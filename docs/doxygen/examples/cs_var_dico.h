@@ -162,7 +162,7 @@
   the exception of \c ihm and \c iscal, which are respectively defined in \ref
   ppincl.f90 and \ref optcal.f90) and the C variables names are defined in
   \ref cs_field_pointer.h. \n Note that \c dt is just an \c allocatable array in
-  Fortran while it is defined as a field in C.
+  Fortran while it is mapped as a field in C.
 
   Fortran code                    | C code                       | Description
   ------------------------------- | ---------------------------- | ------------
@@ -195,18 +195,18 @@
 
   Fortran code               | C code                       | Description
   -------------------------- | ---------------------------- | ------------
-  <tt> propce(iel,\ref irom) | <em>not yet implemented</em> | Density at the current time step
-  propce(iel,\ref iroma)     | <em>not yet implemented</em> | Density at the previous time step
+  <tt> propce(iel,\ref irom) | CS_F_(rho)->val[cell_id]     | Density at the current time step
+  propce(iel,\ref iroma)     | CS_F_(rho)->val_pre[cell_id] | Density at the previous time step
   propce(iel,\ref iromaa)    | <em>not yet implemented</em> | Density at the second previous time
   propce(iel,\ref iviscl)    | CS_F_(mu)->val[cell_id]      | Molecular viscosity
   propce(iel,\ref ivisct)    | CS_F_(mu_t)->val[cell_id]    | Turbulent dynamic viscosity
-  propce(iel,\ref ivisla)    | <em>not yet implemented</em> | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
-  propce(iel,\ref ivista)    | <em>not yet implemented</em> | Dynamic turbulent viscosity \n at the previous time-step
+  propce(iel,\ref ivisla)    | CS_F_(mu)->val_pre[cell_id]  | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
+  propce(iel,\ref ivista)    | CS_F_(mu_t)->val_pre[cell_id] | Dynamic turbulent viscosity \n at the previous time-step
   propce(iel,\ref icp)       | CS_F_(cp)->val[cell_id]      | Specific heat
-  propce(iel,\ref icpa)      | <em>not yet implemented</em> | specific heat at the previous time-step
+  propce(iel,\ref icpa)      | CS_F_(cp)->val_pre[cell_id]  | specific heat at the previous time-step
   propce(iel,\ref icrom)     | CS_F_(rho)->val[cell_id]     | Density (at cells)
   propce(iel,\ref ibrom)     | CS_F_(rho_b)->val[cell_id]   | Density (at boundary faces)
-  propce(iel,\ref icroaa)    | <em>not yet implemented</em> | Cell density at the second previous time step \n key id of the variables
+  propce(iel,\ref icroaa)    | CS_F_(rho)->val_pre[cell_id] | Cell density at the second previous time step \n key id of the variables
   propce(iel,\ref ismago)    | <em>not yet implemented</em> | Field id of the anisotropic turbulent viscosity
   propce(iel,\ref icour)     | <em>not yet implemented</em> | Courant number
   propce(iel,\ref ifour)     | <em>not yet implemented</em> | Fourier number

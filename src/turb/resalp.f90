@@ -36,7 +36,6 @@
 !  mode           nom           role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total numver of variables
-!> \param[in]     dt            step time
 !> \param[in]     rtp, rtpa     calculation variable in cell centers
 !>                              (current or previous instant)
 !______________________________________________________________________________!

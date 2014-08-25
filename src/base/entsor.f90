@@ -87,6 +87,8 @@ module entsor
   !> field key for start position in global postprocessing (ipp index) arrays
   integer, save :: keyipp = -1
 
+  !> \}
+
   !> \defgroup userfile Additional user files
 
   !> \addtogroup userfile

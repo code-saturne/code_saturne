@@ -47,8 +47,6 @@
 !> \param[in]     rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     tslagr        term of coupling return of
-!>                               lagrangian
 !> \param[in]     ckupdc        work array for head losses
 !> \param[in]     smacel        value of variables associated to the
 !                               mass source

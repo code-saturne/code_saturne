@@ -823,7 +823,7 @@ _bucket_sampling(int                      dim,
 
 #endif /* FM_HAVE_MPI */
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions

@@ -64,24 +64,14 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     idbia0        number of first free position in ia
-!> \param[in]     idbra0        number of first free position in ra
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     nitbcp        size of the macro table \f$ C_p \f$ integers
-!> \param[in]     nrtbcp        size of the macro table \f$ C_p \f$ reals
-!> \param[in]     nitbmc        size of the macro table mc integers
-!> \param[in]     nrtbmc        size of the macro table mc reals
-!> \param[in]     nitbwo        size of the macro table work integers
-!> \param[in]     nrtbwo        size of the macro tablet work reals
-!> \param[in]     pa            absolute pressure in pascals
 !> \param[in]     f1m           average of the tracer 1 mvl [chx1+co]
 !> \param[in]     f2m           average of the tracer 2 mvl [chx2+co]
 !> \param[in]     f3m           average of the tracer 3
 !>                              (heterogeneous comb. with CO)
 !> \param[in]     f4m           average of the tracer 4 (air)
 !> \param[in]     f4m           average of the tracer 5 (H2O)
-!> \param[in]     f4p2m         variance of the tracer 4 (air)
 !> \param[in]     enth          enthalpy in \f$ j . kg^{-1} \f$  either of
 !>                                         the gaz or of the mixture melange
 !> \param[in]     rtp           calculation variables at cell centers

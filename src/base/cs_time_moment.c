@@ -1868,9 +1868,9 @@ cs_time_moment_define_by_field_ids(const char                *name,
  * \param[in]  data_func      function used to define data values
  * \param[in]  data_input     pointer to optional (untyped) value or structure
  *                            to be used by data_func
- * \param[in]  weight_func    function used to define weight values
- * \param[in]  weight_input   pointer to optional (untyped) value or structure
- *                            to be used by weight_func
+ * \param[in]  w_data_func    function used to define weight values
+ * \param[in]  w_data_input   pointer to optional (untyped) value or structure
+ *                            to be used by w_data_func
  * \param[in]  type           moment type
  * \param[in]  nt_start       starting time step (or -1 to use t_start)
  * \param[in]  t_start        starting time

@@ -55,12 +55,7 @@ BEGIN_C_DECLS
  * Additional doxygen documentation
  *============================================================================*/
 
-/*!
-  \file cs_parall.h
-        Functions and dealing with parallellism.
-*/
-
-/*! \fn cs_parall_counter(cpt, n)
+/*! \fn inline static void cs_parall_counter(cs_gnum_t cpt[], const int n)
  *
  * \brief Sum values of a counter on all default communicator processes.
  *
@@ -68,8 +63,18 @@ BEGIN_C_DECLS
  * \param[in]       n   number of values
  */
 
-/*! \fn cs_parall_sum(n, datatype, val)
+/*! \fn inline static void cs_parall_counter_max(cs_lnum_t cpt[], const int n)
  *
+ * \brief Maximum values of a counter on all default communicator processes.
+ *
+ * \param[in, out]  cpt local counter in, global counter out (size: n)
+ * \param[in]       n   number of values
+ */
+
+/*! \fn inline static void cs_parall_sum(int n, \
+                                         cs_datatype_t datatype, \
+                                         void *val)
+
  * \brief Sum values of a given datatype on all default communicator processes.
  *
  * \param[in]       n         number of values
@@ -77,7 +82,9 @@ BEGIN_C_DECLS
  * \param[in, out]  val       local sum in, global sum out (size: n)
  */
 
-/*! \fn cs_parall_max(n, datatype, val)
+/*! \fn inline static void cs_parall_max(int n, \
+                                         cs_datatype_t datatype, \
+                                         void *val)
  *
  * \brief Maximum values of a given datatype on all
  *        default communicator processes.
@@ -87,7 +94,10 @@ BEGIN_C_DECLS
  * \param[in, out]  val       local maximum in, global maximum out (size: n)
  */
 
-/*! \fn cs_parall_min(n, datatype, val)
+/*! \fn inline static void cs_parall_min(int n, \
+                                         cs_datatype_t datatype, \
+                                         void *val)
+ *
  *
  * \brief Minimum values of a given datatype on all
  *        default communicator processes.
@@ -97,7 +107,10 @@ BEGIN_C_DECLS
  * \param[in, out]  val       local minimum in, global minimum out (size: n)
  */
 
-/*! \fn cs_parall_bcast(root_rank, n, datatype, val)
+/*! \fn inline static void cs_parall_bcast(int             root_rank, \
+                                           int             n,         \
+                                           cs_datatype_t   datatype,  \
+                                           void           *val)
  *
  * \brief Broadcast values of a given datatype to all
  *        default communicator processes.
@@ -109,11 +122,9 @@ BEGIN_C_DECLS
  *                             output on others (size: n)
  */
 
-/*----------------------------------------------------------------------------*/
-
 /*!
   \file cs_parall.c
-        Functions dealing with parallellism.
+        Utility functions dealing with parallelism.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -574,56 +585,8 @@ cs_f_parall_barrier(void)
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- *  Public function definitions for Fortran API
+ * Public function definitions for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Find a node which minimizes a given distance and its related rank.
- * May be used to locate a node among several domains.
- *
- * Fortran Interface :
- *
- * subroutine parfpt (node, ndrang, dis2mn)
- * *****************
- *
- * integer          node        : <-> : local number of the closest node
- * integer          ndrang      : --> : rank id for which the distance is the
- *                                      smallest
- * double precision dis2mn      : <-- : square distance between the closest node
- *                                      and the wanted node.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
-                          cs_int_t   *ndrang,
-                          cs_real_t  *dis2mn)
-{
-#if defined(HAVE_MPI)
-
-  cs_int_t buf[2];
-
-  _mpi_double_int_t  val_in, val_min;
-
-  assert(sizeof(double) == sizeof(cs_real_t));
-
-  val_in.val  = *dis2mn;
-  val_in.rank = cs_glob_rank_id;
-
-  MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
-                cs_glob_mpi_comm);
-
-  *ndrang = cs_glob_rank_id;
-
-  buf[0] = *node;
-  buf[1] = *ndrang;
-
-  MPI_Bcast(buf, 2, CS_MPI_INT, val_min.rank, cs_glob_mpi_comm);
-
-  *node = buf[0];
-  *ndrang = buf[1];
-
-#endif
-}
 
 /*----------------------------------------------------------------------------
  * Return the value associated to a probe.
@@ -650,14 +613,18 @@ CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
 {
 #if defined(HAVE_MPI)
 
-  assert(sizeof(double) == sizeof(cs_real_t));
+  if (cs_glob_n_ranks > 1) {
 
-  if (*ndrang == cs_glob_rank_id)
-    *varcap = var[*node - 1];
-  else
-    *varcap = 0.0;
+    assert(sizeof(double) == sizeof(cs_real_t));
 
-  MPI_Bcast(varcap, 1, CS_MPI_REAL, *ndrang, cs_glob_mpi_comm);
+    if (*ndrang == cs_glob_rank_id)
+      *varcap = var[*node - 1];
+    else
+      *varcap = 0.0;
+
+    MPI_Bcast(varcap, 1, CS_MPI_REAL, *ndrang, cs_glob_mpi_comm);
+
+  }
 
 #endif
 }
@@ -675,6 +642,7 @@ cs_parall_counter(cs_gnum_t   cpt[],
   if (cs_glob_n_ranks > 1)
     _cs_parall_allreduce(n, CS_GNUM_TYPE, MPI_SUM, cpt);
 }
+
 #endif
 
 /*----------------------------------------------------------------------------
@@ -833,6 +801,55 @@ cs_parall_min_loc_vals(int         n,
     *min = val_min.val;
 
     MPI_Bcast(min_loc_vals, n, CS_MPI_REAL, val_min.rank, cs_glob_mpi_comm);
+
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Given an (id, rank, value) tuple, return the local id, rank,
+ *        and value corresponding to the global minimum value.
+ *
+ * \param[in, out]   elt_id   element id for which the value is the smallest
+ *                            (local in, global out)
+ * \param[in, out]   rank_id  rank id for which the value is the smallest
+ *                            (local in, global out)
+ * \param[in]        val      associated local minimum value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parall_min_id_rank_r(cs_lnum_t  *elt_id,
+                        int        *rank_id,
+                        cs_real_t   val)
+{
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1) {
+
+    cs_lnum_t buf[2];
+
+    _mpi_double_int_t  val_in, val_min;
+
+    assert(sizeof(double) == sizeof(cs_real_t));
+
+    val_in.val  = val;
+    val_in.rank = cs_glob_rank_id;
+
+    MPI_Allreduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC,
+                  cs_glob_mpi_comm);
+
+    *rank_id = cs_glob_rank_id;
+
+    buf[0] = *elt_id;
+    buf[1] = *rank_id;
+
+    MPI_Bcast(buf, 2, CS_MPI_LNUM, val_min.rank, cs_glob_mpi_comm);
+
+    *elt_id = buf[0];
+    *rank_id = buf[1];
 
   }
 

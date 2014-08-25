@@ -1584,6 +1584,8 @@ cs_all_to_all_sort_by_source_rank(cs_all_to_all_t  *d)
  * The number of elements is the number of elements received after exchange.
  *
  * \param[in]  d   pointer to associated all-to-all distributor
+ *
+ * \return  number of elements associated with distributor.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1681,7 +1683,7 @@ cs_all_to_all_swap_src_dest(cs_all_to_all_t  *d)
  *
  * \param[in]   d            pointer to associated all-to-all distributor
  * \param[out]  data_stride  stride (in bytes) between data items
- * \param[out]  data_ptr     pointer to data items
+ * \param[out]  data         pointer to data items
  */
 /*----------------------------------------------------------------------------*/
 

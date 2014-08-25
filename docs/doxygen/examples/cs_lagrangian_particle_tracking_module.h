@@ -24,25 +24,23 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
-
 /*!
 
-  \page cs_lagrangian_particle_tracking_module  Lagrangian volume statistical variable (uslaen.f90)
+  \page cs_lagrangian_particle_tracking_moduleLagrangian volume statistical variable (uslaen.f90)
   
   \brief For the writing of the listing and the post-processing:
 Average of the Lagrangian volume statistical variables.
 Possible intervention of the user.
 
   
-   \section base_loc_var_lag Local variables to be added
+   \section cs_user_lagrangian_base_loc_var_lag Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
 
   \snippet cs_user_lagrangian_particle_tracking_module.f90 loc_var_dec
 
-  \section init_and_final Initialization and finalization
+  \section cs_user_lagrangian_init_and_final Initialization and finalization
 
    The following initialization block needs to be added for the following examples:
 
@@ -52,11 +50,11 @@ Possible intervention of the user.
 
   \snippet cs_user_lagrangian_particle_tracking_module.f90 deallocate
  
-  In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic for C and Fortran.
-
-
+  In theory Fortran 95 deallocates locally-allocated arrays automatically,
+  but deallocating arrays in a symetric manner to their allocation is good pratice,
+  and avoids using a different logic for C and Fortran.
   
-  \section standard_statistic Zone of standard statistics
+  \section cs_user_lagrangian_standard_statistic Zone of standard statistics
 
  Pinpoint the cells where stats are to be calculated.
 
@@ -80,10 +78,6 @@ General case:
   (ivarl=ilpd)
 
 
-
-
-
-
 \snippet cs_user_lagrangian_particle_tracking_module.f90 general_lag
 
  Average
@@ -100,19 +94,15 @@ Sum of the statistical weights
   \snippet cs_user_lagrangian_particle_tracking_module.f90 sum_stat_weights
  
 
-  \section format_lag Format 
+  \section cs_user_lagrangian_format_lag Format 
  
   \snippet cs_user_lagrangian_particle_tracking_module.f90 format_lag
 
-  \section user Zone of the user intervention: example 
+  \section cs_user_lagrangian_user Zone of the user intervention: example 
 Example 1: Statistic calculated in \ref uslast.90 and stored in the array statis.
 
 
   \snippet cs_user_lagrangian_particle_tracking_module.f90 example_1
-
-
-
-
   
 */
 // __________________________________________________________________________________

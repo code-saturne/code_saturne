@@ -675,12 +675,12 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 /*!
  * \brief Compute the flows through the fans.
  *
- * \param[in]  mesh            mesh structure
- * \param[in]  mesh_qantities  mesh quantities
- * \param[in]  i_mass_flux     interior faces mass flux
- * \param[in]  b_mass_flux     boundary faces mass flux
- * \param[in]  c_rho           density at cells
- * \param[in]  b_rho           density at boundary faces
+ * \param[in]  mesh             mesh structure
+ * \param[in]  mesh_quantities  mesh quantities
+ * \param[in]  i_mass_flux      interior faces mass flux
+ * \param[in]  b_mass_flux      boundary faces mass flux
+ * \param[in]  c_rho            density at cells
+ * \param[in]  b_rho            density at boundary faces
  */
 /*----------------------------------------------------------------------------*/
 

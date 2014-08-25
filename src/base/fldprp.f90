@@ -922,7 +922,7 @@ end subroutine add_property_field_nd
 
 !===============================================================================
 
-!> \function add_property_field_hidden
+!> \fn add_property_field_hidden
 !
 !> \brief add field defining a hidden property field defined on cells
 !

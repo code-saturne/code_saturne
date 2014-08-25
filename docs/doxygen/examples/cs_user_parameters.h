@@ -27,7 +27,7 @@
 /*!
   \page parameters Input of calculation parameters (C functions)
 
-  \section intro Introduction
+  \section cs_user_parameters_h_intro Introduction
 
   C user functions for definition of model options and calculation parameters.
     These subroutines are called in all cases.
@@ -40,12 +40,12 @@
     specific parameters.
 
 
-  \section cs_user_model  Base model related options
+  \section cs_user_parameters_h_cs_user_model  Base model related options
 
   Definition of user variables or properties should be defined here,
   if not already done throught the GUI.
 
-  \section cs_user_moments  Time moment related options
+  \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
   Code_Saturne allows the calculation of temporal means or variances,
   either of expressions evaluated through a user function, or
@@ -70,9 +70,9 @@
   \ref time_moment_field_id in Fortran, or \ref cs_time_moment_get_field
   in C.
 
-  \section examples Examples
+  \section cs_user_parameters_h_examples Examples
 
-  \subsection example_1 Example 1
+  \subsection cs_user_parameters_h_example_1 Example 1
 
   In the following example, we define a moment for the mean velocity.
   All components are used (component -1 means all components),
@@ -80,7 +80,7 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_u
 
-  \subsection example_2 Example 2
+  \subsection cs_user_parameters_h_example_2 Example 2
 
   In the next example, we multiply the expression by the density.
   As the density is of dimension 1, and the velocity of dimension 3,
@@ -88,7 +88,7 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_rho_u
 
-  \subsection example_3 Example 3
+  \subsection cs_user_parameters_h_example_3 Example 3
 
   In the next example, we define a product of several field components,
   all of dimension 1, as we consider only the x and y components of the
@@ -99,7 +99,7 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_rho_u_v
 
-  \subsection example_4 Example 4
+  \subsection cs_user_parameters_h_example_4 Example 4
 
   This next example illustrates the use of user-defined functions
   to evaluate expressions. Here, we compute the moment of the sum
@@ -120,7 +120,7 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_simple_sum
 
-  \subsection example_5 Example 5
+  \subsection cs_user_parameters_h_example_5 Example 5
 
   In this last example, we compute components of the mean velocity
   in the case of a rotating mesh. As the mesh orientation changes

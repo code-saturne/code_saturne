@@ -37,30 +37,9 @@
 
 BEGIN_C_DECLS
 
-/*============================================================================
- *  Public function prototypes for Fortran API
+/*=============================================================================
+ * Public function prototypes for Fortran API
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Find a node which minimizes a given distance and its related rank.
- * May be used to locate a node among several domains.
- *
- * Fortran Interface :
- *
- * subroutine parfpt (node, ndrang, dis2mn)
- * *****************
- *
- * integer          node        : <-> : local number of the closest node
- * integer          ndrang      : --> : rank id for which the distance is the
- *                                      smallest
- * double precision dis2mn      : <-- : square distance between the closest node
- *                                      and the wanted node.
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parfpt, PARFPT)(cs_int_t   *node,
-                          cs_int_t   *ndrang,
-                          cs_real_t  *dis2mn);
 
 /*----------------------------------------------------------------------------
  * Return the value associated to a probe.
@@ -343,6 +322,23 @@ void
 cs_parall_min_loc_vals(int         n,
                        cs_real_t  *min,
                        cs_real_t   min_loc_vals[]);
+
+/*----------------------------------------------------------------------------
+ * Given an (id, rank, value) tuple, return the local id, rank,
+ * and value corresponding to the global minimum value.
+ *
+ * parameters:
+ *   elt_id  <-> element id for which the value is the smallest
+ *               (local in, global out)
+ *   rank_id <-> rank id for which the value is the smallest
+ *               (local in, global out)
+ *   val     <-- associated local minimum value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_parall_min_id_rank_r(cs_lnum_t  *elt_id,
+                        int        *rank_id,
+                        cs_real_t   dis2mn);
 
 /*----------------------------------------------------------------------------
  * Return minimum recommended scatter or gather buffer size.

@@ -56,8 +56,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rtp, rtpa     calculated variables at cell centers
 !>                               (at current and previous time steps)
-!> \param[in]     grdvit        work array for the velocity grad term
-!>                                 onyl for iturb=31
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
@@ -66,7 +64,6 @@
 !>                               source terms or mass rate (see \ref ustsma)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslagr        coupling term for lagrangian
 !> \param[in]     tslage        explicit source terms for the Lagrangian module
 !> \param[in]     tslagi        implicit source terms for the Lagrangian module
 !> \param[in]     smbr          working array

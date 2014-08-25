@@ -387,9 +387,6 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
- * \param[in]       f_ext           exterior force generating
- *                                  the hydrostatic pressure
  * \param[out]      grad            gradient
  */
 /*----------------------------------------------------------------------------*/

@@ -67,8 +67,6 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     idbia0        number of first free position in ia
-!> \param[in]     idbra0        number of first free position in ra
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
 !> \param[in]     nitbcp        size of the macro table \f$C_p\f$ integers

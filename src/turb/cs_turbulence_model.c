@@ -293,7 +293,7 @@ double cs_turb_dpow;
 
 /*!
  * Constant \f$C_\mu\f$ for all the RANS turbulence models except for the
- * v2f model (see \ref cv2fmu for the value of \f$C_\mu\f$ in case of v2f
+ * v2f model (see \ref cs_turb_cv2fmu for the value of \f$C_\mu\f$ in case of v2f
  * modelling). Useful if and only if \ref iturb = 20, 21, 30, 31 or 60
  * (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or \f$k-\omega\f$).
  */
@@ -313,7 +313,7 @@ const double cs_turb_ce1 = 1.44;
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
  * \f$R_{ij}-\varepsilon\f$ LRR models.
- * Useful if and only if {\tt iturb}= 20, 21 or 30
+ * Useful if and only if \ref iturb = 20, 21 or 30
  * (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR).
  */
 const double cs_turb_ce2 = 1.92;
@@ -361,7 +361,7 @@ const double cs_turb_crij3 = 0.55;
 /*!
  * Constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
  * corresponding to the wall echo terms.
- * Useful if and only if \ref iturb=30 and \ref irijec=1
+ * Useful if and only if \ref iturb=30 and \ref cs_turb_irijec=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 const double cs_turb_crijp1 = 0.50;
@@ -369,7 +369,7 @@ const double cs_turb_crijp1 = 0.50;
 /*!
  * Constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
  * corresponding to the wall echo terms.
- * Useful if and only if \ref iturb=30 and \ref irijec=1
+ * Useful if and only if \ref iturb=30 and \ref cs_turb_irijec=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 const double cs_turb_crijp2 = 0.30;
@@ -536,7 +536,7 @@ const double cs_turb_ckwbt2 = 0.0828;
  * \warning: \f$\gamma_1\f$ is calculated before the call to
  * \ref usipsu. Hence, if \f$\beta_1\f$, \f$C_\mu\f$, \f$\kappa\f$ or
  * \f$\sigma_{\omega 1}\f$ is modified in \ref usipsu,
- * \ref ckwgm1 must also be modified in accordance.
+ * \ref cs_turb_ckwgm1 must also be modified in accordance.
  */
 double cs_turb_ckwgm1;
 
@@ -546,7 +546,8 @@ double cs_turb_ckwgm1;
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  * \warning: \f$\gamma_2\f$ is calculated before the call to \ref usipsu. Hence,
  * if \f$\beta_2\f$, \f$C_\mu\f$, \f$\kappa\f$ or \f$\sigma_{\omega 2}\f$ is
- * modified in \ref usipsu, \ref ckwgm2 must also be modified in accordance.
+ * modified in \ref usipsu, \ref cs_turb_ckwgm2 must also be modified
+ * in accordance.
  */
 double cs_turb_ckwgm2;
 

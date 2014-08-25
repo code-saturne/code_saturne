@@ -39,8 +39,6 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in,out] ivar          variable number
-!> \param[in]     isou          passage number
 !> \param[in]     icepdc        number of ncepdp cells with head losses
 !> \param[in]     icetsm        number of cells with mass source
 !> \param[in]     itypsm        type of masss source for the

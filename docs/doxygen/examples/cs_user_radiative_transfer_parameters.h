@@ -28,7 +28,7 @@
 
 /*!
 
-  \page cs_user_radiative_transfert_parameters Examples of data settings for radiative tranferts (usray2.f90)
+  \page cs_user_radiative_transfer_parameters Examples of data settings for radiative tranferts (usray2.f90)
   
 \image html radiative_tr_sketch.gif "Sketch of thermal flux in boundary walls"
 
@@ -73,11 +73,11 @@ Therefore :
 
    The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_radiative_transfert_parameters.f90 allocate
+  \snippet cs_user_radiative_transfer_parameters.f90 allocate
 
   At the end of the subroutine, it is recommended to deallocate the work array:
 
-  \snippet cs_user_radiative_transfert_parameters.f90 deallocate
+  \snippet cs_user_radiative_transfer_parameters.f90 deallocate
  
   In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic for C and Fortran.
 
@@ -86,13 +86,13 @@ Therefore :
 
   ivar: number of the thermal variable
 
-   \snippet cs_user_radiative_transfert_parameters.f90 ivar
+   \snippet cs_user_radiative_transfer_parameters.f90 ivar
 
   Min and Max values for the wall temperatures (clipping otherwise)
  
  \f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
 
-  \snippet  cs_user_radiative_transfert_parameters.f90 temp
+  \snippet  cs_user_radiative_transfer_parameters.f90 temp
 
    \section assign2 Assign boundary conditions to boundary wall
 
@@ -145,35 +145,35 @@ Therefore :
 
 Here is a list of examples:
 
-   - \subpage radiative_transfert_parameters_examples
+   - \subpage radiative_transfer_parameters_examples
 
 
 
 */
 // __________________________________________________________________________________
 /*!
- \page radiative_transfert_parameters_examples Radiative transfert parameters examples
+ \page radiative_transfer_parameters_examples Radiative transfert parameters examples
 
   \section ex1 Example 1
 
   For wall boundary faces, selection criteria: color 1  \n
   Gray or black wall with profil of fixed inside temperature
 
-  \snippet   cs_user_radiative_transfert_parameters.f90  example_1
+  \snippet   cs_user_radiative_transfer_parameters.f90  example_1
   
    \section ex2 Example 2
 
   For wall boundary faces, selection criteria: color 2  \n
   Gray or black wall with fixed outside temperature \f$ T_{EXTP} \f$
    
-  \snippet  cs_user_radiative_transfert_parameters.f90 example_2
+  \snippet  cs_user_radiative_transfer_parameters.f90 example_2
 
   \section ex3 Example 3 
   
   For wall boundary faces, selection criteria: color 3 \n
   Reflecting wall (EPSP = 0) with fixed outside temperature \f$ T_{EXTP} \f$
 
-  \snippet  cs_user_radiative_transfert_parameters.f90 example_3
+  \snippet  cs_user_radiative_transfer_parameters.f90 example_3
 
   \section ex4 Example 4
 
@@ -193,7 +193,7 @@ Flux density (< 0 if gain for the fluid)
  \f[ RCODC(IFAC,IVAR,3)=(VISCLS+\frac{VISCT}{\sigma})\cdot \grad{H} \cdot \vect{n}\f]
 
 
-\snippet  cs_user_radiative_transfert_parameters.f90 example_4
+\snippet  cs_user_radiative_transfer_parameters.f90 example_4
 
 \section ex5 Example 5
 
@@ -210,24 +210,24 @@ If the conduction flux is zero then the wall is adiabatic.
   - For enthalpies \f$h\f$,      in \f$ W \cdot m^{-2} \f$:
     \f[  RCODCL(IFAC,IVAR,3) =    (VISCLS+\frac{VISCT}{\sigma})  \cdot \grad{H} \cdot \vect{n} \f]
 
-\snippet  cs_user_radiative_transfert_parameters.f90 example_5
+\snippet  cs_user_radiative_transfer_parameters.f90 example_5
 
 \section w Warning 
 
 For all boundary faces that are not wall it is MANDATORY to impose a number of zone in the array \c izfrdp. For each zone, informations will be displayed in the listing.
 
-\snippet cs_user_radiative_transfert_parameters.f90 w
+\snippet cs_user_radiative_transfer_parameters.f90 w
 
 \section ex6 Example 6 
 
 Verification that all boundary faces have been treated
 
-\snippet  cs_user_radiative_transfert_parameters.f90 example_6 
+\snippet  cs_user_radiative_transfer_parameters.f90 example_6 
 
 \section end_loop End of the loop on the boundary faces
 
-\snippet  cs_user_radiative_transfert_parameters.f90 end_radiative 
+\snippet  cs_user_radiative_transfer_parameters.f90 end_radiative 
 \section format_radiative_trans Format
-\snippet cs_user_radiative_transfert_parameters.f90 format_radiative
+\snippet cs_user_radiative_transfer_parameters.f90 format_radiative
 
 */  

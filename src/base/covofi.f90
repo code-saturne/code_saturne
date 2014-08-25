@@ -64,13 +64,6 @@
 !> \param[in]     spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{cond}^n \f$)
-!> \param[in]     frcxt         external forces making hydrostatic pressure
-!> \param[in]     dfrcxt        variation of the external forces
-!> \param[in]                    making the hydrostatic pressure
-!> \param[in]     tpucou        non scalar time step in case of
-!>                               velocity pressure coupling
-!> \param[in]     trav          right hand side for the normalizing
-!>                               the residual
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
 !> \param[in]     smbrs         tableau de travail

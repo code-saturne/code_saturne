@@ -565,7 +565,7 @@ end subroutine
 
 !===============================================================================
 
-!> \function add_variable_field
+!> \fn add_variable_field
 !
 !> \brief add field defining a general solved variable, with default options
 !

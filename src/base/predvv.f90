@@ -73,11 +73,11 @@
 !> \param[in]     dfrcxt        variation of the external forces
 !> \param[in]                    making the hydrostatic pressure
 !> \param[in]     grdphd        hydrostatic pressure gradient to handle the imbalance
-!> \param[in]                   between the pressure gradient and gravity source term
+!>                              between the pressure gradient and gravity source term
 !> \param[in]     tpucou        non scalar time step in case of
-!>                               velocity pressure coupling
+!>                              velocity pressure coupling
 !> \param[in]     trav          right hand side for the normalizing
-!>                               the residual
+!>                              the residual
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
 !> \param[in]     viscfi        idem viscf pour increments

@@ -35,12 +35,9 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     ivar          variable number
 !> \param[in]     isou          passage numbero
-!> \param[in]     ipp           variable number for post-outpu
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!                                (at current and previous time steps)
-!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     rtpa          calculated variables at cell centers
+!                                (at previous time steps)
 !> \param[in]     produc        production
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!

@@ -91,15 +91,9 @@ module mesh
   ! pointer to C array used by nodfac (0 to n-1 numbering)
   integer, dimension(:), pointer :: nodfac_0
 
-  !> \anchor ipnfbr
-  !> position of the first node of the each boundary face in the array nodfbr
-  !> (see \ref note_3)
   ! pointer to C array used by ipnfbr (0 to n-1 numbering)
   integer, dimension(:), pointer :: ipnfbr_0
 
-  !> \anchor nodfbr
-  !> index-numbers of the nodes of each boundary face
-  !> (see \ref note_3)
   ! pointer to C array used by nodfbr (0 to n-1 numbering)
   integer, dimension(:), pointer :: nodfbr_0
 

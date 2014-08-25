@@ -977,7 +977,7 @@ end subroutine varpos
 
 !===============================================================================
 
-!> \function add_source_term_prev_field
+!> \fn add_source_term_prev_field
 !
 !> \brief add field defining previous source term values for a given field
 !

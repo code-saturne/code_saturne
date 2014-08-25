@@ -1797,6 +1797,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  * The algorithm here is similar to that used for BLAS, but computes several
  * quantities simultaneously for better cache behavior
  *
+ * \param[in]   n_elts      number of local elements
  * \param[in]   dim         local array dimension (max: 9)
  * \param[in]   v_elt_list  optional list of parent elements on which values
  *                          are defined, or NULL

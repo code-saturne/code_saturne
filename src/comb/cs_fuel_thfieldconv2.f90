@@ -39,8 +39,6 @@
 !> \param[in]     rtp           calculation variables in cell centers
 !>                                 (current insatant)
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in]     eh0           real work array
-!> \param[in]     eh1           real work array
 !______________________________________________________________________________!
 
 subroutine cs_fuel_thfieldconv2 &

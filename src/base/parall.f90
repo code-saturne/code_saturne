@@ -373,6 +373,25 @@ module parall
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute the global sums of an array of real numbers
+    !> in case of parellism.
+
+    !> \param[in, out]   elt_id   element id for which the value is the smallest
+    !>                            (local in, global out)
+    !> \param[in, out]   rank_id  rank id for which the value is the smallest
+    !>                            (local in, global out)
+    !> \param[in]        val      associated local minimum value
+
+    subroutine parfpt(elt_id, rank_id, val)  &
+      bind(C, name='cs_parall_min_id_rank_r')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(inout) :: elt_id, rank_id
+      real(c_double), value :: val
+    end subroutine parfpt
+
+    !---------------------------------------------------------------------------
+
     !> \brief Build a global array from each local array in each domain.
 
     !> Local arrays are appened in order of owning MPI rank.

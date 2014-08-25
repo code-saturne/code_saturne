@@ -27,7 +27,7 @@
 /*!
   \page f_parameters Input of calculation parameters (Fortran modules)
 
-  \section intro Introduction
+  \section cs_f_user_parameters_h_intro Introduction
 
   User subroutines for input of calculation parameters (Fortran modules).
     These subroutines are called in all cases.
@@ -53,7 +53,7 @@
     when the corresponding option is selected in the usppmo routine.
 
 
-  \section usipes  Input-output related options
+  \section cs_f_user_parameters_h_usipes  Input-output related options
 
   Frequency of log output.
 
@@ -82,9 +82,9 @@
 
   \snippet cs_user_parameters-output.f90 init_05
 
-  \section examples Examples
+  \section cs_f_user_parameters_h_examples Examples
 
-  \subsection example_1 Example 1
+  \subsection cs_f_user_parameters_h_example_1 Example 1
 
    Force postprocessing of projection of some variables at boundary
    with no reconstruction.
@@ -96,7 +96,7 @@
 
   \snippet cs_user_parameters-output.f90 example_1
 
-  \subsection example_2 Example 2
+  \subsection cs_f_user_parameters_h_example_2 Example 2
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
   a boundary temperature or Nusselt number may be computed using the
