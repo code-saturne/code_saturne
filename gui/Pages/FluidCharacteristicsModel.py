@@ -95,7 +95,7 @@ class FluidCharacteristicsModel(Variables, Model):
         if self.node_coal['model'] != None and self.node_coal['model'] != 'off':
             self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')
             self.nodeList = (self.node_density, self.node_viscosity,
-                             self.node_heat, self.node_dyn)
+                             self.node_heat, self.node_cond, self.node_dyn)
 
         elif self.node_gas['model'] != None and self.node_gas['model'] != 'off':
             self.node_dyn = self.setNewFluidProperty(self.node_fluid, 'dynamic_diffusion')

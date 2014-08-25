@@ -1084,6 +1084,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.lineEditHCNChar.setText(str(self.model.getNOxFormationParameter \
                 (self.fuel, "percentage_HCN_char_combustion")))
             if self.model.getNOxFormationFeature(self.fuel) == 'on':
+                self.checkBoxNOxFormationFeature.setChecked(True)
                 self.labelReburning.show()
                 self.comboBoxReburning.show()
                 mdl = self.model.getReburning(self.fuel)
