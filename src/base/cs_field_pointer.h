@@ -86,6 +86,8 @@ typedef enum {
 
   CS_ENUMF_(mesh_u),       /*!< mesh velocity */
 
+  CS_ENUMF_(void_f),       /*!< void fraction */
+
   CS_ENUMF_(h),            /*!< enthalpy */
   CS_ENUMF_(t),            /*!< temperature */
   CS_ENUMF_(energy),       /*!< total energy */

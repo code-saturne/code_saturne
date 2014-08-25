@@ -697,7 +697,7 @@ end subroutine add_variable_field
 
 !===============================================================================
 
-!> \function add_user_scalar_fields
+!> \fn add_user_scalar_fields
 !
 !> \brief add fields defining user solved scalar variables,
 !>        with default options
@@ -801,7 +801,7 @@ end subroutine add_user_scalar_fields
 
 !===============================================================================
 
-!> \function add_model_scalar_field
+!> \fn add_model_scalar_field
 !
 !> \brief add field defining a non-user solved scalar variable,
 !>        with default options
@@ -931,7 +931,7 @@ return
 end subroutine add_model_scalar_field
 
 !===============================================================================
-!> \function add_model_scalar_field
+!> \fn add_model_scalar_field
 !
 !> \brief add field defining a non-user solved scalar variable,
 !>        with default options
@@ -1072,7 +1072,7 @@ end subroutine add_model_field
 
 !===============================================================================
 
-!> \function fldvar_check_nvar
+!> \fn fldvar_check_nvar
 
 !> \brief check nvarmx is sufficient for the required number of variables.
 
@@ -1167,7 +1167,7 @@ end subroutine fldvar_check_nvar
 
 !===============================================================================
 
-!> \function fldvar_check_nscapp
+!> \fn fldvar_check_nscapp
 !
 !> \brief check nscamx is sufficient for the required number of model scalars.
 !

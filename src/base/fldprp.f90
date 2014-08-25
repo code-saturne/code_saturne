@@ -787,7 +787,7 @@ end subroutine fldprp
 
 !===============================================================================
 
-!> \function add_property_field_nd
+!> \fn add_property_field_nd
 !
 !> \brief add field defining a property field defined on cells,
 !>        with default options
@@ -1044,7 +1044,7 @@ end subroutine add_property_field_hidden
 
 !===============================================================================
 
-!> \function add_property_field
+!> \fn add_property_field
 !
 !> \brief add field defining a property field defined on cells,
 !>        with default options
@@ -1091,7 +1091,7 @@ end subroutine add_property_field
 
 !===============================================================================
 
-!> \function hide_property
+!> \fn hide_property
 !
 !> \brief disable logging and postprocessing for a property
 !
@@ -1145,7 +1145,7 @@ end subroutine hide_property
 
 !===============================================================================
 
-!> \function fldprp_check_nproce
+!> \fn fldprp_check_nproce
 
 !> \brief check npromx is sufficient for the required number of properties.
 

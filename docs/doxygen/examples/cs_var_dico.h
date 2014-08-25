@@ -169,7 +169,7 @@
   <tt> dt                         | CS_F_(dt)->val[cell_id]      | Local time step
   rtp(iel,\ref ipr)               | CS_F_(p)->val[cell_id]       | Pressure
   <EM>(WARNING: deprecated)</EM> \n rtp(iel,\ref iu) \n rtp(iel,\ref iv) \n rtp(iel,\ref iw) | \n CS_F_(u)->val[3*cell_id] \n CS_F_(u)->val[3*cell_id+1] \n CS_F_(u)->val[3*cell_id+2] | Velocity
-  rtp(iel,\ref ivoidf)            | <em>not yet implemented</em> | Void fraction for cavitation modelling
+  rtp(iel,\ref ivoidf)            | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
   rtp(iel,\ref ik)                | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
   rtp(iel,\ref iep)               | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
   rtp(iel,\ref ir11)              | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
