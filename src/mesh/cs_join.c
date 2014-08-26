@@ -1898,7 +1898,6 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
 
   cs_real_t  *b_face_cog = NULL, *b_face_normal = NULL;
 
-  cs_mesh_init_group_classes(mesh);
   cs_mesh_quantities_b_faces(mesh, &b_face_cog, &b_face_normal);
 
   /* Build temporary selection structures */
