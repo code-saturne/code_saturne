@@ -1249,9 +1249,9 @@ class mpi_environment:
             info = get_command_outputs(infoname + ' -configure')
             i = info.find('-with-pm=')
             if i > -1:
-                s = info[i + 8:]
+                s = info[i + len('-with-pm='):]
                 for pm in ['hydra', 'smpd', 'mpd', 'gforker', 'remshell']:
-                    if s[0:len(pm)] == pm_c:
+                    if s[0:len(pm)] == pm:
                         return pm
 
             # Otherwise, we know the default changed with MPICH2 1.3,
