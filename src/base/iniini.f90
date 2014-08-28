@@ -758,9 +758,7 @@ idtvar = 0
 
 coumax = 1.d0
 foumax = 10.d0
-!if (ippmod(icompf).ge.0 ) then
-  cflmmx = 0.99d0
-!endif
+cflmmx = 0.99d0
 dtmin  = -grand*10.d0
 dtmax  = -grand*10.d0
 varrdt = 0.1d0

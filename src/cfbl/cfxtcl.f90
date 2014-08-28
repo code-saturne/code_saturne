@@ -20,64 +20,59 @@
 
 !-------------------------------------------------------------------------------
 
+!> \file cfxtcl.f90
+!> \brief Handle boundary condition type code (\ref itypfb) when the
+!> compressible model is enabled.
+!>
+!-------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> param[in]      nvar          total number of variables
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
+!> param[in]      itypfb        boundary face types
+!> param[in]      dt            time step (per cell)
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!______________________________________________________________________________
+
 subroutine cfxtcl &
 !================
 
  ( nvar   ,                                                       &
-   icodcl , itypfb ,                                              &
-   dt     ,                                                       &
-   rcodcl )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-!    CONDITIONS AUX LIMITES AUTOMATIQUES
-
-!           COMPRESSIBLE SANS CHOC
-
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+   icodcl , itypfb , dt     , rcodcl )
 
 !===============================================================================
 ! Module files
 !===============================================================================
-
-! Arguments
 
 use paramx
 use numvar
@@ -139,10 +134,10 @@ double precision, dimension(:,:), pointer :: vel
 call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 
-! Allocate work arrays
+! Allocate temporary arrays
 allocate(w1(ncelet), w2(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 
@@ -162,7 +157,7 @@ call field_get_val_s(ivarfl(ien), cvar_en)
 
 if (icv.gt.0) call field_get_val_s(iprpfl(icv), cpro_cv)
 
-!     Liste des variables compressible :
+! list of the variables of the compressible model
 ivarcf(1) = ipr
 ivarcf(2) = iu
 ivarcf(3) = iv
@@ -176,12 +171,8 @@ do ifac = 1, nfabor
   wbfb(ifac) = coefbp(ifac)
 enddo
 
-!     Calcul de epsilon_sup = e - CvT
-!     On en a besoin si on a des parois a temperature imposee.
-!     Il est calculé aux cellules W5 et aux faces de bord COEFU.
-!     On n'en a besoin ici qu'aux cellules de bord : s'il est
-!     nécessaire de gagner de la mémoire, on pourra modifier
-!     cf_thermo_eps_sup
+! Computation of epsilon_sup = e - CvT
+! Needed if walls with imposed temperature are set.
 
 icalep = 0
 do ifac = 1, nfabor
@@ -192,16 +183,13 @@ enddo
 if(icalep.ne.0) then
   ! At cell centers
   call cf_thermo_eps_sup(w5, ncel)
-  !===================
 
   ! At boundary faces centers
   call cf_thermo_eps_sup(w7, nfabor)
-  !===================
 endif
 
-
-!     Calcul de gamma (constant ou variable ; pour le moment : cst)
-!       On en a besoin pour les entrees sorties avec rusanov
+! Computation of gamma (can be constant or variable)
+! Needed for to compute the Rusanov fluxes at imposed inlet.
 
 icalgm = 0
 do ifac = 1, nfabor
@@ -214,7 +202,7 @@ if(icalgm.ne.0) then
   if(ieos.eq.1) then
     call cf_thermo_gamma(gammag)
   else
-    ! TODO
+    ! TODO for thermodynamic with variable gamma
     ! Gamma is used in cfrusb. If non uniform (ieos different from 1),
     ! the cell values have to be passed and used as gammag(ifabor(ifac))
     ! in the Rusanov flux computation.
@@ -225,38 +213,33 @@ if(icalgm.ne.0) then
 
 endif
 
-
-
-!     Boucle sur les faces
+! Loop on all boundary faces and treatment of types of BCs given by itypfb
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
 
 !===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES DE PAROI
+! 2. Treatment of all wall boundary faces
 !===============================================================================
 
   if ( itypfb(ifac).eq.iparoi) then
 
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       En paroi, on traite toutes les variables.
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! At walls all variables are treated.
     do ivar = 1, nvar
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
         rcodcl(ifac,ivar,1) = 0.d0
       endif
     enddo
 
-!     Le flux de masse est nul
-
+    ! zero mass flux
     bmasfl(ifac) = 0.d0
 
-!     Pression :
-
-!       Si la gravite est predominante : pression hydrostatique
-!         (approximatif et surtout explicite en rho)
+    ! pressure :
+    ! if the gravity is prevailing: hydrostatic pressure
+    ! (warning: the density is here explicit and the term is an approximation)
 
     if(icfgrp.eq.1) then
 
@@ -270,19 +253,18 @@ do ifac = 1, nfabor
 
     else
 
-!       En général : proportionnelle a la valeur interne
-!         (Pbord = COEFB*Pi)
-!       Si on détend trop : Dirichlet homogene
+      ! generally proportional to the bulk value
+      ! (Pboundary = COEFB*Pi)
+      ! If rarefaction is too strong : homogeneous Dirichlet
 
       call cf_thermo_wall_bc(wbfb, ifac)
-      !===================
 
-!       En outre, il faut appliquer une pre-correction pour compenser
-!        le traitement fait dans condli... Si on pouvait remplir COEFA
-!        et COEFB directement, on gagnerait en simplicite, mais cela
-!        demanderait un test sur IPPMOD dans condli : à voir)
+      ! In addition, a pre-correction has to be applied to cancel the
+      ! treatment done afterward in condli.
+      ! TODO see if coefa, coefb could be directly set. In this case,
+      ! a test on ippmod in condli would be necessary.
 
-!FIXME with the new cofaf
+      !FIXME with the new cofaf
       icodcl(ifac,ipr) = 1
       if(wbfb(ifac).lt.rinfin*0.5d0.and.                  &
          wbfb(ifac).gt.0.d0  ) then
@@ -295,40 +277,35 @@ do ifac = 1, nfabor
 
     endif
 
+    ! Velocity and turbulence are treated in a standard manner in condli.
 
-!       La vitesse et la turbulence sont traitées de manière standard,
-!         dans condli.
+    ! For thermal B.C., a pre-treatment has be done here since the solved
+    ! variable is the total energy
+    ! (internal energy + epsilon_sup + cinetic energy).
+    ! Especially, when a temperature is imposed on a wall, clptur treatment
+    ! has to be prepared. Except for the solved energy all the variables rho
+    ! and s will take arbitrarily a zero flux B.C. (their B.C. are only used
+    ! for the gradient reconstruction and imposing something else than zero
+    ! flux could bring out spurious values near the boundary layer).
 
-!       Pour la thermique, on doit effectuer ici un prétraitement,
-!         la variable résolue étant l'energie
-!         (energie interne+epsilon sup+energie cinétique). En particulier
-!         lorsque la paroi est à température imposée, on prépare le
-!         travail de clptur. Hormis l'énergie résolue, toutes les
-!         variables rho et s prendront arbitrairement une condition de
-!         flux nul (leurs conditions aux limites ne servent qu'à la
-!         reconstruction des gradients et il parait délicat d'imposer
-!         autre chose qu'un flux nul sans risque de créer des valeurs
-!         aberrantes au voisinage de la couche limite)
-
-!       Par défaut : adiabatique
+    ! adiabatic by default
     if(  icodcl(ifac,itk).eq.0.and.                          &
          icodcl(ifac,ien).eq.0) then
       icodcl(ifac,itk) = 3
       rcodcl(ifac,itk,3) = 0.d0
     endif
 
-!       Temperature imposee
+    ! imposed temperature
     if(icodcl(ifac,itk).eq.5) then
 
-!           On impose la valeur de l'energie qui conduit au bon flux.
-!             On notera cependant qu'il s'agit de la condition à la
-!               limite pour le flux diffusif. Pour la reconstruction
-!               des gradients, il faudra utiliser autre chose.
-!               Par exemple un flux nul ou encore toute autre
-!               condition respectant un profil : on se calquera sur
-!               ce qui sera fait pour la température si c'est possible,
-!               sachant que l'energie contient l'energie cinetique,
-!               ce qui rend le choix du profil délicat.
+      ! The value of the energy that leads to the right flux is imposed.
+      ! However it should be noted that it is the B.C. for the diffusion
+      ! flux. For the gradient reconstruction, something else will be
+      ! needed. For example, a zero flux or an other B.C. respecting a
+      ! profile: it may be possible to treat the total energy as the
+      ! temperature, keeping in mind that the total energy contains
+      ! the cinetic energy, which could make the choice of the profile more
+      ! difficult.
 
       icodcl(ifac,ien) = 5
       if(icv.eq.0) then
@@ -339,103 +316,87 @@ do ifac = 1, nfabor
       rcodcl(ifac,ien,1) = rcodcl(ifac,ien,1)             &
            + 0.5d0*(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)          &
            + w5(iel)
-!                   ^epsilon sup (cf USCFTH)
+      ! w5 contains epsilon_sup
 
-!           Les flux en grad epsilon sup et énergie cinétique doivent
-!             être nuls puisque tout est pris par le terme de
-!             diffusion d'energie.
+      ! fluxes in grad(epsilon_sup and cinetic energy) have to be zero
+      ! since they are already accounted for in the energy diffusion term
       ifbet(ifac) = 1
 
-!           Flux nul pour la reconstruction éventuelle de température
+      ! zero flux for the possible temperature reconstruction
       icodcl(ifac,itk) = 3
       rcodcl(ifac,itk,3) = 0.d0
 
-!       Flux impose
+    ! imposed flux
     elseif(icodcl(ifac,itk).eq.3) then
 
-!           On impose le flux sur l'energie
+      ! zero flux on energy
       icodcl(ifac,ien) = 3
       rcodcl(ifac,ien,3) = rcodcl(ifac,itk,3)
 
-!           Les flux en grad epsilon sup et énergie cinétique doivent
-!             être nuls puisque tout est pris par le terme de
-!             diffusion d'energie.
+      ! fluxes in grad(epsilon_sup and cinetic energy) have to be zero
+      ! since they are already accounted for in the energy diffusion term
       ifbet(ifac) = 1
 
-!           Flux nul pour la reconstruction éventuelle de température
+      ! zero flux for the possible temperature reconstruction
       icodcl(ifac,itk) = 3
       rcodcl(ifac,itk,3) = 0.d0
 
     endif
 
 
-!     Scalaires : flux nul (par defaut dans typecl pour iparoi)
+!     Scalars : zero flux (by default in typecl for iparoi code)
 
 
 !===============================================================================
-! 3.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES DE SYMETRIE
+! 3. Treatment of all symmetry boundary faces
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.isymet ) then
 
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       En symetrie, on traite toutes les variables.
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! At symmetry faces, all variables are treated.
     do ivar = 1, nvar
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
         rcodcl(ifac,ivar,1) = 0.d0
       endif
     enddo
 
-!     Le flux de masse est nul
-
+    ! zero mass flux
     bmasfl(ifac) = 0.d0
 
-! Pressure condition:
-! homogeneous Neumann condition, nothing to be done.
-
-!     Pression :
-!       En général : proportionnelle a la valeur interne
-!         (Pbord = COEFB*Pi)
-!       Si on détend trop : Dirichlet homogene
-
-!       En outre, il faut appliquer une pre-correction pour compenser le
-!        traitement fait dans condli... Si on pouvait remplir COEFA
-!        et COEFB directement, on gagnerait en simplicite, mais cela
-!        demanderait un test sur IPPMOD dans condli : à voir)
-
+    ! Pressure condition:
+    ! homogeneous Neumann condition, nothing to be done.
     icodcl(ifac,ipr) = 3
     rcodcl(ifac,ipr,1) = 0.d0
     rcodcl(ifac,ipr,2) = rinfin
     rcodcl(ifac,ipr,3) = 0.d0
 
-!       Toutes les autres variables prennent un flux nul (sauf la vitesse
-!         normale, qui est nulle) : par defaut dans typecl pour isymet.
+    ! zero flux for all other variables (except for the normal velocity which is
+    ! itself zero) : by default in typecl for isymet code.
 
 !===============================================================================
-! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE/SORTIE
-!       ETAPE DE THERMO
+! 4. Treatment of all inlet/outlet boundary faces and thermo step
 !===============================================================================
 
 
 !===============================================================================
-!     4.1 Entree/sortie imposée (par exemple : entree supersonique)
+! 4.1 Imposed Inlet/outlet (for example: supersonic inlet)
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.iesicf ) then
 
-!     On a
-!       - la vitesse,
-!       - 2 variables parmi P, rho, T, E (mais pas (T,E)),
-!       - la turbulence
-!       - les scalaires
+    ! we have
+    !   - velocity,
+    !   - 2 variables among P, rho, T, E (but not the couple (T,E)),
+    !   - turbulence variables
+    !   - scalars
 
-!     On recherche la variable a initialiser
-!       (si on a donne une valeur nulle, c'est pas adapte : on supposera
-!        qu'on n'a pas initialise et on sort en erreur)
+    ! we look for the variable to be initialized
+    ! (if a zero value has been given, it is not adapted, so it will
+    ! be considered as not initialized and the computation will stop
+    ! displaying an error message
     iccfth = 10000
     if(rcodcl(ifac,ipr,1).gt.0.d0) iccfth = 2*iccfth
     if(brom(ifac).gt.0.d0)         iccfth = 3*iccfth
@@ -448,11 +409,11 @@ do ifac = 1, nfabor
     endif
     iccfth = iccfth + 900
 
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite d'abord les variables autres que la turbulence et les
-!       scalaires passifs : celles-ci sont traitees plus bas.
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! firstly variables other than turbulent ones and passive scalars are handled,
+    ! the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -460,45 +421,40 @@ do ifac = 1, nfabor
       endif
     enddo
 
-!     On calcule les variables manquantes parmi P,rho,T,E
-!     COEFA sert de tableau de transfert dans USCFTH
-
+    ! missing thermo variables among P,rho,T,E are computed
     do ivar = 1, nvar
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
 
-    call cfther                                                   &
+    call cfther &
     !==========
- ( nvar   ,                                                       &
-   iccfth , ifac   ,                                              &
+ ( nvar   ,               &
+   iccfth , ifac   ,      &
    w1     , w2     , bval )
 
 
-!     Rusanov, flux de masse et type de conditions aux limites :
-!       voir plus bas
-
+    ! Rusanov fluxes, mass flux and boundary conditions types (icodcl) are
+    ! dealt with further below
 
 !===============================================================================
-!     4.2 Sortie supersonique
+! 4.2 Supersonic outlet
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.isspcf ) then
 
-!     On impose un Dirichlet égal à la valeur interne pour rho u E
-!       (on impose des Dirichlet déduit pour les autres variables).
-!       Il est inutile de passer dans Rusanov.
-!     Il serait nécessaire de reconstruire ces valeurs en utilisant
-!       leur gradient dans la cellule de bord : dans un premier temps,
-!       on utilise des valeurs non reconstruites (non consistant mais
-!       potentiellement plus stable).
-!     On pourrait imposer des flux nuls (a tester), ce qui éviterait
-!       la nécessité de reconstruire les valeurs.
-
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite d'abord les variables autres que la turbulence et les
-!       scalaires passifs : celles-ci sont traitees plus bas.
+    ! A Dirichlet value equal to the bulk value is imposed for the velocity
+    ! and the energy (for the other variables a deduced Dirichlet value is
+    ! imposed). The computation of a convection flux is not needed here.
+    ! Reconstruction of those bulk cell values would be necessary by using their
+    ! cell gradient: for now only cell center values are used (not consistant on
+    ! non orthogonal meshes but potentially more stable).
+    ! Another solution may be to impose zero fluxes which would avoid
+    ! reconstruction (to be tested).
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! firstly variables other than turbulent ones and passive scalars are handled,
+    ! the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -506,8 +462,8 @@ do ifac = 1, nfabor
       endif
     enddo
 
-!     Valeurs de rho u E
-    brom(ifac) = crom(iel)
+    ! density, velocity and total energy values
+    brom(ifac) = crom(iel) ! TODO: test without (already done in phyvar)
     rcodcl(ifac,iu ,1) = vel(1,iel)
     rcodcl(ifac,iv ,1) = vel(2,iel)
     rcodcl(ifac,iw ,1) = vel(3,iel)
@@ -522,38 +478,27 @@ do ifac = 1, nfabor
                                  bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
                                  bval(ifac,iw), l_size)
 
-!               flux de masse et type de conditions aux limites :
-!       voir plus bas
-
+! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-!     4.3 Sortie a pression imposee
+! 4.3 Outlet with imposed pressure
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.isopcf ) then
 
-!       Sortie subsonique a priori (si c'est supersonique dans le
-!         domaine, ce n'est pas pour autant que c'est supersonique
-!         à la sortie, selon la pression que l'on a imposée)
-
-!     On utilise un scenario dans lequel on a une 1-détente et un
-!       2-contact entrant dans le domaine. On détermine les conditions
-!       sur l'interface selon la thermo et on passe dans Rusanov
-!       ensuite pour lisser.
-
-!     Si P n'est pas donné, erreur ; on sort aussi en erreur si P
-!       négatif, même si c'est possible, dans la plupart des cas ce
-!       sera une erreur
+    ! If no value was given for P or if its value is negative, the computation
+    ! stops (a negative value could be possible, but in most cases it would be
+    ! an error).
     if(rcodcl(ifac,ipr,1).lt.-rinfin*0.5d0) then
       write(nfecra,1100)
       call csexit (1)
     endif
 
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite d'abord les variables autres que la turbulence et les
-!       scalaires passifs : celles-ci sont traitees plus bas.
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! firstly variables other than turbulent ones and passive scalars are handled,
+    ! the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -561,7 +506,7 @@ do ifac = 1, nfabor
       endif
     enddo
 
-!     Valeurs de rho, u, E, s
+    ! values of the density, the velocity and the total energy
     do ivar = 1, nvar
       bval(ifac,ivar) = rcodcl(ifac,ivar,1)
     enddo
@@ -569,37 +514,30 @@ do ifac = 1, nfabor
     call cf_thermo_subsonic_outlet_bc(bval, ifac)
     !==============================
 
-!     Rusanov, flux de masse et type de conditions aux limites :
-!       voir plus bas
+    ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-!     4.4 Entree à P et H imposees
+! 4.4 Inlet with Ptot, Htot imposed (reservoir boundary conditions)
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.iephcf ) then
 
-!       Entree subsonique a priori (si c'est supersonique dans le
-!         domaine, ce n'est pas pour autant que c'est supersonique
-!         à l'entree, selon les valeurs que l'on a imposées)
+    ! If values for Ptot and Htot were not given, the computation stops.
 
-!     On utilise un scenario détente ou choc.
-!       On détermine les conditions sur l'interface
-!       selon la thermo.
+    ! rcodcl(ifac,isca(ienerg),1) contains the boundary total enthalpy values
+    ! prescribed by the user
 
-!     Si P et H ne sont pas donnés, erreur
-
-! rcodcl(ifac,isca(ienerg),1) holds the boundary total enthalpy values prescribed by the user
     if(rcodcl(ifac,ipr ,1).lt.-rinfin*0.5d0.or.               &
          rcodcl(ifac,isca(ienerg) ,1).lt.-rinfin*0.5d0) then
       write(nfecra,1200)
       call csexit (1)
     endif
 
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite d'abord les variables autres que la turbulence et les
-!       scalaires passifs : celles-ci sont traitees plus bas.
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! firstly variables other than turbulent ones and passive scalars are handled,
+    ! the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -614,37 +552,34 @@ do ifac = 1, nfabor
     call cf_thermo_ph_inlet_bc(bval, ifac)
     !=======================
 
-!     flux de masse et type de conditions aux limites :
-!     voir plus bas
-
+    ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
-!     4.5 Entree à rho*U et rho*U*H imposes
+! 4.5 Inlet with imposed rho*U and rho*U*H
 !===============================================================================
 
   elseif ( itypfb(ifac).eq.ieqhcf ) then
 
-!       Entree subsonique a priori (si c'est supersonique dans le
-!         domaine, ce n'est pas pour autant que c'est supersonique
-!         à l'entree, selon les valeurs que l'on a imposées)
+    ! TODO to be implemented
+    write(nfecra,1301)
+    call csexit (1)
 
-!     On utilise un scenario dans lequel on a un 2-contact et une
-!       3-détente entrant dans le domaine. On détermine les conditions
-!       sur l'interface selon la thermo et on passe dans Rusanov
-!       ensuite pour lisser.
+    !     On utilise un scenario dans lequel on a un 2-contact et une
+    !       3-détente entrant dans le domaine. On détermine les conditions
+    !       sur l'interface selon la thermo et on passe dans Rusanov
+    !       ensuite pour lisser.
 
-!     Si rho et u ne sont pas donnés, erreur
-! TODO to be implemented
+    !     Si rho et u ne sont pas donnés, erreur
     if(rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
       write(nfecra,1300)
       call csexit (1)
     endif
 
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite d'abord les variables autres que la turbulence et les
-!       scalaires passifs : celles-ci sont traitees plus bas.
+    ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+    ! they have been modified by the user. Here those that have not been modified
+    ! by the user are set back to zero.
+    ! firstly variables other than turbulent ones and passive scalars are handled,
+    ! the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -652,32 +587,28 @@ do ifac = 1, nfabor
       endif
     enddo
 
-!     A coder
-
 !     IRUNH = ISCA(IENER)
 !     (aliases pour simplifier uscfcl)
 
-    write(nfecra,1301)
-    call csexit (1)
+!===============================================================================
+! 5. Unexpected boundary condition type
+!===============================================================================
 
-!===============================================================================
-! 5. CONDITION NON PREVUE
-!===============================================================================
-!     Stop
   else
 
+    ! The computation stops.
     write(nfecra,1400)
     call csexit (1)
 
-! --- Fin de test sur les types de faces
-  endif
+
+  endif ! end of test on boundary condition types
 
 
 !===============================================================================
-! 6. FIN DU TRAITEMENT DES ENTREE/SORTIES
-!     CALCUL DU FLUX DE MASSE,
-!     CALCUL DES FLUX DE BORD AVEC RUSANOV (SI BESOIN)
-!     TYPE DE C    .L. (DIRICHLET NEUMANN)
+! 6. Complete the treatment for inlets and outlets:
+!    - mass fluxes computation
+!    - boundary convective fluxes computation (analytical or Rusanov) if needed
+!    - B.C. code (Dirichlet or Neumann)
 !===============================================================================
 
   if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
@@ -687,101 +618,98 @@ do ifac = 1, nfabor
        ( itypfb(ifac).eq.ieqhcf ) ) then
 
 !===============================================================================
-!     6.1 Flux de bord Rusanov ou simplement flux de masse
-!         Attention a bien avoir calcule gamma pour Rusanov
+! 6.1 Mass fluxes computation and
+!     boundary convective fluxes computation (analytical or Rusanov) if needed
+!     (gamma should already have been computed if Rusanov fluxes are computed)
 !===============================================================================
 
-!     Sortie supersonique :
+    ! Supersonic outlet
     if ( itypfb(ifac).eq.isspcf ) then
 
-!     Seul le flux de masse est calcule (on n'appelle pas Rusanov)
-!       (toutes les variables sont connues)
-
+      ! only the mass flux is computed
       bmasfl(ifac) = brom(ifac) *                                              &
                      ( bval(ifac,iu)*surfbo(1,ifac)                            &
                      + bval(ifac,iv)*surfbo(2,ifac)                            &
                      + bval(ifac,iw)*surfbo(3,ifac) )
 
-!     Autres entrees/sorties :
+    ! other inlets/outlets
     else
 
-!     On calcule des flux par Rusanov
-!       (en particulier, le flux de masse est complete)
-!       pour la condition d'entree supersonique seulement
-
+      ! Rusanov fluxes are computed only for the imposed inlet for stability
+      ! reasons (the mass flux computation is concluded)
       if ( itypfb(ifac).eq.iesicf ) then
 
         call cfrusb(nvar, ifac, gammag, bval)
         !==========
 
-!    Pour les autres types (sortie subsonique, entree QH, entree PH),
-!    On calcule des flux analytiques
-
+      ! For the other types of inlets/outlets (subsonic outlet, QH inlet, PH inlet),
+      ! analytical fluxes are computed
       else
 
-        call cffana                                                   &
+        ! the pressure part of the boundary analytical flux is not added here,
+        ! but set through the pressure gradient boundary conditions (Dirichlet)
+        call cffana(nvar, ifac, bval)
         !==========
-      ( nvar   ,  ifac   , bval )
 
       endif
 
     endif
 
 !===============================================================================
-!     6.2 Recuperation de COEFA
+! 6.2 Copy of boundary values into the Dirichlet values array
 !===============================================================================
 
-!     On rétablit COEFA dans RCODCL
     do ivar = 1, nvar
       rcodcl(ifac,ivar,1) = bval(ifac,ivar)
     enddo
 
 !===============================================================================
-!     6.3 Types de C.L.
+! 6.3 Boundary conditions codes (Dirichlet or Neumann)
 !===============================================================================
 
-!     P               : Dirichlet sauf IESICF : Neumann (choix arbitraire)
+!     P               : Dirichlet except for iesicf : Neumann (arbitrary choice)
 !     rho, U, E, T    : Dirichlet
-!     k, R, eps, scal : Dirichlet/Neumann selon flux de masse
+!     k, R, eps, scal : Dirichlet/Neumann depending on the flux mass value
 
-!     Pour P, le Neumann est censé etre moins genant pour les
-!       reconstructions de gradient si la valeur de P fournie par
-!       l'utilisateur est tres differente de la valeur interne.
-!       Le choix est cependant arbitraire.
+! For the pressure, a Neumann B.C. seems to be less worth for gradient
+! reconstruction if the value of P provided by the user is very different from
+! the internal value. The choice is however arbitrary.
 
-!     On suppose que par defaut,
-!            RCODCL(IFAC,X,1) = utilisateur ou calcule ci-dessus
-!            RCODCL(IFAC,X,2) = RINFIN
-!            RCODCL(IFAC,X,3) = 0.D0
-!       et si ICODCL(IFAC,X) = 3, seul RCODCL(IFAC,X,3) est utilisé
+! At this point, the following values are assumed to be in the array rcodcl
+! rcodcl(IFAC,ivar,1) = user or computed above
+! rcodcl(IFAC,ivar,2) = RINFIN
+! rcodcl(IFAC,ivar,3) = 0.D0
+! and if icodcl(IFAC,ivar) = 3, only rcodcl(IFAC,ivar,3) is used
 
-
-!-------------------------------------------------------------------------------
-!     Pression : Dirichlet ou Neumann homogene
-!-------------------------------------------------------------------------------
-
-      icodcl(ifac,ipr)   = 13
 
 !-------------------------------------------------------------------------------
-!     rho U E T : Dirichlet
+! Pressure : - Dirichlet for the gradient computation, allowing to have the
+!            pressure part of the convective flux at the boundary
+!            - Homogeneous Neumann for the diffusion
 !-------------------------------------------------------------------------------
 
-!     Vitesse
+    icodcl(ifac,ipr)   = 13
+
+!-------------------------------------------------------------------------------
+! U E T : Dirichlet
+!-------------------------------------------------------------------------------
+
+    ! velocity
     icodcl(ifac,iu)    = 1
     icodcl(ifac,iv)    = 1
     icodcl(ifac,iw)    = 1
-!     Energie totale
+    ! total energy
     icodcl(ifac,ien)   = 1
-!     Temperature
+    ! temperature
     icodcl(ifac,itk)   = 1
 
 !-------------------------------------------------------------------------------
-!     turbulence et scalaires passifs : Dirichlet/Neumann selon flux
+! Turbulence and passive scalars: Dirichlet / Neumann depending on the mass flux
 !-------------------------------------------------------------------------------
 
-!       Dirichlet ou Neumann homogène
-!       On choisit un Dirichlet si le flux de masse est entrant et
-!       que l'utilisateur a donné une valeur dans RCODCL
+    ! Dirichlet or homogeneous Neumann
+    ! A Dirichlet is chosen if the mass flux is ingoing and if the user provided
+    ! a value in rcodcl(ifac,ivar,1)
 
     if (bmasfl(ifac).ge.0.d0) then
       if(itytur.eq.2) then
@@ -887,26 +815,21 @@ do ifac = 1, nfabor
        endif
      endif
 
-
-!     Les RCODCL ont ete initialises a -RINFIN pour permettre de
-!       verifier ceux que l'utilisateur a modifies. On les remet a zero
-!       si l'utilisateur ne les a pas modifies.
-!       On traite la turbulence et les scalaires passifs (pour
-!       simplifier la boucle, on traite toutes les variables : les
-!       variables du compressible sont donc vues deux fois, mais ce
-!       n'est pas grave).
+     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
+     ! they have been modified by the user. Here those that have not been modified
+     ! by the user are set back to zero.
+     ! Turbulence and passive scalars are treated so here (to simplify the loop,
+     ! all variables are treated, hence compressible variables are treated again
+     ! here).
      do ivar = 1, nvar
        if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
          rcodcl(ifac,ivar,1) = 0.d0
        endif
      enddo
 
+   endif ! end of test on inlet/outlet faces
 
-! --- Fin de test sur les faces d'entree sortie
-   endif
-
-! --- Fin de boucle sur les faces de bord
- enddo
+ enddo ! end of loop on boundary faces
 
 ! Free memory
 deallocate(w1, w2)
@@ -922,15 +845,16 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    Deux variables independantes et deux seulement parmi    ',/,&
-'@    P, rho, T et E doivent etre imposees aux bords de type  ',/,&
-'@    IESICF dans uscfcl (ICCFTH = ',I10,').                  ',/,&
+'@    two and only two independant variables among            ',/,&
+'@    P, rho, T and E have to be imposed at boundaries of type',/,&
+'@    iesicf in uscfcl (iccfth = ',I10,').                  ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les conditions aux limites dans uscfcl.          ',/,&
+'@    Check the boundary conditions in                        ',/,&
+'@    cs_user_boundary_conditions                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -938,14 +862,15 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    La pression n''a pas ete fournie en sortie a pression   ',/,&
-'@    imposée.                                                ',/,&
+'@    The pressure was not provided at outlet with pressure   ',/,&
+'@    imposed.                                                ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les conditions aux limites dans uscfcl.          ',/,&
+'@    Check the boundary conditions in                        ',/,&
+'@    cs_user_boundary_conditions                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -953,14 +878,15 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    La masse volumique ou la vitesse n''a pas été fournie   ',/,&
-'@    en entree a masse volumique et vitesse imposee.         ',/,&
+'@    The total pressure or total enthalpy were not provided  ',/,&
+'@    at inlet with total pressure and total enthalpy imposed.',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les conditions aux limites dans uscfcl.          ',/,&
+'@    Check the boundary conditions in                        ',/,&
+'@    cs_user_boundary_conditions                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -968,14 +894,15 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    Le debit massique ou le debit enthalpique n''a pas été  ',/,&
-'@    fourni en entree a debit massique et enthalpique imposé.',/,&
+'@    The mass or enthalpy flow rate were not provided        ',/,&
+'@    at inlet with mass and enthalpy flow rate imposed.      ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les conditions aux limites dans uscfcl.          ',/,&
+'@    Check the boundary conditions in                        ',/,&
+'@    cs_user_boundary_conditions                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -983,13 +910,14 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    Entree à debit massique et debit enthalpique non prevue ',/,&
+'@    Inlet with mass and enthalpy flow rate not provided.    ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@  Contacter l''equipe de developpement pour uscfcl.         ',/,&
+'@    Check the boundary conditions in                        ',/,&
+'@    cs_user_boundary_conditions                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -997,14 +925,15 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    Une condition a la limite ne fait pas partie des        ',/,&
-'@      conditions aux limites predefinies en compressible.   ',/,&
+'@    Unexpected type of predefined compressible boundary     ',/,&
+'@      conditions.                                           ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@    The computation will stop.                              ',/,&
 '@                                                            ',/,&
-'@  Verifier les conditions aux limites dans uscfcl.          ',/,&
+'@    Check the boundary conditions in                        ',/,&
+'@    cs_user_boundary_conditions                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -1012,20 +941,20 @@ deallocate(bval)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION                        ',/,&
+'@ @@ WARNING : Error during execution,                       ',/,&
 '@    =========                                               ',/,&
-'@    cfxtcl doit etre modifie pour prendre en compte une loi ',/,&
-'@      d''etat a gamma variable. Seul est pris en compte le  ',/,&
-'@      cas IEOS = 1                                          ',/,&
+'@    cfxtcl should be modified to take into account a state  ',/,&
+'@    law with a variable gamma. Only ieos = 1 is available   ',/,&
+'@    for now.                                                ',/,&
 '@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@  The computation will stop.                                ',/,&
 '@                                                            ',/,&
-'@  Verifier IEOS dans cfther.f90.                            ',/,&
+'@  Check ieos in routine uscfx1.                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 !----
-! FIN
+! END
 !----
 
 return
