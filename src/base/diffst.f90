@@ -83,7 +83,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          ivar  , iel   , ifac  , iscal
+integer          ivar  , iel   , ifac  , iscal, ivar0
 integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
@@ -152,6 +152,7 @@ do iscal = 1, nscal
     call synsca(xcpp)
   endif
   !
+  ivar0  = 0
   iconvp = 0
   idiffp = 1
   nswrgp = nswrgr(ivar)
@@ -169,6 +170,9 @@ do iscal = 1, nscal
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetex = 1.d0
+
+  ! all boundary convective flux with upwind
+  icvflb = 0
 
   ! Pointers to the mass fluxes
   call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -261,13 +265,10 @@ do iscal = 1, nscal
 
     enddo
 
-    ! all boundary convective flux with upwind
-    icvflb = 0
-
     ! Diffusion term calculation
     call bilsca &
    !==========
-  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+  ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
     iwarnp , imucpp , idftnp ,                                     &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
@@ -296,7 +297,7 @@ do iscal = 1, nscal
 
     call bilsca &
     !==========
-  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
+  ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
     iwarnp , imucpp , idftnp ,                                     &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
