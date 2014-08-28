@@ -225,8 +225,8 @@ do ifac = 1, nfabor
   if ( itypfb(ifac).eq.iparoi) then
 
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
     ! At walls all variables are treated.
     do ivar = 1, nvar
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -354,8 +354,8 @@ do ifac = 1, nfabor
   elseif ( itypfb(ifac).eq.isymet ) then
 
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
     ! At symmetry faces, all variables are treated.
     do ivar = 1, nvar
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -410,10 +410,10 @@ do ifac = 1, nfabor
     iccfth = iccfth + 900
 
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
-    ! firstly variables other than turbulent ones and passive scalars are handled,
-    ! the others are handled further below.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
+    ! Firstly variables other than turbulent ones and passive scalars are
+    ! handled, the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -451,10 +451,10 @@ do ifac = 1, nfabor
     ! Another solution may be to impose zero fluxes which would avoid
     ! reconstruction (to be tested).
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
-    ! firstly variables other than turbulent ones and passive scalars are handled,
-    ! the others are handled further below.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
+    ! Firstly variables other than turbulent ones and passive scalars are
+    ! handled, the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -478,7 +478,7 @@ do ifac = 1, nfabor
                                  bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
                                  bval(ifac,iw), l_size)
 
-! mass fluxes and boundary conditions codes, see further below.
+    ! mass fluxes and boundary conditions codes, see further below.
 
 !===============================================================================
 ! 4.3 Outlet with imposed pressure
@@ -495,10 +495,10 @@ do ifac = 1, nfabor
     endif
 
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
-    ! firstly variables other than turbulent ones and passive scalars are handled,
-    ! the others are handled further below.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
+    ! Firstly variables other than turbulent ones and passive scalars are
+    ! handled, the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -534,10 +534,10 @@ do ifac = 1, nfabor
     endif
 
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
-    ! firstly variables other than turbulent ones and passive scalars are handled,
-    ! the others are handled further below.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
+    ! Firstly variables other than turbulent ones and passive scalars are
+    ! handled, the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -576,10 +576,10 @@ do ifac = 1, nfabor
     endif
 
     ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-    ! they have been modified by the user. Here those that have not been modified
-    ! by the user are set back to zero.
-    ! firstly variables other than turbulent ones and passive scalars are handled,
-    ! the others are handled further below.
+    ! they have been modified by the user. Here those that have not been
+    ! modified by the user are set back to zero.
+    ! Firstly variables other than turbulent ones and passive scalars are
+    ! handled, the others are handled further below.
     do iii = 1, nvarcf
       ivar = ivarcf(iii)
       if(rcodcl(ifac,ivar,1).le.-rinfin*0.5d0) then
@@ -642,8 +642,8 @@ do ifac = 1, nfabor
         call cfrusb(nvar, ifac, gammag, bval)
         !==========
 
-      ! For the other types of inlets/outlets (subsonic outlet, QH inlet, PH inlet),
-      ! analytical fluxes are computed
+      ! For the other types of inlets/outlets (subsonic outlet, QH inlet,
+      ! PH inlet), analytical fluxes are computed
       else
 
         ! the pressure part of the boundary analytical flux is not added here,
@@ -816,8 +816,8 @@ do ifac = 1, nfabor
      endif
 
      ! rcodcl elements have been initialized at -RINFIN to allow to check wether
-     ! they have been modified by the user. Here those that have not been modified
-     ! by the user are set back to zero.
+     ! they have been modified by the user. Here those that have not been
+     ! modified by the user are set back to zero.
      ! Turbulence and passive scalars are treated so here (to simplify the loop,
      ! all variables are treated, hence compressible variables are treated again
      ! here).
