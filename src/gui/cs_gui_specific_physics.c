@@ -3243,7 +3243,7 @@ void CS_PROCF (uielsc, UIELSC) (const int *const ippmod,
 
   if (*ngazg > 1)
     for (int iesp = 0; iesp < *ngazg - 1; iesp++) {
-      BFT_MALLOC(name, strlen("YM_ESL") +1 + 1, char);
+      BFT_MALLOC(name, strlen("YM_ESL") +2 + 1, char);
       strcpy(name, "YM_ESL");
       sprintf(snumsca, "%2.2i", iesp +1);
       strcat(name, snumsca);

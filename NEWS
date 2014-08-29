@@ -1,6 +1,15 @@
 
-Release 3.3.5 (unreleased)
+Release 3.2.5 (unreleased)
 ==========================
+
+Bug fixes:
+----------
+
+- Fix size of a string allocation in build of the indirection between GUI
+  numbering and solver one for the electrical model.
+
+- Fix for fire algorithm in the computation of the scalar diffusion terms
+  (introduced by the boundary convective flux option creation).
 
 Release 3.2.4 (22 Aug 2014)
 ===========================
