@@ -168,6 +168,9 @@ do iscal = 1, nscal
   relaxp = relaxv(ivar)
   thetex = 1.d0
 
+  ! all boundary convective flux with upwind
+  icvflb = 0
+
   ! Pointers to the mass fluxes
   call field_get_key_int(ivarfl(iu), kimasf, iflmas)
   call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -258,9 +261,6 @@ do iscal = 1, nscal
            qimp        , hint )
 
     enddo
-
-    ! all boundary convective flux with upwind
-    icvflb = 0
 
     ! Diffusion term calculation
     call bilsca &
