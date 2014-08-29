@@ -5,6 +5,10 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for fire algorithm in the computation of the scalar diffusion terms
+  (introduced by the boundary convective flux option creation and the
+  deployement of the var_cal_opt structure). 
+
 - Fix for "code_saturne run" with space in case path (do not enquote twice).
 
 - Fix possible bugs for Lagrangian inlet conditions in parallel.
