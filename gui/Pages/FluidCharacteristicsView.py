@@ -178,13 +178,8 @@ thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
                         ('thermal_conductivity', 'Al'),
                         ('volume_viscosity', 'Viscv0'),
                         ('dynamic_diffusion', 'Diftl0')]
-        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
-            self.lst = [('density', 'Rho'),
-                        ('molecular_viscosity', 'Mu'),
-                        ('specific_heat', 'Cp'),
-                        ('thermal_conductivity', 'Al'),
-                        ('dynamic_diffusion', 'Diftl0')]
-        elif GasCombustionModel(self.case).getGasCombustionModel() != 'off':
+        elif CoalCombustionModel(self.case).getCoalCombustionModel() != 'off' or \
+             GasCombustionModel(self.case).getGasCombustionModel() != 'off':
             self.lst = [('density', 'Rho'),
                         ('molecular_viscosity', 'Mu'),
                         ('specific_heat', 'Cp'),
