@@ -300,6 +300,8 @@ _variable_attribute(const char  *name,
   cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_element(&path, child);
   _attribute_value(path, child, keyword);
+
+  BFT_FREE(path);
 }
 
 /*-----------------------------------------------------------------------------
