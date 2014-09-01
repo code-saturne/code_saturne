@@ -891,7 +891,7 @@ class XMLinitTestCase(unittest.TestCase):
                 '<turbulence model="k-epsilon">'\
                         '<variable label="TurbEner" name="turb_k"/>'\
                         '<variable label="Dissip" name="turb_eps"/>'\
-                        '<property label="TurbVisc" name="turb_viscosity"/>'\
+                        '<property label="TurbVisc" name="turbulent_viscosity"/>'\
                         '<initialization choice="reference_velocity">'\
                                 '<reference_velocity>1.0</reference_velocity>'\
                         '</initialization>'\
