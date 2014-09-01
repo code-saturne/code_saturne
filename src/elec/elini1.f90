@@ -204,6 +204,15 @@ ivivar = 1
 !       MODREC = 2 : modele avec un plan de recalage
 modrec = 1
 
+! ---> Current density component used to calculate current when MODREC = 2
+!       IDRECA (1, 2 or 3) for component (x, y or z)
+idreca = 3
+crit_reca(1) = 0.
+crit_reca(2) = 0.
+crit_reca(3) = 0.
+crit_reca(4) = 0.
+crit_reca(5) = 0.0002
+
 !===============================================================================
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================

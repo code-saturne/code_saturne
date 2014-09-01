@@ -3137,40 +3137,52 @@ endif
 
 ! --> Relaxation coefficient for mass density
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-srrom = 0.d0
+if (.false.) then
+  srrom = 0.d0
+endif
 
 ! --> "Electric variables" scaling (Joule effect or electric arc version)
 !      IELCOR = 0 : NO Correction
 !      IELCOR = 1 : CORRECTION
-ielcor = 0
+if (.false.) then
+  ielcor = 0
+endif
 
 !     Imposed current intensity (electric arc) in Amp
 !        and Imposed Power (Joule effect for glass melting applications) in Watt
 !       These values have to be positive
 !
-couimp = 0.d0
-puisim = 0.d0
+if (.false.) then
+  couimp = 0.d0
+  puisim = 0.d0
+endif
 
 !     Initial Potential Difference (positive value)
-dpot = 0.d0
+if (.false.) then
+  dpot = 0.d0
+endif
 
 ! ---> Model for scaling intensity (electric arcs)
 !       MODREC = 0 : user defined
 !       MODREC = 1 : standard model
 !       MODREC = 2 : resetting plane model for electromagnetic quantities
-modrec = 1
+if (.false.) then
+  modrec = 1
+endif
 
 ! ---> Define current density component used to calculate current when MODREC = 2
 !       IDRECA (1, 2 or 3) for component (x, y or z)
-idreca = 3
+if (.false.) then
+  idreca = 3
 
-! Example : plane z = 3 with epsilon 0.0002
+  ! Example : plane z = 3 with epsilon 0.0002
 
-crit_reca(1) = 0.
-crit_reca(2) = 0.
-crit_reca(3) = 1.
-crit_reca(4) = -3.
-crit_reca(5) = 0.0002
+  crit_reca(1) = 0.
+  crit_reca(2) = 0.
+  crit_reca(3) = 1.
+  crit_reca(4) = -3.
+  crit_reca(5) = 0.0002
+endif
 
 !----
 ! End
