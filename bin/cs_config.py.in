@@ -79,7 +79,7 @@ class config:
         self.optfeatures = ['debug', 'relocatable', 'shared',
                             'gui', 'frontend',
                             'openmp', 'socket',
-                            'long-gnum', 'nls']
+                            'long-gnum', 'nls', 'host']
         self.features = {}
 
         # List of mandatory and optionnal libraries to link with
@@ -104,7 +104,8 @@ class config:
         self.compilers = {'cc': "@CC@",
                           'cxx': "@CXX@",
                           'fc': "@FC@",
-                          'ld': "@CS_LD@"}
+                          'ld': "@CS_LD@",
+                          'version': "@CC_VERSION@"}
 
         self.flags = {'cflags': "@CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@",
                       'cxxflags': "@CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@",
@@ -152,6 +153,7 @@ class config:
         self.features['openmp'] = "@cs_have_openmp@"
         self.features['long-gnum'] = "@cs_have_long_gnum@"
         self.features['nls'] = '@USE_NLS@'
+        self.features['build_os'] = "@build_os@"
 
         # Now, one can setup the prerequisites information
 
