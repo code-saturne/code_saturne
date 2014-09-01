@@ -179,7 +179,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("__init__")
         QObject.__init__(self, None)
 
-        self.l_color = [(1,0,0),(0,1,0),(0,0,1),(1,1,0),(1,0,1),(0,1,1),]#(0.5,0,0),(0,0.5,0),(0,0,0.5),(0.2,0,0),(0,0.2,0),(0,0,0.2)]
+        self.l_color = [(1,0,0),(0,1,0),(0,0,1),(1,1,0),(1,0,1),(0,1,1),
         self.ul_color = []
         #intialise all dialogs
         self.DialogCollector = CFDSTUDYGUI_DialogCollector.CFDSTUDYGUI_DialogCollector()
@@ -193,22 +193,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._SolverGUI = CFDSTUDYGUI_SolverGUI.CFDSTUDYGUI_SolverGUI()
         self._DskAgent = Desktop_Agent()
 
-        self.myVisu = None
-        self.myViewManager = None
-
-        try:
-            import VISU
-            import visu_gui
-            self.myVisu = visu_gui.myVisu
-            self.myViewManager = self.myVisu.GetViewManager()
-            #self.myView = myViewManager.Create3DView()
-            #self.myView = myViewManager.GetCurrentView()
-            log.debug("__init__ myVisu = %s" % self.myVisu)
-            log.debug("__init__ myViewManager = %s" % self.myViewManager)
-            #log.debug("__init__ myView = %s" % self.myView)
-        except Exception:
-            log.debug("VISU module not available.")
-            pass
         try :
             import salome_kernel
             orb, lcc, naming_service, cm = salome_kernel.salome_kernel_init()
@@ -1252,7 +1236,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             studyId = salome.sg.getActiveStudyId()
             if smeshBuilder and re.match(".*\.med$", sobj.GetName()):
                 smesh = smeshBuilder.New(salome.myStudy)
-                aMeshes, aStatus = smeshBuilder.CreateMeshesFromMED(path)
+                aMeshes, aStatus = smesh.CreateMeshesFromMED(path)
                 if not aStatus:
                     QApplication.restoreOverrideCursor()
                     mess = ObjectTR("EXPORT_IN_SMESH_ACTION_WARNING")
