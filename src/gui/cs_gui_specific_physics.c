@@ -2346,8 +2346,9 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
     rho0ch[icha] = _get_solid_fuel_density(icha+1);
 
     /* ---- Thermal conductivity of the coal (W/m/K) */
-//FIXME CB    if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture_lagr"))
-//FIXME CB      thcdch[icha] = _get_solid_fuel_thermal_conductivity(icha+1);
+    if (vars != NULL)
+      if (cs_gui_strcmp(vars->model_value, "homogeneous_fuel_moisture_lagr"))
+        thcdch[icha] = _get_solid_fuel_thermal_conductivity(icha+1);
 
     /* ---- Caracteristiques cendres */
 
