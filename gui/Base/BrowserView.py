@@ -163,6 +163,11 @@ class TreeModel(QAbstractItemModel):
                     icon = style.standardIcon(QStyle.SP_FileIcon)
                 elif item.itemType == "file-new":
                     icon = style.standardIcon(QStyle.SP_FileLinkIcon)
+                if sys.platform.startswith("win"):
+                    if item.itemType == "file-open":
+                        icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
+                    elif item.itemType == "file-new":
+                        icon = style.standardIcon(QStyle.SP_ToolBarHorizontalExtensionButton)
                 return to_qvariant(icon)
 
         return to_qvariant()

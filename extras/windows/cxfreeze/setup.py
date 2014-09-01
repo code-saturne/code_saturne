@@ -26,13 +26,14 @@ import sys, os
 from cx_Freeze import setup, Executable
 
 #-------------------------------------------------------------------------------
- 
+
 # Preparing environment
 # ---------------------
 
 # Module search path
-path = sys.path + ["bin", "lib/python2.7/site-packages/code_saturne"]
- 
+path = sys.path + ["bin", "lib/python" + sys.version[:3] + "/site-packages/code_saturne"]
+path += [sys.prefix + "/Lib/site-packages"]
+
 # Specific modules to be included
 includes = ["sip"]
 
@@ -47,14 +48,14 @@ excludes = m_autovnv + m_script + m_neptune + m_syrthes + m_salome + m_win32
 
 # Specific packages
 packages = []
- 
+
 # Copy of some mandatory files or directories
 includefiles = []
 if sys.platform.startswith("linux"):
     includefiles += [(r"/usr/lib/qt4/translations", \
                        "translations")]
 elif sys.platform.startswith("win"):
-    includefiles += [(r"C:\Python27\Lib\site-packages\PyQt4\translations", \
+    includefiles += [(r"%s\Lib\site-packages\PyQt4\translations" % sys.prefix, \
                        "translations")]
 else:
     pass
@@ -63,7 +64,7 @@ else:
 binpathincludes = []
 if sys.platform.startswith("linux"):
     binpathincludes += ["/usr/lib"]
- 
+
 # Build the options dictionnary
 options = {"path": path,
            "includes": includes,
@@ -71,7 +72,7 @@ options = {"path": path,
            "packages": packages,
            "include_files": includefiles,
            "bin_path_includes": binpathincludes}
- 
+
 #-------------------------------------------------------------------------------
 
 # Preparing targets
@@ -95,26 +96,26 @@ base = None
 if sys.platform == "win32":
     base_gui = "Win32GUI"
     base_cli = None
- 
+
 target_gui = Executable(script = "bin/code_saturne",
                         targetName = "code_saturne.exe",
                         base = base_gui,
                         compress = True,
-                        icon = None)
- 
+                        icon = "bin/code_saturne.ico")
+
 target_cli = Executable(script = "bin/code_saturne",
                         targetName = "code_saturne.com",
                         base = base_cli,
                         compress = True,
                         icon = None)
- 
+
 #-------------------------------------------------------------------------------
 
 # Creating the setup
 # ------------------
 
 setup(name = "Code_Saturne",
-      version = "3.0",
+      version = "4.0-alpha",
       description = "General purpose CFD software",
       author = "EDF",
       options = {"build_exe": options},

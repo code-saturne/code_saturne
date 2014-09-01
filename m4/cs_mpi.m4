@@ -32,6 +32,7 @@ cs_have_mpi=no
 cs_have_mpi_header=no
 cs_have_mpi_io=no
 cs_have_mpi_one_sided=no
+mpi_prefix=""
 
 AC_ARG_ENABLE(mpi-io,
   [AS_HELP_STRING([--disable-mpi-io], [do not use MPI I/O when available])],
@@ -136,7 +137,7 @@ if test "x$with_mpi" != "xno" ; then
   if test "x$cs_have_mpi" = "xyes"; then
 
     if test "x$mpi_includedir" = "x" -o "x$mpi_libdir" = "x" ; then
-      for arg in `$CC -show`; do 
+      for arg in `$CC -show`; do
         case ${arg} in
           -I*)
             if test "x$mpi_includedir" = "x";
@@ -161,7 +162,7 @@ if test "x$with_mpi" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [cs_have_mpi_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
@@ -179,7 +180,7 @@ if test "x$with_mpi" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
     AC_CHECK_HEADERS([mpi.h],
                      [cs_have_mpi_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
@@ -298,7 +299,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                        if test $? = 0 ; then
                          mpi_type=Intel_MPI
                          AC_DEFINE([MPI_VENDOR_NAME], "Intel MPI", [MPI vendor name])
-                       fi  
+                       fi
                      fi
                      unset cs_mpisupport
                      ;;
@@ -428,11 +429,19 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
   unset saved_LDFLAGS
   unset saved_LIBS
 
+  case $host_os in
+   mingw32)
+      mpi_prefix=`cygpath --path --windows "$with_mpi"`;;
+    *)
+      ;;
+  esac
+
 fi
 
 unset mpi_includedir
 
 AC_SUBST(cs_have_mpi)
+AC_SUBST(mpi_prefix, [${mpi_prefix}])
 AC_SUBST(MPI_CPPFLAGS)
 AC_SUBST(MPI_LDFLAGS)
 AC_SUBST(MPI_LIBS)

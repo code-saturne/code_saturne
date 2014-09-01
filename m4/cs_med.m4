@@ -31,6 +31,7 @@ cs_have_med=no
 cs_have_med_mpi=no
 cs_have_med_headers=no
 cs_have_med_link_cxx=no
+med_prefix=""
 
 # Configure options
 #------------------
@@ -142,12 +143,12 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
                    ],
                    [ AC_DEFINE([HAVE_MED], 1, [MED file support])
                      cs_have_med=yes
-                   ], 
+                   ],
                    [ AC_MSG_WARN([no MED file support with C only link]) ],
                   )
 
     if test "x$cs_have_med" = "xno"; then
-  
+
       # try linking with C++ in case of static MED library
 
       AC_LANG_PUSH(C++)
@@ -158,7 +159,7 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
                      ],
                      [ AC_DEFINE([HAVE_MED], 1, [MED file support])
                        cs_have_med=yes; cs_have_med_link_cxx=yes
-                     ], 
+                     ],
                      [ AC_MSG_WARN([no MED file support])
                      ],
                      )
@@ -170,7 +171,7 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
     #-------------------------------
 
     if test "x$cs_have_mpi" = "xyes" -a "x$cs_have_med" = "xyes"; then
-  
+
       if test "x$cs_have_med_link_cxx" = "xno"; then
         AC_LANG_PUSH(C++)
       fi
@@ -182,7 +183,7 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
                      ],
                      [ AC_DEFINE([HAVE_MED_MPI], 1, [MED file MPI support])
                        cs_have_med_mpi=yes
-                     ], 
+                     ],
                      [ AC_MSG_WARN([no MED file MPI support]) ],
                     )
 
@@ -217,6 +218,12 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
   unset saved_LDFLAGS
   unset saved_LIBS
 
+  case $host_os in
+    mingw32)
+      med_prefix=`cygpath --path --windows "$with_med"`;;
+    *)
+      ;;
+  esac
 fi
 
 unset cs_have_med_headers
@@ -224,6 +231,7 @@ unset cs_have_med_headers
 AM_CONDITIONAL(HAVE_MED, test x$cs_have_med = xyes)
 
 AC_SUBST(cs_have_med)
+AC_SUBST(med_prefix, [${med_prefix}])
 AC_SUBST(MED_CPPFLAGS)
 AC_SUBST(MED_LDFLAGS)
 AC_SUBST(MED_LIBS)

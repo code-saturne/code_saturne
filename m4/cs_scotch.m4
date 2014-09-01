@@ -32,6 +32,7 @@ cs_have_ptscotch=no
 cs_have_scotch_header=no
 cs_have_scotch=no
 cs_scotch_ge_6=no
+scotch_prefix=""
 
 # Some recent Linux distributions require explicit exports
 # of all symbols in libraries
@@ -112,7 +113,7 @@ if test "x$with_scotch" != "xno" ; then
     AC_CHECK_HEADERS([ptscotch.h],
                      [cs_have_ptscotch_header=yes
                       SCOTCH_CPPFLAGS=-I/usr/include/scotch],
-                     [], 
+                     [],
                      [#include <stdio.h>
                       #include <stdint.h>
                       #include <mpi.h>])
@@ -141,7 +142,7 @@ if test "x$with_scotch" != "xno" ; then
                        SCOTCH_LIBS="-lptscotch -lptscotcherr -lscotch -lscotcherr"],
                       [])
 
-    for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
+    for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5"
     do
       if test "x$cs_have_ptscotch" = "xno" ; then
         LIBS="${cs_scotch_test_ladd}${SCOTCH_LIBS} ${cs_scotch_ladd} ${MPI_LIBS} ${saved_LIBS}"
@@ -170,7 +171,7 @@ if test "x$with_scotch" != "xno" ; then
     CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS"
     AC_CHECK_HEADERS([scotch.h],
                        [cs_have_scotch_header=yes],
-                       [], 
+                       [],
                        [])
 
     if test "x$cs_have_scotch_header" = "xno" ; then
@@ -179,7 +180,7 @@ if test "x$with_scotch" != "xno" ; then
       CPPFLAGS="$saved_CPPFLAGS $SCOTCH_CPPFLAGS"
       AC_CHECK_HEADERS([scotch.h],
                        [cs_have_scotch_header=yes],
-                       [], 
+                       [],
                        [])
     fi
 
@@ -188,7 +189,7 @@ if test "x$with_scotch" != "xno" ; then
 
     AC_MSG_CHECKING([for SCOTCH])
 
-    for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5" 
+    for cs_scotch_ladd in "$cs_scotch_l0" "$cs_scotch_l1" "$cs_scotch_l2" "$cs_scotch_l3" "$cs_scotch_l4" "$cs_scotch_l5"
     do
       if test "x$cs_have_scotch" = "xno" ; then
         LIBS="${cs_scotch_test_ladd}${SCOTCH_LIBS} ${cs_scotch_ladd} ${saved_LIBS}"
@@ -238,6 +239,12 @@ if test "x$with_scotch" != "xno" ; then
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
 
+  case $host_os in
+    mingw32)
+      scotch_prefix=`cygpath --path --windows "$with_scotch"`;;
+    *)
+      ;;
+  esac
 fi
 
 unset saved_CPPFLAGS
@@ -254,6 +261,7 @@ unset cs_scotch_l4
 unset cs_scotch_l5
 
 AC_SUBST(cs_have_scotch)
+AC_SUBST(scotch_prefix, [${scotch_prefix}])
 AC_SUBST(SCOTCH_CPPFLAGS)
 AC_SUBST(SCOTCH_LDFLAGS)
 AC_SUBST(SCOTCH_LIBS)

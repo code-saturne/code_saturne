@@ -263,6 +263,7 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(FCFLAGS_HOT)
 
   AC_SUBST(LDRPATH)
+  AC_SUBST(ccversion, [${cs_cc_version}])
 
 fi
 
@@ -493,6 +494,13 @@ if test "$host_os" = mingw32 ; then
   pyexecdir=$am_cv_python_pyexecdir
   pkgpyexecdir=\${pyexecdir}/$PACKAGE
   AC_MSG_RESULT([$pyexecdir])
+  AC_SUBST(pythonversion, [${PYTHON_VERSION}])
+fi
+
+win_prefix=""
+if test "$host_os" = mingw32 ; then
+  win_prefix=`cygpath --path --windows "${prefix}"`
+  AC_SUBST(win_prefix, [${win_prefix}])
 fi
 
 #------------------------------------------------------------------------------
@@ -503,12 +511,12 @@ AC_ARG_ENABLE(cs_use_revision, [AS_HELP_STRING([--disable-revision],
                                                [disable Subversion or Git revision info])],
   [
     case "${enableval}" in
-      yes) cs_use_revision=yes ;;
-      no)  cs_use_revision=no ;;
+      yes) cs_use_revision=true ;;
+      no)  cs_use_revision=false ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-revision]) ;;
     esac
   ],
-  [ cs_use_revision=yes ]
+  [ cs_use_revision=true ]
 )
 
 cs_src_revision=""
@@ -671,12 +679,17 @@ sys.stdout.write(path)]"
   AC_ARG_VAR([PYUIC4], [PyQt4 user interfaces compiler])
   AC_ARG_VAR([PYRCC4], [PyQt4 resources compiler])
 
-  # On MinGW hosts, pyuic4 is a batch file and cannot be run from MSYS.
+  # On MinGW (MSYS) or Cygwin (BASH) build systems, and for MinGW hosts,
+  # pyuic4 is a batch file and cannot be run from the shell.
   # To bypass this issue, we launch pyuic4 through cmd.exe
   # with a "standard" PATH.
   # pyrcc4 does not need this trick as it is a standard executable.
   if test "$host_os" = mingw32 ; then
-    CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
+    if test "$build_os" = mingw32 ; then
+      CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
+    elif test "$build_os" = cygwin ; then
+      CMDPYUIC4="cmd /C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
+    fi
   fi
 
   if test "x$PYUIC4" = "x" ; then
@@ -959,7 +972,9 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
                  extras/salome/fsi_appli_config.xml
-                 extras/windows/innosetup/setup.iss
+                 extras/windows/innosetup/setup_mingw.iss
+                 extras/windows/innosetup/setup_cygwin32.iss
+                 extras/windows/innosetup/setup_cygwin64.iss
                  bin/cs_config.py])
 
 #------------------------------------------------------------------------------

@@ -29,6 +29,7 @@ AC_DEFUN([CS_AC_TEST_METIS], [
 
 cs_have_parmetis=no
 cs_have_metis=no
+metis_prefix=""
 
 AC_ARG_WITH(metis,
             [AS_HELP_STRING([--with-metis=PATH],
@@ -90,7 +91,7 @@ if test "x$with_metis" != "xno" ; then
 # error ParMETIS 4.0 or above required.
 #endif
   MPI_Comm comm = MPI_COMM_WORLD;
-  ParMETIS_V3_PartKway((void *)0, (void *)0, (void *)0, (void *)0,     
+  ParMETIS_V3_PartKway((void *)0, (void *)0, (void *)0, (void *)0,
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       (void *)0, (void *)0, (void *)0, (void *)0, (void *)0,
                       &comm); ]])],
@@ -132,6 +133,12 @@ if test "x$with_metis" != "xno" ; then
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
 
+  case $host_os in
+    mingw32)
+      metis_prefix=`cygpath --path --windows "$with_metis"`;;
+    *)
+      ;;
+  esac
 fi
 
 unset saved_CPPFLAGS
@@ -149,6 +156,7 @@ else
 fi
 
 AC_SUBST(cs_have_metis)
+AC_SUBST(metis_prefix, [${metis_prefix}])
 AC_SUBST(METIS_CPPFLAGS)
 AC_SUBST(METIS_LDFLAGS)
 AC_SUBST(METIS_LIBS)

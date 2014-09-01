@@ -29,6 +29,7 @@ AC_DEFUN([CS_AC_TEST_LIBXML2], [
 
 cs_have_libxml2=no
 cs_have_libxml2_header=no
+libxml2_prefix=""
 
 AC_ARG_WITH(libxml2,
             [AS_HELP_STRING([--with-libxml2=PATH],
@@ -81,7 +82,7 @@ if test "x$with_libxml2" != "xno" ; then
   CPPFLAGS="${saved_CPPFLAGS} ${LIBXML2_CPPFLAGS}"
   AC_CHECK_HEADERS([libxml/parser.h],
                    [cs_have_libxml2_header=yes],
-                   [], 
+                   [],
                    [])
 
   # If header not found, try other standard configurations
@@ -92,16 +93,16 @@ if test "x$with_libxml2" != "xno" ; then
     CPPFLAGS="${saved_CPPFLAGS} ${LIBXML2_CPPFLAGS}"
     AC_CHECK_HEADERS([libxml/parser.h],
                      [cs_have_libxml2_header=yes],
-                     [], 
+                     [],
                      [])
   fi
 
   if test "x$cs_have_libxml2_header" = "xyes" ; then
 
-    AC_CHECK_LIB(xml2, xmlInitParser, 
+    AC_CHECK_LIB(xml2, xmlInitParser,
                  [ AC_DEFINE([HAVE_LIBXML2], 1, [LIBXML2 support])
                    cs_have_libxml2=yes
-                 ], 
+                 ],
                  [if test "x$with_libxml2" != "xcheck" ; then
                     AC_MSG_FAILURE([LIBXML2 support is requested, but test for LIBXML2 failed!])
                   else
@@ -124,11 +125,18 @@ if test "x$with_libxml2" != "xno" ; then
   unset saved_LDFLAGS
   unset saved_LIBS
 
+  case $host_os in
+    mingw32)
+      libxml2_prefix=`cygpath --path --windows "$with_libxml2"`;;
+    *)
+      ;;
+  esac
 fi
 
 AM_CONDITIONAL(HAVE_LIBXML2, test x$cs_have_libxml2 = xyes)
 
 AC_SUBST(cs_have_libxml2)
+AC_SUBST(libxml2_prefix, [${libxml2_prefix}])
 AC_SUBST(LIBXML2_CPPFLAGS)
 AC_SUBST(LIBXML2_LDFLAGS)
 AC_SUBST(LIBXML2_LIBS)

@@ -29,6 +29,7 @@ AC_DEFUN([CS_AC_TEST_HDF5], [
 
 cs_have_hdf5=no
 cs_have_hdf5_header=no
+hdf5_prefix=""
 
 AC_ARG_WITH(hdf5,
             [AS_HELP_STRING([--with-hdf5=PATH],
@@ -92,7 +93,7 @@ if test "x$with_hdf5" != "xno" ; then
   fi
 
   HDF5_LIBS="-lhdf5 $PTHREAD_LIBS"
-  
+
   LDFLAGS="${LDFLAGS} ${HDF5_LDFLAGS}"
   LIBS="${HDF5_LIBS} ${LIBS}"
 
@@ -121,10 +122,10 @@ if test "x$with_hdf5" != "xno" ; then
 
   # Now check library
 
-  AC_CHECK_LIB(hdf5, H5Fopen, 
+  AC_CHECK_LIB(hdf5, H5Fopen,
                [ AC_DEFINE([HAVE_HDF5], 1, [HDF5 file support])
                  cs_have_hdf5=yes
-               ], 
+               ],
                [if test "x$with_hdf5" != "xcheck" ; then
                   AC_MSG_FAILURE([HDF5 support is requested, but test for HDF5 failed!])
                 else
@@ -148,10 +149,17 @@ if test "x$with_hdf5" != "xno" ; then
   unset saved_LDFLAGS
   unset saved_LIBS
 
+  case $host_os in
+    mingw32)
+      hdf5_prefix=`cygpath --path --windows "$with_hdf5"`;;
+    *)
+      ;;
+  esac
+
 fi
 
 AC_SUBST(cs_have_hdf5)
-
+AC_SUBST(hdf5_prefix, [${hdf5_prefix}])
 AC_SUBST(HDF5_CPPFLAGS)
 AC_SUBST(HDF5_LDFLAGS)
 AC_SUBST(HDF5_LIBS)

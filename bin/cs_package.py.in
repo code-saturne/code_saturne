@@ -227,4 +227,10 @@ class package:
 
         return pkg
 
+
+    def get_cross_compil(self):
+
+        return self.config.features['build_os']
+
+
 #-------------------------------------------------------------------------------

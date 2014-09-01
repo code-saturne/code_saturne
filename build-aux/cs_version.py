@@ -458,6 +458,7 @@ def build_version_string(major, minor, release, extra, revision = None):
     """
     Build version string from substrings.
     """
+    import string
 
     version = major + '.' + minor
     if release:
@@ -466,6 +467,7 @@ def build_version_string(major, minor, release, extra, revision = None):
         version += extra
     if revision:
         version += revision
+    version = string.replace( version, '\r', '' )
     return version
 
 #-------------------------------------------------------------------------------

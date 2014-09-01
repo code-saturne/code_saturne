@@ -29,6 +29,7 @@ AC_DEFUN([CS_AC_TEST_CGNS], [
 
 cs_have_cgns=no
 cs_have_cgns_headers=no
+cgns_prefix=""
 
 AC_ARG_WITH(cgns,
             [AS_HELP_STRING([--with-cgns=PATH],
@@ -121,10 +122,10 @@ Otherwise, you need to provide a CGNS 3.1 library and development headers.])
 
   if test "x$cs_have_cgns_headers" = "xyes"; then
 
-    AC_CHECK_LIB(cgns, cg_coord_partial_write, 
+    AC_CHECK_LIB(cgns, cg_coord_partial_write,
                  [ AC_DEFINE([HAVE_CGNS], 1, [CGNS file support])
                    cs_have_cgns=yes
-                 ], 
+                 ],
                  [])
 
   fi
@@ -152,6 +153,13 @@ Otherwise, you need to provide a CGNS 3.1 library and development headers.])
     fi
   fi
 
+  case $host_os in
+    mingw32)
+      cgns_prefix=`cygpath --path --windows "$with_cgns"`;;
+    *)
+      ;;
+  esac
+
 fi
 
 unset cs_have_cgns_headers
@@ -159,6 +167,7 @@ unset cs_have_cgns_headers
 AM_CONDITIONAL(HAVE_CGNS, test x$cs_have_cgns = xyes)
 
 AC_SUBST(cs_have_cgns)
+AC_SUBST(cgns_prefix, [${cgns_prefix}])
 AC_SUBST(CGNS_CPPFLAGS)
 AC_SUBST(CGNS_LDFLAGS)
 AC_SUBST(CGNS_LIBS)

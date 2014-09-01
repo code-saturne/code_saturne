@@ -216,7 +216,7 @@ def get_flags(pkg, flag, link_build = False):
                     cmd_line.remove(lib)
                 cmd_line.append(lib)
 
-    # On Windows, flags must be adapted so as to handle the relocation
+    # On MinGW hosts, flags must be adapted so as to handle the relocation
     # of system headers (together with the compiler)
     # ...unless the compilation is done during the build stage
     if sys.platform.startswith("win") and not link_build:
@@ -277,7 +277,8 @@ def get_build_flags(pkg, flag, install=False, destdir=None):
             # Strangely, on MinGW, Windows paths are not correctly handled here
             # So, assuming we always build on MinGW, here is a little trick!
             if sys.platform.startswith("win"):
-                libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
+                if pkg.get_cross_compil() != 'cygwin': #mingw32 or mingw64
+                    libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
             if destdir:
                 libdir = dest_subdir(destdir, libdir)
             cmd_line.insert(0, "-L" + libdir)
@@ -474,7 +475,10 @@ def link_build(pkg, install=False, destdir=None):
         # Strangely, on MinGW, Windows paths are not correctly handled here...
         # So, assuming we always build on MinGW, here is a little trick!
         if sys.platform.startswith("win"):
-            exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
+            if pkg.get_cross_compil() != 'cygwin': #mingw32 or mingw64
+                exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
+            else:
+                exec_name = pkg.dirs['pkglibexecdir'][1] + "/" + pkg.solver
         if destdir:
             exec_name = dest_subdir(destdir, exec_name)
         dirname = os.path.dirname(exec_name)
