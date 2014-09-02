@@ -1742,16 +1742,18 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     write(nfecra,1500) chaine(1:16), isweep, residu, rnormp, niterf
   endif
 
-  if (abs(rnormp).gt.0.d0) then
-    sinfo%resvar = residu/rnormp
-  else
-    sinfo%resvar = 0.d0
-  endif
-
   isweep = isweep + 1
 
 enddo
 ! --- Reconstruction loop (end)
+
+! For logging
+if (abs(rnormp).gt.0.d0) then
+  sinfo%resvar = residu/rnormp
+else
+  sinfo%resvar = 0.d0
+endif
+
 
 ! Writing
 if(iwarni(ipr).ge.1) then
