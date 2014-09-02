@@ -151,17 +151,14 @@ double precision, allocatable, dimension(:) :: secvif, secvib
 double precision, dimension(:,:), allocatable :: gradp
 double precision, dimension(:), allocatable :: coefa_dp, coefb_dp
 double precision, dimension(:), allocatable :: xinvro
-
 double precision, dimension(:,:), pointer :: grdphd
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:,:,:), pointer :: viscfi
 double precision, dimension(:), pointer :: viscbi
 double precision, dimension(:,:), pointer :: dttens
 double precision, dimension(:,:), pointer :: dfrcxt
-
 double precision, dimension(:,:), pointer :: coefau, cofafu, claale
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
-
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma, viscl, visct
@@ -169,7 +166,7 @@ double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
-
+double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
 
@@ -1465,13 +1462,22 @@ if (iwarni(iu).ge.1) then
 
   ! Pour la periodicite et le parallelisme, rom est echange dans phyvar
 
+  ! With porosity
+  if (iporos.ge.1) then
+    call field_get_val_s(ipori, porosi)
+  endif
+
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
     surf = surfan(ifac)
-    rhom = (crom(iel1)+crom(iel2))*0.5d0
+    if (iporos.ge.1) then
+      rhom = (porosi(iel1)*crom(iel1)+porosi(iel2)*crom(iel2))*0.5d0
+    else
+      rhom = (crom(iel1)+crom(iel2))*0.5d0
+    endif
     rnorm = abs(imasfl(ifac))/(surf*rhom)
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
@@ -1485,7 +1491,11 @@ if (iwarni(iu).ge.1) then
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfabor
-    rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac))
+    if (iporos.ge.1) then
+      rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac)*porosi(ifabor(ifac)))
+    else
+      rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac))
+    endif
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
