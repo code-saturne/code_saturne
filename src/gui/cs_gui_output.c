@@ -250,13 +250,13 @@ _surfacic_variable_post(const char  *name,
  * Get the attribute value from the xpath query.
  *
  * parameters:
- *   path          <-- path for xpath query
+ *   path          <-> path for xpath query (NULL on return)
  *   child         <-- child markup
  *   keyword       --> value of attribute node
  *----------------------------------------------------------------------------*/
 
 static void
-_attribute_value(char                *path,
+_attribute_value(char               **path,
                  const char    *const child,
                  int           *const keyword)
 {
@@ -265,9 +265,9 @@ _attribute_value(char                *path,
   assert(path != NULL);
   assert(child != NULL);
 
-  cs_xpath_add_attribute(&path, "status");
+  cs_xpath_add_attribute(path, "status");
 
-  if (cs_gui_get_status(path, &result)) {
+  if (cs_gui_get_status(*path, &result)) {
     *keyword = result;
   }
   else {
@@ -275,6 +275,8 @@ _attribute_value(char                *path,
     if (cs_gui_strcmp(child, "postprocessing_recording") ||
         cs_gui_strcmp(child, "listing_printing")) *keyword = 1;
   }
+
+  BFT_FREE(*path);
 }
 
 /*----------------------------------------------------------------------------
@@ -297,9 +299,7 @@ _variable_attribute(const char  *name,
   cs_xpath_add_element(&path, "variable");
   cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_element(&path, child);
-  _attribute_value(path, child, keyword);
-
-  BFT_FREE(path);
+  _attribute_value(&path, child, keyword);
 }
 
 /*-----------------------------------------------------------------------------
@@ -478,9 +478,7 @@ _property_output_status(const char  *name,
   cs_xpath_add_element(&path, "property");
   cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_element(&path, child);
-  _attribute_value(path, child, keyword);
-
-  BFT_FREE(path);
+  _attribute_value(&path, child, keyword);
 }
 
 /*-----------------------------------------------------------------------------
@@ -660,9 +658,7 @@ _time_moment_output_status(int          moment_id,
   path = cs_xpath_short_path();
   cs_xpath_add_element_num(&path, "time_average", moment_id+1);
   cs_xpath_add_element(&path, child);
-  _attribute_value(path, child, keyword);
-
-  BFT_FREE(path);
+  _attribute_value(&path, child, keyword);
 }
 
 /*-----------------------------------------------------------------------------
