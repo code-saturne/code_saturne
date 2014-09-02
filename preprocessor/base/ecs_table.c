@@ -1191,7 +1191,6 @@ ecs_table__extrait(ecs_table_t  *table_ref,
 {
   size_t        cpt_elt_new;
   size_t        cpt_val_new;
-  size_t        cpt_val_old_new;
   size_t        nbr_elt_ref;
   size_t        nbr_val_ref;
   size_t        pos_ref_inf;
@@ -1220,7 +1219,6 @@ ecs_table__extrait(ecs_table_t  *table_ref,
   table_new->pos[0] = 1;
   cpt_elt_new           = 0;
   cpt_val_new           = 0;
-  cpt_val_old_new       = 0;
 
   for (ielt_ref = 0; ielt_ref < nbr_elt_ref; ielt_ref++) {
 

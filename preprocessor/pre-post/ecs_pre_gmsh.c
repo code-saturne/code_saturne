@@ -912,7 +912,6 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
   int           version_fmt_gmsh;
   int           type_fmt_gmsh;
   ecs_int_t    *som_val_label;
-  int           dim_e;                 /* Dimension spatiale */
   bool          bool_elements = false;
   bool          bool_noeuds = false;
 
@@ -936,7 +935,6 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
   /*=================*/
 
   num_ligne = 0;
-  dim_e     = 3;
 
   som_val_label = NULL;
 

@@ -1871,7 +1871,6 @@ ecs_loc_pre_ens__lit_geo_gold(const char       *nom_fic_geo,
   bool        lire_elem_id;
   bool        importer_part;
 
-  bool         swap_endian;
   ecs_file_t  *fic;
 
   float    coo_min_max[6];
@@ -2012,7 +2011,6 @@ ecs_loc_pre_ens__lit_geo_gold(const char       *nom_fic_geo,
                "\"big-endian/little-endian\" detection."),
              ecs_file_get_name(fic));
         else {
-          swap_endian = true;
           if (ecs_file_get_swap_endian(fic) == 1)
             ecs_file_set_swap_endian(fic, 0);
           else

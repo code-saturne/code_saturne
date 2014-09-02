@@ -451,9 +451,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
   ecs_int_t  *elt_val_som_ent[ECS_N_ENTMAIL];    /* Numeros des sommets  */
   int        *elt_val_fam_ent[ECS_N_ENTMAIL];    /* Familles elements    */
 
-  ecs_size_t *pos_fac_connect;
-  ecs_int_t  *val_fac_connect;
-
   /* Déclarations des variables pour MED */
   /*-------------------------------------*/
 
@@ -468,7 +465,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
   med_int            nbr_equiv = 0;
   med_int            ind_equiv = -1;
   med_int            edim_med;
-  med_int            mdim_med;
   med_int            nbr_ele_med;
   med_int            taille_med;
 
@@ -507,10 +503,6 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
   }
 
-  pos_fac_connect = NULL;
-  val_fac_connect = NULL;
-
-  mdim_med = (med_int)dim_e;
   strcpy(nom_maillage_med, nom_maillage);
 
   /*------------------------------------------------*/

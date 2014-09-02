@@ -579,7 +579,6 @@ ecs_loc_pre_gambit__lit_elements(ecs_file_t  *fic_maillage,
   ecs_int_t    taille_connect_max;
 
   ecs_int_t    ind_ent;              /* Indice de l'entité concernée         */
-  ecs_int_t    num_pos;              /* Nouvel indice de stockage            */
 
   size_t       ielt;                 /* Indice de boucle sur les éléments    */
   ecs_int_t    inod;                 /* Indice de boucle sur les noeuds      */
@@ -734,9 +733,6 @@ ecs_loc_pre_gambit__lit_elements(ecs_file_t  *fic_maillage,
         elt_pos_som_ent[ind_ent][0] = 1;
 
       }
-
-      num_pos =   elt_pos_som_ent[ind_ent][cpt_elt_ent[ind_ent]] - 1
-                + nbr_som_elt;
 
       /* Connectivité de l'élément par ses numéros de sommets */
       /*------------------------------------------------------*/

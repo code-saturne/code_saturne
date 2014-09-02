@@ -1086,7 +1086,6 @@ _orient_polyhedron(const ecs_coord_t   coord[],
                    ecs_tab_int_t      *edges)
 {
   size_t      i, j, face_id, edge_id;
-  ecs_int_t   ind_premier, ind_dernier;
 
   double      cell_vol = 0.;
   size_t      n_unmarked_faces = 0;
@@ -1111,12 +1110,10 @@ _orient_polyhedron(const ecs_coord_t   coord[],
       if (premier_som == -1) {
         face_index->val[n_faces] = i;
         premier_som = connect[i];
-        ind_premier = i;
       }
       else if (connect[i] == premier_som) {
         n_faces += 1;
         premier_som = -1;
-        ind_dernier = i;
       }
     }
 

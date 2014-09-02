@@ -300,17 +300,12 @@ ecs_maillage_post__ecr_fac_liste(const char           *nom_liste,
 {
   ecs_maillage_t  * maillage_extrait;
 
-  ecs_tab_char_t    liste_groupe;
-
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   assert(maillage != NULL);
 
   /* Initialisations */
   /*-----------------*/
-
-  liste_groupe.nbr = 0;
-  liste_groupe.val = NULL;
 
   maillage_extrait = NULL;
 
