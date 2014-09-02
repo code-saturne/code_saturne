@@ -275,8 +275,6 @@ _attribute_value(char                *path,
     if (cs_gui_strcmp(child, "postprocessing_recording") ||
         cs_gui_strcmp(child, "listing_printing")) *keyword = 1;
   }
-
-  BFT_FREE(path);
 }
 
 /*----------------------------------------------------------------------------
@@ -481,6 +479,8 @@ _property_output_status(const char  *name,
   cs_xpath_add_test_attribute(&path, "name", name);
   cs_xpath_add_element(&path, child);
   _attribute_value(path, child, keyword);
+
+  BFT_FREE(path);
 }
 
 /*-----------------------------------------------------------------------------
@@ -661,6 +661,8 @@ _time_moment_output_status(int          moment_id,
   cs_xpath_add_element_num(&path, "time_average", moment_id+1);
   cs_xpath_add_element(&path, child);
   _attribute_value(path, child, keyword);
+
+  BFT_FREE(path);
 }
 
 /*-----------------------------------------------------------------------------
