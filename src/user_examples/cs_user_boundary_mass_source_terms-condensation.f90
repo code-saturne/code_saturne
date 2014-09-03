@@ -169,6 +169,7 @@ use field
 use cs_c_bindings
 use cs_f_interfaces
 
+use cs_tagmr
 !===============================================================================
 
 implicit none
@@ -251,29 +252,23 @@ if (iappel.eq.1.or.iappel.eq.2) then
     if (iappel.eq.2) ifbpcd(ieltcd) = ifac
   enddo
 
-  ! For iappel = 1,
-  ! Specification of nfbpcd.
-  if (iappel.eq.1) then
-    nfbpcd = ieltcd
-  endif
+endif
 
-elseif (iappel.eq.3) then
+! For iappel = 1,
+! Specification of nfbpcd.
+if (iappel.eq.1) then
+  nfbpcd = ieltcd
+endif
 
 !===============================================================================
-! 2. For nfbpcd > 0 , third call
-!    iappel = 3 : itypcd: type of condensation source term
-!                  spcond: condensation source term
-! Remark
-! ======
-! If itypcd(ieltcd,ivar) is set to 1, spcond(ieltcd,ivar) must be set.
+! Parameters padding of the 1-D thermal model and condensation model
+! ------------------------------------------------------------------
+! the both models can be activated and coupled together or
+! the condensation model can be use without activated the 1-D thermal model
+! in this case a constant wall temperature must be specified by the user at
+! the cold wall (at iappel=3 tpar=tpar0 in this case).
 !===============================================================================
-
-  !-- pointer to the specific heat
-  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
-
-  !-- pointer to the enthalpy value
-  ivarh = isca(iscalt)
-  call field_get_val_s(ivarfl(ivarh), cvar_h)
+if (iappel.eq.2) then
 
   if (ippmod(icond).eq.0) then
 
@@ -315,9 +310,88 @@ elseif (iappel.eq.3) then
 
     icophg = 3
 
-    ! the wall temperature in unit [°C] of the copain model
-    tpar = 26.57d0
+    ! Choice the way to impose the wall temperature (tpar)
+    ! at the solid/fluid interface:
+    !
+    ! with the parameter itag1d defined below:
+    ! ----------------------------------------
+    !  0 : A constant wall temperature imposed is given by the user
+    !     ( tpar = tpar0 used as the wall temperature by the condensation model )
+    !  1 : A variable wall temperature is imposed with a 1-D thermal model
+    !     ( tpar = tmur(ii,1) computed by tagmro.f90 and used as the
+    !       wall temperature by the condensation model )
 
+    itag1d = 1
+
+    ! Wall temperature computed by a 1-D thermal model
+    ! with a implicit scheme and variable over time.
+    ! ------------------------------------------------
+    ! Remark : the wall temperature is in unit [°C].
+    if(itag1d.eq.1) then
+
+      !---------------------------------------------------
+      ! Numerical parameters used by the 1-D thermal model
+      !---------------------------------------------------
+
+      ! (theta) parameter of the implicit scheme
+      theta = 1.d0
+      ! (dxmin) First cell size of the 1D mesh
+      ! -> with (dxmin.eq.0) the Dx is constant
+      ! -> with (dxmin.ne.0) the Dx is variable
+      dxmin = 0.d0
+      ! (nmur) space steps number of the 1D mesh
+      nmur = 10
+      ! (epais) thickness of the 1D wall
+      epais = 0.024d0
+
+      !-------------------------------------------
+      !Initial condition of the 1-D thermal model
+      !-------------------------------------------
+      tpar0 = 26.57d0
+
+    endif
+
+  endif
+
+elseif (iappel.eq.3) then
+
+!===============================================================================
+! 2. For nfbpcd > 0 , third call
+!    iappel = 3 : itypcd: type of condensation source term
+!                  spcond: condensation source term
+! Remark
+! ======
+! If itypcd(ieltcd,ivar) is set to 1, spcond(ieltcd,ivar) must be set.
+!===============================================================================
+
+  !-- pointer to the specific heat
+  if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+
+  !-- pointer to the enthalpy value
+  ivarh = isca(iscalt)
+  call field_get_val_s(ivarfl(ivarh), cvar_h)
+
+  if (ippmod(icond).eq.0) then
+    if(itag1d.eq.1) then
+      !-------------------------------------------
+      !Boundary conditions of the 1-D thermal model
+      !-------------------------------------------
+      hext =  1.d+8 ; text = 26.57d0
+      ! --------------------------------------------
+      ! Physical properties of the concrete material
+      ! --------------------------------------------
+      ! (rob) density (kg.m-3)
+      rob   = 8000.d0
+      ! (condb) thermal conductivity (W.m-1.C-1)
+      condb = 12.8d0
+      ! (cpb)   Specific heat (J.kg-1.C-1)
+      cpb = 500.0d0
+
+    else
+      ! Wall temperature imposed as constant
+      ! with a value specified by the user
+      tpar = 26.57d0
+    endif
   endif
 
   ! To fill the spcond(nfbpcd,ivar) array

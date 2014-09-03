@@ -786,6 +786,14 @@ module optcal
   !>         exchange coefficient evaluated by the copain correlation
   integer, save :: icophg
 
+  !> choice the way to compute the wall temperature at the solid/fluid interface
+  !> coupled with condensation to the wall
+  !>    - 1: the wall temperature is computed with a 1-D thermal model
+  !>         with implicit numerical scheme
+  !>    - 0: the wall temperature is imposed as constant by the user (default)
+  !>         exchange coefficient evaluated by the copain correlation
+  integer, save :: itag1d
+
 
   !> compute error estimators
   !>    - 1: true

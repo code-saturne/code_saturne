@@ -169,6 +169,7 @@ use field
 use cs_c_bindings
 use cs_f_interfaces
 
+use cs_tagmr
 !===============================================================================
 
 implicit none

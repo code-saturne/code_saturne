@@ -227,6 +227,7 @@ csinit.f90 \
 cs_log_iteration.c \
 cs_numbering.c \
 cs_measures_util.c \
+cs_mesh_tagmr.f90 \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \
@@ -249,6 +250,8 @@ cs_stokes_model.c \
 cs_syr4_coupling.c \
 cs_syr_coupling.c \
 cs_thermal_model.c \
+cs_tagmri.f90 \
+cs_tagmro.f90 \
 cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \

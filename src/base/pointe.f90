@@ -334,6 +334,16 @@ module pointe
   !> See the user subroutine \ref cs_user_boundary_mass_source_terms
   double precision, allocatable, dimension(:) :: hpcond
 
+  !> Specific 1D thermal model with implicit time scheme (only used
+  !> with condensation modelling to the cold wall)
+  !> flthr     ! external heat flux used as flux conditions
+  !>           ! of the 1d thermal model (in unit \f$W.m^{-2}\f$).
+  double precision, allocatable, dimension(:) :: flthr
+  !> dflthr    ! external heat flux derivative used as flux conditions
+  !>           ! of the 1d thermal model (in unit \f$W.m^{-3}\f$).
+  double precision, allocatable, dimension(:) :: dflthr
+
+
   !> \}
 
   !=============================================================================
@@ -679,6 +689,11 @@ contains
     allocate(spcond(nfbpcd,nvar))
     allocate(thermal_condensation_flux(nfbpcd))
     allocate(hpcond(nfbpcd))
+    allocate(flthr(nfbpcd),dflthr(nfbpcd))
+
+    !---> Array initialization
+    flthr(:)  = 0.d0
+    dflthr(:) = 0.d0
 
   end subroutine init_pcond
 
@@ -690,6 +705,7 @@ contains
     deallocate(spcond)
     deallocate(thermal_condensation_flux)
     deallocate(hpcond)
+    deallocate(flthr, dflthr)
 
   end subroutine finalize_pcond
 

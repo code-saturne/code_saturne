@@ -129,7 +129,7 @@ double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision cosdto, sindto, omgnrm, rrotgb(3,3)
 double precision hdls(6)
-double precision tpar
+double precision, save :: tpar
 
 integer          ipass
 data             ipass /0/
@@ -1072,6 +1072,13 @@ do while (iterns.le.nterup)
       !==========
     endif
 
+    ! coupling 1D thermal model with condensation modelling
+    ! to take into account the solid temperature evolution over time
+    if (nftcdt.gt.0.and.itag1d.eq.1) then
+      call cs_tagmri(nfabor, iscalt, icodcl, rcodcl)
+      !=============
+    endif
+
   endif
 
 
@@ -1110,7 +1117,7 @@ do while (iterns.le.nterup)
 
       call condensation_copain_model &
       !=============================
-  (   nvar   , nfbpcd , ifbpcd ,               &
+  (   nfbpcd , ifbpcd ,                        &
       tpar   ,                                 &
       spcond(1, ipr)  , hpcond )
 
@@ -1191,6 +1198,15 @@ do while (iterns.le.nterup)
       xlmbt1 , rcpt1d , dtpt1d , dt     ,                          &
       hbord  , theipb )
     endif
+
+    ! 1-D thermal model of severe accidents coupling with condensation
+    if (nftcdt.gt.0.and.itag1d.eq.1) then
+      call cs_tagmro &
+      !=============
+     ( nfbpcd , ifbpcd ,                          &
+       dt     )
+    endif
+
   endif
 
   !     ON N'A PLUS BESOIN DE ISVHB OU ISVHT (POUR HBORD ET TBORD)

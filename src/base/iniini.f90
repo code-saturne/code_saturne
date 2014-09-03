@@ -902,6 +902,12 @@ icophc = 0
 
 icophg = 0
 
+! ---  Choice the way to compute to compute the wall temperature at
+!      the solid/fluid interface coupled with condensation to the wall
+!      ( not activated by default itag1d =0)
+
+itag1d = 0
+
 ! --- Champ de vitesse fige (non fige par defaut)
 
 iccvfg = 0

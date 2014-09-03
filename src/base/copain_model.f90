@@ -54,7 +54,7 @@
 !_______________________________________________________________________________
 
 subroutine condensation_copain_model &
- ( nvar   , nfbpcd , ifbpcd ,            &
+ ( nfbpcd , ifbpcd ,                     &
    tpar   ,                              &
    gam_s  , hpcond )
 
@@ -70,13 +70,14 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: thermal_condensation_flux
+use pointe, only: thermal_condensation_flux, flthr, dflthr
 use parall
 use period
 use field
 use mesh
 use cs_c_bindings
 use cs_f_interfaces
+use cs_tagmr, only: tmur, tpar0, nmur
 
 !===============================================================================
 
@@ -84,7 +85,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar
 integer          nfbpcd, ifbpcd(nfbpcd)
 
 double precision tpar
@@ -127,8 +127,8 @@ double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_v
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
-
 double precision, dimension(:), pointer :: yplbr
+
 !===============================================================================
 ! Allocate a temporary array for cells selection
 allocate(mix_mol_mas(ncelet), mol_mas_ncond(ncelet), x_ncond(ncelet))
@@ -331,8 +331,15 @@ do ii = 1, nfbpcd
   !-- If the 1D thermal conduction model is activated,
   !-- the wall temperature is in unit (Celsius °C)
   !---------------------------------------------------
-  !TODO 1D thermal model
-  t_wall = tpar
+  if(itag1d.eq.1) then
+    if(isuite.eq.0.and.ntcabs.eq.1) then
+      t_wall = tpar0
+    else
+      t_wall = tmur(ii,1)
+    endif
+  else
+    t_wall = tpar
+  endif
 
   !-- kinematic viscosity --------------------------
   xnu = cpro_viscl(iel)/cpro_rho(iel)
@@ -551,8 +558,10 @@ do ii = 1, nfbpcd
   !==       (iagt1d:=1), we stored the flux         ==
   !==         and its derivative.                   ==
   !===================================================
-  !TODO
-
+  if(itag1d.eq.1) then
+    flthr(ii) = flux
+   dflthr(ii) = 0.d0
+  endif
   !===================================================
   !== Rewritting directly the Boundary Conditions   ==
   !==           of the enthalpy scalar              ==

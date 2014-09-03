@@ -83,6 +83,8 @@ use cs_f_interfaces
 
 use, intrinsic :: iso_c_binding
 
+use cs_tagmr
+
 !===============================================================================
 
 implicit none
@@ -772,6 +774,24 @@ if (nftcdt.gt.0) then
   ifbpcd , itypcd , izftcd ,                                     &
   spcond , hpcond , rvoid(1) )
 
+  ! the Condensation model coupled with a 1-D thermal model
+  ! requires the 1-D mesh generation and temperature initialization
+  if(itag1d.eq.1) then
+
+    call init_tagmr
+    !==============
+
+    !if (isuit1.eq.1) then
+    !  !TODO : Read the restart files "suite"
+    !else
+      !1-D mesh generated and temperature initialization
+      call cs_mesh_tagmr &
+      !=================
+    ( nfbpcd , ifbpcd )
+    !endif
+
+  endif
+
 endif
 
 
@@ -1317,6 +1337,10 @@ endif
 
 if(nftcdt.gt.0) then
   call finalize_pcond
+  if(itag1d.eq.1) then
+    call finalize_tagmr
+    !==================
+  endif
 endif
 
 if (nfpt1d.gt.0) then
