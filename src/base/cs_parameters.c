@@ -175,6 +175,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   0,     /* imrgra */
   -1,    /* imligr */
   1,     /* ircflu */
+  0,     /* iwgrec */
   1.,    /* thetav */
   1.,    /* blencv */
   1.e-8, /* epsilo */
@@ -389,6 +390,8 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);
+
+  cs_field_define_key_int("gradient_weighting_id", -1, CS_FIELD_VARIABLE);
 
   cs_field_define_key_int("diffusivity_tensor", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("drift_scalar_model", 0, 0);

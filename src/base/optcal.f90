@@ -302,6 +302,11 @@ module optcal
   !>    - 1: true
   double precision, save :: extrag(nvarmx)
 
+  !> gradient calculation
+  !>    - 1: standard
+  !>    - 0: weighted
+  integer, save :: iwgrec(nvarmx)
+
   !> \}
 
   !> \defgroup diffusive_scheme Diffusive scheme
@@ -320,7 +325,8 @@ module optcal
 
   !> \}
 
-  !> \defgroup iterative_process Iterative process for the convection diffusion equation
+  !> \defgroup iterative_process Iterative process for the convection diffusion
+  !>           equation
   !> \addtogroup iterative_process
   !> \{
 

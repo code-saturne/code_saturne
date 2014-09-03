@@ -177,9 +177,12 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
 integer          nswrsp
 integer          insqrt
 integer          imvisp
+integer          iflid, iflwgr, f_dim
 
 integer          icvflb, f_id0
 integer          ivoid(1)
+
+logical          interleaved
 
 double precision residu, phydr0
 double precision ardtsr, arsr  , unsara, thetap
@@ -223,6 +226,8 @@ double precision, allocatable, dimension(:,:) :: gradni
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:,:), pointer :: cpro_wgrec_v
+double precision, dimension(:), pointer :: cpro_wgrec_s
 
 !===============================================================================
 
@@ -249,6 +254,20 @@ allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
 ! Associate pointers to pressure diffusion coefficient
 viscap => dt(:)
 if (idften(ipr).eq.6)  vitenp => tpucou(:,:)
+
+! Index of the field
+iflid = ivarfl(ipr)
+
+if (iwgrec(ipr).eq.1) then
+  ! Id weighting field for gradient
+  call field_get_key_int(iflid, kwgrec, iflwgr)
+  call field_get_dim(iflwgr, f_dim, interleaved)
+  if (f_dim.gt.1) then
+    call field_get_val_v(iflwgr, cpro_wgrec_v)
+  else
+    call field_get_val_s(iflwgr, cpro_wgrec_s)
+  endif
+endif
 
 ! --- Writing
 call field_get_name(ivarfl(ipr), chaine)
@@ -344,7 +363,7 @@ endif
 ! 2. Norm residual
 !===============================================================================
 
-if(irnpnw.ne.1) then
+if (irnpnw.ne.1) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
@@ -793,6 +812,13 @@ if (idiff(ipr).ge.1) then
      viscap ,            &
      viscf  , viscb  )
 
+    if (iwgrec(ipr).eq.1) then
+      ! Weighting for gradient
+      do iel = 1, ncel
+        cpro_wgrec_s(iel) = viscap(iel)
+      enddo
+    endif
+
   ! Tensor diffusivity
   else if (idften(ipr).eq.6) then
 
@@ -808,14 +834,26 @@ if (idiff(ipr).ge.1) then
      weighf , weighb ,             &
      viscf  , viscb  )
 
+    if (iwgrec(ipr).eq.1) then
+      ! Weighting for gradient
+      do iel = 1, ncel
+        do isou = 1, 6
+          cpro_wgrec_v(isou,iel) = vitenp(isou,iel)
+        enddo
+      enddo
+    endif
+
   endif
+
 else
+
   do ifac = 1, nfac
     viscf(ifac) = 0.d0
   enddo
   do ifac = 1, nfabor
     viscb(ifac) = 0.d0
   enddo
+
 endif
 
 iconvp = iconv (ipr)
@@ -1076,14 +1114,14 @@ if (arak.gt.0.d0) then
 
     call itrmas &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   frcxt  ,                                                       &
-   cvara_pr,                                                      &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
-   viscf  , viscb  ,                                              &
-   viscap , viscap , viscap ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   frcxt  ,                                                                    &
+   cvara_pr          ,                                                         &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                                   &
+   viscf  , viscb  ,                                                           &
+   viscap , viscap , viscap ,                                                  &
    imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
@@ -1465,15 +1503,15 @@ if (iswdyp.ge.1) then
 
     call itrgrp &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   drtp   ,                                                       &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   viscap , viscap , viscap ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfrcxt ,                                                                    &
+   drtp   ,                                                                    &
+   coefa_dp  , coefb_dp  ,                                                     &
+   coefaf_dp , coefbf_dp ,                                                     &
+   viscf  , viscb  ,                                                           &
+   viscap , viscap , viscap ,                                                  &
    rhs0   )
 
   else if (idften(ipr).eq.6) then
@@ -1564,15 +1602,16 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
       call itrgrp &
       !==========
-   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-     iwarnp ,                                                       &
-     epsrgp , climgp , extrap ,                                     &
-     dfrcxt ,                                                       &
-     drtp   ,                                                       &
-     coefa_dp  , coefb_dp  ,                                        &
-     coefaf_dp , coefbf_dp ,                                        &
-     viscf  , viscb  ,                                              &
-     viscap , viscap , viscap ,                                     &
+   ( f_id0           , init   , inc    , imrgra ,              &
+     iccocg , nswrgp , imligp , iphydr ,                       &
+     iwarnp ,                                                  &
+     epsrgp , climgp , extrap ,                                &
+     dfrcxt ,                                                  &
+     drtp   ,                                                  &
+     coefa_dp  , coefb_dp  ,                                   &
+     coefaf_dp , coefbf_dp ,                                   &
+     viscf  , viscb  ,                                         &
+     viscap , viscap , viscap ,                                &
      adxk   )
 
     else if (idften(ipr).eq.6) then
@@ -1697,15 +1736,15 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
     call itrgrp &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   cvar_pr    ,                                                   &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   viscap , viscap , viscap ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfrcxt ,                                                                    &
+   cvar_pr   ,                                                                 &
+   coefa_dp  , coefb_dp  ,                                                     &
+   coefaf_dp , coefbf_dp ,                                                     &
+   viscf  , viscb  ,                                                           &
+   viscap , viscap , viscap ,                                                  &
    rhs    )
 
   else if (idften(ipr).eq.6) then
@@ -1716,7 +1755,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
    iphydr , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
-   cvar_pr    ,                                                   &
+   cvar_pr   ,                                                    &
    coefa_dp  , coefb_dp  ,                                        &
    coefaf_dp , coefbf_dp ,                                        &
    viscf  , viscb  ,                                              &
@@ -1814,15 +1853,15 @@ if (idften(ipr).eq.1) then
 
   call itrmas &
   !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   presa  ,                                                       &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   viscap , viscap , viscap ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfrcxt ,                                                                    &
+   presa  ,                                                                    &
+   coefa_dp  , coefb_dp  ,                                                     &
+   coefaf_dp , coefbf_dp ,                                                     &
+   viscf  , viscb  ,                                                           &
+   viscap , viscap , viscap ,                                                  &
    imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -1833,15 +1872,15 @@ if (idften(ipr).eq.1) then
 
   call itrmas &
   !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   drtp   ,                                                       &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   viscap , viscap , viscap ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfrcxt ,                                                                    &
+   drtp   ,                                                                    &
+   coefa_dp  , coefb_dp  ,                                                     &
+   coefaf_dp , coefbf_dp ,                                                     &
+   viscf  , viscb  ,                                                           &
+   viscap , viscap , viscap ,                                                  &
    imasfl , bmasfl )
 
 else if (idften(ipr).eq.6) then
@@ -2081,7 +2120,7 @@ if (idilat.eq.4) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   cvar_pr    , cvar_pr    ,                                              &
+   cvar_pr  , cvar_pr       ,                                     &
    coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
    velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
@@ -2171,14 +2210,14 @@ if (idilat.eq.4) then
   if (idften(ipr).eq.1) then
     call itrmas &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   drtp   ,                                                       &
-   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfrcxt ,                                                                    &
+   drtp   ,                                                                    &
+   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,                     &
+   viscf  , viscb  ,                                                           &
+   dt     , dt     , dt     ,                                                  &
    imasfl , bmasfl )
 
     ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -2189,14 +2228,14 @@ if (idilat.eq.4) then
 
     call itrmas &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   dpvar  ,                                                       &
-   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfrcxt ,                                                                    &
+   dpvar  ,                                                                    &
+   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,                     &
+   viscf  , viscb  ,                                                           &
+   dt     , dt     , dt     ,                                                  &
    imasfl , bmasfl )
 
   else if (idften(ipr).eq.6) then

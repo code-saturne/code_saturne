@@ -510,14 +510,14 @@ if (iturb.eq.51) then
 
   call itrgrp &
   !==========
-( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-  iwarnp ,                                                       &
-  epsrgp , climgp , extrap ,                                     &
-  rvoid  ,                                                       &
-  rtpa(1,ivar)    ,                                              &
-  coefap , coefbp , cofafp , cofbfp ,                            &
-  viscf  , viscb  ,                                              &
-  w3     , w3     , w3     ,                                     &
+( ivarfl(ivar), init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+  iwarnp ,                                                                     &
+  epsrgp , climgp , extrap ,                                                   &
+  rvoid  ,                                                                     &
+  rtpa(:,ivar)    ,                                                            &
+  coefap , coefbp , cofafp , cofbfp ,                                          &
+  viscf  , viscb  ,                                                            &
+  w3     , w3     , w3     ,                                                   &
   w10    )
 
   do iel = 1, ncel
@@ -831,8 +831,8 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar)    ,                                     &
-   icetsm , itypsm(1,ivar)  ,                                     &
-   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
+   icetsm , itypsm(:,ivar)  ,                                     &
+   volume , rtpa(:,ivar)    , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbrk  , w2     , w4 )
 
   ivar = iep
@@ -841,8 +841,8 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar)    ,                                     &
-   icetsm , itypsm(1,ivar)  ,                                     &
-   volume , rtpa(1,ivar)    , smacel(1,ivar) , smacel(1,ipr) ,    &
+   icetsm , itypsm(:,ivar)  ,                                     &
+   volume , rtpa(:,ivar)    , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
 
   ! If we extrapolate the source terms we put Gamma Pinj in propce
@@ -945,7 +945,7 @@ if (ikecou.eq.1) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
@@ -1019,7 +1019,7 @@ if (ikecou.eq.1) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
@@ -1197,13 +1197,13 @@ call codits &
    imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
+   tinstk , smbrk  , rtp(:,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! ---> Turbulent dissipation (epsilon) treatment
@@ -1282,13 +1282,13 @@ call codits &
    imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinste , smbre  , rtp(1,ivar)     , dpvar  ,                   &
+   tinste , smbre  , rtp(:,ivar)     , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================

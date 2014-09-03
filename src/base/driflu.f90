@@ -150,6 +150,7 @@ call field_get_key_id("scalar_id", keysca)
 call field_get_key_int(iflid, keysca, iscal)
 
 ivar = isca(iscal)
+f_id0 = -1
 
 ! Eventual scalar class:
 !   0: scalar belonging to no class
@@ -404,15 +405,15 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     call itrmas &
     !==========
-   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-     iwarnp ,                                                       &
-     epsrgp , climgp , extrap ,                                     &
-     rvoid  ,                                                       &
-     viscce ,                                                       &
-     coefap , coefbp ,                                              &
-     cofafp , cofbfp ,                                              &
-     viscf  , viscb  ,                                              &
-     w1     , w1     , w1     ,                                     &
+   ( f_id0  , init , inc , imrgra , iccocg , nswrgp , imligp , iphydp ,      &
+     iwarnp ,                                                                &
+     epsrgp , climgp , extrap ,                                              &
+     rvoid  ,                                                                &
+     viscce ,                                                                &
+     coefap , coefbp ,                                                       &
+     cofafp , cofbfp ,                                                       &
+     viscf  , viscb  ,                                                       &
+     w1     , w1     , w1     ,                                              &
      flumas , flumab )
 
   ! TODO add extradiagonal part
@@ -509,7 +510,6 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     enddo
 
-    f_id0  = -1
     init   = 0
     inc    = 1
     iflmb0 = 0

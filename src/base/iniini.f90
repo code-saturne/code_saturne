@@ -51,6 +51,7 @@ use ppincl
 use mesh
 use field
 use cavitation
+use darcy_module
 
 !===============================================================================
 
@@ -113,6 +114,8 @@ call field_get_key_id("boundary_mass_flux_id", kbmasf)
 
 call field_get_key_id("scalar_diffusivity_id", kivisl)
 call field_get_key_id("scalar_diffusivity_ref", kvisl0)
+
+call field_get_key_id("gradient_weighting_id", kwgrec)
 
 call field_get_key_id("source_term_prev_id", kstprv)
 
@@ -879,6 +882,11 @@ icalhy = -1
 !        1: Merkle's model
 icavit = -1
 
+! --- Darcy module (not activated by default)
+!        0: module not activated
+!        1: activated
+idarcy = 0
+
 ! --- No Bernoulli free entrance faces
 iifren = 0
 
@@ -903,6 +911,14 @@ iccvfg = 0
 !     = 1 HARMONIQUE
 
 imvisf = 0
+
+! --- Gradient calculation
+!     = 0 Standard
+!     = 1 Weighted (shoulf be used with imvisf = 1)
+
+do ii = 1, nvarmx
+  iwgrec(ii) = 0
+enddo
 
 ! --- Type des CL, tables de tri
 !       Sera calcule apres cs_user_boundary_conditions.

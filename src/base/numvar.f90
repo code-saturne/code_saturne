@@ -258,7 +258,19 @@ module numvar
   integer, save :: iyplbr
 
   !> \}
+  !----------------------------------------------------------------------------
+  ! Numerical properties
+  !----------------------------------------------------------------------------
 
+  !> \defgroup numerical_prop Numerical properties
+
+  !> \addtogroup numerical_prop
+  !> \{
+
+  !> Weighting for gradient calculation on variables
+  integer, save :: kwgrec
+
+  !> \}
   !----------------------------------------------------------------------------
   ! Mapping to field structures
   !----------------------------------------------------------------------------

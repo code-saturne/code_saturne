@@ -115,7 +115,7 @@ integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe
 integer          nagmax, npstmg
 integer          ibsize, iesize, iphydp
-integer          imucpp
+integer          imucpp, f_id0
 double precision residu
 double precision thetap
 double precision epsrgp, climgp, extrap, epsilp
@@ -148,6 +148,9 @@ allocate(pot(ncelet), pota(ncelet), dpot(ncelet), rhs(ncelet))
 ! --- Writing
 chaine = 'potential       '
 lchain = 16
+
+! --- non field pointer
+f_id0 = -1
 
 ! --- Physical quantities
 call field_get_val_s(icrom, crom)
@@ -389,15 +392,15 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     call itrgrp &
     !==========
-   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-     iwarnp ,                                                       &
-     epsrgp , climgp , extrap ,                                     &
-     rvoid  ,                                                       &
-     pot    ,                                                       &
-     clapot , clbpot ,                                              &
-     cfapot , cfbpot ,                                              &
-     viscf  , viscb  ,                                              &
-     dt     , dt     , dt     ,                                     &
+   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,   &
+     iwarnp ,                                                                  &
+     epsrgp , climgp , extrap ,                                                &
+     rvoid  ,                                                                  &
+     pot    ,                                                                  &
+     clapot , clbpot ,                                                         &
+     cfapot , cfbpot ,                                                         &
+     viscf  , viscb  ,                                                         &
+     dt     , dt     , dt     ,                                                &
      rhs   )
 
     do iel = 1, ncel
@@ -440,15 +443,15 @@ extrap = extrag(ipr)
 
 call itrmas &
 !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   rvoid  ,                                                       &
-   pota   ,                                                       &
-   clapot , clbpot ,                                              &
-   cfapot , cfbpot ,                                              &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   rvoid  ,                                                                    &
+   pota   ,                                                                    &
+   clapot , clbpot ,                                                           &
+   cfapot , cfbpot ,                                                           &
+   viscf  , viscb  ,                                                           &
+   dt     , dt     , dt     ,                                                  &
    imasfl , bmasfl )
 
 ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -460,15 +463,15 @@ inc = 0
 
 call itrmas &
 !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   rvoid  ,                                                       &
-   dpot   ,                                                       &
-   clapot , clbpot ,                                              &
-   cfapot , cfbpot ,                                              &
-   viscf  , viscb  ,                                              &
-   dt     , dt     , dt     ,                                     &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   rvoid  ,                                                                    &
+   dpot   ,                                                                    &
+   clapot , clbpot ,                                                           &
+   cfapot , cfbpot ,                                                           &
+   viscf  , viscb  ,                                                           &
+   dt     , dt     , dt     ,                                                  &
    imasfl , bmasfl )
 
 !===============================================================================

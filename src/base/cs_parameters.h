@@ -64,6 +64,9 @@ typedef struct {
   int     imrgra;
   int     imligr;
   int     ircflu;
+  int     iwgrec;       /* gradient calculation
+                           - 0: standard (default)
+                           - 1: weighted (could be used with imvisf = 1) */
   double  thetav;
   double  blencv;
   double  epsilo;

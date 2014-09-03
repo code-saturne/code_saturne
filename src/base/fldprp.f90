@@ -61,6 +61,7 @@ use ihmpre
 use mesh
 use field
 use cs_c_bindings
+use darcy_module
 
 !===============================================================================
 
@@ -74,7 +75,8 @@ character(len=80) :: f_label, f_name, s_label, s_name
 integer           :: iscal , f_id
 integer           :: ii    , jj    , kk    , ll
 integer           :: iok   , ippok
-integer           :: iest  , ipropp
+integer           :: iest  , ipropp, idim1, idim6, iflid
+logical           :: has_previous
 
 !===============================================================================
 ! Interfaces
@@ -406,6 +408,42 @@ if (nproce.gt.npromx) then
   write(nfecra,7200)nproce, npromx, nproce
   call csexit (1)
   !==========
+endif
+
+! --- Properties for Darcy module
+
+if (idarcy.eq.1) then
+
+  has_previous = .true.
+  idim1 = 1
+  idim6 = 6
+  f_name = 'saturation'
+  f_label = 'Saturation'
+  call add_property_field_owner(f_name, f_label, idim1, has_previous, iflid)
+  f_name = 'capacity'
+  f_label = 'Capacity'
+  call add_property_field_owner(f_name, f_label, idim1, has_previous, iflid)
+  f_name = 'permeability'
+  f_label = 'Permeability'
+  if (darcy_anisotropic_permeability.eq.0) then
+    call add_property_field_owner(f_name, f_label, idim1, has_previous, iflid)
+  else
+    call add_property_field_owner(f_name, f_label, idim6, has_previous, iflid)
+  endif
+  do ii = 1, nscal
+
+    if (isca(ii) .gt. 0) then
+
+      call field_get_name(ivarfl(isca(ii)), s_name)
+
+      f_name = trim(s_name)//'_delay'
+      f_label = trim(s_name)//'_delay'
+      call add_property_field_owner(f_name, f_label, idim1, has_previous, iflid)
+
+    endif
+
+  enddo
+
 endif
 
 return
@@ -1237,5 +1275,113 @@ return
 #endif
 
 end subroutine fldprp_check_nproce
+
+!===============================================================================
+
+!> \function add_property_field_owner
+!
+!> \brief add owner field defining a property field defined on cells,
+!>        with default options
+!
+!> It is recommended not to define property names of more than 16
+!> characters, to get a clear execution listing (some advanced writing
+!> levels take into account only the first 16 characters).
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     name          field name
+!> \param[in]     label         field default label, or empty
+!> \param[in]     dim           field dimension
+!> \param[out]    iprop         matching field property id
+!_______________________________________________________________________________
+
+subroutine add_property_field_owner &
+ ( name, label, dim, has_previous, iprop )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name, label
+integer, intent(in)          :: dim
+logical, intent(in)          :: has_previous
+integer, intent(out)         :: iprop
+
+! Local variables
+
+integer  type_flag, location_id, ii, keyprp, f_id
+logical  interleaved
+
+!===============================================================================
+
+type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
+location_id = 1 ! variables defined on cells
+interleaved = .true.
+
+! Test if the field has already been defined
+call field_get_id_try(trim(name), f_id)
+if (f_id .ge. 0) then
+  write(nfecra,1000) trim(name)
+  call csexit (1)
+endif
+
+! Create field
+
+call field_create(name, type_flag, location_id, dim, interleaved, has_previous, &
+                  f_id)
+
+call field_set_key_int(f_id, keyvis, 1)
+call field_set_key_int(f_id, keylog, 1)
+
+if (len(trim(label)).gt.0) then
+  call field_set_key_str(f_id, keylbl, trim(label))
+endif
+
+return
+
+!---
+! Formats
+!---
+
+#if defined(_CS_LANG_FR)
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    ========                                                ',/,&
+'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#else
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
+'@    ======                                                  ',/,&
+'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#endif
+
+end subroutine add_property_field_owner
 
 !===============================================================================

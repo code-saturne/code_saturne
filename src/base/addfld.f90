@@ -80,15 +80,18 @@ implicit none
 
 ! Local variables
 
-integer          ii
+integer          ii, iel
 integer          iscdri, icla, iclap
-integer          iflid, iopchr
-integer          nfld, itycat, ityloc, idim1, idim3
+integer          iflid, iflidp, iopchr, ivar, iscal
+integer          nfld, itycat, ityloc, idim1, idim3, idimf
 integer          keyccl, keydri, kdiftn
 logical          ilved, iprev, inoprv
 integer          f_id
 
 character(len=80) :: name, f_name
+
+double precision, dimension(:), pointer :: field_s_v
+double precision, dimension(:,:), pointer :: field_v_v
 
 !===============================================================================
 
@@ -209,6 +212,52 @@ do iflid = 0, nfld-1
 
   endif
 enddo
+
+! Add weight field for variable to compute gradient
+iflidp = -1
+itycat = FIELD_PROPERTY
+ityloc = 1         ! variables defined on cells
+ilved  = .true.    ! interleaved by default
+inoprv = .false.   ! variables have no previous value
+iopchr = 0         ! Postprocessing level for variables
+idimf  = -1        ! Field dimension
+
+do ivar = 1, nvar
+  if (iwgrec(ivar).eq.1) then
+
+    if (idiff(ivar).lt.1) cycle
+    iflid = ivarfl(ivar)
+    if (iflid.eq.iflidp) cycle
+    iflidp = iflid
+    call field_get_name(iflid, name)
+    f_name = 'gradient_weighting_'//trim(name)
+    if (idften(ivar).eq.1) then
+      idimf = 1
+    elseif (idften(ivar).eq.6) then
+      idimf = 6
+    endif
+    call field_create(f_name, itycat, ityloc, idimf, ilved, inoprv, f_id)
+    call field_set_key_int(iflid, kwgrec, f_id)
+  if (idimf.eq.6) then
+    call field_get_val_v(f_id, field_v_v)
+    do iel = 1, ncelet
+      field_v_v(1,iel) = 1.d0
+      field_v_v(2,iel) = 1.d0
+      field_v_v(3,iel) = 1.d0
+      field_v_v(4,iel) = 0.d0
+      field_v_v(5,iel) = 0.d0
+      field_v_v(6,iel) = 0.d0
+    enddo
+  else if (idimf.eq.1) then
+    call field_get_val_s(f_id, field_s_v)
+    do iel = 1, ncelet
+      field_s_v(iel) = 1.d0
+    enddo
+  endif
+
+  endif
+enddo
+
 
 return
 

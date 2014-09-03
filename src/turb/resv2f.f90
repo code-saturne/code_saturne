@@ -369,14 +369,15 @@ iphydp = 0
 
 call itrgrp &
 !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   rvoid  ,                                                       &
-   cvara_phi  ,                                                       &
-   coefap , coefbp , cofafp , cofbfp ,                            &
-   viscf  , viscb  ,                                              &
-   w3     , w3     , w3     ,                                     &
+ ( ivarfl(iphi)    , init   , inc    , imrgra ,                      &
+   iccocg , nswrgp , imligp , iphydp ,                               &
+   iwarnp ,                                                          &
+   epsrgp , climgp , extrap ,                                        &
+   rvoid  ,                                                          &
+   cvara_phi       ,                                                 &
+   coefap , coefbp , cofafp , cofbfp ,                               &
+   viscf  , viscb  ,                                                 &
+   w3     , w3     , w3     ,                                        &
    w2     )
 
 !      We store T in W3 et L^2 in W4
@@ -505,7 +506,7 @@ call codits &
    imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
@@ -825,7 +826,7 @@ call codits &
    imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &

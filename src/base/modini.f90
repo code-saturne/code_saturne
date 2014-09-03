@@ -45,6 +45,7 @@ use cplsat
 use post
 use ppincl
 use cs_c_bindings
+use darcy_module
 
 !===============================================================================
 
@@ -711,7 +712,7 @@ elseif (itytur.eq.5) then
 elseif (iturb.eq.60) then
   cdtvar(iomg) = cdtvar(ik  )
 elseif (iturb.eq.70) then
-  ! cdtvar est à 1.0 par defaut dans iniini.f90
+  ! cdtvar est a 1.0 par defaut dans iniini.f90
   cdtvar(inusa)= cdtvar(inusa)
 endif
 
@@ -1113,6 +1114,30 @@ if (nscal.gt.0) then
       ctheta(iscal) = csrij
     endif
   enddo
+endif
+
+! Anisotropic diffusion/permeability for Darcy module
+if (idarcy.eq.1) then
+
+  if (darcy_anisotropic_permeability.eq.1) then
+    idften(ipr) = 6
+  endif
+
+  if (darcy_anisotropic_diffusion.eq.1) then
+    do iscal = 1, nscal
+      idften(isca(iscal)) = 6
+    enddo
+  endif
+
+  ! csrij = 1 and ctheta(iscal) = 1 for Darcy module
+  csrij = 1.d0
+  do iscal = 1, nscal
+    ctheta(iscal) = 1.d0
+  enddo
+
+  ! harmonic face viscosity interpolation
+  imvisf = 1
+
 endif
 
 ! Vecteur rotation et matrice(s) associees

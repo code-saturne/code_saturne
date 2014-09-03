@@ -108,6 +108,7 @@ use parall
 use period
 use cs_f_interfaces
 use atchem
+use darcy_module
 
 !===============================================================================
 
@@ -137,7 +138,7 @@ double precision rovsdt(ncelet)
 logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
-integer          ii, ifac , iel
+integer          ii, ifac , iel, isou
 integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
@@ -149,9 +150,12 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imgrp , ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id,  keydri, iscdri
-integer          icvflb
+integer          icvflb, f_dim, iflwgr
+integer          delay_id
 
 integer          ivoid(1)
+
+logical          interleaved
 
 double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
@@ -173,6 +177,8 @@ double precision, allocatable, dimension(:) :: srcmas
 double precision, allocatable, dimension(:) :: srccond
 
 double precision, dimension(:,:), pointer :: xut, visten
+double precision, dimension(:,:), pointer :: cpro_wgrec_v
+double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
@@ -180,6 +186,10 @@ double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: visct, cpro_cp, c_st_scal
+! Darcy arrays
+double precision, allocatable, dimension(:) :: diverg
+double precision, dimension(:), pointer :: cpro_delay, cpro_sat
+double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 
 !===============================================================================
 
@@ -187,8 +197,11 @@ double precision, dimension(:), pointer :: visct, cpro_cp, c_st_scal
 ! 1. Initialization
 !===============================================================================
 
+! --- Variable number
+ivar   = isca(iscal)
+
 ! Index of the field
-iflid = ivarfl(isca(iscal))
+iflid = ivarfl(ivar)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -203,17 +216,29 @@ call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
 
+if (iwgrec(ivar).eq.1) then
+  ! Id weighting field for gradient
+  call field_get_key_int(iflid, kwgrec, iflwgr)
+  call field_get_dim(iflid, f_dim, interleaved)
+  if (f_dim.gt.1) then
+    call field_get_val_v(iflwgr, cpro_wgrec_v)
+  else
+    call field_get_val_s(iflwgr, cpro_wgrec_s)
+  endif
+endif
+
 ! Allocate temporary arrays
 allocate(w1(ncelet))
 allocate(dpvar(ncelet))
+
+if (idarcy.eq.1) then
+  allocate(diverg(ncelet))
+endif
 
 ! Initialize variables to avoid compiler warnings
 
 xe = 0.d0
 xk = 0.d0
-
-! --- Numero de variable de calcul et de post associe au scalaire traite
-ivar   = isca(iscal)
 
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 !         et numero de variable de calcul
@@ -742,6 +767,13 @@ if (idiff(ivar).ge.1) then
       enddo
     endif
 
+    if (iwgrec(ivar).eq.1) then
+      ! Weighting for gradient
+      do iel = 1, ncel
+        cpro_wgrec_s(iel) = w1(iel)
+      enddo
+    endif
+
     call viscfa &
     !==========
    ( imvisf ,                      &
@@ -786,6 +818,15 @@ if (idiff(ivar).ge.1) then
 
     iwarnp = iwarni(ivar)
 
+    if (iwgrec(ivar).eq.1) then
+      ! Weighting for gradient
+      do iel = 1, ncel
+        do isou = 1, 6
+          cpro_wgrec_v(isou,iel) = viscce(isou,iel)
+        enddo
+      enddo
+    endif
+
     call vitens &
     !==========
    ( viscce , iwarnp ,             &
@@ -819,18 +860,25 @@ else
 
 endif
 
-! Without porosity
-if (iporos.eq.0) then
+if (idarcy.eq.1) then
+  call field_get_name(ivarfl(isca(iscal)), fname)
+  call field_get_id(trim(fname)//'_delay', delay_id)
+  call field_get_val_s(delay_id, cpro_delay)
+  call field_get_val_prev_s(delay_id, cproa_delay)
+  call field_get_val_prev_s_by_name('saturation', cproa_sat)
+  call field_get_val_s_by_name('saturation', cpro_sat)
+endif
+
+! Without porosity neither Darcy
+if ((iporos.eq.0).and.(idarcy.eq.0)) then
 
   ! --> Unsteady term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                                 &
                 + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)
   enddo
-
-! With porosity
-else
-
+! With porosity but not Darcy
+elseif (idarcy.eq.0) then
   call field_get_val_s(ipori, porosi)
 
   do iel = 1, ncel
@@ -843,7 +891,16 @@ else
                   + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)    &
                   ) * porosi(iel)
   enddo
-
+! Darcy : we take into account the porosity and delay for underground transport
+else
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel)*cpro_delay(iel)*cpro_sat(iel)
+  enddo
+  do iel = 1, ncel
+    rovsdt(iel) = (rovsdt(iel)                                                &
+                + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel) )      &
+                * cpro_delay(iel)*cpro_sat(iel)
+  enddo
 endif
 
 ! Scalar with a Drift:
@@ -859,6 +916,34 @@ if (iscdri.ge.1) then
    dt     , rtpa   , propce ,                                     &
    imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
+endif
+
+! Darcy:
+! This step is necessary because the divergence of the
+! hydraulic head (or pressure), which is taken into account as the
+! 'aggregation term' via codits -> bilsca -> bilsc2,
+! is not exactly equal to the loss of mass of water in the unsteady case
+! (just as far as the precision of the Newton scheme is good),
+! and does not take into account the sorbption of the tracer
+! (represented by the 'delay' coefficient).
+! We choose to 'cancel' the aggregation term here, and to add to smbr
+! (right hand side of the transport equation)
+! the necessary correction to take sorption into account and get the exact
+! conservation of the mass of tracer.
+
+if (idarcy.eq.1) then
+  if (darcy_unsteady.eq.1) then
+    call divmas(1, imasfl , bmasfl , diverg)
+    do iel = 1, ncel
+      smbrs(iel) = smbrs(iel) - diverg(iel)*rtp(iel,ivar)              &
+        + volume(iel)/dt(iel)*rtp(iel,ivar)                            &
+        *( cproa_delay(iel)*cproa_sat(iel)                             &
+         - cpro_delay(iel)*cpro_sat(iel) )
+    enddo
+    do iel = 1, ncel
+      rovsdt(iel) = rovsdt(iel) + thetv*diverg(iel)
+    enddo
+  endif
 endif
 
 !===============================================================================
@@ -987,6 +1072,7 @@ if (allocated(viscce)) deallocate(viscce)
 if (allocated(weighf)) deallocate(weighf, weighb)
 deallocate(dpvar)
 deallocate(xcpp)
+if (allocated(diverg)) deallocate(diverg)
 
 !--------
 ! Formats

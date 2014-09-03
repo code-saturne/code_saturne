@@ -123,7 +123,7 @@ double precision epsrsp
 double precision sclnor
 
 integer          imucpp, idftnp, iswdyp
-integer          imvis1
+integer          imvis1, f_id0
 
 double precision thetv, relaxp, hint
 
@@ -166,6 +166,7 @@ allocate(dpvar(ncelet))
 ! --- Number of computational variable and post for pressure
 
 ivar   = ipr
+f_id0 = -1
 
 ! --- Mass flux associated to energy
 call field_get_key_int(ivarfl(isca(ienerg)), kimasf, iflmas)
@@ -364,9 +365,9 @@ call cf_check_pressure(cvar_pr, ncel)
 
 if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)                                                     &
-                 - istat(ivar)*(volume(iel)/dt(iel))                            &
-                   *(rtp(iel,ivar)-rtpa(iel,ivar))                              &
+    smbrs(iel) = smbrs(iel)                                                    &
+                 - istat(ivar)*(volume(iel)/dt(iel))                           &
+                   *(rtp(iel,ivar)-rtpa(iel,ivar))                             &
                    * max(0,min(nswrsm(ivar)-2,1))
   enddo
   isqrt = 1
@@ -379,7 +380,7 @@ endif
 !===============================================================================
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(1,ivar))
+  call synsca(rtp(:,ivar))
 endif
 
 !===============================================================================
@@ -398,17 +399,17 @@ iphydp = 0
 ! viscelx,y,z  = dt
 ! This flux is stored as the mass flux of the energy
 
-call itrmas                                                                     &
+call itrmas                                                                    &
 !==========
-( init   , inc    , imrgra , iccocg , nswrgp , imligp ,                         &
-  iphydp , iwarnp ,                                                             &
-  epsrgp , climgp , extrap ,                                                    &
-  rvoid  ,                                                                      &
-  rtp(1,ivar)     ,                                                             &
-  wbfa   , wbfb   ,                                                             &
-  coefaf_p        , coefbf_p        ,                                           &
-  viscf  , viscb  ,                                                             &
-  dt     , dt     , dt     ,                                                    &
+( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp ,               &
+  iphydp , iwarnp ,                                                            &
+  epsrgp , climgp , extrap ,                                                   &
+  rvoid  ,                                                                     &
+  rtp(:,ivar)     ,                                                            &
+  wbfa   , wbfb   ,                                                            &
+  coefaf_p        , coefbf_p        ,                                          &
+  viscf  , viscb  ,                                                            &
+  dt     , dt     , dt     ,                                                   &
   imasfl, bmasfl)
 
 ! Incrementation of the flux with [rho (u + dt f)].n = wflmas

@@ -69,6 +69,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/ctwr \
+-I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
@@ -102,6 +103,7 @@ $(top_builddir)/src/cfbl/libcscfbl.la \
 $(top_builddir)/src/cogz/libcscogz.la \
 $(top_builddir)/src/comb/libcscomb.la \
 $(top_builddir)/src/ctwr/libcsctwr.la \
+$(top_builddir)/src/darc/libcsdarc.la \
 $(top_builddir)/src/elec/libcselec.la \
 $(top_builddir)/src/gui/libcsgui.la \
 $(top_builddir)/src/lagr/libcslagr.la \

@@ -288,10 +288,21 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
 {
   int tr_dim = 0;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_real_t *weight = NULL;
   cs_var_cal_opt_t var_cal_opt;
 
-  // Get the calculation option from the field
+  /* Get the calculation option from the field */
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+    if (var_cal_opt.idiff > 0) {
+      int key_id = cs_field_key_id("gradient_weighting_id");
+      int diff_id = cs_field_get_key_int(f, key_id);
+      if (diff_id > -1) {
+        cs_field_t *weight_f = cs_field_by_id(diff_id);
+        weight = weight_f->val;
+      }
+    }
+  }
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
@@ -314,7 +325,7 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
                      var,
-                     NULL,
+                     weight,
                      grad);
 }
 
@@ -350,10 +361,21 @@ void cs_field_gradient_potential(const cs_field_t          *f,
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_real_t *weight = NULL;
   cs_var_cal_opt_t var_cal_opt;
 
-  // Get the calculation option from the field
+  /* Get the calculation option from the field */
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+    if (var_cal_opt.idiff > 0) {
+      int key_id = cs_field_key_id("gradient_weighting_id");
+      int diff_id = cs_field_get_key_int(f, key_id);
+      if (diff_id > -1) {
+        cs_field_t *weight_f = cs_field_by_id(diff_id);
+        weight = weight_f->val;
+      }
+    }
+  }
 
   cs_gradient_scalar(f->name,
                      gradient_type,
@@ -372,7 +394,7 @@ void cs_field_gradient_potential(const cs_field_t          *f,
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
                      var,
-                     NULL,
+                     weight,
                      grad);
 }
 

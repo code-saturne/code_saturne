@@ -24,7 +24,7 @@
 
 SUBDIRS = \
 . bft fvm mei gui \
-base pprt alge mesh turb \
+base pprt alge mesh turb darc \
 atmo cfbl cogz comb ctwr elec lagr rayt \
 user user_examples apps
 
@@ -87,6 +87,7 @@ $(top_srcdir)/src/pprt/ppthch.f90 \
 $(top_srcdir)/src/rayt/radiat.f90 \
 $(top_srcdir)/src/turb/vorinc.f90 \
 $(top_srcdir)/src/base/ptrglo.f90 \
+$(top_srcdir)/src/darc/darcy_module.f90 \
 $(top_srcdir)/src/base/turbomachinery.f90
 
 # Module dependencies (handled manually, as Automake does
@@ -122,6 +123,7 @@ $(top_srcdir)/src/pprt/ppcpfu.f90: ppthch.lo ppppar.lo
 $(top_srcdir)/src/pprt/ppincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/pprt/ppthch.f90: cstphy.lo
 $(top_srcdir)/src/rayt/radiat.f90: ppppar.lo
+$(top_srcdir)/src/darc/darcy_module.f90: paramx.lo
 
 # Additional local targets
 

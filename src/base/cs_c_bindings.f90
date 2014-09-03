@@ -70,6 +70,7 @@ module cs_c_bindings
     integer(c_int) :: imrgra
     integer(c_int) :: imligr
     integer(c_int) :: ircflu
+    integer(c_int) :: iwgrec
     real(c_double) :: thetav
     real(c_double) :: blencv
     real(c_double) :: epsilo

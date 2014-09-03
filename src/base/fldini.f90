@@ -72,6 +72,7 @@ use cplsat
 use mesh
 use field
 use cs_c_bindings
+use darcy_module
 
 !===============================================================================
 
@@ -316,7 +317,8 @@ itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 1 ! cells
 ilved = .true.
 
-if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
+if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
+    .or.darcy_anisotropic_diffusion.eq.1) then
   call field_create('anisotropic_turbulent_viscosity', itycat, ityloc, idim6, &
                     ilved, inoprv, ivsten)
 endif
@@ -367,6 +369,7 @@ do ivar = 1, nvar
     vcopt%imrgra= imrgra
     vcopt%imligr= imligr(ivar)
     vcopt%ircflu= ircflu(ivar)
+    vcopt%iwgrec = iwgrec(ivar)
     vcopt%thetav= thetav(ivar)
     vcopt%blencv= blencv(ivar)
     vcopt%epsilo= epsilo(ivar)

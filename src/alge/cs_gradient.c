@@ -1779,6 +1779,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_int_t *isympa = fvq->b_sym_flag;
+  const cs_real_t *restrict weight = fvq->weight;
 
   cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
   cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
@@ -1940,6 +1941,8 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
           ii = i_face_cells[face_id][0];
           jj = i_face_cells[face_id][1];
 
+          cs_real_t pond = weight[face_id];
+
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
@@ -1949,11 +1952,24 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
           for (ll = 0; ll < 3; ll++)
             fctb[ll] = dc[ll] * pfac;
 
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
+          if (c_weight != NULL) {
+            for (ll = 0; ll < 3; ll++)
+              rhsv[ii][ll] +=  c_weight[jj]
+                             / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
+                             * fctb[ll];
 
-          for (ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += fctb[ll];
+            for (ll = 0; ll < 3; ll++)
+              rhsv[jj][ll] +=  c_weight[ii]
+                             / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
+                             * fctb[ll];
+          }
+          else {
+            for (ll = 0; ll < 3; ll++)
+              rhsv[ii][ll] += fctb[ll];
+
+            for (ll = 0; ll < 3; ll++)
+              rhsv[jj][ll] += fctb[ll];
+          }
 
         } /* loop on faces */
 
@@ -4052,6 +4068,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+  const cs_real_t *restrict weight = fvq->weight;
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
@@ -4110,6 +4127,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
           ii = i_face_cells[face_id][0];
           jj = i_face_cells[face_id][1];
 
+          cs_real_t pond = weight[face_id];
+
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
@@ -4119,11 +4138,24 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
           for (ll = 0; ll < 3; ll++)
             fctb[ll] = dc[ll] * pfac;
 
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
+          if (c_weight != NULL) {
+            for (ll = 0; ll < 3; ll++)
+              rhsv[ii][ll] +=  c_weight[jj]
+                             / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
+                             * fctb[ll];
 
-          for (ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += fctb[ll];
+            for (ll = 0; ll < 3; ll++)
+              rhsv[jj][ll] +=  c_weight[ii]
+                             / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
+                             * fctb[ll];
+          }
+          else {
+            for (ll = 0; ll < 3; ll++)
+              rhsv[ii][ll] += fctb[ll];
+
+            for (ll = 0; ll < 3; ll++)
+              rhsv[jj][ll] += fctb[ll];
+          }
 
         } /* loop on faces */
 

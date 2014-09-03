@@ -26,7 +26,8 @@
 
 !> \file condli.f90
 !>
-!> \brief Translation of the boundary conditions given by cs_user_boundary_conditions
+!> \brief Translation of the boundary conditions given by
+!> cs_user_boundary_conditions
 !> in a form that fits to the solver.
 !>
 !> The values at a boundary face \f$ \fib \f$ stored in the face center
@@ -145,6 +146,7 @@ use mesh
 use field
 use field_operator
 use turbomachinery
+use darcy_module
 
 !===============================================================================
 
@@ -213,11 +215,25 @@ double precision, dimension(:), pointer :: viscl, visct, viscls
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cvar_s, cvara_s
 double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
 
+! Darcy arrays
+double precision, dimension(:), pointer :: permeability
+double precision, dimension(:,:), pointer :: tensor_permeability
+integer fid
+
 !===============================================================================
 
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
+
+if (idarcy.eq.1) then
+  if (darcy_anisotropic_permeability.eq.0) then
+    call field_get_val_s_by_name('permeability', permeability)
+  else
+    call field_get_id('permeability', fid)
+    call field_get_val_v(fid, tensor_permeability)
+  endif
+endif
 
 ! Allocate temporary arrays
 allocate(velipb(nfabor,3))
@@ -904,6 +920,7 @@ do ifac = 1, nfabor
   if (idften(ipr).eq.1) then
     hint = dt(iel)/distbf
     if (icavit.ge.0)  hint = hint/crom(iel)
+    if (idarcy.eq.1) hint = permeability(iel)/distbf
   else if (idften(ipr).eq.3) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
@@ -912,16 +929,27 @@ do ifac = 1, nfabor
     if (icavit.ge.0)  hint = hint/crom(iel)
   ! Symmetric tensor diffusivity
   elseif (idften(ipr).eq.6) then
-
-    visci(1,1) = dttens(1,iel)
-    visci(2,2) = dttens(2,iel)
-    visci(3,3) = dttens(3,iel)
-    visci(1,2) = dttens(4,iel)
-    visci(2,1) = dttens(4,iel)
-    visci(2,3) = dttens(5,iel)
-    visci(3,2) = dttens(5,iel)
-    visci(1,3) = dttens(6,iel)
-    visci(3,1) = dttens(6,iel)
+    if (idarcy.eq.0) then
+      visci(1,1) = dttens(1,iel)
+      visci(2,2) = dttens(2,iel)
+      visci(3,3) = dttens(3,iel)
+      visci(1,2) = dttens(4,iel)
+      visci(2,1) = dttens(4,iel)
+      visci(2,3) = dttens(5,iel)
+      visci(3,2) = dttens(5,iel)
+      visci(1,3) = dttens(6,iel)
+      visci(3,1) = dttens(6,iel)
+    else
+      visci(1,1) = tensor_permeability(1,iel)
+      visci(2,2) = tensor_permeability(2,iel)
+      visci(3,3) = tensor_permeability(3,iel)
+      visci(1,2) = tensor_permeability(4,iel)
+      visci(2,1) = tensor_permeability(4,iel)
+      visci(2,3) = tensor_permeability(5,iel)
+      visci(3,2) = tensor_permeability(5,iel)
+      visci(1,3) = tensor_permeability(6,iel)
+      visci(3,1) = tensor_permeability(6,iel)
+    endif
 
     ! ||Ki.S||^2
     viscis = ( visci(1,1)*surfbo(1,ifac)       &
@@ -959,8 +987,8 @@ do ifac = 1, nfabor
 
   endif
 
-  ! On doit remodifier la valeur du  Dirichlet de pression de manière
-  !  à retrouver P*. Car dans typecl.f90 on a travaillé avec la pression
+  ! On doit remodifier la valeur du  Dirichlet de pression de maniere
+  !  a retrouver P*. Car dans typecl.f90 on a travaille avec la pression
   !  totale fournie par l'utilisateur :  Ptotale= P*+ rho.g.r
   ! En compressible, on laisse rcodcl tel quel
 
@@ -1908,7 +1936,11 @@ if (nscal.ge.1) then
 
       ! Scalar diffusivity
       if (idften(ivar).eq.1) then
-        hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(ii))/distbf
+        if (idarcy.eq.0) then !FIXME
+          hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(ii))/distbf
+        else ! idarcy = 1
+          hint = rkl/distbf
+        endif
 
       ! Symmetric tensor diffusivity
       elseif (idften(ivar).eq.6) then
@@ -2012,7 +2044,7 @@ if (nscal.ge.1) then
         !       lorsque la variable transportee est l'energie
         !         ISCSTH(II).EQ.3 :
         !         on procede comme pour l'enthalpie avec CV au lieu de CP
-        !         (rq : il n'y a pas d'hypothèse, sf en non orthogonal :
+        !         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
         !               le flux est le bon et le coef d'echange aussi)
 
         !      De meme plus bas et de meme dans clptur.

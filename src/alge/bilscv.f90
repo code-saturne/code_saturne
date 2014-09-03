@@ -217,6 +217,7 @@ if (ivar.eq.0) then
   vcopt%imrgra = imrgra
   vcopt%imligr = imligp
   vcopt%ircflu = ircflp
+  vcopt%iwgrec = 0
   vcopt%thetav = thetap
   vcopt%blencv = blencp
   vcopt%epsilo = -1.d0

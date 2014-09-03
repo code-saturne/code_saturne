@@ -87,6 +87,7 @@ use ppcpfu
 use elincl
 use mesh
 use field
+use darcy_module
 use cs_f_interfaces
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
@@ -164,6 +165,14 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cpro_prtot
 
+! Darcy
+integer mbrom
+integer, allocatable, dimension(:) :: delay_id
+double precision, dimension(:), pointer :: cpro_delay, cpro_capacity, cpro_sat
+double precision, dimension(:), pointer :: cproa_delay, cproa_capacity
+double precision, dimension(:), pointer :: cproa_sat
+character*80     fname
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -197,7 +206,20 @@ interface
 
   end subroutine navstv
 
-  !=============================================================================
+  subroutine richards &
+  !================
+
+ (icvrge, dt)
+
+    use dimens, only: ndimfb
+    use mesh, only: nfabor
+
+    implicit none
+
+    integer  icvrge
+    double precision, pointer, dimension(:)   :: dt
+
+  end subroutine richards
 
 end interface
 
@@ -216,7 +238,6 @@ call field_get_n_fields(nfld)
 if (iwarni(iu).ge.1) then
   write(nfecra,1000)
 endif
-
 
 ipass = ipass + 1
 
@@ -259,6 +280,8 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================
 
+if (idarcy.eq.0) then
+
 ! On le fait sur 2 pas de temps, car souvent, le champ de flux de masse
 !   initial n'est pas a divergence nulle (CL incluses) et l'obtention
 !   d'un flux a divergence nulle coherent avec la contrainte stationnaire
@@ -267,24 +290,26 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 ! On ne le fait pas dans le cas de la prise en compte de la pression
 !   hydrostatique, ni dans le cas du compressible
 
-if( ntcabs.le.2 .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
-                .and. ippmod(icompf).lt.0                               &
-                .and. idilat .le.1                 ) then
+  if( ntcabs.le.2 .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
+                  .and. ippmod(icompf).lt.0                               &
+                  .and. idilat .le.1                 ) then
 
-  if(iwarni(ipr).ge.2) then
-    write(nfecra,2000) ntcabs
+    if(iwarni(ipr).ge.2) then
+      write(nfecra,2000) ntcabs
+    endif
+    call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+    xxp0   = xyzp0(1)
+    xyp0   = xyzp0(2)
+    xzp0   = xyzp0(3)
+    do iel = 1, ncel
+      cvar_pr(iel) = pred0
+      cpro_prtot(iel) = p0                                   &
+           + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
+           +       gy*(xyzcen(2,iel)-xyp0)                   &
+           +       gz*(xyzcen(3,iel)-xzp0) )
+    enddo
   endif
-  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
-  xxp0   = xyzp0(1)
-  xyp0   = xyzp0(2)
-  xzp0   = xyzp0(3)
-  do iel = 1, ncel
-    cvar_pr(iel) = pred0
-    cpro_prtot(iel) = p0                                        &
-         + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-         +       gy*(xyzcen(2,iel)-xyp0)                   &
-         +       gz*(xyzcen(3,iel)-xzp0) )
-  enddo
+
 endif
 
  2000 format(                                                           &
@@ -480,7 +505,7 @@ endif
 
 if (imobil.eq.1) then
 
-  ! --- En turbomachine on connaît la valeur exacte de la vitesse de maillage
+  ! --- En turbomachine on connait la valeur exacte de la vitesse de maillage
 
   omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
 
@@ -494,7 +519,7 @@ if (imobil.eq.1) then
     enddo
   enddo
 
-  ! On modifie la géométrie en fonction de la géométrie initiale
+  ! On modifie la geometrie en fonction de la geometrie initiale
 
   do inod = 1, nnod
     do ii = 1, 3
@@ -630,6 +655,40 @@ if (nftcdt.gt.0) then
 
 endif
 
+if (idarcy.eq.1) then
+
+  if (nscal.gt.0) then
+    allocate(delay_id(nscal))
+  endif
+
+  do ii = 1, nscal
+
+    call field_get_name(ivarfl(isca(ii)), fname)
+    call field_get_id(trim(fname)//'_delay', delay_id(ii))
+
+  enddo
+
+  ! Index of the corresponding field
+  call field_get_val_prev_s_by_name('capacity', cproa_capacity)
+  call field_get_val_prev_s_by_name('saturation', cproa_sat)
+  call field_get_val_s_by_name('capacity', cpro_capacity)
+  call field_get_val_s_by_name('saturation', cpro_sat)
+
+  do iel = 1, ncel
+    cproa_capacity(iel) = cpro_capacity(iel)
+    cproa_sat(iel) = cpro_sat(iel)
+  enddo
+
+  do ii = 1, nscal
+    call field_get_val_prev_s(delay_id(ii), cproa_delay)
+    call field_get_val_s(delay_id(ii), cpro_delay)
+    do iel = 1, ncel
+      cproa_delay(iel) = cpro_delay(iel)
+    enddo
+  enddo
+
+endif
+
 !===============================================================================
 ! 8.  CALCUL DU NOMBRE DE COURANT ET DE FOURIER
 !     CALCUL DU PAS DE TEMPS SI VARIABLE
@@ -655,7 +714,7 @@ endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
 
-if (idften(ipr).eq.6) then
+if ((idften(ipr).eq.6).and.(idarcy.eq.0)) then
 
   call field_get_val_v(idtten, dttens)
 
@@ -809,6 +868,13 @@ endif
 icvrge = 0
 inslst = 0
 iterns = 1
+
+! Darcy : in case of a steady flow, we resolve Richards only once,
+! at the first time step.
+if (idarcy.eq.1) then
+  if ((darcy_unsteady.eq.0).and.(ntcabs.gt.1)) goto 100
+endif
+
 do while (iterns.le.nterup)
 
   call precli(nvar, nscal, icodcl, rcodcl)
@@ -897,7 +963,7 @@ do while (iterns.le.nterup)
 
   ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
   !       On s'occupe ici du couplage via les faces de bord, et de la
-  !       transformation de l'information reçue en condition limite.
+  !       transformation de l'information recue en condition limite.
 
   if (nbrcpl.gt.0) then
 
@@ -1009,7 +1075,7 @@ do while (iterns.le.nterup)
   endif
 
 
-  if(iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
+  if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
     call raycli &
     !==========
@@ -1282,32 +1348,60 @@ do while (iterns.le.nterup)
 ! 12. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE
 !===============================================================================
 
-    if(iwarni(iu).ge.1) then
+    if (iwarni(iu).ge.1) then
       write(nfecra,1040)
     endif
 
     ! Coupled solving of the velocity components
 
-    call navstv &
-    !==========
-  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
-    isostd ,                                                       &
-    dt     , rtp    , rtpa   , propce ,                            &
-    frcxt  , prhyd  ,                                              &
-    trava  , ximpav , uvwk   )
+    if (idarcy.eq.0) then
 
+      call navstv &
+      !==========
+      ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
+        isostd ,                                                       &
+        dt     , rtp    , rtpa   , propce ,                            &
+        frcxt  , prhyd  ,                                              &
+        trava  , ximpav , uvwk   )
+
+    else
+
+      call richards (icvrge, dt)
+
+      ! Darcy : update data specific to underground flow
+      mbrom = 0
+      call usphyv(nvar, nscal, mbrom, dt)
+
+      if (darcy_unsteady.eq.0) then
+
+        do iel = 1, ncel
+          cproa_capacity(iel) = cpro_capacity(iel)
+          cproa_sat(iel) = cpro_sat(iel)
+        enddo
+
+        do ii = 1, nscal
+          call field_get_val_prev_s(delay_id(ii), cproa_delay)
+          call field_get_val_s(delay_id(ii), cpro_delay)
+          do iel = 1, ncel
+            cproa_delay(iel) = cpro_delay(iel)
+          enddo
+        enddo
+
+      endif
+
+    endif
 
     !     Mise a jour de la pression si on utilise un couplage vitesse/pression
     !       par point fixe
     !     En parallele, l'echange est fait au debut de navstv.
-    if(nterup.gt.1) then
+    if (nterup.gt.1) then
       do iel = 1, ncel
         cvara_pr(iel) = cvar_pr(iel)
       enddo
     endif
 
     !     Si c'est la derniere iteration : INSLST = 1
-    if((icvrge.eq.1).or.(iterns.eq.nterup)) then
+    if ((icvrge.eq.1).or.(iterns.eq.nterup)) then
 
       ! Si on a besoin de refaire une nouvelle iteration pour SYRTHES,
       ! rayonnement, paroi thermique 1D...
@@ -1342,6 +1436,27 @@ do while (iterns.le.nterup)
 enddo
 
 100 continue
+
+! DARCY : the hydraulic head, identified with the pressure,
+! has been updated by the call to Richards.
+! As diffusion of scalars depends on hydraulic head in the
+! general case, in order to compute the exact
+! values of the boundary faces coefficients, we have to
+! call boundary conditions routine again.
+if (idarcy.eq.1) then
+
+  if ((darcy_unsteady.eq.1).or.(ntcabs.eq.1)) then
+
+    call condli &
+     ( nvar   , nscal  , iterns ,                                     &
+       isvhb  ,                                                       &
+       icodcl , isostd ,                                              &
+       dt     , rcodcl ,                                              &
+       visvdr , hbord  , theipb , frcxt  )
+
+  endif
+
+endif
 
 ! Free memory
 if (allocated(hbord)) deallocate(hbord)
@@ -1553,7 +1668,6 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
 
 endif
 
-
 if (nscal.ge.1) then
 
   if(iwarni(iu).ge.1) then
@@ -1569,6 +1683,9 @@ endif
 
 ! Free memory
 deallocate(icodcl, rcodcl)
+
+! Darcy
+if (allocated(delay_id)) deallocate(delay_id)
 
 !===============================================================================
 ! 16.  TRAITEMENT DU FLUX DE MASSE, DE LA VISCOSITE,

@@ -194,6 +194,7 @@ void CS_PROCF (diftnv, DIFTNV)
 
 void CS_PROCF (itrmas, ITRMAS)
 (
+ const cs_int_t  *const   f_id,
  const cs_int_t  *const   init,
  const cs_int_t  *const   inc,
  const cs_int_t  *const   imrgra,
@@ -259,6 +260,7 @@ void CS_PROCF (itrmav, ITRMAV)
 
 void CS_PROCF (itrgrp, ITRGRP)
 (
+ const cs_int_t  *const   f_id,
  const cs_int_t  *const   init,
  const cs_int_t  *const   inc,
  const cs_int_t  *const   imrgra,
@@ -705,6 +707,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
  *             - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
  * \f]
  *
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
@@ -756,7 +759,8 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_diffusion_potential(const cs_mesh_t          *m,
+cs_face_diffusion_potential(const int                 f_id,
+                            const cs_mesh_t          *m,
                             cs_mesh_quantities_t     *fvq,
                             int                       init,
                             int                       inc,
@@ -891,6 +895,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
  *             - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
  * \f]
  *
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
@@ -941,7 +946,8 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_diffusion_potential(const cs_mesh_t          *m,
+cs_diffusion_potential(const int                 f_id,
+                       const cs_mesh_t          *m,
                        cs_mesh_quantities_t     *fvq,
                        int                       init,
                        int                       inc,

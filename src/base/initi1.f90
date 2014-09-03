@@ -94,9 +94,6 @@ call iniusi
 call ppini1
 !==========
 
-call usipes(nmodpp)
-!==========
-
 ttsuit = -1.d0
 wtsuit = -1.d0
 
@@ -139,6 +136,9 @@ call modini
 !===============================================================================
 
 call fldini
+!==========
+
+call usipes(nmodpp)
 !==========
 
 call gui_postprocess_fields

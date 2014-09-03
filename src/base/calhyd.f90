@@ -108,7 +108,7 @@ integer          idiffp, iconvp, ndircp
 integer          nitmap, imgrp , ncymap, nitmgp
 integer          nagmax, npstmg
 integer          ibsize, iesize
-integer          imucpp
+integer          imucpp, f_id0
 
 double precision residu, rnorm , rnrmf , rnrmdf
 double precision epsrgp, climgp, extrap, epsilp
@@ -196,6 +196,8 @@ if ( mod(ntcabs,ntlist).eq.0 .or. iwarni(iu) .ge.0 )           &
 #endif
 
 indhyd = 1
+
+f_id0 = -1
 
 !===============================================================================
 ! 2.  PREPARATION DE LA MATRICE DU SYSTEME A RESOUDRE
@@ -386,15 +388,15 @@ do isweep = 1, nswmpr
 
     call itrgrp &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
-   iwarnp ,                                                       &
-   epsrgp , climgp , extrap ,                                     &
-   dfext  ,                                                       &
-   phydr  ,                                                       &
-   coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
-   viscf  , viscb  ,                                              &
-   w10         , w10         , w10         ,                      &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+   iwarnp ,                                                                    &
+   epsrgp , climgp , extrap ,                                                  &
+   dfext  ,                                                                    &
+   phydr  ,                                                                    &
+   coefap , coefbp ,                                                           &
+   cofafp , cofbfp ,                                                           &
+   viscf  , viscb  ,                                                           &
+   w10         , w10         , w10         ,                                   &
    smbr   )
 
   endif
