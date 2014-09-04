@@ -5,6 +5,10 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix the boundary conditions coefficients for the second pressure correction in
+  the fire algorithm (introduced by the fix of the boundary conditions
+  coefficients for the first pressure correction).
+
 - Fix for fire algorithm in the computation of the scalar diffusion terms
   (introduced by the boundary convective flux option creation and the
   deployement of the var_cal_opt structure). 
