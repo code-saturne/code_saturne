@@ -5,9 +5,9 @@ Release 3.2.5 (unreleased)
 Bug fixes:
 ----------
 
-- Fix the boundary conditions coefficients for the second pressure correction in the
-  fire algorithm (introduced by the fix of the boundary conditions coefficients for
-  the first pressure correction).
+- Fix the boundary conditions coefficients for the second pressure correction in
+  the fire algorithm (introduced by the fix of the boundary conditions
+  coefficients for the first pressure correction).
 
 - Fix size of a string allocation in build of the indirection between GUI
   numbering and solver one for the electrical model.
