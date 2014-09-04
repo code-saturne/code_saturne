@@ -1894,6 +1894,8 @@ if (idilat.eq.4) then
 
   ! Allocate temporary arrays
   allocate(dpvar(ncelet))
+  allocate(coefap(ndimfb), cofafp(ndimfb))
+  allocate(coefbp(ndimfb), cofbfp(ndimfb))
   allocate(coefar(3,ndimfb), cofafr(3,ndimfb))
   allocate(coefbr(3,3,ndimfb), cofbfr(3,3,ndimfb))
 
@@ -1912,8 +1914,8 @@ if (idilat.eq.4) then
   !------------------------------------
 
   do ifac = 1, nfabor
-    coefa_dp(ifac) = brom(ifac)
-    coefb_dp(ifac) = 0.d0
+    coefap(ifac) = brom(ifac)
+    coefbp(ifac) = 0.d0
   enddo
 
   call grdcel &
@@ -1922,7 +1924,7 @@ if (idilat.eq.4) then
    iwarnp , nfecra ,                                              &
    epsrgp , climgp , extrap ,                                     &
    crom   ,                                                       &
-   coefa_dp        , coefb_dp        ,                            &
+   coefap , coefbp ,                                              &
    gradp  )
 
   ! --- dt/rho * grad rho
@@ -2034,8 +2036,8 @@ if (idilat.eq.4) then
 
   ! --- Boundary condition for the pressure increment
   do ifac = 1, nfabor
-   coefa_dp(ifac) = 0.d0
-   coefaf_dp(ifac) = 0.d0
+   coefap(ifac) = 0.d0
+   cofafp(ifac) = 0.d0
   enddo
 
   ! --- Convective source term
@@ -2073,7 +2075,7 @@ if (idilat.eq.4) then
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    rtp(1,ipr)      , rtp(1,ipr)      ,                            &
-   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
+   coefap , coefb_p, cofafp , coefbf_p ,                          &
    velflx , velflb , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
@@ -2132,7 +2134,7 @@ if (idilat.eq.4) then
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
      drtp   , drtp   ,                                              &
-     coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
+     coefap , coefb_p, cofafp , coefbf_p ,                          &
      velflx , velflb ,                                              &
      viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
      weighf , weighb ,                                              &
@@ -2168,7 +2170,7 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    drtp   ,                                                       &
-   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
+   coefap , coefb_p, cofafp , coefbf_p ,                          &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -2186,7 +2188,7 @@ if (idilat.eq.4) then
    epsrgp , climgp , extrap ,                                     &
    dfrcxt ,                                                       &
    dpvar  ,                                                       &
-   coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
+   coefap , coefb_p, cofafp , coefbf_p ,                          &
    viscf  , viscb  ,                                              &
    dt     , dt     , dt     ,                                     &
    imasfl , bmasfl )
@@ -2200,7 +2202,7 @@ if (idilat.eq.4) then
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      drtp   ,                                                       &
-     coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
+     coefap , coefb_p, cofafp , coefbf_p ,                          &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
@@ -2219,7 +2221,7 @@ if (idilat.eq.4) then
      epsrgp , climgp , extrap ,                                     &
      dfrcxt ,                                                       &
      dpvar  ,                                                       &
-     coefa_dp , coefb_p       , coefaf_dp       , coefbf_p ,        &
+     coefap , coefb_p, cofafp , coefbf_p ,                          &
      viscf  , viscb  ,                                              &
      tpucou ,                                                       &
      weighf , weighb ,                                              &
@@ -2229,6 +2231,8 @@ if (idilat.eq.4) then
 
   ! Free memory
   deallocate(dpvar)
+  deallocate(coefap, coefbp)
+  deallocate(cofafp, cofbfp)
   deallocate(coefar, coefbr)
   deallocate(cofafr, cofbfr)
   deallocate(velflx, velflb)
