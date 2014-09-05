@@ -244,8 +244,7 @@ cs_sles_default_setup(void)
                               _poly_degree_default, _n_max_iter_default);
           }
           else if (var_cal_opt.idiff > 0) {
-            cs_sles_it_define(f_id, NULL, CS_SLES_PCG,
-                              _poly_degree_default, _n_max_iter_default);
+            cs_multigrid_define(f_id, NULL);
           }
 
         }
