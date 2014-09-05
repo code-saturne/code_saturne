@@ -1794,7 +1794,7 @@ contains
     eb_size(4) = iesize*iesize
 
     cvg = cs_sles_solve_native(f_id, c_name, c_sym, db_size, eb_size,         &
-                               dam, xam, rotation_mode, rnorm, epsilp,        &
+                               dam, xam, rotation_mode, epsilp, rnorm,        &
                                niter, residue, rhs, vx)
 
     return
