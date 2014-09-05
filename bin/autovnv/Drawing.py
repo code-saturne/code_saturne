@@ -487,7 +487,7 @@ class Plotter(object):
                                          d, "monitoring", file_name)
 
                         if not os.path.isfile(f):
-                            raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
+                            raise ValueError, "\n\nThis file does not exist: %s\n (call with path: %s)\n" % file_name % f
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)
