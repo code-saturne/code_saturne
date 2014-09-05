@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Unify handling of linear solvers, so as to allow finer user control, and
+  enable future additions of solver options and user-defined or external solvers.
+
 - Add drift modelling for coal combustion, and clean up the module:
 
   - Now, the enthalpy of the continuous phase (gas phase, h1) is transported

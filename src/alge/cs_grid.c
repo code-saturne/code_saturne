@@ -4785,16 +4785,17 @@ cs_grid_log_merge_options(void)
 {
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
-    bft_printf(_("\n"
-                 "  Multigrid rank merge parameters:\n"
-                 "    merge rank stride:                  %d\n"
-                 "    mean  coarse cells merge threshold: %d\n"
-                 "    total coarse cells merge threshold: %llu\n"
-                 "    minimum active ranks:               %d\n"),
-               _grid_merge_stride,
-               (int)_grid_merge_mean_threshold,
-               (unsigned long long)_grid_merge_glob_threshold,
-               _grid_merge_min_ranks);
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "Multigrid rank merge parameters:\n"
+                    "  merge rank stride:                  %d\n"
+                    "  mean  coarse cells merge threshold: %d\n"
+                    "  total coarse cells merge threshold: %llu\n"
+                    "  minimum active ranks:               %d\n"),
+                  _grid_merge_stride,
+                  (int)_grid_merge_mean_threshold,
+                  (unsigned long long)_grid_merge_glob_threshold,
+                  _grid_merge_min_ranks);
 #endif
 }
 

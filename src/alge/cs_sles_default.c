@@ -257,6 +257,9 @@ cs_sles_default_setup(void)
 
   /* Logging */
 
+  cs_log_printf(CS_LOG_SETUP, "\n");
+  cs_log_separator(CS_LOG_SETUP);
+
   if (cs_multigrid_needed() && cs_glob_n_ranks > 1)
     cs_grid_log_merge_options();
 
