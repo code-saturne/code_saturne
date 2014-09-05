@@ -158,6 +158,7 @@ class Plot(object):
         j = 0
 
         for line in self.f.readlines():
+            line = line.lstrip()
             if line[0] != '#' and line != "\n":
                 j += 1
                 if xcol:
@@ -178,6 +179,7 @@ class Plot(object):
         elif len(errorbar) == 2:
             error = [ [], [] ]
             for line in self.f.readlines():
+                line = line.lstrip()
                 if line[0] != '#' and line != "\n":
                     error[0].append(float(split(line)[errorbar[0]-1]))
                     error[1].append(float(split(line)[errorbar[1]-1]))
@@ -186,6 +188,7 @@ class Plot(object):
         elif len(errorbar) == 1:
             error = []
             for line in self.f.readlines():
+                line = line.lstrip()
                 if line[0] != '#' and line != "\n":
                     error.append(float(split(line)[errorbar[0]-1]))
             return error
@@ -215,6 +218,7 @@ class Probes(object):
         f = open(file_name, 'r')
 
         for line in f.readlines():
+            line = line.lstrip()
             if line[0] != '#' and line != "\n":
                 self.xspan.append(float(split(line)[xcol - 1]))
                 self.yspan.append(float(split(line)[ycol - 1]))
@@ -413,6 +417,7 @@ class Plotter(object):
         nbr = 0
         f = open(file_name, 'r')
         for line in f.readlines():
+            line = line.lstrip()
             if line[0] != '#' and line != "\n":
                 nbr = len(split(line))
                 break
