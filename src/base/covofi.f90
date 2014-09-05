@@ -64,10 +64,8 @@
 !> \param[in]     spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{cond}^n \f$)
-!> \param[in]     viscf         visc*surface/dist aux faces internes
-!> \param[in]     viscb         visc*surface/dist aux faces de bord
-!> \param[in]     smbrs         tableau de travail
-!> \param[in]     rovsdt        tableau de travail
+!> \param[in]     viscf         visc*surface/dist at internal faces
+!> \param[in]     viscb         visc*surface/dist at boundary faces
 !_______________________________________________________________________________
 
 subroutine covofi &
@@ -76,8 +74,7 @@ subroutine covofi &
    icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dt     , rtp    , rtpa   , propce , tslagr ,                   &
    ckupdc , smacel , spcond ,                                     &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt )
+   viscf  , viscb  )
 
 !===============================================================================
 
@@ -130,8 +127,6 @@ double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision spcond(nfbpcd,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision smbrs(ncelet)
-double precision rovsdt(ncelet)
 
 ! Local variables
 
@@ -165,7 +160,7 @@ double precision temp, idifftp
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:) :: w1, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
@@ -229,6 +224,7 @@ endif
 ! Allocate temporary arrays
 allocate(w1(ncelet))
 allocate(dpvar(ncelet))
+allocate(smbrs(ncelet), rovsdt(ncelet))
 
 if (idarcy.eq.1) then
   allocate(diverg(ncelet))
@@ -1062,6 +1058,7 @@ endif
 
 ! Free memory
 deallocate(w1)
+deallocate(smbrs, rovsdt)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(weighf)) deallocate(weighf, weighb)
 deallocate(dpvar)

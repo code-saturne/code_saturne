@@ -87,7 +87,6 @@ integer          ispecf
 
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
-double precision, allocatable, dimension(:) :: smbrs, rovsdt
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -104,7 +103,6 @@ save             ipass
 ! Allocate temporary arrays for the species resolution
 allocate(dtr(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
-allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ipass = ipass + 1
 
@@ -234,8 +232,7 @@ if (nscapp.gt.0) then
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel ,                                              &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt )
+   viscf  , viscb  )
 
       endif
 
@@ -292,8 +289,7 @@ if (nscapp.gt.0) then
    icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dtr    , rtp    , rtpa   , propce , tslagr ,                   &
    ckupdc , smacel , spcond ,                                     &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt )
+   viscf  , viscb  )
 
 
 ! ---> Versions Electriques
@@ -450,8 +446,7 @@ if (nscaus.gt.0) then
    icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
    dtr    , rtp    , rtpa   , propce , tslagr ,                   &
    ckupdc , smacel , spcond ,                                     &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt )
+   viscf  , viscb  )
 
 
 ! ---> Fin de la Boucle sur les scalaires utilisateurs.
@@ -473,7 +468,6 @@ endif
 ! Free memory
 deallocate(dtr)
 deallocate(viscf, viscb)
-deallocate(smbrs, rovsdt)
 
 !===============================================================================
 ! 4.  FORMATS

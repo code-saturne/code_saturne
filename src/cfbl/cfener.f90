@@ -20,58 +20,46 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cfener &
-!================
+!> \file cfener.f90
+!> \brief This subroutine performs the solving of the convection/diffusion
+!> equation (with eventual source terms) for total energy over a time step. It
+!> the third step of the compressible algorithm at each time iteration.
+!>
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     iscal         scalar number
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        type of mass source term for the variables
+!> \param[in]     dt            time step (per cell)
+!> \param[in,out] rtp, rtpa     calculated variables at cell centers
+!> \param[in]                    (at current and previous time steps)
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        variable value associated to the mass source
+!> \param[in]                    term (for ivar=ipr, smacel is the mass flux
+!> \param[in]                    \f$ \Gamma^n \f$)
+!> \param[in]     viscf         visc*surface/dist at internal faces
+!> \param[in]     viscb         visc*surface/dist at boundary faces
+!_______________________________________________________________________________
+
+subroutine cfener &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , rtp    , rtpa   , propce ,                            &
    ckupdc , smacel ,                                              &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt )
+   viscf  , viscb  )
 
-!===============================================================================
-! FONCTION :
-! ----------
-
-! SOLVING OF A CONVECTION-DIFFUSION EQUATION WITH SOURCE TERMS
-!   FOR TOTAL ENERGY ON ONE TIME-STEP
-!   (COMPRESSIBLE ALGORITHM IN P,U,E)
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! iscal            ! i  ! <-- ! scalar number                                  !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ckupdc           ! tr ! <-- ! work array for the head loss                   !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! variable value associated to the mass source   !
-! (ncesmp,*   )    !    !     ! term (for ivar=ipr, smacel is the mass flux    !
-!                  !    !     ! \f$ \Gamma^n \f$)                              !
-! viscf(nfac)      ! tr ! --- ! visc*surface/dist at internal faces            !
-! viscb(nfabor     ! tr ! --- ! visc*surface/dist at boundary faces            !
-! smbrs(ncelet     ! tr ! --- ! work array for second member                   !
-! rovsdt(ncelet    ! tr ! --- ! work array for unsteady term                   !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -110,8 +98,6 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
-double precision smbrs(ncelet)
-double precision rovsdt(ncelet)
 
 ! Local variables
 
@@ -139,7 +125,7 @@ double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: wb
-double precision, allocatable, dimension(:) :: dpvar
+double precision, allocatable, dimension(:) :: dpvar, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -167,6 +153,7 @@ call field_get_val_v(ivarfl(iu), vel)
 
 ! Allocate a temporary array
 allocate(wb(nfabor))
+allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
 allocate(grad(ncelet,3))
@@ -709,6 +696,7 @@ endif
 
 ! Free memory
 deallocate(wb)
+deallocate(smbrs, rovsdt)
 deallocate(grad)
 deallocate(w1)
 deallocate(w4, w5, w6)
