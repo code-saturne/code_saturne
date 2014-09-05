@@ -94,7 +94,6 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_smoother.h"
-#include "cs_multigrid.h"
 #include "cs_opts.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
@@ -104,6 +103,7 @@
 #include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_sles.h"
+#include "cs_sles_default.h"
 #include "cs_sat_coupling.h"
 #include "cs_syr_coupling.h"
 #include "cs_system_info.h"
@@ -219,6 +219,8 @@ cs_run(void)
   cs_field_define_keys_base();
   cs_parameters_define_field_keys();
 
+  cs_sles_initialize();
+
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
 
@@ -273,6 +275,8 @@ cs_run(void)
   cs_field_log_all_key_vals(true);
 
   cs_time_moment_log_setup();
+
+  cs_sles_default_setup();
 
   cs_log_printf_flush(CS_LOG_SETUP);
 
@@ -333,8 +337,6 @@ cs_run(void)
       cs_user_matrix_tuning();
 
       cs_matrix_initialize();
-      cs_sles_initialize();
-      cs_multigrid_initialize();
 
       /* Update Fortran mesh sizes and quantities */
 
@@ -365,8 +367,8 @@ cs_run(void)
 
       /* Finalize sparse linear systems resolution */
 
-      cs_multigrid_finalize();
-      cs_sles_finalize();
+      cs_sles_default_finalize();
+
       cs_matrix_finalize();
 
     }

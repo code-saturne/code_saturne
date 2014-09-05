@@ -65,6 +65,8 @@
 #include "mei_math_util.h"
 
 #include "cs_base.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_file.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
@@ -72,8 +74,7 @@
 #include "cs_gui_specific_physics.h"
 #include "cs_gui_mobile_mesh.h"
 #include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
+#include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_prototypes.h"
@@ -82,6 +83,8 @@
 #include "cs_physical_properties.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
+#include "cs_sles.h"
+#include "cs_sles_it.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -2705,16 +2708,18 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
                                    int *isstpc,
                                    int *ircflu,
                                 double *cdtvar,
-                                   int *nitmax,
                                 double *epsilo,
-                                   int *iresol,
-                                   int *imgr,
                                    int *nswrsm)
 {
+  bool multigrid = false;
+  cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
+
   double tmp;
+  int n_max_iter;
   char* algo_choice = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   int var_key_id = cs_field_key_id("variable_id");
+  const int n_max_iter_default = 10000;
   cs_var_cal_opt_t var_cal_opt;
 
   /* 1) variables from velocity_pressure and turbulence */
@@ -2724,33 +2729,43 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
   int j = cs_field_get_key_int(c_pres, var_key_id) -1;
 
   cs_gui_variable_value(c_pres->name, "solver_precision", &epsilo[j]);
-  tmp = (double) nitmax[j];
+  tmp = (double) n_max_iter_default;
   cs_gui_variable_value(c_pres->name, "max_iter_number", &tmp);
-  nitmax[j] = (int) tmp;
-
-  imgr[j] = 0;
+  n_max_iter = (int) tmp;
 
   algo_choice = cs_gui_variable_choice(c_pres->name, "solver_choice");
   if (cs_gui_strcmp(algo_choice, "multigrid"))
-  {
-    iresol[j] = 0;
-    imgr[j] = 1;
-  }
+    multigrid = true;
   else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-    iresol[j] = 0;
+    sles_it_type = CS_SLES_PCG;
   else if (cs_gui_strcmp(algo_choice, "jacobi"))
-    iresol[j] = 1;
+    sles_it_type = CS_SLES_JACOBI;
   else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-    iresol[j] = 2;
+    sles_it_type = CS_SLES_BICGSTAB;
   else if (cs_gui_strcmp(algo_choice, "gmres"))
-    iresol[j] = 3;
-  else if (cs_gui_strcmp(algo_choice, "automatic"))
-    iresol[j] = -1;
-  else //default value
-  {
-    iresol[j] = 0;
-    imgr[j] = 1;
+    sles_it_type = CS_SLES_GMRES;
+  /* if choice is "automatic", delay choice to cs_sles_default;
+     otherwise, if no choice is found, default to multigrid */
+  else if (! cs_gui_strcmp(algo_choice, "automatic"))
+    multigrid = true;
+
+  if (sles_it_type < CS_SLES_N_IT_TYPES) {
+    int poly_degree = 0;
+    cs_sles_it_define(c_pres->id, NULL, sles_it_type,
+                      poly_degree, n_max_iter);
   }
+  else if (multigrid == true) {
+    cs_multigrid_t *mg = cs_multigrid_define(c_pres->id, NULL);
+    cs_multigrid_set_solver_options(mg,
+                                    CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG_SR,
+                                    100, /* n max cycles */
+                                    10,  /* n max iter for descent (default 10) */
+                                    10,  /* n max iter for ascent (default 10) */
+                                    n_max_iter,
+                                    0, 0, 0,  /* precond degree */
+                                    1, 1, 1); /* precision multiplier */
+  }
+
   tmp = (double) nswrsm[j];
   cs_gui_variable_value(c_pres->name, "rhs_reconstruction", &tmp);
   nswrsm[j] = (int) tmp;
@@ -2758,7 +2773,6 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
 
   // Set Field calculation options in the field structure
   var_cal_opt.epsilo = epsilo[j];
-  // TODO add nitmax, imgr, iresol
   var_cal_opt.nswrsm = nswrsm[j];
   cs_field_set_key_struct(c_pres, key_cal_opt_id, &var_cal_opt);
 
@@ -2773,29 +2787,38 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
       cs_gui_variable_value(f->name, "blending_factor", &blencv[j]);
       cs_gui_variable_value(f->name, "solver_precision", &epsilo[j]);
 
-      imgr[j] = 0;
+      tmp = (double) n_max_iter_default;
+      cs_gui_variable_value(f->name, "max_iter_number", &tmp);
+      n_max_iter = (int) tmp;
+
+      multigrid = false;
+      sles_it_type = CS_SLES_N_IT_TYPES;
 
       algo_choice = cs_gui_variable_choice(f->name, "solver_choice");
 
       if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-          iresol[j] = 0;
+        sles_it_type = CS_SLES_PCG;
       else if (cs_gui_strcmp(algo_choice, "jacobi"))
-          iresol[j] = 1;
+        sles_it_type = CS_SLES_JACOBI;
       else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-          iresol[j] = 2;
+        sles_it_type = CS_SLES_BICGSTAB;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
-          iresol[j] = 3;
-      else if (cs_gui_strcmp(algo_choice, "automatic"))
-          iresol[j] = -1;
-      else //default value
-          iresol[j] = -1;
+        sles_it_type = CS_SLES_GMRES;
+      /* If choice is "automatic" or unspecified, delay
+         choice to cs_sles_default, so do nothing here */
+
+      if (sles_it_type < CS_SLES_N_IT_TYPES) {
+        int poly_degree = 0;
+        cs_sles_it_define(f->id, NULL, sles_it_type,
+                          poly_degree, n_max_iter);
+      }
+      else if (multigrid == true) {
+        cs_multigrid_define(f->id, NULL);
+      }
 
       // only for nscaus and model scalar
       cs_gui_variable_value(f->name, "time_step_factor", &cdtvar[j]);
 
-      tmp = (double) nitmax[j];
-      cs_gui_variable_value(f->name, "max_iter_number", &tmp);
-      nitmax[j] = (int) tmp;
       cs_gui_variable_attribute(f->name, "order_scheme", &ischcv[j]);
       cs_gui_variable_attribute(f->name, "slope_test", &isstpc[j]);
       cs_gui_variable_attribute(f->name, "flux_reconstruction", &ircflu[j]);

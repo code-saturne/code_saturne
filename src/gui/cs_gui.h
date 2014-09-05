@@ -255,10 +255,7 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
                                    int *isstpc,
                                    int *ircflu,
                                 double *cdtvar,
-                                   int *nitmax,
                                 double *epsilo,
-                                   int *iresol,
-                                   int *imgrpr,
                                    int *nswrsm);
 
 /*----------------------------------------------------------------------------

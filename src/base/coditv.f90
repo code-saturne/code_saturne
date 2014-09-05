@@ -83,13 +83,7 @@
 !> \param[in]     idiffp        indicator
 !>                               - 1 diffusion,
 !>                               - 0 otherwise
-!> \param[in]     ireslp        indicator
-!>                               - 0 conjugate gradient
-!>                               - 1 jacobi
-!>                               - 2 bi-cgstab
 !> \param[in]     ndircp        indicator (0 if the diagonal is stepped aside)
-!> \param[in]     nitmap        maximum number of iteration to solve
-!>                               the iterative process
 !> \param[in]     imrgra        indicateur
 !>                               - 0 iterative gradient
 !>                               - 1 least squares gradient
@@ -126,11 +120,6 @@
 !>                               - 2 dynamic relaxation depending on
 !>                                 \f$ \delta \vect{\varia}^k \f$  and
 !>                                 \f$ \delta \vect{\varia}^{k-1} \f$
-!> \param[in]     imgrp         indicator
-!>                               - 0 no multi-grid
-!>                               - 1 otherwise
-!> \param[in]     ncymxp        max. number of multigrid cycles
-!> \param[in]     nitmfp        number of equivalent iterations on fine mesh
 !> \param[in]     iwarnp        verbosity
 !> \param[in]     blencp        fraction of upwinding
 !> \param[in]     epsilp        precision pour resol iter
@@ -185,10 +174,10 @@
 !_______________________________________________________________________________
 
 subroutine coditv &
- ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    pvara  , pvark  ,                                              &
@@ -212,8 +201,6 @@ use cstnum
 use entsor
 use parall
 use period
-use mltgrd
-use optcal, only: rlxp1
 use mesh
 use field
 use cs_f_interfaces
@@ -226,11 +213,9 @@ implicit none
 ! Arguments
 
 integer          idtvar , ivar   , iconvp , idiffp , ndircp
-integer          nitmap
 integer          imrgra , nswrsp , nswrgp , imligp , ircflp
-integer          ischcp , isstpp , iescap , imgrp
+integer          ischcp , isstpp , iescap
 integer          idftnp , iswdyp , icvflb
-integer          ncymxp , nitmfp
 integer          iwarnp
 integer          ivisep
 
@@ -258,11 +243,10 @@ double precision eswork(3,ncelet)
 
 character(len=80) :: chaine
 character(len=16) :: cnom
-integer          isym,ireslp,ireslq,ipol,isqrt
-integer          inc,isweep,niterf,iel,icycle,nswmod
+integer          f_id,isym,isqrt
+integer          inc,isweep,niterf,iel,nswmod
 integer          iinvpe
 integer          idtva0
-integer          nagmax, npstmg
 integer          isou , jsou
 integer          ibsize, iesize
 integer          lvar, insqrt
@@ -300,8 +284,10 @@ endif
 
 ! Name
 if (ivar.gt.0) then
-  call field_get_name(ivarfl(ivar), chaine)
+  f_id = ivarfl(ivar)
+  call field_get_name(f_id, chaine)
 else
+  f_id = -1
   chaine = nomva0
 endif
 cnom= chaine(1:16)
@@ -313,21 +299,6 @@ if (iconvp.gt.0) isym  = 2
 ! be carefull here, xam is interleaved
 if (iesize.eq.1) allocate(xam(isym,nfac))
 if (iesize.eq.3) allocate(xam(3*3*isym,nfac))
-! METHODE DE RESOLUTION ET DEGRE DU PRECOND DE NEUMANN
-!     0 SI CHOIX AUTOMATIQUE GRADCO OU BICGSTAB
-!     0 SI CHOIX AUTOMATIQUE JACOBI
-!     DONNE PAR IRESLP/1000 SI NON AUTOMATIQUE
-if (ireslp.eq.-1) then
-  ireslq = 0
-  ipol   = 0
-  if (iconvp.gt.0) then
-    ireslq = 1
-    ipol   = 0
-  endif
-else
-  ireslq = mod(ireslp+10000,1000)
-  ipol   = (ireslp-ireslq)/1000
-endif
 
 ! PRISE DE SQRT DANS PS
 isqrt = 1
@@ -371,28 +342,6 @@ if (idtvar.lt.0) then
       enddo
     enddo
   enddo
-endif
-
-!===============================================================================
-! 2. Preparation of the Algebraic Multigrid
-!===============================================================================
-
-if (imgrp.gt.0) then
-
-  ! --- Building of the mesh hierarchy
-
-  iwarnp = iwarni(ivar)
-  nagmax = nagmx0(ivar)
-  npstmg = ncpmgr(ivar)
-
-  call clmlga &
-  !==========
- ( cnom   , len(cnom) ,                                           &
-   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
-   ngrmax , ncegrm ,                                              &
-   rlxp1  ,                                                       &
-   dam    , xam    )
-
 endif
 
 !===============================================================================
@@ -576,14 +525,9 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
   ! Solver residual
   ressol = residu
 
-  call invers &
-  !==========
- ( cnom   , isym   , ibsize , iesize ,                            &
-   ipol   , ireslq , nitmap , imgrp  ,                            &
-   ncymxp , nitmfp ,                                              &
-   iwarnp , niterf , icycle , iinvpe ,                            &
-   epsilp , rnorm  , ressol ,                                     &
-   dam    , xam    , smbrp  , dpvar  )
+  call sles_solve_native(f_id, chaine,                                 &
+                         isym, ibsize, iesize, dam, xam, iinvpe,       &
+                         epsilp, rnorm, niterf, ressol, smbrp, dpvar)
 
   ! Dynamic relaxation of the system
   if (iswdyp.ge.1) then
@@ -846,12 +790,10 @@ if (iescap.gt.0) then
 endif
 
 !===============================================================================
-! 5. Suppression of the mesh hierarchy
+! 5. Free solver setup
 !===============================================================================
 
-if (imgrp.gt.0) then
-  call dsmlga(cnom, len(cnom))
-endif
+call sles_free_native(f_id, chaine)
 
 ! Free memory
 deallocate(dam, xam)

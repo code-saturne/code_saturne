@@ -79,12 +79,12 @@ use optcal
 use albase
 use parall
 use period
-use mltgrd
 use lagpar
 use lagran
 use cplsat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -104,16 +104,14 @@ double precision smacel(ncesmp,nvar)
 
 character(len=80) :: chaine
 integer          lchain
-integer          iccocg, inc   , init  , isym  , ipol  , isqrt
+integer          iccocg, inc   , init  , isym  , isqrt
 integer          ii, iel   , ifac
-integer          ireslp, nswmpr
-integer          isweep, niterf, icycle
+integer          nswmpr
+integer          isweep, niterf
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
-integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe
-integer          nagmax, npstmg
 integer          ibsize, iesize, iphydp
 integer          imucpp, f_id0
 double precision residu
@@ -168,18 +166,6 @@ isym  = 1
 ! Matrix block size
 ibsize = 1
 iesize = 1
-
-if (iresol(ipr).eq.-1) then
-  ireslp = 0
-  ipol   = 0
-  if (iconv(ipr).gt.0) then
-    ireslp = 1
-    ipol   = 0
-  endif
-else
-  ireslp = mod(iresol(ipr)+10000,1000)
-  ipol   = (iresol(ipr)-ireslp)/1000
-endif
 
 ! Boundary conditions on the potential (homogenous Neumann)
 do ifac = 1, nfabor
@@ -282,29 +268,7 @@ call matrix &
    rvoid  , dam    , xam    )
 
 !===============================================================================
-! 5. Preparation of the Algebraic Multigrid
-!===============================================================================
-
-if (imgr(ipr).gt.0) then
-
-  ! --- Building of the mesh hierarchy
-
-  iwarnp = iwarni(ipr)
-  nagmax = nagmx0(ipr)
-  npstmg = ncpmgr(ipr)
-
-  call clmlga &
-  !==========
- ( chaine(1:16) ,    lchain ,                                     &
-   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
-   ngrmax , ncegrm ,                                              &
-   rlxp1  ,                                                       &
-   dam    , xam    )
-
-endif
-
-!===============================================================================
-! 6. Solving (Loop over the non-orthogonalities)
+! 5. Solving (Loop over the non-orthogonalities)
 !===============================================================================
 
 ! --- Number of sweeps
@@ -338,25 +302,15 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     dpot(iel) = 0.d0
   enddo
 
-  nitmap = nitmax(ipr)
-  imgrp  = imgr(ipr)
-  ncymap = ncymax(ipr)
-  nitmgp = nitmgf(ipr)
-  iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
 
   ! The potential is a scalar => no problem for the periodicity of rotation
   ! (iinvpe=1)
   iinvpe = 1
 
-  call invers &
-  !==========
- ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
-   ipol   , ireslp , nitmap , imgrp  ,                            &
-   ncymap , nitmgp ,                                              &
-   iwarnp , niterf , icycle , iinvpe ,                            &
-   epsilp , rnorm  , residu ,                                     &
-   dam    , xam    , rhs   , dpot   )
+  call sles_solve_native(-1, chaine,                                &
+                         isym, ibsize, iesize, dam, xam, iinvpe,    &
+                         epsilp, rnorm, niterf, residu, rhs, dpot)
 
   ! Update the increment of potential
   if (idtvar.ge.0.and.isweep.le.nswmpr.and.residu.gt.tcrite) then
@@ -475,12 +429,10 @@ call itrmas &
    imasfl , bmasfl )
 
 !===============================================================================
-! 7. Suppression of the mesh hierarchy
+! 6. Free solver setup
 !===============================================================================
 
-if (imgr(ipr).gt.0) then
-  call dsmlga(chaine(1:16), lchain)
-endif
+call sles_free_native(-1, chaine)
 
 ! Free memory
 deallocate(dam, xam)

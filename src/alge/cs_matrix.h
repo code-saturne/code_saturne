@@ -251,6 +251,23 @@ const int *
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
+ * Return matrix extra-diagonal block sizes.
+ *
+ * Block sizes are defined by a array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to block sizes
+ *----------------------------------------------------------------------------*/
+
+const int *
+cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
  *
  * Block sizes are defined by an optional array of 4 values:
@@ -382,6 +399,19 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
                         cs_real_t          *restrict da);
 
 /*----------------------------------------------------------------------------
+ * Query matrix coefficients symmetry
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   true if coefficients are symmetric, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_is_symmetric(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
  * Get matrix diagonal values.
  *
  * In case of matrixes with block diagonal coefficients, a pointer to
@@ -396,6 +426,24 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
 
 const cs_real_t *
 cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Get pointer to matrix extra-diagonal values in "native" format
+ *
+ * This function currently only functions if the coefficients were mapped
+ * from native coefficients using cs_matrix_set_coefficients() or
+ * cs_matrix_set_coefficients_ni(). The pointer returned is the same as the
+ * one passed to that function.
+ *
+ * parameters:
+ *   matrix --> Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to matrix diagonal array
+ *----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x

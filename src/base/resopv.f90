@@ -115,7 +115,6 @@ use pointe, only: itypfb, b_head_loss, gamcav, dgdpca
 use albase
 use parall
 use period
-use mltgrd
 use lagpar
 use lagran
 use cplsat
@@ -158,22 +157,20 @@ double precision coefb_dp(ndimfb)
 
 character(len=80) :: chaine
 integer          lchain
-integer          iccocg, inc   , iprev, init  , isym  , ipol  , isqrt
+integer          iccocg, inc   , iprev, init  , isym  , isqrt
 integer          ii, iel   , ifac  , ifac0 , iel0
-integer          ireslp, nswmpr
-integer          isweep, niterf, icycle
+integer          nswmpr
+integer          isweep, niterf
 integer          iflmb0, ifcsor
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
-integer          nitmap, imgrp , ncymap, nitmgp
 integer          iinvpe, indhyd
 integer          itypfl
 integer          iesdep
-integer          nagmax, npstmg
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
-integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
+integer          iescap, ircflp, ischcp, isstpp, ivar
 integer          nswrsp
 integer          insqrt
 integer          imvisp
@@ -307,18 +304,6 @@ endif
 ! Matrix block size
 ibsize = 1
 iesize = 1
-
-if (iresol(ipr).eq.-1) then
-  ireslp = 0
-  ipol   = 0
-  if( iconv(ipr).gt.0 ) then
-    ireslp = 1
-    ipol   = 0
-  endif
-else
-  ireslp = mod(iresol(ipr)+10000,1000)
-  ipol   = (iresol(ipr)-ireslp)/1000
-endif
 
 isqrt = 1
 
@@ -1294,29 +1279,7 @@ if (arak.gt.0.d0) then
 endif
 
 !===============================================================================
-! 6. Preparation of the Algebraic Multigrid
-!===============================================================================
-
-if (imgr(ipr).gt.0) then
-
-  ! --- Building of the mesh hierarchy
-
-  iwarnp = iwarni(ipr)
-  nagmax = nagmx0(ipr)
-  npstmg = ncpmgr(ipr)
-
-  call clmlga &
-  !==========
- ( chaine(1:16) ,    lchain ,                                     &
-   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
-   ngrmax , ncegrm ,                                              &
-   rlxp1  ,                                                       &
-   dam    , xam    )
-
-endif
-
-!===============================================================================
-! 7. Solving (Loop over the non-orthogonalities)
+! 6. Solving (Loop over the non-orthogonalities)
 !===============================================================================
 
 ! --- Number of sweeps
@@ -1553,10 +1516,6 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
     enddo
   endif
 
-  nitmap = nitmax(ipr)
-  imgrp  = imgr  (ipr)
-  ncymap = ncymax(ipr)
-  nitmgp = nitmgf(ipr)
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
 
@@ -1567,14 +1526,9 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   ! Solver reisudal
   ressol = residu
 
-  call invers &
-  !==========
- ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
-   ipol   , ireslp , nitmap , imgrp  ,                            &
-   ncymap , nitmgp ,                                              &
-   iwarnp , niterf , icycle , iinvpe ,                            &
-   epsilp , rnormp , ressol ,                                     &
-   dam    , xam    , rhs    , drtp   )
+  call sles_solve_native(ivarfl(ipr), '',                            &
+                         isym, ibsize, iesize, dam, xam, iinvpe,     &
+                         epsilp, rnormp, niterf, ressol, rhs, drtp)
 
   ! Dynamic relaxation of the system
   !---------------------------------
@@ -1927,10 +1881,7 @@ endif
 ! 8. Suppression of the mesh hierarchy
 !===============================================================================
 
-if (imgr(ipr).gt.0) then
-  call dsmlga(chaine(1:16), lchain)
-  !==========
-endif
+call sles_free_native(ivarfl(ipr), '')
 
 !===============================================================================
 ! 9. Weakly compressible algorithm: semi analytic scheme
@@ -2146,11 +2097,8 @@ if (idilat.eq.4) then
   ! --- Solve the convection diffusion equation
 
   idiffp = 1
-  ireslp = 1
-  ipol   = 0
   ! To reinforce the diagonal
   ndircp = 0
-  nitmap = nitmax(ivar)
   nswrsp = nswrsm(ivar)
   nswrgp = nswrgr(ivar)
   imligp = imligr(ivar)
@@ -2161,9 +2109,6 @@ if (idilat.eq.4) then
   imucpp = 0
   idftnp = idften(ivar)
   iswdyp = iswdyn(ivar)
-  imgrp  = 0
-  ncymxp = ncymax(ivar)
-  nitmfp = nitmgf(ivar)
   iwarnp = iwarni(ivar)
   blencp = blencv(ivar)
   epsilp = epsilo(ivar)
@@ -2178,12 +2123,14 @@ if (idilat.eq.4) then
 
   ! --- Solve the convection diffusion equation
 
+  call sles_push(ivarfl(ipr), "Pr compress")
+
   call codits &
   !==========
-   ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+   ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
      imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-     imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+     iwarnp ,                                                       &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
      relaxp , thetap ,                                              &
      drtp   , drtp   ,                                              &
@@ -2194,6 +2141,8 @@ if (idilat.eq.4) then
      icvflb , ivoid  ,                                              &
      rovsdt , rhs    , drtp   , dpvar  ,                            &
      rvoid  , rvoid  )
+
+  call sles_pop(ivarfl(ipr))
 
   ! --- Update the increment of Pressure
 

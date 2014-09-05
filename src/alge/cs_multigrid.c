@@ -55,10 +55,13 @@
 #include "cs_halo.h"
 #include "cs_log.h"
 #include "cs_matrix.h"
+#include "cs_matrix_default.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_sles.h"
+#include "cs_sles_it.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -106,9 +109,22 @@ BEGIN_C_DECLS
 
 typedef struct _cs_multigrid_info_t {
 
-  char                *name;                /* System name */
-  cs_sles_type_t       type[3];             /* Descent/ascent smoother
+  /* Settings */
+
+  cs_sles_it_type_t    type[3];             /* Descent/ascent smoother
                                                and solver type */
+
+  int                  n_max_cycles;        /* Maximum allowed cycles */
+
+  int                  n_max_iter[3];       /* maximum iterations allowed
+                                               (descent/ascent/coarse) */
+  int                  poly_degree[3];      /* polynomial preconditioning degree
+                                               (descent/ascent/coarse) */
+
+  double               precision_mult[3];   /* solver precision multiplier
+                                               (descent/ascent/coarse) */
+
+  /* Logging */
 
   unsigned             n_calls[2];          /* Number of times grids built
                                                (0) or solved (1) */
@@ -168,45 +184,88 @@ typedef struct _cs_multigrid_level_info_t {
 /* Grid hierarchy */
 /*----------------*/
 
-typedef struct _cs_multigrid_t {
+typedef struct _cs_multigrid_setup_data_t {
 
-  int         n_levels;        /* Current number of grid levels */
-  int         n_levels_max;    /* Maximum number of grid levels */
+  /* Setup */
 
-  int         n_levels_post;   /* Current number of postprocessed levels */
-  int         post_cell_max;   /* If > 0, activates postprocessing of
-                                  coarsening, projecting coarse cell
-                                  numbers (modulo post_cell_max)
-                                  on the base grid */
+  unsigned        n_levels;           /* Current number of grid levels */
+  unsigned        n_levels_alloc;     /* Allocated number of grid levels */
 
-  cs_grid_t **grid_hierarchy;  /* Array of grid pointers */
+  cs_grid_t     **grid_hierarchy;     /* Array of grid pointers */
+  cs_sles_it_t  **sles_hierarchy;     /* Pointer to contexts for  associated
+                                         iterative solvers (i*2: descent, coarse;
+                                         i*2+1: ascent) */
 
-  int       **post_cell_num;   /* If post_cell_max > 0, array of
-                                  (n_levels - 1) arrays of projected
-                                  coarse cell numbers on the base grid */
+  /* Arrays used only for solving, but maintained until free,
+     so as to be usable by convergence error handler. */
 
-  int       **post_cell_rank;  /* If post_cell_max > 0 and grid merging
-                                  is active, array of (n_levels - 1) arrays
-                                  of projected coarse cell ranks on the
-                                  base grid */
+  double         exit_initial_residue;  /* Last level initial residue */
+  double         exit_residue;          /* Last residue */
+  int            exit_level;            /* Last level during solve */
+  int            exit_cycle_id;         /* Last cycle id during solve */
 
-  cs_multigrid_level_info_t  *lv_info;  /* Info for each level */
-  cs_multigrid_info_t         info;     /* Base multigrid info */
+  cs_real_t     *rhs_vx_buf;            /* Coarse grid "right hand sides"
+                                           and corrections buffer */
+  cs_real_t    **rhs_vx;                /* Coarse grid "right hand sides"
+                                           and corrections */
 
+} cs_multigrid_setup_data_t;
 
-} cs_multigrid_t;
+/* Grid hierarchy */
+/*----------------*/
+
+struct _cs_multigrid_t {
+
+  /* Settings */
+
+  int        aggregation_limit;  /* Maximum allowed fine cells per coarse cell */
+  int        coarsening_type;    /* Coarsening traversal type:
+                                    0: algebraic with natural face traversal;
+                                    1: algebraic with face traveral by criteria;
+                                    2: algebraic with Hilbert face traversal; */
+  int        n_levels_max;       /* Maximum number of grid levels */
+  cs_gnum_t  n_g_cells_min;      /* Global number of cells on coarse grids
+                                    under which no coarsening occurs */
+
+  int        verbosity;          /* verbosity level */
+
+  int        post_cell_max;      /* If > 0, activates postprocessing of
+                                    coarsening, projecting coarse cell
+                                    numbers (modulo post_cell_max)
+                                    on the base grid */
+
+  double     p0p1_relax;         /* p0/p1 relaxation_parameter */
+
+  /* Data for postprocessing callback */
+
+  int        n_levels_post;      /* Current number of postprocessed levels */
+
+  int      **post_cell_num;      /* If post_cell_max > 0, array of
+                                    (n_levels - 1) arrays of projected
+                                    coarse cell numbers on the base grid */
+
+  int      **post_cell_rank;     /* If post_cell_max > 0 and grid merging
+                                    is active, array of (n_levels - 1) arrays
+                                    of projected coarse cell ranks on the
+                                    base grid */
+  char      *post_name;          /* Name for postprocessing */
+
+  /* Options and maintained state (statistics) */
+
+  cs_multigrid_level_info_t  *lv_info;      /* Info for each level */
+  cs_multigrid_info_t         info;         /* Base multigrid info */
+
+  /* Data available between "setup" and "solve" states */
+
+  cs_multigrid_setup_data_t  *setup_data;   /* setup data */
+
+};
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
-static int cs_glob_multigrid_n_systems = 0;     /* Current number of systems */
-static int cs_glob_multigrid_n_max_systems = 0; /* Max. number of sytems for
-                                                   cs_glob_mgrid_systems. */
-
-/* System info array */
-
-static cs_multigrid_t **cs_glob_multigrid_systems = NULL;
+static unsigned  _multigrid_in_use = false; /* Used for logging */
 
 /*============================================================================
  * Private function definitions
@@ -221,17 +280,35 @@ static cs_multigrid_t **cs_glob_multigrid_systems = NULL;
  *----------------------------------------------------------------------------*/
 
 static void
-_multigrid_info_init(cs_multigrid_info_t *info,
-                     const char          *name)
+_multigrid_info_init(cs_multigrid_info_t *info)
 {
   int i;
 
-  BFT_MALLOC(info->name, strlen(name) + 1, char);
+  /* Options */
 
-  strcpy(info->name, name);
+  info->type[0] = CS_SLES_PCG;
+  info->type[1] = CS_SLES_PCG;
+  info->type[2] = (cs_glob_n_ranks > 1) ? CS_SLES_PCG_SR : CS_SLES_PCG;
 
-  for (i = 0; i < 3; i++)
-    info->type[i] = CS_SLES_N_TYPES;
+  info->n_max_cycles = 100;
+
+  info->n_max_iter[0] = 10;
+  info->n_max_iter[1] = 10;
+  info->n_max_iter[2] = 10000;
+
+  info->poly_degree[0] = 0;
+  info->poly_degree[1] = 0;
+  info->poly_degree[2] = 0;
+
+  /* In theory, one should increase precision on coarsest mesh,
+     but in practice, it is more efficient to have a lower precision,
+     so we choose coarse_precision = global_precision; */
+
+  info->precision_mult[0] = 1.;
+  info->precision_mult[1] = 1.;
+  info->precision_mult[2] = 1.;
+
+  /* Counting and timing */
 
   for (i = 0; i < 2; i++)
     info->n_calls[i] = 0;
@@ -245,21 +322,6 @@ _multigrid_info_init(cs_multigrid_info_t *info,
 
   for (i = 0; i < 2; i++)
     CS_TIMER_COUNTER_INIT(info->t_tot[i]);
-}
-
-/*----------------------------------------------------------------------------
- * Destroy multigrid info structure.
- *
- * parameters:
- *   this_info <-> pointer to linear system info structure pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_multigrid_info_unset(cs_multigrid_info_t  *this_info)
-{
-  assert(this_info != NULL);
-
-  BFT_FREE(this_info->name);
 }
 
 /*----------------------------------------------------------------------------
@@ -287,6 +349,61 @@ _multigrid_level_info_init(cs_multigrid_level_info_t *info)
 }
 
 /*----------------------------------------------------------------------------
+ * Output information regarding multigrid options.
+ *
+ * parameters:
+ *   mg <-> pointer to multigrid structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_multigrid_setup_log(const cs_multigrid_t *mg)
+{
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Solver type:                       multigrid\n"
+                  "  Coarsening type:                   %s\n"
+                  "    Max fine cells per coarse cell:  %d\n"
+                  "    Maximum number of levels :       %d\n"
+                  "    Minimum number of coarse cells:  %d\n"
+                  "    P0/P1 relaxation parameter:      %g\n"
+                  "  Maximum number of cycles:          %d\n"),
+                _(cs_grid_coarsening_type_name[mg->coarsening_type]),
+                mg->aggregation_limit,
+                mg->n_levels_max, mg->n_g_cells_min,
+                mg->p0p1_relax, mg->info.n_max_cycles);
+
+  const char *stage_name[] = {"Descent smoother",
+                              "Ascent smoother",
+                              "Coarsest level solver"};
+
+  for (int i = 0; i < 3; i++) {
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  %s:\n"
+                    "    Type:                            %s\n"
+                    "    Preconditioning:                 "),
+                  _(stage_name[i]),
+                  _(cs_sles_it_type_name[mg->info.type[i]]));
+
+    if (mg->info.poly_degree[i] < 0)
+      cs_log_printf(CS_LOG_SETUP, _("none\n"));
+    else if (mg->info.poly_degree[i] == 0)
+      cs_log_printf(CS_LOG_SETUP, _("diagonal\n"));
+    else
+      cs_log_printf(CS_LOG_SETUP, _("polynomial, degree %d\n"),
+                      mg->info.poly_degree[i]);
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    Maximum number of iterations:    %d\n"
+                    "    Precision multiplier:            %g\n"),
+                  mg->info.n_max_iter[i],
+                  mg->info.precision_mult[i]);
+  }
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("  Verbosity:                         %d\n"
+                  "  Postprocess coarsening:            %d\n"),
+                mg->verbosity, mg->post_cell_max);
+}
+
+/*----------------------------------------------------------------------------
  * Output information regarding multigrid resolution.
  *
  * parameters:
@@ -294,7 +411,7 @@ _multigrid_level_info_init(cs_multigrid_level_info_t *info)
  *----------------------------------------------------------------------------*/
 
 static void
-_multigrid_info_dump(const cs_multigrid_t *mg)
+_multigrid_performance_log(const cs_multigrid_t *mg)
 {
   unsigned i;
 
@@ -312,14 +429,15 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
                                   N_("restrict:"), N_("prolong:")};
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Summary of multigrid for \"%s\":\n\n"),
-                mg->info.name);
+                 _("\n"
+                   "  Multigrid:\n"
+                   "    Coarsening: %s\n"),
+                 _(cs_grid_coarsening_type_name[mg->coarsening_type]));
 
-  if (mg->info.type[0] != CS_SLES_N_TYPES) {
+  if (mg->info.type[0] != CS_SLES_N_IT_TYPES) {
 
-    const char *descent_smoother_name = cs_sles_type_name[mg->info.type[0]];
-    const char *ascent_smoother_name = cs_sles_type_name[mg->info.type[1]];
+    const char *descent_smoother_name = cs_sles_it_type_name[mg->info.type[0]];
+    const char *ascent_smoother_name = cs_sles_it_type_name[mg->info.type[1]];
 
     if (mg->info.type[0] == mg->info.type[1])
       cs_log_printf(CS_LOG_PERFORMANCE,
@@ -333,7 +451,7 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
 
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  Coarsest level solver:       %s\n"),
-                  _(cs_sles_type_name[mg->info.type[2]]));
+                  _(cs_sles_it_type_name[mg->info.type[2]]));
 
   }
 
@@ -494,90 +612,38 @@ _multigrid_info_dump(const cs_multigrid_t *mg)
                        lv_info->t_tot);
 
   }
-
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------
- * Initialize multigrid info structure.
- *
- * parameters:
- *   name <-- system name
+ * Create empty structure used to maintain setup data
+ * (between cs_sles_setup and cs_sles_free type calls.
  *
  * returns:
- *   pointer to newly created multigrid structure
+ *   pointer to multigrid setup data structure
  *----------------------------------------------------------------------------*/
 
-static cs_multigrid_t *
-_multigrid_create(const char  *name)
+static cs_multigrid_setup_data_t *
+_multigrid_setup_data_create(void)
 {
-  int ii;
-  cs_multigrid_t *mg;
+  cs_multigrid_setup_data_t *mgd;
 
-  BFT_MALLOC(mg, 1, cs_multigrid_t);
+  BFT_MALLOC(mgd, 1, cs_multigrid_setup_data_t);
 
-  _multigrid_info_init(&(mg->info), name);
+  mgd->n_levels = 0;
+  mgd->n_levels_alloc = 0;
 
-  mg->n_levels = 0;
-  mg->n_levels_max = 10;
+  mgd->grid_hierarchy = NULL;
+  mgd->sles_hierarchy = NULL;
 
-  mg->n_levels_post = 0;
-  mg->post_cell_max = 0;
+  mgd->exit_initial_residue = -1.;
+  mgd->exit_residue = -1.;
+  mgd->exit_level = -1.;
+  mgd->exit_cycle_id = -1.;
 
-  BFT_MALLOC(mg->grid_hierarchy, mg->n_levels_max, cs_grid_t *);
-  BFT_MALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
+  mgd->rhs_vx_buf = NULL;
+  mgd->rhs_vx = NULL;
 
-  for (ii = 0; ii < mg->n_levels_max; ii++) {
-    mg->grid_hierarchy[ii] = NULL;
-    _multigrid_level_info_init(mg->lv_info + ii);
-  }
-
-  mg->post_cell_num = NULL;
-  mg->post_cell_rank = NULL;
-
-  return mg;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy multigrid structure.
- *
- * parameters:
- *   mg <-> pointer multigrid structure pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_multigrid_destroy(cs_multigrid_t  **mg)
-{
-  int ii;
-  cs_multigrid_t  *_mg = *mg;
-
-  assert(*mg != NULL);
-
-  BFT_FREE(_mg->lv_info);
-
-  _multigrid_info_unset(&(_mg->info));
-
-  for (ii = 0; ii < _mg->n_levels_max; ii++)
-    cs_grid_destroy(_mg->grid_hierarchy + ii);
-
-  if (_mg->post_cell_max > 0) {
-    for (ii = 0; ii < _mg->n_levels_max - 1; ii++)
-      if (_mg->post_cell_num[ii] != NULL)
-        BFT_FREE(_mg->post_cell_num[ii]);
-    BFT_FREE(_mg->post_cell_num);
-  }
-
-  if (_mg->post_cell_rank != NULL) {
-    for (ii = 0; ii < _mg->n_levels_max - 1; ii++)
-      if (_mg->post_cell_rank[ii] != NULL)
-        BFT_FREE(_mg->post_cell_rank[ii]);
-    BFT_FREE(_mg->post_cell_rank);
-  }
-
-  BFT_FREE(_mg->grid_hierarchy);
-
-  BFT_FREE(*mg);
+  return mgd;
 }
 
 /*----------------------------------------------------------------------------
@@ -592,42 +658,56 @@ static void
 _multigrid_add_level(cs_multigrid_t  *mg,
                      cs_grid_t       *grid)
 {
-  int ii;
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+  unsigned ii;
 
   /* Reallocate arrays if necessary */
 
-  if (mg->n_levels == mg->n_levels_max) {
+  if (mgd->n_levels == mgd->n_levels_alloc) {
 
-    if (mg->n_levels_max == 0)
-      mg->n_levels_max = 10;
-    mg->n_levels_max *= 2;
+    /* Max previous */
+    unsigned int n_lv_max_prev = CS_MAX(mg->info.n_levels[2] + 1,
+                                        mgd->n_levels);
 
-    BFT_REALLOC(mg->grid_hierarchy, mg->n_levels_max, cs_grid_t *);
-    BFT_REALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
+    if (mgd->n_levels_alloc == 0) {
+      mgd->n_levels_alloc = n_lv_max_prev;
+      if (mgd->n_levels_alloc == 0)
+        mgd->n_levels_alloc = 10;
+    }
+    else
+      mgd->n_levels_alloc *= 2;
 
-    for (ii = mg->n_levels; ii < mg->n_levels_max; ii++) {
-      mg->grid_hierarchy[ii] = NULL;
+    BFT_REALLOC(mgd->grid_hierarchy, mgd->n_levels_alloc, cs_grid_t *);
+    BFT_REALLOC(mgd->sles_hierarchy, mgd->n_levels_alloc*2, cs_sles_it_t *);
+
+    for (ii = mgd->n_levels; ii < mgd->n_levels_alloc; ii++)
+      mgd->grid_hierarchy[ii] = NULL;
+
+    if (n_lv_max_prev < mgd->n_levels_alloc) {
+      BFT_REALLOC(mg->lv_info, mgd->n_levels_alloc, cs_multigrid_level_info_t);
+      for (ii = n_lv_max_prev; ii < mgd->n_levels_alloc; ii++)
       _multigrid_level_info_init(mg->lv_info + ii);
     }
 
     if (mg->post_cell_num != NULL) {
-      BFT_REALLOC(mg->post_cell_num, mg->n_levels_max, int *);
-      for (ii = mg->n_levels; ii < mg->n_levels_max; ii++)
+      BFT_REALLOC(mg->post_cell_num, mgd->n_levels_alloc, int *);
+      for (ii = mgd->n_levels; ii < mgd->n_levels_alloc; ii++)
         mg->post_cell_num[ii] = NULL;
-      if (mg->n_levels > 0)
-        mg->post_cell_num[mg->n_levels - 1] = NULL;
+      if (mgd->n_levels > 0)
+        mg->post_cell_num[mgd->n_levels - 1] = NULL;
     }
 
     if (mg->post_cell_rank != NULL) {
-      BFT_REALLOC(mg->post_cell_rank, mg->n_levels_max, int *);
-      for (ii = mg->n_levels; ii < mg->n_levels_max; ii++)
+      BFT_REALLOC(mg->post_cell_rank, mgd->n_levels_alloc, int *);
+      for (ii = mgd->n_levels; ii < mgd->n_levels_alloc; ii++)
         mg->post_cell_rank[ii] = NULL;
-      if (mg->n_levels > 0)
-        mg->post_cell_rank[mg->n_levels - 1] = NULL;
+      if (mgd->n_levels > 0)
+        mg->post_cell_rank[mgd->n_levels - 1] = NULL;
     }
   }
 
-  mg->grid_hierarchy[mg->n_levels] = grid;
+  mgd->grid_hierarchy[mgd->n_levels] = grid;
 
   /* Update associated info */
 
@@ -635,7 +715,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     int  n_ranks;
     cs_lnum_t  n_cells, n_cells_with_ghosts, n_faces;
     cs_gnum_t  n_g_cells;
-    cs_multigrid_level_info_t  *lv_info = mg->lv_info + mg->n_levels;
+    cs_multigrid_level_info_t  *lv_info = mg->lv_info + mgd->n_levels;
 
     cs_grid_get_info(grid,
                      NULL,
@@ -648,17 +728,17 @@ _multigrid_add_level(cs_multigrid_t  *mg,
                      &n_faces,
                      &n_g_cells);
 
-    mg->info.n_levels[0] = mg->n_levels + 1;
+    mg->info.n_levels[0] = mgd->n_levels - 1;
 
     lv_info->n_ranks[0] = n_ranks;
-    if (lv_info->n_ranks[1] > (unsigned)n_ranks || lv_info->n_ranks[1] == 0)
+    if (lv_info->n_ranks[1] > (unsigned)n_ranks)
       lv_info->n_ranks[1] = n_ranks;
     else if (lv_info->n_ranks[2] < (unsigned)n_ranks)
       lv_info->n_ranks[2] = n_ranks;
     lv_info->n_ranks[3] += n_ranks;
 
     lv_info->n_g_cells[0] = n_g_cells;
-    if (lv_info->n_g_cells[1] > n_g_cells || lv_info->n_calls[0] == 0)
+    if (lv_info->n_g_cells[1] > n_g_cells)
       lv_info->n_g_cells[1] = n_g_cells;
     else if (lv_info->n_g_cells[2] < n_g_cells)
       lv_info->n_g_cells[2] = n_g_cells;
@@ -669,8 +749,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
     lv_info->n_elts[2][0] = n_faces;
 
     for (ii = 0; ii < 3; ii++) {
-      if (   lv_info->n_elts[ii][1] > lv_info->n_elts[ii][0]
-          || lv_info->n_calls[0] == 0)
+      if (lv_info->n_elts[ii][1] > lv_info->n_elts[ii][0])
         lv_info->n_elts[ii][1] = lv_info->n_elts[ii][0];
       else if (lv_info->n_elts[ii][2] < lv_info->n_elts[ii][0])
         lv_info->n_elts[ii][2] = lv_info->n_elts[ii][0];
@@ -689,8 +768,7 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       for (ii = 0; ii < 3; ii++) {
         lv_info->unbalance[ii][0] = (  max_sizes[ii]
                                      / (tot_sizes[ii]*1.0/n_ranks)) - 1.0;
-        if (   lv_info->unbalance[ii][1] > lv_info->unbalance[ii][0]
-            || lv_info->n_calls[0] == 0)
+        if (lv_info->unbalance[ii][1] > lv_info->unbalance[ii][0])
           lv_info->unbalance[ii][1] = lv_info->unbalance[ii][0];
         else if (lv_info->unbalance[ii][2] < lv_info->unbalance[ii][0])
           lv_info->unbalance[ii][2] = lv_info->unbalance[ii][0];
@@ -700,106 +778,23 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
 #endif /* defined(HAVE_MPI) */
 
+    if (lv_info->n_calls[0] == 0) {
+      lv_info->n_ranks[1] = n_ranks;
+      lv_info->n_g_cells[1] = n_g_cells;
+      for (ii = 0; ii < 3; ii++) {
+        lv_info->n_elts[ii][1] = lv_info->n_elts[ii][0];
+#if defined(HAVE_MPI)
+        lv_info->unbalance[ii][1] = lv_info->unbalance[ii][0];
+#endif
+      }
+    }
+
     lv_info->n_calls[0] += 1;
   }
 
   /* Ready for next level */
 
-  mg->n_levels += 1;
-}
-
-/*----------------------------------------------------------------------------
- * Get multigrid structure's id in list of known systems
- *
- * parameters:
- *   mg <-- multigrid structure
- *
- * returns:
- *   id (0 to n-1) of structure in list of know systems, or -1 otherwise
- *----------------------------------------------------------------------------*/
-
-static int
-_multigrid_id(const cs_multigrid_t  *mg)
-{
-  int id;
-
-  for (id = 0; id < cs_glob_multigrid_n_systems; id++) {
-    if (mg == cs_glob_multigrid_systems[id])
-      break;
-  }
-
-  if (id >= cs_glob_multigrid_n_systems)
-    id = -1;
-
-  return id;
-}
-
-/*----------------------------------------------------------------------------
- * Return pointer to linear system info.
- *
- * If this system did not previously exist, it is added to the list of
- * "known" systems.
- *
- * parameters:
- *   name <-- system name
- *----------------------------------------------------------------------------*/
-
-static cs_multigrid_t *
-_find_or_add_system(const char  *name)
-{
-  int ii, start_id, end_id, mid_id;
-  int cmp_ret = 1;
-
-  /* Use binary search to find system */
-
-  start_id = 0;
-  end_id = cs_glob_multigrid_n_systems - 1;
-  mid_id = start_id + ((end_id -start_id) / 2);
-
-  while (start_id <= end_id) {
-    cmp_ret = strcmp((cs_glob_multigrid_systems[mid_id])->info.name, name);
-    if (cmp_ret < 0)
-      start_id = mid_id + 1;
-    else if (cmp_ret > 0)
-      end_id = mid_id - 1;
-    else
-      break;
-    mid_id = start_id + ((end_id -start_id) / 2);
-  }
-
-  /* If found, return */
-
-  if (cmp_ret == 0)
-    return cs_glob_multigrid_systems[mid_id];
-
-  /* Reallocate global array if necessary */
-
-  if (cs_glob_multigrid_n_systems >= cs_glob_multigrid_n_max_systems) {
-
-    if (cs_glob_multigrid_n_max_systems == 0)
-      cs_glob_multigrid_n_max_systems = 10;
-    else
-      cs_glob_multigrid_n_max_systems *= 2;
-    BFT_REALLOC(cs_glob_multigrid_systems,
-                cs_glob_multigrid_n_max_systems,
-                cs_multigrid_t *);
-
-    for (ii = cs_glob_multigrid_n_systems;
-         ii < cs_glob_multigrid_n_max_systems;
-         ii++)
-      cs_glob_multigrid_systems[ii] = NULL;
-
-  }
-
-  /* Insert in sorted list */
-
-  for (ii = cs_glob_multigrid_n_systems; ii > mid_id; ii--)
-    cs_glob_multigrid_systems[ii] = cs_glob_multigrid_systems[ii - 1];
-
-  cs_glob_multigrid_systems[mid_id] = _multigrid_create(name);
-  cs_glob_multigrid_n_systems += 1;
-
-  return cs_glob_multigrid_systems[mid_id];
+  mgd->n_levels += 1;
 }
 
 /*----------------------------------------------------------------------------
@@ -807,13 +802,17 @@ _find_or_add_system(const char  *name)
  *
  * parameters:
  *   mg           <-> multigrid structure
+ *   name         <-- postprocessing name
  *   n_base_cells <-- number of cells in base grid
  *----------------------------------------------------------------------------*/
 
 static void
 _multigrid_add_post(cs_multigrid_t  *mg,
+                    const char      *name,
                     cs_lnum_t        n_base_cells)
 {
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
   int ii;
 
   assert(mg != NULL);
@@ -821,7 +820,9 @@ _multigrid_add_post(cs_multigrid_t  *mg,
   if (mg->post_cell_max < 1)
     return;
 
-  mg->n_levels_post = mg->n_levels - 1;
+  mg->n_levels_post = mgd->n_levels - 1;
+
+  BFT_REALLOC(mg->post_name, strlen(name) + 1, char);
 
   assert(mg->n_levels_post < mg->n_levels_max);
 
@@ -841,7 +842,7 @@ _multigrid_add_post(cs_multigrid_t  *mg,
 
   for (ii = 0; ii < mg->n_levels_post; ii++) {
     BFT_REALLOC(mg->post_cell_num[ii], n_base_cells, int);
-    cs_grid_project_cell_num(mg->grid_hierarchy[ii+1],
+    cs_grid_project_cell_num(mgd->grid_hierarchy[ii+1],
                              n_base_cells,
                              mg->post_cell_max,
                              mg->post_cell_num[ii]);
@@ -850,7 +851,7 @@ _multigrid_add_post(cs_multigrid_t  *mg,
   if (mg->post_cell_rank != NULL) {
     for (ii = 0; ii < mg->n_levels_post; ii++) {
       BFT_REALLOC(mg->post_cell_rank[ii], n_base_cells, int);
-      cs_grid_project_cell_rank(mg->grid_hierarchy[ii+1],
+      cs_grid_project_cell_rank(mgd->grid_hierarchy[ii+1],
                                 n_base_cells,
                                 mg->post_cell_rank[ii]);
     }
@@ -886,7 +887,7 @@ _cs_multigrid_post_function(void                  *mgh,
 
   /* Allocate name buffer */
 
-  base_name = mg->info.name;
+  base_name = mg->post_name;
   name_len = 3 + strlen(base_name) + 1 + 3 + 1 + 4 + 1;
   BFT_MALLOC(var_name, name_len, char);
 
@@ -934,6 +935,177 @@ _cs_multigrid_post_function(void                  *mgh,
   mg->n_levels_post = 0;
 
   BFT_FREE(var_name);
+}
+
+/*----------------------------------------------------------------------------
+ * Setup multigrid sparse linear equation solvers on existing hierarchy.
+ *
+ * parameters:
+ *   mg   <-> pointer to multigrid solver info and context
+ *   name <-- linear system name
+ *----------------------------------------------------------------------------*/
+
+static void
+_multigrid_setup_sles_it(cs_multigrid_t  *mg,
+                         const char      *name)
+{
+  cs_timer_t t0, t1;
+
+  cs_multigrid_level_info_t *mg_lv_info;
+  const cs_grid_t *g;
+  const cs_matrix_t *m;
+
+  /* Initialization */
+
+  t0 = cs_timer_time();
+
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+  cs_lnum_t stride = 1; /* For diagonal blocks */
+
+  /* Prepare solver context */
+
+  unsigned n_levels = mgd->n_levels;
+
+  unsigned i = 0;
+
+  g = mgd->grid_hierarchy[i];
+  m = cs_grid_get_matrix(g);
+
+  mg_lv_info = mg->lv_info + i;
+
+  mgd->sles_hierarchy[0]
+    = cs_sles_it_create(mg->info.type[0],
+                        mg->info.poly_degree[0],
+                        mg->info.n_max_iter[0],
+                        false); /* stats not updated here */
+  cs_sles_it_set_verbosity(mgd->sles_hierarchy[0], mg->verbosity - 2);
+
+#if defined(HAVE_MPI)
+  cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[0], cs_grid_get_comm(g));
+#endif
+
+  cs_sles_it_setup(mgd->sles_hierarchy[0], name, m);
+  mgd->sles_hierarchy[1] = NULL;
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t0, &t1);
+
+  /* Intermediate grids */
+
+  for (i = 1; i < n_levels - 1; i++) {
+
+    t0 = t1;
+
+    g = mgd->grid_hierarchy[i];
+    m = cs_grid_get_matrix(g);
+
+    mg_lv_info = mg->lv_info + i;
+
+    mgd->sles_hierarchy[i*2]
+      = cs_sles_it_create(mg->info.type[0],
+                          mg->info.poly_degree[0],
+                          mg->info.n_max_iter[0],
+                          false); /* stats not updated here */
+    cs_sles_it_set_verbosity(mgd->sles_hierarchy[i*2], mg->verbosity - 2);
+
+    mgd->sles_hierarchy[i*2+1]
+      = cs_sles_it_create(mg->info.type[1],
+                          mg->info.poly_degree[1],
+                          mg->info.n_max_iter[1],
+                          false); /* stats not updated here */
+    cs_sles_it_set_verbosity(mgd->sles_hierarchy[i*2 + 1], mg->verbosity - 2);
+
+    cs_sles_it_set_shareable(mgd->sles_hierarchy[i*2 + 1],
+                             mgd->sles_hierarchy[i*2]);
+
+    cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m);
+    cs_sles_it_setup(mgd->sles_hierarchy[i*2+1], "", m);
+
+#if defined(HAVE_MPI)
+    {
+      MPI_Comm lv_comm = cs_grid_get_comm(mgd->grid_hierarchy[i]);
+      cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2], lv_comm);
+      cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2+1], lv_comm);
+    }
+#endif
+
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t0, &t1);
+
+  }
+
+  /* Coarsest grid */
+
+  if (n_levels > 1) {
+
+    t0 = t1;
+
+    i = n_levels - 1;
+
+    g = mgd->grid_hierarchy[i];
+    m = cs_grid_get_matrix(g);
+
+    mg_lv_info = mg->lv_info + i;
+
+    mgd->sles_hierarchy[i*2]
+      = cs_sles_it_create(mg->info.type[2],
+                          mg->info.poly_degree[2],
+                          mg->info.n_max_iter[2],
+                          false); /* stats not updated here */
+    cs_sles_it_set_verbosity(mgd->sles_hierarchy[i*2], mg->verbosity - 2);
+
+#if defined(HAVE_MPI)
+    cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2],
+                                   cs_grid_get_comm(mgd->grid_hierarchy[i]));
+#endif
+
+    cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m);
+    mgd->sles_hierarchy[i*2+1] = NULL;
+
+    /* Diagonal block size is the same for all levels */
+
+    const int *db_size = cs_matrix_get_diag_block_size(m);
+    stride = db_size[1];
+
+  }
+
+  /* Allocate working array for coarse right hand sides and corrections */
+
+  BFT_MALLOC(mgd->rhs_vx, mgd->n_levels*2, cs_real_t *);
+
+  mgd->rhs_vx[0] = NULL;
+  mgd->rhs_vx[1] = NULL;
+
+  if (mgd->n_levels > 1) {
+
+    size_t wr_size = 0;
+    for (i = 1; i < mgd->n_levels; i++) {
+      size_t block_size
+        = cs_grid_get_n_cells_max(mgd->grid_hierarchy[i])*stride;
+      block_size = CS_SIMD_SIZE(block_size);
+      wr_size += block_size;
+    }
+
+    BFT_MALLOC(mgd->rhs_vx_buf, wr_size*2, cs_real_t);
+
+    size_t block_size_shift = 0;
+
+    for (i = 1; i < mgd->n_levels; i++) {
+      size_t block_size
+        = cs_grid_get_n_cells_max(mgd->grid_hierarchy[i])*stride;
+      mgd->rhs_vx[i*2] = mgd->rhs_vx_buf+ block_size_shift;
+      block_size_shift += block_size;
+      mgd->rhs_vx[i*2+1] = mgd->rhs_vx_buf + block_size_shift;
+      block_size_shift += block_size;
+    }
+
+  }
+
+  /* Timing */
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------
@@ -985,11 +1157,10 @@ _dot_product(cs_int_t          n_elts,
  *   rhs           <-- right-hand side
  *
  * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   cycle number reached, -2 if divergence is detected.
+ *   convergence status
  *----------------------------------------------------------------------------*/
 
-static int
+static cs_sles_convergence_state_t
 _convergence_test(const char         *var_name,
                   cs_int_t            n_f_cells,
                   int                 n_max_cycles,
@@ -1034,7 +1205,7 @@ _convergence_test(const char         *var_name,
                  cycle_id, n_iters, *residue/r_norm);
       bft_printf(_(cycle_t_fmt));
     }
-    return 1;
+    return CS_SLES_CONVERGED;
   }
 
   else if (cycle_id >= n_max_cycles) {
@@ -1054,7 +1225,7 @@ _convergence_test(const char         *var_name,
                  var_name, n_max_cycles);
 
     }
-    return -1;
+    return CS_SLES_MAX_ITERATION;
   }
 
   else {
@@ -1063,182 +1234,15 @@ _convergence_test(const char         *var_name,
       bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
 
     if (*residue > initial_residue * 10000.0 && *residue > 100.)
-      return -2;
+      return CS_SLES_BREAKDOWN;
 
 #if (__STDC_VERSION__ >= 199901L)
     if (isnan(*residue) || isinf(*residue))
-      return -2;
+      return CS_SLES_DIVERGED;
 #endif
   }
 
-  return 0;
-}
-
-/*----------------------------------------------------------------------------
- * Handle error output in case if divergence.
- *
- * Depending on the multigrid level at which divergence is detected,
- * output matrix hierarchy information, RHS, and variable info,
- * and finally abort on error.
- *
- * parameters:
- *   mg              <-- multigrid system
- *   level           <-- multigrid level at which divergence is detected
- *   rotation_mode   <-- halo update option for rotational periodicity
- *   cycle_id        <-- id of currect cycle
- *   initial_residue <-- initial residue
- *   residue         <-- residue
- *   rhs             <-- right hand side
- *   vx              <-- system solution
- *   c_rhs           <-- right hand side for levels > 0
- *   c_vx            <-- system solution for levels > 0
- *----------------------------------------------------------------------------*/
-
-static void
-_abort_on_divergence(cs_multigrid_t      *mg,
-                     int                  level,
-                     cs_halo_rotation_t   rotation_mode,
-                     int                  cycle_id,
-                     double               initial_residue,
-                     double               residue,
-                     const cs_real_t      rhs[],
-                     cs_real_t            vx[],
-                     cs_real_t          **c_rhs,
-                     cs_real_t          **c_vx)
-{
-  int mesh_id = cs_post_init_error_writer_cells();
-
-  if (mesh_id != 0) {
-
-    char var_name[32];
-
-    int lv_id = 0;
-    cs_real_t *var = NULL, *da = NULL;
-
-    int i;
-    int db_size[4] = {1, 1, 1, 1};
-    int eb_size[4] = {1, 1, 1, 1};
-
-    const cs_grid_t *g = mg->grid_hierarchy[0];
-    const cs_lnum_t n_base_cells = cs_grid_get_n_cells(g);
-    const cs_matrix_t  *_matrix = NULL;
-
-    BFT_MALLOC(var, cs_grid_get_n_cells_ext(g), cs_real_t);
-    BFT_MALLOC(da, cs_grid_get_n_cells_ext(g), cs_real_t);
-
-    /* Output info on main level */
-
-    _matrix = cs_grid_get_matrix(g);
-
-    cs_sles_post_error_output_def(mg->info.name,
-                                  mesh_id,
-                                  rotation_mode,
-                                  _matrix,
-                                  rhs,
-                                  vx);
-
-    /* Output diagonal and diagonal dominance for all coarse levels */
-
-    for (lv_id = 1; lv_id < mg->n_levels; lv_id++) {
-
-      g = mg->grid_hierarchy[lv_id];
-
-      cs_grid_get_info(g,
-                       NULL,
-                       NULL,
-                       db_size,
-                       eb_size,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL,
-                       NULL);
-
-
-      _matrix = cs_grid_get_matrix(g);
-
-      cs_matrix_copy_diagonal(_matrix, da);
-      cs_grid_project_var(g, n_base_cells, da, var);
-      sprintf(var_name, "Diag_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
-
-      cs_grid_project_diag_dom(g, n_base_cells, var);
-      sprintf(var_name, "Diag_Dom_%04d", lv_id);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
-    }
-
-    /* Output info on current level if > 0 */
-
-    if (level > 0) {
-
-      cs_lnum_t ii;
-      cs_lnum_t n_cells = 0;
-      cs_lnum_t n_cells_ext = 0;
-
-      cs_real_t *c_res = NULL;
-
-      g = mg->grid_hierarchy[level];
-
-      cs_grid_get_info(g,
-                       NULL,
-                       NULL,
-                       db_size,
-                       eb_size,
-                       NULL,
-                       &n_cells,
-                       &n_cells_ext,
-                       NULL,
-                       NULL);
-
-      cs_grid_project_var(g, n_base_cells, c_rhs[level], var);
-      sprintf(var_name, "RHS_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
-
-      cs_grid_project_var(g, n_base_cells, c_vx[level], var);
-      sprintf(var_name, "X_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
-
-      /* Compute residual */
-
-      BFT_MALLOC(c_res, n_cells_ext*db_size[1], cs_real_t);
-
-      _matrix = cs_grid_get_matrix(g);
-
-      cs_matrix_vector_multiply(rotation_mode, _matrix, c_vx[level], c_res);
-
-      for (ii = 0; ii < n_cells; ii++) {
-        for (i = 0; i < db_size[0]; i++)
-          c_res[ii*db_size[1] + i] = fabs( c_res[ii*db_size[1] + i]
-                                         - c_rhs[level][ii*db_size[1] + i]);
-      }
-
-      cs_grid_project_var(g, n_base_cells, c_res, var);
-
-      BFT_FREE(c_res);
-
-      sprintf(var_name, "Residual_%04d", level);
-      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
-    }
-
-    cs_post_finalize();
-
-    BFT_FREE(da);
-    BFT_FREE(var);
-  }
-
-  /* Now abort */
-
-  if (level == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("algebraic multigrid [%s]: divergence after %d cycles:\n"
-                "  initial residual: %11.4e; current residual: %11.4e"),
-              _(mg->info.name), cycle_id, initial_residue, residue);
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("algebraic multigrid [%s]: divergence after %d cycles\n"
-                "  during resolution at level %d:\n"
-                "  initial residual: %11.4e; current residual: %11.4e"),
-              _(mg->info.name), cycle_id, level, initial_residue, residue);
+  return CS_SLES_ITERATING;
 }
 
 /*----------------------------------------------------------------------------
@@ -1254,64 +1258,137 @@ _lv_info_update_stage_iter(unsigned long long  lv_info_it[],
                            unsigned            n_iter)
 {
   lv_info_it[0] = n_iter;
-  if (n_iter < lv_info_it[1] || lv_info_it[1] == 0)
+  if (n_iter < lv_info_it[1])
     lv_info_it[1] = n_iter;
   else if (n_iter > lv_info_it[2])
     lv_info_it[2] = n_iter;
+  if (lv_info_it[1] == 0)
+    lv_info_it[1] = n_iter;
   lv_info_it[3] += n_iter;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute buffer size required for level names
+ *
+ * parameters:
+ *   name     <-- linear system name
+ *   n_levels <-- number multigrid levels
+ *
+ * returns:
+ *   buffer size needed for level names
+ *----------------------------------------------------------------------------*/
+
+static size_t
+_level_names_size(const char  *name,
+                  int          n_levels)
+{
+  /* Format name width */
+
+  int w = 1;
+  for (int i = n_levels/10; i > 0; i /=10)
+    w += 1;
+
+  /* First part: pointers */
+
+  size_t retval = n_levels*sizeof(char *)*2;
+  retval = CS_SIMD_SIZE(retval);
+
+  /* Second part: buffers */
+  size_t buf_size = 0;
+
+  if (n_levels > 1)
+    buf_size =   (strlen(name) + strlen(":descent:") + w + 1)
+               * (n_levels-1)*2;
+  retval += CS_SIMD_SIZE(buf_size);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize level names
+ *
+ * parameters:
+ *   name     <-- linear system name
+ *   n_levels <-- number multigrid levels
+ *   buffer   <-- buffer
+ *----------------------------------------------------------------------------*/
+
+static void
+_level_names_init(const char  *name,
+                  int          n_levels,
+                  void        *buffer)
+{
+  /* Format name width */
+
+  int w = 1;
+  for (int i = n_levels/10; i > 0; i /=10)
+    w += 1;
+
+  /* First part: pointers */
+
+  size_t ptr_size = n_levels*sizeof(char *)*2;
+  ptr_size = CS_SIMD_SIZE(ptr_size);
+
+  char *_buffer = buffer;
+  char **_lv_names = buffer;
+  const char **lv_names = (const char **)_lv_names;
+  const size_t name_len = strlen(name) + strlen(":descent:") + w + 1;
+
+  lv_names[0] = name;
+  lv_names[1] = NULL;
+
+  /* Second part: buffers */
+
+  for (int i = 1; i < n_levels -1; i++) {
+    lv_names[i*2] = _buffer + ptr_size + (i-1)*2*name_len;
+    lv_names[i*2+1] = lv_names[i*2] + name_len;
+    sprintf(_lv_names[i*2], "%s:descent:%0*d", name, w, i);
+    sprintf(_lv_names[i*2+1], "%s:ascent:%0*d", name, w, i);
+  }
+
+  if (n_levels > 1) {
+    int i = n_levels - 1;
+    lv_names[i*2] = _buffer + ptr_size + (i-1)*2*name_len;
+    lv_names[i*2+1] = NULL;
+    sprintf(_lv_names[i*2], "%s:coarse:%0*d", name, w, i);
+  }
 }
 
 /*----------------------------------------------------------------------------
  * Sparse linear system resolution using multigrid.
  *
  * parameters:
- *   mg                    <-- multigrid system
- *   descent_smoother_type <-- type of smoother for descent (PCG, Jacobi, ...)
- *   ascent_smoother_type  <-- type of smoother for ascent (PCG, Jacobi, ...)
- *   coarse_solver_type    <-- type of solver (PCG, Jacobi, ...)
- *   abort_on_divergence   <-- call errorhandler if devergence is detected
- *   poly_degree           <-- preconditioning polynomial degree (0: diagonal)
- *   rotation_mode         <-- halo update option for rotational periodicity
- *   verbosity             <-- verbosity level
- *   cycle_id              <-- id of currect cycle
- *   n_max_cycles          <-- maximum number of cycles
- *   n_max_iter            <-- maximum number of iterations per grid level
- *                             n_max_iter[level * 2]     for descent
- *                             n_max_iter[level * 2 + 1] for ascent
- *   n_equiv_iter          <-> equivalent number of iterations
- *   precision             <-- precision limit
- *   r_norm                <-- residue normalization
- *   residue               <-> residue
- *   rhs                   <-- right hand side
- *   vx                    --> system solution
- *   aux_size              <-- number of elements in aux_vectors
- *   aux_vectors           --- optional working area (allocation otherwise)
+ *   mg            <-- multigrid system
+ *   lv_names      <-- names of linear systems
+ *                     (indexed as mg->setup_data->sles_hierarchy)
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   cycle_id      <-- id of currect cycle
+ *   n_equiv_iter  <-> equivalent number of iterations
+ *   precision     <-- solver precision
+ *   r_norm        <-- residue normalization
+ *   residue       <-> residue
+ *   rhs           <-- right hand side
+ *   vx            --> system solution
+ *   aux_size      <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors   --- optional working area (allocation otherwise)
  *
  * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   cycle number reached, -2 if divergence is detected.
+ *   convergence status
  *----------------------------------------------------------------------------*/
 
-static int
-_multigrid_cycle(cs_multigrid_t      *mg,
-                 cs_sles_type_t       descent_smoother_type,
-                 cs_sles_type_t       ascent_smoother_type,
-                 cs_sles_type_t       coarse_solver_type,
-                 bool                 abort_on_divergence,
-                 int                  poly_degree,
-                 cs_halo_rotation_t   rotation_mode,
-                 int                  verbosity,
-                 int                  cycle_id,
-                 int                  n_max_cycles,
-                 const int            n_max_iter[],
-                 int                 *n_equiv_iter,
-                 double               precision,
-                 double               r_norm,
-                 double              *residue,
-                 const cs_real_t     *rhs,
-                 cs_real_t           *vx,
-                 size_t               aux_size,
-                 void                *aux_vectors)
+static cs_sles_convergence_state_t
+_multigrid_cycle(cs_multigrid_t       *mg,
+                 const char          **lv_names,
+                 cs_halo_rotation_t    rotation_mode,
+                 int                   cycle_id,
+                 int                  *n_equiv_iter,
+                 double                precision,
+                 double                r_norm,
+                 double               *residue,
+                 const cs_real_t      *rhs,
+                 cs_real_t            *vx,
+                 size_t                aux_size,
+                 void                 *aux_vectors)
 {
   int level, coarsest_level;
   cs_lnum_t ii, jj;
@@ -1319,32 +1396,26 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   int db_size[4] = {1, 1, 1, 1};
   int eb_size[4] = {1, 1, 1, 1};
-  int cvg = 0, c_cvg = 0;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING, c_cvg = CS_SLES_ITERATING;
   int n_iter = 0;
-  size_t alloc_size = 0, wr_size = 0;
-  cs_real_t c_precision = precision;
-  cs_real_t _residue = -1.;
+  double _residue = -1.;
+  double _initial_residue = 0.;
 
-  size_t _aux_size = aux_size;
+  size_t _aux_r_size = aux_size / sizeof(cs_real_t);
   cs_lnum_t n_cells = 0, n_cells_ext = 0;
   cs_gnum_t n_g_cells = 0;
   cs_real_t r_norm_l = r_norm;
 
-  char _var_lv_name[33];
-  char *var_lv_name = _var_lv_name;
-
   double denom_n_g_cells_0 = 1.0;
-  double _initial_residue = 0.;
 
-  cs_real_t *_aux_vectors = aux_vectors;
-  cs_real_t *wr = NULL;
-  cs_real_t *_rhs_vx_val = NULL;
-  cs_real_t **_rhs_vx = NULL, **_rhs = NULL, **_vx = NULL;
-  cs_multigrid_info_t *mg_info = NULL;
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
   cs_multigrid_level_info_t  *lv_info = NULL;
 
-  const char *var_name = NULL;
-  const cs_real_t *_rhs_level = NULL;
+  cs_real_t *_aux_vectors = aux_vectors;
+  cs_real_t *restrict wr = NULL;
+  cs_real_t *restrict vx_lv = NULL;
+
+  const cs_real_t *restrict rhs_lv = NULL;
   const cs_matrix_t  *_matrix = NULL;
   const cs_grid_t *f = NULL, *c= NULL;
 
@@ -1352,17 +1423,9 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   /* Initialization */
 
-  mg_info = &(mg->info);
-  var_name = mg_info->name;
+  coarsest_level = mgd->n_levels - 1;
 
-  coarsest_level = mg->n_levels - 1;
-
-  /* In theory, one should increase precision on coarsest mesh,
-     but in practice, it is more efficient to have a lower precision */
-  /* c_precision = precision * 0.01; */
-  c_precision = precision;
-
-  f = mg->grid_hierarchy[0];
+  f = mgd->grid_hierarchy[0];
 
   cs_grid_get_info(f,
                    NULL,
@@ -1377,65 +1440,36 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   denom_n_g_cells_0 = 1.0 / n_g_cells;
 
-  if (strlen(var_name) + 5 > 32)
-    BFT_MALLOC(var_lv_name, strlen(var_name) + 5 + 1, char);
+  /* Allocate wr or use working area
+     (note the finest grid could have less element than a coarser
+     grid to wich rank merging has been applied, hence the test below) */
 
-  /* Allocate wr or use working area */
-
-  for (level = 1, wr_size = n_cells_ext*db_size[1];
-       level < mg->n_levels;
-       level++) {
+  size_t wr_size = n_cells_ext*db_size[1];
+  for (level = 1; level < (int)(mgd->n_levels); level++) {
     cs_lnum_t n_cells_max
-      = cs_grid_get_n_cells_max(mg->grid_hierarchy[level]);
+      = cs_grid_get_n_cells_max(mgd->grid_hierarchy[level]);
     wr_size = CS_MAX(wr_size, (size_t)(n_cells_max*db_size[1]));
     wr_size = CS_SIMD_SIZE(wr_size);
   }
 
-  if (aux_size >= wr_size) {
+  if (_aux_r_size >= wr_size) {
     wr = aux_vectors;
     _aux_vectors = wr + wr_size;
-    _aux_size = aux_size - wr_size;
+    _aux_r_size -= wr_size;
   }
   else
     BFT_MALLOC(wr, wr_size, cs_real_t);
 
-  /* reserve memory for rhs and vx;
+  /* map arrays for rhs and vx;
      for the finest level, simply point to input and output arrays */
 
-  BFT_MALLOC(_rhs_vx, mg->n_levels*2*db_size[1], cs_real_t *);
-  _rhs = _rhs_vx;
-  _vx = _rhs_vx + mg->n_levels*db_size[1];
-
-  _rhs[0] = NULL; /* Use _rhs_level when necessary to avoid const warning */
-  _vx[0] = vx;
-
-  /* Reserve memory for corrections and residues for coarse levels */
-
-  if (mg->n_levels > 1) {
-
-    alloc_size = 0;
-
-    for (level = 1; level < mg->n_levels; level++)
-      alloc_size
-        += CS_SIMD_SIZE(cs_grid_get_n_cells_max(mg->grid_hierarchy[level]));
-
-    BFT_MALLOC(_rhs_vx_val, alloc_size*2*db_size[1], cs_real_t);
-
-    _rhs[1] = _rhs_vx_val;
-    _vx[1] = _rhs_vx_val + alloc_size*db_size[1];
-
-    for (level = 2; level < mg->n_levels; level++) {
-      cs_lnum_t _n_cells_ext_prev
-        = CS_SIMD_SIZE(cs_grid_get_n_cells_max(mg->grid_hierarchy[level-1]));
-      _rhs[level] = _rhs[level - 1] + _n_cells_ext_prev*db_size[1];
-      _vx[level] = _vx[level - 1] + _n_cells_ext_prev*db_size[1];
-    }
-  }
+  mgd->rhs_vx[0] = NULL; /* Use _rhs_level when necessary to avoid const warning */
+  mgd->rhs_vx[1] = vx;
 
   /* Descent */
   /*---------*/
 
-  if (verbosity > 2)
+  if (mg->verbosity > 2)
     bft_printf(_("  Multigrid cycle: descent\n"));
 
   for (level = 0; level < coarsest_level; level++) {
@@ -1443,47 +1477,35 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     lv_info = mg->lv_info + level;
     t0 = cs_timer_time();
 
-    _rhs_level = (level == 0) ?  rhs : _rhs[level];
+    rhs_lv = (level == 0) ?  rhs : mgd->rhs_vx[level*2];
+    vx_lv = mgd->rhs_vx[level*2 + 1];
 
-    sprintf(var_lv_name, "%s:%04d", var_name, level);
-
-    c = mg->grid_hierarchy[level+1];
+    c = mgd->grid_hierarchy[level+1];
 
     /* Smoother pass */
 
-    if (verbosity > 2)
+    if (mg->verbosity > 2)
       bft_printf(_("    level %3d: smoother\n"), level);
 
     _matrix = cs_grid_get_matrix(f);
 
     _initial_residue = _residue;
 
-#if defined(HAVE_MPI)
-    cs_sles_set_mpi_reduce_comm(cs_grid_get_comm(f));
-#endif
+    c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
+                             lv_names[level*2],
+                             _matrix,
+                             rotation_mode,
+                             precision*mg->info.precision_mult[0],
+                             r_norm_l,
+                             &n_iter,
+                             &_residue,
+                             rhs_lv,
+                             vx_lv,
+                             _aux_r_size*sizeof(cs_real_t),
+                             _aux_vectors);
 
-    c_cvg = cs_sles_solve(var_lv_name,
-                          descent_smoother_type,
-                          false, /* Stats not updated here */
-                          _matrix,
-                          poly_degree,
-                          rotation_mode,
-                          verbosity - 2,
-                          n_max_iter[level*2],
-                          precision,
-                          r_norm_l,
-                          &n_iter,
-                          &_residue,
-                          _rhs_level,
-                          _vx[level],
-                          _aux_size,
-                          _aux_vectors);
 
-#if defined(HAVE_MPI)
-    cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
-#endif
-
-    if (c_cvg == -2) {
+    if (c_cvg < CS_SLES_MAX_ITERATION) {
       end_cycle = true;
       break;
     }
@@ -1496,19 +1518,19 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     cs_matrix_vector_multiply(rotation_mode,
                               _matrix,
-                              _vx[level],
+                              vx_lv,
                               wr);
 
     if (db_size[0] == 1) {
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (ii = 0; ii < n_cells; ii++)
-        wr[ii] = _rhs_level[ii] - wr[ii];
+        wr[ii] = rhs_lv[ii] - wr[ii];
     }
     else {
 #     pragma omp parallel for private(jj) if(n_cells > CS_THR_MIN)
       for (ii = 0; ii < n_cells; ii++) {
         for (jj = 0; jj < db_size[0]; jj++)
-        wr[ii*db_size[1] + jj] =   _rhs_level[ii*db_size[1] + jj]
+        wr[ii*db_size[1] + jj] =   rhs_lv[ii*db_size[1] + jj]
                                  - wr[ii*db_size[1] + jj];
       }
     }
@@ -1517,11 +1539,11 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     if (level == 0) {
 
-      cvg = _convergence_test(var_name,
+      cvg = _convergence_test(lv_names[0],
                               n_cells*db_size[1],
-                              n_max_cycles,
+                              mg->info.n_max_cycles,
                               cycle_id,
-                              verbosity,
+                              mg->verbosity,
                               lv_info->n_it_ds_smoothe[0],
                               precision,
                               r_norm,
@@ -1553,7 +1575,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     /* Prepare for next level */
 
-    cs_grid_restrict_cell_var(f, c, wr, _rhs[level+1]);
+    cs_grid_restrict_cell_var(f, c, wr, mgd->rhs_vx[(level+1)*2]);
 
     cs_grid_get_info(c,
                      NULL,
@@ -1570,16 +1592,17 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     /* Initialize correction */
 
+    cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
     if (db_size[0] == 1) {
 #     pragma omp parallel for if(n_cells > CS_THR_MIN)
       for (ii = 0; ii < n_cells; ii++)
-        _vx[level+1][ii] = 0.0;
+        vx_lv1[ii] = 0.0;
     }
     else {
 #     pragma omp parallel for private(jj) if(n_cells > CS_THR_MIN)
       for (ii = 0; ii < n_cells; ii++) {
         for (jj = 0; jj < db_size[0]; jj++)
-          _vx[level+1][ii*db_size[1] + jj] = 0.0;
+          vx_lv1[ii*db_size[1] + jj] = 0.0;
       }
     }
 
@@ -1594,16 +1617,15 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     /* Resolve coarsest level to convergence */
     /*---------------------------------------*/
 
-    if (verbosity > 2)
+    if (mg->verbosity > 2)
       bft_printf(_("  Resolution on coarsest level\n"));
 
     assert(level == coarsest_level);
-    assert(c == mg->grid_hierarchy[coarsest_level]);
+    assert(c == mgd->grid_hierarchy[coarsest_level]);
 
     /* coarsest level == 0 should never happen, but we play it safe */
-    _rhs_level = (level == 0) ?  rhs : _rhs[coarsest_level];
-
-    sprintf(var_lv_name, "%s:%04d", var_name, coarsest_level);
+    rhs_lv = (level == 0) ?  rhs : mgd->rhs_vx[coarsest_level*2];
+    vx_lv = mgd->rhs_vx[level*2 + 1];
 
     _matrix = cs_grid_get_matrix(c);
 
@@ -1612,30 +1634,18 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     lv_info = mg->lv_info + level;
     t0 = cs_timer_time();
 
-#if defined(HAVE_MPI)
-    cs_sles_set_mpi_reduce_comm(cs_grid_get_comm(c));
-#endif
-
-    c_cvg = cs_sles_solve(var_lv_name,
-                          coarse_solver_type,
-                          false, /* Stats not updated here */
-                          _matrix,
-                          poly_degree,
-                          rotation_mode,
-                          verbosity - 2,
-                          n_max_iter[level*2],
-                          c_precision,
-                          r_norm_l,
-                          &n_iter,
-                          &_residue,
-                          _rhs_level,
-                          _vx[level],
-                          _aux_size,
-                          _aux_vectors);
-
-#if defined(HAVE_MPI)
-    cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
-#endif
+    c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
+                             lv_names[level*2],
+                             _matrix,
+                             rotation_mode,
+                             precision*mg->info.precision_mult[2],
+                             r_norm_l,
+                             &n_iter,
+                             &_residue,
+                             rhs_lv,
+                             vx_lv,
+                             _aux_r_size*sizeof(cs_real_t),
+                             _aux_vectors);
 
     t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(lv_info->t_tot[1]), &t0, &t1);
@@ -1644,7 +1654,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
     *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
 
-    if (c_cvg == -2)
+    if (c_cvg < CS_SLES_MAX_ITERATION)
       end_cycle = true;
 
   }
@@ -1654,17 +1664,17 @@ _multigrid_cycle(cs_multigrid_t      *mg,
     /* Ascent */
     /*--------*/
 
-    if (verbosity > 2)
+    if (mg->verbosity > 2)
       bft_printf(_("  Multigrid cycle: ascent\n"));
 
     for (level = coarsest_level - 1; level > -1; level--) {
 
-      cs_real_t *_f_vx = _vx[level];
+      vx_lv = mgd->rhs_vx[level*2 + 1];;
 
       lv_info = mg->lv_info + level;
 
-      c = mg->grid_hierarchy[level+1];
-      f = mg->grid_hierarchy[level];
+      c = mgd->grid_hierarchy[level+1];
+      f = mgd->grid_hierarchy[level];
 
       cs_grid_get_info(f,
                        NULL,
@@ -1681,18 +1691,19 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
       t0 = cs_timer_time();
 
-      cs_grid_prolong_cell_var(c, f, _vx[level+1], wr);
+      cs_real_t *restrict vx_lv1 = mgd->rhs_vx[(level+1)*2 + 1];
+      cs_grid_prolong_cell_var(c, f, vx_lv1, wr);
 
       if (db_size[0] == 1) {
 #       pragma omp parallel for if(n_cells > CS_THR_MIN)
         for (ii = 0; ii < n_cells; ii++)
-          _f_vx[ii] += wr[ii];
+          vx_lv[ii] += wr[ii];
       }
       else {
 #       pragma omp parallel for private(jj) if(n_cells > CS_THR_MIN)
         for (ii = 0; ii < n_cells; ii++) {
           for (jj = 0; jj < db_size[0]; jj++)
-            _f_vx[ii*db_size[1]+jj] += wr[ii*db_size[1]+jj];
+            vx_lv[ii*db_size[1]+jj] += wr[ii*db_size[1]+jj];
         }
       }
 
@@ -1706,39 +1717,27 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
       if (level > 0) {
 
-        if (verbosity > 2)
+        if (mg->verbosity > 2)
           bft_printf(_("    level %3d: smoother\n"), level);
-
-        sprintf(var_lv_name, "%s:%04d", var_name, level);
 
         _matrix = cs_grid_get_matrix(f);
 
         _initial_residue = _residue;
 
-#if defined(HAVE_MPI)
-        cs_sles_set_mpi_reduce_comm(cs_grid_get_comm(f));
-#endif
+        rhs_lv = mgd->rhs_vx[level*2];
 
-        c_cvg = cs_sles_solve(var_lv_name,
-                              ascent_smoother_type,
-                              false, /* Stats not updated here */
-                              _matrix,
-                              poly_degree,
-                              rotation_mode,
-                              verbosity - 2,
-                              n_max_iter[level*2 + 1],
-                              precision,
-                              r_norm_l,
-                              &n_iter,
-                              &_residue,
-                              _rhs[level],
-                              _vx[level],
-                              _aux_size,
-                              _aux_vectors);
-
-#if defined(HAVE_MPI)
-        cs_sles_set_mpi_reduce_comm(cs_glob_mpi_comm);
-#endif
+        c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2+1],
+                                 lv_names[level*2+1],
+                                 _matrix,
+                                 rotation_mode,
+                                 precision*mg->info.precision_mult[1],
+                                 r_norm_l,
+                                 &n_iter,
+                                 &_residue,
+                                 rhs_lv,
+                                 vx_lv,
+                                 _aux_r_size*sizeof(cs_real_t),
+                                 _aux_vectors);
 
         t0 = cs_timer_time();
         cs_timer_counter_add_diff(&(lv_info->t_tot[3]), &t1, &t0);
@@ -1747,7 +1746,7 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
         *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
 
-        if (c_cvg == -2)
+        if (c_cvg < CS_SLES_MAX_ITERATION)
           break;
       }
 
@@ -1755,275 +1754,451 @@ _multigrid_cycle(cs_multigrid_t      *mg,
 
   } /* End of tests on end_cycle */
 
-  if (c_cvg == -2) {
-    cvg = -2;
-    if (abort_on_divergence)
-      _abort_on_divergence(mg, level,
-                           rotation_mode, cycle_id,
-                           _initial_residue, _residue,
-                           rhs, vx, _rhs, _vx);
-  }
+  mgd->exit_level = level;
+  mgd->exit_residue = _residue;
+  mgd->exit_initial_residue = _initial_residue;
+  mgd->exit_cycle_id = cycle_id;
 
   /* Free memory */
 
-  if (var_lv_name != _var_lv_name)
-    BFT_FREE(var_lv_name);
-
-  if (wr != aux_vectors)
-    BFT_FREE(wr);
-
-  BFT_FREE(_rhs_vx);
-  BFT_FREE(_rhs_vx_val);
-
   return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Test if a general sparse linear system needs solving or if the right-hand
+ * side is already zero within convergence criteria.
+ *
+ * The computed residue is also updated;
+ *
+ * parameters:
+ *   name      <-- name of the associated system
+ *   n_rows    <-- number of (non ghost) rows in rhs
+ *   verbosity <-- verbosity level
+ *   r_norm    <-- residue normalization
+ *   residue   <-> residue
+ *   rhs       <-- right hand side
+ *
+ * returns:
+ *   1 if solving is required, 0 if the rhs is already zero within tolerance
+ *   criteria (precision of residue normalization)
+ *----------------------------------------------------------------------------*/
+
+static int
+_needs_solving(const  char          *name,
+               cs_lnum_t             n_rows,
+               int                   verbosity,
+               double                r_norm,
+               double               *residue,
+               const cs_real_t      *rhs)
+{
+  /* Initialize residue, check for immediate return */
+
+  double r = cs_dot_xx(n_rows, rhs);
+  cs_parall_sum(1, CS_DOUBLE, &r);
+  *residue = sqrt(r);
+
+  return cs_sles_needs_solving(_("Multigrid"),
+                               name,
+                               verbosity,
+                               r_norm,
+                               *residue);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Build a hierarchy of meshes starting from a fine mesh, for an
- * ACM (Additive Corrective Multigrid) method.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(clmlga, CLMLGA)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Matrix block size */
- const cs_int_t   *iesize,    /* <-- Matrix extra diag block size */
- const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
- const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
-                                     coarse cell numbers modulo ncpost */
- const cs_int_t   *iwarnp,    /* <-- Verbosity level */
- const cs_int_t   *ngrmax,    /* <-- Maximum number of grid levels */
- const cs_int_t   *ncegrm,    /* <-- Maximum local number of cells on
-                                     coarsest grid */
- const cs_real_t  *rlxp1,     /* <-- P0/P1 relaxation parameter */
- const cs_real_t  *dam,       /* <-- Matrix diagonal */
- const cs_real_t  *xam        /* <-- Matrix extra-diagonal terms */
-)
-{
-  char *var_name;
-
-  bool symmetric = (*isym == 1) ? true : false;
-  int diag_block_size[4] = {*ibsize, *ibsize, *ibsize, (*ibsize)*(*ibsize)};
-  int extra_diag_block_size[4] = {*iesize, *iesize, *iesize, (*iesize)*(*iesize)};
-
-  var_name = cs_base_string_f_to_c_create(cname, *lname);
-
-  cs_multigrid_build(var_name,
-                     *iwarnp,
-                     *ncpost,
-                     *nagmax,
-                     *ngrmax,
-                     *ncegrm,
-                     *rlxp1,
-                     symmetric,
-                     diag_block_size,
-                     extra_diag_block_size,
-                     dam,
-                     xam);
-
-  cs_base_string_f_to_c_free(&var_name);
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a hierarchy of meshes starting from a fine mesh, keeping
- * the corresponding system and postprocessing information for future calls.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(dsmlga, DSMLGA)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname      /* <-- variable name length */
-)
-{
-  char *var_name;
-
-  var_name = cs_base_string_f_to_c_create(cname, *lname);
-
-  cs_multigrid_destroy(var_name);
-
-  cs_base_string_f_to_c_free(&var_name);
-}
-
-/*----------------------------------------------------------------------------
- * General sparse linear system resolution
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(resmgr, RESMGR)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *iresds,    /* <-- Descent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab,
-                                     200: pcg_single reduction */
- const cs_int_t   *iresas,    /* <-- Ascent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab,
-                                     200: pcg_single reduction */
- const cs_int_t   *ireslp,    /* <-- Coarse Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab,
-                                     200: pcg_single reduction */
- const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
-                                     (0: diagonal, -1: none) */
- const cs_int_t   *ncymxp,    /* <-- Max number of cycles */
- const cs_int_t   *nitmds,    /* <-- Max number of iterations for descent */
- const cs_int_t   *nitmas,    /* <-- Max number of iterations for ascent */
- const cs_int_t   *nitmap,    /* <-- Max number of iterations for
-                                     coarsest solution */
- const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
-                                     in rotational periodicity (2) or
-                                     to exchange them as scalars (1) */
- const cs_int_t   *iwarnp,    /* <-- Verbosity level */
- cs_int_t         *ncyclf,    /* --> Number of cycles done */
- cs_int_t         *niterf,    /* --> Number of iterations done */
- const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
- const cs_real_t  *rnorm,     /* <-- Residue normalization */
- cs_real_t        *residu,    /* --> Final non normalized residue */
- const cs_real_t  *rhs,       /* <-- System right-hand side */
- cs_real_t        *vx         /* <-> System solution */
-)
-{
-  char *var_name;
-
-  int res_type[3] = {*iresds, *iresas, *ireslp};
-
-  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
-
-  if (*iinvpe == 2)
-    rotation_mode = CS_HALO_ROTATION_ZERO;
-  else if (*iinvpe == 3)
-    rotation_mode = CS_HALO_ROTATION_IGNORE;
-
-  var_name = cs_base_string_f_to_c_create(cname, *lname);
-
-  for (int i = 0; i < 3; i++) {
-    switch(res_type[i]) {
-    case 1:
-      res_type[i] = CS_SLES_JACOBI;
-      break;
-    case 2:
-      res_type[i] = CS_SLES_BICGSTAB;
-      break;
-    case 200:
-      res_type[i] = CS_SLES_PCG_SR;
-      break;
-    default:
-      res_type[i] = CS_SLES_PCG;
-    }
-  }
-
-  cs_multigrid_solve(var_name,
-                     res_type[0],
-                     res_type[1],
-                     res_type[2],
-                     true,
-                     *ipol,
-                     rotation_mode,
-                     *iwarnp,
-                     *ncymxp,
-                     *nitmds,
-                     *nitmas,
-                     *nitmap,
-                     *epsilp,
-                     *rnorm,
-                     ncyclf,
-                     niterf,
-                     residu,
-                     rhs,
-                     vx,
-                     0,
-                     NULL);
-
-  cs_base_string_f_to_c_free(&var_name);
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Initialize multigrid solver API.
- *
- * parameters:
- *   post_cell_max <-- if > 0, activates postprocessing of coarseninsg,
- *                     projecting coarse cell numbers (modulo post_cell_max)
- *                     on the base grid
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize multigrid solver API.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_multigrid_initialize(void)
 {
 }
 
-/*----------------------------------------------------------------------------
- * Finalize multigrid solver API.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize multigrid solver API.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_multigrid_finalize(void)
 {
-  int ii;
-
-  /* Print system info */
-
-  for (ii = 0; ii < cs_glob_multigrid_n_systems; ii++)
-    _multigrid_info_dump(cs_glob_multigrid_systems[ii]);
-
-  /* Free multigrid structures */
-
-  for (ii = 0; ii < cs_glob_multigrid_n_systems; ii++)
-    _multigrid_destroy(cs_glob_multigrid_systems + ii);
-
-  BFT_FREE(cs_glob_multigrid_systems);
-
-  cs_glob_multigrid_n_systems = 0;
-  cs_glob_multigrid_n_max_systems = 0;
-
+  _multigrid_in_use = false;
   cs_grid_finalize();
 }
 
-/*----------------------------------------------------------------------------
- * Build a hierarchy of meshes starting from a fine mesh, for an
- * ACM (Additive Corrective Multigrid) method.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Indicate if multigrid solver API is used for at least one system.
  *
- * parameters:
- *   var_name               <-- variable name
- *   verbosity              <-- verbosity level
- *   postprocess_block_size <-- if > 0, postprocess coarsening, using
- *                              coarse cell numbers modulo ncpost
- *   aggregation_limit      <-- maximum allowed fine cells per coarse cell
- *   n_max_levels           <-- maximum number of grid levels
- *   n_g_cells_min          <-- global number of cells on coarsest grid
- *                              under which no merging occurs
- *   p0p1_relax             <-- p0/p1 relaxation_parameter
- *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
- *   da                     <-- diagonal values (NULL if zero)
- *   xa                     <-- extradiagonal values (NULL if zero)
- *----------------------------------------------------------------------------*/
+ * \return  true if at least one system uses a multigrid solver,
+ *          false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_multigrid_needed(void)
+{
+  return _multigrid_in_use;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define and associate a multigrid sparse linear system solver
+ *        for a given field or equation name.
+ *
+ * If this system did not previously exist, it is added to the list of
+ * "known" systems. Otherwise, its definition is replaced by the one
+ * defined here.
+ *
+ * This is a utility function: if finer control is needed, see
+ * \ref cs_sles_define and \ref cs_multigrid_create.
+ *
+ * Note that this function returns a pointer directly to the multigrid solver
+ * management structure. This may be used to set further options, for
+ * example calling \ref cs_multigrid_set_coarsening_options and
+ * \ref cs_multigrid_set_solver_options.
+ * If needed, \ref cs_sles_find may be used to obtain a pointer to the
+ * matching \ref cs_sles_t container.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to new multigrid info and context
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_multigrid_t *
+cs_multigrid_define(int          f_id,
+                    const char  *name)
+{
+  cs_multigrid_t *
+    mg = cs_multigrid_create();
+
+  cs_sles_t *sc = cs_sles_define(f_id,
+                                 name,
+                                 mg,
+                                 "cs_multigrid_t",
+                                 cs_multigrid_setup,
+                                 cs_multigrid_solve,
+                                 cs_multigrid_free,
+                                 cs_multigrid_log,
+                                 cs_multigrid_copy,
+                                 cs_multigrid_destroy);
+
+  cs_sles_set_error_handler(sc,
+                            cs_multigrid_error_post_and_abort);
+
+  cs_multigrid_set_verbosity(mg, cs_sles_default_verbosity(f_id));
+
+  return mg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create multigrid linear system solver info and context.
+ *
+ * The multigrid variant is an ACM (Additive Corrective Multigrid) method.
+ *
+ * \return  pointer to new multigrid info and context
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_multigrid_t *
+cs_multigrid_create(void)
+{
+  int ii;
+  cs_multigrid_t *mg;
+
+  /* Increment number of setups */
+
+  _multigrid_in_use = true;
+
+  BFT_MALLOC(mg, 1, cs_multigrid_t);
+
+  mg->aggregation_limit = 3;
+  mg->coarsening_type = 0;
+  mg->n_levels_max = 25;
+  mg->n_g_cells_min = 30;
+
+  mg->verbosity = 0;
+  mg->post_cell_max = 0;
+
+  mg->p0p1_relax = 0.95;
+
+  _multigrid_info_init(&(mg->info));
+
+  mg->n_levels_post = 0;
+
+  mg->setup_data = NULL;
+
+  BFT_MALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
+
+  for (ii = 0; ii < mg->n_levels_max; ii++)
+    _multigrid_level_info_init(mg->lv_info + ii);
+
+  if (mg->post_cell_max > 0)
+    cs_post_add_time_dep_output(_cs_multigrid_post_function, (void *)mg);
+
+  mg->post_cell_num = NULL;
+  mg->post_cell_rank = NULL;
+  mg->post_name = NULL;
+
+  return mg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy multigrid linear system solver info and context.
+ *
+ * \param[in, out]  context  pointer to multigrid linear solver info
+ *                           (actual type: cs_multigrid_t  **)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_multigrid_build(const char       *var_name,
-                   int               verbosity,
-                   int               postprocess_block_size,
-                   int               aggregation_limit,
-                   int               n_max_levels,
-                   cs_gnum_t         n_g_cells_min,
-                   double            p0p1_relax,
-                   bool              symmetric,
-                   const int        *diag_block_size,
-                   const int        *extra_diag_block_size,
-                   const cs_real_t  *da,
-                   const cs_real_t  *xa)
+cs_multigrid_destroy(void  **context)
 {
+  cs_multigrid_t *mg = (cs_multigrid_t *)(*context);
+
+  if (mg == NULL)
+    return;
+
+  BFT_FREE(mg->lv_info);
+
+  if (mg->post_cell_max > 0) {
+    for (int i = 0; i < mg->n_levels_max - 1; i++)
+      if (mg->post_cell_num[i] != NULL)
+        BFT_FREE(mg->post_cell_num[i]);
+    BFT_FREE(mg->post_cell_num);
+  }
+
+  if (mg->post_cell_rank != NULL) {
+    for (int i = 0; i < mg->n_levels_max - 1; i++)
+      if (mg->post_cell_rank[i] != NULL)
+        BFT_FREE(mg->post_cell_rank[i]);
+    BFT_FREE(mg->post_cell_rank);
+  }
+
+  BFT_FREE(mg->post_name);
+
+  BFT_FREE(mg);
+  *context = (void *)mg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create multigrid sparse linear system solver info and context
+ *        based on existing info and context.
+ *
+ * \param[in]  context  pointer to reference info and context
+ *                      (actual type: cs_multigrid_t  *)
+ *
+ * \return  pointer to newly created solver info object
+ *          (actual type: cs_multigrid_t  *)
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_multigrid_copy(const void  *context)
+{
+  cs_multigrid_t *d = NULL;
+
+  if (context != NULL) {
+    const cs_multigrid_t *c = context;
+    d = cs_multigrid_create();
+    /* Beginning of cs_multigrid_info_t contains settings, the rest logging */
+    memcpy(&(d->info), &(c->info),
+           offsetof(cs_multigrid_info_t, n_calls));
+    /* Same here: settings at beginningof structure */
+    memcpy(&(d), &(c),
+           offsetof(cs_multigrid_t, n_levels_post));
+  }
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log multigrid solver info.
+ *
+ * \param[in]  context   pointer to iterative solver info and context
+ *                       (actual type: cs_multigrid_t  *)
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_log(const void  *context,
+                 cs_log_t     log_type)
+{
+  const cs_multigrid_t  *mg = context;
+
+  if (log_type == CS_LOG_SETUP)
+    _multigrid_setup_log(mg);
+
+  else if (log_type == CS_LOG_PERFORMANCE)
+    _multigrid_performance_log(mg);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set multigrid coarsening parameters.
+ *
+ * \param[in, out]  mg                 pointer to multigrid info and context
+ * \param[in]       aggregation_limit  maximum allowed fine cells
+ *                                     per coarse cell
+ * \param[in]       coarsening_type    coarsening type:
+ *                                      0: algebraic, natural face traversal;
+ *                                      1: algebraic, face traveral by criteria;
+ *                                      2: algebraic, Hilbert face traversal;
+ * \param[in]      n_max_levels        maximum number of grid levels
+ * \param[in]      min_g_cells         global number of cells on coarse grids
+ *                                     under which no coarsening occurs
+ * \param[in]      p0p1_relax          p0/p1 relaxation_parameter
+ * \param[in]      postprocess         if > 0, postprocess coarsening
+ *                                     (uses coarse cell numbers
+ *                                      modulo this value)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
+                                    int              aggregation_limit,
+                                    int              coarsening_type,
+                                    int              n_max_levels,
+                                    cs_gnum_t        min_g_cells,
+                                    double           p0p1_relax,
+                                    int              postprocess)
+{
+  if (mg == NULL)
+    return;
+
+  mg->aggregation_limit = aggregation_limit;
+  mg->coarsening_type = coarsening_type;
+  mg->n_levels_max = n_max_levels;
+  mg->n_g_cells_min = min_g_cells;
+
+  mg->post_cell_max = postprocess;
+
+  mg->p0p1_relax = p0p1_relax;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set multigrid parameters for associated iterative solvers.
+ *
+ * \param[in, out]  mg                      pointer to multigrid info
+ *                                          and context
+ * \param[in]       descent_smoother_type   type of smoother for descent
+ * \param[in]       ascent_smoother_type    type of smoother for ascent
+ * \param[in]       coarse_solver_type      type of solver for coarsest grid
+ * \param[in]       n_max_cycles            maximum number of cycles
+ * \param[in]       n_max_iter_descent      maximum iterations
+ *                                          per descent smoothing
+ * \param[in]       n_max_iter_ascent       maximum iterations
+ *                                          per ascent smmothing
+ * \param[in]       n_max_iter_coarse       maximum iterations
+ *                                          per coarsest solution
+ * \param[in]       poly_degree_descent     preconditioning polynomial degree
+ *                                          for descent phases (0: diagonal)
+ * \param[in]       poly_degree_ascent      preconditioning polynomial degree
+ *                                          for ascent phases (0: diagonal)
+ * \param[in]       poly_degree_coarse      preconditioning polynomial degree
+ *                                          for coarse solver (0: diagonal)
+ * \param[in]      precision_mult_descent   precision multiplier
+ *                                          for descent smoothers (levels >= 1)
+ * \param[in]      precision_mult_ascent    precision multiplier
+ *                                          for ascent smoothers
+ * \param[in]      precision_mult_coarse    precision multiplier
+ *                                          for coarsest grid
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
+                                cs_sles_it_type_t   descent_smoother_type,
+                                cs_sles_it_type_t   ascent_smoother_type,
+                                cs_sles_it_type_t   coarse_solver_type,
+                                int                 n_max_cycles,
+                                int                 n_max_iter_descent,
+                                int                 n_max_iter_ascent,
+                                int                 n_max_iter_coarse,
+                                int                 poly_degree_descent,
+                                int                 poly_degree_ascent,
+                                int                 poly_degree_coarse,
+                                double              precision_mult_descent,
+                                double              precision_mult_ascent,
+                                double              precision_mult_coarse)
+{
+  if (mg == NULL)
+    return;
+
+  cs_multigrid_info_t  *info = &(mg->info);
+
+  info->type[0] = descent_smoother_type;
+  info->type[1] = ascent_smoother_type;
+  info->type[0] = coarse_solver_type;
+
+  info->n_max_cycles = n_max_cycles;
+
+  info->n_max_iter[0] = n_max_iter_descent;
+  info->n_max_iter[1] = n_max_iter_ascent;
+  info->n_max_iter[2] = n_max_iter_coarse;
+
+  info->poly_degree[0] = poly_degree_descent;
+  info->poly_degree[1] = poly_degree_ascent;
+  info->poly_degree[2] = poly_degree_coarse;
+
+  info->precision_mult[0] = precision_mult_descent;
+  info->precision_mult[1] = precision_mult_ascent;
+  info->precision_mult[2] = precision_mult_coarse;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set multigrid verbosity.
+ *
+ * \param[in, out]  mg         pointer to multigrid info and context
+ * \param[in]       verbosity  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_verbosity(cs_multigrid_t  *mg,
+                           int              verbosity)
+{
+  if (mg == NULL)
+    return;
+
+  mg->verbosity = verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup multigrid sparse linear equation solver.
+ *
+ * \param[in, out]  context  pointer to multigrid solver info and context
+ *                           (actual type: cs_multigrid_t  *)
+ * \param[in]       name     pointer to name of linear system
+ * \param[in]       a        associated matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_setup(void               *context,
+                   const char         *name,
+                   const cs_matrix_t  *a)
+{
+  cs_multigrid_t  *mg = context;
+
   cs_timer_t t0, t1, t2;
 
   int n_coarse_ranks = cs_glob_n_ranks;
@@ -2035,7 +2210,6 @@ cs_multigrid_build(const char       *var_name,
   cs_gnum_t n_g_cells_prev = 0;
 
   cs_int_t grid_lv = 0;
-  cs_multigrid_t *mg = NULL;
   cs_multigrid_level_info_t *mg_lv_info = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -2043,26 +2217,30 @@ cs_multigrid_build(const char       *var_name,
 
   cs_grid_t *g = NULL;
 
+  /* Destroy previous hierarchy if necessary */
+
+  if (mg->setup_data != NULL)
+    cs_multigrid_free(mg);
+
   /* Initialization */
 
   t0 = cs_timer_time();
 
-  mg = _find_or_add_system(var_name);
-
-  if (verbosity > 1)
+  if (mg->verbosity > 1)
     bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
-               var_name);
+               name);
 
-  /* Destroy previous hierarchy if necessary */
-
-  if (mg->n_levels > 0) {
-    for (grid_lv = mg->n_levels - 1; grid_lv > -1; grid_lv--)
-      cs_grid_destroy(mg->grid_hierarchy + grid_lv);
-    mg->n_levels = 0;
-  }
+  mg->setup_data = _multigrid_setup_data_create();
 
   /* Build coarse grids hierarchy */
   /*------------------------------*/
+
+  bool symmetric = cs_matrix_is_symmetric(a);
+  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const int *extra_diag_block_size = cs_matrix_get_extra_diag_block_size(a);
+
+  const cs_real_t *da = cs_matrix_get_diagonal(a);
+  const cs_real_t *xa = cs_matrix_get_extra_diagonal(a);
 
   g = cs_grid_create_from_shared(mesh->n_cells,
                                  mesh->n_cells_with_ghosts,
@@ -2070,7 +2248,7 @@ cs_multigrid_build(const char       *var_name,
                                  symmetric,
                                  diag_block_size,
                                  extra_diag_block_size,
-                                 mesh->i_face_cells,
+                                 (const cs_lnum_2_t *)(mesh->i_face_cells),
                                  mesh->halo,
                                  mesh->i_face_numbering,
                                  mq->cell_cen,
@@ -2081,16 +2259,14 @@ cs_multigrid_build(const char       *var_name,
 
   _multigrid_add_level(mg, g); /* Assign to hierarchy */
 
+  /* Add info */
+
   n_cells = mesh->n_cells;
   n_cells_with_ghosts = mesh->n_cells_with_ghosts;
   n_faces = mesh->n_i_faces;
   n_g_cells = mesh->n_g_cells;
 
   mg_lv_info = mg->lv_info;
-  mg_lv_info->n_ranks[0] = cs_glob_n_ranks;
-  mg_lv_info->n_elts[0][0] = n_cells;
-  mg_lv_info->n_elts[1][0] = n_cells_with_ghosts;
-  mg_lv_info->n_elts[2][0] = n_faces;
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(mg_lv_info->t_tot[0]), &t0, &t1);
@@ -2102,17 +2278,21 @@ cs_multigrid_build(const char       *var_name,
 
     /* Recursion test */
 
-    if (grid_lv >= n_max_levels)
+    if (grid_lv >= mg->n_levels_max)
       break;
 
     /* Build coarser grid from previous grid */
 
     grid_lv += 1;
 
-    if (verbosity > 2)
+    if (mg->verbosity > 2)
       bft_printf(_("\n   building level %2d grid\n"), grid_lv);
 
-    g = cs_grid_coarsen(g, verbosity, aggregation_limit, p0p1_relax);
+    g = cs_grid_coarsen(g,
+                        mg->verbosity,
+                        mg->coarsening_type,
+                        mg->aggregation_limit,
+                        mg->p0p1_relax);
 
     cs_grid_get_info(g,
                      &grid_lv,
@@ -2129,7 +2309,7 @@ cs_multigrid_build(const char       *var_name,
 
     /* Print coarse mesh stats */
 
-    if (verbosity > 2) {
+    if (mg->verbosity > 2) {
 
 #if defined(HAVE_MPI)
 
@@ -2176,7 +2356,7 @@ cs_multigrid_build(const char       *var_name,
 
     /* If too few cells were grouped, we stop at this level */
 
-    if (n_g_cells <= n_g_cells_min)
+    if (n_g_cells <= mg->n_g_cells_min)
       break;
     else if (n_g_cells > (0.8 * n_g_cells_prev)
         && n_coarse_ranks == n_coarse_ranks_prev)
@@ -2185,7 +2365,7 @@ cs_multigrid_build(const char       *var_name,
 
   /* Print final info */
 
-  if (verbosity > 1)
+  if (mg->verbosity > 1)
     bft_printf
       (_("   number of coarse grids:           %d\n"
          "   number of cells in coarsest grid: %llu\n\n"),
@@ -2193,19 +2373,8 @@ cs_multigrid_build(const char       *var_name,
 
   /* Prepare preprocessing info if necessary */
 
-  if (postprocess_block_size > 0) {
-
-    if (mg->post_cell_max == 0) {
-      int mg_id = _multigrid_id(mg);
-      if (mg_id > -1)
-        cs_post_add_time_dep_output(_cs_multigrid_post_function,
-                                    (void *)mg);
-      mg->post_cell_max = postprocess_block_size;
-    }
-
-    _multigrid_add_post(mg, mesh->n_cells);
-
-  }
+  if (mg->post_cell_max > 0)
+    _multigrid_add_post(mg, name, mesh->n_cells);
 
   /* Update info */
 
@@ -2268,200 +2437,138 @@ cs_multigrid_build(const char       *var_name,
 
   mg->info.n_calls[0] += 1;
 
+  /* Setup solvers */
+
+  _multigrid_setup_sles_it(mg, name);
+
   /* Update timers */
 
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t2);
 }
 
-/*----------------------------------------------------------------------------
- * Destroy a hierarchy of meshes starting from a fine mesh, keeping
- * the corresponding system and postprocessing information for future calls.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Call multigrid sparse linear equation solver.
  *
- * parameters:
- *   var_name <-- variable name
- *----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_destroy(const char  *var_name)
-{
-  int ii;
-  cs_timer_t t0, t1;
-  cs_multigrid_t *mg = NULL;
-
-  /* Initialization */
-
-  t0 = cs_timer_time();
-
-  mg = _find_or_add_system(var_name);
-
-  /* Destroy grid hierarchy */
-
-  if (mg->n_levels > 0) {
-    for (ii = mg->n_levels - 1; ii > -1; ii--)
-      cs_grid_destroy(mg->grid_hierarchy + ii);
-    mg->n_levels = 0;
-  }
-
-  /* Update timers */
-
-  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------
- * Sparse linear system resolution using multigrid.
+ * \param[in, out]  context        pointer to multigrid solver info and context
+ *                                 (actual type: cs_multigrid_t  *)
+ * \param[in]       name     pointer to name of linear system
+ * \param[in]       a              matrix
+ * \param[in]       rotation_mode  halo update option for rotational periodicity
+ * \param[in]       precision      solver precision
+ * \param[in]       r_norm         residue normalization
+ * \param[out]      n_iter         number of "equivalent" iterations
+ * \param[out]      residue        residue
+ * \param[in]       rhs            right hand side
+ * \param[in, out]  vx             system solution
+ * \param[in]       aux_size       size of aux_vectors (in bytes)
+ * \param           aux_vectors    optional working area
+ *                                 (internal allocation if NULL)
  *
- * parameters:
- *   var_name              <-- variable name
- *   descent_smoother_type <-- type of smoother for descent (PCG, Jacobi, ...)
- *   ascent_smoother_type  <-- type of smoother for ascent (PCG, Jacobi, ...)
- *   coarse_solver_type    <-- type of solver (PCG, Jacobi, ...)
- *   abort_on_divergence   <-- call errorhandler if devergence is detected
- *   poly_degree           <-- preconditioning polynomial degree (0: diagonal)
- *   rotation_mode         <-- halo update option for rotational periodicity
- *   verbosity             <-- verbosity level
- *   n_max_cycles          <-- maximum number of cycles
- *   n_max_iter_descent    <-- maximum nb. of iterations for descent phases
- *   n_max_iter_ascent     <-- maximum nb. of iterations for ascent phases
- *   n_max_iter_coarse     <-- maximum nb. of iterations for coarsest solution
- *   precision             <-- precision limit
- *   r_norm                <-- residue normalization
- *   n_cycles              --> number of cycles
- *   n_equiv_iter          --> number of equivalent iterative solver iterations
- *   residue               <-> residue
- *   rhs                   <-- right hand side
- *   vx                    --> system solution
- *   aux_size              <-- number of elements in aux_vectors
- *   aux_vectors           --- optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   cycle number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
+ * \return  convergence state
+ */
+/*----------------------------------------------------------------------------*/
 
-int
-cs_multigrid_solve(const char          *var_name,
-                   cs_sles_type_t       descent_smoother_type,
-                   cs_sles_type_t       ascent_smoother_type,
-                   cs_sles_type_t       coarse_solver_type,
-                   bool                 abort_on_divergence,
-                   int                  poly_degree,
+cs_sles_convergence_state_t
+cs_multigrid_solve(void                *context,
+                   const char          *name,
+                   const cs_matrix_t   *a,
                    cs_halo_rotation_t   rotation_mode,
-                   int                  verbosity,
-                   int                  n_max_cycles,
-                   int                  n_max_iter_descent,
-                   int                  n_max_iter_ascent,
-                   int                  n_max_iter_coarse,
                    double               precision,
                    double               r_norm,
-                   int                 *n_cycles,
-                   int                 *n_equiv_iter,
+                   int                 *n_iter,
                    double              *residue,
                    const cs_real_t     *rhs,
                    cs_real_t           *vx,
                    size_t               aux_size,
                    void                *aux_vectors)
 {
-  int ii;
-  int db_size[4] = {1, 1, 1, 1};
-  int eb_size[4] = {1, 1, 1, 1};
-
-  int cvg = 0;
-  cs_lnum_t n_cells = 0;
-
-  cs_multigrid_t *mg = NULL;
-  cs_multigrid_info_t *mg_info = NULL;
   cs_timer_t t0, t1;
-
   t0 = cs_timer_time();
-  mg = _find_or_add_system(var_name);
-  mg_info = &(mg->info);
 
-  cs_grid_get_info(mg->grid_hierarchy[0],
-                   NULL,
-                   NULL,
-                   db_size,
-                   eb_size,
-                   NULL,
-                   &n_cells,
-                   NULL,
-                   NULL,
-                   NULL);
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  /* Initialize number of iterations and residue,
+  cs_multigrid_t *mg = context;
+  cs_multigrid_info_t *mg_info = &(mg->info);
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+
+  assert(db_size[0] == db_size[1]);
+
+  cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+
+  /* Initialize number of equivalent iterations and residue,
      check for immediate return,
      solve sparse linear system using multigrid algorithm. */
 
-  *n_cycles = 0;
-  *n_equiv_iter = 0;
+  *n_iter = 0;
+  unsigned n_cycles = 0;
 
-  if (cs_sles_needs_solving(var_name,
-                            _("Multigrid"),
-                            n_cells*db_size[1],
-                            verbosity,
-                            r_norm,
-                            residue,
-                            rhs) != 0) {
+  if (_needs_solving(name,
+                     n_rows*db_size[1],
+                     mg->verbosity,
+                     r_norm,
+                     residue,
+                     rhs) != 0) {
 
-    int cycle_id = 1;
+    if (mg->setup_data == NULL) {
+      /* Stop solve timer to switch to setup timer */
+      t1 = cs_timer_time();
+      cs_timer_counter_add_diff(&(mg->info.t_tot[1]), &t0, &t1);
 
-    int *n_max_iter = NULL;
-    size_t  _aux_size = n_cells * 6 * db_size[1];
-    cs_real_t *_aux_vectors = aux_vectors;
+      /* Setup grid hierarchy */
+      cs_multigrid_setup(context, name, a);
 
-    BFT_MALLOC(n_max_iter, mg->n_levels * 2, int);
+      /* Restart solve timer */
+      t0 = cs_timer_time();
+    }
 
-    if (_aux_size <= aux_size)
-      BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
+    /* Buffer size sufficient to avoid local reallocation for most solvers */
+    size_t  lv_names_size = _level_names_size(name, mg->setup_data->n_levels);
+    size_t  _aux_size =   lv_names_size
+                        + n_rows * 6 * db_size[1] * sizeof(cs_real_t);
+    unsigned char *_aux_buf = aux_vectors;
+
+    if (_aux_size > aux_size)
+      BFT_MALLOC(_aux_buf, _aux_size, unsigned char);
     else
       _aux_size = aux_size;
 
-    for (ii = 0; ii < mg->n_levels; ii++) {
-      n_max_iter[ii*2] = n_max_iter_descent;
-      n_max_iter[ii*2 + 1] = n_max_iter_ascent;
-    }
-    n_max_iter[(mg->n_levels-1)*2]     = n_max_iter_coarse;
-    n_max_iter[(mg->n_levels-1)*2 + 1] = n_max_iter_coarse;
+    _level_names_init(name, mg->setup_data->n_levels, _aux_buf);
+    const char **lv_names = (const char **)_aux_buf;
 
-    if (verbosity == 2) /* More detailed headers later if > 2 */
-      bft_printf(_("Multigrid [%s]:\n"), var_name);
+    if (mg->verbosity == 2) /* More detailed headers later if > 2 */
+      bft_printf(_("Multigrid [%s]:\n"), name);
 
     /* Cycle to solution */
 
-    while (cvg == 0) {
+    while (cvg == CS_SLES_ITERATING) {
 
-      if (verbosity > 2)
+      int cycle_id = n_cycles + 1;
+
+      if (mg->verbosity > 2)
         bft_printf(_("Multigrid [%s]: cycle %4d\n"),
-                   var_name, cycle_id);
+                   name, cycle_id);
 
       cvg = _multigrid_cycle(mg,
-                             descent_smoother_type,
-                             ascent_smoother_type,
-                             coarse_solver_type,
-                             abort_on_divergence,
-                             poly_degree,
+                             lv_names,
                              rotation_mode,
-                             verbosity,
                              cycle_id,
-                             n_max_cycles,
-                             n_max_iter,
-                             n_equiv_iter,
+                             n_iter,
                              precision,
                              r_norm,
                              residue,
                              rhs,
                              vx,
-                             aux_size,
-                             _aux_vectors);
+                             _aux_size - lv_names_size,
+                             _aux_buf + lv_names_size);
 
-      cycle_id++;
-      *n_cycles += 1;
+      n_cycles++;
     }
 
-    if (_aux_vectors != aux_vectors)
-      BFT_FREE(_aux_vectors);
-    BFT_FREE(n_max_iter);
+    if (_aux_buf != aux_vectors)
+      BFT_FREE(_aux_buf);
   }
 
   /* Update statistics */
@@ -2470,21 +2577,17 @@ cs_multigrid_solve(const char          *var_name,
 
   /* Update stats on number of iterations (last, min, max, total) */
 
-  mg_info->type[0] = descent_smoother_type;
-  mg_info->type[1] = ascent_smoother_type;
-  mg_info->type[2] = coarse_solver_type;
-
-  mg_info->n_cycles[2] += *n_cycles;
+  mg_info->n_cycles[2] += n_cycles;
 
   if (mg_info->n_calls[1] > 0) {
-    if (mg_info->n_cycles[0] > (unsigned)(*n_cycles))
-      mg_info->n_cycles[0] = *n_cycles;
-    if (mg_info->n_cycles[1] < (unsigned)(*n_cycles))
-      mg_info->n_cycles[1] = *n_cycles;
+    if (mg_info->n_cycles[0] > n_cycles)
+      mg_info->n_cycles[0] = n_cycles;
+    if (mg_info->n_cycles[1] < n_cycles)
+      mg_info->n_cycles[1] = n_cycles;
   }
   else {
-    mg_info->n_cycles[0] = *n_cycles;
-    mg_info->n_cycles[1] = *n_cycles;
+    mg_info->n_cycles[0] = n_cycles;
+    mg_info->n_cycles[1] = n_cycles;
   }
 
   /* Update number of resolutions and timing data */
@@ -2493,6 +2596,243 @@ cs_multigrid_solve(const char          *var_name,
   cs_timer_counter_add_diff(&(mg->info.t_tot[1]), &t0, &t1);
 
   return cvg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free multigrid sparse linear equation solver setup context.
+ *
+ * This function frees resolution-related data, incuding the current
+ * grid hierarchy, but does not free the whole context,
+ * as info used for logging (especially performance data) is maintained.
+ *
+ * \param[in, out]  context  pointer to multigrid solver info and context
+ *                           (actual type: cs_multigrid_t  *)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_free(void  *context)
+{
+  cs_multigrid_t *mg = context;
+
+  cs_timer_t t0, t1;
+
+  /* Initialization */
+
+  t0 = cs_timer_time();
+
+  if (mg->setup_data != NULL) {
+
+    cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+    /* Free coarse solution data */
+
+    BFT_FREE(mgd->rhs_vx);
+    BFT_FREE(mgd->rhs_vx_buf);
+
+    /* Destroy solver hierarchy */
+
+    for (int i = mgd->n_levels - 1; i > -1; i--) {
+      for (int j = 0; j < 2; j++) {
+        if (mgd->sles_hierarchy[i*2+j] != NULL) {
+          void *sles_it = mgd->sles_hierarchy[i*2 + j];
+          cs_sles_it_destroy(&sles_it);
+        }
+      }
+    }
+    BFT_FREE(mgd->sles_hierarchy);
+
+    /* Destroy grid hierarchy */
+
+    for (int i = mgd->n_levels - 1; i > -1; i--)
+      cs_grid_destroy(mgd->grid_hierarchy + i);
+    BFT_FREE(mgd->grid_hierarchy);
+
+    BFT_FREE(mg->setup_data);
+
+  }
+
+  /* Update timers */
+
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Error handler for multigrid sparse linear equation solver.
+ *
+ * In case of divergence or breakdown, this error handler outputs
+ * postprocessing data to assist debugging, then aborts the run.
+ * It does nothing in case the maximum iteration count is reached.
+
+ * \param[in, out]  context        pointer to multigrid solver info and context
+ *                                 (actual type: cs_multigrid_t  *)
+ * \param[in]       state          convergence state
+ * \param[in]       name           pointer to name of linear system
+ * \param[in]       a              matrix
+ * \param[in]       rotation_mode  halo update option for rotational periodicity
+ * \param[in]       rhs            right hand side
+ * \param[in, out]  vx             system solution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_error_post_and_abort(void                         *context,
+                                  cs_sles_convergence_state_t   state,
+                                  const char                   *name,
+                                  const cs_matrix_t            *a,
+                                  cs_halo_rotation_t            rotation_mode,
+                                  const cs_real_t               rhs[],
+                                  cs_real_t                     vx[])
+{
+  const cs_multigrid_t  *mg = context;
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+  int level = mgd->exit_level;
+
+  int mesh_id = cs_post_init_error_writer_cells();
+
+  if (mesh_id != 0) {
+
+    char var_name[32];
+
+    int lv_id = 0;
+    cs_real_t *var = NULL, *da = NULL;
+
+    int i;
+    int db_size[4] = {1, 1, 1, 1};
+    int eb_size[4] = {1, 1, 1, 1};
+
+    const cs_grid_t *g = mgd->grid_hierarchy[0];
+    const cs_lnum_t n_base_cells = cs_grid_get_n_cells(g);
+    const cs_matrix_t  *_matrix = NULL;
+
+    BFT_MALLOC(var, cs_grid_get_n_cells_ext(g), cs_real_t);
+    BFT_MALLOC(da, cs_grid_get_n_cells_ext(g), cs_real_t);
+
+    /* Output info on main level */
+
+    cs_sles_post_error_output_def(name,
+                                  mesh_id,
+                                  rotation_mode,
+                                  a,
+                                  rhs,
+                                  vx);
+
+    /* Output diagonal and diagonal dominance for all coarse levels */
+
+    for (lv_id = 1; lv_id < (int)(mgd->n_levels); lv_id++) {
+
+      g = mgd->grid_hierarchy[lv_id];
+
+      cs_grid_get_info(g,
+                       NULL,
+                       NULL,
+                       db_size,
+                       eb_size,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL,
+                       NULL);
+
+
+      _matrix = cs_grid_get_matrix(g);
+
+      cs_matrix_copy_diagonal(_matrix, da);
+      cs_grid_project_var(g, n_base_cells, da, var);
+      sprintf(var_name, "Diag_%04d", lv_id);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+
+      cs_grid_project_diag_dom(g, n_base_cells, var);
+      sprintf(var_name, "Diag_Dom_%04d", lv_id);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+    }
+
+    /* Output info on current level if > 0 */
+
+    if (level > 0) {
+
+      cs_lnum_t ii;
+      cs_lnum_t n_cells = 0;
+      cs_lnum_t n_cells_ext = 0;
+
+      cs_real_t *c_res = NULL;
+
+      g = mgd->grid_hierarchy[level];
+
+      cs_grid_get_info(g,
+                       NULL,
+                       NULL,
+                       db_size,
+                       eb_size,
+                       NULL,
+                       &n_cells,
+                       &n_cells_ext,
+                       NULL,
+                       NULL);
+
+      cs_grid_project_var(g, n_base_cells, mgd->rhs_vx[level*2], var);
+      sprintf(var_name, "RHS_%04d", level);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+
+      cs_grid_project_var(g, n_base_cells, mgd->rhs_vx[level*2+1], var);
+      sprintf(var_name, "X_%04d", level);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+
+      /* Compute residual */
+
+      BFT_MALLOC(c_res, n_cells_ext*db_size[1], cs_real_t);
+
+      _matrix = cs_grid_get_matrix(g);
+
+      cs_matrix_vector_multiply(rotation_mode,
+                                _matrix,
+                                mgd->rhs_vx[level*2+1],
+                                c_res);
+
+      const cs_real_t *c_rhs_lv = mgd->rhs_vx[level*2];
+      for (ii = 0; ii < n_cells; ii++) {
+        for (i = 0; i < db_size[0]; i++)
+          c_res[ii*db_size[1] + i]
+            = fabs(c_res[ii*db_size[1] + i] - c_rhs_lv[ii*db_size[1] + i]);
+      }
+
+      cs_grid_project_var(g, n_base_cells, c_res, var);
+
+      BFT_FREE(c_res);
+
+      sprintf(var_name, "Residual_%04d", level);
+      cs_sles_post_error_output_var(var_name, mesh_id, db_size[1], var);
+    }
+
+    cs_post_finalize();
+
+    BFT_FREE(da);
+    BFT_FREE(var);
+  }
+
+  /* Now abort */
+
+  const char *error_type[] = {N_("divergence"), N_("breakdown")};
+  int err_id = (state == CS_SLES_BREAKDOWN) ? 1 : 0;
+
+  if (level == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("algebraic multigrid [%s]: %s after %d cycles:\n"
+                "  initial residual: %11.4e; current residual: %11.4e"),
+              name, _(error_type[err_id]), mgd->exit_cycle_id,
+              mgd->exit_initial_residue, mgd->exit_residue);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("algebraic multigrid [%s]: %s after %d cycles\n"
+                "  during resolution at level %d:\n"
+                "  initial residual: %11.4e; current residual: %11.4e"),
+              name, _(error_type[err_id]),
+              mgd->exit_cycle_id, level,
+              mgd->exit_initial_residue, mgd->exit_residue);
 }
 
 /*----------------------------------------------------------------------------*/

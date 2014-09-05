@@ -103,9 +103,8 @@ double precision disty(ncelet)
 ! Local variables
 
 integer          idtva0, ivar  , f_id  , iconvp, idiffp
-integer          ndircp, ireslp
+integer          ndircp
 integer          iescap, iflmb0, itypfl
-integer          ncymxp, nitmfp
 integer          ifac  , iel   , init
 integer          inc   , iccocg, isym  , isweep, infpar
 integer          imucpp, idftnp, iswdyp, icvflb
@@ -514,16 +513,12 @@ do isweep = 1, ntcmxy
   idiffp = 0
   ! Il y a des Dirichlet (car il y a des parois)
   ndircp = 1
-  ! On resout par la methode automatique
-  ireslp = -1
   ! Pas d'estimateurs, ni de multigrille (100 et 10 sont arbitraires)
   iescap = 0
   imucpp = 0
   idftnp = 1
   iswdyp = 0
-  ncymxp = 100
-  nitmfp = 10
-  nomva0 = 'YplusPar'
+  nomva0 = 'yplus_wall'
   ! Ordre 1 en temps (etat stationnaire cherche)
   thetap = 1.d0
   ! Pas de stationnaire ni de relaxation -> a modifier eventuellement
@@ -536,10 +531,10 @@ do isweep = 1, ntcmxy
 
   call codits &
   !==========
- ( idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmay , &
+ ( idtva0 , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsy , nswrgy , imligy , ircfly ,                   &
    ischcy , isstpy , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrpy , ncymxp , nitmfp , iwarny ,                            &
+   iwarny ,                                                       &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
    rtpdp  , rtpdp  ,                                              &

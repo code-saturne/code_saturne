@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_sles.h"
+#include "cs_sles_it.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -46,86 +47,13 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Multigrid linear solver context (opaque) */
+
+typedef struct _cs_multigrid_t  cs_multigrid_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
-
-/*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Build a hierarchy of meshes starting from a fine mesh, for an
- * ACM (Additive Corrective Multigrid) method.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(clmlga, CLMLGA)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Matrix block size */
- const cs_int_t   *iesize,    /* <-- Matrix extra diag block size */
- const cs_int_t   *nagmax,    /* <-- Agglomeration count limit */
- const cs_int_t   *ncpost,    /* <-- If > 0, postprocess coarsening, using
-                                     coarse cell numbers modulo ncpost */
- const cs_int_t   *iwarnp,    /* <-- Verbosity level */
- const cs_int_t   *ngrmax,    /* <-- Maximum number of grid levels */
- const cs_int_t   *ncegrm,    /* <-- Maximum local number of cells on
-                                     coarsest grid */
- const cs_real_t  *rlxp1,     /* <-- P0/P1 relaxation parameter */
- const cs_real_t  *dam,       /* <-- Matrix diagonal */
- const cs_real_t  *xam        /* <-- Matrix extra-diagonal terms */
-);
-
-/*----------------------------------------------------------------------------
- * Destroy a hierarchy of meshes starting from a fine mesh, keeping
- * the corresponding system information for future calls.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(dsmlga, DSMLGA)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname      /* <-- variable name length */
-);
-
-/*----------------------------------------------------------------------------
- * General sparse linear system resolution
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(resmgr, RESMGR)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *iresds,    /* <-- Descent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab,
-                                     200: pcg_single reduction */
- const cs_int_t   *iresas,    /* <-- Ascent smoother type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab,
-                                     200: pcg_single reduction */
- const cs_int_t   *ireslp,    /* <-- Coarse Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab,
-                                     200: pcg_single reduction */
- const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
-                                     (0: diagonal, -1: none) */
- const cs_int_t   *ncymxp,    /* <-- Max number of cycles */
- const cs_int_t   *nitmds,    /* <-- Max number of iterations for descent */
- const cs_int_t   *nitmas,    /* <-- Max number of iterations for ascent */
- const cs_int_t   *nitmap,    /* <-- Max number of iterations for
-                                     coarsest solution */
- const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
-                                     in rotational periodicity (2) or
-                                     to exchange them as scalars (1) */
- const cs_int_t   *iwarnp,    /* <-- Verbosity level */
- cs_int_t         *ncyclf,    /* --> Number of cycles done */
- cs_int_t         *niterf,    /* --> Number of iterations done */
- const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
- const cs_real_t  *rnorm,     /* <-- Residue normalization */
- cs_real_t        *residu,    /* --> Final non normalized residue */
- const cs_real_t  *rhs,       /* <-- System right-hand side */
- cs_real_t        *vx         /* <-> System solution */
-);
 
 /*=============================================================================
  * Public function prototypes
@@ -146,104 +74,270 @@ void
 cs_multigrid_finalize(void);
 
 /*----------------------------------------------------------------------------
- * Build a hierarchy of meshes starting from a fine mesh, for an
- * ACM (Additive Corrective Multigrid) method.
- *
- * parameters:
- *   var_name               <-- variable name
- *   verbosity              <-- verbosity level
- *   postprocess_block_size <-- if > 0, postprocess coarsening, using
- *                              coarse cell numbers modulo ncpost
- *   aggregation_limit      <-- maximum allowed fine cells per coarse cell
- *   n_max_levels           <-- maximum number of grid levels
- *   n_g_cells_min          <-- global number of cells on coarsest grid
- *                              under which no merging occurs
- *   p0p1_relax             <-- p0/p1 relaxation_parameter
- *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
- *   da                     <-- diagonal values (NULL if zero)
- *   xa                     <-- extradiagonal values (NULL if zero)
- *----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_build(const char       *var_name,
-                   int               verbosity,
-                   int               postprocess_block_size,
-                   int               aggregation_limit,
-                   int               n_max_levels,
-                   cs_gnum_t         n_g_cells_min,
-                   double            p0p1_relax,
-                   bool              symmetric,
-                   const int        *diag_block_size,
-                   const int        *extra_diag_block_size,
-                   const cs_real_t  *da,
-                   const cs_real_t  *xa);
-
-/*----------------------------------------------------------------------------
- * Destroy a hierarchy of meshes starting from a fine mesh, keeping
- * the corresponding system and postprocessing information for future calls.
- *
- * parameters:
- *   var_name <-- variable name
- *----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_destroy(const char  *var_name);
-
-/*----------------------------------------------------------------------------
- * Sparse linear system resolution using multigrid.
- *
- * parameters:
- *   var_name              <-- Variable name
- *   descent_smoother_type <-- Type of smoother for descent (PCG, Jacobi, ...)
- *   ascent_smoother_type  <-- Type of smoother for ascent (PCG, Jacobi, ...)
- *   coarse_solver_type    <-- Type of solver (PCG, Jacobi, ...)
- *   abort_on_divergence   <-- Call errorhandler if divergence is detected
- *   poly_degree           <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode         <-- Halo update option for rotational periodicity
- *   verbosity             <-- Verbosity level
- *   n_max_cycles          <-- Maximum number of cycles
- *   n_max_iter_descent    <-- Maximum nb. of iterations for descent phases
- *   n_max_iter_ascent     <-- Maximum nb. of iterations for ascent phases
- *   n_max_iter_coarse     <-- Maximum nb. of iterations for coarsest solution
- *   precision             <-- Precision limit
- *   r_norm                <-- Residue normalization
- *   n_cycles              --> Number of cycles
- *   n_iter                --> Number of iterations
- *   residue               <-> Residue
- *   rhs                   <-- Right hand side
- *   vx                    --> System solution
- *   aux_size              <-- Number of elements in aux_vectors
- *   aux_vectors           --- Optional working area (allocation otherwise)
+ * Indicate if multigrid solver API is used for at least one system.
  *
  * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   cycle number reached, -2 if divergence is detected.
+ *   true if at least one system uses a multigrid solver, false otherwise
  *----------------------------------------------------------------------------*/
 
-int
-cs_multigrid_solve(const char          *var_name,
-                   cs_sles_type_t       descent_smoother_type,
-                   cs_sles_type_t       ascent_smoother_type,
-                   cs_sles_type_t       coarse_solver_type,
-                   bool                 abort_on_divergence,
-                   int                  poly_degree,
+bool
+cs_multigrid_needed(void);
+
+/*----------------------------------------------------------------------------
+ * Define and associate a multigrid sparse linear system solver
+ * for a given field or equation name.
+ *
+ * If this system did not previously exist, it is added to the list of
+ * "known" systems. Otherwise, its definition is replaced by the one
+ * defined here.
+ *
+ * This is a utility function: if finer control is needed, see
+ * cs_sles_define() and cs_multigrid_create().
+ *
+ * Note that this function returns a pointer directly to the multigrid solver
+ * management structure. This may be used to set further options, for
+ * example calling cs_multigrid_set_coarsening_options() and
+ * cs_multigrid_set_solver_options().
+ * If needed, cs_sles_find() may be used to obtain a pointer to the
+ * matching cs_sles_t container.
+ *
+ * parameters:
+ *   f_id <-- associated field id, or < 0
+ *   name <-- associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to new multigrid info and context
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_multigrid_t *
+cs_multigrid_define(int          f_id,
+                    const char  *name);
+
+/*----------------------------------------------------------------------------
+ * Create multigrid linear system solver info and context.
+ *
+ * The multigrid variant is an ACM (Additive Corrective Multigrid) method.
+ *
+ * returns:
+ *   pointer to new multigrid info and context
+ *----------------------------------------------------------------------------*/
+
+cs_multigrid_t *
+cs_multigrid_create(void);
+
+/*----------------------------------------------------------------------------
+ * Destroy multigrid linear system solver info and context.
+ *
+ * parameters:
+ *   context  <-> pointer to multigrid linear solver info
+ *                (actual type: cs_multigrid_t  **)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_destroy(void  **context);
+
+/*----------------------------------------------------------------------------
+ * Create multigrid sparse linear system solver info and context
+ * based on existing info and context.
+ *
+ * parameters:
+ *   context <-- pointer to reference info and context
+ *               (actual type: cs_multigrid_t  *)
+ *
+ * returns:
+ *   pointer to newly created solver info object
+ *   (actual type: cs_multigrid_t  *)
+ *----------------------------------------------------------------------------*/
+
+void *
+cs_multigrid_copy(const void  *context);
+
+/*----------------------------------------------------------------------------
+ * Set multigrid coarsening parameters.
+ *
+ * parameters:
+ *   mg                <-> pointer to multigrid info and context
+ *   aggregation_limit <-- maximum allowed fine cells per coarse cell
+ *   coarsening_type   <-- coarsening type:
+ *                          0: algebraic, natural face traversal;
+ *                          1: algebraic, face traveral by criteria;
+ *                          2: algebraic, Hilbert face traversal;
+ *   n_max_levels      <-- maximum number of grid levels
+ *   min_g_cells       <-- global number of cells on coarse grids
+ *                         under which no coarsening occurs
+ *   p0p1_relax        <-- p0/p1 relaxation_parameter
+ *   verbosity         <-- verbosity level
+ *   postprocess       <-- if > 0, postprocess coarsening
+ *                         (using coarse cell numbers modulo this value)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
+                                    int              aggregation_limit,
+                                    int              coarsening_type,
+                                    int              n_max_levels,
+                                    cs_gnum_t        min_g_cells,
+                                    double           p0p1_relax,
+                                    int              postprocess_block_size);
+
+/*----------------------------------------------------------------------------
+ * Set multigrid parameters for associated iterative solvers.
+ *
+ * parameters:
+ *   mg                     <-> pointer to multigrid info and context
+ *   descent_smoother_type  <-- type of smoother for descent
+ *   ascent_smoother_type   <-- type of smoother for ascent
+ *   coarse_solver_type     <-- type of solver
+ *   n_max_cycles           <-- maximum number of cycles
+ *   n_max_iter_descent     <-- maximum iterations per descent phase
+ *   n_max_iter_ascent      <-- maximum iterations per descent phase
+ *   n_max_iter_coarse      <-- maximum iterations per coarsest solution
+ *   poly_degree_descent    <-- preconditioning polynomial degree
+ *                              for descent phases (0: diagonal)
+ *   poly_degree_ascent     <-- preconditioning polynomial degree
+ *                              for ascent phases (0: diagonal)
+ *   poly_degree_coarse     <-- preconditioning polynomial degree
+ *                              for coarse solver  (0: diagonal)
+ *   precision_mult_descent <-- precision multiplier for descent phases
+ *                              (levels >= 1)
+ *   precision_mult_ascent  <-- precision multiplier for ascent phases
+ *   precision_mult_coarse  <-- precision multiplier for coarsest grid
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
+                                cs_sles_it_type_t   descent_smoother_type,
+                                cs_sles_it_type_t   ascent_smoother_type,
+                                cs_sles_it_type_t   coarse_solver_type,
+                                int                 n_max_cycles,
+                                int                 n_max_iter_descent,
+                                int                 n_max_iter_ascent,
+                                int                 n_max_iter_coarse,
+                                int                 poly_degree_descent,
+                                int                 poly_degree_ascent,
+                                int                 poly_degree_coarse,
+                                double              precision_mult_descent,
+                                double              precision_mult_ascent,
+                                double              precision_mult_coarse);
+
+/*----------------------------------------------------------------------------
+ * Set multigrid verbosity.
+ *
+ * parameters:
+ *   mg        <-> pointer to multigrid info and context
+ *   verbosity <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_verbosity(cs_multigrid_t  *mg,
+                           int              verbosity);
+
+/*----------------------------------------------------------------------------
+ * Setup multigrid sparse linear equation solver.
+ *
+ * parameters:
+ *   context <-> pointer to multigrid info and context
+ *               (actual type: cs_multigrid_t  *)
+ *   name    <-- pointer to name of linear system
+ *   a       <-- associated matrix
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_setup(void               *context,
+                   const char         *name,
+                   const cs_matrix_t  *a);
+
+/*----------------------------------------------------------------------------
+ * Call multigrid sparse linear equation solver.
+ *
+ * parameters:
+ *   context       <-> pointer to iterative sparse linear solver info
+ *                     (actual type: cs_multigrid_t  *)
+ *   name          <-- pointer to name of linear system
+ *   a             <-- matrix
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   precision     <-- solver precision
+ *   r_norm        <-- residue normalization
+ *   n_iter        --> number of iterations
+ *   residue       --> residue
+ *   rhs           <-- right hand side
+ *   vx            <-> system solution
+ *   aux_size      <-- number of elements in aux_vectors
+ *   aux_vectors   --- optional working area (internal allocation if NULL)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_multigrid_solve(void                *context,
+                   const char          *name,
+                   const cs_matrix_t   *a,
                    cs_halo_rotation_t   rotation_mode,
-                   int                  verbosity,
-                   int                  n_max_cycles,
-                   int                  n_max_iter_descent,
-                   int                  n_max_iter_ascent,
-                   int                  n_max_iter_coarse,
                    double               precision,
                    double               r_norm,
-                   int                 *n_cycles,
                    int                 *n_iter,
                    double              *residue,
                    const cs_real_t     *rhs,
                    cs_real_t           *vx,
                    size_t               aux_size,
                    void                *aux_vectors);
+
+/*----------------------------------------------------------------------------
+ * Free iterative sparse linear equation solver setup context.
+ *
+ * Note that this function should free resolution-related data, such as
+ * buffers and preconditioning but doesd not free the whole context,
+ * as info used for logging (especially performance data) is maintained.
+
+ * parameters:
+ *   context <-> pointer to iterative sparse linear solver info
+ *               (actual type: cs_multigrid_t  *)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_free(void  *context);
+
+/*----------------------------------------------------------------------------
+ * Log sparse linear equation solver info.
+ *
+ * parameters:
+ *   context  <-> pointer to iterative sparse linear solver info
+ *                (actual type: cs_multigrid_t  *)
+ *   log_type <-- log type
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_log(const void  *context,
+                 cs_log_t     log_type);
+
+/*----------------------------------------------------------------------------
+ * Error handler for multigrid sparse linear equation solver.
+ *
+ * In case of divergence or breakdown, this error handler outputs
+ * postprocessing data to assist debugging, then aborts the run.
+ * It does nothing in case the maximum iteration count is reached.
+ *
+ * parameters:
+ *   context       <-> pointer to multigrid sparse linear system solver info
+ *                     (actual type: cs_multigrid_t  *)
+ *   name          <-- pointer to name of linear system
+ *   state         <-- convergence status
+ *   a             <-- matrix
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   rhs           <-- right hand side
+ *   vx            <-> system solution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_error_post_and_abort(void                         *context,
+                                  cs_sles_convergence_state_t   state,
+                                  const char                   *name,
+                                  const cs_matrix_t            *a,
+                                  cs_halo_rotation_t            rotation_mode,
+                                  const cs_real_t              *rhs,
+                                  cs_real_t                    *vx);
 
 /*----------------------------------------------------------------------------*/
 

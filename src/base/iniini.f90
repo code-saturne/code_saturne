@@ -44,7 +44,6 @@ use alstru
 use alaste
 use parall
 use period
-use mltgrd
 use ihmpre
 use cplsat
 use ppincl
@@ -677,44 +676,9 @@ enddo
 !       sera mis a 0 dans varpos.
 
 do ii = 1, nvarmx
-  nitmax(ii) = 10000
-  iresol(ii) = -1
-  idircl(ii) = 1
-  ndircl(ii) = 0
-enddo
-do ii = 1, nvarmx
   epsilo(ii) = -999.d0
   epsrsm(ii) = -999.d0
 enddo
-
-! --- Multigrille
-!       On donne ici les valeurs par defaut des options de base.
-
-do ii = 1, nvarmx
-  imgr(ii) = 0
-enddo
-
-do ii = 1, nvarmx
-  ncymax(ii) = 100
-  nitmgf(ii) = 10
-  nagmx0(ii)= 3
-  ncpmgr(ii)= 0
-enddo
-
-! --- Nombre max de cellules et de niveaux
-
-ncegrm = 30
-ngrmax = 25
-
-! --- Parallel merging parameters
-
-mltmmn = 300
-mltmgl = 500
-mltmmr = 1
-mltmst = 1
-mlttyp = 0
-
-rlxp1 = 0.95d0
 
 ! --- Restarted calculation
 !       By default, non-restarted calculation
@@ -1026,7 +990,6 @@ imligy = -999
 ircfly = 1
 ischcy = 1
 isstpy = 0
-imgrpy = 0
 iwarny = -999
 ntcmxy = 1000
 

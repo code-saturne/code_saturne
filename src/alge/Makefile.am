@@ -70,7 +70,9 @@ cs_matrix_priv.h \
 cs_matrix_tuning.h \
 cs_matrix_util.h \
 cs_multigrid.h \
-cs_sles.h
+cs_sles.h \
+cs_sles_default.h \
+cs_sles_it.h
 
 # Library source files
 
@@ -83,6 +85,7 @@ $(FCFLAGS_DBG) $(FCFLAGS_HOT)
 libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
+cs_bw_time_diff.c \
 cs_convection_diffusion.c \
 cs_face_viscosity.c \
 cs_divergence.c \
@@ -96,14 +99,14 @@ cs_matrix_tuning.c \
 cs_matrix_util.c \
 cs_multigrid.c \
 cs_sles.c \
-cs_bw_time_diff.c \
+cs_sles_default.c \
+cs_sles_it.c \
 bilsca.f90 \
 bilscv.f90 \
 grdcel.f90 \
 grdpre.f90 \
 grdvec.f90 \
 grdpot.f90 \
-invers.f90 \
 prodsc.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined

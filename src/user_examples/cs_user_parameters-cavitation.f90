@@ -87,7 +87,6 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use mltgrd
 use parall
 use period
 use ihmpre

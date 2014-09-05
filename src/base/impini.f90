@@ -64,7 +64,6 @@ use radiat
 use lagpar
 use lagdim
 use lagran
-use mltgrd
 use mesh
 use field
 use cavitation
@@ -1754,7 +1753,7 @@ if(ineedy.eq.1) then
   if(abs(icdpar).eq.1) then
     write(nfecra,4951)                                            &
         nitmay, nswrsy, nswrgy, imligy, ircfly, ischcy,           &
-        isstpy, imgrpy, iwarny, ntcmxy,                           &
+        isstpy, iwarny, ntcmxy,                                   &
         blency, epsily, epsrsy, epsrgy, climgy, extray, coumxy,   &
         epscvy, yplmxy
   endif
@@ -1883,7 +1882,6 @@ endif
 '       IRCFLY = ',4x,i10,    ' (Reconst. flux conv. diff.   )',/,&
 '       ISCHCY = ',4x,i10,    ' (Schema convectif            )',/,&
 '       ISSTPY = ',4x,i10,    ' (Utilisation test de pente   )',/,&
-'       IMGRPY = ',4x,i10,    ' (Algorithme multigrille      )',/,&
 '       IWARNY = ',4x,i10,    ' (Niveau d''impression        )',/,&
 '       NTCMXY = ',4x,i10,    ' (Nb iter pour convection stat.',/,&
                                                                 /,&
@@ -2012,7 +2010,6 @@ endif
 '       IRCFLY = ',4x,i10,    ' (Conv. Diff. flow reconstr.  )',/,&
 '       ISCHCY = ',4x,i10,    ' (Convective scheme           )',/,&
 '       ISSTPY = ',4x,i10,    ' (Slope tet use               )',/,&
-'       IMGRPY = ',4x,i10,    ' (Multigrid algorithm         )',/,&
 '       IWARNY = ',4x,i10,    ' (Verbosity level             )',/,&
 '       NTCMXY = ',4x,i10,    ' (Nb iter for steady convect. )',/,&
                                                                 /,&
@@ -2040,28 +2037,9 @@ do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.lt.0) cycle
   call field_get_label(f_id, chaine)
-  write(nfecra,5020) chaine(1:16),iresol(ii),                      &
-                   nitmax(ii),epsilo(ii),idircl(ii)
+  write(nfecra,5020) chaine(1:16), epsilo(ii), idircl(ii)
 enddo
 write(nfecra,5030)
-
-write(nfecra,9900)
-
-
-! --- Multigrille
-
-write(nfecra,5510)ncegrm, ngrmax
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.lt.0) cycle
-  call field_get_label(f_id, chaine)
-  write(nfecra,5520) chaine(1:16),                                 &
-    imgr(ii),ncymax(ii),nitmgf(ii)
-enddo
-write(nfecra,5530)
-
-call clmimp
-!==========
 
 write(nfecra,9900)
 
@@ -2073,42 +2051,16 @@ write(nfecra,9900)
 ' ** SOLVEURS ITERATIFS DE BASE',                               /,&
 '    --------------------------',                               /,&
                                                                 /,&
-'--------------------------------------------------',           /,&
-' Variable         IRESOL NITMAX      EPSILO IDIRCL',           /,&
-'--------------------------------------------------'              )
+'-------------------------------',                              /,&
+' Variable         EPSILO IDIRCL',                              /,&
+'-------------------------------'                                 )
  5020 format(                                                     &
- 1x,    a16,    i7,    i7,      e12.4,    i7                      )
+ 1x,    a16,    e12.4,    i7                                      )
  5030 format(                                                     &
 '-----------------------------------',                          /,&
                                                                 /,&
-'       IRESOL =            -1  (choix automatique du solveur)',/,&
-'                IPOL*1000 + 0  (gradient conjugue           )',/,&
-'                            1  (jacobi                      )',/,&
-'                IPOL*1000 + 2  (bigradient conjugue         )',/,&
-'                  avec IPOL    (degre du preconditionnement )',/,&
-'       NITMAX =                (nb d iterations max         )',/,&
-'       EPSILO =                (precision resolution        )',/,&
 '       IDIRCL = 0 ou 1         (decalage de la diagonale si',  /,&
 '                                ISTAT=0 et pas de Dirichlet )',/)
-
- 5510 format(                                                     &
-                                                                /,&
-' ** MULTIGRILLE',                                              /,&
-'    -----------',                                              /,&
-                                                                /,&
-'       NCEGRM = ',4x,i10,    ' (Nb cell max mail grossier   )',/,&
-'       NGRMAX = ',4x,i10,    ' (Nb max de niveaux de mail   )',/,&
-'--------------------------------------',                       /,&
-' Variable           IMGR NCYMAX NITMGF',                       /,&
-'--------------------------------------                        '  )
- 5520 format(                                                     &
- 1x,    a16,    i7,    i7,    i7                                  )
- 5530 format(                                                     &
-'------------------------------',                               /,&
-                                                                /,&
-'       IMGR   =  0 ou 1        (1 : activation du mltgrd    )',/,&
-'       NCYMAX =                (Nb max de cycles            )',/,&
-'       NITMGF =                (Nb max d iter sur mail fin  )',/)
 
 #else
 
@@ -2117,11 +2069,11 @@ write(nfecra,9900)
 ' ** BASE ITERATIVE SOLVERS',                                   /,&
 '    ----------------------',                                   /,&
                                                                 /,&
-'--------------------------------------------------',           /,&
-' Variable         IRESOL NITMAX      EPSILO IDIRCL',           /,&
-'--------------------------------------------------'              )
+'-------------------------------',                              /,&
+' Variable         EPSILO IDIRCL',                              /,&
+'-------------------------------'                                 )
  5020 format(                                                     &
- 1x,    a16,    i7,    i7,      e12.4,    i7                      )
+ 1x,    a16,    e12.4,    i7                                      )
  5030 format(                                                     &
 '-----------------------------------',                          /,&
                                                                 /,&
@@ -2134,25 +2086,6 @@ write(nfecra,9900)
 '       EPSILO =                (resolution precision        )',/,&
 '       IDIRCL = 0 ou 1         (shift diagonal if   ',         /,&
 '                                ISTAT=0 and no Dirichlet    )',/)
-
- 5510 format(                                                     &
-                                                                /,&
-' ** MULTIGRID',                                                /,&
-'    ---------',                                                /,&
-                                                                /,&
-'       NCEGRM = ',4x,i10,    ' (Max nb cells coarsest grid  )',/,&
-'       NGRMAX = ',4x,i10,    ' (Max number of levels        )',/,&
-'--------------------------------------',                       /,&
-' Variable           IMGR NCYMAX NITMGF',                       /,&
-'--------------------------------------                       '  )
- 5520 format(                                                     &
- 1x,    a16,    i7,    i7,    i7                                 )
- 5530 format(                                                     &
-'------------------------------',                               /,&
-                                                                /,&
-'       IMGR   =  0 ou 1        (1: multigrid activated      )',/,&
-'       NCYMAX =                (Max number  of cycles       )',/,&
-'       NITMGF =                (Max nb iter on coarsest grid)',/)
 
 #endif
 

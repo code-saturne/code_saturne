@@ -307,6 +307,13 @@ struct _cs_matrix_t {
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
 
+  /* Pointers to shared arrays from coefficient assignment
+     these may become NULL in the future if coefficients are passed
+     directly from non "native" types, so precautions may need to be
+     taken when accessing those */
+
+  const cs_real_t      *xa;            /* Extra-diagonal terms */
+
   /* Pointer to private data */
 
   void                  *coeffs;       /* Matrix coefficients */
@@ -322,7 +329,7 @@ struct _cs_matrix_t {
 
   cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
-  /* Loop lenght parameter for some SpMv algorithms */
+  /* Loop length parameter for some SpMv algorithms */
 
   int                                loop_length[CS_MATRIX_N_FILL_TYPES][2];
 

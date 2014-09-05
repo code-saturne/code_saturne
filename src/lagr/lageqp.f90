@@ -82,9 +82,8 @@ character(len=80) :: chaine
 integer          idtva0, ivar
 integer          ifac, iel
 integer          nswrgp, imligp, iwarnp , iescap
-integer          iconvp, idiffp, ndircp, ireslp, nitmap
+integer          iconvp, idiffp, ndircp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
-integer          imgrp, ncymxp, nitmfp
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
@@ -247,8 +246,6 @@ idtva0 = 0
 iconvp = 0
 ! Diffusion
 idiffp = 1
-! Methode de resolution : Gradient conjugue (pas de convection)
-ireslp = 0
 ! Valeur par defaut
 ndircp = 1
 nitmap = 1000
@@ -261,9 +258,6 @@ isstpp = 0
 imucpp = 0
 idftnp = 1
 iswdyp = 0
-imgrp  = 1
-ncymxp = 100
-nitmfp = 100
 iwarnp = 10
 blencp = 0.d0
 epsilp = 1.d-8
@@ -299,10 +293,10 @@ thetap = 1.0d0
 
 call codits &
 !==========
- ( idtva0 , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtva0 , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    phia   , phia   , coefap , coefbp ,                            &

@@ -254,17 +254,14 @@ if (iale.eq.1) then
 
   istat(iuma) = 0
   iconv(iuma) = 0
-  imgr (iuma) = 1
 
   ! All components point to same field
   ivma = iuma + 1
   iwma = ivma + 1
   istat(ivma) = istat(iuma)
   iconv(ivma) = iconv(iuma)
-  imgr (ivma) = imgr (iuma)
   istat(iwma) = istat(iuma)
   iconv(iwma) = iconv(iuma)
-  imgr (iwma) = imgr (iuma)
 
 endif
 

@@ -125,10 +125,9 @@ double precision ckmel(ncelet)
 character(len=80) :: cnom
 
 integer          ifac  , iel
-integer          iconv1, idiff1, ndirc1, ireso1
-integer          nitmap, nswrsp, nswrgp, iwarnp
-integer          imgr1 , imligp, ircflp, ischcp, isstpp, iescap
-integer          ncymap, nitmgp
+integer          iconv1, idiff1, ndirc1
+integer          nswrsp, nswrgp, iwarnp
+integer          imligp, ircflp, ischcp, isstpp, iescap
 integer          idtva0, ivar0
 integer          inc, iccocg
 integer          imucpp, idftnp, iswdyp, icvflb
@@ -154,15 +153,10 @@ allocate(dpvar(ncelet))
 ! 1. PARAMETRAGE DU SOLVEUR ET INITIALISATION
 !===============================================================================
 
-!--> Gradient Conjugue
-
-ireso1 = 0
-
 !--> Parametrage de CODITS
 
 ! IVAR0= 0  LA VARIABLE N'EST ICI NI RIJ NI VITESSE
 ivar0   = 0
-nitmap  = 1000
 !     IMRGRA  = 0
 nswrsp  = 1
 nswrgp  = 100
@@ -174,9 +168,6 @@ iescap  = 0
 imucpp  = 0
 idftnp  = 1
 iswdyp  = 0
-imgr1   = 0
-ncymap  = 100
-nitmgp  = 10
 iwarnp  = iimlum
 blencp  = zero
 epsilp  = 1.d-8
@@ -242,10 +233,10 @@ nomva0 = cnom
 
 call codits &
 !==========
- ( idtva0 , ivar0  , iconv1 , idiff1 , ireso1 , ndirc1 , nitmap , &
+ ( idtva0 , ivar0  , iconv1 , idiff1 , ndirc1 ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgr1  , ncymap , nitmgp ,          iwarnp ,                   &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    thetaa , thetaa , coefap , coefbp , cofafp , cofbfp ,          &

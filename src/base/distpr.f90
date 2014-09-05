@@ -60,8 +60,8 @@ use cstnum
 use ppppar
 use parall
 use period
-use mltgrd
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -76,8 +76,8 @@ double precision distpa(ncelet)
 ! Local variables
 
 integer          ndircp, iconvp, idiffp, isym
-integer          ipol  , ireslp, ipp
-integer          niterf, icycle, ncymxp, nitmfp
+integer          ipp
+integer          niterf
 integer          iinvpe
 integer          isqrt , iel   , ifac
 integer          inc   , iccocg, ivar
@@ -213,12 +213,7 @@ call matrix &
 !===============================================================================
 
 ipp = 1
-nomva0 = 'DisParoi'
-ipol   = 0
-ireslp = 0
-! No multigrid (NCYMXP,NITMFP arbitrary)
-ncymxp = 100
-nitmfp = 10
+nomva0 = 'wall_distance'
 ! Periodicity
 iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
@@ -258,14 +253,9 @@ do isweep = 0, nswrsl
     rtpdp(iel) = 0.d0
   enddo
 
-  call invers &
-  !==========
- ( nomva0 , isym   , ibsize , iesize ,                            &
-   ipol   , ireslp , nitmay , imgrpy ,                            &
-   ncymxp , nitmfp ,                                              &
-   iwarny , niterf , icycle , iinvpe ,                            &
-   epsily , rnorm  , residu ,                                     &
-   dam    , xam    , smbdp  , rtpdp  )
+  call sles_solve_native(-1, nomva0,                                   &
+                         isym, ibsize, iesize, dam, xam, iinvpe,       &
+                         epsily, rnorm, niterf, residu, smbdp, rtpdp)
 
   nittot = nittot + niterf
   do iel = 1, ncel
@@ -305,6 +295,8 @@ do isweep = 0, nswrsl
 
   endif
 enddo
+
+call sles_free_native(-1, nomva0)
 
 mmprpl = 0
 do iel = 1, ncel

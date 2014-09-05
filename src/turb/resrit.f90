@@ -89,9 +89,8 @@ integer          iel
 integer          ii, ivar
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, ireslp
-integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
+integer          iconvp, idiffp, ndircp
+integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          st_prv_id
 integer          ivisep, ifcvsl
 integer          isou, jsou
@@ -368,9 +367,7 @@ call field_get_coefbf_v(f_id,cofbfv)
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
 ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -380,9 +377,6 @@ isstpp = isstpc(ivar)
 iescap = 0
 idftnp = 6
 iswdyp = iswdyn(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -399,10 +393,10 @@ icvflb = 0
 
 call coditv &
 !==========
-(idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+(idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
- imgrp  , ncymxp , nitmfp ,                            iwarnp , &
+ iwarnp ,                                                       &
  blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
  relaxp , thetv  ,                                              &
  xuta   , xuta   ,                                              &

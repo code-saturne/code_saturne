@@ -77,9 +77,9 @@ integer          iel   , isou  , jsou  , ifac
 integer          ipcvmx, ipcvmy, ipcvmz
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, ireslp
-integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp, ivisep
+integer          iconvp, idiffp, ndircp
+integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          ivisep
 integer          iswdyp, idftnp, icvflb
 
 integer          ivoid(1)
@@ -207,9 +207,7 @@ endif
 
 iconvp = iconv (iuma)
 idiffp = idiff (iuma)
-ireslp = iresol(iuma)
 ndircp = ndircl(iuma)
-nitmap = nitmax(iuma)
 nswrsp = nswrsm(iuma)
 nswrgp = nswrgr(iuma)
 imligp = imligr(iuma)
@@ -219,9 +217,6 @@ isstpp = isstpc(iuma)
 iescap = 0
 idftnp = idften(iuma)
 iswdyp = iswdyn(iuma)
-imgrp  = imgr  (iuma)
-ncymxp = ncymax(iuma)
-nitmfp = nitmgf(iuma)
 iwarnp = iwarni(iuma)
 blencp = blencv(iuma)
 epsilp = epsilo(iuma)
@@ -238,10 +233,10 @@ ivisep = 0
 
 call coditv &
 !==========
- ( idtvar , iuma   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iuma   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    mshvela         , mshvela         ,                            &

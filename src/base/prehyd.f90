@@ -90,12 +90,12 @@ use optcal
 use albase
 use parall
 use period
-use mltgrd
 use lagpar
 use lagran
 use cplsat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -107,15 +107,13 @@ double precision prhyd(ncelet), grdphd(ncelet,ndim)
 
 ! Local variables
 
-integer          iccocg, inc, isym  , ipol  , isqrt
+integer          iccocg, inc, isym  , isqrt
 integer          iel   , ifac
-integer          ireslp
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
-integer          nitmap, imgrp
 integer          ibsize
-integer          iescap, ircflp, ischcp, isstpp, ivar, ncymxp, nitmfp
+integer          iescap, ircflp, ischcp, isstpp, ivar
 integer          nswrsp
 integer          imucpp, idftnp, iswdyp
 integer          iharmo
@@ -165,18 +163,6 @@ endif
 
 ! --- Matrix block size
 ibsize = 1
-
-if (iresol(ipr).eq.-1) then
-  ireslp = 0
-  ipol   = 0
-  if (iconv(ipr).gt.0) then
-    ireslp = 1
-    ipol   = 0
-  endif
-else
-  ireslp = mod(iresol(ipr),1000)
-  ipol   = (iresol(ipr)-ireslp)/1000
-endif
 
 isqrt = 1
 
@@ -229,7 +215,7 @@ enddo
 ! --- Solve the diffusion equation
 
 !--------------------------------------------------------------------------
-! We use a conjugate gradient to solve the diffusion equation (ireslp = 0)
+! We use a conjugate gradient to solve the diffusion equation
 
 ! By default, the hydrostatic pressure variable is resolved with 5 sweeps for
 ! the reconstruction gradient. Here we make the assumption that the mesh
@@ -242,13 +228,12 @@ enddo
 !TODO later: define argument additionnal to pass to codits for work variable
 ! like prhyd to obtain the warning with namewv(ipwv) = 'Prhydo'
 
+call sles_push(ivarfl(ipr), "Prhydro")
+
 ivar   = ipr
 iconvp = 0
 idiffp = 1
-ireslp = 0           ! conjugate gradient use to solve prhyd
-ipol   = 0
 ndircp = 0
-nitmap = nitmax(ivar)
 nswrsp = 1           ! no reconstruction gradient
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -259,9 +244,6 @@ iescap = 0
 imucpp = 0
 idftnp = 1
 iswdyp = iswdyn(ivar)
-imgrp  = 0           ! we do not use multigrid
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -278,10 +260,10 @@ icvflb = 0
 
 call codits &
 !==========
-( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+  iwarnp ,                                                       &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   prhyd  , prhyd  ,                                              &
@@ -293,6 +275,8 @@ call codits &
   icvflb , ivoid  ,                                              &
   rovsdt , smbr   , prhyd  , dpvar  ,                            &
   rvoid  , rvoid  )
+
+call sles_pop(ivarfl(ipr))
 
 ! Free memory
 deallocate(dpvar)

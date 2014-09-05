@@ -108,6 +108,7 @@ cs_user_les_inflow-base.f90 \
 cs_user_mass_source_terms.f90 \
 cs_user_mesh-groups_from_free_faces.c \
 cs_user_parameters-cavitation.f90 \
+cs_user_parameters-linear_solvers.c \
 cs_user_parameters-output.f90 \
 cs_user_parameters-time_moments.c \
 cs_user_physical_properties-coal_drift.f90 \

@@ -122,9 +122,8 @@ integer          init  , isqrt , iii
 integer          ipcvsl, iflmas, iflmab
 integer          icvflb
 integer          nswrgp, imligp, iwarnp
-integer          iconvp, idiffp, ndircp, ireslp, nitmap
+integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
 
@@ -606,8 +605,6 @@ endif
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
-nitmap = nitmax(ivar)
 ndircp = ndircl(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
@@ -615,9 +612,6 @@ imligp = imligr(ivar)
 ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -644,10 +638,10 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits                                                      &
 !==========
-( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-  imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+  iwarnp ,                                                       &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
@@ -671,7 +665,7 @@ call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
 !==========
 
 ! --- Traitement utilisateur pour gestion plus fine des bornes
-!       et actions correctives éventuelles.
+!       et actions correctives eventuelles.
 call cf_check_internal_energy(rtp(1,isca(ienerg)), ncel,       &
                               vel)
 

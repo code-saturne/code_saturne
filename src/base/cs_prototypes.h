@@ -257,6 +257,16 @@ void
 cs_user_join(void);
 
 /*----------------------------------------------------------------------------
+ * Define linear solver options.
+ *
+ * This function is called at the setup stage, once user and most model-based
+ * fields are defined.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_linear_solvers(void);
+
+/*----------------------------------------------------------------------------
  * Tag bad cells within the mesh based on geometric criteria.
  *----------------------------------------------------------------------------*/
 

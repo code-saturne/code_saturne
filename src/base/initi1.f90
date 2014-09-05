@@ -60,6 +60,12 @@ interface
     implicit none
   end subroutine gui_postprocess_fields
 
+  subroutine user_linear_solvers()  &
+      bind(C, name='cs_user_linear_solvers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine user_linear_solvers
+
 end interface
 
 !===============================================================================
@@ -105,6 +111,11 @@ call rayopt
 
 call lagopt
 !==========
+
+call user_linear_solvers ! Options set through the GUI much earlier, so
+                         ! functions may be moved closer, but we want to
+                         ! make sure all variable fields are defined here,
+                         ! including all specific physics.
 
 !===============================================================================
 ! 3. DEFINITION DES COUPLAGES AVEC SYRTHES

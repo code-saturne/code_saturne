@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-08-13 15:19+0200\n"
+"POT-Creation-Date: 2014-09-03 18:37+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3029,6 +3029,15 @@ msgstr ""
 msgid " %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"
 msgstr " %s: isweep = %d, norme du résidu : %e, norme : %e, var = %s\n"
 
+msgid "algebraic, natural face traversal"
+msgstr "algébrique, faces dans l'ordre naturel"
+
+msgid "algebraic, face traveral by criteria"
+msgstr "algébrique, faces ordonnées par critère"
+
+msgid "algebraic, face traversal by Hilbert SFC"
+msgstr "algébrique, faces ordonnées par courbe de Hilbert"
+
 #, c-format
 msgid ""
 "Connectivity error:\n"
@@ -3070,38 +3079,21 @@ msgstr ""
 "Réglage pour matrices grossières de niveau %d et type : %s\n"
 "================================\n"
 
-msgid "algebraic, natural face traversal"
-msgstr "algébrique, faces dans l'ordre naturel"
-
-msgid "algebraic, face traveral by criteria"
-msgstr "algébrique, faces ordonnées par critère"
-
-msgid "algebraic, face traversal by Hilbert SFC"
-msgstr "algébrique, faces ordonnées par courbe de Hilbert"
-
 #, c-format
 msgid ""
 "\n"
 "  Multigrid rank merge parameters:\n"
+"    merge rank stride:                  %d\n"
 "    mean  coarse cells merge threshold: %d\n"
-"    total coarse cells merge threshold: %d\n"
-"    minimum ranks merge threshold:      %d\n"
-"    merge stride:                       %d\n"
+"    total coarse cells merge threshold: %llu\n"
+"    minimum active ranks:               %d\n"
 msgstr ""
 "\n"
 "  Paramètres multigrille de regroupement de rangs:\n"
-"    nombre moyen limite de cellules grossières: %d\n"
-"    nombre total limite de cellules grossières: %d\n"
-"    nombre limite de rangs actifs:              %d\n"
 "    nombre de rangs par regroupement:           %d\n"
-
-#, c-format
-msgid ""
-"\n"
-"  Multigrid coarsening type: %s\n"
-msgstr ""
-"\n"
-"  Type d'agglomération multigrille : %s\n"
+"    nombre moyen limite de cellules grossières: %d\n"
+"    nombre total limite de cellules grossières: %llu\n"
+"    nombre minimum de rangs actifs:             %d\n"
 
 msgid "invalid value of isym"
 msgstr ""
@@ -3333,6 +3325,60 @@ msgstr ""
 "L'extraction de la diagonale dominance de matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
+#, c-format
+msgid ""
+"  Solver type:                       multigrid\n"
+"  Coarsening type:                   %s\n"
+"    Max fine cells per coarse cell:  %d\n"
+"    Maximum number of levels :       %d\n"
+"    Minimum number of coarse cells:  %d\n"
+"    P0/P1 relaxation parameter:      %g\n"
+"  Maximum number of cycles:          %d\n"
+msgstr ""
+"  Type de solveur :                  multigrille\n"
+"  Type de regroupement :             %s\n"
+"    Taille de regroupement maximal : %d\n"
+"    Nombre maximal de niveaux :      %d\n"
+"    N. min. de cellules grossières : %d\n"
+"    Paramètre de relaxation P0/P1 :  %g\n"
+"  Nombre maximum de cycles :         %d\n"
+
+#, c-format
+msgid ""
+"  %s:\n"
+"    Type:                            %s\n"
+"    Preconditioning:                 "
+msgstr ""
+"  %s:\n"
+"    Type:                            %s\n"
+"    Préconditionnement :             "
+
+msgid "none\n"
+msgstr "aucun\n"
+
+msgid "diagonal\n"
+msgstr "diagonal\n"
+
+#, c-format
+msgid "polynomial, degree %d\n"
+msgstr "polynômial, degré %d\n"
+
+#, c-format
+msgid ""
+"    Maximum number of iterations:    %d\n"
+"    Precision multiplier:            %g\n"
+msgstr ""
+"    Nombre d'itérations maximal :    %d\n"
+"    Multiplicateur de précision :    %g\n"
+
+#, c-format
+msgid ""
+"  Verbosity:                         %d\n"
+"  Postprocess coarsening:            %d\n"
+msgstr ""
+"  Verbosité :                        %d\n"
+"  Post-traitement de l'aggrégation : %d\n"
+
 msgid "Construction:"
 msgstr "Construction :"
 
@@ -3360,12 +3406,12 @@ msgstr "prolongement :"
 #, c-format
 msgid ""
 "\n"
-"Summary of multigrid for \"%s\":\n"
-"\n"
+"  Multigrid:\n"
+"    Coarsening: %s\n"
 msgstr ""
 "\n"
-"Bilan du multigrille pour \"%s\" :\n"
-"\n"
+"  Multigrille :\n"
+"    Aggrégation : %s\n"
 
 #, c-format
 msgid "  Smoother: %s\n"
@@ -3477,24 +3523,6 @@ msgstr ""
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
 
-#, c-format
-msgid ""
-"algebraic multigrid [%s]: divergence after %d cycles:\n"
-"  initial residual: %11.4e; current residual: %11.4e"
-msgstr ""
-"multigrille algébrique [%s] : divergence après %d cycles :\n"
-"  résidu initial : %11.4e ; résidu courant : %11.4e"
-
-#, c-format
-msgid ""
-"algebraic multigrid [%s]: divergence after %d cycles\n"
-"  during resolution at level %d:\n"
-"  initial residual: %11.4e; current residual: %11.4e"
-msgstr ""
-"multigrille algébrique [%s] : divergence après %d cycles :\n"
-"  au cours de la résolution au niveau %d:\n"
-"  résidu initial : %11.4e ; résidu courant : %11.4e"
-
 msgid "  Multigrid cycle: descent\n"
 msgstr "  Cycle multigrille : descente\n"
 
@@ -3507,6 +3535,9 @@ msgstr "  Résolution sur le niveau le plus grossier\n"
 
 msgid "  Multigrid cycle: ascent\n"
 msgstr "  Cycle multigrille : remontée\n"
+
+msgid "Multigrid"
+msgstr "Multigrille"
 
 #, c-format
 msgid ""
@@ -3552,9 +3583,6 @@ msgstr ""
 "   nombre de cellules dans le maillage le plus grossier : %llu\n"
 "\n"
 
-msgid "Multigrid"
-msgstr "Multigrille"
-
 #, c-format
 msgid "Multigrid [%s]:\n"
 msgstr "Multigrille [%s]:\n"
@@ -3562,6 +3590,97 @@ msgstr "Multigrille [%s]:\n"
 #, c-format
 msgid "Multigrid [%s]: cycle %4d\n"
 msgstr "Multigrille [%s] : cycle %4d\n"
+
+msgid "divergence"
+msgstr ""
+
+msgid "breakdown"
+msgstr ""
+
+#, c-format
+msgid ""
+"algebraic multigrid [%s]: %s after %d cycles:\n"
+"  initial residual: %11.4e; current residual: %11.4e"
+msgstr ""
+"multigrille algébrique [%s] : %s après %d cycles :\n"
+"  résidu initial : %11.4e ; résidu courant : %11.4e"
+
+#, c-format
+msgid ""
+"algebraic multigrid [%s]: %s after %d cycles\n"
+"  during resolution at level %d:\n"
+"  initial residual: %11.4e; current residual: %11.4e"
+msgstr ""
+"multigrille algébrique [%s] : %s après %d cycles :\n"
+"  au cours de la résolution au niveau %d:\n"
+"  résidu initial : %11.4e ; résidu courant : %11.4e"
+
+msgid "Linear solver options modified during run (previous values)"
+msgstr ""
+"Options de solveurs linéaires modifiées au cours du calcul (valeurs "
+"précédentes)"
+
+msgid "Linear solver options for fields"
+msgstr "Options de solveurs linéaires pour les champs"
+
+msgid "Linear solver options for other systems"
+msgstr "Options de solveurs linéaires pour les autres systèmes"
+
+msgid "Linear solver performance with previous options"
+msgstr "Performance des solveurs linéaires avec options précédetes"
+
+msgid "Linear solver performance for fields"
+msgstr "Performance des solveurs linéaires pour les champs"
+
+msgid "Linear solver performance for other systems"
+msgstr "Performance des solveurs linéaires pour les autres systèmes"
+
+#, c-format
+msgid ""
+"\n"
+"Linear solver options for \"%s\" (field id %d)\n"
+msgstr ""
+"\n"
+"Options de solveur linéaire pour le champ \"%s\" (id %d)\n"
+
+#, c-format
+msgid ""
+"\n"
+"Linear solver options for \"%s\"\n"
+msgstr ""
+"\n"
+"Options de solveur linéaire pour le système \"%s\"\n"
+
+#, c-format
+msgid ""
+"\n"
+"Summary of resolutions for \"%s\" (field id %d)\n"
+msgstr ""
+"\n"
+"Bilan des résolutions pour le champ \"%s\" (id %d)\n"
+
+#, c-format
+msgid ""
+"\n"
+"Summary of resolutions for \"%s\"\n"
+msgstr ""
+"\n"
+"Bilan des résolutions pour le système \"%s\"\n"
+
+#, c-format
+msgid ""
+"cs_slesh_push() only allows a stack of depth 1:\n"
+"  it  may not be called multiple times for a given field (id %d)\n"
+"  without calling cs_sles_pop between those calls."
+msgstr ""
+
+#, c-format
+msgid ""
+"%s [%s]:\n"
+"  immediate exit; r_norm = %11.4e, residual = %11.4e\n"
+msgstr ""
+"%s [%s]:\n"
+"  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
 
 msgid "Conjugate gradient"
 msgstr "Gradient conjugué"
@@ -3577,26 +3696,6 @@ msgstr "Bi-CGstab"
 
 msgid "GMRES"
 msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"Summary of resolutions for %s (%s):\n"
-"\n"
-"  Number of calls:               %12d\n"
-"  Minimum number of iterations:  %12d\n"
-"  Maximum number of iterations:  %12d\n"
-"  Mean number of iterations:     %12d\n"
-"  Total elapsed time:            %12.3f\n"
-msgstr ""
-"\n"
-"Bilan des résolutions pour \"%s\" (%s) :\n"
-"\n"
-"  Nombre d'appels :              %12d\n"
-"  Nombre d'itérations minimal :  %12d\n"
-"  Nombre d'itérations maximal :  %12d\n"
-"  Nombre d'itérations moyen :    %12d\n"
-"  Temps écoulé cumulé :          %12.3f\n"
 
 msgid "  n_iter     res_abs     res_nor\n"
 msgstr "  n_iter     res_abs     res_nor\n"
@@ -3667,16 +3766,42 @@ msgstr ""
 "    La résolution ne progresse plus."
 
 #, c-format
-msgid "%s: error (divergence) solving for %s"
+msgid ""
+"  Solver type:                       %s\n"
+"  Preconditioning:                   "
 msgstr ""
+"  Type de solveur :                  %s\n"
+"  Préconditionnement :               "
 
 #, c-format
 msgid ""
-"%s [%s]:\n"
-"  immediate exit; r_norm = %11.4e, residual = %11.4e\n"
+"  Verbosity:                         %d\n"
+"  Maximum number of iterations:      %d\n"
 msgstr ""
-"%s [%s]:\n"
-"  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
+"  Verbosité :                        %d\n"
+"  Nombre d'itérations maximal :      %d\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Solver type:                   %s\n"
+"  Number of setups:              %12d\n"
+"  Number of calls:               %12d\n"
+"  Minimum number of iterations:  %12d\n"
+"  Maximum number of iterations:  %12d\n"
+"  Mean number of iterations:     %12d\n"
+"  Total setup time:              %12.3f\n"
+"  Total solution time:           %12.3f\n"
+msgstr ""
+"\n"
+"  Type de solveur :              %s\n"
+"  Nombre de préparations :       %12d\n"
+"  Number d'appels :              %12d\n"
+"  Nombre d'itérations minimal :  %12d\n"
+"  Nombre d'itérations maximal :  %12d\n"
+"  Nombre d'itérations moyen :    %12d\n"
+"  Temps total de préparation :   %12.3f\n"
+"  Temps total de résolution :    %12.3f\n"
 
 msgid "GMRES not supported with block_size > 1 (velocity coupling)."
 msgstr ""
@@ -3685,6 +3810,10 @@ msgstr ""
 msgid ""
 "Resolution of linear equation on \"%s\"\n"
 "with solver type %d, which is not defined)."
+msgstr ""
+
+#, c-format
+msgid "%s: error (%s) solving for %s"
 msgstr ""
 
 #, c-format
@@ -5513,6 +5642,12 @@ msgstr ""
 #, c-format
 msgid "Error loading parameter file \"%s\".\n"
 msgstr "Erreur à la lecture du fichier de paramètres \"%s\".\n"
+
+#, c-format
+msgid ""
+"Incorrect arguments to %s:\n"
+"  sum of arg. 1 (n_elts) on ranks is not equal to arg. 2 (n_g_elts)."
+msgstr ""
 
 #, c-format
 msgid "      %-19s  %-4d\n"
@@ -8604,22 +8739,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "zone's label number %i is greater than %i, the maximum allowed \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any boundary face.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune face de bord.\n"
-
-#, c-format
 msgid ""
 "Error: can not interpret expression: %s\n"
 " %i"
@@ -8678,6 +8797,22 @@ msgid ""
 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
 "@                                                            \n"
 msgstr ""
+
+#, c-format
+msgid "zone's label number %i is greater than %i, the maximum allowed \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
+"\"%s\"\n"
+" does not correspond to any boundary face.\n"
+msgstr ""
+"Le groupe ou attribut \"%s\" figurant dans le\n"
+"critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune face de bord.\n"
 
 #, c-format
 msgid "Invalid xpath: %s\n"

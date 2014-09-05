@@ -350,23 +350,10 @@ module optcal
   !> \addtogroup linear_solver
   !> \{
 
-  !> maximal number of iteration for the linear solver
-  integer, save ::          nitmax(nvarmx)
-
   !> relative precision of the linear solver
   double precision, save :: epsilo(nvarmx)
 
-  !> type of linear solver
-  !>    - (-1): automatic choice
-  !>    -    0: conjugate gradient
-  !>    -    1: Jacobi
-  !>    -    2: bi-CGSTAB
-  !> \remark
-  !>  we add ipol*1000 to iresol(ivar) where ipol is the degree of the polynome
-  !>  of Neumann preconditionning.
-  integer, save ::          iresol(nvarmx)
-
-  !> strengthen of the diagonal part of the matrix if no Dirichlet is set
+  !> strengthening of the diagonal part of the matrix if no Dirichlet is set
   !>    - 0: false
   !>    - 1: true
   !> \remark
@@ -376,20 +363,6 @@ module optcal
 
   !> number of Dirichlet BCs
   integer, save ::          ndircl(nvarmx)
-
-  !> multigrid algorithm
-  !>    - 0: false
-  !>    - 1: algebraic multigrid
-  integer, save ::          imgr(nvarmx)
-
-  !> maximal number of cycles in the multigrid algorithm
-  integer, save ::          ncymax(nvarmx)
-
-  !> number of iterations on the finer mesh
-  integer, save ::          nitmgf(nvarmx)
-
-  !> relaxation parameter for the multigrid
-  double precision, save :: rlxp1
 
   !> \}
 
@@ -902,9 +875,6 @@ module optcal
 
   !> isstpy : indicateur pour test de pente
   integer, save :: isstpy
-
-  !> imgrpy : multigrille
-  integer, save :: imgrpy
 
   !> iwarny : niveau d'impression
   integer, save :: iwarny

@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -67,9 +68,12 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_multigrid.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
+#include "cs_sles.h"
+#include "cs_sles_it.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -164,6 +168,21 @@ cs_user_model(void)
                                1,
                                CS_MESH_LOCATION_BOUNDARY_FACES);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define linear solver options.
+ *
+ * This function is called at the setup stage, once user and most model-based
+ * fields are defined.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_linear_solvers(void)
+{
+
 }
 
 /*----------------------------------------------------------------------------*/

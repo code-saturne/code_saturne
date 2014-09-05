@@ -650,6 +650,69 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function calling sparse linear equation solver
+    ! using native matrix arrays.
+
+    function cs_sles_solve_native(f_id, name, symmetric,                      &
+                                  diag_block_size, extra_diag_block_size,     &
+                                  da, xa, rotation_mode, precision, r_norm,   &
+                                  n_iter, residue, rhs, vx) result(state)     &
+      bind(C, name='cs_sles_solve_native')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+      logical(kind=c_bool), value :: symmetric
+      integer(c_int), value :: rotation_mode
+      integer(c_int), dimension(*) :: diag_block_size, extra_diag_block_size
+      real(kind=c_double), value :: precision, r_norm
+      integer(c_int), intent(out) :: n_iter
+      real(kind=c_double), intent(out) :: residue
+      real(kind=c_double), dimension(*), intent(in) :: da, xa, rhs
+      real(kind=c_double), dimension(*), intent(inout) :: vx
+      integer(c_int) :: state
+    end function cs_sles_solve_native
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function freeing sparse linear equation solver setup
+    ! using native matrix arrays.
+
+    subroutine cs_sles_free_native(f_id, name)                                &
+      bind(C, name='cs_sles_free_native')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_sles_free_native
+
+    !---------------------------------------------------------------------------
+
+    ! Temporarily replace field id with name for matching calls
+    ! to cs_sles_solve_native.
+
+    subroutine cs_sles_push(f_id, name)                                       &
+      bind(C, name='cs_sles_push')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_sles_push
+
+    !---------------------------------------------------------------------------
+
+    ! Revert to normal behavior of field id for matching calls
+    ! to cs_sles_solve_native.
+
+    subroutine cs_sles_pop(f_id)                                             &
+      bind(C, name='cs_sles_pop')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id
+    end subroutine cs_sles_pop
+
+    !---------------------------------------------------------------------------
+
     ! Add terms from backward differentiation in time.
 
     subroutine cs_backward_differentiation_in_time(field_id,                  &
@@ -1661,6 +1724,162 @@ contains
     n_w = c_n_w
 
   end subroutine restart_write_linked_fields
+
+  !=============================================================================
+
+  !> \brief Call sparse linear equation solver using native matrix arrays.
+
+  !> param[in]       f_id     associated field id, or < 0
+  !> param[in]       name     associated name if f_id < 0, or ignored
+  !> param[in]       isym     symmetry indicator: 1 symmetric, 2: not symmetric
+  !> param[in]       ibsize   block sizes for diagonal
+  !> param[in]       iesize   block sizes for extra diagonal
+  !> param[in]       dam      matrix diagonal
+  !> param[in]       xam      matrix extra-diagonal terms
+  !> param[in]       iinvpe   Indicator to cancel increments in rotational
+  !>                          periodicty (2) or to exchange them as scalars (1)
+  !> param[in]       epsilp   precision for iterative resolution
+  !> param[in]       rnorm    residue normalization
+  !> param[out]      niter    number of "equivalent" iterations
+  !> param[out]      residue  residue
+  !> param[in]       rhs      right hand side
+  !> param[in, out]  vx       system solution
+
+  subroutine sles_solve_native(f_id, name, isym, ibsize, iesize, dam, xam,     &
+                               iinvpe, epsilp, rnorm, niter, residue, rhs, vx)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)      :: name
+    integer, intent(in)               :: f_id, isym, ibsize, iesize, iinvpe
+    double precision, intent(in)      :: rnorm, epsilp
+    integer, intent(out)              :: niter
+    double precision, intent(out)     :: residue
+    real(kind=c_double), dimension(*), intent(in) :: dam, xam, rhs
+    real(kind=c_double), dimension(*), intent(inout) :: vx
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: rotation_mode, cvg
+    integer(c_int), dimension(4) :: db_size, eb_size
+    logical(kind=c_bool) :: c_sym
+
+    c_name = trim(name)//c_null_char
+
+    if (isym.eq.1) then
+      c_sym = .true.
+    else
+      c_sym = .false.
+    endif
+
+    if (iinvpe.eq.2) then
+      rotation_mode = 1 ! CS_HALO_ROTATION_ZERO
+    else if (iinvpe.eq.3) then
+      rotation_mode = 2 ! CS_HALO_ROTATION_IGNORE
+    else
+      rotation_mode = 0 ! CS_HALO_ROTATION_COPY, might not be called
+    endif
+
+    db_size(1) = ibsize
+    db_size(2) = ibsize
+    db_size(3) = ibsize
+    db_size(4) = ibsize*ibsize
+
+    eb_size(1) = iesize
+    eb_size(2) = iesize
+    eb_size(3) = iesize
+    eb_size(4) = iesize*iesize
+
+    cvg = cs_sles_solve_native(f_id, c_name, c_sym, db_size, eb_size,         &
+                               dam, xam, rotation_mode, rnorm, epsilp,        &
+                               niter, residue, rhs, vx)
+
+    return
+
+  end subroutine sles_solve_native
+
+  !=============================================================================
+
+  !> \brief Free sparse linear equation solver setup using native matrix arrays.
+
+  !> param[in]       f_id     associated field id, or < 0
+  !> param[in]       name     associated name if f_id < 0, or ignored
+
+  subroutine sles_free_native(f_id, name)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)      :: name
+    integer, intent(in)               :: f_id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+
+    call cs_sles_free_native(f_id, c_name)
+
+    return
+
+  end subroutine sles_free_native
+
+  !=============================================================================
+
+  !> \brief Temporarily replace field id with name for matching calls
+  !>        to \ref sles_solve_native
+
+  !> param[in]       f_id     associated field id, or < 0
+  !> param[in]       name     associated name if f_id < 0, or ignored
+
+  subroutine sles_push(f_id, name)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in)      :: name
+    integer, intent(in)               :: f_id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+
+    call cs_sles_push(f_id, c_name)
+
+    return
+
+  end subroutine sles_push
+
+  !=============================================================================
+
+  !> \brief Revert to normal behavior of field id for matching calls
+  !>        to \ref sles_solve_native
+
+  !> param[in]  f_id   associated field id, or < 0
+
+  subroutine sles_pop(f_id)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: f_id
+
+    ! Local variables
+
+    call cs_sles_pop(f_id)
+
+    return
+
+  end subroutine sles_pop
 
   !=============================================================================
 

@@ -51,7 +51,6 @@ use cstnum
 use dimens
 use numvar
 use optcal
-use mltgrd
 use cstphy
 use entsor
 use albase
@@ -85,9 +84,9 @@ integer          ii    , iis   , jj    , iisct, kval
 integer          iscal , iest  , iiesca, ivar
 integer          nbsccp
 integer          c_id, f_id, f_dim, n_fields, ippf
-integer          ipp   , imgrok, nbccou
+integer          ipp   , nbccou
 integer          iokpre, indest, iiidef, istop
-integer          iresop, ipolop, kscmin, kscmax
+integer          kscmin, kscmax
 integer          keyvar, keysca
 double precision arakfr, scmaxp, scminp
 
@@ -742,24 +741,10 @@ enddo
 !   Ce sont simplement des reels
 !   Une valeur negative indique qu'on veut atteindre
 !   le nombre d'iterations maximal
-! Il n'y a pas besoin de test sur le nombre d'iterations
-!   Ce sont simplement des entiers
-!   Une valeur negative indique qu'on veut sortir de suite
 
 do f_id = 0, n_fields-1
   call field_get_key_int(f_id, keyvar, ii)
   if (ii.ge.1) then
-    if (iresol(ii).ne.-1) then
-      iresop = mod(iresol(ii)+10000,1000)
-      ipolop = (iresol(ii)-iresop)/1000
-      iresop = mod(iresop,100)
-      if ((iresop.lt.0.or.iresop.gt.3).or.                       &
-          (iresop.eq.1.and.ipolop.ne.0)) then
-        call field_get_label(f_id, chaine)
-        write(nfecra,2400) chaine(1:16),ii,iresol(ii)
-        iok = iok + 1
-      endif
-    endif
     if (idircl(ii).ne.0.and.idircl(ii).ne.1) then
       call field_get_label(f_id, chaine)
       write(nfecra,2401) chaine(1:16),ii,idircl(ii)
@@ -767,23 +752,6 @@ do f_id = 0, n_fields-1
     endif
   endif
 enddo
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    if (iresol(ii).eq.0.and.iconv(ii).eq.1) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2410) chaine(1:16),ii,iresol(ii),iconv(ii)
-    endif
-    if (iresol(ii).eq.1.and.iconv(ii).eq.0) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,2411) chaine(1:16),ii,iresol(ii),iconv(ii)
-    endif
-  endif
-enddo
-
-! --- Le multigrille sera verifie d'un seul bloc plus bas.
-
 
 ! --- Suite de calcul
 
@@ -1289,10 +1257,6 @@ if (ineedy.eq.1) then
     write(nfecra,2200) 'ISSTPY',isstpy
     iok = iok + 1
   endif
-  if (imgrpy.ne.1.and.imgrpy.ne.0) then
-    write(nfecra,2200) 'IMGRPY',imgrpy
-    iok = iok + 1
-  endif
   if (ntcmxy.lt.1) then
     write(nfecra,3100) 'NTCMXY',ntcmxy
     iok = iok + 1
@@ -1349,57 +1313,6 @@ do ivar = 1, nvar
     nswrsm(ivar) = 1
   endif
 enddo
-
-!===============================================================================
-! 2. MULTIGRILLE : TABLEAUX DU MULTIGRILLE : formats 3000
-!===============================================================================
-
-! --- Options generales
-
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    if (imgr(ii).ne.0.and.imgr(ii).ne.1) then
-      call field_get_label(f_id, chaine)
-      write(nfecra,3000) chaine(1:16),'IMGR  ',ii,imgr(ii)
-      iok = iok + 1
-    endif
-    if (imgr(ii).eq.1.and.iconv(ii).eq.1) then
-      write(nfecra,3001)
-      iok = iok + 1
-    endif
-    if (imgr(ii).eq.1) then
-      if (ncymax(ii).le.0) then
-        write(nfecra,3010) chaine(1:16),'NCYMAX',ii,ncymax(ii)
-        iok = iok + 1
-      endif
-      if (nitmgf(ii).le.0) then
-        write(nfecra,3010) chaine(1:16),'NITMGF',ii,nitmgf(ii)
-        iok = iok + 1
-      endif
-    endif
-  endif
-enddo
-imgrok = 0
-do f_id = 0, n_fields-1
-  call field_get_key_int(f_id, keyvar, ii)
-  if (ii.ge.1) then
-    if (imgr(ii).eq.1) then
-      imgrok = 1
-    endif
-  endif
-enddo
-
-! --- Options specifiques de niveau plus eleve
-
-if (imgrok.eq.1.and.ncegrm.le.0) then
-  write(nfecra,3100)'NCEGRM',ncegrm
-  iok = iok + 1
-endif
-if (imgrok.eq.1.and.ngrmax.le.0) then
-  write(nfecra,3100)'NGRMAX',ngrmax
-  iok = iok + 1
-endif
 
 !===============================================================================
 ! 3. TABLEAUX DE cstphy : formats 4000
@@ -2922,31 +2835,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2400 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IRESOL(',i10,   ') DOIT ETRE UN ENTIER EGAL',             /,&
-'@                                     A -1 OU A IPOL*1000+ J', /,&
-'@      AVEC IPOL LE DEGRE DU POLYNOME DE PRECONDITIONNEMENT',  /,&
-'@       ET MOD(J,100) = 0 POUR GRADIENT CONJUGUE',             /,&
-'@                     = 1 POUR JACOBI (IPOL = 0 DANS CE CAS)', /,&
-'@                     = 2 POUR BI-CGSTAB',                     /,&
-'@                     = 3 POUR GMRES',                         /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  IRESOL(I) indique le solveur lineaire a utiliser',          /,&
-'@    pour la variable I',                                      /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2401 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2961,46 +2849,6 @@ endif
 '@',                                                            /,&
 '@  IDIRCL(I) indique si le code doit decaler la diagonale de', /,&
 '@    la matrice de la variable I en l''absence de Dirichlet',  /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2410 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    RISQUE D ECHEC A LA RESOLUTION DU SYSTEME LINEAIRE',      /,&
-'@    IRESOL(',i10,   ') = ', i10,                              /,&
-'@      ET LA VARIABLE EST CONVECTEE (ICONV = ', i10,')',       /,&
-'@',                                                            /,&
-'@  Le calcul sera engage.',                                    /,&
-'@',                                                            /,&
-'@  Le solveur iteratif choisi peut ne pas converger sur le',   /,&
-'@    systeme lineaire resultant du type de probleme considere',/,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2411 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    RISQUE D ECHEC A LA RESOLUTION DU SYSTEME LINEAIRE',      /,&
-'@    IRESOL(',i10,   ') = ', i10,                              /,&
-'@      ET LA VARIABLE N''EST PAS CONVECTEE (ICONV = ', i10,')', /,&
-'@',                                                            /,&
-'@  Le calcul sera engage.',                                    /,&
-'@',                                                            /,&
-'@  Le solveur iteratif choisi peut ne pas converger sur le',   /,&
-'@    systeme lineaire resultant du type de probleme considere',/,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
 '@',                                                            /,&
@@ -3699,57 +3547,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
 
- 3000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@',    a6,'(',i10,   ') DOIT ETRE UN ENTIER EGAL A 0 OU 1',    /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@  L algorithme de resolution multigrille algebrique',         /,&
-'@  n est pas compatible avec les variables convectees.',       /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3010 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@',    a6,'(',i10,   ') DOIT ETRE UN ENTIER',                  /,&
-'@      STRICTEMENT POSITIF',                                   /,&
-'@    IL VAUT ICI', i10,                                        /,&
-'@',                                                            /,&
-'@  Le calcul ne peut etre execute.',                           /,&
-'@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface',           /,&
-'@    ou cs_user_parameters.f90.',                              /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  3100 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5539,31 +5336,6 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 2400 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@    IRESOL(',i10,   ') MUST BE AN INTEGER EQUAL',             /,&
-'@                               to -1 or to     IPOL*1000+ J', /,&
-'@ where IPOL is the order of the preconditionning polynomial', /,&
-'@     and  MOD(J,100) = 0 for conjugate gradient',             /,&
-'@                     = 1 for  JACOBI (IPOL = 0 IN THIS CASE)',/,&
-'@                     = 2 for  BI-CGSTAB',                     /,&
-'@                     = 3 for  GMRES',                         /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@  IRESOL(I) is the linear system reso methode to use',        /,&
-'@    for  variable I',                                         /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  2401 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -5579,46 +5351,6 @@ endif
 '@  IDIRCL(I) tells if the diagonal of the matrix for variable',/,&
 '@  I should be shifted in the absence of Dirichlet condition', /,&
 '@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2410 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   warning :      while reading input data',               /,&
-'@    =========',                                               /,&
-'@    variable', a16,                                           /,&
-'@    resolution of linear system could fail',                  /,&
-'@    iresol(',i10,   ') = ', i10,                              /,&
-'@      and the variable is advected       (iconv = ', i10,')', /,&
-'@',                                                            /,&
-'@  the calculation will be launched nevertheless',             /,&
-'@',                                                            /,&
-'@  the chosen linear solver could fail to converge',           /,&
-'@    because of the nature of the problem',                    /,&
-'@ check the input data given through the user interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 2411 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   warning :      while reading input data',               /,&
-'@    =========',                                               /,&
-'@    variable', a16,                                           /,&
-'@    resolution of linear system could fail',                  /,&
-'@    iresol(',i10,   ') = ', i10,                              /,&
-'@      and the variable is not advected   (iconv = ', i10,')', /,&
-'@',                                                            /,&
-'@  the calculation will be launched nevertheless',             /,&
-'@',                                                            /,&
-'@  the chosen linear solver could fail to converge',           /,&
-'@    because of the nature of the problem',                    /,&
-'@ check the input data given through the user interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -6317,57 +6049,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
 
- 3000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@',    a6,'(',i10,   ') MUST BE AN INTEGER EQUAL  0  OR 1',    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3001 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@  The multigrid algorithm for the linear system resolution',  /,&
-'@  is not compatible with convected variables.',               /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 3010 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    VARIABLE', a16,                                           /,&
-'@',    a6,'(',i10,   ') MUST BE AN INTEGER',                   /,&
-'@      STRICTLY  POSITIVE',                                    /,&
-'@   IT HAS VALUE', i10,                                        /,&
-'@',                                                            /,&
-'@   The calculation could NOT run.',                           /,&
-'@',                                                            /,&
-'@ Check the input data given through the User Interface',      /,&
-'@   or in cs_user_parameters.f90.',                            /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
  3100 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

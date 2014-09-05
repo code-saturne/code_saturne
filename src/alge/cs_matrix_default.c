@@ -269,7 +269,7 @@ cs_matrix_initialize(void)
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
                                      mesh->global_cell_num,
-                                     mesh->i_face_cells,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
                                      mesh->halo,
                                      mesh->i_face_numbering);
 
@@ -318,7 +318,7 @@ cs_matrix_initialize(void)
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
                                      mesh->global_cell_num,
-                                     mesh->i_face_cells,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
                                      mesh->halo,
                                      mesh->i_face_numbering);
 
@@ -386,7 +386,7 @@ cs_matrix_update_mesh(void)
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
                                      mesh->global_cell_num,
-                                     mesh->i_face_cells,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
                                      mesh->halo,
                                      mesh->i_face_numbering);
 

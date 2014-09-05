@@ -214,9 +214,10 @@ struct _cs_grid_t {
 
 #if defined(HAVE_MPI)
 
-static cs_gnum_t   _grid_merge_threshold[2] = {300, 500};
+static cs_gnum_t   _grid_merge_mean_threshold = 300;
+static cs_gnum_t   _grid_merge_glob_threshold = 500;
 static int         _grid_merge_min_ranks = 1;
-static int         _grid_merge_stride = 4;
+static int         _grid_merge_stride = 1;
 
 static int        _n_grid_comms = 0;
 static int       *_grid_ranks = NULL;
@@ -224,9 +225,12 @@ static MPI_Comm  *_grid_comm = NULL;
 
 #endif /* defined(HAVE_MPI) */
 
-/* Select grid coarsening algorithm */
+/* Names for coarsening options */
 
-static int        _grid_coarsening_type = 0;
+const char *cs_grid_coarsening_type_name[]
+  = {N_("algebraic, natural face traversal"),
+     N_("algebraic, face traveral by criteria"),
+     N_("algebraic, face traversal by Hilbert SFC")};
 
 /* Select tuning options */
 
@@ -1028,7 +1032,7 @@ _coarsen(const cs_grid_t   *f,
                  &(c->coarse_face),
                  &(c->_face_cell));
 
-  c->face_cell = c->_face_cell;
+  c->face_cell = (const cs_lnum_2_t  *)(c->_face_cell);
 }
 
 /*----------------------------------------------------------------------------
@@ -2112,7 +2116,7 @@ _append_face_data(cs_grid_t   *g,
     g->n_faces = 0;
   }
 
-  g->face_cell = g->_face_cell;
+  g->face_cell = (const cs_lnum_2_t  *)(g->_face_cell);
   g->face_normal = g->_face_normal;
   g->xa = g->_xa;
   g->xa0 = g->_xa0;
@@ -2329,18 +2333,20 @@ _merge_grids(cs_grid_t  *g,
  * Determine face traversal order.
  *
  * parameters:
- *   g     <-- Grid structure
- *   order --> Face ordering
+ *   g               <-- Grid structure
+ *   coarsening_type <-- Coarsening type
+ *   order           --> Face ordering
  *----------------------------------------------------------------------------*/
 
 static void
 _order_face_traversal(const cs_grid_t   *g,
+                      int                coarsening_type,
                       cs_lnum_t          order[])
 {
   cs_lnum_t ii;
   cs_lnum_t n_faces = g->n_faces;
 
-  if (_grid_coarsening_type == 2) {
+  if (coarsening_type == 2) {
 
     cs_coord_t extents[6];
     fvm_hilbert_code_t  *c_h_code = NULL;
@@ -2440,6 +2446,7 @@ _scatter_cell_num(const cs_grid_t  *g,
  *
  * parameters:
  *   f               <-- Fine grid structure
+ *   coarsening_type <-- Coarsening type
  *   max_aggregation <-- Max fine cells per coarse cell
  *   verbosity       <-- Verbosity level
  *   f_c_cell        --> Fine cell -> coarse cell connectivity
@@ -2447,6 +2454,7 @@ _scatter_cell_num(const cs_grid_t  *g,
 
 static void
 _automatic_aggregation(const cs_grid_t  *fine_grid,
+                       int               coarsening_type,
                        cs_lnum_t         max_aggregation,
                        int               verbosity,
                        cs_lnum_t        *f_c_cell)
@@ -2499,7 +2507,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
   /* Initialization */
 
-  _order_face_traversal(fine_grid, face_order);
+  _order_face_traversal(fine_grid, coarsening_type, face_order);
 
   if (fine_grid->symmetric == true)
     isym = 1;
@@ -2599,7 +2607,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
 
     /* Order faces by criteria (0 to n-1 numbering) */
 
-    if (_grid_coarsening_type == 1)
+    if (coarsening_type == 1)
       _order_real_local(aggr_crit, face_order, n_faces);
 
     /* Loop on non-eliminated faces */
@@ -3337,61 +3345,12 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
   BFT_FREE(w1);
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Set the default parameters for multigrid coarsening.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(clmopt, CLMOPT)
-(
- const cs_int_t   *mltmmn,    /* <-- Mean number of cells under which merging
-                               *     should take place */
- const cs_int_t   *mltmgl,    /* <-- Global number of cells under which
-                               *     merging should take place */
- const cs_int_t   *mltmmr,    /* <-- Number of active ranks under which no
-                               *     merging takes place */
- const cs_int_t   *mltmst,    /* <-- Number of ranks over which merging
-                               *     takes place */
- const cs_int_t   *mlttyp     /* <-- Coarsening algorithm selection */
-)
-{
-  cs_grid_set_defaults(*mltmmn, *mltmgl, *mltmmr, *mltmst, *mlttyp);
-}
-
-/*----------------------------------------------------------------------------
- * Print the default parameters for multigrid coarsening.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(clmimp, CLMIMP)
-(
- void
-)
-{
-  cs_grid_log_defaults();
-}
-
-/*----------------------------------------------------------------------------
- * Order an array of real numbers by increasing value.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(clmlgo, CLMLGO)
-(
- const cs_int_t   *nfac,      /* <-- Number of internal faces */
- const cs_real_t   critr[],   /* <-- Array to order */
- cs_int_t          iord[]     /* <-> ordering */
-)
-{
-  if (_grid_coarsening_type == 1)
-    _order_real_local(critr, iord, *nfac);
-}
-
-/*============================================================================
- * Public function definitions
+ * Semi-private function definitions
+ *
+ * The following functions are intended to be used by the multigrid layer
+ * (cs_multigrid.c), not directly by the user, so they are no more
+ * documented than private static functions)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -3804,6 +3763,10 @@ cs_grid_get_comm(const cs_grid_t  *g)
  * parameters:
  *   f                    <-- Fine grid structure
  *   verbosity            <-- Verbosity level
+ *   coarsening_type      <-- Coarsening traversal type:
+ *                              0: algebraic with natural face traversal;
+ *                              1: algebraic with face traveral by criteria;
+ *                              2: algebraic with Hilbert face traversal
  *   aggregation_limit    <-- Maximum allowed fine cells per coarse cell
  *   relaxation_parameter <-- P0/P1 relaxation factor
  *
@@ -3814,6 +3777,7 @@ cs_grid_get_comm(const cs_grid_t  *g)
 cs_grid_t *
 cs_grid_coarsen(const cs_grid_t   *f,
                 int                verbosity,
+                int                coarsening_type,
                 int                aggregation_limit,
                 double             relaxation_parameter)
 {
@@ -3842,6 +3806,7 @@ cs_grid_coarsen(const cs_grid_t   *f,
   /* Determine fine->coarse cell connectivity (aggregation) */
 
   _automatic_aggregation(f,
+                         coarsening_type,
                          aggregation_limit,
                          verbosity,
                          c->coarse_cell);
@@ -3904,8 +3869,8 @@ cs_grid_coarsen(const cs_grid_t   *f,
   if (c->n_ranks > _grid_merge_min_ranks && _grid_merge_stride > 1) {
     cs_gnum_t  _n_ranks = c->n_ranks;
     cs_gnum_t  _n_mean_g_cells = c->n_g_cells / _n_ranks;
-    if (   _n_mean_g_cells < _grid_merge_threshold[0]
-        || c->n_g_cells < _grid_merge_threshold[1])
+    if (   _n_mean_g_cells < _grid_merge_mean_threshold
+        || c->n_g_cells < _grid_merge_glob_threshold)
     _merge_grids(c, verbosity);
   }
 #endif
@@ -4510,89 +4475,6 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
 }
 
 /*----------------------------------------------------------------------------
- * Get the default parameters for multigrid coarsening.
- *
- * parameters:
- *   merge_mean_threshold --> mean number of cells under which merging
- *                            should take place, or NULL
- *   merge_glob_threshold --> global number of cells under which merging
- *                            should take place, or NULL
- *   merge_min_ranks      --> number of active ranks under which no merging
- *                            takes place, or NULL
- *   merge_stride         --> number of ranks over which merging takes place,
- *                            or NULL
- *   coarsening_type      --> coarsening type:
- *                             0: algebraic with natural face traversal;
- *                             1: algebraic with face traveral by criterai;
- *                             2: algebraic with Hilbert face traversal;
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_get_defaults(int  *merge_mean_threshold,
-                     int  *merge_glob_threshold,
-                     int  *merge_min_ranks,
-                     int  *merge_stride,
-                     int  *coarsening_type)
-{
-#if defined(HAVE_MPI)
-  if (merge_mean_threshold != NULL)
-    *merge_mean_threshold = _grid_merge_threshold[0];
-  if (merge_glob_threshold != NULL)
-    *merge_glob_threshold = _grid_merge_threshold[1];
-  if (merge_min_ranks != NULL)
-    *merge_min_ranks = _grid_merge_min_ranks;
-  if (merge_stride != NULL)
-    *merge_stride = _grid_merge_stride;
-#else
-  if (merge_mean_threshold != NULL)
-    *merge_mean_threshold = 0;
-  if (merge_glob_threshold != NULL)
-    *merge_glob_threshold = 0;
-  if (merge_min_ranks != NULL)
-    *merge_min_ranks = 0;
-  if (merge_stride != NULL)
-    *merge_stride = 0;
-#endif
-
-  if (coarsening_type != NULL)
-    *coarsening_type = _grid_coarsening_type;
-}
-
-/*----------------------------------------------------------------------------
- * Set the default parameters for multigrid coarsening.
- *
- * parameters:
- *   merge_mean_threshold <-- mean number of cells under which merging
- *                            should take place
- *   merge_glob_threshold <-- global number of cells under which merging
- *                            should take place
- *   merge_min_ranks      <-- number of active ranks under which no merging
- *                            takes place
- *   merge_stride         <-- number of ranks over which merging takes place
- *   coarsening_type      <-- coarsening type:
- *                             0: algebraic with natural face traversal;
- *                             1: algebraic with face traveral by criterai;
- *                             2: algebraic with Hilbert face traversal;
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_defaults(int  merge_mean_threshold,
-                     int  merge_glob_threshold,
-                     int  merge_min_ranks,
-                     int  merge_stride,
-                     int  coarsening_type)
-{
-#if defined(HAVE_MPI)
-  _grid_merge_threshold[0] = merge_mean_threshold;
-  _grid_merge_threshold[1] = merge_glob_threshold;
-  _grid_merge_min_ranks = merge_min_ranks;
-  _grid_merge_stride = merge_stride;
-#endif
-
-  _grid_coarsening_type = coarsening_type;
-}
-
-/*----------------------------------------------------------------------------
  * Return the merge_stride if merging is active.
  *
  * returns:
@@ -4610,122 +4492,6 @@ cs_grid_get_merge_stride(void)
 #endif
 
   return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Set matrix tuning behavior for multigrid coarse meshes.
- *
- * The finest mesh (level 0) is handled by the default tuning options,
- * so only coarser meshes are considered here.
- *
- * parameters:
- *   fill_type <-- associated matrix fill type
- *   max_level <-- maximum leval for which tuning is active
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
-                          int                    max_level)
-{
-  if (_grid_tune_max_level < max_level) {
-
-    if (_grid_tune_max_level == 0) {
-      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
-      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
-        _grid_tune_max_fill_level[i] = 0;
-    }
-
-    BFT_REALLOC(_grid_tune_variant,
-                CS_MATRIX_N_FILL_TYPES*max_level, cs_matrix_variant_t *);
-
-    for (int i = _grid_tune_max_level; i < max_level; i++) {
-      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
-        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
-      }
-    }
-
-    _grid_tune_max_level = max_level;
-  }
-
-  _grid_tune_max_fill_level[fill_type] = max_level;
-}
-
-/*----------------------------------------------------------------------------
- * Set matrix tuning behavior for multigrid coarse meshes.
- *
- * The finest mesh (level 0) is handled by the default tuning options,
- * so only coarser meshes are considered here.
- *
- * parameters:
- *   fill_type <-- associated matrix fill type
- *   level     <-- level for which variant is assiged
- *   mv        <-- matrix variant to assign (NULL to unassign)
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
-                           int                         level,
-                           const cs_matrix_variant_t  *mv)
-{
-  if (_grid_tune_max_level < level) {
-
-    if (_grid_tune_max_level == 0) {
-      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
-      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
-        _grid_tune_max_fill_level[i] = 0;
-    }
-
-    BFT_REALLOC(_grid_tune_variant,
-                CS_MATRIX_N_FILL_TYPES*level, cs_matrix_variant_t *);
-
-    for (int i = _grid_tune_max_level; i < level; i++) {
-      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
-        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
-      }
-    }
-
-    _grid_tune_max_level = level;
-  }
-
-  int k = CS_MATRIX_N_FILL_TYPES*(level-1) + fill_type;
-
-  if (_grid_tune_variant[k] != NULL)
-    cs_matrix_variant_destroy(&(_grid_tune_variant[k]));
-
-  if (mv != NULL) {
-    cs_matrix_type_t m_type = cs_matrix_variant_type(mv);
-    _grid_tune_variant[k] = cs_matrix_variant_create(m_type, NULL);
-    cs_matrix_variant_merge(_grid_tune_variant[k], mv, fill_type);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Print the default parameters for multigrid coarsening.
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_log_defaults(void)
-{
-  const char *coarsening_type[3]
-     = {N_("algebraic, natural face traversal"),
-        N_("algebraic, face traveral by criteria"),
-        N_("algebraic, face traversal by Hilbert SFC")};
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    bft_printf(_("\n"
-                 "  Multigrid rank merge parameters:\n"
-                 "    mean  coarse cells merge threshold: %d\n"
-                 "    total coarse cells merge threshold: %d\n"
-                 "    minimum ranks merge threshold:      %d\n"
-                 "    merge stride:                       %d\n"),
-               (int)(_grid_merge_threshold[0]), (int)(_grid_merge_threshold[1]),
-               _grid_merge_min_ranks, _grid_merge_stride);
-#endif
-
-  bft_printf(_("\n"
-               "  Multigrid coarsening type: %s\n"),
-             _(coarsening_type[_grid_coarsening_type + 1]));
 }
 
 /*----------------------------------------------------------------------------
@@ -4840,6 +4606,196 @@ cs_grid_dump(const cs_grid_t  *g)
   }
 
   cs_halo_dump(g->halo, 1);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query the global multigrid parameters for parallel grid merging.
+ *
+ * \param[out]  rank_stride           number of ranks over which merging
+ *                                    takes place, or NULL
+ * \param[out]  cells_mean_threshold  mean number of cells under which merging
+ *                                    should be applied, or NULL
+ * \param[out]  cells_glob_threshold  global number of cells under which merging
+ *                                    should be applied, or NULL
+ * \param[out]  min_ranks             number of active ranks under which
+ *                                    no merging takes place, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_get_merge_options(int         *rank_stride,
+                          int         *cells_mean_threshold,
+                          cs_gnum_t   *cells_glob_threshold,
+                          int         *min_ranks)
+{
+#if defined(HAVE_MPI)
+  if (rank_stride != NULL)
+    *rank_stride = _grid_merge_stride;
+  if (cells_mean_threshold != NULL)
+    *cells_mean_threshold = _grid_merge_mean_threshold;
+  if (cells_glob_threshold != NULL)
+    *cells_glob_threshold = _grid_merge_glob_threshold;
+  if (min_ranks != NULL)
+    *min_ranks = _grid_merge_min_ranks;
+#else
+  if (rank_stride != NULL)
+    *rank_stride = 0;
+  if (cells_mean_threshold != NULL)
+    *cells_mean_threshold = 0;
+  if (cells_glob_threshold != NULL)
+    *cells_glob_threshold = 0;
+  if (min_ranks != NULL)
+    *min_ranks = 1;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set global multigrid parameters for parallel grid merging behavior.
+ *
+ * \param[in]  rank_stride           number of ranks over which merging
+ *                                   takes place
+ * \param[in]  cells_mean_threshold  mean number of cells under which merging
+ *                                   should be applied
+ * \param[in]  cells_glob_threshold  global number of cells under which merging
+ *                                   should be applied
+ * \param[in]  min_ranks             number of active ranks under which
+ *                                   no merging takes place
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_merge_options(int         rank_stride,
+                          int         cells_mean_threshold,
+                          cs_gnum_t   cells_glob_threshold,
+                          int         min_ranks)
+{
+#if defined(HAVE_MPI)
+  _grid_merge_stride = rank_stride;
+  _grid_merge_mean_threshold = cells_mean_threshold;
+  _grid_merge_glob_threshold = cells_glob_threshold;
+  _grid_merge_min_ranks = min_ranks;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set matrix tuning behavior for multigrid coarse meshes.
+ *
+ * The finest mesh (level 0) is handled by the default tuning options,
+ * so only coarser meshes are considered here.
+ *
+ * \param[in]  fill_type  associated matrix fill type
+ * \param[in]  max_level  maximum level for which tuning is active
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
+                          int                    max_level)
+{
+  if (_grid_tune_max_level < max_level) {
+
+    if (_grid_tune_max_level == 0) {
+      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
+      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
+        _grid_tune_max_fill_level[i] = 0;
+    }
+
+    BFT_REALLOC(_grid_tune_variant,
+                CS_MATRIX_N_FILL_TYPES*max_level, cs_matrix_variant_t *);
+
+    for (int i = _grid_tune_max_level; i < max_level; i++) {
+      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
+        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
+      }
+    }
+
+    _grid_tune_max_level = max_level;
+  }
+
+  _grid_tune_max_fill_level[fill_type] = max_level;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Force matrix variant selection for multigrid coarse meshes.
+ *
+ * The finest mesh (level 0) is handled by the default tuning options,
+ * so only coarser meshes are considered here.
+ *
+ * \param[in]  fill_type  associated matrix fill type
+ * \param[in]  level      level for which variant is assiged
+ * \param[in]  mv         matrix variant to assign (NULL to unassign)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
+                           int                         level,
+                           const cs_matrix_variant_t  *mv)
+{
+  if (_grid_tune_max_level < level) {
+
+    if (_grid_tune_max_level == 0) {
+      BFT_MALLOC(_grid_tune_max_fill_level, CS_MATRIX_N_FILL_TYPES, int);
+      for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++)
+        _grid_tune_max_fill_level[i] = 0;
+    }
+
+    BFT_REALLOC(_grid_tune_variant,
+                CS_MATRIX_N_FILL_TYPES*level, cs_matrix_variant_t *);
+
+    for (int i = _grid_tune_max_level; i < level; i++) {
+      for (int j = 0; j < CS_MATRIX_N_FILL_TYPES; j++) {
+        _grid_tune_variant[CS_MATRIX_N_FILL_TYPES*i + j] = NULL;
+      }
+    }
+
+    _grid_tune_max_level = level;
+  }
+
+  int k = CS_MATRIX_N_FILL_TYPES*(level-1) + fill_type;
+
+  if (_grid_tune_variant[k] != NULL)
+    cs_matrix_variant_destroy(&(_grid_tune_variant[k]));
+
+  if (mv != NULL) {
+    cs_matrix_type_t m_type = cs_matrix_variant_type(mv);
+    _grid_tune_variant[k] = cs_matrix_variant_create(m_type, NULL);
+    cs_matrix_variant_merge(_grid_tune_variant[k], mv, fill_type);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Log the current settings for multigrid parallel merging.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_log_merge_options(void)
+{
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    bft_printf(_("\n"
+                 "  Multigrid rank merge parameters:\n"
+                 "    merge rank stride:                  %d\n"
+                 "    mean  coarse cells merge threshold: %d\n"
+                 "    total coarse cells merge threshold: %llu\n"
+                 "    minimum active ranks:               %d\n"),
+               _grid_merge_stride,
+               (int)_grid_merge_mean_threshold,
+               (unsigned long long)_grid_merge_glob_threshold,
+               _grid_merge_min_ranks);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

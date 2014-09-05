@@ -114,9 +114,8 @@ integer          init  , inc   , iccocg, isqrt , ii, jj
 integer          iflmas, iflmab
 integer          iphydp, icvflb
 integer          nswrgp, imligp, iwarnp
-integer          istatp, iconvp, idiffp, ireslp, ndircp, nitmap
+integer          istatp, iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
 integer          ivoid(1)
 double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision epsrsp
@@ -306,9 +305,7 @@ call viscfa                                                                     
 istatp = istat (ivar)
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
 ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -319,9 +316,6 @@ iescap = 0
 imucpp = 0
 idftnp = idften(ivar)
 iswdyp = iswdyn(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -335,10 +329,10 @@ icvflb = 0
 
 call codits                                                                     &
 !==========
-( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap ,                &
+( idtvar , ivar   , iconvp , idiffp , ndircp ,                                  &
   imrgra , nswrsp , nswrgp , imligp , ircflp ,                                  &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                         &
-  imgrp  , ncymxp , nitmfp ,          iwarnp ,                                  &
+  iwarnp ,                                                                      &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                         &
   relaxp , thetv  ,                                                             &
   rtpa(1,ivar)    , rtpa(1,ivar)    ,                                           &

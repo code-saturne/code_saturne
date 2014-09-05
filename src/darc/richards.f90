@@ -92,7 +92,6 @@ use pointe
 use albase
 use parall
 use period
-use mltgrd
 use mesh
 use field
 use field_operator
@@ -112,10 +111,10 @@ double precision, pointer, dimension(:)   :: dt
 
 integer iccocg, inc   , iel, isou, init
 integer nswrgp, imligp, iwarnp
-integer imucpp, ipol  , ircflp, ireslp, isqrt, isweep, isym, lchain
-integer nagmax, ncymap, ndircp, niterf, nitmap, nitmgp, npstmg, nswmpr
-integer imgrp , iinvpe, iflmas, iflmab, iesize, idiffp, iconvp, ibsize
-integer fid   , icycle
+integer imucpp, ircflp, isqrt, isweep, isym, lchain
+integer ndircp, niterf, nswmpr
+integer iinvpe, iflmas, iflmab, iesize, idiffp, iconvp, ibsize
+integer fid
 integer iflid , iflwgr, f_dim, f_id0, iprev, iitsm
 
 logical          interleaved
@@ -249,24 +248,13 @@ if (darcy_unsteady.eq.1) isym  = 2
 ! Matrix block size. Copied from reopv.
 ibsize = 1
 iesize = 1
-if (iresol(ipr).eq.-1) then
-  ireslp = 0
-  ipol   = 0
-  if (iconv(ipr).gt.0) then
-    ireslp = 1
-    ipol   = 0
-  endif
-else
-  ireslp = mod(iresol(ipr)+10000,1000)
-  ipol   = (iresol(ipr)-ireslp)/1000
-endif
 isqrt = 1
 
 !===============================================================================
 ! 1. Building of the linear system to solve
 !===============================================================================
 
-! Instationnary term
+! Unsteady term
 if (darcy_unsteady.eq.1) then
   do iel = 1, ncel
     rovsdt(iel) = volume(iel)*cproa_capacity(iel)/dt(iel)
@@ -331,24 +319,7 @@ call matrix &
   rvoid  , dam    , xam    )
 
 !===============================================================================
-! 2. Preparation of the Algebraic Multigrid
-!===============================================================================
-
-if (imgr(ipr).gt.0) then
-  iwarnp = iwarni(ipr)
-  nagmax = nagmx0(ipr)
-  npstmg = ncpmgr(ipr)
-  call clmlga &
-  !==========
- ( chaine(1:16) ,    lchain ,                                     &
-   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
-   ngrmax , ncegrm ,                                              &
-   rlxp1  ,                                                       &
-   dam    , xam    )
-endif
-
-!===============================================================================
-! 3. Solving (Loop over the non-orthogonalities)
+! 2. Solving (Loop over the non-orthogonalities)
 !===============================================================================
 
 ! For this part, see documentation on resopv.
@@ -472,23 +443,14 @@ do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
             .or. (isweep.eq.1) )
             ! We pass at least once to ensure exactness of mass flux
 
-  nitmap = nitmax(ipr)
-  imgrp  = imgr  (ipr)
-  ncymap = ncymax(ipr)
-  nitmgp = nitmgf(ipr)
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
   iinvpe = 1
   ressol = residu
 
-  call invers &
-  !==========
- ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
-   ipol   , ireslp , nitmap , imgrp  ,                            &
-   ncymap , nitmgp ,                                              &
-   iwarnp , niterf , icycle , iinvpe ,                            &
-   epsilp , rnormp , ressol ,                                     &
-   dam    , xam    , rhs    , drtp   )
+  call sles_solve_native(ivarfl(ipr), chaine,                         &
+                         isym, ibsize, iesize, dam, xam, iinvpe,      &
+                         epsilp, rnormp, niterf, ressol, rhs, drtp)
 
   if (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) then
     do iel = 1, ncel
@@ -583,6 +545,9 @@ if (iwarni(ipr).ge.2) then
     write(nfecra,1600) chaine(1:16), nswmpr
   endif
 endif
+
+call sles_free_native(ivarfl(ipr), chaine)
+deallocate(dam, xam, rhs)
 
 !===============================================================================
 ! 3. Updating of mass fluxes
@@ -765,9 +730,9 @@ call field_set_key_struct_solving_info(ivarfl(ipr), sinfo)
 ! Free memory
 deallocate(gradp)
 deallocate(uvwk)
-deallocate(dam, xam, drtp)
+deallocate(drtp)
 deallocate(presa)
-deallocate(rhs, rovsdt)
+deallocate(rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 deallocate(viscf, viscb)
 

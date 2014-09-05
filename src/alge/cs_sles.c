@@ -1,5 +1,5 @@
 /*============================================================================
- * Sparse Linear Equation Solvers
+ * Sparse Linear Equation Solver driver
  *============================================================================*/
 
 /*
@@ -51,8 +51,10 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_field.h"
 #include "cs_log.h"
 #include "cs_halo.h"
+#include "cs_map.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
@@ -70,6 +72,196 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_sles.c
+
+  \brief Sparse linear equation solver driver.
+
+  The Sparse Linear Equation Solver subsystem is designed to allow
+  both simple usage of built-in solvers, and pluggging of solvers
+  from external libraries.
+
+  As the options associated with different solvers may be very varied,
+  this subsystem is based on the use of a series of callback functions
+  which may be associated with a given linear system (defined either
+  by field id for quick and recurrent access, or by unique system
+  name). It is possible to provide a default function so calls for
+  the resolution of systems not specified before can be handled.
+
+  To summarize, the functions here define a linear system solver
+  driver, with the real work being done by functions bound to this model.
+  The main intent is to help manage passing varied user options to the
+  solvers, and handling consistency of logging.
+
+  \enum cs_sles_convergence_state_t
+
+  \brief Convergence status indicator.
+
+  \var CS_SLES_DIVERGED
+       The solver has diverged
+  \var CS_SLES_BREAKDOWN
+       The solver has broken down, and cannot make any more progress
+  \var CS_SLES_MAX_ITERATION
+       Maximum number of iterations has been reached, without reaching
+       the required convergence
+  \var CS_SLES_ITERATING
+       The solver is iterating
+  \var CS_SLES_CONVERGED
+       The solver has converged
+
+  \typedef  cs_sles_setup_t
+
+  \brief  Function pointer for pre-resolution setup of a linear system's
+          context.
+
+  This setup may include building a multigrid hierarcy, or a preconditioner.
+
+  Use of this type of function is optional: the context is expected to
+  maintain state, so that if a cs_sles_solve_t function is called before a
+  \ref cs_sles_setup_t function, the latter will be called automatically.
+
+  \param[in, out]  context  pointer to solver context
+  \param[in]       name     pointer to name of linear system
+  \param[in]       a        matrix
+
+  \typedef  cs_sles_solve_t
+
+  \brief  Function pointer for resolution of a linear system.
+
+  If the associated cs_sles_setup_t function has not been called before
+  this function, it will be called automatically.
+
+  The solution context setup by this call (or that of the matching
+  \ref cs_sles_setup_t function) will be maintained until the matching
+  \ref cs_sles_free_t function is called.
+
+  The matrix is not expected to change between successive calls, although
+  the right hand side may. If the matrix changes, the associated
+  \ref cs_sles_setup_t or \ref cs_sles_free_t function must be called between
+  solves.
+
+  The system is considered to have converged when
+  residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+
+  \param[in, out]  context        pointer to solver context
+  \param[in]       name           pointer to name of linear system
+  \param[in]       a              matrix
+  \param[in]       rotation_mode  halo update option for rotational periodicity
+  \param[in]       precision      solver precision
+  \param[in]       r_norm         residue normalization
+  \param[out]      n_iter         number of "equivalent" iterations
+  \param[out]      residue        residue
+  \param[in]       rhs            right hand side
+  \param[out]      vx             system solution
+  \param[in]       aux_size       number of elements in aux_vectors
+  \param           aux_vectors    optional working area
+                                  (internal allocation if NULL)
+
+  \return  convergence status
+
+  \typedef  cs_sles_free_t
+
+  \brief  Function pointer for freeing of a linear system's context data.
+
+  Note that this function should free resolution-related data, such as
+  multigrid hierarchy, preconditioning, and any other temporary arrays or
+  objects required for resolution, but should not free the whole context,
+  as info used for logging (especially performance data) should be
+  maintained.
+
+  \param[in, out]  context  pointer to solver context.
+
+  \typedef  cs_sles_log_t
+
+  \brief  Function pointer for logging of linear solver history
+          and performance data.
+
+  This function will be called for each solver when cs_sles_finalize()
+  is called.
+
+  \param[in]  context   pointer to solver context
+  \param[in]  log_type  log type
+
+  \typedef  cs_sles_copy_t
+
+  \brief  Function pointer for creation of a solver context based on
+          the copy of another.
+
+  The new context copies the settings of the copied context, but not
+  its setup data and logged info, such as performance data.
+
+  This type of function is optional, but enables associating different
+  solvers to related systems (to differentiate logging) while using
+  the same settings by default.
+
+  \param[in]  context  context to copy
+
+  \return  pointer to newly created context
+
+  \typedef  cs_sles_destroy_t
+
+  Function pointer for destruction of a linear system solver context.
+
+  This function should free all context data, and will be called for each
+  system when cs_sles_finalize() is called.
+
+  \param[in, out]  context  pointer to solver context
+
+  \typedef  cs_sles_error_handler_t
+
+  \brief  Function pointer for handling of non-convergence when solving
+          a linear system.
+
+  Such a function is optional, and may be used for a variety of purposes,
+  such as logging, postprocessing, re-trying with different parameters,
+  or aborting the run.
+
+  n error handler may be  associated with a given solver context using
+  \ref cs_sles_set_error_handler, in which case it will be called whenever
+  convergence fails.
+
+  \remark In the advent of re-trying with different parameters,
+  it is recommended that either the parameters be sufficiently similar that
+  performance logging will not be affected, so the info reported to
+  the user is not biased. Complex strategies involving different
+  solver types should not be based on the use of an error handler, but
+  built-into the solver function, with appropriate performance logging
+  (though they may use an error handler in case of final failure).
+
+  \param[in, out]  context        pointer to solver context
+  \param[in]       status         convergence status
+  \param[in]       name           name of linear system
+  \param[in]       a              matrix
+  \param[in]       rotation_mode  Halo update option for rotational periodicity
+  \param[in]       rhs            Right hand side
+  \param[out]      vx             System solution
+
+  \typedef  cs_sles_define_t
+
+  \brief  Function pointer for the default definition of a sparse
+          linear equation solver
+
+  The function may be associated using \ref cs_sles_set_default_define,
+  so that it may provide a definition that will be used when
+  \ref cs_sles_setup or \ref cs_sles_solve is used for a system for which
+  no matching call to \ref cs_sles_define has been done.
+
+  The function should call \ref cs_sles_define with arguments \p f_id
+  and \p name, and appropriately chosen function pointers.
+
+  A pointer to the matrix of the system to be solved is also provided,
+  so that the corresponding information may be used to better choose
+  defaults.
+
+  \param[in]  f_id  associated field id, or < 0
+  \param[in]  name  associated name if f_id < 0, or NULL
+  \param[in]  a     matrix
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -77,17 +269,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define EPZERO  1.E-12
-#define RINFIN  1.E+30
-
-#if !defined(HUGE_VAL)
-#define HUGE_VAL  1.E+12
-#endif
-
-/* SIMD unit size to ensure SIMD alignement (2 to 4 required on most
- * current architectures, so 16 should be enough on most architectures
- * through at least 2012) */
-
-#define CS_SIMD_SIZE(s) (((s-1)/16+1)*16)
 
 /*=============================================================================
  * Local Structure Definitions
@@ -96,167 +277,170 @@ BEGIN_C_DECLS
 /* Basic per linear system options and logging */
 /*---------------------------------------------*/
 
-typedef struct _cs_sles_info_t {
+struct _cs_sles_t {
 
-  char                *name;               /* System name */
-  cs_sles_type_t       type;               /* Solver type */
+  int                       n_calls;       /* Number of setup or solve
+                                              calls */
 
-  unsigned             n_calls;            /* Number of times system solved */
+  int                       f_id;          /* matching field id, or < 0 */
 
-  unsigned             n_iterations_last;  /* Number of iterations for last
-                                              system resolution */
-  unsigned             n_iterations_min;   /* Minimum number ot iterations
-                                              in system resolution history */
-  unsigned             n_iterations_max;   /* Maximum number ot iterations
-                                              in system resolution history */
-  unsigned long long   n_iterations_tot;   /* Total accumulated number of
-                                              iterations */
+  const char               *name;          /* name if f_id < 0, or NULL */
+  char                     *_name;         /* private name if f_id < 0,
+                                              or NULL */
 
-  cs_timer_counter_t   t_tot;              /* Total time used */
+  int                       type_id;       /* Id of solver type */
+  void                     *context;       /* solver context
+                                              (options, state, logging) */
 
-} cs_sles_info_t;
+  cs_sles_setup_t          *setup_func;    /* solver setup function */
+  cs_sles_solve_t          *solve_func;    /* solve function */
+  cs_sles_free_t           *free_func;     /* free setup function */
 
-/* Convergence testing and tracking */
-/*----------------------------------*/
+  cs_sles_log_t            *log_func;      /* logging function */
 
-typedef struct _cs_sles_convergence_t {
+  cs_sles_copy_t           *copy_func;     /* copy function */
 
-  int                  verbosity;          /* Verbosity level */
+  cs_sles_destroy_t        *destroy_func;  /* destruction function */
 
-  unsigned             n_iterations;       /* Current number of iterations */
-  unsigned             n_iterations_max;   /* Maximum number of iterations */
+  cs_sles_error_handler_t  *error_func;  /* error handler */
 
-  double               precision;          /* Precision limit */
-  double               r_norm;             /* Residue normalization */
-  double               residue;            /* Current residue */
-  double               initial_residue;    /* Initial residue */
-
-} cs_sles_convergence_t;
+};
 
 /*============================================================================
  *  Global variables
  *============================================================================*/
 
-static int cs_glob_sles_n_systems = 0;      /* Current number of systems */
-static int cs_glob_sles_n_max_systems = 0;  /* Max. number of sytems for
-                                               cs_glob_sles_systems. */
+/* Type name map */
 
-static cs_sles_info_t **cs_glob_sles_systems = NULL; /* System info array */
+static cs_map_name_to_id_t  *_type_name_map = NULL;
 
-/* Sparse linear equation solver type names */
+/* Pointer to default definition */
 
-/* Short names for solver types */
+static cs_sles_define_t *_cs_sles_define_default = NULL;
 
-const char *cs_sles_type_name[] = {N_("Conjugate gradient"),
-                                   N_("Conjugate gradient, single reduction"),
-                                   N_("Jacobi"),
-                                   N_("Bi-CGstab"),
-                                   N_("GMRES")};
+/* Current and maximum number of systems respectively defined by field id,
+   by name, or redefined after use */
 
-/* Communicator used for reduction operations */
+static int _cs_sles_n_systems[3] = {0, 0};
+static int _cs_sles_n_max_systems[3] = {0, 0};
 
-#if defined(HAVE_MPI)
-MPI_Comm _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
-#endif
+/* Arrays of settings and status for linear systems */
+static cs_sles_t **_cs_sles_systems[3] = {NULL, NULL, NULL};
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return pointer to new linear system info structure.
+ * Create new sparse linear equation solver structure.
  *
  * parameters:
- *   name <-- system name
- *   type <-- resolution method
+ *   f_id <-- associated field id, or < 0
+ *   name <-- associated name if f_id < 0, or NULL
  *
  * returns:
- *   pointer to newly created linear system info structure
+ *   pointer to associated linear system object.
  *----------------------------------------------------------------------------*/
 
-static cs_sles_info_t *
-_sles_info_create(const char      *name,
-                  cs_sles_type_t   type)
+static cs_sles_t *
+_sles_create(int          f_id,
+             const char  *name)
 {
-  cs_sles_info_t *new_info = NULL;
+  cs_sles_t *sles;
 
-  BFT_MALLOC(new_info, 1, cs_sles_info_t);
-  BFT_MALLOC(new_info->name, strlen(name) + 1, char);
+  BFT_MALLOC(sles, 1, cs_sles_t);
 
-  strcpy(new_info->name, name);
-  new_info->type = type;
+  sles->f_id = f_id;
 
-  new_info->n_calls = 0;
-  new_info->n_iterations_min = 0;
-  new_info->n_iterations_max = 0;
-  new_info->n_iterations_last = 0;
-  new_info->n_iterations_tot = 0;
-
-  CS_TIMER_COUNTER_INIT(new_info->t_tot);
-
-  return new_info;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy linear system info structure.
- *
- * parameters:
- *   this_info <-> pointer to linear system info structure pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_sles_info_destroy(cs_sles_info_t  **this_info)
-{
-  if (*this_info != NULL) {
-    BFT_FREE((*this_info)->name);
-    BFT_FREE(*this_info);
+  if (f_id < 0 && name != NULL) {
+    BFT_MALLOC(sles->_name, strlen(name) + 1, char);
+    strcpy(sles->_name, name);
   }
+  else
+    sles->_name = NULL;
+
+  if (_type_name_map == NULL)
+    _type_name_map = cs_map_name_to_id_create();
+  sles->type_id = cs_map_name_to_id(_type_name_map, "<undefined>");
+
+  sles->name = sles->_name;
+
+  sles->context = NULL;
+  sles->setup_func = NULL;
+  sles->solve_func = NULL;
+  sles->free_func = NULL;
+  sles->log_func = NULL;
+  sles->copy_func = NULL;
+  sles->destroy_func = NULL;
+  sles->error_func = NULL;
+
+  sles->n_calls = 0;
+
+  return sles;
 }
 
 /*----------------------------------------------------------------------------
- * Output information regarding linear system resolution.
+ * Return pointer to linear system object, based on matching field id.
+ *
+ * If this system did not previously exist, it is added to the list of
+ * "known" systems.
  *
  * parameters:
- *   this_info <-> pointer to linear system info structure
+ *   f_id <-- associated field id
+ *
+ * returns:
+ *   pointer to linear system object
  *----------------------------------------------------------------------------*/
 
-static void
-_sles_info_dump(cs_sles_info_t *this_info)
+static cs_sles_t *
+_find_or_add_system_by_f_id(int  f_id)
 {
-  int n_calls = this_info->n_calls;
-  int n_it_min = this_info->n_iterations_min;
-  int n_it_max = this_info->n_iterations_max;
-  int n_it_mean = (int)(  this_info->n_iterations_tot
-                        / ((unsigned long long)n_calls));
+  assert(f_id >= 0);
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-                  "Summary of resolutions for %s (%s):\n"
-                  "\n"
-                  "  Number of calls:               %12d\n"
-                  "  Minimum number of iterations:  %12d\n"
-                  "  Maximum number of iterations:  %12d\n"
-                  "  Mean number of iterations:     %12d\n"
-                  "  Total elapsed time:            %12.3f\n"),
-                this_info->name, cs_sles_type_name[this_info->type],
-                n_calls, n_it_min, n_it_max, n_it_mean,
-                this_info->t_tot.wall_nsec*1e-9);
+  /* Return system id already defined */
+  if (f_id < _cs_sles_n_max_systems[0]) {
+    if (_cs_sles_systems[0][f_id] != NULL)
+      return _cs_sles_systems[0][f_id];
+  }
+
+  /* Increase size of systems array if required */
+  else {
+    int i = _cs_sles_n_max_systems[0];
+
+    if (_cs_sles_n_max_systems[0] == 0)
+      _cs_sles_n_max_systems[0] = 1;
+    _cs_sles_n_max_systems[0] *=2;
+    BFT_REALLOC(_cs_sles_systems[0],
+                _cs_sles_n_max_systems[0],
+                cs_sles_t *);
+
+    for (int j = i; j < _cs_sles_n_max_systems[0]; j++)
+      _cs_sles_systems[0][j] = NULL;
+  }
+
+  /* If we have not returned yet, we need to add a new system to the array */
+
+  _cs_sles_systems[0][f_id] = _sles_create(f_id, NULL);
+  _cs_sles_n_systems[0] += 1;
+
+  return _cs_sles_systems[0][f_id];
 }
 
 /*----------------------------------------------------------------------------
- * Return pointer to linear system info.
+ * Return pointer to linear system object, based on system name.
  *
  * If this system did not previously exist, it is added to the list of
  * "known" systems.
  *
  * parameters:
  *   name <-- system name
- *   type <-- resolution method
+ *
+ * returns:
+ *   pointer to linear system object
  *----------------------------------------------------------------------------*/
 
-static cs_sles_info_t *
-_find_or_add_system(const char      *name,
-                    cs_sles_type_t   type)
+static cs_sles_t *
+_find_or_add_system_by_name(const char  *name)
 {
   int ii, start_id, end_id, mid_id;
   int cmp_ret = 1;
@@ -264,13 +448,11 @@ _find_or_add_system(const char      *name,
   /* Use binary search to find system */
 
   start_id = 0;
-  end_id = cs_glob_sles_n_systems - 1;
+  end_id = _cs_sles_n_systems[1] - 1;
   mid_id = start_id + ((end_id -start_id) / 2);
 
   while (start_id <= end_id) {
-    cmp_ret = strcmp((cs_glob_sles_systems[mid_id])->name, name);
-    if (cmp_ret == 0)
-      cmp_ret = (cs_glob_sles_systems[mid_id])->type - type;
+    cmp_ret = strcmp((_cs_sles_systems[1][mid_id])->name, name);
     if (cmp_ret < 0)
       start_id = mid_id + 1;
     else if (cmp_ret > 0)
@@ -283,2244 +465,113 @@ _find_or_add_system(const char      *name,
   /* If found, return */
 
   if (cmp_ret == 0)
-    return cs_glob_sles_systems[mid_id];
+    return _cs_sles_systems[1][mid_id];
 
   /* Reallocate global array if necessary */
 
-  if (cs_glob_sles_n_systems >= cs_glob_sles_n_max_systems) {
+  if (_cs_sles_n_systems[1] >= _cs_sles_n_max_systems[1]) {
 
-    if (cs_glob_sles_n_max_systems == 0)
-      cs_glob_sles_n_max_systems = 10;
-    else
-      cs_glob_sles_n_max_systems *= 2;
-    BFT_REALLOC(cs_glob_sles_systems,
-                cs_glob_sles_n_max_systems,
-                cs_sles_info_t*);
+    if (_cs_sles_n_max_systems[1] == 0)
+      _cs_sles_n_max_systems[1] = 1;
+    _cs_sles_n_max_systems[1] *= 2;
+    BFT_REALLOC(_cs_sles_systems[1],
+                _cs_sles_n_max_systems[1],
+                cs_sles_t*);
 
   }
 
   /* Insert in sorted list */
 
-  for (ii = cs_glob_sles_n_systems; ii > mid_id; ii--)
-    cs_glob_sles_systems[ii] = cs_glob_sles_systems[ii - 1];
+  for (ii = _cs_sles_n_systems[1]; ii > mid_id; ii--)
+    _cs_sles_systems[1][ii] = _cs_sles_systems[1][ii - 1];
 
-  cs_glob_sles_systems[mid_id] = _sles_info_create(name,
-                                                   type);
-  cs_glob_sles_n_systems += 1;
+  _cs_sles_systems[1][mid_id] = _sles_create(-1, name);
+  _cs_sles_n_systems[1] += 1;
 
-  return cs_glob_sles_systems[mid_id];
+  return _cs_sles_systems[1][mid_id];
 }
 
 /*----------------------------------------------------------------------------
- * Initialize or reset convergence info structure.
+ * Copy linear system info whose definition has changed.
+ *
+ * This is intended to maintain logging info, and is useful only
+ * if the solver has been called using the older definition.
  *
  * parameters:
- *   solver_name <-- solver name
- *   var_name    <-- variable name
- *   convergence <-> Convergence info structure
- *   verbosity   <-- Verbosity level
- *   n_iter_max  <-- Maximum number of iterations
- *   precision   <-- Precision limit
- *   r_norm      <-- Residue normalization
- *   residue     <-- Initial residue
+ *   s <-> pointer to linear system info
  *----------------------------------------------------------------------------*/
 
 static void
-_convergence_init(cs_sles_convergence_t  *convergence,
-                  const char             *solver_name,
-                  const char             *var_name,
-                  int                     verbosity,
-                  unsigned                n_iter_max,
-                  double                  precision,
-                  double                  r_norm,
-                  double                  residue)
+_save_system_info(cs_sles_t  *s)
 {
-  convergence->verbosity = verbosity;
+  assert(s != NULL);
 
-  convergence->n_iterations = 0;
-  convergence->n_iterations_max = n_iter_max;
+  /* Resize array if needed */
 
-  convergence->precision = precision;
-  convergence->r_norm = r_norm;
-  convergence->residue = residue;
-  convergence->initial_residue = residue;
+  int i = _cs_sles_n_systems[2];
 
-  if (verbosity > 1) {
-    bft_printf("%s [%s]:\n", solver_name, var_name);
-    if (verbosity > 2)
-      bft_printf(_("  n_iter     res_abs     res_nor\n"));
+  if (i >= _cs_sles_n_max_systems[2]) {
+
+    if (_cs_sles_n_max_systems[2] == 0)
+      _cs_sles_n_max_systems[2] = 1;
+    _cs_sles_n_max_systems[2] *=2;
+    BFT_REALLOC(_cs_sles_systems[2],
+                _cs_sles_n_max_systems[2],
+                cs_sles_t *);
+
+    for (int j = i; j < _cs_sles_n_max_systems[2]; j++)
+      _cs_sles_systems[2][j] = NULL;
+
   }
 
+  /* Ensure no extra data is maintained for old system */
+
+  if (s->free_func != NULL)
+    s->free_func(s->context);
+
+  /* Save other context and options */
+
+  cs_sles_t *s_old;
+  BFT_MALLOC(s_old, 1, cs_sles_t);
+  memcpy(s_old, s, sizeof(cs_sles_t));
+
+  s_old->_name = NULL; /* still points to new name */
+  s->context = NULL;   /* old context now only available through s_old */
+
+  _cs_sles_systems[2][i] = s_old;
+
+  _cs_sles_n_systems[2] += 1;
 }
 
 /*----------------------------------------------------------------------------
- * Convergence test.
+ * Compute per-cell residual for Ax = b.
  *
  * parameters:
- *   solver_name <-- solver name
- *   var_name    <-- variable name
- *   n_iter      <-- Number of iterations done
- *   residue     <-- Non normalized residue
- *   convergence <-> Convergence information structure
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_convergence_test(const char             *solver_name,
-                  const char             *var_name,
-                  unsigned                n_iter,
-                  double                  residue,
-                  cs_sles_convergence_t  *convergence)
-{
-  const int verbosity = convergence->verbosity;
-
-  const char final_fmt[]
-    = N_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n");
-
-  /* Update conversion info structure */
-
-  convergence->n_iterations = n_iter;
-  convergence->residue = residue;
-
-  /* Print convergence values if high verbosity */
-
-  if (verbosity > 2)
-    bft_printf("   %5u %11.4e %11.4e\n",
-               n_iter, residue, residue/convergence->r_norm);
-
-  /* If not converged */
-
-  if (residue > convergence->precision * convergence->r_norm) {
-
-    if (n_iter < convergence->n_iterations_max) {
-      int diverges = 0;
-      if (residue > convergence->initial_residue * 10000.0 && residue > 100.)
-        diverges = 1;
-#if (__STDC_VERSION__ >= 199901L)
-      else if (isnan(residue) || isinf(residue))
-        diverges = 1;
-#endif
-      if (diverges) {
-        bft_printf(_("\n\n"
-                     "%s [%s]: divergence after %u iterations:\n"
-                     "  initial residual: %11.4e; current residual: %11.4e\n"),
-                   solver_name, var_name,
-                   convergence->n_iterations,
-                   convergence->initial_residue, convergence->residue);
-        return -2;
-      }
-      else
-        return 0;
-    }
-    else {
-      if (verbosity > 0) {
-        if (verbosity == 1) /* Already output if verbosity > 1 */
-          bft_printf("%s [%s]:\n", solver_name, var_name);
-        if (verbosity <= 2) /* Already output if verbosity > 2 */
-          bft_printf(_(final_fmt),
-                     n_iter, residue, residue/convergence->r_norm);
-        bft_printf(_(" @@ Warning: non convergence\n"));
-      }
-      return -1;
-    }
-
-  }
-
-  /* If converged */
-
-  else {
-    if (verbosity == 2) /* Already output if verbosity > 2 */
-      bft_printf(final_fmt, n_iter, residue, residue/convergence->r_norm);
-    return 1;
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Compute dot product, summing result over all ranks.
- *
- * parameters:
- *   n_elts <-- Local number of elements
- *   x      <-- first vector in s = x.y
- *   y      <-- second vector in s = x.y
- *
- * returns:
- *   result of s = x.y
- *----------------------------------------------------------------------------*/
-
-inline static double
-_dot_product(cs_int_t          n_elts,
-             const cs_real_t  *x,
-             const cs_real_t  *y)
-{
-  double s = cs_dot(n_elts, x, y);
-
-#if defined(HAVE_MPI)
-
-  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                  _cs_sles_mpi_reduce_comm);
-    s = _sum;
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  return s;
-}
-
-/*----------------------------------------------------------------------------
- * Compute dot product x.x, summing result over all ranks.
- *
- * parameters:
- *   n_elts <-- Local number of elements
- *   x      <-- vector in s = x.x
- *
- * returns:
- *   result of s = x.x
- *----------------------------------------------------------------------------*/
-
-inline static double
-_dot_product_xx(cs_int_t          n_elts,
-                const cs_real_t  *x)
-{
-  double s;
-
-  s = cs_dot_xx(n_elts, x);
-
-#if defined(HAVE_MPI)
-
-  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                  _cs_sles_mpi_reduce_comm);
-    s = _sum;
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  return s;
-}
-
-/*----------------------------------------------------------------------------
- * Compute 2 dot products x.x and x.y, summing result over all ranks.
- *
- * parameters:
- *   n_elts <-- Local number of elements
- *   x      <-- vector in s1 = x.x and s2 = x.y
- *   y      <-- vector in s2 = x.y
- *   s1     --> result of s1 = x.x
- *   s2     --> result of s2 = x.y
- *----------------------------------------------------------------------------*/
-
-inline static void
-_dot_products_xx_xy(cs_int_t          n_elts,
-                    const cs_real_t  *x,
-                    const cs_real_t  *y,
-                    double           *s1,
-                    double           *s2)
-{
-  double s[2];
-
-  cs_dot_xx_xy(n_elts, x, y, s, s+1);
-
-#if defined(HAVE_MPI)
-
-  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM,
-                  _cs_sles_mpi_reduce_comm);
-    s[0] = _sum[0];
-    s[1] = _sum[1];
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  *s1 = s[0];
-  *s2 = s[1];
-}
-
-/*----------------------------------------------------------------------------
- * Compute 2 dot products x.x and x.y, summing result over all ranks.
- *
- * parameters:
- *   n_elts <-- Local number of elements
- *   x      <-- vector in s1 = x.y
- *   y      <-- vector in s1 = x.y and s2 = y.z
- *   z      <-- vector in s2 = y.z
- *   s1     --> result of s1 = x.y
- *   s2     --> result of s2 = y.z
- *----------------------------------------------------------------------------*/
-
-inline static void
-_dot_products_xy_yz(cs_int_t          n_elts,
-                    const cs_real_t  *x,
-                    const cs_real_t  *y,
-                    const cs_real_t  *z,
-                    double           *s1,
-                    double           *s2)
-{
-  double s[2];
-
-  cs_dot_xy_yz(n_elts, x, y, z, s, s+1);
-
-#if defined(HAVE_MPI)
-
-  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM,
-                  _cs_sles_mpi_reduce_comm);
-    s[0] = _sum[0];
-    s[1] = _sum[1];
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  *s1 = s[0];
-  *s2 = s[1];
-}
-
-/*----------------------------------------------------------------------------
- * Compute 3 dot products, summing result over all ranks.
- *
- * parameters:
- *   n_elts <-- Local number of elements
- *   x      <-- first vector
- *   y      <-- second vector
- *   z      <-- third vector
- *   s1     --> result of s1 = x.x
- *   s2     --> result of s2 = x.y
- *   s3     --> result of s3 = y.z
- *----------------------------------------------------------------------------*/
-
-inline static void
-_dot_products_xx_xy_yz(cs_lnum_t         n_elts,
-                       const cs_real_t  *x,
-                       const cs_real_t  *y,
-                       const cs_real_t  *z,
-                       double           *s1,
-                       double           *s2,
-                       double           *s3)
-{
-  double s[3];
-
-  cs_dot_xx_xy_yz(n_elts, x, y, z, s, s+1, s+2);
-
-#if defined(HAVE_MPI)
-
-  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    double _sum[3];
-
-    MPI_Allreduce(s, _sum, 3, MPI_DOUBLE, MPI_SUM, _cs_sles_mpi_reduce_comm);
-    s[0] = _sum[0];
-    s[1] = _sum[1];
-    s[2] = _sum[2];
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  *s1 = s[0];
-  *s2 = s[1];
-  *s3 = s[2];
-}
-
-/*----------------------------------------------------------------------------
- * Residue preconditioning Gk = C.Rk
- *
- * To increase the polynomial order with no major overhead, we may
- * "implicit" the resolution using a red-black mesh coloring.
- *
- * poly_degree:
- *   0: Gk = (1/ad).Rk
- *   1: Gk = (1/ad - (1/ad).ax.(1/ad)).Rk
- *   2: Gk = (1/ad - (1/ad).ax.(1/ad) + (1/ad).ax.(1/ad).ax.(1/ad)).Rk
- *
- * parameters:
- *   n_cells       <--  Local number of cells
- *   poly_degree   <--  preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <--  Halo update option for rotational periodicity
- *   ad_inv        <--  Inverse of matrix diagonal
- *   a             <--  Linear equation matrix
- *   rk            <--  Residue vector
- *   gk            -->  Result vector
- *   wk            ---  Working array
+ *   diag_block_size  <-- Block sizes for diagonal
+ *   rotation_mode    <-- Halo update option for rotational periodicity
+ *   a                <-- Linear equation matrix
+ *   rhs              <-- Right hand side
+ *   vx               <-> Current system solution
+ *   res              --> Residual
  *----------------------------------------------------------------------------*/
 
 static void
-_polynomial_preconditionning(cs_int_t             n_cells,
-                             int                  poly_degree,
-                             cs_halo_rotation_t   rotation_mode,
-                             const cs_real_t     *ad_inv,
-                             const cs_matrix_t   *a,
-                             const cs_real_t     *rk,
-                             cs_real_t           *restrict gk,
-                             cs_real_t           *restrict wk)
+_cell_residual(const int           *diag_block_size,
+               cs_halo_rotation_t   rotation_mode,
+               const cs_matrix_t   *a,
+               const cs_real_t      rhs[],
+               cs_real_t            vx[],
+               cs_real_t            res[])
 {
-  int deg_id;
   cs_int_t ii;
 
-#if defined(__xlc__)
-#pragma disjoint(*ad_inv, *rk, *gk, *wk)
-#endif
+  const cs_int_t n_vals = cs_glob_mesh->n_cells * diag_block_size[1];
 
-  if (poly_degree < 0) {
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (ii = 0; ii < n_cells; ii++)
-      gk[ii] = rk[ii];
-    return;
-  }
+  cs_matrix_vector_multiply(rotation_mode, a, vx, res);
 
-  /* Polynomial of degree 0 (diagonal)
-   *-----------------------------------*/
-
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (ii = 0; ii < n_cells; ii++)
-    gk[ii] = rk[ii] * ad_inv[ii];
-
-  /* Polynomial of degree n
-   *-----------------------
-   *
-   *                  n=1                    n=2
-   * gk = ((1/ad) - (1/ad).ax.(1/ad) + (1/ad).ax.(1/ad).ax.(1/ad) + ... ).rk
-   */
-
-  for (deg_id = 1; deg_id <= poly_degree; deg_id++) {
-
-    /* Compute Wk = (A-diag).Gk */
-
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, gk, wk);
-
-#   pragma omp parallel for if(n_cells > CS_THR_MIN)
-    for (ii = 0; ii < n_cells; ii++)
-      gk[ii] = (rk[ii] - wk[ii]) * ad_inv[ii];
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using preconditioned conjugate gradient.
- *
- * Parallel-optimized version, groups dot products, at the cost of
- * computation of the preconditionning for n+1 iterations instead of n.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Matrix
- *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_conjugate_gradient(const char             *var_name,
-                    const cs_matrix_t      *a,
-                    int                     diag_block_size,
-                    int                     poly_degree,
-                    cs_halo_rotation_t      rotation_mode,
-                    cs_sles_convergence_t  *convergence,
-                    const cs_real_t        *rhs,
-                    cs_real_t              *restrict vx,
-                    size_t                  aux_size,
-                    void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict gk;
-  cs_real_t *restrict zk, *restrict wk, *restrict ad_inv;
-
-  unsigned n_iter = 1;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_PCG]);
-
-  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
-
-  /* Allocate work arrays */
-
-  {
-    size_t  n_wa = 5;
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (poly_degree > 0)
-      n_wa += 1;
-
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    ad_inv = _aux_vectors;
-
-    rk = _aux_vectors + wa_size;
-    dk = _aux_vectors + wa_size*2;
-    gk = _aux_vectors + wa_size*3;
-    zk = _aux_vectors + wa_size*4;
-
-    if (poly_degree > 0)
-      wk = _aux_vectors + wa_size*5;
-    else
-      wk = NULL;
-  }
-
-  cs_matrix_copy_diagonal(a, ad_inv);
-
-  /* Initialize arrays */
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1.0 / ad_inv[ii];
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residue and descent direction */
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
-
-  /* Polynomial preconditionning of order poly_degre */
-
-  _polynomial_preconditionning(n_rows,
-                               poly_degree,
-                               rotation_mode,
-                               ad_inv,
-                               a,
-                               rk,
-                               gk,
-                               wk);
-
-  /* Descent direction */
-  /*-------------------*/
-
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    dk[ii] = gk[ii];
-
-#else
-
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  rk_gkm1 = _dot_product(n_rows, rk, gk);
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
-
-  /* Descent parameter */
-
-  _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
-
-  alpha =  - ro_0 / ro_1;
-
-# pragma omp parallel if(n_rows > CS_THR_MIN)
-  {
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      vx[ii] += (alpha * dk[ii]);
-
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      rk[ii] += (alpha * zk[ii]);
-  }
-
-  /* Convergence test */
-
-  residue = sqrt(_dot_product(n_rows, rk, rk));
-
-  cvg = _convergence_test(sles_name, var_name,
-                          n_iter, residue, convergence);
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    _polynomial_preconditionning(n_rows,
-                                 poly_degree,
-                                 rotation_mode,
-                                 ad_inv,
-                                 a,
-                                 rk,
-                                 gk,
-                                 wk);
-
-    /* compute residue and prepare descent parameter */
-
-    _dot_products_xx_xy(n_rows, rk, gk, &residue, &rk_gk);
-
-    residue = sqrt(residue);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(sles_name, var_name,
-                              n_iter, residue, convergence);
-
-    if (cvg != 0)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = rk_gk / rk_gkm1;
-    rk_gkm1 = rk_gk;
-
-#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      dk[ii] = gk[ii] + (beta * dk[ii]);
-
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
-
-    _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
-
-    alpha =  - ro_0 / ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned conjugate gradient
- * with single reduction.
- *
- * For more information, see Lapack Working note 56, at
- * http://www.netlib.org/lapack/lawnspdf/lawn56.pdf)
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name        <-- Variable name
- *   a               <-- Matrix
- *   diag_block_size <-- Block size of element ii, ii
- *   poly_degree     <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode   <-- Halo update option for rotational periodicity
- *   convergence     <-- Convergence information structure
- *   rhs             <-- Right hand side
- *   vx              --> System solution
- *   aux_size        <-- Number of elements in aux_vectors
- *   aux_vectors     --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_conjugate_gradient_sr(const char             *var_name,
-                       const cs_matrix_t      *a,
-                       int                     diag_block_size,
-                       int                     poly_degree,
-                       cs_halo_rotation_t      rotation_mode,
-                       cs_sles_convergence_t  *convergence,
-                       const cs_real_t        *rhs,
-                       cs_real_t              *restrict vx,
-                       size_t                  aux_size,
-                       void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
-  cs_real_t *restrict zk, *restrict wk, *restrict ad_inv;
-
-  unsigned n_iter = 1;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *rk, *dk, *gk, *zk, *wk, *ad_inv)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_PCG_SR]);
-
-  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
-
-  /* Allocate work arrays */
-
-  {
-    size_t  n_wa = 6;
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (poly_degree > 0)
-      n_wa += 1;
-
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    ad_inv = _aux_vectors;
-
-    rk = _aux_vectors + wa_size;
-    dk = _aux_vectors + wa_size*2;
-    gk = _aux_vectors + wa_size*3;
-    zk = _aux_vectors + wa_size*4;
-    sk = _aux_vectors + wa_size*5;
-
-    if (poly_degree > 0)
-      wk = _aux_vectors + wa_size*6;
-    else
-      wk = NULL;
-  }
-
-  cs_matrix_copy_diagonal(a, ad_inv);
-
-  /* Initialize arrays */
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1.0 / ad_inv[ii];
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residue and descent direction */
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
-
-  /* Polynomial preconditionning of order poly_degre */
-  /* gk = c_1 * rk  (zk = c_1 * rk) */
-
-  _polynomial_preconditionning(n_rows,
-                               poly_degree,
-                               rotation_mode,
-                               ad_inv,
-                               a,
-                               rk,
-                               gk,
-                               wk);
-
-  /* Descent direction */
-  /*-------------------*/
-
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    dk[ii] = gk[ii];
-
-#else
-
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk); /* zk = A.dk */
-
-  /* Descent parameter */
-
-  _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
-
-  alpha =  - ro_0 / ro_1;
-
-  rk_gkm1 = ro_0;
-
-# pragma omp parallel if(n_rows > CS_THR_MIN)
-  {
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      vx[ii] += (alpha * dk[ii]);
-
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      rk[ii] += (alpha * zk[ii]);
-  }
-
-  /* Convergence test */
-
-  residue = sqrt(_dot_product(n_rows, rk, rk));
-
-  cvg = _convergence_test(sles_name, var_name,
-                          n_iter, residue, convergence);
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    _polynomial_preconditionning(n_rows,
-                                 poly_degree,
-                                 rotation_mode,
-                                 ad_inv,
-                                 a,
-                                 rk,
-                                 gk,
-                                 wk);
-
-    cs_matrix_vector_multiply(rotation_mode, a, gk, sk);  /* sk = A.zk */
-
-    /* compute residue and prepare descent parameter */
-
-    _dot_products_xx_xy_yz(n_rows, rk, gk, sk, &residue, &rk_gk, &gk_sk);
-
-    residue = sqrt(residue);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(sles_name, var_name,
-                              n_iter, residue, convergence);
-
-    if (cvg != 0)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = rk_gk / rk_gkm1;
-    rk_gkm1 = rk_gk;
-
-    ro_1 = gk_sk - beta*beta*ro_1;
-    ro_0 = rk_gk;
-
-    alpha =  - ro_0 / ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        dk[ii] = gk[ii] + (beta * dk[ii]);
-        vx[ii] += alpha * dk[ii];
-      }
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
-      }
-    }
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using non-preconditioned conjugate gradient.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Matrix
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_conjugate_gradient_npc(const char             *var_name,
-                        const cs_matrix_t      *a,
-                        int                     diag_block_size,
-                        cs_halo_rotation_t      rotation_mode,
-                        cs_sles_convergence_t  *convergence,
-                        const cs_real_t        *rhs,
-                        cs_real_t              *restrict vx,
-                        size_t                  aux_size,
-                        void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict zk;
-
-  unsigned n_iter = 1;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *rk, *dk, *zk)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_PCG]);
-
-  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
-
-  /* Allocate work arrays */
-
-  {
-    size_t  n_wa = 3;
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    rk = _aux_vectors;
-    dk = _aux_vectors + wa_size;
-    zk = _aux_vectors + wa_size*2;
-  }
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residue and descent direction */
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    rk[ii] -= rhs[ii];
-
-  /* Descent direction */
-  /*-------------------*/
-
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    dk[ii] = rk[ii];
-
-#else
-
-  memcpy(dk, rk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  rk_rkm1 = _dot_product(n_rows, rk, rk);
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
-
-  /* Descent parameter */
-
-  _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
-
-  alpha =  - ro_0 / ro_1;
-
-# pragma omp parallel if(n_rows > CS_THR_MIN)
-  {
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      vx[ii] += (alpha * dk[ii]);
-
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      rk[ii] += (alpha * zk[ii]);
-  }
-
-  /* Convergence test */
-
-  residue = sqrt(_dot_product(n_rows, rk, rk));
-
-  cvg = _convergence_test(sles_name, var_name,
-                          n_iter, residue, convergence);
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    /* compute residue and prepare descent parameter */
-
-    _dot_products_xx_xy(n_rows, rk, rk, &residue, &rk_rk);
-
-    residue = sqrt(residue);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(sles_name, var_name,
-                              n_iter, residue, convergence);
-
-    if (cvg != 0)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = rk_rk / rk_rkm1;
-    rk_rkm1 = rk_rk;
-
-#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      dk[ii] = rk[ii] + (beta * dk[ii]);
-
-    cs_matrix_vector_multiply(rotation_mode, a, dk, zk);
-
-    _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
-
-    alpha =  - ro_0 / ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using non-preconditioned conjugate gradient
- * with single reduction.
- *
- * For more information, see Lapack Working note 56, at
- * http://www.netlib.org/lapack/lawnspdf/lawn56.pdf)
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name        <-- Variable name
- *   a               <-- Matrix
- *   diag_block_size <-- Block size of element ii, ii
- *   rotation_mode   <-- Halo update option for rotational periodicity
- *   convergence     <-- Convergence information structure
- *   rhs             <-- Right hand side
- *   vx              --> System solution
- *   aux_size        <-- Number of elements in aux_vectors
- *   aux_vectors     --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_conjugate_gradient_npc_sr(const char             *var_name,
-                           const cs_matrix_t      *a,
-                           int                     diag_block_size,
-                           cs_halo_rotation_t      rotation_mode,
-                           cs_sles_convergence_t  *convergence,
-                           const cs_real_t        *rhs,
-                           cs_real_t              *restrict vx,
-                           size_t                  aux_size,
-                           void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict sk;
-  cs_real_t *restrict zk;
-
-  unsigned n_iter = 1;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *rk, *dk, *zk)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_PCG_SR]);
-
-  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
-
-  /* Allocate work arrays */
-
-  {
-    size_t  n_wa = 4;
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    rk = _aux_vectors;
-    dk = _aux_vectors + wa_size;
-    zk = _aux_vectors + wa_size*2;
-    sk = _aux_vectors + wa_size*3;
-  }
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residue and descent direction */
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    rk[ii] = rk[ii] - rhs[ii];
-
-  /* Descent direction */
-  /*-------------------*/
-
-#if defined(HAVE_OPENMP)
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    dk[ii] = rk[ii];
-
-#else
-
-  memcpy(dk, rk, n_rows * sizeof(cs_real_t));
-
-#endif
-
-  cs_matrix_vector_multiply(rotation_mode, a, dk, zk); /* zk = A.dk */
-
-  /* Descent parameter */
-
-  _dot_products_xy_yz(n_rows, rk, dk, zk, &ro_0, &ro_1);
-
-  alpha =  - ro_0 / ro_1;
-
-  rk_rkm1 = ro_0;
-
-# pragma omp parallel if(n_rows > CS_THR_MIN)
-  {
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      vx[ii] += (alpha * dk[ii]);
-
-#   pragma omp for nowait
-    for (ii = 0; ii < n_rows; ii++)
-      rk[ii] += (alpha * zk[ii]);
-  }
-
-  /* Convergence test */
-
-  residue = sqrt(_dot_product_xx(n_rows, rk));
-
-  cvg = _convergence_test(sles_name, var_name,
-                          n_iter, residue, convergence);
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    cs_matrix_vector_multiply(rotation_mode, a, rk, sk);  /* sk = A.zk */
-
-    /* compute residue and prepare descent parameter */
-
-    _dot_products_xx_xy(n_rows, rk, sk, &residue, &rk_sk);
-
-    rk_rk = residue;
-
-    residue = sqrt(residue);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(sles_name, var_name,
-                              n_iter, residue, convergence);
-
-    if (cvg != 0)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = rk_rk / rk_rkm1;
-    rk_rkm1 = rk_rk;
-
-    ro_1 = rk_sk - beta*beta*ro_1;
-    ro_0 = rk_rk;
-
-    alpha =  - ro_0 / ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        dk[ii] = rk[ii] + (beta * dk[ii]);
-        vx[ii] += alpha * dk[ii];
-      }
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
-      }
-    }
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Jacobi.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Linear equation matrix
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_jacobi(const char             *var_name,
-        const cs_matrix_t      *a,
-        cs_halo_rotation_t      rotation_mode,
-        cs_sles_convergence_t  *convergence,
-        const cs_real_t        *rhs,
-        cs_real_t              *restrict vx,
-        size_t                  aux_size,
-        void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  res2, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict ad_inv, *restrict rk;
-  const cs_real_t  *restrict ad;
-
-  unsigned n_iter = 0;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *ad, *ad_inv)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_JACOBI]);
-
-  n_cols = cs_matrix_get_n_columns(a);
-  n_rows = cs_matrix_get_n_rows(a);
-
-  ad = cs_matrix_get_diagonal(a);
-
-  /* Allocate work arrays */
-
-  {
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == NULL || aux_size < (wa_size * 2))
-      BFT_MALLOC(_aux_vectors, wa_size * 2, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    ad_inv = _aux_vectors;
-    rk     = _aux_vectors + wa_size;
-  }
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1.0 / ad[ii];
-
-  cvg = 0;
-
-  /* Current iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    register double r;
-
-    n_iter += 1;
-
-#if defined(HAVE_OPENMP)
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      rk[ii] = vx[ii];
-
-#else
-
-    memcpy(rk, vx, n_rows * sizeof(cs_real_t));   /* rk <- vx */
-
-#endif
-
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
-
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vx);
-
-    res2 = 0.0;
-
-#   pragma omp parallel for private(r) reduction(+:res2) if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++) {
-      vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
-      r = ad[ii] * (vx[ii]-rk[ii]);
-      res2 += (r*r);
-    }
-
-#if defined(HAVE_MPI)
-
-    if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-      double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    _cs_sles_mpi_reduce_comm);
-      res2 = _sum;
-    }
-
-#endif /* defined(HAVE_MPI) */
-
-    residue = sqrt(res2);
-
-    /* Convergence test */
-
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
-* Block Jacobi utilities.
-* Used to factorize dense 3*3 matrices.
-*
-* parameters:
-*   ad            <-- Diagonal part of linear equation matrix
-*   ad_inv        --> Inverse of the diagonal part of linear equation matrix
-*   n_blocks      <-- Number of blocks
-*
-* returns:
-*----------------------------------------------------------------------------*/
-
-
-static void
-_fact_lu33(const cs_real_t   *ad,
-           cs_real_t         *ad_inv,
-           cs_lnum_t          n_blocks)
-{
-  cs_lnum_t i;
-  cs_real_t * _ad_inv = NULL;
-  const cs_real_t * _ad = NULL;
-
-# pragma omp parallel for private(_ad, _ad_inv) if(n_blocks > CS_THR_MIN)
-  for (i = 0; i < n_blocks; i++) {
-    _ad_inv = &ad_inv[9*i];
-    _ad = &ad[9*i];
-
-    _ad_inv[0] = _ad[0];
-    _ad_inv[1] = _ad[1];
-    _ad_inv[2] = _ad[2];
-
-    _ad_inv[3] = _ad[3]/_ad[0];
-    _ad_inv[4] = _ad[4] - _ad_inv[3]*_ad[1];
-    _ad_inv[5] = _ad[5] - _ad_inv[3]*_ad[2];
-
-    _ad_inv[6] = _ad[6]/_ad[0];
-    _ad_inv[7] = (_ad[7] - _ad_inv[6]*_ad[1])/_ad_inv[4];
-    _ad_inv[8] = _ad[8] - _ad_inv[6]*_ad[2] - _ad_inv[7]*_ad_inv[5];
-  }
-}
-
-/*----------------------------------------------------------------------------
-* Block Jacobi utilities.
-* Compute forward and backward to solve an LU 3*3 system.
-*
-* parameters:
-*   mat           <-- 3*3*dim matrix
-*   x             --> Solution
-*   b             --> 1st part of RHS (c - b)
-*   c             --> 2nd part of RHS (c - b)
-*   aux           --> Work array
-*
-* returns:
-*----------------------------------------------------------------------------*/
-
-inline static void
-_fw_and_bw_lu33(const cs_real_t     mat[],
-                cs_real_t           x[],
-                const cs_real_t     b[],
-                const cs_real_t     c[],
-                cs_real_t           aux[])
-{
-  aux[0] = (c[0] - b[0]);
-  aux[1] = (c[1] - b[1]) - aux[0]*mat[3];
-  aux[2] = (c[2] - b[2]) - aux[0]*mat[6] - aux[1]*mat[7];
-
-  x[2] = aux[2]/mat[8];
-  x[1] = (aux[1] - mat[5]*x[2])/mat[4];
-  x[0] = (aux[0] - mat[1]*x[1] - mat[2]*x[2])/mat[0];
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using block Jacobi.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Linear equation matrix
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_block_3_jacobi(const char             *var_name,
-                const cs_matrix_t      *a,
-                cs_halo_rotation_t      rotation_mode,
-                cs_sles_convergence_t  *convergence,
-                const cs_real_t        *rhs,
-                cs_real_t              *restrict vx,
-                size_t                  aux_size,
-                void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_blocks, n_rows, ii, kk, jj;
-  double  res2, residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  temp[3];
-  cs_real_t  *restrict ad_inv, *restrict rk, *restrict vxx;
-  const cs_real_t  *restrict ad;
-
-  unsigned n_iter = 0;
-
-  /* Tell IBM compiler not to alias */
-  #if defined(__xlc__)
-  #pragma disjoint(*rhs, *vx, *ad, *ad_inv)
-  #endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_JACOBI]);
-
-  n_cols = cs_matrix_get_n_columns(a) * 3;
-  n_blocks = cs_matrix_get_n_rows(a);
-  n_rows = n_blocks * 3;
-
-  ad = cs_matrix_get_diagonal(a);
-
-  /* Allocate work arrays */
-
-  {
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == NULL
-        || aux_size < (wa_size * 2) + 3*wa_size)
-      BFT_MALLOC(_aux_vectors,
-                 (wa_size * 2) + 3*wa_size, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    ad_inv = _aux_vectors;
-    rk     = _aux_vectors + wa_size*3;
-    vxx    = _aux_vectors + wa_size*3 + wa_size;
-
-  }
-
-  _fact_lu33(ad, ad_inv, n_blocks);
-
-  cvg = 0;
-
-  /* Current iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    register double r;
-
-    n_iter += 1;
-    memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
-
-    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
-
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vxx);
-
-    res2 = 0.0;
-
-#   pragma omp parallel for private(jj, kk, r, temp) \
-                            reduction(+:res2) if(n_blocks > CS_THR_MIN)
-    for (ii = 0; ii < n_blocks; ii++) {
-      _fw_and_bw_lu33(ad_inv + 9*ii,
-                      vx + 3*ii,
-                      vxx + 3*ii,
-                      rhs + 3*ii,
-                      temp);
-      for (jj = 0; jj < 3; jj++) {
-        r = 0.0;
-        for (kk = 0; kk < 3; kk++)
-          r +=    ad[ii*9 + jj*3 + kk]
-               * (vx[ii*3 + kk] - rk[ii*3 + kk]);
-        res2 += (r*r);
-      }
-    }
-
-#if defined(HAVE_MPI)
-
-    if (cs_glob_n_ranks > 1) {
-      double _sum;
-      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
-                    cs_glob_mpi_comm);
-      res2 = _sum;
-    }
-
-#endif /* defined(HAVE_MPI) */
-
-    residue = sqrt(res2);
-
-    /* Convergence test */
-
-    cvg = _convergence_test(sles_name, var_name,
-                            n_iter, residue, convergence);
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of (ad+ax).vx = Rhs using preconditioned Bi-CGSTAB.
- *
- * Parallel-optimized version, groups dot products, at the cost of
- * computation of the preconditionning for n+1 iterations instead of n.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name         <-- Variable name
- *   a                <-- Matrix
- *   diag_block_size  <-- Block size of element ii, ii
- *   poly_degree      <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode    <-- Halo update option for rotational periodicity
- *   convergence      <-- Convergence information structure
- *   rhs              <-- Right hand side
- *   vx               --> System solution
- *   aux_size         <-- Number of elements in aux_vectors
- *   aux_vectors      --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_bi_cgstab(const char             *var_name,
-           const cs_matrix_t      *a,
-           int                     diag_block_size,
-           int                     poly_degree,
-           cs_halo_rotation_t      rotation_mode,
-           cs_sles_convergence_t  *convergence,
-           const cs_real_t        *rhs,
-           cs_real_t              *restrict vx,
-           size_t                  aux_size,
-           void                   *aux_vectors)
-{
-  const char *sles_name;
-  int cvg;
-  cs_int_t  n_cols, n_rows, ii;
-  double  _epzero = 1.e-30; /* smaller than epzero */
-  double  ro_0, ro_1, alpha, beta, betam1, gamma, omega, ukres0;
-  double  residue;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict res0, *restrict rk, *restrict pk, *restrict zk;
-  cs_real_t  *restrict uk, *restrict vk, *restrict ad_inv;
-
-  unsigned n_iter = 0;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *res0, *rk, *pk, *zk, *uk, *vk, *ad_inv)
-#endif
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  sles_name = _(cs_sles_type_name[CS_SLES_BICGSTAB]);
-
-  n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-  n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
-
-  /* Allocate work arrays */
-
-  {
-    size_t  n_wa = 7;
-    size_t  wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
-      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    ad_inv = _aux_vectors;
-
-    res0 = _aux_vectors + wa_size;
-    rk = _aux_vectors + wa_size*2;
-    pk = _aux_vectors + wa_size*3;
-    zk = _aux_vectors + wa_size*4;
-    uk = _aux_vectors + wa_size*5;
-    vk = _aux_vectors + wa_size*6;
-
-  }
-
-  cs_matrix_copy_diagonal(a, ad_inv);
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1.0 / ad_inv[ii];
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
-    pk[ii] = 0.0;
-    uk[ii] = 0.0;
-  }
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, res0);
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++) {
-    res0[ii] = -res0[ii] + rhs[ii];
-    rk[ii] = res0[ii];
-  }
-
-  alpha = 1.0;
-  betam1 = 1.0;
-  gamma = 1.0;
-
-  cvg = 0;
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == 0) {
-
-    /* Compute beta and omega;
-       group dot products for new iteration's beta
-       and previous iteration's residue to reduce total latency */
-
-    if (n_iter == 0) {
-
-      beta = _dot_product(n_rows, res0, rk);
-      residue = sqrt(beta);
-
-    }
-    else {
-
-      _dot_products_xx_xy(n_rows, rk, res0, &residue, &beta);
-      residue = sqrt(residue);
-
-      /* Convergence test */
-      cvg = _convergence_test(sles_name, var_name,
-                              n_iter, residue, convergence);
-      if (cvg != 0)
-        break;
-
-    }
-
-    n_iter += 1;
-
-    if (CS_ABS(beta) < _epzero) {
-
-      if (convergence->verbosity == 2)
-        bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
-                   n_iter, residue, residue/convergence->r_norm);
-      else if (convergence->verbosity > 2)
-        bft_printf("   %5u %11.4e %11.4e\n",
-                   n_iter, residue, residue/convergence->r_norm);
-
-      cvg = 0;
-      break;
-    }
-
-    if (CS_ABS(alpha) < _epzero) {
-      bft_printf
-        (_("\n\n"
-           "%s [%s]:\n"
-           " @@ Warning: non convergence and abort\n"
-           "\n"
-           "    Alpha coefficient is lower than %12.4e\n"
-           "\n"
-           "    The matrix cannot be considered as invertible anymore."),
-         sles_name, var_name, alpha);
-      cvg = -2;
-      break;
-    }
-
-    omega = beta*gamma / (alpha*betam1);
-    betam1 = beta;
-
-    /* Compute pk */
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      pk[ii] = rk[ii] + omega*(pk[ii] - alpha*uk[ii]);
-
-    /* Compute zk = c.pk */
-
-    _polynomial_preconditionning(n_rows,
-                                 poly_degree,
-                                 rotation_mode,
-                                 ad_inv,
-                                 a,
-                                 pk,
-                                 zk,
-                                 uk);
-
-    /* Compute uk = A.zk */
-
-    cs_matrix_vector_multiply(rotation_mode, a, zk, uk);
-
-    /* Compute uk.res0 and gamma */
-
-    ukres0 = _dot_product(n_rows, uk, res0);
-
-    gamma = beta / ukres0;
-
-    /* First update of vx and rk */
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        vx[ii] += (gamma * zk[ii]);
-
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] -= (gamma * uk[ii]);
-    }
-
-    /* Compute zk = C.rk (zk is overwritten, vk is a working array */
-
-    _polynomial_preconditionning(n_rows,
-                                 poly_degree,
-                                 rotation_mode,
-                                 ad_inv,
-                                 a,
-                                 rk,
-                                 zk,
-                                 vk);
-
-    /* Compute vk = A.zk and alpha */
-
-    cs_matrix_vector_multiply(rotation_mode, a, zk, vk);
-
-    _dot_products_xx_xy(n_rows, vk, rk, &ro_1, &ro_0);
-
-    if (ro_1 < _epzero) {
-      bft_printf
-        (_("\n\n"
-           "%s [%s]:\n"
-           " @@ Warning: non convergence and abort\n"
-           "\n"
-           "    The square of the norm of the descent vector\n"
-           "    is lower than %12.4e\n"
-           "\n"
-           "    The resolution does not progress anymore."),
-         sles_name, var_name, _epzero);
-      cvg = -2;
-      break;
-    }
-
-    alpha = ro_0 / ro_1;
-
-    /* Final update of vx and rk */
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * zk[ii]);
-
-#     pragma omp for nowait
-      for (ii = 0; ii < n_rows; ii++)
-        rk[ii] -= (alpha * vk[ii]);
-    }
-
-    /* Convergence test at beginning of next iteration so
-       as to group dot products for better parallel performance */
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Transform using Givens rotations a system Ax=b where A is an upper
- * triangular matrix of size n*(n-1) with a lower diagonal to an equivalent
- * system A'x=b' where A' is an upper triangular matrix.
- *
- * parameters:
- *   a              <-> dense matrix (size: size a_size*a_size):
- *                      a(i,j) = a[i + j*a_size]
- *                      input: A; output: A'
- *   a_size         <-- matrix dim
- *   b              <-> pre-allocated vector of a_size elements
- *                      input: b; output: b'
- *   givens_coeff   <-> pre-allocated vector of a_size elements
- *                      input: previous Givens coefficients
- *                      output: updated Givens coefficients
- *   update_rank    <-- rank of first non null coefficient on lower diagonal
- *   end_update     <-- rank of last non null coefficient on lower diagonal
- *----------------------------------------------------------------------------*/
-
-static void
-_givens_rot_update(cs_real_t    *restrict a,
-                   int                    a_size,
-                   cs_real_t    *restrict b,
-                   cs_real_t    *restrict givens_coeff,
-                   int                    update_rank,
-                   int                    end_update)
-{
-  int i, j;
-  cs_real_t _aux;
-  cs_real_t norm;
-
-  for (i = 0; i < update_rank; ++i) {
-    for (j = update_rank; j < end_update; ++j) {
-
-      _aux =   givens_coeff[i]*a[j*a_size + i]
-             + givens_coeff[i + a_size] * a[j*a_size + i+1];
-
-      a[j*a_size + i+1] =   givens_coeff[i] * a[i+1 + j*a_size]
-                          - givens_coeff[i + a_size] * a[j*a_size + i];
-
-      a[j*a_size + i] = _aux;
-    }
-  }
-
-  for (i = update_rank; i < end_update; ++i) {
-
-    norm = pow(a[i*a_size + i], 2) + pow(a[i*a_size + i+1], 2);
-    norm = sqrt(norm);
-
-    givens_coeff[a_size + i] = a[i*a_size + i+1]/norm;
-    givens_coeff[i] = a[i*a_size + i]/norm;
-
-    b[i+1] = -b[i]*givens_coeff[a_size + i];
-    b[i] = b[i]*givens_coeff[i];
-
-    for (j = i; j < end_update; j++) {
-
-      _aux =   givens_coeff[i] * a[j*a_size + i]
-             + givens_coeff[a_size+i] * a[j*a_size + i+1];
-      if (j == i)
-        a[j*a_size+i+1] = 0;
-      else
-        a[i+1 + j*a_size] =   givens_coeff[i]*a[i+1 + j*a_size]
-                            - givens_coeff[a_size + i]*a[i + j*a_size];
-
-      a[j*a_size + i] = _aux;
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute solution of Ax = b where A is an upper triangular matrix.
- *
- * As the system solved by GMRES will grow with iteration number, we
- * preallocate a allocated size, and solve only the useful part:
- *
- *   |       |       |   |x1|   |b1|
- *   |   A   |  pad  |   |x2|   |b2|
- *   |_______|       |   |x3|   |b3|
- *   |               | * |p | = |p |
- *   |     pad       |   |a |   |a |
- *   |               |   |d |   |d |
- *
- * parameters:
- *   a          <-- dense upper triangular matrix A (size: glob_size*glob_size)
- *                 a(i,j) = a[i + j*glob_size]
- *   a_size     <-- system size
- *   alloc_size <-- a_size + halo size
- *   b          <-- pre-allocated vector of a_size elements
- *   x          --> system solution, pre-allocated vector of a_size elements
- *
- * returns:
- *   0 in case of success, 1 in case of zero-pivot.
- *----------------------------------------------------------------------------*/
-
-static int
-_solve_diag_sup_halo(cs_real_t  *restrict a,
-                     int                  a_size,
-                     int                  alloc_size,
-                     cs_real_t  *restrict b,
-                     cs_real_t  *restrict x)
-{
-  int i, j;
-
-  for (i = a_size - 1; i > -1; i--) {
-
-    x[i] = b[i];
-
-    for (j = i + 1; j < a_size; j++)
-      x[i] = x[i] - a[j*alloc_size + i]*x[j];
-
-    x[i] /= a[i*alloc_size + i];
-  }
-
-  return 0; /* We should add a check for zero-pivot */
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using preconditioned GMRES.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Matrix
- *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_gmres(const char             *var_name,
-       const cs_matrix_t      *a,
-       int                     poly_degree,
-       cs_halo_rotation_t      rotation_mode,
-       cs_sles_convergence_t  *convergence,
-       const cs_real_t        *rhs,
-       cs_real_t              *restrict vx,
-       size_t                  aux_size,
-       void                   *aux_vectors)
-{
-  int cvg;
-  const char *sles_name;
-  int check_freq, l_iter, l_old_iter, scaltest;
-  int krylov_size, _krylov_size;
-  cs_lnum_t  n_cols, n_rows, ii, kk, jj;
-  double    beta, dot_prod, residue, _residue, epsi;
-  cs_real_t  *_aux_vectors;
-  cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
-  cs_real_t *restrict _givens_coeff, *restrict _beta;
-  cs_real_t *restrict dk, *restrict gk, *restrict ad_inv;
-  cs_real_t *restrict bk, *restrict fk, *restrict krk;
-
-  int krylov_size_max = 75;
-  unsigned n_iter = 0;
-
-#if defined(__xlc__)
-#pragma disjoint(*rhs, *vx, *_krylov_vectors, *_h_matrix, \
-  *_givens_coeff, *_beta, *dk, *gk, *bk, *fk, *ad_inv, *krk)
-#endif
-
-  sles_name = _(cs_sles_type_name[CS_SLES_GMRES]);
-
-  /* Preliminary calculations */
-  /*--------------------------*/
-
-  n_cols = cs_matrix_get_n_columns(a);
-  n_rows = cs_matrix_get_n_rows(a);
-
-  /* Allocate work arrays */
-
-  krylov_size =  (krylov_size_max < (int)sqrt(n_rows)*1.5) ?
-                  krylov_size_max : (int)sqrt(n_rows)*1.5 + 1;
-
-#if defined(HAVE_MPI)
-  if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-    MPI_Allreduce(&krylov_size,
-                  &_krylov_size,
-                  1,
-                  MPI_INT,
-                  MPI_MIN,
-                  _cs_sles_mpi_reduce_comm);
-    krylov_size = _krylov_size;
-  }
-#endif
-
-  check_freq = (int)(krylov_size/10) + 1;
-  epsi = 1.e-15;
-  scaltest = 0;
-
-  {
-    size_t _aux_size;
-    size_t  n_wa = 5;
-    size_t  wa_size = n_cols < krylov_size? krylov_size:n_cols;
-
-    wa_size = CS_SIMD_SIZE(wa_size);
-    _aux_size =   wa_size*n_wa
-                + (krylov_size-1)*(n_rows + krylov_size) + 3*krylov_size;
-
-    if (aux_vectors == NULL || aux_size < _aux_size)
-      BFT_MALLOC(_aux_vectors, _aux_size, cs_real_t);
-    else
-      _aux_vectors = aux_vectors;
-
-    dk = _aux_vectors;
-    gk = _aux_vectors + wa_size;
-    ad_inv = _aux_vectors + 2*wa_size;
-    bk = _aux_vectors + 3*wa_size;
-    fk = _aux_vectors + 4*wa_size;
-    _krylov_vectors = _aux_vectors + 5*wa_size;
-    _h_matrix = _aux_vectors + 5*wa_size + (krylov_size - 1)*n_rows;
-    _givens_coeff =   _aux_vectors + 5*wa_size
-                    + (krylov_size - 1)*(n_rows + krylov_size);
-    _beta =   _aux_vectors + 5*wa_size
-            + (krylov_size - 1)*(n_rows + krylov_size) + 2*krylov_size;
-  }
-
-  for (ii = 0; ii < krylov_size*(krylov_size - 1); ii++)
-    _h_matrix[ii] = 0.;
-
-  cs_matrix_copy_diagonal(a, ad_inv);
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    ad_inv[ii] = 1./ad_inv[ii];
-
-  cvg = 0;
-
-  while (cvg == 0) {
-
-    /* compute  rk <- a*vx (vx = x0) */
-
-    cs_matrix_vector_multiply(rotation_mode, a, vx, dk);
-
-    /* compute  rk <- rhs - rk (r0 = b-A*x0) */
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      dk[ii] = rhs[ii] - dk[ii];
-
-    /* beta = ||r0|| */
-    beta = sqrt(_dot_product(n_rows, dk, dk));
-    dot_prod = beta;
-
-    _beta[0] = beta;
-    for (ii = 1; ii < krylov_size; ii++)
-      _beta[ii] = 0.;
-
-    /* Lap */
-
-    l_iter = 0;
-    l_old_iter = 0;
-
-    for (ii = 0; ii < krylov_size - 1; ii++) {
-
-      /* krk = k-ieth col of _krylov_vector = vi */
-      krk = _krylov_vectors + ii*n_rows;
-
-#     pragma omp parallel for if(n_rows > CS_THR_MIN)
-      for (jj = 0; jj < n_rows; jj++)
-        krk[jj] = dk[jj]/dot_prod;
-
-      _polynomial_preconditionning(n_rows,
-                                   poly_degree,
-                                   rotation_mode,
-                                   ad_inv,
-                                   a,
-                                   krk,
-                                   gk,
-                                   dk);
-
-      /* compute w = dk <- A*vj */
-
-      cs_matrix_vector_multiply(rotation_mode, a, gk, dk);
-
-      for (jj = 0; jj < ii + 1; jj++) {
-
-        /* compute h(k,i) = <w,vi> = <dk,vi> */
-        _h_matrix[ii*krylov_size + jj]
-          = _dot_product(n_rows, dk, (_krylov_vectors + jj*n_rows));
-
-        /* compute w = dk <- w - h(i,k)*vi */
-
-        cs_axpy(n_rows,
-                -_h_matrix[ii*krylov_size+jj],
-                (_krylov_vectors + jj*n_rows),
-                dk);
-
-      }
-
-      /* compute h(i+1,i) = sqrt<w,w> */
-      dot_prod = sqrt(_dot_product(n_rows, dk, dk));
-      _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
-
-      if (dot_prod < epsi) scaltest = 1;
-
-      if (   (l_iter + 1)%check_freq == 0
-          || l_iter == krylov_size - 2
-          || scaltest == 1) {
-
-          /* H matrix to diagonal sup matrix */
-
-        _givens_rot_update(_h_matrix,
-                           krylov_size,
-                           _beta,
-                           _givens_coeff,
-                           l_old_iter,
-                           l_iter + 1);
-
-        l_old_iter = l_iter + 1;
-
-        /* solve diag sup system */
-        _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
-
-#       pragma omp parallel for private(kk) if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++) {
-          fk[jj] = 0.0;
-          for (kk = 0; kk <= l_iter; kk++)
-            fk[jj] += _krylov_vectors[kk*n_rows + jj] * gk[kk];
-        }
-
-        _polynomial_preconditionning(n_rows,
-                                     poly_degree,
-                                     rotation_mode,
-                                     ad_inv,
-                                     a,
-                                     fk,
-                                     gk,
-                                     bk);
-
-
-#       pragma omp parallel for if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++)
-          fk[jj] = vx[jj] + gk[jj];
-
-        cs_matrix_vector_multiply(rotation_mode, a, fk, bk);
-
-        /* compute residue = | Ax - b |_1 */
-
-        residue = 0.;
-#       pragma omp parallel for reduction(+:residue) if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++)
-          residue += pow(rhs[jj] - bk[jj], 2);
-
-#if defined(HAVE_MPI)
-
-        if (_cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-          MPI_Allreduce(&residue, &_residue, 1, MPI_DOUBLE, MPI_SUM,
-                        _cs_sles_mpi_reduce_comm);
-          residue = _residue;
-        }
-
-#endif
-
-        residue = sqrt(residue);
-
-        cvg = _convergence_test(sles_name,
-                                var_name,
-                                n_iter,
-                                residue,
-                                convergence);
-
-      }
-
-      n_iter++;
-      l_iter++;
-
-      if (cvg == 1 || l_iter == krylov_size - 1 || scaltest == 1) {
-#       pragma omp parallel for if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++)
-          vx[jj] = fk[jj];
-        break;
-      }
-    }
-  }
-
-  if (_aux_vectors != aux_vectors)
-    BFT_FREE(_aux_vectors);
-
-  return cvg;
+# pragma omp parallel for if(n_vals > CS_THR_MIN)
+  for (ii = 0; ii < n_vals; ii++)
+    res[ii] = fabs(res[ii] - rhs[ii]);
 }
 
 /*----------------------------------------------------------------------------
@@ -2537,9 +588,9 @@ _gmres(const char             *var_name,
  *----------------------------------------------------------------------------*/
 
 static size_t
-_value_type(size_t      n_vals,
-            cs_real_t   val[],
-            cs_real_t   val_type[])
+_value_type(size_t     n_vals,
+            cs_real_t  val[],
+            cs_real_t  val_type[])
 {
   size_t ii;
   size_t retval = 0;
@@ -2597,549 +648,525 @@ _value_type(size_t      n_vals,
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * Compute per-cell residual for Ax = b.
- *
- * parameters:
- *   diag_block_size  <-- Block sizes for diagonal
- *   rotation_mode    <-- Halo update option for rotational periodicity
- *   a                <-- Linear equation matrix
- *   rhs              <-- Right hand side
- *   vx               <-> Current system solution
- *   res              --> Residual
- *----------------------------------------------------------------------------*/
-
-static void
-_cell_residual(const int           *diag_block_size,
-               cs_halo_rotation_t   rotation_mode,
-               const cs_matrix_t   *a,
-               const cs_real_t      rhs[],
-               cs_real_t            vx[],
-               cs_real_t            res[])
-{
-  cs_int_t ii;
-
-  const cs_int_t n_vals = cs_glob_mesh->n_cells * diag_block_size[1];
-
-  cs_matrix_vector_multiply(rotation_mode, a, vx, res);
-
-# pragma omp parallel for if(n_vals > CS_THR_MIN)
-  for (ii = 0; ii < n_vals; ii++)
-    res[ii] = fabs(res[ii] - rhs[ii]);
-}
-
-/*----------------------------------------------------------------------------
- * Sparse linear system resolution for non-interleaved non-symmetric matrixes.
- *
- * This function does not have the full functionnality of cs_sles_solve.c,
- * as it should only be used for "legacy" non-interleaved non-symmetric
- * matrixes: it may not be used inside a multigrid solver, and always updates
- * statistics.
- *
- * Note that in most cases (if the right-hand side is not already zero
- * within convergence criteria), coefficients are assigned to matrixes
- * then released by this function, so coefficients need not be assigned
- * prior to this call, and will have been released upon returning.
- *
- * parameters:
- *   var_name      <-- Variable name
- *   solver_type   <-- Type of solver (PCG, Jacobi, ...)
- *   a             <-- Matrix
- *   poly_degree   <-- Preconditioning polynomial degree (0: diagonal)
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   verbosity     <-- Verbosity level
- *   n_max_iter    <-- Maximum number of iterations
- *   precision     <-- Precision limit
- *   r_norm        <-- Residue normalization
- *   n_iter        --> Number of iterations
- *   residue       <-> Residue
- *   rhs           <-- Right hand side
- *   vx            --> System solution
- *   aux_size      <-- Number of elements in aux_vectors
- *   aux_vectors   --- Optional working area (allocation otherwise)
- *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
-
-static int
-_solve_ni(const char          *var_name,
-          cs_sles_type_t       solver_type,
-          const cs_matrix_t   *a,
-          int                  poly_degree,
-          cs_halo_rotation_t   rotation_mode,
-          int                  verbosity,
-          int                  n_max_iter,
-          double               precision,
-          double               r_norm,
-          int                 *n_iter,
-          double              *residue,
-          const cs_real_t     *rhs,
-          cs_real_t           *vx,
-          size_t               aux_size,
-          void                *aux_vectors)
-{
-  cs_int_t  n_rows;
-  cs_timer_t t0, t1;
-
-  unsigned _n_iter = 0;
-  int cvg = 0;
-  cs_sles_convergence_t  convergence;
-
-  cs_sles_info_t *sles_info = NULL;
-
-  n_rows = cs_matrix_get_n_rows(a);
-
-  t0 = cs_timer_time();
-  sles_info = _find_or_add_system(var_name, solver_type);
-
-  /* Initialize number of iterations and residue,
-     check for immediate return,
-     and solve sparse linear system */
-
-  *n_iter = 0;
-
-  if (cs_sles_needs_solving(var_name,
-                            _(cs_sles_type_name[solver_type]),
-                            n_rows,
-                            verbosity,
-                            r_norm,
-                            residue,
-                            rhs) != 0) {
-
-    /* Solve sparse linear system */
-
-    _convergence_init(&convergence,
-                      _(cs_sles_type_name[solver_type]),
-                      var_name,
-                      verbosity,
-                      n_max_iter,
-                      precision,
-                      r_norm,
-                      *residue);
-
-    switch (solver_type) {
-    case CS_SLES_PCG:
-    case CS_SLES_PCG_SR:
-      if (poly_degree >= 0)
-        cvg = _conjugate_gradient(var_name,
-                                  a,
-                                  1,
-                                  poly_degree,
-                                  rotation_mode,
-                                  &convergence,
-                                  rhs,
-                                  vx,
-                                  aux_size,
-                                  aux_vectors);
-      else
-        cvg = _conjugate_gradient_npc(var_name,
-                                      a,
-                                      1,
-                                      rotation_mode,
-                                      &convergence,
-                                      rhs,
-                                      vx,
-                                      aux_size,
-                                      aux_vectors);
-      break;
-    case CS_SLES_JACOBI:
-      cvg = _jacobi(var_name,
-                    a,
-                    rotation_mode,
-                    &convergence,
-                    rhs,
-                    vx,
-                    aux_size,
-                    aux_vectors);
-      break;
-    case CS_SLES_BICGSTAB:
-      cvg = _bi_cgstab(var_name,
-                       a,
-                       1,
-                       poly_degree,
-                       rotation_mode,
-                       &convergence,
-                       rhs,
-                       vx,
-                       aux_size,
-                       aux_vectors);
-      break;
-    case CS_SLES_GMRES:
-      cvg = _gmres(var_name,
-                   a,
-                   poly_degree,
-                   rotation_mode,
-                   &convergence,
-                   rhs,
-                   vx,
-                   aux_size,
-                   aux_vectors);
-      break;
-    default:
-      break;
-    }
-
-    /* Update return values */
-
-    _n_iter = convergence.n_iterations;
-
-    *n_iter = convergence.n_iterations;
-    *residue = convergence.residue;
-  }
-
-  t1 = cs_timer_time();
-
-  if (sles_info->n_calls == 0)
-    sles_info->n_iterations_min = _n_iter;
-
-  sles_info->n_calls += 1;
-
-  if (sles_info->n_iterations_min > _n_iter)
-    sles_info->n_iterations_min = _n_iter;
-  if (sles_info->n_iterations_max < _n_iter)
-    sles_info->n_iterations_max = _n_iter;
-
-  sles_info->n_iterations_last = _n_iter;
-  sles_info->n_iterations_tot += _n_iter;
-
-  cs_timer_counter_add_diff(&(sles_info->t_tot), &t0, &t1);
-
-  return cvg;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * General sparse linear system resolution
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(reslin, RESLIN)
-(
- const char       *cname,     /* <-- variable name */
- const cs_int_t   *lname,     /* <-- variable name length */
- const cs_int_t   *isym,      /* <-- Symmetry indicator:
-                                     1: symmetric; 2: not symmetric */
- const cs_int_t   *ibsize,    /* <-- Block size of element ii, ii */
- const cs_int_t   *iesize,    /* <-- Block size of element ij */
- const cs_int_t   *ireslp,    /* <-- Resolution type:
-                                     0: pcg; 1: Jacobi; 2: cg-stab, 3: gmres,
-                                     200: pcg_sr */
- const cs_int_t   *ipol,      /* <-- Preconditioning polynomial degree
-                                     (0: diagonal; -1: non-preconditionned) */
- const cs_int_t   *nitmap,    /* <-- Number of max iterations */
- const cs_int_t   *iinvpe,    /* <-- Indicator to cancel increments
-                                     in rotational periodicty (2) or
-                                     to exchange them as scalars (1) */
- const cs_int_t   *iwarnp,    /* <-- Verbosity level */
- cs_int_t         *niterf,    /* --> Number of iterations done */
- const cs_real_t  *epsilp,    /* <-- Precision for iterative resolution */
- const cs_real_t  *rnorm,     /* <-- Residue normalization */
- cs_real_t        *residu,    /* --> Final non normalized residue */
- const cs_real_t  *dam,       /* <-- Matrix diagonal */
- const cs_real_t  *xam,       /* <-- Matrix extra-diagonal terms */
- const cs_real_t  *rhs,       /* <-- System right-hand side */
- cs_real_t        *vx         /* <-> System solution */
-)
-{
-  char *var_name;
-  cs_sles_type_t type;
-
-  int cvg = 0;
-  int n_iter = *niterf;
-  int diag_block_size[4] = {1, 1, 1, 1};
-  int extra_diag_block_size[4] = {1, 1, 1, 1};
-  bool symmetric = (*isym == 1) ? true : false;
-  bool interleaved = true;
-  cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
-
-  cs_matrix_t *a = NULL;
-
-  if (*iinvpe == 2)
-    rotation_mode = CS_HALO_ROTATION_ZERO;
-  else if (*iinvpe == 3)
-    rotation_mode = CS_HALO_ROTATION_IGNORE;
-
-  if (*ibsize > 1) {
-    diag_block_size[0] = *ibsize;
-    diag_block_size[1] = *ibsize;
-    diag_block_size[2] = *ibsize;
-    diag_block_size[3] = (*ibsize)*(*ibsize);
-  }
-
-  if (*iesize > 1) {
-    extra_diag_block_size[0] = *iesize;
-    extra_diag_block_size[1] = *iesize;
-    extra_diag_block_size[2] = *iesize;
-    extra_diag_block_size[3] = (*iesize)*(*iesize);
-  }
-
-  a = cs_matrix_default(symmetric,
-                        diag_block_size,
-                        extra_diag_block_size);
-
-  var_name = cs_base_string_f_to_c_create(cname, *lname);
-
-  switch ((int)(*ireslp) % 100) {
-  case 0:
-    type = CS_SLES_PCG;
-    /* Allow for subtypes */
-    if (*ireslp == 200)
-      type = CS_SLES_PCG_SR;
-    break;
-  case 1:
-    type = CS_SLES_JACOBI;
-    break;
-  case 2:
-    type = CS_SLES_BICGSTAB;
-    break;
-  case 3:
-    type = CS_SLES_GMRES;
-    break;
-  default:
-    type = CS_SLES_N_TYPES;
-    assert(0);
-  }
-
-  if (interleaved || symmetric) {
-    cs_matrix_set_coefficients(a,
-                               symmetric,
-                               diag_block_size,
-                               extra_diag_block_size,
-                               dam,
-                               xam);
-    cvg = cs_sles_solve(var_name,
-                        type,
-                        true,
-                        a,
-                        *ipol,
-                        rotation_mode,
-                        *iwarnp,
-                        *nitmap,
-                        *epsilp,
-                        *rnorm,
-                        &n_iter,
-                        residu,
-                        rhs,
-                        vx,
-                        0,
-                        NULL);
-  }
-  else {
-    cs_matrix_set_coefficients_ni(a, false, dam, xam);
-    cvg = _solve_ni(var_name,
-                    type,
-                    a,
-                    *ipol,
-                    rotation_mode,
-                    *iwarnp,
-                    *nitmap,
-                    *epsilp,
-                    *rnorm,
-                    &n_iter,
-                    residu,
-                    rhs,
-                    vx,
-                    0,
-                    NULL);
-  }
-
-  *niterf = n_iter;
-
-  /* If divergence is detected, try diagnostics and abort */
-
-  if (cvg == -2) {
-
-    int mesh_id = cs_post_init_error_writer_cells();
-
-    cs_sles_post_error_output_def(var_name,
-                                  mesh_id,
-                                  rotation_mode,
-                                  a,
-                                  rhs,
-                                  vx);
-
-    cs_post_finalize();
-
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: error (divergence) solving for %s"),
-              _(cs_sles_type_name[type]), var_name);
-  }
-
-  cs_matrix_release_coefficients(a);
-
-  cs_base_string_f_to_c_free(&var_name);
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Initialize sparse linear equation solver API.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize sparse linear equation solver API.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sles_initialize(void)
 {
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    _cs_sles_mpi_reduce_comm = cs_glob_mpi_comm;
-  else
-    _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
-#endif
 }
 
-/*----------------------------------------------------------------------------
- * Finalize sparse linear equation solver API.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize sparse linear equation solver API.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_sles_finalize(void)
 {
-  int ii;
+  for (int i = 0; i < 3; i++) {
 
-  /* Free system info */
+    for (int j = 0; j < _cs_sles_n_systems[i]; j++) {
 
-  for (ii = 0; ii < cs_glob_sles_n_systems; ii++) {
-    _sles_info_dump(cs_glob_sles_systems[ii]);
-    _sles_info_destroy(&(cs_glob_sles_systems[ii]));
+      if (_cs_sles_systems[i][j] != NULL) {
+        cs_sles_t *sles = _cs_sles_systems[i][j];
+        if (sles->destroy_func != NULL)
+          sles->destroy_func(&(sles->context));
+        BFT_FREE(sles->_name);
+        BFT_FREE(_cs_sles_systems[i][j]);
+      }
+
+    }
+
+    BFT_FREE(_cs_sles_systems[i]);
+    _cs_sles_n_max_systems[i] = 0;
+    _cs_sles_n_systems[i] = 0;
+
   }
 
-  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
-  cs_log_separator(CS_LOG_PERFORMANCE);
-
-  BFT_FREE(cs_glob_sles_systems);
-
-  cs_glob_sles_n_systems = 0;
-  cs_glob_sles_n_max_systems = 0;
- }
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Set MPI communicator for dot products.
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_set_mpi_reduce_comm(MPI_Comm comm)
-{
-  static int flag = -1;
-
-  if (flag < 0)
-    flag = cs_halo_get_use_barrier();
-
-  _cs_sles_mpi_reduce_comm = comm;
-
-  if (comm != cs_glob_mpi_comm)
-    cs_halo_set_use_barrier(0);
-  else {
-    cs_halo_set_use_barrier(flag);
-    if (cs_glob_n_ranks < 2)
-      _cs_sles_mpi_reduce_comm = MPI_COMM_NULL;
-  }
+  cs_map_name_to_id_destroy(&_type_name_map);
 }
 
-#endif /* defined(HAVE_MPI) */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log sparse linear equation solver info
+ *
+ * \param[in]  log_type  log type (CS_LOG_SETUP or CS_LOG_PERFORMANCE)
+ */
+/*----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * Test if a general sparse linear system needs solving or if the right-hand
- * side is already zero within convergence criteria.
- *
- * The computed residue is also updated;
- *
- * parameters:
- *   var_name      <-- Variable name
- *   solver_name   <-- Name of solver
- *   n_rows        <-- Number of (non ghost) rows in rhs
- *   verbosity     <-- Verbosity level
- *   r_norm        <-- Residue normalization
- *   residue       <-> Residue
- *   rhs           <-- Right hand side
- *
- * returns:
- *   1 if solving is required, 0 if the rhs is already zero within tolerance
- *   criteria (precision of residue normalization)
- *----------------------------------------------------------------------------*/
-
-int
-cs_sles_needs_solving(const char        *var_name,
-                      const char        *solver_name,
-                      cs_int_t           n_rows,
-                      int                verbosity,
-                      double             r_norm,
-                      double            *residue,
-                      const cs_real_t   *rhs)
+void
+cs_sles_log(cs_log_t  log_type)
 {
-  int retval = 1;
+  int log_order[] = {2, 0, 1}; /* log previous setups first, then fields,
+                                  then others */
 
-  /* Initialize residue, check for immediate return */
+  const char *option_category[]
+    = {N_("Linear solver options modified during run (previous values)"),
+       N_("Linear solver options for fields"),
+       N_("Linear solver options for other systems")};
 
-  *residue = sqrt(_dot_product(n_rows, rhs, rhs));
+  const char *perf_category[]
+    = {N_("Linear solver performance with previous options"),
+       N_("Linear solver performance for fields"),
+       N_("Linear solver performance for other systems")};
 
-#if defined(HAVE_MPI)
-  if (_cs_sles_mpi_reduce_comm != cs_glob_mpi_comm )
-    MPI_Bcast(residue, 1, MPI_DOUBLE, 0, cs_glob_mpi_comm);
-#endif
+  for (int i = 0; i < 3; i++) {
 
-  if (r_norm <= EPZERO) {
-    if (verbosity > 1)
-      bft_printf(_("%s [%s]:\n"
-                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
-                 solver_name, var_name, r_norm, *residue);
-    retval = 0;
-  } else if (*residue/r_norm <= EPZERO) {
-    if (verbosity > 1)
-      bft_printf(_("%s [%s]:\n"
-                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
-                 solver_name, var_name, r_norm, *residue);
-    retval = 0;
+    int j = log_order[i];
+
+    /* Print heading (underlined) line */
+
+    if (_cs_sles_n_systems[j] > 0) {
+
+      size_t l = 0;
+      switch(log_type) {
+      case CS_LOG_SETUP:
+        l = cs_log_strlen(_(option_category[i]));
+        cs_log_printf(log_type, "\n%s\n", _(option_category[i]));
+        break;
+      case CS_LOG_PERFORMANCE:
+        l = cs_log_strlen(_(perf_category[i]));
+        cs_log_printf(log_type, "\n%s\n", _(perf_category[i]));
+        break;
+      default:
+        break;
+      }
+
+      char ul[128];
+      l = CS_MIN(l, 127);
+      for (size_t ll = 0; ll < l; ll++)
+        ul[ll] = '-';
+      ul[l] = '\0';
+      cs_log_printf(log_type, "%s\n", ul);
+
+    }
+
+    /* Logging for each system */
+
+    for (int k = 0; k < _cs_sles_n_systems[j]; k++) {
+      cs_sles_t *sles = _cs_sles_systems[j][k];
+
+      if (sles == NULL) continue;
+
+      if (sles->log_func != NULL) {
+
+        const char *name = cs_sles_base_name(sles->f_id, sles->name);
+
+        switch(log_type) {
+
+        case CS_LOG_SETUP:
+          if (sles->f_id > -1)
+            cs_log_printf
+              (log_type,
+               _("\n"
+                 "Linear solver options for \"%s\" (field id %d)\n"),
+               name, sles->f_id);
+          else
+            cs_log_printf
+              (log_type,
+               _("\n"
+                 "Linear solver options for \"%s\"\n"),
+               name);
+          break;
+
+        case CS_LOG_PERFORMANCE:
+          if (sles->f_id > -1)
+            cs_log_printf
+              (log_type,
+               _("\n"
+                 "Summary of resolutions for \"%s\" (field id %d)\n"),
+               name, sles->f_id);
+          else
+            cs_log_printf
+              (log_type,
+               _("\n"
+                 "Summary of resolutions for \"%s\"\n"),
+               name);
+          break;
+
+        default:
+          break;
+        }
+
+        sles->log_func(sles->context, log_type);
+      }
+    }
+
+  }
+
+  cs_log_printf(log_type, "\n");
+  cs_log_separator(log_type);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to linear system object, based on matching field id or
+ *        system name.
+ *
+ * If this system did not previously exist, NULL is returned.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to associated linear system object, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_t *
+cs_sles_find(int          f_id,
+             const char  *name)
+{
+  cs_sles_t *retval = NULL;
+
+  if (f_id >= 0) {
+    if (f_id < _cs_sles_n_max_systems[0]) {
+      if (_cs_sles_systems[0][f_id] != NULL) {
+        retval = _cs_sles_systems[0][f_id];
+        /* Check for masked ("pushed") definition */
+        if (retval->name != NULL)
+          retval = cs_sles_find(-1, retval->name);
+      }
+    }
+  }
+
+  else if (name != NULL) {
+
+    int start_id, end_id, mid_id;
+    int cmp_ret = 1;
+
+    /* Use binary search to find system */
+
+    start_id = 0;
+    end_id = _cs_sles_n_systems[1] - 1;
+    mid_id = start_id + ((end_id -start_id) / 2);
+
+    while (start_id <= end_id) {
+      cmp_ret = strcmp((_cs_sles_systems[1][mid_id])->name, name);
+      if (cmp_ret < 0)
+        start_id = mid_id + 1;
+      else if (cmp_ret > 0)
+        end_id = mid_id - 1;
+      else
+        break;
+      mid_id = start_id + ((end_id -start_id) / 2);
+    }
+
+    if (cmp_ret == 0)
+      retval = _cs_sles_systems[1][mid_id];
   }
 
   return retval;
 }
 
-/*----------------------------------------------------------------------------
- * General sparse linear system resolution.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to linear system object, based on matching field id or
+ *        system name.
  *
- * parameters:
- *   var_name          <-- Variable name
- *   solver_type       <-- Type of solver (PCG, Jacobi, ...)
- *   update_stats      <-- Automatic solver statistics indicator
- *   a                 <-- Matrix
- *   poly_degree       <-- Preconditioning polynomial degree
- *                         (0: diagonal; -1: non-preconditioned)
- *   rotation_mode     <-- Halo update option for rotational periodicity
- *   verbosity         <-- Verbosity level
- *   n_max_iter        <-- Maximum number of iterations
- *   precision         <-- Precision limit
- *   r_norm            <-- Residue normalization
- *   n_iter            --> Number of iterations
- *   residue           <-> Residue
- *   rhs               <-- Right hand side
- *   vx                --> System solution
- *   aux_size          <-- Number of elements in aux_vectors
- *   aux_vectors       --- Optional working area (allocation otherwise)
+ * If this system did not previously exist, it is created and added to
+ * to the list of "known" systems. In this case, it will be usable
+ * only if cs_sles_define() is called for the same field id and name
+ * (in which case calling the present function is redundant), or if
+ * cs_sles_set_sefault_define() has been previously used to define
+ * the default solver policy.
  *
- * returns:
- *   1 if converged, 0 if not converged, -1 if not converged and maximum
- *   iteration number reached, -2 if divergence is detected.
- *----------------------------------------------------------------------------*/
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to associated linear system object, or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
-int
-cs_sles_solve(const char          *var_name,
-              cs_sles_type_t       solver_type,
-              bool                 update_stats,
+cs_sles_t *
+cs_sles_find_or_add(int          f_id,
+                    const char  *name)
+{
+  cs_sles_t *retval = NULL;
+
+  if (f_id >= 0) {
+    retval = _find_or_add_system_by_f_id(f_id);
+    /* Check for masked ("pushed") definition */
+    if (retval->name != NULL)
+      retval = _find_or_add_system_by_name(retval->name);
+  }
+  else
+    retval = _find_or_add_system_by_name(name);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Temporarily replace field id with name for matching calls
+ * to \ref cs_sles_setup, \ref cs_sles_solve, \ref cs_sles_free, and other
+ * operations involving access through a field id.
+ *
+ * \deprecated This function is provided to allow some peculiar
+ * calling sequences, in which \ref codits is called with a nonzero
+ * \c ivar value, but specific solver options must still be set.
+ * In the future, a more consistent mechanism (using a zero \c ivar
+ * value or designing a cleaner method to handle those exceptional cases)
+ * is preferred. As such, only a stack depth of 1 is allowed.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to associated linear system object, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_push(int          f_id,
+             const char  *name)
+{
+  if (f_id < 0)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       "%s must be called only for an actual field, with id >=0, not %d.",
+       __func__, f_id);
+
+  cs_sles_t *retval = cs_sles_find_or_add(f_id, NULL);
+
+  if (retval->name != NULL)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("cs_slesh_push() only allows a stack of depth 1:\n"
+         "  it  may not be called multiple times for a given field (id %d)\n"
+         "  without calling cs_sles_pop between those calls."), f_id);
+  else
+    retval->name = name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Restore behavior temporarily modified by \ref cs_sles_push.
+ *
+ * \deprecated This function matches \ref cs_sles_push, which is deprecated.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_pop(int  f_id)
+{
+  if (f_id < 0)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       "%s must be called only for an actual field, with id >=0, not %d.",
+       __func__, f_id);
+
+  cs_sles_t *retval = cs_sles_find_or_add(f_id, NULL);
+
+  retval->name = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define sparse linear equation solver for a given field or
+ *        equation name.
+ *
+ * If this system did not previously exist, it is added to the list of
+ * "known" systems.
+ *
+ * The context pointer is used to point to a structure adapted to the function
+ * pointers given here, and combined with those functions, allows using
+ * both built-in, external, or user-defined solvers.
+ *
+ * It is recommended the context type name provided here directly relate
+ * to the associated structure type (for example, "cs_sles_it_t" or
+ * "cs_multigrid_t").
+ *
+ * \param[in]       f_id          associated field id, or < 0
+ * \param[in]       name          associated name if f_id < 0, or NULL
+ * \param[in, out]  context       pointer to solver context management
+ *                                structure (cs_sles subsystem becomes owner)
+ * \param[in]       type_name     context structure or object type name
+ * \param[in]       setup_func    pointer to system setup function
+ * \param[in]       solve_func    pointer to system solution function (also
+ *                                calls setup_func if not done yet or free_func
+ *                                called since last solve)
+ * \param[in]       free_func     pointer function freeing system setup
+ * \param[in]       log_func      pointer to system info logging function
+                                  (optional, but recommended)
+ * \param[in]       copy_func     pointer to settings copy function (optional)
+ * \param[in]       destroy_func  pointer to function destroying solver context
+ *                                (called with \ref cs_sles_finalize or with a
+ *                                new call to this function for the same system)
+ *
+ * \return  pointer to associated linear system object
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_t *
+cs_sles_define(int                 f_id,
+               const char         *name,
+               void               *context,
+               const char         *type_name,
+               cs_sles_setup_t    *setup_func,
+               cs_sles_solve_t    *solve_func,
+               cs_sles_free_t     *free_func,
+               cs_sles_log_t      *log_func,
+               cs_sles_copy_t     *copy_func,
+               cs_sles_destroy_t  *destroy_func)
+{
+  cs_sles_t * sles = cs_sles_find_or_add(f_id, name);
+
+  /* Check if system was previously defined and used,
+     and save info for future logging in this case */
+
+  if (sles->context != NULL) {
+    if (sles->n_calls > 0  && sles->log_func != NULL)
+      _save_system_info(sles);
+    else if (sles->destroy_func != NULL)
+      sles->destroy_func(&(sles->context));
+  }
+
+  if (type_name != NULL)
+    sles->type_id = cs_map_name_to_id(_type_name_map, type_name);
+
+  /* Now define options */
+  sles->context = context;
+  sles->setup_func = setup_func;
+  sles->solve_func = solve_func;
+  sles->free_func = free_func;
+  sles->log_func = log_func;
+  sles->copy_func = copy_func;
+  sles->destroy_func = destroy_func;
+
+  return sles;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return type name of solver context.
+ *
+ * The returned string is intended to help determine which type is associated
+ * with the void * pointer returned by \ref cs_sles_get_context for a given
+ * solver definition, so as to be able to call additional specific functions
+ * beyond the generic functions assigned to a cs_sles_t object.
+ *
+ * If no type_name string was associated to the solver upon its definition by
+ * \ref cs_sles_define, or it has not been defined yet, the string returned
+ * is "<undefined>". It is recommended the type name provided
+ * \ref cs_sles_define directly relate to the associated structure type
+ * (for example, "cs_sles_it_t" or "cs_multigrid_t").
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  pointer to linear system solver specific type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_get_type(cs_sles_t  *sles)
+{
+  return cs_map_name_to_id_reverse(_type_name_map, sles->type_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to solver context structure pointer.
+ *
+ * The context structure depends on the type of solver used, which may in
+ * turn be determined by the string returned by cs_sles_get_type().
+ * If may be used by appropriate functions specific to that type.
+ *
+ * \param[in]  sles  pointer to solver object
+ *
+ * \return  pointer to solver-specific linear system info and context
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_sles_get_context(cs_sles_t  *sles)
+{
+  return sles->context;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup sparse linear equation solver.
+ *
+ * Use of this function is optional: if a \ref cs_sles_solve is called
+ * for the same system before this function is called, the latter will be
+ * called automatically.
+ *
+ * If no options were previously provided for the matching system,
+ * default options will be used.
+ *
+ * \param[in, out]  sles  pointer to solver object
+ * \param[in]       a     matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_setup(cs_sles_t          *sles,
+              const cs_matrix_t  *a)
+{
+  if (sles->context == NULL)
+    _cs_sles_define_default(sles->f_id, sles->name, a);
+
+  sles->n_calls += 1;
+
+  if (sles->setup_func != NULL) {
+    const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
+    sles->setup_func(sles->context, sles_name, a);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief General sparse linear system resolution.
+ *
+ * If no options were previously provided for the matching system,
+ * default options will be used.
+ *
+ * Note that if \ref cs_sles_setup was previously called for this
+ * system, and \ref cs_sles_free has not been called since, the matrix
+ * provided should be the same. The optional separation between the
+ * two stages is intended to allow amortizing the cost of setup
+ * over multiple solutions.
+ *
+ * The system is considered to have converged when
+ * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ *
+ * \param[in, out]  sles           pointer to solver object
+ * \param[in]       a              matrix
+ * \param[in]       rotation_mode  halo update option for rotational periodicity
+ * \param[in]       precision      solver precision
+ * \param[in]       r_norm         residue normalization
+ * \param[out]      n_iter         number of "equivalent" iterations
+ * \param[out]      residue        residue
+ * \param[in]       rhs            right hand side
+ * \param[in, out]  vx             system solution
+ * \param[in]       aux_size       size of aux_vectors (in bytes)
+ * \param           aux_vectors    optional working area
+ *                                 (internal allocation if NULL)
+ *
+ * \return  convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_solve(cs_sles_t           *sles,
               const cs_matrix_t   *a,
-              int                  poly_degree,
               cs_halo_rotation_t   rotation_mode,
-              int                  verbosity,
-              int                  n_max_iter,
               double               precision,
               double               r_norm,
               int                 *n_iter,
@@ -3149,229 +1176,219 @@ cs_sles_solve(const char          *var_name,
               size_t               aux_size,
               void                *aux_vectors)
 {
-  cs_int_t  n_rows;
-  cs_timer_t t0, t1;
+  if (sles->context == NULL)
+    _cs_sles_define_default(sles->f_id, sles->name, a);
 
-  unsigned _n_iter = 0;
-  int cvg = 0;
-  int _diag_block_size = 1;
-  cs_sles_convergence_t  convergence;
+  sles->n_calls += 1;
 
-  cs_sles_info_t *sles_info = NULL;
+  assert(sles->solve_func != NULL);
 
-  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
 
-  n_rows = cs_matrix_get_n_rows(a);
+  cs_sles_convergence_state_t
+    state = sles->solve_func(sles->context,
+                             sles_name,
+                             a,
+                             rotation_mode,
+                             precision,
+                             r_norm,
+                             n_iter,
+                             residue,
+                             rhs,
+                             vx,
+                             aux_size,
+                             aux_vectors);
 
-  if (update_stats == true) {
-    t0 = cs_timer_time();
-    sles_info = _find_or_add_system(var_name, solver_type);
-  }
+  if (state < CS_SLES_ITERATING && sles->error_func != NULL)
+    sles->error_func(sles->context,
+                     state,
+                     sles_name,
+                     a,
+                     rotation_mode,
+                     rhs,
+                     vx);
 
-  if (diag_block_size != NULL) {
-    assert(diag_block_size[0] == diag_block_size[1]);
-    _diag_block_size = diag_block_size[0];
-  }
-
-  /* Initialize number of iterations and residue,
-     check for immediate return,
-     and solve sparse linear system */
-
-  *n_iter = 0;
-
-  if (cs_sles_needs_solving(var_name,
-                            _(cs_sles_type_name[solver_type]),
-                            _diag_block_size*n_rows,
-                            verbosity,
-                            r_norm,
-                            residue,
-                            rhs) != 0) {
-
-    /* Solve sparse linear system */
-
-    _convergence_init(&convergence,
-                      _(cs_sles_type_name[solver_type]),
-                      var_name,
-                      verbosity,
-                      n_max_iter,
-                      precision,
-                      r_norm,
-                      *residue);
-
-    /* Only call solver for "active" ranks */
-
-#if defined(HAVE_MPI)
-    if (cs_glob_n_ranks < 2 || _cs_sles_mpi_reduce_comm != MPI_COMM_NULL) {
-#endif
-
-      switch (solver_type) {
-      case CS_SLES_PCG:
-        if (poly_degree > -1)
-          cvg = _conjugate_gradient(var_name,
-                                    a,
-                                    _diag_block_size,
-                                    poly_degree,
-                                    rotation_mode,
-                                    &convergence,
-                                    rhs,
-                                    vx,
-                                    aux_size,
-                                    aux_vectors);
-        else
-          cvg = _conjugate_gradient_npc(var_name,
-                                        a,
-                                        _diag_block_size,
-                                        rotation_mode,
-                                        &convergence,
-                                        rhs,
-                                        vx,
-                                        aux_size,
-                                        aux_vectors);
-        break;
-      case CS_SLES_PCG_SR:
-        if (poly_degree > -1)
-          cvg = _conjugate_gradient_sr(var_name,
-                                       a,
-                                       _diag_block_size,
-                                       poly_degree,
-                                       rotation_mode,
-                                       &convergence,
-                                       rhs,
-                                       vx,
-                                       aux_size,
-                                       aux_vectors);
-        else
-          cvg = _conjugate_gradient_npc_sr(var_name,
-                                           a,
-                                           _diag_block_size,
-                                           rotation_mode,
-                                           &convergence,
-                                           rhs,
-                                           vx,
-                                           aux_size,
-                                           aux_vectors);
-        break;
-      case CS_SLES_JACOBI:
-        if (_diag_block_size == 1)
-          cvg = _jacobi(var_name,
-                        a,
-                        rotation_mode,
-                        &convergence,
-                        rhs,
-                        vx,
-                        aux_size,
-                        aux_vectors);
-        else if (_diag_block_size == 3)
-          cvg = _block_3_jacobi(var_name,
-                                a,
-                                rotation_mode,
-                                &convergence,
-                                rhs,
-                                vx,
-                                aux_size,
-                                aux_vectors);
-        break;
-      case CS_SLES_BICGSTAB:
-        cvg = _bi_cgstab(var_name,
-                         a,
-                         _diag_block_size,
-                         poly_degree,
-                         rotation_mode,
-                         &convergence,
-                         rhs,
-                         vx,
-                         aux_size,
-                         aux_vectors);
-        break;
-      case CS_SLES_GMRES:
-        if (_diag_block_size == 1)
-          cvg = _gmres(var_name,
-                       a,
-                       poly_degree,
-                       rotation_mode,
-                       &convergence,
-                       rhs,
-                       vx,
-                       aux_size,
-                       aux_vectors);
-        else
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("GMRES not supported with block_size > 1 (velocity coupling)."));
-        break;
-      default:
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("Resolution of linear equation on \"%s\"\n"
-             "with solver type %d, which is not defined)."),
-           var_name, (int)solver_type);
-        break;
-      }
-
-#if defined(HAVE_MPI)
-    }
-#endif
-
-    /* Broadcast convergence info from "active" ranks to others*/
-
-#if defined(HAVE_MPI)
-    if (_cs_sles_mpi_reduce_comm != cs_glob_mpi_comm) {
-      /* cvg is signed, so shift (with some margin) before copy to unsigned. */
-      unsigned buf[2] = {cvg+10, convergence.n_iterations};
-      MPI_Bcast(buf, 2, MPI_UNSIGNED, 0, cs_glob_mpi_comm);
-      MPI_Bcast(&convergence.residue, 1, MPI_DOUBLE, 0,
-                cs_glob_mpi_comm);
-      cvg = buf[0] - 10;
-      convergence.n_iterations = buf[1];
-    }
-#endif
-
-    /* Update return values */
-
-    _n_iter = convergence.n_iterations;
-
-    *n_iter = convergence.n_iterations;
-    *residue = convergence.residue;
-  }
-
-  if (update_stats == true) {
-
-    t1 = cs_timer_time();
-
-    if (sles_info->n_calls == 0)
-      sles_info->n_iterations_min = _n_iter;
-
-    sles_info->n_calls += 1;
-
-    if (sles_info->n_iterations_min > _n_iter)
-      sles_info->n_iterations_min = _n_iter;
-    if (sles_info->n_iterations_max < _n_iter)
-      sles_info->n_iterations_max = _n_iter;
-
-    sles_info->n_iterations_last = _n_iter;
-    sles_info->n_iterations_tot += _n_iter;
-
-    cs_timer_counter_add_diff(&(sles_info->t_tot), &t0, &t1);
-  }
-
-  return cvg;
+  return state;
 }
 
-/*----------------------------------------------------------------------------
- * Output default post-processing data for failed system convergence.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free sparse linear equation solver setup.
  *
- * parameters:
- *   var_name         <-- Variable name
- *   mesh_id          <-- id of error output mesh, or 0 if none
- *   rotation_mode    <-- Halo update option for rotational periodicity
- *   a                <-- Linear equation matrix
- *   ax               <-- Non-diagonal part of linear equation matrix
- *   rhs              <-- Right hand side
- *   vx               <-> Current system solution
- *----------------------------------------------------------------------------*/
+ * This function frees resolution-related data, such as multigrid hierarchy,
+ * preconditioning, and any other temporary arrays or objects required for
+ * resolution, but maintains context information such as that used for
+ * logging (especially performance data).
+ *
+ * \param[in, out]  sles  pointer to solver object
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_def(const char          *var_name,
+cs_sles_free(cs_sles_t  *sles)
+{
+  if (sles != NULL) {
+    if (sles->free_func != NULL)
+      sles->free_func(sles->context);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy the definition of a sparse linear equation solver to another.
+ *
+ * The intended use of this function is to allow associating different
+ * solvers to related systems, so as to differentiate logging, while using
+ * the same setttings by default.
+ *
+ * If the source solver does not provide a \ref cs_sles_copy_t function,
+ * No modification is done to the solver. If the copy function is available,
+ * the context is copied, as are the matching function pointers.
+ *
+ * If previous settings have been defined and used, they are saved as
+ * per \ref cs_sles_define.
+ *
+ * \param[in, out]  dest  pointer to destination solver object
+ * \param[in]       src   pointer to source solver object
+ *
+ * \return  0 in case of success, 1 in case of failure
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_copy(cs_sles_t        *dest,
+             const cs_sles_t  *src)
+{
+  int retval = 1;
+
+  /* If no copy function is available or source does not have a
+     context yet, we can do nothing */
+
+  if (src->copy_func == NULL)
+    return retval;
+
+  /* Check if system was previously defined and used,
+     and save info for future logging in this case */
+
+  if (dest->context != NULL) {
+    if (dest->n_calls > 0  && dest->log_func != NULL)
+      _save_system_info(dest);
+    else if (dest->destroy_func != NULL)
+      dest->destroy_func(&(dest->context));
+  }
+
+  dest->type_id = src->type_id;
+
+  /* Now define options */
+  dest->context = src->copy_func(src->context);
+  dest->setup_func = src->setup_func;
+  dest->solve_func = src->solve_func;
+  dest->free_func = src->free_func;
+  dest->log_func = src->log_func;
+  dest->copy_func = src->copy_func;
+  dest->destroy_func = src->destroy_func;
+
+  if (dest->context != NULL)
+    retval = 0;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associate a convergence error handler to a given sparse linear
+ *        equation solver.
+ *
+ * The error will be called whenever convergence fails. To dissassociate
+ * the error handler, this function may be called with \p handler = NULL.
+ *
+ * The association will only be successful if the matching solver
+ * has already been defined.
+ *
+ * \param[in, out]  sles                pointer to solver object
+ * \param[in]       error_handler_func  pointer to convergence error
+ *                                      handler function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_error_handler(cs_sles_t                *sles,
+                          cs_sles_error_handler_t  *error_handler_func)
+{
+  if (sles != NULL)
+    sles->error_func = error_handler_func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default sparse linear solver definition function.
+ *
+ * The provided function will be used to provide a definition when
+ * \ref cs_sles_setup or \ref cs_sles_solve is used for a system for which no
+ * matching call to \ref cs_sles_define has been done.
+ *
+ * \param[in]  define_func pointer to default definition function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_default_define(cs_sles_define_t  *define_func)
+{
+  _cs_sles_define_default = define_func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Test if a linear system needs solving or if the residue is already
+ *        within convergence criteria.
+ *
+ * \param[in]  solver_name  name of solver calling the test
+ * \param[in]  system_name  name of linear system tested
+ * \param[in]  verbosity    verbosity level
+ * \param[in]  r_norm       residue normalization
+ * \param[in]  residue      residue
+ *
+ * \return  1 if solving is required
+ *          0 if the residue is already zero within tolerance criteria
+ *            (precision of residue normalization)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_needs_solving(const char  *solver_name,
+                      const char  *system_name,
+                      int          verbosity,
+                      double       r_norm,
+                      double       residue)
+{
+  int retval = 1;
+
+  if (r_norm <= EPZERO || residue/r_norm <= EPZERO) {
+    if (verbosity > 1)
+      bft_printf(_("%s [%s]:\n"
+                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
+                 solver_name, system_name, r_norm, residue);
+    retval = 0;
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output default post-processing data for failed system convergence.
+ *
+ * \param[in]       name           variable name
+ * \param[in]       mesh_id        id of error output mesh, or 0 if none
+ * \param[in]       rotation_mode  halo update option for rotational periodicity
+ * \param[in]       a              linear equation matrix
+ * \param[in]       rhs            right hand side
+ * \param[in, out]  vx             current system solution
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_post_error_output_def(const char          *name,
                               int                  mesh_id,
                               cs_halo_rotation_t   rotation_mode,
                               const cs_matrix_t   *a,
@@ -3428,10 +1445,10 @@ cs_sles_post_error_output_def(const char          *var_name,
 
       }
 
-      if (strlen(var_name) + strlen(base_name) < 31) {
+      if (strlen(name) + strlen(base_name) < 31) {
         strcpy(val_name, base_name);
         strcat(val_name, "_");
-        strcat(val_name, var_name);
+        strcat(val_name, name);
       }
       else {
         strncpy(val_name, base_name, 31);
@@ -3450,21 +1467,22 @@ cs_sles_post_error_output_def(const char          *var_name,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Output post-processing variable for failed system convergence.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output post-processing variable for failed system convergence.
  *
- * parameters:
- *   var_name        <-- Variable name
- *   mesh_id         <-- id of error output mesh, or 0 if none
- *   diag_block_size <-- Block size for diagonal
- *   var             <-- Variable values
- *----------------------------------------------------------------------------*/
+ * \param[in]       name             variable name
+ * \param[in]       mesh_id          id of error output mesh, or 0 if none
+ * \param[in]       diag_block_size  block size for diagonal
+ * \param[in, out]  var              variable values
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_sles_post_error_output_var(const char  *var_name,
-                              int          mesh_id,
-                              int          diag_block_size,
-                              cs_real_t   *var)
+cs_sles_post_error_output_var(const char   *name,
+                              int           mesh_id,
+                              int           diag_block_size,
+                              cs_real_t    *var)
 {
   if (mesh_id != 0) {
 
@@ -3491,7 +1509,7 @@ cs_sles_post_error_output_var(const char  *var_name,
     n_non_norm = _value_type(_diag_block_size[1]*n_cells, var, val_type);
 
     cs_post_write_var(mesh_id,
-                      var_name,
+                      name,
                       _diag_block_size[0],
                       true, /* interlace */
                       true, /* use parents */
@@ -3504,14 +1522,14 @@ cs_sles_post_error_output_var(const char  *var_name,
     if (n_non_norm > 0) {
 
       char type_name[32];
-      size_t l = strlen(var_name);
+      size_t l = strlen(name);
 
       if (l > 31)
         l = 31;
 
       l -= strlen("_fp_type");
 
-      strncpy(type_name, var_name, l);
+      strncpy(type_name, name, l);
       type_name[l] = '\0';
 
       strcat(type_name, "_fp_type");
@@ -3533,6 +1551,63 @@ cs_sles_post_error_output_var(const char  *var_name,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return base name associated to a field id, name couple.
+ *
+ * This is simply a utility function which will return its name argument
+ * if f_id < 0, and the associated field's name or label otherwise.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  pointer to associated linear system object, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_base_name(int          f_id,
+                  const char  *name)
+{
+  const char *sles_name = name;
+
+  if (f_id > -1) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    sles_name = cs_field_get_label(f);
+  }
+
+  return sles_name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return default verbosity associated to a field id, name couple.
+ *
+ * This is simply a utility function which will return the main verbosity
+ * associated with a field, and 0 otherwise.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ *
+ * \return  verbosity associated with field, or 0 if f_id < 0
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_default_verbosity(int  f_id)
+{
+  static int k_log = -1;
+
+  int retval = 0;
+
+  if (f_id > -1) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    if (k_log < 0)
+      k_log = cs_field_key_id("log");
+    retval = cs_field_get_key_int(f, k_log);
+  }
+
+  return retval;
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

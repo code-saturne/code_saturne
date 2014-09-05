@@ -4581,6 +4581,8 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
   /* Define coefficients */
 
+  m->xa = NULL;
+
   switch(m->type) {
   case CS_MATRIX_NATIVE:
     m->coeffs = _create_coeff_native();
@@ -4805,6 +4807,30 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
 }
 
 /*----------------------------------------------------------------------------
+ * Return matrix extra-diagonal block sizes.
+ *
+ * Block sizes are defined by a array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to block sizes
+ *----------------------------------------------------------------------------*/
+
+const int *
+cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
+{
+  if (matrix == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The matrix is not defined."));
+
+  return matrix->eb_size;
+}
+
+/*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
  *
  * Block sizes are defined by an optional array of 4 values:
@@ -4927,8 +4953,10 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
 
   /* Set coefficients */
 
-  if (matrix->set_coefficients != NULL)
+  if (matrix->set_coefficients != NULL) {
+    matrix->xa = xa;
     matrix->set_coefficients(matrix, symmetric, true, false, da, xa);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -4970,8 +4998,11 @@ cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
     matrix->fill_type = CS_MATRIX_SCALAR_SYM;
   else
     matrix->fill_type = CS_MATRIX_SCALAR;
-  if (matrix->set_coefficients != NULL)
+
+  if (matrix->set_coefficients != NULL) {
+    matrix->xa = xa;
     matrix->set_coefficients(matrix, symmetric, false, false, da, xa);
+  }
 
   /* Set coefficients */
 }
@@ -5070,8 +5101,10 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
-  if (matrix->release_coefficients != NULL)
+  if (matrix->release_coefficients != NULL) {
+    matrix->xa = NULL;
     matrix->release_coefficients(matrix);
+  }
 
   /* Set fill type to impossible value */
 
@@ -5101,6 +5134,32 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
 
   if (matrix->copy_diagonal != NULL)
     matrix->copy_diagonal(matrix, da);
+}
+
+/*----------------------------------------------------------------------------
+ * Query matrix coefficients symmetry
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   true if coefficients are symmetric, false otherwise
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
+{
+  bool symmetric = false;
+
+  switch(matrix->fill_type) {
+  case CS_MATRIX_SCALAR_SYM:
+  case CS_MATRIX_33_BLOCK_D_SYM:
+    symmetric = true;
+  default:
+    break;
+  }
+
+  return symmetric;
 }
 
 /*----------------------------------------------------------------------------
@@ -5195,6 +5254,55 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
   }
 
   return diag;
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointer to matrix extra-diagonal values in "native" format
+ *
+ * This function currently only functions if the matrix is in "native"
+ * format or the coefficients were mapped from native coefficients using
+ * cs_matrix_set_coefficients() or cs_matrix_set_coefficients_ni(), in which
+ * case the pointer returned is the same as the one passed to that function.
+ *
+ * parameters:
+ *   matrix --> Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to matrix diagonal array
+ *----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
+{
+  const cs_real_t  *exdiag = NULL;
+
+  switch(matrix->type) {
+
+  case CS_MATRIX_NATIVE:
+    {
+      cs_matrix_coeff_native_t *mc = matrix->coeffs;
+      if (mc->xa == NULL) {
+        cs_lnum_t n_exdiag = matrix->n_faces * matrix->eb_size[3];
+        if (mc->_da == NULL || mc->max_eb_size < matrix->eb_size[3]) {
+          BFT_REALLOC(mc->_xa, n_exdiag, cs_real_t);
+          mc->max_eb_size = matrix->eb_size[3];
+        }
+#       pragma omp parallel for  if(n_exdiag > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_exdiag; ii++)
+          mc->_xa[ii] = 0.0;
+        mc->xa = mc->_xa;
+      }
+      exdiag = mc->xa;
+    }
+    break;
+
+  default:
+    assert(matrix->xa != NULL);
+    exdiag = matrix->xa;
+    break;
+  }
+
+  return exdiag;
 }
 
 /*----------------------------------------------------------------------------

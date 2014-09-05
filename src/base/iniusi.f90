@@ -63,7 +63,6 @@ use optcal
 use cstphy
 use entsor
 use albase
-use mltgrd
 use parall
 use period
 use ihmpre
@@ -367,7 +366,7 @@ if (iihmpr.eq.1) then
   call uinum1                                                     &
   !==========
         (blencv, ischcv, isstpc, ircflu,                          &
-         cdtvar, nitmax, epsilo, iresol, imgr, nswrsm)
+         cdtvar, epsilo, nswrsm)
 
 !     Options numériques globales
   relaxp = -999.d0
@@ -416,9 +415,6 @@ endif
 !     ==========================
 
 call usipsu(nmodpp)
-!==========
-
-call clmopt(mltmmn, mltmgl, mltmmr, mltmst, mlttyp)
 !==========
 
 call indsui(isuite)

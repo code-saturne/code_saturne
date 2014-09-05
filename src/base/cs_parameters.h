@@ -51,9 +51,9 @@ BEGIN_C_DECLS
 
 typedef struct {
   int     iwarni;
-  int     iconv ;
-  int     istat ;
-  int     idiff ;
+  int     iconv;
+  int     istat;
+  int     idiff;
   int     idifft;
   int     idften;
   int     iswdyn;

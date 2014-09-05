@@ -105,9 +105,8 @@ integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
 integer          ii, iivar , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
 integer          nswrgp, imligp
-integer          iconvp, idiffp, ndircp, ireslp
-integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
+integer          iconvp, idiffp, ndircp
+integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
 integer          istprv
@@ -950,9 +949,7 @@ endif
 ! Solving k
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
 ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -963,9 +960,6 @@ iescap = 0
 imucpp = 0
 idftnp = 1 ! no tensorial diffusivity
 iswdyp = iswdyn(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -980,10 +974,10 @@ icvflb = 0
 
 call codits &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
@@ -1026,9 +1020,7 @@ endif
 ! Solving omega
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
 ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -1039,9 +1031,6 @@ iescap = 0
 imucpp = 0
 idftnp = 1 ! no tensorial diffusivity
 iswdyp = iswdyn(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -1056,10 +1045,10 @@ icvflb = 0
 
 call codits &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
    rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &

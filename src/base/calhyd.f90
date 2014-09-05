@@ -71,8 +71,8 @@ use cstnum
 use optcal
 use parall
 use period
-use mltgrd
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -97,16 +97,14 @@ double precision smbr(ncelet)
 
 character(len=80) :: chaine
 integer          lchain
-integer          iccocg, inc   , init  , isym  , ipol  , isqrt
+integer          f_id, iccocg, inc   , init  , isym  , isqrt
 integer          iel   , ical
-integer          ireslp, nswmpr
-integer          isweep, niterf, icycle
+integer          nswmpr
+integer          isweep, niterf
 integer          iphydp
 integer          nswrgp, imligp, iwarnp
 integer          iinvpe
 integer          idiffp, iconvp, ndircp
-integer          nitmap, imgrp , ncymap, nitmgp
-integer          nagmax, npstmg
 integer          ibsize, iesize
 integer          imucpp, f_id0
 
@@ -129,20 +127,12 @@ allocate(w1(ncelet), w7(ncelet), w10(ncelet))
 
 ! --- Variable name
 
-chaine = 'PresHydr'
+f_id = -1
+chaine = 'hydrostatic_p'
 lchain = 16
 
-! --- Options de resolution
-!     Symetrique
-!     Preconditionnement diagonal par defaut
+! --- Symetrique
 isym  = 1
-if (iresol(ipr).eq.-1) then
-  ireslp = 0
-  ipol   = 0
-else
-  ireslp = mod(iresol(ipr)+10000,1000)
-  ipol   = (iresol(ipr)-ireslp)/1000
-endif
 
 isqrt = 1
 
@@ -239,7 +229,7 @@ call matrix &
    rvoid  , dam    , xam    )
 
 !===============================================================================
-! 4.  INITIALISATION DU FLUX DE MASSE
+! 3.  INITIALISATION DU FLUX DE MASSE
 !===============================================================================
 
 
@@ -266,31 +256,8 @@ init = 1
 call divmas(init,flumas,flumab,w7)
 call prodsc(ncel,isqrt,w7,w7,rnorm)
 
-
 !===============================================================================
-! 5.  PREPARATION DU MULTIGRILLE ALGEBRIQUE
-!===============================================================================
-
-if (imgr(ipr).gt.0) then
-
-!   --- Creation de la hierarchie de maillages
-
-  iwarnp = iwarni(ipr)
-  nagmax = nagmx0(ipr)
-  npstmg = ncpmgr(ipr)
-
-  call clmlga &
-  !==========
- ( chaine(1:16) ,    lchain ,                                     &
-   isym   , ibsize , iesize , nagmax , npstmg , iwarnp ,          &
-   ngrmax , ncegrm ,                                              &
-   rlxp1  ,                                                       &
-   dam    , xam    )
-
-endif
-
-!===============================================================================
-! 6.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
+! 4.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
 !===============================================================================
 
 ! --- Nombre de sweeps
@@ -337,25 +304,15 @@ do isweep = 1, nswmpr
     drtp(iel) = 0.d0
   enddo
 
-  nitmap = nitmax(ipr)
-  imgrp  = imgr  (ipr)
-  ncymap = ncymax(ipr)
-  nitmgp = nitmgf(ipr)
   iwarnp = iwarni(ipr)
   epsilp = epsilo(ipr)
   iinvpe = 1
   ibsize = 1
   iesize = 1
 
-  call invers &
-  !==========
- ( chaine(1:16)    , isym   , ibsize , iesize ,                   &
-   ipol   , ireslp , nitmap , imgrp  ,                            &
-   ncymap , nitmgp ,                                              &
-   iwarnp , niterf , icycle , iinvpe ,                            &
-   epsilp , rnorm  , residu ,                                     &
-   dam    , xam    , smbr   , drtp   )
-
+  call sles_solve_native(f_id, chaine,                            &
+                         isym, ibsize, iesize, dam, xam, iinvpe,  &
+                         epsilp, rnorm, niterf, residu, smbr, drtp)
 
   if( isweep.eq.nswmpr ) then
 !     Mise a jour de l'increment de pression
@@ -414,13 +371,10 @@ endif
 deallocate(w1, w7, w10)
 
 !===============================================================================
-! 7.  SUPPRESSION DE LA HIERARCHIE DE MAILLAGES
+! 5. Free solver setup
 !===============================================================================
 
-if (imgr(ipr).gt.0) then
-  call dsmlga(chaine(1:16), lchain)
-  !==========
-endif
+call sles_free_native(-1, chaine)
 
 !--------
 ! FORMATS

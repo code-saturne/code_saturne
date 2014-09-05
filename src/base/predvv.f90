@@ -180,11 +180,10 @@ double precision vela  (3  ,ncelet)
 
 integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl
 integer          iccocg, inc   , iprev , init  , ii    , jj    , isqrt
-integer          ireslp, nswrgp, imligp, iwarnp
+integer          nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
-integer          iconvp, idiffp, ndircp, nitmap, nswrsp
+integer          iconvp, idiffp, ndircp, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
 integer          iesprp, iestop
 integer          iflmb0, nswrp
 integer          idtva0, icvflb
@@ -929,10 +928,7 @@ endif
 
 if (ivisse.eq.1) then
 
-  call visecv &
-  !==========
- ( propce ,                             &
-   secvif , secvib )
+  call visecv(propce, secvif, secvib)
 
 endif
 
@@ -1735,9 +1731,7 @@ endif
 ! Solver parameters
 iconvp = iconv (iu)
 idiffp = idiff (iu)
-ireslp = iresol(iu)
 ndircp = ndircl(iu)
-nitmap = nitmax(iu)
 nswrsp = nswrsm(iu)
 nswrgp = nswrgr(iu)
 imligp = imligr(iu)
@@ -1746,9 +1740,6 @@ ischcp = ischcv(iu)
 isstpp = isstpc(iu)
 idftnp = idften(iu)
 iswdyp = iswdyn(iu)
-imgrp  = imgr  (iu)
-ncymxp = ncymax(iu)
-nitmfp = nitmgf(iu)
 iwarnp = iwarni(iu)
 blencp = blencv(iu)
 epsilp = epsilo(iu)
@@ -1777,10 +1768,10 @@ if (iappel.eq.1) then
     ! of the predicted velocity
     call coditv &
     !==========
- ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vela   , vela   ,                                              &
@@ -1797,10 +1788,10 @@ if (iappel.eq.1) then
 
     call coditv &
     !==========
- ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vela   , uvwk   ,                                              &
@@ -1843,10 +1834,10 @@ if (iappel.eq.1) then
 
     call coditv &
     !==========
- ( idtvar , iu     , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
-   imgrp  , ncymxp , nitmfp ,                            iwarnp , &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetap ,                                              &
    vect   , vect   ,                                              &

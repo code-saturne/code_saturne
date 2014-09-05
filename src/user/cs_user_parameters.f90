@@ -1013,7 +1013,6 @@ use numvar
 use optcal
 use cstphy
 use entsor
-use mltgrd
 use parall
 use period
 use ihmpre
@@ -1214,50 +1213,16 @@ endif
 
 ! --- Linear solver parameters (for each unknown)
 
-!     iresol = -1:           default
-!     iresol = 1000*ipol +j: ipol is the degree of the Neumann polynomial
-!                            used for preconditioning,
-!                            j = 0: conjugate gradient,
-!                            j = 200: conjugate gradient, single reduction
-!                            j = 1: Jacobi
-!                            j = 2: bi-CgStab
-!                            j = 3: GMRES
-
-!     nitmax: maximum number of iterations for each unknown ivar
 !     epsilo: relative precision for the solution of the linear system.
 
 if (.false.) then
 
-  iresol(iu) = 2
-  iresol(iv) = 2
-  iresol(iw) = 2
   if (nscaus.ge.1) then
     do ii = 1, nscaus
-      iresol(isca(ii)) = 2
-      nitmax(isca(ii)) = 5000
       epsilo(isca(ii)) = 1.d-6
     enddo
   endif
 
-endif
-
-! --- Algebraic multigrid parameters
-
-! imgr = 0: no multigrid
-! imgr = 1: algebraic multigrid
-
-! Only available for pressure and purely diffusive variables.
-
-! mltmmn = 300  ! mean number of cells under which merging takes place
-! mltmgl = 500  ! global number of cells under which merging takes place
-! mltmmr = 1    ! number of active ranks under which no merging is done
-! mltmst = 4    ! number of ranks over which merging takes place
-! mlttyp = 0    ! 0: loop over faces to coarsen in natural order
-!               ! 1: loop over faces to coarsen in criteria order
-!               ! 3: loop over faces to coarsen in Hilbert order
-
-if (.false.) then
-  imgr(ipr) = 1
 endif
 
 ! --- Dynamic reconstruction sweeps to handle non-orthogonlaities

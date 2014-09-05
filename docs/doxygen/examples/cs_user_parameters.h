@@ -45,6 +45,74 @@
   Definition of user variables or properties should be defined here,
   if not already done throught the GUI.
 
+  \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
+
+  By default, Code_Saturne will use a multigrid algorithm for pressure
+  and iterative solver for other variables. For a given case, checking
+  the setup file resulting from a first calculation will provide
+  more info.
+
+  Available solvers include a variety of iterative linear solvers,
+  described in more detail at \ref cs_sles_it_create, and a multigrid
+  solver, whose definition and settings are described at
+  \ref cs_multigrid_create, \ref cs_multigrid_set_coarsening_options,
+  and \ref cs_multigrid_set_solver_options.
+
+  Simple options may be set using the GUI, but for more advanced settings
+  are described in this section. It is also recommended to read
+  the documentation of \ref cs_sles.c (which is a solver definition
+  "container"), and, , and \ref cs_multigrid.c
+  (which are actual solver implementations). The API provided
+  is extensible, so it is possible for a user to define other solvers
+  or link to external solver libraries using this system,
+  without requiring any modification to non-user source files.
+
+  The examples which follow illustrate mostly simple setting changes
+  which may be useful.
+
+  \subsection cs_user_parameters_h_sles_ex_1 Example: distance to wall
+
+  By default, the wall distance (active only with turbulence models which
+  require it) is computed with a preconditionned conjugate gradient.
+  The following example shows how to use a multigrid solver for this
+  quantity (useful especially if computed repeatedly, such as for ALE).
+
+  \snippet cs_user_parameters-linear_solvers.c sles_wall_dist
+
+  \subsection cs_user_parameters_h_sles_user_1 Example: user variable
+
+  The following example shows how to set the linear solver for a given
+  user variable field so as to use a BiCGStab solver with polynomial
+  preconditioning of degree 1.
+
+  \snippet cs_user_parameters-linear_solvers.c sles_user_1
+
+  \subsection cs_user_parameters_h_sles_user_1 Changing the verbosity
+
+  By default, a linear solver uses the same verbosity as its matching variable,
+  and is not verbose for non-variable quantities. The verbosity
+  may be specifically set for linear system resolution, as shown in
+  the following example:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_verbosity_1
+
+  \subsection cs_user_parameters_h_sles_mgp_1 Example: advanced multigrid settings
+
+  The following example shows how to set advanced settings for the
+  multigrid solver used for the pressure solution.
+
+  \snippet cs_user_parameters-linear_solvers.c sles_mgp_1
+
+  \subsection cs_user_parameters_h_sles_mg_parall Multigrid parallel settings
+
+  In parallel, grids may optionally be merged across neigboring ranks
+  when their local size becomes too small. This tends to deepen
+  the grid hierarchy, as some parallel rank boundaries are removed.
+  Depending on the architecture and processor/network performance
+  ratios, this may increase or decrease performance.
+
+  \snippet cs_user_parameters-linear_solvers.c sles_mg_parall
+
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
   Code_Saturne allows the calculation of temporal means or variances,

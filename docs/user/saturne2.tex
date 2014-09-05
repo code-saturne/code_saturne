@@ -1513,41 +1513,8 @@ useful if and only if {\tt imrgra}=3}
 \subsubsection{Solution of the linear systems}
 %==================================
 
-\motcle{iresol}{ia}{-1, {\tt ipol*1000+j}}{-1}{O}{L3}
-{for each unknown {\tt ivar}, {\tt iresol(ivar)} determines the method used
-for the solution of the linear system\\
-\hspace*{1.3cm}= -1: automatically managed by the code (conjugate
-gradient for the pressure {\tt ivar=ipr} and for any variable which is not
-convected, Jacobi for the others. Diagonal preconditioning with
-conjugate gradient).\\
-\hspace*{1.3cm}= {\tt ipol*1000+j} with {\tt j}= 0: conjugate gradient\\
-\hspace*{1.3cm}= {\tt ipol*1000+j} with {\tt j}= 200: single-reduction conjugate gradient\\
-\hspace*{1.3cm}\phantom{= {\tt ipol*1000+j} with} {\tt j}= 1: Jacobi\\
-\hspace*{1.3cm}\phantom{= {\tt ipol*1000+j} with} {\tt j}= 2: stabilised
-bi-conjugate gradient (BI-CGSTAB)\\
-\hspace*{1.3cm}\phantom{= {\tt ipol*1000+j} with} {\tt j}= 3: GMRES\\
-\hspace*{1.3cm}{\tt ipol} is the degree of the Neumann polynomial used for the
-preconditioning\footnote{$D$ being the diagonal part of $A$ and $X$ its
-extra-diagonal part, it can be written
-$A=D(Id+D^{-1}X)$. Therefore \mbox{$A^{-1}=(Id+D^{-1}X)^{-1}D^{-1}$}. A series
-development of $Id+D^{-1}X$ can then be used which yields, symbolically,
-\mbox{$Id+\sum\limits_{I=1}^{IPOL}\left(-D^{-1}X\right)^{I}$}.}.\\
-{\tt ipol} = -1 may be used to deactivate preconditioning.\\
-{\tt ipol} is necessarily 0 with the Jacobi algorithm.\\
-Concerning the computational time, the performance depends on the
-case. If a preconditioning method different from
-the diagonal preconditioning is to be used, it seems to be better to restrict
-to a first-order preconditioning ({\tt ipol}=1). This preconditioning may
-slightly increase performance in some cases but may decrease it in others.\\
-always useful}
-
-\motcle{nitmax}{ia}{integer $>$ 0}{10000}{O}{L3}
-{for each unknown {\tt ivar}, maximum number of iterations for the solution of
-the linear equation systems: {\tt nitmax(ivar)}\\
-when the algebraic multi-grid option is activated for the variable {\tt ivar}
-({\tt imgr(ivar)}=1), {\tt nitmax(ivar)} is the maximum number of iterations
-for the solution on the coarsest mesh\\
-always useful}
+See \doxygenfile{parameters.html}{the dedicated \texttt{Doxygen} documentation}
+for most settings related to linear solver options.
 
 \motcle{epsilo}{ra}{real number $>$ 0}{$10^{-8}$,$10^{-5}$}{O}{L3}
 {for each unknown {\tt ivar}, relative precision for the solution of the linear
@@ -1557,46 +1524,6 @@ right-hand side of the equation,
 the value may be increased (by default, in case of second-order in time,
 with {\tt nswrsm} = 5 or 10, {\tt epsilo} is increased to $10^{-5}$).\\
 always useful}
-
-\motcle{imgr}{ia}{0 or 1}{0}{O}{L3}
-{for each unknown {\tt ivar}, indicates the use ({\tt imgr(ivar)}=1) or not
-(=0) of the algebraic multi-grid method for the solution of the linear systems\\
-{\tt imgr(ivar)} can be set independently for every variable\\
-always useful. Generally, its use is designed for the variable ``pressure'' in
-case of meshes with strongly stretched cells. It is recommended not to modify
-{\tt imgr}}
-
-\motcle{ncegrm}{i}{integer $>$ 0}{30}{O}{L3}
-{for the multi-grid method, maximum number of cells on the coarsest grid\\
-useful if and only if {\tt imgr(ivar)} = 1 for at least one variable {\tt ivar}}
-
-\motcle{ncymax}{ia}{integer $>$ 0}{100}{O}{L3}
-{for each unknown {\tt ivar}, {\tt ncymax(ivar)} is the maximum number of
-cycles when using the multi-grid method.\\
-useful if and only if {\tt imgr(ivar)} = 1}
-
-\motcle{ngrmax}{i}{1$\leqslant$ integer $\leqslant${\tt ngrmmx} }{{\tt ngrmmx}}{O}{L3}
-{when using the multi-grid method, maximum number of grid levels\\
-useful if and only if {\tt imgr(ivar)} = 1 for at least one variable {\tt ivar}}
-
-\motcle{ncymax}{ia}{integer $>$ 0}{10}{O}{L3}
-{for each unknown {\tt ivar}, {\tt ncymax(ivar)} is the maximum number of
- multi-grid cycles.\\
-useful if and only if {\tt imgr(ivar)} = 1}
-
-\motcle{nitmgf}{ia}{integer $>$ 0}{10}{O}{L3}
-{for each unknown {\tt ivar}, {\tt nitmgf(ivar)} is the maximum number of
-iterations on all grids except for the coarsest when the multi-grid method is
-used; the resolution on the coarsest grid uses {\tt nitmax}.\\
-useful if and only if {\tt imgr(ivar)} = 1}
-
-\motcle{rlxp1}{r}{0 $\leqslant$ real $\leqslant$ 1}{0.95}{O}{L3}
-{relaxation parameter for the multi-grid.
-}
-
-\minititre{Warning}
-The algebraic multi-grid method has only been tested for
-the ``pressure'' variable ({\tt imgr(ipr)}=1).
 
 %==================================
 \subsubsection{Convective scheme}

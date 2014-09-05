@@ -104,9 +104,8 @@ integer          iiun
 integer          ipcvlo, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
-integer          iconvp, idiffp, ndircp, ireslp
-integer          nitmap, nswrsp, ircflp, ischcp, isstpp, iescap
-integer          imgrp , ncymxp, nitmfp
+integer          iconvp, idiffp, ndircp
+integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          istprv
 integer          imucpp, idftnp, iswdyp
 integer          icvflb
@@ -466,9 +465,7 @@ enddo
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
 ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -479,9 +476,6 @@ iescap = 0
 imucpp = 0
 idftnp = idften(ivar)
 iswdyp = iswdyn(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -500,10 +494,10 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
@@ -786,9 +780,7 @@ endif
 
 iconvp = iconv (ivar)
 idiffp = idiff (ivar)
-ireslp = iresol(ivar)
 ndircp = ndircl(ivar)
-nitmap = nitmax(ivar)
 nswrsp = nswrsm(ivar)
 nswrgp = nswrgr(ivar)
 imligp = imligr(ivar)
@@ -799,9 +791,6 @@ iescap = 0
 imucpp = 0
 idftnp = idften(ivar)
 iswdyp = iswdyn(ivar)
-imgrp  = imgr  (ivar)
-ncymxp = ncymax(ivar)
-nitmfp = nitmgf(ivar)
 iwarnp = iwarni(ivar)
 blencp = blencv(ivar)
 epsilp = epsilo(ivar)
@@ -820,10 +809,10 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
 !==========
- ( idtvar , ivar   , iconvp , idiffp , ireslp , ndircp , nitmap , &
+ ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
-   imgrp  , ncymxp , nitmfp ,          iwarnp ,                   &
+   iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
    rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
