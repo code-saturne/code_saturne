@@ -1234,7 +1234,7 @@ _convergence_test(const char         *var_name,
       bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
 
     if (*residue > initial_residue * 10000.0 && *residue > 100.)
-      return CS_SLES_BREAKDOWN;
+      return CS_SLES_DIVERGED;
 
 #if (__STDC_VERSION__ >= 199901L)
     if (isnan(*residue) || isinf(*residue))
@@ -2687,6 +2687,9 @@ cs_multigrid_error_post_and_abort(void                         *context,
                                   const cs_real_t               rhs[],
                                   cs_real_t                     vx[])
 {
+  if (state >= CS_SLES_MAX_ITERATION)
+    return;
+
   const cs_multigrid_t  *mg = context;
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
 
