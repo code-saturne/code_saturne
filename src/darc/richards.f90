@@ -120,10 +120,10 @@ integer iflid , iflwgr, f_dim, f_id0, iprev, iitsm
 logical          interleaved
 
 double precision epsrgp, climgp, extrap
-double precision thetap, xdu, xdv, xdw
+double precision thetap, xdu, xdv, xdw, xnrmul
 double precision relaxp, residu, ressol, epsilp
 
-character*80     chaine
+character(len=80) :: chaine
 
 type(solving_info) sinfo
 
@@ -190,21 +190,21 @@ if (nterup.gt.1) then
       uvwk(3,iel) = cvar_vel(3,iel)
     endif
   enddo
-  xnrmu0 = 0.d0
-  !$omp parallel do reduction(+:xnrmu0)
+  xnrmul = 0.d0
+  !$omp parallel do reduction(+:xnrmul)
   do iel = 1, ncel
     if (darcy_convergence_criterion.eq.0) then
-      xnrmu0 = xnrmu0 +cvar_pr(iel)**2*volume(iel)
+      xnrmul = xnrmul +cvar_pr(iel)**2*volume(iel)
     else
-      xnrmu0 = xnrmu0 +(cvar_vel(1,iel)**2 &
+      xnrmul = xnrmul +(cvar_vel(1,iel)**2 &
                       + cvar_vel(2,iel)**2 &
                       + cvar_vel(2,iel)**2)*volume(iel)
     endif
   enddo
   if (irangp.ge.0) then
-    call parsom (xnrmu0)
+    call parsom (xnrmul)
   endif
-  xnrmu0 = sqrt(xnrmu0)
+  xnrmu0 = sqrt(xnrmul)
 endif
 
 ! Index of the field
@@ -701,21 +701,21 @@ endif
 
 if (nterup.gt.1) then
   icvrge = 1
-  xnrmu = 0.d0
-  !$omp parallel do reduction(+:xnrmu0) private(xdu, xdv, xdw)
+  xnrmul = 0.d0
+  !$omp parallel do reduction(+:xnrmul) private(xdu, xdv, xdw)
   do iel = 1,ncel
     if (darcy_convergence_criterion.eq.0) then
       xdu = cvar_pr(iel) - uvwk(1,iel)
-      xnrmu = xnrmu + xdu**2*volume(iel)
+      xnrmul = xnrmul + xdu**2*volume(iel)
     else
       xdu = cvar_vel(1,iel) - uvwk(1,iel)
       xdv = cvar_vel(2,iel) - uvwk(2,iel)
       xdw = cvar_vel(3,iel) - uvwk(3,iel)
-      xnrmu = xnrmu + (xdu**2 + xdv**2 + xdw**2)*volume(iel)
+      xnrmul = xnrmul + (xdu**2 + xdv**2 + xdw**2)*volume(iel)
     endif
   enddo
-  if (irangp.ge.0) call parsom (xnrmu)
-  xnrmu = sqrt(xnrmu)
+  if (irangp.ge.0) call parsom (xnrmul)
+  xnrmu = sqrt(xnrmul)
   ! Indicator of convergence for the Newton scheme
   if (xnrmu.ge.epsup*xnrmu0) icvrge = 0
 endif
