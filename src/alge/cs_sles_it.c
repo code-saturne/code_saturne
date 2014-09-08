@@ -80,6 +80,21 @@ BEGIN_C_DECLS
   \file cs_sles_it.c
         Iterative linear solvers
 
+  \enum cs_sles_it_type_t
+
+  \brief Iterative solver types
+
+  \var CS_SLES_PCG
+       Preconditioned conjugate gradient
+  \var CS_SLES_JACOBI
+       Jacobi
+  \var CS_SLES_BICGSTAB
+       Preconditioned BiCGstab (biconjugate gradient stabilized)
+  \var CS_SLES_BICGSTAB2
+       Preconditioned BiCGstab (biconjugate gradient stabilized)
+  \var CS_SLES_GMRES
+       Preconditioned GMRES (generalized minimum residual)
+
  \page sles_it Iterative linear solvers.
 
  For Krylov space solvers (all here except Jacobi), reconditioning is based
@@ -205,12 +220,15 @@ typedef struct _cs_sles_it_convergence_t {
 
 /*============================================================================
  *  Global variables
- *============================================================================*/
+ *=================================================================x===========*/
+
+/* Mean system rows threshold under which we use single-reduce version of PCG */
+
+static cs_lnum_t _pcg_sr_threshold = 512;
 
 /* Sparse linear equation solver type names */
 
 const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
-                                      N_("Conjugate gradient, single reduction"),
                                       N_("Jacobi"),
                                       N_("BiCGstab"),
                                       N_("BiCGstab2"),
@@ -2651,11 +2669,12 @@ _gmres(cs_sles_it_t              *c,
  * The residue is also computed.
  *
  * parameters:
- *   c       <-- pointer to solver context info
- *   name    <-- system name
- *   r_norm  <-- residue normalization
- *   residue <-> residue
- *   rhs     <-- right hand side
+ *   c                <-- pointer to solver context info
+ *   name             <-- system name
+ *   single_reduction --> use single reduction if applicable ?
+ *   r_norm           <-- residue normalization
+ *   residue          <-> residue
+ *   rhs              <-- right hand side
  *
  * returns:
  *   1 if solving is required, 0 if the rhs is already zero within tolerance
@@ -2665,18 +2684,48 @@ _gmres(cs_sles_it_t              *c,
 static int
 _needs_solving(const  cs_sles_it_t  *c,
                const char           *name,
+               bool                 *single_reduction,
                double                r_norm,
                double               *residue,
                const cs_real_t      *rhs)
 {
   /* Initialize residue, check for immediate return */
 
-  *residue = sqrt(_dot_product_xx(c, rhs));
+  double s[2];
+  int l = (c->type == CS_SLES_PCG) ? 2 : 1;
+
+  *single_reduction = false;
+
+  s[0] = cs_dot_xx(c->n_rows, rhs);
+  s[1] = c->n_rows;
+
+  cs_parall_sum(l, CS_DOUBLE, s);
+
+  s[0] = sqrt(s[0]);
 
 #if defined(HAVE_MPI)
+
+  if (c->type == CS_SLES_PCG) {
+    if (c->comm != MPI_COMM_NULL && c->comm != cs_glob_mpi_comm) {
+      int size;
+      MPI_Comm_size(c->comm, &size);
+      s[1] /= size;
+    }
+    else
+      s[1] /= cs_glob_n_ranks;
+  }
+
   if (c->comm != MPI_COMM_NULL && c->comm != cs_glob_mpi_comm)
-    MPI_Bcast(residue, 1, MPI_DOUBLE, 0, cs_glob_mpi_comm);
+    MPI_Bcast(s, l, MPI_DOUBLE, 0, cs_glob_mpi_comm);
+
+  if (c->type == CS_SLES_PCG) {
+    if ((cs_lnum_t)(s[1]) < _pcg_sr_threshold)
+      *single_reduction = true;
+  }
+
 #endif
+
+  *residue = s[0];
 
   return cs_sles_needs_solving(cs_sles_it_type_name[c->type],
                                name,
@@ -3022,6 +3071,8 @@ cs_sles_it_solve(void                *context,
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
+  bool single_reduction = false;
+
   const int *diag_block_size = cs_matrix_get_diag_block_size(a);
   const int _diag_block_size = diag_block_size[0];
 
@@ -3037,7 +3088,7 @@ cs_sles_it_solve(void                *context,
 
   c->n_rows = _diag_block_size*n_rows; /* for following call */
 
-  if (_needs_solving(c, name, r_norm, residue, rhs) != 0) {
+  if (_needs_solving(c, name, &single_reduction, r_norm, residue, rhs) != 0) {
 
     /* Setup if not already done */
 
@@ -3074,48 +3125,51 @@ cs_sles_it_solve(void                *context,
 
       switch (c->type) {
       case CS_SLES_PCG:
-        if (c->poly_degree > -1)
-          cvg = _conjugate_gradient(c,
-                                    a,
-                                    _diag_block_size,
-                                    rotation_mode,
-                                    &convergence,
-                                    rhs,
-                                    vx,
-                                    aux_size,
-                                    aux_vectors);
-        else
-          cvg = _conjugate_gradient_npc(c,
-                                        a,
-                                        _diag_block_size,
-                                        rotation_mode,
-                                        &convergence,
-                                        rhs,
-                                        vx,
-                                        aux_size,
-                                        aux_vectors);
-        break;
-      case CS_SLES_PCG_SR:
-        if (c->poly_degree > -1)
-          cvg = _conjugate_gradient_sr(c,
-                                       a,
-                                       _diag_block_size,
-                                       rotation_mode,
-                                       &convergence,
-                                       rhs,
-                                       vx,
-                                       aux_size,
-                                       aux_vectors);
-        else
-          cvg = _conjugate_gradient_npc_sr(c,
-                                           a,
-                                           _diag_block_size,
-                                           rotation_mode,
-                                           &convergence,
-                                           rhs,
-                                           vx,
-                                           aux_size,
-                                           aux_vectors);
+        if (! single_reduction) {
+          if (c->poly_degree > -1)
+            cvg = _conjugate_gradient(c,
+                                      a,
+                                      _diag_block_size,
+                                      rotation_mode,
+                                      &convergence,
+                                      rhs,
+                                      vx,
+                                      aux_size,
+                                      aux_vectors);
+          else
+            cvg = _conjugate_gradient_npc(c,
+                                          a,
+                                          _diag_block_size,
+                                          rotation_mode,
+                                          &convergence,
+                                          rhs,
+                                          vx,
+                                          aux_size,
+                                          aux_vectors);
+          break;
+        }
+        else {
+          if (c->poly_degree > -1)
+            cvg = _conjugate_gradient_sr(c,
+                                         a,
+                                         _diag_block_size,
+                                         rotation_mode,
+                                         &convergence,
+                                         rhs,
+                                         vx,
+                                         aux_size,
+                                         aux_vectors);
+          else
+            cvg = _conjugate_gradient_npc_sr(c,
+                                             a,
+                                             _diag_block_size,
+                                             rotation_mode,
+                                             &convergence,
+                                             rhs,
+                                             vx,
+                                             aux_size,
+                                             aux_vectors);
+        }
         break;
       case CS_SLES_JACOBI:
         if (_diag_block_size == 1)
@@ -3332,6 +3386,79 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query mean number of rows under which Conjugate Gradient algorithm
+ *        uses the single-reduction variant.
+ *
+ * The single-reduction variant requires only one parallel sum per
+ * iteration (instead of 2), at the cost of additional vector operations,
+ * so it tends to be more expensive when the number of matrix rows per
+ * MPI rank is high, then becomes cheaper when the MPI latency cost becomes
+ * more significant.
+ *
+ * This option is ignored for non-parallel runs, so 0 is returned.
+ *
+ * \returns  mean number of rows per active rank under which the
+ *           single-reduction variant will be used
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_sles_it_get_pcg_single_reduction(void)
+{
+#if defined(HAVE_MPI)
+  return _pcg_sr_threshold;
+#else
+  return 0;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set mean number of rows under which Conjugate Gradient algorithm
+ *        should use the single-reduction variant.
+ *
+ * The single-reduction variant requires only one parallel sum per
+ * iteration (instead of 2), at the cost of additional vector operations,
+ * so it tends to be more expensive when the number of matrix rows per
+ * MPI rank is high, then becomes cheaper when the MPI latency cost becomes
+ * more significant.
+ *
+ * This option is ignored for non-parallel runs.
+ *
+ * \param[in]  threshold  mean number of rows per active rank under which the
+ *             single-reduction variant will be used
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_pcg_single_reduction(cs_lnum_t  threshold)
+{
+#if defined(HAVE_MPI)
+  _pcg_sr_threshold = threshold;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the current global settings relative to parallelism.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_log_parallel_options(void)
+{
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1)
+    cs_log_printf(CS_LOG_SETUP,
+                  _("\n"
+                    "Iterative linear solvers parallel parameters:\n"
+                    "  PCG single-reduction threshold:     %d\n"),
+                 _pcg_sr_threshold);
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

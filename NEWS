@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Single-reduction conjugate gradient is now an option rather than a separate
+  solver. This allows switching automatically from one to the other based on
+  computation vs. communication cost.
+
 - Add BiCGstab2 linear solver.
 
 - Change default solver for pure diffusion problems (from Conjugate gradient to

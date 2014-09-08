@@ -58,9 +58,10 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
-#include "cs_gui_util.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
+#include "cs_gui_util.h"
+#include "cs_grid.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
@@ -165,7 +166,7 @@ cs_user_linear_solvers(void)
     (mg,
      CS_SLES_JACOBI, /* descent smoother type (default: CS_SLES_PGC) */
      CS_SLES_JACOBI, /* ascent smoother type (default: CS_SLES_PGC) */
-     CS_SLES_PCG_SR, /* coarse solver type (default: CS_SLES_PGC_SR) */
+     CS_SLES_PCG,    /* coarse solver type (default: CS_SLES_PGC) */
      50,             /* n max cycles (default 100) */
      5,              /* n max iter for descent (default 10) */
      5,              /* n max iter for asscent (default 10) */

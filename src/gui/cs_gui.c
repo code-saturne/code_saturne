@@ -2759,7 +2759,7 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
   else if (multigrid == true) {
     cs_multigrid_t *mg = cs_multigrid_define(c_pres->id, NULL);
     cs_multigrid_set_solver_options(mg,
-                                    CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG_SR,
+                                    CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
                                     100, /* n max cycles */
                                     10,  /* n max iter for descent (default 10) */
                                     10,  /* n max iter for ascent (default 10) */

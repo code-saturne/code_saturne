@@ -4776,7 +4776,7 @@ cs_grid_set_matrix_variant(cs_matrix_fill_type_t       fill_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * Log the current settings for multigrid parallel merging.
+ * \brief Log the current settings for multigrid parallel merging.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -288,7 +288,7 @@ _multigrid_info_init(cs_multigrid_info_t *info)
 
   info->type[0] = CS_SLES_PCG;
   info->type[1] = CS_SLES_PCG;
-  info->type[2] = (cs_glob_n_ranks > 1) ? CS_SLES_PCG_SR : CS_SLES_PCG;
+  info->type[2] = CS_SLES_PCG;
 
   info->n_max_cycles = 100;
 
