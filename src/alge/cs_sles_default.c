@@ -207,6 +207,9 @@ cs_sles_default_setup(void)
   /* Associate "on the fly default definition" function */
 
   cs_sles_set_default_define(cs_sles_default);
+  cs_sles_set_default_verbosity(cs_sles_default_get_verbosity);
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Define for all variable fields */
 
@@ -226,8 +229,6 @@ cs_sles_default_setup(void)
 
   /* Default for other fields based on convection/diffusion */
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   if (key_cal_opt_id > -1) {
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -239,13 +240,11 @@ cs_sles_default_setup(void)
           /* Get the calculation option from the field */
           cs_var_cal_opt_t var_cal_opt;
           cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-          if (var_cal_opt.iconv > 0) {
+          if (var_cal_opt.iconv > 0)
             cs_sles_it_define(f_id, NULL, CS_SLES_JACOBI,
                               _poly_degree_default, _n_max_iter_default);
-          }
-          else if (var_cal_opt.idiff > 0) {
+          else if (var_cal_opt.idiff > 0)
             cs_multigrid_define(f_id, NULL);
-          }
 
         }
 
@@ -282,6 +281,45 @@ cs_sles_default_finalize(void)
 
   cs_multigrid_finalize();
   cs_sles_finalize();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return default verbosity associated to a field id, name couple.
+ *
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  verbosity associated with field or name
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_default_get_verbosity(int          f_id,
+                              const char  *name)
+{
+  int retval = 0;
+
+  static int k_log = -1;
+  static int k_cal_opt_id = -1;
+
+  if (k_log < 0)
+    k_log = cs_field_key_id("log");
+  if (k_cal_opt_id < 0)
+    k_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  if (f_id > -1) {
+    const cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_var_cal_opt_t var_cal_opt;
+      cs_field_get_key_struct(f, k_cal_opt_id, &var_cal_opt);
+      retval = var_cal_opt.iwarni;
+    }
+    else
+      retval = cs_field_get_key_int(f, k_log);
+  }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

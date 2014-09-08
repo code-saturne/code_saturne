@@ -269,6 +269,26 @@ typedef void
                     const char         *name,
                     const cs_matrix_t  *a);
 
+/*----------------------------------------------------------------------------
+ * Function pointer for the default definition of a sparse
+ * linear equation solver's verbosity
+ *
+ * The function may be associated using cs_sles_set_default_verbosity(), so
+ * that it may provide a definition that will be used when
+ * cs_sles_default_verbosity() is called.
+ *
+ * parameters:
+ *   f_id <-- associated field id, or < 0
+ *   name <-- associated name if f_id < 0, or NULL
+ *
+ * returns:
+ *   default verbosity value
+ *----------------------------------------------------------------------------*/
+
+typedef int
+(cs_sles_verbosity_t) (int          f_id,
+                       const char  *name);
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -609,6 +629,19 @@ void
 cs_sles_set_default_define(cs_sles_define_t  *define_func);
 
 /*----------------------------------------------------------------------------
+ * Set default verbosity definition function.
+ *
+ * The provided function will be used to define the verbosity when
+ * cs_sles_default_verbosity() is called.
+ *
+ * parameters:
+ *   verbosity_func <-- pointer to default verbosity function
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func);
+
+/*----------------------------------------------------------------------------
  * Test if a linear system needs solving or if the residue is already
  * within convergence criteria.
  *
@@ -691,15 +724,19 @@ cs_sles_base_name(int          f_id,
  * This is simply a utility function which will return the main verbosity
  * associated with a field, and 0 otherwise.
  *
+ * Its behavior may be modified using cs_sles_set_default_verbosity().
+ *
  * parameters:
  *   f_id <-- associated field id, or < 0
+ *   name <-- associated name if f_id < 0, or NULL
  *
  * returns:
- *   verbosity associated with field, or 0 if f_id < 0
+ *   verbosity associated with field or name
  *----------------------------------------------------------------------------*/
 
 int
-cs_sles_default_verbosity(int  f_id);
+cs_sles_default_verbosity(int          f_id,
+                          const char  *name);
 
 /*----------------------------------------------------------------------------*/
 

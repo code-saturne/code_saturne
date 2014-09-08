@@ -1144,17 +1144,18 @@ _dot_product(cs_int_t          n_elts,
  * Test if convergence is attained.
  *
  * parameters:
- *   var_name      <-- variable name
- *   n_f_cells     <-- number of cells on fine mesh
- *   n_max_cycles  <-- maximum number of cycles
- *   cycle_id      <-- number of current cycle
+ *   var_name        <-- variable name
+ *   n_f_cells       <-- number of cells on fine mesh
+ *   n_max_cycles    <-- maximum number of cycles
+ *   cycle_id        <-- number of current cycle
  *
- *   verbosity     <-- verbosity level
- *   n_iters       <-- number of iterations
- *   precision     <-- precision limit
- *   r_norm        <-- residue normalization
- *   residue       <-> residue
- *   rhs           <-- right-hand side
+ *   verbosity       <-- verbosity level
+ *   n_iters         <-- number of iterations
+ *   precision       <-- precision limit
+ *   r_norm          <-- residue normalization
+ *   initial_residue <-- initial residue
+ *   residue         <-> residue
+ *   rhs             <-- right-hand side
  *
  * returns:
  *   convergence status
@@ -1169,6 +1170,7 @@ _convergence_test(const char         *var_name,
                   int                 n_iters,
                   double              precision,
                   double              r_norm,
+                  double              initial_residue,
                   double             *residue,
                   const cs_real_t     rhs[])
 {
@@ -1185,8 +1187,6 @@ _convergence_test(const char         *var_name,
   const char cycle_fmt[]
     = N_("   N. cycles: %4d; Fine mesh cumulative iter: %5d; "
          "Norm. residual %12.4e\n");
-
-  static double initial_residue = 0.;
 
   /* Compute residue */
 
@@ -1358,19 +1358,20 @@ _level_names_init(const char  *name,
  * Sparse linear system resolution using multigrid.
  *
  * parameters:
- *   mg            <-- multigrid system
- *   lv_names      <-- names of linear systems
- *                     (indexed as mg->setup_data->sles_hierarchy)
- *   rotation_mode <-- halo update option for rotational periodicity
- *   cycle_id      <-- id of currect cycle
- *   n_equiv_iter  <-> equivalent number of iterations
- *   precision     <-- solver precision
- *   r_norm        <-- residue normalization
- *   residue       <-> residue
- *   rhs           <-- right hand side
- *   vx            --> system solution
- *   aux_size      <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors   --- optional working area (allocation otherwise)
+ *   mg              <-- multigrid system
+ *   lv_names        <-- names of linear systems
+ *                       (indexed as mg->setup_data->sles_hierarchy)
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   cycle_id        <-- id of currect cycle
+ *   n_equiv_iter    <-> equivalent number of iterations
+ *   precision       <-- solver precision
+ *   r_norm          <-- residue normalization
+ *   initial_residue <-- initial residue
+ *   residue         <-> residue
+ *   rhs             <-- right hand side
+ *   vx              --> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
  *
  * returns:
  *   convergence status
@@ -1384,6 +1385,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                  int                  *n_equiv_iter,
                  double                precision,
                  double                r_norm,
+                 double                initial_residue,
                  double               *residue,
                  const cs_real_t      *rhs,
                  cs_real_t            *vx,
@@ -1547,6 +1549,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                               lv_info->n_it_ds_smoothe[0],
                               precision,
                               r_norm,
+                              initial_residue,
                               residue,
                               wr);
 
@@ -1756,7 +1759,10 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
   mgd->exit_level = level;
   mgd->exit_residue = _residue;
-  mgd->exit_initial_residue = _initial_residue;
+  if (level == 0)
+    mgd->exit_initial_residue = initial_residue;
+  else
+    mgd->exit_initial_residue = _initial_residue;
   mgd->exit_cycle_id = cycle_id;
 
   /* Free memory */
@@ -1896,7 +1902,7 @@ cs_multigrid_define(int          f_id,
   cs_sles_set_error_handler(sc,
                             cs_multigrid_error_post_and_abort);
 
-  cs_multigrid_set_verbosity(mg, cs_sles_default_verbosity(f_id));
+  cs_multigrid_set_verbosity(mg, cs_sles_default_verbosity(f_id, name));
 
   return mg;
 }
@@ -2541,6 +2547,8 @@ cs_multigrid_solve(void                *context,
     if (mg->verbosity == 2) /* More detailed headers later if > 2 */
       bft_printf(_("Multigrid [%s]:\n"), name);
 
+    double initial_residue = *residue;
+
     /* Cycle to solution */
 
     while (cvg == CS_SLES_ITERATING) {
@@ -2558,6 +2566,7 @@ cs_multigrid_solve(void                *context,
                              n_iter,
                              precision,
                              r_norm,
+                             initial_residue,
                              residue,
                              rhs,
                              vx,

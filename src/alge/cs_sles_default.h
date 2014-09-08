@@ -87,6 +87,21 @@ void
 cs_sles_default_setup(void);
 
 /*----------------------------------------------------------------------------
+ * Return default verbosity associated to a field id, name couple.
+ *
+ * parameters:
+ *   f_id <-- associated field id, or < 0
+ *   name <-- associated name if f_id < 0, or NULL
+ *
+ * returns:
+ *   verbosity associated with field or name
+ *----------------------------------------------------------------------------*/
+
+int
+cs_sles_default_get_verbosity(int          f_id,
+                              const char  *name);
+
+/*----------------------------------------------------------------------------
  * Default finalization for sparse linear equation solver API.
  *
  * This includes performance data logging output.

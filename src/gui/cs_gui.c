@@ -2711,12 +2711,8 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
                                 double *epsilo,
                                    int *nswrsm)
 {
-  bool multigrid = false;
-  cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
-
   double tmp;
   int n_max_iter;
-  char* algo_choice = NULL;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   int var_key_id = cs_field_key_id("variable_id");
   const int n_max_iter_default = 10000;
@@ -2733,45 +2729,9 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
   cs_gui_variable_value(c_pres->name, "max_iter_number", &tmp);
   n_max_iter = (int) tmp;
 
-  algo_choice = cs_gui_variable_choice(c_pres->name, "solver_choice");
-  if (cs_gui_strcmp(algo_choice, "multigrid"))
-    multigrid = true;
-  else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-    sles_it_type = CS_SLES_PCG;
-  else if (cs_gui_strcmp(algo_choice, "jacobi"))
-    sles_it_type = CS_SLES_JACOBI;
-  else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-    sles_it_type = CS_SLES_BICGSTAB;
-  else if (cs_gui_strcmp(algo_choice, "bi_cgstab2"))
-    sles_it_type = CS_SLES_BICGSTAB2;
-  else if (cs_gui_strcmp(algo_choice, "gmres"))
-    sles_it_type = CS_SLES_GMRES;
-  /* if choice is "automatic", delay choice to cs_sles_default;
-     otherwise, if no choice is found, default to multigrid */
-  else if (! cs_gui_strcmp(algo_choice, "automatic"))
-    multigrid = true;
-
-  if (sles_it_type < CS_SLES_N_IT_TYPES) {
-    int poly_degree = 0;
-    cs_sles_it_define(c_pres->id, NULL, sles_it_type,
-                      poly_degree, n_max_iter);
-  }
-  else if (multigrid == true) {
-    cs_multigrid_t *mg = cs_multigrid_define(c_pres->id, NULL);
-    cs_multigrid_set_solver_options(mg,
-                                    CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
-                                    100, /* n max cycles */
-                                    10,  /* n max iter for descent (default 10) */
-                                    10,  /* n max iter for ascent (default 10) */
-                                    n_max_iter,
-                                    0, 0, 0,  /* precond degree */
-                                    1, 1, 1); /* precision multiplier */
-  }
-
   tmp = (double) nswrsm[j];
   cs_gui_variable_value(c_pres->name, "rhs_reconstruction", &tmp);
   nswrsm[j] = (int) tmp;
-  BFT_FREE(algo_choice);
 
   // Set Field calculation options in the field structure
   var_cal_opt.epsilo = epsilo[j];
@@ -2792,33 +2752,6 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
       tmp = (double) n_max_iter_default;
       cs_gui_variable_value(f->name, "max_iter_number", &tmp);
       n_max_iter = (int) tmp;
-
-      multigrid = false;
-      sles_it_type = CS_SLES_N_IT_TYPES;
-
-      algo_choice = cs_gui_variable_choice(f->name, "solver_choice");
-
-      if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
-        sles_it_type = CS_SLES_PCG;
-      else if (cs_gui_strcmp(algo_choice, "jacobi"))
-        sles_it_type = CS_SLES_JACOBI;
-      else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
-        sles_it_type = CS_SLES_BICGSTAB;
-      else if (cs_gui_strcmp(algo_choice, "bi_cgstab2"))
-        sles_it_type = CS_SLES_BICGSTAB2;
-      else if (cs_gui_strcmp(algo_choice, "gmres"))
-        sles_it_type = CS_SLES_GMRES;
-      /* If choice is "automatic" or unspecified, delay
-         choice to cs_sles_default, so do nothing here */
-
-      if (sles_it_type < CS_SLES_N_IT_TYPES) {
-        int poly_degree = 0;
-        cs_sles_it_define(f->id, NULL, sles_it_type,
-                          poly_degree, n_max_iter);
-      }
-      else if (multigrid == true) {
-        cs_multigrid_define(f->id, NULL);
-      }
 
       // only for nscaus and model scalar
       cs_gui_variable_value(f->name, "time_step_factor", &cdtvar[j]);
@@ -5392,6 +5325,111 @@ cs_gui_reference_initialization(const char  *param,
   if (cs_gui_get_double(path, &result))
     *value = result;
   BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
+ * Selection of linear solvers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_linear_solvers(void)
+{
+  bool multigrid = false;
+  cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
+
+  double tmp;
+  int n_max_iter;
+  char* algo_choice = NULL;
+
+  int var_key_id = cs_field_key_id("variable_id");
+  const int n_max_iter_default = 10000;
+
+  /* 1) variables from velocity_pressure and turbulence */
+  /* 1-a) for pressure */
+  cs_field_t *c_pres = cs_field_by_name("pressure");
+  int j = cs_field_get_key_int(c_pres, var_key_id) -1;
+
+  tmp = (double) n_max_iter_default;
+  cs_gui_variable_value(c_pres->name, "max_iter_number", &tmp);
+  n_max_iter = (int) tmp;
+
+  algo_choice = cs_gui_variable_choice(c_pres->name, "solver_choice");
+  if (cs_gui_strcmp(algo_choice, "multigrid"))
+    multigrid = true;
+  else if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
+    sles_it_type = CS_SLES_PCG;
+  else if (cs_gui_strcmp(algo_choice, "jacobi"))
+    sles_it_type = CS_SLES_JACOBI;
+  else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
+    sles_it_type = CS_SLES_BICGSTAB;
+  else if (cs_gui_strcmp(algo_choice, "bi_cgstab2"))
+    sles_it_type = CS_SLES_BICGSTAB2;
+  else if (cs_gui_strcmp(algo_choice, "gmres"))
+    sles_it_type = CS_SLES_GMRES;
+  /* if choice is "automatic", delay choice to cs_sles_default;
+     otherwise, if no choice is found, default to multigrid */
+  else if (! cs_gui_strcmp(algo_choice, "automatic"))
+    multigrid = true;
+
+  if (sles_it_type < CS_SLES_N_IT_TYPES) {
+    int poly_degree = 0;
+    cs_sles_it_define(c_pres->id, NULL, sles_it_type,
+                      poly_degree, n_max_iter);
+  }
+  else if (multigrid == true) {
+    cs_multigrid_t *mg = cs_multigrid_define(c_pres->id, NULL);
+    cs_multigrid_set_solver_options(mg,
+                                    CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
+                                    100, /* n max cycles */
+                                    10,  /* n max iter for descent (default 10) */
+                                    10,  /* n max iter for ascent (default 10) */
+                                    n_max_iter,
+                                    0, 0, 0,  /* precond degree */
+                                    1, 1, 1); /* precision multiplier */
+  }
+
+  BFT_FREE(algo_choice);
+
+  /* 1-b) for the other variables */
+  int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t  *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE && !cs_gui_strcmp(f->name, "pressure")) {
+      j = cs_field_get_key_int(f, var_key_id) -1;
+
+      tmp = (double) n_max_iter_default;
+      cs_gui_variable_value(f->name, "max_iter_number", &tmp);
+      n_max_iter = (int) tmp;
+
+      multigrid = false;
+      sles_it_type = CS_SLES_N_IT_TYPES;
+
+      algo_choice = cs_gui_variable_choice(f->name, "solver_choice");
+
+      if (cs_gui_strcmp(algo_choice, "conjugate_gradient"))
+        sles_it_type = CS_SLES_PCG;
+      else if (cs_gui_strcmp(algo_choice, "jacobi"))
+        sles_it_type = CS_SLES_JACOBI;
+      else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
+        sles_it_type = CS_SLES_BICGSTAB;
+      else if (cs_gui_strcmp(algo_choice, "bi_cgstab2"))
+        sles_it_type = CS_SLES_BICGSTAB2;
+      else if (cs_gui_strcmp(algo_choice, "gmres"))
+        sles_it_type = CS_SLES_GMRES;
+
+      /* If choice is "automatic" or unspecified, delay
+         choice to cs_sles_default, so do nothing here */
+
+      if (sles_it_type < CS_SLES_N_IT_TYPES) {
+        int poly_degree = 0;
+        cs_sles_it_define(f->id, NULL, sles_it_type,
+                          poly_degree, n_max_iter);
+      }
+      else if (multigrid == true) {
+        cs_multigrid_define(f->id, NULL);
+      }
+    }
+  }
 }
 
 /*-----------------------------------------------------------------------------

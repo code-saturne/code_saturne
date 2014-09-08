@@ -260,6 +260,20 @@ BEGIN_C_DECLS
   \param[in]  f_id  associated field id, or < 0
   \param[in]  name  associated name if f_id < 0, or NULL
   \param[in]  a     matrix
+
+  \typedef  cs_sles_verbosity_t
+
+  \brief  Function pointer for the default definition of a sparse
+          linear equation solver's verbosity
+
+  The function may be associated using \ref cs_sles_set_default_verbosity, so
+  that it may provide a definition that will be used when
+  \ref cs_sles_default_verbosity is called.
+
+  \param[in]  f_id  associated field id, or < 0
+  \param[in]  name  associated name if f_id < 0, or NULL
+
+  \return  default verbosity value
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -314,9 +328,10 @@ struct _cs_sles_t {
 
 static cs_map_name_to_id_t  *_type_name_map = NULL;
 
-/* Pointer to default definition */
+/* Pointers to default definitions */
 
 static cs_sles_define_t *_cs_sles_define_default = NULL;
+static cs_sles_verbosity_t *_cs_sles_verbosity_default = NULL;
 
 /* Current and maximum number of systems respectively defined by field id,
    by name, or redefined after use */
@@ -1339,6 +1354,23 @@ cs_sles_set_default_define(cs_sles_define_t  *define_func)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set default verbosity definition function.
+ *
+ * The provided function will be used to define the verbosity when
+ * \ref cs_sles_default_verbosity is called.
+ *
+ * \param[in]  verbosity_func pointer to default verbosity function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func)
+{
+  _cs_sles_verbosity_default = verbosity_func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Test if a linear system needs solving or if the residue is already
  *        within convergence criteria.
  *
@@ -1586,28 +1618,34 @@ cs_sles_base_name(int          f_id,
  * This is simply a utility function which will return the main verbosity
  * associated with a field, and 0 otherwise.
  *
- * \param[in]  f_id  associated field id, or < 0
+ * Its behavior may be modified using \ref cs_sles_set_default_verbosity.
  *
- * \return  verbosity associated with field, or 0 if f_id < 0
+ * \param[in]  f_id  associated field id, or < 0
+ * \param[in]  name  associated name if f_id < 0, or NULL
+ *
+ * \return  verbosity associated with field or name
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_sles_default_verbosity(int  f_id)
+cs_sles_default_verbosity(int          f_id,
+                          const char  *name)
 {
-  static int k_log = -1;
-
-  int retval = 0;
-
-  if (f_id > -1) {
-    const cs_field_t *f = cs_field_by_id(f_id);
-    if (k_log < 0)
-      k_log = cs_field_key_id("log");
-    retval = cs_field_get_key_int(f, k_log);
+  if (_cs_sles_verbosity_default == NULL) {
+    int retval = 0;
+    static int k_log = -1;
+    if (f_id > -1) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      if (k_log < 0)
+        k_log = cs_field_key_id("log");
+      retval = cs_field_get_key_int(f, k_log);
+    }
+    return retval;
   }
-
-  return retval;
+  else
+    return _cs_sles_verbosity_default(f_id, name);
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

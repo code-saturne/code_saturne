@@ -1780,6 +1780,50 @@ _block_3_jacobi(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Test for (and eventually report) breakdown.
+ *
+ * parameters:
+ *   c           <-- pointer to solver context info
+ *   convergence <-- convergence information structure
+ *   coeff       <-- coefficient name
+ *   coeff       <-- coefficient to test
+ *   epsilon     <-- value to test against
+ *   n_iter      <-- current number of iterations
+ *   cvg         <-> convergence status
+ *
+ * returns:
+ *   true in case of breakdown, false otherwise
+ *----------------------------------------------------------------------------*/
+
+static inline bool
+_breakdown(cs_sles_it_t                 *c,
+           cs_sles_it_convergence_t     *convergence,
+           const char                   *coeff_name,
+           double                        coeff,
+           double                        epsilon,
+           double                        residue,
+           int                           n_iter,
+           cs_sles_convergence_state_t  *cvg)
+{
+  if (CS_ABS(coeff) < epsilon) {
+
+    bft_printf
+      (_("\n\n"
+         "%s [%s]:\n"
+         " @@ Warning: non convergence\n"
+         "\n"
+         "    norm of coefficient \"%s\" is lower than %12.4e\n"
+         "\n"
+         "    The resolution does not progress anymore."),
+       cs_sles_it_type_name[c->type], convergence->name, coeff_name, epsilon);
+    bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
+               n_iter, residue, residue/convergence->r_norm);
+
+    *cvg = CS_SLES_BREAKDOWN;
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using preconditioned Bi-CGSTAB.
  *
  * Parallel-optimized version, groups dot products, at the cost of
@@ -1902,31 +1946,13 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     n_iter += 1;
 
-    if (CS_ABS(beta) < _epzero) {
-
-      if (convergence->verbosity == 2)
-        bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
-                   n_iter, residue, residue/convergence->r_norm);
-
-      cvg = CS_SLES_ITERATING;
+    if (_breakdown(c, convergence, "beta", beta, _epzero,
+                   residue, n_iter, &cvg))
       break;
-    }
 
-    if (CS_ABS(alpha) < _epzero) {
-      bft_printf
-        (_("\n\n"
-           "%s [%s]:\n"
-           " @@ Warning: non convergence\n"
-           "\n"
-           "    Alpha coefficient is lower than %12.4e\n"
-           "\n"
-           "    The matrix cannot be considered as invertible anymore."),
-         cs_sles_it_type_name[c->type], convergence->name, alpha);
-      bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
-                 n_iter, residue, residue/convergence->r_norm);
-      cvg = CS_SLES_BREAKDOWN;
+    if (_breakdown(c, convergence, "alpha", alpha, _epzero,
+                   residue, n_iter, &cvg))
       break;
-    }
 
     omega = beta*gamma / (alpha*betam1);
     betam1 = beta;
@@ -1984,22 +2010,9 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     _dot_products_xx_xy(c, vk, rk, &ro_1, &ro_0);
 
-    if (ro_1 < _epzero) {
-      bft_printf
-        (_("\n\n"
-           "%s [%s]:\n"
-           " @@ Warning: non convergence\n"
-           "\n"
-           "    The square of the norm of the descent vector\n"
-           "    is lower than %12.4e\n"
-           "\n"
-           "    The resolution does not progress anymore."),
-         cs_sles_it_type_name[c->type], convergence->name, _epzero);
-      bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
-                 n_iter, residue, residue/convergence->r_norm);
-      cvg = CS_SLES_BREAKDOWN;
+    if (_breakdown(c, convergence, "rho1", ro_1, _epzero,
+                   residue, n_iter, &cvg))
       break;
-    }
 
     alpha = ro_0 / ro_1;
 
@@ -2158,15 +2171,13 @@ _bicgstab2(cs_sles_it_t              *c,
     ro_0 = -omega_2*ro_0;
     ro_1 = _dot_product(c, qk, rk);
 
-    if (CS_ABS(ro_1) < _epzero) {
-
-      if (convergence->verbosity == 2)
-        bft_printf(_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"),
-                   n_iter, residue, residue/convergence->r_norm);
-
-      cvg = CS_SLES_ITERATING;
+    if (_breakdown(c, convergence, "rho0", ro_0, 1.e-60,
+                   residue, n_iter, &cvg))
       break;
-    }
+
+    if (_breakdown(c, convergence, "rho1", ro_1, _epzero,
+                   residue, n_iter, &cvg))
+      break;
 
     beta = alpha*ro_1/ro_0;
     ro_0 = ro_1;
@@ -2190,6 +2201,10 @@ _bicgstab2(cs_sles_it_t              *c,
     /* Compute gamma and alpha */
 
     gamma = _dot_product(c, qk, vk);
+
+    if (_breakdown(c, convergence, "gamma", gamma, 1.e-60,
+                   residue, n_iter, &cvg))
+      break;
 
     alpha = ro_0/gamma;
 
@@ -2794,7 +2809,7 @@ cs_sles_it_define(int                 f_id,
   cs_sles_set_error_handler(sc,
                             cs_sles_it_error_post_and_abort);
 
-  cs_sles_it_set_verbosity(c, cs_sles_default_verbosity(f_id));
+  cs_sles_it_set_verbosity(c, cs_sles_default_verbosity(f_id, name));
 
   return c;
 }

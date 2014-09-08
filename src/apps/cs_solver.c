@@ -220,6 +220,7 @@ cs_run(void)
   cs_parameters_define_field_keys();
 
   cs_sles_initialize();
+  cs_sles_set_default_verbosity(cs_sles_default_get_verbosity);
 
   cs_preprocessor_data_read_headers(cs_glob_mesh,
                                     cs_glob_mesh_builder);
