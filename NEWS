@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add BiCGstab2 linear solver.
+
 - Change default solver for pure diffusion problems (from Conjugate gradient to
   multigrid solver).
 

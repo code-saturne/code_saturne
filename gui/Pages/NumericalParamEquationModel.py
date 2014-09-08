@@ -563,7 +563,8 @@ class NumericalParamEquatModel(Model):
     @Variables.undoLocal
     def setSolverChoice(self, label, value):
         """ Put choice of solver for variable labelled label """
-        self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi', 'bi_cgstab', 'gmres', 'automatic'))
+        self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi',
+                              'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic'))
         node = self._getSolverLabelNode(label)
         if self._isPressure(node):
             default = self._defaultValues()['solver_choice_pressure']

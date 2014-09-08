@@ -57,6 +57,7 @@
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_timer.h"
 
@@ -211,7 +212,8 @@ typedef struct _cs_sles_it_convergence_t {
 const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
                                       N_("Conjugate gradient, single reduction"),
                                       N_("Jacobi"),
-                                      N_("Bi-CGstab"),
+                                      N_("BiCGstab"),
+                                      N_("BiCGstab2"),
                                       N_("GMRES")};
 
 /*============================================================================
@@ -532,6 +534,45 @@ _dot_products_xx_xy_yz(const cs_sles_it_t  *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute 5 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of x.x
+ *   yy     --> result of y.y
+ *   xy     --> result of x.y
+ *   xz     --> result of x.z
+ *   yz     --> result of y.z
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
+                             const cs_real_t     *x,
+                             const cs_real_t     *y,
+                             const cs_real_t     *z,
+                             double              *xx,
+                             double              *yy,
+                             double              *xy,
+                             double              *xz,
+                             double              *yz)
+{
+  double s[5];
+
+  cs_dot_xx_yy_xy_xz_yz(c->n_rows, x, y, z, s, s+1, s+2, s+3, s+4);
+
+  cs_parall_sum(5, CS_DOUBLE, s);
+
+  *xx = s[0];
+  *yy = s[1];
+  *xy = s[2];
+  *xz = s[3];
+  *yz = s[4];
+}
+
+/*----------------------------------------------------------------------------
  * Residue preconditioning Gk = C.Rk
  *
  * To increase the polynomial order with no major overhead, we may
@@ -656,8 +697,6 @@ _setup_sles_it(cs_sles_it_t       *c,
   cs_timer_t t0;
   if (c->update_stats == true)
     t0 = cs_timer_time();
-
-  const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
   c->n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
@@ -1969,6 +2008,273 @@ _bi_cgstab(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Solution of (ad+ax).vx = Rhs using (not yet preconditioned) Bi-CGSTAB2.
+ *
+ * This Krylov method is based on an implemantation of J.P. Caltagirone
+ * in his file bibpac6.f90 for Aquillon. He refers to it as Bi-CGSTAB2,
+ * but a proper reference for the method has yet to be found.
+ * (Gutknecht's BiCGstab2?)
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- block size of element ii, ii
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_bicgstab2(cs_sles_it_t              *c,
+           const cs_matrix_t         *a,
+           int                        diag_block_size,
+           cs_halo_rotation_t         rotation_mode,
+           cs_sles_it_convergence_t  *convergence,
+           const cs_real_t           *rhs,
+           cs_real_t                 *restrict vx,
+           size_t                     aux_size,
+           void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg;
+  cs_lnum_t ii;
+  double  _epzero = 1.e-30;/* smaller than epzero */
+  double  ro_0, ro_1, alpha, beta, gamma;
+  double  omega_1, omega_2, mu, nu, tau;
+  double  residue;
+  cs_real_t  *_aux_vectors;
+  cs_real_t  *restrict res0, *restrict qk, *restrict rk, *restrict sk;
+  cs_real_t  *restrict tk, *restrict uk, *restrict vk, *restrict wk;
+  cs_real_t  *restrict zk;
+
+  unsigned n_iter = 0;
+
+  /* Call setup if not already done, allocate or map work arrays */
+  /*-------------------------------------------------------------*/
+
+  if (c->setup == false)
+    _setup_sles_it(c, a, diag_block_size, false);
+
+  const cs_lnum_t n_rows = c->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    size_t  n_wa = 9;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
+      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+    else
+      _aux_vectors = aux_vectors;
+
+    res0 = _aux_vectors;
+    zk = _aux_vectors + wa_size;
+    qk = _aux_vectors + wa_size*2;
+    rk = _aux_vectors + wa_size*3;
+    sk = _aux_vectors + wa_size*4;
+    tk = _aux_vectors + wa_size*5;
+    uk = _aux_vectors + wa_size*6;
+    vk = _aux_vectors + wa_size*7;
+    wk = _aux_vectors + wa_size*8;
+  }
+
+  /* Initialize work arrays */
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (ii = 0; ii < n_rows; ii++) {
+    uk[ii] = 0.0;
+  }
+
+  /* Initialize iterative calculation */
+  /*----------------------------------*/
+
+  cs_matrix_vector_multiply(rotation_mode, a, vx, res0);
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (ii = 0; ii < n_rows; ii++) {
+    res0[ii] = -res0[ii] + rhs[ii];
+    rk[ii] = res0[ii];
+    qk[ii] = rk[ii];
+  }
+
+  ro_0    = 1.0;
+  alpha   = 0.0;
+  omega_2 = 1.0;
+
+  cvg = CS_SLES_ITERATING;
+
+  /* Current Iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    /* Compute beta and omega;
+       group dot products for new iteration's beta
+       and previous iteration's residue to reduce total latency */
+
+    double mprec = 1.0e-60;
+
+    if (n_iter == 0)
+      residue = sqrt(_dot_product(c, res0, rk));
+
+    else {
+
+      residue = sqrt(_dot_product_xx(c, rk));
+
+      /* Convergence test */
+      cvg = _convergence_test(c, n_iter, residue, convergence);
+      if (cvg != CS_SLES_ITERATING)
+        break;
+    }
+
+    n_iter += 1;
+
+    ro_0 = -omega_2*ro_0;
+    ro_1 = _dot_product(c, qk, rk);
+
+    if (CS_ABS(ro_1) < _epzero) {
+
+      if (convergence->verbosity == 2)
+        bft_printf(_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"),
+                   n_iter, residue, residue/convergence->r_norm);
+      else if (convergence->verbosity > 2)
+        bft_printf("   %5d %11.4e %11.4e\n",
+                   n_iter, residue, residue/convergence->r_norm);
+
+      cvg = CS_SLES_ITERATING;
+      break;
+    }
+
+    beta = alpha*ro_1/ro_0;
+    ro_0 = ro_1;
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++)
+      uk[ii] = rk[ii] - beta* uk[ii];
+
+    /* Compute zk = c.uk */
+
+    _polynomial_preconditionning(c,
+                                 rotation_mode,
+                                 a,
+                                 uk,
+                                 zk,
+                                 vk);
+    /* Compute vk =  A*zk */
+
+    cs_matrix_vector_multiply(rotation_mode, a, zk, vk);
+
+    /* Compute gamma and alpha */
+
+    gamma = _dot_product(c, qk, vk);
+
+    alpha = ro_0/gamma;
+
+    /* Update rk */
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++) {
+      rk[ii] -= alpha*vk[ii];
+      vx[ii] += alpha*uk[ii];
+    }
+
+    /* p = A*r */
+
+    _polynomial_preconditionning(c,
+                                 rotation_mode,
+                                 a,
+                                 rk,
+                                 zk,
+                                 sk);
+
+    cs_matrix_vector_multiply(rotation_mode, a, zk, sk);
+
+    ro_1 = _dot_product(c, qk, sk);
+    beta = alpha*ro_1/ro_0;
+    ro_0 = ro_1;
+
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
+    {
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        vk[ii] = sk[ii] - beta*vk[ii];
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        uk[ii] = rk[ii] - beta*uk[ii];
+    }
+
+    /* wk = A*vk */
+
+    _polynomial_preconditionning(c,
+                                 rotation_mode,
+                                 a,
+                                 vk,
+                                 zk,
+                                 wk);
+
+    cs_matrix_vector_multiply(rotation_mode, a, zk, wk);
+
+    gamma = _dot_product(c, qk, wk);
+    alpha = (ro_0+mprec)/(gamma+mprec);
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++) {
+      rk[ii] -= alpha*vk[ii];
+      sk[ii] -= alpha*wk[ii];
+    }
+
+    /* tk = A*sk */
+
+    _polynomial_preconditionning(c,
+                                 rotation_mode,
+                                 a,
+                                 sk,
+                                 zk,
+                                 tk);
+
+    cs_matrix_vector_multiply(rotation_mode, a, zk, tk);
+
+    _dot_products_xx_yy_xy_xz_yz(c, sk, tk, rk,
+                                 &mu, &tau, &nu, &omega_1, &omega_2);
+
+    tau = tau - (nu*nu/mu);
+    omega_2 = (omega_2 - ((nu+mprec)*(omega_1+mprec)/(mu+mprec)))/(tau+mprec);
+
+    omega_1 = (omega_1 - nu*omega_2)/mu;
+
+    /* sol <- sol + omega_1*r + omega_2*s + alpha*u */
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++)
+      vx[ii] += omega_1*rk[ii] + omega_2*sk[ii] + alpha*uk[ii];
+
+#   pragma omp parallel if(n_rows > CS_THR_MIN)
+    {
+      /* r <- r - omega_1*s - omega_2*t */
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
+      /* u <- u - omega_1*v - omega_2*w */
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++)
+        uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
+    }
+
+  }
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
  * Transform using Givens rotations a system Ax=b where A is an upper
  * triangular matrix of size n*(n-1) with a lower diagonal to an equivalent
  * system A'x=b' where A' is an upper triangular matrix.
@@ -2474,6 +2780,8 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->type = solver_type;
 
   c->poly_degree = poly_degree;
+  if (c->type == CS_SLES_JACOBI)
+    c->poly_degree = 0;
 
   c->update_stats = update_stats;
   c->verbosity = 0;
@@ -2832,6 +3140,17 @@ cs_sles_it_solve(void                *context,
         break;
       case CS_SLES_BICGSTAB:
         cvg = _bi_cgstab(c,
+                         a,
+                         _diag_block_size,
+                         rotation_mode,
+                         &convergence,
+                         rhs,
+                         vx,
+                         aux_size,
+                         aux_vectors);
+        break;
+      case CS_SLES_BICGSTAB2:
+        cvg = _bicgstab2(c,
                          a,
                          _diag_block_size,
                          rotation_mode,

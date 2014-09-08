@@ -221,6 +221,38 @@ cs_dot_xx_xy_yz(cs_lnum_t                    n,
                 double                      *yz);
 
 /*----------------------------------------------------------------------------
+ * Return 5 dot products of 3 vectors: x.x, y.y, x.y, x.z, and y.z
+ *
+ * The products could be computed separately, but computing them
+ * simultaneously adds more optimization opportunities and possibly better
+ * cache behavior.
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * parameters:
+ *   n  <-- size of arrays x and y
+ *   x  <-- array of floating-point values
+ *   y  <-- array of floating-point values
+ *   z  <-- array of floating-point values
+ *   xx --> x.y dot product
+ *   yy --> y.y dot product
+ *   xy --> x.y dot product
+ *   xz --> x.z dot product
+ *   yz --> y.z dot product
+ *----------------------------------------------------------------------------*/
+
+void
+cs_dot_xx_yy_xy_xz_yz(cs_lnum_t                    n,
+                      const cs_real_t  *restrict   x,
+                      const cs_real_t  *restrict   y,
+                      const cs_real_t  *restrict   z,
+                      double                      *xx,
+                      double                      *yy,
+                      double                      *xy,
+                      double                      *xz,
+                      double                      *yz);
+
+/*----------------------------------------------------------------------------
  * Return the global dot product of 2 vectors: x.y
  *
  * In parallel mode, the local results are summed on the default

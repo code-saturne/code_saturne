@@ -120,17 +120,18 @@ class SolverChoiceDelegate(QItemDelegate):
         editor.addItem("Automatic")
         editor.addItem("Conjugate gradient")
         editor.addItem("Jacobi")
-        editor.addItem("BI-CGSTAB")
+        editor.addItem("BiCGstab")
+        editor.addItem("BiCGstab2")
         editor.addItem("GMRES")
-        editor.addItem("Multigrid")
+        if index.row() <= 0:
+            editor.addItem("Multigrid")
         editor.installEventFilter(self)
-        if index.row() > 0:
-            editor.removeItem(4)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"automatic": 0, "conjugate_gradient": 1, "jacobi": 2, "bi_cgstab": 3, "gmres": 4, "multigrid": 5}
+        dico = {"automatic": 0, "conjugate_gradient": 1, "jacobi": 2,
+                "bi_cgstab": 3, "bi_cgstab2": 4, "gmres": 5, "multigrid": 6}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -450,11 +451,19 @@ class StandardItemModelSolver(QStandardItemModel):
 
 
     def populateModel(self):
-        self.dicoV2M= {"Multigrid": 'multigrid',"Conjugate gradient" : 'conjugate_gradient',
-                       "Jacobi": 'jacobi', "BI-CGSTAB": 'bi_cgstab', "GMRES": 'gmres',
+        self.dicoV2M= {"Multigrid": 'multigrid',
+                       "Conjugate gradient" : 'conjugate_gradient',
+                       "Jacobi": 'jacobi',
+                       "BiCGstab": 'bi_cgstab',
+                       "BiCGstab2": 'bi_cgstab2',
+                       "GMRES": 'gmres',
                        "Automatic": "automatic"}
-        self.dicoM2V= {"multigrid" : 'Multigrid',"conjugate_gradient" : 'Conjugate gradient',
-                       "jacobi": 'Jacobi', "bi_cgstab": 'BI-CGSTAB', 'gmres': "GMRES",
+        self.dicoM2V= {"multigrid" : 'Multigrid',
+                       "conjugate_gradient" : 'Conjugate gradient',
+                       "jacobi": 'Jacobi',
+                       "bi_cgstab": 'BiCGstab',
+                       "bi_cgstab2": 'BiCGstab2',
+                       'gmres': "GMRES",
                        "automatic": "Automatic"}
         for label in self.NPE.getSolverList():
             row = self.rowCount()
@@ -481,11 +490,7 @@ class StandardItemModelSolver(QStandardItemModel):
             return to_qvariant()
 
         if role == Qt.ToolTipRole:
-            if index.column() == 1:
-                return to_qvariant(self.tr("Code_Saturne keyword: IRESOL"))
-            elif index.column() == 2:
-                return to_qvariant(self.tr("Code_Saturne keyword: NITMAX"))
-            elif index.column() == 3:
+            if index.column() == 3:
                 return to_qvariant(self.tr("Code_Saturne keyword: EPSILO"))
             elif index.column() == 4:
                 return to_qvariant(self.tr("Code_Saturne keyword: CDTVAR"))

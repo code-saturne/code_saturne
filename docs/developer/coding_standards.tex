@@ -269,8 +269,8 @@ Several integer types are found in \CS:
       the usual integer types. These warnings should be heeded, as they may
       avoid many hours of debugging.
 
-\item \texttt{cs\_int\_t} should be used for integer variables or arrays passed
-      between C and Fortran, though using \texttt{integer(kind)} statements
+\item \texttt{cs\_int\_t} is deprecated; it was used for integer variables or arrays
+      passed between C and Fortran, though using \texttt{integer(kind)} statements
       in Fortran should be a better future solution. In practice,
       \texttt{cs\_int\_t} and \texttt{cs\_lnum\_t} are identical. The former
       is more commonly found in older code, but the latter should be used where
@@ -296,11 +296,11 @@ The array below summarizes the replacements for usual functions:
 \multicolumn{1}{|c}{C function}  & \multicolumn{1}{|c}{\CS macro or function} & \multicolumn{1}{|c|}{Header}\\
 \hline
 \verb=exit()=    & \verb=cs_exit()=         & \verb=cs_base.h=\\
-                  & \verb=bft_error()=       & \verb=bft_error.h=\\
+                 & \verb=bft_error()=       & \verb=bft_error.h=\\
 \verb=printf()=  & \verb=bft_printf()=      & \verb=bft_printf.h=\\
 \verb=malloc(=   & \verb=BFT_MALLOC()=      & \verb=bft_mem.h=\\
-\verb=realloc()=& \verb=BFT_REALLOC()=     & \verb=bft_mem.h=\\
-\verb=free()=   & \verb=BFT_FREE()=         & \verb=bft_mem.h=\\
+\verb=realloc()= & \verb=BFT_REALLOC()=     & \verb=bft_mem.h=\\
+\verb=free()=    & \verb=BFT_FREE()=        & \verb=bft_mem.h=\\
 \hline
 \end{tabular}
 \end{center}
@@ -391,6 +391,8 @@ file.
       are recommended (using underscores as word separators), though
       the Fortran 95 standard requires those names be limited to 31
       characters.
+      Also, for routine names with underscores, the \texttt{CS\_PROCF}
+      macro must not be used. ISO C bindings must be used instead.
 
 \item at least 2 characters per variable names 
       (banish variables \texttt{i}, \texttt{j}, or \texttt{k},

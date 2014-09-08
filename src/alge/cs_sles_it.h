@@ -57,6 +57,7 @@ typedef enum {
   CS_SLES_PCG_SR,     /* Preconditionned conjugate gradient, single reduction*/
   CS_SLES_JACOBI,     /* Jacobi */
   CS_SLES_BICGSTAB,   /* Bi-conjugate gradient stabilized */
+  CS_SLES_BICGSTAB2,  /* Bi-conjugate gradient stabilized - 2*/
   CS_SLES_GMRES,      /* Generalized minimal residual */
   CS_SLES_N_IT_TYPES  /* Number of resolution algorithms */
 

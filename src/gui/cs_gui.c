@@ -2742,6 +2742,8 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
     sles_it_type = CS_SLES_JACOBI;
   else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
     sles_it_type = CS_SLES_BICGSTAB;
+  else if (cs_gui_strcmp(algo_choice, "bi_cgstab2"))
+    sles_it_type = CS_SLES_BICGSTAB2;
   else if (cs_gui_strcmp(algo_choice, "gmres"))
     sles_it_type = CS_SLES_GMRES;
   /* if choice is "automatic", delay choice to cs_sles_default;
@@ -2802,6 +2804,8 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
         sles_it_type = CS_SLES_JACOBI;
       else if (cs_gui_strcmp(algo_choice, "bi_cgstab"))
         sles_it_type = CS_SLES_BICGSTAB;
+      else if (cs_gui_strcmp(algo_choice, "bi_cgstab2"))
+        sles_it_type = CS_SLES_BICGSTAB2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
         sles_it_type = CS_SLES_GMRES;
       /* If choice is "automatic" or unspecified, delay
