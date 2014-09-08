@@ -2673,8 +2673,8 @@ cs_sles_it_setup(void               *context,
  * \param[in]       name           pointer to system name
  * \param[in]       a              matrix
  * \param[in]       rotation_mode  halo update option for rotational periodicity
- * \param[in]       r_norm         residue normalization
  * \param[in]       precision      solver precision
+ * \param[in]       r_norm         residue normalization
  * \param[out]      n_iter         number of "equivalent" iterations
  * \param[out]      residue        residue
  * \param[in]       rhs            right hand side
@@ -2692,8 +2692,8 @@ cs_sles_it_solve(void                *context,
                  const char          *name,
                  const cs_matrix_t   *a,
                  cs_halo_rotation_t   rotation_mode,
-                 double               r_norm,
                  double               precision,
+                 double               r_norm,
                  int                 *n_iter,
                  double              *residue,
                  const cs_real_t     *rhs,
