@@ -1350,7 +1350,7 @@ enddo
 !===============================================================================
 ! On renforce si ISTAT=0 et si l'option est activee (IDIRCL=1)
 ! Si une de ces conditions est fausse, on force NDIRCL a valoir
-! au moins 1 pour ne pas declaer la diagonale.
+! au moins 1 pour ne pas decaler la diagonale.
 
 do ivar = 1, nvar
   ndircl(ivar) = 0

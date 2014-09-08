@@ -676,6 +676,8 @@ enddo
 !       sera mis a 0 dans varpos.
 
 do ii = 1, nvarmx
+  idircl(ii) = 1
+  ndircl(ii) = 0
   epsilo(ii) = -999.d0
   epsrsm(ii) = -999.d0
 enddo
