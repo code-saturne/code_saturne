@@ -511,12 +511,12 @@ AC_ARG_ENABLE(cs_use_revision, [AS_HELP_STRING([--disable-revision],
                                                [disable Subversion or Git revision info])],
   [
     case "${enableval}" in
-      yes) cs_use_revision=true ;;
-      no)  cs_use_revision=false ;;
+      yes) cs_use_revision=yes ;;
+      no)  cs_use_revision=no ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-revision]) ;;
     esac
   ],
-  [ cs_use_revision=true ]
+  [ cs_use_revision=yes ]
 )
 
 cs_src_revision=""
