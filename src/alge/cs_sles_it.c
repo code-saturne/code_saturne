@@ -1907,9 +1907,6 @@ _bi_cgstab(cs_sles_it_t              *c,
       if (convergence->verbosity == 2)
         bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
                    n_iter, residue, residue/convergence->r_norm);
-      else if (convergence->verbosity > 2)
-        bft_printf("   %5u %11.4e %11.4e\n",
-                   n_iter, residue, residue/convergence->r_norm);
 
       cvg = CS_SLES_ITERATING;
       break;
@@ -1919,12 +1916,14 @@ _bi_cgstab(cs_sles_it_t              *c,
       bft_printf
         (_("\n\n"
            "%s [%s]:\n"
-           " @@ Warning: non convergence and abort\n"
+           " @@ Warning: non convergence\n"
            "\n"
            "    Alpha coefficient is lower than %12.4e\n"
            "\n"
            "    The matrix cannot be considered as invertible anymore."),
          cs_sles_it_type_name[c->type], convergence->name, alpha);
+      bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
+                 n_iter, residue, residue/convergence->r_norm);
       cvg = CS_SLES_BREAKDOWN;
       break;
     }
@@ -1989,13 +1988,15 @@ _bi_cgstab(cs_sles_it_t              *c,
       bft_printf
         (_("\n\n"
            "%s [%s]:\n"
-           " @@ Warning: non convergence and abort\n"
+           " @@ Warning: non convergence\n"
            "\n"
            "    The square of the norm of the descent vector\n"
            "    is lower than %12.4e\n"
            "\n"
            "    The resolution does not progress anymore."),
          cs_sles_it_type_name[c->type], convergence->name, _epzero);
+      bft_printf(_("  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"),
+                 n_iter, residue, residue/convergence->r_norm);
       cvg = CS_SLES_BREAKDOWN;
       break;
     }
@@ -2161,9 +2162,6 @@ _bicgstab2(cs_sles_it_t              *c,
 
       if (convergence->verbosity == 2)
         bft_printf(_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"),
-                   n_iter, residue, residue/convergence->r_norm);
-      else if (convergence->verbosity > 2)
-        bft_printf("   %5d %11.4e %11.4e\n",
                    n_iter, residue, residue/convergence->r_norm);
 
       cvg = CS_SLES_ITERATING;
