@@ -5334,6 +5334,9 @@ cs_gui_reference_initialization(const char  *param,
 void
 cs_gui_linear_solvers(void)
 {
+  if (!cs_gui_file_is_loaded())
+    return;
+
   bool multigrid = false;
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
 
