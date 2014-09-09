@@ -96,26 +96,36 @@ BEGIN_C_DECLS
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*
 /*!
  * \brief Define linear solver options.
  *
  * This function is called at the setup stage, once user and most model-based
  * fields are defined.
  *
- * Available native linear solvers are:
- *  - CS_SLES_PCG:        Preconditionned conjugate gradient
- *  - CS_SLES_JACOBI:     Jacobi
- *  - CS_SLES_BICGSTAB:   Bi-conjugate gradient stabilized
- *  - CS_SLES_BICGSTAB2:  Bi-conjugate gradient stabilized - 2
- *  - CS_SLES_GMRES:      Generalized minimal residual
- *  - CS_SLES_N_IT_TYPES: Number of resolution algorithms
+ * Available native iterative linear solvers include conjugate gradient,
+ * Jacobi, BiCGStab, BiCGStab2, and GMRES. For symmetric linear systems,
+ * an algebraic multigrid solver is available (and recommended).
+ *
+ * External solvers may also be setup using this function, the cs_sles_t
+ * mechanism alowing such through user-define functions.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_linear_solvers(void)
 {
+  /* Available native iterative linear solvers are:
+   *
+   *  CS_SLES_PCG        (preconditionned conjugate gradient)
+   *  CS_SLES_JACOBI     (Jacobi)
+   *  CS_SLES_BICGSTAB   (Bi-conjugate gradient stabilized)
+   *  CS_SLES_BICGSTAB2  (BiCGStab2)
+   *  CS_SLES_GMRES      (generalized minimal residual)
+   *
+   *  The multigrid solver uses the conjugate gradient as a smoother
+   *  and coarse solver by default, but this behavior may be modified. */
+
   /* Example: use multigrid for wall distance computation */
   /*------------------------------------------------------*/
 
@@ -131,7 +141,7 @@ cs_user_linear_solvers(void)
   if (cvar_user_1 != NULL) {
     cs_sles_it_define(cvar_user_1->id,
                       NULL,   /* name passed is NULL if field_id > -1 */
-                      CS_SLES_BICGSTAB,
+                      CS_SLES_BICGSTAB2,
                       1,      /*  polynomial precond. degree (default 0) */
                       10000); /* n_max_iter */
   }

@@ -61,7 +61,8 @@
   Simple options may be set using the GUI, but for more advanced settings
   are described in this section. It is also recommended to read
   the documentation of \ref cs_sles.c (which is a solver definition
-  "container"), and, , and \ref cs_multigrid.c
+  "container"), \ref cs_sles_it.c (iterative solvers, with available
+  types \ref cs_sles_it_type_t), and \ref cs_multigrid.c
   (which are actual solver implementations). The API provided
   is extensible, so it is possible for a user to define other solvers
   or link to external solver libraries using this system,
