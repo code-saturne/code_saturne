@@ -15,7 +15,15 @@ Changes:
   multigrid solver).
 
 - Unify handling of linear solvers, so as to allow finer user control, and
-  enable future additions of solver options and user-defined or external solvers.
+  enable future additions of solver options and user-defined or external
+  solvers.
+
+- Add a new experimental module for Darcy flows. It could be
+  activated with the keyword idarcy = 1.
+  This path includes new developments to improve gradient calculation with
+  heterogeneous diffusion coefficients. This feature is only available
+  for standard LSQ gradients and could be activated with
+  the keyword iwgrec(ivar) = 1.
 
 - Add drift modelling for coal combustion, and clean up the module:
 
