@@ -343,35 +343,6 @@ void CS_PROCF (cserf, CSERF)
 }
 
 /*----------------------------------------------------------------------------
- * Copy a Fortan string buffer to a C string buffer
- *
- * The aim of this function is to aviod issues with Fortran array bounds
- * checking when compilers such as icc 11 consider a character array from C
- * as an array of 1-character length strings.
- *
- * Fortran interface
- *
- * subroutine cssf2c (len, cstr, fstr)
- * *****************
- *
- * integer          len         : <-- : String length
- * character*       fstr        : <-- : Fortran string
- * character*       cstr        : --> : C string
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cssf2c, CSSF2C)
-(
- const cs_int_t   *len,
- const char       *fstr,
- char             *cstr
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
-)
-{
-  memcpy(cstr, fstr, *len);
-}
-
-/*----------------------------------------------------------------------------
  * Get log name file information.
  *
  * When log file output is suppressed, it returns the name of the
