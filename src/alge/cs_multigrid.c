@@ -1780,6 +1780,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
  *   name      <-- name of the associated system
  *   n_rows    <-- number of (non ghost) rows in rhs
  *   verbosity <-- verbosity level
+ *   precision <-- solver precision
  *   r_norm    <-- residue normalization
  *   residue   <-> residue
  *   rhs       <-- right hand side
@@ -1793,6 +1794,7 @@ static int
 _needs_solving(const  char          *name,
                cs_lnum_t             n_rows,
                int                   verbosity,
+               double                precision,
                double                r_norm,
                double               *residue,
                const cs_real_t      *rhs)
@@ -1806,6 +1808,7 @@ _needs_solving(const  char          *name,
   return cs_sles_needs_solving(_("Multigrid"),
                                name,
                                verbosity,
+                               precision,
                                r_norm,
                                *residue);
 }
@@ -2514,6 +2517,7 @@ cs_multigrid_solve(void                *context,
   if (_needs_solving(name,
                      n_rows*db_size[1],
                      mg->verbosity,
+                     precision,
                      r_norm,
                      residue,
                      rhs) != 0) {

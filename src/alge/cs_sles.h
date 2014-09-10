@@ -649,6 +649,7 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func);
  *   solver_name <-- name of the solver calling the test
  *   system_name <-- name of the linear system tested
  *   verbosity   <-- verbosity level
+ *   precision   <-- solver precision
  *   r_norm      <-- residue normalization
  *   residue     <-- residue
  *
@@ -661,6 +662,7 @@ int
 cs_sles_needs_solving(const char  *solver_name,
                       const char  *system_name,
                       int          verbosity,
+                      double       precision,
                       double       r_norm,
                       double       residue);
 

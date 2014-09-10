@@ -2685,6 +2685,7 @@ _gmres(cs_sles_it_t              *c,
  *   c                <-- pointer to solver context info
  *   name             <-- system name
  *   single_reduction --> use single reduction if applicable ?
+ *   precision        <-- solver precision
  *   r_norm           <-- residue normalization
  *   residue          <-> residue
  *   rhs              <-- right hand side
@@ -2698,6 +2699,7 @@ static int
 _needs_solving(const  cs_sles_it_t  *c,
                const char           *name,
                bool                 *single_reduction,
+               double                precision,
                double                r_norm,
                double               *residue,
                const cs_real_t      *rhs)
@@ -2743,6 +2745,7 @@ _needs_solving(const  cs_sles_it_t  *c,
   return cs_sles_needs_solving(cs_sles_it_type_name[c->type],
                                name,
                                c->verbosity,
+                               precision,
                                r_norm,
                                *residue);
 }
@@ -3101,7 +3104,8 @@ cs_sles_it_solve(void                *context,
 
   c->n_rows = _diag_block_size*n_rows; /* for following call */
 
-  if (_needs_solving(c, name, &single_reduction, r_norm, residue, rhs) != 0) {
+  if (_needs_solving(c, name, &single_reduction,
+                     precision, r_norm, residue, rhs) != 0) {
 
     /* Setup if not already done */
 

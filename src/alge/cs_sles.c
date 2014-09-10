@@ -1377,6 +1377,7 @@ cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func)
  * \param[in]  solver_name  name of solver calling the test
  * \param[in]  system_name  name of linear system tested
  * \param[in]  verbosity    verbosity level
+ * \param[in]  precision    solver precision
  * \param[in]  r_norm       residue normalization
  * \param[in]  residue      residue
  *
@@ -1390,18 +1391,23 @@ int
 cs_sles_needs_solving(const char  *solver_name,
                       const char  *system_name,
                       int          verbosity,
+                      double       precision,
                       double       r_norm,
                       double       residue)
 {
   int retval = 1;
+  double _precision = CS_MIN(EPZERO, precision); /* prefer to err on the side
+                                                    of caution... */
 
-  if (r_norm <= EPZERO || residue/r_norm <= EPZERO) {
-    if (verbosity > 1)
-      bft_printf(_("%s [%s]:\n"
-                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
-                 solver_name, system_name, r_norm, residue);
+  if (r_norm <= EPZERO)
     retval = 0;
-  }
+  else if (residue/r_norm <= _precision)
+    retval = 0;
+
+  if (retval == 0 && verbosity > 1)
+    bft_printf(_("%s [%s]:\n"
+                 "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
+               solver_name, system_name, r_norm, residue);
 
   return retval;
 }
