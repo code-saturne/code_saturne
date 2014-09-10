@@ -3222,6 +3222,8 @@ void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
 
       BFT_FREE(mdl);
     }
+
+    BFT_FREE(status);
   }
 }
 
@@ -5539,6 +5541,8 @@ cs_gui_turbomachinery_rotor(void)
                                 rotation_axis,
                                 rotation_invariant);
 
+    BFT_FREE(cell_criteria);
+
     int n_join = 0;
     n_join = cs_gui_get_tag_number
                ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
@@ -5557,15 +5561,24 @@ cs_gui_turbomachinery_rotor(void)
         int verbosity = (verbosity_s != NULL) ? atoi(verbosity_s) : 1;
         int visualization = (visu_s != NULL) ? atoi(visu_s) : 1;
 
+        BFT_FREE(visu_s);
+        BFT_FREE(verbosity_s);
+        BFT_FREE(plane_s);
+        BFT_FREE(fraction_s);
 
         (void) cs_turbomachinery_join_add(selector_s,
                                           fraction,
                                           plane,
                                           verbosity,
                                           visualization);
+
+        BFT_FREE(selector_s);
+
       }
     }
   }
+
+  BFT_FREE(model);
 }
 
 
