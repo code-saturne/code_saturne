@@ -894,7 +894,7 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   /* Cell and boundary face numberings can be moved from old mesh
      to new one, as the corresponding parts of the mesh should not change */
-     
+
   cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
   cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
   cs_glob_mesh->cell_numbering = NULL;
