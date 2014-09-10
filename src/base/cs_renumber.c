@@ -5713,5 +5713,51 @@ cs_renumber_i_faces(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber boundary faces for vectorization or threading depending on
+ * code options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_b_faces(cs_mesh_t  *mesh)
+{
+  if (mesh->b_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->b_face_numbering));
+
+  const char *p = NULL;
+
+  /* Initialization */
+
+  if (_cs_renumber_n_threads < 1)
+    _cs_renumber_n_threads = cs_glob_n_threads;
+
+  p = getenv("CS_RENUMBER");
+
+  if (p != NULL) {
+    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0)
+      return;
+  }
+
+  /* Apply renumbering */
+
+  _renumber_b_faces(mesh);
+
+  if (mesh->verbosity > 0)
+    bft_printf
+      ("\n ----------------------------------------------------------\n");
+
+  if (mesh->b_face_numbering == NULL)
+    mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
+
+  _renumber_b_test(mesh);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

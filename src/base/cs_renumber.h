@@ -220,6 +220,17 @@ cs_renumber_mesh(cs_mesh_t  *mesh);
 void
 cs_renumber_i_faces(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------
+ * Renumber boundary faces for vectorization or threading depending on code
+ * options and target machine.
+ *
+ * parameters:
+ *   mesh  <->  pointer to global mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_renumber_b_faces(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

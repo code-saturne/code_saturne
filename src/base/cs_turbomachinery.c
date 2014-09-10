@@ -892,10 +892,19 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_glob_turbomachinery->active = true;
 
+  /* Cell and boundary face numberings can be moved from old mesh
+     to new one, as the corresponding parts of the mesh should not change */
+     
+  cs_numbering_t *cell_numbering = cs_glob_mesh->cell_numbering;
+  cs_numbering_t *b_face_numbering = cs_glob_mesh->b_face_numbering;
+  cs_glob_mesh->cell_numbering = NULL;
+  cs_glob_mesh->b_face_numbering = NULL;
+
   /* Destroy previous global mesh and related entities */
 
   cs_mesh_location_finalize();
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+
   cs_mesh_destroy(cs_glob_mesh);
 
   /* Create new global mesh and related entities */
@@ -989,9 +998,16 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
 
-  /* Update interior faces renumbering based on code options */
+  /* Update numberings (cells saved from previous, interior
+     faces updated, boundary faces computed after first joining,
+     saved from previous afterwards) */
+
+  cs_glob_mesh->cell_numbering = cell_numbering;
 
   cs_renumber_i_faces(cs_glob_mesh);
+
+  if (b_face_numbering == NULL)
+    cs_renumber_b_faces(cs_glob_mesh);
 
   /* Build group classes */
 
@@ -1080,7 +1096,12 @@ cs_turbomachinery_initialize(void)
   cs_user_turbomachinery_rotor();
   _select_rotor_cells(tbm);
 
-  /* Build the reference mesh that duplicates the global mesh before joining */
+  /* Build the reference mesh that duplicates the global mesh before joining;
+     first remove the boundary face numbering, as it will need to be
+     rebuilt after the first joining */
+
+  if (cs_glob_mesh->b_face_numbering != NULL)
+    cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
 
   _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
 
