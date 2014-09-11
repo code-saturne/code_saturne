@@ -424,7 +424,8 @@ _find_or_add_system_by_f_id(int  f_id)
 
     if (_cs_sles_n_max_systems[0] == 0)
       _cs_sles_n_max_systems[0] = 1;
-    _cs_sles_n_max_systems[0] *=2;
+    while (_cs_sles_n_max_systems[0] <= f_id)
+      _cs_sles_n_max_systems[0] *= 2;
     BFT_REALLOC(_cs_sles_systems[0],
                 _cs_sles_n_max_systems[0],
                 cs_sles_t *);
