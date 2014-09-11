@@ -2989,8 +2989,11 @@ cs_sles_it_log(const void  *context,
     int n_calls = c->n_solves;
     int n_it_min = c->n_iterations_min;
     int n_it_max = c->n_iterations_max;
-    int n_it_mean = (int)(  c->n_iterations_tot
-                          / ((unsigned long long)n_calls));
+    int n_it_mean = 0;
+
+    if (n_calls > 0)
+      n_it_mean = (int)(  c->n_iterations_tot
+                         / ((unsigned long long)n_calls));
 
     cs_log_printf(log_type,
                   _("\n"
