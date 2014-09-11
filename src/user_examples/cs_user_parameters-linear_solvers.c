@@ -147,23 +147,12 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_user_1] */
 
-  /* Example: increase verbosity parameters for pressure;
-   *          we assume we do not know in advance whether a multigrid or
-   *          simple iterative solver is used, so the example tests and
-   *          shows for both */
+  /* Example: increase verbosity parameters for pressure */
 
   /*! [sles_verbosity_1] */
 
   cs_sles_t *sles_p = cs_sles_find(CS_F_(p)->id, NULL);
-  const char *sles_type = cs_sles_get_type(sles_p);
-  if (strcmp(sles_type, "cs_multigrid_t") == 0) {
-    cs_multigrid_set_verbosity(cs_sles_get_context(sles_p),
-                               4);
-  }
-  else if (strcmp(sles_type, "cs_sles_it_t") == 0) {
-    cs_sles_it_set_verbosity(cs_sles_get_context(sles_p),
-                             2);
-  }
+  cs_sles_set_verbosity(sles_p, 4);
 
   /*! [sles_verbosity_1] */
 

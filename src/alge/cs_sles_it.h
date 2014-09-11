@@ -161,31 +161,21 @@ void *
 cs_sles_it_copy(const void  *context);
 
 /*----------------------------------------------------------------------------
- * Set iterative sparse linear equation solver verbosity.
- *
- * parameters:
- *   context   <-> pointer to iterative sparse linear solver info
- *   verbosity <-- verbosity level
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_set_verbosity(cs_sles_it_t  *context,
-                         int            verbosity);
-
-/*----------------------------------------------------------------------------
  * Setup iterative sparse linear equation solver.
  *
  * parameters:
- *   context <-> pointer to iterative sparse linear solver info
- *               (actual type: cs_sles_it_t  *)
- *   name    <-- pointer to system name
- *   a       <-- associated matrix
+ *   context   <-> pointer to iterative sparse linear solver info
+ *                 (actual type: cs_sles_it_t  *)
+ *   name      <-- pointer to system name
+ *   a         <-- associated matrix
+ *   verbosity <-- verbosity level
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_it_setup(void               *context,
                  const char         *name,
-                 const cs_matrix_t  *a);
+                 const cs_matrix_t  *a,
+                 int                 verbosity);
 
 /*----------------------------------------------------------------------------
  * Call iterative sparse linear equation solver.
@@ -195,6 +185,7 @@ cs_sles_it_setup(void               *context,
  *                     (actual type: cs_sles_it_t  *)
  *   name          <-- pointer to system name
  *   a             <-- matrix
+ *   verbosity     <-- verbosity level
  *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
@@ -213,6 +204,7 @@ cs_sles_convergence_state_t
 cs_sles_it_solve(void                *context,
                  const char          *name,
                  const cs_matrix_t   *a,
+                 int                  verbosity,
                  cs_halo_rotation_t   rotation_mode,
                  double               precision,
                  double               r_norm,

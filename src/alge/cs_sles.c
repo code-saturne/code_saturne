@@ -59,6 +59,7 @@
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
+#include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_timer.h"
 
@@ -124,9 +125,10 @@ BEGIN_C_DECLS
   maintain state, so that if a cs_sles_solve_t function is called before a
   \ref cs_sles_setup_t function, the latter will be called automatically.
 
-  \param[in, out]  context  pointer to solver context
-  \param[in]       name     pointer to name of linear system
-  \param[in]       a        matrix
+  \param[in, out]  context    pointer to solver context
+  \param[in]       name       pointer to name of linear system
+  \param[in]       a          matrix
+  \param[in]       verbosity  associated verbosity
 
   \typedef  cs_sles_solve_t
 
@@ -150,6 +152,7 @@ BEGIN_C_DECLS
   \param[in, out]  context        pointer to solver context
   \param[in]       name           pointer to name of linear system
   \param[in]       a              matrix
+  \param[in]       verbosity      associated verbosity
   \param[in]       rotation_mode  halo update option for rotational periodicity
   \param[in]       precision      solver precision
   \param[in]       r_norm         residue normalization
@@ -296,13 +299,18 @@ struct _cs_sles_t {
   int                       n_calls;       /* Number of setup or solve
                                               calls */
 
+  int                       n_no_op;       /* Number of solves with immediate
+                                              exit */
+
   int                       f_id;          /* matching field id, or < 0 */
 
   const char               *name;          /* name if f_id < 0, or NULL */
   char                     *_name;         /* private name if f_id < 0,
                                               or NULL */
 
-  int                       type_id;       /* Id of solver type */
+  int                       verbosity;     /* verbosity level */
+
+  int                       type_id;       /* id of solver type */
   void                     *context;       /* solver context
                                               (options, state, logging) */
 
@@ -331,7 +339,7 @@ static cs_map_name_to_id_t  *_type_name_map = NULL;
 /* Pointers to default definitions */
 
 static cs_sles_define_t *_cs_sles_define_default = NULL;
-static cs_sles_verbosity_t *_cs_sles_verbosity_default = NULL;
+static cs_sles_verbosity_t *_cs_sles_default_verbosity = NULL;
 
 /* Current and maximum number of systems respectively defined by field id,
    by name, or redefined after use */
@@ -374,6 +382,11 @@ _sles_create(int          f_id,
   else
     sles->_name = NULL;
 
+  if (_cs_sles_default_verbosity != NULL)
+    sles->verbosity = _cs_sles_default_verbosity(f_id, name);
+  else
+    sles->verbosity = 0;
+
   if (_type_name_map == NULL)
     _type_name_map = cs_map_name_to_id_create();
   sles->type_id = cs_map_name_to_id(_type_name_map, "<undefined>");
@@ -390,6 +403,7 @@ _sles_create(int          f_id,
   sles->error_func = NULL;
 
   sles->n_calls = 0;
+  sles->n_no_op = 0;
 
   return sles;
 }
@@ -588,6 +602,84 @@ _cell_residual(const int           *diag_block_size,
 # pragma omp parallel for if(n_vals > CS_THR_MIN)
   for (ii = 0; ii < n_vals; ii++)
     res[ii] = fabs(res[ii] - rhs[ii]);
+}
+
+/*----------------------------------------------------------------------------
+ * Test if a general sparse linear system needs solving or if the right-hand
+ * side is already zero within convergence criteria.
+ *
+ * The computed residue is also updated;
+ *
+ * parameters:
+ *   name      <-- name of the associated system
+ *   a         <-- pointer to matrix
+ *   verbosity <-- verbosity level
+ *   precision <-- solver precision
+ *   r_norm    <-- residue normalization
+ *   residue   <-> residue
+ *   vx        <-- initial solution
+ *   rhs       <-- right hand side
+ *
+ * returns:
+ *   1 if solving is required, 0 if the rhs is already zero within tolerance
+ *   criteria (precision of residue normalization)
+ *----------------------------------------------------------------------------*/
+
+static int
+_needs_solving(const  char        *name,
+               const cs_matrix_t  *a,
+               int                 verbosity,
+               double              precision,
+               double              r_norm,
+               double             *residue,
+               const cs_real_t    *vx,
+               const cs_real_t    *rhs)
+{
+  int retval = 1;
+
+  /* Initialize residue, check for immediate return */
+
+  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t _diag_block_size = diag_block_size[1];
+  assert(diag_block_size[0] == diag_block_size[1]);
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * _diag_block_size;
+
+  double r[2] = {cs_dot_xx(n_rows, rhs), 0};
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_rows; i++)
+    r[1] += vx[i]*vx[i];
+  r[1] = CS_MIN(r[1], 1);
+
+  cs_parall_sum(2, CS_DOUBLE, r);
+
+  /* If the initial solution is "true" zero (increment mode), we can determine
+     convergence without resorting to a matrix-vector product */
+
+  if (r[1] < 1e-60) {
+
+    double _precision = CS_MIN(EPZERO, precision); /* prefer to err on the side
+                                                      of caution... */
+    *residue = sqrt(r[0]);
+
+    if (r_norm <= EPZERO)
+      retval = 0;
+    else if (*residue/r_norm <= _precision)
+      retval = 0;
+
+    if (retval == 0 && verbosity > 1)
+      bft_printf(_("[%s]:\n"
+                   "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
+                 name, r_norm, *residue);
+
+  }
+  else
+    *residue = HUGE_VAL; /* actually unknown, since we did not multiply
+                            by A (we might as well enter the solver,
+                            and expect to have vx = 0 most of the time) */
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -820,6 +912,27 @@ cs_sles_log(cs_log_t  log_type)
         }
 
         sles->log_func(sles->context, log_type);
+
+        switch(log_type) {
+
+        case CS_LOG_SETUP:
+          cs_log_printf
+            (log_type,
+             _("  Verbosity: %d\n"), sles->verbosity);
+          break;
+
+        case CS_LOG_PERFORMANCE:
+          if (sles->n_no_op > 0)
+            cs_log_printf
+              (log_type,
+               _("\n"
+                 "  Number of immediate solve exits: %d\n"), sles->n_no_op);
+          break;
+
+        default:
+          break;
+        }
+
       }
     }
 
@@ -1070,6 +1183,27 @@ cs_sles_define(int                 f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the verbosity for a given linear equation solver.
+ *
+ * This verbosity will be used by cs_sles_setup and cs_sles_solve.
+ *
+ * By default, the verbosity is set to 0, or the value returned by the
+ * function set with cs_sles_set_default_define().
+ *
+ * \param[in, out]  sles       pointer to solver object
+ * \param[in]       verbosity  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_verbosity(cs_sles_t  *sles,
+                      int         verbosity)
+{
+  sles->verbosity = verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated
@@ -1142,7 +1276,7 @@ cs_sles_setup(cs_sles_t          *sles,
 
   if (sles->setup_func != NULL) {
     const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
-    sles->setup_func(sles->context, sles_name, a);
+    sles->setup_func(sles->context, sles_name, a, sles->verbosity);
   }
 }
 
@@ -1201,10 +1335,26 @@ cs_sles_solve(cs_sles_t           *sles,
 
   const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
 
-  cs_sles_convergence_state_t
+  cs_sles_convergence_state_t state;
+
+  if (! _needs_solving(sles_name,
+                       a,
+                       sles->verbosity,
+                       precision,
+                       r_norm,
+                       residue,
+                       rhs,
+                       vx)) {
+    sles->n_no_op += 1;
+    *n_iter = 0;
+    state = CS_SLES_CONVERGED;
+  }
+
+  else
     state = sles->solve_func(sles->context,
                              sles_name,
                              a,
+                             sles->verbosity,
                              rotation_mode,
                              precision,
                              r_norm,
@@ -1294,6 +1444,7 @@ cs_sles_copy(cs_sles_t        *dest,
   }
 
   dest->type_id = src->type_id;
+  dest->verbosity = src->verbosity;
 
   /* Now define options */
   dest->context = src->copy_func(src->context);
@@ -1367,50 +1518,7 @@ cs_sles_set_default_define(cs_sles_define_t  *define_func)
 void
 cs_sles_set_default_verbosity(cs_sles_verbosity_t  *verbosity_func)
 {
-  _cs_sles_verbosity_default = verbosity_func;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Test if a linear system needs solving or if the residue is already
- *        within convergence criteria.
- *
- * \param[in]  solver_name  name of solver calling the test
- * \param[in]  system_name  name of linear system tested
- * \param[in]  verbosity    verbosity level
- * \param[in]  precision    solver precision
- * \param[in]  r_norm       residue normalization
- * \param[in]  residue      residue
- *
- * \return  1 if solving is required
- *          0 if the residue is already zero within tolerance criteria
- *            (precision of residue normalization)
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_sles_needs_solving(const char  *solver_name,
-                      const char  *system_name,
-                      int          verbosity,
-                      double       precision,
-                      double       r_norm,
-                      double       residue)
-{
-  int retval = 1;
-  double _precision = CS_MIN(EPZERO, precision); /* prefer to err on the side
-                                                    of caution... */
-
-  if (r_norm <= EPZERO)
-    retval = 0;
-  else if (residue/r_norm <= _precision)
-    retval = 0;
-
-  if (retval == 0 && verbosity > 1)
-    bft_printf(_("%s [%s]:\n"
-                 "  immediate exit; r_norm = %11.4e, residual = %11.4e\n"),
-               solver_name, system_name, r_norm, residue);
-
-  return retval;
+  _cs_sles_default_verbosity = verbosity_func;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1616,41 +1724,6 @@ cs_sles_base_name(int          f_id,
   }
 
   return sles_name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return default verbosity associated to a field id, name couple.
- *
- * This is simply a utility function which will return the main verbosity
- * associated with a field, and 0 otherwise.
- *
- * Its behavior may be modified using \ref cs_sles_set_default_verbosity.
- *
- * \param[in]  f_id  associated field id, or < 0
- * \param[in]  name  associated name if f_id < 0, or NULL
- *
- * \return  verbosity associated with field or name
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_sles_default_verbosity(int          f_id,
-                          const char  *name)
-{
-  if (_cs_sles_verbosity_default == NULL) {
-    int retval = 0;
-    static int k_log = -1;
-    if (f_id > -1) {
-      const cs_field_t *f = cs_field_by_id(f_id);
-      if (k_log < 0)
-        k_log = cs_field_key_id("log");
-      retval = cs_field_get_key_int(f, k_log);
-    }
-    return retval;
-  }
-  else
-    return _cs_sles_verbosity_default(f_id, name);
 }
 
 /*----------------------------------------------------------------------------*/

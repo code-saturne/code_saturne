@@ -77,15 +77,17 @@ typedef struct _cs_sles_t  cs_sles_t;
  * cs_sles_setup_t function, the latter will be called automatically.
  *
  * parameters:
- *   context <-> pointer to solver context
- *   name    <-- pointer to name of linear system
- *   a       <-- matrix
+ *   context   <-> pointer to solver context
+ *   name      <-- pointer to name of linear system
+ *   a         <-- matrix
+ *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
 typedef void
 (cs_sles_setup_t) (void               *context,
                    const char         *name,
-                   const cs_matrix_t  *a);
+                   const cs_matrix_t  *a,
+                   int                 verbosity);
 
 /*----------------------------------------------------------------------------
  * Function pointer for resolution of a linear system.
@@ -109,6 +111,7 @@ typedef void
  *   context       <-> pointer to solver context
  *   name          <-- pointer to name of linear system
  *   a             <-- matrix
+ *   verbosity     <-- associated verbosity
  *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
@@ -127,6 +130,7 @@ typedef cs_sles_convergence_state_t
 (cs_sles_solve_t) (void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
+                   int                  verbosity,
                    cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,
@@ -451,6 +455,23 @@ cs_sles_define(int                 f_id,
                cs_sles_destroy_t  *destroy_func);
 
 /*----------------------------------------------------------------------------
+ * Set the verbosity for a given linear equation solver.
+ *
+ * This verbosity will be used by cs_sles_setup() and cs_sles_solve().
+ *
+ * By default, the verbosity is set to 0, or the value returned by the
+ * function set with cs_sles_set_default_define().
+ *
+ * parameters
+ *   sles      <-> pointer to solver object
+ *   verbosity <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_verbosity(cs_sles_t  *sles,
+                      int         verbosity);
+
+/*----------------------------------------------------------------------------
  * Return type name of solver context.
  *
  * The returned string is intended to help determine which type is associated
@@ -719,26 +740,6 @@ cs_sles_post_error_output_var(const char  *name,
 const char *
 cs_sles_base_name(int          f_id,
                   const char  *name);
-
-/*----------------------------------------------------------------------------
- * Return default verbosity associated to a field id, name couple.
- *
- * This is simply a utility function which will return the main verbosity
- * associated with a field, and 0 otherwise.
- *
- * Its behavior may be modified using cs_sles_set_default_verbosity().
- *
- * parameters:
- *   f_id <-- associated field id, or < 0
- *   name <-- associated name if f_id < 0, or NULL
- *
- * returns:
- *   verbosity associated with field or name
- *----------------------------------------------------------------------------*/
-
-int
-cs_sles_default_verbosity(int          f_id,
-                          const char  *name);
 
 /*----------------------------------------------------------------------------*/
 

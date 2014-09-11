@@ -221,31 +221,21 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
                                 double              precision_mult_coarse);
 
 /*----------------------------------------------------------------------------
- * Set multigrid verbosity.
- *
- * parameters:
- *   mg        <-> pointer to multigrid info and context
- *   verbosity <-- verbosity level
- *----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_set_verbosity(cs_multigrid_t  *mg,
-                           int              verbosity);
-
-/*----------------------------------------------------------------------------
  * Setup multigrid sparse linear equation solver.
  *
  * parameters:
- *   context <-> pointer to multigrid info and context
- *               (actual type: cs_multigrid_t  *)
- *   name    <-- pointer to name of linear system
- *   a       <-- associated matrix
+ *   context   <-> pointer to multigrid info and context
+ *                 (actual type: cs_multigrid_t  *)
+ *   name      <-- pointer to name of linear system
+ *   a         <-- associated matrix
+ *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
 void
 cs_multigrid_setup(void               *context,
                    const char         *name,
-                   const cs_matrix_t  *a);
+                   const cs_matrix_t  *a,
+                   int                 verbosity);
 
 /*----------------------------------------------------------------------------
  * Call multigrid sparse linear equation solver.
@@ -255,6 +245,7 @@ cs_multigrid_setup(void               *context,
  *                     (actual type: cs_multigrid_t  *)
  *   name          <-- pointer to name of linear system
  *   a             <-- matrix
+ *   verbosity     <-- associated verbosity
  *   rotation_mode <-- halo update option for rotational periodicity
  *   precision     <-- solver precision
  *   r_norm        <-- residue normalization
@@ -273,6 +264,7 @@ cs_sles_convergence_state_t
 cs_multigrid_solve(void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
+                   int                  verbosity,
                    cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,

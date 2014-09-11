@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-09-08 11:50+0200\n"
+"POT-Creation-Date: 2014-09-11 16:39+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3372,12 +3372,8 @@ msgstr ""
 "    Multiplicateur de précision :    %g\n"
 
 #, c-format
-msgid ""
-"  Verbosity:                         %d\n"
-"  Postprocess coarsening:            %d\n"
-msgstr ""
-"  Verbosité :                        %d\n"
-"  Post-traitement de l'aggrégation : %d\n"
+msgid "  Postprocess coarsening:            %d\n"
+msgstr "  Post-traitement de l'aggrégation : %d\n"
 
 msgid "Construction:"
 msgstr "Construction :"
@@ -3536,9 +3532,6 @@ msgstr "  Résolution sur le niveau le plus grossier\n"
 msgid "  Multigrid cycle: ascent\n"
 msgstr "  Cycle multigrille : remontée\n"
 
-msgid "Multigrid"
-msgstr "Multigrille"
-
 #, c-format
 msgid ""
 "\n"
@@ -3615,6 +3608,14 @@ msgstr ""
 "  au cours de la résolution au niveau %d:\n"
 "  résidu initial : %11.4e ; résidu courant : %11.4e"
 
+#, c-format
+msgid ""
+"[%s]:\n"
+"  immediate exit; r_norm = %11.4e, residual = %11.4e\n"
+msgstr ""
+"[%s]:\n"
+"  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
+
 msgid "Linear solver options modified during run (previous values)"
 msgstr ""
 "Options de solveurs linéaires modifiées au cours du calcul (valeurs "
@@ -3668,19 +3669,23 @@ msgstr ""
 "Bilan des résolutions pour le système \"%s\"\n"
 
 #, c-format
+msgid "  Verbosity: %d\n"
+msgstr "  Verbosité : %d\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Number of immediate solve exits: %d\n"
+msgstr ""
+"\n"
+"  Nombre de sorties de résolution immédiates : %d\n"
+
+#, c-format
 msgid ""
 "cs_slesh_push() only allows a stack of depth 1:\n"
 "  it  may not be called multiple times for a given field (id %d)\n"
 "  without calling cs_sles_pop between those calls."
 msgstr ""
-
-#, c-format
-msgid ""
-"%s [%s]:\n"
-"  immediate exit; r_norm = %11.4e, residual = %11.4e\n"
-msgstr ""
-"%s [%s]:\n"
-"  sortie immédiate ; r_norm = %11.4e, residu = %11.4e\n"
 
 msgid "Conjugate gradient"
 msgstr "Gradient conjugué"
@@ -3752,12 +3757,8 @@ msgstr ""
 "  Préconditionnement :               "
 
 #, c-format
-msgid ""
-"  Verbosity:                         %d\n"
-"  Maximum number of iterations:      %d\n"
-msgstr ""
-"  Verbosité :                        %d\n"
-"  Nombre d'itérations maximal :      %d\n"
+msgid "  Maximum number of iterations:      %d\n"
+msgstr "  Nombre d'itérations maximal :      %d\n"
 
 #, c-format
 msgid ""

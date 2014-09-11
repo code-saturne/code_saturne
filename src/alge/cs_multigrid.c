@@ -227,8 +227,6 @@ struct _cs_multigrid_t {
   cs_gnum_t  n_g_cells_min;      /* Global number of cells on coarse grids
                                     under which no coarsening occurs */
 
-  int        verbosity;          /* verbosity level */
-
   int        post_cell_max;      /* If > 0, activates postprocessing of
                                     coarsening, projecting coarse cell
                                     numbers (modulo post_cell_max)
@@ -398,9 +396,8 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
   }
 
   cs_log_printf(CS_LOG_SETUP,
-                _("  Verbosity:                         %d\n"
-                  "  Postprocess coarsening:            %d\n"),
-                mg->verbosity, mg->post_cell_max);
+                _("  Postprocess coarsening:            %d\n"),
+                mg->post_cell_max);
 }
 
 /*----------------------------------------------------------------------------
@@ -941,13 +938,15 @@ _cs_multigrid_post_function(void                  *mgh,
  * Setup multigrid sparse linear equation solvers on existing hierarchy.
  *
  * parameters:
- *   mg   <-> pointer to multigrid solver info and context
- *   name <-- linear system name
+ *   mg        <-> pointer to multigrid solver info and context
+ *   name      <-- linear system name
+ *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
 static void
 _multigrid_setup_sles_it(cs_multigrid_t  *mg,
-                         const char      *name)
+                         const char      *name,
+                         int              verbosity)
 {
   cs_timer_t t0, t1;
 
@@ -979,13 +978,12 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
                         mg->info.poly_degree[0],
                         mg->info.n_max_iter[0],
                         false); /* stats not updated here */
-  cs_sles_it_set_verbosity(mgd->sles_hierarchy[0], mg->verbosity - 2);
 
 #if defined(HAVE_MPI)
   cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[0], cs_grid_get_comm(g));
 #endif
 
-  cs_sles_it_setup(mgd->sles_hierarchy[0], name, m);
+  cs_sles_it_setup(mgd->sles_hierarchy[0], name, m, verbosity - 2);
   mgd->sles_hierarchy[1] = NULL;
 
   t1 = cs_timer_time();
@@ -1007,20 +1005,18 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
                           mg->info.poly_degree[0],
                           mg->info.n_max_iter[0],
                           false); /* stats not updated here */
-    cs_sles_it_set_verbosity(mgd->sles_hierarchy[i*2], mg->verbosity - 2);
 
     mgd->sles_hierarchy[i*2+1]
       = cs_sles_it_create(mg->info.type[1],
                           mg->info.poly_degree[1],
                           mg->info.n_max_iter[1],
                           false); /* stats not updated here */
-    cs_sles_it_set_verbosity(mgd->sles_hierarchy[i*2 + 1], mg->verbosity - 2);
 
     cs_sles_it_set_shareable(mgd->sles_hierarchy[i*2 + 1],
                              mgd->sles_hierarchy[i*2]);
 
-    cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m);
-    cs_sles_it_setup(mgd->sles_hierarchy[i*2+1], "", m);
+    cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
+    cs_sles_it_setup(mgd->sles_hierarchy[i*2+1], "", m, verbosity - 2);
 
 #if defined(HAVE_MPI)
     {
@@ -1053,14 +1049,13 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
                           mg->info.poly_degree[2],
                           mg->info.n_max_iter[2],
                           false); /* stats not updated here */
-    cs_sles_it_set_verbosity(mgd->sles_hierarchy[i*2], mg->verbosity - 2);
 
 #if defined(HAVE_MPI)
     cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2],
                                    cs_grid_get_comm(mgd->grid_hierarchy[i]));
 #endif
 
-    cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m);
+    cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
     mgd->sles_hierarchy[i*2+1] = NULL;
 
     /* Diagonal block size is the same for all levels */
@@ -1113,19 +1108,17 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
  *
  * parameters:
  *   n_elts <-- local number of elements
- *   x      <-- first vector in s = x.y
- *   y      <-- second vector in s = x.y
+ *   x      <-- vector in s = x.x
  *
  * returns:
- *   result of s = x.y
+ *   result of s = x.x
  *----------------------------------------------------------------------------*/
 
 inline static double
-_dot_product(cs_int_t          n_elts,
-             const cs_real_t  *x,
-             const cs_real_t  *y)
+_dot_product_xx(cs_int_t          n_elts,
+                const cs_real_t  *x)
 {
-  double s = cs_dot(n_elts, x, y);
+  double s = cs_dot_xx(n_elts, x);
 
 #if defined(HAVE_MPI)
 
@@ -1190,7 +1183,7 @@ _convergence_test(const char         *var_name,
 
   /* Compute residue */
 
-  *residue = sqrt(_dot_product(n_f_cells, rhs, rhs));
+  *residue = sqrt(_dot_product_xx(n_f_cells, rhs));
 
   if (cycle_id == 1)
     initial_residue = *residue;
@@ -1361,6 +1354,7 @@ _level_names_init(const char  *name,
  *   mg              <-- multigrid system
  *   lv_names        <-- names of linear systems
  *                       (indexed as mg->setup_data->sles_hierarchy)
+ *   verbosity       <-- verbosity level
  *   rotation_mode   <-- halo update option for rotational periodicity
  *   cycle_id        <-- id of currect cycle
  *   n_equiv_iter    <-> equivalent number of iterations
@@ -1380,6 +1374,7 @@ _level_names_init(const char  *name,
 static cs_sles_convergence_state_t
 _multigrid_cycle(cs_multigrid_t       *mg,
                  const char          **lv_names,
+                 int                   verbosity,
                  cs_halo_rotation_t    rotation_mode,
                  int                   cycle_id,
                  int                  *n_equiv_iter,
@@ -1471,7 +1466,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
   /* Descent */
   /*---------*/
 
-  if (mg->verbosity > 2)
+  if (verbosity > 2)
     bft_printf(_("  Multigrid cycle: descent\n"));
 
   for (level = 0; level < coarsest_level; level++) {
@@ -1479,14 +1474,14 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     lv_info = mg->lv_info + level;
     t0 = cs_timer_time();
 
-    rhs_lv = (level == 0) ?  rhs : mgd->rhs_vx[level*2];
+    rhs_lv = (level == 0) ? rhs : mgd->rhs_vx[level*2];
     vx_lv = mgd->rhs_vx[level*2 + 1];
 
     c = mgd->grid_hierarchy[level+1];
 
     /* Smoother pass */
 
-    if (mg->verbosity > 2)
+    if (verbosity > 2)
       bft_printf(_("    level %3d: smoother\n"), level);
 
     _matrix = cs_grid_get_matrix(f);
@@ -1496,6 +1491,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
                              lv_names[level*2],
                              _matrix,
+                             verbosity - 2,
                              rotation_mode,
                              precision*mg->info.precision_mult[0],
                              r_norm_l,
@@ -1545,7 +1541,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                               n_cells*db_size[1],
                               mg->info.n_max_cycles,
                               cycle_id,
-                              mg->verbosity,
+                              verbosity,
                               lv_info->n_it_ds_smoothe[0],
                               precision,
                               r_norm,
@@ -1620,7 +1616,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     /* Resolve coarsest level to convergence */
     /*---------------------------------------*/
 
-    if (mg->verbosity > 2)
+    if (verbosity > 2)
       bft_printf(_("  Resolution on coarsest level\n"));
 
     assert(level == coarsest_level);
@@ -1640,6 +1636,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
                              lv_names[level*2],
                              _matrix,
+                             verbosity - 2,
                              rotation_mode,
                              precision*mg->info.precision_mult[2],
                              r_norm_l,
@@ -1667,7 +1664,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     /* Ascent */
     /*--------*/
 
-    if (mg->verbosity > 2)
+    if (verbosity > 2)
       bft_printf(_("  Multigrid cycle: ascent\n"));
 
     for (level = coarsest_level - 1; level > -1; level--) {
@@ -1720,7 +1717,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
       if (level > 0) {
 
-        if (mg->verbosity > 2)
+        if (verbosity > 2)
           bft_printf(_("    level %3d: smoother\n"), level);
 
         _matrix = cs_grid_get_matrix(f);
@@ -1732,6 +1729,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
         c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2+1],
                                  lv_names[level*2+1],
                                  _matrix,
+                                 verbosity - 2,
                                  rotation_mode,
                                  precision*mg->info.precision_mult[1],
                                  r_norm_l,
@@ -1768,49 +1766,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
   /* Free memory */
 
   return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Test if a general sparse linear system needs solving or if the right-hand
- * side is already zero within convergence criteria.
- *
- * The computed residue is also updated;
- *
- * parameters:
- *   name      <-- name of the associated system
- *   n_rows    <-- number of (non ghost) rows in rhs
- *   verbosity <-- verbosity level
- *   precision <-- solver precision
- *   r_norm    <-- residue normalization
- *   residue   <-> residue
- *   rhs       <-- right hand side
- *
- * returns:
- *   1 if solving is required, 0 if the rhs is already zero within tolerance
- *   criteria (precision of residue normalization)
- *----------------------------------------------------------------------------*/
-
-static int
-_needs_solving(const  char          *name,
-               cs_lnum_t             n_rows,
-               int                   verbosity,
-               double                precision,
-               double                r_norm,
-               double               *residue,
-               const cs_real_t      *rhs)
-{
-  /* Initialize residue, check for immediate return */
-
-  double r = cs_dot_xx(n_rows, rhs);
-  cs_parall_sum(1, CS_DOUBLE, &r);
-  *residue = sqrt(r);
-
-  return cs_sles_needs_solving(_("Multigrid"),
-                               name,
-                               verbosity,
-                               precision,
-                               r_norm,
-                               *residue);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1905,8 +1860,6 @@ cs_multigrid_define(int          f_id,
   cs_sles_set_error_handler(sc,
                             cs_multigrid_error_post_and_abort);
 
-  cs_multigrid_set_verbosity(mg, cs_sles_default_verbosity(f_id, name));
-
   return mg;
 }
 
@@ -1937,7 +1890,6 @@ cs_multigrid_create(void)
   mg->n_levels_max = 25;
   mg->n_g_cells_min = 30;
 
-  mg->verbosity = 0;
   mg->post_cell_max = 0;
 
   mg->p0p1_relax = 0.95;
@@ -2027,8 +1979,7 @@ cs_multigrid_copy(const void  *context)
     memcpy(&(d->info), &(c->info),
            offsetof(cs_multigrid_info_t, n_calls));
     /* Same here: settings at beginningof structure */
-    memcpy(&(d), &(c),
-           offsetof(cs_multigrid_t, n_levels_post));
+    memcpy(d, c, offsetof(cs_multigrid_t, n_levels_post));
   }
 
   return d;
@@ -2173,38 +2124,21 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set multigrid verbosity.
- *
- * \param[in, out]  mg         pointer to multigrid info and context
- * \param[in]       verbosity  verbosity level
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_set_verbosity(cs_multigrid_t  *mg,
-                           int              verbosity)
-{
-  if (mg == NULL)
-    return;
-
-  mg->verbosity = verbosity;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Setup multigrid sparse linear equation solver.
  *
- * \param[in, out]  context  pointer to multigrid solver info and context
- *                           (actual type: cs_multigrid_t  *)
- * \param[in]       name     pointer to name of linear system
- * \param[in]       a        associated matrix
+ * \param[in, out]  context    pointer to multigrid solver info and context
+ *                             (actual type: cs_multigrid_t  *)
+ * \param[in]       name       pointer to name of linear system
+ * \param[in]       a          associated matrix
+ * \param[in]       verbosity  associated verbosity
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_multigrid_setup(void               *context,
                    const char         *name,
-                   const cs_matrix_t  *a)
+                   const cs_matrix_t  *a,
+                   int                 verbosity)
 {
   cs_multigrid_t  *mg = context;
 
@@ -2235,7 +2169,7 @@ cs_multigrid_setup(void               *context,
 
   t0 = cs_timer_time();
 
-  if (mg->verbosity > 1)
+  if (verbosity > 1)
     bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
                name);
 
@@ -2294,11 +2228,11 @@ cs_multigrid_setup(void               *context,
 
     grid_lv += 1;
 
-    if (mg->verbosity > 2)
+    if (verbosity > 2)
       bft_printf(_("\n   building level %2d grid\n"), grid_lv);
 
     g = cs_grid_coarsen(g,
-                        mg->verbosity,
+                        verbosity,
                         mg->coarsening_type,
                         mg->aggregation_limit,
                         mg->p0p1_relax);
@@ -2318,7 +2252,7 @@ cs_multigrid_setup(void               *context,
 
     /* Print coarse mesh stats */
 
-    if (mg->verbosity > 2) {
+    if (verbosity > 2) {
 
 #if defined(HAVE_MPI)
 
@@ -2374,7 +2308,7 @@ cs_multigrid_setup(void               *context,
 
   /* Print final info */
 
-  if (mg->verbosity > 1)
+  if (verbosity > 1)
     bft_printf
       (_("   number of coarse grids:           %d\n"
          "   number of cells in coarsest grid: %llu\n\n"),
@@ -2448,7 +2382,7 @@ cs_multigrid_setup(void               *context,
 
   /* Setup solvers */
 
-  _multigrid_setup_sles_it(mg, name);
+  _multigrid_setup_sles_it(mg, name, verbosity);
 
   /* Update timers */
 
@@ -2462,8 +2396,9 @@ cs_multigrid_setup(void               *context,
  *
  * \param[in, out]  context        pointer to multigrid solver info and context
  *                                 (actual type: cs_multigrid_t  *)
- * \param[in]       name     pointer to name of linear system
+ * \param[in]       name           pointer to name of linear system
  * \param[in]       a              matrix
+ * \param[in]       verbosity      associated verbosity
  * \param[in]       rotation_mode  halo update option for rotational periodicity
  * \param[in]       precision      solver precision
  * \param[in]       r_norm         residue normalization
@@ -2483,6 +2418,7 @@ cs_sles_convergence_state_t
 cs_multigrid_solve(void                *context,
                    const char          *name,
                    const cs_matrix_t   *a,
+                   int                  verbosity,
                    cs_halo_rotation_t   rotation_mode,
                    double               precision,
                    double               r_norm,
@@ -2514,75 +2450,71 @@ cs_multigrid_solve(void                *context,
   *n_iter = 0;
   unsigned n_cycles = 0;
 
-  if (_needs_solving(name,
-                     n_rows*db_size[1],
-                     mg->verbosity,
-                     precision,
-                     r_norm,
-                     residue,
-                     rhs) != 0) {
+  if (mg->setup_data == NULL) {
+    /* Stop solve timer to switch to setup timer */
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(mg->info.t_tot[1]), &t0, &t1);
 
-    if (mg->setup_data == NULL) {
-      /* Stop solve timer to switch to setup timer */
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&(mg->info.t_tot[1]), &t0, &t1);
+    /* Setup grid hierarchy */
+    cs_multigrid_setup(context, name, a, verbosity);
 
-      /* Setup grid hierarchy */
-      cs_multigrid_setup(context, name, a);
-
-      /* Restart solve timer */
-      t0 = cs_timer_time();
-    }
-
-    /* Buffer size sufficient to avoid local reallocation for most solvers */
-    size_t  lv_names_size = _level_names_size(name, mg->setup_data->n_levels);
-    size_t  _aux_size =   lv_names_size
-                        + n_rows * 6 * db_size[1] * sizeof(cs_real_t);
-    unsigned char *_aux_buf = aux_vectors;
-
-    if (_aux_size > aux_size)
-      BFT_MALLOC(_aux_buf, _aux_size, unsigned char);
-    else
-      _aux_size = aux_size;
-
-    _level_names_init(name, mg->setup_data->n_levels, _aux_buf);
-    const char **lv_names = (const char **)_aux_buf;
-
-    if (mg->verbosity == 2) /* More detailed headers later if > 2 */
-      bft_printf(_("Multigrid [%s]:\n"), name);
-
-    double initial_residue = *residue;
-
-    /* Cycle to solution */
-
-    while (cvg == CS_SLES_ITERATING) {
-
-      int cycle_id = n_cycles + 1;
-
-      if (mg->verbosity > 2)
-        bft_printf(_("Multigrid [%s]: cycle %4d\n"),
-                   name, cycle_id);
-
-      cvg = _multigrid_cycle(mg,
-                             lv_names,
-                             rotation_mode,
-                             cycle_id,
-                             n_iter,
-                             precision,
-                             r_norm,
-                             initial_residue,
-                             residue,
-                             rhs,
-                             vx,
-                             _aux_size - lv_names_size,
-                             _aux_buf + lv_names_size);
-
-      n_cycles++;
-    }
-
-    if (_aux_buf != aux_vectors)
-      BFT_FREE(_aux_buf);
+    /* Restart solve timer */
+    t0 = cs_timer_time();
   }
+
+  /* Buffer size sufficient to avoid local reallocation for most solvers */
+  size_t  lv_names_size = _level_names_size(name, mg->setup_data->n_levels);
+  size_t  _aux_size =   lv_names_size
+                      + n_rows * 6 * db_size[1] * sizeof(cs_real_t);
+  unsigned char *_aux_buf = aux_vectors;
+
+  if (_aux_size > aux_size)
+    BFT_MALLOC(_aux_buf, _aux_size, unsigned char);
+  else
+    _aux_size = aux_size;
+
+  _level_names_init(name, mg->setup_data->n_levels, _aux_buf);
+  const char **lv_names = (const char **)_aux_buf;
+
+  if (verbosity == 2) /* More detailed headers later if > 2 */
+    bft_printf(_("Multigrid [%s]:\n"), name);
+
+  /* Initial residue should be improved, but this is consistent
+     with the legacy case */
+
+  double initial_residue = sqrt(_dot_product_xx(n_rows*db_size[1], rhs));
+
+  *residue = initial_residue; /* not known yet, so be safe */
+
+  /* Cycle to solution */
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    int cycle_id = n_cycles + 1;
+
+    if (verbosity > 2)
+      bft_printf(_("Multigrid [%s]: cycle %4d\n"), name, cycle_id);
+
+    cvg = _multigrid_cycle(mg,
+                           lv_names,
+                           verbosity,
+                           rotation_mode,
+                           cycle_id,
+                           n_iter,
+                           precision,
+                           r_norm,
+                           initial_residue,
+                           residue,
+                           rhs,
+                           vx,
+                           _aux_size - lv_names_size,
+                           _aux_buf + lv_names_size);
+
+    n_cycles++;
+  }
+
+  if (_aux_buf != aux_vectors)
+    BFT_FREE(_aux_buf);
 
   /* Update statistics */
 
