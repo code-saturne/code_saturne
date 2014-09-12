@@ -59,8 +59,9 @@ cs_lagr_clogging.h \
 cs_lagr_roughness.h \
 cs_lagr_dlvo.h \
 cs_lagr_extract.h \
-cs_lagr_tracking.h \
 cs_lagr_perio.h \
+cs_lagr_restart.h \
+cs_lagr_tracking.h \
 cs_lagr_utils.h
 
 # Library source files
@@ -71,8 +72,9 @@ cs_lagr_clogging.c \
 cs_lagr_roughness.c \
 cs_lagr_dlvo.c \
 cs_lagr_extract.c \
-cs_lagr_tracking.c \
 cs_lagr_perio.c \
+cs_lagr_restart.c \
+cs_lagr_tracking.c \
 cs_lagr_utils.c \
 diverv.f90 \
 lagadh.f90 \

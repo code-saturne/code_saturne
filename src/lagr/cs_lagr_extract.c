@@ -327,7 +327,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
                   "but component %d is requested."),
                 _attr_name,
                 stride,
-                    component_id);
+                component_id);
       return 1;
     }
   }
@@ -468,7 +468,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
                   "but component %d is requested."),
                 _attr_name,
                 stride,
-                    component_id);
+                component_id);
       return 1;
     }
   }

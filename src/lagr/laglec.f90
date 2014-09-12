@@ -83,10 +83,9 @@ subroutine laglec &
 !(ncelet,ntersl    !    !     !   lagrangien sur la phase porteuse             !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -138,7 +137,7 @@ character        rubriq*64 , car4*4, car8*8, kar8*8
 character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
-integer          ierror , itysup , ipasup, nbval
+integer          ierror , itysup , nbval  , n_sec
 integer          irfsup , idbase
 integer          ilecec , nberro , ivers
 integer          mvls   , ivar   , ip     , icha  , ilayer
@@ -268,23 +267,8 @@ if (nfaiok.eqv..false.) write(nfecra,9031) ficsui,'internes','internes'
 
 if (nfabok.eqv..false.) write(nfecra,9031) ficsui,'de bord ','de bord '
 
-!     Nombre de particules dans le domaine du calcul
-
 itysup = 0
 nbval  = 1
-
-rubriq = 'particles'
-call restart_read_particles_info(rp, rubriq, nbpart, ipasup)
-
-if (ipasup.le.0) then
-  write(nfecra,9040) ficsui,                                      &
-  'nombre_courant_particules                                   '
-  iok = iok + 1
-endif
-if (nbpart.gt.nbpmax) then
-  write(nfecra,9050) ficsui, nbpart, nbpmax
-  iok = iok + 1
-endif
 
 !     Physique associee aux particules
 
@@ -426,233 +410,12 @@ elseif (nvls.gt.mvls ) then
   write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
 endif
 
-! --> Caracteristiques et infos particulaires (ENTIERS)
+! --> Caracteristiques et infos particulaires
 
-nberro = 0
+n_sec = lagr_restart_read_particle_data(rp)
 
-nomite(jord1) = 'order_1'
-
-if (nbclst.gt.0) then
-  nomite(jclst) = 'numero_groupe_statistiques'
-endif
-if (iphyla.eq.2) then
-  nomite(jinch) = 'numero_charbon'
-endif
-! deposition submodel
-if (idepst.eq.1) then
-  nomite(jimark) = 'indicateur_de_saut'
-  nomite(jdiel) = 'diel_particules'
-  nomite(jdfac) = 'dfac_particules'
-  nomite(jdifel) = 'difel_particules'
-  nomite(jtraj) = 'traj_particules'
-  nomite(jptdet) = 'ptdet_particules'
-  nomite(jinjst) = 'indic_stat'
-  nomite(jdepo) = 'part_depo'
-endif
-
-if (ireent.eq.1) then
-   nomite(jnbasg) = 'nb_ls_aspe'
-   nomite(jnbasp) = 'nb_sms_aspe'
-endif
-
-itysup = ipasup
-nbval  = 1
-
-allocate(coopar(3,nbpart))
-
-ierror = cs_restart_read_particles(rp, itysup, itepa(:,jisor), coopar)
-
-nberro = nberro+ierror
-
-if (ierror.eq.0) then
-  do ii = 1, nbpart
-    ettp(ii,jxp) = coopar(1,ii)
-    ettp(ii,jyp) = coopar(2,ii)
-    ettp(ii,jzp) = coopar(3,ii)
-  enddo
-endif
-
-deallocate(coopar)
-
-allocate(iflpar(nbpart))
-
-rubriq = 'particle_status_flag'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,iflpar,ierror)
-nberro = nberro+ierror
-
-if (ierror.eq.0) then
-  do ii = 1, nbpart
-    if (iand(iflpar(ii), 1) .eq. 1) itepa(ii,jisor) = -itepa(ii,jisor)
-  enddo
-endif
-
-deallocate(iflpar)
-
-do ivar = 1, nivep
-  if (ivar.ne.jisor .and. ivar.ne.jisora .and. ivar.ne.jirka) then
-    rubriq = nomite(ivar)
-    if (ivar.eq.jdfac) then
-      idbase = 1
-      irfsup = 3
-      call leisui(rp,rubriq,len(rubriq),itysup,irfsup,idbase,      &
-                  itepa(:,ivar),ierror)
-    else
-      call restart_read_section_int_t(rp,rubriq,itysup,nbval,      &
-                                      itepa(:,ivar),ierror)
-    endif
-    nberro = nberro+ierror
-  endif
-enddo
-
-! --> Caracteristiques et infos particulaires (REELS)
-
-nomrte(jrval) = 'random_value'
-nomrte(jrtsp) = 'temps_sejour_particules'
-nomrte(jrpoi) = 'poids_statistiques_particules'
-if (iphyla.eq.1 .and. itpvar.eq.1 .and. iirayo.gt.0) then
-  nomrte(jreps) = 'emissivite_particules'
-endif
-if (iphyla.eq.2) then
-  nomrte(jrdck) = 'diametre_coeur_retrecissant_charbon'
-  nomrte(jrd0p) = 'diametre_initial_charbon'
-  do ilayer = 1, nlayer
-    write(nomrte(jrhock(ilayer)),'(A28,I4.4)') 'masse_volumique_coke_couche_',ilayer
-  enddo
-endif
-
-! Deposition submodel
-if (idepst.eq.1) then
-  nomrte(jryplu) = 'yplus_particules'
-  nomrte(jrinpf) = 'dx_particules'
-endif
-
-if (ireent.eq.1) then
-   nomrte(jfadh) = 'force_adhesion'
-   nomrte(jmfadh) = 'moment_adhesion'
-   nomrte(jndisp) = 'disp_norm'
-endif
-
-do ivar = 1, nvep
-  rubriq = nomrte(ivar)
-  call restart_read_section_real_t(rp,rubriq,itysup,nbval,  &
-                                   tepa(:,ivar),ierror)
-  if (ivar.eq.jrval .and. ierror.ne.0) then
-    do ii = 1, nbpart
-      call random_number(tepa(ii,jrval))
-    enddo
-  endif
-  nberro = nberro+ierror
-enddo
-
-dnbpar = 0.d0
-do ip  = 1, nbpart
-  dnbpar = dnbpar + tepa(ip,jrpoi)
-enddo
-
-! --> Variables particulaires
-
-nomnvl(jup) = 'variable_vitesseU_particule'
-nomnvl(jvp) = 'variable_vitesseV_particule'
-nomnvl(jwp) = 'variable_vitesseW_particule'
-nomnvl(juf) = 'variable_vitesseU_fluide_vu'
-nomnvl(jvf) = 'variable_vitesseV_fluide_vu'
-nomnvl(jwf) = 'variable_vitesseW_fluide_vu'
-nomnvl(jmp) = 'variable_masse_particule'
-nomnvl(jdp) = 'variable_diametre_particule'
-if (iphyla.eq.1 .and. itpvar.eq.1) then
-  nomnvl(jtp) = 'variable_temperature_particule'
-  nomnvl(jtf) = 'variable_temperature_fluide_vu'
-  nomnvl(jcp) = 'variable_chaleur_specifique_particule'
-elseif (iphyla.eq.2) then
-  do ilayer = 1, nlayer
-    write(nomnvl(jhp(ilayer)),'(A38,I4.4)') 'variable_temperature_particule_couche_',ilayer
-  enddo
-  nomnvl(jtf) = 'variable_temperature_fluide_vu'
-  nomnvl(jmwat) = 'variable_masse_humidite'
-  do ilayer = 1, nlayer
-    write(nomnvl(jmch(ilayer)),'(A38,I4.4)') 'variable_masse_charbon_reactif_couche_',ilayer
-  enddo
-  do ilayer = 1, nlayer
-    write(nomnvl(jmck(ilayer)),'(A27,I4.4)') 'variable_masse_coke_couche_',ilayer
-  enddo
-  nomnvl(jcp) = 'variable_chaleur_specifique_particule'
-endif
-if (mvls.gt.0) then
-  do ip = 1,mvls
-    write(car4,'(i4.4)') ip
-    nomnvl(jvls(ip)) = 'variable_supplementaire_'//car4
-  enddo
-endif
-
-do ivar = jmp, jwf
-  if (ivar .lt. jxp .or. ivar.gt.jzp) then
-    rubriq = nomnvl(ivar)
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
-                                     ettp(:,ivar),ierror)
-    nberro = nberro+ierror
-  endif
-enddo
-
-if (iphyla.eq.1 .and. itpvar.eq.1) then
-
-  if (itpvar.eq.1 .and. jtpvar.eq.0) then
-
-    do ip = 1,nbpart
-      iel = itepa(ip,jisor)
-      ettp(ip,jtp) = tpart
-      ettp(ip,jcp) = cppart
-      if ( ippmod(iccoal).ge.0 .or.                               &
-           ippmod(icpl3c).ge.0 .or.                               &
-           ippmod(icfuel).ge.0      ) then
-        ettp(ip,jtf) = propce(iel,ipproc(itemp1)) -tkelvi
-      else if ( ippmod(icod3p).ge.0 .or.                          &
-                ippmod(icoebu).ge.0 .or.                          &
-                ippmod(ielarc).ge.0 .or.                          &
-                ippmod(ieljou).ge.0      ) then
-        ettp(ip,jtf) = propce(iel,ipproc(itemp)) -tkelvi
-      else if (itherm.eq.1 .and. itpscl.eq.2) then
-        ettp(ip,jtf) = rtpa(iel,isca(iscalt)) -tkelvi
-      else if (itherm.eq.1 .and. itpscl.eq.1) then
-        ettp(ip,jtf) = rtpa(iel,isca(iscalt))
-      else if (itherm.eq.2) then
-        mode = 1
-        call usthht(mode, rtpa(iel,isca(iscalt)), ettp(ip,jtf))
-      endif
-    enddo
-
-  else if (itpvar.eq.1 .and. jtpvar.eq.1) then
-    do ivar = jtp,jcp
-      rubriq = nomnvl(ivar)
-      call restart_read_section_real_t(rp,rubriq,itysup,nbval,   &
-                                       ettp(:,ivar),ierror)
-      nberro = nberro+ierror
-    enddo
-  endif
-
-else if (iphyla.eq.2) then
-  do ivar = jhp(1),jcp
-    rubriq = nomnvl(ivar)
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
-                                     ettp(:,ivar),ierror)
-    nberro = nberro+ierror
-  enddo
-endif
-
-if (mvls.gt.0) then
-  do ivar = 1,mvls
-    rubriq = nomnvl(jvls(ivar))
-    call restart_read_section_real_t(rp,rubriq,itysup,nbval,     &
-                                     ettp(:,jvls(ivar)),ierror)
-    nberro = nberro+ierror
-  enddo
-endif
-
-!  ---> Si pb : arret
-
-
-if (nberro.ne.0) then
-  write(nfecra,9041) ficsui
-  call csexit (1)
+if (n_sec .gt. 0) then
+  call rstput(nbpart, dnbpar, ettp, itepa, tepa)
 endif
 
 write(nfecra,6011)
@@ -1262,44 +1025,6 @@ write(nfecra,2000)
 '@    Verifier que ce fichier suite                           ',/,&
 '@        correspond bien a un fichier suite Lagrangien,      ',/,&
 '@        et qu''il n''a pas ete endommage.                   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9041 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DES VARIABLES PARTICULAIRES       ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@    Verifier que ce fichier suite                           ',/,&
-'@        correspond bien a un fichier suite Lagrangien,      ',/,&
-'@        et qu''il n''a pas ete endommage.                   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9050 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
-'@                                                            ',/,&
-'@    Le nombre de particules contenu dans le fichier suite   ',/,&
-'@      est superieur au nombre de particule maximal autorise ',/,&
-'@      NBPART = ',I10                                         ,/,&
-'@      NBPMAX = ',I10                                         ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Augmenter la valeur de NBPMAX dans USLAG1.              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

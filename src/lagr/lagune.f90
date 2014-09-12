@@ -838,7 +838,7 @@ call ucdprt                                                        &
    ettp   , ettpa  , itepa  , tepa   )
 
 !===============================================================================
-! 17. NOMBRE DE PARITICULES PERDUES (SUITES COMPRISES)
+! 17. NOMBRE DE PARTICULES PERDUES (SUITES COMPRISES)
 !===============================================================================
 
 nbpper = nbperr

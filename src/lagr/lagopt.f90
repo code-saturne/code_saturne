@@ -1200,11 +1200,11 @@ else if (iphyla.eq.2) then
 endif
 
 ! Modele de deposition : 2 tableaux supp dans TEPA  : YPLUS , JRINPF
-!                        6 tableaux supp dans ITEPA : MARKO , DIEL,DFAC, DIFEL, TRAJ, JPTDET
+!                        3 tableaux supp dans ITEPA : MARKO , DFAC, DEPO
 
 if ( idepst .eq. 1 ) then
   nvep  = nvep  + 2
-  nivep = nivep + 8
+  nivep = nivep + 3
 endif
 
 ! Modele de remise en suspension : 3 tableaux supp dans TEPA  : JFADH , JMFADH, JNDISP
@@ -1433,20 +1433,14 @@ if (iphyla.eq.2) then
 endif
 
 ! Modele de Deposition :  tableaux supp dans itepa : marko
-!                                                    jdiel
 !                                                    jdfac
 
 
 if ( idepst .eq. 1 ) then
   jimark = irf    + 1
-  jdiel  = jimark + 1
-  jdfac  = jdiel  + 1
-  jdifel = jdfac  + 1
-  jdepo  = jdifel + 1
-  jtraj  = jdepo  + 1
-  jptdet = jtraj  + 1
-  jinjst = jptdet + 1
-  irf    = jinjst
+  jdfac  = jimark + 1
+  jdepo  = jdfac  + 1
+  irf    = jdepo
 endif
 
 ! Modele de resuspension : 2 tableaux supp dans ITEPA : jnbasg, jnbasp

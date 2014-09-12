@@ -144,6 +144,17 @@ extern void CS_PROCF (initi1, INITI1)
 extern void CS_PROCF (memfin, MEMFIN) (void);
 
 /*----------------------------------------------------------------------------
+ * User function for enthalpy <-> temperature conversion
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (usthht, USTHHT)
+(
+ const cs_int_t  *mode,      /* <-- -1 : t -> h ; 1 : h -> t */
+ cs_real_t       *enthal,    /* <-- enthalpy */
+ cs_real_t       *temper     /* <-- temperature */
+);
+
+/*----------------------------------------------------------------------------
  * User function for output of variables on a post-processing mesh
  *----------------------------------------------------------------------------*/
 

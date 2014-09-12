@@ -455,36 +455,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function reading base particle info from restart
-
-    function cs_restart_read_particles_info(r, name, n_particles) result(l_id) &
-      bind(C, name='cs_restart_read_particles_info')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-      character(kind=c_char, len=1), dimension(*), intent(in) :: name
-      integer(c_int), intent(out) :: n_particles
-      integer(c_int) l_id
-    end function cs_restart_read_particles_info
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function reading main particle info from restart
-
-    function cs_restart_read_particles(r, p_loc_id, p_cell_num, p_coords)   &
-      result(ierror)                                                        &
-      bind(C, name='cs_restart_read_particles')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), value :: r
-      integer(c_int), value :: p_loc_id
-      integer(kind=c_int), dimension(*) :: p_cell_num
-      real(kind=c_double), dimension(3,*) :: p_coords
-      integer(c_int) :: ierror
-    end function cs_restart_read_particles
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function reading a section from a restart file.
 
     function cs_restart_read_section(r, sec_name,                           &
@@ -1172,40 +1142,6 @@ contains
     r = cs_restart_create(c_name, c_path, c_mode)
 
   end subroutine restart_create
-
-  !---------------------------------------------------------------------------
-
-  !> \brief Read particle info from a restart file
-
-  !> \param[in]   r             pointer to restart structure
-  !> \param[in]   name          name of particles set
-  !> \param[in]   n_particles   number of particles
-  !> \param[out]  location_id   id of associated mesh location
-
-  subroutine restart_read_particles_info(r, name, n_particles, location_id)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    type(c_ptr), intent(in)           :: r
-    character(len=*), intent(in)      :: name
-    integer, intent(out)              :: n_particles, location_id
-
-    ! Local variables
-
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-    integer(c_int) :: c_n_p, c_l_id
-
-    c_name = trim(name)//c_null_char
-
-    c_l_id = cs_restart_read_particles_info(r, c_name, c_n_p)
-
-    n_particles = c_n_p
-    location_id = c_l_id
-
-  end subroutine restart_read_particles_info
 
   !---------------------------------------------------------------------------
 

@@ -229,17 +229,7 @@ module lagran
   !> Additional pointer in the ITEPA array (contains the particule state)
   integer, save ::   jimark
   !> Additional pointer in the ITEPA array (contains the particule state)
-  integer, save ::   jdiel
-  !> Additional pointer in the ITEPA array (contains the particule state)
   integer, save ::   jdfac
-  !> Additional pointer in the ITEPA array (contains the particule state)
-  integer, save ::   jdifel
-  !> Additional pointer in the ITEPA array (contains the particule state)
-  integer, save ::   jtraj
-  !> Additional pointer in the ITEPA array (contains the particule state)
-  integer, save ::   jptdet
-  !> Additional pointer in the ITEPA array (contains the particule state)
-  integer, save ::   jinjst
   !> Additional pointer in the ITEPA array (contains the particule state)
   integer, save ::   jryplu
   !> Additional pointer in the ITEPA array (contains the particule state)
@@ -1289,6 +1279,38 @@ module lagran
   !> \}
 
   !=============================================================================
+
+  interface
+
+    !> \brief Read particle data from checkpoint.
+
+    !> \param[in, out]  r  pointer to restart structure
+
+    function lagr_restart_read_particle_data(r) result(n) &
+      bind(C, name='cs_lagr_restart_read_particle_data')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int) :: n
+    end function lagr_restart_read_particle_data
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Write particle data to checkpoint.
+
+    !> \param[in, out]  r  pointer to restart structure
+
+    function lagr_restart_write_particle_data(r) result(n) &
+      bind(C, name='cs_lagr_restart_write_particle_data')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: r
+      integer(c_int) :: n
+    end function lagr_restart_write_particle_data
+
+  !=============================================================================
+
+  end interface
 
 contains
 

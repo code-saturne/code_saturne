@@ -106,10 +106,10 @@ character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
 character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
 character        ficsui*32
 integer          nbval, itysup , irfsup, idbase
-integer          ivers  , ilecec
+integer          ivers  , ilecec, n_sec
 integer          icha   , ii , ilayer
 integer          ipas   , jj
-integer          inmcoo, ipasup
+integer          inmcoo
 integer          ival(1)
 double precision rval(1)
 
@@ -158,23 +158,6 @@ call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
 ! Infos sur le suivi du calcul
 
-inmcoo = 0
-
-allocate(icepar(nbpart))
-allocate(coopar(3,nbpart))
-
-do ii = 1, nbpart
-  icepar(ii) = abs(itepa(ii,jisor))
-  coopar(1,ii) = ettp(ii,jxp)
-  coopar(2,ii) = ettp(ii,jyp)
-  coopar(3,ii) = ettp(ii,jzp)
-enddo
-
-rubriq = 'particles'
-call ecpsui(rp,rubriq,len(rubriq),inmcoo,nbpart,icepar,coopar,ipasup)
-
-deallocate(coopar)
-
 ival(1) = nbptot
 rubriq = 'nombre_total_particules'
 call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
@@ -205,170 +188,7 @@ call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
 write(nfecra,6012)
 
-! Particle flags (currently: stuck or not)
-
-do ii = 1, nbpart
-  if (itepa(ii,jisor) .lt. 0) then
-    icepar(ii) = 1
-  else
-    icepar(ii) = 0
-  endif
-enddo
-
-itysup = ipasup
-nbval  = 1
-
-rubriq = 'particle_status_flag'
-call restart_write_section_int_t(rp, rubriq,  itysup, nbval, icepar)
-
-deallocate(icepar)
-
-! Variables particulaires
-
-nomnvl(jup) = 'variable_vitesseU_particule'
-nomnvl(jvp) = 'variable_vitesseV_particule'
-nomnvl(jwp) = 'variable_vitesseW_particule'
-nomnvl(juf) = 'variable_vitesseU_fluide_vu'
-nomnvl(jvf) = 'variable_vitesseV_fluide_vu'
-nomnvl(jwf) = 'variable_vitesseW_fluide_vu'
-nomnvl(jmp) = 'variable_masse_particule'
-nomnvl(jdp) = 'variable_diametre_particule'
-if (iphyla.eq.1 .and. itpvar.eq.1) then
-  nomnvl(jtp) = 'variable_temperature_particule'
-  nomnvl(jtf) = 'variable_temperature_fluide_vu'
-  nomnvl(jcp) = 'variable_chaleur_specifique_particule'
-elseif (iphyla.eq.2) then
-  do ilayer = 1, nlayer
-    write(nomnvl(jhp(ilayer)),'(A38,I4.4)') 'variable_temperature_particule_couche_',ilayer
-  enddo
-  nomnvl(jtf) = 'variable_temperature_fluide_vu'
-  nomnvl(jmwat) = 'variable_masse_humidite'
-  do ilayer = 1, nlayer
-    write(nomnvl(jmch(ilayer)),'(A38,I4.4)') 'variable_masse_charbon_reactif_couche_',ilayer
-  enddo
-  do ilayer = 1, nlayer
-    write(nomnvl(jmck(ilayer)),'(A27,I4.4)') 'variable_masse_coke_couche_',ilayer
-  enddo
-  nomnvl(jcp) = 'variable_chaleur_specifique_particule'
-endif
-if (nvls.gt.0) then
-  do ii = 1,nvls
-    write(car4,'(i4.4)') ii
-    nomnvl(jvls(ii)) = 'variable_supplementaire_'//car4
-  enddo
-endif
-
-itysup = ipasup
-nbval  = 1
-
-do ii = jmp,jwf
-  if (ii .lt. jxp .or. ii.gt.jzp) then
-    rubriq = nomnvl(ii)
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,ettp(:,ii))
-  endif
-enddo
-
-do ii = 1,jmp-1
-  rubriq = nomnvl(ii)
-  call restart_write_section_real_t(rp,rubriq,itysup,nbval,ettp(:,ii))
-enddo
-
-! Caracteristiques et infos particulaires (ENTIERS)
-
-nomite(jisor) = 'indicateur_'
-nomite(jord1) = 'order_1'
-
-if (iphyla.eq.2) then
-  nomite(jinch) = 'numero_charbon'
-endif
-
-! Deposition submodel
-if (idepst.eq.1) then
-  nomite(jimark) = 'indicateur_de_saut'
-  nomite(jdiel) = 'diel_particules'
-  nomite(jdfac) = 'dfac_particules'
-  nomite(jdifel) = 'difel_particules'
-  nomite(jtraj) = 'traj_particules'
-  nomite(jptdet) = 'ptdet_particules'
-  nomite(jinjst) = 'indic_stat'
-  nomite(jdepo) = 'part_depo'
-endif
-
-if (ireent.eq.1) then
-   nomite(jnbasg) = 'nb_ls_aspe'
-   nomite(jnbasp) = 'nb_sms_aspe'
-endif
-
-itysup = ipasup
-nbval  = 1
-
-do ii = 1, nivep
-  if (ii .ne. jisor .and. ii .ne. jisora .and. ii .ne.jirka) then
-    rubriq = nomite(ii)
-    if (ii.eq.jdfac) then
-      idbase = 1
-      irfsup = 3
-      call ecisui(rp, rubriq, len(rubriq), itysup, irfsup, idbase, itepa(:,ii))
-    else
-      call restart_write_section_int_t(rp, rubriq,  itysup, nbval, itepa(:,ii))
-    endif
-  endif
-enddo
-
-! groupe statistique particules
-
-if (nbclst .gt. 0 ) then
-  nomite(jclst) = 'numero_groupe_statistiques'
-
-  itysup = ipasup
-  nbval  = 1
-
-  rubriq = nomite(jclst)
-  call restart_write_section_int_t(rp,rubriq,itysup,nbval,itepa(:,jclst))
-endif
-
-! Numero du charbon des particules
-
-if (iphyla.eq.2) then
-  rubriq = nomite(jinch)
-  call restart_write_section_int_t(rp,rubriq,itysup,nbval,itepa(:,jinch))
-endif
-
-! Caracteristiques et infos particulaires (REELS)
-
-nomrte(jrval) = 'random_value'
-nomrte(jrtsp) = 'temps_sejour_particules'
-nomrte(jrpoi) = 'poids_statistiques_particules'
-if (iphyla.eq.1 .and. itpvar.eq.1 .and.iirayo.gt.0) then
-  nomrte(jreps) = 'emissivite_particules'
-endif
-if (iphyla.eq.2) then
-  nomrte(jrdck) = 'diametre_coeur_retrecissant_charbon'
-  nomrte(jrd0p) = 'diametre_initial_charbon'
-  do ilayer = 1, nlayer
-    write(nomrte(jrhock(ilayer)),'(A28,I4.4)') 'masse_volumique_coke_couche_',ilayer
-  enddo
-endif
-
-! Deposition submodel
-if (idepst.eq.1) then
-  nomrte(jryplu) = 'yplus_particules'
-  nomrte(jrinpf) = 'dx_particules'
-endif
-
-if (ireent.eq.1) then
-   nomrte(jfadh) = 'force_adhesion'
-   nomrte(jmfadh) = 'moment_adhesion'
-   nomrte(jndisp) = 'disp_norm'
-endif
-
-itysup = ipasup
-nbval  = 1
-
-do ii = 1, nvep
-  rubriq = nomrte(ii)
-  call restart_write_section_real_t(rp,rubriq,itysup,nbval,tepa(:,ii))
-enddo
+n_sec = lagr_restart_write_particle_data(rp)
 
 write(nfecra,6013)
 

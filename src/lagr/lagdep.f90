@@ -371,12 +371,6 @@ call field_get_val_s(iprpfl(iviscl), viscl)
                   itepa(ip,jimark) = 0
                endif
 
-!               if ( itepa(ip,jimark) .eq. 0   .and.                    &
-!                    itepa(ip,jdiel)  .eq. iel .and.                    &
-!                    ifacl(ip)  .ne. itepa(ip,jdfac)) then
-!                  itepa(ip,jimark) = 10
-!               endif
-
             else
 
                !   if (jrinpf < y^+ < depint)

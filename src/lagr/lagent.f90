@@ -1280,7 +1280,6 @@ do ii = 1,nfrtot
 
            tepa(ip,jryplu) = 1000.d0
            itepa(ip,jimark) = -1
-           itepa(ip,jdiel)  = 0
            itepa(ip,jdfac)  = 0
 
          endif

@@ -432,6 +432,23 @@ CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
                           const cs_lnum_t    itepa[],
                           const cs_real_t    tepa[]);
 
+/*----------------------------------------------------------------------------
+ * Put variables and parameters associated to each particles into FORTRAN
+ * arrays (when reading from restart).
+ *
+ * parameters:
+ *   nbpart --> number of current particles
+ *   dnbpar --> particle total weight
+ *   ...
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
+                          cs_real_t        *dnbpar,
+                          cs_real_t         ettp[],
+                          cs_int_t          itepa[],
+                          cs_real_t         tepa[]);
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

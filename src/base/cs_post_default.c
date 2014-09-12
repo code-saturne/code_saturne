@@ -138,7 +138,7 @@ _write_particle_vars(cs_post_default_input_t  *input,
   int  component_id;
   char var_name_component[64];
 
-  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++)
+  for (attr_id = 0; attr_id < CS_LAGR_N_ATTRIBUTES; attr_id++) {
 
     if (input->particle_attr[attr_id]) {
 
@@ -163,7 +163,9 @@ _write_particle_vars(cs_post_default_input_t  *input,
                                       ts);
       else {
         /* Create one output per component */
-        for (component_id = 0; component_id < input->particle_multicomponent_export[attr_id]; component_id++) {
+        for (component_id = 0;
+             component_id < input->particle_multicomponent_export[attr_id];
+             component_id++) {
           snprintf(var_name_component,
                    63,
                    "%s_layer_%2.2i",
@@ -178,6 +180,8 @@ _write_particle_vars(cs_post_default_input_t  *input,
         }
       }
     }
+
+  }
 
 }
 
