@@ -502,7 +502,7 @@ deallocate(iflpar)
 irtyp  = 1
 
 do ivar = 1, nivep
-  if (ivar.ne.jisor) then
+  if (ivar.ne.jisor .and. ivar.ne.jisora .and. ivar.ne.jirka) then
     rubriq = nomite(ivar)
     if (ivar.eq.jdfac) then
       idbase = 1

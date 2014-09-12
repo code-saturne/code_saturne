@@ -5,6 +5,10 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash in Lagrangian restart.
+
+- Fix occasional crash in Lagrangian tracking when deposition model is not active.
+
 - Fix the boundary conditions coefficients for the second pressure correction in
   the fire algorithm (introduced by the fix of the boundary conditions
   coefficients for the first pressure correction).
