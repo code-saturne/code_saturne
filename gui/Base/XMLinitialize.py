@@ -796,9 +796,9 @@ class XMLinit(Variables):
         for node in self.scalar_node.xmlGetNodeList('variable'):
             name = node['name']
             label = node['label']
-            if label != None:
+            if name == None:
                 node['name'] = label
-            else:
+            if label == None:
                 node['label'] = name
             for n in XMLAnaControl.xmlGetNodeList('var_prop'):
                 if n['name'] == name:
@@ -813,9 +813,9 @@ class XMLinit(Variables):
         for node in XMLBoundaryNode.xmlGetNodeList('scalar'):
             name = node['name']
             label = node['label']
-            if label != None:
+            if name == None:
                 node['name'] = label
-            else:
+            if label == None:
                 node['label'] = name
 
         XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
