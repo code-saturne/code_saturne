@@ -181,7 +181,7 @@ cs_sles_default(int                 f_id,
       if (cs_matrix_is_symmetric(a))
         sles_it_type = CS_SLES_PCG;
       else
-        sles_it_type = CS_SLES_BICGSTAB;
+        sles_it_type = CS_SLES_JACOBI;
     }
     (void)cs_sles_it_define(f_id,
                             name,
@@ -221,9 +221,13 @@ cs_sles_default_setup(void)
 
   const cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));
   if (cvar_p != NULL) {
-    if (   cvar_p->type & CS_FIELD_VARIABLE
-        && cs_sles_find(cvar_p->id, NULL) == NULL) {
-      cs_multigrid_define(cvar_p->id, NULL);
+    if (cvar_p->type & CS_FIELD_VARIABLE) {
+      void *context = NULL;
+      cs_sles_t *sc = cs_sles_find(cvar_p->id, NULL);
+      if (sc != NULL)
+        context = cs_sles_get_context(sc);
+      if (context == NULL)
+        cs_multigrid_define(cvar_p->id, NULL);
     }
   }
 
@@ -235,7 +239,12 @@ cs_sles_default_setup(void)
       const cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & CS_FIELD_VARIABLE) {
 
-        if (cs_sles_find(f_id, NULL) == NULL) {
+        void *context = NULL;
+        cs_sles_t *sc = cs_sles_find(f->id, NULL);
+        if (sc != NULL)
+          context = cs_sles_get_context(sc);
+
+        if (context == NULL) {
 
           /* Get the calculation option from the field */
           cs_var_cal_opt_t var_cal_opt;

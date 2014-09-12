@@ -133,8 +133,8 @@ cs_user_linear_solvers(void)
   cs_multigrid_define(-1, "wall_distance");
   /*! [sles_wall_dist] */
 
-  /* Example: use BiCGStab for user variable (named user_1) */
-  /*--------------------------------------------------------*/
+  /* Example: use BiCGStab2 for user variable (named user_1) */
+  /*---------------------------------------------------------*/
 
   /*! [sles_user_1] */
   cs_field_t *cvar_user_1 = cs_field_by_name_try("user_1");
@@ -151,7 +151,7 @@ cs_user_linear_solvers(void)
 
   /*! [sles_verbosity_1] */
 
-  cs_sles_t *sles_p = cs_sles_find(CS_F_(p)->id, NULL);
+  cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
   cs_sles_set_verbosity(sles_p, 4);
 
   /*! [sles_verbosity_1] */
