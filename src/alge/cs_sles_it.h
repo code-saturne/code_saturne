@@ -244,6 +244,27 @@ cs_sles_it_log(const void  *context,
                cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------
+ * Return the initial residue for the previous solve operation with a solver.
+ *
+ * This is useful for convergence tests when this solver is used as
+ * a preconditioning smoother.
+ *
+ * This operation is only valid between calls to \ref cs_sles_it_setup
+ * (or \ref cs_sles_it_solve) and \ref cs_sles_it_free.
+ * It returns -1 otherwise.
+ *
+ * parameters:
+ *   context <-- pointer to iterative solver info and context
+ *
+ * returns:
+ *   initial residue from last call to \ref cs_sles_solve with this solver
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context);
+
+/*----------------------------------------------------------------------------
  * Associate a similar info and context object with which some setup
  * data may be shared.
  *

@@ -1360,7 +1360,7 @@ _level_names_init(const char  *name,
  *   n_equiv_iter    <-> equivalent number of iterations
  *   precision       <-- solver precision
  *   r_norm          <-- residue normalization
- *   initial_residue <-- initial residue
+ *   initial_residue <-> initial residue
  *   residue         <-> residue
  *   rhs             <-- right hand side
  *   vx              --> system solution
@@ -1380,7 +1380,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                  int                  *n_equiv_iter,
                  double                precision,
                  double                r_norm,
-                 double                initial_residue,
+                 double               *initial_residue,
                  double               *residue,
                  const cs_real_t      *rhs,
                  cs_real_t            *vx,
@@ -1486,8 +1486,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
     _matrix = cs_grid_get_matrix(f);
 
-    _initial_residue = _residue;
-
     c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
                              lv_names[level*2],
                              _matrix,
@@ -1502,8 +1500,13 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                              _aux_r_size*sizeof(cs_real_t),
                              _aux_vectors);
 
+    _initial_residue
+      = cs_sles_it_get_last_initial_residue(mgd->sles_hierarchy[level*2]);
 
-    if (c_cvg < CS_SLES_MAX_ITERATION) {
+    if (level == 0 && cycle_id == 1)
+      *initial_residue = _initial_residue;
+
+    if (c_cvg < CS_SLES_BREAKDOWN) {
       end_cycle = true;
       break;
     }
@@ -1545,7 +1548,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                               lv_info->n_it_ds_smoothe[0],
                               precision,
                               r_norm,
-                              initial_residue,
+                              *initial_residue,
                               residue,
                               wr);
 
@@ -1652,9 +1655,12 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     lv_info->n_calls[1] += 1;
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
+    _initial_residue
+      = cs_sles_it_get_last_initial_residue(mgd->sles_hierarchy[level*2]);
+
     *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
 
-    if (c_cvg < CS_SLES_MAX_ITERATION)
+    if (c_cvg < CS_SLES_BREAKDOWN)
       end_cycle = true;
 
   }
@@ -1722,8 +1728,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
         _matrix = cs_grid_get_matrix(f);
 
-        _initial_residue = _residue;
-
         rhs_lv = mgd->rhs_vx[level*2];
 
         c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2+1],
@@ -1745,9 +1749,12 @@ _multigrid_cycle(cs_multigrid_t       *mg,
         lv_info->n_calls[3] += 1;
         _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
 
+        _initial_residue
+          = cs_sles_it_get_last_initial_residue(mgd->sles_hierarchy[level*2+1]);
+
         *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
 
-        if (c_cvg < CS_SLES_MAX_ITERATION)
+        if (c_cvg < CS_SLES_BREAKDOWN)
           break;
       }
 
@@ -1758,7 +1765,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
   mgd->exit_level = level;
   mgd->exit_residue = _residue;
   if (level == 0)
-    mgd->exit_initial_residue = initial_residue;
+    mgd->exit_initial_residue = *initial_residue;
   else
     mgd->exit_initial_residue = _initial_residue;
   mgd->exit_cycle_id = cycle_id;
@@ -2480,9 +2487,9 @@ cs_multigrid_solve(void                *context,
     bft_printf(_("Multigrid [%s]:\n"), name);
 
   /* Initial residue should be improved, but this is consistent
-     with the legacy case */
+     with the legacy (by increment) case */
 
-  double initial_residue = sqrt(_dot_product_xx(n_rows*db_size[1], rhs));
+  double initial_residue = -1;
 
   *residue = initial_residue; /* not known yet, so be safe */
 
@@ -2503,7 +2510,7 @@ cs_multigrid_solve(void                *context,
                            n_iter,
                            precision,
                            r_norm,
-                           initial_residue,
+                           &initial_residue,
                            residue,
                            rhs,
                            vx,

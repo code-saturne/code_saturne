@@ -176,8 +176,8 @@ struct _cs_sles_it_t {
   unsigned long long   n_iterations_tot;   /* Total accumulated number of
                                               iterations */
 
-  cs_timer_counter_t   t_setup;              /* Total setup */
-  cs_timer_counter_t   t_solve;              /* Total time used */
+  cs_timer_counter_t   t_setup;            /* Total setup */
+  cs_timer_counter_t   t_solve;            /* Total time used */
 
   /* Communicator used for reduction operations
      (if left at NULL, main communicator will be used) */
@@ -188,15 +188,19 @@ struct _cs_sles_it_t {
 
   /* Solver setup */
 
-  cs_lnum_t              n_rows;     /* Number of associated rows */
+  double                 initial_residue;  /* Last initial residue value */
 
-  bool                   setup;      /* Has the setup operation been called ?) */
+  cs_lnum_t              n_rows;           /* Number of associated rows */
 
-  const struct _cs_sles_it_t  *shared;    /* pointer to context sharing some
-                                             preconditioning data, or NULL */
+  bool                   setup;            /* Has the setup operation
+                                              been called ?) */
 
-  const cs_real_t       *ad_inv;     /* pointer to diagonal inverse */
-  cs_real_t             *_ad_inv;    /* private pointer to diagonal inverse */
+  const struct _cs_sles_it_t  *shared;     /* pointer to context sharing some
+                                              preconditioning data, or NULL */
+
+  const cs_real_t       *ad_inv;           /* pointer to diagonal inverse */
+  cs_real_t             *_ad_inv;          /* private pointer to
+                                              diagonal inverse */
 
 };
 
@@ -215,7 +219,6 @@ typedef struct _cs_sles_it_convergence_t {
   double               precision;          /* Precision limit */
   double               r_norm;             /* Residue normalization */
   double               residue;            /* Current residue */
-  double               initial_residue;    /* Initial residue */
 
 } cs_sles_it_convergence_t;
 
@@ -276,7 +279,6 @@ _convergence_init(cs_sles_it_convergence_t  *convergence,
   convergence->precision = precision;
   convergence->r_norm = r_norm;
   convergence->residue = *residue;
-  convergence->initial_residue = *residue;
 
   if (verbosity > 1) {
     bft_printf("%s [%s]:\n", solver_name, var_name);
@@ -326,7 +328,7 @@ _convergence_test(cs_sles_it_t              *c,
 
     if (n_iter < convergence->n_iterations_max) {
       int diverges = 0;
-      if (residue > convergence->initial_residue * 10000.0 && residue > 100.)
+      if (residue > c->initial_residue * 10000.0 && residue > 100.)
         diverges = 1;
 #if (__STDC_VERSION__ >= 199901L)
       else if (isnan(residue) || isinf(residue))
@@ -338,7 +340,7 @@ _convergence_test(cs_sles_it_t              *c,
                      "  initial residual: %11.4e; current residual: %11.4e\n"),
                    cs_sles_it_type_name[c->type], convergence->name,
                    convergence->n_iterations,
-                   convergence->initial_residue, convergence->residue);
+                   c->initial_residue, convergence->residue);
         return CS_SLES_DIVERGED;
       }
       else
@@ -911,7 +913,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   /* If no solving required, finish here */
 
-  convergence->initial_residue = residue;
+  c->initial_residue = residue;
   cvg = _convergence_test(c, n_iter, residue, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
@@ -1119,7 +1121,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   _dot_products_xx_xy_yz(c, rk, dk, zk, &residue, &ro_0, &ro_1);
   residue = sqrt(residue);
 
-  convergence->initial_residue = residue;
+  c->initial_residue = residue;
 
   /* If no solving required, finish here */
 
@@ -1307,7 +1309,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   /* If no solving required, finish here */
 
-  convergence->initial_residue = residue;
+  c->initial_residue = residue;
   cvg = _convergence_test(c, n_iter, residue, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
@@ -1499,9 +1501,9 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   /* If no solving required, finish here */
 
-  convergence->initial_residue = residue;
+  c->initial_residue = residue;
 
-  cvg = _convergence_test(c, n_iter, convergence->initial_residue, convergence);
+  cvg = _convergence_test(c, n_iter, residue, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
 
@@ -1698,12 +1700,12 @@ _jacobi(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2);
+    residue = sqrt(res2); /* Actually, residue of previous iteration */
 
     /* Convergence test */
 
     if (n_iter == 1)
-      convergence->initial_residue = residue; /* not quite true... */
+      c->initial_residue = residue;
 
     cvg = _convergence_test(c, n_iter, residue, convergence);
 
@@ -1850,10 +1852,10 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
 #endif /* defined(HAVE_MPI) */
 
-    residue = sqrt(res2);
+    residue = sqrt(res2); /* Actually, residue of previous iteration */
 
     if (n_iter == 1)
-      convergence->initial_residue = residue; /* not quite true... */
+      c->initial_residue = residue;
 
     /* Convergence test */
 
@@ -1893,6 +1895,8 @@ _breakdown(cs_sles_it_t                 *c,
            int                           n_iter,
            cs_sles_convergence_state_t  *cvg)
 {
+  bool retval = false;
+
   if (CS_ABS(coeff) < epsilon) {
 
     bft_printf
@@ -1908,7 +1912,10 @@ _breakdown(cs_sles_it_t                 *c,
                n_iter, residue, residue/convergence->r_norm);
 
     *cvg = CS_SLES_BREAKDOWN;
+    retval = true;
   }
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -2017,7 +2024,7 @@ _bi_cgstab(cs_sles_it_t              *c,
     if (n_iter == 0) {
       beta = _dot_product_xx(c, rk); /* rk == res0 here */
       residue = sqrt(beta);
-      convergence->initial_residue = residue;
+      c->initial_residue = residue;
     }
     else {
       _dot_products_xx_xy(c, rk, res0, &residue, &beta);
@@ -2240,7 +2247,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     if (n_iter == 0) {
       residue = sqrt(_dot_product_xx(c, rk)); /* rk == res0 here */
-      convergence->initial_residue = residue;
+      c->initial_residue = residue;
     }
     else
       residue = sqrt(_dot_product_xx(c, rk));
@@ -2627,7 +2634,7 @@ _gmres(cs_sles_it_t              *c,
 
     if (n_iter == 0) {
       residue = sqrt(_dot_product_xx(c, dk));
-      convergence->initial_residue = residue;
+      c->initial_residue = residue;
       cvg = _convergence_test(c, n_iter, residue, convergence);
       if (cvg != CS_SLES_ITERATING)
         break;
@@ -2884,6 +2891,9 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->comm = cs_glob_mpi_comm;
 #endif
 
+  c->initial_residue = -1;
+  c->n_rows = 0;
+
   c->setup = false;
   c->shared = NULL;
   c->ad_inv = NULL;
@@ -3131,6 +3141,8 @@ cs_sles_it_solve(void                *context,
                     r_norm,
                     residue);
 
+  c->initial_residue = -1;
+
   /* Only call solver for "active" ranks */
 
 #if defined(HAVE_MPI)
@@ -3335,6 +3347,35 @@ cs_sles_it_free(void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return the initial residue for the previous solve operation
+ *        with a solver.
+ *
+ * This is useful for convergence tests when this solver is used as
+ * a preconditioning smoother.
+ *
+ * This operation is only valid between calls to \ref cs_sles_it_setup
+ * (or \ref cs_sles_it_solve) and \ref cs_sles_it_free.
+ * It returns -1 otherwise.
+ *
+ * \param[in]  context  pointer to iterative solver info and context
+ *
+ * \return initial residue from last call to \ref cs_sles_solve with this
+ *         solver
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context)
+{
+  double retval = 1;
+  if (context->setup)
+    retval = context->initial_residue;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate a similar info and context object with which some setup
  *        data may be shared.
  *
@@ -3502,7 +3543,7 @@ cs_sles_it_error_post_and_abort(void                         *context,
                                 const cs_real_t              *rhs,
                                 cs_real_t                    *vx)
 {
-  if (state >= CS_SLES_MAX_ITERATION)
+  if (state >= CS_SLES_BREAKDOWN)
     return;
 
   cs_sles_it_t  *c = context;
