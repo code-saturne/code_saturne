@@ -2965,11 +2965,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Particulate boundary mass flux (contribution of rolling particles
      will be added  at the end of their movement) */
 
-  cs_lnum_t deposition_flag
-    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-  if (deposition_flag == CS_LAGR_PART_DEPOSITED && part_b_mass_flux != NULL)
-    part_b_mass_flux[face_id]
-      += particle_stat_weight * particle_mass / face_area;
+  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+    cs_lnum_t deposition_flag
+      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
+    if (deposition_flag == CS_LAGR_PART_DEPOSITED && part_b_mass_flux != NULL)
+      part_b_mass_flux[face_id]
+        += particle_stat_weight * particle_mass / face_area;
+  }
 
   /* FIXME: Post-treatment not yet implemented... */
 
