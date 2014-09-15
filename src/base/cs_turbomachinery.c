@@ -933,8 +933,8 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
     const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
     for (f_id = 0; f_id < cs_glob_mesh->n_i_faces; f_id++) {
       for (i = 0; i < 2; i++) {
-        if (i_face_cells[f_id][i] > n_cells)
-          i_face_cells[f_id][i] = 0;
+        if (i_face_cells[f_id][i] >= n_cells)
+          i_face_cells[f_id][i] = -1;
       }
     }
   }
