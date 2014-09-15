@@ -1404,8 +1404,6 @@ cs_field_allocate_values(cs_field_t  *f)
     BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t*);
 
    /* Initialization */
-    for (ii = 0; ii < f->n_time_vals; ii++)
-      f->vals[ii] = NULL;
 
     for (ii = 0; ii < f->n_time_vals; ii++)
       f->vals[ii] = _add_val(n_elts[2], f->dim, f->vals[ii]);
