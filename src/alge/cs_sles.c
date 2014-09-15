@@ -1077,8 +1077,12 @@ cs_sles_push(int          f_id,
        _("cs_slesh_push() only allows a stack of depth 1:\n"
          "  it  may not be called multiple times for a given field (id %d)\n"
          "  without calling cs_sles_pop between those calls."), f_id);
-  else
-    retval->name = name;
+  else {
+    assert(retval->_name == NULL);
+    BFT_MALLOC(retval->_name, strlen(name) + 1, char);
+    strcpy(retval->_name, name);
+    retval->name = retval->_name;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1100,9 +1104,10 @@ cs_sles_pop(int  f_id)
        "%s must be called only for an actual field, with id >=0, not %d.",
        __func__, f_id);
 
-  cs_sles_t *retval = cs_sles_find_or_add(f_id, NULL);
+  cs_sles_t *retval = _find_or_add_system_by_f_id(f_id);
 
   retval->name = NULL;
+  BFT_FREE(retval->_name);
 }
 
 /*----------------------------------------------------------------------------*/
