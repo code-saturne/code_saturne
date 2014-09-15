@@ -386,6 +386,40 @@ static int _jvls = -1;
 static cs_lagr_param_t  _lagr_param = {0, 1, 0, 0, 0, 0, 0, 0};
 const  cs_lagr_param_t  *cs_glob_lagr_params = &_lagr_param;
 
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return pointers to particle attributes
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   dim_ipepa --> dimensions for ipepa pointer
+ *   dim_peta  --> dimensions for pepa pointer
+ *   dim_eptp  --> dimensions for eptp pointer
+ *   dim_eptpa --> dimensions for eptpa pointer
+ *   p_ipeta   --> ipepa pointer
+ *   p_pepa    --> pepa pointer
+ *   p_eptp    --> eptp pointer
+ *   p_eptpa   --> eptpa pointer
+ *
+ * returns:
+ *   pointer to the field structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_lagr_pointers(int          dim_ipepa[2],
+                   int          dim_pepa[2],
+                   int          dim_eptp[2],
+                   int          dim_eptpa[2],
+                   cs_int_t   **p_ipeta,
+                   cs_real_t  **p_peta,
+                   cs_real_t  **p_eptp,
+                   cs_real_t  **p_eptpa);
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -4566,7 +4600,135 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Update particle set structures: transform list to array.
+ *
+ * parameters:
+ *   particles <-> pointer to particle set
+ *----------------------------------------------------------------------------*/
+
+static void
+_finalize_displacement(cs_lagr_particle_set_t  *particles)
+{
+  cs_lnum_t  i, j;
+
+  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
+
+  const cs_lnum_t  n_particles = particles->n_particles;
+
+  unsigned char *swap_buffer;
+  size_t swap_buffer_size = p_am->extents * ((size_t)n_particles);
+
+  BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
+
+  /* For particle state */
+
+  for (i = 0, j = particles->first_used_id; i < n_particles; i++) {
+
+#if defined(DEBUG) || !defined(NDEBUG)
+
+    cs_lnum_t cur_part_state = _get_tracking_info(particles, j)->state;
+
+    assert(cur_part_state != CS_LAGR_PART_TO_DELETE);
+    assert(cur_part_state != CS_LAGR_PART_OUT);
+    assert(cur_part_state != CS_LAGR_PART_ERR);
+    assert(cur_part_state != CS_LAGR_PART_TO_SYNC);
+
+#endif
+
+    memcpy(swap_buffer + p_am->extents*i,
+           particles->p_buffer + p_am->extents*j,
+           p_am->extents);
+
+    j = particles->used_id[j].next_id;
+
+  }
+
+  memcpy(particles->p_buffer, swap_buffer, swap_buffer_size);
+
+  BFT_FREE(swap_buffer);
+
+  /* Also update list */
+
+  for (i = 0; i < particles->n_particles; i++) {
+    particles->used_id[i].prev_id = i-1;
+    particles->used_id[i].next_id = i+1;
+  }
+
+  if (particles->n_particles > 0) {
+    particles->first_used_id = 0;
+    particles->used_id[0].prev_id = -1;
+    particles->used_id[particles->n_particles - 1].next_id = -1;
+  }
+  else
+    particles->first_used_id = -1;
+
+  particles->first_free_id = particles->n_particles;
+  particles->used_id[particles->first_free_id].next_id = -1;
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return pointers to particle attributes
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   dim_ipepa --> dimensions for ipepa pointer
+ *   dim_peta  --> dimensions for pepa pointer
+ *   dim_eptp  --> dimensions for eptp pointer
+ *   dim_eptpa --> dimensions for eptpa pointer
+ *   p_ipeta   --> ipepa pointer
+ *   p_pepa    --> pepa pointer
+ *   p_eptp    --> eptp pointer
+ *   p_eptpa   --> eptpa pointer
+ *
+ * returns:
+ *   pointer to the field structure, or NULL
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_lagr_pointers(int          dim_ipepa[2],
+                   int          dim_pepa[2],
+                   int          dim_eptp[2],
+                   int          dim_eptpa[2],
+                   cs_int_t   **p_ipeta,
+                   cs_real_t  **p_peta,
+                   cs_real_t  **p_eptp,
+                   cs_real_t  **p_eptpa)
+{
+  cs_lagr_particle_set_t  *particles = _particle_set;
+  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
+  const size_t extents = p_am->extents;
+  const size_t max_data_size
+    = p_am->extents * ((size_t)particles->n_particles_max);
+
+  dim_ipepa[0] = extents / sizeof(cs_int_t);
+  dim_ipepa[1] = max_data_size / sizeof(cs_int_t);
+
+  dim_pepa[0] = extents / sizeof(cs_real_t);
+  dim_pepa[1] = max_data_size / sizeof(cs_real_t);
+
+  dim_eptp[0] = extents / sizeof(cs_real_t);
+  dim_eptp[1] = max_data_size / sizeof(cs_real_t);
+
+  dim_eptpa[0] = extents / sizeof(cs_real_t);
+  dim_eptpa[1] = max_data_size / sizeof(cs_real_t);
+
+  *p_ipeta = (cs_int_t *)particles->p_buffer;
+  *p_peta = (cs_real_t *)particles->p_buffer;
+
+  *p_eptp = (cs_real_t *)particles->p_buffer;
+  *p_eptpa = (cs_real_t *)(  particles->p_buffer
+                           + p_am->displ[1][CS_LAGR_COORDS]
+                           - p_am->displ[0][CS_LAGR_COORDS]);
+}
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -5632,6 +5794,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
     }
   }
 
+  _finalize_displacement(particles);
+
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n PARTICLE SET AFTER DPLPRT\n");
   cs_lagr_particle_set_dump(particles);
@@ -5816,13 +5980,9 @@ CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
 
         const cs_real_t *cur_part_coal_mass
           = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COAL_MASS);
-        const cs_real_t *prev_part_coal_mass
-          = cs_lagr_particles_attr_n_const(particles, i, 1, CS_LAGR_COAL_MASS);
 
         const cs_real_t *cur_part_coke_mass
           = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COKE_MASS);
-        const cs_real_t *prev_part_coke_mass
-          = cs_lagr_particles_attr_n_const(particles, i, 1, CS_LAGR_COKE_MASS);
 
         for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
           id = (_jmch + k) * nbpmax + i;
@@ -5882,8 +6042,6 @@ CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
 
     const cs_real_t *cur_part_coord
       = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COORDS);
-    const cs_real_t *prv_part_coord
-      = cs_lagr_particles_attr_n_const(particles, i, 1, CS_LAGR_COORDS);
 
     id = _jxp * nbpmax + i;
     ettp[id] = cur_part_coord[0];
@@ -5898,8 +6056,6 @@ CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
 
     const cs_real_t *cur_part_velocity
       = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_VELOCITY);
-    const cs_real_t *prv_part_velocity
-      = cs_lagr_particles_attr_n_const(particles, i, 1, CS_LAGR_VELOCITY);
 
     id = _jup * nbpmax + i;
     ettp[id] = cur_part_velocity[0];
@@ -5947,8 +6103,6 @@ CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
     if (particles->p_am->count[0][CS_LAGR_USER] > 0) {
       const cs_real_t
         *usr = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_USER);
-      const cs_real_t
-        *usra = cs_lagr_particles_attr_n_const(particles, i, 1, CS_LAGR_USER);
       for (cs_lnum_t k = 0; k < particles->p_am->count[0][CS_LAGR_USER]; k++) {
         id = (_jvls + k) * nbpmax + i;
         ettp[id] = usr[k];

@@ -275,6 +275,8 @@ if (iplar.eq.1) then
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
    jndisp , jclst  , jvls   )
 
+  call lagr_update_pointers
+
 ! --> if the deposition model is activated
 
   if (idepst.ge.1) then
@@ -709,6 +711,8 @@ if (nor.eq.1) then
    iencckbd , inclg    , iscovc   ,                               &
    nusbor   , iusb     , vislen   , dlgeo    , energt   ,         &
    tprenc   , visref   , enc1     , enc2     , tkelvi)
+
+  call lagr_update_pointers
 
   call prtput                                                     &
   !==========

@@ -159,6 +159,28 @@ module lagran
 
   !> \}
 
+  !=======================
+
+  !> \addtogroup lagran
+  !> \{
+  !> \defgroup lag_pointers Lagrangian pointers
+
+  !> \addtogroup lag_pointers
+  !> \{
+
+  !> \anchor ipepa
+  integer, dimension(:,:), pointer, save          :: ipepa
+  !> \anchor pepa
+  double precision, dimension(:,:), pointer, save :: pepa
+  !> \anchor eptp
+  double precision, dimension(:,:), pointer, save :: eptp
+  !> \anchor eptpa
+  double precision, dimension(:,:), pointer, save :: eptpa
+
+  !> \}
+
+  !> \}
+
   !=============================================================================
 
   !> \defgroup specific_physic Specific physics
@@ -1282,6 +1304,20 @@ module lagran
 
   interface
 
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning particle attribute pointers
+    subroutine cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa,    &
+                                  p_ipepa, p_pepa, p_eptp, p_eptpa)            &
+      bind(C, name='cs_f_lagr_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(2) :: dim_ipepa, dim_pepa, dim_eptp, dim_eptpa
+      type(c_ptr), intent(out)     :: p_ipepa, p_pepa, p_eptp, p_eptpa
+    end subroutine cs_f_lagr_pointers
+
+    !---------------------------------------------------------------------------
+
     !> \brief Read particle data from checkpoint.
 
     !> \param[in, out]  r  pointer to restart structure
@@ -1559,6 +1595,31 @@ contains
     enddo
 
   end subroutine lagr_define_zone_class_param
+
+  !=============================================================================
+
+  !> \brief Update Lagrangian pointers
+
+  subroutine lagr_update_pointers()
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    integer(c_int), dimension(2) :: dim_ipepa, dim_pepa, dim_eptp, dim_eptpa
+    type(c_ptr) :: p_ipepa, p_pepa, p_eptp, p_eptpa
+    type(c_ptr) :: p1, p2, p3, p4
+
+    call cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa, &
+                            p_ipepa, p_pepa, p_eptp, p_eptpa)
+
+    call c_f_pointer(p_ipepa, ipepa, [dim_ipepa(1), dim_ipepa(2)])
+    call c_f_pointer(p_pepa,  pepa,  [dim_pepa(1),  dim_pepa(2)])
+    call c_f_pointer(p_eptp,  eptp,  [dim_eptp(1),  dim_eptp(2)])
+    call c_f_pointer(p_eptpa, eptpa, [dim_eptpa(1), dim_eptpa(2)])
+
+  end subroutine lagr_update_pointers
 
   !=============================================================================
 
