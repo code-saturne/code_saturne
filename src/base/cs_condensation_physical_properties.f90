@@ -79,7 +79,7 @@ implicit none
 character*80     chaine
 
 integer          iel   , iscal, iesp, jesp, ierror
-integer          f_id
+integer          f_id  , ii
 
 double precision xsum_mu, xsum_lambda, phi_mu, phi_lambda, tk, x_k
 double precision mu_i, mu_j, lambda_i, lambda_j
@@ -325,7 +325,10 @@ do iesp = 1, nscasp+1
 enddo
 
 ! Same diffusivity for all the scalars except the enthalpy
-do iscal = 1, nscal
+do ii = 1, nscapp
+
+  iscal = iscapp(ii)
+
   if (iscal.ne.iscalt) then
 
     call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vyk)
@@ -335,6 +338,7 @@ do iscal = 1, nscal
     enddo
 
   endif
+
 enddo
 
 ! --- Lambda/Cp of the thermal scalar
