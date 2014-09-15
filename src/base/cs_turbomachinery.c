@@ -1008,6 +1008,8 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   if (b_face_numbering == NULL)
     cs_renumber_b_faces(cs_glob_mesh);
+  else
+    cs_glob_mesh->b_face_numbering = b_face_numbering;
 
   /* Build group classes */
 
