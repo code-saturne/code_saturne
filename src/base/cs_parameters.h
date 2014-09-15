@@ -86,6 +86,7 @@ typedef struct {
   double  rhs_norm;
   double  res_norm;
   double  derive;
+  double  l2residual;
 } cs_solving_info_t;
 
 /*----------------------------------------------------------------------------

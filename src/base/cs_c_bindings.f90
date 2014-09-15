@@ -88,6 +88,7 @@ module cs_c_bindings
     real(c_double) :: rnsmbr
     real(c_double) :: resvar
     real(c_double) :: dervar
+    real(c_double) :: l2residual
   end type solving_info
 
   !---------------------------------------------------------------------------

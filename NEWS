@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add L2 time normalized residual to the log.
+
 - Single-reduction conjugate gradient is now an option rather than a separate
   solver. This allows switching automatically from one to the other based on
   computation vs. communication cost.

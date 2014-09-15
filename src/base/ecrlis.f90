@@ -79,11 +79,14 @@ double precision dt(ncelet), volume(ncelet)
 ! Local variables
 
 integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
-integer          ippf, kval, nfld, f_type
+integer          ippf, kval, nfld, f_type, isqrt
 logical          interleaved
 character(len=200) :: chain, chainc, flabel,fname
 
 double precision dervar(9)
+double precision varres(9), varnrm(9)
+
+double precision, allocatable, dimension(:) :: w1, w2
 
 double precision, dimension(:), pointer :: field_s_v, field_s_vp
 double precision, dimension(:,:), pointer :: field_v_v, field_v_vp
@@ -94,6 +97,8 @@ type(solving_info) sinfo
 
 ! Number of fields
 call field_get_n_fields(nfld)
+
+allocate(w1(ncelet), w2(ncelet))
 
 !===============================================================================
 ! 2. ECRITURE DES CRITERES DE CONVERGENCE
@@ -136,6 +141,9 @@ do f_id = 0, nfld - 1
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+14
     chain = ' '
+
+    ! Compute the derive
+    !-------------------
 
     ! Scalar derive (except pressure)
     if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
@@ -180,6 +188,63 @@ do f_id = 0, nfld - 1
     write(chain,3000) dervar(1)
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+12
+
+    ! L2 time normalized residual
+    !----------------------------
+    if (f_dim.eq.1) then
+      call field_get_val_s(f_id, field_s_v)
+      call field_get_val_prev_s(f_id, field_s_vp)
+      do icel = 1, ncel
+        w1(icel) = volume(icel)*(field_s_v(icel)-field_s_vp(icel))/dt(icel)
+        w2(icel) = volume(icel)*field_s_v(icel)
+      enddo
+
+      ! L2 error, square root
+      isqrt = 11
+
+      call prodsc(ncel,isqrt,w1,w1,varres(1))
+      call prodsc(ncel,isqrt,w2,w2,varnrm(1))
+
+      if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
+      sinfo%l2residual = varres(1)
+
+    ! Vector or tensor derive (total L2 time residual)
+    else
+      call field_get_val_v(f_id, field_v_v)
+      call field_get_val_prev_v(f_id, field_v_vp)
+
+      ! Loop over the components
+      do c_id = 1, f_dim
+
+        do icel = 1, ncel
+          w1(icel) = volume(icel) &
+                   * (field_v_v(c_id, icel)-field_v_vp(c_id, icel))/dt(icel)
+          w2(icel) = volume(icel)*field_v_v(c_id, icel)
+        enddo
+
+        ! L2 error, NO square root
+        isqrt = 10
+
+        call prodsc(ncel,isqrt,w1,w1,varres(c_id))
+        call prodsc(ncel,isqrt,w2,w2,varnrm(c_id))
+
+        if (c_id.gt.1) then
+          varres(1) = varres(1) + varres(c_id)
+          varnrm(1) = varnrm(1) + varnrm(c_id)
+        endif
+
+      enddo
+
+      if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
+      sinfo%l2residual = sqrt(varres(1))
+
+    endif
+
+    write(chain,3000) sinfo%l2residual
+    chainc(ic:ic+12) = chain(1:12)
+    ic=ic+12
+
+    ! Finalize the log of the line
     write(nfecra,'(a)') chainc(1:ic)
 
     ! Vector or tensor derive (by component)
@@ -282,6 +347,8 @@ write(nfecra,1010)
 write(nfecra,*) ' '
 write(nfecra,*) ' '
 
+deallocate(w1, w2)
+
 !--------
 ! Formats
 !--------
@@ -291,9 +358,9 @@ write(nfecra,*) ' '
  1000 format (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
           3X,'   -------------------------------')
  1011 format ('   Variable    Norm 2nd mb.',                      &
-        '  Nbiter  Residu norme        derive')
+        '  Nbiter  Residu norme        derive Residu en temps')
  1010 format ('---------------------------',                      &
-        '------------------------------------')
+        '----------------------------------------------------')
 
  3000 format (e12.5)
  4000 format (i7)
@@ -303,9 +370,9 @@ write(nfecra,*) ' '
  1000 format (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
           3X,'   --------------------------')
  1011 format ('   Variable    Rhs norm    ',                      &
-        '  N_iter  Norm. residual      derive')
+        '  N_iter  Norm. residual      derive Time residual')
  1010 format ('---------------------------',                      &
-        '------------------------------------')
+        '--------------------------------------------------')
 
  3000 format (e12.5)
  4000 format (i7)

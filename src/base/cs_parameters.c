@@ -211,6 +211,7 @@ static cs_solving_info_t _solving_info =
   0.,    /* rhs_norm: right hand side norm                   */
   0.,    /* res_norm: normed residual                        */
   0.,    /* derive: norm of the time derivative              */
+  0.,    /* l2residual: L2 time residual                     */
 };
 
 
@@ -288,6 +289,7 @@ _log_func_solving_info(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "rhs_norm", _t->rhs_norm);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "res_norm", _t->res_norm);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "derive", _t->derive);
+  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "l2residual", _t->l2residual);
 }
 
 static void
