@@ -104,6 +104,8 @@ static const int _type_flag_mask[] = {CS_BAD_CELL_ORTHO_NORM,
 
 static int  _type_flag_compute[] = {-1, 0};
 static int  _type_flag_visualize[] = {0, 0};
+static int  _call_type_compute = 0;
+static int  _call_type_visualize = 0;
 
 /*============================================================================
  * Private function definitions
@@ -733,9 +735,15 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   cs_lnum_t i;
   cs_gnum_t n_cells_tot, iwarning, ibad;
 
+  /* If bad cell data has been destroyed and this function is
+     called, we have a call type 0, even if it was called before */
+
+  if (mesh_quantities->bad_cell_flag == NULL)
+    _call_type_compute = 0;
+
   /* Initialization or per time step ? */
 
-  static int call_type = 0;
+  const int call_type = _call_type_compute;
 
   /* Set defaults if not done yet */
 
@@ -956,7 +964,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
   /* After first call, we assume others are done at each time step */
 
-  call_type = 1;
+  _call_type_compute = 1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -975,7 +983,7 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
 {
   /* Initialization or per time step ? */
 
-  static int call_type = 0;
+  const int call_type = _call_type_visualize;
 
   /* Set defaults if not done yet */
 
@@ -992,7 +1000,7 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
                   0,
                   NULL);
 
-  call_type = 1; /* Prevent future calls from doing anything */
+  _call_type_visualize = 1; /* Prevent future calls from doing anything */
 }
 
 /*----------------------------------------------------------------------------*/

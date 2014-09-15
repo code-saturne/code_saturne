@@ -1021,6 +1021,8 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   /* Compute geometric quantities related to the mesh */
 
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
+  cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
 
   /* Initialize selectors and locations for the mesh */
 
