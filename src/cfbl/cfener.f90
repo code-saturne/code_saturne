@@ -21,9 +21,9 @@
 !-------------------------------------------------------------------------------
 
 !> \file cfener.f90
-!> \brief This subroutine performs the solving of the convection/diffusion
-!> equation (with eventual source terms) for total energy over a time step. It
-!> the third step of the compressible algorithm at each time iteration.
+!> \brief Perform the solving of the convection/diffusion equation (with
+!> eventual source terms) for total energy over a time step. It is the third
+!> step of the compressible algorithm at each time iteration.
 !>
 !-------------------------------------------------------------------------------
 
@@ -41,13 +41,11 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!> \param[in]                    (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
-!> \param[in]                    term (for ivar=ipr, smacel is the mass flux
-!> \param[in]                    \f$ \Gamma^n \f$)
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at boundary faces
 !_______________________________________________________________________________
@@ -56,7 +54,7 @@ subroutine cfener &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , propce ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  )
 
@@ -94,7 +92,7 @@ integer          iscal
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
@@ -139,12 +137,19 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:,:), pointer :: vel
 
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvar_energ, cvara_energ
+double precision, dimension(:), pointer :: cvar_tempk
 double precision, dimension(:), pointer :: visct, cpro_cp
 
 !===============================================================================
 
+! Computation number and post-treatment number of the scalar total energy
+ivar   = isca(iscal)
+
 ! Map field arrays
+call field_get_val_prev_s(ivarfl(ivar), cvara_energ)
+call field_get_val_s(ivarfl(ivar), cvar_energ)
+call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
 call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
@@ -162,8 +167,7 @@ allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(dpvar(ncelet))
 
-! Computation number and post-treatment number of the scalar total energy
-ivar   = isca(iscal)
+
 
 ! Physical property numbers
 call field_get_val_s(icrom, crom)
@@ -220,7 +224,7 @@ call ustssc                                                                    &
   ckupdc , smacel , smbrs  , rovsdt )
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtp(iel,ivar)
+  smbrs(iel) = smbrs(iel) + rovsdt(iel)*cvar_energ(iel)
   rovsdt(iel) = max(-rovsdt(iel),zero)
 enddo
 
@@ -238,8 +242,8 @@ if (ncesmp.gt.0) then
   iterns = 1
   call catsma ( ncelet , ncel , ncesmp , iterns ,                              &
                 isno2t, thetav(ivar),                                          &
-                icetsm , itypsm(1,ivar) ,                                      &
-                volume , rtpa(1,ivar) , smacel(1,ivar) ,                       &
+                icetsm , itypsm(1,ivar),                                       &
+                volume , cvara_energ   , smacel(1,ivar),                       &
                 smacel(1,ipr) , smbrs , rovsdt , w1    )
 endif
 
@@ -631,13 +635,13 @@ call codits                                                      &
   iwarnp ,                                                       &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
   relaxp , thetap ,                                              &
-  rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+  cvara_energ     , cvara_energ     ,                            &
   coefap , coefbp , cofafp , cofbfp ,                            &
   imasfl, bmasfl,                                                &
   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
   rvoid  , rvoid  ,                                              &
   icvflb , icvfli ,                                              &
-  rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
+  rovsdt , smbrs  , cvar_energ      , dpvar  ,                   &
   rvoid  , rvoid  )
 
 
@@ -645,16 +649,11 @@ call codits                                                      &
 ! 5. PRINTINGS AND CLIPPINGS
 !===============================================================================
 
-! dummy value
-iii = nflown
-
-call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
-!==========
+call clpsca(iscal)
 
 ! --- Traitement utilisateur pour gestion plus fine des bornes
 !       et actions correctives eventuelles.
-call cf_check_internal_energy(rtp(1,isca(ienerg)), ncel,       &
-                              vel)
+call cf_check_internal_energy(cvar_energ, ncel, vel)
 
 ! Explicit balance (see codits : the increment is removed)
 
@@ -662,7 +661,7 @@ if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                    &
             - istat(ivar)*(crom(iel)/dt(iel))*volume(iel)                      &
-                *(rtp(iel,ivar)-rtpa(iel,ivar))                                &
+                *(cvar_energ(iel)-cvara_energ(iel))                            &
                 * max(0,min(nswrsm(ivar)-2,1))
   enddo
   isqrt = 1
@@ -677,9 +676,7 @@ endif
 ! The state equation is used P   =P(RHO   ,H   )
 
 ! Computation of P and T at cell centers
-call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), cvar_pr,                &
-                          rtp(1,isca(itempk)),                           &
-                          vel, ncel)
+call cf_thermo_pt_from_de(crom, cvar_energ, cvar_pr, cvar_tempk, vel, ncel)
 
 !===============================================================================
 ! 7. COMMUNICATION OF PRESSURE, ENERGY AND TEMPERATURE
@@ -688,9 +685,9 @@ call cf_thermo_pt_from_de(crom, rtp(1,isca(ienerg)), cvar_pr,                &
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(cvar_pr)
   !==========
-  call synsca(rtp(1,ivar))
+  call synsca(cvar_energ)
   !==========
-  call synsca(rtp(1,isca(itempk)))
+  call synsca(cvar_tempk)
   !==========
 endif
 

@@ -560,8 +560,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 !                                           des scalaires non variance.
         if (valmin.ge.scminp.and.valmax.le.scmaxp) then
           iscal = ii
-          call clpsca(ncelet, ncel, iscal, rvoid, rtp)
-          !==========
+          call clpsca(iscal)
         else
           call field_get_label(ivarfl(isca(ii)), chaine)
           write(nfecra,3040) ii,chaine(1:16),                     &
@@ -617,8 +616,7 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 ! Ici on clippe pour etre coherent avec la valeur du scalaire
           if(valmin.ge.0.d0) then
             iscal = ii
-            call clpsca(ncelet, ncel, iscal, rtp(1,isca(iscavr(ii))), rtp)
-            !==========
+            call clpsca(iscal)
           else
             call field_get_name(ivarfl(isca(ii)), chaine)
             write(nfecra,3050)ii,chaine(1:16),valmin,scminp,valmax,scmaxp

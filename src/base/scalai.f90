@@ -230,7 +230,7 @@ if (nscapp.gt.0) then
    ncepdc , ncetsm ,                                              &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , propce ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  )
 

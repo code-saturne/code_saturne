@@ -993,15 +993,7 @@ call codits &
 ! 4. Writing and clipping
 !===============================================================================
 
-if (ivarsc.gt.0) then
-  iii = ivarsc
-else
-! Valeur bidon
-  iii = nflown
-endif
-
-call clpsca(ncelet, ncel, iscal, rtp(1,iii), rtp)
-!==========
+call clpsca(iscal)
 
 if (idilat.eq.4.and.itspdv.eq.1) then
 

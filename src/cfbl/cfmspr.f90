@@ -20,54 +20,43 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cfmspr &
-!================
+!> \file cfmspr.f90
+!> \brief Update the convective mass flux before the velocity prediction step.
+!> It is the first step of the compressible algorithm at each time iteration.
+!>
+!> This function solves the continuity equation in pressure formulation and then
+!> updates the density and the mass flux.
+!>
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     iterns        Navier-Stokes iteration number
+!> \param[in]     ncepdp        number of cells with head loss
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     icepdc        index of cells with head loss
+!> \param[in]     icetsm        index of cells with mass source term
+!> \param[in]     itypsm        type of mass source term for each variable
+!>                               (see uttsma.f90)
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in]     vela          velocity value at time step beginning
+!> \param[in]     ckupdc        work array for the head loss
+!> \param[in]     smacel        variable value associated to the mass source
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
+!_______________________________________________________________________________
+
+subroutine cfmspr &
  ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce , vela   ,                   &
+   dt     , propce , vela   ,                                     &
    ckupdc , smacel )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! SOLVING OF A CONVECTION-DIFFUSION EQUATION WITH SOURCE TERMS
-!   FOR PRESSURE ON ONE TIME-STEP
-!   (COMPRESSIBLE ALGORITHM IN P,U,E)
-
-!-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
-! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! icepdc(ncelet)   ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
-! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! vela             ! ra ! <-- ! variable value at time step beginning          !
-! ckupdc           ! tr ! <-- ! work array for the head loss                   !
-!  (ncepdp,6)      !    !     !                                                !
-! smacel           ! tr ! <-- ! variable value associated to the mass source   !
-! (ncesmp,*   )    !    !     ! term (for ivar=ipr, smacel is the mass flux    !
-!                  !    !     ! \f$ \Gamma^n \f$)                              !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!-------------------------------------------------------------------------------
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -100,7 +89,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision vela  (3  ,ncelet)
@@ -142,7 +131,7 @@ double precision, allocatable, dimension(:) :: c2
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: rhopre, crom
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 
 !===============================================================================
 !===============================================================================
@@ -177,6 +166,7 @@ call field_get_val_s(icrom, crom)
 call field_get_val_prev_s(icrom, rhopre)
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_label(ivarfl(ivar), chaine)
 
@@ -232,7 +222,7 @@ endif
 
 allocate(c2(ncelet))
 
-call cf_thermo_c_square( cvar_pr, crom, c2, ncel)
+call cf_thermo_c_square(cvar_pr, crom, c2, ncel)
 !======================
 
 do iel = 1, ncel
@@ -335,14 +325,14 @@ call codits                                                                     
   iwarnp ,                                                                      &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                         &
   relaxp , thetv  ,                                                             &
-  rtpa(1,ivar)    , rtpa(1,ivar)    ,                                           &
+  cvara_pr        , cvara_pr        ,                                           &
   wbfa   , wbfb   ,                                                             &
   coefaf_p        , coefbf_p        ,                                           &
   wflmas          , wflmab          ,                                           &
   viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,                         &
   rvoid  , rvoid  ,                                                             &
   icvflb , ivoid  ,                                                             &
-  rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                                  &
+  rovsdt , smbrs  , cvar_pr         , dpvar  ,                                  &
   rvoid  , rvoid  )
 
 !===============================================================================
@@ -361,7 +351,7 @@ if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                    &
                  - istat(ivar)*(volume(iel)/dt(iel))                           &
-                   *(rtp(iel,ivar)-rtpa(iel,ivar))                             &
+                   *(cvar_pr(iel)-cvara_pr(iel))                               &
                    * max(0,min(nswrsm(ivar)-2,1))
   enddo
   isqrt = 1
@@ -374,7 +364,7 @@ endif
 !===============================================================================
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtp(:,ivar))
+  call synsca(cvar_pr)
 endif
 
 !===============================================================================
@@ -399,7 +389,7 @@ call itrmas                                                                    &
   iphydp , iwarnp ,                                                            &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &
-  rtp(:,ivar)     ,                                                            &
+  cvar_pr,                                                                     &
   wbfa   , wbfb   ,                                                            &
   coefaf_p        , coefbf_p        ,                                          &
   viscf  , viscb  ,                                                            &
@@ -426,7 +416,7 @@ if (igrdpp.gt.0) then
     ! Backup of the current density values
     rhopre(iel) = crom(iel)
     ! Update of density values
-    crom(iel) = crom(iel)+(rtp(iel,ivar)-rtpa(iel,ivar))/c2(iel)
+    crom(iel) = crom(iel)+(cvar_pr(iel)-cvara_pr(iel))/c2(iel)
   enddo
 
 !===============================================================================

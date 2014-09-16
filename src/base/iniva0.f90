@@ -514,7 +514,7 @@ if (nscal.gt.0) then
   do iis = 1, nscal
     if(iscavr(iis).eq.0) then
       iscal = iis
-      call clpsca(ncelet, ncel, iscal, rvoid, rtp)
+      call clpsca(iscal)
       !==========
     endif
   enddo
@@ -524,7 +524,7 @@ if (nscal.gt.0) then
   do iis = 1, nscal
     if(iscavr(iis).ne.0.and.iclvfl(iis).ne.1) then
       iscal = iis
-      call clpsca(ncelet, ncel, iscal, rvoid, rtp)
+      call clpsca(iscal)
       !==========
     endif
   enddo
@@ -534,7 +534,7 @@ if (nscal.gt.0) then
   do iis = 1, nscal
     if (iscavr(iis).le.nscal.and.iscavr(iis).ge.1.and.iclvfl(iis).eq.1) then
       iscal = iis
-      call clpsca(ncelet, ncel, iscal, rtp(1,isca(iscavr(iis))), rtp)
+      call clpsca(iscal)
       !==========
     endif
   enddo

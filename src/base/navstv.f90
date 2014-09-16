@@ -402,7 +402,7 @@ if ( ippmod(icompf).ge.0 ) then
   !==========
   ( nvar   , nscal  , iterns ,                                     &
     ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
-    dt     , rtp    , rtpa   , propce , vela   ,                   &
+    dt     , propce , vela   ,                                     &
     ckupdc , smacel )
 
 endif

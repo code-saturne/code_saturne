@@ -74,7 +74,6 @@ double precision propce(ncelet,*)
 ! Local Variables
 
 integer ii, jb, jsp, iel
-double precision rvoid(1)
 double precision dlconc(nespg_siream)
 double precision dlconc_aer(nbin_aer,nesp_aer)
 double precision dlnum_aer(nbin_aer)
@@ -97,7 +96,7 @@ call field_get_val_s(icrom, crom)
 ! Clipping before calling siream
 
 do ii = 1, nespg_siream+nesp_aer*nbin_aer
-  call clpsca(ncelet, ncel, ii, rvoid, rtp)
+  call clpsca(ii)
 enddo
 
 ! Loop on cells
@@ -205,7 +204,7 @@ enddo ! Loop on cells
 ! Clipping after calling Siream
 
 do ii = 1, nespg_siream+nesp_aer*nbin_aer
-  call clpsca(ncelet, ncel, ii, rvoid, rtp)
+  call clpsca(ii)
 enddo
 
 !--------

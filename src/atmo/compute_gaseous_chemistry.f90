@@ -88,7 +88,6 @@ double precision rk(nrg)
 double precision dtc
 integer ncycle
 double precision dtrest
-double precision rvoid(1)
 
 double precision, dimension(:), pointer :: crom
 
@@ -183,7 +182,7 @@ enddo
 ! TODO: clipping or not ?
 ! Clipping
 do ii = 1, nespg
-  call clpsca (ncelet, ncel, ii, rvoid, rtp)
+  call clpsca (ii)
 enddo
 
 !--------

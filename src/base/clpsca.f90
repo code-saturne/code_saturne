@@ -20,37 +20,21 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine clpsca &
-!================
-
- ( ncelet , ncel   , iscal  , scandd , rtp    )
-
-!===============================================================================
-! FONCTION :
-! ----------
-
-! CLIPPING
-!   POUR UN SCALAIRE OU VARIANCE
+!> \file clpsca.f90
+!> \brief This subroutine clips the values of a given scalar or variance.
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-!ARGU                             ARGUMENTS
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! iscal            ! i  ! <-- ! scalar number                                  !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant        )          !
-! scandd           ! tr ! <-- ! scalaire auquel est associe la                 !
-! (ncelet)         !    !     !    variance traitee (si c'en est une)          !
-!__________________!____!_____!________________________________________________!
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     iscal         scalar number
+!_______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
+subroutine clpsca &
+ ( iscal )
 
 !===============================================================================
 ! Module files
@@ -66,6 +50,7 @@ use cstnum
 use parall
 use field
 use cs_c_bindings
+use mesh
 
 !===============================================================================
 
@@ -73,11 +58,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
 integer          iscal
-
-double precision rtp(ncelet,nflown:nvar)
-double precision scandd(ncelet)
 
 ! Local variables
 
@@ -88,10 +69,12 @@ double precision vmin(1), vmax(1), vfmin, vfmax
 double precision scmax, scmin
 double precision scmaxp, scminp
 
+double precision, dimension(:), pointer :: cvar_scal, cvar_scav
+
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialisation
 !===============================================================================
 
 ! --- Numero de variable de calcul et de post associe au scalaire traite
@@ -101,22 +84,25 @@ iflid  = ivarfl(ivar)
 ! --- Numero du scalaire eventuel associe dans le cas fluctuation
 iiscav = iscavr(iscal)
 
+! Map field arrays
+call field_get_val_s(ivarfl(ivar), cvar_scal)
+
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
 call field_get_key_id("max_scalar_clipping", kscmax)
 
 !===============================================================================
-! 2. IMPRESSIONS ET CLIPPINGS
+! 2. Printings and clippings
 !===============================================================================
 
-!      IL Y A TOUJOURS CLIPPING DES VARIANCES A DES VALEURS POSITIVES
+! Variances are always clipped at positive values
 
-! --- Calcul du min et max
-vmin(1) = rtp(1,ivar)
-vmax(1) = rtp(1,ivar)
+! Compute min. and max. values
+vmin(1) = cvar_scal(1)
+vmax(1) = cvar_scal(1)
 do iel = 1, ncel
-  vmin(1) = min(vmin(1),rtp(iel,ivar))
-  vmax(1) = max(vmax(1),rtp(iel,ivar))
+  vmin(1) = min(vmin(1),cvar_scal(iel))
+  vmax(1) = max(vmax(1),cvar_scal(iel))
 enddo
 
 if (iiscav.eq.0) then
@@ -132,13 +118,13 @@ if (iiscav.eq.0) then
 
   if(scmaxp.gt.scminp)then
     do iel = 1, ncel
-      if(rtp(iel,ivar).gt.scmaxp)then
+      if(cvar_scal(iel).gt.scmaxp)then
         iclmax = iclmax + 1
-        rtp(iel,ivar) = scmaxp
+        cvar_scal(iel) = scmaxp
       endif
-      if(rtp(iel,ivar).lt.scminp)then
+      if(cvar_scal(iel).lt.scminp)then
         iclmin = iclmin + 1
-        rtp(iel,ivar) = scminp
+        cvar_scal(iel) = scminp
       endif
     enddo
   endif
@@ -148,25 +134,26 @@ else
   ! Clipping of variances
 
   f_id = ivarfl(isca(iiscav))
+  call field_get_val_s(f_id, cvar_scav)
 
   iclmax = 0
   iclmin = 0
 
-  ! -- Clipping minimal au minimum 0.
+  ! Minimal clipping at minimum 0.
   if(iclvfl(iscal).eq.0) then
     do iel = 1, ncel
-      if(rtp(iel,ivar).lt.0.d0) then
+      if(cvar_scal(iel).lt.0.d0) then
         iclmin = iclmin + 1
-        rtp(iel,ivar) = 0.d0
+        cvar_scal(iel) = 0.d0
       endif
     enddo
 
-  ! -- Clipping a partir des valeurs du scalaire (ou 0 au min)
+  ! Clipping based on associated scalar values (or 0 at min.)
   elseif(iclvfl(iscal).eq.1) then
     do iel = 1, ncel
-      if(rtp(iel,ivar).lt.0.d0) then
+      if(cvar_scal(iel).lt.0.d0) then
         iclmin = iclmin + 1
-        rtp(iel,ivar) = 0.d0
+        cvar_scal(iel) = 0.d0
       endif
     enddo
 
@@ -175,10 +162,10 @@ else
     call field_get_key_double(f_id, kscmax, scmax)
 
     do iel = 1, ncel
-      vfmax = (scandd(iel)-scmin)*(scmax-scandd(iel))
-      if(rtp(iel,ivar).gt.vfmax) then
+      vfmax = (cvar_scav(iel)-scmin)*(scmax-cvar_scav(iel))
+      if(cvar_scal(iel).gt.vfmax) then
         iclmax = iclmax + 1
-        rtp(iel,ivar) = vfmax
+        cvar_scal(iel) = vfmax
       endif
     enddo
 
@@ -193,13 +180,13 @@ else
     vfmax = scmaxp
     if(vfmax.gt.vfmin)then
       do iel = 1, ncel
-        if(rtp(iel,ivar).gt.vfmax)then
+        if(cvar_scal(iel).gt.vfmax)then
           iclmax = iclmax + 1
-          rtp(iel,ivar) = vfmax
+          cvar_scal(iel) = vfmax
         endif
-        if(rtp(iel,ivar).lt.vfmin)then
+        if(cvar_scal(iel).lt.vfmin)then
           iclmin = iclmin + 1
-          rtp(iel,ivar) = vfmin
+          cvar_scal(iel) = vfmin
         endif
       enddo
     endif
