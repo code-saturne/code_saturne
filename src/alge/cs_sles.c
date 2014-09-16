@@ -1348,8 +1348,8 @@ cs_sles_solve(cs_sles_t           *sles,
                        precision,
                        r_norm,
                        residue,
-                       rhs,
-                       vx)) {
+                       vx,
+                       rhs)) {
     sles->n_no_op += 1;
     *n_iter = 0;
     state = CS_SLES_CONVERGED;
