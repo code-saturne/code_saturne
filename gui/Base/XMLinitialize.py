@@ -802,7 +802,7 @@ class XMLinit(Variables):
                 node['label'] = name
             for n in XMLAnaControl.xmlGetNodeList('var_prop'):
                 if n['name'] == name:
-                    n['name'] = label
+                    n['name'] = node['name']
             for n in node.xmlGetNodeList('formula'):
                 if n:
                     content = n.xmlGetTextNode()
