@@ -961,7 +961,7 @@ if (ivar .eq. isca(ihgas)) then
     do iel = 1,ncel
 
       smbrs(iel) = smbrs(iel)+volume(iel)*propce(iel,ipproc(itsre(1)))
-      do icla = 1, numcla
+      do icla = 1, nclacp
         smbrs(iel) = smbrs(iel)-volume(iel)*propce(iel,ipproc(itsre(icla+1))) &
                                            *propce(iel,ipproc(ix2(icla)))
       enddo
