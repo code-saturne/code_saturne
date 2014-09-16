@@ -2854,7 +2854,7 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
 
   for (int i = 0; i < _n_moment_wa; i++) {
     cs_time_moment_wa_t *mwa = _moment_wa + i;
-    if (mwa->nt_start <= ts->nt_cur) {
+    if (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur) {
       active_wa_id[i] = n_active_wa;
       n_active_wa += 1;
     }
