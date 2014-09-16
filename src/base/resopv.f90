@@ -245,7 +245,8 @@ allocate(iflux(nfac), bflux(ndimfb))
 iswdyp = iswdyn(ipr)
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dpvarm1(ncelet), rhs0(ncelet))
-if (icalhy.eq.1) allocate(frchy(ndim,ncelet), dfrchy(ndim,ncelet), hydro_pres(ncelet))
+if (icalhy.eq.1) allocate(frchy(ndim,ncelet),             &
+                          dfrchy(ndim,ncelet), hydro_pres(ncelet))
 
 ! Diffusive flux Boundary conditions for delta P
 allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
@@ -264,8 +265,7 @@ if (iwgrec(ipr).eq.1) then
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
   else
-    call field_get_val_s(iflwgr,  = 0
-    cpro_wgrec_s)
+    call field_get_val_s(iflwgr, cpro_wgrec_s)
   endif
 endif
 
