@@ -349,12 +349,9 @@ _physical_property(const char *param,
       else if (cs_gui_strcmp(param, "thermal_conductivity")) {
         /* for the Temperature, the diffusivity factor is not divided by Cp */
         if (*itherm != 1)
-        {
           mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]*(*cp0));
-        }
-        else {
+        else
           mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]);
-        }
       }
 
       for (int f_id2 = 0; f_id2 < cs_field_n_fields(); f_id2++) {
@@ -2429,21 +2426,22 @@ void CS_PROCF (csivis, CSIVIS) (int *ivisls,
   bft_printf("==>CSIVIS\n");
 #endif
 
-  if (vars->model != NULL)
-    if (*itherm) {
-      test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
-      test2 = cs_gui_properties_choice("specific_heat", &choice2);
+  if (vars->model != NULL && *itherm) {
+    test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
+    test2 = cs_gui_properties_choice("specific_heat", &choice2);
 
+    if (strcmp(vars->model, "thermal_scalar") == 0) {
       if (test1 && test2) {
         if (choice1 || choice2)
           ivisls[*iscalt-1] = 1;
         else
           ivisls[*iscalt-1] = 0;
       }
-#if _XML_DEBUG_
-      bft_printf("--ivisls[%i] = %i\n", i, ivisls[i]);
-#endif
     }
+#if _XML_DEBUG_
+    bft_printf("--ivisls(iscalt) = %i\n", i, ivisls[*iscalt-1]);
+#endif
+  }
 
   int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
