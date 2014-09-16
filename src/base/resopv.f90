@@ -235,6 +235,7 @@ double precision, dimension(:), pointer :: cpro_wgrec_s
 
 ! Initializations to avoid compiler warnings
 rnorm2 = 0.d0
+niterf = 0
 
 ! Allocate temporary arrays
 allocate(dam(ncelet), xam(nfac))
@@ -263,7 +264,8 @@ if (iwgrec(ipr).eq.1) then
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
   else
-    call field_get_val_s(iflwgr, cpro_wgrec_s)
+    call field_get_val_s(iflwgr,  = 0
+    cpro_wgrec_s)
   endif
 endif
 
