@@ -359,7 +359,7 @@ if ( iclogst.eq.1 ) then
    call cloginit                                                   &
    !===========
    ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,          &
-     phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
+     valen , phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
 
 endif
 
@@ -390,7 +390,7 @@ if ( irough .eq. 1 ) then
 
    call roughness_init                                &
    !===========
-   ( cstfar, epsvid, epseau, fion, tempp,             &
+   ( cstfar, epsvid, epseau, fion, tempp,  valen    , &
      phi1  , phi2  , cstham, dcutof, lambwl, kboltz , &
      espasg , denasp , rayasp , rayasg)
 

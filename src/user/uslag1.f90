@@ -596,6 +596,10 @@ if (idlvo.eq.1) then
 
   phi2 = -50.d-3
 
+  ! Valency of ions in the solution (used for EDL forces)
+
+  valen = 1.0d0
+
   ! Ionic force (mol/l)
 
   fion = 1.d-2

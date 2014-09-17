@@ -148,7 +148,9 @@ rpart = 0.5d0 * eptp(jdp,ip)
 nmoyag = (2.0d0 * rpart + rayasg) / rayasg * scovag
 
 if (nmoyag.gt.600.d0) then
-   ipepa(jnbasg,ip) = ceiling(nmoyag)
+   call normalen(1,ntmp)
+   ipepa(jnbasg,ip) = nmoyag + sqrt(nmoyag)*ntmp(1)
+   ipepa(jnbasg,ip) = max(0,ipepa(jnbasg,ip))
 else
    call fische1(nmoyag, ipepa(jnbasg,ip))
 endif
@@ -160,7 +162,9 @@ if (ipepa(jnbasg,ip).gt.1) then
         / rayasg**2 * scovag
 
    if (nmoyag.gt.600.d0) then
-      nbasg = ceiling(nmoyag)
+     call normalen(1,ntmp)
+     nbasg = nmoyag + sqrt(nmoyag)*ntmp(1)
+     nbasg = max(0,nbasg)
    else
      call fische(1, nmoyag, ntmp)
      nbasg = ntmp(1)
@@ -179,7 +183,9 @@ if (nbasg.eq.0) then
    nmoyap = (2.0d0 * rpart + rayasp) / rayasp * scovap
 
    if (nmoyap.gt.600.d0) then
-      ipepa(jnbasp,ip)   = ceiling(nmoyap)
+      call normalen(1,ntmp)
+      ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*ntmp(1)
+      ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
    else
       call fische1(nmoyap, ipepa(jnbasp,ip))
    endif
@@ -190,7 +196,9 @@ if (nbasg.eq.0) then
            / rayasp**2 * scovap
 
       if (nmoyap.gt.600.d0) then
-         nbasp = ceiling(nmoyap)
+         call normalen(1,ntmp)
+         ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*ntmp(1)
+         ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
       else
          call fische(1, nmoyap, ntmp)
          nbasp = ntmp(1)
@@ -213,7 +221,9 @@ else
    nmoyap = paramh*(2*rayasg-paramh) / rayasp**2 * scovap
 
    if (nmoyap.gt.600.d0) then
-      ipepa(jnbasp,ip)   = ceiling(nmoyap)
+      call normalen(1,ntmp)
+      ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*ntmp(1)
+      ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
    else
       call fische1(nmoyap, ipepa(jnbasp,ip))
    endif
@@ -227,7 +237,9 @@ else
       nmoyap = 1 + paramh*(2*rayasg-paramh) / rayasp**2 * scovap
 
       if (nmoyap.gt.600.d0) then
-         nbasp = ceiling(nmoyap)
+         call normalen(1,ntmp)
+         nbasp = nmoyap + sqrt(nmoyap)*ntmp(1)
+         nbasp = max(0,nbasp)
       else
          call fische(1, nmoyap, ntmp)
          nbasp = ntmp(1)
@@ -336,7 +348,7 @@ else
    !which is close to our approach
 
    omsurf = cstham / (24.0d0 * pi * dcutof**2)
-   dismom = (12.0d0 * pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0)
+   dismom = (4.0d0 * pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0)
 
 endif
 
@@ -429,25 +441,24 @@ ldebye = ((2.d3 * cstfar**2 * fion)                            &
 
 
 ! Reduced zeta potential
-lphi1 =  charge * phi1 /  kboltz / tempf
-lphi2 =  charge * phi2 /  kboltz / tempf
-
-tau = rpart / (1.d0/ldebye)
+lphi1 =  valen * charge * phi1 /  kboltz / tempf
+lphi2 =  valen * charge * phi2 /  kboltz / tempf
 
 
 !Extended reduced zeta potential
 !  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)
 
+!For the particle
+tau = rpart / ldebye
 
 lphi1 = 8.d0 * tanh(lphi1 / 4.d0) /                       &
 ( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
 * tanh(lphi1 / 4.d0)**2) )
 
-lphi2 = 8.d0 * tanh(lphi2 / 4.d0) /                       &
-( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
-* tanh(lphi2 / 4.d0)**2) )
+! For the plate
+lphi2 = 4.d0 * tanh(lphi2 / 4.d0)
 
-
+!Calculation for the EDL force
 alpha = sqrt((distp+rpart)/rpart)+sqrt(rpart/(distp+rpart))
 omega1 = lphi1**2 + lphi2**2 + alpha * lphi1 * lphi2
 omega2 = lphi1**2 + lphi2**2 - alpha * lphi1 * lphi2
@@ -486,21 +497,29 @@ charge = 1.6e-19
 ldebye = ((2.d3 * cstfar**2 * fion)                            &
            /(epseau * epsvid * rr * tempf))**(-0.5)
 
-tau = rpart1 / (1.d0/ldebye)
 
 ! Reduced zeta potential
-lphi1 =  charge * phi1 /  kboltz / tempf
-lphi2 =  charge * phi2 /  kboltz / tempf
+lphi1 =  valen * charge * phi1 /  kboltz / tempf
+lphi2 =  valen * charge * phi2 /  kboltz / tempf
+
+!Extended reduced zeta potential
+!  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)
+
+! For the first particle
+tau = rpart1 / (1.d0/ldebye)
 
 lphi1 = 8.d0 * tanh(lphi1 / 4.d0) /                       &
 ( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
 * tanh(lphi1 / 4.d0)**2))
 
+! For the second particle
+tau = rpart2 / ldebye
+
 lphi2 = 8.d0 * tanh(lphi2 / 4.d0) /                       &
 ( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
 * tanh(lphi2 / 4.d0)**2) )
 
-
+! Calculation of the EDL force
 alpha = sqrt(rpart2*(distcc-rpart2)/(rpart1*(distcc-rpart1)))     &
          +sqrt(rpart1*(distcc-rpart1)/(rpart2*(distcc-rpart2)))
 omega1 = lphi1**2 + lphi2**2 + alpha * lphi1 * lphi2

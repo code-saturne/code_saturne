@@ -109,6 +109,7 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
                                           const cs_real_t   *water_permit,
                                           const cs_real_t   *ionic_strength,
                                           const cs_real_t    temperature[],
+                                          const cs_real_t   *valen,
                                           const cs_real_t   *phi1,
                                           const cs_real_t   *phi2,
                                           const cs_real_t   *cstham,
@@ -131,6 +132,7 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
   cs_lagr_roughness_param.free_space_permit = *free_space_permit;
   cs_lagr_roughness_param.water_permit = *water_permit;
   cs_lagr_roughness_param.ionic_strength = *ionic_strength;
+  cs_lagr_roughness_param.valen = *valen;
   cs_lagr_roughness_param.phi1 = *phi1;
   cs_lagr_roughness_param.phi2 = *phi2;
   cs_lagr_roughness_param.cstham = *cstham;
@@ -172,6 +174,7 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
   bft_printf(" epseau = %g\n", cs_lagr_roughness_param.water_permit);
   bft_printf(" fion   = %g\n", cs_lagr_roughness_param.ionic_strength);
   bft_printf(" temp[1]   = %g\n", cs_lagr_roughness_param.temperature[0]);
+  bft_printf(" valen   = %g\n", cs_lagr_roughness_param.valen);
   bft_printf(" debye[1]   = %g\n", cs_lagr_roughness_param.debye_length[0]);
   bft_printf(" phi1   = %g\n", cs_lagr_roughness_param.phi1);
   bft_printf(" phi2  = %g\n", cs_lagr_roughness_param.phi2);
@@ -199,247 +202,238 @@ cs_lagr_roughness_finalize()
  *   face_id        <-- id of face neighboring particle
  *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
-
 void
 cs_lagr_roughness_barrier(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
                           cs_lnum_t                       face_id,
                           cs_real_t                      *energy_barrier)
 {
-  cs_int_t  dim_aux = 1;
+  cs_int_t  i, dim_aux = 1 ;
   cs_real_t param2, value;
-  cs_int_t  param1;
-  cs_lnum_t k, i;
-  cs_real_t dismin;
-  cs_real_t nbr1, nbr2;
-  cs_real_t nmoyap ;
-  cs_int_t  nbrasg[1],nbrasp[1],ntmp[1],nbtemp[12000];
-  cs_int_t  nbasg,nbasp;
+  cs_lnum_t param1,contact,compt_max;
+  cs_lnum_t iclas, ints, np, iasp;
+  cs_real_t rpart2[1],udlvor[500];
+  cs_real_t distasp, posasp1[2000],posasp2[2000],posasp3[2000],posasp4[2000],disminp;
+  cs_real_t scov[1], seff[1];
+  cs_lnum_t nbtemp[12000];
+  cs_lnum_t nbasp[1], nclas, nbaspt[1], nasptot;
+  cs_real_t*random;
+  cs_lnum_t one = 1;
 
-  /* Computation of the number of particles in contact with */
-  /* the depositing particle */
+  contact = 0;
+  compt_max = 5000;
 
-  /* Assuming monodisperse calculation */
+  /* Computation of the surface coverage  */
 
-  cs_real_t scovap =   cs_lagr_roughness_param.denasp
-                     * _pi * pow(cs_lagr_roughness_param.rayasp, 2);
-  cs_real_t scovag = _pi *  pow(cs_lagr_roughness_param.rayasg, 2)
-                          / pow(cs_lagr_roughness_param.espasg, 2);
+  nclas = 2;
+  cs_real_t scovtot = 0.;
+  for (iclas = 0; iclas < nclas; iclas++) {
+    scov[0] = _pi *  pow(cs_lagr_roughness_param.rayasg, 2)
+      / pow(cs_lagr_roughness_param.espasg, 2);
 
-  cs_real_t scovtot = scovap + scovag;
+    scov[1] =  cs_lagr_roughness_param.denasp
+      * _pi * pow(cs_lagr_roughness_param.rayasp, 2);
 
-  /* Number of large-scale asperities*/
+    scovtot = scovtot + scov[iclas];
 
-  cs_real_t rpart
-    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT) * 0.5;
-
-  cs_real_t nmoyag = (2.0 * rpart + cs_lagr_roughness_param.rayasg)
-                     / cs_lagr_roughness_param.rayasg * scovag;
-
-  CS_PROCF(fische, FISCHE)(&dim_aux, &nmoyag, nbrasg);
-
-  value = 700.;
-
-  if (nmoyag > value) {
-    param1 = nmoyag / value;
-    param2 = fmod(nmoyag,value);
-
-    CS_PROCF(fische, FISCHE)(&dim_aux, &param2, nbrasg);
-    CS_PROCF(fische, FISCHE)(&param1, &value ,nbtemp);
-
-    for (k = 0; k < param1; k++)
-      nbrasg[0] =  nbrasg[0] + nbtemp[k];
+    rpart2[0] = cs_lagr_roughness_param.rayasg;
+    rpart2[1] =  cs_lagr_roughness_param.rayasp;
   }
 
-  if (nbrasg[0] > 1) {
-    nmoyag =  1 + 2 * cs_lagr_roughness_param.dcutof
-              * (2.0 * rpart + 2.0 * cs_lagr_roughness_param.rayasg + 4.0
-                 * cs_lagr_roughness_param.dcutof)
-              / pow(cs_lagr_roughness_param.rayasg,2) * scovag;
 
-    CS_PROCF(fische, FISCHE)(&dim_aux, &nmoyag, ntmp);
-    nbasg = ntmp[0];
-    if (nbasg < 1)
-      nbasg = 1;
+  cs_real_t rpart = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_DIAMETER) * 0.5;
+
+  /* Creation of asperities */
+
+  for (iclas = 0; iclas < nclas; iclas++) {
+    seff[iclas] = 0.;
+    nbasp[iclas] = 0;
   }
-  else
-    nbasg = nbrasg[0];
 
-  /* Nb of small-scale asperities */
+  nasptot = 0;
+  cs_lnum_t nasp = 0;
+  cs_real_t dismin = 0.;
 
-  /* 1st case: no large-scale asperities */
-  if (nbasg == 0) {
-    nmoyap = (2.0 * rpart + cs_lagr_roughness_param.rayasp)
-             / cs_lagr_roughness_param.rayasp * scovap;
+  for (iclas = 0; iclas < nclas; iclas++) {
+      rpart2[0] = cs_lagr_roughness_param.rayasg;
+      rpart2[1] =  cs_lagr_roughness_param.rayasp;
 
-    CS_PROCF(fische, FISCHE)(&dim_aux, &nmoyap, nbrasp);
+    seff[iclas]  = 2.5 * _pi * (2. * rpart + rpart2[iclas] + 10. *  cs_lagr_roughness_param.debye_length[0])
+      *  ( rpart2[iclas] + 10. * cs_lagr_roughness_param.debye_length[0] );
 
     value = 700.;
-    if (nmoyap > value) {
-      param1 = nmoyap / value;
-      param2 = fmod(nmoyap,value);
 
-      CS_PROCF(fische, FISCHE)(&dim_aux, &param2, nbrasp);
-      CS_PROCF(fische, FISCHE)(&param1, &value ,nbtemp);
+    cs_real_t value2 = seff[iclas] * scov[iclas] / _pi / pow(rpart2[iclas],2) ;
 
-      for (k = 0; k < param1; k++)
-        nbrasp[0] =  nbrasp[0] + nbtemp[k];
-    }
-
-    if (nbrasp[0] > 1) {
-      nmoyap =  1 + 2 * cs_lagr_roughness_param.dcutof
-                * (2.0 * rpart + 2.0 * cs_lagr_roughness_param.rayasp + 4.0
-                   * cs_lagr_roughness_param.dcutof)
-              / pow(cs_lagr_roughness_param.rayasp,2) * scovap;
-
-      CS_PROCF(fische, FISCHE)(&dim_aux, &nmoyap, ntmp);
-      nbasp = ntmp[0];
-      if (nbasp < 1)
-        nbasp = 1;
+    if ( value2  > 700)   {
+      param1 = value2 / 700;
+      param2 = fmod(value2 , 700.);
+      CS_PROCF(fische, FISCHE)(&dim_aux, &param2, nbaspt);
+      CS_PROCF(fische, FISCHE)(&param1, &value , nbtemp);
+      for (ints = 0; ints < param1; ints++) {
+        nbaspt[0] = nbaspt[0] + nbtemp[ints];
+      }
+      nbasp[iclas] = nbaspt[0];
     }
     else
-      nbasp = nbrasp[0];
+    {
+      CS_PROCF(fische, FISCHE)(&dim_aux, &value2 , nbaspt);
+      nbasp[iclas] = nbaspt[0];
+    }
 
-    /* Determine the minimal distance between the particle and the plate */
+  /* Placement of asperities */
+    cs_lnum_t iboucle;
 
-    if (nbrasp[0] < 1)
-      nbr1 = nbrasp[0];
-    else
-      nbr1 = 1;
-    dismin = cs_lagr_roughness_param.rayasp * nbr1;
+    for (i = 0; i < nbasp[iclas];i++) {
+      iboucle  = 0;
+      do {
+        contact = 0;
+        BFT_MALLOC(random,1,cs_real_t);
+        CS_PROCF(zufall, ZUFALL)(&one, random);
+
+        posasp1[i + nasptot] = pow(seff[iclas] /_pi, 0.5) * (*random);
+        posasp2[i + nasptot] = 2 * _pi * (*random);
+        posasp3[i + nasptot] = 0.;
+        posasp4[i + nasptot] = rpart2[iclas];
+
+        BFT_FREE(random);
+
+   /* No contact between two asperities of a same class */
+        for (iasp = 0; iasp < nasp - nasptot; iasp++) {
+
+          distasp = pow(posasp1[i + nasptot] * cos(posasp2[i + nasptot])- posasp1[iasp + nasptot] * cos(posasp2[iasp + nasptot]),2)
+            + pow(posasp1[i + nasptot] * sin(posasp2[i + nasptot]) - posasp1[iasp + nasptot] *  sin(posasp2[iasp + nasptot]),2)
+            + pow( posasp3[iasp + nasptot] - posasp3[i + nasptot],2) ;
+
+          if (distasp <  pow(posasp4[iasp + nasptot] + posasp4[i + nasptot],2)) {
+            iboucle = iboucle + 1;
+            contact = contact + 1;
+          }
+        }
+      }while (contact != 0 && iboucle < compt_max);
+
+      if (iboucle > compt_max) {
+        BFT_MALLOC(random,1,cs_real_t);
+        CS_PROCF(zufall, ZUFALL)(&one, random);
+
+        posasp1[i + nasptot] = pow(seff[iclas] / _pi,0.5) * 2.;
+        posasp2[i + nasptot] = 2 * _pi * (*random);
+        posasp3[i + nasptot] = 0.;
+        posasp4[i + nasptot] = rpart2[iclas];
+
+        BFT_FREE(random);
+      }
+
+   /* No contact between two asperities of various class */
+      for (iasp = 0; iasp <  nasptot; iasp++) {
+        distasp =  pow( posasp1[i + nasptot] *  cos(posasp2[i+nasptot])- posasp1[iasp] * cos(posasp1[iasp]),2) +
+                   pow( posasp1[i+nasptot]* sin(posasp2[i+nasptot])
+                   - posasp1[iasp] * sin(posasp2[iasp]),2) + pow( posasp3[iasp] - posasp3[i+nasptot] ,2) ;
+
+        if( distasp <  pow(posasp4[iasp],2) && pow(posasp3[i + nasptot],2) <
+            (pow(posasp4[iasp],2) - distasp)) {
+          posasp3[i + nasptot] = pow(pow(posasp4[iasp],2) - distasp,0.5) +  posasp3[iasp];
+        }
+      }
+
+      nasp = nasp + 1;
+    }
+
+   /* Number of asperities on the surface */
+    nasptot = nasptot + nbasp[iclas];
+    /* End of the loop on asperity size */
   }
-  else {
-    cs_real_t paramh = 0.5 * (2.0 * rpart + cs_lagr_roughness_param.rayasp)
-                       * cs_lagr_roughness_param.rayasp
-                       / (rpart + cs_lagr_roughness_param.rayasg);
 
-    nmoyap = 1 + paramh * (2 * cs_lagr_roughness_param.rayasg - paramh)
-            / pow(cs_lagr_roughness_param.rayasp,2) * scovap;
 
-    CS_PROCF(fische, FISCHE)(&dim_aux, &nmoyap, nbrasp);
-
-    if (nbrasp[0] > 1) {
-      paramh = 0.5 * (  2. * rpart + 2 * cs_lagr_roughness_param.rayasp
-                      + 4.0 * cs_lagr_roughness_param.dcutof ) * 2.0
-        * cs_lagr_roughness_param.dcutof
-        / (  rpart + cs_lagr_roughness_param.rayasg
-           + cs_lagr_roughness_param.rayasp + cs_lagr_roughness_param.dcutof);
-      nmoyap =  1 + paramh * (2 * cs_lagr_roughness_param.rayasg - paramh)
-             / pow( cs_lagr_roughness_param.rayasp,2) * scovap;
-      CS_PROCF(fische, FISCHE)(&dim_aux, &nmoyap, ntmp);
-      nbasp = ntmp[0];
-      if (nbasp < 1 )
-        nbasp = 1;
+  /* Determination of the mimnimal distance*/
+  for (iasp = 0 ; iasp < nasptot;iasp++) {
+    if ( posasp1[iasp] < (rpart + posasp4[iasp])) {
+      disminp = pow( pow(rpart + posasp4[iasp],2)- pow(posasp1[iasp],2) ,0.5)- rpart + posasp3[iasp];
     }
-    else
-      nbasp = nbrasp[0];
-
-    nbasp = nbasp * nbasg;
-    nbrasp[0] = nbrasp[0] * nbrasg[0];
-    if (nbasp < 1)
-      nbr1 = nbasp;
-    else
-      nbr1 = 1;
-
-    if (nbasg < 1)
-      nbr2 = nbasg;
-    else
-      nbr2 = 1;
-
-    dismin =   cs_lagr_roughness_param.rayasp * nbr1
-             + cs_lagr_roughness_param.rayasg * nbr2;
+    else {
+      disminp = 0.;
+    }
+    if (disminp > dismin) {
+      dismin = disminp;
+    }
   }
 
-  *energy_barrier = 0.;
+   /*      Calculation of the energy barrier */
 
-  cs_real_t barr = 0.;
-  cs_real_t distp = 0.;
+   /*     Loop on the separation distance */
+  for (np = 0; np <  500; np++) {
+    udlvor[np] = 0.;
+    cs_real_t distp = dismin + (np + 1) * 1.0e-10;
 
-  /* Computation of the energy barrier */
+   /*     DLVO between the particle and the rough plate */
 
-  for (i = 0; i < 101; i++) {
+   /*     Sum of the interaction {particle-plate} and {particule-asperity} */
 
-    cs_real_t  step = 1e-10;
+   /*     Sphere-plate interaction */
+    cs_real_t var1     = cs_lagr_van_der_waals_sphere_plane(distp,
+                                                            rpart,
+                                                            cs_lagr_roughness_param.lambwl,
+                                                            cs_lagr_roughness_param.cstham);
 
-    /* Interaction between the sphere and the plate */
+    cs_real_t var2     = cs_lagr_edl_sphere_plane(distp,
+                                                  rpart,
+                                                  cs_lagr_roughness_param.valen,
+                                                  cs_lagr_roughness_param.phi1,
+                                                  cs_lagr_roughness_param.phi2,
+                                                  cs_lagr_roughness_param.kboltz,
+                                                  cs_lagr_roughness_param.temperature[face_id],
+                                                  cs_lagr_roughness_param.debye_length[face_id],
+                                                  cs_lagr_roughness_param.free_space_permit,
+                                                  cs_lagr_roughness_param.water_permit);
 
-    distp = dismin + cs_lagr_roughness_param.dcutof + i * step;
 
-    cs_real_t var1
-      = cs_lagr_van_der_waals_sphere_plane(distp,
-                                           rpart,
-                                           cs_lagr_roughness_param.lambwl,
-                                           cs_lagr_roughness_param.cstham);
+    udlvor[np] = (var1 + var2) * (1. - scovtot);
 
-    cs_real_t var2
-      = cs_lagr_edl_sphere_plane(distp,
-                                 rpart,
-                                 cs_lagr_roughness_param.phi1,
-                                 cs_lagr_roughness_param.phi2,
-                                 cs_lagr_roughness_param.kboltz,
-                                 cs_lagr_roughness_param.temperature[face_id],
-                                 cs_lagr_roughness_param.debye_length[face_id],
-                                 cs_lagr_roughness_param.free_space_permit,
-                                 cs_lagr_roughness_param.water_permit);
+   /*     Sphere-asperity interactions */
 
-    barr = (var1 + var2) * (1 - scovtot);
+    for (iasp = 0; iasp <  nasptot; iasp++) {
+        cs_real_t distcc = pow(pow(distp + rpart- posasp3[iasp],2) + pow(posasp1[iasp],2) ,0.5);
 
-    /* Interaction between the sphere and small-scale asperities */
 
-    cs_real_t distcc =   cs_lagr_roughness_param.dcutof + step * i
-                       + rpart + cs_lagr_roughness_param.rayasp;
+      var1 = cs_lagr_van_der_waals_sphere_sphere(distcc,
+                                                 rpart,
+                                                 posasp4[iasp],
+                                                 cs_lagr_roughness_param.lambwl,
+                                                 cs_lagr_roughness_param.cstham);
 
-    var1 = cs_lagr_van_der_waals_sphere_sphere(distcc,
-                                               rpart,
-                                               cs_lagr_roughness_param.rayasp,
-                                               cs_lagr_roughness_param.lambwl,
-                                               cs_lagr_roughness_param.cstham);
-    var2
-      = cs_lagr_edl_sphere_sphere(distcc,
-                                  rpart,
-                                  cs_lagr_roughness_param.rayasp,
-                                  cs_lagr_roughness_param.phi1,
-                                  cs_lagr_roughness_param.phi2,
-                                  cs_lagr_roughness_param.kboltz,
-                                  cs_lagr_roughness_param.temperature[face_id],
-                                  cs_lagr_roughness_param.debye_length[face_id],
-                                  cs_lagr_roughness_param.free_space_permit,
-                                  cs_lagr_roughness_param.water_permit);
 
-    barr = barr + (var1 + var2) * nbasp;
+      var2 = cs_lagr_edl_sphere_sphere(distcc,
+                                       rpart,
+                                       posasp4[iasp],
+                                       cs_lagr_roughness_param.valen,
+                                       cs_lagr_roughness_param.phi1,
+                                       cs_lagr_roughness_param.phi2,
+                                       cs_lagr_roughness_param.kboltz,
+                                       cs_lagr_roughness_param.temperature[face_id],
+                                       cs_lagr_roughness_param.debye_length[face_id],
+                                       cs_lagr_roughness_param.free_space_permit,
+                                       cs_lagr_roughness_param.water_permit);
 
-    /* Interaction between the sphere and large-scale asperities */
+      udlvor[np] = udlvor[np] + (var1 + var2) * (distp + rpart - posasp3[iasp]) / distcc;
+    }
 
-    distcc =   cs_lagr_roughness_param.dcutof + step * i
-             + rpart + cs_lagr_roughness_param.rayasg;
+    /*     End of the loop on the separation distance */
+  }
 
-    var1 = cs_lagr_van_der_waals_sphere_sphere(distcc,
-                                               rpart,
-                                               cs_lagr_roughness_param.rayasg,
-                                               cs_lagr_roughness_param.lambwl,
-                                               cs_lagr_roughness_param.cstham);
-    var2
-      = cs_lagr_edl_sphere_sphere(distcc,
-                                  rpart,
-                                  cs_lagr_roughness_param.rayasg,
-                                  cs_lagr_roughness_param.phi1,
-                                  cs_lagr_roughness_param.phi2,
-                                  cs_lagr_roughness_param.kboltz,
-                                  cs_lagr_roughness_param.temperature[face_id],
-                                  cs_lagr_roughness_param.debye_length[face_id],
-                                  cs_lagr_roughness_param.free_space_permit,
-                                  cs_lagr_roughness_param.water_permit);
+  /*     Tracking of the energy barrier */
+  cs_real_t barren = 0.;
+  for (np = 0; np <  500; np++) {
+    if (udlvor[np] > barren) {
+      barren = udlvor[np];
+    }
+    }
+  if (barren < 0.) barren = 0.;
+  *energy_barrier = barren / rpart;
 
-    barr = barr  + (var1 + var2) * nbasg;
+  return  *energy_barrier;
 
-    if (barr >  *energy_barrier)
-      *energy_barrier = barr;
-    if (barr < 0)
-      *energy_barrier = 0;
-   }
-
-  *energy_barrier = *energy_barrier / rpart;
 }
+
 
 /*----------------------------------------------------------------------------*/
 

@@ -105,14 +105,14 @@ cs_lagr_van_der_waals_sphere_plane (cs_real_t distp,
   }
   else {
     var = cstham
-      * ((2.45 * lambwl ) /(60 * _pi)
+      * ((2.45 * lambwl ) /(60. * _pi)
          * (  (distp - rpart) / pow(distp,2)
-            - (distp + 3 * rpart) / pow(distp + 2 * rpart,2)
-            - 2.17 / 720 / pow(_pi,2) * pow(lambwl,2) * ((distp - 2 * rpart)
-            / pow(distp,3) - (distp + 4 * rpart) / pow(distp + 2 * rpart,3))
-            + 0.59 / 5040 / pow(_pi,3) * pow(lambwl,3)
-            * ((distp - 3 * rpart) /  pow(distp,4) - (distp + 5 * rpart)
-            / pow(distp + 2 * rpart,4))));
+            - (distp + 3. * rpart) / pow(distp + 2. * rpart,2))
+            - 2.17 / 720. / pow(_pi,2) * pow(lambwl,2) * ((distp - 2. * rpart)
+            / pow(distp,3) - (distp + 4. * rpart) / pow(distp + 2. * rpart,3))
+            + 0.59 / 5040. / pow(_pi,3) * pow(lambwl,3)
+            * ((distp - 3. * rpart) /  pow(distp,4) - (distp + 5. * rpart)
+            / pow(distp + 2. * rpart,4)));
   }
 
   return var;
@@ -146,6 +146,7 @@ cs_lagr_van_der_waals_sphere_sphere(cs_real_t  distcc,
 cs_real_t
 cs_lagr_edl_sphere_plane(cs_real_t  distp,
                          cs_real_t  rpart,
+                         cs_real_t  valen,
                          cs_real_t  phi1,
                          cs_real_t  phi2,
                          cs_real_t  kboltz,
@@ -154,12 +155,13 @@ cs_lagr_edl_sphere_plane(cs_real_t  distp,
                          cs_real_t  free_space_permit,
                          cs_real_t  water_permit)
 {
+
   cs_real_t charge = 1.6e-19;
   /* Reduced zeta potential */
-  cs_real_t lphi1 =  charge * phi1 /  kboltz / temp;
-  cs_real_t lphi2 =  charge * phi2 /  kboltz / temp;
+  cs_real_t lphi1 =  valen * charge * phi1 /  kboltz / temp;
+  cs_real_t lphi2 =  valen * charge * phi2 /  kboltz / temp;
 
-  cs_real_t tau = rpart / (1. / debye_length);
+  cs_real_t tau = rpart / debye_length;
 
   /* Extended reduced zeta potential */
   /* (following the work from Ohshima et al, 1982, JCIS, 90, 17-26) */
@@ -168,9 +170,7 @@ cs_lagr_edl_sphere_plane(cs_real_t  distp,
          ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
          * pow(tanh(lphi1 / 4.),2),0.5));
 
-  lphi2 = 8. * tanh(lphi2 / 4.) /
-          ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
-          * pow(tanh(lphi2 / 4.),2),0.5));
+  lphi2 = 4. * tanh(lphi2 / 4.) ;
 
   cs_real_t alpha =   sqrt((distp + rpart) / rpart)
                     + sqrt(rpart / (distp + rpart));
@@ -179,7 +179,7 @@ cs_lagr_edl_sphere_plane(cs_real_t  distp,
   cs_real_t gamma = sqrt(rpart / (distp + rpart)) * exp(-1./debye_length * distp);
 
   cs_real_t var = 2 * _pi * free_space_permit * water_permit
-                  * pow((kboltz * temp / charge),2)
+    * pow((kboltz * temp / (1. * valen) / charge),2)
                   * rpart * (distp + rpart) / (distp + 2 * rpart)
                   * (omega1 * log(1 + gamma) + omega2 * log(1 - gamma));
 
@@ -196,6 +196,7 @@ cs_real_t
 cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
                           cs_real_t  rpart1,
                           cs_real_t  rpart2,
+                          cs_real_t  valen,
                           cs_real_t  phi1,
                           cs_real_t  phi2,
                           cs_real_t  kboltz,
@@ -207,20 +208,21 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
   cs_real_t charge = 1.6e-19;
 
   /* Reduced zeta potential */
-  cs_real_t lphi1 =  charge * phi1 /  kboltz / temp;
-  cs_real_t lphi2 =  charge * phi2 /  kboltz / temp;
+  cs_real_t lphi1 =  valen * charge * phi1 /  kboltz / temp;
+  cs_real_t lphi2 =  valen * charge * phi2 /  kboltz / temp;
 
-  cs_real_t tau = rpart1 / (1. / debye_length);
 
   /* Extended reduced zeta potential */
   /* (following the work from Ohshima et al, 1982, JCIS, 90, 17-26) */
 
+  cs_real_t tau1 = rpart1 / debye_length;
   lphi1 = 8. * tanh(lphi1 / 4.) /
-    ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
+    ( 1. + pow(1. - (2. * tau1 + 1.) / (pow(tau1 + 1,2))
                * pow(tanh(lphi1 / 4.),2),0.5));
 
+  cs_real_t tau2 = rpart2 / debye_length;
   lphi2 = 8. * tanh(lphi2 / 4.) /
-         ( 1. + pow(1. - (2. * tau + 1.) / (pow(tau + 1,2))
+         ( 1. + pow(1. - (2. * tau2 + 1.) / (pow(tau2 + 1,2))
           * pow(tanh(lphi2 / 4.),2),0.5));
 
   cs_real_t alpha =    sqrt(rpart2 * (distcc - rpart2)

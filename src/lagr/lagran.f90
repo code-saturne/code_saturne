@@ -989,6 +989,9 @@ module lagran
   !> Electrokinetic potential of the second solid
   double precision, save ::  phi2
 
+  !> Valency of ions in the solution (used for EDL forces)
+  double precision, save ::  valen
+
   !> Ionic force
   double precision, save ::  fion
 

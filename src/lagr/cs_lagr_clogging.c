@@ -105,6 +105,7 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
                               const cs_real_t   *ionic_strength,
                               const cs_real_t   *jamming_limit,
                               const cs_real_t   *min_porosity,
+                              const cs_real_t   *valen,
                               const cs_real_t    temperature[],
                               const cs_real_t   *phi1,
                               const cs_real_t   *phi2,
@@ -129,6 +130,7 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
   cs_lagr_clogging_param.ionic_strength = *ionic_strength;
   cs_lagr_clogging_param.jamming_limit = *jamming_limit;
   cs_lagr_clogging_param.min_porosity = *min_porosity;
+  cs_lagr_clogging_param.valen = *valen;
   cs_lagr_clogging_param.phi1 = *phi1;
   cs_lagr_clogging_param.phi2 = *phi2;
   cs_lagr_clogging_param.cstham = *cstham;
@@ -164,6 +166,7 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
   bft_printf(" cstfar = %g\n", cs_lagr_clogging_param.faraday_cst);
   bft_printf(" epsvid = %g\n", cs_lagr_clogging_param.free_space_permit);
   bft_printf(" epseau = %g\n", cs_lagr_clogging_param.water_permit);
+  bft_printf(" valen   = %g\n", cs_lagr_clogging_param.valen);
   bft_printf(" fion   = %g\n", cs_lagr_clogging_param.ionic_strength);
   bft_printf(" temp[1]   = %g\n", cs_lagr_clogging_param.temperature[0]);
   bft_printf(" debye[1]   = %g\n", cs_lagr_clogging_param.debye_length[0]);
@@ -309,6 +312,7 @@ cs_lagr_clogging_barrier(const void                     *particle,
         = cs_lagr_edl_sphere_sphere(distcc,
                                     deposited_radius,
                                     depositing_radius,
+                                    cs_lagr_clogging_param.valen,
                                     cs_lagr_clogging_param.phi1,
                                     cs_lagr_clogging_param.phi2,
                                     cs_lagr_clogging_param.kboltz,
