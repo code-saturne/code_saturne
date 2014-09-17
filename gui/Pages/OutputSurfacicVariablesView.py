@@ -44,12 +44,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
-from Pages.OutputControlModel import OutputControlModel
-from Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
-from Pages.OutputVolumicVariablesView import LabelDelegate
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.OutputSurfacicVariablesForm import Ui_OutputSurfacicVariablesForm
+from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.Pages.OutputSurfacicVariablesModel import OutputSurfacicVariablesModel
+from code_saturne.Pages.OutputVolumicVariablesView import LabelDelegate
 
 #-------------------------------------------------------------------------------
 # log config

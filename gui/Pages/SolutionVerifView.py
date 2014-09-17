@@ -45,14 +45,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, Py2
-from Base.XMLengine import Case
-from Base.XMLinitialize import XMLinit
-from Pages.SolutionVerifForm import Ui_SolutionVerifForm
-from Pages.MeshQualityCriteriaLogDialogForm import Ui_MeshQualityCriteriaLogDialogForm
-from Pages.SolutionDomainModel import SolutionDomainModel
-from Pages.OutputControlModel import OutputControlModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, Py2
+from code_saturne.Base.XMLengine import Case
+from code_saturne.Base.XMLinitialize import XMLinit
+from code_saturne.Pages.SolutionVerifForm import Ui_SolutionVerifForm
+from code_saturne.Pages.MeshQualityCriteriaLogDialogForm import Ui_MeshQualityCriteriaLogDialogForm
+from code_saturne.Pages.SolutionDomainModel import SolutionDomainModel
+from code_saturne.Pages.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -48,12 +48,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, setGreenColor, from_qvariant
-from Pages.SolutionDomainModel import RelOrAbsPath
-from Pages.StartRestartForm import Ui_StartRestartForm
-from Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
-from Pages.StartRestartModel import StartRestartModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, setGreenColor, from_qvariant
+from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath
+from code_saturne.Pages.StartRestartForm import Ui_StartRestartForm
+from code_saturne.Pages.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm
+from code_saturne.Pages.StartRestartModel import StartRestartModel
 
 #-------------------------------------------------------------------------------
 # log config

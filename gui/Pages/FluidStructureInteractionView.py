@@ -54,16 +54,16 @@ from PyQt4.QtGui  import QAbstractItemView, QItemSelectionModel, QValidator
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.QtPage                          import DoubleValidator, IntValidator
-from Base.QtPage                          import to_qvariant, from_qvariant
-from Pages.FluidStructureInteractionForm  import Ui_FluidStructureInteractionForm
-from Pages.FluidStructureInteractionModel import FluidStructureInteractionModel
-from Pages.LocalizationModel              import LocalizationModel
-from Pages.Boundary                       import Boundary
-from Pages.FluidStructureInteractionAdvancedOptionsDialogForm import \
+from code_saturne.Base.QtPage                          import DoubleValidator, IntValidator
+from code_saturne.Base.QtPage                          import to_qvariant, from_qvariant
+from code_saturne.Pages.FluidStructureInteractionForm  import Ui_FluidStructureInteractionForm
+from code_saturne.Pages.FluidStructureInteractionModel import FluidStructureInteractionModel
+from code_saturne.Pages.LocalizationModel              import LocalizationModel
+from code_saturne.Pages.Boundary                       import Boundary
+from code_saturne.Pages.FluidStructureInteractionAdvancedOptionsDialogForm import \
 Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

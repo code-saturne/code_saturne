@@ -47,14 +47,20 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
+from code_saturne.Base.Toolbox import GuiParam
 
 import CFDSTUDYGUI
 from CFDSTUDYGUI_DataModel import _getStudy, _getEngine
 from CFDSTUDYGUI_Commons import sg, sgPyQt
-from salome import lcc
-import smesh
+
+import salome
+from salome import *
+
+import SMESH
+from salome.smesh import smeshBuilder
+
 import GEOM
+from salome.geom import geomBuilder
 
 #-------------------------------------------------------------------------------
 # log config
@@ -66,11 +72,24 @@ log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 
-aStudy = _getStudy()
-aSMESH_SO = aStudy.FindComponent("SMESH")
-aGEOM_SO = aStudy.FindComponent("GEOM")
+try:
+    engineGeom = lcc.FindOrLoadComponent( "FactoryServer", "GEOM" )
+    aGEOM_SO = geomBuilder.New(salome.myStudy, engineGeom)
+    pass
+except:
+    aGEOM_SO = None
+    pass
+
+try:
+    engineMesh = lcc.FindOrLoadComponent( "FactoryServer", "SMESH" )
+    aSMESH_SO = smeshBuilder.New(salome.myStudy, engineSmesh)
+    pass
+except:
+    aSMESH_SO = None
+    pass
 
 #loading IORs
+aStudy = _getStudy()
 builder = aStudy.NewBuilder()
 if aSMESH_SO != None:
     aSMESHEngine = lcc.FindOrLoadComponent("FactoryServer", "SMESH")
@@ -81,21 +100,6 @@ if aGEOM_SO != None:
     builder.LoadWith(aGEOM_SO, aGEOMEngine)
 
 #-------------------------------------------------------------------------------
-
-#def isSmeshAndGeomActivated():
-#    if aSMESH_SO == None and aGEOM_SO == None:
-#        return False
-#    else:
-#        return True
-
-
-#def isSmeshActivated():
-#    if aSMESH_SO == None:
-#        tkMessageBox.showwarning ("WARNING", "MESH module is not activated.")
-#        return False
-#    else:
-#        return True
-
 
 def BoundaryGroup():
     """
@@ -115,13 +119,13 @@ def BoundaryGroup():
                     if anObjectDS !=  None:
 
                         # check for smesh group
-                        aSmeshObject = anObjectDS._narrow(smesh.SMESH_GroupBase)
+                        aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_GroupBase)
                         #if aSmeshObject == None:
-                        #    aSmeshObject = anObjectDS._narrow(smesh.SMESH_Group)
+                        #    aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_Group)
                         #if aSmeshObject == None:
-                        #    aSmeshObject = anObjectDS._narrow(smesh.SMESH_GroupOnGeom)
+                        #    aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_GroupOnGeom)
 
-                        if aSmeshObject != None and aSmeshObject.GetType() == smesh.FACE:
+                        if aSmeshObject != None and aSmeshObject.GetType() == smeshBuilder.FACE:
                             if not local:
                                 local = aSmeshObject.GetName()
                             else:
@@ -132,9 +136,8 @@ def BoundaryGroup():
                         if aGeomObject != None and aGeomObject.GetType() == 37:
                             # check the group
                             # get all possible faces
-                            import geompy
-                            all_ids = geompy.SubShapeAllIDs(aGeomObject.GetMainShape(), geompy.ShapeType["FACE"])
-                            cur_ids = geompy.GetObjectIDs(aGeomObject)
+                            all_ids = geomBuilder.SubShapeAllIDs(aGeomObject.GetMainShape(), geomBuilder.ShapeType["FACE"])
+                            cur_ids = geomBuilder.GetObjectIDs(aGeomObject)
                             isValid = len(cur_ids) > 0 # not include empty list
                             if isValid:
                                 for face_id in cur_ids:
@@ -170,9 +173,9 @@ def VolumeGroup():
                     anObjectDS = sobj.GetObject()
                     #check for smesh group
                     if anObjectDS !=  None:
-                        #aSmeshObject = anObjectDS._narrow(smesh.SMESH_Group)
-                        aSmeshObject = anObjectDS._narrow(smesh.SMESH_GroupBase)
-                        if aSmeshObject != None and aSmeshObject.GetType() == smesh.VOLUME:
+                        #aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_Group)
+                        aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_GroupBase)
+                        if aSmeshObject != None and aSmeshObject.GetType() == smeshBuilder.VOLUME:
                             if not local:
                                 local = aSmeshObject.GetName()
                             else:
@@ -183,9 +186,8 @@ def VolumeGroup():
                         if aGeomObject != None and aGeomObject.GetType() == 37:
                             # check the group
                             # get all possible volumes
-                            import geompy
-                            all_ids = geompy.SubShapeAllIDs(aGeomObject.GetMainShape(), geompy.ShapeType["SOLID"])
-                            cur_ids = geompy.GetObjectIDs(aGeomObject)
+                            all_ids = geomBuilder.SubShapeAllIDs(aGeomObject.GetMainShape(), geomBuilder.ShapeType["SOLID"])
+                            cur_ids = geomBuilder.GetObjectIDs(aGeomObject)
                             isValid = len(cur_ids) > 0 # not include empty list
                             if isValid:
                                 for face_id in cur_ids:

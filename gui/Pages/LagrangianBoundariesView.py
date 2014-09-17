@@ -46,16 +46,16 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import IntValidator, DoubleValidator, ComboModel
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
-from Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.LagrangianBoundariesModel import LagrangianBoundariesModel
-from Pages.LagrangianModel import LagrangianModel
-from Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
-from Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.LagrangianBoundariesForm import Ui_LagrangianBoundariesForm
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.LagrangianBoundariesModel import LagrangianBoundariesModel
+from code_saturne.Pages.LagrangianModel import LagrangianModel
+from code_saturne.Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 
 
 #-------------------------------------------------------------------------------

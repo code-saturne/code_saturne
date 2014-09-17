@@ -46,13 +46,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, IntValidator, to_qvariant
-from Base.QtPage import from_qvariant, to_text_string
-from Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
-from Pages.NumericalParamEquationModel import NumericalParamEquatModel
-from Pages.TurbulenceModel import TurbulenceModel
-from Pages.SteadyManagementModel import SteadyManagementModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, IntValidator, to_qvariant
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
+from code_saturne.Pages.NumericalParamEquationForm import Ui_NumericalParamEquationForm
+from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquatModel
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config

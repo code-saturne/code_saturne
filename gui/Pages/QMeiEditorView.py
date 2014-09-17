@@ -51,8 +51,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Pages.QMeiEditorForm import Ui_QMeiDialog
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Pages.QMeiEditorForm import Ui_QMeiDialog
 
 #-------------------------------------------------------------------------------
 # log config

@@ -40,11 +40,11 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import XMLmodel, ModelTest
-from Pages.TimeStepModel import TimeStepModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Pages.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------
 #  SteadyManagement model class
@@ -94,7 +94,7 @@ class SteadyManagementModel(Model):
             self.getZeroIteration()
             self.getNbIter()
             self.getRelaxCoefficient()
-            from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+            from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
             model = NumericalParamGlobalModel(self.case).getVelocityPressureAlgorithm()
             if model == 'piso':
                 self.case.xmlRemoveChild('velocity_pressure_algo')
@@ -102,7 +102,7 @@ class SteadyManagementModel(Model):
         else:
             mdl_time.setTimePassing(0)
             # Treatment of SIMPLE algorithm
-            from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+            from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
             model = NumericalParamGlobalModel(self.case).getVelocityPressureAlgorithm()
             if model == 'simple':
                 self.case.xmlRemoveChild('velocity_pressure_algo')

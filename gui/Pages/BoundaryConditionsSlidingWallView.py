@@ -44,13 +44,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsSlidingWallForm import Ui_BoundaryConditionsSlidingWallForm
-from Pages.MobileMeshModel import MobileMeshModel
+from code_saturne.Pages.BoundaryConditionsSlidingWallForm import Ui_BoundaryConditionsSlidingWallForm
+from code_saturne.Pages.MobileMeshModel import MobileMeshModel
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, from_qvariant
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, from_qvariant
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # log config

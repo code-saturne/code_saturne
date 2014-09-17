@@ -39,11 +39,11 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.XMLvariables import Model, Variables
-from Base.XMLmodel     import  ModelTest
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel     import  ModelTest
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 
 #-------------------------------------------------------------------------------
 # Atmospheric flows model class

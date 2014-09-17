@@ -44,15 +44,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, setGreenColor
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, setGreenColor
 
-from Pages.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
-from Pages.MobileMeshModel import MobileMeshModel
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
+from code_saturne.Pages.BoundaryConditionsMobileMeshForm import Ui_BoundaryConditionsMobileMeshForm
+from code_saturne.Pages.MobileMeshModel import MobileMeshModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
 
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

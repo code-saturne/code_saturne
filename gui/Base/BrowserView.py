@@ -44,9 +44,9 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.BrowserForm import Ui_BrowserForm
-from Base.Toolbox import GuiParam, displaySelectedPage
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.BrowserForm import Ui_BrowserForm
+from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 #-------------------------------------------------------------------------------
 # log config

@@ -40,13 +40,13 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
-from Pages.OutputControlModel import OutputControlModel
-from Pages.Boundary import Boundary
-from Pages.LocalizationModel import LocalizationModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # Mobil Mesh model class

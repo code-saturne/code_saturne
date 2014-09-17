@@ -39,7 +39,7 @@ import os, sys, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 
 #-------------------------------------------------------------------------------
 # Global GUI parameters

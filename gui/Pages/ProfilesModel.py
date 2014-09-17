@@ -40,11 +40,11 @@ import os, sys, string, types, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model, Variables
-from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # Model class

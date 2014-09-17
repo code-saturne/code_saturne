@@ -41,16 +41,16 @@ from math import pow
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model, Variables
-from Pages.TurbulenceModel import TurbulenceModel
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.LocalizationModel import LocalizationModel
-from Pages.CompressibleModel import CompressibleModel
-from Pages.ElectricalModel import ElectricalModel
-from Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class

@@ -44,11 +44,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, DoubleValidator, from_qvariant
-from Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
-from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
-from Pages.SteadyManagementModel import SteadyManagementModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
+from code_saturne.Pages.NumericalParamGlobalForm import Ui_NumericalParamGlobalForm
+from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config

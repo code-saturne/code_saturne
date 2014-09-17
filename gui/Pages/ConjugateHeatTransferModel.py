@@ -40,10 +40,10 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
 # Conjugate Heat Transfer model class

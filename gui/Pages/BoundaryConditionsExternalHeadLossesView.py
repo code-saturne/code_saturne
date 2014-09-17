@@ -44,15 +44,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import setGreenColor
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import setGreenColor
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
-from Pages.BoundaryConditionsExternalHeadLossesForm import Ui_BoundaryConditionsExternalHeadLossesForm
+from code_saturne.Pages.BoundaryConditionsExternalHeadLossesForm import Ui_BoundaryConditionsExternalHeadLossesForm
 
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

@@ -41,22 +41,22 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.XMLvariables import Variables
-from Base import Toolbox
+from code_saturne.Base.XMLvariables import Variables
+from code_saturne.Base import Toolbox
 
-from Pages.LocalizationModel import Zone, LocalizationModel
-from Pages.OutputControlModel import OutputControlModel
-from Pages.MobileMeshModel import MobileMeshModel
-from Pages.TurbulenceModel import TurbulenceModel
-from Pages.InitializationModel import InitializationModel
-from Pages.TimeStepModel import TimeStepModel
-from Pages.SteadyManagementModel import SteadyManagementModel
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ElectricalModel import ElectricalModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.LocalizationModel import Zone, LocalizationModel
+from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.Pages.MobileMeshModel import MobileMeshModel
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.InitializationModel import InitializationModel
+from code_saturne.Pages.TimeStepModel import TimeStepModel
+from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 
 #-------------------------------------------------------------------------------
 # class XMLinit
@@ -847,7 +847,7 @@ class XMLinitTestCase(unittest.TestCase):
         """
         This method is executed before all "check" methods.
         """
-        from Base import XMLengine
+        from code_saturne.Base import XMLengine
         Toolbox.GuiParam.lang = 'en'
         self.doc = XMLengine.XMLDocument("")
         self.case = XMLengine.Case(None)

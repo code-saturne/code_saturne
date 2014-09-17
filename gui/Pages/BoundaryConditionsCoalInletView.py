@@ -47,16 +47,16 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
-from Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
+from code_saturne.Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
 import Pages.CoalCombustionModel as CoalCombustion
 
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

@@ -47,21 +47,21 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
+from code_saturne.Base.Toolbox import GuiParam
 
 import Base.QtPage as QtPage
 
-from Pages.AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
-from Pages.TurbulenceModel import TurbulenceModel
-from Pages.LagrangianModel import LagrangianModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.CompressibleModel import CompressibleModel
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.ElectricalModel import ElectricalModel
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.SteadyManagementModel import SteadyManagementModel
-from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.LagrangianModel import LagrangianModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config

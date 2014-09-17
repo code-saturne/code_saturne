@@ -48,8 +48,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Pages.XMLEditorForm import Ui_XMLEditor
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Pages.XMLEditorForm import Ui_XMLEditor
 
 #-------------------------------------------------------------------------------
 # log config

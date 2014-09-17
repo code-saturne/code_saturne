@@ -44,15 +44,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
 
-from Pages.BoundaryConditionsElectricalForm import Ui_BoundaryConditionsElectricalForm
-from Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.BoundaryConditionsElectricalForm import Ui_BoundaryConditionsElectricalForm
+from code_saturne.Pages.ElectricalModel import ElectricalModel
 
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.QMeiEditorView import QMeiEditorView
-from Pages.Boundary import Boundary
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # log config

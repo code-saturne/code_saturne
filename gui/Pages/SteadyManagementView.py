@@ -46,11 +46,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Pages.SteadyManagementForm import Ui_SteadyManagementForm
-from Base.QtPage import DoubleValidator, IntValidator, from_qvariant
-from Base.XMLvariables import Variables
-from Pages.SteadyManagementModel import SteadyManagementModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Pages.SteadyManagementForm import Ui_SteadyManagementForm
+from code_saturne.Base.QtPage import DoubleValidator, IntValidator, from_qvariant
+from code_saturne.Base.XMLvariables import Variables
+from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config

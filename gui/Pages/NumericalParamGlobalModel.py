@@ -42,11 +42,11 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
-from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # NumericalParamGlobal model class
@@ -79,7 +79,7 @@ class NumericalParamGlobalModel(Model):
         self.default['gradient_reconstruction'] = 0
         self.default['time_scheme_order'] = 1
         self.default['velocity_pressure_algo'] ='simplec'
-        from Pages.CompressibleModel import CompressibleModel
+        from code_saturne.Pages.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.default['piso_sweep_number'] = 1
         else:

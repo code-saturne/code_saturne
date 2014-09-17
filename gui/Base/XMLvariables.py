@@ -44,8 +44,8 @@ import unittest
 #-------------------------------------------------------------------------------
 
 
-from Base.Common import *
-from Base import Toolbox
+from code_saturne.Base.Common import *
+from code_saturne.Base import Toolbox
 
 
 #-------------------------------------------------------------------------------
@@ -251,6 +251,7 @@ class Variables:
             we suspend global record to prevent infinity loop
             use when call another class function
             """
+
             if self.case.record_global == True:
                 self.case.undoGlobal(f, c)
                 self.case.undoStop()
@@ -265,6 +266,7 @@ class Variables:
     @staticmethod
     def undoLocal(f):
         def _wrapper2(self, *c, **d):
+
             self.case.undo(f, c)
             return f(self, *c, **d)
         return _wrapper2

@@ -44,17 +44,17 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
 
-from Pages.InitializationForm import Ui_InitializationForm
-from Pages.TurbulenceModel import TurbulenceModel
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
-from Pages.InitializationModel import InitializationModel
-from Pages.CompressibleModel import CompressibleModel
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.InitializationForm import Ui_InitializationForm
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, LocalizationModel
+from code_saturne.Pages.InitializationModel import InitializationModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

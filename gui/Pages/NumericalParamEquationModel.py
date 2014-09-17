@@ -42,14 +42,14 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import XMLmodel, ModelTest
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
-from Pages.TurbulenceModel import TurbulenceModel
-from Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # NumericalParamEquat model class
@@ -111,7 +111,7 @@ class NumericalParamEquatModel(Model):
         else:
             self.default['order_scheme'] = 'centered'
             self.default['blending_factor'] = 1.
-        from Pages.CompressibleModel import CompressibleModel
+        from code_saturne.Pages.CompressibleModel import CompressibleModel
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             self.default['order_scheme'] = 'upwind'
             self.default['blending_factor'] = 0.
@@ -358,7 +358,7 @@ class NumericalParamEquatModel(Model):
     def getSolverList(self):
         """ Return the variables label list for solver parameters """
         lst = []
-        from Pages.CompressibleModel import CompressibleModel
+        from code_saturne.Pages.CompressibleModel import CompressibleModel
         comp_model = CompressibleModel(self.case).getCompressibleModel()
         del CompressibleModel
 
@@ -837,7 +837,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
         assert model.getSolverPrecision('Pressure') == 1e-8,\
                 'Could not get solver precision for pressure in NumericalParamEquationModel'
-        from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+        from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
         NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
         del NumericalParamGlobalModel
         assert model.getSolverPrecision('Velocity') == 1e-5
@@ -862,7 +862,7 @@ class NumericalParamEquatTestCase(ModelTest):
         Check whether the NumericalParamEquatModel class could set and get time step factor
         """
         model = NumericalParamEquatModel(self.case)
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 

@@ -33,8 +33,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.VerifyExistenceLabelDialogForm import Ui_VerifyExistenceLabelDialogForm
-from Base.QtPage import RegExpValidator
+from code_saturne.Pages.VerifyExistenceLabelDialogForm import Ui_VerifyExistenceLabelDialogForm
+from code_saturne.Base.QtPage import RegExpValidator
 
 #-------------------------------------------------------------------------------
 # Advanced dialog

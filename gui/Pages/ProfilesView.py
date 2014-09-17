@@ -47,13 +47,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import LABEL_LENGTH_MAX
-from Base.Toolbox import GuiParam
-from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from Base.QtPage import setGreenColor, to_qvariant, from_qvariant
-from Pages.ProfilesForm import Ui_ProfilesForm
-from Pages.ProfilesModel import ProfilesModel
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
+from code_saturne.Base.QtPage import setGreenColor, to_qvariant, from_qvariant
+from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
+from code_saturne.Pages.ProfilesModel import ProfilesModel
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config
@@ -268,7 +268,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             default['list'] = self.mdl.getProfilesLabelsList()
             rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
             default['regexp'] = QRegExp(rx)
-            from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+            from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
             dialog = VerifyExistenceLabelDialogView(self, default)
             if dialog.exec_():
                 result = dialog.get_result()

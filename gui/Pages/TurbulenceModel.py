@@ -40,12 +40,12 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
-from Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # Turbulence model class
@@ -239,13 +239,13 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'smagorinsky_constant^2')
             self.__removeVariablesAndProperties([], 'turbulent_viscosity')
 
-            from Pages.TimeStepModel import TimeStepModel
+            from code_saturne.Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).setTimePassing(0)
             del TimeStepModel
 
             NumericalParamGlobalModel(self.case).setTimeSchemeOrder(2)
 
-            from Pages.NumericalParamEquationModel import NumericalParamEquatModel
+            from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquatModel
             NumericalParamEquatModel(self.case).setSchemeDefaultValues()
             del NumericalParamEquatModel
 
@@ -284,7 +284,7 @@ class TurbulenceModel(Variables, Model):
         """
         Put boundaries conditions if it's necessary
         """
-        from Pages.Boundary import Boundary
+        from code_saturne.Pages.Boundary import Boundary
         for nodbc in self.node_bc.xmlGetChildNodeList('inlet'):
             model = Boundary('inlet', nodbc['label'], self.case)
             model.getTurbulenceChoice()
@@ -418,7 +418,7 @@ class TurbulenceModelTestCase(ModelTest):
 
     def checkTurbulenceModelsList(self):
         """Check whether the TurbulenceModelList could be get"""
-        from Pages.LagrangianModel import LagrangianModel
+        from code_saturne.Pages.LagrangianModel import LagrangianModel
         LagrangianModel(self.case).setLagrangianStatus('on')
         del LagrangianModel
         mdl = TurbulenceModel(self.case)

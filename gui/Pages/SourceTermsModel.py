@@ -41,12 +41,12 @@ from math import pow
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model, Variables
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.LocalizationModel import LocalizationModel
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel
 
 #-------------------------------------------------------------------------------
 # Variables and Scalar model initialization modelling class

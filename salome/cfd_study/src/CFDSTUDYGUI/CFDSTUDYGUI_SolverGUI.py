@@ -319,10 +319,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
         if CFD_Code() == CFD_Saturne:
             from cs_package import package
-            from Base.MainView import MainView
+            from code_saturne.Base.MainView import MainView
         elif CFD_Code() == CFD_Neptune:
             from nc_package import package
-            from core.MainView import MainView
+            from neptune_cfd.core.MainView import MainView
 
         if sobjXML == None:
             Title = "unnamed"

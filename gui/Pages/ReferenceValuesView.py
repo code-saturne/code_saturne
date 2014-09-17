@@ -46,14 +46,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, DoubleValidator, from_qvariant
-from Pages.ReferenceValuesForm import Ui_ReferenceValuesForm
-from Pages.ReferenceValuesModel import ReferenceValuesModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.CompressibleModel import CompressibleModel
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
+from code_saturne.Pages.ReferenceValuesForm import Ui_ReferenceValuesForm
+from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # log config

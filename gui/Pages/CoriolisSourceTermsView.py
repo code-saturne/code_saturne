@@ -44,11 +44,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, from_qvariant
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
 
-from Pages.CoriolisSourceTermsForm import Ui_CoriolisSourceTermsForm
-from Pages.CoriolisSourceTermsModel import CoriolisSourceTermsModel
+from code_saturne.Pages.CoriolisSourceTermsForm import Ui_CoriolisSourceTermsForm
+from code_saturne.Pages.CoriolisSourceTermsModel import CoriolisSourceTermsModel
 
 #-------------------------------------------------------------------------------
 # log config

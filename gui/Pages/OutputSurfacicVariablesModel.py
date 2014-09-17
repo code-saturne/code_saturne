@@ -38,12 +38,12 @@ import string, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import ModelTest
-from Base.XMLvariables import Model, Variables
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 
 #-------------------------------------------------------------------------------
 # Output model class
@@ -223,7 +223,7 @@ class OutputSurfacicVariablesTestCase(ModelTest):
         Check whether the OutputSurfacicVariablesModel class could be set and
         get status for post processing of named property
         """
-        from Pages.ThermalRadiationModel import ThermalRadiationModel
+        from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
         del ThermalRadiationModel
         model = OutputSurfacicVariablesModel(self.case)

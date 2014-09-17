@@ -40,10 +40,10 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
-from Base.XMLmodel import ModelTest
-from Base.XMLvariables import Variables, Model
-from Pages.OutputControlModel import OutputControlModel
+from code_saturne.Base.Common import *
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Pages.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # ThermalRadiation model class
@@ -157,8 +157,8 @@ class ThermalRadiationModel(Variables, Model):
         Private method : put by default boundary conditions for radiative
         variables as soon as a radiative model is set
         """
-        from Pages.LocalizationModel import LocalizationModel, Zone
-        from Pages.Boundary import Boundary
+        from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+        from code_saturne.Pages.Boundary import Boundary
         d = LocalizationModel('BoundaryZone', self.case)
         for zone in d.getZones():
             nature = zone.getNature()

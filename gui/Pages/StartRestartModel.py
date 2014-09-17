@@ -41,10 +41,10 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model, Variables
-from Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
 # Start-Restart model class

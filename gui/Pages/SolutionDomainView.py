@@ -51,12 +51,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.SolutionDomainForm import Ui_SolutionDomainForm
-from Pages.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
-from Pages.FacesSelectionView import StandardItemModelFaces
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.SolutionDomainForm import Ui_SolutionDomainForm
+from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
+from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------
 # log config

@@ -54,13 +54,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.Common import LABEL_LENGTH_MAX
-from Base.QtPage import IntValidator, RegExpValidator
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.LocalizationForm import Ui_LocalizationForm
-from Pages.PreProcessingInformationsView import Informations, preprocessorFile
-from Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.QtPage import IntValidator, RegExpValidator
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.LocalizationForm import Ui_LocalizationForm
+from code_saturne.Pages.PreProcessingInformationsView import Informations, preprocessorFile
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
 # log config
@@ -113,7 +113,7 @@ class LabelDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData-> default = %s" % default)
 
-                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
@@ -759,7 +759,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         graphical selection in the VTK viwver, or in the ObjectBrowser.
         """
         if self.case['salome']:
-            from Pages.SalomeHandler import BoundaryGroup, VolumeGroup
+            from code_saturne.Pages.SalomeHandler import BoundaryGroup, VolumeGroup
 
             log.debug("slotAddFromSalome: zoneType -> %s" % self.zoneType)
             if self.zoneType == 'VolumicZone':

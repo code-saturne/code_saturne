@@ -44,14 +44,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsMeteoForm import Ui_BoundaryConditionsMeteoForm
-from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.BoundaryConditionsMeteoForm import Ui_BoundaryConditionsMeteoForm
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 
 #-------------------------------------------------------------------------------
 # log config

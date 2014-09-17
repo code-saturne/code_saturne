@@ -40,8 +40,8 @@ import os, sys, string, types
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
 # Utility function

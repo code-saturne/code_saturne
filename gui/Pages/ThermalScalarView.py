@@ -46,15 +46,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel
-from Pages.ThermalScalarForm import Ui_ThermalScalarForm
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ElectricalModel import ElectricalModel
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from Pages.CompressibleModel import CompressibleModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel
+from code_saturne.Pages.ThermalScalarForm import Ui_ThermalScalarForm
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config

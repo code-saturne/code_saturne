@@ -60,7 +60,7 @@ except:
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
+from code_saturne.Base.Toolbox import GuiParam
 
 #-------------------------------------------------------------------------------
 # log config

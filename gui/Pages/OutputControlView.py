@@ -52,15 +52,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.Common import LABEL_LENGTH_MAX
-from Base.QtPage import ComboModel, DoubleValidator, IntValidator
-from Base.QtPage import RegExpValidator, setGreenColor, to_qvariant
-from Base.QtPage import from_qvariant, to_text_string
-from Pages.OutputControlForm import Ui_OutputControlForm
-from Pages.OutputControlModel import OutputControlModel
-from Pages.QMeiEditorView import QMeiEditorView
-from Pages.LagrangianModel import LagrangianModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, IntValidator
+from code_saturne.Base.QtPage import RegExpValidator, setGreenColor, to_qvariant
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
+from code_saturne.Pages.OutputControlForm import Ui_OutputControlForm
+from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.LagrangianModel import LagrangianModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -114,7 +114,7 @@ class LabelWriterDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
-                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
@@ -170,7 +170,7 @@ class LabelMeshDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
-                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
@@ -2532,12 +2532,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         """
         steady = 1
-        from Pages.SteadyManagementModel import SteadyManagementModel
+        from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
         if SteadyManagementModel(self.case).getSteadyFlowManagement() == 'on':
             steady = 0
         else:
-            from Pages.TimeStepModel import TimeStepModel
+            from code_saturne.Pages.TimeStepModel import TimeStepModel
             if TimeStepModel(self.case).getTimePassing() == 2:
                 steady = 0
 

@@ -62,17 +62,17 @@ import cs_runcase
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BatchRunningForm import Ui_BatchRunningForm
-from Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
-from Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
+from code_saturne.Pages.BatchRunningForm import Ui_BatchRunningForm
+from code_saturne.Pages.BatchRunningAdvancedOptionsDialogForm import Ui_BatchRunningAdvancedOptionsDialogForm
+from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
-from Base.QtPage import to_qvariant, from_qvariant
-from Base.CommandMgrDialogView import CommandMgrDialogView
-from Pages.BatchRunningModel import BatchRunningModel
-from Pages.ScriptRunningModel import ScriptRunningModel
-from Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Base.CommandMgrDialogView import CommandMgrDialogView
+from code_saturne.Pages.BatchRunningModel import BatchRunningModel
+from code_saturne.Pages.ScriptRunningModel import ScriptRunningModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 
 #-------------------------------------------------------------------------------
 # log config

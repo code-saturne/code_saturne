@@ -47,12 +47,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator
-from Base.QtPage import from_qvariant, to_text_string
-from Pages.LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
-from Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
-from Pages.LagrangianModel import LagrangianModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
+from code_saturne.Base.QtPage import from_qvariant, to_text_string
+from code_saturne.Pages.LagrangianStatisticsForm import Ui_LagrangianStatisticsForm
+from code_saturne.Pages.LagrangianStatisticsModel import LagrangianStatisticsModel
+from code_saturne.Pages.LagrangianModel import LagrangianModel
 
 
 #-------------------------------------------------------------------------------

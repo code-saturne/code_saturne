@@ -44,11 +44,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
-from Pages.TimeStepForm import Ui_TimeStepForm
-from Pages.TimeStepModel import TimeStepModel
-from Pages.SteadyManagementModel import SteadyManagementModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
+from code_saturne.Pages.TimeStepForm import Ui_TimeStepForm
+from code_saturne.Pages.TimeStepModel import TimeStepModel
+from code_saturne.Pages.SteadyManagementModel import SteadyManagementModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -147,7 +147,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             idtvar = self.mdl.getTimePassing()
             self.modelTimeOptions.setItem(str_model=str(idtvar))
 
-            from Pages.TurbulenceModel import TurbulenceModel
+            from code_saturne.Pages.TurbulenceModel import TurbulenceModel
             model = TurbulenceModel(self.case).getTurbulenceModel()
             del TurbulenceModel
 

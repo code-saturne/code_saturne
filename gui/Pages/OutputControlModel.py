@@ -45,8 +45,8 @@ import string, sys, unittest
 #-------------------------------------------------------------------------------
 
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model, Variables
-from Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -1120,7 +1120,7 @@ class OutputControlModel(Model):
 
             # update the attribute "choice" of the probes markup for variables
 
-            from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+            from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
             listNodeVolum = OutputVolumicVariablesModel(self.case).listNodeVolum
             del OutputVolumicVariablesModel
             for nodeList in listNodeVolum:

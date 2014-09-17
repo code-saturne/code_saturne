@@ -46,13 +46,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import LABEL_LENGTH_MAX
-from Base.Toolbox import GuiParam
-from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator
-from Base.QtPage import ComboModel, to_qvariant, from_qvariant
-from Pages.TimeAveragesForm import Ui_TimeAveragesForm
-from Pages.StartRestartModel import StartRestartModel
-from Pages.TimeAveragesModel import TimeAveragesModel
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator
+from code_saturne.Base.QtPage import ComboModel, to_qvariant, from_qvariant
+from code_saturne.Pages.TimeAveragesForm import Ui_TimeAveragesForm
+from code_saturne.Pages.StartRestartModel import StartRestartModel
+from code_saturne.Pages.TimeAveragesModel import TimeAveragesModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -279,7 +279,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             default['list'] = self.mdl.getTimeAverageLabels()
             rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
             default['regexp'] = QRegExp(rx)
-            from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+            from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
             dialog = VerifyExistenceLabelDialogView(self, default)
             if dialog.exec_():
                 result = dialog.get_result()

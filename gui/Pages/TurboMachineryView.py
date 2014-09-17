@@ -43,12 +43,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, RegExpValidator, DoubleValidator
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.TurboMachineryForm import Ui_TurboMachineryForm
-from Pages.TurboMachineryModel import TurboMachineryModel
-from Pages.FacesSelectionView import StandardItemModelFaces
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, RegExpValidator, DoubleValidator
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.TurboMachineryForm import Ui_TurboMachineryForm
+from code_saturne.Pages.TurboMachineryModel import TurboMachineryModel
+from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 
 #-------------------------------------------------------------------------------
 # log config

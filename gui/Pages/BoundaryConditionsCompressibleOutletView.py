@@ -44,14 +44,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
 
-from Pages.BoundaryConditionsCompressibleOutletForm import \
+from code_saturne.Pages.BoundaryConditionsCompressibleOutletForm import \
      Ui_BoundaryConditionsCompressibleOutletForm
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
-from Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config

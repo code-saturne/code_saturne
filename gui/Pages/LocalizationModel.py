@@ -44,10 +44,10 @@ import sys, unittest, types
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.XMLvariables import Model, Variables
-from Base.XMLmodel import ModelTest
-from Base.XMLengine import *
-from Pages.Boundary import Boundary
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLengine import *
+from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 #
@@ -181,7 +181,7 @@ class BoundaryZone(Zone):
             if self.case['package'].name == 'code_saturne':
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet']
                 self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
-                from Pages.MobileMeshModel import MobileMeshModel
+                from code_saturne.Pages.MobileMeshModel import MobileMeshModel
                 if MobileMeshModel(self.case).getMethod() != "off":
                     self._natureDict['free_surface'] = self.tr("Free surface")
                     self._natureList = ['wall', 'inlet', 'outlet', 'symmetry', 'free_inlet_outlet', 'free_surface']
@@ -235,7 +235,7 @@ class VolumicZone(Zone):
             self._natureDict['porosity']             = self.tr("Porosity")
             self._natureDict['momentum_source_term'] = self.tr("Momentum source\n term")
 
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         if ThermalScalarModel(self.case).getThermalScalarModel() != 'off':
             self._natureList.append('thermal_source_term')
             self._natureDict['thermal_source_term']  = self.tr("Thermal source term")

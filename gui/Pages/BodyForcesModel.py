@@ -41,10 +41,10 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model, Variables
-from Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel import ModelTest
 
 #-------------------------------------------------------------------------------
 # Body Force model class
@@ -101,7 +101,7 @@ class BodyForcesModel(Model):
         if self.getGravity('gravity_x') == 0.0 and \
            self.getGravity('gravity_y') == 0.0 and \
            self.getGravity('gravity_z') == 0.0:
-            from Pages.TimeStepModel import TimeStepModel
+            from code_saturne.Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).RemoveThermalTimeStepNode()
             del TimeStepModel
 

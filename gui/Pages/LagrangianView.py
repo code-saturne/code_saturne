@@ -47,13 +47,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.LagrangianForm import Ui_LagrangianForm
-from Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
-from Pages.LagrangianModel import LagrangianModel
-from Pages.StartRestartModel import StartRestartModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.LagrangianForm import Ui_LagrangianForm
+from code_saturne.Pages.LagrangianAdvancedOptionsDialogForm import Ui_LagrangianAdvancedOptionsDialogForm
+from code_saturne.Pages.LagrangianModel import LagrangianModel
+from code_saturne.Pages.StartRestartModel import StartRestartModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -444,7 +444,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 #            if mdl not in self.model.lagrangianStatus():
 #                self.modelIILAGR.disableItem(str_model=mdl)
 
-        from Pages.CoalCombustionModel import CoalCombustionModel
+        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
         if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
             self.modelIILAGR.disableItem(str_model="one_way")
             self.modelIILAGR.disableItem(str_model="two_way")

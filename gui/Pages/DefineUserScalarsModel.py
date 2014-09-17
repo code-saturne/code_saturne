@@ -40,11 +40,11 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables
-from Base.XMLvariables import Model
-from Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Variables
+from code_saturne.Base.XMLvariables import Model
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
 
 #-------------------------------------------------------------------------------
 # Define User Scalars model class
@@ -302,7 +302,7 @@ class DefineUserScalarsModel(Variables, Model):
         """Public method.
         Input boundaries conditions for a scalar node. Method also used by ThermalScalarModel
         """
-        from Pages.Boundary import Boundary
+        from code_saturne.Pages.Boundary import Boundary
 
         for node in self.node_bc.xmlGetChildNodeList('inlet'):
             model = Boundary('inlet', node['label'], self.case)
@@ -858,7 +858,7 @@ class UserScalarTestCase(ModelTest):
         model = DefineUserScalarsModel(self.case)
         zone = '1'
         model.addUserScalar(zone, 'usersca1')
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -1093,7 +1093,7 @@ class UserScalarTestCase(ModelTest):
         zone = '1'
         model.addUserScalar(zone, 'premier')
 
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 

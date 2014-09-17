@@ -40,10 +40,10 @@ import sys, unittest, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model, Variables
-from Pages.LagrangianModel import LagrangianModel
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Pages.LagrangianModel import LagrangianModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -419,8 +419,8 @@ class LagrangianStatisticsTestCase(unittest.TestCase):
         """
         This method is executed before all "check" methods.
         """
-        from Base.XMLengine import Case
-        from Base.XMLinitialize import XMLinit
+        from code_saturne.Base.XMLengine import Case
+        from code_saturne.Base.XMLinitialize import XMLinit
         self.case = Case()
         XMLinit(self.case).initialize()
 

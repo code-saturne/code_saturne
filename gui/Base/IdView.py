@@ -43,7 +43,7 @@ from PyQt4 import QtGui, QtCore
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.IdForm import Ui_IdForm
+from code_saturne.Base.IdForm import Ui_IdForm
 
 #-------------------------------------------------------------------------------
 #

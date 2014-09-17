@@ -40,11 +40,11 @@ import os, sys, unittest, logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Model, Variables
-from Base.XMLmodel import ModelTest
-from Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -105,7 +105,7 @@ class LagrangianModel(Model):
         default['complete_model_iteration']            = 0
         default['complete_model_direction']            = 1
 
-        from Pages.CoalCombustionModel import CoalCombustionModel
+        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
         if CoalCombustionModel(self.case).getCoalCombustionModel() != 'off':
             default['coupling_mode']                       = "frozen"
         del CoalCombustionModel
@@ -117,7 +117,7 @@ class LagrangianModel(Model):
         """
         Return a tuple with the lagrangian status allowed.
         """
-        from Pages.TurbulenceModel import TurbulenceModel
+        from code_saturne.Pages.TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
         if model not in ('off',
@@ -156,7 +156,7 @@ class LagrangianModel(Model):
         self.isOnOff(status)
         old_status = self.node_lagr['model']
         self.node_lagr['model'] = status
-        from Pages.OutputControlModel import OutputControlModel
+        from code_saturne.Pages.OutputControlModel import OutputControlModel
         if status != 'off':
             OutputControlModel(self.case).addDefaultLagrangianWriter()
             OutputControlModel(self.case).addDefaultLagrangianMesh()
@@ -814,7 +814,7 @@ class LagrangianTestCase(ModelTest):
 
     def checklagrangianStatus(self):
         """Check whether the lagrangianStatus could be get."""
-        from Pages.TurbulenceModel import TurbulenceModel
+        from code_saturne.Pages.TurbulenceModel import TurbulenceModel
         mdl = LagrangianModel(self.case)
         TurbulenceModel(self.case).setTurbulenceModel('LES_Smagorinsky')
 

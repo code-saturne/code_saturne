@@ -44,17 +44,17 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
 
-from Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.QMeiEditorView import QMeiEditorView
-from Pages.Boundary import Boundary
-from Pages.CompressibleModel import CompressibleModel
-from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config

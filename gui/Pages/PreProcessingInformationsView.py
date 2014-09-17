@@ -46,8 +46,8 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import getopenfilename
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import getopenfilename
 
 #-------------------------------------------------------------------------------
 # log config

@@ -41,10 +41,10 @@ import os, sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
 
 #-------------------------------------------------------------------------------
 # EOS
@@ -524,7 +524,7 @@ class FluidCharacteristicsModel(Variables, Model):
             node.xmlInitNode('postprocessing_recording')['status'] = 'off'
 
             if tag == 'density':
-                from Pages.TimeStepModel import TimeStepModel
+                from code_saturne.Pages.TimeStepModel import TimeStepModel
                 TimeStepModel(self.case).RemoveThermalTimeStepNode()
                 del TimeStepModel
         else:
@@ -557,7 +557,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
     def checkGetThermoPhysicalModel(self):
         """Check whether thermal physical models could be get"""
         mdl = FluidCharacteristicsModel(self.case)
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
         assert mdl.getThermoPhysicalModel() == ('off', 'off', 'temperature_celsius', 'off', 'off', 'off'),\

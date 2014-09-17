@@ -91,6 +91,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
         run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
 
     path = pkg.get_dir('pkgpythondir')
+    path = path+":"+pkg.get_dir('pythondir')
     if pkg.name == 'neptune_cfd':
         cspath = os.path.join(pkg.get_dir('csdir'), "lib",
                                                    "python" + sys.version[:3],

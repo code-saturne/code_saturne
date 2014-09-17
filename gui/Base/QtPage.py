@@ -53,8 +53,8 @@ from PyQt4 import QtGui, QtCore
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
 
 #-------------------------------------------------------------------------------
 # log config

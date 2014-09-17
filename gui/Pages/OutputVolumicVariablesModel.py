@@ -35,12 +35,12 @@ import string, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import XMLmodel, ModelTest
-from Base.XMLvariables import Model, Variables
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
+from code_saturne.Base.XMLvariables import Model, Variables
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -565,7 +565,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         Check whether the OutputVolumicVariablesModel class could be
         set and get status for printing listing
         """
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -591,7 +591,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         Check whether the OutputVolumicVariablesModel class could be
         set and get status for printing
         """
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
 
@@ -617,7 +617,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
         Check whether the OutputVolumicVariablesModel class could be
         set and get status for post processing of radaitive property
         """
-        from Pages.ThermalRadiationModel import ThermalRadiationModel
+        from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
         ThermalRadiationModel(self.case).setRadiativeModel('dom')
         del ThermalRadiationModel
 

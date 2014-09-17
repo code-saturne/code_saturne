@@ -40,15 +40,15 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.NumericalParamEquationModel import NumericalParamEquatModel
-from Pages.LocalizationModel import LocalizationModel
-from Pages.Boundary import Boundary
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.NumericalParamEquationModel import NumericalParamEquatModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel
+from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # Gas combustion model class
@@ -402,8 +402,8 @@ class GasCombustionTestCase(unittest.TestCase):
     """
     def setUp(self):
         """This method is executed before all "check" methods."""
-        from Base.XMLengine import Case, XMLDocument
-        from Base.XMLinitialize import XMLinit
+        from code_saturne.Base.XMLengine import Case, XMLDocument
+        from code_saturne.Base.XMLinitialize import XMLinit
         Tool.GuiParam.lang = 'en'
         self.case = Case(None)
         XMLinit(self.case).initialize()

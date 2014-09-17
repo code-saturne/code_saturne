@@ -40,15 +40,15 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.ElectricalModel import ElectricalModel
-from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from Pages.CompressibleModel import CompressibleModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.ElectricalModel import ElectricalModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # Reference values model class
@@ -333,7 +333,7 @@ class ReferenceValuesTestCase(ModelTest):
     def checkGetandSetTemperature(self):
         """Check whether the ReferenceValuesModel class could be set and get Temperature"""
         mdl = ReferenceValuesModel(self.case)
-        from Pages.CoalCombustionModel import CoalCombustionModel
+        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
         CoalCombustionModel(self.case).setCoalCombustionModel('homogeneous_fuel')
         del CoalCombustionModel
         mdl.setTemperature(55.5)
@@ -376,7 +376,7 @@ class ReferenceValuesTestCase(ModelTest):
     def checkGetandSsetMassemol(self):
         """Check whether the ReferenceValuesModel class could be set and get Molar mass"""
         mdl = ReferenceValuesModel(self.case)
-        from Pages.GasCombustionModel import GasCombustionModel
+        from code_saturne.Pages.GasCombustionModel import GasCombustionModel
         GasCombustionModel(self.case).setGasCombustionModel('ebu')
         del GasCombustionModel
         mdl.setMassemol(50.8e-3)

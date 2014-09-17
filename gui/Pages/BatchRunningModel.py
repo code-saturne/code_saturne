@@ -38,10 +38,10 @@ import os, os.path, shutil, sys, string, types, re
 #-------------------------------------------------------------------------------
 
 import Base.Toolbox as Tool
-from Pages.SolutionDomainModel import MeshModel, SolutionDomainModel
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
-from Base.XMLvariables import Variables, Model
+from code_saturne.Pages.SolutionDomainModel import MeshModel, SolutionDomainModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Base.XMLvariables import Variables, Model
 
 import cs_exec_environment
 
@@ -652,9 +652,9 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """
         This method is executed before all 'check' methods.
         """
-        from Base.XMLengine import Case
-        from Base.XMLinitialize import XMLinit
-        from Base.Toolbox import GuiParam
+        from code_saturne.Base.XMLengine import Case
+        from code_saturne.Base.XMLinitialize import XMLinit
+        from code_saturne.Base.Toolbox import GuiParam
         GuiParam.lang = 'en'
         self.case = Case(None)
         XMLinit(self.case).initialize()

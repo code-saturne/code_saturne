@@ -38,8 +38,8 @@ import unittest
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
-from Base.XMLvariables import  Model, Variables
-from Base.XMLmodel     import  ModelTest
+from code_saturne.Base.XMLvariables import  Model, Variables
+from code_saturne.Base.XMLmodel     import  ModelTest
 
 
 #-------------------------------------------------------------------------------

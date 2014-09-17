@@ -40,12 +40,12 @@ import os, sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
 # Coal combustion model class
@@ -128,7 +128,7 @@ class ElectricalModel(Variables, Model):
 
         self.__updateScalarAndProperty()
 #
-#        from Pages.Boundary import Boundary
+#        from code_saturne.Pages.Boundary import Boundary
 #        for nodbc in self.node_bc.xmlGetChildNodeList('inlet'):
 #            model = Boundary('electric_inlet', nodbc['label'], self.case)
 #            model.getTurbulenceChoice()
@@ -545,8 +545,8 @@ class ElectricalTestCase(unittest.TestCase):
     """
     def setUp(self):
         """This method is executed before all "check" methods."""
-        from Base.XMLengine import Case, XMLDocument
-        from Base.XMLinitialize import XMLinit
+        from code_saturne.Base.XMLengine import Case, XMLDocument
+        from code_saturne.Base.XMLinitialize import XMLinit
         Tool.GuiParam.lang = 'en'
         self.case = Case(None)
         XMLinit(self.case).initialize()

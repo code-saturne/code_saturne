@@ -66,31 +66,31 @@ from cs_exec_environment import \
 import cs_runcase
 
 try:
-    from Base.MainForm import Ui_MainForm
-    from Base.NewCaseDialogForm import Ui_NewCaseDialogForm
+    from code_saturne.Base.MainForm import Ui_MainForm
+    from code_saturne.Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
-    from Base.MainForm import Ui_MainForm
-    from Base.NewCaseDialogForm import Ui_NewCaseDialogForm
+    from code_saturne.Base.MainForm import Ui_MainForm
+    from code_saturne.Base.NewCaseDialogForm import Ui_NewCaseDialogForm
 
-from Base.IdView import IdView
-from Base.BrowserView import BrowserView
-from Base import XMLengine
-from Base.XMLinitialize import *
-from Base.XMLmodel import *
-from Base.Toolbox import GuiParam, displaySelectedPage
-from Base.Common import XML_DOC_VERSION
+from code_saturne.Base.IdView import IdView
+from code_saturne.Base.BrowserView import BrowserView
+from code_saturne.Base import XMLengine
+from code_saturne.Base.XMLinitialize import *
+from code_saturne.Base.XMLmodel import *
+from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
+from code_saturne.Base.Common import XML_DOC_VERSION
 
 try:
     import Pages
 except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Pages.WelcomeView import WelcomeView
-from Pages.IdentityAndPathesModel import IdentityAndPathesModel
-from Pages.XMLEditorView import XMLEditorView
-from Base.QtPage import setGreenColor, getexistingdirectory
-from Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
+from code_saturne.Pages.WelcomeView import WelcomeView
+from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.Pages.XMLEditorView import XMLEditorView
+from code_saturne.Base.QtPage import setGreenColor, getexistingdirectory
+from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 
 
 #-------------------------------------------------------------------------------

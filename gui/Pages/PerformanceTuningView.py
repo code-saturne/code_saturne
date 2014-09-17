@@ -47,11 +47,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
-from Pages.SolutionDomainModel import RelOrAbsPath
-from Pages.PerformanceTuningForm import Ui_PerformanceTuningForm
-from Pages.PerformanceTuningModel import PerformanceTuningModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, RegExpValidator, setGreenColor
+from code_saturne.Pages.SolutionDomainModel import RelOrAbsPath
+from code_saturne.Pages.PerformanceTuningForm import Ui_PerformanceTuningForm
+from code_saturne.Pages.PerformanceTuningModel import PerformanceTuningModel
 
 #-------------------------------------------------------------------------------
 # log config

@@ -43,9 +43,9 @@ from PyQt4 import QtGui, QtCore
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Pages.IdentityAndPathesForm import Ui_IdentityAndPathesForm
-from Pages.IdentityAndPathesModel import IdentityAndPathesModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Pages.IdentityAndPathesForm import Ui_IdentityAndPathesForm
+from code_saturne.Pages.IdentityAndPathesModel import IdentityAndPathesModel
 
 #-------------------------------------------------------------------------------
 # log config

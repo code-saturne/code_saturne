@@ -46,15 +46,15 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsWallRadiativeTransferForm import \
+from code_saturne.Pages.BoundaryConditionsWallRadiativeTransferForm import \
      Ui_BoundaryConditionsWallRadiativeTransferForm
-from Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
-from Base.QtPage import to_qvariant, from_qvariant
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, ComboModel, setGreenColor
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # log config

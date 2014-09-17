@@ -48,14 +48,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.Common import LABEL_LENGTH_MAX
-from Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, RegExpValidator, setGreenColor
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
-from Pages.CoalCombustionForm import Ui_CoalCombustionForm
-from Pages.Boundary import Boundary
-from Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.CoalCombustionForm import Ui_CoalCombustionForm
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -109,7 +109,7 @@ class LabelFuelDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
-                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()

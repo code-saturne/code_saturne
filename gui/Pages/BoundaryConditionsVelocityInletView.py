@@ -44,16 +44,16 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Pages.BoundaryConditionsVelocityInletForm import Ui_BoundaryConditionsVelocityInletForm
+from code_saturne.Pages.BoundaryConditionsVelocityInletForm import Ui_BoundaryConditionsVelocityInletForm
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.Boundary import Boundary
-from Pages.CompressibleModel import CompressibleModel
-from Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

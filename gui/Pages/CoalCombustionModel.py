@@ -40,16 +40,16 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
 import Pages.IdentityAndPathesModel as IdentityAndPathesModel
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.LocalizationModel import LocalizationModel
-from Pages.Boundary import Boundary
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.LocalizationModel import LocalizationModel
+from code_saturne.Pages.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 # Solid fuel combustion model class

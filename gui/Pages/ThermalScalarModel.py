@@ -41,13 +41,13 @@ import sys
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import ModelTest
-from Base.XMLvariables import Variables, Model
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 #-------------------------------------------------------------------------------
 # Thermal scalar model class
@@ -125,7 +125,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         Private method : remove node 'thermal_time_step' in time_parameters
         we call function from TimeStepModel
         """
-        from Pages.TimeStepModel import TimeStepModel
+        from code_saturne.Pages.TimeStepModel import TimeStepModel
         TimeStepModel(self.case).RemoveThermalTimeStepNode()
         del TimeStepModel
 

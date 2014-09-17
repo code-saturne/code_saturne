@@ -47,10 +47,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.QtPage import RegExpValidator, DoubleValidator
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Base.Toolbox import GuiParam
-from Pages.FacesSelectionForm import Ui_FacesSelectionForm
+from code_saturne.Base.QtPage import RegExpValidator, DoubleValidator
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Pages.FacesSelectionForm import Ui_FacesSelectionForm
 
 #-------------------------------------------------------------------------------
 # log config

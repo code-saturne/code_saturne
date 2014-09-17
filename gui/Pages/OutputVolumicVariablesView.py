@@ -44,14 +44,14 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import LABEL_LENGTH_MAX
-from Base.Toolbox import GuiParam
-from Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
-from Base.QtPage import PYQT_API_1
-from Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
-from Pages.OutputControlModel import OutputControlModel
-from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
-from Pages.TimeStepModel import TimeStepModel
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
+from code_saturne.Base.QtPage import PYQT_API_1
+from code_saturne.Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
+from code_saturne.Pages.OutputControlModel import OutputControlModel
+from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.Pages.TimeStepModel import TimeStepModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -189,7 +189,7 @@ class LabelDelegate(QItemDelegate):
                 default['regexp'] = self.regExp
                 log.debug("setModelData-> default = %s" % default)
 
-                from Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
+                from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()

@@ -59,17 +59,17 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
-from Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
-from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
-from Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from Pages.ThermalScalarModel import ThermalScalarModel
-from Pages.ReferenceValuesModel import ReferenceValuesModel
-from Pages.CompressibleModel import CompressibleModel
-from Pages.CoalCombustionModel import CoalCombustionModel
-from Pages.GasCombustionModel import GasCombustionModel
-from Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Pages.FluidCharacteristicsForm import Ui_FluidCharacteristicsForm
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
+from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
 # log config

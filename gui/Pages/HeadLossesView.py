@@ -47,12 +47,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import DoubleValidator, ComboModel
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.HeadLossesForm import Ui_HeadLossesForm
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.HeadLossesModel import HeadLossesModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import DoubleValidator, ComboModel
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.HeadLossesForm import Ui_HeadLossesForm
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.HeadLossesModel import HeadLossesModel
 
 #-------------------------------------------------------------------------------
 # log config

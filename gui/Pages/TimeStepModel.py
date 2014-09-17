@@ -40,11 +40,11 @@ import unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLvariables import Variables, Model
-from Base.XMLmodel import ModelTest
-from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
 
 #-------------------------------------------------------------------------------
 # Time Step Model class
@@ -91,14 +91,14 @@ class TimeStepModel(Model):
         Is the current case adapted for IPTLRO ?
         """
         thermal_case = 0
-        from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+        from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
         n_atmo, n_joul, n_thermo, n_gas, n_coal, n_comp = FluidCharacteristicsModel(self.case).getThermoPhysicalModel()
 
         if n_atmo != 'off' or n_joul != 'off' or  n_thermo != 'off' or  n_gas != 'off' or  n_coal != 'off':
            thermal_case = 1
 
         # gravity
-        from Pages.BodyForcesModel import BodyForcesModel
+        from code_saturne.Pages.BodyForcesModel import BodyForcesModel
         mdl = BodyForcesModel(self.case)
         gx = mdl.getGravity('gravity_x')
         gy = mdl.getGravity('gravity_y')
@@ -126,7 +126,7 @@ class TimeStepModel(Model):
             v = self.defaultValues()[tag]
             self.setTimePassing(v)
 
-        from Pages.TurbulenceModel import TurbulenceModel
+        from code_saturne.Pages.TurbulenceModel import TurbulenceModel
         model = TurbulenceModel(self.case).getTurbulenceModel()
         del TurbulenceModel
         if model in ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
@@ -539,13 +539,13 @@ class TimeStepModelTestCase(ModelTest):
     def checkSetandGetThermalTimeStep(self):
         """Check whether the TimeStepModel class could be set and get thermal time step"""
         mdl = TimeStepModel(self.case)
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+        from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
         FluidCharacteristicsModel(self.case).setPropertyMode('density','variable')
         del FluidCharacteristicsModel
-        from Pages.BodyForcesModel import BodyForcesModel
+        from code_saturne.Pages.BodyForcesModel import BodyForcesModel
         BodyForcesModel(self.case).setGravity('gravity_x', 9.81)
         del BodyForcesModel
         mdl.setThermalTimeStep('on')
@@ -582,13 +582,13 @@ class TimeStepModelTestCase(ModelTest):
     def checkRemoveThermalTimeStepNode(self):
         """Check whether the TimeStepModel class could be removed thermal time step node"""
         mdl = TimeStepModel(self.case)
-        from Pages.ThermalScalarModel import ThermalScalarModel
+        from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
         ThermalScalarModel(self.case).setThermalModel('temperature_celsius')
         del ThermalScalarModel
-        from Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
+        from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
         FluidCharacteristicsModel(self.case).setPropertyMode('density','variable')
         del FluidCharacteristicsModel
-        from Pages.BodyForcesModel import BodyForcesModel
+        from code_saturne.Pages.BodyForcesModel import BodyForcesModel
         BodyForcesModel(self.case).setGravity('gravity_x', 9.81)
         del BodyForcesModel
         mdl.setThermalTimeStep('on')

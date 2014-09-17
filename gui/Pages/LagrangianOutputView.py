@@ -44,10 +44,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator
-from Pages.LagrangianOutputForm import Ui_LagrangianOutputForm
-from Pages.LagrangianOutputModel import LagrangianOutputModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator
+from code_saturne.Pages.LagrangianOutputForm import Ui_LagrangianOutputForm
+from code_saturne.Pages.LagrangianOutputModel import LagrangianOutputModel
 
 #-------------------------------------------------------------------------------
 # log config

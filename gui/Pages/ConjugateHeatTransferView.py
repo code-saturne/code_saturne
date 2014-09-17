@@ -51,12 +51,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import LABEL_LENGTH_MAX
-from Base.Toolbox import GuiParam
-from Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.ConjugateHeatTransferForm import Ui_ConjugateHeatTransferForm
-from Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
+from code_saturne.Base.Common import LABEL_LENGTH_MAX
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.ConjugateHeatTransferForm import Ui_ConjugateHeatTransferForm
+from code_saturne.Pages.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 
 #-------------------------------------------------------------------------------
 # log config

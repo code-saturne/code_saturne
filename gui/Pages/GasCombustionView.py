@@ -44,10 +44,10 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, setGreenColor
-from Pages.GasCombustionForm import Ui_GasCombustionForm
-from Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, setGreenColor
+from code_saturne.Pages.GasCombustionForm import Ui_GasCombustionForm
+from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 
 #-------------------------------------------------------------------------------
 # log config

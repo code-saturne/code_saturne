@@ -47,13 +47,13 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, setGreenColor
-from Base.QtPage import to_qvariant, from_qvariant, to_text_string
-from Pages.PorosityForm import Ui_PorosityForm
-from Pages.LocalizationModel import LocalizationModel, Zone
-from Pages.QMeiEditorView import QMeiEditorView
-from Pages.PorosityModel import PorosityModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, setGreenColor
+from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
+from code_saturne.Pages.PorosityForm import Ui_PorosityForm
+from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
+from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.PorosityModel import PorosityModel
 
 #-------------------------------------------------------------------------------
 # log config

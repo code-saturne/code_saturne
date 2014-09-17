@@ -47,11 +47,11 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, DoubleValidator, from_qvariant
-from Pages.TurbulenceForm import Ui_TurbulenceForm
-from Pages.TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
-from Pages.TurbulenceModel import TurbulenceModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
+from code_saturne.Pages.TurbulenceForm import Ui_TurbulenceForm
+from code_saturne.Pages.TurbulenceAdvancedOptionsDialogForm import Ui_TurbulenceAdvancedOptionsDialogForm
+from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 
 #-------------------------------------------------------------------------------
 # log config

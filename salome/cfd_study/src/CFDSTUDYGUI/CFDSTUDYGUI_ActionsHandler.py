@@ -179,7 +179,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         log.debug("__init__")
         QObject.__init__(self, None)
 
-        self.l_color = [(1,0,0),(0,1,0),(0,0,1),(1,1,0),(1,0,1),(0,1,1),
+        self.l_color = [(1,0,0),(0,1,0),(0,0,1),(1,1,0),(1,0,1),(0,1,1),]
         self.ul_color = []
         #intialise all dialogs
         self.DialogCollector = CFDSTUDYGUI_DialogCollector.CFDSTUDYGUI_DialogCollector()

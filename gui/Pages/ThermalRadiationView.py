@@ -46,12 +46,12 @@ from PyQt4.QtGui  import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Toolbox import GuiParam
-from Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
-from Pages.ThermalRadiationForm import Ui_ThermalRadiationForm
-from Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
-from Pages.ThermalRadiationModel import ThermalRadiationModel
-from Pages.OutputControlModel import OutputControlModel
+from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
+from code_saturne.Pages.ThermalRadiationForm import Ui_ThermalRadiationForm
+from code_saturne.Pages.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
+from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.Pages.OutputControlModel import OutputControlModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -246,7 +246,7 @@ class ThermalRadiationView(QWidget, Ui_ThermalRadiationForm):
         self.modelAbsorption.addItem('user law',                   'formula')
         self.modelAbsorption.addItem('H2O and CO2 mixing (Modak)', 'modak')
 
-        from Pages.CoalCombustionModel import CoalCombustionModel
+        from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
         if CoalCombustionModel(self.case).getCoalCombustionModel() != "off":
             self.modelAbsorption.disableItem(str_model='variable')
             self.modelAbsorption.enableItem(str_model='modak')

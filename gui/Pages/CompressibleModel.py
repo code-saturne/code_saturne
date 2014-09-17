@@ -41,13 +41,13 @@ import sys
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from Base.Common import *
+from code_saturne.Base.Common import *
 import Base.Toolbox as Tool
-from Base.XMLmodel import ModelTest
-from Base.XMLvariables import Variables, Model
-from Pages.LocalizationModel import LocalizationModel
-from Pages.Boundary import Boundary
-from Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.XMLvariables import Variables, Model
+from code_saturne.Pages.LocalizationModel import LocalizationModel
+from code_saturne.Pages.Boundary import Boundary
+from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # Compressible model class
@@ -111,7 +111,7 @@ class CompressibleModel(Variables, Model):
                 ThermalScalarModel(self.case).setThermalModel('total_energy')
                 for v in self.var_list:
                     self.setNewVariable(self.node_comp, v, tpe="model", label=v)
-                from Pages.TurbulenceModel import TurbulenceModel
+                from code_saturne.Pages.TurbulenceModel import TurbulenceModel
                 TurbulenceModel(self.case).setTurbulenceModel('off')
                 del TurbulenceModel
 
