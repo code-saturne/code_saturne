@@ -233,103 +233,50 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_int_t    *nbclst,
                           cs_lnum_t          icocel[],
                           cs_lnum_t          itycel[],
-                          const cs_int_t    *jisor,
-                          const cs_int_t    *jisora,
-                          const cs_int_t    *jirka,
-                          const cs_int_t    *jord1,
-                          const cs_int_t    *jrval,
-                          const cs_int_t    *jrpoi,
-                          const cs_int_t    *jrtsp,
-                          const cs_int_t    *jdp,
-                          const cs_int_t    *jmp,
-                          const cs_int_t    *jxp,
-                          const cs_int_t    *jyp,
-                          const cs_int_t    *jzp,
-                          const cs_int_t    *jup,
-                          const cs_int_t    *jvp,
-                          const cs_int_t    *jwp,
-                          const cs_int_t    *juf,
-                          const cs_int_t    *jvf,
-                          const cs_int_t    *jwf,
-                          const cs_int_t    *jtaux,
-                          const cs_int_t    *jryplu,
-                          const cs_int_t    *jrinpf,
-                          const cs_int_t    *jdfac,
-                          const cs_int_t    *jimark,
-                          const cs_int_t    *jtp,
-                          const cs_int_t     jhp[],
-                          const cs_int_t    *jtf,
-                          const cs_int_t    *jmwat,
-                          const cs_int_t     jmch[],
-                          const cs_int_t     jmck[],
-                          const cs_int_t    *jcp,
-                          const cs_int_t    *jrdck,
-                          const cs_int_t    *jrd0p,
-                          const cs_int_t    *jinch,
-                          const cs_int_t     jrhock[],
-                          const cs_int_t    *jreps,
-                          const cs_int_t    *jdepo,
-                          const cs_int_t    *jnbasg,
-                          const cs_int_t    *jnbasp,
-                          const cs_int_t    *jfadh,
-                          const cs_int_t    *jmfadh,
-                          const cs_int_t    *jndisp,
-                          const cs_int_t    *jclst,
-                          const cs_int_t    *jvls);
-
-/*----------------------------------------------------------------------------
- * Get variables and parameters associated to each particles and keep it in
- * a new structure
- *
- * parameters:
- *   nbpmax <-- n_particles max.
- *   nbpart --> number of current particles
- *   ...
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (prtget, PRTGET)(const cs_int_t   *nbpmax,
-                          const cs_int_t   *nbpart,
-                          const cs_real_t   ettp[],
-                          const cs_real_t   ettpa[],
-                          const cs_int_t    itepa[],
-                          const cs_real_t   tepa[]);
-
-/*----------------------------------------------------------------------------
- * Put variables and parameters associated to each particles into FORTRAN
- * arrays.
- *
- * parameters:
- *   nbpmax <-- n_particles max.
- *   nbpart --> number of current particles
- *   dnbpar --> particle total weight
- *   nbpout --> number of outgoing particles
- *   dnbpou --> outgoing particle total weight
- *   nbperr --> number of failed particles
- *   dnbper --> failed particles total weight
- *   nbpdep --> number of depositing particles
- *   dnbdep --> depositing particles total weight
- *   npencr --> number of fouled particles (coal)
- *   dnpenc --> fouled particles (coal) total weight
- *   ...
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
-                          cs_int_t         *nbpart,
-                          cs_real_t        *dnbpar,
-                          cs_int_t         *nbpout,
-                          cs_real_t        *dnbpou,
-                          cs_int_t         *nbperr,
-                          cs_real_t        *dnbper,
-                          cs_int_t         *nbpdep,
-                          cs_real_t        *dnbdep,
-                          cs_int_t         *npencr,
-                          cs_real_t        *dnpenc,
-                          cs_real_t         ettp[],
-                          cs_real_t         ettpa[],
-                          cs_int_t          itepa[],
-                          cs_real_t         tepa[]);
+                          cs_int_t          *jisor,
+                          cs_int_t          *jisora,
+                          cs_int_t          *jirka,
+                          cs_int_t          *jord1,
+                          cs_int_t          *jrval,
+                          cs_int_t          *jrpoi,
+                          cs_int_t          *jrtsp,
+                          cs_int_t          *jdp,
+                          cs_int_t          *jmp,
+                          cs_int_t          *jxp,
+                          cs_int_t          *jyp,
+                          cs_int_t          *jzp,
+                          cs_int_t          *jup,
+                          cs_int_t          *jvp,
+                          cs_int_t          *jwp,
+                          cs_int_t          *juf,
+                          cs_int_t          *jvf,
+                          cs_int_t          *jwf,
+                          cs_int_t          *jtaux,
+                          cs_int_t          *jryplu,
+                          cs_int_t          *jrinpf,
+                          cs_int_t          *jdfac,
+                          cs_int_t          *jimark,
+                          cs_int_t          *jtp,
+                          cs_int_t           jhp[],
+                          cs_int_t          *jtf,
+                          cs_int_t          *jmwat,
+                          cs_int_t           jmch[],
+                          cs_int_t           jmck[],
+                          cs_int_t          *jcp,
+                          cs_int_t          *jrdck,
+                          cs_int_t          *jrd0p,
+                          cs_int_t          *jinch,
+                          cs_int_t           jrhock[],
+                          cs_int_t          *jreps,
+                          cs_int_t          *jdepo,
+                          cs_int_t          *jnbasg,
+                          cs_int_t          *jnbasp,
+                          cs_int_t          *jfadh,
+                          cs_int_t          *jmfadh,
+                          cs_int_t          *jndisp,
+                          cs_int_t          *jclst,
+                          cs_int_t          *jvls,
+                          cs_int_t          *nvp1);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in
@@ -353,13 +300,11 @@ CS_PROCF (getbdy, GETBDY)(const cs_int_t    *nflagm,
  * Displacement of particles.
  *
  * parameters:
- *   p_n_particles <-> pointer to the number of particles
  *   scheme_order  <-- current order of the scheme used for Lagragian
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
-                          cs_int_t        *p_scheme_order,
+CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_scheme_order,
                           cs_real_t        boundary_stat[],
                           const cs_int_t  *iensi3,
                           const cs_int_t  *inbr,
@@ -390,64 +335,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_n_particles,
                           const cs_real_t  enc1[],
                           const cs_real_t  enc2[],
                           const cs_real_t  *tkelvi);
-
-/*----------------------------------------------------------------------------
- * Update C structures metadata after particle computations.
- *
- * This metadata is overwritten and rebuilt at each time step, so
- * it is useful only for a possible postprocessing step.
- *
- * The matching data is copied separately, as it may not need to be
- * updated at each time step.
- *
- * parameters:
- *   nbpmax <-- n_particles max.
- *   nbpart <-- number of current particles
- *   dnbpar <-- particle total weight
- *   nbpout <-- number of outgoing particles
- *   dnbpou <-- outgoing particle total weight
- *   nbperr <-- number of failed particles
- *   dnbper <-- failed particles total weight
- *   nbpdep <-- number of depositing particles
- *   dnbdep <-- depositing particles total weight
- *   npencr <-- number of fouled particles (coal)
- *   dnpenc <-- fouled particles (coal) total weight
- *   ...
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
-                          const cs_lnum_t   *nbpart,
-                          const cs_real_t   *dnbpar,
-                          const cs_int_t    *nbpout,
-                          const cs_real_t   *dnbpou,
-                          const cs_int_t    *nbperr,
-                          const cs_real_t   *dnbper,
-                          const cs_int_t    *nbpdep,
-                          const cs_real_t   *dnbdep,
-                          const cs_int_t    *npencr,
-                          const cs_real_t   *dnpenc,
-                          const cs_real_t    ettp[],
-                          const cs_real_t    ettpa[],
-                          const cs_lnum_t    itepa[],
-                          const cs_real_t    tepa[]);
-
-/*----------------------------------------------------------------------------
- * Put variables and parameters associated to each particles into FORTRAN
- * arrays (when reading from restart).
- *
- * parameters:
- *   nbpart --> number of current particles
- *   dnbpar --> particle total weight
- *   ...
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
-                          cs_real_t        *dnbpar,
-                          cs_real_t         ettp[],
-                          cs_int_t          itepa[],
-                          cs_real_t         tepa[]);
 
 /*============================================================================
  * Public function prototypes

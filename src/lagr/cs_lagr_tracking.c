@@ -153,20 +153,20 @@ typedef enum {
 } cs_lagr_tracking_error_t;
 
 /* keys to sort attributes by Fortran array and index (for mapping)
-   ettp/ettpa real values at current and previous time steps
+   eptp/eptpa real values at current and previous time steps
 
-   iettp/iettpa integer values at current and previous time steps
-   tepa real values at current time step
+   ieptp/ieptpa integer values at current and previous time steps
+   pepa real values at current time step
    _int_loc local integer values at current time step
-   itepa integer values at current time step
+   ipepa integer values at current time step
    iprkid values are for rank ids, useful and valid only for previous
    time steps */
 
 typedef enum {
-  ETTP = 1,
-  IETTP,
-  TEPA,
-  ITEPA,
+  EPTP = 1,
+  IEPTP,
+  PEPA,
+  IPEPA,
   IPRKID,
 } _array_map_id_t;
 
@@ -365,21 +365,6 @@ enum {X, Y, Z};  /* Used for _get_norm() and _get_dot_prod() */
 static  MPI_Datatype  _cs_mpi_particle_type;
 #endif
 
-/* Indexes in Fortran arrays */
-
-static int _jisor = - 1, _jisora = -1, _jirka = -1, _jord1 = - 1;
-static int _jrval = - 1, _jrpoi = -1, _jrtsp = - 1;
-static int _jmp = -1, _jdp = -1, _jxp = -1, _jyp = -1, _jzp = -1;
-static int _jup = -1, _jvp = -1, _jwp = -1, _juf = -1, _jvf = -1, _jwf = -1;
-static int _jtaux = - 1, _jdepo = - 1, _jryplu = - 1;
-static int _jrinpf = - 1, _jdfac = - 1, _jimark = -1, _jnbasg = - 1;
-static int _jnbasp = - 1, _jfadh = - 1, _jmfadh = - 1, _jndisp = - 1;
-static int _jtf = - 1, _jmwat = - 1;
-static int _jcp = -1, _jrdck = -1, _jrd0p = - 1;
-static int _jinch = - 1, _jreps = -1, _jclst = -1;
-static int _jthp = -1, _jmch = -1, _jmck = -1, _jrhock = -1;
-static int _jvls = -1;
-
 /* Global Lagragian module parameters and associated pointer
    Should move to cs_lagr.c */
 
@@ -391,25 +376,6 @@ const  cs_lagr_param_t  *cs_glob_lagr_params = &_lagr_param;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Return pointers to particle attributes
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   dim_ipepa --> dimensions for ipepa pointer
- *   dim_peta  --> dimensions for pepa pointer
- *   dim_eptp  --> dimensions for eptp pointer
- *   dim_eptpa --> dimensions for eptpa pointer
- *   p_ipeta   --> ipepa pointer
- *   p_pepa    --> pepa pointer
- *   p_eptp    --> eptp pointer
- *   p_eptpa   --> eptpa pointer
- *
- * returns:
- *   pointer to the field structure, or NULL
- *----------------------------------------------------------------------------*/
-
 void
 cs_f_lagr_pointers(int          dim_ipepa[2],
                    int          dim_pepa[2],
@@ -418,7 +384,24 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
                    cs_int_t   **p_ipeta,
                    cs_real_t  **p_peta,
                    cs_real_t  **p_eptp,
-                   cs_real_t  **p_eptpa);
+                   cs_real_t  **p_eptpa,
+                   cs_int_t   **p_nbpart,
+                   cs_real_t  **p_dnbpar,
+                   cs_int_t   **p_nbpout,
+                   cs_real_t  **p_dnbpou,
+                   cs_int_t   **p_nbperr,
+                   cs_real_t  **p_dnbper,
+                   cs_int_t   **p_nbpdep,
+                   cs_real_t  **p_dnbdep,
+                   cs_int_t   **p_npencr,
+                   cs_real_t  **p_dnpenc);
+
+void
+cs_f_lagr_part_copy(cs_lnum_t  dest,
+                    cs_lnum_t  src);
+
+void
+cs_f_lagr_current_to_previous(cs_lnum_t  pn);
 
 /*=============================================================================
  * Private function definitions
@@ -535,23 +518,23 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
       if (attr_keys[attr][0] < 1) continue;
 
       /*
-        iettp/iettpa integer values at current and previous time steps
-        tepa real values at current time step
-        itepa integer values at current time step */
+        ieptp/ieptpa integer values at current and previous time steps
+        pepa real values at current time step
+        ipepa integer values at current time step */
 
       /* Behavior depending on array */
 
       switch(attr_keys[attr][0]) {
-      case ETTP:
+      case EPTP:
         max_time_id = 1;
         break;
-      case IETTP:
+      case IEPTP:
         datatype = CS_LNUM_TYPE;
         max_time_id = 1;
         break;
-      case TEPA:
+      case PEPA:
         break;
-      case ITEPA:
+      case IPEPA:
         datatype = CS_LNUM_TYPE;
         break;
       case IPRKID:
@@ -568,9 +551,9 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
       /* Add padding for alignment when changing array */
 
-      if (attr_keys[attr][1] != array_prev) {
+      if (attr_keys[attr][0] != array_prev) {
         p_am->extents = _align_extents(p_am->extents);
-        array_prev = attr_keys[attr][1];
+        array_prev = attr_keys[attr][0];
       }
 
       /* Add attribute to map */
@@ -586,6 +569,8 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
       p_am->extents += p_am->size[attr];
 
     }
+
+    p_am->extents = _align_extents(p_am->extents);
 
   }
 
@@ -4264,66 +4249,27 @@ _lagr_halo_sync(void)
 }
 
 /*----------------------------------------------------------------------------
- * Sort possible particle attributes to prepare for buildingmap.
+ * Prepare for particle movement phase
  *
  * parameters:
- *   nbpmax <-- n_particles max.
- *   ...
+ *   particles <-> pointer to particles structure
  *----------------------------------------------------------------------------*/
 
 static void
-_update_c_from_fortran(const cs_lnum_t   *nbpmax,
-                       const cs_real_t    ettp[],
-                       const cs_real_t    ettpa[],
-                       const cs_lnum_t    itepa[],
-                       const cs_real_t    tepa[])
+_initialize_displacement(cs_lagr_particle_set_t  *particles)
 {
-  cs_lnum_t  i, id;
-
-  cs_lagr_particle_set_t  *particles = _particle_set;
+  cs_lnum_t  i;
 
   const cs_lagr_param_t *lagr_params = cs_glob_lagr_params;
 
   const cs_lagr_attribute_map_t  *am = particles->p_am;
 
-  assert(*nbpmax == particles->n_particles_max); /* Up to now, we don't manage
-                                                    a modification of nbpmax */
-
-  /* When we receive particles from FORTRAN, we keep a compact
-     storage of particles */
-
-  if (particles->n_particles > 0)
-    particles->first_used_id = 0;
-  else
-    particles->first_used_id = -1;
-
-  particles->first_free_id = particles->n_particles;
-  particles->used_id[particles->first_free_id].next_id = -1;
-
-  /* Fill particle structures */
+  /* Prepare tracking info */
 
   for (i = 0; i < particles->n_particles; i++) {
 
-    if (i > 0)
-      particles->used_id[i].prev_id = i-1;
-    else  /* Not defined */
-      particles->used_id[i].prev_id = -1;
-
-    if (i < particles->n_particles - 1)
-      particles->used_id[i].next_id = i+1;
-    else  /* Not defined */
-      particles->used_id[i].next_id = -1;
-
-    cs_lagr_particles_set_lnum(particles, i, CS_LAGR_CELL_NUM,
-                               itepa[i + _jisor * (*nbpmax)]);
-    cs_lagr_particles_set_lnum_n(particles, i, 1, CS_LAGR_CELL_NUM,
-                                 itepa[i + _jisora * (*nbpmax)]);
-
-    cs_lagr_particles_set_lnum_n(particles, i, 1, CS_LAGR_RANK_ID,
-                                 itepa[i + _jirka * (*nbpmax)]);
-
-    cs_lagr_particles_set_real(particles, i, CS_LAGR_RANDOM_VALUE,
-                               tepa[i + _jrval * (*nbpmax)]);
+    particles->used_id[i].prev_id = i-1;
+    particles->used_id[i].next_id = i+1;
 
     cs_lnum_t cur_part_cell_num
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
@@ -4336,268 +4282,41 @@ _update_c_from_fortran(const cs_lnum_t   *nbpmax,
 
     _tracking_info(particles, i)->last_face_num = 0;
 
-    id = _jord1 * (*nbpmax) + i;
-    cs_lagr_particles_set_lnum(particles, i, CS_LAGR_SWITCH_ORDER_1, itepa[id]);
-
-    assert(itepa[id] != 999);
-
-    id = _jrpoi * (*nbpmax) + i;
-    cs_lagr_particles_set_real(particles, i, CS_LAGR_STAT_WEIGHT, tepa[id]);
-
-    id = _jrtsp * (*nbpmax) + i;
-    cs_lagr_particles_set_real(particles, i, CS_LAGR_RESIDENCE_TIME, tepa[id]);
-
-    id = _jmp * (*nbpmax) + i;
-    cs_lagr_particles_set_real_n(particles, i, 0, CS_LAGR_MASS, ettp[id]);
-    cs_lagr_particles_set_real_n(particles, i, 1, CS_LAGR_MASS, ettpa[id]);
-
-    id = _jdp * (*nbpmax) + i;
-    cs_lagr_particles_set_real_n(particles, i, 0, CS_LAGR_DIAMETER, ettp[id]);
-    cs_lagr_particles_set_real_n(particles, i, 1, CS_LAGR_DIAMETER, ettpa[id]);
+    assert(   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_SWITCH_ORDER_1)
+           != 999);
 
     /* Coordinates of the particle */
 
-    cs_real_t *cur_part_coord
-      = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_COORDS);
     cs_real_t *prv_part_coord
       = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_COORDS);
-
-    id = _jxp * (*nbpmax) + i;
-    cur_part_coord[0] = ettp[id];
-    prv_part_coord[0] = ettpa[id];
-
-    id = _jyp * (*nbpmax) + i;
-    cur_part_coord[1] = ettp[id];
-    prv_part_coord[1] = ettpa[id];
-
-    id = _jzp * (*nbpmax) + i;
-    cur_part_coord[2] = ettp[id];
-    prv_part_coord[2] = ettpa[id];
 
     _tracking_info(particles, i)->start_coords[0] = prv_part_coord[0];
     _tracking_info(particles, i)->start_coords[1] = prv_part_coord[1];
     _tracking_info(particles, i)->start_coords[2] = prv_part_coord[2];
 
-    /* Velocity of the particle */
-
-    cs_real_t *cur_part_velocity
-      = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_VELOCITY);
-    cs_real_t *prv_part_velocity
-      = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_VELOCITY);
-
-    id = _jup * (*nbpmax) + i;
-    cur_part_velocity[0] = ettp[id];
-    prv_part_velocity[0] = ettpa[id];
-
-    id = _jvp * (*nbpmax) + i;
-    cur_part_velocity[1] = ettp[id];
-    prv_part_velocity[1] = ettpa[id];
-
-    id = _jwp * (*nbpmax) + i;
-    cur_part_velocity[2] = ettp[id];
-    prv_part_velocity[2] = ettpa[id];
-
-    /* Velocity seen by the fluid */
-
-    cs_real_t *cur_part_velocity_seen
-      = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *prv_part_velocity_seen
-      = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_VELOCITY_SEEN);
-
-    id = _juf * (*nbpmax) + i;
-    cur_part_velocity_seen[0] = ettp[id];
-    prv_part_velocity_seen[0] = ettpa[id];
-
-    id = _jvf * (*nbpmax) + i;
-    cur_part_velocity_seen[1] = ettp[id];
-    prv_part_velocity_seen[1] = ettpa[id];
-
-    id = _jwf * (*nbpmax) + i;
-    cur_part_velocity_seen[2] = ettp[id];
-    prv_part_velocity_seen[2] = ettpa[id];
-
-    id = _jtaux * (*nbpmax) + i;
-    cs_lagr_particles_set_real(particles, i, CS_LAGR_TAUP_AUX, ettp[id]);
-
     /* Data needed if the deposition model is activated */
-    if (lagr_params->deposition > 0) {
-
-      id = _jdepo  * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG, itepa[id]);
-
-      id = _jryplu * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_YPLUS, tepa[id]);
-
-      id = _jrinpf * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_INTERF, tepa[id]);
-
-      id = _jdfac  * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID,
-                                 itepa[id] - 1);
-
-      id = _jimark  * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_MARKO_VALUE, itepa[id]);
-
-    } else {
-
-      if (am->size[CS_LAGR_DEPOSITION_FLAG] > 0)
-        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG,
-                                   CS_LAGR_PART_IN_FLOW);
-
-    }
-
-    /* Data needed if the resuspension model is activated */
-
-    if (am->size[CS_LAGR_N_LARGE_ASPERITIES] > 0) {
-      id = _jnbasg  * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_N_LARGE_ASPERITIES,
-                                 itepa[id]);
-    }
-
-    if (am->size[CS_LAGR_N_SMALL_ASPERITIES] > 0) {
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_N_SMALL_ASPERITIES, 0);
-      id = _jnbasp  * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_N_SMALL_ASPERITIES,
-                                 itepa[id]);
-    }
-
-    if (am->size[CS_LAGR_ADHESION_FORCE] > 0) {
-      id = _jfadh  * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_ADHESION_FORCE, tepa[id]);
-    }
-
-    if (am->size[CS_LAGR_DISPLACEMENT_NORM] > 0) {
-      id = _jndisp  * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_DISPLACEMENT_NORM,
-                                 tepa[id]);
-    }
-
-    if (am->size[CS_LAGR_ADHESION_TORQUE] > 0) {
-      id = _jmfadh  * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_ADHESION_TORQUE, tepa[id]);
-    }
-
-    if (am->size[CS_LAGR_TEMPERATURE] > 0) {
-
-      assert(_jthp > -1);
-
-      cs_real_t *cur_part_temp
-        = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_TEMPERATURE);
-      cs_real_t *prv_part_temp
-        = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_TEMPERATURE);
-
-      for (cs_lnum_t j = 0; j < am->count[0][CS_LAGR_TEMPERATURE]; j++) {
-        id = (_jthp+j) * (*nbpmax) + i;
-        cur_part_temp[j] = ettp[id];
-        prv_part_temp[j] = ettpa[id];
-      }
-
-    }
-
-    if (am->size[CS_LAGR_FLUID_TEMPERATURE] > 0) {
-      id = _jtf * (*nbpmax) + i;
-      cs_lagr_particles_set_real_n(particles, i, 0, CS_LAGR_FLUID_TEMPERATURE,
-                                   ettp[id]);
-      cs_lagr_particles_set_real_n(particles, i, 1, CS_LAGR_FLUID_TEMPERATURE,
-                                   ettpa[id]);
-    }
-
-    /* Data needed if the coal combustion is activated */
-
-    if (lagr_params->physical_model == 2) {
-
-      /* ettp and ettpa arrays */
-
-      id = _jmwat * (*nbpmax) + i;
-      cs_lagr_particles_set_real_n(particles, i, 0, CS_LAGR_WATER_MASS,
-                                   ettp[id]);
-      cs_lagr_particles_set_real_n(particles, i, 1, CS_LAGR_WATER_MASS,
-                                   ettpa[id]);
-
-      if (am->count[0][CS_LAGR_TEMPERATURE] > 0) {
-
-        cs_real_t *cur_part_coal_mass
-          = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_COAL_MASS);
-        cs_real_t *prv_part_coal_mass
-          = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_COAL_MASS);
-
-        cs_real_t *cur_part_coke_mass
-          = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_COKE_MASS);
-        cs_real_t *prv_part_coke_mass
-          = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_COKE_MASS);
-
-        for (cs_lnum_t j = 0; j < am->count[0][CS_LAGR_TEMPERATURE]; j++) {
-          id = (_jmch + j) * (*nbpmax) + i;
-          cur_part_coal_mass[j] = ettp[id];
-          prv_part_coal_mass[j] = ettpa[id];
-
-          id = (_jmck + j) * (*nbpmax) + i;
-          cur_part_coke_mass[j] = ettp[id];
-          prv_part_coke_mass[j] = ettpa[id];
-        }
-
-      }
-
-      id = _jcp * (*nbpmax) + i;
-      cs_lagr_particles_set_real_n(particles, i, 0, CS_LAGR_CP, ettp[id]);
-      cs_lagr_particles_set_real_n(particles, i, 1, CS_LAGR_CP, ettpa[id]);
-
-      /* tepa array */
-
-      id = _jrdck * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_SHRINKING_DIAMETER, tepa[id]);
-      /*  FIXME for post-processing by trajectory purpose. To have better
-          results shrinking_diam should be transfered to ETTPA/ETTP arrays*/
-
-      id = _jrd0p * (*nbpmax) + i;
-      cs_lagr_particles_set_real(particles, i, CS_LAGR_INITIAL_DIAMETER, tepa[id]);
-
-      if  (am->count[0][CS_LAGR_TEMPERATURE] > 0) {
-        cs_real_t *cur_part_coal_density
-          = cs_lagr_particles_attr(particles, i, CS_LAGR_COAL_DENSITY);
-        for (cs_lnum_t j = 0; j < am->count[0][CS_LAGR_TEMPERATURE]; j++) {
-          id = (_jrhock + j) * (*nbpmax) + i;
-          cur_part_coal_density[j] = tepa[id];
-        }
-      }
-
-      /* itepa array */
-
-      id = _jinch * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_COAL_NUM, itepa[id]);
-
-    } /* iphyla == 2 */
-
-    /* Values based on other physical model options */
-
-    if (am->size[CS_LAGR_EMISSIVITY] > 0) {
-      id = _jreps * (*nbpmax) + i;
-      cs_lagr_particles_set_real_n(particles, i, 0, CS_LAGR_EMISSIVITY,
-                                   ettp[id]);
-      cs_lagr_particles_set_real_n(particles, i, 1, CS_LAGR_EMISSIVITY,
-                                   ettpa[id]);
-    }
-
-    /* Statistical class */
-
-    if (am->size[CS_LAGR_STAT_CLASS] > 0) {
-      id = _jclst * (*nbpmax) + i;
-      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_STAT_CLASS, itepa[id]);
-    }
-
-    /* User variables */
-
-    if (am->count[0][CS_LAGR_USER] > 0) {
-      cs_real_t *usr0 = cs_lagr_particles_attr_n(particles, i, 0, CS_LAGR_USER);
-      cs_real_t *usr1 = cs_lagr_particles_attr_n(particles, i, 1, CS_LAGR_USER);
-      for (cs_lnum_t j = 0; j < particles->p_am->count[0][CS_LAGR_USER]; j++) {
-        id = (_jvls + j) * (*nbpmax) + i;
-        usr0[j] = ettp[id];
-        usr1[j] = ettpa[id];
-      }
-    }
+    if (   lagr_params->deposition <= 0
+        && am->size[CS_LAGR_DEPOSITION_FLAG] > 0)
+      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG,
+                                 CS_LAGR_PART_IN_FLOW);
 
   }
+
+  if (particles->n_particles > 0) {
+    particles->first_used_id = 0;
+    particles->used_id[0].prev_id = -1;
+    particles->used_id[particles->n_particles - 1].next_id = -1;
+  }
+  else
+    particles->first_used_id = -1;
+
+  particles->first_free_id = particles->n_particles;
+  particles->used_id[particles->first_free_id].next_id = -1;
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf("\n Particle set after %s\n", __func__);
+  cs_lagr_particle_set_dump(particles);
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -4625,9 +4344,12 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles)
 
   for (i = 0, j = particles->first_used_id; i < n_particles; i++) {
 
-#if defined(DEBUG) || !defined(NDEBUG)
-
     cs_lnum_t cur_part_state = _get_tracking_info(particles, j)->state;
+
+    if  (cur_part_state == CS_LAGR_PART_ERR)
+      cs_lagr_particles_set_lnum(particles, j, CS_LAGR_CELL_NUM, 0);
+
+#if defined(DEBUG) || !defined(NDEBUG)
 
     assert(cur_part_state != CS_LAGR_PART_TO_DELETE);
     assert(cur_part_state != CS_LAGR_PART_OUT);
@@ -4648,24 +4370,26 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles)
 
   BFT_FREE(swap_buffer);
 
-  /* Also update list */
+  /* Shift from 0-based to 1-based (temporary) */
 
-  for (i = 0; i < particles->n_particles; i++) {
-    particles->used_id[i].prev_id = i-1;
-    particles->used_id[i].next_id = i+1;
+  if (p_am->count[0][CS_LAGR_NEIGHBOR_FACE_ID] > 0) {
+    for (i = 0; i < n_particles; i++) {
+      const cs_lnum_t n_face_num
+        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID) + 1;
+        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID,
+                                   n_face_num);
+    }
   }
 
-  if (particles->n_particles > 0) {
-    particles->first_used_id = 0;
-    particles->used_id[0].prev_id = -1;
-    particles->used_id[particles->n_particles - 1].next_id = -1;
-  }
-  else
-    particles->first_used_id = -1;
+  /* Also mark list as not used */
 
-  particles->first_free_id = particles->n_particles;
-  particles->used_id[particles->first_free_id].next_id = -1;
+  particles->first_used_id = -1;
+  particles->first_free_id = -1;
 
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf("\n Particle set after %s\n", __func__);
+  cs_lagr_particle_set_dump(particles);
+#endif
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -4688,6 +4412,16 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles)
  *   p_pepa    --> pepa pointer
  *   p_eptp    --> eptp pointer
  *   p_eptpa   --> eptpa pointer
+ *   p_nbpart  --> nbpart pointer
+ *   p_dnbpar  --> dnbpar pointer
+ *   p_nbpout  --> nbpout pointer
+ *   p_dnbpou  --> dnbpou pointer
+ *   p_nbperr  --> nbperr pointer
+ *   p_dnbper  --> dnbper  pointer
+ *   p_nbpdep  --> nbpdep pointer
+ *   p_dnbdep  --> dnbdep  pointer
+ *   p_npencr  --> npencr pointer
+ *   p_dnpenc  --> dnpenc  pointer
  *
  * returns:
  *   pointer to the field structure, or NULL
@@ -4701,7 +4435,17 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
                    cs_int_t   **p_ipeta,
                    cs_real_t  **p_peta,
                    cs_real_t  **p_eptp,
-                   cs_real_t  **p_eptpa)
+                   cs_real_t  **p_eptpa,
+                   cs_int_t   **p_nbpart,
+                   cs_real_t  **p_dnbpar,
+                   cs_int_t   **p_nbpout,
+                   cs_real_t  **p_dnbpou,
+                   cs_int_t   **p_nbperr,
+                   cs_real_t  **p_dnbper,
+                   cs_int_t   **p_nbpdep,
+                   cs_real_t  **p_dnbdep,
+                   cs_int_t   **p_npencr,
+                   cs_real_t  **p_dnpenc)
 {
   cs_lagr_particle_set_t  *particles = _particle_set;
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
@@ -4728,6 +4472,68 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
   *p_eptpa = (cs_real_t *)(  particles->p_buffer
                            + p_am->displ[1][CS_LAGR_COORDS]
                            - p_am->displ[0][CS_LAGR_COORDS]);
+
+  *p_nbpart = &(particles->n_particles);
+  *p_dnbpar = &(particles->weight);
+  *p_nbpout = &(particles->n_part_out);
+  *p_dnbpou = &(particles->weight_out);
+  *p_nbperr = &(particles->n_failed_part);
+  *p_dnbper = &(particles->weight_failed);
+  *p_nbpdep = &(particles->n_part_dep);
+  *p_dnbdep = &(particles->weight_dep);
+  *p_npencr = &(particles->n_part_fou);
+  *p_dnpenc = &(particles->weight_fou);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy attributes from one particle to another
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   dest <-- number (1-based) of destination particle
+ *   src  <-- number (1-based) of source particle
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_lagr_part_copy(cs_lnum_t  dest,
+                    cs_lnum_t  src)
+{
+  cs_lagr_particle_set_t  *particles = _particle_set;
+  memcpy(particles->p_buffer + particles->p_am->extents*(dest-1),
+         particles->p_buffer + particles->p_am->extents*(src-1),
+         particles->p_am->extents);
+  cs_lagr_particles_set_real(particles, (dest-1), CS_LAGR_RANDOM_VALUE,
+                             rand()/RAND_MAX);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy current attributes to previous attributes.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   pn <-- number (1-based) of destination particle
+ *   src  <-- number (1-based) of source particle
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_lagr_current_to_previous(cs_lnum_t  pn)
+{
+  cs_lagr_particle_set_t  *particles = _particle_set;
+  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
+  unsigned char *p_buf = particles->p_buffer + p_am->extents*(pn-1);
+
+  for (cs_lagr_attribute_t attr = 0;
+       attr < CS_LAGR_N_ATTRIBUTES;
+       attr++) {
+    if (p_am->count[1][attr] > 0 && p_am->count[0][attr] > 0) {
+      memcpy(p_buf + p_am->displ[1][attr],
+             p_buf + p_am->displ[0][attr],
+             p_am->size[attr]);
+    }
+  }
+  *((cs_lnum_t *)(  p_buf + p_am->displ[1][CS_LAGR_RANK_ID])) = cs_glob_rank_id;
 }
 
 /*============================================================================
@@ -4758,54 +4564,56 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           const cs_int_t    *nbclst,
                           cs_lnum_t          icocel[],
                           cs_lnum_t          itycel[],
-                          const cs_int_t    *jisor,
-                          const cs_int_t    *jisora,
-                          const cs_int_t    *jirka,
-                          const cs_int_t    *jord1,
-                          const cs_int_t    *jrval,
-                          const cs_int_t    *jrpoi,
-                          const cs_int_t    *jrtsp,
-                          const cs_int_t    *jdp,
-                          const cs_int_t    *jmp,
-                          const cs_int_t    *jxp,
-                          const cs_int_t    *jyp,
-                          const cs_int_t    *jzp,
-                          const cs_int_t    *jup,
-                          const cs_int_t    *jvp,
-                          const cs_int_t    *jwp,
-                          const cs_int_t    *juf,
-                          const cs_int_t    *jvf,
-                          const cs_int_t    *jwf,
-                          const cs_int_t    *jtaux,
-                          const cs_int_t    *jryplu,
-                          const cs_int_t    *jrinpf,
-                          const cs_int_t    *jdfac,
-                          const cs_int_t    *jimark,
-                          const cs_int_t    *jtp,
-                          const cs_int_t     jhp[],
-                          const cs_int_t    *jtf,
-                          const cs_int_t    *jmwat,
-                          const cs_int_t     jmch[],
-                          const cs_int_t     jmck[],
-                          const cs_int_t    *jcp,
-                          const cs_int_t    *jrdck,
-                          const cs_int_t    *jrd0p,
-                          const cs_int_t    *jinch,
-                          const cs_int_t     jrhock[],
-                          const cs_int_t    *jreps,
-                          const cs_int_t    *jdepo,
-                          const cs_int_t    *jnbasg,
-                          const cs_int_t    *jnbasp,
-                          const cs_int_t    *jfadh,
-                          const cs_int_t    *jmfadh,
-                          const cs_int_t    *jndisp,
-                          const cs_int_t    *jclst,
-                          const cs_int_t    *jvls)
+                          cs_int_t          *jisor,
+                          cs_int_t          *jisora,
+                          cs_int_t          *jirka,
+                          cs_int_t          *jord1,
+                          cs_int_t          *jrval,
+                          cs_int_t          *jrpoi,
+                          cs_int_t          *jrtsp,
+                          cs_int_t          *jdp,
+                          cs_int_t          *jmp,
+                          cs_int_t          *jxp,
+                          cs_int_t          *jyp,
+                          cs_int_t          *jzp,
+                          cs_int_t          *jup,
+                          cs_int_t          *jvp,
+                          cs_int_t          *jwp,
+                          cs_int_t          *juf,
+                          cs_int_t          *jvf,
+                          cs_int_t          *jwf,
+                          cs_int_t          *jtaux,
+                          cs_int_t          *jryplu,
+                          cs_int_t          *jrinpf,
+                          cs_int_t          *jdfac,
+                          cs_int_t          *jimark,
+                          cs_int_t          *jtp,
+                          cs_int_t           jhp[],
+                          cs_int_t          *jtf,
+                          cs_int_t          *jmwat,
+                          cs_int_t           jmch[],
+                          cs_int_t           jmck[],
+                          cs_int_t          *jcp,
+                          cs_int_t          *jrdck,
+                          cs_int_t          *jrd0p,
+                          cs_int_t          *jinch,
+                          cs_int_t           jrhock[],
+                          cs_int_t          *jreps,
+                          cs_int_t          *jdepo,
+                          cs_int_t          *jnbasg,
+                          cs_int_t          *jnbasp,
+                          cs_int_t          *jfadh,
+                          cs_int_t          *jmfadh,
+                          cs_int_t          *jndisp,
+                          cs_int_t          *jclst,
+                          cs_int_t          *jvls,
+                          cs_int_t          *nvp1)
 {
   cs_lnum_t  i;
   cs_mesh_t  *mesh = cs_glob_mesh;
 
-  int iettp_loc_count = 0;
+  int n_layers = 0;
+  int ieptp_loc_count = 0;
 
   cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3];
 
@@ -4829,175 +4637,135 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   /* Set indexes */
 
   for (i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
-    attr_keys[i][0] = ETTP; /* default */
+    attr_keys[i][0] = EPTP; /* default */
     attr_keys[i][1] = 0;
     attr_keys[i][2] = 0;
   }
 
   /* Special case:
-     jisor is first index in itepa, but cell number is also
+     jisor is first index in ipepa, but cell number is also
      needed in indep for previous time step;
-     so we cheat here and assign this attribute to "iettp".
+     so we cheat here and assign this attribute to "ieptp".
   */
 
   assert(*jisor == 1);               /* for future mapping of Fortran to C */
 
-  attr_keys[CS_LAGR_CELL_NUM][0] = IETTP;
-  attr_keys[CS_LAGR_CELL_NUM][1] = ++iettp_loc_count;
-  _jisor = *jisor - 1;
-  _jisora = *jisora - 1;
+  attr_keys[CS_LAGR_CELL_NUM][0] = IEPTP;
+  attr_keys[CS_LAGR_CELL_NUM][1] = ++ieptp_loc_count;
 
   attr_keys[CS_LAGR_RANK_ID][0] = IPRKID;
   attr_keys[CS_LAGR_RANK_ID][1] = 1;
-  _jirka = *jirka - 1;
 
   /* Other attributes */
 
-  attr_keys[CS_LAGR_SWITCH_ORDER_1][0] = ITEPA;
+  attr_keys[CS_LAGR_SWITCH_ORDER_1][0] = IPEPA;
   attr_keys[CS_LAGR_SWITCH_ORDER_1][1] = *jord1;
-  _jord1 = *jord1 - 1;
 
-  attr_keys[CS_LAGR_RANDOM_VALUE][0] = TEPA;
+  attr_keys[CS_LAGR_RANDOM_VALUE][0] = PEPA;
   attr_keys[CS_LAGR_RANDOM_VALUE][1] = *jrval;
-  _jrval = *jrval - 1;
 
-  attr_keys[CS_LAGR_STAT_WEIGHT][0] = TEPA;
+  attr_keys[CS_LAGR_STAT_WEIGHT][0] = PEPA;
   attr_keys[CS_LAGR_STAT_WEIGHT][1] = *jrpoi;
-  _jrpoi = *jrpoi - 1;
 
-  attr_keys[CS_LAGR_RESIDENCE_TIME][0] = TEPA;
+  attr_keys[CS_LAGR_RESIDENCE_TIME][0] = PEPA;
   attr_keys[CS_LAGR_RESIDENCE_TIME][1] = *jrtsp;
-  _jrtsp = *jrtsp - 1;
 
-  attr_keys[CS_LAGR_MASS][0] = ETTP;
+  attr_keys[CS_LAGR_MASS][0] = EPTP;
   attr_keys[CS_LAGR_MASS][1] = *jmp;
-  _jmp = *jmp - 1;
 
   attr_keys[CS_LAGR_DIAMETER][1] = *jdp;
-  _jdp = *jdp - 1;
 
   attr_keys[CS_LAGR_COORDS][1] = *jxp;
   attr_keys[CS_LAGR_COORDS][2] = 3;
-  _jxp = *jxp - 1;
-  _jyp = *jyp - 1;
-  _jzp = *jzp - 1;
 
   attr_keys[CS_LAGR_VELOCITY][1] = *jup;
   attr_keys[CS_LAGR_VELOCITY][2] = 3;
-  _jup = *jup - 1;
-  _jvp = *jvp - 1;
-  _jwp = *jwp - 1;
 
   attr_keys[CS_LAGR_VELOCITY_SEEN][1] = *juf;
   attr_keys[CS_LAGR_VELOCITY_SEEN][2] = 3;
-  _juf = *juf - 1;
-  _jvf = *jvf - 1;
-  _jwf = *jwf - 1;
 
   attr_keys[CS_LAGR_TAUP_AUX][1] = *jtaux;
-  _jtaux = *jtaux - 1;
 
-  attr_keys[CS_LAGR_DEPOSITION_FLAG][0] = ITEPA;
+  attr_keys[CS_LAGR_DEPOSITION_FLAG][0] = IPEPA;
   attr_keys[CS_LAGR_DEPOSITION_FLAG][1] = *jdepo;
-  _jdepo = *jdepo - 1;
 
-  attr_keys[CS_LAGR_YPLUS][0] = TEPA;
+  attr_keys[CS_LAGR_YPLUS][0] = PEPA;
   attr_keys[CS_LAGR_YPLUS][1] = *jryplu;
-  _jryplu = *jryplu - 1;
 
-  attr_keys[CS_LAGR_INTERF][0] = TEPA;
+  attr_keys[CS_LAGR_INTERF][0] = PEPA;
   attr_keys[CS_LAGR_INTERF][1] = *jrinpf;
-  _jrinpf = *jrinpf - 1;
 
-  attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][0] = ITEPA;
+  attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][0] = IPEPA;
   attr_keys[CS_LAGR_NEIGHBOR_FACE_ID][1] = *jdfac;
-  _jdfac = *jdfac - 1;
 
-  attr_keys[CS_LAGR_MARKO_VALUE][0] = ITEPA;
+  attr_keys[CS_LAGR_MARKO_VALUE][0] = IPEPA;
   attr_keys[CS_LAGR_MARKO_VALUE][1] = *jimark;
-  _jimark = *jimark - 1;
 
-  attr_keys[CS_LAGR_N_LARGE_ASPERITIES][0] = ITEPA;
+  attr_keys[CS_LAGR_N_LARGE_ASPERITIES][0] = IPEPA;
   attr_keys[CS_LAGR_N_LARGE_ASPERITIES][1] = *jnbasg;
-  _jnbasg = *jnbasg - 1;
 
-  attr_keys[CS_LAGR_N_SMALL_ASPERITIES][0] = ITEPA;
+  attr_keys[CS_LAGR_N_SMALL_ASPERITIES][0] = IPEPA;
   attr_keys[CS_LAGR_N_SMALL_ASPERITIES][1] = *jnbasp;
-  _jnbasp = *jnbasp - 1;
 
-  attr_keys[CS_LAGR_ADHESION_FORCE][0] = TEPA;
+  attr_keys[CS_LAGR_ADHESION_FORCE][0] = PEPA;
   attr_keys[CS_LAGR_ADHESION_FORCE][1] = *jfadh;
-  _jfadh = *jfadh - 1;
 
-  attr_keys[CS_LAGR_ADHESION_TORQUE][0] = TEPA;
+  attr_keys[CS_LAGR_ADHESION_TORQUE][0] = PEPA;
   attr_keys[CS_LAGR_ADHESION_TORQUE][1] = *jmfadh;
-  _jmfadh = *jmfadh - 1;
 
-  attr_keys[CS_LAGR_DISPLACEMENT_NORM][0] = TEPA;
+  attr_keys[CS_LAGR_DISPLACEMENT_NORM][0] = PEPA;
   attr_keys[CS_LAGR_DISPLACEMENT_NORM][1] = *jndisp;
-  _jndisp = *jndisp - 1;
 
   if (*jtp > 0) {
     attr_keys[CS_LAGR_TEMPERATURE][1] = *jtp;
-    _jthp = *jtp - 1;
   }
   else {
     attr_keys[CS_LAGR_TEMPERATURE][1] = jhp[0];
     attr_keys[CS_LAGR_TEMPERATURE][2]
       = cs_glob_lagr_params->n_temperature_layers;
-    _jthp = jhp[0]-1;
   }
 
   attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = *jtf;
-  _jtf = *jtf - 1;
 
   attr_keys[CS_LAGR_WATER_MASS][1] = *jmwat;
-  _jmwat = *jmwat - 1;
 
   attr_keys[CS_LAGR_COAL_MASS][1] = jmch[0];
   attr_keys[CS_LAGR_COAL_MASS][2]
     = cs_glob_lagr_params->n_temperature_layers;
-  _jmch = jmch[0] - 1;
 
   attr_keys[CS_LAGR_COKE_MASS][1] = jmck[0];
   attr_keys[CS_LAGR_COKE_MASS][2]
     = cs_glob_lagr_params->n_temperature_layers;
-  _jmck = jmck[0] - 1;
 
   attr_keys[CS_LAGR_CP][1] = *jcp;
-  _jcp = *jcp - 1;
 
-  attr_keys[CS_LAGR_SHRINKING_DIAMETER][0] = TEPA;
+  /*  FIXME for post-processing by trajectory purpose. To have better
+      results shrinking_diam should be transfered to EPTPA/EPTP arrays*/
+
+  attr_keys[CS_LAGR_SHRINKING_DIAMETER][0] = PEPA;
   attr_keys[CS_LAGR_SHRINKING_DIAMETER][1] = *jrdck;
-  _jrdck = *jrdck - 1;
 
-  attr_keys[CS_LAGR_INITIAL_DIAMETER][0] = TEPA;
+  attr_keys[CS_LAGR_INITIAL_DIAMETER][0] = PEPA;
   attr_keys[CS_LAGR_INITIAL_DIAMETER][1] = *jrd0p;
-  _jrd0p = *jrd0p - 1;
 
-  attr_keys[CS_LAGR_COAL_DENSITY][0] = TEPA;
+  attr_keys[CS_LAGR_COAL_DENSITY][0] = PEPA;
   attr_keys[CS_LAGR_COAL_DENSITY][1] = jrhock[0];
   attr_keys[CS_LAGR_COAL_DENSITY][2]
     = cs_glob_lagr_params->n_temperature_layers;
-  _jrhock = jrhock[0] - 1;
 
-  attr_keys[CS_LAGR_COAL_NUM][0] = ITEPA;
+  attr_keys[CS_LAGR_COAL_NUM][0] = IPEPA;
   attr_keys[CS_LAGR_COAL_NUM][1] = *jinch;
-  _jinch = *jinch - 1;
 
   attr_keys[CS_LAGR_EMISSIVITY][1] = *jreps;
-  _jreps = *jreps - 1;
 
   if (*nbclst > 0) {
-    attr_keys[CS_LAGR_STAT_CLASS][0] = ITEPA;
+    attr_keys[CS_LAGR_STAT_CLASS][0] = IPEPA;
     attr_keys[CS_LAGR_STAT_CLASS][1] = *jclst;
-    _jclst = *jclst - 1;
   }
 
   if (*nvls > 0) {
     attr_keys[CS_LAGR_USER][1] = *jvls;
     attr_keys[CS_LAGR_USER][2] = *nvls;
-    _jvls = jvls[0] - 1;
   }
 
   /* Default count of 1 */
@@ -5055,405 +4823,172 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
     itycel[i] = builder->cell_face_idx[i];
   for (i = 0; i < builder->cell_face_idx[mesh->n_cells] ; i++)
     icocel[i] = builder->cell_face_lst[i];
-}
 
-/*----------------------------------------------------------------------------
- * Get variables and parameters associated to each particle and keep it in
- * a new structure
- *
- * parameters:
- *   nbpmax <-- n_particles max.
- *   nbpart --> number of current particles
- *   ...
- *----------------------------------------------------------------------------*/
+  /* Now remap all pointers */
+  /*------------------------*/
 
-void
-CS_PROCF (prtget, PRTGET)(const cs_lnum_t   *nbpmax,
-                          const cs_lnum_t   *nbpart,
-                          const cs_real_t    ettp[],
-                          const cs_real_t    ettpa[],
-                          const cs_lnum_t    itepa[],
-                          const cs_real_t    tepa[])
-{
-  cs_lagr_particle_set_t  *particles = _particle_set;
+  const cs_lagr_attribute_map_t *p_am = _particle_set->p_am;
 
-  assert(*nbpmax == particles->n_particles_max); /* Up to now, we don't manage
-                                                    a mofification of nbpmax */
-  particles->n_particles = *nbpart;
+  *jisor = p_am->displ[0][CS_LAGR_CELL_NUM]/sizeof(cs_lnum_t) + 1;
+  *jisora = p_am->displ[1][CS_LAGR_CELL_NUM]/sizeof(cs_lnum_t) + 1;
 
-  particles->weight = 0.0;
-  particles->n_part_out = 0;
-  particles->n_part_dep = 0;
-  particles->n_part_fou = 0;
-  particles->weight_out = 0.0;
-  particles->weight_dep = 0.0;
-  particles->weight_fou = 0.0;
-  particles->n_failed_part = 0;
-  particles->weight_failed = 0.0;
+  *jirka = p_am->displ[1][CS_LAGR_RANK_ID]/sizeof(cs_lnum_t) + 1;
 
-  _update_c_from_fortran(nbpmax,
-                         ettp,
-                         ettpa,
-                         itepa,
-                         tepa);
+  *jord1 = p_am->displ[0][CS_LAGR_SWITCH_ORDER_1]/sizeof(cs_lnum_t) + 1;
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n PARTICLE SET AFTER PRTGET\n");
-  cs_lagr_particle_set_dump(particles);
-#endif
-}
+  *jrval = p_am->displ[0][CS_LAGR_RANDOM_VALUE]/sizeof(cs_real_t) + 1;
+  *jrpoi = p_am->displ[0][CS_LAGR_STAT_WEIGHT]/sizeof(cs_real_t) + 1;
+  *jrtsp = p_am->displ[0][CS_LAGR_RESIDENCE_TIME]/sizeof(cs_real_t) + 1;
+  *jdp = p_am->displ[0][CS_LAGR_DIAMETER]/sizeof(cs_real_t) + 1;
+  *jmp = p_am->displ[0][CS_LAGR_MASS]/sizeof(cs_real_t) + 1;
 
-/*----------------------------------------------------------------------------
- * Put variables and parameters associated to each particles into FORTRAN
- * arrays.
- *
- * parameters:
- *   nbpmax <-- n_particles max.
- *   nbpart --> number of current particles
- *   dnbpar --> particle total weight
- *   nbpout --> number of outgoing particles
- *   dnbpou --> outgoing particle total weight
- *   nbperr --> number of failed particles
- *   dnbper --> failed particles total weight
- *   nbpdep --> number of depositing particles
- *   dnbdep --> depositing particles total weight
- *   npencr --> number of fouled particles (coal)
- *   dnpenc --> fouled particles (coal) total weight
- *   ...
- *----------------------------------------------------------------------------*/
+  *jxp =  p_am->displ[0][CS_LAGR_COORDS]/sizeof(cs_real_t) + 1;
+  *jyp = *jxp + 1;
+  *jzp = *jyp + 1;
 
-void
-CS_PROCF (prtput, PRTPUT)(const cs_int_t   *nbpmax,
-                          cs_int_t         *nbpart,
-                          cs_real_t        *dnbpar,
-                          cs_int_t         *nbpout,
-                          cs_real_t        *dnbpou,
-                          cs_int_t         *nbperr,
-                          cs_real_t        *dnbper,
-                          cs_int_t         *nbpdep,
-                          cs_real_t        *dnbdep,
-                          cs_int_t         *npencr,
-                          cs_real_t        *dnpenc,
-                          cs_real_t         ettp[],
-                          cs_real_t         ettpa[],
-                          cs_int_t          itepa[],
-                          cs_real_t         tepa[])
-{
-  cs_lnum_t  i, j, id, nbp;
+  *jup =  p_am->displ[0][CS_LAGR_VELOCITY]/sizeof(cs_real_t) + 1;
+  *jvp = *jup + 1;
+  *jwp = *jvp + 1;
 
-  cs_lagr_particle_set_t  *particles = _particle_set;
+  *juf =  p_am->displ[0][CS_LAGR_VELOCITY_SEEN]/sizeof(cs_real_t) + 1;
+  *jvf = *juf + 1;
+  *jwf = *jvf + 1;
 
-  const cs_lagr_param_t *lagr_params = cs_glob_lagr_params;
+  *jtaux = p_am->displ[0][CS_LAGR_TAUP_AUX]/sizeof(cs_real_t) + 1;
 
-  const cs_lnum_t n_temperature_layers
-    = particles->p_am->count[0][CS_LAGR_TEMPERATURE];
+  if (p_am->count[0][CS_LAGR_YPLUS] > 0)
+    *jryplu = p_am->displ[0][CS_LAGR_YPLUS]/sizeof(cs_real_t) + 1;
+  else
+    *jryplu = -1;
 
-  assert(*nbpmax == particles->n_particles_max);
+  if (p_am->count[0][CS_LAGR_INTERF] > 0)
+    *jrinpf = p_am->displ[0][CS_LAGR_INTERF]/sizeof(cs_real_t) + 1;
+  else
+    *jrinpf = -1;
 
-  j = particles->first_used_id;
+  if (p_am->count[0][CS_LAGR_NEIGHBOR_FACE_ID] > 0)
+    *jdfac = p_am->displ[0][CS_LAGR_NEIGHBOR_FACE_ID]/sizeof(cs_lnum_t) + 1;
+  else
+    *jdfac = -1;
 
-  nbp = 0;
+  if (p_am->count[0][CS_LAGR_MARKO_VALUE] > 0)
+    *jimark = p_am->displ[0][CS_LAGR_MARKO_VALUE]/sizeof(cs_lnum_t) + 1;
+  else
+    *jimark = -1;
 
-  for (i = 0; (i < particles-> n_particles )&(j != -1); i++) {
+  n_layers = p_am->count[0][CS_LAGR_TEMPERATURE];
+  if (*jtp > 0) {
+    assert(n_layers == 1);
+    *jtp = p_am->displ[0][CS_LAGR_TEMPERATURE]/sizeof(cs_real_t) + 1;
+  }
+  else {
+    *jtp = -1;
+    for (int l_id = 0; l_id < n_layers; l_id++)
+      jhp[l_id]
+        = p_am->displ[0][CS_LAGR_TEMPERATURE]/sizeof(cs_real_t) + 1 + l_id;
+  }
 
-    nbp++;
+  if (p_am->count[0][CS_LAGR_FLUID_TEMPERATURE] > 0)
+    *jtf = p_am->displ[0][CS_LAGR_FLUID_TEMPERATURE]/sizeof(cs_real_t) + 1;
+  else
+    *jtf = -1;
 
-    cs_lnum_t cur_part_state = _get_tracking_info(particles, j)->state;
+  if (p_am->count[0][CS_LAGR_WATER_MASS] > 0)
+    *jmwat = p_am->displ[0][CS_LAGR_WATER_MASS]/sizeof(cs_real_t) + 1;
+  else
+    *jmwat = -1;
 
-    if  (   cur_part_state == CS_LAGR_PART_TREATED
-         || cur_part_state == CS_LAGR_PART_STUCK) {
-      itepa[_jisor * (*nbpmax) + i]
-        = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_CELL_NUM);
+  n_layers = p_am->count[0][CS_LAGR_COAL_MASS];
+  for (int l_id = 0; l_id < n_layers; l_id++)
+    jmch[l_id] = p_am->displ[0][CS_LAGR_COAL_MASS]/sizeof(cs_real_t) + 1 + l_id;
+
+  n_layers = p_am->count[0][CS_LAGR_COKE_MASS];
+  for (int l_id = 0; l_id < n_layers; l_id++)
+    jmck[l_id] = p_am->displ[0][CS_LAGR_COKE_MASS]/sizeof(cs_real_t) + 1 + l_id;
+
+  if (p_am->count[0][CS_LAGR_CP] > 0)
+    *jcp = p_am->displ[0][CS_LAGR_CP]/sizeof(cs_real_t) + 1;
+  else
+    *jcp = -1;
+
+  if (p_am->count[0][CS_LAGR_SHRINKING_DIAMETER] > 0)
+    *jrdck = p_am->displ[0][CS_LAGR_SHRINKING_DIAMETER]/sizeof(cs_real_t) + 1;
+  else
+    *jrdck = -1;
+
+  if (p_am->count[0][CS_LAGR_INITIAL_DIAMETER] > 0)
+    *jrd0p = p_am->displ[0][CS_LAGR_INITIAL_DIAMETER]/sizeof(cs_real_t) + 1;
+  else
+    *jrd0p = -1;
+
+  if (p_am->count[0][CS_LAGR_COAL_NUM] > 0)
+    *jinch = p_am->displ[0][CS_LAGR_COAL_NUM]/sizeof(cs_lnum_t) + 1;
+  else
+    *jinch = -1;
+
+  n_layers = p_am->count[0][CS_LAGR_COAL_DENSITY];
+  for (int l_id = 0; l_id < n_layers; l_id++) {
+    jrhock[l_id]
+      = p_am->displ[0][CS_LAGR_COAL_DENSITY]/sizeof(cs_real_t) + 1 + l_id;
+  }
+
+  if (p_am->count[0][CS_LAGR_EMISSIVITY] > 0)
+    *jreps = p_am->displ[0][CS_LAGR_EMISSIVITY]/sizeof(cs_real_t) + 1;
+  else
+    *jreps = -1;
+
+  if (p_am->count[0][CS_LAGR_DEPOSITION_FLAG] > 0)
+    *jdepo = p_am->displ[0][CS_LAGR_DEPOSITION_FLAG]/sizeof(cs_lnum_t) + 1;
+  else
+    *jdepo = -1;
+
+  if (p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
+    *jnbasg = p_am->displ[0][CS_LAGR_N_LARGE_ASPERITIES]/sizeof(cs_lnum_t) + 1;
+  else
+    *jnbasg = -1;
+
+  if (p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
+    *jnbasp = p_am->displ[0][CS_LAGR_N_SMALL_ASPERITIES]/sizeof(cs_lnum_t) + 1;
+  else
+    *jnbasp = -1;
+
+  if (p_am->count[0][CS_LAGR_ADHESION_FORCE] > 0)
+    *jfadh = p_am->displ[0][CS_LAGR_ADHESION_FORCE]/sizeof(cs_real_t) + 1;
+  else
+    *jfadh = -1;
+
+  if (p_am->count[0][CS_LAGR_ADHESION_TORQUE] > 0)
+    *jmfadh = p_am->displ[0][CS_LAGR_ADHESION_TORQUE]/sizeof(cs_real_t) + 1;
+  else
+    *jmfadh = -1;
+
+  if (p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
+    *jndisp = p_am->displ[0][CS_LAGR_DISPLACEMENT_NORM]/sizeof(cs_real_t) + 1;
+  else
+    *jndisp = -1;
+
+  if (p_am->count[0][CS_LAGR_STAT_CLASS] > 0)
+    *jclst = p_am->displ[0][CS_LAGR_STAT_CLASS]/sizeof(cs_lnum_t) + 1;
+  else
+    *jclst = -1;
+
+  int n_user = p_am->count[0][CS_LAGR_USER];
+  for (int u_id = 0; u_id < n_user; u_id++) {
+    jvls[u_id]
+      = p_am->displ[0][CS_LAGR_USER]/sizeof(cs_real_t) + 1 + u_id;
+  }
+
+  /* Determine nvp1 (max real attribute, for safety) */
+
+  *nvp1 = 0;
+
+  for (cs_lagr_attribute_t attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
+    if (p_am->count[0][attr] > 0 && p_am->datatype[attr] == CS_REAL_TYPE) {
+      int iend = p_am->displ[0][attr]/sizeof(cs_real_t) + p_am->count[0][attr];
+      if (iend > *nvp1)
+        *nvp1 = iend;
     }
-    else if (cur_part_state == CS_LAGR_PART_OUT) {
-      itepa[_jisor * (*nbpmax) + i] = 0;
-    }
-    else {
-      assert(cur_part_state = CS_LAGR_PART_ERR);
-
-      itepa[_jisor * (*nbpmax) + i] = 0;
-    }
-
-    tepa[_jrval * (*nbpmax) + i]
-      = cs_lagr_particles_get_real(particles, j, CS_LAGR_RANDOM_VALUE);
-
-    /* Data needed if the deposition model is activated */
-
-    if (lagr_params->deposition > 0) {
-
-      tepa[_jryplu * (*nbpmax) + i]
-        = cs_lagr_particles_get_real(particles, j, CS_LAGR_YPLUS);
-
-      tepa[_jrinpf * (*nbpmax) + i]
-        = cs_lagr_particles_get_real(particles, j, CS_LAGR_INTERF);
-
-      itepa[_jdfac * (*nbpmax) + i]
-        = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_NEIGHBOR_FACE_ID) + 1;
-
-      itepa[_jimark * (*nbpmax) + i]
-        = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_MARKO_VALUE);
-
-      itepa[_jdepo * (*nbpmax) + i]
-        = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_DEPOSITION_FLAG);
-
-    }
-
-    /* Data needed if the resuspension model is activated */
-
-    if (lagr_params->resuspension > 0) {
-
-      itepa[_jnbasg * (*nbpmax) + i]
-        = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_N_LARGE_ASPERITIES);
-
-      itepa[_jnbasp * (*nbpmax) + i]
-        = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_N_SMALL_ASPERITIES);
-
-      tepa[_jfadh * (*nbpmax) + i]
-        = cs_lagr_particles_get_real(particles, j, CS_LAGR_ADHESION_FORCE);
-
-      tepa[_jmfadh * (*nbpmax) + i]
-        = cs_lagr_particles_get_real(particles, j, CS_LAGR_ADHESION_TORQUE);
-
-      tepa[_jndisp * (*nbpmax) + i]
-        = cs_lagr_particles_get_real(particles, j, CS_LAGR_DISPLACEMENT_NORM);
-
-    }
-
-    /* Data needed if coal combustion is activated */
-
-    if (n_temperature_layers > 0) {
-
-      const cs_real_t *cur_part_temp
-        = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_TEMPERATURE);
-      const cs_real_t *prev_part_temp
-        = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_TEMPERATURE);
-
-      for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
-        if (_jthp > -1) {
-          id = (_jthp + k) * (*nbpmax) + i;
-          ettp[id] = cur_part_temp[k];
-          ettpa[id] = prev_part_temp[k];
-        }
-      }
-
-    }
-
-    if (lagr_params->physical_model == 2) {
-
-      /* ettp and ettpa arrays */
-
-      id = _jtf * (*nbpmax) + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0,
-                                              CS_LAGR_FLUID_TEMPERATURE);
-      ettpa[id] = cs_lagr_particles_get_real_n(particles, j, 1,
-                                               CS_LAGR_FLUID_TEMPERATURE);
-
-      id = _jmwat * (*nbpmax) + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_WATER_MASS);
-      ettpa[id] = cs_lagr_particles_get_real_n(particles, j, 1, CS_LAGR_WATER_MASS);
-
-      if (n_temperature_layers > 0) {
-
-        const cs_real_t *cur_part_coal_mass
-          = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_COAL_MASS);
-        const cs_real_t *prev_part_coal_mass
-          = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_COAL_MASS);
-
-        const cs_real_t *cur_part_coke_mass
-          = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_COKE_MASS);
-        const cs_real_t *prev_part_coke_mass
-          = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_COKE_MASS);
-
-        for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
-          id = (_jmch + k) * (*nbpmax) + i;
-          ettp[id] = cur_part_coal_mass[k];
-          ettpa[id] = prev_part_coal_mass[k];
-
-          id = (_jmck + k) * (*nbpmax) + i;
-          ettp[id] = cur_part_coke_mass[k];
-          ettpa[id] = prev_part_coke_mass[k];
-        }
-
-      }
-
-      id = _jcp * (*nbpmax) + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_CP);
-      ettpa[id] = cs_lagr_particles_get_real_n(particles, j, 1, CS_LAGR_CP);
-
-      /* tepa array */
-
-      id = _jrdck * (*nbpmax) + i;
-      tepa[id]
-        = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_SHRINKING_DIAMETER);
-
-      id = _jrd0p * (*nbpmax) + i;
-      tepa[id]
-        = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_INITIAL_DIAMETER);
-
-      if (n_temperature_layers > 0) {
-        const cs_real_t *cur_part_coal_density
-          = cs_lagr_particles_attr_const(particles, j, CS_LAGR_COAL_DENSITY);
-        for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
-          id = (_jrhock + k) * (*nbpmax) + i;
-          tepa[id] = cur_part_coal_density[k];
-        }
-      }
-
-      /* itepa array */
-
-      id = _jinch * (*nbpmax) + i;
-      itepa[id] = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_COAL_NUM);
-
-    }
-
-    id = _jord1 * (*nbpmax) + i;
-    itepa[id] = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_SWITCH_ORDER_1);
-
-    id = _jrpoi * (*nbpmax) + i;
-    tepa[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_STAT_WEIGHT);
-
-    id = _jrtsp * (*nbpmax) + i;
-    tepa[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_RESIDENCE_TIME);
-
-    id = _jmp * (*nbpmax) + i;
-    ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_MASS);
-    ettpa[id] = cs_lagr_particles_get_real_n(particles, j, 1, CS_LAGR_MASS);
-
-    id = _jdp * (*nbpmax) + i;
-    ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_DIAMETER);
-    ettpa[id] = cs_lagr_particles_get_real_n(particles, j, 1, CS_LAGR_DIAMETER);
-
-    /* Coordinates of the particle */
-
-    const cs_real_t *cur_part_coord
-      = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_COORDS);
-    const cs_real_t *prv_part_coord
-      = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_COORDS);
-
-    id = _jxp * (*nbpmax) + i;
-    ettp[id] = cur_part_coord[0];
-    ettpa[id] = prv_part_coord[0];
-
-    id = _jyp * (*nbpmax) + i;
-    ettp[id] = cur_part_coord[1];
-    ettpa[id] = prv_part_coord[1];
-
-    id = _jzp * (*nbpmax) + i;
-    ettp[id] = cur_part_coord[2];
-    ettpa[id] = prv_part_coord[2];
-
-    /* Velocity of the particle */
-
-    const cs_real_t *cur_part_velocity
-      = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_VELOCITY);
-    const cs_real_t *prv_part_velocity
-      = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_VELOCITY);
-
-    id = _jup * (*nbpmax) + i;
-    ettp[id] = cur_part_velocity[0];
-    ettpa[id] = prv_part_velocity[0];
-
-    id = _jvp * (*nbpmax) + i;
-    ettp[id] = cur_part_velocity[1];
-    ettpa[id] = prv_part_velocity[1];
-
-    id = _jwp * (*nbpmax) + i;
-    ettp[id] = cur_part_velocity[2];
-    ettpa[id] = prv_part_velocity[2];
-
-    /* Velocity seen by the fluid */
-
-    const cs_real_t *cur_part_velocity_seen
-      = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_VELOCITY_SEEN);
-    const cs_real_t *prv_part_velocity_seen
-      = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_VELOCITY_SEEN);
-
-    id = _juf * (*nbpmax) + i;
-    ettp[id] = cur_part_velocity_seen[0];
-    ettpa[id] = prv_part_velocity_seen[0];
-
-    id = _jvf * (*nbpmax) + i;
-    ettp[id] = cur_part_velocity_seen[1];
-    ettpa[id] = prv_part_velocity_seen[1];
-
-    id = _jwf * (*nbpmax) + i;
-    ettp[id] = cur_part_velocity_seen[2];
-    ettpa[id] = prv_part_velocity_seen[2];
-
-    id = _jtaux * (*nbpmax) + i;
-    ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0, CS_LAGR_TAUP_AUX);
-
-    /* Other values based on physical model */
-
-    if (_jreps > -1) {
-      id = _jreps * (*nbpmax) + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, j, 0,
-                                              CS_LAGR_EMISSIVITY);
-      ettpa[id] = cs_lagr_particles_get_real_n(particles, j, 1,
-                                               CS_LAGR_EMISSIVITY);
-    }
-
-    /* Statistical class */
-
-    if (_jclst > -1) {
-      id = _jclst * (*nbpmax) + i;
-      itepa[id] = cs_lagr_particles_get_lnum(particles, j, CS_LAGR_STAT_CLASS);
-    }
-
-    /* User variables */
-
-    if (particles->p_am->count[0][CS_LAGR_USER] > 0) {
-      const cs_real_t
-        *usr = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_USER);
-      const cs_real_t
-        *usra = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_USER);
-      for (cs_lnum_t k = 0; k < particles->p_am->count[0][CS_LAGR_USER]; k++) {
-        id = (_jvls + k) * (*nbpmax) + i;
-        ettp[id] = usr[k];
-        ettpa[id] = usra[k];
-      }
-    }
-
-    /* Next particle id to treat */
-
-    j = particles->used_id[j].next_id;
-
-  } /* End of loop on particles */
-
-  /* New number of particles */
-  *nbpart= particles->n_particles;
-
-  /* New weight */
-  *dnbpar= particles->weight;
-
-  /* Number of exiting particles */
-  *nbpout = particles->n_part_out;
-
-  /* weight of exiting particles */
-  *dnbpou = particles->weight_out;
-
-  /* Number of depositing particles */
-  *nbpdep = particles->n_part_dep;
-
-  /* weight of depositing particles */
-  *dnbdep = particles->weight_dep;
-
-  /* Number of fouled particles (coal) */
-  *npencr = particles->n_part_fou;
-
-  /* weight of fouled particles (coal) */
-  *dnpenc = particles->weight_fou;
-
-  /* Number of failed particles */
-  *nbperr = particles->n_failed_part;
-
-  /* weight of failed particles */
-  *dnbper = particles->weight_failed;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n PARTICLE SET AFTER PRTPUT\n");
-  cs_lagr_particle_set_dump(particles);
-#endif
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -5530,13 +5065,11 @@ CS_PROCF (getbdy, GETBDY)(const cs_int_t    *nflagm,
  * Displacement of particles.
  *
  * parameters:
- *   p_n_particles <-> pointer to the number of particles
  *   scheme_order  <-> current order of the scheme used for Lagrangian
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
-                          cs_lnum_t        *p_scheme_order,
+CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                           cs_real_t         boundary_stat[],
                           const cs_lnum_t  *iensi3,
                           const cs_lnum_t  *inbr,
@@ -5601,6 +5134,29 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   }
 
   assert(particles != NULL);
+
+  particles->weight = 0.0;
+  particles->n_part_out = 0;
+  particles->n_part_dep = 0;
+  particles->n_part_fou = 0;
+  particles->weight_out = 0.0;
+  particles->weight_dep = 0.0;
+  particles->weight_fou = 0.0;
+  particles->n_failed_part = 0;
+  particles->weight_failed = 0.0;
+
+  _initialize_displacement(particles);
+
+  /* Shift from 1-based to 0-based (temporary) */
+
+  if (p_am->count[0][CS_LAGR_NEIGHBOR_FACE_ID] > 0) {
+    for (i = 0; i < particles->n_particles; i++) {
+      const cs_lnum_t n_face_id
+        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID) - 1;
+        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID,
+                                   n_face_id);
+    }
+  }
 
   /* Main loop on  particles: global propagation */
 
@@ -5795,327 +5351,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
   }
 
   _finalize_displacement(particles);
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  bft_printf("\n PARTICLE SET AFTER DPLPRT\n");
-  cs_lagr_particle_set_dump(particles);
-#endif
-
-  /* Returns pointers */
-
-  *p_n_particles =  particles->n_particles;
-}
-
-/*----------------------------------------------------------------------------
- * Update C structures metadata after particle computations.
- *
- * This metadata is overwritten and rebuilt at each time step, so
- * it is useful only for a possible postprocessing step.
- *
- * The matching data is copied separately, as it may not need to be
- * updated at each time step.
- *
- * parameters:
- *   nbpmax <-- n_particles max.
- *   nbpart <-- number of current particles
- *   dnbpar <-- particle total weight
- *   nbpout <-- number of outgoing particles
- *   dnbpou <-- outgoing particle total weight
- *   nbperr <-- number of failed particles
- *   dnbper <-- failed particles total weight
- *   nbpdep <-- number of depositing particles
- *   dnbdep <-- depositing particles total weight
- *   npencr <-- number of fouled particles (coal)
- *   dnpenc <-- fouled particles (coal) total weight
- *   ...
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (ucdprt, UCDPRT)(const cs_lnum_t   *nbpmax,
-                          const cs_lnum_t   *nbpart,
-                          const cs_real_t   *dnbpar,
-                          const cs_int_t    *nbpout,
-                          const cs_real_t   *dnbpou,
-                          const cs_int_t    *nbperr,
-                          const cs_real_t   *dnbper,
-                          const cs_int_t    *nbpdep,
-                          const cs_real_t   *dnbdep,
-                          const cs_int_t    *npencr,
-                          const cs_real_t   *dnpenc,
-                          const cs_real_t    ettp[],
-                          const cs_real_t    ettpa[],
-                          const cs_int_t     itepa[],
-                          const cs_real_t    tepa[])
-{
-  cs_lagr_particle_set_t  *particles = _particle_set;
-
-  assert(*nbpmax == particles->n_particles_max); /* Up to now, we don't manage
-                                                    a mofification of nbpmax */
-
-  particles->n_particles = *nbpart;
-
-  particles->weight = *dnbpar;
-  particles->n_part_out = *nbpout;
-  particles->n_part_dep = *nbpdep;
-  particles->n_part_fou = *npencr;
-  particles->weight_out = *dnbpou;
-  particles->weight_dep = *dnbdep;
-  particles->weight_fou = *dnpenc;
-  particles->n_failed_part = *nbperr;
-  particles->weight_failed = *dnbper;
-
-  _update_c_from_fortran(nbpmax,
-                         ettp,
-                         ettpa,
-                         itepa,
-                         tepa);
-}
-
-/*----------------------------------------------------------------------------
- * Put variables and parameters associated to each particles into FORTRAN
- * arrays (when reading from restart).
- *
- * parameters:
- *   nbpart --> number of current particles
- *   dnbpar --> particle total weight
- *   ...
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (rstput, RSTPUT)(cs_int_t         *nbpart,
-                          cs_real_t        *dnbpar,
-                          cs_real_t         ettp[],
-                          cs_int_t          itepa[],
-                          cs_real_t         tepa[])
-{
-  cs_lnum_t  id;
-
-  cs_lagr_particle_set_t  *particles = cs_lagr_get_particle_set();
-  const cs_lnum_t n_particles = particles->n_particles;
-  const cs_lnum_t nbpmax = particles->n_particles_max;
-
-  const cs_lagr_param_t *lagr_params = cs_glob_lagr_params;
-
-  const cs_lnum_t n_temperature_layers
-    = particles->p_am->count[0][CS_LAGR_TEMPERATURE];
-
-  for (cs_lnum_t i = 0; i < n_particles; i++) {
-
-    itepa[_jisor * nbpmax + i]
-      = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
-
-    tepa[_jrval * nbpmax + i]
-      = cs_lagr_particles_get_real(particles, i, CS_LAGR_RANDOM_VALUE);
-
-    /* Data needed if the deposition model is activated */
-
-    if (lagr_params->deposition > 0) {
-
-      tepa[_jryplu * nbpmax + i]
-        = cs_lagr_particles_get_real(particles, i, CS_LAGR_YPLUS);
-
-      tepa[_jrinpf * nbpmax + i]
-        = cs_lagr_particles_get_real(particles, i, CS_LAGR_INTERF);
-
-      itepa[_jdfac * nbpmax + i]
-        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID) + 1;
-
-      itepa[_jimark * nbpmax + i]
-        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_MARKO_VALUE);
-
-      itepa[_jdepo * nbpmax + i]
-        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG);
-
-    }
-
-    /* Data needed if the resuspension model is activated */
-
-    if (lagr_params->resuspension > 0) {
-
-      itepa[_jnbasg * nbpmax + i]
-        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_N_LARGE_ASPERITIES);
-
-      itepa[_jnbasp * nbpmax + i]
-        = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_N_SMALL_ASPERITIES);
-
-      tepa[_jfadh * nbpmax + i]
-        = cs_lagr_particles_get_real(particles, i, CS_LAGR_ADHESION_FORCE);
-
-      tepa[_jmfadh * nbpmax + i]
-        = cs_lagr_particles_get_real(particles, i, CS_LAGR_ADHESION_TORQUE);
-
-      tepa[_jndisp * nbpmax + i]
-        = cs_lagr_particles_get_real(particles, i, CS_LAGR_DISPLACEMENT_NORM);
-
-    }
-
-    /* Data needed if coal combustion is activated */
-
-    if (n_temperature_layers > 0) {
-
-      const cs_real_t *cur_part_temp
-        = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_TEMPERATURE);
-
-      for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
-        if (_jthp > -1) {
-          id = (_jthp + k) * nbpmax + i;
-          ettp[id] = cur_part_temp[k];
-        }
-      }
-
-    }
-
-    if (lagr_params->physical_model == 2) {
-
-      /* ettp array */
-
-      id = _jtf * nbpmax + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0,
-                                              CS_LAGR_FLUID_TEMPERATURE);
-
-      id = _jmwat * nbpmax + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_WATER_MASS);
-
-      if (n_temperature_layers > 0) {
-
-        const cs_real_t *cur_part_coal_mass
-          = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COAL_MASS);
-
-        const cs_real_t *cur_part_coke_mass
-          = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COKE_MASS);
-
-        for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
-          id = (_jmch + k) * nbpmax + i;
-          ettp[id] = cur_part_coal_mass[k];
-
-          id = (_jmck + k) * nbpmax + i;
-          ettp[id] = cur_part_coke_mass[k];
-        }
-
-      }
-
-      id = _jcp * nbpmax + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_CP);
-
-      /* tepa array */
-
-      id = _jrdck * nbpmax + i;
-      tepa[id]
-        = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_SHRINKING_DIAMETER);
-
-      id = _jrd0p * nbpmax + i;
-      tepa[id]
-        = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_INITIAL_DIAMETER);
-
-      if (n_temperature_layers > 0) {
-        const cs_real_t *cur_part_coal_density
-          = cs_lagr_particles_attr_const(particles, i, CS_LAGR_COAL_DENSITY);
-        for (cs_lnum_t k = 0; k < n_temperature_layers; k++) {
-          id = (_jrhock + k) * nbpmax + i;
-          tepa[id] = cur_part_coal_density[k];
-        }
-      }
-
-      /* itepa array */
-
-      id = _jinch * nbpmax + i;
-      itepa[id] = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_COAL_NUM);
-
-    }
-
-    id = _jord1 * nbpmax + i;
-    itepa[id] = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_SWITCH_ORDER_1);
-
-    id = _jrpoi * nbpmax + i;
-    tepa[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_STAT_WEIGHT);
-
-    id = _jrtsp * nbpmax + i;
-    tepa[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_RESIDENCE_TIME);
-
-    id = _jmp * nbpmax + i;
-    ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_MASS);
-
-    id = _jdp * nbpmax + i;
-    ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_DIAMETER);
-
-    /* Coordinates of the particle */
-
-    const cs_real_t *cur_part_coord
-      = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COORDS);
-
-    id = _jxp * nbpmax + i;
-    ettp[id] = cur_part_coord[0];
-
-    id = _jyp * nbpmax + i;
-    ettp[id] = cur_part_coord[1];
-
-    id = _jzp * nbpmax + i;
-    ettp[id] = cur_part_coord[2];
-
-    /* Velocity of the particle */
-
-    const cs_real_t *cur_part_velocity
-      = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_VELOCITY);
-
-    id = _jup * nbpmax + i;
-    ettp[id] = cur_part_velocity[0];
-
-    id = _jvp * nbpmax + i;
-    ettp[id] = cur_part_velocity[1];
-
-    id = _jwp * nbpmax + i;
-    ettp[id] = cur_part_velocity[2];
-
-    /* Velocity seen by the fluid */
-
-    const cs_real_t *cur_part_velocity_seen
-      = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_VELOCITY_SEEN);
-
-    id = _juf * nbpmax + i;
-    ettp[id] = cur_part_velocity_seen[0];
-
-    id = _jvf * nbpmax + i;
-    ettp[id] = cur_part_velocity_seen[1];
-
-    id = _jwf * nbpmax + i;
-    ettp[id] = cur_part_velocity_seen[2];
-
-    id = _jtaux * nbpmax + i;
-    ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0, CS_LAGR_TAUP_AUX);
-
-    /* Other values based on physical model */
-
-    if (_jreps > -1) {
-      id = _jreps * nbpmax + i;
-      ettp[id] = cs_lagr_particles_get_real_n(particles, i, 0,
-                                              CS_LAGR_EMISSIVITY);
-    }
-
-    /* Statistical class */
-
-    if (_jclst > -1) {
-      id = _jclst * nbpmax + i;
-      itepa[id] = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_STAT_CLASS);
-    }
-
-    /* User variables */
-
-    if (particles->p_am->count[0][CS_LAGR_USER] > 0) {
-      const cs_real_t
-        *usr = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_USER);
-      for (cs_lnum_t k = 0; k < particles->p_am->count[0][CS_LAGR_USER]; k++) {
-        id = (_jvls + k) * nbpmax + i;
-        ettp[id] = usr[k];
-      }
-    }
-
-  } /* End of loop on particles */
-
-  /* New number of particles */
-  *nbpart= particles->n_particles;
-
-  /* New weight */
-  *dnbpar= particles->weight;
 }
 
 /*============================================================================
@@ -6242,7 +5477,7 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
     bft_printf("  n_particles:      %10d\n", particles->n_particles);
     bft_printf("  n_particles_max:  %10d\n", particles->n_particles_max);
 
-    if (particles->used_id != NULL) {
+    if (particles->n_particles > 0 && particles->first_used_id > 0) {
 
       bft_printf("  first_used_id:    %10d\n", particles->first_used_id);
       bft_printf("  first_free_id:    %10d\n", particles->first_free_id);
@@ -6265,14 +5500,9 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
 
       bft_printf_flush();
 
-      if (particles->n_particles > 0) {
-        for (i = 0; i < particles->n_particles; i++) {
-          bft_printf("  dump_particle_set i = %d \n", i);
-          _dump_particle(particles, i);
-          j = particles->used_id[j].next_id;
-        }
-        assert(j == -1); /* The next_id is not defined for the last particle
-                            of the particle set */
+      for (i = 0; i < particles->n_particles; i++) {
+        bft_printf("  dump_particle_set i = %d \n", i);
+        _dump_particle(particles, i);
       }
 
     }

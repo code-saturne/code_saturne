@@ -61,8 +61,6 @@ subroutine lagcou &
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep)   !    !     !   (cellule de la particule,...)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tsfext(nbpmax    ! tr ! <-- ! forces externes                                !
@@ -176,27 +174,27 @@ enddo
 
 do npt = 1,nbpart
   aux1 = dtp/taup(npt)
-  if (nordre.eq.1 .or. itepa(npt,jord1).gt.0) then
-    tsfext(npt)= (1.d0-exp(-aux1)) *ettp(npt,jmp) *taup(npt)
+  if (nordre.eq.1 .or. ipepa(jord1,npt).gt.0) then
+    tsfext(npt)= (1.d0-exp(-aux1)) *eptp(jmp,npt) *taup(npt)
   else
     tsfext(npt) = tsfext(npt)                                     &
                 + (1.d0- (1.d0-exp(-aux1)) /aux1 ) * taup(npt)    &
-                * ettp(npt,jmp)
+                * eptp(jmp,npt)
   endif
 enddo
 
 do npt = 1,nbpart
-  auxl1(npt) = tepa(npt,jrpoi)*                                   &
-        ( ettp(npt,jmp)  * ettp(npt,jup)                          &
-         -ettpa(npt,jmp) * ettpa(npt,jup)                         &
+  auxl1(npt) = pepa(jrpoi,npt)*                                   &
+        ( eptp(jmp,npt)  * eptp(jup,npt)                          &
+         -eptpa(jmp,npt) * eptpa(jup,npt)                         &
          -gx*tsfext(npt)  ) / dtp
-  auxl2(npt) = tepa(npt,jrpoi)*                                   &
-        ( ettp(npt,jmp)  * ettp(npt,jvp)                          &
-         -ettpa(npt,jmp)* ettpa(npt,jvp)                          &
+  auxl2(npt) = pepa(jrpoi,npt)*                                   &
+        ( eptp(jmp,npt)  * eptp(jvp,npt)                          &
+         -eptpa(jmp,npt)* eptpa(jvp,npt)                          &
          -gy*tsfext(npt) ) / dtp
-  auxl3(npt) = tepa(npt,jrpoi)*                                   &
-        ( ettp(npt,jmp)  * ettp(npt,jwp)                          &
-         -ettpa(npt,jmp)* ettpa(npt,jwp)                          &
+  auxl3(npt) = pepa(jrpoi,npt)*                                   &
+        ( eptp(jmp,npt)  * eptp(jwp,npt)                          &
+         -eptpa(jmp,npt)* eptpa(jwp,npt)                          &
          -gz*tsfext(npt) ) / dtp
 enddo
 
@@ -208,14 +206,14 @@ if (ltsdyn.eq.1) then
 
   do npt = 1,nbpart
 
-    iel = itepa(npt,jisora)
+    iel = ipepa(jisora,npt)
 
 ! Volume et masse des particules dans la maille
 
     volp(iel) = volp(iel)                                         &
-              + tepa(npt,jrpoi)*pi*(ettpa(npt,jdp)**3)/6.d0
+              + pepa(jrpoi,npt)*pi*(eptpa(jdp,npt)**3)/6.d0
     volm(iel) = volm(iel)                                         &
-              + tepa(npt,jrpoi)*ettpa(npt,jmp)
+              + pepa(jrpoi,npt)*eptpa(jmp,npt)
 
 ! TS de QM
 
@@ -223,7 +221,7 @@ if (ltsdyn.eq.1) then
     tslag(iel,itsvy) = tslag(iel,itsvy) - auxl2(npt)
     tslag(iel,itsvz) = tslag(iel,itsvz) - auxl3(npt)
     tslag(iel,itsli) = tslag(iel,itsli)                           &
-                     - 2.d0*tepa(npt,jrpoi)*ettp(npt,jmp)         &
+                     - 2.d0*pepa(jrpoi,npt)*eptp(jmp,npt)         &
                      / taup(npt)
 
   enddo
@@ -240,11 +238,11 @@ if (ltsdyn.eq.1) then
 
     do npt = 1,nbpart
 
-      iel = itepa(npt,jisora)
+      iel = ipepa(jisora,npt)
 
-      uuf = 0.5d0 * ( ettpa(npt,juf) + ettp(npt,juf) )
-      vvf = 0.5d0 * ( ettpa(npt,jvf) + ettp(npt,jvf) )
-      wwf = 0.5d0 * ( ettpa(npt,jwf) + ettp(npt,jwf) )
+      uuf = 0.5d0 * ( eptpa(juf,npt) + eptp(juf,npt) )
+      vvf = 0.5d0 * ( eptpa(jvf,npt) + eptp(jvf,npt) )
+      wwf = 0.5d0 * ( eptpa(jwf,npt) + eptp(jwf,npt) )
 
       tslag(iel,itske) = tslag(iel,itske)                         &
                        - uuf * auxl1(npt)                         &
@@ -266,11 +264,11 @@ if (ltsdyn.eq.1) then
 
     do npt = 1,nbpart
 
-      iel = itepa(npt,jisora)
+      iel = ipepa(jisora,npt)
 
-      uuf = 0.5d0 * ( ettpa(npt,juf) + ettp(npt,juf) )
-      vvf = 0.5d0 * ( ettpa(npt,jvf) + ettp(npt,jvf) )
-      wwf = 0.5d0 * ( ettpa(npt,jwf) + ettp(npt,jwf) )
+      uuf = 0.5d0 * ( eptpa(juf,npt) + eptp(juf,npt) )
+      vvf = 0.5d0 * ( eptpa(jvf,npt) + eptp(jvf,npt) )
+      wwf = 0.5d0 * ( eptpa(jwf,npt) + eptp(jwf,npt) )
 
       tslag(iel,itsr11) = tslag(iel,itsr11)                       &
                         - 2.d0 * uuf * auxl1(npt)
@@ -334,10 +332,10 @@ if ( ltsmas.eq.1 .and. (impvar.eq.1 .or. idpvar.eq.1) ) then
 
 ! Dans saturne TSmasse > 0 ===> Apport de masse sur le fluide
 
-    iel = itepa(npt,jisora)
+    iel = ipepa(jisora,npt)
 
-    tslag(iel,itsmas) = tslag(iel,itsmas) - tepa(npt,jrpoi)       &
-     * ( ettp(npt,jmp) - ettpa(npt,jmp) ) /dtp
+    tslag(iel,itsmas) = tslag(iel,itsmas) - pepa(jrpoi,npt)       &
+     * ( eptp(jmp,npt) - eptpa(jmp,npt) ) /dtp
 
   enddo
 
@@ -353,15 +351,15 @@ if (ltsthe.eq.1) then
 
     do npt = 1,nbpart
 
-      iel = itepa(npt,jisora)
+      iel = ipepa(jisora,npt)
 
       tslag(iel,itste) = tslag(iel,itste)                         &
-     -( ettp(npt,jmp)  *ettp(npt,jtp) *ettp(npt,jcp)              &
-        -ettpa(npt,jmp) *ettpa(npt,jtp)                           &
-         *ettpa(npt,jcp) ) / dtp * tepa(npt,jrpoi)
+     -( eptp(jmp,npt)  *eptp(jtp,npt) *eptp(jcp,npt)              &
+        -eptpa(jmp,npt) *eptpa(jtp,npt)                           &
+         *eptpa(jcp,npt) ) / dtp * pepa(jrpoi,npt)
 
       tslag(iel,itsti) = tslag(iel,itsti)                         &
-                       + tempct(npt,2) * tepa(npt,jrpoi)
+                       + tempct(npt,2) * pepa(jrpoi,npt)
 
     enddo
 
@@ -369,13 +367,13 @@ if (ltsthe.eq.1) then
 
       do npt = 1,nbpart
 
-        iel = itepa(npt,jisora)
+        iel = ipepa(jisora,npt)
 
-        aux1 = pi *ettp(npt,jdp) *ettp(npt,jdp) *tepa(npt,jreps)  &
+        aux1 = pi *eptp(jdp,npt) *eptp(jdp,npt) *pepa(jreps,npt)  &
                 *(propce(iel,ipproc(ilumin))                      &
-                -4.d0 *stephn *ettp(npt,jtp)**4 )
+                -4.d0 *stephn *eptp(jtp,npt)**4 )
 
-        tslag(iel,itste) =tslag(iel,itste)+aux1*tepa(npt,jrpoi)
+        tslag(iel,itste) =tslag(iel,itste)+aux1*pepa(jrpoi,npt)
 
       enddo
 
@@ -394,27 +392,27 @@ if (ltsthe.eq.1) then
 
       do npt = 1,nbpart
 
-        iel = itepa(npt,jisora)
-        icha = itepa(npt,jinch)
+        iel = ipepa(jisora,npt)
+        icha = ipepa(jinch,npt)
 
         tslag(iel,itste) = tslag(iel,itste)                         &
-             -( ettp(npt,jmp)  *ettp(npt,jhp(1))                    &
-             *ettp(npt,jcp)                                         &
-             -ettpa(npt,jmp)*ettpa(npt,jhp(1))                      &
-             *ettpa(npt,jcp) )                                      &
-             /dtp*tepa(npt,jrpoi)
+             -( eptp(jmp,npt)  *eptp(jhp(1),npt)                    &
+             *eptp(jcp,npt)                                         &
+             -eptpa(jmp,npt)*eptpa(jhp(1),npt)                      &
+             *eptpa(jcp,npt) )                                      &
+             /dtp*pepa(jrpoi,npt)
 
         tslag(iel,itsti) = tslag(iel,itsti)                         &
-             + tempct(npt,2) * tepa(npt,jrpoi)
+             + tempct(npt,2) * pepa(jrpoi,npt)
 
         tslag(iel,itsmv1(icha)) = tslag(iel,itsmv1(icha))           &
-             + tepa(npt,jrpoi) * cpgd1(npt)
+             + pepa(jrpoi,npt) * cpgd1(npt)
 
         tslag(iel,itsmv2(icha)) = tslag(iel,itsmv2(icha))           &
-             + tepa(npt,jrpoi) * cpgd2(npt)
+             + pepa(jrpoi,npt) * cpgd2(npt)
 
         tslag(iel,itsco)  = tslag(iel,itsco)                        &
-             + tepa(npt,jrpoi) * cpght(npt)
+             + pepa(jrpoi,npt) * cpght(npt)
 
         tslag(iel,itsfp4) = 0.d0
 

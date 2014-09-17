@@ -23,10 +23,8 @@
 subroutine lagitg &
 !================
 
- ( nbpmax , nvp    , nvp1   , nivep  ,                            &
-   ivar   ,                                                       &
-   itepa  ,                                                       &
-   ettp   , ettpa  , tcarac , pip    , tsvar  )
+ ( ivar   ,                                                       &
+   tcarac , pip    , tsvar  )
 
 !===============================================================================
 ! FONCTION :
@@ -51,17 +49,8 @@ subroutine lagitg &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! ivar             ! e  ! <-- ! numero de la variable a integrer               !
-!                  !    !     ! dans le tableau ettp                           !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep)   !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
+!                  !    !     ! dans le tableau eptp                           !
 ! tcarac(nbpmax    ! tr ! <-- ! temps caracteristique associe a l'eds          !
 ! pip(nbpmax)      ! tr ! <-- ! second membre associe a l'eds                  !
 ! tsvar            ! tr ! --> ! prediction 1er sous-pas pour la                !
@@ -85,6 +74,7 @@ use cstphy
 use cstnum
 use optcal
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 
@@ -94,11 +84,8 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1, nivep
 integer          ivar
-integer          itepa(nbpmax,nivep)
 
-double precision ettp(nbpmax,nvp) ,  ettpa(nbpmax,nvp)
 double precision tcarac(nbpmax) , pip(nbpmax)
 double precision tsvar(nbpmax,nvp1)
 
@@ -113,7 +100,7 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
   if (nor.eq.1) then
 
     do npt = 1, nbpart
-      if (itepa(npt,jisor).gt.0) then
+      if (ipepa(jisor,npt).gt.0) then
 
         if (tcarac(npt).le.0.d0) then
           write(nfecra,2000) ivar, tcarac(npt), npt
@@ -123,13 +110,13 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
         aux1 = dtp/tcarac(npt)
         aux2 = exp(-aux1)
 
-        ter1 = ettpa(npt,ivar) * aux2
+        ter1 = eptpa(ivar,npt) * aux2
         ter2 = pip(npt) * (1.d0-aux2)
 
 !        Pour le cas NORDRE= 1 ou s'il y a rebond,
 !          le ETTP suivant est le resultat final
 
-        ettp(npt,ivar) = ter1 + ter2
+        eptp(ivar,npt) = ter1 + ter2
 
 !        Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
 
@@ -141,7 +128,7 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
   else if (nor.eq.2) then
 
     do npt = 1, nbpart
-      if (itepa(npt,jisor).gt.0 .and. itepa(npt,jord1).eq.0) then
+      if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
 
         if (tcarac(npt).le.0.d0) then
           write(nfecra,2000) ivar, tcarac(npt), npt
@@ -151,12 +138,12 @@ double precision aux1 , aux2 , ter1 , ter2 , ter3
         aux1 = dtp/tcarac(npt)
         aux2 = exp(-aux1)
 
-        ter1 = 0.5d0 * ettpa(npt,ivar) * aux2
+        ter1 = 0.5d0 * eptpa(ivar,npt) * aux2
         ter2 = pip(npt) * ( 1.d0 - (1.d0-aux2) / aux1 )
 
 !        Pour le cas NORDRE= 2, le ETTP suivant est le resultat final
 
-        ettp(npt,ivar) = tsvar(npt,ivar) + ter1 + ter2
+        eptp(ivar,npt) = tsvar(npt,ivar) + ter1 + ter2
       endif
     enddo
 

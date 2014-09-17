@@ -24,9 +24,8 @@ subroutine lagrus &
 !================
 
  ( ncelet , ncel   ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  ,                                                       &
-   ettp   , ettpa  , tepa  , croule )
+   nbpmax ,                                                       &
+   croule )
 
 !===============================================================================
 ! FONCTION :
@@ -46,21 +45,9 @@ subroutine lagrus &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
-! croule(ncelet    ! tr ! <-- ! critere d'importance                           !
+! croule(ncelet)   ! tr ! <-- ! critere d'importance                           !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -88,17 +75,14 @@ implicit none
 ! Arguments
 
 integer          ncelet , ncel
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          itepa(nbpmax,nivep)
+integer          nbpmax
 
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision croule(ncelet)
 
 ! Local variables
 
-integer          iel    , ield    , nclo    , npars
-integer          npt    , n       , n1      , iva    , nc
+integer          iel    , ield    , nclo
+integer          npt    , n       , n1      , nc
 double precision aux(1) , coeff  , pnew
 
 !===============================================================================
@@ -130,10 +114,10 @@ dnpkil = 0.d0
 
 do npt = 1,nbpart
 
-  if (itepa(npt,jisor).ne.itepa(npt,jisora)) then
+  if (ipepa(jisor,npt).ne.ipepa(jisora,npt)) then
 
-    iel  = itepa(npt,jisor)
-    ield = itepa(npt,jisora)
+    iel  = ipepa(jisor,npt)
+    ield = ipepa(jisora,npt)
 
 ! Rapport des fonction d'importance entre la cellule de depart
 ! et celle d'arrivee
@@ -153,15 +137,15 @@ do npt = 1,nbpart
 
 ! La particule survit avec une probabilite COEFF
 
-        tepa(npt,jrpoi) = tepa(npt,jrpoi)/coeff
+        pepa(jrpoi,npt) = pepa(jrpoi,npt)/coeff
 
       else
 
 ! La particule est supprimee avec une probabilite (1-COEFF)
 
-        itepa(npt,jisor) = 0
+        ipepa(jisor,npt) = 0
         npkill = npkill + 1
-        dnpkil = dnpkil + tepa(npt,jrpoi)
+        dnpkil = dnpkil + pepa(jrpoi,npt)
       endif
 
     else if (coeff.gt.1.d0) then
@@ -194,37 +178,23 @@ do npt = 1,nbpart
       endif
 
       npcsup = npcsup + 1
-      dnpcsu = dnpcsu + tepa(npt,jrpoi)
-      pnew = tepa(npt,jrpoi) / dble(nclo)
+      dnpcsu = dnpcsu + pepa(jrpoi,npt)
+      pnew = pepa(jrpoi,npt) / dble(nclo)
 
       do nc = 1,nclo
 
         npclon = npclon + 1
         dnpclo = dnpclo + pnew
 
-        do iva = 1,nvp
-          ettp(nbpart+npclon,iva) = ettp(npt,iva)
-        enddo
+        call lagr_part_copy(nbpart+npclon, npt)
 
-        do iva = 1,nvp
-          ettpa(nbpart+npclon,iva) = ettpa(npt,iva)
-        enddo
-
-        do iva = 1,nvep
-          tepa(nbpart+npclon,iva) = tepa(npt,iva)
-        enddo
-
-        tepa(nbpart+npclon,jrpoi) = pnew
-
-        do iva = 1,nivep
-          itepa(nbpart+npclon,iva) = itepa(npt,iva)
-        enddo
+        pepa(jrpoi,nbpart+npclon) = pnew
 
       enddo
 
 ! Modif de la particule elle meme
 
-      itepa(npt,jisor) = 0
+      ipepa(jisor,npt) = 0
 
     endif
   endif
@@ -244,13 +214,7 @@ dnbpar = dnbpar + dnpclo
 
 ! FIXME : rewrite former lageli function
 
-!!$call lageli                                                       &
-!!$!==========
-!!$ ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-!!$   npars  ,                                                       &
-!!$   itepa  ,                                                       &
-!!$   dnpars ,                                                       &
-!!$   ettp   , ettpa  , tepa   )
+!!$call lageli(nbpmax, npars, dnpars)
 
 ! if ( npars.ne.(npkill+npcsup) ) then
 !   write(nfecra,9000)

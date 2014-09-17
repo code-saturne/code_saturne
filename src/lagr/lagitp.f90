@@ -23,10 +23,8 @@
 subroutine lagitp &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  ,                                                       &
-   propce ,                                                       &
-   ettp   , ettpa  , tepa   , tempct ,                            &
+ ( propce ,                                                       &
+   tempct ,                                                       &
    tsvar  , auxl1  , auxl2  )
 
 !===============================================================================
@@ -43,20 +41,7 @@ subroutine lagitp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
@@ -82,6 +67,7 @@ use cstphy
 use cstnum
 use optcal
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -94,13 +80,7 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1 , nvep , nivep
-
-integer          itepa(nbpmax,nivep)
-
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax) , auxl2(nbpmax)
@@ -118,14 +98,14 @@ double precision srad
 
 do npt = 1,nbpart
 
-  if (itepa(npt,jisor).gt.0) then
+  if (ipepa(jisor,npt).gt.0) then
 
     auxl1(npt) = tempct(npt,1)
 
     if (nor.eq.1) then
-      auxl2(npt) = ettpa(npt,jtf)
+      auxl2(npt) = eptpa(jtf,npt)
     else
-      auxl2(npt) = ettp(npt,jtf)
+      auxl2(npt) = eptp(jtf,npt)
     endif
 
   endif
@@ -140,24 +120,24 @@ if (iirayo.gt.0) then
 
   do npt = 1,nbpart
 
-    iel = itepa(npt,jisor)
+    iel = ipepa(jisor,npt)
 
     if (iel.gt.0) then
 
       if (nor.eq.1) then
 
-        srad = pi *ettpa(npt,jdp) *ettpa(npt,jdp)                 &
-                  *tepa(npt,jreps) *(propce(iel,ipproc(ilumin))   &
-                        -4.d0 *stephn *ettpa(npt,jtp)**4 )
-        auxl2(npt) = ettpa(npt,jtf)                               &
-               +auxl1(npt) *srad /ettpa(npt,jcp) /ettpa(npt,jmp)
+        srad = pi *eptpa(jdp,npt) *eptpa(jdp,npt)                 &
+                  *pepa(jreps,npt) *(propce(iel,ipproc(ilumin))   &
+                        -4.d0 *stephn *eptpa(jtp,npt)**4 )
+        auxl2(npt) = eptpa(jtf,npt)                               &
+               +auxl1(npt) *srad /eptpa(jcp,npt) /eptpa(jmp,npt)
       else
 
-        srad = pi *ettp(npt,jdp) *ettp(npt,jdp) *tepa(npt,jreps)  &
+        srad = pi *eptp(jdp,npt) *eptp(jdp,npt) *pepa(jreps,npt)  &
                 *(propce(iel,ipproc(ilumin))                      &
-                -4.d0 *stephn *ettp(npt,jtp)**4 )
-        auxl2(npt) = ettp(npt,jtf)                                &
-                +auxl1(npt) *srad /ettp(npt,jcp) /ettp(npt,jmp)
+                -4.d0 *stephn *eptp(jtp,npt)**4 )
+        auxl2(npt) = eptp(jtf,npt)                                &
+                +auxl1(npt) *srad /eptp(jcp,npt) /eptp(jmp,npt)
 
       endif
 
@@ -173,10 +153,8 @@ endif
 
 call lagitg                                                       &
 !==========
- ( nbpmax , nvp    , nvp1   , nivep  ,                            &
-   jtp    ,                                                       &
-   itepa  ,                                                       &
-   ettp   , ettpa  , auxl1  , auxl2  , tsvar  )
+ ( jtp    ,                                                       &
+   auxl1  , auxl2  , tsvar  )
 
 !===============================================================================
 

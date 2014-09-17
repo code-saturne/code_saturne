@@ -25,8 +25,7 @@ subroutine lagune &
 
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+   nbpmax ,                                                       &
    dt     , rtpa   , rtp    , propce )
 
 !===============================================================================
@@ -47,16 +46,9 @@ subroutine lagune &
 ! lndnod           ! e  ! <-- ! dim. connectivite cellules->faces              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
@@ -82,6 +74,7 @@ use parall
 use period
 use pointe
 use lagpar
+use lagdim, only: nvp1, ntersl, nvlsta, nvisbr
 use lagran
 use mesh
 use field
@@ -96,9 +89,7 @@ implicit none
 ! Arguments
 
 integer          lndnod
-integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
-integer          ntersl , nvlsta , nvisbr
+integer          nvar   , nscal, nbpmax
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
@@ -154,7 +145,6 @@ data             ipass /0/
 save             ipass
 
 !===============================================================================
-!===============================================================================
 ! 0.  GESTION MEMOIRE ET COMPTEUR DE PASSAGE
 !===============================================================================
 
@@ -167,7 +157,6 @@ allocate(vagaus(nbpmax,nvgaus))
 allocate(tsuf(nbpmax,3))
 allocate(tsup(nbpmax,3))
 allocate(bx(nbpmax,3,2))
-allocate(tsvar(nbpmax,nvp1))
 allocate(gradpr(3,ncelet))
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
@@ -220,27 +209,6 @@ endif
 iplar = iplar + 1
 iplas = iplas + 1
 
-nbpnew = 0
-npcsup = 0
-npclon = 0
-npkill = 0
-npencr = 0
-nbpout = 0
-nbperr = 0
-nbpdep = 0
-nbpres = 0
-
-dnbpnw = 0.d0
-dnpcsu = 0.d0
-dnpclo = 0.d0
-dnpkil = 0.d0
-dnpenc = 0.d0
-dnbpou = 0.d0
-dnbper = 0.d0
-dnbdep = 0.d0
-dnbres = 0.d0
-
-
 !-->Sur Champ fige Lagrangien : RTPA = RTP
 !   Rem : cette boucle pourrait etre faite au 1er passage
 !         mais la presence de cs_user_extra_operations incite a la prudence...
@@ -273,9 +241,14 @@ if (iplar.eq.1) then
    jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
    jcp    , jrdck  , jrd0p  , jinch  , jrhock ,                   &
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
-   jndisp , jclst  , jvls   )
+   jndisp , jclst  , jvls   , nvp1   )
 
   call lagr_update_pointers
+
+  ! first initializations
+
+  nbpart = 0;
+  dnbpar = 0.d0
 
 ! --> if the deposition model is activated
 
@@ -333,6 +306,30 @@ if (iplar.eq.1) then
   endif
 
 endif
+
+! Initialization
+
+allocate(tsvar(nbpmax,nvp1))
+
+nbpnew = 0
+npcsup = 0
+npclon = 0
+npkill = 0
+npencr = 0
+nbpout = 0
+nbperr = 0
+nbpdep = 0
+nbpres = 0
+
+dnbpnw = 0.d0
+dnpcsu = 0.d0
+dnpclo = 0.d0
+dnpkil = 0.d0
+dnpenc = 0.d0
+dnbpou = 0.d0
+dnbper = 0.d0
+dnbdep = 0.d0
+dnbres = 0.d0
 
 !===============================================================================
 ! 1.bis  Initialization for the clogging model
@@ -418,12 +415,12 @@ call lagent                                                      &
 !==========
 ( lndnod ,                                                       &
   nvar   , nscal  ,                                              &
-  nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+  nbpmax ,                                                       &
   ntersl , nvlsta , nvisbr , iprev  ,                            &
   itycel , icocel , dlgeo  ,                                     &
-  itypfb , itrifb , ifrlag , itepa  ,                            &
+  itypfb , itrifb , ifrlag ,                                     &
   dt     ,                                                       &
-  ettp   , tepa   , vagaus )
+  vagaus )
 
 !===============================================================================
 ! 2.1 CALCUL DE LA FONCTION D'IMPORTANCE POUR LA ROULETTE RUSSE
@@ -434,11 +431,11 @@ if (iroule.ge.1) then
   call uslaru                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa ,                                      &
+   itypfb , itrifb ,                                              &
    dt     ,                                                       &
-   ettp   , tepa   , vagaus , croule , auxl ,                     &
+   vagaus , croule , auxl ,                                       &
    dispar , yplpar )
 
   iok = 0
@@ -478,9 +475,9 @@ if (nbpartall.eq.0) goto 20
 ! Record particle's starting cell and rank, and reset order 1 switch
 
 do ip = 1,nbpart
-  itepa(ip,jisora) = itepa(ip,jisor)
-  itepa(ip,jirka) = irangp
-  itepa(ip,jord1) = 0
+  ipepa(jisora,ip) = ipepa(jisor,ip)
+  ipepa(jirka,ip) = irangp
+  ipepa(jord1,ip) = 0
 enddo
 
 !===============================================================================
@@ -545,10 +542,8 @@ nor = nor + 1
 
 if (nor.eq.1) then
 
-  do ivf = 1,nvp
-    do ip = 1,nbpart
-      ettpa(ip,ivf) = ettp(ip,ivf)
-    enddo
+  do ip = 1,nbpart
+    call lagr_current_to_previous(ip)
   enddo
 
 endif
@@ -576,11 +571,10 @@ endif
 call lagcar                                                     &
 !==========
  ( nvar   , nscal  ,                                            &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+   nbpmax ,                                                     &
    nvlsta , iprev  ,                                            &
-   itepa  ,                                                     &
    dt     ,                                                     &
-   ettp   , ettpa  , tepa   , taup   , tlag   ,                 &
+   taup   , tlag   ,                                            &
    piil   , bx     , tempct , statis ,                          &
    gradpr , gradvf , w1     , w2     , auxl(1,1) )
 
@@ -591,11 +585,9 @@ call lagcar                                                     &
 call lagesp                                                       &
 !==========
    ( nvar   , nscal  ,                                            &
-     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
+     nbpmax ,                                                     &
      ntersl , nvlsta , nvisbr ,                                   &
-     itepa  ,                                                     &
      dt     , rtpa   , propce ,                                   &
-     ettp   , ettpa  , tepa   ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
      tsuf   , tsup   , bx     , tsfext ,                          &
      vagaus , gradpr , gradvf , brgaus , terbru ,                 &
@@ -609,20 +601,16 @@ if (iphyla.eq.1 .or. iphyla.eq.2) then
   if ( nor.eq.1 ) then
     call lagphy                                                   &
     !==========
-    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
-      ntersl , nvlsta , nvisbr ,                                  &
-      itepa  ,                                                    &
+    ( ntersl , nvlsta , nvisbr ,                                  &
       dt     , rtpa   , propce ,                                  &
-      ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
+      taup   , tlag   , tempct ,                                  &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
   else
     call lagphy                                                   &
     !==========
-    ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
-      ntersl , nvlsta , nvisbr ,                                  &
-      itepa  ,                                                    &
+    ( ntersl , nvlsta , nvisbr ,                                  &
       dt     , rtp    , propce ,                                  &
-      ettp   , ettpa  , tepa   , taup   , tlag   , tempct ,       &
+      taup   , tlag   , tempct ,                                  &
       tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
   endif
 
@@ -658,9 +646,9 @@ endif
 
 if (idlvo.eq.1) then
 
-   call lagbar                                                    &
+   call lagbar (rtp, energt)
    !==========
-  ( rtp , energt )
+
 
 endif
 
@@ -697,14 +685,9 @@ if (nor.eq.1) then
    iusclb , deblag , ifrlag )
 
 
-  call prtget                                                     &
-  !==========
- ( nbpmax , nbpart ,                                              &
-   ettp   , ettpa  , itepa  , tepa   )
-
   call dplprt                                                     &
   !==========
- ( nbpart   , nordre   , parbor   , iensi3   ,                    &
+ ( nordre   , parbor   , iensi3   ,                               &
    inbr     , inbrbd   , iflm     , iflmbd   , iang     ,         &
    iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
    iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &
@@ -713,13 +696,6 @@ if (nor.eq.1) then
    tprenc   , visref   , enc1     , enc2     , tkelvi)
 
   call lagr_update_pointers
-
-  call prtput                                                     &
-  !==========
- ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr , dnbper,  &
-   nbpdep , dnbdep , npencr , dnpenc ,                            &
-   ettp   , ettpa  , itepa  , tepa   )
-
 
   if (ierr.eq.1) then
     ntmabs = ntcabs
@@ -737,8 +713,8 @@ endif
 if (nor.eq.nordre) then
 
   do npt = 1,nbpart
-    if ( itepa(npt,jisor).ne.0 ) then
-      tepa(npt,jrtsp) = tepa(npt,jrtsp) + dtp
+    if (ipepa(jisor,npt).ne.0) then
+      pepa(jrtsp,npt) = pepa(jrtsp,npt) + dtp
     endif
   enddo
 
@@ -752,9 +728,7 @@ if (ireent.gt.0) then
 
   call lagres                                                     &
   !==========
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
-   ettp   , ettpa  , tepa   , rtp , parbor, nvisbr)
+ ( rtp , parbor, nvisbr)
 
 endif
 
@@ -766,10 +740,8 @@ if (nor.eq.nordre .and. istala.eq.1 .and. iplas.ge.idstnt) then
 
   call lagsta                                                     &
   !==========
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   nvlsta ,                                                       &
-   itepa  ,                                                       &
-   ettp   , tepa   , statis , stativ )
+ ( nvlsta ,                                                       &
+   statis , stativ )
 
 endif
 
@@ -790,10 +762,8 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
 
   call lagrus                                                     &
   !==========
-   ( ncelet , ncel   ,                                            &
-     nbpmax , nvp    , nvp1   , nvep   , nivep  ,                 &
-     itepa  ,                                                     &
-     ettp   , ettpa  , tepa   , croule )
+   ( ncelet , ncel   , nbpmax ,                                   &
+     croule )
 
   if (npclon.gt.0) then
 
@@ -824,7 +794,7 @@ if (nordre.eq.2 .and. nor.eq.1) goto 10
 call uslast                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    dt     ,                                                       &
    taup   , tlag   , tempct )
@@ -834,12 +804,6 @@ call uslast                                                       &
 !===============================================================================
 
  20   continue
-
-call ucdprt                                                        &
-!==========
- ( nbpmax , nbpart , dnbpar , nbpout , dnbpou , nbperr ,           &
-   dnbper , nbpdep , dnbdep , npencr , dnpenc ,                    &
-   ettp   , ettpa  , itepa  , tepa   )
 
 !===============================================================================
 ! 17. NOMBRE DE PARTICULES PERDUES (SUITES COMPRISES)

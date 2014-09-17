@@ -23,11 +23,10 @@
 subroutine lagnew &
 !================
 
- ( nbpmax , nvp    , nvp1   ,                                     &
-   npt    , nptnew , new    ,                                     &
+ ( nbpmax ,                                                       &
+   npt    , nznew  ,                                              &
    izone  ,                                                       &
-   ifrlag , isorti , iworkp ,                                     &
-   ettp   )
+   ifrlag , iworkp )
 
 !===============================================================================
 ! FONCTION :
@@ -48,25 +47,16 @@ subroutine lagnew &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! npt              ! e  ! --> ! nombre courant de particules                   !
-! nptnew           ! e  ! <-- ! nombre total de nouvelles particules           !
-!                  !    !     ! pour toutes les zones d'injection              !
-! new              ! e  ! <-- ! nombre de nouvelles part a injecter            !
+! nznew            ! e  ! <-- ! nombre de nouvelles part a injecter            !
 !                  !    !     ! pour la zone d'injection courante              !
 ! izone            ! e  ! <-- ! numero  de la zone d'injection                 !
 ! ifrlag           ! te ! <-- ! numero de zone de la face de bord              !
 !   (nfabor)       !    !     !  pour le module lagrangien                     !
-! isorti           ! te ! --> ! pour chaque particule :                        !
-!   (nbpmax)       !    !     !    * numero de sa cellule                      !
-!                  !    !     !    * 0 si sortie du domaine                    !
 ! iworkp(nbpmax    ! te ! --> ! numero de la face d'injection                  !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -93,13 +83,11 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1
-integer          npt    , nptnew , new
+integer          nbpmax
+integer          npt    , nznew
 integer          izone
 
-integer          ifrlag(nfabor) , isorti(nbpmax) , iworkp(nbpmax)
-
-double precision ettp(nbpmax,nvp)
+integer          ifrlag(nfabor) , iworkp(nbpmax)
 
 ! Local variables
 
@@ -139,13 +127,13 @@ endif
 
 !     BOUCLE SUR LES NOUVELLES PARTICULES :
 
-do np = 1,new
+do np = 1,nznew
 
-!       incrementation du pointeur sur les particules
+  ! incrementation du pointeur sur les particules
 
   npt = npt + 1
 
-!       tirage aleatoire d'une face :
+  ! tirage aleatoire d'une face :
 
  100    continue
 
@@ -350,11 +338,11 @@ do np = 1,new
 !        LE TRAITEMENT EST TERMINE POUR LE POINT NPT,
 !        ON REMPLIT LES TABLEAUX POUR LE LAGRANGIEN :
 
-  ettp(npt,jxp) = ctr(6,1)
-  ettp(npt,jyp) = ctr(6,2)
-  ettp(npt,jzp) = ctr(6,3)
+  eptp(jxp,npt) = ctr(6,1)
+  eptp(jyp,npt) = ctr(6,2)
+  eptp(jzp,npt) = ctr(6,3)
 
-  isorti(npt) = ifabor(ifac)
+  ipepa(jisor,npt) = ifabor(ifac)
   iworkp(npt) = ifac
 
 enddo

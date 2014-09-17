@@ -23,10 +23,9 @@
 subroutine lages2 &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
+ ( nbpmax ,                                                       &
    rtpa   , propce ,                                              &
-   ettp   , ettpa  , tepa   , taup   , tlag   , piil   ,          &
+   taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , auxl   , gradpr ,                                     &
    romp   , brgaus , terbru , fextla )
@@ -51,21 +50,10 @@ subroutine lages2 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- !  cumul des statistiques volumiques             !
 !(ncelet,nvlsta    !    !     !                                                !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
@@ -117,13 +105,10 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
-integer          itepa(nbpmax,nivep)
+integer          nbpmax
 
 double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
@@ -193,9 +178,9 @@ do id = 1,3
 
   do ip = 1,nbpart
 
-    if (itepa(ip,jisor).gt.0) then
+    if (ipepa(jisor,ip).gt.0) then
 
-      iel = itepa(ip,jisor)
+      iel = ipepa(jisor,ip)
 
       rom = cromf(iel)
 
@@ -232,9 +217,9 @@ if (nor.eq.1) then
 
   do ip = 1,nbpart
 
-    if (itepa(ip,jisor).gt.0) then
+    if (ipepa(jisor,ip).gt.0) then
 
-      ettp(ip,jtaux) = taup(ip)
+      eptp(jtaux,ip) = taup(ip)
 
     endif
 
@@ -247,11 +232,11 @@ if (nor.eq.1) then
 
     do ip = 1,nbpart
 
-      if (itepa(ip,jisor).gt.0) then
+      if (ipepa(jisor,ip).gt.0) then
 
         aux0 = -dtp/taup(ip)
         aux1 = exp(aux0)
-        tsfext(ip) = taup(ip) * ettp(ip,jmp)                      &
+        tsfext(ip) = taup(ip) * eptp(jmp,ip)                      &
                    * (-aux1 + (aux1-1.d0) / aux0)
 
       endif
@@ -270,7 +255,7 @@ if (nor.eq.1) then
 
     do ip = 1,nbpart
 
-      if (itepa(ip,jisor).gt.0) then
+      if (ipepa(jisor,ip).gt.0) then
 
         aux0 = -dtp / taup(ip)
         aux1 = -dtp / tlag(ip,id)
@@ -279,11 +264,11 @@ if (nor.eq.1) then
         aux4 = tlag(ip,id) / (tlag(ip,id) - taup(ip))
         aux5 = aux3 - aux2
 
-        tsuf(ip,id) = 0.5d0 * ettpa(ip,juf+i0) * aux3             &
+        tsuf(ip,id) = 0.5d0 * eptpa(juf+i0,ip) * aux3             &
                     + auxl(ip,id+3) * ( -aux3 + (aux3-1.d0) /aux1)
 
-        ter1 = 0.5d0 * ettpa(ip,jup+i0) * aux2
-        ter2 = 0.5d0 * ettpa(ip,juf+i0) * aux4 * aux5
+        ter1 = 0.5d0 * eptpa(jup+i0,ip) * aux2
+        ter2 = 0.5d0 * eptpa(juf+i0,ip) * aux4 * aux5
         ter3 = auxl(ip,id+3)*                                     &
               ( - aux2 + ((tlag(ip,id) + taup(ip)) / dtp)         &
              * (1.d0 - aux2)                                      &
@@ -303,10 +288,9 @@ if (nor.eq.1) then
 
   call lages1                                                     &
   !==========
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
+ ( nbpmax ,                                                       &
    rtpa   , propce ,                                              &
-   ettp   , ettpa  , tepa   , taup   , tlag   , piil   ,          &
+   taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
 
@@ -325,7 +309,7 @@ else
 
     do ip = 1,nbpart
 
-      if (itepa(ip,jisor).gt.0 .and. itepa(ip,jord1).eq.0) then
+      if (ipepa(jisor,ip).gt.0 .and. ipepa(jord1,ip).eq.0) then
 
         aux0 = -dtp / taup(ip)
         aux1 = -dtp / tlag(ip,id)
@@ -335,7 +319,7 @@ else
         aux5 = aux3 - aux2
         aux6 = aux3 * aux3
 
-        ter1 = 0.5d0 * ettpa(ip,juf+i0) * aux3
+        ter1 = 0.5d0 * eptpa(juf+i0,ip) * aux3
         ter2 = auxl(ip,id+3) * (1.d0 - (aux3 - 1.d0) / aux1)
 
         ter3 = -aux6 + (aux6 - 1.d0) / (2.d0 * aux1)
@@ -345,20 +329,20 @@ else
 
         ter5 = 0.5d0 * tlag(ip,id) * (1.d0 - aux6)
 
-        ettp(ip,juf+i0) = tsuf(ip,id) + ter1 + ter2               &
+        eptp(juf+i0,ip) = tsuf(ip,id) + ter1 + ter2               &
                             + sige * sqrt(ter5) * vagaus(ip,id)
 
 !---> Calcul de Up :
 !     --------------
 
-        ter1 = 0.5d0 * ettpa(ip,jup+i0) * aux2
-        ter2 = 0.5d0 * ettpa(ip,juf+i0) * aux4 * aux5
+        ter1 = 0.5d0 * eptpa(jup+i0,ip) * aux2
+        ter2 = 0.5d0 * eptpa(juf+i0,ip) * aux4 * aux5
         ter3 = auxl(ip,id+3)*                                     &
            ( 1.d0 - ((tlag(ip,id) + taup(ip)) /dtp) *(1.d0-aux2)  &
              + (tlag(ip,id) / dtp) * aux4 * aux5)                 &
              + auxl(ip,id) * (1.d0 - (aux2 - 1.d0) / aux0)
 
-        tapn  = ettp(ip,jtaux)
+        tapn  = eptp(jtaux,ip)
         aux7  = exp(-dtp / tapn)
         aux8  = 1.d0 - aux3 * aux7
         aux9  = 1.d0 - aux6
@@ -438,7 +422,7 @@ else
 
 ! ---> finalisation de l'ecriture
 
-        ettp(ip,jup+i0) = tsup(ip,id) +ter1 +ter2 +ter3 +ter4     &
+        eptp(jup+i0,ip) = tsup(ip,id) +ter1 +ter2 +ter3 +ter4     &
                         + tbriu
 
       endif

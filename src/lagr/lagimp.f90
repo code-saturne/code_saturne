@@ -23,10 +23,7 @@
 subroutine lagimp &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  ,                                                       &
-   ettp   , ettpa  , tepa   ,                                     &
-   tsvar  , auxl1  , auxl2  )
+ ( tsvar  , auxl1  , auxl2  )
 
 !===============================================================================
 ! FONCTION :
@@ -42,19 +39,6 @@ subroutine lagimp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
 ! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
 !                  !    !     !   correction au 2eme sous-pas                  !
@@ -78,6 +62,7 @@ use cstphy
 use cstnum
 use optcal
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use mesh
@@ -88,12 +73,6 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1 , nvep , nivep
-
-integer          itepa(nbpmax,nivep)
-
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax) , auxl2(nbpmax)
 
@@ -106,20 +85,18 @@ integer          npt
 
 do npt = 1,nbpart
 
-  if ( itepa(npt,jisor).gt.0 ) then
+  if ( ipepa(jisor,npt).gt.0 ) then
 
     auxl1(npt)     = 1.d0
-    auxl2(npt)     = ettp(npt,jmp)
+    auxl2(npt)     = eptp(jmp,npt)
 
   endif
 enddo
 
 call lagitg                                                       &
 !==========
- ( nbpmax , nvp    , nvp1   , nivep ,                             &
-   jmp    ,                                                       &
-   itepa  ,                                                       &
-   ettp   , ettpa  , auxl1  , auxl2  , tsvar  )
+ ( jmp    ,                                                       &
+   auxl1  , auxl2  , tsvar  )
 
 !===============================================================================
 

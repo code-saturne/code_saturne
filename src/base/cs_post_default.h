@@ -79,21 +79,13 @@ void CS_PROCF (pstgeo, PSTGEO)
  * subroutine pstvar
  * *****************
  *                  ( ntcabs,
- *                    nvar,   nscal,  nvlsta, nvisbr,
- *                    nbpmax, nvp, nvp1, nvep, nivep )
+ *                    nvar,   nscal,  nvlsta, nvisbr )
  *
  * integer          ntcabs      : --> : current time step number
  * integer          nvar        : <-- : number of variables
  * integer          nscal       : <-- : number of scalars
  * integer          nvlsta      : <-- : number of statistical variables (lagr)
  * integer          nvisbr      : <-- : number of boundary stat. variables (lagr)
- * integer          nbpmax      : <-- : maximum number of particles allowed
- * integer          nvp         : <-- : number of particle variables
- * integer          nvp1        : <-- : nvp less position, fluid and
- *                              :     : particle velocity
- * integer          nvep        : <-- : number of real particle attributes
- * integer          nivep       : <-- : number of interger particle attributes
- * double precision ttcabs      : <-- : current physical time
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pstvar, PSTVAR)
@@ -102,12 +94,7 @@ void CS_PROCF (pstvar, PSTVAR)
  const cs_int_t   *nvar,
  const cs_int_t   *nscal,
  const cs_int_t   *nvlsta,
- const cs_int_t   *nvisbr,
- const cs_int_t   *nbpmax,
- const cs_int_t   *nvp,
- const cs_int_t   *nvp1,
- const cs_int_t   *nvep,
- const cs_int_t   *nivep
+ const cs_int_t   *nvisbr
 );
 
 /*----------------------------------------------------------------------------

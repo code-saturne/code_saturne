@@ -24,11 +24,10 @@ subroutine lagcar &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    nvlsta , iprev  ,                                              &
-   itepa  ,                                                       &
    dt     ,                                                       &
-   ettp   , ettpa  , tepa   , taup   , tlag   ,                   &
+   taup   , tlag   ,                                              &
    piil   , bx     , tempct , statis ,                            &
    gradpr , gradvf , energi , dissip , romp   )
 
@@ -49,23 +48,11 @@ subroutine lagcar &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! iprev            ! e  ! <-- ! time step indicator for fields                 !
 !                  !    !     !   0: use fields at current time step           !
 !                  !    !     !   1: use fields at previous time step          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! taup(nbpmax)     ! tr ! --> ! temps caracteristiques dynamique               !
 ! tlag(nbpmax)     ! tr ! --> ! temps caracteristiques fluide                  !
 ! piil(nbpmax,3    ! tr ! --> ! terme dans l'integration des eds up            !
@@ -114,14 +101,11 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          nvlsta
-integer          itepa(nbpmax,nivep)
 integer          iprev
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision tempct(nbpmax,2)
@@ -226,9 +210,9 @@ endif
 ! Calcul de la masse volumique
 
 do ip = 1,nbpart
-  if ( itepa(ip,jisor).gt.0 ) then
-    d3 = ettp(ip,jdp) * ettp(ip,jdp) * ettp(ip,jdp)
-    romp(ip) = ettp(ip,jmp) * d6spi / d3
+  if ( ipepa(jisor,ip).gt.0 ) then
+    d3 = eptp(jdp,ip) * eptp(jdp,ip) * eptp(jdp,ip)
+    romp(ip) = eptp(jmp,ip) * d6spi / d3
   endif
 enddo
 
@@ -238,32 +222,32 @@ enddo
 
 do ip = 1,nbpart
 
-  if ( itepa(ip,jisor) .gt.0 ) then
+  if ( ipepa(jisor,ip) .gt.0 ) then
 
-    iel = itepa(ip,jisor)
+    iel = ipepa(jisor,ip)
 
     rom  = cromf(iel)
     xnul = viscl(iel) / rom
 
-    uvwr = sqrt( ( ettp(ip,juf) -ettp(ip,jup) )*                  &
-                 ( ettp(ip,juf) -ettp(ip,jup) )                   &
-               + ( ettp(ip,jvf) -ettp(ip,jvp) )*                  &
-                 ( ettp(ip,jvf) -ettp(ip,jvp) )                   &
-               + ( ettp(ip,jwf) -ettp(ip,jwp) )*                  &
-                 ( ettp(ip,jwf) -ettp(ip,jwp) )  )
+    uvwr = sqrt( ( eptp(juf,ip) -eptp(jup,ip) )*                  &
+                 ( eptp(juf,ip) -eptp(jup,ip) )                   &
+               + ( eptp(jvf,ip) -eptp(jvp,ip) )*                  &
+                 ( eptp(jvf,ip) -eptp(jvp,ip) )                   &
+               + ( eptp(jwf,ip) -eptp(jwp,ip) )*                  &
+                 ( eptp(jwf,ip) -eptp(jwp,ip) )  )
 
 !--->  CALCUL DU REYNOLDS LOCAL
 
-    rep  = uvwr * ettp(ip,jdp) / xnul
+    rep  = uvwr * eptp(jdp,ip) / xnul
 
 !--->  CALCUL DU COEFFICIENT DE TRAINEE
 
-    d2 = ettp(ip,jdp) * ettp(ip,jdp)
+    d2 = eptp(jdp,ip) * eptp(jdp,ip)
 
     if (rep.le.rec) then
       fdr = 18.d0 * xnul * (1.d0 + cd1 * rep**cd2) / d2
     else
-      fdr = d3s444 * uvwr / ettp(ip,jdp)
+      fdr = d3s444 * uvwr / eptp(jdp,ip)
     endif
 
 !--->  CALCUL DE Tp
@@ -275,11 +259,10 @@ do ip = 1,nbpart
     call uslatp                                                   &
     !==========
      ( nvar   , nscal  ,                                          &
-       nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
-       ip     , itepa  ,                                          &
+       nbpmax ,                                                   &
+       ip     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul , taup(ip) ,    &
-       dt     ,                                                   &
-       ettp   , ettpa  , tepa   )
+       dt     )
 
 !--->  CALCUL DE Tc
 
@@ -314,7 +297,7 @@ do ip = 1,nbpart
 
 ! Calcul du temps caracteristique thermique Tc
 
-      tempct(ip,1) = d2 * romp(ip) * ettp(ip,jcp)                 &
+      tempct(ip,1) = d2 * romp(ip) * eptp(jcp,ip)                 &
                    / ( fnus * 6.d0 * rom * xcp * xrkl )
 
 !--->  CALCUL UTILISATEUR DE Tc
@@ -322,16 +305,15 @@ do ip = 1,nbpart
     call uslatc                                                   &
     !==========
      ( nvar   , nscal  ,                                          &
-       nbpmax , nvp    , nvp1   , nvep   , nivep  ,               &
-       ip     , itepa  ,                                          &
+       nbpmax ,                                                   &
+       ip     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul ,               &
        xcp    , xrkl   , tempct(ip,1) ,                           &
-       dt     ,                                                   &
-       ettp   , ettpa  , tepa   )
+       dt     )
 
 ! Terme source implicite pour le couplage retour thermique
 
-      tempct(ip,2) = fnus * pi * ettp(ip,jdp) * xrkl * rom
+      tempct(ip,2) = fnus * pi * eptp(jdp,ip) * xrkl * rom
 
     endif
 
@@ -376,9 +358,9 @@ if (idistu.eq.1) then
 
   do ip = 1,nbpart
 
-    if (itepa(ip,jisor).gt.0) then
+    if (ipepa(jisor,ip).gt.0) then
 
-      iel = itepa(ip,jisor)
+      iel = ipepa(jisor,ip)
 
 
       if (dissip(iel).gt.0.d0 .and.                               &
@@ -387,12 +369,12 @@ if (idistu.eq.1) then
       tl = cl * energi(iel) / dissip(iel)
       tl = max(tl,epzero)
 
-      upart = ettp(ip,jup)
-      vpart = ettp(ip,jvp)
-      wpart = ettp(ip,jwp)
-      uflui = ettp(ip,juf)
-      vflui = ettp(ip,jvf)
-      wflui = ettp(ip,jwf)
+      upart = eptp(jup,ip)
+      vpart = eptp(jvp,ip)
+      wpart = eptp(jwp,ip)
+      uflui = eptp(juf,ip)
+      vflui = eptp(jvf,ip)
+      wflui = eptp(jwf,ip)
 
       if (modcpl.gt.0 .and. iplas.gt.modcpl) then
         if (statis(iel,ilpd).gt.seuil) then
@@ -515,7 +497,7 @@ else
 
   do ip = 1,nbpart
 
-    if ( itepa(ip,jisor) .gt.0 ) then
+    if ( ipepa(jisor,ip) .gt.0 ) then
       tlag(ip,1) = epzero
       tlag(ip,2) = epzero
       tlag(ip,3) = epzero
@@ -536,13 +518,13 @@ do id = 1,3
 
   do ip = 1,nbpart
 
-    if (itepa(ip,jisor).gt.0) then
+    if (ipepa(jisor,ip).gt.0) then
 
 !--->   Calcul de II = ( -grad(P)/Rom(f)+grad(<Vf>)*(<Up>-<Uf>) )
 !       ou
 !       Calcul de II = ( -grad(P)/Rom(f) )
 
-      iel = itepa(ip,jisor)
+      iel = ipepa(jisor,ip)
 
       piil(ip,id) = gradpr(id,iel)
 
@@ -574,7 +556,7 @@ do id = 1,3
 
 !                ff = romp(ip) / rom
 !     &             *( statis(iel,ilfv) / (dble(npst)*volume(iel)) )
-!     &             *( ettp(ip,juf+(id-1)) - ettp(ip,jup+(id-1)))
+!     &             *( eptp(juf+(id-1),ip) - eptp(jup+(id-1),ip))
 !     &                   /taup(ip)
 
 !                piil(ip,id) = piil(ip,id) - ff

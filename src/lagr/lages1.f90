@@ -23,10 +23,8 @@
 subroutine lages1 &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
+ ( nbpmax ,                                                       &
    rtpa   , propce ,                                              &
-   ettp   , ettpa  , tepa   ,                                     &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
@@ -46,20 +44,9 @@ subroutine lages1 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
@@ -72,10 +59,9 @@ subroutine lages1 &
 !(ncelet,3)        !    !     !    utilisateur (m/s2)                          !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 !===============================================================================
@@ -103,14 +89,10 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
-
-integer          itepa(nbpmax,nivep)
+integer          nbpmax
 
 double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
 double precision vagaus(nbpmax,*)
@@ -176,9 +158,9 @@ do id = 1,3
 
   do ip = 1,nbpart
 
-    if (itepa(ip,jisor).gt.0) then
+    if (ipepa(jisor,ip).gt.0) then
 
-      iel = itepa(ip,jisor)
+      iel = ipepa(jisor,ip)
 
       rom = cromf(iel)
 
@@ -222,14 +204,14 @@ do id = 1,3
       bb = (aux5 - aa) * aux3
       cc = dtp - aa - bb
 
-      ter1x = aa * ettpa(ip,jup+i0)
-      ter2x = bb * ettpa(ip,juf+i0)
+      ter1x = aa * eptpa(jup+i0,ip)
+      ter2x = bb * eptpa(juf+i0,ip)
       ter3x = cc * tci
       ter4x = (dtp - aa) * force
 
 !---> termes pour le fluide vu
 
-      ter1f = ettpa(ip,juf+i0) * aux2
+      ter1f = eptpa(juf+i0,ip) * aux2
       ter2f = tci * (1.d0-aux2)
 
 !---> termes pour la vitesse des particules
@@ -237,8 +219,8 @@ do id = 1,3
       dd = aux3 * (aux2 - aux1)
       ee = 1.d0 - aux1
 
-      ter1p = ettpa(ip,jup+i0) * aux1
-      ter2p = ettpa(ip,juf+i0) * dd
+      ter1p = eptpa(jup+i0,ip) * aux1
+      ter2p = eptpa(juf+i0,ip) * dd
       ter3p = tci * (ee-dd)
       ter4p = force * ee
 
@@ -352,7 +334,7 @@ do id = 1,3
         endif
 
         ddbr  = sqrt( 2.d0*kboltz*tempf                           &
-                     /(ettp(ip,jmp)*taup(ip)) )
+                     /(eptp(jmp,ip)*taup(ip)) )
         tix2  = (taup(ip)*ddbr)**2                                &
                 *(dtp - taup(ip)*(1.d0-aux1)                      &
                                *(3.d0-aux1) /2.d0 )
@@ -395,17 +377,17 @@ do id = 1,3
 
 !---> trajectoire
 
-      ettp(ip,jxp+i0) = ettpa(ip,jxp+i0)                          &
+      eptp(jxp+i0,ip) = eptpa(jxp+i0,ip)                          &
                        + ter1x + ter2x + ter3x + ter4x + ter5x    &
                        + tbrix1 + tbrix2
 
 !---> vitesse fluide vu
 
-      ettp(ip,juf+i0) = ter1f + ter2f + ter3f
+      eptp(juf+i0,ip) = ter1f + ter2f + ter3f
 
 !---> vitesse particules
 
-      ettp(ip,jup+i0) = ter1p + ter2p + ter3p + ter4p + ter5p     &
+      eptp(jup+i0,ip) = ter1p + ter2p + ter3p + ter4p + ter5p     &
                        + tbriu
 
     endif

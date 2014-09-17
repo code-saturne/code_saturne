@@ -82,6 +82,7 @@ use ihmpre
 implicit none
 
 integer  ii , ilayer , irf , icha , iok
+integer  nvp, nvep, nivep
 
 !===============================================================================
 ! 0. INITIALISATION
@@ -1028,18 +1029,18 @@ ierr = 0
 !    NBPART/DNBPAR : NOMBRE DE PARTICULES PRESENTES DANS LE DOMAINE
 !                      DE CALCUL A CHAQUE ITERATION
 
-nbpart = 0
-dnbpar = 0.d0
+nbpart => null()
+dnbpar => null()
 
 !     NBPERR/DNBPER : NOMBRE DE PARTICULES ELIMINES EN ERREUR
 
-nbperr = 0
-dnbper = 0.d0
+nbperr => null()
+dnbper => null()
 
 !     NBPDEP/DNBDEP : NOMBRE DE PARTICULES DEPOSEES
 
-nbpdep = 0
-dnbdep = 0.d0
+nbpdep => null()
+dnbdep => null()
 
 !     NBPRES/DNBRES : NOMBRE DE PARTICULES RESUSPENDUES
 
@@ -1059,8 +1060,8 @@ nbptot = 0
 !     NBPOUT/DNBPOU : Contient les particules sorties de facon normale,
 !                       plus les particules sorties en erreur de reperage.
 
-nbpout = 0
-dnbpou = 0.d0
+nbpout => null()
+dnbpou => null()
 
 !     NDEPOT : Nombre de particules deposees definitivement
 !               dont on garde une trace en memoire pour le
@@ -1083,8 +1084,8 @@ dnpkil = 0.d0
 
 !     NPENCR/DNPENC : nombre de grains de charbon "encrasses"
 
-npencr = 0
-dnpenc = 0.d0
+npencr => null()
+dnpenc => null()
 
 
 !     CONDITIONS AUX LIMITES
@@ -1220,16 +1221,15 @@ endif
 
 if (nvls.gt.0) nvp = nvp + nvls
 
-!-->  NVP1 represente le nombre de variables sur les particules en
-!     enlevant position, vitesse particule et vitesse fluides (TSVAR)
+!-->  NVP1 is used for tsvar, and is computed by lagbeg
 
-nvp1 = nvp - 9
+nvp1 = -1
 
 
 ! 3.3 DEFINITION DES POINTEURS SUR LES VARIABLES LIEES AUX PARTICULES
 
 
-!   3.3.1 TABLEAU ETTP
+!   3.3.1 TABLEAU EPTP
 !   ~~~~~~~~~~~~~~~~~~
 
 !   Attention il faut que
@@ -1432,7 +1432,7 @@ if (iphyla.eq.2) then
   irf   = jinch
 endif
 
-! Modele de Deposition :  tableaux supp dans itepa : marko
+! Modele de Deposition :  tableaux supp dans ipepa : marko
 !                                                    jdfac
 
 
@@ -1446,7 +1446,6 @@ endif
 ! Modele de resuspension : 2 tableaux supp dans ITEPA : jnbasg, jnbasp
 !
 !
-
 
 if ( ireent .eq. 1 ) then
   jnbasg  = irf    + 1

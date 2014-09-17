@@ -1331,11 +1331,6 @@ ifaccp = 0
 ! 12. Lagrangian arrays
 !===============================================================================
 
-itepa => ivoid2
-
-ettp => rvoid2
-ettpa => rvoid2
-tepa => rvoid2
 statis => rvoid2
 nullify(stativ)
 parbor => rvoid2

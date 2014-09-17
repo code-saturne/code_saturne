@@ -23,10 +23,8 @@
 subroutine lagsta &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   nvlsta ,                                                       &
-   itepa  ,                                                       &
-   ettp   , tepa   , statis , stativ )
+ ( nvlsta ,                                                       &
+   statis , stativ )
 
 !===============================================================================
 ! FONCTION :
@@ -63,18 +61,7 @@ subroutine lagsta &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis(ncelet    ! tr ! --> ! cumul des statistiques volumiques              !
 !    nvlsta)       !    !     !                                                !
 ! stativ           ! tr ! <-- ! cumul pour les variances des                   !
@@ -110,12 +97,8 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep
 integer          nvlsta
 
-integer          itepa(nbpmax,nivep)
-
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 
@@ -245,36 +228,36 @@ pis6 = pi / 6.d0
 
 do npt = 1,nbpart
 
-  if (itepa(npt,jisor).gt.0) then
+  if (ipepa(jisor,npt).gt.0) then
 
 !     * Moyenne et variance des composantes de la vitesse
 
-    iel = itepa(npt,jisor)
+    iel = ipepa(jisor,npt)
 
     if (iactvx.eq.1) then
 
        statis(iel,ilvx) = statis(iel,ilvx)                           &
-            + tepa(npt,jrpoi) * ettp(npt,jup)
+            + pepa(jrpoi,npt) * eptp(jup,npt)
        stativ(iel,ilvx) = stativ(iel,ilvx)                           &
-            + tepa(npt,jrpoi) * ettp(npt,jup) * ettp(npt,jup)
+            + pepa(jrpoi,npt) * eptp(jup,npt) * eptp(jup,npt)
 
     endif
 
     if (iactvy.eq.1) then
 
        statis(iel,ilvy) = statis(iel,ilvy)                           &
-            + tepa(npt,jrpoi) * ettp(npt,jvp)
+            + pepa(jrpoi,npt) * eptp(jvp,npt)
        stativ(iel,ilvy) = stativ(iel,ilvy)                           &
-            + tepa(npt,jrpoi) * ettp(npt,jvp) * ettp(npt,jvp)
+            + pepa(jrpoi,npt) * eptp(jvp,npt) * eptp(jvp,npt)
 
     endif
 
     if (iactvz.eq.1) then
 
        statis(iel,ilvz) = statis(iel,ilvz)                           &
-                     + tepa(npt,jrpoi) * ettp(npt,jwp)
+                     + pepa(jrpoi,npt) * eptp(jwp,npt)
        stativ(iel,ilvz) = stativ(iel,ilvz)                           &
-            + tepa(npt,jrpoi) * ettp(npt,jwp) * ettp(npt,jwp)
+            + pepa(jrpoi,npt) * eptp(jwp,npt) * eptp(jwp,npt)
 
     endif
 
@@ -282,17 +265,17 @@ do npt = 1,nbpart
 
     if (iactfv.eq.1) then
 
-       concen = (ettp(npt,jdp)**3) *pis6
+       concen = (eptp(jdp,npt)**3) *pis6
 
        statis(iel,ilfv) = statis(iel,ilfv)                           &
-            + tepa(npt,jrpoi) * concen
+            + pepa(jrpoi,npt) * concen
 
 !    * La variance du taux de presence n'a de sens qu'en stationnaire
 
        if (npst.gt.1) then
 
           stativ(iel,ilfv) = stativ(iel,ilfv)                           &
-               + tepa(npt,jrpoi) * concen * concen
+               + pepa(jrpoi,npt) * concen * concen
 
        endif
 
@@ -303,16 +286,16 @@ do npt = 1,nbpart
     if (iactts.eq.1) then
 
        statis(iel,ilts) = statis(iel,ilts)                           &
-            + tepa(npt,jrpoi) *  tepa(npt,jrtsp)
+            + pepa(jrpoi,npt) *  pepa(jrtsp,npt)
 
        stativ(iel,ilts) = stativ(iel,ilts)                           &
-            + tepa(npt,jrpoi) *  tepa(npt,jrtsp) *  tepa(npt,jrtsp)
+            + pepa(jrpoi,npt) *  pepa(jrtsp,npt) *  pepa(jrtsp,npt)
 
     endif
 
 !     * Somme du poids statistiques associé aux particules (toujours calcule)
 
-    statis(iel,ilpd) = statis(iel,ilpd) + tepa(npt,jrpoi)
+    statis(iel,ilpd) = statis(iel,ilpd) + pepa(jrpoi,npt)
 
     if (iphyla.eq.1) then
 
@@ -321,10 +304,10 @@ do npt = 1,nbpart
       if ( itpvar .eq. 1 ) then
 
         statis(iel,iltp) = statis(iel,iltp)                       &
-                         + tepa(npt,jrpoi) * ettp(npt,jtp)
+                         + pepa(jrpoi,npt) * eptp(jtp,npt)
 
         stativ(iel,iltp) = stativ(iel,iltp)                       &
-             + tepa(npt,jrpoi)*ettp(npt,jtp)*ettp(npt,jtp)
+             + pepa(jrpoi,npt)*eptp(jtp,npt)*eptp(jtp,npt)
 
       endif
 
@@ -333,10 +316,10 @@ do npt = 1,nbpart
       if ( idpvar .eq. 1 ) then
 
         statis(iel,ildp) = statis(iel,ildp)                       &
-                         + tepa(npt,jrpoi) * ettp(npt,jdp)
+                         + pepa(jrpoi,npt) * eptp(jdp,npt)
 
         stativ(iel,ildp) = stativ(iel,ildp)                       &
-             + tepa(npt,jrpoi)*ettp(npt,jdp)*ettp(npt,jdp)
+             + pepa(jrpoi,npt)*eptp(jdp,npt)*eptp(jdp,npt)
 
       endif
 
@@ -345,10 +328,10 @@ do npt = 1,nbpart
       if ( impvar .eq. 1 ) then
 
         statis(iel,ilmp) = statis(iel,ilmp)                       &
-                         + tepa(npt,jrpoi) * ettp(npt,jmp)
+                         + pepa(jrpoi,npt) * eptp(jmp,npt)
 
         stativ(iel,ilmp) = stativ(iel,ilmp)                       &
-             + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
+             + pepa(jrpoi,npt)*eptp(jmp,npt)*eptp(jmp,npt)
 
       endif
 
@@ -362,34 +345,34 @@ do npt = 1,nbpart
 !     * Moyenne et variance du diametre du coeur retrecissant
 
       statis(iel,ilmp) = statis(iel,ilmp)                         &
-                         + tepa(npt,jrpoi) * ettp(npt,jmp)
+                         + pepa(jrpoi,npt) * eptp(jmp,npt)
       do ilayer=1,nlayer
         statis(iel,ilhp(ilayer))  = statis(iel,ilhp(ilayer))      &
-              + tepa(npt,jrpoi) * ettp(npt,jhp(ilayer))
+              + pepa(jrpoi,npt) * eptp(jhp(ilayer),npt)
         statis(iel,ilmch(ilayer)) = statis(iel,ilmch(ilayer))     &
-              + tepa(npt,jrpoi) * ettp(npt,jmch(ilayer))
+              + pepa(jrpoi,npt) * eptp(jmch(ilayer),npt)
         statis(iel,ilmck(ilayer)) = statis(iel,ilmck(ilayer))     &
-              + tepa(npt,jrpoi) * ettp(npt,jmck(ilayer))
+              + pepa(jrpoi,npt) * eptp(jmck(ilayer),npt)
       enddo
       statis(iel,ilmwat) = statis(iel,ilmwat)                     &
-                        + tepa(npt,jrpoi) * ettp(npt,jmwat)
+                        + pepa(jrpoi,npt) * eptp(jmwat,npt)
       statis(iel,ildck) = statis(iel,ildck)                       &
-                        + tepa(npt,jrpoi) * tepa(npt,jrdck)
+                        + pepa(jrpoi,npt) * pepa(jrdck,npt)
 
      stativ(iel,ilmp) = stativ(iel,ilmp)                          &
-             + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
+             + pepa(jrpoi,npt)*eptp(jmp,npt)*eptp(jmp,npt)
       do ilayer=1,nlayer
         stativ(iel,ilhp(ilayer))  = stativ(iel,ilhp(ilayer))      &
-        + tepa(npt,jrpoi)*ettp(npt,jhp(ilayer))*ettp(npt,jhp(ilayer))
+        + pepa(jrpoi,npt)*eptp(jhp(ilayer),npt)*eptp(jhp(ilayer),npt)
         stativ(iel,ilmch(ilayer)) = stativ(iel,ilmch(ilayer))     &
-        + tepa(npt,jrpoi)*ettp(npt,jmch(ilayer))*ettp(npt,jmch(ilayer))
+        + pepa(jrpoi,npt)*eptp(jmch(ilayer),npt)*eptp(jmch(ilayer),npt)
         stativ(iel,ilmck(ilayer)) = stativ(iel,ilmck(ilayer))     &
-        + tepa(npt,jrpoi)*ettp(npt,jmck(ilayer))*ettp(npt,jmck(ilayer))
+        + pepa(jrpoi,npt)*eptp(jmck(ilayer),npt)*eptp(jmck(ilayer),npt)
       enddo
       stativ(iel,ilmwat) = stativ(iel,ilmwat)                     &
-          + tepa(npt,jrpoi)*ettp(npt,jmwat)*ettp(npt,jmwat)
+          + pepa(jrpoi,npt)*eptp(jmwat,npt)*eptp(jmwat,npt)
       stativ(iel,ildck) = stativ(iel,ildck)                       &
-          + tepa(npt,jrpoi)*tepa(npt,jrdck)*tepa(npt,jrdck)
+          + pepa(jrpoi,npt)*pepa(jrdck,npt)*pepa(jrdck,npt)
 
     endif
 
@@ -407,62 +390,62 @@ if (nbclst.gt.0) then
 
     do npt = 1,nbpart
 
-      if (itepa(npt,jisor).gt.0 .and.                             &
-                         itepa(npt,jclst).eq. izcl ) then
+      if (ipepa(jisor,npt).gt.0 .and.                             &
+                         ipepa(jclst,npt).eq. izcl ) then
 
 !     * Moyenne et variance des composantes de la vitesse
 
-        iel = itepa(npt,jisor)
+        iel = ipepa(jisor,npt)
 
         ilvx1 = ilvx + izcl*nvlsta
         ilvy1 = ilvy + izcl*nvlsta
         ilvz1 = ilvz + izcl*nvlsta
 
         statis(iel,ilvx1) = statis(iel,ilvx1)                     &
-                       + tepa(npt,jrpoi) * ettp(npt,jup)
+                       + pepa(jrpoi,npt) * eptp(jup,npt)
         statis(iel,ilvy1) = statis(iel,ilvy1)                     &
-                       + tepa(npt,jrpoi) * ettp(npt,jvp)
+                       + pepa(jrpoi,npt) * eptp(jvp,npt)
         statis(iel,ilvz1) = statis(iel,ilvz1)                     &
-                       + tepa(npt,jrpoi)*ettp(npt,jwp)
+                       + pepa(jrpoi,npt)*eptp(jwp,npt)
 
         ilvx1 = ilvx + izcl*(nvlsta-1)
         ilvy1 = ilvy + izcl*(nvlsta-1)
         ilvz1 = ilvz + izcl*(nvlsta-1)
 
         stativ(iel,ilvx1) = stativ(iel,ilvx1)                     &
-       + tepa(npt,jrpoi) * ettp(npt,jup) * ettp(npt,jup)
+       + pepa(jrpoi,npt) * eptp(jup,npt) * eptp(jup,npt)
         stativ(iel,ilvy1) = stativ(iel,ilvy1)                     &
-       + tepa(npt,jrpoi) * ettp(npt,jvp) * ettp(npt,jvp)
+       + pepa(jrpoi,npt) * eptp(jvp,npt) * eptp(jvp,npt)
         stativ(iel,ilvz1) = stativ(iel,ilvz1)                     &
-       + tepa(npt,jrpoi) * ettp(npt,jwp) * ettp(npt,jwp)
+       + pepa(jrpoi,npt) * eptp(jwp,npt) * eptp(jwp,npt)
 
 !     * Moyenne et variance du taux de presence
 
 
-        concen = (ettp(npt,jdp)**3) *pis6
+        concen = (eptp(jdp,npt)**3) *pis6
 
         ilfv1 = ilfv+izcl*nvlsta
         statis(iel,ilfv1) = statis(iel,ilfv1)                     &
-                          +tepa(npt,jrpoi)*concen
+                          +pepa(jrpoi,npt)*concen
 
         ilfv1 = ilfv+izcl*(nvlsta-1)
         stativ(iel,ilfv1) = stativ(iel,ilfv1)                     &
-                          +tepa(npt,jrpoi)*concen*concen
+                          +pepa(jrpoi,npt)*concen*concen
 
 !     * Moyenne et variance du temps de séjour
 
         ilts1 = ilts+izcl*nvlsta
         statis(iel,ilts1) = statis(iel,ilts1)                     &
-          + tepa(npt,jrpoi) *  tepa(npt,jrtsp)
+          + pepa(jrpoi,npt) *  pepa(jrtsp,npt)
 
         ilts1 = ilts+izcl*(nvlsta-1)
         stativ(iel,ilts1) = stativ(iel,ilts1)                     &
-          + tepa(npt,jrpoi)*tepa(npt,jrtsp)*tepa(npt,jrtsp)
+          + pepa(jrpoi,npt)*pepa(jrtsp,npt)*pepa(jrtsp,npt)
 
 !     * Somme du poids statistiques associé aux particules
 
         ilpd1 = ilpd+izcl*nvlsta
-        statis(iel,ilpd1) = statis(iel,ilpd1) + tepa(npt,jrpoi)
+        statis(iel,ilpd1) = statis(iel,ilpd1) + pepa(jrpoi,npt)
 
        if ( iphyla .eq. 1 ) then
 
@@ -472,11 +455,11 @@ if (nbclst.gt.0) then
 
             iltp1 = iltp+izcl*nvlsta
             statis(iel,iltp1) = statis(iel,iltp1)                 &
-                         + tepa(npt,jrpoi) * ettp(npt,jtp)
+                         + pepa(jrpoi,npt) * eptp(jtp,npt)
 
             iltp1 = iltp+izcl*(nvlsta-1)
             stativ(iel,iltp1) = stativ(iel,iltp1)                 &
-             + tepa(npt,jrpoi)*ettp(npt,jtp)*ettp(npt,jtp)
+             + pepa(jrpoi,npt)*eptp(jtp,npt)*eptp(jtp,npt)
 
           endif
 
@@ -486,11 +469,11 @@ if (nbclst.gt.0) then
 
             ildp1 = ildp+izcl*nvlsta
             statis(iel,ildp1) = statis(iel,ildp1)                 &
-                         + tepa(npt,jrpoi) * ettp(npt,jdp)
+                         + pepa(jrpoi,npt) * eptp(jdp,npt)
 
             ildp1 = ildp+izcl*(nvlsta-1)
             stativ(iel,ildp1) = stativ(iel,ildp1)                 &
-             + tepa(npt,jrpoi)*ettp(npt,jdp)*ettp(npt,jdp)
+             + pepa(jrpoi,npt)*eptp(jdp,npt)*eptp(jdp,npt)
 
           endif
 
@@ -500,11 +483,11 @@ if (nbclst.gt.0) then
 
             ilmp1 = ilmp+izcl*nvlsta
             statis(iel,ilmp1) = statis(iel,ilmp1)                 &
-                         + tepa(npt,jrpoi) * ettp(npt,jmp)
+                         + pepa(jrpoi,npt) * eptp(jmp,npt)
 
             ilmp1 = ilmp+izcl*(nvlsta-1)
             stativ(iel,ilmp1) = stativ(iel,ilmp1)                 &
-             + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
+             + pepa(jrpoi,npt)*eptp(jmp,npt)*eptp(jmp,npt)
 
           endif
 
@@ -527,19 +510,19 @@ if (nbclst.gt.0) then
           ildck1  = ildck  + izcl*nvlsta
 
           statis(iel,ilmp1)  = statis(iel,ilmp1)                   &
-                        + tepa(npt,jrpoi) * ettp(npt,jmp)
+                        + pepa(jrpoi,npt) * eptp(jmp,npt)
           do ilayer=1,nlayer
             statis(iel,ilhp1(ilayer))  = statis(iel,ilhp1(ilayer)) &
-                  + tepa(npt,jrpoi) * ettp(npt,jhp(ilayer))
+                  + pepa(jrpoi,npt) * eptp(jhp(ilayer),npt)
             statis(iel,ilmch1(ilayer)) = statis(iel,ilmch1(ilayer))&
-                  + tepa(npt,jrpoi) * ettp(npt,jmch(ilayer))
+                  + pepa(jrpoi,npt) * eptp(jmch(ilayer),npt)
             statis(iel,ilmck1(ilayer)) = statis(iel,ilmck1(ilayer))&
-                  + tepa(npt,jrpoi) * ettp(npt,jmck(ilayer))
+                  + pepa(jrpoi,npt) * eptp(jmck(ilayer),npt)
           enddo
           statis(iel,ilmwat1) = statis(iel,ilmwat1)               &
-                        + tepa(npt,jrpoi) * ettp(npt,jmwat)
+                        + pepa(jrpoi,npt) * eptp(jmwat,npt)
           statis(iel,ildck1) = statis(iel,ildck1)                 &
-                        + tepa(npt,jrpoi) * tepa(npt,jrdck)
+                        + pepa(jrpoi,npt) * pepa(jrdck,npt)
 
           ilmp1   = ilmp   + izcl*(nvlsta-1)
           do ilayer=1,nlayer
@@ -552,19 +535,19 @@ if (nbclst.gt.0) then
           ildck1  = ildck  + izcl*(nvlsta-1)
 
           stativ(iel,ilmp1)  = stativ(iel,ilmp1)                  &
-          + tepa(npt,jrpoi)*ettp(npt,jmp)*ettp(npt,jmp)
+          + pepa(jrpoi,npt)*eptp(jmp,npt)*eptp(jmp,npt)
           do ilayer=1,nlayer
             stativ(iel,ilhp1(ilayer))  = stativ(iel,ilhp1(ilayer)) &
-            + tepa(npt,jrpoi)*ettp(npt,jhp(ilayer)) *ettp(npt,jhp(ilayer))
+            + pepa(jrpoi,npt)*eptp(jhp(ilayer),npt) *eptp(jhp(ilayer),npt)
             stativ(iel,ilmch1(ilayer)) = stativ(iel,ilmch1(ilayer))&
-            + tepa(npt,jrpoi)*ettp(npt,jmch(ilayer))*ettp(npt,jmch(ilayer))
+            + pepa(jrpoi,npt)*eptp(jmch(ilayer),npt)*eptp(jmch(ilayer),npt)
             stativ(iel,ilmck1(ilayer)) = stativ(iel,ilmck1(ilayer))&
-            + tepa(npt,jrpoi)*ettp(npt,jmck(ilayer))*ettp(npt,jmck(ilayer))
+            + pepa(jrpoi,npt)*eptp(jmck(ilayer),npt)*eptp(jmck(ilayer),npt)
           enddo
           stativ(iel,ilmwat1) = stativ(iel,ilmwat1)               &
-          + tepa(npt,jrpoi)*ettp(npt,jmwat)*ettp(npt,jmwat)
+          + pepa(jrpoi,npt)*eptp(jmwat,npt)*eptp(jmwat,npt)
           stativ(iel,ildck1) = stativ(iel,ildck1)                 &
-          + tepa(npt,jrpoi)*tepa(npt,jrdck)*tepa(npt,jrdck)
+          + pepa(jrpoi,npt)*pepa(jrdck,npt)*pepa(jrdck,npt)
 
         endif
 

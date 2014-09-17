@@ -24,11 +24,10 @@ subroutine lagesp &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
    dt     , rtpa   , propce ,                                     &
-   ettp   , ettpa  , tepa   , statis , stativ ,                   &
+   statis , stativ ,                                              &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2 ,  &
@@ -56,25 +55,13 @@ subroutine lagesp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
 !  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
 !(ncelet,nvlsta    !    !     !   statistiques volumiques                      !
 ! stativ           ! tr ! <-- ! cumul pour les variances des                   !
@@ -127,15 +114,11 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
-
-integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,*),stativ(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
@@ -169,9 +152,9 @@ iifacl = 0
 
 aa = 6.d0 / pi
 do ip = 1,nbpart
-  if ( itepa(ip,jisor).gt.0 ) then
-    d3 = ettp(ip,jdp) * ettp(ip,jdp) * ettp(ip,jdp)
-    romp(ip) = aa * ettp(ip,jmp) / d3
+  if ( ipepa(jisor,ip).gt.0 ) then
+    d3 = eptp(jdp,ip) * eptp(jdp,ip) * eptp(jdp,ip)
+    romp(ip) = aa * eptp(jmp,ip) / d3
   endif
 enddo
 
@@ -191,11 +174,10 @@ enddo
 call uslafe                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
    dt     ,                                                       &
-   ettp   , ettpa  , tepa   , statis , stativ ,                   &
+   statis , stativ ,                                              &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
@@ -217,10 +199,8 @@ if (nordre.eq.1) then
 
   call lages1                                                     &
   !==========
-   ( nbpmax , nvp    , nvep   , nivep  ,                          &
-     itepa  ,                                                     &
+   ( nbpmax ,                                                     &
      rtpa   , propce ,                                            &
-     ettp   , ettpa  , tepa   ,                                   &
      taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &
      brgaus , terbru , fextla )
@@ -250,10 +230,8 @@ else
 
   call lages2                                                     &
   !==========
-   ( nbpmax , nvp    , nvep   , nivep  ,                          &
-     itepa  ,                                                     &
+   ( nbpmax ,                                                     &
      rtpa   , propce ,                                            &
-     ettp   , ettpa  , tepa   ,                                   &
      taup   , tlag   , piil   ,                                   &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
      auxl2  , gradpr ,                                            &

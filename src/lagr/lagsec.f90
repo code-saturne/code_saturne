@@ -20,12 +20,11 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine lagsec                                       &
+subroutine lagsec                                                              &
 !================
 
- ( nbpmax, nvp    , nvp1   , nvep     , nivep ,                                &
-   npt   ,                                                                     &
-   itepa , propce , ettp   , ettpa    , tepa  , tempct , tsvar ,               &
+ ( npt   ,                                                                     &
+   propce , tempct , tsvar ,                                                   &
    rayon , mlayer , mwater , mwat_max , volume_couche  , sherw , fwat   )
 
 
@@ -50,21 +49,8 @@ subroutine lagsec                                       &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! npt              ! e  ! <-- ! numero de la particule a traiter               !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! propce(ncelet, *)! tr ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
@@ -96,6 +82,7 @@ subroutine lagsec                                       &
 use numvar
 use cstnum
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -109,13 +96,9 @@ use mesh
 implicit none
 
 ! Arguments
-integer          nbpmax, nvp, nvp1, nvep, nivep
-integer          itepa(nbpmax,nivep)
 integer          npt
 
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp), ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision tempct(nbpmax,2), tsvar(nbpmax,nvp1)
 double precision rayon(nlayer), mlayer(nlayer), mwater(nlayer)
 double precision mwat_max, volume_couche, sherw, fwat(nlayer)
@@ -144,7 +127,7 @@ do ilayer=1,nlayer
   fwat(ilayer) = 0.d0
   fwatsat(ilayer) = 0.d0
 enddo
-iel = itepa(npt,jisor)
+iel = ipepa(jisor,npt)
 
 ! --- Reperage de la couche
 ilayer_wat = 1
@@ -154,7 +137,7 @@ do ilayer=1,nlayer
   endif
 enddo
 
-tpk = ettp(npt,jhp(ilayer_wat))
+tpk = eptp(jhp(ilayer_wat),npt)
 
 ! --- Calcul de la fraction massique d'eau saturante
 if (tpk.ge.tmini) then
@@ -170,7 +153,7 @@ if (tpk.ge.tmini) then
   endif
   ! --- Calcul du terme source d eau diffusee
   aux3 = max(1.0d0 - aux2, precis)
-  fwattot = pi*ettpa(npt,jdp)*diftl0*sherw*                                    &
+  fwattot = pi*eptpa(jdp,npt)*diftl0*sherw*                                    &
                log((1.0d0-propce(iel,ipproc(iym1(ih2o))))/aux3)
 else
   ! Le flux est nul
@@ -245,9 +228,8 @@ enddo
 
 call lagtmp                                                                    &
 !==========
-( nbpmax , nvp    , nvp1  , nvep  , nivep ,                                    &
-  npt    ,                                                                     &
-  itepa  , propce , ettp  , ettpa , tepa  , tempct ,                           &
+( npt    ,                                                                     &
+  propce , tempct ,                                                            &
   rayon  , mlayer , phith , temp  , tsvar , volume_couche )
 
 ! On remet le tableau de correction pour le 2e ordre
@@ -257,7 +239,7 @@ enddo
 
 ! On calcule le flux d'evaporation/condensation tel que T_i=Tsat
 do ilayer=1,nlayer
-  fwatsat(ilayer) = mlayer(ilayer)*ettpa(npt,jcp)                              &
+  fwatsat(ilayer) = mlayer(ilayer)*eptpa(jcp,npt)                              &
                     *(temp(ilayer)-tsat)/(lv*dtp)
 enddo
 

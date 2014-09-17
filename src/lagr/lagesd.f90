@@ -172,10 +172,10 @@ energi = 0.d0
 dissip = 0.d0
 norm_vit = 0.d0
 
-iel = itepa(ip,jisor)
+iel = ipepa(jisor,ip)
 
 ! Friction velocity
-ifac = itepa(ip,jdfac)
+ifac = ipepa(jdfac,ip)
 ustar = uetbor(ifac)
 
 ! Constants for the calculation of bxp and tlp
@@ -198,12 +198,12 @@ visccf = viscl(iel) / romf
 norm=sqrt(vela(1,iel)**2 + vela(2,iel)**2 + vela(3,iel)**2)
 
 ! Velocity norm w.r.t y+
-if (tepa(ip,jryplu).le.5.d0) then
-   norm_vit = tepa(ip,jryplu) * ustar
-else if ( tepa(ip,jryplu).gt.5.d0.and.tepa(ip,jryplu).le.30.d0) then
-   norm_vit = ( -3.05d0 + 5.d0 * log(tepa(ip,jryplu))) * ustar
-else if (tepa(ip,jryplu).gt.30.d0.and.tepa(ip,jryplu).lt.100.d0) then
-   norm_vit = (2.5d0 * log(tepa(ip,jryplu)) + 5.5d0) * ustar
+if (pepa(jryplu,ip).le.5.d0) then
+   norm_vit = pepa(jryplu,ip) * ustar
+else if ( pepa(jryplu,ip).gt.5.d0.and.pepa(jryplu,ip).le.30.d0) then
+   norm_vit = ( -3.05d0 + 5.d0 * log(pepa(jryplu,ip))) * ustar
+else if (pepa(jryplu,ip).gt.30.d0.and.pepa(jryplu,ip).lt.100.d0) then
+   norm_vit = (2.5d0 * log(pepa(jryplu,ip)) + 5.5d0) * ustar
 endif
 
 vit(1) = norm_vit * vela(1,iel) / norm
@@ -211,15 +211,15 @@ vit(2) = norm_vit * vela(2,iel) / norm
 vit(3) = norm_vit * vela(3,iel) / norm
 
 ! Turbulent kinetic energy and dissipation w.r.t y+
-if (tepa(ip,jryplu).le.5.d0) then
-   energi = 0.1d0 * (tepa(ip,jryplu)**2) * ustar**2
+if (pepa(jryplu,ip).le.5.d0) then
+   energi = 0.1d0 * (pepa(jryplu,ip)**2) * ustar**2
    dissip = 0.2d0 * ustar**4 / visccf
-else if (tepa(ip,jryplu).gt.5.d0.and.tepa(ip,jryplu).le.30.d0) then
+else if (pepa(jryplu,ip).gt.5.d0.and.pepa(jryplu,ip).le.30.d0) then
    energi = ustar**2 / (0.09d0)**0.5
    dissip = 0.2d0 * ustar**4 / visccf
-else if (tepa(ip,jryplu).gt.30.d0.and.tepa(ip,jryplu).le.100.d0) then
+else if (pepa(jryplu,ip).gt.30.d0.and.pepa(jryplu,ip).le.100.d0) then
    energi = ustar**2 / (0.09d0)**0.5
-   dissip = ustar**4 / (0.41d0 * tepa(ip,jryplu) * visccf)
+   dissip = ustar**4 / (0.41d0 * pepa(jryplu,ip) * visccf)
 endif
 
 !===============================================================================
@@ -235,7 +235,7 @@ isens = 1
 call  lagprj                                                        &
 !===========
      ( isens          ,                                             &
-       ettpa(ip,jup)  , ettpa(ip,jvp)  , ettpa(ip,jwp)  ,           &
+       eptpa(jup,ip)  , eptpa(jvp,ip)  , eptpa(jwp,ip)  ,           &
        vpart(1)       , vpart(2)       , vpart(3)       ,           &
        dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,           &
        dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,           &
@@ -249,7 +249,7 @@ vpart0(3) = vpart(3)
 call  lagprj                                                        &
 !===========
      ( isens          ,                                             &
-       ettpa(ip,juf)  , ettpa(ip,jvf)  , ettpa(ip,jwf)  ,           &
+       eptpa(juf,ip)  , eptpa(jvf,ip)  , eptpa(jwf,ip)  ,           &
        vvue(1)        , vvue(2)        , vvue(3)        ,           &
        dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,           &
        dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,           &
@@ -333,15 +333,15 @@ endif
 
 call lagcli                                                       &
 !==========
-   ( itepa(ip,jimark),                                            &
+   ( ipepa(jimark,ip),                                            &
      tempf        ,                                               &
      lvisq, tvisq,                                                &
      vpart(1)     , vvue(1)   , depl(1) ,                         &
-     ettp(ip,jdp) , romp(ip)  , taup(ip),                         &
-     tepa(ip,jryplu),tepa(ip,jrinpf), enertur, ggp(1), vflui(1),  &
+     eptp(jdp,ip) , romp(ip)  , taup(ip),                         &
+     pepa(jryplu,ip),pepa(jrinpf,ip), enertur, ggp(1), vflui(1),  &
      gdpr(1), piilp(1), depint )
 
-if (itepa(ip,jdepo).gt.0) then
+if (ipepa(jdepo,ip).gt.0) then
    depl(1) = 0.d0
    vpart(1) = 0.d0
 endif
@@ -349,7 +349,7 @@ endif
 
 !  Integration in the 2 other directions
 
-if (itepa(ip,jdepo).eq.0) then
+if (ipepa(jdepo,ip).eq.0) then
 
    do id = 2,3
 
@@ -517,54 +517,54 @@ endif
 
 if (ireent.eq.1) then
 
-   if (itepa(ip,jdepo).gt.0) then
+   if (ipepa(jdepo,ip).gt.0) then
 
       ! Resuspension model
 
       ! Calculation of the hydrodynamic drag and torque
       ! applied on the deposited particle
 
-      drag(1) = 3.d0 * pi * ettp(ip,jdp) * (vvue(1) - vpart(1)) * visccf * romf * 3.39d0
+      drag(1) = 3.d0 * pi * eptp(jdp,ip) * (vvue(1) - vpart(1)) * visccf * romf * 3.39d0
       tordrg(1) = 0.0d0
 
       do id = 2,3
-         drag(id) = 3.d0 * pi * ettp(ip,jdp) * (vvue(id)-vpart(id)) * visccf * romf * 1.7d0
-         tordrg(id) = 1.4d0 * drag(id) * ettp(ip,jdp) * 0.5d0
+         drag(id) = 3.d0 * pi * eptp(jdp,ip) * (vvue(id)-vpart(id)) * visccf * romf * 1.7d0
+         tordrg(id) = 1.4d0 * drag(id) * eptp(jdp,ip) * 0.5d0
       enddo
 
 
       ! Is there direct wall-normal lift-off of the particle ?
 
-      if ((abs(drag(1)).gt.tepa(ip,jfadh)).and.(drag(1).lt.0.d0)) then
+      if ((abs(drag(1)).gt.pepa(jfadh,ip)).and.(drag(1).lt.0.d0)) then
 
          ! The particle is resuspended
 
-         itepa(ip,jdepo) = 0
+         ipepa(jdepo,ip) = 0
 
-         tepa(ip,jfadh) = 0.d0
-         tepa(ip,jmfadh) = 0.d0
+         pepa(jfadh,ip) = 0.d0
+         pepa(jmfadh,ip) = 0.d0
 
-         itepa(ip,jnbasg) = 0
-         itepa(ip,jnbasp) = 0
+         ipepa(jnbasg,ip) = 0
+         ipepa(jnbasp,ip) = 0
 
-         tepa(ip,jndisp) = 0.d0
+         pepa(jndisp,ip) = 0.d0
 
-         vpart(1) = min(- 1.d0 / ettp(ip,jmp) * abs(drag(1) -  tepa(ip,jfadh)) * dtp, 1.d-3)
+         vpart(1) = min(- 1.d0 / eptp(jmp,ip) * abs(drag(1) -  pepa(jfadh,ip)) * dtp, 1.d-3)
          vpart(2) = 0.d0
          vpart(3) = 0.d0
 
          ! Update of the number and weight of resuspended particles
 
          nbpres = nbpres + 1
-         dnbres = dnbres + tepa(ip, jrpoi)
+         dnbres = dnbres + pepa( jrpoi,ip)
 
-         parbor(itepa(ip,jdfac),ires) = parbor(itepa(ip,jdfac),ires) + tepa(ip,jrpoi)
+         parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
 
-         parbor(itepa(ip,jdfac),iflres) = parbor(itepa(ip,jdfac),iflres) + tepa(ip,jrpoi)  &
-                       + ( tepa(ip,jrpoi) * ettp(ip,jmp) / surfbn(itepa(ip,jdfac)))
+         parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres) + pepa(jrpoi,ip)  &
+                       + ( pepa(jrpoi,ip) * eptp(jmp,ip) / surfbn(ipepa(jdfac,ip)))
 
-         parbor(itepa(ip,jdfac),iflm) = parbor(itepa(ip,jdfac),iflm)                       &
-                       - ( tepa(ip,jrpoi) * ettp(ip,jmp) / surfbn(itepa(ip,jdfac)))
+         parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                       &
+                       - ( pepa(jrpoi,ip) * eptp(jmp,ip) / surfbn(ipepa(jdfac,ip)))
 
 
          else  ! No direct normal lift-off
@@ -573,16 +573,16 @@ if (ireent.eq.1) then
 
          tordrg_norm = sqrt(tordrg(2)**2 + tordrg(3)**2)
 
-         adh_tor(2) = - tepa(ip,jmfadh) / tordrg_norm * tordrg(2)
-         adh_tor(3) = - tepa(ip,jmfadh) / tordrg_norm * tordrg(3)
+         adh_tor(2) = - pepa(jmfadh,ip) / tordrg_norm * tordrg(2)
+         adh_tor(3) = - pepa(jmfadh,ip) / tordrg_norm * tordrg(3)
 
          do id = 2,3
 
-            iner_tor = (7.d0/5.d0)*ettp(ip,jmp)*(ettp(ip,jdp) * 0.5d0)**2
+            iner_tor = (7.d0/5.d0)*eptp(jmp,ip)*(eptp(jdp,ip) * 0.5d0)**2
 
-            cst_4 = 6 * pi * visccf * romf * 1.7 * 1.4 * (ettp(ip,jdp) * 0.5d0)**2
+            cst_4 = 6 * pi * visccf * romf * 1.7 * 1.4 * (eptp(jdp,ip) * 0.5d0)**2
 
-            cst_1 = cst_4 * (ettp(ip,jdp) * 0.5d0) / iner_tor
+            cst_1 = cst_4 * (eptp(jdp,ip) * 0.5d0) / iner_tor
 
             vpart0(id) = vpart(id)
 
@@ -599,7 +599,7 @@ if (ireent.eq.1) then
             ! with the flow seen
             ! --> The particle starts or keep on rolling
 
-            itepa(ip,jdepo) = 2
+            ipepa(jdepo,ip) = 2
 
             vpart(1) = 0.0d0
 
@@ -626,7 +626,7 @@ if (ireent.eq.1) then
             ! The particle is not set into motion or stops
             ! the flag is set to  10 and velocity and displacement are null
 
-            itepa(ip,jdepo) = 10
+            ipepa(jdepo,ip) = 10
             do id = 2,3
                depl(id) = 0.d0
                vpart(id) = 0.d0
@@ -640,7 +640,7 @@ if (ireent.eq.1) then
 
 else  ! if ireent.eq.0 --> Motionless deposited particle
 
-   if (itepa(ip,jdepo).gt.0) then
+   if (ipepa(jdepo,ip).gt.0) then
 
       do id = 2,3
          vpart(id) = 0.d0
@@ -678,7 +678,7 @@ call lagprj                                                       &
 call lagprj                                                       &
 !==========
     ( isens          ,                                            &
-      ettp(ip,jup)   , ettp(ip,jvp)   , ettp(ip,jwp)   ,          &
+      eptp(jup,ip)   , eptp(jvp,ip)   , eptp(jwp,ip)   ,          &
       vpart(1)       , vpart(2)       , vpart(3)       ,          &
       dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,          &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,          &
@@ -691,7 +691,7 @@ call lagprj                                                       &
 call lagprj                                                       &
 !==========
     ( isens          ,                                            &
-      ettp(ip,juf)   , ettp(ip,jvf)   , ettp(ip,jwf)   ,          &
+      eptp(juf,ip)   , eptp(jvf,ip)   , eptp(jwf,ip)   ,          &
       vvue(1)        , vvue(2)        , vvue(3)        ,          &
       dlgeo(ifac, 5) , dlgeo(ifac, 6) , dlgeo(ifac, 7) ,          &
       dlgeo(ifac, 8) , dlgeo(ifac, 9) , dlgeo(ifac,10) ,          &
@@ -701,9 +701,9 @@ call lagprj                                                       &
 ! 5. Computation of the new particle position
 !===============================================================================
 
-   ettp(ip,jxp) = ettp(ip,jxp) + depg(1)
-   ettp(ip,jyp) = ettp(ip,jyp) + depg(2)
-   ettp(ip,jzp) = ettp(ip,jzp) + depg(3)
+   eptp(jxp,ip) = eptp(jxp,ip) + depg(1)
+   eptp(jyp,ip) = eptp(jyp,ip) + depg(2)
+   eptp(jzp,ip) = eptp(jzp,ip) + depg(3)
 
 
 !===============================================================================

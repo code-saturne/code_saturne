@@ -230,13 +230,13 @@ nbpmax = 1000000
 ! 5.1 Additional variables
 ! ------------------------
 
-! * these additional variables are stored in ettp and ettpa arrays
+! * these additional variables are stored in eptp and eptpa arrays
 ! * nvls is the number of additional variables
 ! * the upper limit is nusvar = 10 (fixed in block common lagpar.f90)
-! * one access to additional variables in ettp ettpa using the pointer jvls:
+! * one access to additional variables in eptp eptpa using the pointer jvls:
 
-! current step  -> ettp(nbpt,jvls(nvus))
-! previous step -> ettpa(nbpt,jvls(nvus))
+! current step  -> eptp(jvls(nvus),nbpt)
+! previous step -> eptpa(jvls(nvus),npbt)
 
 ! nbpt is the number of the considered particle
 !      (integer between 1 and nbpart),

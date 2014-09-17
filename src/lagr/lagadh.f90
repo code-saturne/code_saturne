@@ -24,9 +24,7 @@ subroutine lagadh &
 !================
 
  ( ip     ,                                                       &
-   nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
-   ettp   , tepa   , rtp , adhesion_energ)
+   rtp    , adhesion_energ)
 
 !===============================================================================
 
@@ -39,33 +37,20 @@ subroutine lagadh &
 
 !   Calculation of the adhesion force and adhesion energy
 !
-!
-!
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ip               ! i  ! <-- ! particle number                                !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! adhesion_energ   ! r  ! --> ! particle adhesion energy                       !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
 !===============================================================================
 
 
@@ -95,10 +80,7 @@ implicit none
 ! Arguments
 
 integer          ip
-integer          nbpmax , nvp    , nvep  , nivep
-integer          itepa(nbpmax,nivep)
 
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision rtp (ncelet,nflown:nvar)
 double precision adhesion_energ
 
@@ -133,7 +115,7 @@ scovag = pi * rayasg**2 / espasg**2
 ! Determination of the temperature
 
 
-  iel = itepa(ip,jisor)
+  iel = ipepa(jisor,ip)
 
   if (iscalt.gt.0) then
     if (itherm.eq.1) then
@@ -161,18 +143,18 @@ scovag = pi * rayasg**2 / espasg**2
 
 ! Number of large-scale asperities
 
-rpart = 0.5d0 * ettp(ip,jdp)
+rpart = 0.5d0 * eptp(jdp,ip)
 
 nmoyag = (2.0d0 * rpart + rayasg) / rayasg * scovag
 
 if (nmoyag.gt.600.d0) then
-   itepa(ip,jnbasg) = ceiling(nmoyag)
+   ipepa(jnbasg,ip) = ceiling(nmoyag)
 else
-   call fische(1, nmoyag, itepa(ip,jnbasg))
+   call fische1(nmoyag, ipepa(jnbasg,ip))
 endif
 
 
-if (itepa(ip,jnbasg).gt.1) then
+if (ipepa(jnbasg,ip).gt.1) then
 
    nmoyag = 1 + 2.0d0 * dcutof*(2.0d0*rpart + 2.0d0 * rayasg+4.0d0*dcutof)       &
         / rayasg**2 * scovag
@@ -187,7 +169,7 @@ if (itepa(ip,jnbasg).gt.1) then
    nbasg = max(1,nbasg)
 
 else
-   nbasg = itepa(ip,jnbasg)
+   nbasg = ipepa(jnbasg,ip)
 endif
 
 ! Nb of small-scale asperities : 1st case: no large-scale asperities
@@ -197,12 +179,12 @@ if (nbasg.eq.0) then
    nmoyap = (2.0d0 * rpart + rayasp) / rayasp * scovap
 
    if (nmoyap.gt.600.d0) then
-      itepa(ip,jnbasp)   = ceiling(nmoyap)
+      ipepa(jnbasp,ip)   = ceiling(nmoyap)
    else
-      call fische(1, nmoyap, itepa(ip,jnbasp))
+      call fische1(nmoyap, ipepa(jnbasp,ip))
    endif
 
-   if (itepa(ip,jnbasp).gt.1) then
+   if (ipepa(jnbasp,ip).gt.1) then
 
       nmoyap = 1 + 2.0d0*dcutof*(2.0d0*rpart+2.0d0*rayasp+4.0d0*dcutof)    &
            / rayasp**2 * scovap
@@ -216,11 +198,11 @@ if (nbasg.eq.0) then
       nbasp = max(1,nbasp)
 
    else
-      nbasp = itepa(ip,jnbasp)
+      nbasp = ipepa(jnbasp,ip)
    endif
 
    ! Determination of the minimal distance between the particle and the plate
-   dismin = rayasp * min(1.0d0,itepa(ip,jnbasp)*1.0d0)
+   dismin = rayasp * min(1.0d0,ipepa(jnbasp,ip)*1.0d0)
 
    ! 2nd case: contact with large-scale asperities
 
@@ -231,13 +213,13 @@ else
    nmoyap = paramh*(2*rayasg-paramh) / rayasp**2 * scovap
 
    if (nmoyap.gt.600.d0) then
-      itepa(ip,jnbasp)   = ceiling(nmoyap)
+      ipepa(jnbasp,ip)   = ceiling(nmoyap)
    else
-      call fische(1, nmoyap, itepa(ip,jnbasp))
+      call fische1(nmoyap, ipepa(jnbasp,ip))
    endif
 
 
-   if (itepa(ip,jnbasp).gt.1) then
+   if (ipepa(jnbasp,ip).gt.1) then
 
       paramh = 0.5d0*(2.0d0*rpart+2*rayasp+4.0d0*dcutof)*2.0d0*dcutof     &
            / (rpart+rayasg+rayasp+dcutof)
@@ -252,19 +234,19 @@ else
       endif
       nbasp = max(1,nbasp)
    else
-      nbasp = itepa(ip,jnbasp)
+      nbasp = ipepa(jnbasp,ip)
    endif
 
    ! Mutliple contacts with large scale asperities?
 
    nbasp = nbasp * nbasg
-   itepa(ip,jnbasp) = itepa(ip,jnbasp)*itepa(ip,jnbasg)
+   ipepa(jnbasp,ip) = ipepa(jnbasp,ip)*ipepa(jnbasg,ip)
 
    ! Determination of the minimal distance between the particle and the plate
    dismin = rayasp * min(1.0d0,nbasp*1.0d0)                  &
         + rayasg * min(1.0d0,nbasg*1.0d0)
 
-endif ! End of determination of itepa(ip,jnbasp) and itepa(ip,jnbasg)
+endif ! End of determination of ipepa(jnbasp,ip) and ipepa(jnbasg,ip)
 
 
 ! Sum of {particle-plane} and {particle-asperity} energies
@@ -325,9 +307,9 @@ adhesion_energ = adhesion_energ + udlvor(1) * nbasg
 ! The force is negative when it is attractive
 
 if (fadhes.ge.0.0d0) then
-   tepa(ip,jfadh) = 0.0d0
+   pepa(jfadh,ip) = 0.0d0
 else
-   tepa(ip,jfadh) = - fadhes
+   pepa(jfadh,ip) = - fadhes
 endif
 
 ! The interaction should be negative to prevent reentrainment (attraction)
@@ -358,7 +340,7 @@ else
 
 endif
 
-tepa(ip,jmfadh) = tepa(ip,jfadh)*dismom
+pepa(jmfadh,ip) = pepa(jfadh,ip)*dismom
 
 
 end subroutine lagadh

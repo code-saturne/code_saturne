@@ -2817,7 +2817,7 @@ with a negative sign}
 the first face surrounding every cell in the array \texttt{icocel} (see subroutine
 \texttt{lagdeb} for more details)}
 
-\variablist{ettp}{ettp(nbpmax,nvp)}{ra}
+\variablist{eptp}{eptp(nvp,nbpmax)}{ra}
 {Variables forming the state vector related to the particles: either at
 the current stage if the Lagrangian scheme is a second-order, or at the
 current time step if the scheme is a first-order. These variables are
@@ -2839,12 +2839,12 @@ marked out by ``pointers'' whose value can vary between 1 and \texttt{nvp}:
 \end{list}
 }
 
-\variab{ettpa}{ettpa(nbpmax,nvp)}{ra}{Variables forming the state vector
+\variab{eptpa}{eptpa(nvp,nbpmax)}{ra}{Variables forming the state vector
 related to the particles: either at the previous stage if the Lagrangian
 scheme is a second-order, or at the previous time step if the Lagrangian
 scheme is a first-order}
 
-\variablist{itepa}{itepa(nbpmax,nivep)}{ia}{Integer variables
+\variablist{ipepa}{ipepa(nivep,nbpmax)}{ia}{Integer variables
 related to the particles. They are marked out by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{jisor}: Number of the current cell containing the particle; this
@@ -2853,7 +2853,7 @@ related to the particles. They are marked out by the following ``pointers'':
 \end{list}
 }
 
-\variablist{tepa}{tepa(nbpmax,nvep)}{ra}{Real variables
+\variablist{pepa}{pepa(nvep,nbpmax)}{ra}{Real variables
 related to the particles. They are marked out by the following ``pointers'':
 \begin{list}{$\rightarrow$}{}
 \item \texttt{jrtsp}: particle residence time
@@ -2872,7 +2872,7 @@ modified during the iteration}
 trajectography, \texttt{vitpar} contains the particle velocity vector components;
 the modifications of the particle velocity following every
 particle/boundary interaction are saved in this array; after the
-trajectography and backward coupling steps, \texttt{ettp} is updated with
+trajectography and backward coupling steps, \texttt{eptp} is updated with
 \texttt{vitpar}}
 
 \variab{vitflu}{vitflu(nbpmax,3)}{ra}{At the beginning of the
@@ -2881,7 +2881,7 @@ velocity vector components;
 the modifications of the locally undisturbed fluid flow velocity
 following every
 particle/boundary interaction are saved in this array; after the
-trajectography and backward coupling steps, \texttt{ettp} is updated with
+trajectography and backward coupling steps, \texttt{eptp} is updated with
 \texttt{vitflu}}
 
 \variab{gradpr}{gradpr(ncelet,3)}{ra}{Pressure gradient of the
@@ -7655,7 +7655,7 @@ be provided for each class \texttt{iclas} and each particle injection zone
 
 \item \texttt{ruslag(iclas,izone,idebt)}: allows to impose a particle mass
       flow. According to the number of injected particles, the particle
-      statistical weight \texttt{tepa(npt,jrpoi)} is recalculated in order to
+      statistical weight \texttt{pepa(jrpoi,npt)} is recalculated in order to
       respect the required mass flow (the number of injected particles
       does not change). When the mass flow is null, it is not taken into
       account.
@@ -7735,10 +7735,10 @@ In this section, some information is provided for a more advanced numerical set-
 %==================================
 
 \noindent
-The user subroutine \texttt{uslain} can be used to complete \texttt{uslag2} when the particles must be injected in the domain according to fine constraints (profile, position, ...): the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa} can be modified here for the new particles (these arrays were previously completed automatically by the code from the data provided by the user in \texttt{uslag2}).
+The user subroutine \texttt{uslain} can be used to complete \texttt{uslag2} when the particles must be injected in the domain according to fine constraints (profile, position, ...): the arrays \texttt{eptp}, \texttt{pepa} and \texttt{ipepa} can be modified here for the new particles (these arrays were previously completed automatically by the code from the data provided by the user in \texttt{uslag2}).
 
 \noindent
-In the case of a more advanced use, it is possible to modify here all the arrays \texttt{ettp}, \texttt{tepa} and \texttt{itepa}. The particles already present in the calculation domain are marked out by an index varying between 1 and \texttt{nbpart}. The particles entering the calculation domain at the current iteration are marked out by an index varying between \texttt{nbpart}+1 and \texttt{nbpnew}.
+In the case of a more advanced use, it is possible to modify here all the arrays \texttt{eptp}, \texttt{pepa} and \texttt{ipepa}. The particles already present in the calculation domain are marked out by an index varying between 1 and \texttt{nbpart}. The particles entering the calculation domain at the current iteration are marked out by an index varying between \texttt{nbpart}+1 and \texttt{nbpnew}.
 
 % --> to go to theory guide
 %--------------------------
@@ -7800,8 +7800,8 @@ therefore provided.
 
 \noindent
 An intervention in the \texttt{uslaed} subroutine is required if supplementary user
-variables are added to the particle state vector (arrays \texttt{ettp}
-and \texttt{ettpa}). This subroutine is called at each Lagrangian sub-step.
+variables are added to the particle state vector (arrays \texttt{eptp}
+and \texttt{eptpa}). This subroutine is called at each Lagrangian sub-step.
 
 \noindent
 The integration of the stochastic differential equations associated with
@@ -7818,11 +7818,11 @@ form:
 \frac{d \Phi_p}{dt} \,=\, - \frac{\Phi_p - \Pi}{\tau_\phi}
 \end{displaymath}
 where $\Phi_p$ is the I\textit{th} supplementary user variable (\texttt{nvls} in
-total) available in \texttt{ettp(nbpmax, jvls(i))} and in
- \texttt{ettpa(nbpmax,jvls(i))},
+total) available in \texttt{eptp(jvls(i),nbpmax)} and in
+ \texttt{eptpa(jvls(i),nbpmax)},
 $\tau_\phi$ is a quantity homogeneous to a characteristic time, and $\Pi$ is
 a coefficient which may be expressed as a function of the other
-particulate variables contained in \texttt{ettp} and \texttt{ettpa}. \\
+particulate variables contained in \texttt{eptp} and \texttt{eptpa}. \\
 In order to do the integration of this equation, the following
 parameters must be provided:
 \begin{list}{-}{}
@@ -7831,12 +7831,12 @@ parameters must be provided:
 \item $\Pi$ , equation coefficient, in the array \texttt{auxl2}. If the
       integration scheme is a first-order, then $\Pi$ is expressed as a
       function of the particulate variables at the previous iteration,
-      stored in the array \texttt{ettpa}. If the chosen scheme is a second-order,
+      stored in the array \texttt{eptpa}. If the chosen scheme is a second-order,
       then $\Pi$ is expressed at the first call of the subroutine
       (prediction step \texttt{nor} = 1) as a function of the variables at the
-      previous iteration (stored in \texttt{ettpa}), then at the second call
+      previous iteration (stored in \texttt{eptpa}), then at the second call
       (correction step \texttt{nor} = 2) as a function of the predicted variables
-      stored in the array \texttt{ettp}.
+      stored in the array \texttt{eptp}.
 \end{list}
 
 \noindent

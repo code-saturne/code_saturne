@@ -32,6 +32,8 @@ module lagran
   !                            lagdim qui porte les dimensions variables
   !                            lagpar qui porte les parametres
 
+  use, intrinsic :: iso_c_binding
+
   use lagpar
 
   implicit none
@@ -94,13 +96,13 @@ module lagran
   !> number of particles treated during one Lagrangian time step,
   !> must always be lower than \ref nbpmax.
   !> Always useful, but initialised and updated without intervention of the user
-  integer, save ::           nbpart
+  integer(c_int), pointer, save :: nbpart
 
   !> number of new entering particles
   integer, save ::           nbpnew
 
   !> number of in error deleted particles
-  integer, save ::           nbperr
+  integer(c_int), pointer, save :: nbperr
 
   !> total number of injected particles, since the beginning,
   !> including calculation restarts
@@ -108,7 +110,7 @@ module lagran
 
   !> contains normally exited particles
   !> and  in detection error exited particles
-  integer, save ::           nbpout
+  integer(c_int), pointer, save :: nbpout
 
   ! TODO
   integer, save ::           nbpert
@@ -118,25 +120,25 @@ module lagran
   integer, save ::           ndepot
 
   !> number of deposed particles
-  integer, save ::           nbpdep
+  integer(c_int), pointer, save :: nbpdep
 
   !> number of re-entrained particles
   integer, save ::           nbpres
 
   !> real value for \ref nbpart
-  double precision, save ::  dnbpar
+  real(c_double), pointer, save :: dnbpar
 
   !> real value for \ref nbpnew
   double precision, save ::  dnbpnw
 
   !> real value for \ref nbperr
-  double precision, save ::  dnbper
+  real(c_double), pointer, save :: dnbper
 
   !> real value for \ref nbpout
-  double precision, save ::  dnbpou
+  real(c_double), pointer, save :: dnbpou
 
   !> real value for \ref nbpdep
-  double precision, save ::  dnbdep
+  real(c_double), pointer, save :: dnbdep
 
   !> real value for nbres
   double precision, save ::  dnbres
@@ -248,15 +250,15 @@ module lagran
   integer ngeol
   parameter (ngeol = 13)
 
-  !> Additional pointer in the ITEPA array (contains the particule state)
+  !> Additional pointer in the IPEPA array (contains the particule state)
   integer, save ::   jimark
-  !> Additional pointer in the ITEPA array (contains the particule state)
+  !> Additional pointer in the IPEPA array (contains the particule state)
   integer, save ::   jdfac
-  !> Additional pointer in the ITEPA array (contains the particule state)
+  !> Additional pointer in the IPEPA array (contains the particule state)
   integer, save ::   jryplu
-  !> Additional pointer in the ITEPA array (contains the particule state)
+  !> Additional pointer in the IPEPA array (contains the particule state)
   integer, save ::   jrinpf
-  !> Additional pointer in the ITEPA array (contains the particule state)
+  !> Additional pointer in the IPEPA array (contains the particule state)
   integer, save ::   jord1
 
   !> \}
@@ -276,19 +278,19 @@ module lagran
   !> - 1: DLVO conditions with roughness surface
   integer, save ::     irough
 
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jroll
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jnbasg
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jnbasp
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jdepo
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jfadh
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jmfadh
-  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jndisp
 
   !> Parameter of the particle resuspension model
@@ -360,100 +362,100 @@ module lagran
   !=============================================================================
 
   !> \defgroup particles_pointer Particles pointers
-  !> for array \ref ettp
+  !> for array \ref eptp
 
   !> \addtogroup particles_pointer
   !> \{
 
-  !> pointer to particle X coordinate for array \ref ettp
+  !> pointer to particle X coordinate for pointer \ref eptp
   integer, save ::  jxp
-  !> pointer to particle Y coordinate for array \ref ettp
+  !> pointer to particle Y coordinate for pointer \ref eptp
   integer, save ::  jyp
-  !> pointer to particle Z coordinate for array \ref ettp
+  !> pointer to particle Z coordinate for pointer \ref eptp
   integer, save ::  jzp
-  !> pointer to particle X velocity component for array \ref ettp
+  !> pointer to particle X velocity component for pointer \ref eptp
   integer, save ::  jup
-  !> pointer to particle Y velocity component for array \ref ettp
+  !> pointer to particle Y velocity component for pointer \ref eptp
   integer, save ::  jvp
-  !> pointer to particle Z velocity component for array \ref ettp
+  !> pointer to particle Z velocity component for pointer \ref eptp
   integer, save ::  jwp
   !> pointer to locally undisturbed X fluid velocity component
-  !> for array \ref ettp
+  !> for pointer \ref eptp
   integer, save ::  juf
   !> pointer to locally undisturbed Y fluid velocity component
-  !> for array \ref ettp
+  !> for pointer \ref eptp
   integer, save ::  jvf
   !> pointer to locally undisturbed Z fluid velocity component
-  !> for array \ref ettp
+  !> for pointer \ref eptp
   integer, save ::  jwf
-  !> pointer to particle mass for array \ref ettp
+  !> pointer to particle mass for pointer \ref eptp
   integer, save ::  jmp
-  !> pointer to particle diameter for array \ref ettp
+  !> pointer to particle diameter for pointer \ref eptp
   integer, save ::  jdp
   !> pointer to particle and locally undisturbed fluid flow temperature
-  !> (Celsius) for array \ref ettp
+  !> (Celsius) for pointer \ref eptp
   integer, save ::  jtp
   !> pointer to particle and locally undisturbed fluid flow temperature
-  !> (Celsius) for array \ref ettp
+  !> (Celsius) for pointer \ref eptp
   integer, save ::  jtf
-  !> pointer to particle specific heat for array \ref ettp
+  !> pointer to particle specific heat for pointer \ref eptp
   integer, save ::  jcp
-  !> pointer to coal particle temperature (\f$K\f$) for array \ref ettp
+  !> pointer to coal particle temperature (\f$K\f$) for pointer \ref eptp
   integer, save ::  jhp(nlayer)
-  !> pointer to water mass (for coal) for array \ref ettp
+  !> pointer to water mass (for coal) for pointer \ref eptp
   integer, save ::  jmwat
-  !> pointer to mass of reactive coal of the coal particle for array \ref ettp
+  !> pointer to mass of reactive coal of the coal particle for pointer \ref eptp
   integer, save ::  jmch(nlayer)
-  !> pointer to mass of coke of the coal particle for array \ref ettp
+  !> pointer to mass of coke of the coal particle for pointer \ref eptp
   integer, save ::  jmck(nlayer)
-  !> pointer to work array for the second order in time for array \ref ettp
+  !> pointer to work array for the second order in time for pointer \ref eptp
   integer, save ::  jtaux
-  !> pointer to additional user variable for array \ref ettp
+  !> pointer to additional user variable for pointer \ref eptp
   integer, save ::  jvls(nusvar)
 
   !> pointer to random number associated with a particle
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jrval
   !> pointer to particle residence time
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jrtsp
   !> pointer to particle statistic weight
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jrpoi
   !> pointer to particle emissivity
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jreps
   !> pointer to coal particle initial diameter
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jrd0p
   !> pointer to coal particle shrinking core diameter
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jrdck
   !> pointer to coal density
-  !> for array \ref tepa
+  !> for array \ref pepa
   integer, save :: jrhock(nlayer)
 
   !> pointer to number of the current cell containing the particle
-  !> for \ref itepa array; this
+  !> for \ref ipepa array; this
   !> number is re-actualised during the trajectography step
   integer, save :: jisor
   !> pointer to number of the previous cell containing the particle
-  !> for \ref itepa array
+  !> for \ref ipepa array
   integer, save :: jisora
   !> pointer to number of the previous rank containing the particle
-  !> for \ref itepa array
+  !> for \ref ipepa array
   integer, save :: jirka
-  !> pointer to number of the coal particle for \ref itepa array
+  !> pointer to number of the coal particle for \ref ipepa array
   integer, save :: jinch
-  !> pointer to class of the particle for \ref itepa array
+  !> pointer to class of the particle for \ref ipepa array
   integer, save :: jclst
 
   !> pointer to number of additional variables related to the particles
-  !> for \ref itepa array.
+  !> for \ref ipepa array.
   !> The additional variables can be accessed in the arrays
-  !> \ref ettp and \ref ettpa by means of the
-  !> pointer \ref jvls:  \ref ettp(nbpt,jvls(ii)) and
-  !> \ref ettpa(nbpt,jvls(ii)) (\ref nbpt is
+  !> \ref eptp and \ref eptpa by means of the
+  !> pointer \ref jvls:  \ref eptp(nbpt,jvls(ii)) and
+  !> \ref eptpa(nbpt,jvls(ii)) (\ref nbpt is
   !> the index-number of the treated particle, and \ref ii an integer
   !> between 1 and \ref nvls)
   integer, save ::           nvls
@@ -945,7 +947,7 @@ module lagran
   integer, save ::  iencra
 
   !> encrustation data
-  integer, save ::  npencr
+  integer(c_int), pointer, save :: npencr
 
   !> encrustation data
   double precision, save ::  enc1(ncharm2)
@@ -964,7 +966,7 @@ module lagran
   double precision, save ::  visref(ncharm2)
 
   !> encrustation data
-  double precision, save ::  dnpenc
+  real(c_double), pointer, save :: dnpenc
 
   !> \}
 
@@ -1308,13 +1310,46 @@ module lagran
 
     ! Interface to C function returning particle attribute pointers
     subroutine cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa,    &
-                                  p_ipepa, p_pepa, p_eptp, p_eptpa)            &
+                                  p_ipepa, p_pepa, p_eptp, p_eptpa,            &
+                                  p_nbpart, p_dnbpar, p_nbpout, p_dnbpou,      &
+                                  p_nbperr, p_dnbper, p_nbpdep, p_dnbdep,      &
+                                  p_npencr, p_dnpenc)                          &
       bind(C, name='cs_f_lagr_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(2) :: dim_ipepa, dim_pepa, dim_eptp, dim_eptpa
       type(c_ptr), intent(out)     :: p_ipepa, p_pepa, p_eptp, p_eptpa
+      type(c_ptr), intent(out)     :: p_nbpart, p_dnbpar, p_nbpout, p_dnbpou
+      type(c_ptr), intent(out)     :: p_nbperr, p_dnbper, p_nbpdep, p_dnbdep
+      type(c_ptr), intent(out)     :: p_npencr, p_dnpenc
     end subroutine cs_f_lagr_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Copy attributes from one particle to another.
+
+    !> \param[in]  dest  number of particle to copy to
+    !> \param[in]  src   number of particle to copy from
+
+    subroutine lagr_part_copy(dest, src)                                       &
+      bind(C, name='cs_f_lagr_part_copy')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: dest, src
+    end subroutine lagr_part_copy
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Copy current attributes to previous attributes.
+
+    !> \param[in]  pn  associated particle number (1-based)
+
+    subroutine lagr_current_to_previous(pn)                                    &
+      bind(C, name='cs_f_lagr_current_to_previous')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: pn
+    end subroutine lagr_current_to_previous
 
     !---------------------------------------------------------------------------
 
@@ -1609,15 +1644,31 @@ contains
 
     integer(c_int), dimension(2) :: dim_ipepa, dim_pepa, dim_eptp, dim_eptpa
     type(c_ptr) :: p_ipepa, p_pepa, p_eptp, p_eptpa
-    type(c_ptr) :: p1, p2, p3, p4
+    type(c_ptr) :: p_nbpart, p_dnbpar, p_nbpout, p_dnbpou
+    type(c_ptr) :: p_nbperr, p_dnbper, p_nbpdep, p_dnbdep
+    type(c_ptr) :: p_npencr, p_dnpenc
 
     call cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa, &
-                            p_ipepa, p_pepa, p_eptp, p_eptpa)
+                            p_ipepa, p_pepa, p_eptp, p_eptpa,         &
+                            p_nbpart, p_dnbpar, p_nbpout, p_dnbpou,   &
+                            p_nbperr, p_dnbper, p_nbpdep, p_dnbdep,   &
+                            p_npencr, p_dnpenc)
 
     call c_f_pointer(p_ipepa, ipepa, [dim_ipepa(1), dim_ipepa(2)])
     call c_f_pointer(p_pepa,  pepa,  [dim_pepa(1),  dim_pepa(2)])
     call c_f_pointer(p_eptp,  eptp,  [dim_eptp(1),  dim_eptp(2)])
     call c_f_pointer(p_eptpa, eptpa, [dim_eptpa(1), dim_eptpa(2)])
+
+    call c_f_pointer(p_nbpart, nbpart)
+    call c_f_pointer(p_dnbpar, dnbpar)
+    call c_f_pointer(p_nbpout, nbpout)
+    call c_f_pointer(p_dnbpou, dnbpou)
+    call c_f_pointer(p_nbperr, nbperr)
+    call c_f_pointer(p_dnbper, dnbper)
+    call c_f_pointer(p_nbpdep, nbpdep)
+    call c_f_pointer(p_dnbdep, dnbdep)
+    call c_f_pointer(p_npencr, npencr)
+    call c_f_pointer(p_dnpenc, dnpenc)
 
   end subroutine lagr_update_pointers
 

@@ -355,17 +355,9 @@ module pointe
   !> \addtogroup lag_arrays
   !> \{
 
-  integer, pointer, dimension(:,:) :: itepa => null()
   integer, allocatable, dimension(:) :: icocel, itycel
   integer, allocatable, dimension(:) :: ifrlag
 
-  !> \anchor ettp
-  double precision, pointer, dimension(:,:) :: ettp => null()
-  !> \anchor ettpa
-  double precision, pointer, dimension(:,:) :: ettpa => null()
-  !> \anchor tepa
-  double precision, pointer, dimension(:,:) :: tepa => null()
-  !> \anchor statis
   double precision, pointer, dimension(:,:) :: statis => null()
   !> \anchor parbor
   double precision, pointer, dimension(:,:) :: parbor => null()

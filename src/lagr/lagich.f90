@@ -23,9 +23,7 @@
 subroutine lagich &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                &
-   itepa  , propce , ettp   , ettpa  ,                         &
-   tepa   , tempct , tsvar  , cpgd1  , cpgd2  ,                &
+ ( propce , tempct , tsvar  , cpgd1  , cpgd2  ,                &
    cpght                                         )
 
 !===============================================================================
@@ -49,20 +47,7 @@ subroutine lagich &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
@@ -89,6 +74,7 @@ use cstphy
 use cstnum
 use optcal
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -105,13 +91,7 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1 , nvep , nivep
-
-integer          itepa(nbpmax,nivep)
-
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
@@ -192,22 +172,22 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 ! 3. Boucle principale sur l'ensemble des particules
 !===============================================================================
 do npt = 1,nbpart
-  if (itepa(npt,jisor).gt.0) then
+  if (ipepa(jisor,npt).gt.0) then
 
     ! Variables generiques
-    iel  = itepa(npt,jisor)
-    icha = itepa(npt,jinch)
-    volume_couche = dpis6 * (tepa(npt,jrd0p)**3) / float(nlayer)
+    iel  = ipepa(jisor,npt)
+    icha = ipepa(jinch,npt)
+    volume_couche = dpis6 * (pepa(jrd0p,npt)**3) / float(nlayer)
 
     ! Calcul du Reynolds
-    aux1 = sqrt( ( ettp(npt,juf) -ettp(npt,jup) )*                             &
-                 ( ettp(npt,juf) -ettp(npt,jup) )                              &
-               + ( ettp(npt,jvf) -ettp(npt,jvp) )*                             &
-                 ( ettp(npt,jvf) -ettp(npt,jvp) )                              &
-               + ( ettp(npt,jwf) -ettp(npt,jwp) )*                             &
-                 ( ettp(npt,jwf) -ettp(npt,jwp) )  )
+    aux1 = sqrt( ( eptp(juf,npt) -eptp(jup,npt) )*                             &
+                 ( eptp(juf,npt) -eptp(jup,npt) )                              &
+               + ( eptp(jvf,npt) -eptp(jvp,npt) )*                             &
+                 ( eptp(jvf,npt) -eptp(jvp,npt) )                              &
+               + ( eptp(jwf,npt) -eptp(jwp,npt) )*                             &
+                 ( eptp(jwf,npt) -eptp(jwp,npt) )  )
     xnul = viscl(iel) / cromf(iel)
-    rep  = aux1 * ettp(npt,jdp) / xnul
+    rep  = aux1 * eptp(jdp,npt) / xnul
 
     ! Calcul du Prandtl et du Sherwood
     if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
@@ -222,14 +202,14 @@ do npt = 1,nbpart
 
     ! Calcul des rayons de discrétisation
     do ilayer = 1, nlayer
-      rayon(ilayer)=(((tepa(npt,jrd0p)/2.0d0)**3)                              &
+      rayon(ilayer)=(((pepa(jrd0p,npt)/2.0d0)**3)                              &
                       *(float(ilayer)/float(nlayer)))**(1.d0/3.d0)
     enddo
-    mp0  = dpis6 * (tepa(npt,jrd0p)**3) * rho0ch(icha)
+    mp0  = dpis6 * (pepa(jrd0p,npt)**3) * rho0ch(icha)
     mwat_max = xwatch(icha)*mp0/float(nlayer)
 
     ! Calcul de la quantité d'eau sur chaque couche
-    aux1 = ettp(npt,jmwat)
+    aux1 = eptp(jmwat,npt)
     do ilayer = 1, nlayer
       if (ilayer.eq.nlayer) then
         mwater(ilayer)=max(0.0d0,aux1)
@@ -243,8 +223,8 @@ do npt = 1,nbpart
     do ilayer = 1, nlayer
       mlayer(ilayer) = xashch(icha)*mp0/float(nlayer)                          &
                       +mwater(ilayer)                                          &
-                      +ettp(npt,jmch(ilayer))                                  &
-                      +ettp(npt,jmck(ilayer))
+                      +eptp(jmch(ilayer),npt)                                  &
+                      +eptp(jmck(ilayer),npt)
     enddo
 
 
@@ -257,9 +237,8 @@ do npt = 1,nbpart
     ! --- Calcul du flux de vapeur pour la particule
     call lagsec                                                                &
     !==========
-    ( nbpmax, nvp    , nvp1   , nvep     , nivep ,                             &
-      npt   ,                                                                  &
-      itepa , propce , ettp   , ettpa    , tepa  , tempct , tsvar ,            &
+    ( npt   ,                                                                  &
+      propce , tempct , tsvar ,                                                &
       rayon , mlayer , mwater , mwat_max , volume_couche  , sherw , fwat   )
 
 
@@ -271,12 +250,12 @@ do npt = 1,nbpart
     !     RR --> Constante des gaz parfaits en J/mol/K
     do ilayer = 1, nlayer
 
-      aux1 = 1.d0 / (rr*ettp(npt,jhp(ilayer)))
+      aux1 = 1.d0 / (rr*eptp(jhp(ilayer),npt))
       skp1(ilayer) = a1ch(icha) * exp( -e1ch(icha) * aux1)
       skp2(ilayer) = a2ch(icha) * exp( -e2ch(icha) * aux1)
 
-      aux1 = skp1(ilayer) * y1ch(icha) * ettp(npt,jmch(ilayer))
-      aux2 = skp2(ilayer) * y2ch(icha) * ettp(npt,jmch(ilayer))
+      aux1 = skp1(ilayer) * y1ch(icha) * eptp(jmch(ilayer),npt)
+      aux2 = skp2(ilayer) * y2ch(icha) * eptp(jmch(ilayer),npt)
 
       ! --- Couplage retour thermique
       if ( ltsthe.eq.1 ) then
@@ -295,14 +274,14 @@ do npt = 1,nbpart
     ! On repere la couche avec du ch la plus externe
     ilayer_het = 1
     do ilayer = 1 , nlayer
-      if (ettpa(npt,jmch(ilayer)).gt.0.0d0 ) then
+      if (eptpa(jmch(ilayer),npt).gt.0.0d0 ) then
         ilayer_het = ilayer
       endif
     enddo
 
     ! On verifie cherche s'il reste du ck sur une couche plus externe
     do ilayer = ilayer_het , nlayer
-      if (ettpa(npt,jmck(ilayer)).gt.0.0d0 ) then
+      if (eptpa(jmck(ilayer),npt).gt.0.0d0 ) then
         ilayer_het = ilayer
       endif
     enddo
@@ -312,15 +291,15 @@ do npt = 1,nbpart
     ! Conversion (kcal/mol -> J/mol)
     aux1 = ehetch(icha) * 1.0d3 * xcal2j
     aux2 = ahetch(icha)                                                      &
-      * exp(- aux1 / (rr*ettp(npt,jhp(ilayer_het))) )
+      * exp(- aux1 / (rr*eptp(jhp(ilayer_het),npt)) )
 
     ! --- Coefficient de diffusion en  (Kg/m2/s/atm) et constante
     !     globale de reaction
-    if ( tepa(npt,jrdck).gt.precis ) then
+    if ( pepa(jrdck,npt).gt.precis ) then
       ! La constante 2.53d-7 est expliquée dans le tome 5 du rapport sur les
       ! physiques particulières de Code_Saturne (HI-81/04/003/A) équation 80
       aux3 = sherw * 2.53d-7 * (propce(iel,ipproc(itemp1))**0.75d0)           &
-                             / tepa(npt,jrdck)
+                             / pepa(jrdck,npt)
       skglob = (aux2*aux3) / (aux2+aux3)
     else
       skglob = aux2
@@ -338,10 +317,10 @@ do npt = 1,nbpart
          * propce(iel,ipproc(iym1(io2))) / wmole(io2) / prefth
 
     ! --- Calcul de surface efficace : SE
-    aux2 =  pi * (1.0d0-xashch(icha)) * tepa(npt,jrdck)**2
+    aux2 =  pi * (1.0d0-xashch(icha)) * pepa(jrdck,npt)**2
 
     ! --- Pas de combustion heterogene si Mch/Mp >= 1.D-3
-    if ( ettpa(npt,jmch(1)).ge.(1.d-3*mlayer(1)) ) then
+    if ( eptpa(jmch(1),npt).ge.(1.d-3*mlayer(1)) ) then
       gamhet = 0.d0
     else
       ! --- Calcul de la GamHET
@@ -360,7 +339,7 @@ do npt = 1,nbpart
     ! --- Calcul de Hc(Tp)-Mco/Mc Hco2(Tp)+0.5Mo2/Mc Ho2(Tf)
 
     !        Calcul de Hcoke(TP)
-    aux1 = h02ch(icha) + ettp(npt,jcp)*(ettp(npt,jhp(ilayer_het))-trefth)
+    aux1 = h02ch(icha) + eptp(jcp,npt)*(eptp(jhp(ilayer_het),npt)-trefth)
 
     !        Calcul de MCO/MC HCO(TP)
     do iii = 1, ngazem
@@ -373,7 +352,7 @@ do npt = 1,nbpart
       f2mc(iii) = zero
     enddo
     mode      = -1
-    call cpthp1 ( mode , aux2 , coefe  , f1mc , f2mc ,  ettp(npt,jhp(ilayer_het)) )
+    call cpthp1 ( mode , aux2 , coefe  , f1mc , f2mc ,  eptp(jhp(ilayer_het),npt) )
     !==========
 
     !        Calcul de MO2/MC/2. HO2(TF)
@@ -387,7 +366,7 @@ do npt = 1,nbpart
       f2mc(iii) = zero
     enddo
     mode      = -1
-    aux3      = ettp(npt,jtf) + tkelvi
+    aux3      = eptp(jtf,npt) + tkelvi
     call cpthp1 ( mode  , aux4 , coefe , f1mc  , f2mc , aux3 )
     !==========
 
@@ -403,11 +382,11 @@ do npt = 1,nbpart
       do ilayer = 1, nlayer
         aux1 = aux1 + fwat(ilayer)*dtp
       enddo
-      ettp(npt,jmwat) = ettpa(npt,jmwat)-aux1
+      eptp(jmwat,npt) = eptpa(jmwat,npt)-aux1
 
       ! Clipping
-      if ( ettp(npt,jmwat).lt.precis ) then
-        ettp(npt,jmwat) = 0.d0
+      if ( eptp(jmwat,npt).lt.precis ) then
+        eptp(jmwat,npt) = 0.d0
       endif
 
     else if (nor.eq.2) then
@@ -415,11 +394,11 @@ do npt = 1,nbpart
       do ilayer = 1, nlayer
         aux1 = aux1 + fwat(ilayer)*dtp
       enddo
-      ettp(npt,jmwat) = 0.5d0 * ( ettp(npt,jmwat)+ettpa(npt,jmwat)-aux1 )
+      eptp(jmwat,npt) = 0.5d0 * ( eptp(jmwat,npt)+eptpa(jmwat,npt)-aux1 )
 
       ! Clipping
-      if ( ettp(npt,jmwat).lt.precis ) then
-        ettp(npt,jmwat) = 0.d0
+      if ( eptp(jmwat,npt).lt.precis ) then
+        eptp(jmwat,npt) = 0.d0
       endif
 
     endif
@@ -432,23 +411,23 @@ do npt = 1,nbpart
     if (nor.eq.1) then
       do ilayer = 1, nlayer
         aux1 = exp(-(skp1(ilayer)+skp2(ilayer))*dtp)
-        ettp(npt,jmch(ilayer)) = ettpa(npt,jmch(ilayer))*aux1
+        eptp(jmch(ilayer),npt) = eptpa(jmch(ilayer),npt)*aux1
 
         ! Clipping
-        if ( ettp(npt,jmch(ilayer)).lt.precis ) then
-          ettp(npt,jmch(ilayer)) = 0.d0
+        if ( eptp(jmch(ilayer),npt).lt.precis ) then
+          eptp(jmch(ilayer),npt) = 0.d0
         endif
       enddo
 
     else if (nor.eq.2) then
       do ilayer = 1, nlayer
         aux1 = exp(-(skp1(ilayer)+skp2(ilayer))*dtp)
-        ettp(npt,jmch(ilayer)) = 0.5d0 * ( ettp(npt,jmch(ilayer))              &
-                                          +ettpa(npt,jmch(ilayer))*aux1 )
+        eptp(jmch(ilayer),npt) = 0.5d0 * ( eptp(jmch(ilayer),npt)              &
+                                          +eptpa(jmch(ilayer),npt)*aux1 )
 
         ! Clipping
-        if ( ettp(npt,jmch(ilayer)).lt.precis ) then
-          ettp(npt,jmch(ilayer)) = 0.d0
+        if ( eptp(jmch(ilayer),npt).lt.precis ) then
+          eptp(jmch(ilayer),npt) = 0.d0
         endif
       enddo
 
@@ -473,12 +452,12 @@ do npt = 1,nbpart
                /( skp1(ilayer)+skp2(ilayer) )
 
         aux2 = exp(-(skp1(ilayer)+skp2(ilayer))*dtp)
-        aux3 = aux1 * ettpa(npt,jmch(ilayer)) * (1.0d0-aux2) / dtp
+        aux3 = aux1 * eptpa(jmch(ilayer),npt) * (1.0d0-aux2) / dtp
 
         if ( ilayer.eq.ilayer_het ) then
           ! Calcul de la masse de coke équivalente
-          aux4 = dpis6 * (1.0d0-xashch(icha)) * tepa(npt,jrdck)**3             &
-                 * tepa(npt,jrhock(ilayer))
+          aux4 = dpis6 * (1.0d0-xashch(icha)) * pepa(jrdck,npt)**3             &
+                 * pepa(jrhock(ilayer),npt)
 
           if ( aux4.gt.precis ) then
             ! On tient compte de la combustion hétérogène
@@ -494,23 +473,23 @@ do npt = 1,nbpart
           aux5 = dtp * aux3
         endif
 
-        ettp(npt,jmck(ilayer)) = ettpa(npt,jmck(ilayer)) + aux5
+        eptp(jmck(ilayer),npt) = eptpa(jmck(ilayer),npt) + aux5
       enddo
 
       !  Si gamhet est trop important, on le repartit sur plusieurs couches
       do ilayer=ilayer_het,1,-1
-        if ( ettp(npt,jmck(ilayer)).lt.0.d0 ) then
+        if ( eptp(jmck(ilayer),npt).lt.0.d0 ) then
 
           ! On limite la comb hétérogène
-          fcoke(ilayer) = fcoke(ilayer)+ettp(npt,jmck(ilayer))
+          fcoke(ilayer) = fcoke(ilayer)+eptp(jmck(ilayer),npt)
 
           ! On attaque éventuellement la comb de la couche suivante
           if ( ilayer.gt.2 ) then
-            ettp(npt,jmck(ilayer-1)) = ettp(npt,jmck(ilayer-1))+ettp(npt,jmck(ilayer))
+            eptp(jmck(ilayer-1),npt) = eptp(jmck(ilayer-1),npt)+eptp(jmck(ilayer),npt)
           endif
 
           ! On limite la masse de coke
-          ettp(npt,jmck(ilayer)) = 0.d0
+          eptp(jmck(ilayer),npt) = 0.d0
 
         endif
       enddo
@@ -533,13 +512,12 @@ do npt = 1,nbpart
 
     call lagtmp                                                                &
     !==========
-    ( nbpmax , nvp    , nvp1  , nvep  , nivep ,                                &
-      npt    ,                                                                 &
-      itepa  , propce , ettp  , ettpa , tepa  , tempct ,                       &
+    ( npt    ,                                                                 &
+      propce , tempct ,                                                        &
       rayon  , mlayer , phith , temp  , tsvar , volume_couche )
 
     do ilayer = 1, nlayer
-      ettp(npt,jhp(ilayer)) = temp(ilayer)
+      eptp(jhp(ilayer),npt) = temp(ilayer)
     enddo
 
 
@@ -549,14 +527,14 @@ do npt = 1,nbpart
 
     do ilayer = 1, nlayer
 
-      if (ettpa(npt,jmch(ilayer)).ge.1.d-3*mlayer(ilayer)) then
+      if (eptpa(jmch(ilayer),npt).ge.1.d-3*mlayer(ilayer)) then
         ! mv represente la mlayer qui a quitté le grain ( sechage + pyrolyse)
         mv = mp0*(1-xashch(icha))/float(nlayer)                                &
-                - ettp(npt,jmch(ilayer))                                       &
-                - ettp(npt,jmck(ilayer))                                       &
+                - eptp(jmch(ilayer),npt)                                       &
+                - eptp(jmck(ilayer),npt)                                       &
                 - (mwater(ilayer)-fwat(ilayer)*dtp)
         ! masse volumique du coke SEUL
-        tepa(npt,jrhock(ilayer)) = rho0ch(icha)                                &
+        pepa(jrhock(ilayer),npt) = rho0ch(icha)                                &
                                   -mv/(volume_couche*(1.d0-xashch(icha)) )
       endif
 
@@ -570,49 +548,49 @@ do npt = 1,nbpart
     ! On repere la couche avec du ch la plus externe
     ilayer_het = 1
     do ilayer = 1 , nlayer
-      if (ettpa(npt,jmch(ilayer)).gt.0.0d0 ) then
+      if (eptpa(jmch(ilayer),npt).gt.0.0d0 ) then
         ilayer_het = ilayer
       endif
     enddo
 
     ! On verifie cherche s'il reste du ck sur une couche plus externe
     do ilayer = ilayer_het , nlayer
-      if (ettpa(npt,jmck(ilayer)).gt.0.0d0 ) then
+      if (eptpa(jmck(ilayer),npt).gt.0.0d0 ) then
         ilayer_het = ilayer
       endif
     enddo
 
-    if (ettp(npt,jmch(ilayer_het)).ge.1.d-3*mlayer(ilayer_het)) then
+    if (eptp(jmch(ilayer_het),npt).ge.1.d-3*mlayer(ilayer_het)) then
       ! La pyrolyse n'est pas terminée, le char a le diametre initial
-      tepa(npt,jrdck) = 2.0d0*rayon(ilayer_het)
+      pepa(jrdck,npt) = 2.0d0*rayon(ilayer_het)
     else
       ! On repartit le char de façon uniforme
       if (ilayer_het.eq.1) then
-        tepa(npt,jrdck) =  ( (d6spi/(1.d0-xashch(icha)))                       &
-                            *(ettp(npt,jmch(ilayer_het))                       &
+        pepa(jrdck,npt) =  ( (d6spi/(1.d0-xashch(icha)))                       &
+                            *(eptp(jmch(ilayer_het),npt)                       &
                                /rho0ch(icha)                                   &
-                             +ettp(npt,jmck(ilayer_het))                       &
-                               /tepa(npt,jrhock(ilayer_het)))                  &
+                             +eptp(jmck(ilayer_het),npt)                       &
+                               /pepa(jrhock(ilayer_het),npt))                  &
                                                                ) **d1s3
         ! Clipping
-        if (tepa(npt,jrdck).gt.2.0d0*rayon(ilayer_het)) then
-          tepa(npt,jrdck) = 2.0d0*rayon(ilayer_het)
-        else if (tepa(npt,jrdck).lt.0.0d0) then
-          tepa(npt,jrdck) = 0.0d0
+        if (pepa(jrdck,npt).gt.2.0d0*rayon(ilayer_het)) then
+          pepa(jrdck,npt) = 2.0d0*rayon(ilayer_het)
+        else if (pepa(jrdck,npt).lt.0.0d0) then
+          pepa(jrdck,npt) = 0.0d0
         endif
       else
-        tepa(npt,jrdck) = ( (2.0d0*rayon(ilayer_het-1))**3 +                   &
+        pepa(jrdck,npt) = ( (2.0d0*rayon(ilayer_het-1))**3 +                   &
                            ( (d6spi/(1.d0-xashch(icha)))                       &
-                            *(ettp(npt,jmch(ilayer_het))                       &
+                            *(eptp(jmch(ilayer_het),npt)                       &
                                /rho0ch(icha)                                   &
-                             +ettp(npt,jmck(ilayer_het))                       &
-                               /tepa(npt,jrhock(ilayer_het)))                  &
+                             +eptp(jmck(ilayer_het),npt)                       &
+                               /pepa(jrhock(ilayer_het),npt))                  &
                                                                ))**d1s3
         ! Clipping
-        if (tepa(npt,jrdck).gt.2.0d0*rayon(ilayer_het)) then
-          tepa(npt,jrdck) = 2.0d0*rayon(ilayer_het)
-        else if (tepa(npt,jrdck).lt.2.0d0*rayon(ilayer_het-1)) then
-          tepa(npt,jrdck) = 2.0d0*rayon(ilayer_het-1)
+        if (pepa(jrdck,npt).gt.2.0d0*rayon(ilayer_het)) then
+          pepa(jrdck,npt) = 2.0d0*rayon(ilayer_het)
+        else if (pepa(jrdck,npt).lt.2.0d0*rayon(ilayer_het-1)) then
+          pepa(jrdck,npt) = 2.0d0*rayon(ilayer_het-1)
         endif
       endif
     endif
@@ -622,9 +600,9 @@ do npt = 1,nbpart
 ! 15. Calcul du diametre des grains de charbon
 !===============================================================================
 
-    ettp(npt,jdp) = (xashch(icha)*(tepa(npt,jrd0p)**2)            &
+    eptp(jdp,npt) = (xashch(icha)*(pepa(jrd0p,npt)**2)            &
                          + (1.d0-xashch(icha))                    &
-                          *(tepa(npt,jrdck)**2) )**0.5d0
+                          *(pepa(jrdck,npt)**2) )**0.5d0
 
 !===============================================================================
 ! 16. Calcul de la masse des grains de charbon
@@ -632,16 +610,16 @@ do npt = 1,nbpart
 
     aux1 = 0.0d0
     do ilayer = 1, nlayer
-      aux1 = aux1 + ettp(npt,jmch(ilayer)) + ettp(npt,jmck(ilayer))
+      aux1 = aux1 + eptp(jmch(ilayer),npt) + eptp(jmck(ilayer),npt)
     enddo
 
-    ettp(npt,jmp) = aux1 + ettp(npt,jmwat) + xashch(icha)*mp0
+    eptp(jmp,npt) = aux1 + eptp(jmwat,npt) + xashch(icha)*mp0
 
 
 !===============================================================================
 ! 17. Fin de la boucle principale sur l'ensemble des particules
 !===============================================================================
-  endif   ! itepa(npt,jisor).gt.0
+  endif   ! ipepa(jisor,npt).gt.0
 enddo     !npt = 1,nbpart
 
 !===============================================================================

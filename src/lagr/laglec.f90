@@ -24,11 +24,8 @@ subroutine laglec &
 !================
 
  ( ncelet , ncel   , nfabor ,                                     &
-   nbpmax , nvp    , nvep   , nivep  ,                            &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   rtpa   , propce ,                                              &
-   ettp   , tepa   , statis , stativ , parbor , tslagr )
+   statis , stativ , parbor , tslagr )
 
 !===============================================================================
 ! FONCTION :
@@ -57,21 +54,9 @@ subroutine laglec &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules instant precedent                  !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
 !(ncelet,nvlsta    !    !     !   statistiques volumiques                      !
 ! stativ           ! tr ! <-- ! cumul pour les variances des                   !
@@ -120,12 +105,9 @@ implicit none
 ! Arguments
 
 integer          ncelet , ncel   , nfabor
-integer          nbpmax , nvp    , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
-integer          itepa(nbpmax,nivep)
 
-double precision rtpa(ncelet,nflown:nvar) , propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision statis(ncelet,nvlsta)
 double precision stativ(ncelet,nvlsta-1)
 double precision tslagr(ncelet,ntersl)
@@ -134,18 +116,16 @@ double precision parbor(nfabor,nvisbr)
 ! Local variables
 
 character        rubriq*64 , car4*4, car8*8, kar8*8
-character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
-character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
+character        nomtsl(nvplmx)*60
 character        ficsui*32
 integer          ierror , itysup , nbval  , n_sec
-integer          irfsup , idbase
 integer          ilecec , nberro , ivers
-integer          mvls   , ivar   , ip     , icha  , ilayer
-integer          ifac   , iel    , ii     , iok
+integer          mvls   , ivar   , icha
+integer          ifac   , iel    , iok
 integer          jphyla , jtpvar , jdpvar , jmpvar
 integer          jsttio , jdstnt , mstist , mvlsts
 integer          mstbor , musbor , mstits , jturb, jtytur
-integer          mode   , ipas   , ivl    , nclsto
+integer          ipas   , ivl    , nclsto
 integer          ival(1)
 double precision rval(1)
 
@@ -153,8 +133,6 @@ logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
 
 type(c_ptr) :: rp
 
-integer, allocatable, dimension(:) :: iflpar
-double precision, allocatable, dimension(:,:) :: coopar
 double precision, pointer, dimension(:) :: sval
 
 !===============================================================================
@@ -166,24 +144,6 @@ double precision, pointer, dimension(:) :: sval
 !---> Il faut faire dans cette routine les initialisations des
 !     tableaux lagrangiens ouverts dans la routine MEMLA1
 !     (sauf ITYCEL et ICOCEL qui sont initialises dans LAGDEB),
-
-do ivar = 1,nvp
-  do ip = 1,nbpmax
-    ettp(ip,ivar) = 0.d0
-  enddo
-enddo
-
-do ivar = 1,nivep
-  do ip = 1,nbpmax
-    itepa(ip,ivar) = 0
-  enddo
-enddo
-
-do ivar = 1,nvep
-  do ip = 1,nbpmax
-    tepa(ip,ivar) = 0.d0
-  enddo
-enddo
 
 if (istala.eq.1) then
   do ipas  = 0,nbclst
@@ -413,10 +373,6 @@ endif
 ! --> Caracteristiques et infos particulaires
 
 n_sec = lagr_restart_read_particle_data(rp)
-
-if (n_sec .gt. 0) then
-  call rstput(nbpart, dnbpar, ettp, itepa, tepa)
-endif
 
 write(nfecra,6011)
 

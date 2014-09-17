@@ -23,8 +23,7 @@
 subroutine lagout &
 !================
 
- ( nvep   , nivep  ,                                              &
-   ntersl , nvlsta , nvisbr ,                                     &
+ ( ntersl , nvlsta , nvisbr ,                                     &
    propce )
 
 !===============================================================================
@@ -51,8 +50,6 @@ subroutine lagout &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvep             ! i  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! i  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! i  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! i  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! i  ! <-- ! nombre de statistiques aux frontieres          !
@@ -94,7 +91,6 @@ implicit none
 
 ! Arguments
 
-integer          nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
 double precision propce(ncelet,*)
@@ -102,21 +98,16 @@ double precision propce(ncelet,*)
 ! Local variables
 
 character        rubriq*64 , car4*4
-character        nomnvl(nvplmx)*60 , nomtsl(nvplmx)*60
-character        nomite(nvplmx)*64 , nomrte(nvplmx)*64
+character        nomtsl(nvplmx)*60
 character        ficsui*32
-integer          nbval, itysup , irfsup, idbase
+integer          nbval, itysup
 integer          ivers  , ilecec, n_sec
-integer          icha   , ii , ilayer
+integer          icha   , ii
 integer          ipas   , jj
-integer          inmcoo
 integer          ival(1)
 double precision rval(1)
 
 type(c_ptr) :: rp
-
-integer, allocatable, dimension(:) :: icepar
-double precision, allocatable, dimension(:,:) :: coopar
 
 !===============================================================================
 

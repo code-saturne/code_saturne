@@ -25,12 +25,11 @@ subroutine lagent &
 
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr , iprev  ,                            &
    itycel , icocel , dlgeo  ,                                     &
-   itypfb , itrifb , ifrlag , itepa  ,                            &
-   dt     ,                                                       &
-   ettp   , tepa   , vagaus )
+   itypfb , itrifb , ifrlag ,                                     &
+   dt     , vagaus )
 
 !===============================================================================
 ! FONCTION :
@@ -46,10 +45,10 @@ subroutine lagent &
 !        particule/face de frontiere.
 
 !     2. injection des particules dans le domaine : initialisation
-!        des tableau ETTP, ITEPA(IP,JISOR) et TEPA(IP,JRPOI).
+!        des tableau eptp, ipepa(jisor,ip) et pepa(jrpoi,ip).
 
 !     3. modification des conditions d'injection des particules :
-!        retouche des ETTP, ITEPA(IP,JISOR) et TEPA(IP,JRPOI).
+!        retouche des eptp, ipepa(jisor,ip) et pepa(jrpoi,ip).
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -60,10 +59,6 @@ subroutine lagent &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -80,13 +75,7 @@ subroutine lagent &
 ! itrifb(nfabor)   ! te ! <-- ! tab d'indirection pour tri des faces           !
 ! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module lagrangien                     !
-! itepa            ! te ! --> ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
 !(nbpmax,nvgaus    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
@@ -128,16 +117,15 @@ implicit none
 
 integer          lndnod
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 integer          iprev
 
 integer          itypfb(nfabor) , itrifb(nfabor)
 integer          icocel(lndnod) , itycel(ncelet+1)
-integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
+integer          ifrlag(nfabor)
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 double precision dlgeo(nfabor,ngeol)
 
@@ -239,11 +227,10 @@ endif
 call uslag2                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   itypfb , itrifb , ifrlag ,                                     &
+   dt     )
 
 
 shpe = shape(iuslag)
@@ -934,11 +921,10 @@ do ii = 1,nfrtot
 
                call lagnew                                                   &
                !==========
-             ( nbpmax , nvp    , nvp1   ,                                    &
-               npt    , nlocnew ,      iusloc(nc,nb,ijnbp)  ,                &
+             ( nbpmax ,                                                      &
+               npt    , iusloc(nc,nb,ijnbp)  ,                               &
                nb     ,                                                      &
-               ifrlag , itepa(:,jisor)  , iwork  ,                           &
-               ettp   )
+               ifrlag , iwork  )
 
             endif
 
@@ -946,11 +932,9 @@ do ii = 1,nfrtot
 
             call lagnpr                                                      &
             !==========
-           ( nbpmax , nvp    , nvp1   ,                                      &
-             npt    , nlocnew ,  iusloc(nc,nb,ijnbp)   ,                     &
+           ( nbpmax , npt    ,                                               &
              nb     ,                                                        &
-             ifrlag , itepa(:,jisor)  , iwork  ,                             &
-             ettp   )
+             ifrlag , iwork  )
          endif
 
       endif
@@ -981,16 +965,16 @@ do ii = 1,nfrtot
      if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
 
       do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
-        iel = itepa(ip,jisor)
+        iel = ipepa(jisor,ip)
         ifac = iwork(ip)
 
 !-->COMPOSANTES DE LA VITESSE DES PARTICULES
 
 !             si composantes de la vitesse imposee :
         if (iuslag(nc,nb,ijuvw).eq.1) then
-          ettp(ip,jup) = ruslag(nc,nb,iupt)
-          ettp(ip,jvp) = ruslag(nc,nb,ivpt)
-          ettp(ip,jwp) = ruslag(nc,nb,iwpt)
+          eptp(jup,ip) = ruslag(nc,nb,iupt)
+          eptp(jvp,ip) = ruslag(nc,nb,ivpt)
+          eptp(jwp,ip) = ruslag(nc,nb,iwpt)
 
 !             si norme de la vitesse imposee :
         else if (iuslag(nc,nb,ijuvw).eq.0) then
@@ -998,51 +982,50 @@ do ii = 1,nfrtot
           vn1 = surfbo(1,ifac) * aa
           vn2 = surfbo(2,ifac) * aa
           vn3 = surfbo(3,ifac) * aa
-          ettp(ip,jup) = vn1 * ruslag(nc,nb,iuno)
-          ettp(ip,jvp) = vn2 * ruslag(nc,nb,iuno)
-          ettp(ip,jwp) = vn3 * ruslag(nc,nb,iuno)
+          eptp(jup,ip) = vn1 * ruslag(nc,nb,iuno)
+          eptp(jvp,ip) = vn2 * ruslag(nc,nb,iuno)
+          eptp(jwp,ip) = vn3 * ruslag(nc,nb,iuno)
 
 !             si vitesse du fluide vu :
         else if (iuslag(nc,nb,ijuvw).eq.-1) then
-          ettp(ip,jup) = vela(1,iel)
-          ettp(ip,jvp) = vela(2,iel)
-          ettp(ip,jwp) = vela(3,iel)
+          eptp(jup,ip) = vela(1,iel)
+          eptp(jvp,ip) = vela(2,iel)
+          eptp(jwp,ip) = vela(3,iel)
 
 !             si profil de vitesse impose :
         else if (iuslag(nc,nb,ijuvw).eq.2) then
 
          idvar = 1
-         xxpart = ettp(ip,jxp)
-         yypart = ettp(ip,jyp)
-         zzpart = ettp(ip,jzp)
+         xxpart = eptp(jxp,ip)
+         yypart = eptp(jyp,ip)
+         zzpart = eptp(jzp,ip)
 
          call uslapr                                              &
          !==========
  ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
+   itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   dt     )
 
-          ettp(ip,jup) = uupart
-          ettp(ip,jvp) = vvpart
-          ettp(ip,jwp) = wwpart
+          eptp(jup,ip) = uupart
+          eptp(jvp,ip) = vvpart
+          eptp(jwp,ip) = wwpart
 
         endif
 
 !-->Vitesse du fluide vu
 
-        ettp(ip,juf) = vela(1,iel)
-        ettp(ip,jvf) = vela(2,iel)
-        ettp(ip,jwf) = vela(3,iel)
+        eptp(juf,ip) = vela(1,iel)
+        eptp(jvf,ip) = vela(2,iel)
+        eptp(jwf,ip) = vela(3,iel)
 
 !--> TEMPS DE SEJOUR
 
-        tepa(ip,jrtsp) = 0.d0
+        pepa(jrtsp,ip) = 0.d0
 
 !--> Diametre
 
@@ -1051,82 +1034,80 @@ do ii = 1,nfrtot
           if (ruslag(nc,nb,ivdpt) .gt. 0.d0) then
             n1 = 1
             call normalen(n1,rd)
-            ettp(ip,jdp) = ruslag(nc,nb,idpt)                     &
+            eptp(jdp,ip) = ruslag(nc,nb,idpt)                     &
                          + rd(1) * ruslag(nc,nb,ivdpt)
 
 !    On verifie qu'on obtient un diametre dans la gamme des 99,7%
 
             d3 = 3.d0 * ruslag(nc,nb,ivdpt)
-            if (ettp(ip,jdp).lt.ruslag(nc,nb,idpt)-d3)            &
-              ettp(ip,jdp)= ruslag(nc,nb,idpt)
-            if (ettp(ip,jdp).gt.ruslag(nc,nb,idpt)+d3)            &
-              ettp(ip,jdp)= ruslag(nc,nb,idpt)
+            if (eptp(jdp,ip).lt.ruslag(nc,nb,idpt)-d3)            &
+              eptp(jdp,ip)= ruslag(nc,nb,idpt)
+            if (eptp(jdp,ip).gt.ruslag(nc,nb,idpt)+d3)            &
+              eptp(jdp,ip)= ruslag(nc,nb,idpt)
           else
-            ettp(ip,jdp) = ruslag(nc,nb,idpt)
+            eptp(jdp,ip) = ruslag(nc,nb,idpt)
           endif
 
 !             si profil pour le diametre  :
         else if (iuslag(nc,nb,ijprdp).eq.2) then
 
           idvar = 2
-          xxpart = ettp(ip,jxp)
-          yypart = ettp(ip,jyp)
-          zzpart = ettp(ip,jzp)
+          xxpart = eptp(jxp,ip)
+          yypart = eptp(jyp,ip)
+          zzpart = eptp(jzp,ip)
 
           call uslapr                                             &
           !==========
  ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
+   itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   dt     )
 
-          ettp(ip,jdp) = ddpart
+          eptp(jdp,ip) = ddpart
 
         endif
 
 !--> Autres variables : masse, ... en fonction de la physique
 
-        d3 = ettp(ip,jdp) * ettp(ip,jdp) * ettp(ip,jdp)
+        d3 = eptp(jdp,ip) * eptp(jdp,ip) * eptp(jdp,ip)
 
         if (nbclst.gt.0) then
-          itepa(ip,jclst) = iuslag(nc,nb,iclst)
+          ipepa(jclst,ip) = iuslag(nc,nb,iclst)
         endif
 
         if ( iphyla.eq.0 .or. iphyla.eq.1 ) then
 
-          ettp(ip,jmp) = ruslag(nc,nb,iropt) * pis6 * d3
+          eptp(jmp,ip) = ruslag(nc,nb,iropt) * pis6 * d3
 
           if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
 
 !             si Temperature constante imposee :
             if (iuslag(nc,nb,ijprtp).eq.1) then
-              ettp(ip,jtp) = ruslag(nc,nb,itpt)
+              eptp(jtp,ip) = ruslag(nc,nb,itpt)
 !             si profil pour la temperature :
             else if (iuslag(nc,nb,ijprtp).eq.2) then
 
               idvar = 3
-              xxpart = ettp(ip,jxp)
-              yypart = ettp(ip,jyp)
-              zzpart = ettp(ip,jzp)
+              xxpart = eptp(jxp,ip)
+              yypart = eptp(jyp,ip)
+              zzpart = eptp(jzp,ip)
 
               call uslapr                                         &
               !==========
  ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
+   itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   dt     )
 
-              ettp(ip,jtp) = ttpart
+              eptp(jtp,ip) = ttpart
 
             endif
 
@@ -1134,51 +1115,51 @@ do ii = 1,nfrtot
                  ippmod(icpl3c).ge.0 .or.                         &
                  ippmod(icfuel).ge.0      ) then
 
-              ettp(ip,jtf) = temp1(iel) -tkelvi
+              eptp(jtf,ip) = temp1(iel) -tkelvi
 
             else if ( ippmod(icod3p).ge.0 .or.                    &
                       ippmod(icoebu).ge.0 .or.                    &
                       ippmod(ielarc).ge.0 .or.                    &
                       ippmod(ieljou).ge.0      ) then
 
-              ettp(ip,jtf) = temp(iel) -tkelvi
+              eptp(jtf,ip) = temp(iel) -tkelvi
 
             else if (itherm.eq.1) then
 
               if (itpscl.eq.1) then !Kelvin
 
-                ettp(ip,jtf) = cscalt(iel) -tkelvi
+                eptp(jtf,ip) = cscalt(iel) -tkelvi
 
               else if (itpscl.eq.2) then ! Celsius
 
-                ettp(ip,jtf) = cscalt(iel)
+                eptp(jtf,ip) = cscalt(iel)
 
               endif
 
             else if (itherm.eq.2) then
 
               mode = 1
-              call usthht(mode, cscalt(iel), ettp(ip,jtf))
+              call usthht(mode, cscalt(iel), eptp(jtf,ip))
 
             endif
 
-            ettp(ip,jcp) = ruslag(nc,nb,icpt)
-            tepa(ip,jreps) = ruslag(nc,nb,iepsi)
+            eptp(jcp,ip) = ruslag(nc,nb,icpt)
+            pepa(jreps,ip) = ruslag(nc,nb,iepsi)
 
           endif
 
         else if ( iphyla.eq.2 ) then
 
-          ! Remplissage de ITEPA
-          itepa(ip,jinch)  = iuslag(nc,nb,inuchl)
+          ! Remplissage de ipepa
+          ipepa(jinch,ip)  = iuslag(nc,nb,inuchl)
 
-          ! Remplissage de ETTP
-          ettp(ip,jtaux) = 0.0d0 ! non utilise pour iphyla=2
-          ettp(ip,jtf) = temp1(iel) - tkelvi
+          ! Remplissage de eptp
+          eptp(jtaux,ip) = 0.0d0 ! non utilise pour iphyla=2
+          eptp(jtf,ip) = temp1(iel) - tkelvi
 
           do ilayer = 1, nlayer
 
-            ettp(ip,jhp(ilayer))  = ruslag(nc,nb,ihpt(ilayer))
+            eptp(jhp(ilayer),ip)  = ruslag(nc,nb,ihpt(ilayer))
 
           enddo
 
@@ -1186,24 +1167,24 @@ do ii = 1,nfrtot
           if (iuslag(nc,nb,irawcl).eq.0) then
 
             ! Remplissage de ETTP
-            ettp(ip,jcp) = ruslag(nc,nb,icpt)
-            ettp(ip,jmp) = ruslag(nc,nb,iropt) * pis6 * d3
-            ettp(ip,jmwat) = ruslag(nc,nb,ifrmwt) * ettp(ip,jmp)
+            eptp(jcp,ip) = ruslag(nc,nb,icpt)
+            eptp(jmp,ip) = ruslag(nc,nb,iropt) * pis6 * d3
+            eptp(jmwat,ip) = ruslag(nc,nb,ifrmwt) * eptp(jmp,ip)
 
             do ilayer = 1, nlayer
 
-              ettp(ip,jmch(ilayer)) = ruslag(nc,nb,ifrmch(ilayer)) * ettp(ip,jmp) / float(nlayer)
-              ettp(ip,jmck(ilayer)) = ruslag(nc,nb,ifrmck(ilayer)) * ettp(ip,jmp) / float(nlayer)
+              eptp(jmch(ilayer),ip) = ruslag(nc,nb,ifrmch(ilayer)) * eptp(jmp,ip) / float(nlayer)
+              eptp(jmck(ilayer),ip) = ruslag(nc,nb,ifrmck(ilayer)) * eptp(jmp,ip) / float(nlayer)
 
             enddo
 
-            ! Remplissage de TEPA
-            tepa(ip,jrdck) = ruslag(nc,nb,irdck)
-            tepa(ip,jrd0p) = ruslag(nc,nb,ird0p)
+            ! Remplissage de pepa
+            pepa(jrdck,ip) = ruslag(nc,nb,irdck)
+            pepa(jrd0p,ip) = ruslag(nc,nb,ird0p)
 
             do ilayer = 1, nlayer
 
-              tepa(ip,jrhock(ilayer))= ruslag(nc,nb,irhock0(ilayer))
+              pepa(jrhock(ilayer),ip)= ruslag(nc,nb,irhock0(ilayer))
 
             enddo
 
@@ -1211,26 +1192,26 @@ do ii = 1,nfrtot
           else if (iuslag(nc,nb,irawcl).eq.1) then
 
             ! Remplissage de ETTP
-            ettp(ip,jcp) = cp2ch(iuslag(nc,nb,inuchl))
-            ettp(ip,jmp) = rho0ch(iuslag(nc,nb,inuchl)) * pis6 * d3
-            ettp(ip,jmwat) = xwatch(iuslag(nc,nb,inuchl)) * ettp(ip,jmp)
+            eptp(jcp,ip) = cp2ch(iuslag(nc,nb,inuchl))
+            eptp(jmp,ip) = rho0ch(iuslag(nc,nb,inuchl)) * pis6 * d3
+            eptp(jmwat,ip) = xwatch(iuslag(nc,nb,inuchl)) * eptp(jmp,ip)
 
             do ilayer = 1, nlayer
 
-              ettp(ip,jmch(ilayer)) =                                           &
+              eptp(jmch(ilayer),ip) =                                           &
               (1.0d0-xwatch(iuslag(nc,nb,inuchl))-xashch(iuslag(nc,nb,inuchl))) &
-                   * ettp(ip,jmp) / float(nlayer)
+                   * eptp(jmp,ip) / float(nlayer)
 
-              ettp(ip,jmck(ilayer)) = 0.0d0
+              eptp(jmck(ilayer),ip) = 0.0d0
 
             enddo
 
-            ! Remplissage de TEPA
-            tepa(ip,jrdck) = ettp(ip,jdp)
-            tepa(ip,jrd0p) = ettp(ip,jdp)
+            ! Remplissage de pepa
+            pepa(jrdck,ip) = eptp(jdp,ip)
+            pepa(jrd0p,ip) = eptp(jdp,ip)
 
             do ilayer=1,nlayer
-              tepa(ip,jrhock(ilayer)) = rho0ch(iuslag(nc,nb,inuchl))
+              pepa(jrhock(ilayer),ip) = rho0ch(iuslag(nc,nb,inuchl))
             enddo
 
          endif
@@ -1239,34 +1220,33 @@ do ii = 1,nfrtot
 !--> POIDS STATISTIQUE
 
        if (iuslag(nc,nb,ijprpd).eq.1) then
-          tepa(ip,jrpoi) = ruslag(nc,nb,ipoit)
+          pepa(jrpoi,ip) = ruslag(nc,nb,ipoit)
        else if (iuslag(nc,nb,ijprpd).eq.2) then
 
           idvar = 0
-          xxpart = ettp(ip,jxp)
-          yypart = ettp(ip,jyp)
-          zzpart = ettp(ip,jzp)
+          xxpart = eptp(jxp,ip)
+          yypart = eptp(jyp,ip)
+          zzpart = eptp(jzp,ip)
 
           call uslapr                                             &
           !==========
  ( idvar  , iel    , nb     , nc     ,                            &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
+   itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   dt     )
 
           volp = pis6*d3
           surf = sqrt( surfbo(1,ifac)*surfbo(1,ifac)              &
                       +surfbo(2,ifac)*surfbo(2,ifac)              &
                       +surfbo(3,ifac)*surfbo(3,ifac) )
-          vitp = sqrt( ettp(ip,jup)*ettp(ip,jup)                  &
-                      +ettp(ip,jvp)*ettp(ip,jvp)                  &
-                      +ettp(ip,jwp)*ettp(ip,jwp) )
-          tepa(ip,jrpoi) =tvpart*(surf*vitp*dtp)/volp
+          vitp = sqrt( eptp(jup,ip)*eptp(jup,ip)                  &
+                      +eptp(jvp,ip)*eptp(jvp,ip)                  &
+                      +eptp(jwp,ip)*eptp(jwp,ip) )
+          pepa(jrpoi,ip) =tvpart*(surf*vitp*dtp)/volp
 
          endif
 
@@ -1276,11 +1256,11 @@ do ii = 1,nfrtot
 
            call zufall(1,dintrf(1))
 
-           tepa(ip,jrinpf) = 5.d0 + 15.d0 * dintrf(1)
+           pepa(jrinpf,ip) = 5.d0 + 15.d0 * dintrf(1)
 
-           tepa(ip,jryplu) = 1000.d0
-           itepa(ip,jimark) = -1
-           itepa(ip,jdfac)  = 0
+           pepa(jryplu,ip) = 1000.d0
+           ipepa(jimark,ip) = -1
+           ipepa(jdfac,ip)  = 0
 
          endif
 
@@ -1334,14 +1314,14 @@ do ii = 1,nfrlag
 
          dmasse = 0.d0
          do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
-            dmasse = dmasse + ettp(ip,jmp)
+            dmasse = dmasse + eptp(jmp,ip)
          enddo
 
          !        Calcul des Poids
 
          if ( dmasse.gt.0.d0 ) then
             do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
-               tepa(ip,jrpoi) = ( ruslag(nc,nb,idebt)*dtp )  * rapsurf &
+               pepa(jrpoi,ip) = ( ruslag(nc,nb,idebt)*dtp )  * rapsurf &
                     / dmasse
             enddo
          else
@@ -1392,12 +1372,12 @@ call lagipn(nbpmax, npar1, npar2, iprev, vagaus)
 call uslain                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    nlocnew         , iprev  ,                                     &
-   itypfb , itrifb , itepa  , ifrlag , iwork  ,                   &
+   itypfb , itrifb , ifrlag , iwork  ,                            &
    dt     ,                                                       &
-   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
+   vagaus , icocel , lndnod , itycel , dlgeo,                     &
    ncmax  , nzmax  , iusloc )
 
 
@@ -1406,7 +1386,7 @@ call uslain                                                       &
 !===============================================================================
 
 do npt = npar1,npar2
-  call random_number(tepa(npt,jrval))
+  call random_number(pepa(jrval,npt))
 enddo
 
 !   reinitialisation du compteur de nouvelles particules
@@ -1424,11 +1404,11 @@ do ii = 1,nfrlag
 
       do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
 
-        if (ettp(ip,jdp).lt.0.d0 .and.                            &
+        if (eptp(jdp,ip).lt.0.d0 .and.                            &
             ruslag(nc,nb,ivdpt).gt.0.d0) then
           write(nfecra,4000) ruslag(nc,nb,idpt),                  &
                              ruslag(nc,nb,ivdpt),                 &
-                             ettp(ip,jdp)
+                             eptp(jdp,ip)
         endif
 
       enddo
@@ -1472,11 +1452,9 @@ if ( injcon.eq.1 ) then
 !!$        call lagnwc                                               &
 !!$        !==========
 !!$  ( lndnod ,                                                      &
-!!$    nbpmax , nvp    , nvp1   , nvep   , nivep  ,                  &
 !!$    npt    , nlocnew , iuslag(nc,nb,ijnbp)      ,                  &
 !!$    itycel , icocel ,                                             &
-!!$    ifrlag , itepa(1,jisor)  , iwork  ,                           &
-!!$    ettp   )
+!!$    ifrlag , iwork  )
 !!$
 !!$      endif
 !!$
@@ -1525,8 +1503,8 @@ do ii = 1,nfrlag
              iusloc(nc,nb,ijfre).gt.0            ) then
 
       do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
-        deblag(nb) = deblag(nb) + tepa(ip,jrpoi)*ettp(ip,jmp)
-        dnbpnw = dnbpnw + tepa(ip,jrpoi)
+        deblag(nb) = deblag(nb) + pepa(jrpoi,ip)*eptp(jmp,ip)
+        dnbpnw = dnbpnw + pepa(jrpoi,ip)
       enddo
 
     endif

@@ -479,12 +479,9 @@ endif
 ! Memory reservation for Lagrangian module
 if (iilagr.gt.0) then
 
-  allocate(itepa(nbpmax,nivep))
   allocate(icocel(lndnod), itycel(ncelet+1))
   allocate(ifrlag(nfabor))
 
-  allocate(ettp(nbpmax,nvp), ettpa(nbpmax,nvp))
-  allocate(tepa(nbpmax,nvep))
   allocate(statis(ncelet,nvlsta*(1+nbclst)))
   if (nvlsta.gt.1) allocate(stativ(ncelet,(nvlsta-1)*(1+nbclst)))
   allocate(tslagr(ncelet,ntersl))
@@ -612,11 +609,8 @@ if (iilagr.gt.0) then
   call laglec                                                     &
   !==========
  ( ncelet , ncel   , nfabor ,                                     &
-   nbpmax , nvp    , nvep   , nivep  ,                            &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
-   rtpa   , propce ,                                              &
-   ettp   , tepa   , statis , stativ , parbor , tslagr )
+   statis , stativ , parbor , tslagr )
 
 endif
 
@@ -955,8 +949,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   !==========
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
+   nbpmax ,                                                       &
    dt     , rtpa   , rtp    , propce )
 
 endif
@@ -1076,8 +1069,7 @@ if (iisuit.eq.1) then
 
     call lagout                                                      &
     !==========
-    ( nvep   , nivep  ,                                              &
-      ntersl , nvlsta , nvisbr ,                                     &
+    ( ntersl , nvlsta , nvisbr ,                                     &
       propce )
 
   endif
@@ -1123,8 +1115,7 @@ endif
 call pstvar                                                       &
 !==========
  ( ntcabs ,                                                       &
-   nvar   , nscal  , nvlsta , nvisbr ,                            &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  )
+   nvar   , nscal  , nvlsta , nvisbr )
 
 !===============================================================================
 ! Probes
@@ -1279,13 +1270,9 @@ if (iilagr.gt.0) then
 
   close(implal)
 
-  deallocate(itepa)
   deallocate(icocel, itycel)
   deallocate(ifrlag)
 
-  deallocate(ettp)
-  deallocate(ettpa)
-  deallocate(tepa)
   deallocate(statis)
   if (associated(stativ)) deallocate(stativ)
   deallocate(tslagr)

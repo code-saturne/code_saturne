@@ -52,9 +52,6 @@ subroutine lagdep &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
@@ -175,9 +172,9 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 
   do ip = 1,nbpart
 
-    if (itepa(ip,jisor).gt.0) then
+    if (ipepa(jisor,ip).gt.0) then
 
-      iel = itepa(ip,jisor)
+      iel = ipepa(jisor,ip)
       romf = cromf(iel)
       visccf = viscl(iel) / romf
 
@@ -219,9 +216,9 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 !   the standard model is applied
 !=========================================================================
 
-     if (tepa(ip,jryplu).gt.depint) then
+     if (pepa(jryplu,ip).gt.depint) then
 
-         itepa(ip,jimark) = -1
+         ipepa(jimark,ip) = -1
 
          do id = 1,3
 
@@ -252,14 +249,14 @@ call field_get_val_s(iprpfl(iviscl), viscl)
             bb = (aux5 - aa) * aux3
             cc = dtp - aa - bb
 
-            ter1x = aa * ettpa(ip,jup+i0)
-            ter2x = bb * ettpa(ip,juf+i0)
+            ter1x = aa * eptpa(jup+i0,ip)
+            ter2x = bb * eptpa(juf+i0,ip)
             ter3x = cc * tci
             ter4x = (dtp - aa) * force
 
             !---> flow-seen velocity terms
 
-            ter1f = ettpa(ip,juf+i0) * aux2
+            ter1f = eptpa(juf+i0,ip) * aux2
             ter2f = tci * (1.d0-aux2)
 
             !---> termes pour la vitesse des particules
@@ -267,8 +264,8 @@ call field_get_val_s(iprpfl(iviscl), viscl)
             dd = aux3 * (aux2 - aux1)
             ee = 1.d0 - aux1
 
-            ter1p = ettpa(ip,jup+i0) * aux1
-            ter2p = ettpa(ip,juf+i0) * dd
+            ter1p = eptpa(jup+i0,ip) * aux1
+            ter2p = eptpa(juf+i0,ip) * dd
             ter3p = tci * (ee-dd)
             ter4p = force * ee
 
@@ -348,12 +345,12 @@ call field_get_val_s(iprpfl(iviscl), viscl)
             ! Update of the particle state-vector
             !
 
-            ettp(ip,jxp+i0) = ettpa(ip,jxp+i0)                         &
+            eptp(jxp+i0,ip) = eptpa(jxp+i0,ip)                         &
                  + ter1x + ter2x + ter3x + ter4x + ter5x
 
-            ettp(ip,juf+i0) = ter1f + ter2f + ter3f
+            eptp(juf+i0,ip) = ter1f + ter2f + ter3f
 
-            ettp(ip,jup+i0) = ter1p + ter2p + ter3p + ter4p + ter5p
+            eptp(jup+i0,ip) = ter1p + ter2p + ter3p + ter4p + ter5p
 
          enddo
 
@@ -363,32 +360,32 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 
          else
 
-            if (tepa(ip,jryplu).lt.tepa(ip,jrinpf)) then
+            if (pepa(jryplu,ip).lt.pepa(jrinpf,ip)) then
 
-               if ( itepa(ip,jimark) .lt. 0 ) then
-                  itepa(ip,jimark) = 10
+               if ( ipepa(jimark,ip) .lt. 0 ) then
+                  ipepa(jimark,ip) = 10
                else
-                  itepa(ip,jimark) = 0
+                  ipepa(jimark,ip) = 0
                endif
 
             else
 
                !   if (jrinpf < y^+ < depint)
 
-               if ( itepa(ip,jimark) .lt. 0 ) then
-                  itepa(ip,jimark) = 20
-               else if ( itepa(ip,jimark) .eq. 0 ) then
-                  itepa(ip,jimark) = 30
+               if ( ipepa(jimark,ip) .lt. 0 ) then
+                  ipepa(jimark,ip) = 20
+               else if ( ipepa(jimark,ip) .eq. 0 ) then
+                  ipepa(jimark,ip) = 30
                endif
 
             endif
 
-            lvisq = vislen(itepa(ip,jdfac))
-            tvisq = lvisq / uetbor(itepa(ip,jdfac))
+            lvisq = vislen(ipepa(jdfac,ip))
+            tvisq = lvisq / uetbor(ipepa(jdfac,ip))
 
             call lagesd                                                    &
             !==========
-            ( itepa(ip,jdfac) , ip     ,                                   &
+            ( ipepa(jdfac,ip) , ip     ,                                   &
               nbpmax ,                                                     &
               taup   , piil   ,                                            &
               vagaus , gradpr , romp   ,                                   &

@@ -23,9 +23,8 @@
 subroutine lagtmp                                                              &
 !================
 
- ( nbpmax , nvp    , nvp1  , nvep  , nivep ,                                   &
-   npt    ,                                                                    &
-   itepa  , propce , ettp  , ettpa , tepa  , tempct ,                          &
+ ( npt    ,                                                                    &
+   propce , tempct ,                                                           &
    rayon  , mlayer , phith , temp  , tsvar , volume_couche )
 
 !===============================================================================
@@ -50,21 +49,8 @@ subroutine lagtmp                                                              &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
 ! npt              ! e  ! <-- ! numero de la particule a traiter               !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! propce(ncelet, *)! tr ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
 !  (nbpmax,2)      !    !     !                                                !
 ! rayon            ! tr ! <-- ! rayons frontieres des differentes couches      !
@@ -94,6 +80,7 @@ subroutine lagtmp                                                              &
 use numvar
 use cstnum
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -107,12 +94,8 @@ use mesh
 implicit none
 
 ! Arguments
-integer          nbpmax , nvp, nvp1, nvep, nivep
-integer          itepa(nbpmax,nivep)
 integer          npt
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision tempct(nbpmax,2)
 double precision rayon(nlayer), mlayer(nlayer)
 double precision phith(nlayer), temp(nlayer)
@@ -132,8 +115,8 @@ double precision w1(nlayer-1), w2(nlayer)
 ! INITIALISATION DES VARIABLES
 !===============================================================================
 
-iel  = itepa(npt,jisor)
-icha = itepa(npt,jinch)
+iel  = ipepa(jisor,npt)
+icha = ipepa(jinch,npt)
 
 !===============================================================================
 ! A. RESOLUTION MONOCOUCHE (SI NLAYER > 1)
@@ -175,11 +158,11 @@ if (nlayer.gt.1) then
   lambda = thcdch(icha)
 
   ! Conducto-conductif
-  dd2 = ettp(npt,jdp)**2
-  diamp2 = xashch(icha)*tepa(npt,jrd0p)*tepa(npt,jrd0p)                        &
-           +(1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
+  dd2 = eptp(jdp,npt)**2
+  diamp2 = xashch(icha)*pepa(jrd0p,npt)*pepa(jrd0p,npt)                        &
+           +(1.d0-xashch(icha))*pepa(jrdck,npt)*pepa(jrdck,npt)
   tpscara = tempct(npt,1)*diamp2/dd2
-  coefh = ettpa(npt,jmp)*ettpa(npt,jcp)/(tpscara*pi*diamp2)
+  coefh = eptpa(jmp,npt)*eptpa(jcp,npt)/(tpscara*pi*diamp2)
 
   ! Temperature equivalente de rayonnement
   temprayo = (propce(iel,ipproc(ilumin))/(4.0d0*stephn))**0.25
@@ -192,38 +175,38 @@ if (nlayer.gt.1) then
 
   do ilayer=1,nlayer
     if (ilayer.eq.1) then
-      b(ilayer) = 1.d0 + 4.0d0*(lambda*dtp)/(rho(ilayer)*ettpa(npt,jcp))       &
+      b(ilayer) = 1.d0 + 4.0d0*(lambda*dtp)/(rho(ilayer)*eptpa(jcp,npt))       &
                          * ( 1.d0  + 1.d0/(rayon(ilayer+1)*rayon(ilayer))      &
                    + 2.d0/(rayon(ilayer+1)*(rayon(ilayer) + rayon(ilayer+1))) )
 
-      c(ilayer) = - 4.0d0*(lambda*dtp)/(rho(ilayer)*ettpa(npt,jcp))            &
+      c(ilayer) = - 4.0d0*(lambda*dtp)/(rho(ilayer)*eptpa(jcp,npt))            &
                          * ( 1.d0 + 1.d0/(rayon(ilayer+1)*rayon(ilayer))       &
                    + 2.d0/(rayon(ilayer+1)*(rayon(ilayer) + rayon(ilayer+1))) )
-      d(ilayer) = ettp(npt,jhp(ilayer)) +                                      &
-                  (phith(ilayer)*dtp)/(mlayer(ilayer)*ettpa(npt,jcp))
+      d(ilayer) = eptp(jhp(ilayer),npt) +                                      &
+                  (phith(ilayer)*dtp)/(mlayer(ilayer)*eptpa(jcp,npt))
 
     elseif (ilayer.eq.nlayer) then
-      f = stephn*( temprayo**2 + (ettp(npt,jhp(nlayer)))**2 )                  &
-                *( temprayo    +  ettp(npt,jhp(nlayer))     )
-      a(ilayer) = - (lambda*dtp)/(rho(ilayer)*ettpa(npt,jcp)*delray(ilayer-1)) &
+      f = stephn*( temprayo**2 + (eptp(jhp(nlayer),npt))**2 )                  &
+                *( temprayo    +  eptp(jhp(nlayer),npt)     )
+      a(ilayer) = - (lambda*dtp)/(rho(ilayer)*eptpa(jcp,npt)*delray(ilayer-1)) &
                     * ( 1.0d0/delray(ilayer-1)-1.0d0/rayond(ilayer) )
       !b(ilayer) = 1.d0 + (lambda*dtp)/(rho(ilayer)                             &
-      !                   * ettpa(npt,jcp)*delray(ilayer-1))                    &
+      !                   * eptpa(jcp,npt)*delray(ilayer-1))                    &
       !                   * ( 1.0d0/delray(ilayer-1)-1.0d0/rayond(ilayer) )
-      !d(ilayer) = ettp(npt,jhp(ilayer))+dtp/(mlayer(ilayer)*ettpa(npt,jcp))*   &
+      !d(ilayer) = eptp(jhp(ilayer),npt)+dtp/(mlayer(ilayer)*eptpa(jcp,npt))*   &
       !            (phith(ilayer)+(phicc+phirayo)*volume_couche                 &
       !                           *(1.0d0/delray(ilayer-1)+1.0d0/rayond(ilayer)))
       b(ilayer) = 1.d0 + (lambda*dtp)/(rho(ilayer)                             &
-                         * ettpa(npt,jcp)*delray(ilayer-1))                    &
+                         * eptpa(jcp,npt)*delray(ilayer-1))                    &
                          * ( 1.0d0/delray(ilayer-1)-1.0d0/rayond(ilayer) )     &
-                       + ( dtp*(coefh+f)/(rho(ilayer)*ettpa(npt,jcp))          &
+                       + ( dtp*(coefh+f)/(rho(ilayer)*eptpa(jcp,npt))          &
                           * ( 1.0d0/delray(ilayer-1)+1.0d0/rayond(ilayer) ) )
-      d(ilayer) = ettp(npt,jhp(ilayer))+dtp/(mlayer(ilayer)*ettpa(npt,jcp))*   &
-                  (phith(ilayer) + ( coefh*(ettp(npt,jtf)+tkelvi)+f*temprayo)  &
+      d(ilayer) = eptp(jhp(ilayer),npt)+dtp/(mlayer(ilayer)*eptpa(jcp,npt))*   &
+                  (phith(ilayer) + ( coefh*(eptp(jtf,npt)+tkelvi)+f*temprayo)  &
                                     * volume_couche                            &
                               *(1.0d0/delray(ilayer-1)+1.0d0/rayond(ilayer)) )
     else
-      f = (lambda*dtp)/(rho(ilayer)*ettpa(npt,jcp)                             &
+      f = (lambda*dtp)/(rho(ilayer)*eptpa(jcp,npt)                             &
                         *delray(ilayer-1)*delray(ilayer))
       a(ilayer) = - f* ( 2.0d0*delray(ilayer)/(delray(ilayer-1)+delray(ilayer))&
                         - (delray(ilayer)/rayond(ilayer)) )
@@ -231,8 +214,8 @@ if (nlayer.gt.1) then
                                         /rayond(ilayer)) )
       c(ilayer) = -f*( 2.0d0*delray(ilayer-1)/(delray(ilayer-1)+delray(ilayer))&
                         + (delray(ilayer-1)/rayond(ilayer)) )
-      d(ilayer) = ettp(npt,jhp(ilayer)) +                                      &
-                  (phith(ilayer)*dtp)/(mlayer(ilayer)*ettpa(npt,jcp))
+      d(ilayer) = eptp(jhp(ilayer),npt) +                                      &
+                  (phith(ilayer)*dtp)/(mlayer(ilayer)*eptpa(jcp,npt))
     endif
   enddo
 
@@ -275,27 +258,27 @@ if (nlayer.gt.1) then
 !===============================================================================
 else if (nlayer.eq.1) then
 
-  dd2 = ettp(npt,jdp)**2
-  diamp2 = xashch(icha)*tepa(npt,jrd0p)*tepa(npt,jrd0p)                        &
-           +(1.d0-xashch(icha))*tepa(npt,jrdck)*tepa(npt,jrdck)
+  dd2 = eptp(jdp,npt)**2
+  diamp2 = xashch(icha)*pepa(jrd0p,npt)*pepa(jrd0p,npt)                        &
+           +(1.d0-xashch(icha))*pepa(jrdck,npt)*pepa(jrdck,npt)
   tpscara = tempct(npt,1)*diamp2/dd2
 
   !     Rayonnement
   phirayo = ( propce(iel,ipproc(ilumin))/4.d0                                  &
-              - stephn*((ettp(npt,jhp(nlayer)))**4) )
+              - stephn*((eptp(jhp(nlayer),npt))**4) )
 
-  aux1 = ettp(npt,jtf)+tkelvi + tpscara*(phirayo*pi*diamp2+phith(nlayer))      &
-                                /(ettp(npt,jmp)*ettp(npt,jcp))
+  aux1 = eptp(jtf,npt)+tkelvi + tpscara*(phirayo*pi*diamp2+phith(nlayer))      &
+                                /(eptp(jmp,npt)*eptp(jcp,npt))
   aux2 = exp(-dtp/tpscara)
 
   if (nor.eq.1) then
-    tsvar(npt,jhp(nlayer)) = 0.5d0*ettpa(npt,jhp(nlayer))*aux2                 &
+    tsvar(npt,jhp(nlayer)) = 0.5d0*eptpa(jhp(nlayer),npt)*aux2                 &
                              + (-aux2+(1.0d0-aux2)*tpscara/dtp)*aux1
-    temp(nlayer) = ettpa(npt,jhp(nlayer))*aux2 +                               &
+    temp(nlayer) = eptpa(jhp(nlayer),npt)*aux2 +                               &
                    (1.0d0-aux2)*aux1
 
   else if (nor.eq.2) then
-    temp(nlayer) = tsvar(npt,jhp(nlayer)) + 0.5d0*ettpa(npt,jhp(nlayer))*aux2  &
+    temp(nlayer) = tsvar(npt,jhp(nlayer)) + 0.5d0*eptpa(jhp(nlayer),npt)*aux2  &
                    + (1.0d0-(1.0d0-aux2)*tpscara/dtp)*aux1
 
   endif

@@ -26,11 +26,10 @@ subroutine uslag2 &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   itypfb , itrifb , ifrlag ,                                     &
+   dt     )
 
 !===============================================================================
 ! Purpose:
@@ -62,23 +61,13 @@ subroutine uslag2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the             !
 ! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
 ! ifrlag(nfabor    ! ia ! --> ! type of the Lagrangian boundary faces          !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -90,6 +79,7 @@ subroutine uslag2 &
 ! Module files
 !===============================================================================
 
+use parall
 use paramx
 use numvar
 use optcal
@@ -111,14 +101,13 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 integer          itypfb(nfabor) , itrifb(nfabor)
-integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
+integer          ifrlag(nfabor)
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables
 

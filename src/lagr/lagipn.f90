@@ -195,13 +195,13 @@ endif
 
 do npt = npar1,npar2
 
-  iel = itepa(npt,jisor)
+  iel = ipepa(jisor,npt)
 
   tu = sqrt( d2s3*w1(iel) )
 
-  ettp(npt,juf) = vel(1,iel) + vagaus(npt,1)*tu
-  ettp(npt,jvf) = vel(2,iel) + vagaus(npt,2)*tu
-  ettp(npt,jwf) = vel(3,iel) + vagaus(npt,3)*tu
+  eptp(juf,npt) = vel(1,iel) + vagaus(npt,1)*tu
+  eptp(jvf,npt) = vel(2,iel) + vagaus(npt,2)*tu
+  eptp(jwf,npt) = vel(3,iel) + vagaus(npt,3)*tu
 
 enddo
 
@@ -210,14 +210,14 @@ enddo
 if (idepst.eq.1) then
 
   do npt = npar1,npar2
-    iel = itepa(npt,jisor)
+    iel = ipepa(jisor,npt)
     !Calculation of the normalized wall-normal particle distance (y^+)
 
     dismin = 1.d+20
     dismax = -1.d+20
 
     distp = 1.0d+20
-    tepa(npt,jryplu) = 1.0d3
+    pepa(jryplu,npt) = 1.0d3
     nbfac = 0
 
     do il = itycel(iel)+1,itycel(iel+1)
@@ -248,9 +248,9 @@ if (idepst.eq.1) then
           ustar = uetbor(ifac)
           lvisq = visccf / ustar
 
-          px = ettp(npt,jxp)
-          py = ettp(npt,jyp)
-          pz = ettp(npt,jzp)
+          px = eptp(jxp,npt)
+          py = eptp(jyp,npt)
+          pz = eptp(jzp,npt)
 
           d1 = abs(px*dlgeo(ifac,1)+py*dlgeo(ifac,2)         &
                   +pz*dlgeo(ifac,3)+dlgeo(ifac,4))           &
@@ -260,38 +260,38 @@ if (idepst.eq.1) then
 
           if (d1.lt.distp) then
             distp = d1
-            tepa(npt,jryplu) = distp/lvisq
-            itepa(npt,jdfac) = ifac
+            pepa(jryplu,npt) = distp/lvisq
+            ipepa(jdfac,npt) = ifac
           endif
         endif
       endif
     enddo
 
-    if (tepa(npt,jryplu).lt.tepa(npt,jrinpf)) then
-      itepa(npt,jimark) = 10
-    elseif (tepa(npt,jryplu).gt.100.d0) then
-      itepa(npt,jimark) = -1
+    if (pepa(jryplu,npt).lt.pepa(jrinpf,npt)) then
+      ipepa(jimark,npt) = 10
+    elseif (pepa(jryplu,npt).gt.100.d0) then
+      ipepa(jimark,npt) = -1
     else
 
       call zufall(1, unif1(1))
       !==========
       if (unif1(1).lt.0.25d0) then
-        itepa(npt,jimark) = 12
+        ipepa(jimark,npt) = 12
       elseif (unif1(1).gt.0.625d0) then
-        itepa(npt,jimark) = 1
+        ipepa(jimark,npt) = 1
       elseif ((unif1(1).gt.0.25d0).and.(unif1(1).lt.0.625d0)) then
-        itepa(npt,jimark) = 3
+        ipepa(jimark,npt) = 3
       endif
     endif
 
-    if (tepa(npt,jryplu).le.tepa(npt,jrinpf)) then
-      ettp(npt,juf) = vel(1,iel)
-      ettp(npt,jvf) = vel(2,iel)
-      ettp(npt,jwf) = vel(3,iel)
+    if (pepa(jryplu,npt).le.pepa(jrinpf,npt)) then
+      eptp(juf,npt) = vel(1,iel)
+      eptp(jvf,npt) = vel(2,iel)
+      eptp(jwf,npt) = vel(3,iel)
     endif
 
     ! No deposited particles at the injection
-    itepa(npt,jdepo) = 0
+    ipepa(jdepo,npt) = 0
 
   enddo
 
@@ -300,13 +300,13 @@ if (idepst.eq.1) then
 
   if (ireent.gt.0) then
 
-    tepa(npt,jfadh) = 0.d0
-    tepa(npt,jmfadh) = 0.d0
+    pepa(jfadh,npt) = 0.d0
+    pepa(jmfadh,npt) = 0.d0
 
-    itepa(npt,jnbasg) = 0
-    itepa(npt,jnbasp) = 0
+    ipepa(jnbasg,npt) = 0
+    ipepa(jnbasp,npt) = 0
 
-    tepa(npt,jndisp) = 0.d0
+    pepa(jndisp,npt) = 0.d0
 
   endif
 

@@ -23,9 +23,7 @@
 subroutine lagres &
 !================
 
- ( nbpmax , nvp    , nvep   , nivep  ,                            &
-   itepa  ,                                                       &
-   ettp   , ettpa  , tepa   , rtp , parbor, nvisbr)
+ ( rtp , parbor, nvisbr)
 
 !===============================================================================
 
@@ -45,18 +43,6 @@ subroutine lagres &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
-! ettp             ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! parbor           ! tr ! <-->! infos sur interaction des particules           !
@@ -94,11 +80,8 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvep  , nivep , nvisbr
-integer          itepa(nbpmax,nivep)
+integer          nvisbr
 
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision rtp (ncelet,nflown:nvar)
 double precision parbor(nfabor,nvisbr)
 
@@ -127,46 +110,38 @@ do ip = 1, nbpart
 
    test_colli = 0
 
-   if (itepa(ip,jdepo).eq.1) then
+   if (ipepa(jdepo,ip).eq.1) then
 
       ! The particle has just deposited
       ! The adhesion force is calculated
 
-      call lagadh                                                     &
-           ( ip   ,                                                   &
-           nbpmax , nvp    , nvep   , nivep  ,                        &
-           itepa  ,                                                   &
-           ettp   , tepa   , rtp , adhesion_energ)
+      call lagadh(ip, rtp, adhesion_energ)
 
-   elseif (itepa(ip,jdepo).eq.2) then
+   elseif (ipepa(jdepo,ip).eq.2) then
 
       ! The particle is rolling
       ! if the number of great asperities
       ! is null it is marked for a possible collision
 
-      if (itepa(ip,jnbasg).eq.0) then
+      if (ipepa(jnbasg,ip).eq.0) then
          test_colli = 1
       endif
 
-      if (tepa(ip,jndisp).gt.ettp(ip,jdp).and. &
-           tepa(ip,jndisp).lt. 2.d0 * ettp(ip,jdp)) then
+      if (pepa(jndisp,ip).gt.eptp(jdp,ip).and. &
+           pepa(jndisp,ip).lt. 2.d0 * eptp(jdp,ip)) then
 
          ! If the particle has a displacement approximately
          ! equal to a diameter, recalculation of the adhesion force
 
-         tepa(ip,jndisp) = 0.d0
+         pepa(jndisp,ip) = 0.d0
 
-         call lagadh                                                     &
-              ( ip   ,                                                   &
-              nbpmax , nvp    , nvep   , nivep  ,                        &
-              itepa  ,                                                   &
-              ettp   , tepa   , rtp , adhesion_energ)
+         call lagadh(ip, rtp, adhesion_energ)
 
-            if ((test_colli.eq.1) .and. (itepa(ip,jnbasg).gt.0)) then
+            if ((test_colli.eq.1) .and. (ipepa(jnbasg,ip).gt.0)) then
 
-               kinetic_energy = 0.5d0 * ettp(ip,jmp) * (ettp(ip,jup)**2      &
-                                                  +    ettp(ip,jvp)**2       &
-                                                  +    ettp(ip,jwp)**2)
+               kinetic_energy = 0.5d0 * eptp(jmp,ip) * (eptp(jup,ip)**2      &
+                                                  +    eptp(jvp,ip)**2       &
+                                                  +    eptp(jwp,ip)**2)
 
                if (kinetic_energy.gt.adhesion_energ) then
 
@@ -174,67 +149,63 @@ do ip = 1, nbpart
                   ! and its kinetic energy is totally converted
                   ! along the wall-normal distance
 
-                  itepa(ip,jdepo) = 0
+                  ipepa(jdepo,ip) = 0
 
-                  tepa(ip,jfadh) = 0.d0
-                  tepa(ip,jmfadh) = 0.d0
+                  pepa(jfadh,ip) = 0.d0
+                  pepa(jmfadh,ip) = 0.d0
 
-                  itepa(ip,jnbasg) = 0
-                  itepa(ip,jnbasp) = 0
+                  ipepa(jnbasg,ip) = 0
+                  ipepa(jnbasp,ip) = 0
 
-                  tepa(ip,jndisp) = 0.d0
+                  pepa(jndisp,ip) = 0.d0
 
-                  norm_face = surfbn(itepa(ip,jdfac))
+                  norm_face = surfbn(ipepa(jdfac,ip))
 
-                  norm_velocity = sqrt(ettp(ip,jup)**2 + ettp(ip,jvp)**2 + ettp(ip,jwp)**2)
+                  norm_velocity = sqrt(eptp(jup,ip)**2 + eptp(jvp,ip)**2 + eptp(jwp,ip)**2)
 
-                  ettp(ip,jup) = - norm_velocity / norm_face * surfbo(1, itepa(ip,jdfac))
-                  ettp(ip,jvp) = - norm_velocity / norm_face * surfbo(2, itepa(ip,jdfac))
-                  ettp(ip,jwp) = - norm_velocity / norm_face * surfbo(3, itepa(ip,jdfac))
+                  eptp(jup,ip) = - norm_velocity / norm_face * surfbo(1, ipepa(jdfac,ip))
+                  eptp(jvp,ip) = - norm_velocity / norm_face * surfbo(2, ipepa(jdfac,ip))
+                  eptp(jwp,ip) = - norm_velocity / norm_face * surfbo(3, ipepa(jdfac,ip))
 
                   ! Update of the number and weight of resuspended particles
 
                   nbpres = nbpres + 1
-                  dnbres = dnbres + tepa(ip, jrpoi)
+                  dnbres = dnbres + pepa( jrpoi,ip)
 
-                  parbor(itepa(ip,jdfac),ires) = parbor(itepa(ip,jdfac),ires) + tepa(ip,jrpoi)
+                  parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
 
-                  parbor(itepa(ip,jdfac),iflres) = parbor(itepa(ip,jdfac),iflres)                  &
-                              + ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+                  parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres)                  &
+                              + ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
 
-                  parbor(itepa(ip,jdfac),iflm) = parbor(itepa(ip,jdfac),iflm)                   &
-                              - ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+                  parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                   &
+                              - ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
 
 
                endif
 
             endif
 
-      elseif (tepa(ip,jndisp).ge. 2d0 * ettp(ip,jdp)) then
+      elseif (pepa(jndisp,ip).ge. 2d0 * eptp(jdp,ip)) then
 
-         ndiam = floor(tepa(ip,jndisp) / ettp(ip,jdp))
+         ndiam = floor(pepa(jndisp,ip) / eptp(jdp,ip))
 
          ii = 1
 
-         do while ((ii.le.ndiam).and.(itepa(ip,jdepo).eq.2))
+         do while ((ii.le.ndiam).and.(ipepa(jdepo,ip).eq.2))
 
-            call lagadh                                                     &
-                 ( ip   ,                                                   &
-                 nbpmax , nvp    , nvep   , nivep  ,                        &
-                 itepa  ,                                                   &
-                 ettp   , tepa   , rtp , adhesion_energ)
+            call lagadh(ip, rtp, adhesion_energ)
 
             ! Reconstruct an estimate of the particle velocity
             ! at the current sub-time-step assuming linear variation
             ! (constant acceleration)
 
-            v_part_t = sqrt( ettpa(ip,jup) ** 2                         &
-                           + ettpa(ip,jvp) ** 2                         &
-                           + ettpa(ip,jwp) ** 2)
+            v_part_t = sqrt( eptpa(jup,ip) ** 2                         &
+                           + eptpa(jvp,ip) ** 2                         &
+                           + eptpa(jwp,ip) ** 2)
 
-            v_part_t_dt = sqrt( ettp(ip,jup) ** 2                       &
-                              + ettp(ip,jvp) ** 2                       &
-                              + ettp(ip,jwp) ** 2)
+            v_part_t_dt = sqrt( eptp(jup,ip) ** 2                       &
+                              + eptp(jvp,ip) ** 2                       &
+                              + eptp(jwp,ip) ** 2)
 
             sub_dt = dtp / ndiam
 
@@ -243,30 +214,30 @@ do ip = 1, nbpart
             ! Reconstruct an estimate of the angular velocity
             ! at the current sub-time-step
 
-            omep = v_part_inst / (ettp(ip,jdp) * 0.5d0)
+            omep = v_part_inst / (eptp(jdp,ip) * 0.5d0)
 
             ! Variation of the angular velocity due to
             ! the update of the adhesion torque
 
-            domep = tepa(ip,jmfadh)                                &
-                 /((7.d0/5.d0)*ettp(ip,jmp)*(ettp(ip,jdp) * 0.5d0)**2)
+            domep = pepa(jmfadh,ip)                                &
+                 /((7.d0/5.d0)*eptp(jmp,ip)*(eptp(jdp,ip) * 0.5d0)**2)
 
             if ((domep * sub_dt) .gt. omep) then
 
-               itepa(ip,jdepo) = 10
+               ipepa(jdepo,ip) = 10
 
-               ettp(ip,jup) = 0.d0
-               ettp(ip,jvp) = 0.d0
-               ettp(ip,jwp) = 0.d0
+               eptp(jup,ip) = 0.d0
+               eptp(jvp,ip) = 0.d0
+               eptp(jwp,ip) = 0.d0
 
             endif
 
 
-            if ((test_colli.eq.1) .and. (itepa(ip,jnbasg).gt.0)) then
+            if ((test_colli.eq.1) .and. (ipepa(jnbasg,ip).gt.0)) then
 
-               kinetic_energy = 0.5d0 * ettp(ip,jmp) * (ettp(ip,jup)**2      &
-                                                  +    ettp(ip,jvp)**2       &
-                                                  +    ettp(ip,jwp)**2)
+               kinetic_energy = 0.5d0 * eptp(jmp,ip) * (eptp(jup,ip)**2      &
+                                                  +    eptp(jvp,ip)**2       &
+                                                  +    eptp(jwp,ip)**2)
 
 
               if (kinetic_energy.gt.adhesion_energ) then
@@ -275,39 +246,39 @@ do ip = 1, nbpart
                   ! and its kinetic energy is totally converted
                   ! along the wall-normal distance
 
-                  itepa(ip,jdepo) = 0
+                  ipepa(jdepo,ip) = 0
 
-                  tepa(ip,jfadh) = 0.d0
-                  tepa(ip,jmfadh) = 0.d0
+                  pepa(jfadh,ip) = 0.d0
+                  pepa(jmfadh,ip) = 0.d0
 
-                  itepa(ip,jnbasg) = 0
-                  itepa(ip,jnbasp) = 0
+                  ipepa(jnbasg,ip) = 0
+                  ipepa(jnbasp,ip) = 0
 
-                  tepa(ip,jndisp) = 0.d0
+                  pepa(jndisp,ip) = 0.d0
 
-                  norm_face = surfbn(itepa(ip,jdfac))
+                  norm_face = surfbn(ipepa(jdfac,ip))
 
-                  norm_velocity = sqrt(ettp(ip,jup)**2 + ettp(ip,jvp)**2 + ettp(ip,jwp)**2)
+                  norm_velocity = sqrt(eptp(jup,ip)**2 + eptp(jvp,ip)**2 + eptp(jwp,ip)**2)
 
-                  ettp(ip,jup) = - norm_velocity / norm_face * surfbo(1, itepa(ip,jdfac))
-                  ettp(ip,jvp) = - norm_velocity / norm_face * surfbo(2, itepa(ip,jdfac))
-                  ettp(ip,jwp) = - norm_velocity / norm_face * surfbo(3, itepa(ip,jdfac))
+                  eptp(jup,ip) = - norm_velocity / norm_face * surfbo(1, ipepa(jdfac,ip))
+                  eptp(jvp,ip) = - norm_velocity / norm_face * surfbo(2, ipepa(jdfac,ip))
+                  eptp(jwp,ip) = - norm_velocity / norm_face * surfbo(3, ipepa(jdfac,ip))
 
                   ! Update of the number and weight of resuspended particles
 
                   nbpres = nbpres + 1
-                  dnbres = dnbres + tepa(ip, jrpoi)
+                  dnbres = dnbres + pepa( jrpoi,ip)
 
-                  parbor(itepa(ip,jdfac),ires) = parbor(itepa(ip,jdfac),ires) + tepa(ip,jrpoi)
+                  parbor(ipepa(jdfac,ip),ires) = parbor(ipepa(jdfac,ip),ires) + pepa(jrpoi,ip)
 
-                  parbor(itepa(ip,jdfac),iflres) = parbor(itepa(ip,jdfac),iflres)                  &
-                                     + ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+                  parbor(ipepa(jdfac,ip),iflres) = parbor(ipepa(jdfac,ip),iflres)                  &
+                                     + ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
 
-                  parbor(itepa(ip,jdfac),iflm) = parbor(itepa(ip,jdfac),iflm)                   &
-                                   - ( tepa(ip,jrpoi) * ettp(ip,jmp) / norm_face)
+                  parbor(ipepa(jdfac,ip),iflm) = parbor(ipepa(jdfac,ip),iflm)                   &
+                                   - ( pepa(jrpoi,ip) * eptp(jmp,ip) / norm_face)
                endif
 
-               if (itepa(ip,jnbasg).eq.0) then
+               if (ipepa(jnbasg,ip).eq.0) then
                   test_colli = 1
 
                endif
@@ -318,7 +289,7 @@ do ip = 1, nbpart
 
          enddo ! do while ..
 
-      endif ! if tepa(ip,jndisp)
+      endif ! if pepa(jndisp,ip)
 
 
    endif  ! if jdepo = ...

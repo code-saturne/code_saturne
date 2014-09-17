@@ -184,11 +184,11 @@ enddo
 ! CORRECTION DES VITESSES INSTANTANNES
 
 do npt = 1,nbpart
-  if (itepa(npt,jisor).gt.0) then
-    iel = itepa(npt,jisor)
-    ettp(npt,jup) = ettp(npt,jup) - grad(iel,1)
-    ettp(npt,jvp) = ettp(npt,jvp) - grad(iel,2)
-    ettp(npt,jwp) = ettp(npt,jwp) - grad(iel,3)
+  if (ipepa(jisor,npt).gt.0) then
+    iel = ipepa(jisor,npt)
+    eptp(jup,npt) = eptp(jup,npt) - grad(iel,1)
+    eptp(jvp,npt) = eptp(jvp,npt) - grad(iel,2)
+    eptp(jwp,npt) = eptp(jwp,npt) - grad(iel,3)
   endif
 enddo
 

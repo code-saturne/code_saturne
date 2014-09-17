@@ -23,10 +23,8 @@
 subroutine lagitf &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   itepa  ,                                                       &
-   rtp    , propce ,                                              &
-   ettp   , ettpa  , tepa   , tsvar  ,                            &
+ ( rtp    , propce ,                                              &
+   tsvar  ,                                                       &
    auxl1  )
 
 !===============================================================================
@@ -44,22 +42,9 @@ subroutine lagitf &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! nvp              ! e  ! <-- ! nombre de variables particulaires              !
-! nvp1             ! e  ! <-- ! nvp sans position, vfluide, vpart              !
-! nvep             ! e  ! <-- ! nombre info particulaires (reels)              !
-! nivep            ! e  ! <-- ! nombre info particulaires (entiers)            !
-! itepa            ! te ! <-- ! info particulaires (entiers)                   !
-! (nbpmax,nivep    !    !     !   (cellule de la particule,...)                !
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! ettp             ! tr ! --> ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape courante                !
-! ettpa            ! tr ! <-- ! tableaux des variables liees                   !
-!  (nbpmax,nvp)    !    !     !   aux particules etape precedente              !
-! tepa             ! tr ! <-- ! info particulaires (reels)                     !
-! (nbpmax,nvep)    !    !     !   (poids statistiques,...)                     !
 ! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
 ! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
 !                  !    !     !   correction au 2eme sous-pas                  !
@@ -83,6 +68,7 @@ use cstnum
 use optcal
 use dimens, only: nvar
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -97,14 +83,8 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp , nvp1 , nvep , nivep
-
-integer          itepa(nbpmax,nivep)
-
 double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax)
 
@@ -195,9 +175,9 @@ endif
 
 do npt = 1,nbpart
 
-  if ( itepa(npt,jisor).gt.0 ) then
+  if ( ipepa(jisor,npt).gt.0 ) then
 
-    iel = itepa(npt,jisor)
+    iel = ipepa(jisor,npt)
 
     if (itytur.eq.2 .or. itytur.eq.3 .or.           &
         iturb.eq.50 .or. iturb.eq.60) then
@@ -237,17 +217,17 @@ if (nor.eq.1) then
 
   do npt = 1,nbpart
 
-    if (itepa(npt,jisor).gt.0) then
+    if (ipepa(jisor,npt).gt.0) then
 
-      iel = itepa(npt,jisor)
+      iel = ipepa(jisor,npt)
 
       aux1 = -dtp/auxl1(npt)
       aux2 = exp(aux1)
 
-      ter1 = ettpa(npt,jtf) * aux2
+      ter1 = eptpa(jtf,npt) * aux2
       ter2 = tempf(iel) * ( 1.d0-aux2 )
 
-      ettp(npt,jtf) = ter1 + ter2
+      eptp(jtf,npt) = ter1 + ter2
 
 !            Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
 
@@ -260,17 +240,17 @@ else if (nor.eq.2) then
 
   do npt = 1,nbpart
 
-    if (itepa(npt,jisor).gt.0 .and. itepa(npt,jord1).eq.0) then
+    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
 
-      iel = itepa(npt,jisor)
+      iel = ipepa(jisor,npt)
 
       aux1 = -dtp/auxl1(npt)
       aux2 = exp(aux1)
 
-      ter1 = 0.5d0 * ettpa(npt,jtf) * aux2
+      ter1 = 0.5d0 * eptpa(jtf,npt) * aux2
       ter2 = tempf(iel) * (1.d0 - (aux2-1.d0) / aux1)
 
-      ettp(npt,jtf) = tsvar(npt,jtf) + ter1 + ter2
+      eptp(jtf,npt) = tsvar(npt,jtf) + ter1 + ter2
     endif
   enddo
 endif

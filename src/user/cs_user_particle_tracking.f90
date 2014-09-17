@@ -25,11 +25,9 @@
 subroutine uslaed &
 !================
 
- ( nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
+ ( ntersl , nvlsta , nvisbr ,                                     &
    dt     ,                                                       &
-   ettp   , ettpa  , tepa   , taup   , tlag   , tempct , tsvar  , &
+   taup   , tlag   , tempct , tsvar  ,                            &
    auxl1  , auxl2  , auxl3  )
 
 !===============================================================================
@@ -51,8 +49,8 @@ subroutine uslaed &
 
 
 !     T : IIIIeme user-defined variable, given for the ip particle by
-!            T = ETTP(IP,JVLS(IIII))
-!            T = ETTPA(IP,JVLS(IIII))
+!            T = EPTP(JVLS(IIII),IP)
+!            T = EPTPA(JVLS(IIII),IP)
 
 !     Tca : Characteristic time for the sde
 !           to be prescribed in the array auxl1
@@ -62,36 +60,24 @@ subroutine uslaed &
 !
 !           If the chosen scheme is first order (nordre=1)
 !           then, at the first and only passage pip is expressed
-!           as a function of the quantities of the previous time step contained in ettpa
+!           as a function of the quantities of the previous time step contained
+!           in eptpa
 !
 !           If the chosen scheme is second order (nordre=2)
 !           then, at the first passage (nor=1) pip is expressed as
-!           a function of the quantities of the previous time step contained in ettpa,
+!           a function of the quantities of the previous time step contained in eptpa,
 !           and at the second passage (nor=2) pip is expressed as
-!           a function of the quantities of the current time step contained in ettp
+!           a function of the quantities of the current time step contained in eptp
 
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! ettpa            ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 ! taup(nbpmax)     ! ra ! <-- ! particle relaxation time                       !
 ! tlag(nbpmax)     ! ra ! <-- ! relaxation time for the flow                   !
 ! tempct           ! ra ! <-- ! characteristic thermal time and                !
@@ -121,6 +107,7 @@ use cstnum
 use optcal
 use dimens, only: nvar
 use entsor
+use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use mesh
@@ -131,14 +118,9 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)
-
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
 double precision tsvar(nbpmax,nvp1)
 double precision auxl1(nbpmax), auxl2(nbpmax), auxl3(nbpmax)
@@ -204,15 +186,15 @@ endif
 
 do iiii = 1,nvls
 
-!      Number of the treated variable in ettp
+  ! Number of the treated variable in eptp
 
   ipl = jvls(iiii)
 
   do npt = 1,nbpart
 
-    if ( itepa(npt,jisor).gt.0 ) then
+    if ( ipepa(jisor,npt).gt.0 ) then
 
-      iel = itepa(npt,jisor)
+      iel = ipepa(jisor,npt)
 
 !     Characteristic time tca of the differential equation
 !     This example must be adapted to the case
@@ -223,13 +205,13 @@ do iiii = 1,nvls
 !     This example must be adapted to the case
 
       if (nor.eq.1) then
-        auxl2(npt) = ettpa(npt,ipl)
+        auxl2(npt) = eptpa(ipl,npt)
       else
 
 !     Correction at the second substep
 !     This example must be adapted to the case
 
-        auxl2(npt) = ettp(npt,ipl)
+        auxl2(npt) = eptp(ipl,npt)
       endif
 
     endif
@@ -241,10 +223,8 @@ do iiii = 1,nvls
 
   call lagitg                                                     &
   !==========
-   ( nbpmax , nvp    , nvp1   , nivep ,                           &
-     ipl    ,                                                     &
-     itepa  ,                                                     &
-     ettp   , ettpa  , auxl1  , auxl2  , tsvar  )
+   ( ipl    ,                                                     &
+     auxl1  , auxl2  , tsvar  )
 
 enddo
 
@@ -264,11 +244,10 @@ subroutine uslafe &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itepa  ,                                                       &
    dt     ,                                                       &
-   ettp   , ettpa  , tepa   , statis , stativ ,                   &
+   statis , stativ ,                                              &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
@@ -298,22 +277,10 @@ subroutine uslafe &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep)   !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     !                                                !
-! ettpa            ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     !                                                !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-!  (nbpmax,nvep)   !    !     !                                                !
 ! statis           ! ra ! <-- ! cumul for the averages of the volume stats.    !
 !  (ncelet,nvlsta) !    !     !                                                !
 ! stativ           ! ra ! <-- ! cumulation for the variance of the volume      !
@@ -366,14 +333,10 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
-integer          itepa(nbpmax,nivep)
-
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 double precision statis(ncelet,*),stativ(ncelet,*)
 double precision taup(nbpmax) , tlag(nbpmax,3)
 double precision piil(nbpmax,3) , bx(nbpmax,3,2)
@@ -387,7 +350,6 @@ double precision fextla(nbpmax,3)
 ! Local variables
 
 integer          ip
-
 
 !===============================================================================
 
@@ -451,12 +413,12 @@ subroutine uslain &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    nptnew , iprev  ,                                              &
-   itypfb , itrifb , itepa  , ifrlag , injfac ,                   &
+   itypfb , itrifb , ifrlag , injfac ,                            &
    dt     ,                                                       &
-   ettp   , tepa   , vagaus , icocel , lndnod , itycel , dlgeo,   &
+   vagaus , icocel , lndnod , itycel , dlgeo,                     &
    ncmax  , nzmax  , iusloc )
 
 !===============================================================================
@@ -472,7 +434,7 @@ subroutine uslain &
 ! (inlet and treatment for the other boundaries)
 !
 ! This routine is called after the initialization of the
-! ettp, tepa and itepa arrays for the new particles in order to modify them
+! eptp, pepa and ipepa arrays for the new particles in order to modify them
 ! to inject new particle profiles.
 !
 
@@ -484,10 +446,6 @@ subroutine uslain &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
@@ -499,14 +457,8 @@ subroutine uslain &
 ! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the boundary    !
 ! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
 ! ifrlag(nfabor)   ! ia ! --> ! type of the Lagrangian boundary faces          !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! injfac(npbmax)   ! ia ! <-- ! number of the injection boundary face          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 ! vagaus           ! ra ! --> ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! icocel           ! ia ! <-- ! connectivity cells -> faces                    !
@@ -551,18 +503,17 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 integer          nptnew
 integer          iprev
 integer          lndnod
 
 integer          itypfb(nfabor) , itrifb(nfabor)
-integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
+integer          ifrlag(nfabor)
 integer          injfac(nbpmax)
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*)
 integer          icocel(lndnod) ,  itycel(ncelet+1)
 double precision dlgeo(nfabor,ngeol)
@@ -643,8 +594,8 @@ do ii = 1,nfrlag
 !        WITH RESPECT TO THE INJECTION POSITION
 !-----------------------------------------------------------
 !    For instance, the user can call his own subroutine that provides
-!    the three components of the instantaneous velocities ettp(ip,jup)
-!    ettp(ip,jvp) and  ettp(ip,jwp) with respect to  ettp(ip,jzp)
+!    the three components of the instantaneous velocities eptp(jup,ip)
+!    eptp(jvp,ip) and  eptp(jwp,ip) with respect to  eptp(jzp,ip)
 !    (through interpolation for instance). More simply, the user can provide
 !    the three components of the instantaneous velocities, under the form
 !    of a mean value (taken arbitrarily here equal to (2,0,0) m/s) added
@@ -653,9 +604,9 @@ do ii = 1,nfrlag
 !
         ipnorm = 2
         call normalen(ipnorm,vgauss)
-        ettp(ip,jup) = 2.d0 + vgauss(1) * 0.2d0
-        ettp(ip,jvp) = 0.d0
-        ettp(ip,jwp) = 0.d0 + vgauss(2) * 0.2d0
+        eptp(jup,ip) = 2.d0 + vgauss(1) * 0.2d0
+        eptp(jvp,ip) = 0.d0
+        eptp(jwp,ip) = 0.d0 + vgauss(2) * 0.2d0
 
       enddo
 
@@ -671,7 +622,7 @@ enddo
 !    BY THE SOLID PARTICLES ALONG THEIR TRAJECTORIES.
 !===============================================================================
 !
-! Entering this subroutine, the ettp(ip,juf) ettp(ip,jvf) and ettp(ip,jwf) arrays
+! Entering this subroutine, the eptp(juf,ip) eptp(jvf,ip) and eptp(jwf,ip) arrays
 ! are filled with the components of the instantaneous velocity (fluctuation + mean value)
 ! seen by the particles
 !
@@ -723,13 +674,12 @@ subroutine uslapr &
 
  ( idvar  , iepart , izone  , iclass ,                            &
    nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  , ifrlag ,                            &
+   itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
    tvpart , uupart , vvpart , wwpart , ddpart , ttpart  ,         &
-   dt     ,                                                       &
-   ettp   , tepa   )
+   dt     )
 
 !===============================================================================
 ! Purpose:
@@ -762,18 +712,12 @@ subroutine uslapr &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itrifb(nfabor)   ! ia ! <-- ! indirection for the sorting of the             !
 ! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
 ! ifrlag(nfabor)   ! ia ! --> ! type of the Lagrangian boundary faces          !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! xxpart           !  r ! <-- ! x-coordinate of the particle                   !
 ! yypart           !  r ! <-- ! y-coordinate of the particle                   !
 ! zzpart           !  r ! <-- ! z-coordinate of the particle                   !
@@ -784,10 +728,6 @@ subroutine uslapr &
 ! ddpart           !  r ! <-- ! particle diameter                              !
 ! ttpart           !  r ! <-- ! particle temperature                           !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -823,18 +763,17 @@ implicit none
 integer          idvar  , iepart , izone  , iclass
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 integer          itypfb(nfabor) , itrifb(nfabor)
-integer          itepa(nbpmax,nivep) , ifrlag(nfabor)
+integer          ifrlag(nfabor)
 
 double precision xxpart , yypart , zzpart
 double precision tvpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 
 ! Local variables
 
@@ -951,11 +890,11 @@ subroutine uslaru &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , itepa  ,                                     &
+   itypfb , itrifb ,                                              &
    dt     ,                                                       &
-   ettp   , tepa   , vagaus , croule , auxl  ,                    &
+   vagaus , croule , auxl  ,                                      &
    distpa , distyp )
 
 !===============================================================================
@@ -978,22 +917,12 @@ subroutine uslaru &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
 ! itypfb(nfabor)   ! ia ! <-- ! type of the boundary faces                     !
 ! itrifb(nfabor)   ! ia ! --> ! indirection for the sorting of the             !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep)   !    !     !                                                !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 ! vagaus           ! ra ! <-- ! Gaussian random variables                      !
 !(nbpmax,nvgaus    !    !     !                                                !
 ! croule(ncelet    ! ra ! --> ! function of significance for                   !
@@ -1031,14 +960,12 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 integer          itypfb(nfabor) , itrifb(nfabor)
-integer          itepa(nbpmax,nivep)
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , tepa(nbpmax,nvep)
 double precision vagaus(nbpmax,*) , croule(ncelet)
 double precision auxl(nbpmax,3)
 double precision distpa(ncelet) , distyp(ncelet)
@@ -1123,7 +1050,7 @@ subroutine uslast &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
+   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    dt     ,                                                       &
    taup   , tlag   , tempct )
@@ -1172,10 +1099,6 @@ subroutine uslast &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
@@ -1216,7 +1139,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 double precision dt(ncelet)
@@ -1322,19 +1245,19 @@ if (1.eq.0) then
 
   do npt = 1,nbpart
 
-    if( itepa(npt,jisor).gt.0 ) then
+    if( ipepa(jisor,npt).gt.0 ) then
 
-      iel = itepa(npt,jisor)
+      iel = ipepa(jisor,npt)
 
 ! -------------------------------------------------
 ! EXAMPLE 1: Cumulation for mass concentration
 ! -------------------------------------------------
 
       statis(iel,ilvu(1)) = statis(iel,ilvu(1))                   &
-        + tepa(npt,jrpoi) *ettp(npt,jmp)
+        + pepa(jrpoi,npt) *eptp(jmp,npt)
 
       stativ(iel,ilvu(1)) = stativ(iel,ilvu(1))                   &
-        + tepa(npt,jrpoi) *ettp(npt,jmp) *ettp(npt,jmp)
+        + pepa(jrpoi,npt) *eptp(jmp,npt) *eptp(jmp,npt)
 
     endif
 
@@ -1371,13 +1294,13 @@ if (1.eq.0) then
 
     do npt = 1,nbpart
 
-      if(itepa(npt,jisor).gt.0) then
+      if(ipepa(jisor,npt).gt.0) then
 
-        iel = itepa(npt,jisor)
+        iel = ipepa(jisor,npt)
 
-        if( ettp(npt,jxp).gt.zz(iplan) .and.                      &
-            ettpa(npt,jxp).le.zz(iplan)      ) then
-          debm(iplan) = debm(iplan) +tepa(npt,jrpoi)*ettp(npt,jmp)
+        if( eptp(jxp,npt).gt.zz(iplan) .and.                      &
+            eptpa(jxp,npt).le.zz(iplan)      ) then
+          debm(iplan) = debm(iplan) +pepa(jrpoi,npt)*eptp(jmp,npt)
         endif
 
       endif
@@ -1510,12 +1433,11 @@ subroutine uslatc &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   numpt  , itepa  ,                                              &
+   nbpmax ,                                                       &
+   numpt  ,                                                       &
    rep    , uvwr   , romf   , romp   , xnul   ,                   &
    xcp    , xrkl   , tauc   ,                                     &
-   dt     ,                                                       &
-   ettp   , ettpa  , tepa   )
+   dt     )
 
 !===============================================================================
 ! Purpose:
@@ -1584,15 +1506,9 @@ subroutine uslatc &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! numpt            ! i  ! <-- !                                                !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! rep              ! r  ! <-- ! particle Reynolds number                       !
-!                  !    !     ! rep = uvwr * ettp(numpt,jdp) / xnul            !
+!                  !    !     ! rep = uvwr * eptp(jdp,numpt) / xnul            !
 ! uvwr             ! r  ! <-- ! relative velocity of the particle              !
 !                  !    !     ! uvwr = |flow-seen velocity - part. velocity |  !
 ! romf             ! r  ! <-- ! fluid density at  particle position            !
@@ -1606,12 +1522,6 @@ subroutine uslatc &
 !                  !    !     ! position                                       !
 ! tauc             ! r  ! --> ! thermal relaxation time                        !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! ettpa            ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1645,17 +1555,13 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          numpt
-
-integer          itepa(nbpmax,nivep)
 
 double precision rep    , uvwr   , romf   , romp   , xnul
 double precision xcp    , xrkl   , tauc
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 
 ! Local variables
 
@@ -1700,7 +1606,7 @@ if (1.eq.0) then
 
   fnus = 2.d0 + 0.55d0 * rep**0.5d0 * prt**(1.d0/3.d0)
 
-  tauc = ettp(ip,jdp) *ettp(ip,jdp) * romp * ettp(ip,jcp)         &
+  tauc = eptp(jdp,ip) *eptp(jdp,ip) * romp * eptp(jcp,ip)         &
            / ( fnus * 6.d0 * romf * xcp * xrkl )
 
 endif
@@ -1726,11 +1632,10 @@ subroutine uslatp &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax , nvp    , nvp1   , nvep   , nivep  ,                   &
-   numpt  , itepa  ,                                              &
+   nbpmax ,                                                       &
+   numpt  ,                                                       &
    rep    , uvwr   , romf   , romp   , xnul   , taup   ,          &
-   dt     ,                                                       &
-   ettp   , ettpa  , tepa   )
+   dt     )
 
 !===============================================================================
 ! Purpose:
@@ -1786,15 +1691,9 @@ subroutine uslatp &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
-! nvp              ! i  ! <-- ! number of particle variables                   !
-! nvp1             ! i  ! <-- ! nvp minus position, fluid and part. velocities !
-! nvep             ! i  ! <-- ! number of particle properties (integer)        !
-! nivep            ! i  ! <-- ! number of particle properties (integer)        !
 ! numpt            ! i  ! <-- !                                                !
-! itepa            ! ia ! <-- ! particle information (integers)                !
-! (nbpmax,nivep    !    !     !                                                !
 ! rep              ! r  ! <-- ! particle Reynolds number                       !
-!                  !    !     ! rep = uvwr * ettp(numpt,jdp) / xnul            !
+!                  !    !     ! rep = uvwr * eptp(jdp,numpt) / xnul            !
 ! uvwr             ! r  ! <-- ! particle relative velocity                     !
 !                  !    !     ! uvwr= |flow-seen velocity - part. velocity|    !
 ! romf             ! r  ! <-- ! fluid density at  particle position            !
@@ -1804,12 +1703,6 @@ subroutine uslatp &
 !                  !    !     ! particle position                              !
 ! taup             ! r  ! --> ! particle relaxation time                       !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ettp             ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the current time step         !
-! ettpa            ! ra ! <-- ! array of the variables associated to           !
-!  (nbpmax,nvp)    !    !     ! the particles at the previous time step        !
-! tepa             ! ra ! <-- ! particle information (real) (statis. weight..) !
-! (nbpmax,nvep)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -1843,16 +1736,12 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax , nvp    , nvp1   , nvep  , nivep
+integer          nbpmax
 integer          numpt
-
-integer          itepa(nbpmax,nivep)
 
 double precision rep    , uvwr   , romf   , romp   , xnul  , taup
 
 double precision dt(ncelet)
-double precision ettp(nbpmax,nvp) , ettpa(nbpmax,nvp)
-double precision tepa(nbpmax,nvep)
 
 ! Local variables
 
@@ -1898,10 +1787,10 @@ if (1.eq.0) then
   cd2  = 0.687d0
 
   if (rep.le.1000) then
-      dd2 = ettp(ip,jdp) * ettp(ip,jdp)
+      dd2 = eptp(jdp,ip) * eptp(jdp,ip)
       fdr = 18.d0 * xnul * (1.d0 + cd1 * rep**cd2) / dd2
   else
-      fdr = (0.44d0 * 3.d0 / 4.d0) * uvwr / ettp(ip,jdp)
+      fdr = (0.44d0 * 3.d0 / 4.d0) * uvwr / eptp(jdp,ip)
   endif
 
   taup = romp / romf / fdr
@@ -1918,7 +1807,7 @@ rec2 =  1.0d0
 rec3 =  10.d0
 rec4 = 200.d0
 
-dd2 = ettp(ip,jdp) * ettp(ip,jdp)
+dd2 = eptp(jdp,ip) * eptp(jdp,ip)
 
 if ( rep.le.rec1 ) then
   fdr = 18.d0 * xnul / dd2
@@ -1935,7 +1824,7 @@ else if ( rep.le.rec4 ) then
     fdr = 18.d0*xnul/dd2 *(1.d0 + 0.15d0*rep**0.687d0)
 
 else
-   fdr = (0.44d0 * 3.d0 / 4.d0) * uvwr / ettp(ip,jdp)
+   fdr = (0.44d0 * 3.d0 / 4.d0) * uvwr / eptp(jdp,ip)
 endif
 
 taup = romp / romf / fdr
