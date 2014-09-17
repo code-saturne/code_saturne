@@ -1711,11 +1711,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         }
 
       /* TODO modify when vec_potential in vector field */
-      const cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_1");
+      const cs_field_t  *fp1 = cs_field_by_name_try("vec_potential_01");
       int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-      const cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_2");
+      const cs_field_t  *fp2 = cs_field_by_name_try("vec_potential_02");
       int ivar2 = cs_field_get_key_int(fp2, var_key_id) -1;
-      const cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_3");
+      const cs_field_t  *fp3 = cs_field_by_name_try("vec_potential_03");
       int ivar3 = cs_field_get_key_int(fp3, var_key_id) -1;
 
       if (boundaries->type_code[fp1->id][izone] == NEUMANN_IMPLICIT)

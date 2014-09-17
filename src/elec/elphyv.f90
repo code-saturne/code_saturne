@@ -253,12 +253,12 @@ if (ippmod(ielarc).ge.1) then
   call field_get_val_s(iprpfl(iviscl), viscl)
   if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
-  call field_get_key_int (ivarfl(iscalt), kivisl, ifcvsl)
+  call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
   if (ifcvsl.ge.0) then
     call field_get_val_s(ifcvsl, viscls)
   endif
 
-  call field_get_key_int (ivarfl(ipotr), kivisl, ifcsig)
+  call field_get_key_int (ivarfl(isca(ipotr)), kivisl, ifcsig)
   if (ifcsig.ge.0) then
     call field_get_val_s(ifcsig, cpro_sig)
   endif
@@ -538,7 +538,7 @@ if (ippmod(ielarc).ge.1) then
 !                                        et pas le potentiel (sigma)
 !                                   et qui ne sont pas des fluctuations
 
-      call field_get_key_int (ivarfl(iscal), kivisl, ifcvsl)
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0) then
 
         ! Lambda du scalaire:
@@ -594,7 +594,7 @@ if (ippmod(ielion).ge.1 ) then
 !       Lambda/CP  VARIABLE en kg/(m s)
 !       ===============================
 
-  call field_get_key_int (ivarfl(iscalt), kivisl, ifcvsl)
+  call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
   if (ifcvsl.ge.0) then
 
     call field_get_val_s(ifcvsl, viscls)
@@ -637,7 +637,7 @@ if (ippmod(ielion).ge.1 ) then
 ! --- On ne traite ici que les variables non thermiques
 !                                   et qui ne sont pas des fluctuations
 
-      call field_get_key_int (ivarfl(iscal), kivisl, ifcvsl)
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
       if (ifcvsl.ge.0) then
 
         ! Lambda du scalaire
