@@ -43,6 +43,9 @@ class master_script:
                          'run':self.run,
                          'salome':self.salome}
 
+        if package != None:
+            sys.path.insert(1, package.get_dir('pythondir'))
+
     def execute(self):
 
         help_commands = ("help", "--help", "-h")

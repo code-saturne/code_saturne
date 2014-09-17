@@ -141,7 +141,6 @@ def main(argv, pkg):
     else:
         images_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
         sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'core'))
-    sys.path.insert(1, pkg.get_dir('pythondir'))
 
     # Test if EOS modules could be imported
     cfg = cs_config.config()
