@@ -152,7 +152,8 @@ if (nmoyag.gt.600.d0) then
    ipepa(jnbasg,ip) = nmoyag + sqrt(nmoyag)*rtmp(1)
    ipepa(jnbasg,ip) = max(0,ipepa(jnbasg,ip))
 else
-   call fische1(nmoyag, ipepa(jnbasg,ip))
+   call fische(1, nmoyag, ntmp)
+   ipepa(jnbasg,ip) = ntmp(1)
 endif
 
 
@@ -183,11 +184,12 @@ if (nbasg.eq.0) then
    nmoyap = (2.0d0 * rpart + rayasp) / rayasp * scovap
 
    if (nmoyap.gt.600.d0) then
-      call normalen(1,ntmp)
-      ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*ntmp(1)
+      call normalen(1,rtmp)
+      ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*rtmp(1)
       ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
    else
-      call fische1(nmoyap, ipepa(jnbasp,ip))
+      call fische(1, nmoyap, ntmp)
+      ipepa(jnbasp,ip) = ntmp(1)
    endif
 
    if (ipepa(jnbasp,ip).gt.1) then
@@ -196,8 +198,8 @@ if (nbasg.eq.0) then
            / rayasp**2 * scovap
 
       if (nmoyap.gt.600.d0) then
-         call normalen(1,ntmp)
-         ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*ntmp(1)
+         call normalen(1,rtmp)
+         ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*rtmp(1)
          ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
       else
          call fische(1, nmoyap, ntmp)
@@ -221,11 +223,12 @@ else
    nmoyap = paramh*(2*rayasg-paramh) / rayasp**2 * scovap
 
    if (nmoyap.gt.600.d0) then
-      call normalen(1,ntmp)
-      ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*ntmp(1)
+      call normalen(1,rtmp)
+      ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*rtmp(1)
       ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
    else
-      call fische1(nmoyap, ipepa(jnbasp,ip))
+      call fische(nmoyap, ntmp)
+      ipepa(jnbasp,ip) = ntmp(1)
    endif
 
 
@@ -237,8 +240,8 @@ else
       nmoyap = 1 + paramh*(2*rayasg-paramh) / rayasp**2 * scovap
 
       if (nmoyap.gt.600.d0) then
-         call normalen(1,ntmp)
-         nbasp = nmoyap + sqrt(nmoyap)*ntmp(1)
+         call normalen(1,rtmp)
+         nbasp = nmoyap + sqrt(nmoyap)*rtmp(1)
          nbasp = max(0,nbasp)
       else
          call fische(1, nmoyap, ntmp)

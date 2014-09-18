@@ -421,21 +421,6 @@ end subroutine
 
 !===============================================================================
 
-subroutine fische1(mu,p)
-implicit none
-integer p
-double precision mu
-
-integer p1(1)
-
-call fische(1, mu, p1)
-p = p1(1)
-
-return
-end subroutine
-
-!===============================================================================
-
 block data
 implicit none
 
