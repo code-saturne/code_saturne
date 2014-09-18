@@ -4196,8 +4196,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
     for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-#     pragma omp parallel for private(face_id, ii, ll, \
-                                      pfac)
+#     pragma omp parallel for private(face_id, ii, ll, dc, pfac)
       for (t_id = 0; t_id < n_b_threads; t_id++) {
 
         for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
