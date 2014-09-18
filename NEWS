@@ -55,6 +55,12 @@ Changes:
 Architectural changes
 ---------------------
 
+- Lagrangian particle data is now shared between Fortran and C parts.
+  Fortran arrays have been replaced by pointers, which map to the C data.
+  arrays itepa, tepa, ettp, and ettpa are replaced respectively by pointers
+  ipepa, pepa, eptp, eptpa, whih use interlaved data; for example, the
+  equivalent of itepa(np,jisor) would now be ipepa(jisor,np).
+
 - When building with both lib CCM-IO and CGNS, do not try to use CGNS's ADF
   library for CCM-IO. This used to work in the past, but now leads to failure
   opening CCM files. The change might lead to issues for such builds when using

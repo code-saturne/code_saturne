@@ -151,6 +151,12 @@ cs_config.h
 
 ACLOCAL_AMFLAGS = -I m4
 
+if HAVE_RELOCATABLE
+  PYTHON_SHEBANG = /usr/bin/env python
+else
+  PYTHON_SHEBANG = $(PYTHON)
+endif
+
 # Replace paths in Python scripts.
 # The following command and targets are adapted from an example in
 # autoconf. The autoconf documentation recommends changing scripts
@@ -158,7 +164,7 @@ ACLOCAL_AMFLAGS = -I m4
 # cites its own automate and autoheader as examples.
 
 edit_python = sed \
-	-e 's|@PYTHON[@]|$(PYTHON)|g' \
+	-e 's|@PYTHON[@]|$(PYTHON_SHEBANG)|g' \
 	-e 's|@pkgpythondir[@]|$(pkgpythondir)|g' \
 	-e 's|@relocatable[@]|$(relocatable)|g'
 
