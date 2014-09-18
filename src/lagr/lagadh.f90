@@ -227,7 +227,7 @@ else
       ipepa(jnbasp,ip) = nmoyap + sqrt(nmoyap)*rtmp(1)
       ipepa(jnbasp,ip) = max(0,ipepa(jnbasp,ip))
    else
-      call fische(nmoyap, ntmp)
+      call fische(1, nmoyap, ntmp)
       ipepa(jnbasp,ip) = ntmp(1)
    endif
 
