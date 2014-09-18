@@ -148,8 +148,8 @@ rpart = 0.5d0 * eptp(jdp,ip)
 nmoyag = (2.0d0 * rpart + rayasg) / rayasg * scovag
 
 if (nmoyag.gt.600.d0) then
-   call normalen(1,ntmp)
-   ipepa(jnbasg,ip) = nmoyag + sqrt(nmoyag)*ntmp(1)
+   call normalen(1,rtmp)
+   ipepa(jnbasg,ip) = nmoyag + sqrt(nmoyag)*rtmp(1)
    ipepa(jnbasg,ip) = max(0,ipepa(jnbasg,ip))
 else
    call fische1(nmoyag, ipepa(jnbasg,ip))
@@ -162,8 +162,8 @@ if (ipepa(jnbasg,ip).gt.1) then
         / rayasg**2 * scovag
 
    if (nmoyag.gt.600.d0) then
-     call normalen(1,ntmp)
-     nbasg = nmoyag + sqrt(nmoyag)*ntmp(1)
+     call normalen(1,rtmp)
+     nbasg = nmoyag + sqrt(nmoyag)*rtmp(1)
      nbasg = max(0,nbasg)
    else
      call fische(1, nmoyag, ntmp)
