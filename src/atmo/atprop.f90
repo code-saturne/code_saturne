@@ -81,14 +81,14 @@ nprini = nproce
 !--------------------------------------
 
 if (ippmod(iatmos).ge.1) then
-  call add_property_field('t_celcius', 'RealTemp', itempc)
+  call add_property_field('real_temperature', 'RealTemp', itempc)
 endif
 
 ! Liquid water content (IPPMOD(IATMOS) = 2)
 !------------------------------------------
 
 if (ippmod(iatmos).eq.2) then
-  call add_property_field('liquid_water_content', 'LiqWater', iliqwt)
+  call add_property_field('liquid_water', 'LiqWater', iliqwt)
 endif
 
 ! Nb algebraic (or state) variables
