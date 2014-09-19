@@ -202,6 +202,7 @@ cs_lagr_roughness_finalize()
  *   face_id        <-- id of face neighboring particle
  *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
+
 void
 cs_lagr_roughness_barrier(const void                     *particle,
                           const cs_lagr_attribute_map_t  *attr_map,
@@ -212,9 +213,9 @@ cs_lagr_roughness_barrier(const void                     *particle,
   cs_real_t param2, value;
   cs_lnum_t param1,contact,compt_max;
   cs_lnum_t iclas, ints, np, iasp;
-  cs_real_t rpart2[1],udlvor[500];
+  cs_real_t rpart2[2],udlvor[500];
   cs_real_t distasp, posasp1[2000],posasp2[2000],posasp3[2000],posasp4[2000],disminp;
-  cs_real_t scov[1], seff[1];
+  cs_real_t scov[2], seff[1];
   cs_lnum_t nbtemp[12000];
   cs_lnum_t nbasp[1], nclas, nbaspt[1], nasptot;
   cs_real_t*random;
@@ -429,8 +430,6 @@ cs_lagr_roughness_barrier(const void                     *particle,
     }
   if (barren < 0.) barren = 0.;
   *energy_barrier = barren / rpart;
-
-  return  *energy_barrier;
 
 }
 

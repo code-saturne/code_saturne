@@ -205,8 +205,8 @@ elif test "x$ple_gcc" = "xclang"; then
   ple_compiler_known=yes
 
   # Default compiler flags
-  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cflags_default="-std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default_dbg="-g -O0 -Wp64"
   cflags_default_opt="-O2"
   cflags_default_prf="-p"
 

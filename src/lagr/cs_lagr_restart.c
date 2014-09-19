@@ -509,7 +509,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
           cs_lnum_t cell_id = CS_ABS(cell_num) - 1;
           cs_real_t *part_val
             = cs_lagr_particles_attr_n(particles, i, 0, attr);
-          for (cs_lnum_t j; j < stride; j++)
+          for (cs_lnum_t j = 0; j < stride; j++)
             part_val[j] = t[cell_id] - c_kelvin;
         }
       }
@@ -523,7 +523,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
           cs_lnum_t cell_id = CS_ABS(cell_num) - 1;
           cs_real_t *part_val
             = cs_lagr_particles_attr_n(particles, i, 0, attr);
-          for (cs_lnum_t j; j < stride; j++)
+          for (cs_lnum_t j = 0; j < stride; j++)
             CS_PROCF(usthht, USTHHT)(&mode, h + cell_id, part_val + j);
         }
       }
@@ -533,7 +533,7 @@ _init_particle_values(cs_lagr_particle_set_t  *particles,
         for (cs_lnum_t i = 0; i < n_particles; i++) {
           cs_real_t *part_val
             = cs_lagr_particles_attr_n(particles, i, 0, attr);
-          for (cs_lnum_t j; j < stride; j++)
+          for (cs_lnum_t j = 0; j < stride; j++)
             part_val[j] = 0.0;
         }
       }

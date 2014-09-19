@@ -143,7 +143,7 @@ if test "x$GCC" = "xyes"; then
   if test -n "`$CC --version | grep icc`" ; then
     cs_gcc=icc
   elif test -n "`$CC --version | grep clang`" ; then
-    ple_gcc=clang
+    cs_gcc=clang
   elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
     cs_gcc=pathcc
   elif test -n "`$CC --version 2>&1 | grep Open64`" ; then
@@ -284,8 +284,8 @@ elif test "x$cs_gcc" = "xclang"; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
-  cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cflags_default="-std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default_dbg="-g -O0 -Wp64"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
@@ -733,8 +733,8 @@ elif test "x$cs_gxx" = "xclang"; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cxxflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
+  cxxlags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default_dbg="-g -O0 -Wp64"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"
