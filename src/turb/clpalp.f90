@@ -23,7 +23,7 @@
 subroutine clpalp &
 !================
 
- ( ncelet , ncel   , nvar   , rtp    )
+ ( ncelet , ncel   , nvar   )
 
 !===============================================================================
 ! FONCTION :
@@ -40,11 +40,6 @@ subroutine clpalp &
 ! ncelet           ! e  ! <-- ! nombre d'elements halo compris                 !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
-!                  !    !     !  (inivar)                                      !
-!                  !    !     !            sinon on peut (turrij)              !
-! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
-! (ncelet,nvar)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -74,11 +69,10 @@ implicit none
 ! Arguments
 
 integer          nvar, ncelet, ncel
-double precision rtp(ncelet,nflown:nvar)
 
 ! VARIABLES LOCALES
 
-integer          iel, ivar
+integer          iel
 integer          iclpmn, iclpmx
 double precision vmin(1), vmax(1), var
 
@@ -92,12 +86,10 @@ double precision, dimension(:), pointer :: cvar_al
 
 call field_get_val_s(ivarfl(ial), cvar_al)
 
-ivar = ial
-
 vmin(1) =  grand
 vmax(1) = -grand
 do iel = 1, ncel
-  var = rtp(iel,ivar)
+  var = cvar_al(iel)
   vmin(1) = min(vmin(1),var)
   vmax(1) = max(vmax(1),var)
 enddo

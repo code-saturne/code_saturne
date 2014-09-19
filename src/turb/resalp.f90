@@ -36,13 +36,10 @@
 !  mode           nom           role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total numver of variables
-!> \param[in]     rtp, rtpa     calculation variable in cell centers
-!>                              (current or previous instant)
 !______________________________________________________________________________!
 
 subroutine resalp &
- ( nvar   ,                                                       &
-   rtp    , rtpa   )
+ ( nvar   )
 
 !===============================================================================
 ! Module files
@@ -67,8 +64,6 @@ implicit none
 ! Arguments
 
 integer          nvar
-
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -97,7 +92,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: cvara_ep, cvara_al
+double precision, dimension(:), pointer :: cvar_al, cvara_al, cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: viscl, visct
 
@@ -115,8 +110,9 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 
-call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_val_s(ivarfl(ial), cvar_al)
 call field_get_val_prev_s(ivarfl(ial), cvara_al)
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
 call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
@@ -256,20 +252,20 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_al        , cvara_al        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbr   , cvar_al         , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================
 ! 3. Clipping
 !===============================================================================
 
-call clpalp(ncelet, ncel, nvar, rtp)
+call clpalp(ncelet, ncel, nvar)
 !==========
 
 ! Free memory

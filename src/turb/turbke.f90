@@ -43,11 +43,6 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        mass source type for the variables (cf. ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                               (at the current time step)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (at the previous time step)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
@@ -59,7 +54,7 @@
 subroutine turbke &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    tslagr , ckupdc , smacel , prdv2f )
 
 !===============================================================================
@@ -92,8 +87,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
@@ -110,7 +104,6 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
 integer          istprv
-integer          ipcvto, ipcvlo
 integer          iphydp, iprev
 integer          imucpp, idftnp, iswdyp
 
@@ -150,8 +143,10 @@ double precision, dimension(:), pointer :: brom, crom, bromo, cromo
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: cvara_k
-double precision, dimension(:), pointer :: cvara_ep, cvara_al, cvara_phi
+double precision, dimension(:), pointer :: cvar_k, cvara_k
+double precision, dimension(:), pointer :: cvar_ep, cvara_ep
+double precision, dimension(:), pointer :: cvara_al, cvara_phi
+double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_eps_p
 
@@ -185,7 +180,6 @@ endif
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(ivisct), cvisct)
 call field_get_val_s(iprpfl(iviscl), viscl)
 
@@ -194,9 +188,9 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_val_s(ibrom, brom)
-
+call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
+call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.eq.50.or.iturb.eq.51) call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
 if (iturb.eq.51) call field_get_val_prev_s(ivarfl(ial), cvara_al)
@@ -217,16 +211,16 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
-ipcvto = ipproc(ivisct)
-ipcvlo = ipproc(iviscl)
+call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
+call field_get_val_s(iprpfl(iviscl), cpro_pcvlo)
 if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
   if (iviext.gt.0) then
-    ipcvto = ipproc(ivista)
-    ipcvlo = ipproc(ivisla)
+    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
+    call field_get_val_s(iprpfl(ivisla), cpro_pcvlo)
   endif
 endif
 
@@ -309,7 +303,7 @@ enddo
 if (iturb.eq.21) then
   do iel = 1, ncel
     rho   = cromo(iel)
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     xs = sqrt(strain(iel))
     cmueta = min(cmu*cvara_k(iel)/cvara_ep(iel)*xs, sqrcmu)
     smbrk(iel) = rho*cmueta*xs*cvara_k(iel)
@@ -317,7 +311,7 @@ if (iturb.eq.21) then
   enddo
 else
   do iel = 1, ncel
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     smbrk(iel) = visct*strain(iel)
     smbre(iel) = smbrk(iel)
   enddo
@@ -376,7 +370,6 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
   call atprke &
   !==========
  ( nscal  ,                                                       &
-   rtpa   , propce ,                                              &
    tinstk ,                                                       &
    smbrk  , smbre  )
 
@@ -422,7 +415,7 @@ else if (igrake.eq.1) then
   ! smbr* store mu_TxS**2
   do iel = 1, ncel
     rho   = cromo(iel)
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     xeps = cvara_ep(iel)
     xk   = cvara_k(iel)
     ttke = xk / xeps
@@ -465,7 +458,7 @@ if (iturb.eq.51) then
   ! Calculation of Ceps2*: it is stored in w10
 
   do iel=1,ncel
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     rho   = cromo(iel)
     w3(iel) = visct/rho/sigmak
   enddo
@@ -513,7 +506,7 @@ if (iturb.eq.51) then
   iwarnp ,                                                                     &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &
-  rtpa(:,ivar)    ,                                                            &
+  cvara_k         ,                                                            &
   coefap , coefbp , cofafp , cofbfp ,                                          &
   viscf  , viscb  ,                                                            &
   w3     , w3     , w3     ,                                                   &
@@ -537,8 +530,8 @@ if (iturb.eq.51) then
   do iel = 1, ncel
 
     rho   = cromo(iel)
-    xnu   = propce(iel,ipcvlo)/rho
-    xnut  = propce(iel,ipcvto)/rho
+    xnu   = cpro_pcvlo(iel)/rho
+    xnut  = cpro_pcvto(iel)/rho
     xeps = cvara_ep(iel)
     xk   = cvara_k(iel)
     xphi = cvara_phi(iel)
@@ -622,9 +615,9 @@ else if (iturb.eq.50) then
 
   do iel = 1, ncel
 
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     rho  = cromo(iel)
-    xnu  = propce(iel,ipcvlo)/rho
+    xnu  = cpro_pcvlo(iel)/rho
     xeps = cvara_ep(iel)
     xk   = cvara_k(iel)
     xphi = cvara_phi(iel)
@@ -663,9 +656,9 @@ else if (iturb.eq.51) then
 
   do iel=1,ncel
 
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     rho   = cromo(iel)
-    xnu  = propce(iel,ipcvlo)/rho
+    xnu  = cpro_pcvlo(iel)/rho
     xeps = cvara_ep(iel)
     xk   = cvara_k(iel)
     xphi = cvara_phi(iel)
@@ -831,7 +824,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar)    ,                                     &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , rtpa(:,ivar)    , smacel(:,ivar) , smacel(1,ipr) ,    &
+   volume , cvara_k         , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbrk  , w2     , w4 )
 
   ivar = iep
@@ -841,7 +834,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar)    ,                                     &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , rtpa(:,ivar)    , smacel(:,ivar) , smacel(1,ipr) ,    &
+   volume , cvara_ep        , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
 
   ! If we extrapolate the source terms we put Gamma Pinj in propce
@@ -944,7 +937,7 @@ if (ikecou.eq.1) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
+   cvara_k         , cvara_k         ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
@@ -1018,7 +1011,7 @@ if (ikecou.eq.1) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
+   cvara_ep        , cvara_ep        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
@@ -1052,7 +1045,7 @@ if (ikecou.eq.1) then
     do iel = 1, ncel
 
       rho = crom(iel)
-      visct = propce(iel,ipcvto)
+      visct = cpro_pcvto(iel)
 
       ! Coupled solving
       romvsd = 1.d0/(rho*volume(iel))
@@ -1191,13 +1184,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
+   cvara_k         , cvara_k         ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinstk , smbrk  , rtp(:,ivar)     , dpvar  ,                   &
+   tinstk , smbrk  , cvar_k          , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! ---> Turbulent dissipation (epsilon) treatment
@@ -1271,13 +1264,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
+   cvara_ep        , cvara_ep        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinste , smbre  , rtp(:,ivar)     , dpvar  ,                   &
+   tinste , smbre  , cvar_ep         , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================
@@ -1289,8 +1282,7 @@ iwarnp = iwarni(ik)
 call clipke &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
-   iclip  , iwarnp ,                                              &
-   rtp    )
+   iclip  , iwarnp )
 
 ! Free memory
 deallocate(viscf, viscb)

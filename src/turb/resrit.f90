@@ -41,8 +41,6 @@
 !> \param[in,out] xut, xuta     calculated variables at cell centers
 !>                               (at current and previous time steps)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     gradv         mean velocity gradient
 !> \param[in]     gradt         mean temperature gradient
 !______________________________________________________________________________!
@@ -50,7 +48,7 @@
 subroutine resrit &
  ( nscal  ,                                                       &
    iscal  , xcpp   , xut    , xuta   ,                            &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    gradv  , gradt  )
 
 !===============================================================================
@@ -78,7 +76,7 @@ implicit none
 
 integer          nscal , iscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(3,3,ncelet)
 double precision gradt(ncelet,3)
@@ -127,6 +125,7 @@ double precision, dimension(:), pointer :: crom, cpro_beta
 double precision, dimension(:), pointer :: cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_tt, cvara_tt
 double precision, dimension(:), pointer :: viscl, visct, viscls, c_st_prv
 
 !===============================================================================
@@ -253,6 +252,11 @@ enddo
 !     rho*(Pit + Git + Phi*_it - eps_it)
 !===============================================================================
 
+if (itt.gt.0) then
+  call field_get_val_s(ivarfl(isca(itt)), cvar_tt)
+  call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
+endif
+
 do iel = 1, ncel
   trrij  = d1s2*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
   ! --- calcul de l echelle de temps de Durbin
@@ -278,7 +282,7 @@ do iel = 1, ncel
                            -xrij(isou,3)*gradt(iel,3))
     if (itt.gt.0) then
       phiith(isou) = phiith(isou)                                              &
-             + c3trit*(cpro_beta(iel)*grav(isou)*rtp(iel,isca(itt)))
+             + c3trit*(cpro_beta(iel)*grav(isou)*cvar_tt(iel))
     endif
 
     ! Pressure/thermal fluctuation correlation term
@@ -308,7 +312,7 @@ do iel = 1, ncel
     if (itt.gt.0) then
       smbrut(isou,iel) = smbrut(isou,iel)                            &
                        + volume(iel)*crom(iel)*(            &
-               -grav(isou)*cpro_beta(iel)*rtpa(iel,isca(itt)))
+               -grav(isou)*cpro_beta(iel)*cvara_tt(iel))
     endif
   enddo
 enddo

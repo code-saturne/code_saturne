@@ -1555,7 +1555,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     ,                                                       &
     tslagr ,                                                       &
     ckupdc , smacel ,                                              &
     prdv2f )
@@ -1567,7 +1567,7 @@ if (iccvfg.eq.0) then
     ( nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm , itypsm ,                                     &
-      dt     , rtp    , rtpa   , propce ,                            &
+      dt     ,                                                       &
       ckupdc , smacel ,                                              &
       prdv2f )
 
@@ -1596,7 +1596,7 @@ if (iccvfg.eq.0) then
     ! Calcul de Alpha pour l'EBRSM
     if (iturb.eq.32) then
 
-      call resalp(nvar, rtp, rtpa)
+      call resalp(nvar)
       !==========
 
     endif
@@ -1606,7 +1606,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   ,                                     &
+    dt     ,                                                       &
     tslagr ,                                                       &
     ckupdc , smacel )
 
@@ -1617,7 +1617,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     ,                                                       &
     tslagr ,                                                       &
     ckupdc , smacel )
 
@@ -1643,7 +1643,7 @@ if (iccvfg.eq.0) then
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     ,                                                       &
     ckupdc , smacel ,                                              &
     itypfb )
 

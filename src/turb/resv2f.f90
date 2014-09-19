@@ -44,9 +44,6 @@
 !> \param[in]     itypsm        type of masss source for the
 !>                              variables (cf. ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                              (at current and previous time steps)
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     ckupdc        work array for head losses
 !> \param[in]     smacel        value of variables associated to the
 !>                              mass source
@@ -59,7 +56,7 @@
 subroutine resv2f &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    prdv2f )
 
@@ -91,8 +88,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
 
@@ -101,7 +97,6 @@ double precision prdv2f(ncelet)
 integer          init  , ifac  , iel   , inc   , iprev , iccocg
 integer          ivar
 integer          iiun
-integer          ipcvlo, ipcvso
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp, iphydp
 integer          iconvp, idiffp, ndircp
@@ -130,9 +125,11 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: cvar_fb
-double precision, dimension(:), pointer :: cvara_k, cvara_ep
-double precision, dimension(:), pointer :: cvara_al, cvara_phi, cvara_fb
+double precision, dimension(:), pointer :: cvar_fb, cvara_fb
+double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_phi
+double precision, dimension(:), pointer :: cvar_al, cvara_al
+double precision, dimension(:), pointer :: cvar_var, cvara_var
+double precision, dimension(:), pointer :: cpro_pcvlo, cpro_pcvto
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: c_st_phi_p, c_st_a_p
 
@@ -166,6 +163,7 @@ if (iturb.eq.50) then
   call field_get_val_s(ivarfl(ifb), cvar_fb)
   call field_get_val_prev_s(ivarfl(ifb), cvara_fb)
 elseif (iturb.eq.51) then
+  call field_get_val_s(ivarfl(ial), cvar_al)
   call field_get_val_prev_s(ivarfl(ial), cvara_al)
 endif
 
@@ -238,8 +236,12 @@ deallocate(gradp, gradk)
 
 if (iturb.eq.50) then
   ivar = ifb
+  cvar_var => cvar_fb
+  cvara_var => cvara_fb
 elseif (iturb.eq.51) then
   ivar = ial
+  cvar_var => cvar_al
+  cvara_var => cvara_al
 endif
 
 if (iwarni(ivar).ge.1) then
@@ -251,15 +253,14 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcvlo = ipproc(iviscl)
-
 call field_get_val_s(icrom, cromo)
+call field_get_val_s(iprpfl(iviscl), cpro_pcvlo)
 if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
   if (iviext.gt.0) then
-    ipcvlo = ipproc(ivisla)
+    call field_get_val_s(iprpfl(ivisla), cpro_pcvlo)
   endif
 endif
 
@@ -293,7 +294,7 @@ if (istprv.ge.0) then
     c_st_phi_p(iel) = - smbr(iel)
     !       Second member of the previous step time
     !       we implicit the user source term (the rest)
-    smbr(iel) = - rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
+    smbr(iel) = - rovsdt(iel)*cvara_var(iel) - thets*tuexpe
     !       Diagonal
     rovsdt(iel) = thetv*rovsdt(iel)
   enddo
@@ -303,7 +304,7 @@ else
   !       \f$-\div\{\grad{\dfrac{\overline{f}}{\alpha}}} = ...\f$
   !       We solve by conjugated gradient, so we do not impose the mark
   !       of rovsdt
-    smbr(iel)   = -rovsdt(iel)*rtpa(iel,ivar) - smbr(iel)
+    smbr(iel)   = -rovsdt(iel)*cvara_var(iel) - smbr(iel)
   !          rovsdt(iel) =  rovsdt(iel)
   enddo
 endif
@@ -386,7 +387,7 @@ call itrgrp &
 do iel=1,ncel
   xk = cvara_k(iel)
   xe = cvara_ep(iel)
-  xnu  = propce(iel,ipcvlo)/cromo(iel)
+  xnu  = cpro_pcvlo(iel)/cromo(iel)
   ttke = xk / xe
   if (iturb.eq.50) then
     ttmin = cv2fct*sqrt(xnu/xe)
@@ -412,7 +413,7 @@ enddo
 !     a mark "-" (coming from itrgrp)
 do iel = 1, ncel
     xrom = cromo(iel)
-    xnu  = propce(iel,ipcvlo)/xrom
+    xnu  = cpro_pcvlo(iel)/xrom
     xk = cvara_k(iel)
     xe = cvara_ep(iel)
     if (iturb.eq.50) then
@@ -500,13 +501,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
+   cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbr   , cvar_var        , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================
@@ -514,6 +515,9 @@ call codits &
 !===============================================================================
 
 ivar = iphi
+
+call field_get_val_s(ivarfl(ivar), cvar_var)
+cvara_var => cvara_phi
 
 if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), label)
@@ -524,10 +528,10 @@ endif
 thets  = thetst
 thetv  = thetav(ivar )
 
-ipcvso = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
 if (istprv.ge.0) then
   if (iviext.gt.0) then
-    ipcvso = ipproc(ivista)
+    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
   endif
 endif
 
@@ -560,13 +564,13 @@ if (istprv.ge.0) then
     !       Second member of previous time step
     !       We suppose -rovsdt > 0: we implicit
     !       the user source term (the rest)
-    smbr(iel) = rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
+    smbr(iel) = rovsdt(iel)*cvara_var(iel) - thets*tuexpe
     !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
   do iel = 1, ncel
-    smbr(iel)   = rovsdt(iel)*rtpa(iel,ivar) + smbr(iel)
+    smbr(iel)   = rovsdt(iel)*cvara_var(iel) + smbr(iel)
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
 endif
@@ -586,7 +590,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   volume , cvara_var    , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbr   ,  rovsdt , w2 )
 
   ! If we extrapolate the source term we put Gamma Pinj in the prev. TS
@@ -635,7 +639,7 @@ do iel = 1, ncel
   xk = cvara_k(iel)
   xe = cvara_ep(iel)
   xrom = cromo(iel)
-  xnu  = propce(iel,ipcvlo)/xrom
+  xnu  = cpro_pcvlo(iel)/xrom
   if (iturb.eq.50) then
     !     The term in f_barre is taken in rtp and not in rtpa
     !     ... a priori better
@@ -643,7 +647,7 @@ do iel = 1, ncel
     !             of the second-ordre (which need rtpa for extrapolation).
     w2(iel)   =  volume(iel)*                                       &
          ( xrom*cvar_fb(iel)                                            &
-           +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
+           +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
   elseif (iturb.eq.51) then
     ttke = xk / xe
     ttmin = cpalct*sqrt(xnu/xe)
@@ -652,7 +656,7 @@ do iel = 1, ncel
              (cvara_phi(iel)-d2s3)
     w2(iel)   = volume(iel)*                                        &
          ( cvara_al(iel)**3*fhomog*xrom                                 &
-           +2.d0/xk*propce(iel,ipcvso)/sigmak*w1(iel) )
+           +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
   endif
 
 enddo
@@ -815,13 +819,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(:,ivar)    , rtpa(:,ivar)    ,                            &
+   cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbr   , cvar_var        , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================

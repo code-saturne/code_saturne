@@ -24,8 +24,7 @@ subroutine clprij &
 !================
 
  ( ncelet , ncel   , nvar   ,                                     &
-   iclip  ,                                                       &
-   rtpa   , rtp    )
+   iclip  )
 
 !===============================================================================
 ! FONCTION :
@@ -42,13 +41,9 @@ subroutine clprij &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! e  ! <-- ! nombre de cellules                             !
 ! nvar             ! e  ! <-- ! nombre de variables                            !
-! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas rtpa           !
-!                  !    !     !  (inivar)                                      !
+! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas les champs au  !
+!                  !    !     !     pas de temps precedent (inivar)            !
 !                  !    !     !            sinon on peut (turrij)              !
-! rtpa             ! tr ! <-- ! tableaux des variables au pdt precedt          !
-! (ncelet,nvar)    !    !     !                                                !
-! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
-! (ncelet,nvar)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -77,8 +72,6 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iclip
-double precision rtpa(ncelet,nflown:nvar)
-double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -87,6 +80,11 @@ integer          iclrij(7)
 double precision vmin(7), vmax(7), var, rijmin, varrel, und0, epz2
 
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
+double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvar_var, cvar_var1, cvar_var2
+double precision, dimension(:), pointer :: cvara_var
 
 !===============================================================================
 
@@ -101,7 +99,13 @@ ivar2 = 0
 epz2 = epzero**2
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
-call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+call field_get_val_s(ivarfl(ir11), cvar_r11)
+call field_get_val_s(ivarfl(ir22), cvar_r22)
+call field_get_val_s(ivarfl(ir33), cvar_r33)
+call field_get_val_s(ivarfl(ir12), cvar_r12)
+call field_get_val_s(ivarfl(ir13), cvar_r13)
+call field_get_val_s(ivarfl(ir23), cvar_r23)
 
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
@@ -109,26 +113,26 @@ call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 do isou = 1, 7
   if    (isou.eq.1) then
-    ivar = ir11
+    cvar_var => cvar_r11
   elseif(isou.eq.2) then
-    ivar = ir22
+    cvar_var => cvar_r22
   elseif(isou.eq.3) then
-    ivar = ir33
+    cvar_var => cvar_r33
   elseif(isou.eq.4) then
-    ivar = ir12
+    cvar_var => cvar_r12
   elseif(isou.eq.5) then
-    ivar = ir13
+    cvar_var => cvar_r13
   elseif(isou.eq.6) then
-    ivar = ir23
+    cvar_var => cvar_r23
   elseif(isou.eq.7) then
-    ivar = iep
+    cvar_var => cvar_ep
   endif
 
   iclrij(isou) = 0
   vmin(isou) =  grand
   vmax(isou) = -grand
   do iel = 1, ncel
-    var = rtp(iel,ivar)
+    var = cvar_var(iel)
     vmin(isou) = min(vmin(isou),var)
     vmax(isou) = max(vmax(isou),var)
   enddo
@@ -140,14 +144,14 @@ if (iclip.eq.1) then
 
   do isou = 1, 3
 
-    if(isou.eq.1) ivar=ir11
-    if(isou.eq.2) ivar=ir22
-    if(isou.eq.3) ivar=ir33
+    if(isou.eq.1) cvar_var => cvar_r11
+    if(isou.eq.2) cvar_var => cvar_r22
+    if(isou.eq.3) cvar_var => cvar_r33
 
     do iel = 1, ncel
-      if (rtp(iel,ivar).le.epz2) then
+      if (cvar_var(iel).le.epz2) then
         iclrij(isou) = iclrij(isou) + 1
-        rtp(iel,ivar) = epz2
+        cvar_var(iel) = epz2
       endif
     enddo
 
@@ -167,19 +171,32 @@ else
 
   varrel = 1.1d0
 
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+
   do isou = 1, 3
 
-    if(isou.eq.1) ivar=ir11
-    if(isou.eq.2) ivar=ir22
-    if(isou.eq.3) ivar=ir33
+    if    (isou.eq.1) then
+      cvar_var => cvar_r11
+      cvara_var => cvara_r11
+    elseif(isou.eq.2) then
+      cvar_var => cvar_r22
+      cvara_var => cvara_r22
+    elseif(isou.eq.3) then
+      cvar_var => cvar_r33
+      cvara_var => cvara_r33
+    endif
 
     do iel = 1, ncel
-      if (abs(rtp(iel,ivar)).le.epz2) then
+      if (abs(cvar_var(iel)).le.epz2) then
         iclrij(isou) = iclrij(isou) + 1
-        rtp(iel,ivar) = max(rtp(iel,ivar),epz2)
-      elseif(rtp(iel,ivar).le.0.d0) then
+        cvar_var(iel) = max(cvar_var(iel),epz2)
+      elseif(cvar_var(iel).le.0.d0) then
         iclrij(isou) = iclrij(isou) + 1
-        rtp(iel,ivar) = min(abs(rtp(iel,ivar)), varrel*abs(rtpa(iel,ivar)))
+        cvar_var(iel) = min(abs(cvar_var(iel)), varrel*abs(cvara_var(iel)))
       endif
     enddo
 
@@ -203,23 +220,23 @@ endif
 do isou = 4, 6
 
   if(isou.eq.4) then
-    ivar  = ir12
-    ivar1 = ir11
-    ivar2 = ir22
+    cvar_var  => cvar_r12
+    cvar_var1 => cvar_r11
+    cvar_var2 => cvar_r22
   elseif(isou.eq.5) then
-    ivar  = ir13
-    ivar1 = ir11
-    ivar2 = ir33
+    cvar_var  => cvar_r13
+    cvar_var1 => cvar_r11
+    cvar_var2 => cvar_r33
   elseif(isou.eq.6) then
-    ivar  = ir23
-    ivar1 = ir22
-    ivar2 = ir33
+    cvar_var  => cvar_r23
+    cvar_var1 => cvar_r22
+    cvar_var2 => cvar_r33
   endif
   und0 = 1.d0
   do iel = 1, ncel
-    rijmin = sqrt(rtp(iel,ivar1)*rtp(iel,ivar2))
-    if (rijmin.lt.abs(rtp(iel,ivar))) then
-      rtp(iel,ivar) = sign(und0,rtp(iel,ivar)) * rijmin
+    rijmin = sqrt(cvar_var1(iel)*cvar_var2(iel))
+    if (rijmin.lt.abs(cvar_var(iel))) then
+      cvar_var(iel) = sign(und0,cvar_var(iel)) * rijmin
       iclrij(isou) = iclrij(isou) + 1
     endif
   enddo

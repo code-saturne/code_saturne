@@ -37,15 +37,13 @@
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     xcpp          Cp
 !> \param[out]    smbrs         Right hand side to update
 !_______________________________________________________________________________
 
 subroutine divrit &
  ( nscal  , iscal  ,                                              &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    xcpp   ,                                                       &
    smbrs )
 
@@ -73,7 +71,7 @@ implicit none
 
 integer          nscal
 integer          iscal
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision xcpp(ncelet)
 double precision smbrs(ncelet)
 
@@ -110,6 +108,7 @@ double precision, dimension(:), pointer :: brom, crom, cpro_beta
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:), pointer :: cvara_scal, cvara_tt
 
 !===============================================================================
 
@@ -137,6 +136,7 @@ endif
 ivar = isca(iscal)
 iccocg = 1
 inc = 1
+call field_get_val_prev_s(ivarfl(ivar), cvara_scal)
 
 ! Name of the scalar ivar
 call field_get_name(ivarfl(ivar), fname)
@@ -163,7 +163,7 @@ call grdcel &
 !==========
  ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
    iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
-   rtpa(1,ivar)    , coefap , coefbp ,                           &
+   cvara_scal      , coefap , coefbp ,                           &
    gradt  )
 
 ! Compute velocity gradient
@@ -214,6 +214,8 @@ if (ityturt(iscal).ne.3) then
     thflxb(ifac) = 0.d0
   enddo
 
+  if (itt.gt.0) call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
+
   do iel = 1, ncel
     !Rij
     xrij(1,1) = cvara_r11(iel)
@@ -249,7 +251,7 @@ if (ityturt(iscal).ne.3) then
       if (ityturt(iscal).eq.2.and.ibeta.gt.0) then
         if (itt.gt.0) then
           temp(ii) = temp(ii) - ctheta(iscal)*xtt*                            &
-                       etaafm*cpro_beta(iel)*grav(ii)*rtpa(iel,isca(itt))
+                       etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
         endif
 
         do jj = 1, 3
@@ -333,7 +335,7 @@ else
   !==========
 ( nscal  ,                                               &
   iscal  , xcpp   , xut    , xuta   ,                    &
-  dt     , rtp    , rtpa   ,                             &
+  dt     ,                                               &
   gradv  , gradt  )
 
   itypfl = 1

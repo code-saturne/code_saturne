@@ -43,11 +43,6 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        mass source type for the variables (cf. ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                               (at the current time step)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (at the previous time step)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
@@ -58,7 +53,7 @@
 subroutine turbkw &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    tslagr , ckupdc , smacel )
 
 !===============================================================================
@@ -93,8 +88,7 @@ integer          ncepdp , ncesmp
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
@@ -110,7 +104,6 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
 integer          istprv
-integer          ipcvto, ipcvlo
 integer          imucpp, idftnp, iswdyp
 
 integer          icvflb
@@ -148,6 +141,8 @@ double precision, dimension(:), pointer :: bromo, cromo
 double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
 double precision, dimension(:), pointer :: coefa_o, coefb_o, coefaf_o, coefbf_o
 double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_omg, cvara_omg
+double precision, dimension(:), pointer :: cvar_var
+double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
 
@@ -183,6 +178,9 @@ call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, cromo)
 call field_get_val_s(ibrom, bromo)
 
+call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
+call field_get_val_s(iprpfl(iviscl), cpro_pcvlo)
+
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
 call field_get_val_s(ivarfl(iomg), cvar_omg)
@@ -210,16 +208,14 @@ if (istprv.ge.0) then
   if (istprv.ge.0) istprv = 1
 endif
 
-ipcvto = ipproc(ivisct)
-ipcvlo = ipproc(iviscl)
 if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
     call field_get_val_prev_s(ibrom, bromo)
   endif
   if (iviext.gt.0) then
-    ipcvto = ipproc(ivista)
-    ipcvlo = ipproc(ivisla)
+    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
+    call field_get_val_s(iprpfl(ivisla), cpro_pcvlo)
   endif
 endif
 
@@ -283,7 +279,7 @@ endif
 ! -> a garder en tete si on fait vraiment de l'ordre 2 en temps en k-omega
 do iel = 1, ncel
   rho = cromo(iel)
-  xnu = propce(iel,ipcvlo)/rho
+  xnu = cpro_pcvlo(iel)/rho
   xk = cvara_k(iel)
   xw  = cvara_omg(iel)
   cdkw = 2*rho/ckwsw2/xw*gdkgdw(iel)
@@ -314,7 +310,7 @@ do iel = 1, ncel
   xk   = cvara_k(iel)
   xw   = cvara_omg(iel)
   xeps = cmu*xw*xk
-  visct = propce(iel,ipcvto)
+  visct = cpro_pcvto(iel)
   rho = cromo(iel)
   prodw(iel) = visct*s2kw(iel)                    &
              - d2s3*rho*xk*divukw(iel)
@@ -412,7 +408,7 @@ if (igrake.eq.1) then
 
   do iel = 1, ncel
     rho = cromo(iel)
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
 
     w2(iel) = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
                (rho*prdtur)
@@ -512,7 +508,7 @@ endif
 
 do iel = 1, ncel
 
-  visct  = propce(iel,ipcvto)
+  visct  = cpro_pcvto(iel)
   rho    = cromo(iel)
   xk     = cvara_k(iel)
   xw     = cvara_omg(iel)
@@ -567,7 +563,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
     !    du k-eps sans justification ... a creuser si necessaire
     smbrw(iel)  = smbrw(iel)                                      &
                 + ce4 *tslagr(iel,itske) * cromo(iel)             &
-                /propce(iel,ipcvto)
+                /cpro_pcvto(iel)
 
     ! Termes sources implicite sur k
     tinstk(iel) = tinstk(iel) + max(-tslagr(iel,itsli),zero)
@@ -599,7 +595,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar) ,                                        &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   volume , cvara_k      , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrk  , tinstk , gamk )
 
   ivar = iomg
@@ -609,7 +605,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar) ,                                        &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   volume , cvara_omg    , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrw  , tinstw , gamw )
 
   ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
@@ -752,7 +748,7 @@ if (ikecou.eq.1) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_k         , cvara_k         ,                            &
    coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
@@ -768,6 +764,7 @@ if (ikecou.eq.1) then
 
   ! ---> Traitement de omega
   ivar   = iomg
+
   call field_get_label(ivarfl(ivar), chaine)
 
   if (idiff(ivar).ge. 1) then
@@ -821,7 +818,7 @@ if (ikecou.eq.1) then
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_omg       , cvara_omg       ,                            &
    coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , rvoid  ,                            &
@@ -980,13 +977,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_k         , cvara_k         ,                            &
    coefa_k , coefb_k , coefaf_k , coefbf_k ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinstk , smbrk  , rtp(1,ivar)     , dpvar  ,                   &
+   tinstk , smbrk  , cvar_k          , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! ---> Omega treatment
@@ -1051,13 +1048,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_omg       , cvara_omg       ,                            &
    coefa_o , coefb_o , coefaf_o , coefbf_o ,                      &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinstw , smbrw  , rtp(1,ivar)     , dpvar  ,                   &
+   tinstw , smbrw  , cvar_omg        , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================
@@ -1067,15 +1064,15 @@ call codits &
 ! Calcul des Min/Max avant clipping, pour affichage
 do ii = 1, 2
   if (ii.eq.1) then
-    ivar = ik
+    cvar_var => cvar_k
   elseif (ii.eq.2) then
-    ivar = iomg
+    cvar_var => cvar_omg
   endif
 
   vrmin(ii) =  grand
   vrmax(ii) = -grand
   do iel = 1, ncel
-    var = rtp(iel,ivar)
+    var = cvar_var(iel)
     vrmin(ii) = min(vrmin(ii),var)
     vrmax(ii) = max(vrmax(ii),var)
   enddo

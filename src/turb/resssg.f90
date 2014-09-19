@@ -54,8 +54,6 @@
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     gradv         work array for the velocity grad term
 !>                                 only for iturb=31
 !> \param[in]     gradro        work array for grad rom
@@ -75,7 +73,7 @@ subroutine resssg &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    gradv  , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -116,7 +114,7 @@ integer          ivar   , isou
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -170,6 +168,8 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:), pointer :: cvar_var, cvara_var, w8
+double precision, allocatable, dimension(:,:,:) :: cvara_ndrey
 double precision, dimension(:), pointer :: viscl, c_st_prv
 
 !===============================================================================
@@ -206,6 +206,9 @@ call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
 call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
 call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
 call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+
+call field_get_val_s(ivarfl(ivar), cvar_var)
+call field_get_val_prev_s(ivarfl(ivar), cvara_var)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -278,13 +281,13 @@ if (st_prv_id.ge.0) then
     !       Second member of the previous time step
     !       We suppose -rovsdt > 0: we implicite
     !          the user source term (the rest)
-    smbr(iel) = rovsdt(iel)*rtpa(iel,ivar)  - thets*tuexpr
+    smbr(iel) = rovsdt(iel)*cvara_var(iel)  - thets*tuexpr
     !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
   do iel = 1, ncel
-    smbr(iel)   = rovsdt(iel)*rtpa(iel,ivar) + smbr(iel)
+    smbr(iel)   = rovsdt(iel)*cvara_var(iel) + smbr(iel)
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
 endif
@@ -315,7 +318,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
+   volume , cvara_var       , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
   ! If we extrapolate the source terms we put Gamma Pinj in the previous st
@@ -412,7 +415,7 @@ else
   enddo
 endif
 
-! Index of the Reynolds stress variables in rtpa array
+! Index of the Reynolds stress variables
 indrey(1,1) = ir11
 indrey(2,2) = ir22
 indrey(3,3) = ir33
@@ -422,6 +425,16 @@ indrey(2,3) = ir23
 indrey(2,1) = indrey(1,2)
 indrey(3,1) = indrey(1,3)
 indrey(3,2) = indrey(2,3)
+
+allocate(cvara_ndrey(3,3,ncelet))
+do ii = 1, 3
+  do kk = 1, 3
+    call field_get_val_prev_s(ivarfl(indrey(ii,kk)), w8)
+    do iel = 1,ncel
+      cvara_ndrey(ii,kk,iel) = w8(iel)
+    enddo
+  enddo
+enddo
 
 do iel=1,ncel
 
@@ -480,8 +493,8 @@ do iel=1,ncel
         do jj = ii, 3
           do kk = 1, 3
             xprod(ii,jj) = xprod(ii,jj)                             &
-                 - ccorio*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk))   &
-                 + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
+                 - ccorio*( matrot(ii,kk)*cvara_ndrey(jj,kk,iel)    &
+                 + matrot(jj,kk)*cvara_ndrey(ii,kk,iel) )
           enddo
         enddo
       enddo
@@ -658,6 +671,8 @@ do iel=1,ncel
 
 enddo
 
+deallocate(cvara_ndrey)
+
 if (iturb.eq.32) then
   deallocate(grad)
 endif
@@ -801,13 +816,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbr   , cvar_var        , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! Free memory

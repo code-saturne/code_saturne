@@ -43,10 +43,6 @@
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        mass source type for the variables (cf. ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                               (at the current time step)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (at the previous time step)
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
@@ -57,7 +53,7 @@
 subroutine turrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    tslagr ,                                                       &
    ckupdc , smacel )
 
@@ -94,7 +90,7 @@ integer          icetsm(ncesmp)
 
 integer, dimension(ncesmp,nvar), target :: itypsm
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6)
 
 double precision, dimension(ncesmp,nvar), target ::  smacel
@@ -125,6 +121,7 @@ double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:), pointer :: cvara_scalt
 
 !===============================================================================
 
@@ -266,6 +263,8 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
 
   call field_get_val_s(icrom, cromo)
 
+  call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
+
   iprev = 1
   inc = 1
   iccocg = 1
@@ -276,7 +275,7 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
 
   ! gradro stores: rho grad(theta)/theta
   do iel = 1, ncel
-    rhothe = cromo(iel)/rtpa(iel, isca(iscalt))
+    rhothe = cromo(iel)/cvara_scalt(iel)
     gradro(1, iel) = rhothe*gradro(1, iel)
     gradro(2, iel) = rhothe*gradro(2, iel)
     gradro(3, iel) = rhothe*gradro(3, iel)
@@ -358,7 +357,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -373,7 +372,7 @@ do isou = 1, 6
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    gradv  , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -387,14 +386,11 @@ enddo
 ! 5. Solve Epsilon
 !===============================================================================
 
-ivar   = iep
-
 call reseps &
 !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -414,8 +410,7 @@ endif
 call clprij &
 !==========
  ( ncelet , ncel   , nvar   ,                                     &
-   iclip  ,                                                       &
-   rtpa   , rtp    )
+   iclip  )
 
 
 ! Free memory

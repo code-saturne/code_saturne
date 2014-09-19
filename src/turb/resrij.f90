@@ -54,8 +54,6 @@
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
@@ -74,7 +72,7 @@ subroutine resrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -114,7 +112,7 @@ integer          ivar   , isou
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision produc(6,ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -160,6 +158,8 @@ double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvar_var, cvara_var
+double precision, dimension(:), pointer :: cvara_ndreyii, cvara_ndreyjj
 double precision, dimension(:), pointer :: viscl, c_st_prv
 
 !===============================================================================
@@ -193,6 +193,9 @@ call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
 call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
 call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+
+call field_get_val_s(ivarfl(ivar), cvar_var)
+call field_get_val_prev_s(ivarfl(ivar), cvara_var)
 
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
@@ -263,13 +266,13 @@ if (st_prv_id.ge.0) then
 !       Second member of previous time step
 !       We suppose -rovsdt > 0: we implicite
 !          the user source term (the rest)
-    smbr(iel) = rovsdt(iel)*rtpa(iel,ivar)  - thets*tuexpr
+    smbr(iel) = rovsdt(iel)*cvara_var(iel)  - thets*tuexpr
 !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
   do iel = 1, ncel
-    smbr(iel)   = rovsdt(iel)*rtpa(iel,ivar) + smbr(iel)
+    smbr(iel)   = rovsdt(iel)*cvara_var(iel) + smbr(iel)
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
 endif
@@ -300,7 +303,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
+   volume , cvara_var       , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
 !       If we extrapolate the source terms we put Gamma Pinj in propce
@@ -382,7 +385,7 @@ if (st_prv_id.ge.0) then
     !       =       -C1rho eps/k(Rij         )
     !       = rho{                                     -C1eps/kRij}
     smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
-      *( -crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar)  )
+      *( -crij1*cvara_ep(iel)/trrij * cvara_var(iel) )
 
     !     Calculation of the implicit part coming from Phil
     !       = C1rho eps/k(1        )
@@ -401,12 +404,12 @@ if (st_prv_id.ge.0) then
      !    We remove of cromo
      !       =       -C1rho eps/k(   -1/3Rij dij)
       c_st_prv(iel) = c_st_prv(iel) - cromo(iel) * volume(iel)    &
-      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar))
+      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(iel))
       !    We add to smbr (with crom)
       !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
                           + crom(iel) * volume(iel)               &
-      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar))
+      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(iel))
       !    We add to rovsdt (woth crom)
       !       =        C1rho eps/k(   -1/3    dij)
       rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)         &
@@ -432,7 +435,7 @@ else
            (  crij2*trprod                                        &
             +(crij1-1.d0)* cvara_ep(iel)  )                           &
          +(1.0d0-crij2)*produc(isou,iel)                          &
-         -crij1*cvara_ep(iel)/trrij * rtpa(iel,ivar)  )
+         -crij1*cvara_ep(iel)/trrij * cvara_var(iel)  )
 
     !     Calculation of the implicit part coming from Phi1
     !       = C1rho eps/k(1-1/3 dij)
@@ -496,10 +499,12 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   endif
 
   ! Compute Gij: (i,j) component of the Coriolis production
-  do iel = 1, ncel
-    do kk = 1, 3
-      w7(iel) = w7(iel) - ccorio*( matrot(ii,kk)*rtpa(iel,indrey(jj,kk)) &
-                               + matrot(jj,kk)*rtpa(iel,indrey(ii,kk)) )
+  do kk = 1, 3
+    call field_get_val_prev_s(ivarfl(indrey(ii,kk)), cvara_ndreyii)
+    call field_get_val_prev_s(ivarfl(indrey(jj,kk)), cvara_ndreyjj)
+    do iel = 1, ncel
+      w7(iel) = w7(iel) - ccorio*( matrot(ii,kk)*cvara_ndreyjj(iel) &
+                               + matrot(jj,kk)*cvara_ndreyii(iel) )
     enddo
   enddo
 
@@ -534,7 +539,7 @@ if (irijec.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijech(isou, rtpa, produc, w7)
+  call rijech(isou, produc, w7)
   !==========
 
   ! If we extrapolate the source terms: propce
@@ -664,13 +669,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbr   , cvar_var        , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! Free memory

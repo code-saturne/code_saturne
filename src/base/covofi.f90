@@ -838,7 +838,7 @@ if (idiff(ivar).ge.1) then
     !==========
     ( nscal  ,                                                       &
       iscal  ,                                                       &
-      dt     , rtp    , rtpa   ,                                     &
+      dt     ,                                                       &
       xcpp   ,                                                       &
       smbrs  )
 

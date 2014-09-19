@@ -24,8 +24,7 @@ subroutine clipke &
 !================
 
  ( ncelet , ncel   , nvar   ,                                     &
-   iclip  , iwarnk ,                                              &
-   rtp    )
+   iclip  , iwarnk )
 
 !===============================================================================
 ! FONCTION :
@@ -45,8 +44,6 @@ subroutine clipke &
 ! iclip            ! e  ! <-- ! indicateur = 0 on utilise viscl0               !
 !                  !    !     !            sinon on utilise viscl              !
 ! iwarnk           ! e  ! <-- ! niveau d'impression                            !
-! rtp              ! tr ! <-- ! tableaux des variables au pdt courant          !
-! (ncelet     )    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -77,7 +74,6 @@ implicit none
 
 integer          nvar, ncelet, ncel
 integer          iclip, iwarnk
-double precision rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -88,7 +84,7 @@ double precision xepmin,xepm,xe,xkmin,xkm,xk,var,epz2
 double precision vmin(2), vmax(2)
 
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_var
 double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
@@ -116,15 +112,15 @@ do ii = 1, 2
   iclpmn(ii) = 0
 
   if (ii.eq.1) then
-    ivar = ik
+    cvar_var => cvar_k
   elseif(ii.eq.2) then
-    ivar = iep
+    cvar_var => cvar_ep
   endif
 
   vmin(ii) =  grand
   vmax(ii) = -grand
   do iel = 1, ncel
-    var = rtp(iel,ivar)
+    var = cvar_var(iel)
     vmin(ii) = min(vmin(ii),var)
     vmax(ii) = max(vmax(ii),var)
   enddo

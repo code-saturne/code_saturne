@@ -24,7 +24,6 @@ subroutine atprke &
 !================
 
  ( nscal  ,                                                       &
-   rtpa   , propce ,                                              &
    tinstk ,                                                       &
    smbrk  , smbre )
 
@@ -40,9 +39,6 @@ subroutine atprke &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tinstk(ncelet)   ! tr ! --> ! Implicit part of the buoyancy term (for k)     !
 ! smbrk(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for k)     !
 ! smbre(ncelet)    ! tr ! --> ! Explicit part of the buoyancy term (for eps)   !
@@ -83,16 +79,12 @@ implicit none
 ! Arguments
 integer          nscal
 
-double precision rtpa (ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision smbrk(ncelet), smbre(ncelet)
 double precision tinstk(ncelet)
 
 ! Local variables
 integer         iel
-integer         ipcvto
 integer         itpp , iqw
-integer         ipcliq
 integer         iccocg, inc
 integer         iivar
 
@@ -106,6 +98,8 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: cromo
 
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
+double precision, dimension(:), pointer :: cvara_tpp, cvara_qw
+double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcliq
 
 !===============================================================================
 
@@ -118,13 +112,13 @@ allocate(grad(3,ncelet))
 
 ! Pointer to density and turbulent viscosity
 call field_get_val_s(icrom, cromo)
-ipcvto = ipproc(ivisct)
+call field_get_val_s(iprpfl(ivisct), cpro_pcvto)
 if(isto2t.gt.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
   if(iviext.gt.0) then
-    ipcvto = ipproc(ivista)
+    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
   endif
 endif
 
@@ -165,6 +159,8 @@ subroutine dry_atmosphere()
 
 itpp = isca(iscalt)
 
+call field_get_val_prev_s(ivarfl(itpp), cvara_tpp)
+
 ! computational options:
 
 iccocg = 1
@@ -191,13 +187,13 @@ endif
 if (itytur.eq.2) then
   do iel = 1, ncel
     rho   = cromo(iel)
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
     xeps = cvara_ep(iel)
     xk   = cvara_k(iel)
     ttke = xk / xeps
 
     gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
-           / (rtpa(iel,itpp)*prdtur)
+           / (cvara_tpp(iel)*prdtur)
 
     ! Implicit part (no implicit part for epsilon because the source
     ! term is positive)
@@ -237,7 +233,10 @@ allocate(gravke_qw(ncelet))
 
 itpp = isca(iscalt)
 iqw = isca(itotwt)
-ipcliq = ipproc(iliqwt)
+
+call field_get_val_prev_s(ivarfl(itpp), cvara_tpp)
+call field_get_val_prev_s(ivarfl(iqw), cvara_qw)
+call field_get_val_s(iprpfl(iliqwt), cpro_pcliq)
 
 ! compute the coefficients etheta,eq
 
@@ -250,9 +249,9 @@ do iel = 1, ncel
          nbmett, nbmetm,                                          &
          ztmet, tmmet, phmet, xyzcen(3,iel), ttcabs, pphy )
   endif
-  qw = rtpa(iel,iqw) ! total water content
-  qldia = propce(iel,ipcliq) ! liquid water content
-  call etheq(pphy,rtpa(iel,itpp),qw,qldia,                      &
+  qw = cvara_qw(iel) ! total water content
+  qldia = cpro_pcliq(iel) ! liquid water content
+  call etheq(pphy,cvara_tpp(iel),qw,qldia,                      &
              nebdia(iel),nn(iel),etheta(iel),eq(iel))
 enddo
 ! options for gradient calculation
@@ -281,9 +280,9 @@ endif
 ! store now the production term due to theta_liq in gravke_theta
 if (itytur.eq.2) then
   do iel = 1, ncel
-    qw = rtpa(iel,iqw) ! total water content
-    qldia = propce(iel,ipcliq) ! liquid water content
-    theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra - 1)*qw - rvsra*qldia)
+    qw = cvara_qw(iel) ! total water content
+    qldia = cpro_pcliq(iel) ! liquid water content
+    theta_virt = cvara_tpp(iel)*(1.d0 + (rvsra - 1)*qw - rvsra*qldia)
     gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz)            &
            / (theta_virt*prdtur)
     gravke_theta(iel) = gravke*etheta(iel)
@@ -316,9 +315,9 @@ endif
 
 if (itytur.eq.2) then
   do iel = 1, ncel
-    qw = rtpa(iel,iqw) ! total water content
-    qldia = propce(iel,ipcliq) !liquid water content
-    theta_virt = rtpa(iel,itpp)*(1.d0 + (rvsra - 1.d0)*qw - rvsra*qldia)
+    qw = cvara_qw(iel) ! total water content
+    qldia = cpro_pcliq(iel) !liquid water content
+    theta_virt = cvara_tpp(iel)*(1.d0 + (rvsra - 1.d0)*qw - rvsra*qldia)
     gravke = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz)                 &
            / (theta_virt*prdtur)
     gravke_qw(iel) = gravke*eq(iel)
@@ -328,7 +327,7 @@ endif
 ! Finalization
 do iel = 1, ncel
   rho   = cromo(iel)
-  visct = propce(iel,ipcvto)
+  visct = cpro_pcvto(iel)
   xeps = cvara_ep(iel)
   xk   = cvara_k(iel)
   ttke = xk / xeps

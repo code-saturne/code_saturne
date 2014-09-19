@@ -322,8 +322,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iclip = 1
       call clipke( ncelet , ncel   , nvar   ,          &
       !==========
-                   iclip  , iwarni(ik) ,            &
-                   rtp    )
+                   iclip  , iwarni(ik) )
     else
       write(nfecra,3020) xekmin,xepmin
       iok = iok + 1
@@ -414,8 +413,7 @@ if(iusini.eq.1.or.isuite.eq.1) then
       iclip = 1
       call clprij( ncelet , ncel   , nvar   ,          &
       !==========
-                   iclip  ,                            &
-                   rtp    , rtp    )
+                   iclip  )
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin
       iok = iok + 1

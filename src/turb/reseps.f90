@@ -40,14 +40,11 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     ivar          variable number
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     gradv         work array for the term grad
 !>                               of velocity only for iturb=31
 !> \param[in]     produc        work array for production (without
@@ -65,9 +62,8 @@
 
 subroutine reseps &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    gradv  , produc , gradro ,                                     &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
@@ -102,12 +98,11 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncepdp , ncesmp
-integer          ivar
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(ncelet,3)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -117,6 +112,7 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
+integer          ivar
 integer          iel
 integer          iiun
 integer          iflmas, iflmab
@@ -146,7 +142,7 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer ::  crom, cromo
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: visten
-double precision, dimension(:), pointer :: cvara_ep, cvar_al
+double precision, dimension(:), pointer :: cvar_ep, cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 double precision, dimension(:), pointer :: viscl, visct, c_st_prv
@@ -158,6 +154,8 @@ character(len=80) :: label
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
+ivar = iep
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -176,6 +174,7 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 
+call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.eq.32) call field_get_val_s(ivarfl(ial), cvar_al)
 
@@ -251,13 +250,13 @@ if (st_prv_id.ge.0) then
     !       Second member of previous time step
     !       We suppose -rovsdt > 0: we implicit
     !          the user source term (the rest)
-    smbr(iel) = rovsdt(iel)*rtpa(iel,ivar) - thets*tuexpe
+    smbr(iel) = rovsdt(iel)*cvara_ep(iel) - thets*tuexpe
     !       Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
   do iel = 1, ncel
-    smbr(iel)   = rovsdt(iel)*rtpa(iel,ivar) + smbr(iel)
+    smbr(iel)   = rovsdt(iel)*cvara_ep(iel) + smbr(iel)
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
 endif
@@ -300,7 +299,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , rtpa(:,ivar)    , smacel(:,ivar)   , smacel(:,ipr) ,  &
+   volume , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   , rovsdt , w1 )
 
   !       If we extrapolate the source terms, we put Gamma Pinj in propce
@@ -534,13 +533,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_ep        , cvara_ep        ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
-   viscf  , viscb  , viscce  , viscf  , viscb  , viscce  ,        &
+   viscf  , viscb  , viscce  , viscf , viscb  , viscce  ,         &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbr   , cvar_ep         , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! Free memory

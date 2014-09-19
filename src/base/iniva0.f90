@@ -379,8 +379,7 @@ if(itytur.eq.2 .or. itytur.eq.5) then
 
     iclip = 1
     call clipke(ncelet , ncel   , nvar    ,     &
-         iclip  , iwarni(ik),                   &
-         rtp    )
+         iclip  , iwarni(ik))
 
   else
     do iel = 1, ncel
@@ -434,8 +433,7 @@ elseif(itytur.eq.3) then
     enddo
     iclip = 1
     call clprij(ncelet , ncel   , nvar    ,     &
-               iclip  ,                         &
-               rtp    , rtp    )
+                iclip  )
 
   else
 

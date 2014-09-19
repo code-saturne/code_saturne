@@ -36,15 +36,12 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     isou          passage numbero
-!> \param[in]     rtpa          calculated variables at cell centers
-!                                (at previous time steps)
 !> \param[in]     produc        production
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
 subroutine rijech &
  ( isou   ,                                                       &
-   rtpa   ,                                                       &
    produc , smbr   )
 
 !===============================================================================
@@ -71,14 +68,13 @@ implicit none
 
 integer          isou
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision produc(6,ncelet)
 double precision smbr(ncelet)
 
 ! Local variables
 
 integer          ifacpt, iel   , ii    , jj    , kk    , mm
-integer          irkm  , irki  , irkj  , iskm  , iski  , iskj
+integer          iskm  , iski  , iskj
 integer          ifac
 integer          inc   , iccocg, ivar0
 
@@ -93,6 +89,7 @@ double precision, allocatable, dimension(:) :: w2, w3, w4, w6
 double precision, allocatable, dimension(:) :: coefax, coefbx
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: cvara_ep
+double precision, dimension(:), pointer :: cvara_rkm, cvara_rki, cvara_rkj
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 
 !===============================================================================
@@ -109,9 +106,6 @@ allocate(w2(ncelet), w3(ncelet), w4(ncelet), w6(ncelet))
 
 ii = 0
 jj = 0
-irki = 0
-irkj = 0
-irkm = 0
 iski = 0
 iskj = 0
 iskm = 0
@@ -279,22 +273,22 @@ do kk = 1, 3
     !  --> R km
 
     if     ((kk*mm).eq.1) then
-      irkm = ir11
+      call field_get_val_prev_s(ivarfl(ir11), cvara_rkm)
       iskm = 1
     elseif ((kk*mm).eq.4) then
-      irkm = ir22
+      call field_get_val_prev_s(ivarfl(ir22), cvara_rkm)
       iskm = 2
     elseif ((kk*mm).eq.9) then
-      irkm = ir33
+      call field_get_val_prev_s(ivarfl(ir33), cvara_rkm)
       iskm = 3
     elseif ((kk*mm).eq.2) then
-      irkm = ir12
+      call field_get_val_prev_s(ivarfl(ir12), cvara_rkm)
       iskm = 4
     elseif ((kk*mm).eq.3) then
-      irkm = ir13
+      call field_get_val_prev_s(ivarfl(ir13), cvara_rkm)
       iskm = 5
     elseif ((kk*mm).eq.6) then
-      irkm = ir23
+      call field_get_val_prev_s(ivarfl(ir23), cvara_rkm)
       iskm = 6
     endif
 
@@ -319,7 +313,7 @@ do kk = 1, 3
       endif
 
       w6(iel) = w6(iel) + vnk*vnm*deltij*(                        &
-             crijp1*rtpa(iel,irkm)*epsk(iel)                      &
+             crijp1*cvara_rkm(iel)*epsk(iel)                      &
             -crijp2                                               &
              *crij2*(produc(iskm,iel)-d2s3*produk(iel)*deltkm) )
     enddo
@@ -332,44 +326,44 @@ do kk = 1, 3
   !  --> R ki
 
   if     ((kk*ii).eq.1) then
-    irki = ir11
+    call field_get_val_prev_s(ivarfl(ir11), cvara_rki)
     iski = 1
   elseif ((kk*ii).eq.4) then
-    irki = ir22
+    call field_get_val_prev_s(ivarfl(ir22), cvara_rki)
     iski = 2
   elseif ((kk*ii).eq.9) then
-    irki = ir33
+    call field_get_val_prev_s(ivarfl(ir33), cvara_rki)
     iski = 3
   elseif ((kk*ii).eq.2) then
-    irki = ir12
+    call field_get_val_prev_s(ivarfl(ir12), cvara_rki)
     iski = 4
   elseif ((kk*ii).eq.3) then
-    irki = ir13
+    call field_get_val_prev_s(ivarfl(ir13), cvara_rki)
     iski = 5
   elseif ((kk*ii).eq.6) then
-    irki = ir23
+    call field_get_val_prev_s(ivarfl(ir23), cvara_rki)
     iski = 6
   endif
 
   !  --> R kj
 
   if     ((kk*jj).eq.1) then
-    irkj = ir11
+    call field_get_val_prev_s(ivarfl(ir11), cvara_rkj)
     iskj = 1
   elseif ((kk*jj).eq.4) then
-    irkj = ir22
+    call field_get_val_prev_s(ivarfl(ir22), cvara_rkj)
     iskj = 2
   elseif ((kk*jj).eq.9) then
-    irkj = ir33
+    call field_get_val_prev_s(ivarfl(ir33), cvara_rkj)
     iskj = 3
   elseif ((kk*jj).eq.2) then
-    irkj = ir12
+    call field_get_val_prev_s(ivarfl(ir12), cvara_rkj)
     iskj = 4
   elseif ((kk*jj).eq.3) then
-    irkj = ir13
+    call field_get_val_prev_s(ivarfl(ir13), cvara_rkj)
     iskj = 5
   elseif ((kk*jj).eq.6) then
-    irkj = ir23
+    call field_get_val_prev_s(ivarfl(ir23), cvara_rkj)
     iskj = 6
   endif
 
@@ -416,7 +410,7 @@ do kk = 1, 3
       endif
 
     w6(iel) = w6(iel) + 1.5d0*vnk*(                               &
-    -crijp1*(rtpa(iel,irki)*vnj+rtpa(iel,irkj)*vni)*epsk(iel)     &
+    -crijp1*(cvara_rki(iel)*vnj+cvara_rkj(iel)*vni)*epsk(iel)     &
     +crijp2                                                       &
      *crij2*((produc(iski,iel)-d2s3*produk(iel)*deltki)*vnj       &
             +(produc(iskj,iel)-d2s3*produk(iel)*deltkj)*vni) )

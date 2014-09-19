@@ -44,9 +44,6 @@
 !> \param[in]     itypsm        type of mass source for the variables
 !>                               (cf. ustsma)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
-!> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     ckupdc        work array for head losses
 !> \param[in]     smacel        value of variables associated to the
 !                               mass source
@@ -56,7 +53,7 @@
 subroutine turbsa &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     ,                                                       &
    ckupdc , smacel ,                                              &
    itypfb )
 
@@ -91,8 +88,7 @@ integer          itypfb(nfabor)
 integer          icvflb
 integer          ivoid(1)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
+double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 ! Local variables
@@ -105,7 +101,6 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
 integer          iwarnp
 integer          istprv
-integer          ipcvto, ipcvlo
 integer          ipatrg
 integer          imucpp, idftnp, iswdyp
 
@@ -134,7 +129,8 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: csab1r, rotfct
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
-double precision, dimension(:), pointer :: cvara_nusa
+double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
+double precision, dimension(:), pointer :: cpro_pcvto
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_nusa_p
@@ -161,6 +157,7 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(ivisct), cvisct)
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(ibrom, brom)
+call field_get_val_s(ivarfl(inusa), cvar_nusa)
 call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -178,16 +175,13 @@ if (istprv.ge.0) then
 endif
 
 call field_get_val_s(icrom, cromo)
-ipcvto = ipproc(ivisct)
-ipcvlo = ipproc(iviscl)
 
 if (istprv.ge.0) then
   if (iroext.gt.0) then
     call field_get_val_prev_s(icrom, cromo)
   endif
   if (iviext.gt.0) then
-    ipcvto = ipproc(ivista)
-    ipcvlo = ipproc(ivisla)
+    call field_get_val_s(iprpfl(ivista), cpro_pcvto)
   endif
 endif
 
@@ -326,7 +320,7 @@ endif
 do iel = 1, ncel
 
   if (istprv.ge.0 .and. iviext.gt.0) then
-    visct = propce(iel,ipcvto)
+    visct = cpro_pcvto(iel)
   else
     visct = cvisct(iel)
   endif
@@ -480,7 +474,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetv  ,                                              &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , smacel(1,ipr) ,       &
+   volume , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
    rhssa  , tinssa , w1 )
 
   ! --- Explicit part: Gamma*RTPAi
@@ -614,13 +608,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_nusa      , cvara_nusa      ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   tinssa , rhssa  , rtp(1,ivar)     , dpvar ,                    &
+   tinssa , rhssa  , cvar_nusa       , dpvar ,                    &
    rvoid  , rvoid  )
 
 !===============================================================================
