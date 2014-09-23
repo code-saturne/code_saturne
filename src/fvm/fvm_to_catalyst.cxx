@@ -165,50 +165,9 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-#if defined(CS_FPE_TRAP)
-static int    _fenv_save = 0;
-static fenv_t _fenv_old;     /* Old exception mask */
-#endif
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Disable floating-point exception handling.
- *
- * Uses a counter to handle nested calls.
- *----------------------------------------------------------------------------*/
-
-static void
-_disable_fe_exceptions(void)
-{
-#if defined(CS_FPE_TRAP)
-  if (_fenv_save == 0) {
-    if (fegetenv(&_fenv_old) == 0)
-      _fenv_save += 1;
-    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-  }
-  else
-    _fenv_save += 1;
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Restore floating-point exception handling.
- *----------------------------------------------------------------------------*/
-
-static void
-_restore_fe_exceptions(void)
-{
-#if defined(CS_FPE_TRAP)
-  if (_fenv_save) {
-    _fenv_save -= 1;
-    if (_fenv_save == 0)
-      fesetenv(&_fenv_old);
-  }
-#endif
-}
 
 /*----------------------------------------------------------------------------
  * Return the Catalyst mesh id associated with a given mesh name,
@@ -1010,8 +969,6 @@ fvm_to_catalyst_init_writer(const char             *name,
 {
   fvm_to_catalyst_t  *w = NULL;
 
-  _disable_fe_exceptions();
-
   /* Initialize writer */
 
   BFT_MALLOC(w, 1, fvm_to_catalyst_t);
@@ -1141,8 +1098,6 @@ fvm_to_catalyst_init_writer(const char             *name,
   }
 #endif
 
-  _restore_fe_exceptions();
-
   return w;
 }
 
@@ -1164,8 +1119,6 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
   fvm_to_catalyst_t  *w = (fvm_to_catalyst_t *)this_writer_p;
 
   assert(w != NULL);
-
-  _disable_fe_exceptions();
 
   /* Write output if not done already */
 
@@ -1201,8 +1154,6 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 
   BFT_FREE(w);
 
-  _restore_fe_exceptions();
-
   return NULL;
 }
 
@@ -1225,16 +1176,12 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
   int _time_step = (time_step > -1) ? time_step : 0;
   double _time_value = (time_value > 0.0) ? time_value : 0.0;
 
-  _disable_fe_exceptions();
-
   if (_time_step > w->time_step) {
     w->time_step = _time_step;
     assert(time_value >= w->time_value);
     w->time_value = _time_value;
     w->datadesc->SetTimeData(w->time_value, w->time_step);
   }
-
-  _restore_fe_exceptions();
 }
 
 /*----------------------------------------------------------------------------
@@ -1254,8 +1201,6 @@ fvm_to_catalyst_export_nodal(void               *this_writer_p,
   fvm_to_catalyst_t  *w = (fvm_to_catalyst_t *)this_writer_p;
 
   const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
-
-  _disable_fe_exceptions();
 
   /* Initialization */
   /*----------------*/
@@ -1320,8 +1265,6 @@ fvm_to_catalyst_export_nodal(void               *this_writer_p,
   } /* End of loop on sections */
 
   w->modified = true;
-
-  _restore_fe_exceptions();
 }
 
 /*----------------------------------------------------------------------------
@@ -1367,8 +1310,6 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
   char _name[128];
 
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
-
-  _disable_fe_exceptions();
 
   /* Initialization */
   /*----------------*/
@@ -1466,8 +1407,6 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
   fvm_to_catalyst_set_mesh_time(w, time_step, time_value);
 
   w->modified = true;
-
-  _restore_fe_exceptions();
 }
 
 /*----------------------------------------------------------------------------
@@ -1484,15 +1423,11 @@ fvm_to_catalyst_flush(void  *this_writer_p)
 {
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  _disable_fe_exceptions();
-
   if (w->processor->RequestDataDescription(w->datadesc) != 0 && w->modified) {
     w->datadesc->GetInputDescriptionByName("input")->SetGrid(w->mb);
     w->processor->CoProcess(w->datadesc);
     w->modified = false;
   }
-
-  _restore_fe_exceptions();
 }
 
 /*----------------------------------------------------------------------------*/

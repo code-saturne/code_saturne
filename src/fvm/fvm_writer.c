@@ -294,6 +294,13 @@ static fvm_writer_format_t _fvm_writer_format_list[6] = {
 
 };
 
+/* Floating point exception handling */
+
+#if defined(CS_FPE_TRAP)
+static int    _fenv_save = 0;
+static fenv_t _fenv_old;     /* Old exception mask */
+#endif
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -313,6 +320,42 @@ const char _empty_string[] = "";
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Disable floating-point exception handling.
+ *
+ * Uses a counter to handle nested calls.
+ *----------------------------------------------------------------------------*/
+
+static void
+_disable_fe_exceptions(void)
+{
+#if defined(CS_FPE_TRAP)
+  if (_fenv_save == 0) {
+    if (fegetenv(&_fenv_old) == 0)
+      _fenv_save += 1;
+    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  }
+  else
+    _fenv_save += 1;
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Restore floating-point exception handling.
+ *----------------------------------------------------------------------------*/
+
+static void
+_restore_fe_exceptions(void)
+{
+#if defined(CS_FPE_TRAP)
+  if (_fenv_save) {
+    _fenv_save -= 1;
+    if (_fenv_save == 0)
+      fesetenv(&_fenv_old);
+  }
+#endif
+}
 
 /*----------------------------------------------------------------------------
  * Transform a string containing a list of options to lowercase with
@@ -1014,6 +1057,9 @@ fvm_writer_init(const char             *name,
   init_func = this_writer->format->init_func;
 
   if (init_func != NULL) {
+
+    _disable_fe_exceptions();
+
 #if defined(HAVE_MPI)
     this_writer->format_writer = init_func(name,
                                            tmp_path,
@@ -1026,6 +1072,9 @@ fvm_writer_init(const char             *name,
                                            this_writer->options,
                                            this_writer->time_dep);
 #endif
+
+    _restore_fe_exceptions();
+
   }
   else
     this_writer->format_writer = NULL;
@@ -1062,8 +1111,11 @@ fvm_writer_finalize(fvm_writer_t  *this_writer)
 
   finalize_func = this_writer->format->finalize_func;
 
-  if (finalize_func != NULL)
+  if (finalize_func != NULL) {
+    _disable_fe_exceptions();
     this_writer->format_writer = finalize_func(this_writer->format_writer);
+    _restore_fe_exceptions();
+  }
   else
     this_writer->format_writer = NULL;
 
@@ -1186,10 +1238,13 @@ fvm_writer_set_mesh_time(fvm_writer_t  *this_writer,
 
   set_mesh_time_func = this_writer->format->set_mesh_time_func;
 
-  if (set_mesh_time_func != NULL)
+  if (set_mesh_time_func != NULL) {
+    _disable_fe_exceptions();
     set_mesh_time_func(this_writer->format_writer,
                        time_step,
                        time_value);
+    _restore_fe_exceptions();
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1246,9 +1301,11 @@ fvm_writer_export_nodal(fvm_writer_t        *this_writer,
 
   export_nodal_func = this_writer->format->export_nodal_func;
 
-  if (export_nodal_func != NULL)
-    export_nodal_func(this_writer->format_writer,
-                      mesh);
+  if (export_nodal_func != NULL) {
+    _disable_fe_exceptions();
+    export_nodal_func(this_writer->format_writer, mesh);
+    _restore_fe_exceptions();
+  }
 
   t1 = cs_timer_time();
 
@@ -1305,7 +1362,8 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
 
   export_field_func = this_writer->format->export_field_func;
 
-  if (export_field_func != NULL)
+  if (export_field_func != NULL) {
+    _disable_fe_exceptions();
     export_field_func(this_writer->format_writer,
                       mesh,
                       name,
@@ -1318,6 +1376,8 @@ fvm_writer_export_field(fvm_writer_t                 *this_writer,
                       time_step,
                       time_value,
                       field_values);
+    _restore_fe_exceptions();
+  }
 
   t1 = cs_timer_time();
 
@@ -1348,7 +1408,11 @@ fvm_writer_flush(fvm_writer_t  *this_writer)
 
     t0 = cs_timer_time();
 
+    _disable_fe_exceptions();
+
     flush_func(this_writer->format_writer);
+
+    _restore_fe_exceptions();
 
     t1 = cs_timer_time();
 
