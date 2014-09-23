@@ -3410,10 +3410,8 @@ _mat_vec_p_l_msr(bool                exclude_diag,
       cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       cs_real_t sii = 0.0;
 
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] != ii)
-          sii += (m_row[jj]*x[col_id[jj]]);
-      }
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+        sii += (m_row[jj]*x[col_id[jj]]);
 
       y[ii] = sii;
 
