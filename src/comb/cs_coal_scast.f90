@@ -1403,6 +1403,7 @@ if ( ieqco2 .eq. 1 ) then
          x2 = x2 + propce(iel,ipproc(ix2(icla)))
        enddo
 
+       if ( ieqco2 .eq. 1 ) then
        !    We transport CO2
 
        smbrs(iel)  = smbrs(iel)                                   &
@@ -1410,6 +1411,16 @@ if ( ieqco2 .eq. 1 ) then
          * (xco2eq-xxco2)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
          * volume(iel) * crom(iel)
+
+       else if ( ieqco2 .eq. 2 ) then
+       !    We transport CO
+
+       smbrs(iel)  = smbrs(iel)                                   &
+                    +wmole(ico)/propce(iel,ipproc(irom1))        &
+         * (xco2eq-xxco)/(tauchi+tautur)                         &
+         * (1.d0-x2)                                              &
+         * volume(iel) * crom(iel)
+       endif
 
        w1(iel) = volume(iel)*crom(iel)/(tauchi+tautur)
        rovsdt(iel) = rovsdt(iel) +   max(w1(iel),zero)
