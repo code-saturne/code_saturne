@@ -155,7 +155,6 @@ else
   allocate(uvwk(3,ncelet))
 endif
 allocate(drtp(ncelet))
-allocate(dam(ncelet), xam(nfac,2))
 allocate(presa(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet), rhs0(ncelet))
 allocate(viscf(nfac), viscb(ndimfb))
@@ -249,6 +248,8 @@ if (darcy_unsteady.eq.1) isym  = 2
 ibsize = 1
 iesize = 1
 isqrt = 1
+
+allocate(dam(ncelet), xam(isym,nfac))
 
 !===============================================================================
 ! 1. Building of the linear system to solve

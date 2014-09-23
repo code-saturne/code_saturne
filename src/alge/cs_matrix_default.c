@@ -203,7 +203,7 @@ void CS_PROCF(promav, PROMAV)
 
     a = cs_matrix_default(symmetric, NULL, NULL);
 
-    cs_matrix_set_coefficients_ni(a, false, dam, xam);
+    cs_matrix_set_coefficients(a, false, NULL, NULL, dam, xam);
 
   }
 

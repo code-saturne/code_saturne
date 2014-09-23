@@ -320,27 +320,6 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
                            const cs_real_t  *xa);
 
 /*----------------------------------------------------------------------------
- * Set matrix coefficients in the non-interleaved case.
- *
- * In the symmetric case, there is no difference with the interleaved case.
- *
- * Depending on current options and initialization, values will be copied
- * or simply mapped (non-symmetric values will be copied).
- *
- * parameters:
- *   matrix    <-> Pointer to matrix structure
- *   symmetric <-- Indicates if matrix coefficients are symmetric
- *   da        <-- Diagonal values (NULL if zero)
- *   xa        <-- Extradiagonal values (NULL if zero)
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
-                              bool              symmetric,
-                              const cs_real_t  *da,
-                              const cs_real_t  *xa);
-
-/*----------------------------------------------------------------------------
  * Set matrix coefficients, copying values to private arrays.
  *
  * With private arrays, the matrix becomes independant from the
@@ -430,10 +409,10 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
 /*----------------------------------------------------------------------------
  * Get pointer to matrix extra-diagonal values in "native" format
  *
- * This function currently only functions if the coefficients were mapped
- * from native coefficients using cs_matrix_set_coefficients() or
- * cs_matrix_set_coefficients_ni(). The pointer returned is the same as the
- * one passed to that function.
+ * This function currently only functions if the matrix is in "native"
+ * format or the coefficients were mapped from native coefficients using
+ * cs_matrix_set_coefficients(), in which case the pointer returned is
+ * the same as the one passed to that function.
  *
  * parameters:
  *   matrix --> Pointer to matrix structure

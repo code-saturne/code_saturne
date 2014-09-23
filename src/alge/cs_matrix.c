@@ -675,7 +675,6 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
  * parameters:
  *   matrix           <-- Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric
- *   interleaved      <-- Indicates if matrix coefficients are interleaved
  *   copy             <-- Indicates if coefficients should be copied
  *   da               <-- Diagonal values
  *   xa               <-- Extradiagonal values
@@ -684,7 +683,6 @@ _destroy_coeff_native(cs_matrix_coeff_native_t **coeff)
 static void
 _set_coeffs_native(cs_matrix_t      *matrix,
                    bool              symmetric,
-                   bool              interleaved,
                    bool              copy,
                    const cs_real_t  *da,
                    const cs_real_t  *xa)
@@ -716,39 +714,21 @@ _set_coeffs_native(cs_matrix_t      *matrix,
 
   if (xa != NULL) {
 
-    if (interleaved || symmetric == true) {
+    size_t xa_n_vals = ms->n_faces;
+    if (! symmetric)
+      xa_n_vals *= 2;
 
-      size_t xa_n_vals = ms->n_faces;
-      if (! symmetric)
-        xa_n_vals *= 2;
-
-      if (copy) {
-        if (mc->_xa == NULL || mc->max_eb_size < matrix->eb_size[3]) {
-          BFT_MALLOC(mc->_xa, matrix->eb_size[3]*xa_n_vals, cs_real_t);
-          mc->max_eb_size = matrix->eb_size[3];
-        }
-        memcpy(mc->_xa, xa, matrix->eb_size[3]*xa_n_vals*sizeof(cs_real_t));
-        mc->xa = mc->_xa;
+    if (copy) {
+      if (mc->_xa == NULL || mc->max_eb_size < matrix->eb_size[3]) {
+        BFT_MALLOC(mc->_xa, matrix->eb_size[3]*xa_n_vals, cs_real_t);
+        mc->max_eb_size = matrix->eb_size[3];
       }
-      else
-        mc->xa = xa;
-
-    }
-    else { /* !interleaved && symmetric == false */
-
-      assert(matrix->db_size[3] == 1);
-      assert(matrix->eb_size[3] == 1);
-
-      if (mc->_xa == NULL)
-        BFT_MALLOC(mc->_xa, 2*ms->n_faces, cs_real_t);
-
-      for (ii = 0; ii < ms->n_faces; ++ii) {
-        mc->_xa[2*ii] = xa[ii];
-        mc->_xa[2*ii + 1] = xa[ms->n_faces + ii];
-      }
+      memcpy(mc->_xa, xa, matrix->eb_size[3]*xa_n_vals*sizeof(cs_real_t));
       mc->xa = mc->_xa;
-
     }
+    else
+      mc->xa = xa;
+
   }
 }
 
@@ -1926,14 +1906,12 @@ _destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff)
  * parameters:
  *   matrix      <-- Pointer to matrix structure
  *   symmetric   <-- Indicates if extradiagonal values are symmetric
- *   interleaved <-- Indicates if matrix coefficients are interleaved
  *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
                           bool              symmetric,
-                          bool              interleaved,
                           const cs_real_t  *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
@@ -1951,36 +1929,17 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
 
   if (symmetric == false) {
 
-    if (interleaved == false) {
-      const cs_real_t  *restrict xa1 = xa;
-      const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->val[kk] = xa1[face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->val[ll] = xa2[face_id];
-        }
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      cs_lnum_t kk, ll;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
+      if (ii < ms->n_rows) {
+        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+        mc->val[kk] = xa[2*face_id];
       }
-    }
-    else { /* interleaved == true */
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->val[kk] = xa[2*face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->val[ll] = xa[2*face_id + 1];
-        }
+      if (jj < ms->n_rows) {
+        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+        mc->val[ll] = xa[2*face_id + 1];
       }
     }
 
@@ -2016,14 +1975,12 @@ _set_xa_coeffs_csr_direct(cs_matrix_t      *matrix,
  * parameters:
  *   matrix      <-- Pointer to matrix structure
  *   symmetric   <-- Indicates if extradiagonal values are symmetric
- *   interleaved <-- Indicates if matrix coefficients are interleaved
  *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
                              bool              symmetric,
-                             bool              interleaved,
                              const cs_real_t  *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
@@ -2041,38 +1998,20 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
 
   if (symmetric == false) {
 
-    if (interleaved == false) {
-      const cs_real_t  *restrict xa1 = xa;
-      const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->val[kk] += xa1[face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->val[ll] += xa2[face_id];
-        }
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      cs_lnum_t kk, ll;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
+      if (ii < ms->n_rows) {
+        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+        mc->val[kk] += xa[2*face_id];
+      }
+      if (jj < ms->n_rows) {
+        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+        mc->val[ll] += xa[2*face_id + 1];
       }
     }
-    else { /* interleaved == true */
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->val[kk] += xa[2*face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->val[ll] += xa[2*face_id + 1];
-        }
-      }
-    }
+
   }
   else { /* if symmetric == true */
 
@@ -2101,7 +2040,6 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
  * parameters:
  *   matrix           <-> Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric
- *   interleaved      <-- Indicates if matrix coefficients are interleaved
  *   copy             <-- Indicates if coefficients should be copied
  *   da               <-- Diagonal values (NULL if all zero)
  *   xa               <-- Extradiagonal values (NULL if all zero)
@@ -2110,7 +2048,6 @@ _set_xa_coeffs_csr_increment(cs_matrix_t      *matrix,
 static void
 _set_coeffs_csr(cs_matrix_t      *matrix,
                 bool              symmetric,
-                bool              interleaved,
                 bool              copy,
                 const cs_real_t  *restrict da,
                 const cs_real_t  *restrict xa)
@@ -2176,9 +2113,9 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
     if (xa != NULL) {
 
       if (ms->direct_assembly == true)
-        _set_xa_coeffs_csr_direct(matrix, symmetric, interleaved, xa);
+        _set_xa_coeffs_csr_direct(matrix, symmetric, xa);
       else
-        _set_xa_coeffs_csr_increment(matrix, symmetric, interleaved, xa);
+        _set_xa_coeffs_csr_increment(matrix, symmetric, xa);
 
     }
     else { /* if (xa == NULL) */
@@ -2756,7 +2693,6 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
  * parameters:
  *   matrix           <-> Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric (true)
- *   interleaved      <-- Indicates if matrix coefficients are interleaved
  *   copy             <-- Indicates if coefficients should be copied
  *   da               <-- Diagonal values (NULL if all zero)
  *   xa               <-- Extradiagonal values (NULL if all zero)
@@ -2765,7 +2701,6 @@ _set_xa_coeffs_csr_sym_increment(cs_matrix_t      *matrix,
 static void
 _set_coeffs_csr_sym(cs_matrix_t      *matrix,
                     bool              symmetric,
-                    bool              interleaved,
                     bool              copy,
                     const cs_real_t  *restrict da,
                     const cs_real_t  *restrict xa)
@@ -3059,14 +2994,12 @@ _destroy_coeff_msr(cs_matrix_coeff_msr_t  **coeff)
  * parameters:
  *   matrix      <-- Pointer to matrix structure
  *   symmetric   <-- Indicates if extradiagonal values are symmetric
- *   interleaved <-- Indicates if matrix coefficients are interleaved
  *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
                           bool              symmetric,
-                          bool              interleaved,
                           const cs_real_t  *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
@@ -3084,36 +3017,17 @@ _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
     const cs_lnum_t *restrict face_cel_p
       = (const cs_lnum_t *restrict)(matrix->face_cell);
 
-    if (interleaved == false) {
-      const cs_real_t  *restrict xa1 = xa;
-      const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->x_val[kk] = xa1[face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->x_val[ll] = xa2[face_id];
-        }
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      cs_lnum_t kk, ll;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
+      if (ii < ms->n_rows) {
+        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+        mc->x_val[kk] = xa[2*face_id];
       }
-    }
-    else { /* interleaved == true */
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->x_val[kk] = xa[2*face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->x_val[ll] = xa[2*face_id + 1];
-        }
+      if (jj < ms->n_rows) {
+        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+        mc->x_val[ll] = xa[2*face_id + 1];
       }
     }
 
@@ -3153,14 +3067,12 @@ _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
  * parameters:
  *   matrix      <-- Pointer to matrix structure
  *   symmetric   <-- Indicates if extradiagonal values are symmetric
- *   interleaved <-- Indicates if matrix coefficients are interleaved
  *   xa          <-- Extradiagonal values
  *----------------------------------------------------------------------------*/
 
 static void
 _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
                              bool              symmetric,
-                             bool              interleaved,
                              const cs_real_t  *restrict xa)
 {
   cs_lnum_t  ii, jj, face_id;
@@ -3178,39 +3090,20 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
     const cs_lnum_t *restrict face_cel_p
       = (const cs_lnum_t *restrict)(matrix->face_cell);
 
-    const cs_real_t  *restrict xa1 = xa;
-    const cs_real_t  *restrict xa2 = xa + matrix->n_faces;
+    for (face_id = 0; face_id < n_faces; face_id++) {
+      cs_lnum_t kk, ll;
+      ii = *face_cel_p++;
+      jj = *face_cel_p++;
+      if (ii < ms->n_rows) {
+        for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
+        mc->x_val[kk] += xa[2*face_id];
+      }
+      if (jj < ms->n_rows) {
+        for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
+        mc->x_val[ll] += xa[2*face_id + 1];
+      }
+    }
 
-    if (interleaved == false) {
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->x_val[kk] += xa1[face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->x_val[ll] += xa2[face_id];
-        }
-      }
-    }
-    else { /* interleaved == true */
-      for (face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t kk, ll;
-        ii = *face_cel_p++;
-        jj = *face_cel_p++;
-        if (ii < ms->n_rows) {
-          for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-          mc->x_val[kk] += xa[2*face_id];
-        }
-        if (jj < ms->n_rows) {
-          for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-          mc->x_val[ll] += xa[2*face_id + 1];
-        }
-      }
-    }
   }
   else { /* if symmetric == true */
 
@@ -3243,7 +3136,6 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
  * parameters:
  *   matrix           <-> Pointer to matrix structure
  *   symmetric        <-- Indicates if extradiagonal values are symmetric
- *   interleaved      <-- Indicates if matrix coefficients are interleaved
  *   copy             <-- Indicates if coefficients should be copied
  *   da               <-- Diagonal values (NULL if all zero)
  *   xa               <-- Extradiagonal values (NULL if all zero)
@@ -3252,7 +3144,6 @@ _set_xa_coeffs_msr_increment(cs_matrix_t      *matrix,
 static void
 _set_coeffs_msr(cs_matrix_t      *matrix,
                 bool              symmetric,
-                bool              interleaved,
                 bool              copy,
                 const cs_real_t  *restrict da,
                 const cs_real_t  *restrict xa)
@@ -3315,9 +3206,9 @@ _set_coeffs_msr(cs_matrix_t      *matrix,
     if (xa != NULL) {
 
       if (ms->direct_assembly == true)
-        _set_xa_coeffs_msr_direct(matrix, symmetric, interleaved, xa);
+        _set_xa_coeffs_msr_direct(matrix, symmetric, xa);
       else
-        _set_xa_coeffs_msr_increment(matrix, symmetric, interleaved, xa);
+        _set_xa_coeffs_msr_increment(matrix, symmetric, xa);
 
     }
     else { /* if (xa == NULL) */
@@ -4953,56 +4844,8 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
 
   if (matrix->set_coefficients != NULL) {
     matrix->xa = xa;
-    matrix->set_coefficients(matrix, symmetric, true, false, da, xa);
+    matrix->set_coefficients(matrix, symmetric, false, da, xa);
   }
-}
-
-/*----------------------------------------------------------------------------
- * Set matrix coefficients in the non-interleaved case.
- *
- * In the symmetric case, there is no difference with the interleaved case.
- *
- * Depending on current options and initialization, values will be copied
- * or simply mapped (non-symmetric values will be copied).
- *
- * parameters:
- *   matrix    <-> Pointer to matrix structure
- *   symmetric <-- Indicates if matrix coefficients are symmetric
- *   da        <-- Diagonal values (NULL if zero)
- *   xa        <-- Extradiagonal values (NULL if zero)
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_set_coefficients_ni(cs_matrix_t      *matrix,
-                              bool              symmetric,
-                              const cs_real_t  *da,
-                              const cs_real_t  *xa)
-{
-  int i;
-
-  if (matrix == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The matrix is not defined."));
-
-  for (i = 0; i < 4; i++)
-    matrix->db_size[i] = 1;
-
-  for (i = 0; i < 4; i++)
-    matrix->eb_size[i] = 1;
-
-  /* Set fill type */
-
-  if (symmetric)
-    matrix->fill_type = CS_MATRIX_SCALAR_SYM;
-  else
-    matrix->fill_type = CS_MATRIX_SCALAR;
-
-  if (matrix->set_coefficients != NULL) {
-    matrix->xa = xa;
-    matrix->set_coefficients(matrix, symmetric, false, false, da, xa);
-  }
-
-  /* Set coefficients */
 }
 
 /*----------------------------------------------------------------------------
@@ -5057,7 +4900,7 @@ cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
   }
 
   if (matrix->set_coefficients != NULL)
-    matrix->set_coefficients(matrix, symmetric, true, true, da, xa);
+    matrix->set_coefficients(matrix, symmetric, true, da, xa);
 
   /* Set fill type */
 
@@ -5259,8 +5102,8 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
  *
  * This function currently only functions if the matrix is in "native"
  * format or the coefficients were mapped from native coefficients using
- * cs_matrix_set_coefficients() or cs_matrix_set_coefficients_ni(), in which
- * case the pointer returned is the same as the one passed to that function.
+ * cs_matrix_set_coefficients(), in which case the pointer returned is the
+ * same as the one passed to that function.
  *
  * parameters:
  *   matrix --> Pointer to matrix structure

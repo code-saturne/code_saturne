@@ -63,7 +63,6 @@ BEGIN_C_DECLS
 typedef void
 (cs_matrix_set_coeffs_t) (cs_matrix_t      *matrix,
                           bool              symmetric,
-                          bool              interleaved,
                           bool              copy,
                           const cs_real_t  *restrict da,
                           const cs_real_t  *restrict xa);
