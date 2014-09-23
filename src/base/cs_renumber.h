@@ -164,7 +164,7 @@ cs_renumber_set_algorithm(bool                        halo_adjacent_cells_last,
                           cs_renumber_cells_type_t    cells_pre_numbering,
                           cs_renumber_cells_type_t    cells_numbering,
                           cs_renumber_i_faces_type_t  i_faces_numbering,
-                          cs_renumber_i_faces_type_t  b_faces_numbering);
+                          cs_renumber_b_faces_type_t  b_faces_numbering);
 
 /*----------------------------------------------------------------------------
  * Return the options for interior faces renumbering.
