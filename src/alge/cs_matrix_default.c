@@ -465,6 +465,9 @@ void
 cs_matrix_set_variant(cs_matrix_fill_type_t       fill_type,
                       const cs_matrix_variant_t  *mv)
 {
+  if (!_initialized)
+    _initialize_api();
+
   /* Create default variant for copy if none present */
 
   if (_matrix_variant_tuned[fill_type] == NULL) {
