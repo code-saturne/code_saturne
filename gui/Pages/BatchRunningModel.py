@@ -37,7 +37,7 @@ import os, os.path, shutil, sys, string, types, re
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import Base.Toolbox as Tool
+import code_saturne.Base.Toolbox as Tool
 from code_saturne.Pages.SolutionDomainModel import MeshModel, SolutionDomainModel
 from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel

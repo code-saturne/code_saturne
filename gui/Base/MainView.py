@@ -82,7 +82,7 @@ from code_saturne.Base.Toolbox import GuiParam, displaySelectedPage
 from code_saturne.Base.Common import XML_DOC_VERSION
 
 try:
-    import Pages
+    import code_saturne.Pages
 except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

@@ -49,7 +49,7 @@ from PyQt4.QtGui  import *
 
 from code_saturne.Base.Toolbox import GuiParam
 
-import Base.QtPage as QtPage
+import code_saturne.Base.QtPage as QtPage
 
 from code_saturne.Pages.AnalysisFeaturesForm import Ui_AnalysisFeaturesForm
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel

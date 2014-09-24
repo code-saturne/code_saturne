@@ -41,7 +41,7 @@ import sys, unittest
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Common import *
-import Base.Toolbox as Tool
+import code_saturne.Base.Toolbox as Tool
 from code_saturne.Base.XMLvariables import Variables, Model
 from code_saturne.Base.XMLmodel import ModelTest
 from code_saturne.Pages.OutputControlModel import OutputControlModel

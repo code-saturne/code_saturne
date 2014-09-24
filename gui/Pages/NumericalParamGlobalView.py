@@ -135,7 +135,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         else:
             self.checkBoxIPUCOU.setChecked(False)
 
-        import Pages.FluidCharacteristicsModel as FluidCharacteristics
+        import code_saturne.Pages.FluidCharacteristicsModel as FluidCharacteristics
         fluid = FluidCharacteristics.FluidCharacteristicsModel(self.case)
         modl_atmo, modl_joul, modl_thermo, modl_gas, modl_coal, modl_comp = fluid.getThermoPhysicalModel()
 

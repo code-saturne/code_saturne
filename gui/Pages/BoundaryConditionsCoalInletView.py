@@ -52,7 +52,7 @@ from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor
 from code_saturne.Base.QtPage import to_qvariant, from_qvariant, to_text_string
 
 from code_saturne.Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
-import Pages.CoalCombustionModel as CoalCombustion
+import code_saturne.Pages.CoalCombustionModel as CoalCombustion
 
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary

@@ -41,7 +41,7 @@ import os, sys, string, types, unittest
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Common import *
-import Base.Toolbox as Tool
+import code_saturne.Base.Toolbox as Tool
 from code_saturne.Base.XMLmodel import XMLmodel, ModelTest
 from code_saturne.Base.XMLvariables import Model, Variables
 from code_saturne.Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel

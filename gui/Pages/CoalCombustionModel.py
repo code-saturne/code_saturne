@@ -41,8 +41,8 @@ import sys, unittest
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Common import *
-import Base.Toolbox as Tool
-import Pages.IdentityAndPathesModel as IdentityAndPathesModel
+import code_saturne.Base.Toolbox as Tool
+import code_saturne.Pages.IdentityAndPathesModel as IdentityAndPathesModel
 from code_saturne.Base.XMLvariables import Variables, Model
 from code_saturne.Base.XMLmodel import ModelTest
 from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel

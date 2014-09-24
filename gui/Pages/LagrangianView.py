@@ -311,7 +311,7 @@ class StandardItemModelCoals(QStandardItemModel):
         self.case = case
         self.model = model
 
-        import Pages.CoalCombustionModel as CoalCombustionModel
+        import code_saturne.Pages.CoalCombustionModel as CoalCombustionModel
         self.coalModel = CoalCombustionModel.CoalCombustionModel(self.case)
         CoalsNumber = self.coalModel.getCoalNumber()
 

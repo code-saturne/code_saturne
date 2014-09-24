@@ -78,179 +78,179 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
     #
 
     if page_name == tr("Identity and paths"):
-        import Pages.IdentityAndPathesView as Page
+        import code_saturne.Pages.IdentityAndPathesView as Page
         thisPage = Page.IdentityAndPathesView(root, case, study)
 
     elif page_name == tr("Meshes selection"):
-        import Pages.SolutionDomainView as Page
+        import code_saturne.Pages.SolutionDomainView as Page
         thisPage = Page.SolutionDomainView(root, case, stbar)
 
     elif page_name == tr("Mesh quality criteria"):
-        import Pages.SolutionVerifView as Page
+        import code_saturne.Pages.SolutionVerifView as Page
         thisPage = Page.SolutionVerifView(root, case)
 
     elif page_name == tr("Volume regions definition"):
-        import Pages.LocalizationView as Page
+        import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.VolumeLocalizationView(root, case, tree)
 
     elif page_name == tr("Calculation features"):
-        import Pages.AnalysisFeaturesView as Page
+        import code_saturne.Pages.AnalysisFeaturesView as Page
         thisPage = Page.AnalysisFeaturesView(root, case, tree)
 
     elif page_name == tr("Deformable mesh"):
-        import Pages.MobileMeshView as Page
+        import code_saturne.Pages.MobileMeshView as Page
         thisPage = Page.MobileMeshView(root, case, tree)
 
     elif page_name == tr("Turbulence models"):
-        import Pages.TurbulenceView as Page
+        import code_saturne.Pages.TurbulenceView as Page
         thisPage = Page.TurbulenceView(root, case)
 
     elif page_name == tr("Thermal model"):
-        import Pages.ThermalScalarView as Page
+        import code_saturne.Pages.ThermalScalarView as Page
         thisPage = Page.ThermalScalarView(root, case, tree)
 
     elif page_name == tr("Gas combustion"):
-        import Pages.GasCombustionView as Page
+        import code_saturne.Pages.GasCombustionView as Page
         thisPage = Page.GasCombustionView(root, case)
 
     elif page_name == tr("Pulverized fuel combustion"):
-        import Pages.CoalCombustionView as Page
+        import code_saturne.Pages.CoalCombustionView as Page
         thisPage = Page.CoalCombustionView(root, case, stbar)
 
     elif page_name == tr("Electrical models"):
-        import Pages.ElectricalView as Page
+        import code_saturne.Pages.ElectricalView as Page
         thisPage = Page.ElectricalView(root, case, stbar)
 
     elif page_name == tr("Radiative transfers"):
-        import Pages.ThermalRadiationView as Page
+        import code_saturne.Pages.ThermalRadiationView as Page
         thisPage = Page.ThermalRadiationView(root, case, tree)
 
     elif page_name == tr("Conjugate heat transfer"):
-        import Pages.ConjugateHeatTransferView as Page
+        import code_saturne.Pages.ConjugateHeatTransferView as Page
         thisPage = Page.ConjugateHeatTransferView(root, case)
 
     elif page_name == tr("Initialization"):
-        import Pages.InitializationView as Page
+        import code_saturne.Pages.InitializationView as Page
         thisPage = Page.InitializationView(root, case, stbar)
 
     elif page_name == tr("Head losses"):
-        import Pages.HeadLossesView as Page
+        import code_saturne.Pages.HeadLossesView as Page
         thisPage = Page.HeadLossesView(root, case)
 
     elif page_name == tr("Porosity"):
-        import Pages.PorosityView as Page
+        import code_saturne.Pages.PorosityView as Page
         thisPage = Page.PorosityView(root, case)
 
     elif page_name == tr("Source terms"):
-        import Pages.SourceTermsView as Page
+        import code_saturne.Pages.SourceTermsView as Page
         thisPage = Page.SourceTermsView(root, case, stbar)
 
     elif page_name == tr("Coriolis Source Terms"):
-        import Pages.CoriolisSourceTermsView as Page
+        import code_saturne.Pages.CoriolisSourceTermsView as Page
         thisPage = Page.CoriolisSourceTermsView(root, case)
 
     elif page_name == tr("Reference values"):
-        import Pages.ReferenceValuesView as Page
+        import code_saturne.Pages.ReferenceValuesView as Page
         thisPage = Page.ReferenceValuesView(root, case)
 
     elif page_name == tr("Fluid properties"):
-        import Pages.FluidCharacteristicsView as Page
+        import code_saturne.Pages.FluidCharacteristicsView as Page
         thisPage = Page.FluidCharacteristicsView(root, case)
 
     elif page_name == tr("Gravity"):
-        import Pages.BodyForcesView as Page
+        import code_saturne.Pages.BodyForcesView as Page
         thisPage = Page.BodyForcesView(root, case)
 
     elif page_name == tr("Species transport"):
-        import Pages.DefineUserScalarsView as Page
+        import code_saturne.Pages.DefineUserScalarsView as Page
         thisPage = Page.DefineUserScalarsView(root, case, stbar)
 
     elif page_name == tr("Turbomachinery"):
-        import Pages.TurboMachineryView as Page
+        import code_saturne.Pages.TurboMachineryView as Page
         thisPage = Page.TurboMachineryView(root, case)
 
     elif page_name == tr("Global settings"):
-        import Pages.LagrangianView as Page
+        import code_saturne.Pages.LagrangianView as Page
         thisPage = Page.LagrangianView(root, case)
 
     elif page_name == tr("Statistics"):
-        import Pages.LagrangianStatisticsView as Page
+        import code_saturne.Pages.LagrangianStatisticsView as Page
         thisPage = Page.LagrangianStatisticsView(root, case)
 
     elif page_name == tr("Definition of boundary regions"):
-        import Pages.LocalizationView as Page
+        import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case, tree)
 
     elif page_name == tr("Boundary conditions"):
-        import Pages.BoundaryConditionsView as Page
+        import code_saturne.Pages.BoundaryConditionsView as Page
         thisPage = Page.BoundaryConditionsView(root, case)
 
     elif page_name == tr("Particles boundary conditions"):
-        import Pages.LagrangianBoundariesView as Page
+        import code_saturne.Pages.LagrangianBoundariesView as Page
         thisPage = Page.LagrangianBoundariesView(root, case)
 
     elif page_name == tr("Time averages"):
-        import Pages.TimeAveragesView as Page
+        import code_saturne.Pages.TimeAveragesView as Page
         thisPage = Page.TimeAveragesView(root, case, stbar)
 
     elif page_name == tr("Time step"):
-        import Pages.TimeStepView as Page
+        import code_saturne.Pages.TimeStepView as Page
         thisPage = Page.TimeStepView(root, case)
 
     elif page_name == tr("Pseudo-Time step"):
-        import Pages.TimeStepView as Page
+        import code_saturne.Pages.TimeStepView as Page
         thisPage = Page.TimeStepView(root, case)
 
     elif page_name == tr("Steady flow management"):
-        import Pages.SteadyManagementView as Page
+        import code_saturne.Pages.SteadyManagementView as Page
         thisPage = Page.SteadyManagementView(root, case)
 
     elif page_name == tr("Output control"):
-        import Pages.OutputControlView as Page
+        import code_saturne.Pages.OutputControlView as Page
         thisPage = Page.OutputControlView(root, case, tree)
 
     elif page_name == tr("Volume solution control"):
-        import Pages.OutputVolumicVariablesView as Page
+        import code_saturne.Pages.OutputVolumicVariablesView as Page
         thisPage = Page.OutputVolumicVariablesView(root, case)
 
     elif page_name == tr("Surface solution control"):
-        import Pages.OutputSurfacicVariablesView as Page
+        import code_saturne.Pages.OutputSurfacicVariablesView as Page
         thisPage = Page.OutputSurfacicVariablesView(root, case)
 
     elif page_name == tr("Lagrangian solution control"):
-        import Pages.LagrangianOutputView as Page
+        import code_saturne.Pages.LagrangianOutputView as Page
         thisPage = Page.LagrangianOutputView(root, case)
 
     elif page_name == tr("Profiles"):
-        import Pages.ProfilesView as Page
+        import code_saturne.Pages.ProfilesView as Page
         thisPage = Page.ProfilesView(root, case, stbar)
 
     elif page_name == tr("Equation parameters"):
-        import Pages.NumericalParamEquationView as Page
+        import code_saturne.Pages.NumericalParamEquationView as Page
         thisPage = Page.NumericalParamEquationView(root, case)
 
     elif page_name == tr("Global parameters"):
-        import Pages.NumericalParamGlobalView as Page
+        import code_saturne.Pages.NumericalParamGlobalView as Page
         thisPage = Page.NumericalParamGlobalView(root, case, tree)
 
     elif page_name == tr("Start/Restart"):
-        import Pages.StartRestartView as Page
+        import code_saturne.Pages.StartRestartView as Page
         thisPage = Page.StartRestartView(root, case)
 
     elif page_name == tr("Performance tuning"):
-        import Pages.PerformanceTuningView as Page
+        import code_saturne.Pages.PerformanceTuningView as Page
         thisPage = Page.PerformanceTuningView(root, case)
 
     elif page_name == tr("Prepare batch calculation"):
-        import Pages.BatchRunningView as Page
+        import code_saturne.Pages.BatchRunningView as Page
         thisPage = Page.BatchRunningView(root, case)
 
     elif page_name == tr("Fluid structure interaction"):
-        import Pages.FluidStructureInteractionView as Page
+        import code_saturne.Pages.FluidStructureInteractionView as Page
         thisPage = Page.FluidStructureInteractionView(root, case)
 
     elif page_name == tr("Atmospheric flows"):
-        import Pages.AtmosphericFlowsView as Page
+        import code_saturne.Pages.AtmosphericFlowsView as Page
         thisPage = Page.AtmosphericFlowsView(root, case)
 
 
@@ -258,7 +258,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         msg = tr("Warning: the corresponding Page %s doesn't exist!") % page_name
         print(msg)
         # So we display the Welcome Page!
-        import Pages.WelcomeView as Page
+        import code_saturne.Pages.WelcomeView as Page
         thisPage = Page.WelcomeView()
 
     case['current_page'] = str(page_name)
