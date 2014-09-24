@@ -453,7 +453,7 @@ integer, allocatable, dimension(:) :: lstelt
 
 if (iihmpr.eq.1) then
   return
-else
+else if (nfabor.gt.0) then
   write(nfecra,9000)
   call csexit (1)
 endif
