@@ -661,11 +661,12 @@ endif
 !  For temperature, the temperature scale may be set later using itpscl
 !  (1 for Kelvin, 2 for Celsius).
 !
-!  When using specific physics, this value is set automatically by the physics model.
+!  Warning: When using specific physics, this value is
+!           set automatically by the physics model.
 
-if (ixmlpu.eq.0) then
+if (.false.) then
 
-  itherm = 0
+  itherm = 1
 
 endif
 

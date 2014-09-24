@@ -748,7 +748,8 @@ iptlro = 0
 
 ! --- Thermique
 
-itherm =-999
+! No thermal scalar by default
+itherm = 0
 itpscl = 1
 iscalt =-1
 
