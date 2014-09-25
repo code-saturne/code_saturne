@@ -81,7 +81,7 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_heat      = self.setNewFluidProperty(self.node_fluid, 'specific_heat')
         self.node_cond      = self.setNewFluidProperty(self.node_fluid, 'thermal_conductivity')
 
-        import cs_config
+        import code_saturne.cs_config as cs_config
         cfg = cs_config.config()
         self.freesteam = 0
         if cfg.libs['freesteam'].have != "no":
