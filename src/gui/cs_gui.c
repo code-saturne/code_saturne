@@ -3210,6 +3210,7 @@ void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
                             "porosities",
                             "porosity");
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      BFT_FREE(zone_id);
       cs_xpath_add_attribute(&path, "model");
       char *mdl = cs_gui_get_attribute_value(path);
       BFT_FREE(path);
@@ -3377,6 +3378,7 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
       BFT_FREE(zone_id);
       BFT_FREE(mdl);
     }
+    BFT_FREE(status);
   }
 }
 
