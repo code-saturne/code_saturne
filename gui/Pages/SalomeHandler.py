@@ -72,32 +72,19 @@ log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 
-try:
-    engineGeom = lcc.FindOrLoadComponent( "FactoryServer", "GEOM" )
-    aGEOM_SO = geomBuilder.New(salome.myStudy, engineGeom)
-    pass
-except:
-    aGEOM_SO = None
-    pass
-
-try:
-    engineMesh = lcc.FindOrLoadComponent( "FactoryServer", "SMESH" )
-    aSMESH_SO = smeshBuilder.New(salome.myStudy, engineSmesh)
-    pass
-except:
-    aSMESH_SO = None
-    pass
-
 #loading IORs
 aStudy = _getStudy()
 builder = aStudy.NewBuilder()
-if aSMESH_SO != None:
-    aSMESHEngine = lcc.FindOrLoadComponent("FactoryServer", "SMESH")
-    builder.LoadWith(aSMESH_SO, aSMESHEngine)
 
-if aGEOM_SO != None:
+sMeshComponent = salome.myStudy.FindComponent("SMESH")
+if sMeshComponent != None:
+    aSMESHEngine = lcc.FindOrLoadComponent("FactoryServer", "SMESH")
+    builder.LoadWith(sMeshComponent, aSMESHEngine)
+
+sGeomComponent = salome.myStudy.FindComponent("GEOM")
+if sGeomComponent != None:
     aGEOMEngine = lcc.FindOrLoadComponent("FactoryServer", "GEOM")
-    builder.LoadWith(aGEOM_SO, aGEOMEngine)
+    builder.LoadWith(sGeomComponent, aGEOMEngine)
 
 #-------------------------------------------------------------------------------
 
@@ -105,7 +92,7 @@ def BoundaryGroup():
     """
     Import groups of faces.
     """
-    if aSMESH_SO == None and aGEOM_SO == None:
+    if sMeshComponent == None and sGeomComponent == None:
         raise ValueError("Component SMESH and GEOM not found")
 
     local = ""
@@ -119,13 +106,12 @@ def BoundaryGroup():
                     if anObjectDS !=  None:
 
                         # check for smesh group
-                        aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_GroupBase)
+                        aSmeshObject = anObjectDS._narrow(SMESH.SMESH_GroupBase)
                         #if aSmeshObject == None:
-                        #    aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_Group)
+                        #    aSmeshObject = anObjectDS._narrow(SMESH.SMESH_Group)
                         #if aSmeshObject == None:
-                        #    aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_GroupOnGeom)
-
-                        if aSmeshObject != None and aSmeshObject.GetType() == smeshBuilder.FACE:
+                        #    aSmeshObject = anObjectDS._narrow(SMESH.SMESH_GroupOnGeom)
+                        if aSmeshObject != None and aSmeshObject.GetType() == SMESH.FACE:
                             if not local:
                                 local = aSmeshObject.GetName()
                             else:
@@ -160,7 +146,7 @@ def VolumeGroup():
     """
     Import groups of solid.
     """
-    if aSMESH_SO == None and aGEOM_SO == None:
+    if sMeshComponent == None and sGeomComponent == None:
         raise ValueError("Component SMESH and GEOM not found")
 
     local = ""
@@ -173,9 +159,9 @@ def VolumeGroup():
                     anObjectDS = sobj.GetObject()
                     #check for smesh group
                     if anObjectDS !=  None:
-                        #aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_Group)
-                        aSmeshObject = anObjectDS._narrow(smeshBuilder.SMESH_GroupBase)
-                        if aSmeshObject != None and aSmeshObject.GetType() == smeshBuilder.VOLUME:
+                        #aSmeshObject = anObjectDS._narrow(SMESH.SMESH_Group)
+                        aSmeshObject = anObjectDS._narrow(SMESH.SMESH_GroupBase)
+                        if aSmeshObject != None and aSmeshObject.GetType() == SMESH.VOLUME:
                             if not local:
                                 local = aSmeshObject.GetName()
                             else:
