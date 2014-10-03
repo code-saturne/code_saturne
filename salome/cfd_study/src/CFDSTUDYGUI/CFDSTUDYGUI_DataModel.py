@@ -314,10 +314,6 @@ def _getStudy():
     return study
 
 
-def _getlistOfOpenStudies():
-    return studyManager.GetOpenStudies()
-
-
 def _getStudy_Id(studyName) :
     s = studyManager.GetStudyByName(studyName)
     return s._get_StudyId()

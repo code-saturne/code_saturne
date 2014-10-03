@@ -193,13 +193,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._SolverGUI = CFDSTUDYGUI_SolverGUI.CFDSTUDYGUI_SolverGUI()
         self._DskAgent = Desktop_Agent()
 
-        try :
-            import salome_kernel
-            orb, lcc, naming_service, cm = salome_kernel.salome_kernel_init()
-            self.myParavisEngine = lcc.FindOrLoadComponent("FactoryServer","PARAVIS")
-        except Exception:
-            log.debug("PARAVIS module not available.")
-            pass
 
     def createActions(self):
         """
@@ -382,16 +375,15 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         #export/convert actions
 
-        if self.myParavisEngine :
-            action = sgPyQt.createAction(-1,
-                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TEXT"),
-                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TIP"),
-                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_SB"),
-                                          ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_ICON"))
-            self.connect(action, SIGNAL("activated()"), self.slotExportInParavis)
-            action_id = sgPyQt.actionId(action)
-            self._ActionMap[action_id] = action
-            self._CommonActionIdMap[ExportInParaViSAction] = action_id
+        action = sgPyQt.createAction(-1,
+                                      ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TEXT"),
+                                      ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TIP"),
+                                      ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_SB"),
+                                      ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_ICON"))
+        self.connect(action, SIGNAL("activated()"), self.slotExportInParavis)
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._CommonActionIdMap[ExportInParaViSAction] = action_id
 
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("EXPORT_IN_SMESH_ACTION_TEXT"),\
@@ -750,40 +742,25 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.solverAction(SolverSaveAsAction).setEnabled(False)
                 self.solverAction(SolverUndoAction).setEnabled(False)
                 self.solverAction(SolverRedoAction).setEnabled(False)
-                boo = True
 
                 xmlName      = sobj.GetName()
                 caseName     = sobj.GetFather().GetFather().GetName()
                 studyCFDName = sobj.GetFather().GetFather().GetFather().GetName()
                 dockName = self._SolverGUI.getDockTitleNameFromOB(studyCFDName,caseName,xmlName)
 
-                listOfOpenSalomeStudies = CFDSTUDYGUI_DataModel._getlistOfOpenStudies()
-
-                if listOfOpenSalomeStudies != [] and len(listOfOpenSalomeStudies) >= 1:
-                    for nameSalomeStudy in CFDSTUDYGUI_DataModel._getlistOfOpenStudies():
-                        studyId = CFDSTUDYGUI_DataModel._getStudy_Id(nameSalomeStudy)
-                        if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases != {}:
-                            if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases.has_key(studyId):
-                                if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases[studyId] != []:
-                                    dockListe, dockListeWB = CFDSTUDYGUI_SolverGUI._c_CFDGUI.getDockListes(studyId)
-                                    for dock in dockListe:
-                                        if dockName == dock.windowTitle():
-                                            self.commonAction(OpenGUIAction).setEnabled(False)
-                                            if studyId != sgPyQt.getStudyId():
-                                                self.solverAction(SolverCloseAction).setEnabled(False)
-                                                self.solverAction(SolverSaveAction).setEnabled(False)
-                                                self.solverAction(SolverSaveAsAction).setEnabled(False)
-                                                self.solverAction(SolverUndoAction).setEnabled(False)
-                                                self.solverAction(SolverRedoAction).setEnabled(False)
-                                            else:
-                                                self.solverAction(SolverCloseAction).setEnabled(True)
-                                                self.solverAction(SolverSaveAction).setEnabled(True)
-                                                self.solverAction(SolverSaveAsAction).setEnabled(True)
-                                                self.solverAction(SolverUndoAction).setEnabled(True)
-                                                self.solverAction(SolverRedoAction).setEnabled(True)
-                                            boo = False
-                if boo:
-                    self.commonAction(OpenGUIAction).setEnabled(True)
+                studyId = salome.myStudyId
+                if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases != {}:
+                    if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases.has_key(studyId):
+                        if CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases[studyId] != []:
+                            dockListe, dockListeWB = CFDSTUDYGUI_SolverGUI._c_CFDGUI.getDockListes(studyId)
+                            for dock in dockListe:
+                                if dockName == dock.windowTitle():
+                                    self.commonAction(OpenGUIAction).setEnabled(False)
+                                    self.solverAction(SolverCloseAction).setEnabled(True)
+                                    self.solverAction(SolverSaveAction).setEnabled(True)
+                                    self.solverAction(SolverSaveAsAction).setEnabled(True)
+                                    self.solverAction(SolverUndoAction).setEnabled(True)
+                                    self.solverAction(SolverRedoAction).setEnabled(True)
 
 
     def customPopup(self, id, popup):
