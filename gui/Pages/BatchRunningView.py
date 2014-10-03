@@ -801,6 +801,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                             self.case['package'].name)]
         cmd = cmd + ["run", "--suggest-id"]
         r_title = subprocess.Popen(cmd,
+                                   shell=True,
                                    stdout=subprocess.PIPE).stdout.read()[:-1]
         r_id = os.path.join(self.case['resu_path'], r_title)
 
