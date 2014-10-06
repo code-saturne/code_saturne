@@ -24,6 +24,16 @@
 
 # Main part
 
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+$(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
@@ -45,12 +55,14 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_radiation_solver.h
 
 # Library source files
 
 noinst_LTLIBRARIES = libcsrayt.la
 libcsrayt_la_SOURCES = \
+cs_radiation_solver.c \
 raycli.f90 \
 raycll.f90 \
 raydak.f90 \
@@ -65,6 +77,7 @@ raypun.f90 \
 raysca.f90 \
 raysol.f90 \
 rmodak.f90
+
 libcsrayt_la_LDFLAGS = -no-undefined
 
 clean-local:

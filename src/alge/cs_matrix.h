@@ -178,16 +178,6 @@ void
 cs_matrix_structure_destroy(cs_matrix_structure_t  **ms);
 
 /*----------------------------------------------------------------------------
- * Get the type associated with a matrix structure.
- *
- * parameters:
- *   ms <-- Associated matrix structure
- *----------------------------------------------------------------------------*/
-
-cs_matrix_type_t
-cs_matrix_structure_type(const cs_matrix_structure_t  *ms);
-
-/*----------------------------------------------------------------------------
  * Create a matrix container using a given structure.
  *
  * Note that the matrix container maps to the assigned structure,
@@ -266,6 +256,19 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
 const int *
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Return pointer to matrix halo structure.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to halo strucuture
+ *----------------------------------------------------------------------------*/
+
+const cs_halo_t *
+cs_matrix_get_halo(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
@@ -423,6 +426,30 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
 
 const cs_real_t *
 cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Get arrays describing a matrix in MSR format.
+ *
+ * This function only works for an MSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * parameters:
+ *   matrix    <-- Pointer to matrix structure
+ *   row_index --> MSR row index
+ *   col_id    --> MSR column id
+ *   d_val     --> diagonal values
+ *   x_val     --> extra-diagonal values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
+                         const cs_lnum_t    **row_index,
+                         const cs_lnum_t    **col_id,
+                         const cs_real_t    **d_val,
+                         const cs_real_t    **x_val);
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x

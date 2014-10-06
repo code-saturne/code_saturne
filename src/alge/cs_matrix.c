@@ -689,7 +689,6 @@ _set_coeffs_native(cs_matrix_t      *matrix,
 {
   cs_matrix_coeff_native_t  *mc = matrix->coeffs;
   const cs_matrix_struct_native_t  *ms = matrix->structure;
-  cs_lnum_t ii;
   mc->symmetric = symmetric;
 
   /* Map or copy values */
@@ -743,7 +742,7 @@ static void
 _release_coeffs_native(cs_matrix_t  *matrix)
 {
   cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  if (mc !=NULL) {
+  if (mc != NULL) {
     mc->da = NULL;
     mc->xa = NULL;
   }
@@ -3941,161 +3940,6 @@ _variant_add(const char                        *name,
   *n_variants += 1;
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Create a matrix Structure.
- *
- * Note that the structure created maps to the given existing
- * cell global number, face -> cell connectivity arrays, and cell halo
- * structure, so it must be destroyed before they are freed
- * (usually along with the code's main face -> cell structure).
- *
- * Note that the resulting matrix structure will contain either a full or
- * an empty main diagonal, and that the extra-diagonal structure is always
- * symmetric (though the coefficients my not be, and we may choose a
- * matrix format that does not exploit ths symmetry). If the face_cell
- * connectivity argument is NULL, the matrix will be purely diagonal.
- *
- * parameters:
- *   type        <-- Type of matrix considered
- *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
- *   n_cells     <-- Local number of cells
- *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
- *   n_faces     <-- Local number of internal faces
- *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
- *   face_cell   <-- Face -> cells connectivity (1 to n)
- *   halo        <-- Halo structure associated with cells, or NULL
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
- *
- * returns:
- *   pointer to created matrix structure;
- *----------------------------------------------------------------------------*/
-
-cs_matrix_structure_t *
-cs_matrix_structure_create(cs_matrix_type_t       type,
-                           bool                   have_diag,
-                           cs_lnum_t              n_cells,
-                           cs_lnum_t              n_cells_ext,
-                           cs_lnum_t              n_faces,
-                           const cs_gnum_t       *cell_num,
-                           const cs_lnum_2_t     *face_cell,
-                           const cs_halo_t       *halo,
-                           const cs_numbering_t  *numbering)
-{
-  cs_matrix_structure_t *ms;
-
-  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
-
-  ms->type = type;
-
-  ms->n_cells = n_cells;
-  ms->n_cells_ext = n_cells_ext;
-  ms->n_faces = n_faces;
-
-  /* Define Structure */
-
-  switch(ms->type) {
-  case CS_MATRIX_NATIVE:
-    ms->structure = _create_struct_native(n_cells,
-                                          n_cells_ext,
-                                          n_faces,
-                                          face_cell);
-    break;
-  case CS_MATRIX_CSR:
-    ms->structure = _create_struct_csr(have_diag,
-                                       n_cells,
-                                       n_cells_ext,
-                                       n_faces,
-                                       face_cell);
-    break;
-  case CS_MATRIX_CSR_SYM:
-    ms->structure = _create_struct_csr_sym(have_diag,
-                                           n_cells,
-                                           n_cells_ext,
-                                           n_faces,
-                                           face_cell);
-    break;
-  case CS_MATRIX_MSR:
-    ms->structure = _create_struct_csr(false,
-                                       n_cells,
-                                       n_cells_ext,
-                                       n_faces,
-                                       face_cell);
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Handling of matrixes in %s format\n"
-                "is not operational yet."),
-              _(cs_matrix_type_name[type]));
-    break;
-  }
-
-  /* Set pointers to structures shared from mesh here */
-
-  ms->face_cell = face_cell;
-  ms->cell_num = cell_num;
-  ms->halo = halo;
-  ms->numbering = numbering;
-
-  return ms;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a matrix structure.
- *
- * parameters:
- *   ms <-> Pointer to matrix structure pointer
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
-{
-  if (ms != NULL && *ms != NULL) {
-
-    cs_matrix_structure_t *_ms = *ms;
-
-    switch(_ms->type) {
-    case CS_MATRIX_NATIVE:
-      {
-        cs_matrix_struct_native_t *structure = _ms->structure;
-        _destroy_struct_native(&structure);
-      }
-      break;
-    case CS_MATRIX_CSR:
-      {
-        cs_matrix_struct_csr_t *structure = _ms->structure;
-        _destroy_struct_csr(&structure);
-      }
-      break;
-    case CS_MATRIX_CSR_SYM:
-      {
-        cs_matrix_struct_csr_sym_t *structure = _ms->structure;
-        _destroy_struct_csr_sym(&structure);
-      }
-      break;
-    case CS_MATRIX_MSR:
-      {
-        cs_matrix_struct_csr_t *structure = _ms->structure;
-        _destroy_struct_csr(&structure);
-      }
-      break;
-    default:
-      assert(0);
-      break;
-    }
-    _ms->structure = NULL;
-
-    /* Now free main structure */
-
-    BFT_FREE(*ms);
-  }
-}
-
 /*----------------------------------------------------------------------------
  * Select the sparse matrix-vector product function to be used by a
  * matrix or variant for a given fill type.
@@ -4418,6 +4262,161 @@ _set_spmv_func(cs_matrix_type_t             m_type,
   return retcode;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Create a matrix Structure.
+ *
+ * Note that the structure created maps to the given existing
+ * cell global number, face -> cell connectivity arrays, and cell halo
+ * structure, so it must be destroyed before they are freed
+ * (usually along with the code's main face -> cell structure).
+ *
+ * Note that the resulting matrix structure will contain either a full or
+ * an empty main diagonal, and that the extra-diagonal structure is always
+ * symmetric (though the coefficients my not be, and we may choose a
+ * matrix format that does not exploit ths symmetry). If the face_cell
+ * connectivity argument is NULL, the matrix will be purely diagonal.
+ *
+ * parameters:
+ *   type        <-- Type of matrix considered
+ *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
+ *   n_cells     <-- Local number of cells
+ *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
+ *   n_faces     <-- Local number of internal faces
+ *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
+ *   face_cell   <-- Face -> cells connectivity (1 to n)
+ *   halo        <-- Halo structure associated with cells, or NULL
+ *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ *
+ * returns:
+ *   pointer to created matrix structure;
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create(cs_matrix_type_t       type,
+                           bool                   have_diag,
+                           cs_lnum_t              n_cells,
+                           cs_lnum_t              n_cells_ext,
+                           cs_lnum_t              n_faces,
+                           const cs_gnum_t       *cell_num,
+                           const cs_lnum_2_t     *face_cell,
+                           const cs_halo_t       *halo,
+                           const cs_numbering_t  *numbering)
+{
+  cs_matrix_structure_t *ms;
+
+  BFT_MALLOC(ms, 1, cs_matrix_structure_t);
+
+  ms->type = type;
+
+  ms->n_cells = n_cells;
+  ms->n_cells_ext = n_cells_ext;
+  ms->n_faces = n_faces;
+
+  /* Define Structure */
+
+  switch(ms->type) {
+  case CS_MATRIX_NATIVE:
+    ms->structure = _create_struct_native(n_cells,
+                                          n_cells_ext,
+                                          n_faces,
+                                          face_cell);
+    break;
+  case CS_MATRIX_CSR:
+    ms->structure = _create_struct_csr(have_diag,
+                                       n_cells,
+                                       n_cells_ext,
+                                       n_faces,
+                                       face_cell);
+    break;
+  case CS_MATRIX_CSR_SYM:
+    ms->structure = _create_struct_csr_sym(have_diag,
+                                           n_cells,
+                                           n_cells_ext,
+                                           n_faces,
+                                           face_cell);
+    break;
+  case CS_MATRIX_MSR:
+    ms->structure = _create_struct_csr(false,
+                                       n_cells,
+                                       n_cells_ext,
+                                       n_faces,
+                                       face_cell);
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Handling of matrixes in %s format\n"
+                "is not operational yet."),
+              _(cs_matrix_type_name[type]));
+    break;
+  }
+
+  /* Set pointers to structures shared from mesh here */
+
+  ms->face_cell = face_cell;
+  ms->cell_num = cell_num;
+  ms->halo = halo;
+  ms->numbering = numbering;
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------
+ * Destroy a matrix structure.
+ *
+ * parameters:
+ *   ms <-> Pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
+{
+  if (ms != NULL && *ms != NULL) {
+
+    cs_matrix_structure_t *_ms = *ms;
+
+    switch(_ms->type) {
+    case CS_MATRIX_NATIVE:
+      {
+        cs_matrix_struct_native_t *structure = _ms->structure;
+        _destroy_struct_native(&structure);
+      }
+      break;
+    case CS_MATRIX_CSR:
+      {
+        cs_matrix_struct_csr_t *structure = _ms->structure;
+        _destroy_struct_csr(&structure);
+      }
+      break;
+    case CS_MATRIX_CSR_SYM:
+      {
+        cs_matrix_struct_csr_sym_t *structure = _ms->structure;
+        _destroy_struct_csr_sym(&structure);
+      }
+      break;
+    case CS_MATRIX_MSR:
+      {
+        cs_matrix_struct_csr_t *structure = _ms->structure;
+        _destroy_struct_csr(&structure);
+      }
+      break;
+    default:
+      assert(0);
+      break;
+    }
+    _ms->structure = NULL;
+
+    /* Now free main structure */
+
+    BFT_FREE(*ms);
+  }
+}
+
 /*----------------------------------------------------------------------------
  * Create a matrix container using a given structure.
  *
@@ -4717,6 +4716,26 @@ cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
               _("The matrix is not defined."));
 
   return matrix->eb_size;
+}
+
+/*----------------------------------------------------------------------------
+ * Return pointer to matrix halo structure.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *
+ * returns:
+ *   pointer to halo strucuture
+ *----------------------------------------------------------------------------*/
+
+const cs_halo_t *
+cs_matrix_get_halo(const cs_matrix_t  *matrix)
+{
+  if (matrix == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The matrix is not defined."));
+
+  return matrix->halo;
 }
 
 /*----------------------------------------------------------------------------
@@ -5144,6 +5163,47 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
   }
 
   return exdiag;
+}
+
+/*----------------------------------------------------------------------------
+ * Get arrays describing a matrix in MSR format.
+ *
+ * This function only works for an MSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * parameters:
+ *   matrix    <-- Pointer to matrix structure
+ *   row_index --> MSR row index
+ *   col_id    --> MSR column id
+ *   d_val     --> diagonal values
+ *   x_val     --> extra-diagonal values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
+                         const cs_lnum_t    **row_index,
+                         const cs_lnum_t    **col_id,
+                         const cs_real_t    **d_val,
+                         const cs_real_t    **x_val)
+{
+  *row_index = NULL;
+  *col_id = NULL;
+  *d_val = NULL;
+  *x_val = NULL;
+
+  if (matrix->type == CS_MATRIX_MSR) {
+    const cs_matrix_struct_csr_t  *ms = matrix->structure;
+    const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+    *row_index = ms->row_index;
+    *col_id = ms->col_id;
+    if (mc != NULL) {
+      *d_val = mc->d_val;
+      *x_val = mc->x_val;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------

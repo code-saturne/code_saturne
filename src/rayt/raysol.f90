@@ -202,6 +202,10 @@ ndirc1 = 1
 
 iconv1 = 1
 
+if (ntcabs.eq.ntpabs+1) then
+  call rayord(ndirs, sx, sy, sz)
+endif
+
 !===============================================================================
 !                                              / -> ->
 ! 3. CORRECTION DES C.L. POUR RESPECTER : PI= /  S. N DOMEGA

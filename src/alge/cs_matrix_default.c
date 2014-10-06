@@ -113,6 +113,11 @@ static cs_matrix_t *_matrix_tuned[CS_MATRIX_N_FILL_TYPES];
 
 static int _tuned_matrix_id[CS_MATRIX_N_FILL_TYPES];
 
+/* MSR matrix structure, if needed */
+
+static cs_matrix_structure_t *_matrix_struct_msr = NULL;
+static cs_matrix_t *_matrix_msr = NULL;
+
 static double _t_measure = 0.5;
 static int _n_min_products = 10;
 
@@ -134,6 +139,8 @@ _initialize_api(void)
       _matrix_tuned[mft] = NULL;
       _tuned_matrix_id[mft] = -1;
     }
+    _matrix_struct_msr = NULL;
+    _matrix_msr = NULL;
     _initialized = true;
   }
 }
@@ -356,6 +363,11 @@ cs_matrix_finalize(void)
       cs_matrix_variant_destroy(&(_matrix_variant_tuned[i]));
   }
 
+  if (_matrix_msr != NULL)
+    cs_matrix_destroy(&(_matrix_msr));
+  if (_matrix_struct_msr != NULL)
+    cs_matrix_structure_destroy(&(_matrix_struct_msr));
+
   _initialized = false;
   _initialize_api();
   _initialized = false;
@@ -399,6 +411,29 @@ cs_matrix_update_mesh(void)
     }
 
   }
+
+  /* MSR might also be required separately */
+
+  if (_matrix_msr != NULL) {
+
+    cs_matrix_destroy(&(_matrix_msr));
+    cs_matrix_structure_destroy(&(_matrix_struct_msr));
+
+    _matrix_struct_msr
+      = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                   true,
+                                   mesh->n_cells,
+                                   mesh->n_cells_with_ghosts,
+                                   mesh->n_i_faces,
+                                   mesh->global_cell_num,
+                                   (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                   mesh->halo,
+                                   mesh->i_face_numbering);
+
+    _matrix_msr = cs_matrix_create(_matrix_struct_msr);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -446,6 +481,68 @@ cs_matrix_default(bool        symmetric,
 
   if (_tuned_matrix_id[fill_type] > -1)
     m = _matrix_tuned[_tuned_matrix_id[fill_type]];
+
+  return m;
+}
+
+/*----------------------------------------------------------------------------
+ * Return MSR matrix for a given fill type
+ *
+ * parameters:
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *
+ * returns:
+ *   pointer to MSR matrix adapted to fill type
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_msr(bool        symmetric,
+              const int  *diag_block_size,
+              const int  *extra_diag_block_size)
+{
+  cs_matrix_t *m = NULL;
+
+  /* If default matrix for fill type is already MSR, return that */
+
+  cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
+                                                      diag_block_size,
+                                                      extra_diag_block_size);
+
+  if (_matrix_tuned[mft] != NULL) {
+    if ((_matrix_tuned[mft])->type == CS_MATRIX_MSR)
+      m = cs_matrix_default(symmetric,
+                            diag_block_size,
+                            extra_diag_block_size);
+  }
+
+  if (m == NULL) {
+
+    /* Create matrix if not done yet */
+
+    if (_matrix_msr == NULL) {
+
+      cs_mesh_t  *mesh = cs_glob_mesh;
+
+      _matrix_struct_msr
+        = cs_matrix_structure_create(CS_MATRIX_MSR,
+                                     true,
+                                     mesh->n_cells,
+                                     mesh->n_cells_with_ghosts,
+                                     mesh->n_i_faces,
+                                     mesh->global_cell_num,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                     mesh->halo,
+                                     mesh->i_face_numbering);
+
+      _matrix_msr = cs_matrix_create(_matrix_struct_msr);
+
+    }
+
+    m = _matrix_msr;
+
+  }
 
   return m;
 }

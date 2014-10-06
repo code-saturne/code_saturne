@@ -400,9 +400,17 @@ cs_sles_solve_native(int                  f_id,
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
 
-    a = cs_matrix_default(symmetric,
+    if (strcmp(cs_sles_get_type(sc), "cs_sles_it_t") == 0) {
+      cs_sles_it_t *c = cs_sles_get_context(sc);
+      if (cs_sles_it_get_type(c) == CS_SLES_B_GAUSS_SEIDEL)
+        a = cs_matrix_msr(symmetric,
                           diag_block_size,
                           extra_diag_block_size);
+    }
+    if (a == NULL)
+      a = cs_matrix_default(symmetric,
+                            diag_block_size,
+                            extra_diag_block_size);
 
     cs_matrix_set_coefficients(a,
                                symmetric,

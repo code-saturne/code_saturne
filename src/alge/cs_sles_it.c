@@ -94,6 +94,8 @@ BEGIN_C_DECLS
        Preconditioned BiCGstab (biconjugate gradient stabilized)
   \var CS_SLES_GMRES
        Preconditioned GMRES (generalized minimum residual)
+  \var CS_SLES_B_GAUSS_SEIDEL
+       Block Gauss-Seidel
 
  \page sles_it Iterative linear solvers.
 
@@ -143,6 +145,32 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
+/* Solver setup data */
+/*-------------------*/
+
+typedef struct _cs_sles_it_setup_t {
+
+  bool                 single_reduce;    /* single reduction mode for PCG */
+
+  double               initial_residue;  /* Last initial residue value */
+
+  cs_lnum_t            n_rows;           /* Number of associated rows */
+
+  const cs_real_t     *ad_inv;           /* pointer to diagonal inverse */
+  cs_real_t           *_ad_inv;          /* private pointer to
+                                            diagonal inverse */
+
+} cs_sles_it_setup_t;
+
+/* Solver additional data */
+/*------------------------*/
+
+typedef struct _cs_sles_it_add_t {
+
+  cs_lnum_t           *order;            /* ordering */
+
+} cs_sles_it_add_t;
+
 /* Basic per linear system options and logging */
 /*---------------------------------------------*/
 
@@ -155,8 +183,6 @@ struct _cs_sles_it_t {
   int                  poly_degree;        /* preconditioning polynomial
                                               degree (0: diagonal,
                                               -1: non-preconditioned) */
-
-  bool                 single_reduce;      /* single reduction mode for PCG */
 
   bool                 update_stats;       /* do stats need to be updated ? */
 
@@ -188,19 +214,12 @@ struct _cs_sles_it_t {
 
   /* Solver setup */
 
-  double                 initial_residue;  /* Last initial residue value */
-
-  cs_lnum_t              n_rows;           /* Number of associated rows */
-
-  bool                   setup;            /* Has the setup operation
-                                              been called ?) */
-
   const struct _cs_sles_it_t  *shared;     /* pointer to context sharing some
-                                              preconditioning data, or NULL */
+                                              setup data, or NULL */
 
-  const cs_real_t       *ad_inv;           /* pointer to diagonal inverse */
-  cs_real_t             *_ad_inv;          /* private pointer to
-                                              diagonal inverse */
+  cs_sles_it_add_t            *add_data;   /* additional data */
+
+  cs_sles_it_setup_t          *setup_data; /* setup data */
 
 };
 
@@ -236,7 +255,8 @@ const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
                                       N_("Jacobi"),
                                       N_("BiCGstab"),
                                       N_("BiCGstab2"),
-                                      N_("GMRES")};
+                                      N_("GMRES"),
+                                      N_("Block Gauss-Seidel")};
 
 /*============================================================================
  * Private function definitions
@@ -307,6 +327,7 @@ _convergence_test(cs_sles_it_t              *c,
                   cs_sles_it_convergence_t  *convergence)
 {
   const int verbosity = convergence->verbosity;
+  const cs_sles_it_setup_t  *s = c->setup_data;
 
   const char final_fmt[]
     = N_("  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n");
@@ -328,7 +349,7 @@ _convergence_test(cs_sles_it_t              *c,
 
     if (n_iter < convergence->n_iterations_max) {
       int diverges = 0;
-      if (residue > c->initial_residue * 10000.0 && residue > 100.)
+      if (residue > s->initial_residue * 10000.0 && residue > 100.)
         diverges = 1;
 #if (__STDC_VERSION__ >= 199901L)
       else if (isnan(residue) || isinf(residue))
@@ -340,7 +361,7 @@ _convergence_test(cs_sles_it_t              *c,
                      "  initial residual: %11.4e; current residual: %11.4e\n"),
                    cs_sles_it_type_name[c->type], convergence->name,
                    convergence->n_iterations,
-                   c->initial_residue, convergence->residue);
+                   s->initial_residue, convergence->residue);
         return CS_SLES_DIVERGED;
       }
       else
@@ -388,7 +409,7 @@ _dot_product(const cs_sles_it_t  *c,
              const cs_real_t     *x,
              const cs_real_t     *y)
 {
-  double s = cs_dot(c->n_rows, x, y);
+  double s = cs_dot(c->setup_data->n_rows, x, y);
 
 #if defined(HAVE_MPI)
 
@@ -420,7 +441,7 @@ _dot_product_xx(const cs_sles_it_t  *c,
 {
   double s;
 
-  s = cs_dot_xx(c->n_rows, x);
+  s = cs_dot_xx(c->setup_data->n_rows, x);
 
 #if defined(HAVE_MPI)
 
@@ -456,7 +477,7 @@ _dot_products_xx_xy(const cs_sles_it_t  *c,
 {
   double s[2];
 
-  cs_dot_xx_xy(c->n_rows, x, y, s, s+1);
+  cs_dot_xx_xy(c->setup_data->n_rows, x, y, s, s+1);
 
 #if defined(HAVE_MPI)
 
@@ -496,7 +517,7 @@ _dot_products_xy_yz(const cs_sles_it_t  *c,
 {
   double s[2];
 
-  cs_dot_xy_yz(c->n_rows, x, y, z, s, s+1);
+  cs_dot_xy_yz(c->setup_data->n_rows, x, y, z, s, s+1);
 
 #if defined(HAVE_MPI)
 
@@ -538,7 +559,7 @@ _dot_products_xx_xy_yz(const cs_sles_it_t  *c,
 {
   double s[3];
 
-  cs_dot_xx_xy_yz(c->n_rows, x, y, z, s, s+1, s+2);
+  cs_dot_xx_xy_yz(c->setup_data->n_rows, x, y, z, s, s+1, s+2);
 
 #if defined(HAVE_MPI)
 
@@ -586,7 +607,7 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
 {
   double s[5];
 
-  cs_dot_xx_yy_xy_xz_yz(c->n_rows, x, y, z, s, s+1, s+2, s+3, s+4);
+  cs_dot_xx_yy_xy_xz_yz(c->setup_data->n_rows, x, y, z, s, s+1, s+2, s+3, s+4);
 
   cs_parall_sum(5, CS_DOUBLE, s);
 
@@ -628,8 +649,9 @@ _polynomial_preconditionning(const cs_sles_it_t  *c,
   int deg_id;
   cs_lnum_t ii;
 
-  const cs_lnum_t n_rows = c->n_rows;
-  const cs_real_t *restrict ad_inv = c->ad_inv;
+  const cs_sles_it_setup_t *s = c->setup_data;
+  const cs_lnum_t n_rows = s->n_rows;
+  const cs_real_t *restrict ad_inv = s->ad_inv;
 
   if (c->poly_degree < 0) {
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
@@ -723,7 +745,19 @@ _setup_sles_it(cs_sles_it_t       *c,
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
-  c->n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
+  cs_sles_it_setup_t *sd = c->setup_data;
+
+  if (sd == NULL) {
+    BFT_MALLOC(c->setup_data, 1, cs_sles_it_setup_t);
+    sd = c->setup_data;
+    sd->ad_inv = NULL;
+    sd->_ad_inv = NULL;
+  }
+
+  sd->n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
+
+  sd->single_reduce = false;
+  sd->initial_residue = -1;
 
   /* Setup diagonal inverse */
 
@@ -731,40 +765,42 @@ _setup_sles_it(cs_sles_it_t       *c,
 
     const cs_sles_it_t  *s = c->shared;
     if (s != NULL) {
-      if (s->setup == false || s->ad_inv == NULL)
+      if (s->setup_data == NULL)
+        s = NULL;
+      else if (s->setup_data->ad_inv == NULL)
         s = NULL;
     }
 
     if (s != NULL) {
-      c->ad_inv = s->ad_inv;
-      BFT_FREE(c->_ad_inv);
+      sd->ad_inv = s->setup_data->ad_inv;
+      BFT_FREE(sd->_ad_inv);
     }
     else {
 
       if (diag_block_size != 3 || block_33_inverse == false) {
 
-        const cs_lnum_t n_rows = c->n_rows;
+        const cs_lnum_t n_rows = sd->n_rows;
 
-        BFT_REALLOC(c->_ad_inv, c->n_rows, cs_real_t);
-        c->ad_inv = c->_ad_inv;
+        BFT_REALLOC(sd->_ad_inv, sd->n_rows, cs_real_t);
+        sd->ad_inv = sd->_ad_inv;
 
-        cs_matrix_copy_diagonal(a, c->_ad_inv);
+        cs_matrix_copy_diagonal(a, sd->_ad_inv);
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_rows; i++)
-          c->_ad_inv[i] = 1.0 / c->_ad_inv[i];
+          sd->_ad_inv[i] = 1.0 / sd->_ad_inv[i];
 
       }
 
       else {
 
-        BFT_REALLOC(c->_ad_inv, c->n_rows*diag_block_size, cs_real_t);
-        c->ad_inv = c->_ad_inv;
+        BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
+        sd->ad_inv = sd->_ad_inv;
 
         const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
-        const cs_lnum_t  n_blocks = c->n_rows / diag_block_size;
+        const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
 
-        _fact_lu33(n_blocks, ad, c->_ad_inv);
+        _fact_lu33(n_blocks, ad, sd->_ad_inv);
 
       }
 
@@ -777,7 +813,7 @@ _setup_sles_it(cs_sles_it_t       *c,
 #if defined(HAVE_MPI)
 
   if (c->type == CS_SLES_PCG) {
-    cs_gnum_t n_m_rows = c->n_rows;
+    cs_gnum_t n_m_rows = sd->n_rows;
     cs_parall_sum(1, CS_GNUM_TYPE, &n_m_rows);
     if (c->comm != MPI_COMM_NULL && c->comm != cs_glob_mpi_comm) {
       int size;
@@ -790,14 +826,12 @@ _setup_sles_it(cs_sles_it_t       *c,
       MPI_Bcast(&n_m_rows, 1, CS_MPI_GNUM, 0, cs_glob_mpi_comm);
 
     if (n_m_rows < (cs_gnum_t)_pcg_sr_threshold)
-      c->single_reduce = true;
+      sd->single_reduce = true;
   }
 
 #endif
 
   /* Now finish */
-
-  c->setup = true;
 
   if (c->update_stats == true) {
     cs_timer_t t1 = cs_timer_time();
@@ -852,10 +886,10 @@ _conjugate_gradient(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -913,7 +947,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   /* If no solving required, finish here */
 
-  c->initial_residue = residue;
+  c->setup_data->initial_residue = residue;
   cvg = _convergence_test(c, n_iter, residue, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
@@ -1056,10 +1090,10 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1121,7 +1155,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   _dot_products_xx_xy_yz(c, rk, dk, zk, &residue, &ro_0, &ro_1);
   residue = sqrt(residue);
 
-  c->initial_residue = residue;
+  c->setup_data->initial_residue = residue;
 
   /* If no solving required, finish here */
 
@@ -1258,10 +1292,10 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1309,7 +1343,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   /* If no solving required, finish here */
 
-  c->initial_residue = residue;
+  c->setup_data->initial_residue = residue;
   cvg = _convergence_test(c, n_iter, residue, convergence);
 
   if (cvg == CS_SLES_ITERATING) {
@@ -1445,10 +1479,10 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1501,7 +1535,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   /* If no solving required, finish here */
 
-  c->initial_residue = residue;
+  c->setup_data->initial_residue = residue;
 
   cvg = _convergence_test(c, n_iter, residue, convergence);
 
@@ -1631,12 +1665,12 @@ _jacobi(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_real_t  *restrict ad_inv = c->ad_inv;
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1705,7 +1739,7 @@ _jacobi(cs_sles_it_t              *c,
     /* Convergence test */
 
     if (n_iter == 1)
-      c->initial_residue = residue;
+      c->setup_data->initial_residue = residue;
 
     cvg = _convergence_test(c, n_iter, residue, convergence);
 
@@ -1786,13 +1820,13 @@ _block_3_jacobi(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, true);
 
-  const cs_real_t  *restrict ad_inv = c->ad_inv;
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
-  const cs_lnum_t n_rows = c->n_rows;
-  const cs_lnum_t n_blocks = c->n_rows / 3;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+  const cs_lnum_t n_blocks = c->setup_data->n_rows / 3;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -1855,7 +1889,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
     residue = sqrt(res2); /* Actually, residue of previous iteration */
 
     if (n_iter == 1)
-      c->initial_residue = residue;
+      c->setup_data->initial_residue = residue;
 
     /* Convergence test */
 
@@ -1966,10 +2000,10 @@ _bi_cgstab(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -2024,7 +2058,7 @@ _bi_cgstab(cs_sles_it_t              *c,
     if (n_iter == 0) {
       beta = _dot_product_xx(c, rk); /* rk == res0 here */
       residue = sqrt(beta);
-      c->initial_residue = residue;
+      c->setup_data->initial_residue = residue;
     }
     else {
       _dot_products_xx_xy(c, rk, res0, &residue, &beta);
@@ -2183,10 +2217,10 @@ _bicgstab2(cs_sles_it_t              *c,
   /* Call setup if not already done, allocate or map work arrays */
   /*-------------------------------------------------------------*/
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
@@ -2247,7 +2281,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     if (n_iter == 0) {
       residue = sqrt(_dot_product_xx(c, rk)); /* rk == res0 here */
-      c->initial_residue = residue;
+      c->setup_data->initial_residue = residue;
     }
     else
       residue = sqrt(_dot_product_xx(c, rk));
@@ -2561,10 +2595,10 @@ _gmres(cs_sles_it_t              *c,
 
   const int diag_block_size = 1;
 
-  if (c->setup == false)
+  if (c->setup_data == NULL)
     _setup_sles_it(c, a, diag_block_size, false);
 
-  const cs_lnum_t n_rows = c->n_rows;
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
 
   /* Allocate work arrays */
 
@@ -2634,7 +2668,7 @@ _gmres(cs_sles_it_t              *c,
 
     if (n_iter == 0) {
       residue = sqrt(_dot_product_xx(c, dk));
-      c->initial_residue = residue;
+      c->setup_data->initial_residue = residue;
       cvg = _convergence_test(c, n_iter, residue, convergence);
       if (cvg != CS_SLES_ITERATING)
         break;
@@ -2774,6 +2808,282 @@ _gmres(cs_sles_it_t              *c,
   return cvg;
 }
 
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Block Gauss-Seidel.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_b_gauss_seidel(cs_sles_it_t              *c,
+                const cs_matrix_t         *a,
+                int                        diag_block_size,
+                cs_halo_rotation_t         rotation_mode,
+                cs_sles_it_convergence_t  *convergence,
+                const cs_real_t           *rhs,
+                cs_real_t                 *restrict vx,
+                size_t                     aux_size,
+                void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg;
+  double  res2, residue;
+
+  unsigned n_iter = 0;
+
+  /* Call setup if not already done, allocate or map work arrays */
+  /*-------------------------------------------------------------*/
+
+  if (c->setup_data == NULL)
+    _setup_sles_it(c, a, diag_block_size, false);
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+
+  const cs_lnum_t  *order = NULL;
+
+  const cs_lnum_t  *a_row_index, *a_col_id;
+  const cs_real_t  *a_d_val, *a_x_val;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
+
+  if (c->add_data != NULL)
+    order = c->add_data->order;
+
+  cvg = CS_SLES_ITERATING;
+
+  /* Current iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    register double r;
+
+    n_iter += 1;
+
+    /* Synchronize ghost cells first */
+
+    if (halo != NULL) {
+
+      if (db_size[3] == 1)
+        cs_halo_sync_component(halo,
+                               CS_HALO_STANDARD,
+                               rotation_mode,
+                               vx);
+
+      else { /* if (matrix->db_size[3] > 1) */
+
+        cs_halo_sync_var_strided(halo,
+                                 CS_HALO_STANDARD,
+                                 vx,
+                                 db_size[1]);
+
+        /* Synchronize periodic values */
+
+        if (halo->n_transforms > 0 && db_size[0] == 3)
+          cs_halo_perio_sync_var_vect(halo,
+                                      CS_HALO_STANDARD,
+                                      vx,
+                                      db_size[1]);
+
+      }
+
+    }
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+
+    res2 = 0.0;
+
+    if (order == NULL) {
+
+      if (diag_block_size == 1) {
+
+#       pragma omp parallel for private(r) reduction(+:res2)      \
+                            if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+
+          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+          cs_real_t vxm1 = vx[ii];
+
+          vx[ii] = rhs[ii];
+
+          for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+            vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+
+          vx[ii] *= ad_inv[ii];
+
+          r = ad[ii] * (vx[ii]-vxm1);
+          res2 += (r*r);
+        }
+
+      }
+      else {
+
+#       pragma omp parallel for private(r) reduction(+:res2) \
+                          if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+
+          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+          cs_real_t vxm1;
+
+          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+
+            vxm1 = vx[ii*db_size[1] + kk];
+
+            vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+
+            for (cs_lnum_t jj = 0; jj < kk; jj++)
+              vx[ii*db_size[1] + kk]
+                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
+            for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
+              vx[ii*db_size[1] + kk]
+                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
+
+            for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+              vx[ii*db_size[1] + kk]
+                -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+
+            vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+
+            r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+            res2 += (r*r);
+
+          }
+
+        }
+
+      }
+
+    }
+
+    /* Ordered variant */
+
+    else {
+
+      if (diag_block_size == 1) {
+
+#       pragma omp parallel for private(r) reduction(+:res2)      \
+                            if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
+
+          cs_lnum_t ii = order[ll];
+
+          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+          cs_real_t vxm1 = vx[ii];
+
+          vx[ii] = rhs[ii];
+
+          for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+            vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+
+          vx[ii] *= ad_inv[ii];
+
+          r = ad[ii] * (vx[ii]-vxm1);
+          res2 += (r*r);
+        }
+
+      }
+      else {
+
+#       pragma omp parallel for private(r) reduction(+:res2) \
+                            if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
+
+          cs_lnum_t ii = order[ll];
+
+          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+          cs_real_t vxm1;
+
+          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+
+            vxm1 = vx[ii*db_size[1] + kk];
+
+            vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+
+            for (cs_lnum_t jj = 0; jj < kk; jj++)
+              vx[ii*db_size[1] + kk]
+                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
+            for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
+              vx[ii*db_size[1] + kk]
+                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                   * vx[ii*db_size[1] + jj];
+
+            for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+              vx[ii*db_size[1] + kk]
+                -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+
+            vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+
+            r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+            res2 += (r*r);
+
+          }
+
+        }
+
+      }
+
+    }
+
+#if defined(HAVE_MPI)
+
+    if (c->comm != MPI_COMM_NULL) {
+      double _sum;
+      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
+                    c->comm);
+      res2 = _sum;
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+    residue = sqrt(res2); /* Actually, residue of previous iteration */
+
+    /* Convergence test */
+
+    if (n_iter == 1)
+      c->setup_data->initial_residue = residue;
+
+    cvg = _convergence_test(c, n_iter, residue, convergence);
+
+  }
+
+  return cvg;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2870,8 +3180,6 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   if (c->type == CS_SLES_JACOBI)
     c->poly_degree = 0;
 
-  c->single_reduce = false;
-
   c->update_stats = update_stats;
 
   c->n_max_iter = n_max_iter;
@@ -2891,13 +3199,9 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->comm = cs_glob_mpi_comm;
 #endif
 
-  c->initial_residue = -1;
-  c->n_rows = 0;
-
-  c->setup = false;
+  c->setup_data = NULL;
+  c->add_data = NULL;
   c->shared = NULL;
-  c->ad_inv = NULL;
-  c->_ad_inv = NULL;
 
   return c;
 }
@@ -2917,6 +3221,10 @@ cs_sles_it_destroy(void **context)
   cs_sles_it_t *c = (cs_sles_it_t *)(*context);
   if (c != NULL) {
     cs_sles_it_free(c);
+    if (c->add_data != NULL) {
+      BFT_FREE(c->add_data->order);
+      BFT_FREE(c->add_data);
+    }
     BFT_FREE(c);
     *context = c;
   }
@@ -3090,7 +3398,6 @@ cs_sles_it_solve(void                *context,
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  cs_lnum_t  n_rows;
   cs_timer_t t0, t1;
 
   unsigned _n_iter = 0;
@@ -3104,19 +3411,15 @@ cs_sles_it_solve(void                *context,
 
   assert(diag_block_size[0] == diag_block_size[1]);
 
-  n_rows = cs_matrix_get_n_rows(a);
-
   /* Initialize number of iterations and residue,
      check for immediate return,
      and solve sparse linear system */
 
   *n_iter = 0;
 
-  c->n_rows = _diag_block_size*n_rows; /* for following call */
-
   /* Setup if not already done */
 
-  if (c->setup == false) {
+  if (c->setup_data == NULL) {
 
     if (c->update_stats) { /* Stop solve timer to switch to setup timer */
       t1 = cs_timer_time();
@@ -3141,7 +3444,7 @@ cs_sles_it_solve(void                *context,
                     r_norm,
                     residue);
 
-  c->initial_residue = -1;
+  c->setup_data->initial_residue = -1;
 
   /* Only call solver for "active" ranks */
 
@@ -3151,7 +3454,7 @@ cs_sles_it_solve(void                *context,
 
     switch (c->type) {
     case CS_SLES_PCG:
-      if (! c->single_reduce) {
+      if (! c->setup_data->single_reduce) {
         if (c->poly_degree > -1)
           cvg = _conjugate_gradient(c,
                                     a,
@@ -3255,6 +3558,17 @@ cs_sles_it_solve(void                *context,
           (__FILE__, __LINE__, 0,
            _("GMRES not supported with block_size > 1 (velocity coupling)."));
       break;
+    case CS_SLES_B_GAUSS_SEIDEL:
+      cvg = _b_gauss_seidel(c,
+                            a,
+                            _diag_block_size,
+                            rotation_mode,
+                            &convergence,
+                            rhs,
+                            vx,
+                            aux_size,
+                            aux_vectors);
+      break;
     default:
       bft_error
         (__FILE__, __LINE__, 0,
@@ -3335,14 +3649,31 @@ cs_sles_it_free(void  *context)
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
-  BFT_FREE(c->_ad_inv);
-
-  c->setup = false;
+  if (c->setup_data != NULL) {
+    BFT_FREE(c->setup_data->_ad_inv);
+    BFT_FREE(c->setup_data);
+  }
 
   if (c->update_stats == true) {
     cs_timer_t t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return iterative solver type.
+ *
+ * \param[in]  context  pointer to iterative solver info and context
+ *
+ * \return  selected solver type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_it_type_t
+cs_sles_it_get_type(const cs_sles_it_t  *context)
+{
+  return context->type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3368,8 +3699,8 @@ double
 cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context)
 {
   double retval = 1;
-  if (context->setup)
-    retval = context->initial_residue;
+  if (context->setup_data != NULL)
+    retval = context->setup_data->initial_residue;
 
   return retval;
 }
@@ -3441,6 +3772,43 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
 }
 
 #endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign ordering to iterative solver.
+ *
+ * The solver context takes ownership of the order array (i.e. it will
+ * handle its later deallocation).
+ *
+ * This is useful only for Block Gauss-Seidel.
+ *
+ * \param[in, out]  context  pointer to iterative solver info and context
+ * \param[in, out]  order    pointer to ordering array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_assign_order(cs_sles_it_t   *context,
+                        cs_lnum_t     **order)
+{
+  if (context->type != CS_SLES_B_GAUSS_SEIDEL)
+    BFT_FREE(*order);
+
+  else {
+
+    if (context->add_data == NULL) {
+      BFT_MALLOC(context->add_data, 1, cs_sles_it_add_t);
+      context->add_data->order = NULL;
+    }
+
+    BFT_FREE(context->add_data->order);
+
+    context->add_data->order = *order;
+
+    *order = NULL;
+
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

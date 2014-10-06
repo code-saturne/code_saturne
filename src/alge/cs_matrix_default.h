@@ -116,6 +116,23 @@ cs_matrix_default(bool        symmetric,
                   const int  *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
+ * Return MSR matrix for a given fill type
+ *
+ * parameters:
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *
+ * returns:
+ *   pointer to MSR matrix adapted to fill type
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_t  *
+cs_matrix_msr(bool        symmetric,
+              const int  *diag_block_size,
+              const int  *extra_diag_block_size);
+
+/*----------------------------------------------------------------------------
  * Force matrix variant for a given fill type
  *
  * Information from the variant used fo this definition is copied,

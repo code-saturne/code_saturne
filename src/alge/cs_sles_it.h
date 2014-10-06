@@ -53,12 +53,13 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_SLES_PCG,        /* Preconditionned conjugate gradient */
-  CS_SLES_JACOBI,     /* Jacobi */
-  CS_SLES_BICGSTAB,   /* Bi-conjugate gradient stabilized */
-  CS_SLES_BICGSTAB2,  /* Bi-conjugate gradient stabilized - 2*/
-  CS_SLES_GMRES,      /* Generalized minimal residual */
-  CS_SLES_N_IT_TYPES  /* Number of resolution algorithms */
+  CS_SLES_PCG,             /* Preconditionned conjugate gradient */
+  CS_SLES_JACOBI,          /* Jacobi */
+  CS_SLES_BICGSTAB,        /* Bi-conjugate gradient stabilized */
+  CS_SLES_BICGSTAB2,       /* Bi-conjugate gradient stabilized - 2*/
+  CS_SLES_GMRES,           /* Generalized minimal residual */
+  CS_SLES_B_GAUSS_SEIDEL,  /* Block Gauss-Seidel */
+  CS_SLES_N_IT_TYPES       /* Number of resolution algorithms */
 
 } cs_sles_it_type_t;
 
@@ -244,13 +245,26 @@ cs_sles_it_log(const void  *context,
                cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------
+ * Return iterative solver type.
+ *
+ * parameters:
+ *   context <-- pointer to iterative solver info and context
+ *
+ * returns:
+ *   selected solver type
+ *----------------------------------------------------------------------------*/
+
+cs_sles_it_type_t
+cs_sles_it_get_type(const cs_sles_it_t  *context);
+
+/*----------------------------------------------------------------------------
  * Return the initial residue for the previous solve operation with a solver.
  *
  * This is useful for convergence tests when this solver is used as
  * a preconditioning smoother.
  *
- * This operation is only valid between calls to \ref cs_sles_it_setup
- * (or \ref cs_sles_it_solve) and \ref cs_sles_it_free.
+ * This operation is only valid between calls to cs_sles_it_setup()
+ * (or cs_sles_it_solve()) and cs_sles_it_free().
  * It returns -1 otherwise.
  *
  * parameters:
@@ -258,8 +272,7 @@ cs_sles_it_log(const void  *context,
  *
  * returns:
  *   initial residue from last call to \ref cs_sles_solve with this solver
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 double
 cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context);
@@ -306,6 +319,23 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
                                MPI_Comm       comm);
 
 #endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------
+ * Assign ordering to iterative solver.
+ *
+ * The solver context takes ownership of the order array (i.e. it will
+ * handle its later deallocation).
+ *
+ * This is useful only for Block Gauss-Seidel.
+ *
+ * parameters:
+ *   context <-> pointer to iterative solver info and context
+ *   order   <-> pointer to ordering array
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_assign_order(cs_sles_it_t   *context,
+                        cs_lnum_t     **order);
 
 /*----------------------------------------------------------------------------
  * Query mean number of rows under which Conjugate Gradient algorithm
