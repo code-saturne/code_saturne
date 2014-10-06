@@ -6695,7 +6695,7 @@ cs_diffusion_potential(const int                 f_id,
   cs_real_3_t *visel;
   cs_field_t *f;
 
-  cs_real_t *gweight = NULL;
+  const cs_real_t *gweight = NULL;
 
   /*==========================================================================*/
 
