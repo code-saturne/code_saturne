@@ -284,8 +284,8 @@ elif test "x$cs_gcc" = "xclang"; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cflags_default_dbg="-g -O0 -Wp64"
+  cflags_default="-std=c99 -funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
@@ -733,8 +733,8 @@ elif test "x$cs_gxx" = "xclang"; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cxxlags_default="-strict-ansi -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
-  cxxflags_default_dbg="-g -O0 -Wp64"
+  cxxlags_default="-strict-ansi -funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"

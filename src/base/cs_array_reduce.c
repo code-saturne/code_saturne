@@ -1427,9 +1427,9 @@ _cs_real_sstats_nd(cs_lnum_t         n,
     for (i = start_id; i < end_id; i++) {
       for (j = 0; j < dim; j++) {
         c[j] += v[i*dim + j];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1441,9 +1441,9 @@ _cs_real_sstats_nd(cs_lnum_t         n,
       i = vl[i];
       for (j = 0; j < dim; j++) {
         c[j] += v[i*dim + j];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1617,9 +1617,9 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*w[i];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1630,9 +1630,9 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*wi;
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1643,9 +1643,9 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*w[i];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }

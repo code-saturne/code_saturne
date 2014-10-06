@@ -214,7 +214,6 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
   size_t   ipropr;
 
   ecs_tab_char_t  tab_nom_descr;
-  ecs_tab_int_t   tab_ide_descr;
 
   /* Déclarations des variables pour MED */
   /*-------------------------------------*/
@@ -278,7 +277,6 @@ ecs_loc_table_post_med__ecr_fam(const char           *prefixe_nom_fam,
 
   }
 
-  ECS_FREE(tab_ide_descr.val);
   ECS_FREE(tab_nom_descr.val);
 
   /* Appel à la fonction d'écriture MED */
