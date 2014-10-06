@@ -569,25 +569,26 @@ if (nbpnew.eq.0) return
 !    injection: it is thus possible to impose an injection profile with
 !    the continous-injection option.
 !
+if (.false.) then
 
-!   reinitialization of the counter of the new particles
-npt = nbpart
+  ! reinitialization of the counter of the new particles
+  npt = nbpart
 
-!   for each boundary zone:
-do ii = 1,nfrlag
-  izone = ilflag(ii)
+  ! for each boundary zone:
+  do ii = 1,nfrlag
+    izone = ilflag(ii)
 
-!       for each class:
-  do iclas = 1, iusncl(izone)
+    ! for each class:
+    do iclas = 1, iusncl(izone)
 
-!         if new particles must enter the domain:
-    if (mod(ntcabs,iusloc(iclas,izone,ijfre)).eq.0) then
+      ! if new particles must enter the domain:
+      if (mod(ntcabs,iusloc(iclas,izone,ijfre)).eq.0) then
 
-      do ip = npt+1 , npt+iusloc(iclas,izone,ijnbp)
+        do ip = npt+1 , npt+iusloc(iclas,izone,ijnbp)
 
-!         number of the original boundary face of injection
+          !  number of the original boundary face of injection
 
-      ifac = injfac(ip)
+          ifac = injfac(ip)
 !
 !-----------------------------------------------------------
 !        EXAMPLE OF MODIFICATION OF THE INJECTION VELOCITY
@@ -602,20 +603,22 @@ do ii = 1,nfrlag
 !    to a fluctuating value (equal here to 0,2 m/s for the 1st and 3rd components)
 !
 !
-        ipnorm = 2
-        call normalen(ipnorm,vgauss)
-        eptp(jup,ip) = 2.d0 + vgauss(1) * 0.2d0
-        eptp(jvp,ip) = 0.d0
-        eptp(jwp,ip) = 0.d0 + vgauss(2) * 0.2d0
+          ipnorm = 2
+          call normalen(ipnorm,vgauss)
+          eptp(jup,ip) = 2.d0 + vgauss(1) * 0.2d0
+          eptp(jvp,ip) = 0.d0
+          eptp(jwp,ip) = 0.d0 + vgauss(2) * 0.2d0
 
-      enddo
+        enddo
 
-      npt = npt + iusloc(iclas,izone,ijnbp)
+        npt = npt + iusloc(iclas,izone,ijnbp)
 
-    endif
+      endif
 
+    enddo
   enddo
-enddo
+
+endif
 
 !===============================================================================
 ! 4. SIMULATION OF THE INSTANTANEOUS TURBULENT FLUID FLOW VELOCITIES SEEN
@@ -637,7 +640,7 @@ enddo
 ! The reconstruction is unactivated here and must be adapted to the case.
 !
 
-if ( 1.eq.0 ) then
+if (.false.) then
 
   npar1 = nbpart+1
   npar2 = nbpart+nbpnew
