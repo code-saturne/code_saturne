@@ -31,7 +31,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mesh \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_EXT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \

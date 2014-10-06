@@ -260,7 +260,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                   [mpi_type=MPIBULL2])
   fi
   if test "x$mpi_type" = "x"; then
-    AC_EGREP_CPP([platform_mpi],
+    AC_EGREP_CPP([cs_platform_mpi],
                  [
                   #include <mpi.h>
                   #ifdef PLATFORM_MPI
@@ -278,7 +278,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
 
   # Now try to determine if we are in fact using a variant MPI,
   # which does not define its own version macros in mpi.h but still uses its
-  # own numbering (horrible, but Intel and Bull do it).
+  # own numbering (very ugly, but Intel and Bull do it).
 
   case $mpi_type in
     OpenMPI)         if test -d "${mpi_libdir}/bullxmpi" ; then

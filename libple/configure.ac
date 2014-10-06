@@ -48,8 +48,8 @@ m4_define([ple_licence_c_comment],
 */])
 
 m4_define([ple_major_version], [1])
-m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [4])
+m4_define([ple_minor_version], [1])
+m4_define([ple_release_version], [0])
 m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
@@ -135,6 +135,19 @@ AC_ARG_ENABLE(debug,
 )
 AC_SUBST(debug)
 
+AC_ARG_ENABLE(profile,
+  [AS_HELP_STRING([--enable-profile], [enable profiling])],
+  [
+    case "${enableval}" in
+      yes) profile=yes ;;
+      no)  profile=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-profile]) ;;
+    esac
+  ],
+  [ profile=no ]
+)
+AC_SUBST(profile)
+
 # Optionally deactivate automatic determination of flags on known systems
 
 AC_ARG_ENABLE(auto-flags,
@@ -149,19 +162,24 @@ AC_ARG_ENABLE(auto-flags,
   [ auto_flags=yes ]
 )
 
-AC_ARG_ENABLE(enable_static_libs,
-  [AS_HELP_STRING([--enable-static-libs], [allow use of static external libraries])],
+# Optionnaly install the code with relocatable features
+
+AC_ARG_ENABLE(relocatable,
+  [AS_HELP_STRING([--enable-relocatable], [enable relocatable installation])],
   [
     case "${enableval}" in
-      yes) enable_static_libs=yes ;;
-      no)  enable_static_libs=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-static-libs]) ;;
+      yes) relocatable=yes ;;
+      no)  relocatable=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-relocatable]) ;;
     esac
   ],
   [ relocatable=no ]
 )
-AC_SUBST(enable_static_libs)
-AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${enable_static_libs}" = yes])
+AC_SUBST(relocatable)
+AM_CONDITIONAL(HAVE_RELOCATABLE, [test "${relocatable}" = yes])
+if test "${relocatable}" = yes ; then
+  AC_DEFINE([HAVE_RELOCATABLE], 1, [Relocatable installation])
+fi
 
 # Default compiler options (may be modified
 # by defining CFLAGS in the environment)
@@ -225,12 +243,15 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$ple_disable_shared" = "xyes" ; then
-  enable_shared=no
+if test "x$ple_ibm_bg_type" = "xP" \
+   -o "$host_os" = mingw32 ; then
+   enable_shared=no
 fi
 AC_SUBST(enable_shared)
 
-LT_INIT([win32-dll])
+# Initialize libtool.
+
+LT_INIT([disable-static, win32-dll])
 
 #------------------------------------------------------------------------------
 # Checks for libraries.
@@ -251,6 +272,7 @@ AC_C_CONST
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_PID_T
+
 AC_HEADER_TIME
 AC_HEADER_STDBOOL
 
@@ -268,6 +290,59 @@ PLE_AC_CHECK_SIZEOF([long], [ple])
 PLE_AC_CHECK_SIZEOF([long long], [ple])
 PLE_AC_CHECK_SIZEOF([float], [ple])
 PLE_AC_CHECK_SIZEOF([double], [ple])
+
+#------------------------------------------------------------------------------
+# Determine OpenMP support (not used in source code yet)
+#------------------------------------------------------------------------------
+
+# For consistency with the auto_flags mechanisme and with Code_Saturne,
+# we do not use AC_OPENMP, our own method here, based on flags already set
+# by default or by the user.
+
+# From this point, no runtime tests should be run, so no issues should
+# arise due to missing RPATH or LD_LIBRARY_PATH values in case of non-standard
+# compiler install paths, such as may happen with gcc's libgomp.
+
+ple_have_openmp=no
+
+AC_ARG_ENABLE(openmp,
+  [AS_HELP_STRING([--disable-openmp], [disable OpenMP support])],
+  [
+    case "${enableval}" in
+      yes) ple_have_openmp=yes ;;
+      no)  ple_have_openmp=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-openmp]) ;;
+    esac
+  ],
+  [ ple_have_openmp=no ]
+)
+
+if test "x$ple_have_openmp" = "xyes" ; then
+
+  saved_CFLAGS="$CFLAGS"
+  saved_FCFLAGS="$FCFLAGS"
+  saved_LDFLAGS="$LDFLAGS"
+
+  CFLAGS="${CFLAGS} ${cflags_default_omp}"
+  FCFLAGS="${FCFLAGS} ${fcflags_default_omp}"
+  LDFLAGS="${LDFLAGS} ${cflags_default_omp}"
+
+  AC_MSG_CHECKING([for OpenMP (C)])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <omp.h>]],
+                 [[ omp_get_num_threads();]])],
+                 [ple_have_openmp=yes],
+                 [ple_have_openmp=no])
+  AC_MSG_RESULT($ple_have_openmp)
+  if test "x$ple_have_openmp" = "xyes" ; then
+    AC_DEFINE([HAVE_OPENMP], 1, [openmp support])
+  else
+    ple_have_openmp=no
+    CFLAGS="$saved_CFLAGS"
+    FCFLAGS="$saved_FCFLAGS"
+    LDFLAGS="$saved_LDFLAGS"
+  fi
+fi
+AC_SUBST(ple_have_openmp)
 
 #------------------------------------------------------------------------------
 # Checks for library functions.
@@ -391,6 +466,7 @@ echo
 echo "Configuration options:"
 echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$ple_have_mpi""
+echo " OpenMP support: "$ple_have_openmp""
 echo
 echo "The package has been configured. Type:"
 echo " make"

@@ -247,12 +247,10 @@ if test "x$auto_flags" = "xyes" ; then
     # Add optimization flags for linker
     LDFLAGS="$LDFLAGS $ldflags_default_opt"
   fi
-  CFLAGS_EXT="$cflags_default_ext"
 
   AC_SUBST(CFLAGS_DBG)
   AC_SUBST(CFLAGS_OPT)
   AC_SUBST(CFLAGS_HOT)
-  AC_SUBST(CFLAGS_EXT)
 
   AC_SUBST(CXXFLAGS_DBG)
   AC_SUBST(CXXFLAGS_OPT)
@@ -278,9 +276,6 @@ case "$host_os" in
     ;;
   darwin*)
     CPPFLAGS="${CPPFLAGS} -D_DARWIN_C_SOURCE"
-    ;;
-  hpux*)
-    CPPFLAGS="${CPPFLAGS} -D_HPUX_SOURCE"
     ;;
   *)
     ;;
@@ -313,7 +308,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" = "xL" -o "x$cs_ibm_bg_type" = "xP" \
+if test "x$cs_ibm_bg_type" = "xP" \
    -o "$host_os" = mingw32 ; then
    enable_shared=no
 fi

@@ -1,4 +1,4 @@
-dnl Copyright (C) 2005-2013 EDF
+dnl Copyright (C) 2005-2014 EDF
 dnl
 dnl This file is part of the PLE software package.  For license
 dnl information, see the COPYING file in the top level directory of the
@@ -126,8 +126,8 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
   # (especially when multiple librairies are installed on the same machine).
 
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
-  mpi_h_type=""
-  if test "x$mpi_h_type" = "x"; then
+  mpi_type=""
+  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([ple_msmpi],
                  [
                   #include <mpi.h>
@@ -135,9 +135,9 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
                   ple_msmpi
                   #endif
                   ],
-                 [mpi_h_type=MSMPI])
+                 [mpi_type=MSMPI])
   fi
-  if test "x$mpi_h_type" = "x"; then
+  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([ple_mpich],
                  [
                   #include <mpi.h>
@@ -147,9 +147,9 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
                   #endif
                   #endif
                   ],
-                 [mpi_h_type=MPICH])
+                 [mpi_type=MPICH])
   fi
-  if test "x$mpi_h_type" = "x"; then
+  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([ple_mpich2],
                  [
                   #include <mpi.h>
@@ -157,9 +157,9 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
                   ple_mpich2
                   #endif
                   ],
-                 [mpi_h_type=MPICH2])
+                 [mpi_type=MPICH2])
   fi
-  if test "x$mpi_h_type" = "x"; then
+  if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([ple_ompi],
                  [
                   #include <mpi.h>
@@ -167,33 +167,62 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
                   ple_ompi
                   #endif
                   ],
-                  [mpi_h_type=OpenMPI])
+                  [mpi_type=OpenMPI])
   fi
-  if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([ple_lam_mpi],
+  if test "x$mpi_type" = "x"; then
+    AC_EGREP_CPP([ple_mpibull2],
                  [
                   #include <mpi.h>
-                  #ifdef LAM_MPI
-                  ple_lam_mpi
+                  #ifdef MPIBULL2_NAME
+                  ple_mpibull2
                   #endif
                   ],
-                  [mpi_h_type=LAM_MPI])
+                  [mpi_type=MPIBULL2])
   fi
-  if test "x$mpi_h_type" = "x"; then
-    AC_EGREP_CPP([ple_mpich1],
+  if test "x$mpi_type" = "x"; then
+    AC_EGREP_CPP([ple_platform_mpi],
                  [
                   #include <mpi.h>
-                  #ifdef MPICH
-                  ple_mpich1
+                  #ifdef PLATFORM_MPI
+                  ple_platform_mpi
                   #endif
                   ],
-                 [mpi_h_type=MPICH1])
+                  [mpi_type=Platform_MPI])
   fi
 
   # Add a specific preprocessor directive to skip the MPI C++ bindings
-  case $mpi_h_type in
+  case $mpi_type in
     OpenMPI)         MPI_CPPFLAGS="$MPI_CPPFLAGS -DOMPI_SKIP_MPICXX" ;;
     MPICH | MPICH2)  MPI_CPPFLAGS="$MPI_CPPFLAGS -DMPICH_SKIP_MPICXX" ;;
+  esac
+
+  # Now try to determine if we are in fact using a variant MPI,
+  # which does not define its own version macros in mpi.h but still uses its
+  # own numbering (very ugly, but Intel and Bull do it).
+
+  case $mpi_type in
+    OpenMPI)         if test -d "${mpi_libdir}/bullxmpi" ; then
+                       mpi_type=BullxMPI
+                       AC_DEFINE([MPI_VENDOR_NAME], "BullxMPI", [MPI vendor name])
+                     fi
+                     ;;
+    MPICH | MPICH2)  ple_mpisupport=""
+                     if test -f "${mpi_libdir}/../mpisupport.txt" ; then
+                       # mpi_libdir may point to lib sudirectory
+                       ple_mpisupport="${mpi_libdir}/../mpisupport.txt"
+                     elif test -f "${mpi_libdir}/../../mpisupport.txt" ; then
+                       # mpi_libdir may point to intel64/lib sudirectory
+                       ple_mpisupport="${mpi_libdir}/../../mpisupport.txt"
+                     fi
+                     if test "x$ple_mpisupport" != "x" ; then
+                       grep "Intel(R) MPI" "$ple_mpisupport" > /dev/null 2>&1
+                       if test $? = 0 ; then
+                         mpi_type=Intel_MPI
+                         AC_DEFINE([MPI_VENDOR_NAME], "Intel MPI", [MPI vendor name])
+                       fi
+                     fi
+                     unset ple_mpisupport
+                     ;;
   esac
 
   # If only MPI headers have been detected so far (i.e. we are
@@ -203,7 +232,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
 
     LDFLAGS="$saved_LDFLAGS $MPI_LDFLAGS"
 
-    case $mpi_h_type in
+    case $mpi_type in
 
       MPICH | MPICH2)
         AC_MSG_CHECKING([for MPICH-3 or MPICH2])
@@ -252,62 +281,6 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
                        [AC_DEFINE([HAVE_MPI], 1, [MPI support])
                         ple_have_mpi=yes],
                        [ple_have_mpi=no])
-        AC_MSG_RESULT($ple_have_mpi)
-        ;;
-
-      MPICH1)
-        AC_MSG_CHECKING([for MPICH1)])
-        # First try (simplest)
-        MPI_LIBS="-lmpich $PTHREAD_LIBS"
-        LIBS="$MPI_LIBS $saved_LIBS"
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                       [[ MPI_Init(0, (void *)0); ]])],
-                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
-                        ple_have_mpi=yes],
-                       [ple_have_mpi=no])
-        if test "x$ple_have_mpi" = "xno"; then
-          # Second try (with lpmpich)
-          MPI_LIBS="-Wl,-lpmpich -Wl,-lmpich -Wl,-lpmpich -Wl,-lmpich"
-          LIBS="$MPI_LIBS $saved_LIBS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                         [[ MPI_Init(0, (void *)0); ]])],
-                         [AC_DEFINE([HAVE_MPI], 1, [MPI support])
-                          ple_have_mpi=yes],
-                         [ple_have_mpi=no])
-        fi
-        AC_MSG_RESULT($ple_have_mpi)
-        ;;
-
-      LAM_MPI)
-        AC_MSG_CHECKING([for LAM/MPI)])
-        # First try (without MPI-IO)
-        case $host_os in
-          freebsd*)
-            MPI_LIBS="-lmpi -llam $PTHREAD_LIBS";;
-          *)
-            MPI_LIBS="-lmpi -llam -lpthread";;
-        esac
-        LIBS="$MPI_LIBS $saved_LIBS"
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                       [[ MPI_Init(0, (void *)0); ]])],
-                       [AC_DEFINE([HAVE_MPI], 1, [MPI support])
-                        ple_have_mpi=yes],
-                       [ple_have_mpi=no])
-        if test "x$ple_have_mpi" = "xno"; then
-          # Second try (with MPI-IO)
-          case $host_os in
-            freebsd*)
-              MPI_LIBS="-lmpi -llam -lutil -ldl $PTHREAD_LIBS";;
-            *)
-              MPI_LIBS="-lmpi -llam -lutil -ldl -lpthread";;
-          esac
-          LIBS="$MPI_LIBS $saved_LIBS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                         [[ MPI_Init(0, (void *)0); ]])],
-                         [AC_DEFINE([HAVE_MPI], 1, [MPI support])
-                          ple_have_mpi=yes],
-                         [ple_have_mpi=no])
-        fi
         AC_MSG_RESULT($ple_have_mpi)
         ;;
 
@@ -362,6 +335,8 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
   unset saved_LIBS
 
 fi
+
+unset mpi_includedir
 
 AM_CONDITIONAL(HAVE_MPI, test x$ple_have_mpi = xyes)
 AM_CONDITIONAL(HAVE_MPI_ONE_SIDED, test x$ple_have_mpi_one_sided = xyes)

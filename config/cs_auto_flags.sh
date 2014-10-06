@@ -1,4 +1,4 @@
-#!/bin/sh
+# Shell script
 
 #-------------------------------------------------------------------------------
 
@@ -34,8 +34,6 @@
 # cflags_default_hot     # Optimization for specific files   (default: "-O")
 # cflags_default_prf     # Added to $CFLAGS for profiling    (default: "")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
-# cflags_default_ext     # Added to $CFLAGS for extended     (default: "")
-#                        # precision if available
 
 # cxxflags_default       # Base CXXFLAGS                       (default: "")
 # cxxflags_default_dbg   # Added to $CXXFLAGS for debugging    (default: "-g")
@@ -198,13 +196,8 @@ if test "x$cs_gcc" = "xgcc"; then
       cflags_default_opt="-funroll-loops -O2 -Wuninitialized"
       case "$host_cpu" in
         i686)
-          case "$cs_cc_vendor-$cs_cc_version" in
-            gcc-3*|gcc-4*)
-              cflags_default_opt="$cflags_default_opt -march=i686"
-              ;;
-          esac
+          cflags_default_opt="$cflags_default_opt -march=i686"
           ;;
-
       esac
       ;;
 
@@ -214,13 +207,21 @@ if test "x$cs_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-3*|gcc-4.[012]*)
+    gcc-4.[012345678]*)
+      ;;
+    *)
+      cflags_default="$cflags_default -fdiagnostics-color=auto"
+      ;;
+  esac
+
+  case "$cs_cc_vendor-$cs_cc_version" in
+    gcc-4.[012]*)
       cflags_default_omp=""
       ;;
   esac
 
   case "$cs_cc_vendor-$cs_cc_version" in
-    gcc-3*|gcc-4.[01234]*)
+    gcc-4.[01234]*)
       ;;
     *)
       cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
@@ -257,16 +258,6 @@ elif test "x$cs_gcc" = "xicc"; then
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
   cflags_default_omp="-openmp"
-
-  # Modify default flags on certain systems
-
-  case "$host-os-$host_cpu" in
-    *ia64)
-      cflags_default_opt="-O2 -mcpu=itanium2-p9000"
-      cflags_default_hot="-O3 -mcpu=itanium2-p9000"
-      cflags_default_ext="-fp-model extended"
-      ;;
-  esac
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -317,7 +308,7 @@ elif test "x$cs_gcc" = "xpathcc"; then
 
   fi
 
-# Otherwise, are we using opencc ?
+# Otherwise, are we using open64 ?
 #---------------------------------
 
 elif test "x$cs_gcc" = "xopen64"; then
@@ -469,100 +460,32 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
     SUPER-UX* | superux*)
 
-      # Native NEC SX vectorizing C compiler (sxmpicc)
-      #-------------------------------------
+     # Native NEC SX vectorizing C compiler (sxmpicc)
+     #-------------------------------------
 
-      $CC -V conftest.c 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
-      if test "$?" = "0" ; then
+     $CC -V conftest.c 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
+     if test "$?" = "0" ; then
 
-        echo "compiler '$CC' is NEC SX compiler"
+       echo "compiler '$CC' is NEC SX compiler"
 
-        # Version strings for logging purposes and known compiler flag
-        $CC -V conftest.c > $outfile 2>&1
-        cs_ac_cc_version=`grep ccom $outfile`
-        cs_cc_compiler_known=yes
-        cs_linker_set=yes
+       # Version strings for logging purposes and known compiler flag
+       $CC -V conftest.c > $outfile 2>&1
+       cs_ac_cc_version=`grep ccom $outfile`
+       cs_cc_compiler_known=yes
+       cs_linker_set=yes
 
-        # Default compiler flags
-        cflags_default="-Kc99 -pvctl,loopcnt=2147483647"
-        cflags_default_opt=""
-        cflags_default_dbg=""
-        cflags_default_prf=""
-        cflags_default_omp=""
+       # Default compiler flags
+       cflags_default="-Kc99 -pvctl,loopcnt=2147483647"
+       cflags_default_opt=""
+       cflags_default_dbg=""
+       cflags_default_prf=""
+       cflags_default_omp=""
 
-        # Default linker flags
-        ldflags_default=""
-        ldflags_default_opt="-O"
-        ldflags_default_dbg="-g"
-        ldflags_default_prf="-pg"
-
-      fi
-      ;;
-
-    hpux*)
-
-      # Native HP-UX C compiler
-      #------------------------
-
-      $CC -V conftest.c 2>&1 | grep 'HP' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is HP compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -V conftest.c > $outfile 2>&1
-        cs_ac_cc_version=`grep ccom $outfile`
-        cs_cc_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        cflags_default="-AC99 +e"
-        cflags_default_opt="+O2"
-        cflags_default_hot="+O3"
-        cflags_default_dbg="-g"
-        cflags_default_prf="-G"
-        cflags_default_omp="+Oopenmp" # most pragmas require +O3
-
-        # Default linker flags
-        ldflags_default="+FPVZOUD +U77"
-        ldflags_default_opt="+O1"
-        ldflags_default_dbg="-g"
-        ldflags_default_prf="-fbexe"
-        cflags_default_omp="+Oopenmp"
-
-        if test "$host_cpu" = "ia64" ; then
-          cflags_default="$cflags_default +DD64"
-          ldflags_default="$ldflags_default +DD64"
-        else
-          cflags_default="$cflags_default +DA2.0w"
-          ldflags_default="$ldflags_default +DA2.0w"
-        fi
-
-      fi
-      ;;
-
-    solaris2.*)
-
-      # Sun Workshop compiler
-      #----------------------
-
-      $CC -V 2>&1 | grep 'WorkShop Compilers' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CC' is Sun WorkShop Compilers"
-
-        # Version strings for logging purposes and known compiler flag
-        $CC -V conftest.c > $outfile 2>&1
-        cs_ac_cc_version=`grep cc $outfile`
-        cs_cc_compiler_known=yes
-
-        # Default compiler flags
-        cflags_default="-Xa -Xc99"
-        cflags_default_opt="-xO2"
-        cflags_default_hot="-xO3"
-        cflags_default_dbg="-g"
-        cflags_default_prf="-pg"
-        cflags_default_omp="-xopenmp"
+       # Default linker flags
+       ldflags_default=""
+       ldflags_default_opt="-O"
+       ldflags_default_dbg="-g"
+       ldflags_default_prf="-pg"
 
      fi
      ;;
@@ -632,8 +555,8 @@ if test "x$cs_gxx" = "xg++"; then
   cs_cxx_compiler_known=yes
 
   # Practical version info for option setting
-  cs_cxx_version="`$CXX -v 2>&1 |grep 'g++ version' |\
-                  sed 's/.*g++ version \([-a-z0-9\.]*\).*/\1/'`"
+  cs_cxx_version="`$CXX -v 2>&1 |grep 'gcc version' |\
+                  sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
   cs_cxx_vendor=`echo $cxx_version |sed 's/\([a-z]*\).*/\1/'`
   cs_cxx_version=`echo $cs_cxx_version |sed 's/[-a-z]//g'`
 
@@ -645,9 +568,9 @@ if test "x$cs_gxx" = "xg++"; then
   fi
 
   # Some version numbers
-  cs_cxx_vers_major=`echo $cxx_version | cut -f1 -d.`
-  cs_cxx_vers_minor=`echo $cxx_version | cut -f2 -d.`
-  cs_cxx_vers_patch=`echo $cxx_version | cut -f3 -d.`
+  cs_cxx_vers_major=`echo $cs_cxx_version | cut -f1 -d.`
+  cs_cxx_vers_minor=`echo $cs_cxx_version | cut -f2 -d.`
+  cs_cxx_vers_patch=`echo $cs_cxx_version | cut -f3 -d.`
   test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
   test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
@@ -668,11 +591,8 @@ if test "x$cs_gxx" = "xg++"; then
       cxxflags_default_opt="-funroll-loops -O2 -Wuninitialized"
       case "$host_cpu" in
         i686)
-          case "$cs_cxx_vendor-$cs_cxx_version" in
-            g++-3*|g++-4*)
-              cxxflags_default_opt="$cxxflags_default_opt -march=i686"
-            ;;
-          esac
+          cxxflags_default_opt="$cxxflags_default_opt -march=i686"
+          ;;
       esac
       ;;
 
@@ -680,6 +600,14 @@ if test "x$cs_gxx" = "xg++"; then
 
   # Modify default flags depending on g++ version (as older versions
   # may not handle all flags)
+
+  case "$cs_cxx_vendor-$cs_cxx_version" in
+    g++-4.[012345678]*)
+      ;;
+    *)
+      cxxflags_default="$cxxflags_default -fdiagnostics-color=auto"
+      ;;
+  esac
 
   case "$cs_cxx_vendor-$cs_cxx_version" in
     g++-2.*|g++-3*|g++-4.[012]*)
@@ -923,65 +851,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
       fi
       ;;
 
-    hpux*)
-
-      # Native HP-UX C compiler
-      #------------------------
-
-      $CXX -V conftest.c 2>&1 | grep 'HP' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is HP compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -V conftest.c > $outfile 2>&1
-        cs_ac_cxx_version=`grep ccom $outfile`
-        cs_cxx_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        cxxflags_default="-Aa +e"
-        cxxflags_default_opt="+O2"
-        cxxflags_default_hot="+O3"
-        cxxflags_default_dbg="-g"
-        cxxflags_default_prf="-G"
-        cxxflags_default_omp="+Oopenmp" # most pragmas require +O3
-
-        if test "$host_cpu" = "ia64" ; then
-          cxxflags_default="$cxxflags_default +DD64"
-        else
-          cxxflags_default="$cxxflags_default +DA2.0w"
-        fi
-
-      fi
-      ;;
-
-    solaris2.*)
-
-      # Sun Workshop compiler
-      #----------------------
-
-      $CXX -V 2>&1 | grep 'WorkShop Compilers' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is Sun WorkShop Compilers"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -V conftest.c > $outfile 2>&1
-        cs_ac_cxx_version=`grep cc $outfile`
-        cs_cxx_compiler_known=yes
-
-        # Default compiler flags
-        cxxflags_default="-Xa"
-        cxxflags_default_opt="-xO2"
-        cxxflags_default_hot="-xO3"
-        cxxflags_default_dbg="-g"
-        cxxflags_default_prf="-pg"
-        cxxflags_default_omp="-xopenmp"
-
-     fi
-     ;;
-
     *)
 
       # Unknown
@@ -1033,8 +902,6 @@ if test "$?" = "0" ; then
   cs_fc_version="`$FC -v 2>&1 |grep 'gcc version' |\
                   sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
 
-  echo "compiler '$FC' is gfortran"
-
   cs_fc_compiler_known=yes
   cs_gfortran=gfortran
 
@@ -1054,6 +921,8 @@ if test "$?" = "0" ; then
   fi
   if test "-" != "$cs_fc_vendor-$cs_fc_version"; then
     echo "compiler '$FC' is GNU $cs_fc_vendor-$cs_fc_version"
+  else
+      echo "compiler '$FC' is gfortran"
   fi
 
   # Some version numbers
@@ -1295,32 +1164,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
       fi
       ;;
 
-    hpux*)
-
-      # Native HP-UX Fortran compiler
-      #------------------------------
-
-      $FC +version 2>&1 | grep 'HP' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$FC' is HP compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $FC -V conftest.f > $outfile 2>&1
-        cs_ac_fc_version=`$FC +version`
-        cs_fc_compiler_known=yes
-
-        # Default compiler flags
-        fcflags_default="+cpp=yes +fp_exception +FPVZOUD +U77 +DA2.0W +noppu"
-        fcflags_default_opt="+O1"
-        fcflags_default_hot="+O2"
-        fcflags_default_dbg="-g"
-        fcflags_default_prf="-G"
-        fcflags_default_omp="+Oopenmp" # most pragmas require +O3
-
-      fi
-      ;;
-
     *)
 
       # Unknown
@@ -1381,12 +1224,6 @@ if test "x$cs_linker_set" != "xyes" ; then
         fi
         unset libgfortran_dir
       fi
-      ;;
-
-    solaris2.*)
-      ldflags_default_opt=""
-      ldflags_default_dbg="-g"
-      ldflags_default_prf=""
       ;;
 
     *)
