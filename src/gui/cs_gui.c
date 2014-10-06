@@ -2710,10 +2710,8 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
                                    int *nswrsm)
 {
   double tmp;
-  int n_max_iter;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   int var_key_id = cs_field_key_id("variable_id");
-  const int n_max_iter_default = 10000;
   cs_var_cal_opt_t var_cal_opt;
 
   /* 1) variables from velocity_pressure and turbulence */
@@ -2723,9 +2721,6 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
   int j = cs_field_get_key_int(c_pres, var_key_id) -1;
 
   cs_gui_variable_value(c_pres->name, "solver_precision", &epsilo[j]);
-  tmp = (double) n_max_iter_default;
-  cs_gui_variable_value(c_pres->name, "max_iter_number", &tmp);
-  n_max_iter = (int) tmp;
 
   tmp = (double) nswrsm[j];
   cs_gui_variable_value(c_pres->name, "rhs_reconstruction", &tmp);
@@ -2746,10 +2741,6 @@ void CS_PROCF (uinum1, UINUM1) (double *blencv,
 
       cs_gui_variable_value(f->name, "blending_factor", &blencv[j]);
       cs_gui_variable_value(f->name, "solver_precision", &epsilo[j]);
-
-      tmp = (double) n_max_iter_default;
-      cs_gui_variable_value(f->name, "max_iter_number", &tmp);
-      n_max_iter = (int) tmp;
 
       // only for nscaus and model scalar
       cs_gui_variable_value(f->name, "time_step_factor", &cdtvar[j]);
@@ -5347,13 +5338,11 @@ cs_gui_linear_solvers(void)
   int n_max_iter;
   char* algo_choice = NULL;
 
-  int var_key_id = cs_field_key_id("variable_id");
   const int n_max_iter_default = 10000;
 
   /* 1) variables from velocity_pressure and turbulence */
   /* 1-a) for pressure */
   cs_field_t *c_pres = cs_field_by_name("pressure");
-  int j = cs_field_get_key_int(c_pres, var_key_id) -1;
 
   tmp = (double) n_max_iter_default;
   cs_gui_variable_value(c_pres->name, "max_iter_number", &tmp);
@@ -5401,7 +5390,6 @@ cs_gui_linear_solvers(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE && !cs_gui_strcmp(f->name, "pressure")) {
-      j = cs_field_get_key_int(f, var_key_id) -1;
 
       tmp = (double) n_max_iter_default;
       cs_gui_variable_value(f->name, "max_iter_number", &tmp);
