@@ -25,7 +25,6 @@ subroutine lagune &
 
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    dt     , rtpa   , rtp    , propce )
 
 !===============================================================================
@@ -74,7 +73,7 @@ use parall
 use period
 use pointe
 use lagpar
-use lagdim, only: nvp1, ntersl, nvlsta, nvisbr
+use lagdim, only: nbpmax, ntersl, nvlsta, nvisbr
 use lagran
 use mesh
 use field
@@ -89,7 +88,7 @@ implicit none
 ! Arguments
 
 integer          lndnod
-integer          nvar   , nscal, nbpmax
+integer          nvar   , nscal
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
@@ -97,7 +96,7 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          ip     , npt    , iok
-integer          iel    , ivf    , ivar, ifld
+integer          iel    , ivar, ifld
 integer          npar1  , npar2
 integer          modntl
 integer          iprev
@@ -109,28 +108,21 @@ double precision ustarmoy, surftot, surfb
 
 double precision, allocatable, dimension(:) :: taup
 double precision, allocatable, dimension(:,:) :: tlag, piil
-double precision, allocatable, dimension(:,:) :: vagaus
 double precision, allocatable, dimension(:,:,:) :: bx
-double precision, allocatable, dimension(:,:) :: tsuf, tsup
-double precision, allocatable, dimension(:,:) :: tsvar
 double precision, allocatable, dimension(:,:) :: tempct
 double precision, allocatable, dimension(:) :: tsfext
 double precision, allocatable, dimension(:) :: cpgd1, cpgd2, cpght
-double precision, allocatable, dimension(:,:) :: brgaus
 double precision, allocatable, dimension(:) :: terbru
 double precision, allocatable, dimension(:,:) :: gradpr
 double precision, allocatable, dimension(:,:,:) :: gradvf
 double precision, allocatable, dimension(:) :: croule
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:,:) :: auxl, auxl2
-
-double precision, allocatable, dimension(:,:) :: tslag
 
 double precision, allocatable, save, dimension(:) :: vislen
 
-double precision, allocatable, dimension(:):: energt
+double precision, allocatable, dimension(:) :: energt
 
-double precision, allocatable, dimension(:):: tempp
+double precision, allocatable, dimension(:) :: tempp
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:), pointer :: viscl
@@ -149,57 +141,30 @@ save             ipass
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(auxl(nbpmax,3))
-allocate(taup(nbpmax))
-allocate(tlag(nbpmax,3))
-allocate(piil(nbpmax,3))
-allocate(vagaus(nbpmax,nvgaus))
-allocate(tsuf(nbpmax,3))
-allocate(tsup(nbpmax,3))
-allocate(bx(nbpmax,3,2))
 allocate(gradpr(3,ncelet))
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 ! Allocate other arrays depending on user options
-if ((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) then
-  allocate(tempct(nbpmax,2))
-endif
-if (iilagr.eq.2) then
-  allocate(tsfext(nbpmax))
-endif
-if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
-  allocate(cpgd1(nbpmax))
-  allocate(cpgd2(nbpmax))
-  allocate(cpght(nbpmax))
-endif
 if (modcpl.gt.0) then
   allocate(gradvf(3,3,ncelet))
 endif
 if (iroule.eq.1) then
   allocate(croule(ncelet))
 endif
-if (lamvbr.eq.1) then
-  allocate(brgaus(nbpmax,nbrgau))
-  allocate(terbru(nbpmax))
-endif
-if (nordre.eq.2) then
-  allocate(auxl2(nbpmax,7))
-endif
 if (idlvo.eq.1) then
-
   allocate(energt(nfabor))
   if (iclogst.eq.1 .or.  irough .eq.1) then
-     allocate(tempp(nfabor))
+    allocate(tempp(nfabor))
   endif
 endif
 
 ipass = ipass + 1
 
 if ((idepst.eq.1).and.(ipass.eq.1)) then
-   allocate(vislen(nfabor))
-   do ifac = 1, nfabor
-     vislen(ifac) = grand
-   enddo
+  allocate(vislen(nfabor))
+  do ifac = 1, nfabor
+    vislen(ifac) = grand
+  enddo
 endif
 
 !===============================================================================
@@ -241,7 +206,7 @@ if (iplar.eq.1) then
    jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
    jcp    , jrdck  , jrd0p  , jinch  , jrhock ,                   &
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
-   jndisp , jclst  , jvls   , nvp1   )
+   jndisp , jclst  , jvls   )
 
   call lagr_update_pointers
 
@@ -309,8 +274,6 @@ endif
 
 ! Initialization
 
-allocate(tsvar(nbpmax,nvp1))
-
 nbpnew = 0
 npcsup = 0
 npclon = 0
@@ -337,29 +300,29 @@ dnbres = 0.d0
 
 if ( iclogst.eq.1 ) then
 
-   do ifac = 1,nfabor
-      iel = ifabor(ifac)
+  do ifac = 1,nfabor
+    iel = ifabor(ifac)
 
-      if (iscalt.gt.0) then
+    if (iscalt.gt.0) then
 
-         if (itherm.eq.1 .and. itpscl.eq.2) then
-            tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
-         else if (itherm.eq.1 .and. itpscl.eq.2) then
-            tempp(ifac) = rtp(iel,isca(iscalt))
-         else if (itherm.eq.2) then
-            call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
-         endif
-
-      else
-         tempp(ifac) = t0
+      if (itherm.eq.1 .and. itpscl.eq.2) then
+        tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
+      else if (itherm.eq.1 .and. itpscl.eq.2) then
+        tempp(ifac) = rtp(iel,isca(iscalt))
+      else if (itherm.eq.2) then
+        call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
       endif
 
-   enddo
+    else
+      tempp(ifac) = t0
+    endif
 
-   call cloginit                                                   &
-   !===========
-   ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,          &
-     valen , phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
+  enddo
+
+  call cloginit                                                   &
+  !===========
+  ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,          &
+    valen , phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
 
 endif
 
@@ -369,30 +332,30 @@ endif
 
 if ( irough .eq. 1 ) then
 
- do ifac = 1,nfabor
-      iel = ifabor(ifac)
+  do ifac = 1,nfabor
+    iel = ifabor(ifac)
 
-      if (iscalt.gt.0) then
+    if (iscalt.gt.0) then
 
-         if (itherm.eq.1 .and. itpscl.eq.2) then
-            tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
-         else if (itherm.eq.1 .and. itpscl.eq.2) then
-            tempp(ifac) = rtp(iel,isca(iscalt))
-         else if (itherm.eq.2) then
-            call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
-         endif
-
-      else
-         tempp(ifac) = t0
+      if (itherm.eq.1 .and. itpscl.eq.2) then
+        tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
+      else if (itherm.eq.1 .and. itpscl.eq.2) then
+        tempp(ifac) = rtp(iel,isca(iscalt))
+      else if (itherm.eq.2) then
+        call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
       endif
 
-   enddo
+    else
+      tempp(ifac) = t0
+    endif
 
-   call roughness_init                                &
-   !===========
-   ( cstfar, epsvid, epseau, fion, tempp,  valen    , &
-     phi1  , phi2  , cstham, dcutof, lambwl, kboltz , &
-     espasg , denasp , rayasp , rayasg)
+  enddo
+
+  call roughness_init                                &
+  !===========
+  ( cstfar, epsvid, epseau, fion, tempp,  valen    , &
+    phi1  , phi2  , cstham, dcutof, lambwl, kboltz , &
+    espasg , denasp , rayasp , rayasg)
 
 endif
 
@@ -415,12 +378,10 @@ call lagent                                                      &
 !==========
 ( lndnod ,                                                       &
   nvar   , nscal  ,                                              &
-  nbpmax ,                                                       &
   ntersl , nvlsta , nvisbr , iprev  ,                            &
   itycel , icocel , dlgeo  ,                                     &
   itypfb , itrifb , ifrlag ,                                     &
-  dt     ,                                                       &
-  vagaus )
+  dt     )
 
 !===============================================================================
 ! 2.1 CALCUL DE LA FONCTION D'IMPORTANCE POUR LA ROULETTE RUSSE
@@ -431,11 +392,10 @@ if (iroule.ge.1) then
   call uslaru                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb ,                                              &
    dt     ,                                                       &
-   vagaus , croule , auxl ,                                       &
+   croule ,                                                       &
    dispar , yplpar )
 
   iok = 0
@@ -500,36 +460,6 @@ else
 endif
 
 !===============================================================================
-! 4.  Initialisation des variables aleatoires gaussiennes
-!===============================================================================
-
-!---> CALCUL DES TIRAGES ALEATOIRES
-!     remarque : NORMALEN est dans le fichier ZUFALL.F
-!     ^^^^^^^^
-
-if (idistu.eq.1) then
-  do ivf = 1,nvgaus
-    call normalen(nbpart, vagaus(1,ivf))
-  enddo
-else
-  do ivf = 1,nvgaus
-    do ip = 1,nbpmax
-      vagaus(ip,ivf) = 0.d0
-    enddo
-  enddo
-endif
-
-!---> CALCUL DES TIRAGES ALEATOIRES POUR LE MVT BROWNIEN
-
-if ( lamvbr .eq. 1 ) then
-
-  do ivf = 1,nbrgau
-    call normalen(nbpart, brgaus(1,ivf))
-  enddo
-
-endif
-
-!===============================================================================
 ! 5. PROGRESSION DES PARTICULES
 !===============================================================================
 
@@ -537,6 +467,27 @@ endif
 
 nor = mod(nor,nordre)
 nor = nor + 1
+
+! Allocations
+
+allocate(taup(nbpart))
+allocate(tlag(nbpart,3))
+allocate(piil(nbpart,3))
+allocate(bx(nbpart,3,2))
+if (iilagr.eq.2) then
+  allocate(tsfext(nbpart))
+endif
+if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
+  allocate(cpgd1(nbpart))
+  allocate(cpgd2(nbpart))
+  allocate(cpght(nbpart))
+endif
+if ((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) then
+  allocate(tempct(nbpart,2))
+endif
+if (lamvbr.eq.1) then
+  allocate(terbru(nbpart))
+endif
 
 !---> Recopie des resultats de l'etape precedente :
 
@@ -571,12 +522,11 @@ endif
 call lagcar                                                     &
 !==========
  ( nvar   , nscal  ,                                            &
-   nbpmax ,                                                     &
    nvlsta , iprev  ,                                            &
    dt     ,                                                     &
    taup   , tlag   ,                                            &
    piil   , bx     , tempct , statis ,                          &
-   gradpr , gradvf , w1     , w2     , auxl(1,1) )
+   gradpr , gradvf , w1     , w2     )
 
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
@@ -585,13 +535,11 @@ call lagcar                                                     &
 call lagesp                                                       &
 !==========
    ( nvar   , nscal  ,                                            &
-     nbpmax ,                                                     &
      ntersl , nvlsta , nvisbr ,                                   &
      dt     , rtpa   , propce ,                                   &
      statis , stativ , taup   , tlag   , piil   ,                 &
-     tsuf   , tsup   , bx     , tsfext ,                          &
-     vagaus , gradpr , gradvf , brgaus , terbru ,                 &
-     auxl(1,1) , auxl2        , vislen)
+     bx     , tsfext ,                                            &
+     gradpr , gradvf , terbru , vislen)
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES
@@ -604,14 +552,14 @@ if (iphyla.eq.1 .or. iphyla.eq.2) then
     ( ntersl , nvlsta , nvisbr ,                                  &
       dt     , rtpa   , propce ,                                  &
       taup   , tlag   , tempct ,                                  &
-      tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
+      cpgd1  , cpgd2  , cpght  )
   else
     call lagphy                                                   &
     !==========
     ( ntersl , nvlsta , nvisbr ,                                  &
       dt     , rtp    , propce ,                                  &
       taup   , tlag   , tempct ,                                  &
-      tsvar  , auxl   , cpgd1  , cpgd2  , cpght  )
+      cpgd1  , cpgd2  , cpght  )
   endif
 
 endif
@@ -622,21 +570,13 @@ endif
 
 if (iilagr.eq.2 .and. nor.eq.nordre) then
 
-  ! Allocate a temporary array
-  allocate(tslag(nbpmax,ntersl))
-
   call lagcou                                                     &
   !==========
-   ( nbpmax ,                                                     &
-     ntersl ,                                                     &
+   ( ntersl ,                                                     &
      propce ,                                                     &
      taup   , tempct , tsfext ,                                   &
      cpgd1  , cpgd2  , cpght  ,                                   &
-     tslag  , w1     , w2   ,                                     &
-     auxl(1,1) , auxl(1,2)   , auxl(1,3) )
-
-     ! Free memory
-     deallocate(tslag)
+     w1     , w2   )
 
 endif
 
@@ -649,7 +589,27 @@ if (idlvo.eq.1) then
    call lagbar (rtp, energt)
    !==========
 
+endif
 
+! Deallocate arrays whose size is based on nbpart (which may change next)
+
+deallocate(tlag)
+deallocate(taup)
+deallocate(piil)
+deallocate(bx)
+if (iilagr.eq.2) then
+  deallocate(tsfext)
+endif
+if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
+  deallocate(cpgd1)
+  deallocate(cpgd2)
+  deallocate(cpght)
+endif
+if ((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) then
+  deallocate(tempct)
+endif
+if (lamvbr.eq.1) then
+  deallocate(terbru)
 endif
 
 !===============================================================================
@@ -760,10 +720,8 @@ endif
 
 if ( nor.eq.nordre .and. iroule.ge.1 ) then
 
-  call lagrus                                                     &
+  call lagrus(ncelet, ncel, croule)
   !==========
-   ( ncelet , ncel   , nbpmax ,                                   &
-     croule )
 
   if (npclon.gt.0) then
 
@@ -773,7 +731,7 @@ if ( nor.eq.nordre .and. iroule.ge.1 ) then
     ! Use fields at current time step
     iprev = 0
 
-    call lagipn(nbpmax, npar1, npar2, iprev, vagaus)
+    call lagipn(npar1, npar2, iprev)
     !==========
 
   endif
@@ -794,10 +752,8 @@ if (nordre.eq.2 .and. nor.eq.1) goto 10
 call uslast                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
-   dt     ,                                                       &
-   taup   , tlag   , tempct )
+   dt     )
 
 !===============================================================================
 ! 16. Visualisations
@@ -825,56 +781,29 @@ nbpert = nbpert + nbpper
 !===============================================================================
 
 if (ipass.eq.1) then
-   modntl = 0
+  modntl = 0
 elseif(ntlal.gt.0) then
-   modntl = mod(ntcabs,ntlal)
+  modntl = mod(ntcabs,ntlal)
 elseif(ntlal.eq.-1.and.ntcabs.eq.ntmabs) then
-   modntl = 0
+  modntl = 0
 else
-   modntl = 1
+  modntl = 1
 endif
 
 if (modntl.eq.0) then
-   call lagaff
-   !==========
+  call lagaff
+  !==========
 endif
 
 ! Free memory
 
-deallocate(auxl)
-deallocate(taup)
-deallocate(tlag)
-deallocate(piil)
-deallocate(vagaus)
-deallocate(tsuf)
-deallocate(tsup)
-deallocate(bx)
-deallocate(tsvar)
 deallocate(gradpr)
 deallocate(w1, w2, w3)
-if ((iphyla.eq.1 .and. itpvar.eq.1) .or. iphyla.eq.2) then
-  deallocate(tempct)
-endif
-if (iilagr.eq.2) then
-  deallocate(tsfext)
-endif
-if (iilagr.eq.2 .and. iphyla.eq.2 .and. ltsthe.eq.1) then
-  deallocate(cpgd1)
-  deallocate(cpgd2)
-  deallocate(cpght)
-endif
 if (modcpl.gt.0) then
   deallocate(gradvf)
 endif
 if (iroule.eq.1) then
   deallocate(croule)
-endif
-if (lamvbr.eq.1) then
-  deallocate(brgaus)
-  deallocate(terbru)
-endif
-if (nordre.eq.2) then
-  deallocate(auxl2)
 endif
 
 if ((idepst.eq.1).and.(ntcabs.eq.ntmabs)) then

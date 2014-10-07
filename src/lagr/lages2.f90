@@ -23,11 +23,10 @@
 subroutine lages2 &
 !================
 
- ( nbpmax ,                                                       &
-   rtpa   , propce ,                                              &
+ ( rtpa   , propce ,                                              &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
-   vagaus , auxl   , gradpr ,                                     &
+   vagaus , gradpr ,                                              &
    romp   , brgaus , terbru , fextla )
 
 !===============================================================================
@@ -49,25 +48,23 @@ subroutine lages2 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! statis           ! tr ! <-- !  cumul des statistiques volumiques             !
 !(ncelet,nvlsta    !    !     !                                                !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
-! tsup(nbpmax,3    ! tr ! <-- ! prediction 1er sous-pas pour                   !
+! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
+! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
+! piil(nbpart,3)   ! tr ! <-- ! terme dans l'integration des eds up            !
+! tsup(nbpart,3)   ! tr ! <-- ! prediction 1er sous-pas pour                   !
 !                  !    !     !   la vitesse des particules                    !
-! tsuf(nbpmax,3    ! tr ! <-- ! prediction 1er sous-pas pour                   !
+! tsuf(nbpart,3)   ! tr ! <-- ! prediction 1er sous-pas pour                   !
 !                  !    !     !   la vitesse du fluide vu                      !
-! bx(nbpmax,3,2    ! tr ! <-- ! caracteristiques de la turbulence              !
-! tsfext(nbpmax    ! tr ! --> ! infos pour couplage retour dynamique           !
+! bx(nbpart,3,2)   ! tr ! <-- ! caracteristiques de la turbulence              !
+! tsfext(nbpart)   ! tr ! --> ! infos pour couplage retour dynamique           !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
-! auxl             ! tr ! --- ! tableau auxiliaire                             !
+!(nbpart,nvgaus)   !    !     !                                                !
 ! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
@@ -105,19 +102,17 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax
-
 double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision taup(nbpmax) , tlag(nbpmax,3)
-double precision piil(nbpmax,3) , bx(nbpmax,3,2)
-double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
-double precision tsfext(nbpmax)
-double precision vagaus(nbpmax,*) , auxl(nbpmax,7)
+double precision taup(nbpart) , tlag(nbpart,3)
+double precision piil(nbpart,3) , bx(nbpart,3,2)
+double precision tsuf(nbpart,3) , tsup(nbpart,3)
+double precision tsfext(nbpart)
+double precision vagaus(nbpart,*), brgaus(nbpart,*)
 double precision gradpr(3,ncelet)
-double precision romp(nbpmax)
-double precision brgaus(nbpmax,*) , terbru(nbpmax)
-double precision fextla(nbpmax,3)
+double precision romp(nbpart)
+double precision terbru(nbpart)
+double precision fextla(nbpart,3)
 
 ! Local variables
 
@@ -136,6 +131,7 @@ double precision tbriu
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vel, vela
+double precision, dimension(:,:), allocatable :: auxl
 
 !===============================================================================
 
@@ -146,6 +142,8 @@ call field_get_val_prev_v(ivarfl(iu), vela)
 !===============================================================================
 ! 1. INITIALISATIONS
 !===============================================================================
+
+allocate(auxl(nbpart,7))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -288,8 +286,7 @@ if (nor.eq.1) then
 
   call lages1                                                     &
   !==========
- ( nbpmax ,                                                       &
-   rtpa   , propce ,                                              &
+ ( rtpa   , propce ,                                              &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
@@ -432,6 +429,8 @@ else
   enddo
 
 endif
+
+deallocate(auxl)
 
 !----
 ! FIN

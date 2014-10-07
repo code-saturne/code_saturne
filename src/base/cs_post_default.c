@@ -83,8 +83,6 @@ typedef struct {
   const cs_int_t   *nvlsta;
   const cs_int_t   *nvisbr;
 
-  const cs_int_t   *nbpmax;
-
   /* Lagrangian variables */
 
   bool      particle_attr[CS_LAGR_N_ATTRIBUTES];

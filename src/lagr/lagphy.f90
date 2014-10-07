@@ -25,8 +25,7 @@ subroutine lagphy &
 
  ( ntersl , nvlsta , nvisbr ,                                     &
    dt     , rtp    , propce ,                                     &
-   taup   , tlag   ,                                              &
-   tempct , tsvar  , auxl   ,                                     &
+   taup   , tlag   , tempct ,                                     &
    cpgd1  , cpgd2  , cpght  )
 
 !===============================================================================
@@ -58,16 +57,12 @@ subroutine lagphy &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
+! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
+! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable courante, utilise pour la           !
-!                  !    !     !   correction au 2eme sous-pas                  !
-! auxl(nbpmax,3    ! tr ! --- ! tableau de travail lagrangien                  !
+!  (nbpart,2)      !    !     !                                                !
 ! cpgd1,cpgd2,     ! tr ! --> ! termes de devolatilisation 1 et 2 et           !
-!  cpght(nbpmax    !    !     !   de combusion heterogene (charbon             !
+!  cpght(nbpart)   !    !     !   de combusion heterogene (charbon             !
 !                  !    !     !   avec couplage retour thermique)              !
 !__________________!____!_____!________________________________________________!
 
@@ -88,7 +83,6 @@ use cstnum
 use optcal
 use dimens, only: nvar
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use mesh
@@ -103,18 +97,12 @@ integer          ntersl , nvlsta , nvisbr
 
 double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision taup(nbpmax) , tlag(nbpmax,3) , tempct(nbpmax,2)
-double precision tsvar(nbpmax,nvp1) , auxl(nbpmax,3)
-double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
+double precision taup(nbpart) , tlag(nbpart,3) , tempct(nbpart,2)
+double precision cpgd1(nbpart) , cpgd2(nbpart) , cpght(nbpart)
 
 ! Local variables
 
 !===============================================================================
-
-!===============================================================================
-! 0.  GESTION MEMOIRE
-!===============================================================================
-
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -129,7 +117,7 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
 
   call lagitf                                                     &
   !==========
-  ( rtp    , propce , tsvar  , auxl(1,1) )
+  ( rtp    , propce )
 
 endif
 
@@ -141,9 +129,7 @@ if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
 
   call lagitp                                                     &
   !==========
-  ( propce ,                                                      &
-    tempct ,                                                      &
-    tsvar  , auxl(1,1) , auxl(1,2)  )
+  ( propce , tempct )
 
 endif
 
@@ -153,9 +139,8 @@ endif
 
 if ( iphyla.eq.1 .and. idpvar.eq.1 ) then
 
-  call lagidp                                                     &
+  call lagidp
   !==========
-  ( tsvar  , auxl(1,1) , auxl(1,2)  )
 
 endif
 
@@ -165,9 +150,8 @@ endif
 
 if (iphyla.eq.1 .and. impvar.eq.1) then
 
-  call lagimp                                                     &
+  call lagimp
   !==========
-  ( tsvar  , auxl(1,1) , auxl(1,2)  )
 
 endif
 
@@ -179,8 +163,7 @@ if (iphyla.eq.2) then
 
   call lagich                                                     &
   !==========
-  ( propce , tempct , tsvar  , cpgd1  , cpgd2  ,                  &
-    cpght  )
+  ( propce , tempct , cpgd1  , cpgd2  , cpght  )
 
 endif
 
@@ -194,8 +177,7 @@ if (nvls.ge.1) then
   !==========
     ( ntersl , nvlsta , nvisbr ,                                  &
       dt     ,                                                    &
-      taup   , tlag   , tempct , tsvar  ,                         &
-      auxl(1,1) ,  auxl(1,2) ,  auxl(1,3) )
+      taup   , tlag   , tempct )
 
 endif
 

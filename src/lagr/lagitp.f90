@@ -23,9 +23,7 @@
 subroutine lagitp &
 !================
 
- ( propce ,                                                       &
-   tempct ,                                                       &
-   tsvar  , auxl1  , auxl2  )
+ ( propce , tempct )
 
 !===============================================================================
 ! FONCTION :
@@ -43,12 +41,7 @@ subroutine lagitp &
 !__________________!____!_____!________________________________________________!
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
-! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
+!  (nbpart,2)      !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -67,7 +60,6 @@ use cstphy
 use cstnum
 use optcal
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -81,16 +73,17 @@ implicit none
 ! Arguments
 
 double precision propce(ncelet,*)
-double precision tempct(nbpmax,2)
-double precision tsvar(nbpmax,nvp1)
-double precision auxl1(nbpmax) , auxl2(nbpmax)
+double precision tempct(nbpart,2)
 
 ! Local variables
 
 integer          npt , iel
 double precision srad
+double precision, dimension(:), allocatable :: tcarac, pip
 
 !===============================================================================
+
+allocate(tcarac(nbpart), pip(nbpart))
 
 !===============================================================================
 !     REMPLISSAGE DU TEMPS CARACTERISTIQUE ET DU "PSEUDO SECOND MEMBRE"
@@ -100,12 +93,12 @@ do npt = 1,nbpart
 
   if (ipepa(jisor,npt).gt.0) then
 
-    auxl1(npt) = tempct(npt,1)
+    tcarac(npt) = tempct(npt,1)
 
     if (nor.eq.1) then
-      auxl2(npt) = eptpa(jtf,npt)
+      pip(npt) = eptpa(jtf,npt)
     else
-      auxl2(npt) = eptp(jtf,npt)
+      pip(npt) = eptp(jtf,npt)
     endif
 
   endif
@@ -129,15 +122,15 @@ if (iirayo.gt.0) then
         srad = pi *eptpa(jdp,npt) *eptpa(jdp,npt)                 &
                   *pepa(jreps,npt) *(propce(iel,ipproc(ilumin))   &
                         -4.d0 *stephn *eptpa(jtp,npt)**4 )
-        auxl2(npt) = eptpa(jtf,npt)                               &
-               +auxl1(npt) *srad /eptpa(jcp,npt) /eptpa(jmp,npt)
+        pip(npt) = eptpa(jtf,npt)                                 &
+               +tcarac(npt) *srad /eptpa(jcp,npt) /eptpa(jmp,npt)
       else
 
         srad = pi *eptp(jdp,npt) *eptp(jdp,npt) *pepa(jreps,npt)  &
                 *(propce(iel,ipproc(ilumin))                      &
                 -4.d0 *stephn *eptp(jtp,npt)**4 )
-        auxl2(npt) = eptp(jtf,npt)                                &
-                +auxl1(npt) *srad /eptp(jcp,npt) /eptp(jmp,npt)
+        pip(npt) = eptp(jtf,npt)                                  &
+                +tcarac(npt) *srad /eptp(jcp,npt) /eptp(jmp,npt)
 
       endif
 
@@ -151,12 +144,11 @@ endif
 !     INTEGRATION
 !===============================================================================
 
-call lagitg                                                       &
-!==========
- ( jtp    ,                                                       &
-   auxl1  , auxl2  , tsvar  )
+call lagitg(jtp, tcarac, pip)
 
 !===============================================================================
+
+deallocate(tcarac, pip)
 
 !----
 ! FIN

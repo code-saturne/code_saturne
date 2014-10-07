@@ -23,10 +23,8 @@
 subroutine lagipn &
 !================
 
- ( nbpmax ,                                                       &
-   npar1  , npar2  ,                                              &
-   iprev  ,                                                       &
-   vagaus )
+ ( npar1  , npar2  ,                                              &
+   iprev  )
 
 !===============================================================================
 ! FONCTION :
@@ -43,14 +41,11 @@ subroutine lagipn &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! npar1 ,npar2     ! e  ! <-- ! borne min et max des particules                !
 !                  !    !     !    a initialiser                               !
 ! iprev            ! e  ! <-- ! time step indicator for fields                 !
 !                  !    !     !   0: use fields at current time step           !
 !                  !    !     !   1: use fields at previous time step          !
-! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -84,11 +79,8 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax
 integer          npar1 , npar2
 integer          iprev
-
-double precision vagaus(nbpmax,*)
 
 ! Local variables
 
@@ -107,6 +99,7 @@ double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: viscl
+double precision, dimension(:,:), allocatable :: vagaus
 
 !===============================================================================
 
@@ -180,13 +173,15 @@ endif
 !     remarque : NORMALEN est dans le fichier ZUFALL.F
 !     ^^^^^^^^
 
+nomb = npar2-npar1+1
+allocate(vagaus(nomb,3))
+
 if (idistu.eq.1) then
-  nomb = npar2-npar1+1
-  call normalen (nomb,vagaus(npar1,1))
-  call normalen (nomb,vagaus(npar1,2))
-  call normalen (nomb,vagaus(npar1,3))
+  call normalen (nomb,vagaus(:,1))
+  call normalen (nomb,vagaus(:,2))
+  call normalen (nomb,vagaus(:,3))
 else
-  do npt = npar1,npar2
+  do npt = 1,nomb
     vagaus(npt,1) = 0.d0
     vagaus(npt,2) = 0.d0
     vagaus(npt,3) = 0.d0
@@ -197,13 +192,15 @@ do npt = npar1,npar2
 
   iel = ipepa(jisor,npt)
 
-  tu = sqrt( d2s3*w1(iel) )
+  tu = sqrt(d2s3*w1(iel))
 
-  eptp(juf,npt) = vel(1,iel) + vagaus(npt,1)*tu
-  eptp(jvf,npt) = vel(2,iel) + vagaus(npt,2)*tu
-  eptp(jwf,npt) = vel(3,iel) + vagaus(npt,3)*tu
+  eptp(juf,npt) = vel(1,iel) + vagaus(npt-npar1+1,1)*tu
+  eptp(jvf,npt) = vel(2,iel) + vagaus(npt-npar1+1,2)*tu
+  eptp(jwf,npt) = vel(3,iel) + vagaus(npt-npar1+1,3)*tu
 
 enddo
+
+deallocate(vagaus)
 
 !Calcul de la fluctuation de vitesse si le modèle de dépôt est activé
 

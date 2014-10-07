@@ -24,12 +24,11 @@ subroutine lagcar &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    nvlsta , iprev  ,                                              &
    dt     ,                                                       &
    taup   , tlag   ,                                              &
    piil   , bx     , tempct , statis ,                            &
-   gradpr , gradvf , energi , dissip , romp   )
+   gradpr , gradvf , energi , dissip )
 
 !===============================================================================
 ! FONCTION :
@@ -47,18 +46,17 @@ subroutine lagcar &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! iprev            ! e  ! <-- ! time step indicator for fields                 !
 !                  !    !     !   0: use fields at current time step           !
 !                  !    !     !   1: use fields at previous time step          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! taup(nbpmax)     ! tr ! --> ! temps caracteristiques dynamique               !
-! tlag(nbpmax)     ! tr ! --> ! temps caracteristiques fluide                  !
-! piil(nbpmax,3    ! tr ! --> ! terme dans l'integration des eds up            !
-! bx(nbpmax,3,2    ! tr ! --> ! caracteristiques de la turbulence              !
+! taup(nbpart)     ! tr ! --> ! temps caracteristiques dynamique               !
+! tlag(nbpart)     ! tr ! --> ! temps caracteristiques fluide                  !
+! piil(nbpart,3)   ! tr ! --> ! terme dans l'integration des eds up            !
+! bx(nbpart,3,2)   ! tr ! --> ! caracteristiques de la turbulence              !
 ! tempct           ! tr ! --> ! temps caracteristique thermique                !
-!   (nbpmax,2)     !    !     !                                                !
+!   (nbpart,2)     !    !     !                                                !
 ! statis(ncelet    ! tr ! <-- ! cumul des statistiques volumiques              !
 !    nvlsta)       !    !     !                                                !
 ! gradpr           ! tr ! <-- ! gradient de pression                           !
@@ -67,7 +65,6 @@ subroutine lagcar &
 !   (3,3,ncelet)   !    !     !                                                !
 ! energi(ncelet    ! tr ! --- ! tableau de travail                             !
 ! dissip(ncelet    ! tr ! --- ! tableau de travail                             !
-! romp(nbpmax)     ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -101,17 +98,16 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax
 integer          nvlsta
 integer          iprev
 
 double precision dt(ncelet)
-double precision taup(nbpmax) , tlag(nbpmax,3)
-double precision piil(nbpmax,3) , bx(nbpmax,3,2)
-double precision tempct(nbpmax,2)
+double precision taup(nbpart) , tlag(nbpart,3)
+double precision piil(nbpart,3) , bx(nbpart,3,2)
+double precision tempct(nbpart,2)
 double precision statis(ncelet,nvlsta)
 double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)
-double precision energi(ncelet) , dissip(ncelet), romp(nbpmax)
+double precision energi(ncelet) , dissip(ncelet), romp(nbpart)
 
 ! Local variables
 
@@ -259,7 +255,6 @@ do ip = 1,nbpart
     call uslatp                                                   &
     !==========
      ( nvar   , nscal  ,                                          &
-       nbpmax ,                                                   &
        ip     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul , taup(ip) ,    &
        dt     )
@@ -305,7 +300,6 @@ do ip = 1,nbpart
     call uslatc                                                   &
     !==========
      ( nvar   , nscal  ,                                          &
-       nbpmax ,                                                   &
        ip     ,                                                   &
        rep    , uvwr   , rom    , romp(ip) , xnul ,               &
        xcp    , xrkl   , tempct(ip,1) ,                           &

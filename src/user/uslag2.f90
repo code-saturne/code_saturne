@@ -26,7 +26,6 @@ subroutine uslag2 &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , ifrlag ,                                     &
    dt     )
@@ -60,7 +59,6 @@ subroutine uslag2 &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! i  ! <-- ! maximum number of particles allowed            !
 ! ntersl           ! i  ! <-- ! number of source terms of return coupling      !
 ! nvlsta           ! i  ! <-- ! nb of Lagrangian statistical variables         !
 ! nvisbr           ! i  ! <-- ! number of boundary statistics                  !
@@ -101,7 +99,6 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 integer          itypfb(nfabor) , itrifb(nfabor)
@@ -155,14 +152,12 @@ endif
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-
 !===============================================================================
 ! 1.  Memory management
 !===============================================================================
 
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
-
 
 !===============================================================================
 ! 2. Initialization
@@ -174,29 +169,27 @@ pis6 = pi / 6.d0
 ! 3. Construction of the boundary zones
 !===============================================================================
 
+! Definition of the boundary zones
+! --------------------------------
 
-!     Definition of the boundary zones
-!     --------------------------------
-
-!     For the Lagrangian module, the user defines nfrlag boundary zones
-!     from the color of the boundary faces, or more generally from their
-!     properties (colors, groups..) or from the boundary conditions prescribed
-!     in cs_user_boundary_conditions, or even from their coordinates. To do
-!     that, we fill the ifrlag(nfabor) array which gives for every boundary
-!     face the number of the zone to which it belongs ifrlag(ifac)
+! For the Lagrangian module, the user defines nfrlag boundary zones
+! from the properties (groups, ...) of the boundary faces, from the
+! boundary conditions, or even from their coordinates. To do this,
+! we fill the ifrlag(nfabor) array which gives for every boundary
+! face the number of the zone to which it belongs ifrlag(ifac)
 !
-!     Be careful, all the boundary faces must have been assigned.
+! Be careful, all the boundary faces must have been assigned.
 !
-!     The number of the zones (thus the values of ifrlag(ifac)) is arbitrarily
-!     chosen by the user, but must be a positive integer and inferior or equal
-!     to nflagm (parameter prescribed in lagpar.h).
+! The number of the zones (thus the values of ifrlag(ifac)) is arbitrarily
+! chosen by the user, but must be a positive integer and inferior or equal
+! to nflagm (parameter prescribed in lagpar.f90).
 !
-!     Afterwards, we assign to every zone a type named itylag that will be used
-!     to impose global boundary conditions.
+! Afterwards, we assign to every zone a type named itylag that will be used
+! to prescribe global boundary conditions.
 
 izone = -1
 
-! ---> First zone numbered izone=1 ( = color 10)
+! ---> First zone numbered izone=1 (= color 10)
 call getfbr('10',nlelt,lstelt)
 !==========
 
@@ -209,7 +202,7 @@ do ilelt = 1, nlelt
 
 enddo
 
-! ---> Second zone numbered izone=2 ( = part of color 4)
+! ---> Second zone numbered izone=2 (= part of color 4)
 call getfbr('4 and y < 1.0',nlelt,lstelt)
 !==========
 
@@ -243,25 +236,20 @@ do ilelt = 1, nlelt
 
 enddo
 
-
 !===============================================================================
 ! 4. Injection per particle class into the calculation domain
 !===============================================================================
 
-!   TO PROVIDE INFORMATION ABOUT THE PARTICLE CLASSES,
-!   WE FOLLOW A TWO-STEP PROCEDURE:
+! To provide information about the particle classes,
+! we follow a two-step procedure:
 
-!   1) FIRST, THE NUMBER OF PARTICLE CLASSES IS PRESCRIBED
-!      FOR EACH BOUNDARY ZONE: IUSNCL (by default, this parameter is equal to zero)
+!   1) first, the number of particle classes is prescribed
+!      for each boundary zone: iusncl (by default, this parameter is set to zero)
 
-!   2) AFTERWARDS, FOR EACH ZONE AND FOR EACH CLASS, WE PRESCRIBE
-!      THE PHYSICAL PROPERTIES OF THE PARTICLES
-!
+!   2) afterwards, for each zone and for each class, we prescribe
+!      the physical properties of the particles
 
-
-
-
-! --> Number of particle classes entering the domain
+! Number of particle classes entering the domain
 !   We assign here the number of classes for each zone previously identified.
 !
 !   This number is zero by default.
@@ -287,97 +275,98 @@ izone     = 5
 nbclas    = 0
 iusncl(izone) = nbclas
 
+! For every class associated with a zone,
+! we provide the following information.
 
-! --> For every class associated with a zone,
-!     we give the following information.
+! iusncl number of classes per zone
+! iusclb boundary conditions for the particles
+! = ientrl -> zone of particle inlet
+! = isortl -> particle outlet
+! = irebol -> rebound of the particles
+! = idepo1 -> definitive deposition
+! = idepo2 -> definitive deposition, but the particle remains in memory
+!             (useful only if iensi2 = 1)
+! = idepfa -> deposition of the particle with DLVO forces
+! = iencrl -> fouling (coal only iphyla = 2)
+! = isymtl -> symmetry condition for the particles (zero flux)
 
+! iczpar array:
+! ============
+!    ijnbp : number of particles per class and per zone
+!    ijfre : injection frequency. If ijfre = 0, then the injection
+!            occurs only at the first absolute iteration.
+!    iclst : number of the group to which the particle belongs
+!            (only if one wishes to calculate statistics per group)
+!    ijuvw : type of condition on the velocity
+!              = -1 imposed flow velocity
+!              =  0 imposed velocity along the normal direction of the
+!                   boundary face, with norm equal to rczpar(iuno)
+!              =  1 imposed velocity: we prescribe   rczpar(iupt)
+!                                                    rczpar(ivpt)
+!                                                    rczpar(iwpt)
+!              =  2 user-defined profile
+!    ijprpd : type of statistical weight
+!              =  1 automatic: we prescribe          rczpar(idebt)
+!                                                    rczpar(ipoit)
+!              =  2 user-defined profile
+!    ijprtp : type of temperature condition
+!              =  1 imposed temperature: we prescribe rczpar(itpt)
+!              =  2 user-defined profile
+!    ijprdp : type of diameter condition
+!              =  1 imposed diameter: we prescribe  rczpar(idpt)
+!                                                   rczpar(ivdpt)
+!              =  2 user-defined profile
+!    ijprtp : type of temperature condition
+!              =  1 imposed temperature: we prescribe rczpar(itpt)
+!              =  2 user-defined profile
+!    inuchl : number of the coal of the particle (only if iphyla = 2)
+!    irawcl : type of coal injection composition (only if iphyla = 2)
+!              = 0 coal injected with an user-defined composition
+!              = 1 raw coal injection
 
-!     iusncl number of classes per zone
-!     iusclb boundary conditions for the particles
-!     = ientrl -> zone of particle inlet
-!     = isortl -> particle outlet
-!     = irebol -> rebound of the particles
-!     = idepo1 -> definitive deposition
-!     = idepo2 -> definitive deposition, but the particle remains in memory
-!                 (useful only if iensi2 = 1)
-!     = idepfa -> deposition of the particle with DLVO forces
-!     = iencrl -> fouling (coal only iphyla = 2)
-!     = isymtl -> symmetry condition for the particles (zero flux)
+! rczpar array:
+! ============
+!    iuno  : Norm of the velocity (m/s)
+!    iupt  : Velocity along the X axis, for each class and for each zone (m/s)
+!    ivpt  : Velocity along the Y axis, for each class and for each zone (m/s)
+!    iwpt  : Velocity along the Z axis, for each class and for each zone (m/s
+!    ipoit : Statistical weight (number of samples) associated
+!            to the particle (automatically computed to respect a mass
+!            flow rate if it is defined)
+!    idebt : Mass flow rate (kg/s)
 
-!     Array iczpar:
-!     ============
-!        ijnbp : number of particles per class and per zone
-!        ijfre : injection frequency. If ijfre = 0, then the injection
-!                occurs only at the first absolute iteration.
-!        iclst : number of the group to which the particle belongs
-!                (only if one wishes to calculate statistics per group)
-!        ijuvw : type of condition on the velocity
-!                  = -1 imposed flow velocity
-!                  =  0 imposed velocity along the normal direction of the
-!                      boundary face, with norm equal to rczpar(iuno)
-!                  =  1 imposed velocity: we prescribe   rczpar(iupt)
-!                                                        rczpar(ivpt)
-!                                                        rczpar(iwpt)
-!                  =  2 user-defined profile
-!        ijprtp : type of temperature condition
-!                  =  1 imposed temperature: we prescribe rczpar(itpt)
-!                  =  2 user-defined profile
-!        ijprdp : type of diameter condition
-!                  =  1 imposed diameter: we prescribe  rczpar(idpt)
-!                                                       rczpar(ivdpt)
-!                  =  2 user-defined profile
-!        ijprtp : type of temperature condition
-!                  =  1 imposed temperature: we prescribe rczpar(itpt)
-!                  =  2 user-defined profile
-!        inuchl : number of the coal of the particle (only if iphyla = 2)
-!        irawcl : type of coal injection composition (only if iphyla = 2)
-!                  = 0 coal injected with an user-defined composition
-!                  = 1 raw coal injection
+!    Physical characteristics:
+!      idpt   : diameter (m)
+!      ivdpt  : standard deviation of the diameter (m)
+!      iropt  : density (kg/m3)
+!      itpt   : temperature in Celsius degress (no enthalpy)
+!      icpt   : specific heat (J/kg/K)
+!      iepsi  : emissivity (if =0 then no radiative effect is taken into account)
 
-!     Array rczpar:
-!     ============
-!        iuno  : Norm of the velocity (m/s)
-!        iupt  : Velocity along the X axis, for each class and for each zone (m/s)
-!        ivpt  : Velocity along the Y axis, for each class and for each zone (m/s)
-!        iwpt  : Velocity along the Z axis, for each class and for each zone (m/s
-!        ipoit : Statistical weight (number of samples) associated
-!                to the particle (automatically computed to respect a mass
-!                flow rate if it is defined)
-!        idebt : Mass flow rate (kg/s)
+!     If coal (iphyla=2)
+!        ihpt    : temperature in Kelvin degres (no enthalpy) (layer by layer)
+!        ifrmwt  : mass fraction of moisture in the particle
+!        ifrmch  : mass fraction of reactive coal in the particle (layer by layer)
+!        ifrmck  : mass fraction of coke coal in the particle (layer by layer)
+!        irdck   : coke diameter (m)
+!        ird0p   : coal particle initial diameter (m)
+!        irhock0 : density of coke at the end of the pyrolysis (kg/m³)
+!                  (layer by layer)
 
-!        Physical characteristics:
-!          idpt   : diameter (m)
-!          ivdpt  : standard deviation of the diameter (m)
-!          iropt  : density (kg/m3)
-!          itpt   : temperature in Celsius degress (no enthalpy)
-!          icpt   : specific heat (J/kg/K)
-!          iepsi  : emissivity (if =0 then no radiative effect is taken into account)
-
-!         If coal (iphyla=2)
-!            ihpt    : temperature in Kelvin degres (no enthalpy) (layer by layer)
-!            ifrmwt  : mass fraction of moisture in the particle
-!            ifrmch  : mass fraction of reactive coal in the particle (layer by layer)
-!            ifrmck  : mass fraction of coke coal in the particle (layer by layer)
-!            irdck   : coke diameter (m)
-!            ird0p   : coal particle initial diameter (m)
-!            irhock0 : density of coke at the end of the pyrolysis (kg/m³) (layer by layer)
-
-
-! ---> EXAMPLE : First zone, numbered IZONE = 1 (NBCLAS classes)
-!        IUSCLB : adherence of the particle to a boundary face
-!        IJNBP  : 10 particles for each class,
-!        IJFRE  : injection every other time step
-!        IJUVW, IUPT, IVPT, IWPT : imposed velocity on 1.1D0, 0.0D0, 0.0D0
-!        ICPT   : cp equal to 10000
-!        ITPT   : temperature equal to 25 Celsius degress
-!        IDPT   : diameter equal to 50.E-6 m
-!        IEPSI  : emissivity equal to 0.7
-!        IVDPT  : constant diameter ==> standard deviation null
-!        IROPT  : density
-!        IPOIT  : statistical weight (number of physical particles
+! ---> Example : first zone, numbered izone = 1 (nbclas classes)
+!        iusclb : adherence of the particle to a boundary face
+!        ijnbp  : 10 particles  each class,
+!        ijfre  : injection every other time step
+!        ijuvw, iupt, ivpt, iwpt : imposed velocity on 1.1, 0.0, 0.0
+!        icpt   : cp equal to 10000
+!        itpt   : temperature equal to 25 Celsius degress
+!        idpt   : diameter equal to 50.E-6 m
+!        iepsi  : emissivity equal to 0.7
+!        ivdpt  : constant diameter ==> standard deviation null
+!        iropt  : density
+!        ipoit  : statistical weight (number of physical particles
 !                 represented by one statistical particle)
-!        IDEBT  : mass flow rate
-
+!        idebt  : mass flow rate
 
 izone         = 1
 nbclas        = iusncl(izone)
@@ -521,7 +510,6 @@ enddo
 
 izone     = 2
 iusclb (izone)         =  irebol
-
 
 ! same procedure for the other zones...
 

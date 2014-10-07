@@ -4606,8 +4606,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           cs_int_t          *jmfadh,
                           cs_int_t          *jndisp,
                           cs_int_t          *jclst,
-                          cs_int_t          *jvls,
-                          cs_int_t          *nvp1)
+                          cs_int_t          *jvls)
 {
   cs_lnum_t  i;
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -4976,18 +4975,6 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   for (int u_id = 0; u_id < n_user; u_id++) {
     jvls[u_id]
       = p_am->displ[0][CS_LAGR_USER]/sizeof(cs_real_t) + 1 + u_id;
-  }
-
-  /* Determine nvp1 (max real attribute, for safety) */
-
-  *nvp1 = 0;
-
-  for (cs_lagr_attribute_t attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
-    if (p_am->count[0][attr] > 0 && p_am->datatype[attr] == CS_REAL_TYPE) {
-      int iend = p_am->displ[0][attr]/sizeof(cs_real_t) + p_am->count[0][attr];
-      if (iend > *nvp1)
-        *nvp1 = iend;
-    }
   }
 }
 

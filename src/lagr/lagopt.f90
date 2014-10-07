@@ -1221,11 +1221,6 @@ endif
 
 if (nvls.gt.0) nvp = nvp + nvls
 
-!-->  NVP1 is used for tsvar, and is computed by lagbeg
-
-nvp1 = -1
-
-
 ! 3.3 DEFINITION DES POINTEURS SUR LES VARIABLES LIEES AUX PARTICULES
 
 

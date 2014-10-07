@@ -275,8 +275,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
                           cs_int_t          *jmfadh,
                           cs_int_t          *jndisp,
                           cs_int_t          *jclst,
-                          cs_int_t          *jvls,
-                          cs_int_t          *nvp1);
+                          cs_int_t          *jvls);
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in

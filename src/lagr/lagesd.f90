@@ -24,7 +24,6 @@ subroutine lagesd &
 !================
 
  ( ifac   , ip     ,                                              &
-   nbpmax ,                                                       &
    taup   , piil   ,                                              &
    vagaus , gradpr , romp,                                        &
    tempf  , romf   , ustar  , lvisq  ,tvisq   ,  depint )
@@ -56,11 +55,10 @@ subroutine lagesd &
 !__________________!____!_____!________________________________________________!
 ! ifac             ! e  ! <-- !                                                !
 ! ip               ! e  ! <-- !                                                !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
+! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
+! piil(nbpart,3)   ! tr ! <-- ! terme dans l'integration des eds up            !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
+!(nbpart,nvgaus)   !    !     !                                                !
 ! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! tempf            !  r ! <-- ! temperature of the fluid (K)                   !
@@ -103,13 +101,12 @@ implicit none
 ! Arguments
 
 integer          ifac   , ip
-integer          nbpmax
 
-double precision taup(nbpmax)
-double precision piil(nbpmax,3)
-double precision vagaus(nbpmax,*)
+double precision taup(nbpart)
+double precision piil(nbpart,3)
+double precision vagaus(nbpart,*)
 double precision gradpr(3,ncelet)
-double precision romp(nbpmax)
+double precision romp(nbpart)
 double precision ustar
 
 ! Local variables

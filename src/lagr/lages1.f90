@@ -23,8 +23,7 @@
 subroutine lages1 &
 !================
 
- ( nbpmax ,                                                       &
-   rtpa   , propce ,                                              &
+ ( rtpa   , propce ,                                              &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )
@@ -43,16 +42,15 @@ subroutine lages1 &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! piil(nbpmax,3    ! tr ! <-- ! terme dans l'integration des eds up            !
-! bx(nbpmax,3,2    ! tr ! <-- ! caracteristiques de la turbulence              !
+! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
+! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
+! piil(nbpart,3)   ! tr ! <-- ! terme dans l'integration des eds up            !
+! bx(nbpart,3,2)   ! tr ! <-- ! caracteristiques de la turbulence              !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
+!(nbpart,nvgaus    !    !     !                                                !
 ! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! romp             ! tr ! <-- ! masse volumique des particules                 !
 ! fextla           ! tr ! <-- ! champ de forces exterieur                      !
@@ -89,17 +87,15 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax
-
 double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision taup(nbpmax) , tlag(nbpmax,3)
-double precision piil(nbpmax,3) , bx(nbpmax,3,2)
-double precision vagaus(nbpmax,*)
-double precision brgaus(nbpmax,*) , terbru(nbpmax)
+double precision taup(nbpart) , tlag(nbpart,3)
+double precision piil(nbpart,3) , bx(nbpart,3,2)
+double precision vagaus(nbpart,*), brgaus(nbpart,*)
+double precision terbru(nbpart)
 double precision gradpr(3,ncelet)
-double precision romp(nbpmax)
-double precision fextla(nbpmax,3)
+double precision romp(nbpart)
+double precision fextla(nbpart,3)
 
 ! Local variables
 

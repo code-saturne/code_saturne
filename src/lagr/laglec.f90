@@ -53,7 +53,6 @@ subroutine laglec &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nfabor           ! i  ! <-- ! number of boundary faces                       !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -84,7 +83,6 @@ use cstnum
 use cstphy
 use numvar
 use optcal
-use dimens, only: nvar
 use entsor
 use parall
 use period
@@ -105,7 +103,6 @@ implicit none
 ! Arguments
 
 integer          ncelet , ncel   , nfabor
-integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 double precision statis(ncelet,nvlsta)

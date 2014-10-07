@@ -24,14 +24,11 @@ subroutine lagesp &
 !================
 
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    dt     , rtpa   , propce ,                                     &
-   statis , stativ ,                                              &
-   taup   , tlag   , piil   ,                                     &
-   tsuf   , tsup   , bx     , tsfext ,                            &
-   vagaus , gradpr , gradvf , brgaus , terbru , romp   , auxl2 ,  &
-   vislen  )
+   statis , stativ , taup   , tlag   , piil   ,                   &
+   bx     , tsfext ,                                              &
+   gradpr , gradvf , terbru , vislen  )
 
 !===============================================================================
 ! Purpose:
@@ -54,7 +51,6 @@ subroutine lagesp &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -67,22 +63,17 @@ subroutine lagesp &
 ! stativ           ! tr ! <-- ! cumul pour les variances des                   !
 !(ncelet,          !    !     !    statistiques volumiques                     !
 !   nvlsta-1)      !    !     !                                                !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tlag(nbpmax)     ! tr ! <-- ! temps caracteristique fluide                   !
-! piil(nbpmax,3    ! tr ! --> ! terme dans l'integration des eds up            !
-! tsup(nbpmax,3    ! tr ! --> ! prediction 1er sous-pas pour                   !
+! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
+! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
+! piil(nbpart,3)   ! tr ! --> ! terme dans l'integration des eds up            !
+! tsup(nbpart,3)   ! tr ! --> ! prediction 1er sous-pas pour                   !
 !                  !    !     !   la vitesse des particules                    !
-! tsuf(nbpmax,3    ! tr ! --> ! prediction 1er sous-pas pour                   !
+! tsuf(nbpart,3)   ! tr ! --> ! prediction 1er sous-pas pour                   !
 !                  !    !     !   la vitesse du fluide vu                      !
-! bx(nbpmax,3,2    ! tr ! <-- ! caracteristiques de la turbulence              !
-! tsfext(nbpmax    ! tr ! <-- ! infos pour le couplage retour                  !
-! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
+! bx(nbpart,3,2)   ! tr ! <-- ! caracteristiques de la turbulence              !
+! tsfext(nbpart)   ! tr ! <-- ! infos pour le couplage retour                  !
 ! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
 ! gradvf(3,3,ncel) ! tr ! <-- ! gradient de la vitesse du fluide               !
-! romp             ! tr ! --- ! masse volumique des particules                 !
-! auxl2            ! tr ! --- ! tableau de travail                             !
-!    (nbpmax,7)    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -114,30 +105,29 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 
 double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision statis(ncelet,*),stativ(ncelet,*)
-double precision taup(nbpmax) , tlag(nbpmax,3)
-double precision piil(nbpmax,3) , bx(nbpmax,3,2)
-double precision tsuf(nbpmax,3) , tsup(nbpmax,3)
-double precision tsfext(nbpmax)
-double precision vagaus(nbpmax,*)
+double precision taup(nbpart) , tlag(nbpart,3)
+double precision piil(nbpart,3) , bx(nbpart,3,2)
+double precision tsfext(nbpart)
 double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)
-double precision brgaus(nbpmax,*) , terbru(nbpmax)
-double precision romp(nbpmax) , auxl2(nbpmax,7)
+double precision terbru(nbpart)
+double precision romp(nbpart)
 double precision vislen(nfabor)
 
 ! Local variables
 
-integer          ip
+integer          ip, ivf
 integer          iifacl
 
 double precision d3 , aa
 
 double precision, allocatable, dimension(:,:) :: fextla
+double precision, allocatable, dimension(:,:) :: tsuf, tsup
+double precision, allocatable, dimension(:,:) :: vagaus, brgaus
 
 !===============================================================================
 
@@ -162,10 +152,36 @@ enddo
 ! 2.  Management of user external force fields
 !===============================================================================
 
-! Allocate a temporay array
-allocate(fextla(nbpmax,3))
+! Allocate temporay arrays
+allocate(fextla(nbpart,3))
+allocate(tsuf(nbpart,3))
+allocate(tsup(nbpart,3))
+allocate(vagaus(nbpart,nvgaus))
 
-do ip = 1, nbpmax
+! Random values
+
+if (idistu.eq.1) then
+  do ivf = 1,nvgaus
+    call normalen(nbpart, vagaus(:,ivf))
+  enddo
+else
+  do ivf = 1,nvgaus
+    do ip = 1,nbpart
+      vagaus(ip,ivf) = 0.d0
+    enddo
+  enddo
+endif
+
+! Brownian movement
+
+if (lamvbr.eq.1) then
+  allocate(brgaus(nbpart,nbrgau))
+  do ivf = 1,nbrgau
+    call normalen(nbpart, brgaus(:,ivf))
+  enddo
+endif
+
+do ip = 1, nbpart
   fextla(ip,1) = 0.d0
   fextla(ip,2) = 0.d0
   fextla(ip,3) = 0.d0
@@ -174,7 +190,6 @@ enddo
 call uslafe                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    dt     ,                                                       &
    statis , stativ ,                                              &
@@ -182,7 +197,6 @@ call uslafe                                                       &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
    romp   , fextla )
-
 
 !===============================================================================
 ! 4.  First order
@@ -199,8 +213,7 @@ if (nordre.eq.1) then
 
   call lages1                                                     &
   !==========
-   ( nbpmax ,                                                     &
-     rtpa   , propce ,                                            &
+   ( rtpa   , propce ,                                            &
      taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &
      brgaus , terbru , fextla )
@@ -214,8 +227,7 @@ if (nordre.eq.1) then
 
      call lagdep                                                  &
     !==========
-   ( nbpmax ,                                                     &
-     rtpa   , propce ,                                            &
+   ( rtpa   , propce ,                                            &
      taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &
      fextla , vislen)
@@ -230,17 +242,22 @@ else
 
   call lages2                                                     &
   !==========
-   ( nbpmax ,                                                     &
-     rtpa   , propce ,                                            &
+   ( rtpa   , propce ,                                            &
      taup   , tlag   , piil   ,                                   &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
-     auxl2  , gradpr ,                                            &
+     gradpr ,                                                     &
      romp   , brgaus , terbru , fextla )
 
 endif
 
 ! Free memory
+if (lamvbr.eq.1) then
+  deallocate(brgaus)
+endif
+deallocate(vagaus)
 deallocate(fextla)
+deallocate(tsuf)
+deallocate(tsup)
 
 !===============================================================================
 

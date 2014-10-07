@@ -24,7 +24,7 @@ subroutine lagitg &
 !================
 
  ( ivar   ,                                                       &
-   tcarac , pip    , tsvar  )
+   tcarac , pip    )
 
 !===============================================================================
 ! FONCTION :
@@ -51,11 +51,8 @@ subroutine lagitg &
 !__________________!____!_____!________________________________________________!
 ! ivar             ! e  ! <-- ! numero de la variable a integrer               !
 !                  !    !     ! dans le tableau eptp                           !
-! tcarac(nbpmax    ! tr ! <-- ! temps caracteristique associe a l'eds          !
-! pip(nbpmax)      ! tr ! <-- ! second membre associe a l'eds                  !
-! tsvar            ! tr ! --> ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
+! tcarac(nbpart)   ! tr ! <-- ! temps caracteristique associe a l'eds          !
+! pip(nbpart)      ! tr ! <-- ! second membre associe a l'eds                  !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -74,7 +71,6 @@ use cstphy
 use cstnum
 use optcal
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 
@@ -86,72 +82,71 @@ implicit none
 
 integer          ivar
 
-double precision tcarac(nbpmax) , pip(nbpmax)
-double precision tsvar(nbpmax,nvp1)
+double precision tcarac(nbpart) , pip(nbpart)
 
 ! Local variables
 
 integer          npt
-double precision aux1 , aux2 , ter1 , ter2 , ter3
+double precision aux1 , aux2 , ter1 , ter2
 
 !===============================================================================
 
 
-  if (nor.eq.1) then
+if (nor.eq.1) then
 
-    do npt = 1, nbpart
-      if (ipepa(jisor,npt).gt.0) then
+  do npt = 1, nbpart
+    if (ipepa(jisor,npt).gt.0) then
 
-        if (tcarac(npt).le.0.d0) then
-          write(nfecra,2000) ivar, tcarac(npt), npt
-          call csexit (1)
-        endif
-
-        aux1 = dtp/tcarac(npt)
-        aux2 = exp(-aux1)
-
-        ter1 = eptpa(ivar,npt) * aux2
-        ter2 = pip(npt) * (1.d0-aux2)
-
-!        Pour le cas NORDRE= 1 ou s'il y a rebond,
-!          le ETTP suivant est le resultat final
-
-        eptp(ivar,npt) = ter1 + ter2
-
-!        Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
-
-        ter3 = ( -aux2 + (1.d0-aux2) / aux1 ) * pip(npt)
-        tsvar(npt,ivar) = 0.5d0 * ter1 + ter3
+      if (tcarac(npt).le.0.d0) then
+        write(nfecra,2000) ivar, tcarac(npt), npt
+        call csexit (1)
       endif
-    enddo
 
-  else if (nor.eq.2) then
+      aux1 = dtp/tcarac(npt)
+      aux2 = exp(-aux1)
 
-    do npt = 1, nbpart
-      if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
+      ter1 = eptpa(ivar,npt) * aux2
+      ter2 = pip(npt) * (1.d0-aux2)
 
-        if (tcarac(npt).le.0.d0) then
-          write(nfecra,2000) ivar, tcarac(npt), npt
-          call csexit (1)
-        endif
+      ! Pour le cas NORDRE= 1 ou s'il y a rebond,
+      ! le ETTP suivant est le resultat final
 
-        aux1 = dtp/tcarac(npt)
-        aux2 = exp(-aux1)
+      eptp(ivar,npt) = ter1 + ter2
 
-        ter1 = 0.5d0 * eptpa(ivar,npt) * aux2
-        ter2 = pip(npt) * ( 1.d0 - (1.d0-aux2) / aux1 )
+      ! Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
 
-!        Pour le cas NORDRE= 2, le ETTP suivant est le resultat final
+      ! ter3 = ( -aux2 + (1.d0-aux2) / aux1 ) * pip(npt)
+      ! tsvar(npt,ivar) = 0.5d0 * ter1 + ter3
+    endif
+  enddo
 
-        eptp(ivar,npt) = tsvar(npt,ivar) + ter1 + ter2
-      endif
-    enddo
+! else if (nor.eq.2) then
 
-  else
-    write(nfecra,1000) nor
-    call csexit (1)
-    !==========
-  endif
+!  do npt = 1, nbpart
+!    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
+
+!      if (tcarac(npt).le.0.d0) then
+!        write(nfecra,2000) ivar, tcarac(npt), npt
+!        call csexit (1)
+!      endif
+
+!      aux1 = dtp/tcarac(npt)
+!      aux2 = exp(-aux1)
+
+!      ter1 = 0.5d0 * eptpa(ivar,npt) * aux2
+!      ter2 = pip(npt) * ( 1.d0 - (1.d0-aux2) / aux1 )
+
+!      ! Pour le cas NORDRE= 2, le ETTP suivant est le resultat final
+
+!      eptp(ivar,npt) = tsvar(npt,ivar) + ter1 + ter2
+!    endif
+!  enddo
+
+else
+  write(nfecra,1000) nor
+  call csexit (1)
+  !==========
+endif
 
 !===============================================================================
 

@@ -23,8 +23,7 @@
 subroutine lagich &
 !================
 
- ( propce , tempct , tsvar  , cpgd1  , cpgd2  ,                &
-   cpght                                         )
+ ( propce , tempct , cpgd1  , cpgd2  , cpght )
 
 !===============================================================================
 ! FONCTION :
@@ -49,12 +48,9 @@ subroutine lagich &
 !__________________!____!_____!________________________________________________!
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
+!  (nbpart,2)      !    !     !                                                !
 ! cpgd1,cpgd2,     ! tr ! --> ! termes de devolatilisation 1 et 2 et           !
-!  cpght(nbpmax    !    !     !   de combusion heterogene (charbon             !
+!  cpght(nbpart)   !    !     !   de combusion heterogene (charbon             !
 !                  !    !     !   avec couplage retour thermique)              !
 !__________________!____!_____!________________________________________________!
 
@@ -74,7 +70,6 @@ use cstphy
 use cstnum
 use optcal
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -92,9 +87,8 @@ implicit none
 ! Arguments
 
 double precision propce(ncelet,*)
-double precision tempct(nbpmax,2)
-double precision tsvar(nbpmax,nvp1)
-double precision cpgd1(nbpmax), cpgd2(nbpmax), cpght(nbpmax)
+double precision tempct(nbpart,2)
+double precision cpgd1(nbpart), cpgd2(nbpart), cpght(nbpart)
 
 ! Local variables
 
@@ -238,7 +232,7 @@ do npt = 1,nbpart
     call lagsec                                                                &
     !==========
     ( npt   ,                                                                  &
-      propce , tempct , tsvar ,                                                &
+      propce , tempct ,                                                        &
       rayon , mlayer , mwater , mwat_max , volume_couche  , sherw , fwat   )
 
 
@@ -514,7 +508,7 @@ do npt = 1,nbpart
     !==========
     ( npt    ,                                                                 &
       propce , tempct ,                                                        &
-      rayon  , mlayer , phith , temp  , tsvar , volume_couche )
+      rayon  , mlayer , phith , temp  , volume_couche )
 
     do ilayer = 1, nlayer
       eptp(jhp(ilayer),npt) = temp(ilayer)

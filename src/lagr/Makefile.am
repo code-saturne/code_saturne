@@ -107,7 +107,6 @@ lagitp.f90 \
 laglec.f90 \
 laglis.f90 \
 lagnew.f90 \
-lagnpr.f90 \
 lagopt.f90 \
 lagout.f90 \
 lagphy.f90 \

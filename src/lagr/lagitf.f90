@@ -23,9 +23,7 @@
 subroutine lagitf &
 !================
 
- ( rtp    , propce ,                                              &
-   tsvar  ,                                                       &
-   auxl1  )
+ ( rtp    , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -45,10 +43,6 @@ subroutine lagitf &
 ! rtp              ! tr ! <-- ! variables de calcul au centre des              !
 ! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
-! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -68,7 +62,6 @@ use cstnum
 use optcal
 use dimens, only: nvar
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -85,8 +78,6 @@ implicit none
 
 double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
-double precision tsvar(nbpmax,nvp1)
-double precision auxl1(nbpmax)
 
 ! Local variables
 
@@ -99,6 +90,7 @@ double precision, allocatable, dimension(:) :: tempf
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), allocatable :: auxl1
 
 !===============================================================================
 
@@ -107,6 +99,7 @@ double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 !===============================================================================
 
 ! Allocate a temporary array
+allocate(auxl1(nbpart))
 allocate(tempf(ncelet))
 
 ! Initialize variables to avoid compiler warnings
@@ -229,34 +222,36 @@ if (nor.eq.1) then
 
       eptp(jtf,npt) = ter1 + ter2
 
-!            Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
+      ! Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
 
-      tsvar(npt,jtf) = 0.5d0 * ter1                               &
-                     + tempf(iel) * ( -aux2 +(aux2-1.d0) / aux1 )
+      ! tsvar(npt,jtf) =    0.5d0 * ter1                               &
+      !                   + tempf(iel) * ( -aux2 +(aux2-1.d0) / aux1 )
     endif
   enddo
 
-else if (nor.eq.2) then
+! else if (nor.eq.2) then
 
-  do npt = 1,nbpart
+!  do npt = 1,nbpart
 
-    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
+!    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
 
-      iel = ipepa(jisor,npt)
+!      iel = ipepa(jisor,npt)
 
-      aux1 = -dtp/auxl1(npt)
-      aux2 = exp(aux1)
+!      aux1 = -dtp/auxl1(npt)
+!      aux2 = exp(aux1)
 
-      ter1 = 0.5d0 * eptpa(jtf,npt) * aux2
-      ter2 = tempf(iel) * (1.d0 - (aux2-1.d0) / aux1)
+!      ter1 = 0.5d0 * eptpa(jtf,npt) * aux2
+!      ter2 = tempf(iel) * (1.d0 - (aux2-1.d0) / aux1)
 
-      eptp(jtf,npt) = tsvar(npt,jtf) + ter1 + ter2
-    endif
-  enddo
+!      eptp(jtf,npt) = tsvar(npt,jtf) + ter1 + ter2
+!    endif
+!  enddo
+
 endif
 
 ! Free memory
 deallocate(tempf)
+deallocate(auxl1)
 
 !===============================================================================
 

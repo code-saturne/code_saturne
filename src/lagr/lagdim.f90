@@ -55,12 +55,11 @@ module lagdim
   !=============================================================================
   ! 3. Dimensions des tableaux particulaires
 
-  !     nvp1         : number of real particle variables
   !     ntersl       : nombre de termes sources pour couplage retour
   !     nvlsta       : nombre de variables statistiques
   !     nvisbr       : nombre de variables a enregistrer sur les frontieres
 
-  integer, save ::  nvp1, ntersl, nvlsta, nvisbr
+  integer, save ::  ntersl, nvlsta, nvisbr
 
   !=============================================================================
 

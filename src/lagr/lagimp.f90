@@ -20,10 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine lagimp &
+subroutine lagimp
 !================
-
- ( tsvar  , auxl1  , auxl2  )
 
 !===============================================================================
 ! FONCTION :
@@ -39,11 +37,6 @@ subroutine lagimp &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
-! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -62,7 +55,6 @@ use cstphy
 use cstnum
 use optcal
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use mesh
@@ -73,32 +65,30 @@ implicit none
 
 ! Arguments
 
-double precision tsvar(nbpmax,nvp1)
-double precision auxl1(nbpmax) , auxl2(nbpmax)
-
 ! Local variables
 
 integer          npt
+double precision, dimension(:), allocatable :: tcarac, pip
 
 !===============================================================================
 
+allocate(tcarac(nbpart), pip(nbpart))
 
 do npt = 1,nbpart
 
   if ( ipepa(jisor,npt).gt.0 ) then
 
-    auxl1(npt)     = 1.d0
-    auxl2(npt)     = eptp(jmp,npt)
+    tcarac(npt) = 1.d0
+    pip(npt)    = eptp(jmp,npt)
 
   endif
 enddo
 
-call lagitg                                                       &
-!==========
- ( jmp    ,                                                       &
-   auxl1  , auxl2  , tsvar  )
+call lagitg (jmp, tcarac, pip)
 
 !===============================================================================
+
+deallocate(tcarac, pip)
 
 !----
 ! FIN

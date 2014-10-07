@@ -24,7 +24,6 @@ subroutine lagrus &
 !================
 
  ( ncelet , ncel   ,                                              &
-   nbpmax ,                                                       &
    croule )
 
 !===============================================================================
@@ -44,7 +43,6 @@ subroutine lagrus &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! croule(ncelet)   ! tr ! <-- ! critere d'importance                           !
@@ -65,6 +63,7 @@ use numvar
 use cstnum
 use optcal
 use entsor
+use lagdim, only: nbpmax
 use lagpar
 use lagran
 
@@ -75,7 +74,6 @@ implicit none
 ! Arguments
 
 integer          ncelet , ncel
-integer          nbpmax
 
 double precision croule(ncelet)
 
@@ -214,7 +212,7 @@ dnbpar = dnbpar + dnpclo
 
 ! FIXME : rewrite former lageli function
 
-!!$call lageli(nbpmax, npars, dnpars)
+!!$call lageli(npars, dnpars)
 
 ! if ( npars.ne.(npkill+npcsup) ) then
 !   write(nfecra,9000)

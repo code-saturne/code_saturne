@@ -24,7 +24,7 @@ subroutine lagsec                                                              &
 !================
 
  ( npt   ,                                                                     &
-   propce , tempct , tsvar ,                                                   &
+   propce , tempct ,                                                           &
    rayon , mlayer , mwater , mwat_max , volume_couche  , sherw , fwat   )
 
 
@@ -52,10 +52,7 @@ subroutine lagsec                                                              &
 ! npt              ! e  ! <-- ! numero de la particule a traiter               !
 ! propce(ncelet, *)! tr ! <-- ! physical properties at cell centers            !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
+!  (nbpart,2)      !    !     !                                                !
 ! rayon            ! tr ! <-- ! rayons frontieres des differentes couches      !
 !  (nlayer)        !    !     !   (en m) (1 par couche)                        !
 ! mlayer           ! tr ! <-- ! masse des differentes couches (en kg)          !
@@ -82,7 +79,6 @@ subroutine lagsec                                                              &
 use numvar
 use cstnum
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -99,7 +95,7 @@ implicit none
 integer          npt
 
 double precision propce(ncelet,*)
-double precision tempct(nbpmax,2), tsvar(nbpmax,nvp1)
+double precision tempct(nbpart,2)
 double precision rayon(nlayer), mlayer(nlayer), mwater(nlayer)
 double precision mwat_max, volume_couche, sherw, fwat(nlayer)
 
@@ -107,7 +103,8 @@ double precision mwat_max, volume_couche, sherw, fwat(nlayer)
 logical          limitateur
 integer          ilayer, ilayer_wat, iel
 double precision tpk, aux1, aux2, aux3, fwattot , fwat_restant
-double precision tsat, fwatsat(nlayer), phith(nlayer), temp(nlayer), tssauv(nlayer)
+double precision tsat, fwatsat(nlayer), phith(nlayer), temp(nlayer)
+! double precision tssauv(nlayer)
 
 double precision precis, lv, tebl, tlimit, tmini
 precis = 1.d-15
@@ -222,20 +219,20 @@ do ilayer=1,nlayer
 enddo
 
 ! On sauvegarde le tableau de correction pour le 2e ordre
-do ilayer=1,nlayer
-  tssauv(ilayer)=tsvar(npt,jhp(ilayer))
-enddo
+! do ilayer=1,nlayer
+!  tssauv(ilayer) = tsvar(npt,jhp(ilayer))
+! enddo
 
 call lagtmp                                                                    &
 !==========
 ( npt    ,                                                                     &
   propce , tempct ,                                                            &
-  rayon  , mlayer , phith , temp  , tsvar , volume_couche )
+  rayon  , mlayer , phith , temp  , volume_couche )
 
 ! On remet le tableau de correction pour le 2e ordre
-do ilayer=1,nlayer
-  tsvar(npt,jhp(ilayer))=tssauv(ilayer)
-enddo
+! do ilayer=1,nlayer
+!  tsvar(npt,jhp(ilayer)) = tssauv(ilayer)
+! enddo
 
 ! On calcule le flux d'evaporation/condensation tel que T_i=Tsat
 do ilayer=1,nlayer

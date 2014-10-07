@@ -23,13 +23,11 @@
 subroutine lagcou &
 !================
 
- ( nbpmax ,                                                       &
-   ntersl ,                                                       &
+ ( ntersl ,                                                       &
    propce ,                                                       &
    taup   , tempct , tsfext ,                                     &
    cpgd1  , cpgd2  , cpght  ,                                     &
-   tslag  , volp   , volm   ,                                     &
-   auxl1  , auxl2  , auxl3  )
+   volp   , volm   )
 
 !===============================================================================
 ! FONCTION :
@@ -59,23 +57,17 @@ subroutine lagcou &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! taup(nbpmax)     ! tr ! <-- ! temps caracteristique dynamique                !
-! tsfext(nbpmax    ! tr ! <-- ! forces externes                                !
+! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
+! tsfext(nbpart)   ! tr ! <-- ! forces externes                                !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
+!  (nbpart,2)      !    !     !                                                !
 ! cpgd1,cpgd2,     ! tr ! <-- ! termes de devolatilisation 1 et 2 et           !
-!  cpght(nbpmax    !    !     !   de combusion heterogene (charbon             !
+!  cpght(nbpart)   !    !     !   de combusion heterogene (charbon             !
 !                  !    !     !   avec couplage retour thermique)              !
-! tslag(nbpmax,    ! tr ! --- ! tableau de travail                             !
-!     ntersl)      !    !     !                                                !
 ! volp(ncelet)     ! tr ! --- ! fraction volumique des particules              !
 ! volm(ncelet)     ! tr ! --- ! fraction massique des particules               !
-! auxl1(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl2(nbpmax)    ! tr ! --- ! tableau de travail                             !
-! auxl3(nbpmax)    ! tr ! --- ! tableau de travail                             !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -112,16 +104,13 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax
 integer          ntersl
 
 double precision propce(ncelet,*)
-double precision taup(nbpmax) , tempct(nbpmax,2)
-double precision tsfext(nbpmax)
-double precision cpgd1(nbpmax) , cpgd2(nbpmax) , cpght(nbpmax)
-double precision tslag(ncelet,ntersl)
+double precision taup(nbpart) , tempct(nbpart,2)
+double precision tsfext(nbpart)
+double precision cpgd1(nbpart) , cpgd2(nbpart) , cpght(nbpart)
 double precision volp(ncelet) , volm(ncelet)
-double precision auxl1(nbpmax) , auxl2(nbpmax) , auxl3(nbpmax)
 
 ! Local variables
 
@@ -131,6 +120,8 @@ double precision uuf , vvf , wwf , mf
 
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:,:), pointer :: vel
+double precision, allocatable, dimension(:,:) :: tslag
+double precision, allocatable, dimension(:) :: auxl1, auxl2, auxl3
 
 !===============================================================================
 
@@ -144,6 +135,9 @@ call field_get_val_v(ivarfl(iu), vel)
 tvmax = 0.8d0
 
 call field_get_val_s(icrom, crom)
+
+allocate(tslag(ncelet,ntersl))
+allocate(auxl1(nbpart) , auxl2(nbpart) , auxl3(nbpart))
 
 !   Nombre de passage pour les termes sources en stationnaire
 
@@ -472,6 +466,9 @@ else
 endif
 
 !===============================================================================
+
+deallocate(auxl1, auxl2, auxl3)
+deallocate(tslag)
 
 !----
 ! FIN

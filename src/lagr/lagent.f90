@@ -25,11 +25,10 @@ subroutine lagent &
 
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr , iprev  ,                            &
    itycel , icocel , dlgeo  ,                                     &
    itypfb , itrifb , ifrlag ,                                     &
-   dt     , vagaus )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,7 +57,6 @@ subroutine lagent &
 ! lndnod           ! e  !  -> ! longueur du tableau icocel                     !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -76,8 +74,6 @@ subroutine lagent &
 ! ifrlag           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module lagrangien                     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! vagaus           ! tr ! --> ! variables aleatoires gaussiennes               !
-!(nbpmax,nvgaus    !    !     !                                                !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -98,6 +94,7 @@ use cstnum
 use cstphy
 use parall
 use period
+use lagdim, only: nbpmax
 use lagpar
 use lagran
 use ppppar
@@ -117,7 +114,6 @@ implicit none
 
 integer          lndnod
 integer          nvar   , nscal
-integer          nbpmax
 integer          ntersl , nvlsta , nvisbr
 integer          iprev
 
@@ -126,7 +122,6 @@ integer          icocel(lndnod) , itycel(ncelet+1)
 integer          ifrlag(nfabor)
 
 double precision dt(ncelet)
-double precision vagaus(nbpmax,*)
 double precision dlgeo(nfabor,ngeol)
 
 ! Local variables
@@ -139,7 +134,7 @@ integer          ncmax, nzmax
 double precision vn1 , vn2 , vn3 , pis6 , d3
 double precision dmasse , rd(1) , aa
 double precision xxpart , yypart , zzpart
-double precision tvpart , uupart , vvpart , wwpart
+double precision swpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
 double precision surf   , volp , vitp
 double precision dintrf(1)
@@ -227,11 +222,9 @@ endif
 call uslag2                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , ifrlag ,                                     &
    dt     )
-
 
 shpe = shape(iuslag)
 ncmax = shpe(1)
@@ -283,13 +276,12 @@ do ifac = 1, nfabor
       ilflag(nfrlag) = ifrlag(ifac)
     else
       write(nfecra,1001) nfrlag
-      WRITE(NFECRA,'(I10)') (ILFLAG(II),II=1,NFRLAG)
+      write(nfecra,'(i10)') (ilflag(ii),ii=1,nfrlag)
       call csexit (1)
       !==========
     endif
   endif
 enddo
-
 
 ! --> Calculation of the surfaces of the Lagrangian boundary zones
 
@@ -780,7 +772,6 @@ if(iok.gt.0) then
   !==========
 endif
 
-
 !===============================================================================
 ! 4. Transformation des donnees utilisateur
 !===============================================================================
@@ -806,29 +797,6 @@ enddo
 nbpnew = 0
 dnbpnw = 0.d0
 
-!     Dans le cas ou on a un taux de presence impose dans une zone,
-!     on corrige IUSLAG(NC,NB,IJNBP) donne dans USLAG2 qui n'a
-!     pas de sens puisque l'on injecte 1 particule par maille
-
-do ii = 1,nfrlag
-  nb = ilflag(ii)
-!       pour chaque classe :
-  do nc = 1, iusncl(nb)
-!         si de nouvelles particules doivent entrer :
-    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
-
-      if ( iuslag(nc,nb,ijprpd) .eq. 2 ) then
-        iuslag(nc,nb,ijnbp)=0
-        do ifac = 1,nfabor
-          if (ifrlag(ifac).eq.nb) then
-            iuslag(nc,nb,ijnbp)=iuslag(nc,nb,ijnbp)+1
-          endif
-        enddo
-      endif
-    endif
-  enddo
-enddo
-
 do ii = 1,nfrtot
   nb = ilftot(ii)
   do nc = 1, iusncl(nb)
@@ -851,104 +819,98 @@ if (nbpnew.eq.0) return
 ! --> Tirage aleatoire des positions des NBPNEW nouvelles particules
 !   au niveau des zones de bord et reperage des cellules correspondantes
 
-!   initialisation du compteur de nouvelles particules
-
-npt = nbpart
-
-! Allocate a work array
-allocate(iwork(nbpmax))
-
 ! Initialisation du nombre local
 ! de particules injectées par rang
 nlocnew = 0
 
-!     Ensuite, on regarde ou on les met
+! Distribute new particles
 
-!     pour chaque zone de bord :
+! For each boundary zone
 do ii = 1,nfrtot
-   nb = ilftot(ii)
-   !       pour chaque classe :
-   do nc = 1, iusncl(nb)
-      !         si de nouvelles particules doivent entrer :
-      if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
+  nb = ilftot(ii)
+  ! for each class
+  do nc = 1, iusncl(nb)
+    ! if new particles must be added
+    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
 
-         if ( iuslag(nc,nb,ijprpd) .eq. 1 ) then
+      ! Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
+      ! base sur la surface relative de chaque zone d'injection presente sur
+      ! chaque rang --> remplissage du tableau ninjrg(nrangp)
 
+      if (irangp.eq.0) then
 
-          ! Calcul sur le rang 0 du nombre de particules à injecter pour chaque rang
-          ! base sur la surface relative de chaque zone d'injection presente sur
-          ! chaque rang --> remplissage du tableau ninjrg(nrangp)
+        do irp = 1, nrangp
+          ninjrg(irp) = 0
+        enddo
 
-            if (irangp.eq.0) then
+        do ipart = 1, iuslag(nc,nb,ijnbp)
 
-               do irp = 1, nrangp
-                  ninjrg(irp) = 0
-               enddo
+          call zufall(1, unif)
 
-               do ipart = 1, iuslag(nc,nb,ijnbp)
+          ! blindage
+          unif(1) = unif(1) + 1.d-9
 
-                  call zufall(1, unif)
-
-                  ! blindage
-                  unif(1) = unif(1) + 1.d-9
-
-                  irp = 1
-                  offset = surlgrg(nb,irp) / surflag(nb)
-                  do while (unif(1).gt.offset)
-                     irp = irp + 1
-                     offset = offset + surlgrg(nb,irp) / surflag(nb)
-                  enddo
-                  ninjrg(irp) = ninjrg(irp) + 1
-               enddo
-            endif
-
-            ! Broadcast a tous les rangs
-            if (irangp.ge.0) then
-               call parbci(0, nrangp, ninjrg)
-            endif
-
-            ! Fin du calcul du nombre de particules à injecter
-
-            if (irangp.ge.0) then
-               iusloc(nc,nb,ijnbp) = ninjrg(irangp+1)
-               nlocnew = nlocnew + ninjrg(irangp+1)
-            else
-               iusloc(nc,nb,ijnbp) = iuslag(nc,nb,ijnbp)
-               nlocnew = nlocnew + iuslag(nc,nb,ijnbp)
-            endif
-
-            if  (iusloc(nc,nb,ijnbp).gt.0) then
-
-               call lagnew                                                   &
-               !==========
-             ( nbpmax ,                                                      &
-               npt    , iusloc(nc,nb,ijnbp)  ,                               &
-               nb     ,                                                      &
-               ifrlag , iwork  )
-
-            endif
-
-         elseif ( iuslag(nc,nb,ijprpd) .eq. 2 ) then
-
-            call lagnpr                                                      &
-            !==========
-           ( nbpmax , npt    ,                                               &
-             nb     ,                                                        &
-             ifrlag , iwork  )
-         endif
-
+          irp = 1
+          offset = surlgrg(nb,irp) / surflag(nb)
+          do while (unif(1).gt.offset)
+            irp = irp + 1
+            offset = offset + surlgrg(nb,irp) / surflag(nb)
+          enddo
+          ninjrg(irp) = ninjrg(irp) + 1
+        enddo
       endif
-   enddo
+
+      ! Broadcast a tous les rangs
+      if (irangp.ge.0) then
+        call parbci(0, nrangp, ninjrg)
+      endif
+
+      ! Fin du calcul du nombre de particules à injecter
+
+      if (irangp.ge.0) then
+        iusloc(nc,nb,ijnbp) = ninjrg(irangp+1)
+        nlocnew = nlocnew + ninjrg(irangp+1)
+      else
+        iusloc(nc,nb,ijnbp) = iuslag(nc,nb,ijnbp)
+        nlocnew = nlocnew + iuslag(nc,nb,ijnbp)
+      endif
+
+    endif
+  enddo
+enddo
+
+! Allocate a work array
+allocate(iwork(nbpart+nlocnew))
+
+! Now define particles
+
+! initialize new particles counter
+npt = nbpart
+
+! For each boundary zone
+do ii = 1,nfrtot
+  nb = ilftot(ii)
+  ! for each class
+  do nc = 1, iusncl(nb)
+    ! if new particles must be added
+    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
+
+      if  (iusloc(nc,nb,ijnbp).gt.0) then
+        call lagnew(npt, iusloc(nc,nb,ijnbp), nb, ifrlag, iwork)
+        !==========
+      endif
+
+    endif
+  enddo
 enddo
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)
 
-if ( (nbpart+nlocnew).ne.npt ) then
+if ((nbpart+nlocnew).ne.npt) then
   write(nfecra,3010) nlocnew, npt-nbpart
   call csexit (1)
   !==========
 endif
-
 
 !   reinitialisation du compteur de nouvelles particules
 
@@ -958,25 +920,25 @@ npt = nbpart
 do ii = 1,nfrtot
   nb = ilftot(ii)
 
-!       pour chaque classe :
+  ! pour chaque classe :
   do nc = 1, iusncl(nb)
 
-!         si de nouvelles particules doivent entrer :
-     if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
+    ! si de nouvelles particules doivent entrer :
+    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0) then
 
       do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
         iel = ipepa(jisor,ip)
         ifac = iwork(ip)
 
-!-->COMPOSANTES DE LA VITESSE DES PARTICULES
+        ! Composantes de la vitesse des particules
 
-!             si composantes de la vitesse imposee :
+        ! si composantes de la vitesse imposee :
         if (iuslag(nc,nb,ijuvw).eq.1) then
           eptp(jup,ip) = ruslag(nc,nb,iupt)
           eptp(jvp,ip) = ruslag(nc,nb,ivpt)
           eptp(jwp,ip) = ruslag(nc,nb,iwpt)
 
-!             si norme de la vitesse imposee :
+        ! si norme de la vitesse imposee :
         else if (iuslag(nc,nb,ijuvw).eq.0) then
           aa = -1.d0 / surfbn(ifac)
           vn1 = surfbo(1,ifac) * aa
@@ -986,30 +948,29 @@ do ii = 1,nfrtot
           eptp(jvp,ip) = vn2 * ruslag(nc,nb,iuno)
           eptp(jwp,ip) = vn3 * ruslag(nc,nb,iuno)
 
-!             si vitesse du fluide vu :
+        ! si vitesse du fluide vu :
         else if (iuslag(nc,nb,ijuvw).eq.-1) then
           eptp(jup,ip) = vela(1,iel)
           eptp(jvp,ip) = vela(2,iel)
           eptp(jwp,ip) = vela(3,iel)
 
-!             si profil de vitesse impose :
+        ! si profil de vitesse impose :
         else if (iuslag(nc,nb,ijuvw).eq.2) then
 
-         idvar = 1
-         xxpart = eptp(jxp,ip)
-         yypart = eptp(jyp,ip)
-         zzpart = eptp(jzp,ip)
+          idvar = 1
+          xxpart = eptp(jxp,ip)
+          yypart = eptp(jyp,ip)
+          zzpart = eptp(jzp,ip)
 
-         call uslapr                                              &
-         !==========
- ( idvar  , iel    , nb     , nc     ,                            &
-   nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
-   ntersl , nvlsta , nvisbr ,                                     &
-   itypfb , itrifb , ifrlag ,                                     &
-   xxpart , yypart , zzpart ,                                     &
-   tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
-   dt     )
+          call uslapr                                              &
+          !==========
+  ( idvar  , iel    , ifac   , nb     , nc     ,                   &
+    nvar   , nscal  ,                                              &
+    ntersl , nvlsta , nvisbr ,                                     &
+    itypfb , itrifb , ifrlag ,                                     &
+    xxpart , yypart , zzpart ,                                     &
+    swpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
+    dt     )
 
           eptp(jup,ip) = uupart
           eptp(jvp,ip) = vvpart
@@ -1017,54 +978,56 @@ do ii = 1,nfrtot
 
         endif
 
-!-->Vitesse du fluide vu
+        ! Vitesse du fluide vu
 
         eptp(juf,ip) = vela(1,iel)
         eptp(jvf,ip) = vela(2,iel)
         eptp(jwf,ip) = vela(3,iel)
 
-!--> TEMPS DE SEJOUR
+        ! TEMPS DE SEJOUR
 
         pepa(jrtsp,ip) = 0.d0
 
-!--> Diametre
+        ! Diametre
 
-!             si diametre constant imposee :
+        ! si diametre constant imposee :
         if (iuslag(nc,nb,ijprdp).eq.1) then
           if (ruslag(nc,nb,ivdpt) .gt. 0.d0) then
             n1 = 1
             call normalen(n1,rd)
-            eptp(jdp,ip) = ruslag(nc,nb,idpt)                     &
-                         + rd(1) * ruslag(nc,nb,ivdpt)
+            eptp(jdp,ip) =   ruslag(nc,nb,idpt)                    &
+                           + rd(1) * ruslag(nc,nb,ivdpt)
 
-!    On verifie qu'on obtient un diametre dans la gamme des 99,7%
+            ! On verifie qu'on obtient un diametre dans la gamme des 99,7%
 
             d3 = 3.d0 * ruslag(nc,nb,ivdpt)
-            if (eptp(jdp,ip).lt.ruslag(nc,nb,idpt)-d3)            &
-              eptp(jdp,ip)= ruslag(nc,nb,idpt)
-            if (eptp(jdp,ip).gt.ruslag(nc,nb,idpt)+d3)            &
-              eptp(jdp,ip)= ruslag(nc,nb,idpt)
+            if (eptp(jdp,ip).lt.ruslag(nc,nb,idpt)-d3)             &
+                 eptp(jdp,ip)= ruslag(nc,nb,idpt)
+            if (eptp(jdp,ip).gt.ruslag(nc,nb,idpt)+d3)             &
+                 eptp(jdp,ip)= ruslag(nc,nb,idpt)
           else
             eptp(jdp,ip) = ruslag(nc,nb,idpt)
           endif
 
-!             si profil pour le diametre  :
+          ! si profil pour le diametre  :
         else if (iuslag(nc,nb,ijprdp).eq.2) then
 
           idvar = 2
           xxpart = eptp(jxp,ip)
           yypart = eptp(jyp,ip)
           zzpart = eptp(jzp,ip)
+          uupart = eptp(jup,ip)
+          vvpart = eptp(jvp,ip)
+          wwpart = eptp(jwp,ip)
 
           call uslapr                                             &
           !==========
- ( idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , ifac   , nb     , nc     ,                   &
    nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
-   tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
+   swpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     )
 
           eptp(jdp,ip) = ddpart
@@ -1079,32 +1042,36 @@ do ii = 1,nfrtot
           ipepa(jclst,ip) = iuslag(nc,nb,iclst)
         endif
 
-        if ( iphyla.eq.0 .or. iphyla.eq.1 ) then
+        if (iphyla.eq.0 .or. iphyla.eq.1) then
 
           eptp(jmp,ip) = ruslag(nc,nb,iropt) * pis6 * d3
 
           if ( iphyla.eq.1 .and. itpvar.eq.1 ) then
 
-!             si Temperature constante imposee :
+            ! si Temperature constante imposee :
             if (iuslag(nc,nb,ijprtp).eq.1) then
               eptp(jtp,ip) = ruslag(nc,nb,itpt)
-!             si profil pour la temperature :
+
+            ! si profil pour la temperature :
             else if (iuslag(nc,nb,ijprtp).eq.2) then
 
               idvar = 3
               xxpart = eptp(jxp,ip)
               yypart = eptp(jyp,ip)
               zzpart = eptp(jzp,ip)
+              uupart = eptp(jup,ip)
+              vvpart = eptp(jvp,ip)
+              wwpart = eptp(jwp,ip)
+              ddpart = eptp(jdp,ip)
 
               call uslapr                                         &
               !==========
- ( idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , ifac   , nb     , nc     ,                   &
    nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
-   tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
+   swpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     )
 
               eptp(jtp,ip) = ttpart
@@ -1166,16 +1133,16 @@ do ii = 1,nfrtot
           ! user-defined composition (uslag2)
           if (iuslag(nc,nb,irawcl).eq.0) then
 
-            ! Remplissage de ETTP
+            ! Remplissage de eptp
             eptp(jcp,ip) = ruslag(nc,nb,icpt)
             eptp(jmp,ip) = ruslag(nc,nb,iropt) * pis6 * d3
             eptp(jmwat,ip) = ruslag(nc,nb,ifrmwt) * eptp(jmp,ip)
 
             do ilayer = 1, nlayer
-
-              eptp(jmch(ilayer),ip) = ruslag(nc,nb,ifrmch(ilayer)) * eptp(jmp,ip) / float(nlayer)
-              eptp(jmck(ilayer),ip) = ruslag(nc,nb,ifrmck(ilayer)) * eptp(jmp,ip) / float(nlayer)
-
+              eptp(jmch(ilayer),ip) =   ruslag(nc,nb,ifrmch(ilayer))      &
+                                      * eptp(jmp,ip) / float(nlayer)
+              eptp(jmck(ilayer),ip) =   ruslag(nc,nb,ifrmck(ilayer))      &
+                                      * eptp(jmp,ip) / float(nlayer)
             enddo
 
             ! Remplissage de pepa
@@ -1183,15 +1150,13 @@ do ii = 1,nfrtot
             pepa(jrd0p,ip) = ruslag(nc,nb,ird0p)
 
             do ilayer = 1, nlayer
-
               pepa(jrhock(ilayer),ip)= ruslag(nc,nb,irhock0(ilayer))
-
             enddo
 
           ! composition from DP_FCP
           else if (iuslag(nc,nb,irawcl).eq.1) then
 
-            ! Remplissage de ETTP
+            ! Remplissage de eptp
             eptp(jcp,ip) = cp2ch(iuslag(nc,nb,inuchl))
             eptp(jmp,ip) = rho0ch(iuslag(nc,nb,inuchl)) * pis6 * d3
             eptp(jmwat,ip) = xwatch(iuslag(nc,nb,inuchl)) * eptp(jmp,ip)
@@ -1214,55 +1179,54 @@ do ii = 1,nfrtot
               pepa(jrhock(ilayer),ip) = rho0ch(iuslag(nc,nb,inuchl))
             enddo
 
-         endif
-       endif
+          endif
+        endif
 
-!--> POIDS STATISTIQUE
+        !--> POIDS STATISTIQUE
 
-       if (iuslag(nc,nb,ijprpd).eq.1) then
+        if (iuslag(nc,nb,ijprpd).eq.1) then
+
           pepa(jrpoi,ip) = ruslag(nc,nb,ipoit)
-       else if (iuslag(nc,nb,ijprpd).eq.2) then
 
-          idvar = 0
+        else if (iuslag(nc,nb,ijprpd).eq.2) then
+
+          idvar = 4
           xxpart = eptp(jxp,ip)
           yypart = eptp(jyp,ip)
           zzpart = eptp(jzp,ip)
+          uupart = eptp(jup,ip)
+          vvpart = eptp(jvp,ip)
+          wwpart = eptp(jwp,ip)
+          ddpart = eptp(jdp,ip)
+          if (jtp.ge.1) ttpart = eptp(jtp,ip)
 
           call uslapr                                             &
           !==========
- ( idvar  , iel    , nb     , nc     ,                            &
+ ( idvar  , iel    , ifac   , nb     , nc     ,                   &
    nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    itypfb , itrifb , ifrlag ,                                     &
    xxpart , yypart , zzpart ,                                     &
-   tvpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
+   swpart , uupart , vvpart , wwpart , ddpart , ttpart ,          &
    dt     )
 
-          volp = pis6*d3
-          surf = sqrt( surfbo(1,ifac)*surfbo(1,ifac)              &
-                      +surfbo(2,ifac)*surfbo(2,ifac)              &
-                      +surfbo(3,ifac)*surfbo(3,ifac) )
-          vitp = sqrt( eptp(jup,ip)*eptp(jup,ip)                  &
-                      +eptp(jvp,ip)*eptp(jvp,ip)                  &
-                      +eptp(jwp,ip)*eptp(jwp,ip) )
-          pepa(jrpoi,ip) =tvpart*(surf*vitp*dtp)/volp
+          pepa(jrpoi,ip) = swpart
 
-         endif
+        endif
 
-! Modele de Deposition : Initialisation
+        ! Modele de Deposition : Initialisation
 
-         if ( idepst .eq. 1 ) then
+        if (idepst .eq. 1) then
 
-           call zufall(1,dintrf(1))
+          call zufall(1,dintrf(1))
 
-           pepa(jrinpf,ip) = 5.d0 + 15.d0 * dintrf(1)
+          pepa(jrinpf,ip) = 5.d0 + 15.d0 * dintrf(1)
 
-           pepa(jryplu,ip) = 1000.d0
-           ipepa(jimark,ip) = -1
-           ipepa(jdfac,ip)  = 0
+          pepa(jryplu,ip) = 1000.d0
+          ipepa(jimark,ip) = -1
+          ipepa(jdfac,ip)  = 0
 
-         endif
+        endif
 
       enddo
 
@@ -1281,65 +1245,60 @@ if ( (nbpart+nlocnew).ne.npt ) then
   !==========
 endif
 
-
 !===============================================================================
 ! 5. MODIFICATION DES POIDS POUR AVOIR LE DEBIT
 !===============================================================================
 
-!   reinitialisation du compteur de nouvelles particules
+! Reinitialisation du compteur de nouvelles particules
 
 npt = nbpart
 
-!     pour chaque zone de bord :
+! pour chaque zone de bord :
 
 do ii = 1,nfrlag
-   nb = ilflag(ii)
+  nb = ilflag(ii)
 
-   !         pour chaque classe :
+  ! pour chaque classe :
 
-   do nc = 1,iusncl(nb)
+  do nc = 1,iusncl(nb)
 
-      !         si de nouvelles particules sont entrees,
-      !         et si on a un debit non nul :
+    ! si de nouvelles particules sont entrees,
+    ! et si on a un debit non nul :
 
-      if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
-           ruslag(nc,nb,idebt) .gt. 0.d0        .and.               &
-           iusloc(nc,nb,ijnbp) .gt. 0                 ) then
+    if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
+         ruslag(nc,nb,idebt) .gt. 0.d0        .and.               &
+         iusloc(nc,nb,ijnbp) .gt. 0                 ) then
 
-         if (irangp.ge.0) then
-            rapsurf = dble(iusloc(nc,nb,ijnbp)) / iuslag(nc,nb,ijnbp)
-         else
-            rapsurf = 1.d0
-         endif
-
-         dmasse = 0.d0
-         do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
-            dmasse = dmasse + eptp(jmp,ip)
-         enddo
-
-         !        Calcul des Poids
-
-         if ( dmasse.gt.0.d0 ) then
-            do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
-               pepa(jrpoi,ip) = ( ruslag(nc,nb,idebt)*dtp )  * rapsurf &
-                    / dmasse
-            enddo
-         else
-            write(nfecra,1057) nb, nc, ruslag(nc,nb,idebt),           &
-                 iusloc(nc,nb,ijnbp)
-            call csexit (1)
-            !==========
-         endif
-
-
-         npt = npt +  iusloc(nc,nb,ijnbp)
-
+      if (irangp.ge.0) then
+        rapsurf = dble(iusloc(nc,nb,ijnbp)) / iuslag(nc,nb,ijnbp)
+      else
+        rapsurf = 1.d0
       endif
 
-   enddo
+      dmasse = 0.d0
+      do ip = npt+1 , npt + iusloc(nc,nb,ijnbp)
+        dmasse = dmasse + eptp(jmp,ip)
+      enddo
+
+      ! Calcul des Poids
+
+      if (dmasse.gt.0.d0) then
+        do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
+          pepa(jrpoi,ip) = ( ruslag(nc,nb,idebt)*dtp )  * rapsurf / dmasse
+        enddo
+      else
+        write(nfecra,1057) nb, nc, ruslag(nc,nb,idebt), iusloc(nc,nb,ijnbp)
+        call csexit (1)
+        !==========
+      endif
+
+      npt = npt +  iusloc(nc,nb,ijnbp)
+
+    endif
+
+  enddo
 
 enddo
-
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)
 
@@ -1350,19 +1309,17 @@ enddo
 !  !==========
 !endif
 
-
-
 !===============================================================================
 ! 6. SIMULATION DES VITESSES TURBULENTES FLUIDES INSTANTANEES VUES
 !    PAR LES PARTICULES SOLIDES LE LONG DE LEUR TRAJECTOIRE.
 !===============================================================================
 
-!   si de nouvelles particules doivent entrer :
+! si de nouvelles particules doivent entrer :
 
 npar1 = nbpart+1
 npar2 = nbpart+ nlocnew
 
-call lagipn(nbpmax, npar1, npar2, iprev, vagaus)
+call lagipn(npar1, npar2, iprev)
 !==========
 
 !===============================================================================
@@ -1372,14 +1329,12 @@ call lagipn(nbpmax, npar1, npar2, iprev, vagaus)
 call uslain                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   nbpmax ,                                                       &
    ntersl , nvlsta , nvisbr ,                                     &
    nlocnew         , iprev  ,                                     &
    itypfb , itrifb , ifrlag , iwork  ,                            &
    dt     ,                                                       &
-   vagaus , icocel , lndnod , itycel , dlgeo,                     &
+   icocel , lndnod , itycel , dlgeo,                              &
    ncmax  , nzmax  , iusloc )
-
 
 !===============================================================================
 ! 7bis. Random id associated with particles (to be initialized later)
@@ -1424,7 +1379,7 @@ enddo
 ! 8. INJECTION "CONTINUE" EVENTUELLE
 !===============================================================================
 
-if ( injcon.eq.1 ) then
+if (injcon.eq.1) then
 
  write(nfecra,*) "Error : pseudo-continuous injection not implemented "
  call csexit (1)
@@ -1499,8 +1454,8 @@ do ii = 1,nfrlag
 
 !        si de nouvelles particules sont entrees,
 
-    if ( mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
-             iusloc(nc,nb,ijfre).gt.0            ) then
+    if (mod(ntcabs,iuslag(nc,nb,ijfre)).eq.0 .and.               &
+            iusloc(nc,nb,ijfre).gt.0) then
 
       do ip = npt+1 , npt+iusloc(nc,nb,ijnbp)
         deblag(nb) = deblag(nb) + pepa(jrpoi,ip)*eptp(jmp,ip)
@@ -1547,32 +1502,30 @@ if (irangp.ge.0) then
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
-
- 1000 format(                                                           &
+ 1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========   (LAGENT)                                    ',/,&
+'@ @@ WARNING: ABORT DURING THE LAGRANGIAN MODULE (lagent)    ',/,&
+'@    =========                                               ',/,&
 '@                                                            ',/,&
-'@    LES CONDITIONS AUX LIMITES SONT INCOMPLETES OU ERRONEES ',/,&
+'@  Boundary conditions are incomplete or incorrect.          ',/,&
 '@                                                            ',/,&
-'@  Le numero de zone associee a la face ',I10   ,' doit etre ',/,&
-'@    un entier strictement positif et inferieur ou egal a    ',/,&
-'@    NFLAGM = ',I10                                           ,/,&
-'@  Ce numero (IFRLAG(IFAC)) vaut ici ',I10                    ,/,&
+'@  The zone number associated to face ',i10   ,' must be     ',/,&
+'@    an integer > 0 and < nflagm = ',i10                      ,/,&
+'@  This number (ifrlag(ifac)) is here ',i10                   ,/,&
 '@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
+'@  The calculation will not run.                             ',/,&
 '@                                                            ',/,&
-'@  Verifier USLAG2.                                          ',/,&
+'@  Verify the parameters given via the interface or uslag2.  ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
- 1001 format(                                                           &
+ 1001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -1785,7 +1738,7 @@ endif
 '@   = 1 vitesse imposee : on donne RUSLAG(NB,NC,IUPT)        ',/,&
 '@                                  RUSLAG(NB,NC,IVPT)        ',/,&
 '@                                  RUSLAG(NB,NC,IWPT)        ',/,&
-'@   = 2 profil de vitesse imposee dans USLAPR                ',/,&
+'@   = 2 profil de vitesse imposee dans uslapr                ',/,&
 '@                                                            ',/,&
 '@  Ce nombre pour la frontiere NB = ',I10                     ,/,&
 '@    et      pour la classe    NC = ',I10                     ,/,&
@@ -1814,7 +1767,7 @@ endif
 '@   = 1 diametre imposee dans la zone :                      ',/,&
 '@                  on donne        RUSLAG(NB,NC,IDPT)        ',/,&
 '@                                  RUSLAG(NB,NC,IVDPT)       ',/,&
-'@   = 2 profil de diametre imposee dans USLAPR               ',/,&
+'@   = 2 profil de diametre imposee dans uslapr               ',/,&
 '@                                                            ',/,&
 '@  Ce nombre pour la frontiere  NB = ',I10                    ,/,&
 '@    et      pour la classe     NC = ',I10                    ,/,&
@@ -1842,7 +1795,7 @@ endif
 '@    obligatoirement les suivantes                           ',/,&
 '@   = 1 temperature imposee dans la zone :                   ',/,&
 '@                  on donne        RUSLAG(NB,NC,ITPT))       ',/,&
-'@   = 2 profil de temperature imposee dans USLAPR            ',/,&
+'@   = 2 profil de temperature imposee dans uslapr            ',/,&
 '@                                                            ',/,&
 '@  Ce nombre pour la frontiere  NB = ',I10                    ,/,&
 '@    et      pour la classe     NC = ',I10                    ,/,&
@@ -1870,7 +1823,7 @@ endif
 '@    obligatoirement les suivantes                           ',/,&
 '@   = 1 distribution uniforme                                ',/,&
 '@                  on donne        RUSLAG(NB,NC,IPOID))      ',/,&
-'@   = 2 profil de taux de presence imposee dans USLAPR       ',/,&
+'@   = 2 profil de taux de presence imposee dans uslapr       ',/,&
 '@                                                            ',/,&
 '@  Ce nombre pour la frontiere  NB = ',I10                    ,/,&
 '@    et      pour la classe     NC = ',I10                    ,/,&
@@ -2140,7 +2093,7 @@ endif
 '@  Ces deux options sont dangereuses car on définit          ',/,&
 '@    RUSLAG(NC,NB,IRDCK) et RUSLAG(NC,NB,IRD0P) dans USLAG2  ',/,&
 '@    avant meme de connaitre le diametre de la particule     ',/,&
-'@    defini dans USLAPR                                      ',/,&
+'@    defini dans uslapr                                      ',/,&
 '@                                                            ',/,&
 '@    Pour la frontiere NB  = ',I10                            ,/,&
 '@    et pour la classe NC  = ',I10                            ,/,&
@@ -2150,7 +2103,7 @@ endif
 '@  Le calcul continu mais une verification est souhaitable.  ',/,&
 '@                                                            ',/,&
 '@  Verifier que les expressions du diametre de la particule  ',/,&
-'@    dans USLAPR et la donnee de RUSLAG(NC,NB,IRDCK) et      ',/,&
+'@    dans uslapr et la donnee de RUSLAG(NC,NB,IRDCK) et      ',/,&
 '@    RUSLAG(NC,NB,IRD0P) dans USLAG2 sont bien coherentes    ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

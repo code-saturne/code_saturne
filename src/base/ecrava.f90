@@ -29,7 +29,7 @@ subroutine ecrava &
 ! Purpose:
 ! --------
 
-! Write main and auxliary restart files
+! Write main and auxiliary restart files
 
 !-------------------------------------------------------------------------------
 ! Arguments

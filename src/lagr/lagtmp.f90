@@ -25,7 +25,7 @@ subroutine lagtmp                                                              &
 
  ( npt    ,                                                                    &
    propce , tempct ,                                                           &
-   rayon  , mlayer , phith , temp  , tsvar , volume_couche )
+   rayon  , mlayer , phith , temp  , volume_couche )
 
 !===============================================================================
 ! FONCTION :
@@ -52,7 +52,7 @@ subroutine lagtmp                                                              &
 ! npt              ! e  ! <-- ! numero de la particule a traiter               !
 ! propce(ncelet, *)! tr ! <-- ! physical properties at cell centers            !
 ! tempct           ! tr ! <-- ! temps caracteristique thermique                !
-!  (nbpmax,2)      !    !     !                                                !
+!  (nbpart,2)      !    !     !                                                !
 ! rayon            ! tr ! <-- ! rayons frontieres des differentes couches      !
 !  (nlayer)        !    !     !   (en m) (1 par couche)                        !
 ! mlayer           ! tr ! <-- ! masse des differentes couches (en kg)          !
@@ -61,9 +61,6 @@ subroutine lagtmp                                                              &
 !  (nlayer)        !    !     !   reaction chimique (1 par couche)             !
 ! temp             ! tr ! --> ! temperature de la particule apres evolution    !
 !  (nlayer)        !    !     !                                                !
-! tsvar            ! tr ! <-- ! prediction 1er sous-pas pour la                !
-! (nbpmax,nvp1)    !    !     !   variable ivar, utilise pour la               !
-!                  !    !     !   correction au 2eme sous-pas                  !
 ! volume_couche    ! r  ! <-- ! volume occuppe par une couche (en m^3)         !
 !__________________!____!_____!________________________________________________!
 
@@ -80,7 +77,6 @@ subroutine lagtmp                                                              &
 use numvar
 use cstnum
 use entsor
-use lagdim, only: nbpmax, nvp1
 use lagpar
 use lagran
 use ppppar
@@ -96,10 +92,10 @@ implicit none
 ! Arguments
 integer          npt
 double precision propce(ncelet,*)
-double precision tempct(nbpmax,2)
+double precision tempct(nbpart,2)
 double precision rayon(nlayer), mlayer(nlayer)
 double precision phith(nlayer), temp(nlayer)
-double precision tsvar(nbpmax,nvp1), volume_couche
+double precision volume_couche
 
 ! Local variables
 integer          ilayer, iel, icha
@@ -272,14 +268,14 @@ else if (nlayer.eq.1) then
   aux2 = exp(-dtp/tpscara)
 
   if (nor.eq.1) then
-    tsvar(npt,jhp(nlayer)) = 0.5d0*eptpa(jhp(nlayer),npt)*aux2                 &
-                             + (-aux2+(1.0d0-aux2)*tpscara/dtp)*aux1
+    ! tsvar(npt,jhp(nlayer)) = 0.5d0*eptpa(jhp(nlayer),npt)*aux2               &
+    !                         + (-aux2+(1.0d0-aux2)*tpscara/dtp)*aux1
     temp(nlayer) = eptpa(jhp(nlayer),npt)*aux2 +                               &
                    (1.0d0-aux2)*aux1
 
-  else if (nor.eq.2) then
-    temp(nlayer) = tsvar(npt,jhp(nlayer)) + 0.5d0*eptpa(jhp(nlayer),npt)*aux2  &
-                   + (1.0d0-(1.0d0-aux2)*tpscara/dtp)*aux1
+  ! else if (nor.eq.2) then
+  !   temp(nlayer) = tsvar(npt,jhp(nlayer)) + 0.5d0*eptpa(jhp(nlayer),npt)*aux2  &
+  !                 + (1.0d0-(1.0d0-aux2)*tpscara/dtp)*aux1
 
   endif
 

@@ -23,8 +23,7 @@
 subroutine lagnew &
 !================
 
- ( nbpmax ,                                                       &
-   npt    , nznew  ,                                              &
+ ( npt    , nznew  ,                                              &
    izone  ,                                                       &
    ifrlag , iworkp )
 
@@ -46,7 +45,6 @@ subroutine lagnew &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nbpmax           ! e  ! <-- ! nombre max de particulies autorise             !
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -56,7 +54,7 @@ subroutine lagnew &
 ! izone            ! e  ! <-- ! numero  de la zone d'injection                 !
 ! ifrlag           ! te ! <-- ! numero de zone de la face de bord              !
 !   (nfabor)       !    !     !  pour le module lagrangien                     !
-! iworkp(nbpmax    ! te ! --> ! numero de la face d'injection                  !
+! iworkp(npt+nznew)! te ! --> ! numero de la face d'injection                  !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -73,6 +71,7 @@ use paramx
 use numvar
 use optcal
 use entsor
+use lagdim, only: nbpmax
 use lagpar
 use lagran
 use mesh
@@ -83,11 +82,10 @@ implicit none
 
 ! Arguments
 
-integer          nbpmax
 integer          npt    , nznew
 integer          izone
 
-integer          ifrlag(nfabor) , iworkp(nbpmax)
+integer          ifrlag(nfabor) , iworkp(npt+nznew)
 
 ! Local variables
 
