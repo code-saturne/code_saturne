@@ -238,9 +238,6 @@ endif
 
 call add_property_field('density', 'Density', irom)
 icrom = iprpfl(irom)
-if (irovar.eq.0) then
-  call hide_property(irom)
-endif
 
 call add_property_field('molecular_viscosity', 'Laminar Viscosity', iviscl)
 

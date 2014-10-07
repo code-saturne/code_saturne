@@ -181,6 +181,10 @@ endif
 
 ! Logging and postprocessing output
 
+if (irovar.eq.0) then
+  call hide_property(irom)
+endif
+
 if (itytur.eq.4) then
   call hide_property(ivisct)
 endif
