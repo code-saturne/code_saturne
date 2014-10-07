@@ -755,9 +755,9 @@ if (idiff(ipr).ge.1) then
   if (idften(ipr).eq.1) then
 
     if (icavit.ge.0) then
-      imvisp = imvisf
-    else
       imvisp = 1  ! Cavitation: continuity of the flux across internal faces
+    else
+      imvisp = imvisf
     endif
 
     call viscfa &

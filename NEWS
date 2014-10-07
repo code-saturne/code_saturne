@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix face viscosity default option of the pressure (harmonic instead of arithmetic).
+
 - Fix for density logging and postprocessing (bug #88).
 
 - Fix memory leak in transient rotor turbomachinery cases.
@@ -19,7 +21,7 @@ Bug fixes:
 
 - Fix for fire algorithm in the computation of the scalar diffusion terms
   (introduced by the boundary convective flux option creation and the
-  deployement of the var_cal_opt structure). 
+  deployement of the var_cal_opt structure).
 
 - Fix for "code_saturne run" with space in case path (do not enquote twice).
 
