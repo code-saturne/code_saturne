@@ -683,7 +683,7 @@ cs_parameters_create_added_properties(void)
                            CS_FIELD_PROPERTY | CS_FIELD_USER,
                            (_user_property_defs + i)->location_id,
                            (_user_property_defs + i)->dim,
-                           false,
+                           true,
                            false);
 
     BFT_FREE((_user_property_defs + i)->name);
