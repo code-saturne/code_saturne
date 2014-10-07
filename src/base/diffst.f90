@@ -151,7 +151,7 @@ do iscal = 1, nscal
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(xcpp)
   endif
-  !
+
   ivar0  = 0
   iconvp = 0
   idiffp = 1
@@ -170,7 +170,6 @@ do iscal = 1, nscal
   extrap = extrag(ivar)
   relaxp = relaxv(ivar)
   thetex = 1.d0
-
   ! all boundary convective flux with upwind
   icvflb = 0
 

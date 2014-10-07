@@ -271,7 +271,7 @@ if (icp.ne.0) then
 endif
 
 ! Density at the second previous time step for cavitation algorithm
-if (icavit.ge.0.or.idilat.eq.4) then
+if (icavit.ge.0.or.idilat.gt.1) then
   call add_property_field('density_old', 'Density Old', iromaa)
   icroaa = iprpfl(iromaa)
 endif

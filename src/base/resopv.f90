@@ -158,7 +158,7 @@ double precision coefb_dp(ndimfb)
 character(len=80) :: chaine
 integer          lchain
 integer          iccocg, inc   , iprev, init  , isym  , isqrt
-integer          ii, iel   , ifac  , ifac0 , iel0
+integer          ii, jj, iel   , ifac  , ifac0 , iel0
 integer          nswmpr
 integer          isweep, niterf
 integer          iflmb0, ifcsor
@@ -318,6 +318,10 @@ if (icavit.ge.0) then
   call field_get_key_int(ivarfl(ivoidf), kbmasf, iflmab)
   call field_get_val_s(iflmas, imasfl)
   call field_get_val_s(iflmab, bmasfl)
+endif
+
+! Calculation of dt/rho
+if (icavit.ge.0.or.idilat.eq.4) then
 
   ! Allocate and initialize specific arrays
   allocate(xunsro(ncelet))
@@ -407,7 +411,7 @@ if (irnpnw.ne.1) then
   epsrgp = epsrgr(iu )
   climgp = climgr(iu )
   itypfl = 1
-  if (idilat.eq.4.or.icavit.ge.0) itypfl = 0
+  if (idilat.ge.4.or.icavit.ge.0) itypfl = 0
 
   call inimav &
   !==========
@@ -424,7 +428,7 @@ if (irnpnw.ne.1) then
   call divmas(init, iflux, bflux, res)
 
   ! --- Weakly compressible algorithm: semi analytic scheme
-  if (idilat.eq.4) then
+  if (idilat.ge.4) then
     do iel = 1, ncel
       res(iel) = res(iel)*crom(iel)
     enddo
@@ -921,7 +925,7 @@ endif
 ! --- Weakly compressible algorithm: semi analytic scheme
 !     The RHS contains rho div(u*) and not div(rho u*)
 !     so this term will be add afterwards
-if (idilat.eq.4) then
+if (idilat.ge.4) then
   if (idften(ipr).eq.1) then
     do iel = 1, ncel
       ardtsr  = arak*(dt(iel)/crom(iel))
@@ -996,8 +1000,8 @@ endif
 
 init   = 1
 inc    = 1
-! BCs will be taken into account after in idilat=4
-if (idilat.eq.4) inc = 0
+! BCs will be taken into account after in idilat>=4
+if (idilat.ge.4) inc = 0
 iflmb0 = 1
 if (iale.eq.1.or.imobil.eq.1) iflmb0 = 0
 nswrgp = nswrgr(iu )
@@ -1006,7 +1010,7 @@ iwarnp = iwarni(ipr)
 epsrgp = epsrgr(iu )
 climgp = climgr(iu )
 itypfl = 1
-if (icavit.ge.0) itypfl = 0
+if (icavit.ge.0.or.idilat.eq.4) itypfl = 0
 
 call inimav &
 !==========
@@ -1309,7 +1313,7 @@ call divmas(init, imasfl , bmasfl , divu)
 !     2. Add dilatation source term to rhs
 !     3. The mass flux is completed by rho u* . S
 
-if (idilat.eq.4) then
+if (idilat.ge.4) then
 
   allocate(velflx(nfac), velflb(ndimfb))
 
@@ -1339,16 +1343,30 @@ if (idilat.eq.4) then
 
   call divmas(init, velflx , velflb , res)
 
-  do iel = 1, ncel
-    divu(iel) = divu(iel) + res(iel)*crom(iel)
-  enddo
+  if (idilat.eq.4) then
+    do iel = 1, ncel
+      divu(iel) = divu(iel) + res(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      divu(iel) = divu(iel) + res(iel)*crom(iel)
+    enddo
+  endif
 
   ! 2. Add the dilatation source term D(rho)/Dt
-  do iel = 1, ncel
-    divu(iel) = divu(iel) + propce(iel,ipproc(iustdy(itsrho)))
-  enddo
+  if (idilat.eq.4) then
+    do iel = 1, ncel
+      divu(iel) = divu(iel) &
+                + propce(iel,ipproc(iustdy(itsrho)))/crom(iel)
+    enddo
+  else
+    do iel = 1, ncel
+      divu(iel) = divu(iel) + propce(iel,ipproc(iustdy(itsrho)))
+    enddo
+  endif
 
-  ! 3. The mass flux is completed by rho u* . S
+  ! 3. The mass flux is completed by u*.S (idilat=4)
+  !                                  rho u* . S (idilat=5)
   init   = 0
   inc    = 1
   iflmb0 = 1
@@ -1360,6 +1378,7 @@ if (idilat.eq.4) then
   climgp = climgr(iu)
 
   itypfl = 1
+  if (idilat.eq.4) itypfl = 0
 
   call inimav &
   !==========
@@ -1467,6 +1486,10 @@ if (iswdyp.ge.1) then
 
   if (idften(ipr).eq.1) then
 
+    ! idilat = 4, viscap already contains dt/rho, 
+    ! so dt is temporaly affected to viscap
+    if (idilat.eq.4) viscap => dt(:)
+
     call itrgrp &
     !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
@@ -1480,7 +1503,14 @@ if (iswdyp.ge.1) then
    viscap , viscap , viscap ,                                                  &
    rhs0   )
 
+    ! idilat = 4, viscap contains dt/rho again
+    if (idilat.eq.4) viscap => xdtsro(:)
+
   else if (idften(ipr).eq.6) then
+
+    ! idilat = 4, viscap already contains dt/rho
+    ! so dt is temporaly affected to viscap
+    if (idilat.eq.4) vitenp => tpucou(:,:)
 
     call itrgrv &
     !==========
@@ -1495,6 +1525,9 @@ if (iswdyp.ge.1) then
    vitenp ,                                                       &
    weighf , weighb ,                                              &
    rhs0   )
+
+    ! idilat = 4, viscap contains dt/rho again
+    if (idilat.eq.4) vitenp => tpusro(:,:)
 
   endif
 
@@ -1557,6 +1590,10 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
     if (idften(ipr).eq.1) then
 
+      ! idilat = 4, viscap already contains dt/rho
+      ! so dt is temporaly affected to viscap
+      if (idilat.eq.4) viscap => dt(:)
+
       call itrgrp &
       !==========
    ( f_id0           , init   , inc    , imrgra ,              &
@@ -1571,7 +1608,14 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      viscap , viscap , viscap ,                                &
      adxk   )
 
+      ! idilat = 4, viscap contains dt/rho again
+      if (idilat.eq.4) viscap => xdtsro(:)
+
     else if (idften(ipr).eq.6) then
+
+      ! idilat = 4, viscap already contains dt/rho
+      ! so dt is temporaly affected to viscap
+      if (idilat.eq.4) vitenp => tpucou(:,:)
 
       call itrgrv &
       !==========
@@ -1586,6 +1630,9 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      vitenp ,                                                       &
      weighf , weighb ,                                              &
      adxk   )
+
+      ! idilat = 4, viscap contains dt/rho again
+      if (idilat.eq.4) vitenp => tpusro(:,:)
 
     endif
 
@@ -1890,7 +1937,7 @@ call sles_free_native(ivarfl(ipr), '')
 !    2nd step solving a convection diffusion equation
 !===============================================================================
 
-if (idilat.eq.4) then
+if (idilat.eq.5) then
 
   deallocate(gradp)
   allocate(gradp(ncelet,3))
@@ -2256,6 +2303,22 @@ else
   enddo
 endif
 
+! Transformation of volumic mass fluxes into massic mass fluxes 
+if (idilat.eq.4) then
+
+  do ifac = 1, nfabor 
+    bmasfl(ifac) = bmasfl(ifac) * brom(ifac)
+  enddo
+
+  do ifac = 1, nfac
+    ii = ifacel(1, ifac)
+    jj = ifacel(2, ifac)
+    rho = pond(ifac)*crom(ii)+(1.d0-pond(ifac))*crom(jj)
+    imasfl(ifac) = imasfl(ifac) * rho
+  enddo
+
+endif
+
 ! Free memory
 deallocate(dam, xam)
 deallocate(res, divu, presa)
@@ -2265,7 +2328,7 @@ deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
 if (icalhy.eq.1) deallocate(frchy, dfrchy, hydro_pres)
-if (icavit.ge.0) then
+if (icavit.ge.0.or.idilat.eq.4) then
   deallocate(xdtsro)
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)

@@ -132,21 +132,9 @@ if (iperot.gt.0 .and. itytur.eq.3) then
 
 endif
 
-!===============================================================================
-! 3. Weakly compressible algorithm (semi-analytical):
-!     Computation of scalar diffusion terms
-!===============================================================================
-
-! Diffusion terms for weakly compressible algorithm
-if (idilat.eq.4.and.ipass.gt.1) then
-
-  call diffst(nscal, rtp, propce)
-  !==========
-
-endif
 
 !===============================================================================
-! 4. User settings
+! 3. User settings
 !===============================================================================
 
 mbrom = 0
@@ -257,12 +245,12 @@ if (ntcabs.eq.ntpabs+1) then
 endif
 
 !===============================================================================
-! 5. Compute the eddy viscosity
+! 4. Compute the eddy viscosity
 !===============================================================================
 
 if     (iturb.eq. 0) then
 
-! 5.1 Laminar
+! 4.1 Laminar
 ! ===========
 
   call field_get_val_s(iprpfl(ivisct), visct)
@@ -273,14 +261,14 @@ if     (iturb.eq. 0) then
 
 elseif (iturb.eq.10) then
 
-! 5.2 Mixing length model
+! 4.2 Mixing length model
 ! =======================
 
   call vislmg
 
 elseif (itytur.eq.2) then
 
-! 5.3 k-epsilon
+! 4.3 k-epsilon
 ! =============
 
   call field_get_val_s(iprpfl(ivisct), visct)
@@ -296,7 +284,7 @@ elseif (itytur.eq.2) then
 
 elseif (itytur.eq.3) then
 
-! 5.4 Rij-epsilon
+! 4.4 Rij-epsilon
 ! ===============
 
   call field_get_val_s(iprpfl(ivisct), visct)
@@ -315,7 +303,7 @@ elseif (itytur.eq.3) then
 
 elseif (iturb.eq.40) then
 
-! 5.5 LES Smagorinsky
+! 4.5 LES Smagorinsky
 ! ===================
 
   call vissma
@@ -323,7 +311,7 @@ elseif (iturb.eq.40) then
 
 elseif (iturb.eq.41) then
 
-! 5.6 LES dynamic
+! 4.6 LES dynamic
 ! ===============
 
   call visdyn &
@@ -337,7 +325,7 @@ elseif (iturb.eq.41) then
 
 elseif (iturb.eq.42) then
 
-! 5.7 LES WALE
+! 4.7 LES WALE
 ! ============
 
   call viswal
@@ -345,7 +333,7 @@ elseif (iturb.eq.42) then
 
 elseif (itytur.eq.5) then
 
-! 5.8 v2f (phi-model and BL-v2/k)
+! 4.8 v2f (phi-model and BL-v2/k)
 ! ===============================
 
   if (iturb.eq.50) then
@@ -377,7 +365,7 @@ elseif (itytur.eq.5) then
 
 elseif (iturb.eq.60) then
 
-! 5.9 k-omega SST
+! 4.9 k-omega SST
 ! ===============
 
   call vissst
@@ -385,7 +373,7 @@ elseif (iturb.eq.60) then
 
 elseif (iturb.eq.70) then
 
-! 5.10 Spalart-Allmaras
+! 4.10 Spalart-Allmaras
 ! =====================
 
   cv13 = csav1**3
@@ -406,7 +394,7 @@ elseif (iturb.eq.70) then
 endif
 
 !===============================================================================
-! 6. Anisotropic turbulent viscosity (symmetric)
+! 5. Anisotropic turbulent viscosity (symmetric)
 !===============================================================================
 idfm = 0
 
@@ -480,7 +468,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 endif
 
 !===============================================================================
-! 7. Eddy viscosity correction for cavitating flows
+! 6. Eddy viscosity correction for cavitating flows
 !===============================================================================
 
 if (icavit.ge.0 .and. icvevm.eq.1) then
@@ -496,7 +484,7 @@ if (icavit.ge.0 .and. icvevm.eq.1) then
 endif
 
 !===============================================================================
-! 8. User modification of the turbulent viscosity and symmetric tensor
+! 7. User modification of the turbulent viscosity and symmetric tensor
 !    diffusivity
 !===============================================================================
 
@@ -509,7 +497,7 @@ call usvist &
   ckupdc , smacel )
 
 !===============================================================================
-! 9. Clipping of the turbulent viscosity in dynamic LES
+! 8. Clipping of the turbulent viscosity in dynamic LES
 !===============================================================================
 
 ! Pour la LES en modele dynamique on clippe la viscosite turbulente de maniere
@@ -537,7 +525,7 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 10. User modification of the mesh viscosity in ALE
+! 9. User modification of the mesh viscosity in ALE
 !===============================================================================
 
 if (iale.eq.1.and.ntcabs.eq.0) then
@@ -567,7 +555,7 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 endif
 
 !===============================================================================
-! 11. Checking of the user values
+! 10. Checking of the user values
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions
@@ -821,7 +809,7 @@ if (iok.ne.0) then
 endif
 
 !===============================================================================
-! 12. Parallelism and periodicity
+! 11. Parallelism and periodicity
 !===============================================================================
 
 ! Pour navstv et visecv on a besoin de ROM dans le halo

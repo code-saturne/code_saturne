@@ -429,7 +429,7 @@ if (iirayo.ge.1) then
     smbrs, rovsdt,volume,propce )
 
     ! Store the explicit radiative source term
-    if (idilat.eq.4) then
+    if (idilat.ge.4) then
       do iel = 1, ncel
         propce(iel,ipproc(iustdy(iscalt))) = &
         propce(iel,ipproc(iustdy(iscalt)))   &
@@ -659,7 +659,7 @@ if (itspdv.eq.1) then
       endif
 
       ! Production term for a variance  TODO compute ustdy when isso2t >0
-      if (idilat.eq.4) then
+      if (idilat.ge.4) then
         do iel = 1, ncel
           propce(iel,ipproc(iustdy(iscal))) =                     &
           propce(iel,ipproc(iustdy(iscal))) +                     &
@@ -995,7 +995,7 @@ call codits &
 
 call clpsca(iscal)
 
-if (idilat.eq.4.and.itspdv.eq.1) then
+if (idilat.ge.4.and.itspdv.eq.1) then
 
   do iel = 1, ncel
     if (itytur.eq.2 .or. itytur.eq.5) then
@@ -1019,7 +1019,7 @@ if (idilat.eq.4.and.itspdv.eq.1) then
 endif
 
 ! Store the implicit part of the radiative source term
-if (idilat.eq.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
+if (idilat.ge.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
   do iel = 1, ncel
     ivar = isca(iscalt)
     drtp = rtp(iel,ivar)-rtpa(iel,ivar)

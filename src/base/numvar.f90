@@ -174,7 +174,7 @@ module numvar
   !> Density at the previous time step
   integer, save :: iroma
 
-  !> Density at the second previous time
+  !> Density at the second previous time step
   integer, save :: iromaa
 
   !> dynamic molecular viscosity (in kg/(m.s))

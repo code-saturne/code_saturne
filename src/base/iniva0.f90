@@ -163,12 +163,13 @@ enddo
 if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0) then
   call field_current_to_previous(icrom)
 endif
-if (icavit.ge.0.or.idilat.eq.4) then
+if (icavit.ge.0.or.idilat.gt.1) then
   call field_get_val_s(icroaa, crom_prev2)
   do iel = 1, ncelet
     crom_prev2(iel) = crom(iel)
   enddo
 endif
+
 !     Masse volumique aux faces de bord (et au pdt precedent si ordre2)
 do ifac = 1, nfabor
   brom(ifac) = ro0
@@ -250,7 +251,7 @@ do iscal = 1, nscal
 enddo
 
 ! Initialisation of source terms for weakly compressible algorithm
-if (idilat.eq.4) then
+if (idilat.ge.4) then
   do iel = 1, ncel
     propce(iel,ipproc(iustdy(itsrho))) = 0.d0
   enddo

@@ -5,6 +5,11 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add a new dilatable (non conservative) algorithm for fire modelling.
+  Activate it with idilat=4 (the formulation is in div(u) instead of
+  div(rho u)). You can access to the previous dedicated algorithm by
+  setting idilat to 5.
+
 - Add L2 time normalized residual to the log.
 
 - Single-reduction conjugate gradient is now an option rather than a separate

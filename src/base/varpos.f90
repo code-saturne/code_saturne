@@ -364,7 +364,7 @@ endif
 nprmax = nproce
 
 ! Source term for weakly compressible algorithm (semi analytic scheme)
-if (idilat.eq.4) then
+if (idilat.ge.4) then
   do iscal = 1, nscal
     id = ivarfl(isca(iscal))
     call field_get_name(id, s_name)

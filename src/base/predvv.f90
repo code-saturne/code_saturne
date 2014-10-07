@@ -565,6 +565,10 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
   if (idilat.eq.4)then
     do iel = 1, ncel
+      xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))/crom(iel)
+    enddo
+  elseif (idilat.eq.5) then
+    do iel = 1, ncel
       xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))
     enddo
 
