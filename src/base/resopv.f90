@@ -1486,10 +1486,6 @@ if (iswdyp.ge.1) then
 
   if (idften(ipr).eq.1) then
 
-    ! idilat = 4, viscap already contains dt/rho,
-    ! so dt is temporaly affected to viscap
-    if (idilat.eq.4) viscap => dt(:)
-
     call itrgrp &
     !==========
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
@@ -1503,14 +1499,7 @@ if (iswdyp.ge.1) then
    viscap , viscap , viscap ,                                                  &
    rhs0   )
 
-    ! idilat = 4, viscap contains dt/rho again
-    if (idilat.eq.4) viscap => xdtsro(:)
-
   else if (idften(ipr).eq.6) then
-
-    ! idilat = 4, viscap already contains dt/rho
-    ! so dt is temporaly affected to viscap
-    if (idilat.eq.4) vitenp => tpucou(:,:)
 
     call itrgrv &
     !==========
@@ -1525,9 +1514,6 @@ if (iswdyp.ge.1) then
    vitenp ,                                                       &
    weighf , weighb ,                                              &
    rhs0   )
-
-    ! idilat = 4, viscap contains dt/rho again
-    if (idilat.eq.4) vitenp => tpusro(:,:)
 
   endif
 
@@ -1590,10 +1576,6 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
     if (idften(ipr).eq.1) then
 
-      ! idilat = 4, viscap already contains dt/rho
-      ! so dt is temporaly affected to viscap
-      if (idilat.eq.4) viscap => dt(:)
-
       call itrgrp &
       !==========
    ( f_id0           , init   , inc    , imrgra ,              &
@@ -1608,14 +1590,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      viscap , viscap , viscap ,                                &
      adxk   )
 
-      ! idilat = 4, viscap contains dt/rho again
-      if (idilat.eq.4) viscap => xdtsro(:)
-
     else if (idften(ipr).eq.6) then
-
-      ! idilat = 4, viscap already contains dt/rho
-      ! so dt is temporaly affected to viscap
-      if (idilat.eq.4) vitenp => tpucou(:,:)
 
       call itrgrv &
       !==========
@@ -1630,9 +1605,6 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
      vitenp ,                                                       &
      weighf , weighb ,                                              &
      adxk   )
-
-      ! idilat = 4, viscap contains dt/rho again
-      if (idilat.eq.4) vitenp => tpusro(:,:)
 
     endif
 
