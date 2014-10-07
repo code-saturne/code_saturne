@@ -443,6 +443,10 @@ if (idarcy.eq.1) then
 
 endif
 
+! User-defined properties
+
+call cs_parameters_create_added_properties
+
 return
 
 !===============================================================================
