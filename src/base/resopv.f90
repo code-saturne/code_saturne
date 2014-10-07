@@ -1486,7 +1486,7 @@ if (iswdyp.ge.1) then
 
   if (idften(ipr).eq.1) then
 
-    ! idilat = 4, viscap already contains dt/rho, 
+    ! idilat = 4, viscap already contains dt/rho,
     ! so dt is temporaly affected to viscap
     if (idilat.eq.4) viscap => dt(:)
 
@@ -2303,10 +2303,10 @@ else
   enddo
 endif
 
-! Transformation of volumic mass fluxes into massic mass fluxes 
+! Transformation of volumic mass fluxes into massic mass fluxes
 if (idilat.eq.4) then
 
-  do ifac = 1, nfabor 
+  do ifac = 1, nfabor
     bmasfl(ifac) = bmasfl(ifac) * brom(ifac)
   enddo
 
