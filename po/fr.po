@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-09-11 16:39+0200\n"
+"POT-Creation-Date: 2014-10-08 14:53+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3700,6 +3700,9 @@ msgid "BiCGstab2"
 msgstr "BiCGstab2"
 
 msgid "GMRES"
+msgstr ""
+
+msgid "Block Gauss-Seidel"
 msgstr ""
 
 msgid "  n_iter     res_abs     res_nor\n"
@@ -9088,6 +9091,15 @@ msgid ""
 msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
+
+#, c-format
+msgid ""
+"Maximum number of particles (%lu) is lower than the local\n"
+"number of particles read from restart (%lu)."
+msgstr ""
+
+msgid "Error reading main particle restart data."
+msgstr "Erreur à la lecture des données de reprise particulaires."
 
 msgid ""
 " Error during boundary treatment.\n"

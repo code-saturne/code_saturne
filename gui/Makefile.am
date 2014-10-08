@@ -24,9 +24,27 @@
 
 SUBDIRS = Base Pages
 
+EXTRA_DIST = Base/icons/code_saturne.ico
+
 # Install data
 
 imagesdir = ${pkgdatadir}/images
 
 images_DATA = \
 Base/icons/splashscreen.png
+
+install-exec-local:
+	@case ${host_os} in \
+	  *mingw* | *cygwin*) \
+	    $(INSTALL_PROGRAM) $(srcdir)/Base/icons/code_saturne.ico $(DESTDIR)$(bindir); \
+	    ;; \
+	esac
+
+uninstall-local:
+	@case ${host_os} in \
+	  *mingw* | *cygwin*) \
+	    rm $(DESTDIR)$(bindir)/code_saturne.ico; \
+	    rmdir $(DESTDIR)$(bindir); \
+	    ;; \
+	esac
+

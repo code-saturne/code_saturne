@@ -224,8 +224,7 @@ EXTRA_DIST += bin/code_saturne.in bin/cs_package.py.in
 # Install binary scripts
 
 nodist_bin_SCRIPTS = \
-bin/code_saturne \
-bin/code_saturne.ico
+bin/code_saturne
 
 # Install Python library
 
