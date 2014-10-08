@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug when both options iphydr=1 and (icorio=1 or iturbo=1) are activated
+
 - Fix possible bugs in array statistics used by logging (listing).
 
 - Fix face viscosity default option of the pressure (harmonic instead of arithmetic).
