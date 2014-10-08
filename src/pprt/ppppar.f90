@@ -58,7 +58,7 @@ module ppppar
 
   !> maximum number of coal classes for the pulverised coal combustion module
   integer    nclcpm
-  parameter (ncharm=5, ncpcmx=10, nclcpm=ncharm*ncpcmx)
+  parameter (ncharm=5, ncpcmx=20, nclcpm=ncharm*ncpcmx)
 
   !=============================================================================
 

@@ -57,7 +57,7 @@ module paramx
   integer   nvarmx
 
   !> maximal number of physical properties at cells.
-  !> = nscamx (Lambda) + 7 (rho,Cp,viscl,visct,cou,fou,iprtot) + 4 (estim)
+  !> = nscamx (Lambda) + 100 (margin for most specific physics)
   integer   npromx
 
   !> maximal number of physical quantities
@@ -74,7 +74,7 @@ module paramx
 
   parameter(nscamx=200)
   parameter(nvarmx=nscamx+12)
-  parameter(npromx=nscamx+11)
+  parameter(npromx=nscamx+100)
   parameter(ngrdmx=nvarmx+npromx)
   parameter(nsmamx=nvarmx+1)
   parameter(nvppmx=ngrdmx+20)
