@@ -105,7 +105,6 @@ integer          ncelps, nfacps, nfbrps
 integer          itypps(3)
 integer          lstcel(ncelps), lstfac(nfacps), lstfbr(nfbrps)
 
-
 ! Local variables
 
 integer          ivar
@@ -114,6 +113,7 @@ logical          ientla, ivarpr
 double precision rvoid(1)
 
 double precision, dimension(:), pointer :: cvar_var
+
 !===============================================================================
 
 !===============================================================================

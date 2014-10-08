@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case2" solver_version="4.0-alpha" study="full_domain" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="case1" solver_version="4.0-alpha" study="full_domain" version="2.0">
 	<additional_scalars>
 		<variable label="scalar2" name="scalar2" type="user">
 			<blending_factor>1</blending_factor>
@@ -63,11 +63,6 @@
 			<probe name="8" status="on">
 				<probe_x>0.75</probe_x>
 				<probe_y>0.75</probe_y>
-				<probe_z>0</probe_z>
-			</probe>
-			<probe name="9" status="on">
-				<probe_x>-0.5</probe_x>
-				<probe_y>2.25</probe_y>
 				<probe_z>0</probe_z>
 			</probe>
 			<probe_format choice="DAT"/>
@@ -211,9 +206,10 @@
 		<fluid_properties>
 			<material choice="user_material"/>
 			<method choice="user_properties"/>
-			<property choice="variable" label="Density" name="density">
-				<formula>density = TempC * ( -4.0668E-03*TempC - 5.0754E-02 ) + 1000.9;</formula>
+			<property choice="constant" label="Density" name="density">
 				<initial_value>725.735</initial_value>
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
 			</property>
 			<property choice="constant" label="LamVisc" name="molecular_viscosity">
 				<initial_value>8.951e-05</initial_value>
@@ -234,7 +230,7 @@
 		</fluid_properties>
 		<gravity>
 			<gravity_x>0</gravity_x>
-			<gravity_y>-9.81</gravity_y>
+			<gravity_y>0</gravity_y>
 			<gravity_z>0</gravity_z>
 		</gravity>
 	</physical_properties>

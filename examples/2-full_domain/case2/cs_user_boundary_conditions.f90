@@ -236,7 +236,7 @@
 !>     - For velocities U, dynamic roughness
 !>         \c rcodcl(ifac, iu, 3) = roughd
 !>     - For other scalars, thermal roughness
-!>         \c rcodcl(ifac, iv, 3) = rought
+!>         \c rcodcl(ifac, iv, 3) = rough
 !>
 !>
 !> Note that if the user assigns a value to \c itypfb equal to \c ientre, \c isolib,
@@ -323,23 +323,23 @@
 !>       entering the subroutine.
 !>
 !>
-!> \subsubsection cell_id Cells identification of some variables
+!> \subsubsection cell_id Cell values of some variables
 !>
-!> Cell values  (let \c iel = \c ifabor(ifac))
+!> Cell value field ids
 !>
-!> - Density:                               \c propce(iel, ipproc(irom))
-!> - Dynamic molecular viscosity:           \c propce(iel, ipproc(iviscl))
-!> - Turbulent viscosity:                   \c propce(iel, ipproc(ivisct))
-!> - Specific heat:                         \c propce(iel, ipproc(icp)
-!> - Diffusivity(lambda):                   \c propce(iel, ipproc(ivisls(iscal)))
+!> - Density:                               \c iprpfl(ipproc(irom))
+!> - Dynamic molecular viscosity:           \c iprpfl(ipproc(iviscl))
+!> - Turbulent viscosity:                   \c iprpfl(ipproc(ivisct))
+!> - Specific heat:                         \c iprpfl(ipproc(icp)
+!> - Diffusivity(lambda):                   \c iprpfl(ipproc(ivisls(iscal)))
 !>
 !>
 !> \subsubsection fac_id Faces identification
 !>
 !> - Density:                               \c field id \c ibrom
-!> - Mass flux (for convecting \c ivar):
+!> - Boundary mass flux (for convecting \c ivar):
 !>     field id \c iflmab
-!>     using \c field_get_key_int(ivarfl(ivar), kimasf, iflmab)
+!>     using \c field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
 !> - For other values: take as an approximation the value in the adjacent cell
 !>                     i.e. as above with \c iel = ifabor(ifac).
 !-------------------------------------------------------------------------------
@@ -359,7 +359,7 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 5 smooth wall and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
-!>                               - 6 rought wall and
+!>                               - 6 rough wall and
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
@@ -372,7 +372,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughtness
+!>                                 (negative if gain) in w/m2 or roughness
 !>                                 in m if icodcl=6
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradt \, \vect{u} \cdot \vect{n}  \f$
@@ -435,7 +435,10 @@ double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
-integer          ifac, iel, ilelt, nlelt
+
+integer ilelt, ifac, nlelt
+
+! INSERT_VARIABLE_DEFINITIONS_HERE
 
 integer, allocatable, dimension(:) :: lstelt
 
@@ -448,6 +451,8 @@ integer, allocatable, dimension(:) :: lstelt
 
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 
+! INSERT_ADDITIONAL_INITIALIZATION_CODE_HERE
+
 !===============================================================================
 ! Assign boundary conditions to boundary faces here
 
@@ -457,19 +462,17 @@ allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
 !   - set the boundary condition for each face
 !===============================================================================
 
-call getfbr('1', nlelt, lstelt)
-!==========
+call getfbr('1',nlelt,lstelt)
 
 if (ttcabs.lt.3.8d0) then
-
   do ilelt = 1, nlelt
     ifac = lstelt(ilelt)
-    rcodcl(ifac,isca(1),1) = 20.d0 + 100.d0*ttcabs
+    rcodcl(ifac,isca(2),1) = 20.d0 + 100.d0*ttcabs
   enddo
 else
   do ilelt = 1, nlelt
     ifac = lstelt(ilelt)
-    rcodcl(ifac,isca(1),1) = 400.d0
+    rcodcl(ifac,isca(2),1) = 400.d0
   enddo
 endif
 
