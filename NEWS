@@ -5,6 +5,8 @@ Release 3.2.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug when iphydr=1 and (icorio or iturbo=1)
+
 - Fix the boundary conditions coefficients for the second pressure correction in
   the fire algorithm (introduced by the fix of the boundary conditions
   coefficients for the first pressure correction).
@@ -91,7 +93,7 @@ Bug fixes:
 - Fix automatic initialization of blencv for the thermal scalar (centered)
   (introduced by change in handling of thermal scalar in the GUI).
 
-- Fix misusage of boundary coefficients array of the pressure increment, 
+- Fix misusage of boundary coefficients array of the pressure increment,
   a work array is used instead.
 
 - Fix dynamic relaxation coefficient (iswdyn option) for vector and
