@@ -371,9 +371,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
         cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
         cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
         cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-        dfrcxt(iel,1) = dfrcxt(iel,1) - ccorio*crom(iel)*cx
-        dfrcxt(iel,2) = dfrcxt(iel,2) - ccorio*crom(iel)*cy
-        dfrcxt(iel,3) = dfrcxt(iel,3) - ccorio*crom(iel)*cz
+        dfrcxt(1,iel) = dfrcxt(1,iel) - ccorio*crom(iel)*cx
+        dfrcxt(2,iel) = dfrcxt(2,iel) - ccorio*crom(iel)*cy
+        dfrcxt(3,iel) = dfrcxt(3,iel) - ccorio*crom(iel)*cz
       endif
     enddo
   endif
