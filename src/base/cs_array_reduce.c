@@ -1389,7 +1389,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
           for (j = 0; j < dim; j++)
             c[j] = 0.0;
           for (li = start_id; li < end_id; li++) {
-            i = vl[i];
+            i = vl[li];
             for (j = 0; j < dim; j++) {
               c[j] += v[i*dim + j];
               if (v[i*dim + j] < lmin[j])
@@ -1428,9 +1428,9 @@ _cs_real_sstats_nd(cs_lnum_t         n,
     for (i = start_id; i < end_id; i++) {
       for (j = 0; j < dim; j++) {
         c[j] += v[i*dim + j];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1439,12 +1439,12 @@ _cs_real_sstats_nd(cs_lnum_t         n,
   else {
 
     for (li = start_id; li < end_id; li++) {
-      i = vl[i];
+      i = vl[li];
       for (j = 0; j < dim; j++) {
         c[j] += v[i*dim + j];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1578,7 +1578,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           for (j = 0; j < dim2; j++)
             c[j] = 0.0;
           for (li = start_id; li < end_id; li++) {
-            i = vl[i];
+            i = vl[li];
             for (j = 0; j < dim; j++) {
               c[j]     += v[i*dim + j];
               c[j+dim] += v[i*dim + j]*w[i];
@@ -1618,9 +1618,9 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*w[i];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1631,22 +1631,22 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*wi;
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
   }
   else { /* vl != NULL */
     for (li = start_id; li < end_id; li++) {
-      i = vl[i];
+      i = vl[li];
       for (j = 0; j < dim; j++) {
         c[j]     += v[i*dim + j];
         c[j+dim] += v[i*dim + j]*w[i];
-        if (v[i*dim + j] < lmin[j])
+        if (v[i*dim + j] < vmin[j])
           vmin[j] = v[i*dim + j];
-        if (v[i*dim+j] > lmax[j])
+        if (v[i*dim+j] > vmax[j])
           vmax[j] = v[i*dim+j];
       }
     }
@@ -1796,6 +1796,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  * The algorithm here is similar to that used for BLAS, but computes several
  * quantities simultaneously for better cache behavior
  *
+ * \param[in]   n_elts      number of local elements
  * \param[in]   dim         local array dimension (max: 9)
  * \param[in]   v_elt_list  optional list of parent elements on which values
  *                          are defined, or NULL
