@@ -134,10 +134,8 @@ cs_sles_default(int                 f_id,
     if (!strcmp(name, "yplus_wall")) { /* distyp.f90 */
       sles_it_type = CS_SLES_JACOBI;
     }
-    if (!strcmp(name, "potential")) { /* predfl.f90 */
-      sles_it_type = CS_SLES_JACOBI;
-    }
-    else if (!strcmp(name, "hydrostatic_p")) { /* calhyd.f90 */
+    else if (   !strcmp(name, "hydrostatic_p")  /* calhyd.f90 */
+             || !strcmp(name, "potential")) {   /* predfl.f90 */
       /* Copy from pressure if possible */
       cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));
       cs_sles_t *src = NULL;
@@ -163,11 +161,7 @@ cs_sles_default(int                 f_id,
       sles_it_type = CS_SLES_PCG;
       n_max_iter = 1000;
     }
-    else if (!strcmp(name, "RayonXXX")) { /* raysol.f90 */
-      sles_it_type = CS_SLES_JACOBI;
-      n_max_iter = 1000;
-    }
-    else if (!strcmp(name, "Rayon P1")) { /* raypun.f90 */
+    else if (!strcmp(name, "radiation_P1")) { /* raypun.f90 */
       sles_it_type = CS_SLES_PCG;
       n_max_iter = 1000;
     }

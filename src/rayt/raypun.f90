@@ -228,7 +228,7 @@ thetap = 1.d0
 idtva0 = 0
 
 cnom = ' '
-write(cnom,'(A)') 'Rayon P1'
+write(cnom,'(a)') 'radiation_p1'
 nomva0 = cnom
 
 call codits &

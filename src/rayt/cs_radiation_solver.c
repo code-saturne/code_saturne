@@ -229,12 +229,18 @@ void CS_PROCF (rayord, RAYORD)
           kdir = kdir + 1;
 
           char name[32];
-          sprintf(name, "Rayon%03d", kdir);
+          sprintf(name, "radiation_%03d", kdir);
 
           cs_sles_t *sles = cs_sles_find(-1, name);
 
-          if (sles == NULL)
-            continue;
+          if (sles == NULL) {
+            (void)cs_sles_it_define(-1,
+                                    name,
+                                    CS_SLES_B_GAUSS_SEIDEL,
+                                    0,      /* poly_degree */
+                                    1000);  /* n_max_iter */
+            sles = cs_sles_find(-1, name);
+          }
 
           if (strcmp(cs_sles_get_type(sles), "cs_sles_it_t") != 0)
             continue;

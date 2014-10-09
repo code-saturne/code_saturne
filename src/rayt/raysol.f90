@@ -273,15 +273,7 @@ do iel = 1, ncel
   rovsdt(iel) = max(rovsdt(iel),zero)
 enddo
 
-!--> ON SAUVEGARDE LE NOM DE LA PREMIERE VARIABLE
-!    Attention, le passage du nom de variable pour les impressions
-!      est fait par common dans NOMVAR (pas tres pratique).
-!      Des infos sont egalement remplies en common (residu, nbiter...)
-!      Les directions n'etant pas des variables qu'on se donne
-!      la possibilite d'imprimer dans le listing, on utilise
-!      la position numero 1 qui est une poubelle.
-
-nomva0 = 'RayonXXX'
+nomva0 = 'radiation_xxx'
 
 !===============================================================================
 ! 5. RESOLUTION DE L'EQUATION DES TRANSFERTS RADIATIFS
@@ -306,7 +298,7 @@ do ii = -1,1,2
         kdir = kdir + 1
 
         cnom = ' '
-        write(cnom,'(a5,i3.3)')'Rayon',kdir
+        write(cnom,'(a10,i3.3)')'radiation_',kdir
         nomva0 = cnom
 
 !===============================================================================
