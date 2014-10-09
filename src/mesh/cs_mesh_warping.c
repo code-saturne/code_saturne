@@ -528,15 +528,23 @@ _cut_warped_i_faces_halo(cs_mesh_t   *mesh,
 
     if (cut_flag[face_id] != 0) {
 
-      n_triangles = fvm_triangulate_polygon(dim,
-                                            0,
-                                            n_face_vertices,
-                                            mesh->vtx_coord,
-                                            NULL,
-                                            mesh->i_face_vtx_lst + idx_start,
-                                            FVM_TRIANGULATE_ELT_DEF,
-                                            new_face_vtx_lst + connect_size,
-                                            triangle_state);
+      if (n_face_vertices == 4)
+        n_triangles = fvm_triangulate_quadrangle(dim,
+                                                 0,
+                                                 mesh->vtx_coord,
+                                                 NULL,
+                                                 mesh->i_face_vtx_lst + idx_start,
+                                                 new_face_vtx_lst + connect_size);
+      else
+        n_triangles = fvm_triangulate_polygon(dim,
+                                              0,
+                                              n_face_vertices,
+                                              mesh->vtx_coord,
+                                              NULL,
+                                              mesh->i_face_vtx_lst + idx_start,
+                                              FVM_TRIANGULATE_ELT_DEF,
+                                              new_face_vtx_lst + connect_size,
+                                              triangle_state);
 
       assert(n_triangles == n_face_vertices - 2);
 
@@ -789,15 +797,23 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
     if (cut_flag[face_id] != 0) {
 
-      n_triangles = fvm_triangulate_polygon(dim,
-                                            0,
-                                            n_face_vertices,
-                                            mesh->vtx_coord,
-                                            NULL,
-                                            (*p_face_vtx_lst) + idx_start,
-                                            FVM_TRIANGULATE_MESH_DEF,
-                                            new_face_vtx_lst + connect_size,
-                                            triangle_state);
+      if (n_face_vertices == 4)
+        n_triangles = fvm_triangulate_quadrangle(dim,
+                                                 0,
+                                                 mesh->vtx_coord,
+                                                 NULL,
+                                                 (*p_face_vtx_lst) + idx_start,
+                                                 new_face_vtx_lst + connect_size);
+      else
+        n_triangles = fvm_triangulate_polygon(dim,
+                                              0,
+                                              n_face_vertices,
+                                              mesh->vtx_coord,
+                                              NULL,
+                                              (*p_face_vtx_lst) + idx_start,
+                                              FVM_TRIANGULATE_MESH_DEF,
+                                              new_face_vtx_lst + connect_size,
+                                              triangle_state);
 
       assert(n_triangles == n_face_vertices - 2);
 
