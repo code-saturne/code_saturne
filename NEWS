@@ -12,6 +12,12 @@ Changes:
 
 - Add L2 time normalized residual to the log.
 
+- Add Block Gauss-Seidel linear solver, wich may be accelerated for "upwind"
+  type systems by a matrix line ordering. This is used (by default) for the
+  DOM radiation module, using the ordering defined by the radiation direction,
+  and leads to a factor of 2 to 4 improvement over the Jacobi solver for this
+  case (tested on a small number of MPI ranks).
+
 - Single-reduction conjugate gradient is now an option rather than a separate
   solver. This allows switching automatically from one to the other based on
   computation vs. communication cost.
