@@ -741,7 +741,7 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
       cs_lnum_t length = (  halo->send_index[2*rank_id + 2]
                           - halo->send_index[2*rank_id]);
 
-      if (halo->c_domain_rank[rank_id] != local_rank)
+      if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
         MPI_Irecv(send_buf + start,
                   length,
                   CS_MPI_LNUM,
@@ -772,13 +772,14 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
         cs_lnum_t length = (  halo->index[2*rank_id + 2]
                             - halo->index[2*rank_id]);
 
-        MPI_Isend(recv_buf + start,
-                  length,
-                  CS_MPI_LNUM,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+        if (length > 0)
+          MPI_Isend(recv_buf + start,
+                    length,
+                    CS_MPI_LNUM,
+                    halo->c_domain_rank[rank_id],
+                    halo->c_domain_rank[rank_id],
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
 
       }
 
@@ -897,7 +898,7 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
       length = (  halo->index[2*rank_id + end_shift]
                 - halo->index[2*rank_id]);
 
-      if (halo->c_domain_rank[rank_id] != local_rank) {
+      if (halo->c_domain_rank[rank_id] != local_rank && length > 0) {
 
         unsigned char *dest = _val + (halo->n_local_elts*size) + start*size;
 
@@ -916,9 +917,9 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
     }
 
     /* Assemble buffers for halo exchange;
-       with threading, use dynamic scheduling ,as this is probably a small loop */
+       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
+       and even static scheduling might lead to false sharing for small halos. */
 
-    #pragma omp parallel for private(start, length, src, i, j) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
@@ -955,13 +956,14 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
         length = (  halo->send_index[2*rank_id + end_shift]
                   - halo->send_index[2*rank_id]);
 
-        MPI_Isend(build_buffer + start*size,
-                  length*size,
-                  MPI_UNSIGNED_CHAR,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+        if (length > 0)
+          MPI_Isend(build_buffer + start*size,
+                    length*size,
+                    MPI_UNSIGNED_CHAR,
+                    halo->c_domain_rank[rank_id],
+                    local_rank,
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
 
       }
 
@@ -1041,8 +1043,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
       start = halo->index[2*rank_id];
       length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
 
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
+      if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
         MPI_Irecv(num + halo->n_local_elts + start,
                   length,
                   CS_MPI_INT,
@@ -1051,16 +1052,15 @@ cs_halo_sync_num(const cs_halo_t  *halo,
                   cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
-      }
       else
         local_rank_id = rank_id;
 
     }
 
     /* Assemble buffers for halo exchange;
-       with threading, use dynamic scheduling ,as this is probably a small loop */
+       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
+       and even static scheduling might lead to false sharing for small halos. */
 
-    #pragma omp parallel for private(start, length, i) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
@@ -1091,13 +1091,14 @@ cs_halo_sync_num(const cs_halo_t  *halo,
         length =   halo->send_index[2*rank_id + end_shift]
                  - halo->send_index[2*rank_id];
 
-        MPI_Isend(build_buffer + start,
-                  length,
-                  CS_MPI_INT,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+        if (length > 0)
+          MPI_Isend(build_buffer + start,
+                    length,
+                    CS_MPI_INT,
+                    halo->c_domain_rank[rank_id],
+                    local_rank,
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
 
       }
 
@@ -1171,8 +1172,7 @@ cs_halo_sync_var(const cs_halo_t  *halo,
       start = halo->index[2*rank_id];
       length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
 
-      if (halo->c_domain_rank[rank_id] != local_rank) {
-
+      if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
         MPI_Irecv(var + halo->n_local_elts + start,
                   length,
                   CS_MPI_REAL,
@@ -1181,16 +1181,15 @@ cs_halo_sync_var(const cs_halo_t  *halo,
                   cs_glob_mpi_comm,
                   &(_cs_glob_halo_request[request_count++]));
 
-      }
       else
         local_rank_id = rank_id;
 
     }
 
     /* Assemble buffers for halo exchange;
-       with threading, use dynamic scheduling ,as this is probably a small loop */
+       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
+       and even static scheduling might lead to false sharing for small halos. */
 
-    #pragma omp parallel for private(start, length, i) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
@@ -1221,13 +1220,14 @@ cs_halo_sync_var(const cs_halo_t  *halo,
         length =   halo->send_index[2*rank_id + end_shift]
                  - halo->send_index[2*rank_id];
 
-        MPI_Isend(build_buffer + start,
-                  length,
-                  CS_MPI_REAL,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+        if (length > 0)
+          MPI_Isend(build_buffer + start,
+                    length,
+                    CS_MPI_REAL,
+                    halo->c_domain_rank[rank_id],
+                    local_rank,
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
 
       }
 
@@ -1314,7 +1314,7 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
       length = (  halo->index[2*rank_id + end_shift]
                 - halo->index[2*rank_id]) * stride;
 
-      if (halo->c_domain_rank[rank_id] != local_rank) {
+      if (halo->c_domain_rank[rank_id] != local_rank && length > 0) {
 
         buffer = var + (halo->n_local_elts + halo->index[2*rank_id])*stride;
 
@@ -1333,9 +1333,9 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
     }
 
     /* Assemble buffers for halo exchange;
-       with threading, use dynamic scheduling ,as this is probably a small loop */
+       avoid threading for now, as dynamic scheduling led to slightly higher cost here,
+       and even static scheduling might lead to false sharing for small halos. */
 
-    #pragma omp parallel for private(start, length, i, j) schedule(dynamic)
     for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
 
       if (halo->c_domain_rank[rank_id] != local_rank) {
@@ -1383,13 +1383,14 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
         length = (  halo->send_index[2*rank_id + end_shift]
                   - halo->send_index[2*rank_id]);
 
-        MPI_Isend(build_buffer + start*stride,
-                  length*stride,
-                  CS_MPI_REAL,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+        if (length > 0)
+          MPI_Isend(build_buffer + start*stride,
+                    length*stride,
+                    CS_MPI_REAL,
+                    halo->c_domain_rank[rank_id],
+                    local_rank,
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
 
       }
 
