@@ -115,11 +115,14 @@ BEGIN_C_DECLS
         - 0: false (default)
         (see \ref condli, useful in case of coupling with syrthes)
   \var  cs_stokes_model_t::iphydr
-        improve hydrostatic pressure algorithm
+        improve static pressure algorithm
+        - 1: take -div(rho R) in the static pressure
+          treatment IF iphydr=1
+        - 0: no treatment (default)
+  \var  cs_stokes_model_t::igprij
+        improve static pressure algorithm
         - 1: impose the equilibrium of the hydrostaic part of the pressure with
           any external force, even head losses
-        - 2: compute an hydrostatic pressure due to buoyancy forces before the
-          prediction step
         - 0: no treatment (default)
   \var  cs_stokes_model_t::iifren
         indicates the presence of a Bernoulli boundary face (automatically
@@ -150,7 +153,7 @@ BEGIN_C_DECLS
 /* main Stokes equation model descriptor structure and associated pointer */
 
 static cs_stokes_model_t  _stokes_model = { 1, 0, 1, 1, 0, 1.0, 0, 0, 1, 1.e-12,
-                                            0, 0, 0,-1};
+                                            0, 0, 0, 0,-1};
 
 const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
 
@@ -172,6 +175,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  double  **epsdp,
                                  int     **itbrrb,
                                  int     **iphydr,
+                                 int     **igprij,
                                  int     **iifren,
                                  int     **icalhy);
 
@@ -202,6 +206,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  *   epsdp   --> pointer to cs_globe_stokes_model->epsdp
  *   itbrrb  --> pointer to cs_globe_stokes_model->itbrrb
  *   iphydr  --> pointer to cs_globe_stokes_model->iphydr
+ *   igprij  --> pointer to cs_globe_stokes_model->igprij
  *   iifren  --> pointer to cs_globe_stokes_model->iifren
  *   icalhy  --> pointer to cs_globe_stokes_model->icalhy
  *----------------------------------------------------------------------------*/
@@ -219,6 +224,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  double  **epsdp,
                                  int     **itbrrb,
                                  int     **iphydr,
+                                 int     **igprij,
                                  int     **iifren,
                                  int     **icalhy)
 {
@@ -234,6 +240,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *epsdp  = &(_stokes_model.epsdp );
   *itbrrb = &(_stokes_model.itbrrb);
   *iphydr = &(_stokes_model.iphydr);
+  *igprij = &(_stokes_model.igprij);
   *iifren = &(_stokes_model.iifren);
   *icalhy = &(_stokes_model.icalhy);
 }

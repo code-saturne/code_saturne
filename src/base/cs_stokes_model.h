@@ -91,6 +91,10 @@ typedef struct {
                                  - 2: compute an hydrostatic pressure due to
                                    buoyancy forces before the prediction step
                                  - 0: no treatment (default) */
+  int           igprij;       /* improve static pressure algorithm
+                                 - 1: take -div(rho R) in the static pressure
+                                   treatment IF iphydr=1
+                                 - 0: no treatment (default) */
   int           iifren;       /* indicates the presence of a Bernoulli boundary
                                  face (automatically computed)
                                  - 0: no face

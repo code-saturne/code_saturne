@@ -313,12 +313,12 @@ iihmpu = iihmpr
 !       cs_glob_maillage_grd_cdg_cel inchange si IALGCE<0)
 ialgce = -999
 
-call usipgl                                                       &
+call usipgl &
 !==========
  ( nesmax ,                                                       &
    ieepre , ieeder , ieecor , ieetot ,                            &
    iihmpu , nfecra ,                                              &
-   idtvar , ipucou , idilat , iphydr , ialgce , iescal )
+   idtvar , ipucou , idilat , iphydr , igprij , ialgce , iescal )
 
 ! If time step is local or variable, pass information to C layer, as it
 ! may ne needed for some field (or moment) definitions.

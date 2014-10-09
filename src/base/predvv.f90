@@ -324,69 +324,7 @@ endif
 !===============================================================================
 
 !-------------------------------------------------------------------------------
-! ---> PRISE EN COMPTE DE LA PRESSION HYDROSTATIQUE :
-!       UNIQUEMENT AU PREMIER APPEL (I.E. POUR LE CALCUL NORMAL,
-!       LE DEUXIEME APPEL EST DESTINE A UN CALCUL D'ESTIMATEUR)
-
-if (iappel.eq.1.and.iphydr.eq.1) then
-
-! force ext au pas de temps precedent :
-!     FRCXT a ete initialise a zero
-!     (est deja utilise dans typecl, et est mis a jour a la fin
-!     de navsto)
-
-  do iel = 1, ncel
-
-    ! variation de force (utilise dans resopv)
-    drom = (crom(iel)-ro0)
-    dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
-    dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
-    dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
-  enddo
-  ! Add head losses
-  if (ncepdp.gt.0) then
-    do ielpdc = 1, ncepdp
-      iel=icepdc(ielpdc)
-      vit1   = vela(1,iel)
-      vit2   = vela(2,iel)
-      vit3   = vela(3,iel)
-      cpdc11 = ckupdc(ielpdc,1)
-      cpdc22 = ckupdc(ielpdc,2)
-      cpdc33 = ckupdc(ielpdc,3)
-      cpdc12 = ckupdc(ielpdc,4)
-      cpdc23 = ckupdc(ielpdc,5)
-      cpdc13 = ckupdc(ielpdc,6)
-      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) &
-                    - crom(iel)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
-      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) &
-                    - crom(iel)*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
-      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) &
-                    - crom(iel)*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
-    enddo
-  endif
-!     Ajout eventuel de la force de Coriolis
-  if (icorio.eq.1 .or. iturbo.eq.1) then
-    do iel = 1, ncel
-      if (irotce(iel).ne.0) then
-        cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
-        cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
-        cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-        dfrcxt(1,iel) = dfrcxt(1,iel) - ccorio*crom(iel)*cx
-        dfrcxt(2,iel) = dfrcxt(2,iel) - ccorio*crom(iel)*cy
-        dfrcxt(3,iel) = dfrcxt(3,iel) - ccorio*crom(iel)*cz
-      endif
-    enddo
-  endif
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvin(dfrcxt)
-    !==========
-  endif
-
-endif
-
-!-------------------------------------------------------------------------------
-! ---> PRISE EN COMPTE DU GRADIENT DE PRESSION
+! ---> Pressure gradient
 
 ! Allocate a work array for the gradient calculation
 allocate(grad(3,ncelet))
@@ -737,7 +675,7 @@ deallocate(grad)
 
 
 !-------------------------------------------------------------------------------
-! ---> INITIALISATION DU TABLEAU TRAVA et PROPCE AU PREMIER PASSAGE
+! ---> INITIALISATION DU TABLEAU TRAVA et propce AU PREMIER PASSAGE
 !     (A LA PREMIERE ITER SUR NAVSTO)
 
 !     TRAVA rassemble les termes sources qu'il suffit de calculer
@@ -925,7 +863,7 @@ endif
 
 
 !-------------------------------------------------------------------------------
-! ---> TERMES DE GRADIENT TRANSPOSE
+! ---> Transpose of velocity gradient in the diffusion term
 
 !     These terms are taken into account in bilscv.
 !     We only compute here the secondary viscosity.
@@ -1179,7 +1117,7 @@ if(itytur.eq.3.and.iterns.eq.1) then
   allocate(tflmas(3,nfac))
   allocate(tflmab(3,nfabor))
 
-  call divrij                                                     &
+  call divrij &
   !==========
  ( f_id   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
@@ -1209,34 +1147,37 @@ if(itytur.eq.3.and.iterns.eq.1) then
 
   deallocate(tflmas, tflmab)
 
-!   Si on extrapole les termes source en temps :
-!     PROPCE recoit les termes de divergence
-  if (isno2t.gt.0) then
-    do iel = 1, ncel
-      do isou = 1, 3
-        c_st_vel(isou,iel) = c_st_vel(isou,iel) - divt(isou,iel)
-      enddo
-    enddo
-!   Si on n'extrapole pas les termes source en temps :
-  else
-!     si on n'itere pas sur navsto : TRAV
-    if (nterup.eq.1) then
+  ! (if iphydr=1 then this term is already taken into account)
+  if (iphydr.ne.1.or.igprij.ne.1) then
+
+    ! If extrapolation of source terms
+    if (isno2t.gt.0) then
       do iel = 1, ncel
         do isou = 1, 3
-          trav(isou,iel) = trav(isou,iel) - divt(isou,iel)
+          c_st_vel(isou,iel) = c_st_vel(isou,iel) - divt(isou,iel)
         enddo
       enddo
-!     si on itere sur navsto       : TRAVA
+
+    ! No extrapolation of source terms
     else
-      do iel = 1, ncel
-        do isou = 1, 3
-          trava(isou,iel) = trava(isou,iel) - divt(isou,iel)
+
+      ! No PISO iteration
+      if (nterup.eq.1) then
+        do iel = 1, ncel
+          do isou = 1, 3
+            trav(isou,iel) = trav(isou,iel) - divt(isou,iel)
+          enddo
         enddo
-      enddo
+      ! PISO iterations
+      else
+        do iel = 1, ncel
+          do isou = 1, 3
+            trava(isou,iel) = trava(isou,iel) - divt(isou,iel)
+          enddo
+        enddo
+      endif
     endif
   endif
-
-  deallocate(divt)
 
 endif
 
@@ -1344,6 +1285,78 @@ else
     do ifac = 1, nfabor
       viscbi(ifac) = 0.d0
     enddo
+  endif
+
+endif
+
+!-------------------------------------------------------------------------------
+! ---> Take external forces partially equilibrated with the pressure gradient
+!      into account (only for the first call, the second one is dedicated
+!      to error estimators)
+
+if (iappel.eq.1.and.iphydr.eq.1) then !FIXME iterns ?
+
+! force ext au pas de temps precedent :
+!     FRCXT a ete initialise a zero
+!     (est deja utilise dans typecl, et est mis a jour a la fin
+!     de navsto)
+
+  do iel = 1, ncel
+
+    ! External force variation between time step n and n+1
+    ! (used in the correction step)
+    drom = (crom(iel)-ro0)
+    dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
+    dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
+    dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
+  enddo
+
+  ! Add head losses
+  if (ncepdp.gt.0) then
+    do ielpdc = 1, ncepdp
+      iel=icepdc(ielpdc)
+      vit1   = vela(1,iel)
+      vit2   = vela(2,iel)
+      vit3   = vela(3,iel)
+      cpdc11 = ckupdc(ielpdc,1)
+      cpdc22 = ckupdc(ielpdc,2)
+      cpdc33 = ckupdc(ielpdc,3)
+      cpdc12 = ckupdc(ielpdc,4)
+      cpdc23 = ckupdc(ielpdc,5)
+      cpdc13 = ckupdc(ielpdc,6)
+      dfrcxt(1 ,iel) = dfrcxt(1 ,iel) &
+                    - crom(iel)*(cpdc11*vit1+cpdc12*vit2+cpdc13*vit3)
+      dfrcxt(2 ,iel) = dfrcxt(2 ,iel) &
+                    - crom(iel)*(cpdc12*vit1+cpdc22*vit2+cpdc23*vit3)
+      dfrcxt(3 ,iel) = dfrcxt(3 ,iel) &
+                    - crom(iel)*(cpdc13*vit1+cpdc23*vit2+cpdc33*vit3)
+    enddo
+  endif
+
+  ! Add Coriolis force
+  if (icorio.eq.1 .or. iturbo.eq.1) then
+    do iel = 1, ncel
+      if (irotce(iel).ne.0) then
+        cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
+        cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
+        cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
+        dfrcxt(1,iel) = dfrcxt(1,iel) - ccorio*crom(iel)*cx
+        dfrcxt(2,iel) = dfrcxt(2,iel) - ccorio*crom(iel)*cy
+        dfrcxt(3,iel) = dfrcxt(3,iel) - ccorio*crom(iel)*cz
+      endif
+    enddo
+  endif
+
+  ! Add -div( rho R) as external force
+  if (itytur.eq.3.and.igprij.eq.1) then
+    do iel = 1, ncel
+      dfrcxt(isou, iel) = dfrcxt(isou, iel) - divt(isou, iel)
+    enddo
+  endif
+
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synvin(dfrcxt)
   endif
 
 endif
@@ -2010,6 +2023,7 @@ deallocate(fimp)
 deallocate(tsexp)
 deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
+if (allocated(divt)) deallocate(divt)
 
 !--------
 ! Formats

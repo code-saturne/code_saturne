@@ -832,7 +832,7 @@ subroutine usipgl &
  ( nesmax,                                                        &
    iespre, iesder, iescor, iestot,                                &
    ixmlpu, nfecra,                                                &
-   idtvar, ipucou, idilat, iphydr, ialgce , iescal )
+   idtvar, ipucou, idilat, iphydr, igprij, ialgce , iescal )
 
 
 !===============================================================================
@@ -860,6 +860,8 @@ subroutine usipgl &
 ! iphydr           ! i  ! --> ! flag for handling of the equilibrium between   !
 !                  !    !     ! the pressure gradient and the gravity and      !
 !                  !    !     ! head-loss terms                                !
+! igprij           ! i  ! --> ! flag for handling of the equilibrium between   !
+!                  !    !     ! the pressure gradient and -div(rho R)          !
 ! ialgce           ! i  ! <-- ! option for the method of calculation of        !
 !                  !    !     ! cell centers                                   !
 ! iescal(nesmax)   ! ia ! <-- ! flag for activation of error estimators for    !
@@ -888,7 +890,7 @@ implicit none
 integer nesmax
 integer iespre, iesder, iescor, iestot
 integer ixmlpu, nfecra
-integer idtvar, ipucou, idilat, iphydr, ialgce
+integer idtvar, ipucou, idilat, iphydr, igprij, ialgce
 integer iescal(nesmax)
 
 ! Local variables

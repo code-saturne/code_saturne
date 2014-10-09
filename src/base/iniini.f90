@@ -843,6 +843,14 @@ epsdp  = 1.0d-12
 iphydr = 0
 icalhy = -1
 
+! --- Take into account the balance or imbalance between the pressure
+!     gradient and source terms -div(rho R)
+!     (not activate by default igprij=0)
+!     igprij = 1: take -div(rho R) in the static pressure
+!                 treatment IF iphydr=1
+!              0: no treatment (default)
+igprij = 0
+
 ! --- Cavitation module (not activated by default)
 !       -1: module not activated
 !        0: no vaporization/condensation model

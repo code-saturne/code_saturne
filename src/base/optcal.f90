@@ -733,6 +733,11 @@ module optcal
   !>    - 0: no treatment (default)
   integer(c_int), pointer, save :: iphydr
 
+  !> improve static pressure algorithm
+  !>    - 1: take -div(rho R) in the static pressure
+  !>      treatment IF iphydr=1
+  !>    - 0: no treatment (default)
+  integer(c_int), pointer, save :: igprij
 
   !> indicates the presence of a Bernoulli boundary face (automatically computed)
   !>    - 0: no face
@@ -1096,13 +1101,14 @@ module optcal
     subroutine cs_f_stokes_options_get_pointers(ivisse, irevmc, iprco, irnpnw, &
                                                 rnormp, arak  ,ipucou, iccvfg, &
                                                 idilat, epsdp ,itbrrb, iphydr, &
+                                                igprij,                        &
                                                 iifren, icalhy)        &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ivisse, irevmc, iprco, irnpnw, rnormp, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
-      type(c_ptr), intent(out) :: iifren, icalhy
+      type(c_ptr), intent(out) :: igprij, iifren, icalhy
     end subroutine cs_f_stokes_options_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1330,11 +1336,12 @@ contains
 
     type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_irnpnw, c_rnormp, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
-    type(c_ptr) :: c_iifren, c_icalhy
+    type(c_ptr) :: c_igprij, c_iifren, c_icalhy
+
 
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
                                           c_irnpnw, c_rnormp, c_arak  , c_ipucou, c_iccvfg, &
-                                          c_idilat, c_epsdp , c_itbrrb, c_iphydr, &
+                                          c_idilat, c_epsdp , c_itbrrb, c_iphydr, c_igprij, &
                                           c_iifren, c_icalhy)
 
     call c_f_pointer(c_ivisse, ivisse)
@@ -1349,6 +1356,7 @@ contains
     call c_f_pointer(c_epsdp , epsdp )
     call c_f_pointer(c_itbrrb, itbrrb)
     call c_f_pointer(c_iphydr, iphydr)
+    call c_f_pointer(c_igprij, igprij)
     call c_f_pointer(c_iifren, iifren)
     call c_f_pointer(c_icalhy, icalhy)
 
