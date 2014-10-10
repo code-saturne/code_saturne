@@ -426,13 +426,11 @@ indrey(2,1) = indrey(1,2)
 indrey(3,1) = indrey(1,3)
 indrey(3,2) = indrey(2,3)
 
-allocate(cvara_ndrey(3,3,ncelet))
+allocate(cvara_ndrey(ncelet,3,3))
 do ii = 1, 3
   do kk = 1, 3
     call field_get_val_prev_s(ivarfl(indrey(ii,kk)), w8)
-    do iel = 1,ncel
-      cvara_ndrey(ii,kk,iel) = w8(iel)
-    enddo
+    cvara_ndrey(:,ii,kk) = w8
   enddo
 enddo
 
@@ -493,8 +491,8 @@ do iel=1,ncel
         do jj = ii, 3
           do kk = 1, 3
             xprod(ii,jj) = xprod(ii,jj)                             &
-                 - ccorio*( matrot(ii,kk)*cvara_ndrey(jj,kk,iel)    &
-                 + matrot(jj,kk)*cvara_ndrey(ii,kk,iel) )
+                 - ccorio*( matrot(ii,kk)*cvara_ndrey(iel,jj,kk)    &
+                 + matrot(jj,kk)*cvara_ndrey(iel,ii,kk) )
           enddo
         enddo
       enddo
