@@ -26,7 +26,7 @@ subroutine raydom &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce )
+   dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -52,8 +52,6 @@ subroutine raydom &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -96,7 +94,7 @@ integer          nvar   , nscal
 integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -105,7 +103,6 @@ integer          iappel
 integer          ifac   , iel    , iok    , izone
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , ivar0
-integer          ivart
 integer          idverl
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
@@ -126,6 +123,8 @@ double precision, allocatable, dimension(:) :: flurds, flurdb
 double precision, dimension(:), pointer :: tparo, bqinci
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 
+double precision, dimension(:), pointer :: cvara_scalt
+double precision, dimension(:), pointer :: cvara_yfol
 double precision, dimension(:), pointer :: cpro_cp
 
 integer    ipadom
@@ -170,9 +169,6 @@ write(nfecra,1000)
 !---> Constants initialization
 unspi = 1.d0/pi
 
-!---> Index of thermal variable
-ivart = isca(iscalt)
-
 !=============================================================================
 ! 3.1 Absorption coefficient of environment semitransparent
 !=============================================================================
@@ -189,7 +185,7 @@ enddo
 
 if (ippmod(iphpar).ge.2) then
 
-  call ppcabs(rtp, propce)
+  call ppcabs(propce)
   !==========
 
   !---> ckmel stores temporarly the absorbption coefficient
@@ -213,9 +209,10 @@ if (ippmod(iphpar).ge.2) then
     else
       do icla = 1,nclafu
         ipcla = 1+icla
+        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
         do iel = 1, ncel
           ckmel(iel) = ckmel(iel)                                   &
-                     + ( rtpa(iel,isca(iyfol(icla)))                &
+                     + ( cvara_yfol(iel)                            &
                        * propce(iel,ipproc(icak(ipcla))) )
         enddo
       enddo
@@ -343,13 +340,15 @@ if (idverl.ge.0) then
   !---> Temperature transport
   if (itherm.eq.1) then
 
+    call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
+
     if (itpscl.eq.1) then
       do iel = 1, ncel
-        tempk(iel,1) = rtpa(iel,ivart) + tkelvi
+        tempk(iel,1) = cvara_scalt(iel) + tkelvi
       enddo
     else
       do iel = 1, ncel
-        tempk(iel,1) = rtpa(iel,ivart)
+        tempk(iel,1) = cvara_scalt(iel)
       enddo
     endif
 
@@ -374,7 +373,7 @@ if (idverl.ge.0) then
       !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
-      rtp    , rtpa   , propce ,                                     &
+      propce ,                                                       &
       tparo  , flurdb , tempk(1,1)  )
 
     endif
@@ -486,9 +485,10 @@ if (iirayo.eq.2) then
   else if (ippmod(icfuel).ge.0) then
     do icla = 1, nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1,ncel
         smbrs(iel) = smbrs(iel)                               &
-                   + (3.d0*rtpa(iel,isca(iyfol(icla)))        &
+                   + (3.d0*cvara_yfol(iel)                    &
                      * propce(iel,ipproc(icak(ipcla)))        &
                      * (tempk(iel,ipcla)**4) * volume(iel) )
       enddo
@@ -517,9 +517,10 @@ if (iirayo.eq.2) then
   else if (ippmod(icfuel).ge.0) then
     do icla = 1, nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1,ncel
         rovsdt(iel) = rovsdt(iel)                                      &
-                    + (3.d0*rtpa(iel,isca(iyfol(icla)))                &
+                    + (3.d0*cvara_yfol(iel)                            &
                       * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
       enddo
     enddo
@@ -551,9 +552,10 @@ if (iirayo.eq.2) then
   else if (ippmod(icfuel).ge.0) then
     do icla = 1, nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1, ncel
         ckmel(iel) = ckmel(iel)                                  &
-                   + ( rtpa(iel,isca(iyfol(icla)))               &
+                   + ( cvara_yfol(iel)                           &
                      * propce(iel,ipproc(icak(ipcla))) )
       enddo
     enddo
@@ -613,9 +615,10 @@ else if (iirayo.eq.1) then
   elseif (ippmod(icfuel).ge.0) then
     do icla = 1,nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1,ncel
         smbrs(iel) = smbrs(iel)                                 &
-                    + rtpa(iel,isca(iyfol(icla)))               &
+                    + cvara_yfol(iel)                           &
                  *propce(iel,ipproc(itsri(ipcla)))*volume(iel)  &
                  *unspi
       enddo
@@ -644,9 +647,10 @@ else if (iirayo.eq.1) then
   elseif (ippmod(icfuel).ge.0) then
     do icla = 1,nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1,ncel
         rovsdt(iel) = rovsdt(iel)                                      &
-                    + rtpa(iel,isca(iyfol(icla)))                      &
+                    + cvara_yfol(iel)                                  &
                       * propce(iel,ipproc(icak(ipcla))) * volume(iel)
       enddo
     enddo
@@ -824,15 +828,16 @@ if (idverl.ge.0) then
   elseif (ippmod(icfuel).ge.0) then
     do icla = 1, nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1, ncel
         ! Fluid
         propce(iel,ipproc(iabs(1))) = propce(iel,ipproc(iabs(1)))             &
-                                    + rtpa(iel,isca(iyfol(icla)))             &
+                                    + cvara_yfol(iel)                         &
                                       * propce(iel,ipproc(icak(ipcla)))       &
                                       * propce(iel,ipproc(itsre(1)))
 
         propce(iel,ipproc(iemi(1))) = propce(iel,ipproc(iemi(1)))             &
-                                    - 4.0d0*rtpa(iel,isca(iyfol(icla)))       &
+                                    - 4.0d0*cvara_yfol(iel)                   &
                                       * propce(iel,ipproc(itsri(ipcla)))
         ! Particles
         propce(iel,ipproc(iabs(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
@@ -912,10 +917,11 @@ if (idverl.ge.0) then
   elseif (ippmod(icfuel).ge.0) then
     do icla = 1, nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1, ncel
         propce(iel,ipproc(itsri(1))) = propce(iel,ipproc(itsri(1)))           &
                                      - 16.d0*propce(iel,ipproc(icak(ipcla)))  &
-                                       * rtpa(iel,isca(iyfol(icla))) * stephn &
+                                       * cvara_yfol(iel) * stephn             &
                                        * (tempk(iel,ipcla)**3) / cp2fol
         propce(iel,ipproc(itsri(ipcla))) = -16.d0                             &
                                          * propce(iel,ipproc(icak(ipcla)))    &

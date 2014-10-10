@@ -426,7 +426,7 @@ if (iirayo.ge.1) then
     call raysca &
     !==========
   ( iscalt,ncelet,ncel,     &
-    smbrs, rovsdt,volume,propce )
+    smbrs, rovsdt,volume)
 
     ! Store the explicit radiative source term
     if (idilat.ge.4) then

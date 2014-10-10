@@ -26,7 +26,7 @@ subroutine raycli &
  ( nvar   , nscal  ,                                              &
    icodcl , itypfb ,                                              &
    izfrad ,                                                       &
-   dt     , rtp    , rtpa   , propce , rcodcl )
+   dt     , propce , rcodcl )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +58,6 @@ subroutine raycli &
 ! itypfb           ! ia ! --> ! boundary face types                            !
 ! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
 !  (nfabor,nvar    !    !     !  aux faces de bord                             !
@@ -112,7 +110,7 @@ integer          icodcl(ndimfb,nvarcl)
 integer          itypfb(ndimfb)
 integer          izfrad(ndimfb)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision rcodcl(ndimfb,nvarcl,3)
 
@@ -132,6 +130,8 @@ double precision, allocatable, dimension(:) :: text, tint
 double precision, dimension(:), pointer :: bhconv, bfconv
 double precision, dimension(:), pointer :: tparo, bqinci
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
+
+double precision, dimension(:), pointer :: cvara_scalt
 
 integer    ipacli
 data       ipacli /0/
@@ -637,13 +637,15 @@ if (itherm.eq.1) then
 
   !---> ON REMPLIT TEMPK
 
+  call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
+
   if (itpscl.eq.2) then
     do iel = 1, ncel
-      tempk(iel) = rtpa(iel,ivart) + tkelvi
+      tempk(iel) = cvara_scalt(iel) + tkelvi
     enddo
   else if (itpscl.eq.1) then
     do iel = 1, ncel
-      tempk(iel) = rtpa(iel,ivart)
+      tempk(iel) = cvara_scalt(iel)
     enddo
   endif
 
@@ -670,7 +672,7 @@ elseif (itherm.eq.2) then
     !==========
  ( mode   ,                                                       &
    itypfb ,                                                       &
-   rtp    , rtpa   , propce ,                                     &
+   propce ,                                                       &
    tparo  , thwall , tempk  )
       ! Resultat : T en K
 
@@ -812,7 +814,7 @@ elseif (itherm.eq.2) then
       !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
-      rtp    , rtpa   , propce ,                                     &
+      propce ,                                                       &
       tparo  , bfnet  ,                                              &
       tempk  )
       ! HPAROI
@@ -848,7 +850,7 @@ elseif (itherm.eq.2) then
       !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
-      rtp    , rtpa   , propce ,                                     &
+      propce ,                                                       &
       text   , thwall , tempk  )
       ! HEXT
 

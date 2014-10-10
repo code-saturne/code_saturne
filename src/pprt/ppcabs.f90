@@ -23,7 +23,7 @@
 subroutine ppcabs &
 !================
 
- ( rtp    , propce )
+ ( propce )
 
 !===============================================================================
 ! FONCTION :
@@ -44,9 +44,6 @@ subroutine ppcabs &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -84,7 +81,6 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -94,6 +90,7 @@ double precision xm, dd2, vv, sf, xlc, xkmin, pp
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_fsm
 
 !===============================================================================
 ! 0 - Initialization
@@ -114,6 +111,8 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 
   if (imodak.eq.1) then
 
+    call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
+
     do iel = 1, ncel
       xm = 1.d0/ (  propce(iel,ipproc(iym(1)))/wmolg(1)                 &
                   + propce(iel,ipproc(iym(2)))/wmolg(2)                 &
@@ -126,7 +125,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
       ! Soot model
       if (isoot.eq.0) w3(iel) = Xsoot * propce(iel,ipproc(iym(1))) &
                        * crom(iel) / rosoot
-      if (isoot.ge.1) w3(iel) = rtp(iel,isca(ifsm)) &
+      if (isoot.ge.1) w3(iel) = cvar_fsm(iel) &
                         * crom(iel) / rosoot
     enddo
     call raydak(ncel,ncelet,                                      &

@@ -50,8 +50,6 @@ subroutine raypun &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! itypfb           ! ia ! <-- ! boundary face types                            !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! coefap,coefbp    ! tr ! --- ! conditions aux limites aux                     !
 !  cofafp, cofbfp  !    !     !    faces de bord pour la luminance             !
 ! flurds,flurdb    ! tr ! --- ! pseudo flux de masse (faces internes           !

@@ -25,7 +25,7 @@ subroutine ppray4 &
 
  ( mode   ,                                                       &
    itypfb ,                                                       &
-   rtp    , rtpa   , propce ,                                     &
+   propce ,                                                       &
    tparop , hparop , tempk  )
 
 !===============================================================================
@@ -58,8 +58,6 @@ subroutine ppray4 &
 !__________________!____!_____!________________________________________________!
 ! mode             ! e  ! <-- ! type de conversion enthal<->tempk              !
 ! itypfb(nfabor    ! te ! <-- ! type des faces de bord                         !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! cofrua,cofrub    ! tr ! --> ! conditions aux limites aux                     !
 !(nfabor)          !    !     !    faces de bord pour la luminances            !
@@ -106,7 +104,6 @@ integer          mode
 
 integer          itypfb(nfabor)
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 double precision tempk(ncelet)
@@ -123,6 +120,13 @@ double precision x2t , h2 , x2h2 , hf , xsolid(nsolim),t1
 double precision ym    (ngazgm)
 double precision diamgt,masgut,mkgout,mfgout,mkfini,rhofol
 double precision, dimension(:), pointer :: bym1, bym2, bym3
+
+double precision, dimension(:), pointer :: w1
+double precision, dimension(:,:), allocatable :: cvar_xchcl, cvar_xckcl
+double precision, dimension(:,:), allocatable :: cvar_xnpcl, cvar_xwtcl
+double precision, dimension(:,:), allocatable :: cvar_f1mch, cvar_f2mch
+double precision, dimension(:,:), allocatable :: cvara_yfolcl
+double precision, dimension(:,:), allocatable :: cvar_ycoelsp
 
 !===============================================================================
 
@@ -198,6 +202,56 @@ if (mode.eq.-1) then
   call field_get_val_s(ibym(2), bym2)
   call field_get_val_s(ibym(3), bym3)
 
+  if ( ippmod(iccoal).ge.0 ) then
+
+    allocate(cvar_xchcl(ncelet,nclacp))
+    allocate(cvar_xckcl(ncelet,nclacp))
+    allocate(cvar_xnpcl(ncelet,nclacp))
+    allocate(cvar_xwtcl(ncelet,nclacp))
+
+    do icla = 1, nclacp
+      call field_get_val_s(ivarfl(isca(ixch(icla))), w1)
+      cvar_xchcl(:,icla) = w1
+      call field_get_val_s(ivarfl(isca(ixck(icla))), w1)
+      cvar_xckcl(:,icla) = w1
+      call field_get_val_s(ivarfl(isca(inp(icla))), w1)
+      cvar_xnpcl(:,icla) = w1
+      if ( ippmod(iccoal).eq.1 ) then
+        call field_get_val_s(ivarfl(isca(ixwt(icla))), w1)
+        cvar_xwtcl(:,icla) = w1
+      endif
+    enddo
+
+    allocate(cvar_f1mch(ncelet,ncharb))
+    allocate(cvar_f2mch(ncelet,ncharb))
+
+    do icha = 1, ncharb
+      call field_get_val_s(ivarfl(isca(if1m(icha))), w1)
+      cvar_f1mch(:,icha) = w1
+      call field_get_val_s(ivarfl(isca(if2m(icha))), w1)
+      cvar_f2mch(:,icha) = w1
+    enddo
+
+  else if ( ippmod(icfuel).ge.0 ) then
+
+    allocate(cvara_yfolcl(ncelet,nclafu))
+
+    do icla=1,nclafu
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), w1)
+      cvara_yfolcl(:,icla) = w1
+    enddo
+
+  else if ( ippmod(ielarc).ge.1  ) then
+
+    allocate(cvar_ycoelsp(ncelet,ngazg-1))
+
+    do iesp = 1, ngazg-1
+      call field_get_val_s(ivarfl(isca(iycoel(iesp))), w1)
+      cvar_ycoelsp(:,iesp) = w1
+    enddo
+
+  endif
+
   do ifac = 1,nfabor
 
     if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
@@ -239,14 +293,14 @@ if (mode.eq.-1) then
             xsolid(isol) = zero
           enddo
           if (propce(iel,ipcx2c).gt.epsicp) then
-            xsolid(ich(icha) ) = rtp(iel,ixchcl)                  &
+            xsolid(ich(icha) ) = cvar_xchcl(iel,icla)             &
                                / propce(iel,ipcx2c)
-            xsolid(ick(icha) ) = rtp(iel,ixckcl)                  &
+            xsolid(ick(icha) ) = cvar_xckcl(iel,icla)             &
                                / propce(iel,ipcx2c)
-            xsolid(iash(icha)) = rtp(iel,ixnpcl)*xmash(icla)      &
+            xsolid(iash(icha)) = cvar_xnpcl(iel,icla)*xmash(icla) &
                                / propce(iel,ipcx2c)
             if ( ippmod(iccoal).eq.1 ) then
-              xsolid(iwat(icha)) = rtp(iel,isca(ixwt(icla)))      &
+              xsolid(iwat(icha)) = cvar_xwtcl(iel,icla)           &
                                   /propce(iel,ipcx2c)
             endif
             iii = icla
@@ -264,9 +318,9 @@ if (mode.eq.-1) then
           coefe(ige) = zero
         enddo
         do icha = 1, ncharb
-          f1mc(icha) = rtp(iel,isca(if1m(icha)))                  &
+          f1mc(icha) = cvar_f1mch(iel,icha)                       &
                      / (1.d0-x2t)
-          f2mc(icha) =  rtp(iel,isca(if2m(icha)))                 &
+          f2mc(icha) =  cvar_f2mch(iel,icha)                      &
                      / (1.d0-x2t)
         enddo
         do icha = (ncharb+1), ncharm
@@ -291,7 +345,7 @@ if (mode.eq.-1) then
 
         do icla=1,nclafu
 
-          x2t = x2t+rtpa(iel,isca(iyfol(icla)))
+          x2t = x2t+cvara_yfolcl(iel,icla)
 
           mkfini = rho0fl*pi/6.d0*dinikf(icla)**3
           rhofol = propce(iel,ipproc(irom2(icla)))
@@ -316,7 +370,7 @@ if (mode.eq.-1) then
          !=======================
         ( mode   , h2     , xsolid , tparop(ifac) )
 
-          x2h2 =  x2h2 + rtpa(iel,isca(iyfol(icla)))*h2
+          x2h2 =  x2h2 + cvara_yfolcl(iel,icla)*h2
 
         enddo
 
@@ -343,7 +397,7 @@ if (mode.eq.-1) then
         else
           ym(ngazg) = 1.d0
           do iesp = 1, ngazg-1
-            ym(iesp) = rtp(iel,isca(iycoel(iesp)))
+            ym(iesp) = cvar_ycoelsp(iel,iesp)
             ym(ngazg) = ym(ngazg) - ym(iesp)
           enddo
           call elthht(mode,ngazg,ym,hparop(ifac),tparop(ifac))
@@ -357,6 +411,18 @@ if (mode.eq.-1) then
     endif
 
   enddo
+
+  if ( ippmod(iccoal).ge.0 ) then
+    deallocate(cvar_xchcl, cvar_xckcl, cvar_xnpcl)
+    if ( ippmod(iccoal).eq.1 ) then
+      deallocate(cvar_xwtcl)
+    endif
+    deallocate(cvar_f1mch, cvar_f2mch)
+  else if ( ippmod(icfuel).ge.0 ) then
+    deallocate(cvara_yfolcl)
+  else if ( ippmod(ielarc).ge.1  ) then
+    deallocate(cvar_ycoelsp)
+  endif
 
 endif
 

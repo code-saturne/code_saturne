@@ -25,7 +25,7 @@ subroutine raysca &
 
  ( iisca  ,                                                       &
    ncelet , ncel   ,                                              &
-   smbrs  , rovsdt , volume , propce  )
+   smbrs  , rovsdt , volume )
 
 !===============================================================================
 !  FONCTION  :
@@ -48,7 +48,6 @@ subroutine raysca &
 ! smbrs(ncelet)    ! tr ! <-- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! <-- ! tableau de travail pour terme instat           !
 ! volume(ncelet    ! tr ! <-- ! volume d'un des ncelet elements                !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -72,6 +71,7 @@ use ppincl
 use radiat
 use entsor
 use numvar
+use field
 
 !===============================================================================
 
@@ -84,11 +84,12 @@ integer          iisca , ncelet , ncel
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel
+
+double precision, dimension(:), pointer :: cpro_tsri, cpro_tsre
 
 !===============================================================================
 
@@ -98,17 +99,20 @@ integer          iel
 
 if (iisca.eq.iscalt .and. (itherm.eq.1 .or. itherm.eq.2)) then
 
+  call field_get_val_s(iprpfl(itsri(1)), cpro_tsri)
+  call field_get_val_s(iprpfl(itsre(1)), cpro_tsre)
+
   ! Implicit part
 
   do iel = 1,ncel
-    propce(iel,ipproc(itsri(1))) = max(-propce(iel,ipproc(itsri(1))),zero)
-    rovsdt(iel) = rovsdt(iel) + propce(iel,ipproc(itsri(1)))*volume(iel)
+    cpro_tsri(iel) = max(-cpro_tsri(iel),zero)
+    rovsdt(iel) = rovsdt(iel) + cpro_tsri(iel)*volume(iel)
   enddo
 
   ! Explicit part
 
   do iel = 1,ncel
-    smbrs(iel) = smbrs(iel) + propce(iel,ipproc(itsre(1)))*volume(iel)
+    smbrs(iel) = smbrs(iel) + cpro_tsre(iel)*volume(iel)
   enddo
 
 endif
