@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Remove the cs_user_field_parameters subroutine from cs_user_parameters.f90.
+  user code in that subroutine may now be placed in usipsu or usipes.
+
 - Add a new dilatable (non conservative) algorithm for fire modelling.
   Activate it with idilat=4 (the formulation is in div(u) instead of
   div(rho u)). You can access to the previous dedicated algorithm by

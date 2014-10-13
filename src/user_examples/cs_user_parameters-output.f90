@@ -54,6 +54,118 @@
 !===============================================================================
 
 
+subroutine usipsu &
+!================
+
+ ( nmodpp )
+
+
+!===============================================================================
+! Purpose:
+! -------
+
+! User subroutine for the input of additional user parameters.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+! nmodpp           ! i  ! <-- ! number of active specific physics models       !
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use cstnum
+use dimens
+use numvar
+use optcal
+use cstphy
+use entsor
+use parall
+use period
+use ihmpre
+use ppppar
+use ppthch
+use ppincl
+use coincl
+use cpincl
+use elincl
+use field
+use cavitation
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer nmodpp
+
+! Local variables
+
+logical       ilved, inoprv
+integer       f_id, idim1, itycat, ityloc, iscdri, iscal
+
+!===============================================================================
+
+!     This subroutine allows setting parameters
+
+!       which do not already appear in the other subroutines of this file.
+
+
+!     It is possible to add or remove parameters.
+
+
+!     The number of physical properties and variables is known here.
+
+!===============================================================================
+
+! Enforce existence of 'tplus' and 'tstar' fields, so that
+! a boundary temperature or Nusselt number may be computed using the
+! post_boundary_temperature or post_boundary_nusselt subroutines.
+! When postprocessing of these quantities is activated, those fields
+! are present, but if we need to compute them in the
+! cs_user_extra_operations user subroutine without postprocessing them,
+! forcing the definition of these fields to save the values computed
+! for the boundary layer is necessary.
+
+!< [usipsu_ex_1]
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 3 ! boundary faces
+ilved = .true. ! interleaved
+inoprv = .false. ! no previous time step values needed
+
+call field_get_id('tplus', f_id)
+if (f_id.lt.0) then
+  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+endif
+
+call field_get_id('tstar', f_id)
+if (f_id.lt.0) then
+  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
+endif
+!< [usipsu_ex_1]
+
+!----
+! Formats
+!----
+
+return
+end subroutine usipsu
+
+
+!===============================================================================
+
+
 subroutine usipes &
 !================
 
@@ -118,6 +230,7 @@ integer nmodpp
 ! Local variables
 
 integer ii
+integer f_id, idim1, ipp, iflpst, ifllog
 
 !===============================================================================
 
@@ -182,199 +295,122 @@ endif
 
 ! Frequency of log output
 
-if (.false.) then
-!< [init_01]
-  ntlist = 1
-!< [init_01]
-
-
-endif
+!< [usipes_ex_01]
+ntlist = 1
+!< [usipes_ex_01]
 
 ! Log (listing) verbosity
 
-if (.false.) then
+!< [usipes_ex_02]
+do ii = 1, nvar
+  iwarni(ii) = 1
+enddo
 
-!< [init_02]
-  do ii = 1, nvar
-    iwarni(ii) = 1
-  enddo
+iwarni(ipr) = 2
+iwarni(iu) = 2
+iwarni(iv) = 2
+iwarni(iw) = 2
+!< [usipes_ex_02]
 
-  iwarni(ipr) = 2
-  iwarni(iu) = 2
-  iwarni(iv) = 2
-  iwarni(iw) = 2
-!< [init_02]
+! Logging of variables and properties
+! (example for velocity: 1 to activate logging output, 0 to deactivate)
 
+!< [usipes_ex_03]
+f_id = ivarfl(iu)
+ifllog = 0
+call field_set_key_int(f_id, keyvis, ifllog)
+!< [usipes_ex_03]
+
+! Change a property's label
+! (here for specific heat, first checking if it is variable)
+
+!< [usipes_ex_04]
+if (icp.ne.0) then
+  f_id = iprpfl(icp)
+  call field_set_key_str (f_id, keylbl, 'Cp')
 endif
+!< [usipes_ex_04]
 
 ! --- probes output step
 
-if (.false.) then
-
-!< [init_03]
-  nthist = 1
-  frhist = -1.d0
-!< [init_03]
-
-endif
+!< [usipes_ex_05]
+nthist = 1
+frhist = -1.d0
+!< [usipes_ex_05]
 
 ! --- Number of monitoring points (probes) and their positions
 !     (limited to ncaptm=100)
 
-if (.false.) then
+!< [usipes_ex_06]
+ncapt  = 4
+tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
 
-!< [init_04]
-  ncapt  = 4
-  tplfmt = 1 ! time plot format (1: .dat, 2: .csv, 3: both)
+xyzcap(1,1) = 0.30d0
+xyzcap(2,1) = 0.15d0
+xyzcap(3,1) = 0.01d0
 
-  xyzcap(1,1) = 0.30d0
-  xyzcap(2,1) = 0.15d0
-  xyzcap(3,1) = 0.01d0
+xyzcap(1,2) = 0.30d0
+xyzcap(2,2) = 0.00d0
+xyzcap(3,2) = 0.01d0
 
-  xyzcap(1,2) = 0.30d0
-  xyzcap(2,2) = 0.00d0
-  xyzcap(3,2) = 0.01d0
+xyzcap(1,3) = 0.30d0
+xyzcap(2,3) =-0.08d0
+xyzcap(3,3) = 0.01d0
 
-  xyzcap(1,3) = 0.30d0
-  xyzcap(2,3) =-0.08d0
-  xyzcap(3,3) = 0.01d0
+xyzcap(1,4) = 0.60d0
+xyzcap(2,4) =-0.05d0
+xyzcap(3,4) = 0.01d0
+!< [usipes_ex_06]
 
-  xyzcap(1,4) = 0.60d0
-  xyzcap(2,4) =-0.05d0
-  xyzcap(3,4) = 0.01d0
-!< [init_04]
+! Postprocessing of variables and properties
+! (example for velocity: 1 to activate postprocessing output, 0 to deactivate)
 
+!< [usipes_ex_07]
+f_id = ivarfl(iu)
+iflpst = 0
+call field_set_key_int(f_id, keyvis, iflpst)
+!< [usipes_ex_07]
+
+! Probes for variables and properties
+! (example for velocity, probes on u component only)
+
+!< [usipes_ex_08]
+f_id = ivarfl(iu)
+ipp = field_post_id(f_id)
+ihisvr(ipp,1) = -1
+ihisvr(ipp+1,1) = 0
+ihisvr(ipp+2,1) = 0
+!< [usipes_ex_08]
+
+! Force postprocessing of projection of some variables at boundary
+! with no reconstruction.
+! This is handled automatically if the second bit of a field's
+! 'post_vis' key value is set to 1 (which amounts to adding 2
+! to that key value).
+
+!< [usipes_ex_09]
+f_id = ivarfl(iu)
+if (iand(iflpst, 2) .eq. 0) then
+  call field_get_key_int(f_id, keyvis, iflpst)
+  iflpst = ior(iflpst, 2)
+  call field_set_key_int(f_id, keyvis, iflpst)
 endif
+
+f_id = ivarfl(ipr)
+if (iand(iflpst, 2) .eq. 0) then
+  call field_get_key_int(f_id, keyvis, iflpst)
+  iflpst = ior(iflpst, 2)
+  call field_set_key_int(f_id, keyvis, iflpst)
+endif
+!< [usipes_ex_09]
 
 !----
 ! Formats
 !----
-
 
 return
 end subroutine usipes
 
-
-!===============================================================================
-
-subroutine user_field_parameters
-!===============================
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Define (redefine) key-value pairs on calculation fields.
-
-! This subroutine is called at the end of the parameters initialization
-! stage, after all other routines from this file have been called.
-
-! Note that to determine which fields are defined in a computation, you
-! may check the 'config.log' file after a first execution.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use cstnum
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use parall
-use ihmpre
-use ppppar
-use ppthch
-use ppincl
-use field
-
-!===============================================================================
-
-implicit none
-
-! Local variables
-
-logical       ilved, inoprv
-integer       fldid, idim1, iflpst, itycat, ityloc
-
-!===============================================================================
-
-! Example: force postprocessing of projection of some variables at boundary
-!          with no reconstruction.
-!          This is handled automatically if the second bit of a field's
-!          'post_vis' key value is set to 1 (which amounts to adding 2
-!          to that key value).
-!
-!          field_get_id returns -1 if field does not exist
-
-!< [example_1]
-fldid = ivarfl(iu)
-if (iand(iflpst, 2) .eq. 0) then
-  call field_get_key_int(fldid, keyvis, iflpst)
-  iflpst = ior(iflpst, 2)
-  call field_set_key_int(fldid, keyvis, iflpst)
-endif
-
-fldid = ivarfl(ipr)
-if (iand(iflpst, 2) .eq. 0) then
-  call field_get_key_int(fldid, keyvis, iflpst)
-  iflpst = ior(iflpst, 2)
-  call field_set_key_int(fldid, keyvis, iflpst)
-endif
-!< [example_1]
-
-!-------------------------------------------------------------------------------
-
-! Example: enforce existence of 'tplus' and 'tstar' fields, so that
-!          a boundary temperature or Nusselt number may be computed using the
-!          post_boundary_temperature or post_boundary_nusselt subroutines.
-!          When postprocessing of these quantities is activated, those fields
-!          are present, but if we need to compute them in the
-!          cs_user_extra_operations user subroutine without postprocessing them,
-!          forcing the definition of these fields to save the values computed
-!          for the boundary layer is necessary.
-
-!< [example_2]
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-ityloc = 3 ! boundary faces
-ilved = .true. ! interleaved
-inoprv = .false. ! no previous time step values needed
-
-call field_get_id('tplus', fldid)
-if (fldid.lt.0) then
-  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, fldid)
-endif
-
-call field_get_id('tstar', fldid)
-if (fldid.lt.0) then
-  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, fldid)
-endif
-!< [example_2]
-
-return
-
-!===============================================================================
-
-!----
-! Formats
-!----
-
-return
-end subroutine user_field_parameters
 
 !===============================================================================
 

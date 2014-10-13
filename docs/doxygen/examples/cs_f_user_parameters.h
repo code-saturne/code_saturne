@@ -52,39 +52,72 @@
     These routines are described at the end of this file and will be activated
     when the corresponding option is selected in the usppmo routine.
 
+  \section cs_f_user_parameters_h_usipsu  General options (usipsu)
 
-  \section cs_f_user_parameters_h_usipes  Input-output related options
+  \subsection cs_f_user_parameters_h_usipsu_1 Special fields
+
+  Enforce existence of 'tplus' and 'tstar' fields, so that
+  a boundary temperature or Nusselt number may be computed using the
+  post_boundary_temperature or post_boundary_nusselt subroutines.
+  When postprocessing of these quantities is activated, those fields
+  are present, but if we need to compute them in the
+  \ref cs_user_extra_operations user subroutine without postprocessing them,
+  forcing the definition of these fields to save the values computed
+  for the boundary layer is necessary.
+
+  \snippet cs_user_parameters-output.f90 usipsu_ex_1
+
+  \section cs_f_user_parameters_h_usipes  Input-output related examples (usipes)
+
+  \subsection cs_f_user_parameters_h_example_base Basic options
 
   Frequency of log output.
 
-  \snippet cs_user_parameters-output.f90 init_01
+  \snippet cs_user_parameters-output.f90 usipes_ex_01
 
   Log (listing) verbosity.
 
-  \snippet cs_user_parameters-output.f90 init_02
+  \snippet cs_user_parameters-output.f90 usipes_ex_02
+
+  Activate or deactivate logging output.
+  By default, logging is active for most variables. In the following
+  example, logging for velocity is deactivated.
+
+  \snippet cs_user_parameters-output.f90 usipes_ex_03
+
+  Change a property's label (here for density, first checking if it
+  is variable). A field's name cannot be changed, but its label,
+  used for logging and postprocessing output, may be redefined.
+
+  \snippet cs_user_parameters-output.f90 usipes_ex_04
+
+  \subsection cs_f_user_parameters_h_example_probes Probes output
 
   Probes output step.
 
-  \snippet cs_user_parameters-output.f90 init_03
+  \snippet cs_user_parameters-output.f90 usipes_ex_05
 
   Number of monitoring points (probes) and their positions.
   Limited to ncaptm=100.
 
-  \snippet cs_user_parameters-output.f90 init_04
+  \snippet cs_user_parameters-output.f90 usipes_ex_06
 
-  Current variable.
-  As for other variables, if we do not assign the following array values,
-  default values will be used:
+  \subsection cs_f_user_parameters_h_example_post Postprocessing output
 
-     - if ihisvr(.,1)  = -1, output for all probes
+  Activate or deactivate postprocessing output.
+  By default, output is active for most variables. In the following
+  example, the output for velocity is deactivated.
 
-  \note Only the fist 16 characters of a name will be used in the most detailed log.
+  \snippet cs_user_parameters-output.f90 usipes_ex_07
 
-  \snippet cs_user_parameters-output.f90 init_05
+  Activate or deactivate probes output.
+  If \ref ihisvr(.,1) = -1, output is done for all probes.
+  In the following example, probes output for the velocity is restricted
+  to the first component.
 
-  \section cs_f_user_parameters_h_examples Examples
+  \snippet cs_user_parameters-output.f90 usipes_ex_08
 
-  \subsection cs_f_user_parameters_h_example_1 Example 1
+  \subsection cs_f_user_parameters_h_example_1 Postprocess at boundary
 
    Force postprocessing of projection of some variables at boundary
    with no reconstruction.
@@ -92,21 +125,6 @@
    'post_vis' key value is set to 1 (which amounts to adding 2
    to that key value).
 
-   field_get_id returns -1 if field does not exist
-
-  \snippet cs_user_parameters-output.f90 example_1
-
-  \subsection cs_f_user_parameters_h_example_2 Example 2
-
-  Enforce existence of 'tplus' and 'tstar' fields, so that
-  a boundary temperature or Nusselt number may be computed using the
-  post_boundary_temperature or post_boundary_nusselt subroutines.
-  When postprocessing of these quantities is activated, those fields
-  are present, but if we need to compute them in the
-  cs_user_extra_operations user subroutine without postprocessing them,
-  forcing the definition of these fields to save the values computed
-  for the boundary layer is necessary.
-
-  \snippet cs_user_parameters-output.f90 example_2
+  \snippet cs_user_parameters-output.f90 usipes_ex_09
 
 */

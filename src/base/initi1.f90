@@ -150,15 +150,12 @@ call modini
 call fldini
 !==========
 
-call usipes(nmodpp)
-!==========
+call addfld
 
 call gui_postprocess_fields
 
-call user_field_parameters
-!=========================
-
-call addfld
+call usipes(nmodpp)
+!==========
 
 call gui_linear_solvers
 call user_linear_solvers

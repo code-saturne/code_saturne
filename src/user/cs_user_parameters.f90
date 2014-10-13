@@ -709,15 +709,6 @@ integer iscal
 !       All the parameters which appear in this subroutine must be set.
 !       ===
 
-
-!     If we are using the Code_Saturne GUI:
-
-!       we will find in the user subroutines commented examples
-!       on the model of the present section.
-
-!       If necessary, the user may uncomment them and adapt them to
-!       his needs.
-
 !===============================================================================
 
 ! --- Variable diffusivity (ivisls=1) or constant diffusivity (ivisls=0) for
@@ -836,15 +827,6 @@ integer iescal(nesmax)
 
 !       All the parameters which appear in this subroutine must be set.
 !       ===
-
-
-!     If we are using the Code_Saturne GUI:
-
-!       we will find in the user subroutines commented examples
-!       on the model of the present section.
-
-!       If necessary, the user may uncomment them and adapt them to
-!       his needs.
 
 !===============================================================================
 
@@ -967,7 +949,9 @@ integer nmodpp
 
 ! Local variables
 
-integer ii, jj, kscmin, kscmax
+logical       ilved, inoprv
+integer       ii, jj, kscmin, kscmax, keydri
+integer       f_id, idim1, itycat, ityloc, iscdri, iscal
 
 !===============================================================================
 
@@ -980,15 +964,6 @@ integer ii, jj, kscmin, kscmax
 
 
 !     The number of physical properties and variables is known here.
-
-
-!     If we are using the Code_Saturne GUI:
-
-!       we will find in the user subroutines commented examples
-!       on the model of the present section.
-
-!       If necessary, the user may uncomment them and adapt them to
-!       his needs.
 
 !===============================================================================
 
@@ -1481,6 +1456,85 @@ if (.false.) then
   almax = 0.5
 endif
 
+
+! --- Scalar with a drift (key work "drift_scalar_model">0) or without drift
+!       ((key work "drift_scalar_model"=0, default option) for each USER scalar.
+!       - to specify that a scalar have a drift and need the drift computation:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+!
+! --- Then, for each scalar with a drift, add a flag to specify if
+!     specific terms have to be taken into account:
+!       - thermophoresis terms:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
+!       - turbophoresis terms:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
+!       - centrifugal force terms:
+!       iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
+
+if (.false.) then
+
+  ! Key id for drift scalar
+  call field_get_key_id("drift_scalar_model", keydri)
+
+  if (nscaus.ge.1) then
+
+    iscdri = 1
+    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+
+    if (.false.) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
+    endif
+
+    if (.false.) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
+    endif
+
+    if (.false.) then
+      iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
+    endif
+
+    iscal = 1
+    f_id = ivarfl(isca(iscal))
+
+    ! Set the key word "drift_scalar_model" into the field structure
+    call field_set_key_int(f_id, keydri, iscdri)
+
+  endif
+
+endif
+
+! Postprocessing-related fields
+! =============================
+
+! Example: enforce existence of 'tplus' and 'tstar' fields, so that
+!          a boundary temperature or Nusselt number may be computed using the
+!          post_boundary_temperature or post_boundary_nusselt subroutines.
+!          When postprocessing of these quantities is activated, those fields
+!          are present, but if we need to compute them in the
+!          cs_user_extra_operations user subroutine without postprocessing them,
+!          forcing the definition of these fields to save the values computed
+!          for the boundary layer is necessary.
+
+if (.false.) then
+
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+  idim1 = 1 ! dimension
+  ilved = .true. ! interleaved
+  inoprv = .false. ! no previous time step values needed
+
+  call field_get_id('tplus', f_id)
+  if (f_id.lt.0) then
+    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  endif
+
+  call field_get_id('tstar', f_id)
+  if (f_id.lt.0) then
+    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
+  endif
+
+endif
+
 !----
 ! Formats
 !----
@@ -1561,15 +1615,6 @@ integer ii, ipp, f_id
 
 !     The number of physical properties and variables is known here.
 
-
-!     If we are using the Code_Saturne GUI:
-
-!       we will find in the user subroutines commented examples
-!       on the model of the present section.
-
-!       If necessary, the user may uncomment them and adapt them to
-!       his needs.
-
 !===============================================================================
 
 !===============================================================================
@@ -1643,7 +1688,7 @@ endif
 !===============================================================================
 
 ! Per variable output control.
-! Many more examples are provided in cs_user_parameters-output.f90
+! More examples are provided in cs_user_parameters-output.f90
 
 ! User scalar variables.
 
@@ -1672,185 +1717,6 @@ endif
 return
 end subroutine usipes
 
-
-!===============================================================================
-
-subroutine user_field_parameters
-!===============================
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Define (redefine) key-value pairs on calculation fields.
-
-! This subroutine is called at the end of the parameters initialization
-! stage, after all other routines from this file have been called.
-
-! Note that to determine which fields are defined in a computation, you
-! may check the 'config.log' file after a first execution.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use cstnum
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use parall
-use ihmpre
-use ppppar
-use ppthch
-use ppincl
-use field
-
-!===============================================================================
-
-implicit none
-
-! Local variables
-
-logical       ilved, inoprv
-integer       f_id, idim1, iflpst, itycat, ityloc, iscdri, iscal
-integer       keydri
-
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-
-! --- Scalar with a drift (key work "drift_scalar_model">0) or without drift
-!       ((key work "drift_scalar_model"=0, default option) for each USER scalar.
-!       - to specify that a scalar have a drift and need the drift computation:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
-!
-! --- Then, for each scalar with a drift, add a flag to specify if
-!     specific terms have to be taken into account:
-!       - thermophoresis terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
-!       - turbophoresis terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
-!       - centrifugal force terms:
-!       iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-
-if (.false.) then
-
-  ! Key id for drift scalar
-  call field_get_key_id("drift_scalar_model", keydri)
-
-  if (nscaus.ge.1) then
-
-    iscdri = 1
-    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
-
-    if (.false.) then
-      iscdri = ibset(iscdri, DRIFT_SCALAR_THERMOPHORESIS)
-    endif
-
-    if (.false.) then
-      iscdri = ibset(iscdri, DRIFT_SCALAR_TURBOPHORESIS)
-    endif
-
-    if (.false.) then
-      iscdri = ibset(iscdri, DRIFT_SCALAR_CENTRIFUGALFORCE)
-    endif
-
-    iscal = 1
-    f_id = ivarfl(isca(iscal))
-
-    ! Set the key word "drift_scalar_model" into the field structure
-    call field_set_key_int(f_id, keydri, iscdri)
-
-  endif
-
-endif
-
-! Example: force postprocessing of projection of some variables at boundary
-!          with no reconstruction.
-!          This is handled automatically if the second bit of a field's
-!          'post_vis' key value is set to 1 (which amounts to adding 2
-!          to that key value).
-!
-!          field_get_id returns -1 if field does not exist
-
-if (.false.) then
-
-  f_id = ivarfl(iu)
-  if (iand(iflpst, 2) .eq. 0) then
-    iflpst = ior(iflpst, 2)
-    call field_set_key_int(f_id, keyvis, iflpst)
-  endif
-
-  f_id = ivarfl(ipr)
-  if (iand(iflpst, 2) .eq. 0) then
-    iflpst = ior(iflpst, 2)
-    call field_set_key_int(f_id, keyvis, iflpst)
-  endif
-
-endif
-
-!-------------------------------------------------------------------------------
-
-! Example: enforce existence of 'tplus' and 'tstar' fields, so that
-!          a boundary temperature or Nusselt number may be computed using the
-!          post_boundary_temperature or post_boundary_nusselt subroutines.
-!          When postprocessing of these quantities is activated, those fields
-!          are present, but if we need to compute them in the
-!          cs_user_extra_operations user subroutine without postprocessing them,
-!          forcing the definition of these fields to save the values computed
-!          for the boundary layer is necessary.
-
-if (.false.) then
-
-  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-  ityloc = 3 ! boundary faces
-  idim1 = 1 ! dimension
-  ilved = .true. ! interleaved
-  inoprv = .false. ! no previous time step values needed
-
-  call field_get_id('tplus', f_id)
-  if (f_id.lt.0) then
-    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
-  endif
-
-  call field_get_id('tstar', f_id)
-  if (f_id.lt.0) then
-    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
-  endif
-
-endif
-
-!===============================================================================
-
-!----
-! Formats
-!----
-
-return
-end subroutine user_field_parameters
 
 !===============================================================================
 
