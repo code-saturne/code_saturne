@@ -25,7 +25,7 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_porosity Examples of data settings for porous media (usporo.f90)
+  \page cs_porosity Examples of data settings for porous media (cs_user_porosity.f90)
 
 
   \section intro_poro Introduction

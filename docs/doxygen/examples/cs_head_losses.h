@@ -28,7 +28,7 @@
 
 /*!
 
-  \page cs_head_losses Examples of data settings for head losses (uskpdc.f90)
+  \page cs_head_losses Examples of data settings for head losses (cs_user_head_losses.f90)
   
   \brief User \ref uskpdc subroutine which is called at three different stages in the code <tt>(iappel=1, 2 or 3)</tt>.
 
