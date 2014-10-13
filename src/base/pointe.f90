@@ -254,11 +254,11 @@ module pointe
 
 
   !> number of cells in which a pressure drop is imposed.
-  !> See the user subroutine \ref uskpdc
+  !> See the user subroutine \ref cs_user_head_losses
   integer, save :: ncepdc
 
   !> number of the \c ncepdc cells in which a pressure drop is imposed.
-  !> See \c {iicepd} and the user subroutine \ref uskpdc
+  !> See \c {iicepd} and the user subroutine \ref cs_user_head_losses
   integer, allocatable, dimension(:) :: icepdc
 
   !> zone with head losses
@@ -267,7 +267,7 @@ module pointe
   !> value of the coefficients of the pressure drop tensor of the
   !> \c ncepdc cells in which a pressure drop is imposed.
   !> Note the 6 values are sorted as follows: (k11, k22, k33, k12, k23, k33).
-  !> See \c ickpdc and the user subroutine ref uskpdc
+  !> See \c ickpdc and the user subroutine \ref cs_user_head_losses
   double precision, allocatable, dimension(:,:) :: ckupdc
 
   !> Head loss factor of the fluid outside the domain, between infinity and

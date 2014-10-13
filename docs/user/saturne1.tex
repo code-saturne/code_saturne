@@ -2426,16 +2426,16 @@ between the center of the cell \texttt{iel} and the closest wall is therefore
 
 \variab{icepdc}{icepdc(ncepdc)}{ia}{Number of the \texttt{ncepdc}
 cells in which a pressure drop is imposed. See \texttt{iicepd} and the user
-subroutine \texttt{uskpdc}}
+subroutine \texttt{cs\_user\_head\_losses.f90}}
 
 \variab{ckupdc}{ckupdc(ncepdc,6)}{ra}{Value of the
 coefficients of the pressure drop tensor of the
 \texttt{ncepdc} cells in which a pressure drop is imposed. Note the 6 values are
 sorted as follows: (k11, k22, k33, k12, k23, k33).
-See \texttt{ickpdc} and the user subroutine \texttt{uskpdc}}
+See \texttt{ickpdc} and the user subroutine \texttt{cs\_user\_head\_losses.f90}}
 
 \variab{ncepdc}{ncepdc}{ia}{Number of cells in
-which a pressure drop is imposed. See the user subroutine \texttt{uskpdc}}
+which a pressure drop is imposed. See the user subroutine \texttt{cs\_user\_head\_losses.f90}}
 
 \variab{porosi}{porosi(ncelet)}{ra}{Value of the porosity}
 
@@ -3104,7 +3104,7 @@ define a subset of the mesh, for example:
 \item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
 \texttt{usray2}, \texttt{uslag2}, ...),
 \item volume initialization (cf. \texttt{cs\_user\_initialization}, ...),
-\item head-loss region (cf. \texttt{uskpdc}),
+\item head-loss region (cf. \texttt{cs\_user\_head\_losses.f90}),
 \item source terms region (cf. \texttt{cs\_user\_source\_terms}),
 \item advanced post-processing (cf. \texttt{cs\_user\_postprocess.c},
       \texttt{cs\_user\_extra\_operations}, ...),
@@ -5446,7 +5446,7 @@ term to be applied (the arrays are initially set to 0 at each inlet in the subro
 \subsubsection{Head losses}
 %==================================
 
-Pressure drops can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{uskpdc} (called three times every time step). In the GUI, under the heading ``Volume conditions'', the item ``Volume regions definition'' allows to define areas where pressure drops occur, see an example in fig \ref{fig:hl1}. The item ``Head losses'' allows to specify the head loss coefficients, see \figurename~\ref{fig:hl2}. The tensor representing the pressure drops is supposed to be symmetric
+Pressure drops can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{cs\_user\_head\_losses.f90} (called three times every time step). In the GUI, under the heading ``Volume conditions'', the item ``Volume regions definition'' allows to define areas where pressure drops occur, see an example in fig \ref{fig:hl1}. The item ``Head losses'' allows to specify the head loss coefficients, see \figurename~\ref{fig:hl2}. The tensor representing the pressure drops is supposed to be symmetric
 and positive.
 
 \begin{figure}[!ht]
@@ -5469,13 +5469,13 @@ and positive.
 \end{figure}
 
 If necessary, the pressure drops are written in the
-subroutine \texttt{uskpdc}.
+subroutine \texttt{cs\_user\_head\_losses.f90}.
 
 \begin{list}{$\bullet$}{}
 \item During the first call, all the cells are checked to know the
       number of cells in which a pressure drop is present.
       This number is called \texttt{ncepdp\index{ncepdp}} in
-      \texttt{uskpdc} (and corresponds to
+      \texttt{cs\_user\_head\_losses.f90} (and corresponds to
       \texttt{ncepdc\index{ncepdc}}). It is used to lay out the arrays
       related to the pressure drops. If there is no pressure drop,
       \texttt{ncepdp} must be equal to zero (it is the default value, and the
@@ -8082,7 +8082,7 @@ For the electric module,each boundary face in \texttt{cs\_user\_boundary\_condit
  \texttt{izone} number \footnote{\texttt{izone} must be less than the maximum
  value allowed by the code, \texttt{nozzppm}. This is fixed at 2000 in \texttt
 {ppvar} and cannot be modified.}(the color \texttt{icoul} for example) in
- order to group together all the boundary faces of the same type. In the 
+ order to group together all the boundary faces of the same type. In the
  \texttt{cs\_user\_boundary\_conditions} report, the main change from the users point of view concerns the
  specification of the boundary conditions of the potential, which isn't
  implied by default. The Dirichlet and Neumann conditions must be imposed

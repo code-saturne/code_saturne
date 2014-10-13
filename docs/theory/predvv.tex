@@ -321,7 +321,7 @@ entre deux pas de temps.\\
 {\tiny$\blacksquare$} la partie diagonale $\tens{K}_{\,d}$ du terme
 de perte de charge est utilis\'{e}e dans $f_s^{\,imp}$. En fait, pour \^etre rigoureux,
 il faudrait ne retenir que les contributions positives (point signal\'e dans le
-sous-programme utilisateur associ\'e \fort{uskpdc}). Cette prise en compte sera \`a am\'eliorer.\\
+sous-programme utilisateur associ\'e \fort{cs\_user\_head\_losses.f90}). Cette prise en compte sera \`a am\'eliorer.\\
 {\tiny$\blacksquare$} Le terme $\theta\,\Gamma^{n}-\theta\,\dive
 (\rho\,\underline {u})$ ne pose pas de probl\`{e}me pour la
 dominance de la diagonale de la matrice car il est exactement compens\'{e} par le
@@ -765,7 +765,7 @@ $\rho k$ ne sont pas directement accessibles, contrairement \`a celles de
 $k$.\\
 
 \etape{Prise en compte de la diagonale de $\tens{K}_{\,pdc}$}
-Actuellement, dans le sous-programme utilisateur \fort{uskpdc}, une mise en
+Actuellement, dans le sous-programme utilisateur \fort{cs\_user\_head\_losses.f90}, une mise en
 garde explicite est \'ecrite, mais en commentaire.
 % \footnote{Son contenu est : Veillez
 %\`a ce que les coefficients diagonaux  (du tenseur de pertes de charge consid\'er\'e) soient positifs. Vous risquez un PLANTAGE

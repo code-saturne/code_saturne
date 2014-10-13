@@ -26,12 +26,11 @@
 ! Purpose:
 ! --------
 
-!>    User subroutine.
-!> \file uskpdc.f90
+!> \file cs_user_head_losses.f90
 !> \brief Define Head losses
 !>
-!> The subroutine uskpdc is called at three different stages in the code
-!>  (iappel = 1, 2 or 3)
+!> The subroutine cs_user_head_losses is called at three different stages
+!> in the code (iappel = 1, 2 or 3)
 !>
 !> iappel = 1:
 !>    Calculation of the number of cells where a head loss term is
@@ -93,8 +92,6 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     iappel        stage in the code
 !> \param[in]     icepd         numbers of ncepdp cells with head loss
@@ -104,9 +101,8 @@
 !_______________________________________________________________________________
 
 
-subroutine uskpdc &
- ( nvar   , nscal  ,                                              &
-   ncepdp , iappel ,                                              &
+subroutine cs_user_head_losses &
+ ( ncepdp , iappel ,                                              &
    icepdc , izcpdc ,                                              &
    dt     ,                                                       &
    ckupdc )
@@ -133,7 +129,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
 integer          ncepdp
 integer          iappel
 
@@ -362,4 +357,4 @@ deallocate(lstelt)
 !< [deallocate]
 
 return
-end subroutine uskpdc
+end subroutine cs_user_head_losses

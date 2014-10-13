@@ -76,6 +76,7 @@ cs_user_boundary_mass_source_terms.f90 \
 cs_user_coupling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \
+cs_user_head_losses.f90 \
 cs_user_initialization.f90 \
 cs_user_les_inflow.f90 \
 cs_user_mesh.c \
@@ -95,7 +96,6 @@ usatch.f90 \
 usctdz.f90 \
 uselrc.f90 \
 ushist.f90 \
-uskpdc.f90 \
 uslaen.f90 \
 uslag1.f90 \
 uslag2.f90 \

@@ -245,10 +245,8 @@ if (iihmpr.eq.1) then
   rvoid  )
 endif
 
-call  uskpdc &
-!===========
-( nvar   , nscal  ,                                              &
-  ncepdc , iappel ,                                              &
+call cs_user_head_losses &
+( ncepdc , iappel ,                                              &
   ivoid  , izcpdc ,                                              &
   rvoid  ,                                                       &
   rvoid  )
@@ -705,12 +703,11 @@ endif
 !===============================================================================
 
 !  En fin de bloc en temps on doit retrouver IFNIA1 et IFNRA1
-
-! On appelle uskpdc lorqu'il y a sur un processeur au moins des cellules
-!     avec terme source de masse.
+! On appelle cs_user_head_losses lorqu'il y a sur un processeur au moins des
+!     cellules avec terme source de masse.
 !     On ne fait que remplir le tableau d'indirection des cellules
-!     On appelle cependant uskpdc avec tous les processeurs, au cas ou
-!     l'utilisateur aurait mis en oeuvre des operations globales.
+!     On appelle cependant cs_user_head_losses avec tous les processeurs,
+!     au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 
 if(ncpdct.gt.0) then
 
@@ -721,10 +718,8 @@ if(ncpdct.gt.0) then
     !==========
   endif
 
-  call  uskpdc &
-  !===========
-( nvar   , nscal  ,                                              &
-  ncepdc , iappel ,                                              &
+  call cs_user_head_losses &
+( ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
   dt     ,                                                       &
   ckupdc )

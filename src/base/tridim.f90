@@ -591,10 +591,8 @@ if (ncpdct.gt.0) then
     icepdc, ckupdc)
   endif
 
-  call uskpdc &
-  !==========
-( nvar   , nscal  ,                                              &
-  ncepdc , iappel ,                                              &
+  call cs_user_head_losses &
+( ncepdc , iappel ,                                              &
   icepdc , izcpdc ,                                              &
   dt     ,                                                       &
   ckupdc )
