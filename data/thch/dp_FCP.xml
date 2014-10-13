@@ -52,6 +52,7 @@
 					<specie nature="H2O"/>
 				</char_combustion>
 				<nox_formation>
+                                        <improved_NOx_model status="off"/>
 					<nitrogen_fraction>1.1</nitrogen_fraction>
 					<nitrogen_concentration>0.015</nitrogen_concentration>
                                         <nitrogen_in_char_at_low_temperatures>0.8</nitrogen_in_char_at_low_temperatures>
