@@ -350,63 +350,6 @@ if (ixmlpu.eq.0) then
 
 endif
 
-! --- Kinetic model for NOx formation
-
-!         Only compatible with heavy fuel oil combustion
-
-!         if = 0  unused
-!         if = 1  activated
-
-if (ixmlpu.eq.0) then
-
-  ieqnox = 1
-
-endif
-
-! --- NOx Formation Features
-!
-!     imdnox = 0: - HCN is the only intermediate nitrogen species
-!                   liberated during the devolatilisation process.
-!                 - HCN is the only intermediate nitrogen species
-!                   liberated during char combustion.
-!                 - Constant ratio of the nitrogen mass liberated
-!                   during devolatilisation and the nitrogen mass
-!                   remaining in char.
-!            = 1 (only if iccoal = 0(1))
-!                 - HCN and NH3 are the intermediate nitrogen
-!                   species liberated during the devolatilisation
-!                   process.
-!                 - HCN and NO are the intermediate nitrogen species
-!                   liberated during char combustion.
-!                 - Temperature dependent ratios of the nitrogen
-!                   mass liberated during devolatilisation and the
-!                   nitrogen mass remaining in char.
-!                 - Activation of Reburning kinetics is possible.
-!
-
-if (ixmlpu.eq.0) then
-
-  imdnox = 0
-
-endif
-
-
-! --- Reburning
-
-!     Only compatible with ieqnox = 1 and imdnox = 1 and iccoal = 0(1)
-
-!     if = 0  unused
-!     if = 1  Model of Chen et al.
-!     if = 2  Model of Dimitriou et al.
-
-
-if (ixmlpu.eq.0) then
-
-  irb = 0
-
-endif
-
-
 ! --- Kinetic model for CO <=> CO2
 
 !         Compatible with coal and heavy fuel oil combustion
@@ -418,20 +361,6 @@ endif
 if (ixmlpu.eq.0) then
 
   ieqco2 = 0
-
-endif
-
-! --- Heteregoneous combustion by CO2
-
-!         Needs the activation of the CO2 transport equation
-!         Account for the reaction between char and CO2: C(s) + CO2 => 2 CO
-
-!         if = 0  unused
-!         if = 1  activated
-
-if (ixmlpu.eq.0) then
-
-  ihtco2 = 0
 
 endif
 
