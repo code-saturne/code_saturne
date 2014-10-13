@@ -2761,6 +2761,8 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   /* Build halo */
 
+  mesh->halo_type = halo_type;
+
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0) {
 
     t1 = cs_timer_wtime();
@@ -2772,8 +2774,6 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
       bft_printf(_(" Composing periodicities\n"));
       fvm_periodicity_combine(mesh->periodicity, 0);
     }
-
-    mesh->halo_type = halo_type;
 
     if (halo_type ==  CS_HALO_EXTENDED)
       bft_printf(_("\n Halo construction with extended neighborhood\n"
