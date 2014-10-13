@@ -797,9 +797,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Return an id.
         """
-        cmd = [os.path.join(self.case['package'].get_dir('bindir'),
-                            self.case['package'].name)]
-        cmd = cmd + ["run", "--suggest-id"]
+        cmd = os.path.join(self.case['package'].get_dir('bindir'),
+                           self.case['package'].name)
+        cmd = cs_exec_environment.enquote_arg(cmd) + " run --suggest-id"
         r_title = subprocess.Popen(cmd,
                                    shell=True,
                                    stdout=subprocess.PIPE).stdout.read()[:-1]
