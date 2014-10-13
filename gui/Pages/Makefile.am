@@ -213,7 +213,7 @@ RESOURCES = $(QRCFILES:.qrc=_rc.py)
 
 # Specific rules
 
-PYRCC4VER = `$(PYTHON) --version 2>&1 | cut -c 8`
+PYRCC4VER = `$(PYTHON) -V 2>&1 | cut -c 8`
 
 SUFFIXES = .ui .qrc _rc.py
 

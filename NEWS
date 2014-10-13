@@ -5,6 +5,9 @@ Release 3.0.6 (unreleased)
 Bug fixes:
 ----------
 
+- Fix build with GUI and Python version 2.4 (oldest supported version;
+  no previous issue with Python 2.6 and 2.7).
+
 - Fix possible bugs for Lagrangian inlet conditions in parallel.
 
 - Fix memory leaks in Code_Saturne/Code_Saturne coupling.
