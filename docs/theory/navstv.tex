@@ -23,29 +23,35 @@
 \programme{navstv}\label{ap:navstv}
 
 \vspace{1cm}
-On s'int\'eresse \`a la r\'esolution du syst\`eme d'\'equations de Navier-Stokes
-tridimensionnelles monophasiques, \`a une pression, instationnaires, en
-incompressible ou faiblement dilatable, bas\'ees sur une discr\'etisation
-temporelle de type Euler implicite d'ordre 1 ou Crank-Nicolson d'ordre 2 et sur
-une discr\'etisation spatiale  par volumes finis colocalis\'ee.
+Consideration is given to solving the non-stationary, pressure-based,
+single-phase, three-dimensional Navier-Stokes system of equations for
+incompressible or weakly compressible flows based on first-order implicit
+Euler or second-order Crank-Nicolson time discretization with collocated
+finite volume spatial discretization.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Fonction}
+\section*{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  Dans ce sous-programme sont calcul\'ees, \`a un pas de temps donn\'e, les
-variables vitesse et pression de ce probl\`eme en proc\'edant en
-deux  \'etapes issues d'une d\'ecomposition des op\'erateurs (m\'ethode \`a
-pas fractionnaires).\\
-Les variables sont donc suppos\'ees connues \`a
-l'instant ${t^n}$ et on cherche \`a les d\'eterminer \`a l'instant\footnote{La pression est supposée connue à l'instant $t^{n-1+\theta}$ et recherchée en $t^{n+\theta}$, avec $\theta=1$ ou $1/2$ suivant le schéma en temps considéré.} ${t^{n+1}}$. Soit ${\Delta {t^n} ={t^{n+1}- {t^n}}}$ le pas de temps associ\'e. Dans un premier temps, on r\'ealise l'\'etape de
-pr\'ediction de la vitesse en r\'esolvant l'\'equation de quantit\'e de
-mouvement avec une pression explicite. Suit l'\'etape de correction de la
-pression (ou projection de la vitesse) qui permet d'obtenir un champ de vitesse \`a divergence nulle.\\\\
-Les \'equations en continu sont donc :
+This subroutine is used to calculate, at a given time step, the velocity
+ and pressure variables of the problem following an approach that proceeds
+ in two steps based on a decomposition of operators (fractional step method).
+
+The variables are assumed to be known at the instant ${t^n}$ and a
+determination of their new values is sought at the
+instant\footnote{The pressure is assumed known at instant $t^{n-1+\theta}$
+and its new value sought at $t^{n+\theta}$, with $\theta=1$ or $1/2$
+depending on the considered time-stepping scheme.} ${t^{n+1}}$.
+Therefore, the associated time step is ${\Delta {t^n} ={t^{n+1}- {t^n}}}$.
+To begin with, the velocity prediction step is performed by solving the
+momentum balance equation with an explicit pressure. This is followed by
+the pressure correction (or velocity projection) step allowing to obtain
+a null divergence velocity field.
+
+The continuous equations are thus:
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle\frac{\partial}{\partial t}(\rho \vect{u}) + \dive(\rho\, \vect{u} \otimes \vect{u})
@@ -54,21 +60,21 @@ Les \'equations en continu sont donc :
 \end{array}\right.
 \end{equation}
 
-%(plus tard $\frac{\partial \rho}{\partial t} + \dive(\rho \vect{u}) = \Gamma$)
+%(later $\frac{\partial \rho}{\partial t} + \dive(\rho \vect{u}) = \Gamma$)
 
 
 
-avec $\rho$ la masse volumique, $\vect{u}$ le champ de vitesse,
-$[\,\vect{TS}-\tens{K}\,\vect{u}\,]$ les autres termes sources ($\tens{K}$~est un
-tenseur diagonal positif par d\'efinition), $\tens{\sigma}$ le tenseur
-de contraintes, $\tens{\tau}$ le tenseur des contraintes visqueuses, $\mu$ la
-viscosit\'e dynamique (mol\'eculaire et \'eventuellement turbulente), $\kappa$
-la viscosité de
-volume (usuellement nulle et négligée dans le code et dans la suite du document,
-sauf en compressible),
-$\tens{D}$ le tenseur taux de d\'eformation\footnote{\`A ne pas confondre, malgr\'e la m\^eme notation $D$,
-avec les flux diffusifs $\vect{D}_{\,ij}$ et $\vect{D}_{\,{b}_{ik}}$ d\'ecrits par la suite dans ce
-sous-programme.}, $\Gamma$ le terme source de masse.
+with $\rho$ the density field, $\vect{u}$ the velocity field,
+$[\,\vect{TS}-\tens{K}\,\vect{u}\,]$ the other source terms ($\tens{K}$~is a
+positive diagonal tensor by definition), $\tens{\sigma}$ the stress tensor,
+$\tens{\tau}$ the tensor of viscous stresses,
+$\mu$ the dynamic viscosity (molecular and possibly turbulent),
+$\kappa$ the volume viscosity (usually null and therefore neglected in
+the code and hereafter in this document, apart from the compressible module),
+$\tens{D}$ the deformation rate tensor\footnote{Not to be confused,
+despite an identical notation $D$, with the diffusive fluxes
+$\vect{D}_{\,ij}$ and $\vect{D}_{\,{b}_{ik}}$ described later in this
+subroutine.}, $\Gamma$ the mass source term.
 \begin{equation}
 \left\{\begin{array}{l}
 \tens{\sigma} = \tens{\tau} - P\tens{Id}  \\
@@ -79,8 +85,8 @@ sous-programme.}, $\Gamma$ le terme source de masse.
 \end{equation}
  \\
 
-On rappelle la d\'efinition des notations employ\'ees\footnote{en
-utilisant la convention de sommation d'Einstein.}~:
+Recalling the definition of the notations employed\footnote{Using the
+Einstein summation convention.}~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 \left[\ggrad{\vect{a}}\right]_{ij} &=& \partial_j a_i\\
@@ -89,7 +95,7 @@ utilisant la convention de sommation d'Einstein.}~:
 a_i\,b_j\\
 \end{array}\right.
 \end{equation}
-et donc :
+and thus:
 \begin{equation}\notag
 \begin{array}{lll}
 \left[\dive(\vect{a}\otimes\vect{b})\right]_i &= &
@@ -97,30 +103,30 @@ et donc :
 \end{array}
 \end{equation}
 
-\minititre{Remarque}
-Dans le cas de la prise en compte d'une masse volumique variable, l'équation de continuité s'écrit :
+\minititre{Remark}
+When accounting for variable density, the continuity equation is written:
 $$\frac{\partial \rho}{\partial t} + \dive{\,(\rho\,\vect{u})} = \Gamma  $$
-Cette équation n'est pas prise en compte dans l'étape de projection (on continue à résoudre
-seulement
-$\displaystyle \dive(\,{\rho\,\vect{u}}) = \Gamma$) alors que le terme
-$\displaystyle \frac{\partial \rho}{\partial t}$ appara\^{\i}t lors de l'étape de pr\'ediction de la vitesse
-dans le sous-programme \fort{predvv}. Si ce terme joue un rôle sensible, l'algorithme compressible
-de \CS (qui résout l'équation complète) est alors sans doute plus adapté.
+This equation is not taken into account in the projection step
+(we continue to resolve only $\displaystyle \dive(\,{\rho\,\vect{u}}) = \Gamma$)
+whereas the term $\displaystyle \frac{\partial \rho}{\partial t}$ does
+appear during the velocity prediction step in the subroutine \fort{predvv}.
+If this term plays a significant role, the \CS compressible algorithm
+(which solves the full equation) is probably better adapted.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-On pose :
+We define beforehand:
 
 \begin{equation}\notag
-\displaystyle\alpha_{ij}=\frac{\overline{FJ'}}{\overline{I'J'}} \text{\ d\'efini aux faces internes uniquement et}
+\displaystyle\alpha_{ij}=\frac{\overline{FJ'}}{\overline{I'J'}} \text{\ defined  at the internal faces only and}
 \end{equation}
 \begin{equation}\notag
-\vect{u}_{K'} = \vect{u}_{K}+(\ggrad{\vect{u}})_K\text{.}\, \vect{KK'}\, \text{\ \`a l'ordre
-1 en espace, pour ${K = I \,\text{ou}\, J}$}
+\vect{u}_{K'} = \vect{u}_{K}+(\ggrad{\vect{u}})_K\text{.}\, \vect{KK'}\, \text{\
+at first order in space, for ${K = I \,\text{or}\, J}$}
 \end{equation}
 
 \begin{figure}[h]
@@ -128,65 +134,68 @@ On pose :
 \centerline{\includegraphics[height=4cm]{facette}}}
 \parbox{8cm}{%
 \centerline{\includegraphics[height=4cm]{facebord}}}
-\caption{\label{Base_Navstv_fig_geom}D\'efinition des diff\'erentes entit\'es
-g\'eom\'etriques pour les faces internes (gauche) et de bord (droite).}
+\caption{\label{Base_Navstv_fig_geom}Schema of the geometric entities defined for
+internal (left) and boundary faces (right).}
 \end{figure}
 
-\subsection*{\bf M\'ethode \`a pas fractionnaires}
+\subsection*{\bf Fractional step method}
 \subsubsection*{\bf Introduction}
-Une des m\'ethodes permettant de r\'esoudre num\'eriquement les \'equations de
-Navier-Stokes est de d\'ecomposer les op\'erateurs s'y rattachant en
-op\'erateurs moins complexes (qui peuvent \^etre trait\'es \`a l'aide d'algorithmes
-efficaces), moyennant des sous-pas interm\'ediaires dans un m\^eme pas de
-temps. Ici, deux sous-pas sont r\'ealis\'es : le premier reprend les
-parties convective, diffusive et termes sources de l'\'equation de quantit\'e de mouvement et
-constitue l'\'etape dite de pr\'ediction de la vitesse, le
-second traite l'\'equation de continuit\'e et est
-d\'esign\'e comme l'\'etape de correction de pression ou de projection de la vitesse.
+One of the methods used to numerically solve the Navier-Stokes equations
+consists of decomposing the corresponding operators into a set of simpler
+operators (which can then be treated by efficient algorithms) {\it via}
+the division of a single time step into a number of intermediate sub-steps.
+In this case, two sub-steps are used: the first takes up the convective,
+diffusive and source terms of the momentum equation and constitutes the
+velocity prediction step, the second treats the continuity equation and
+is designated as the pressure correction or velocity projection step.
 
-\subsubsection*{\bf \'Etape de pr\'ediction des vitesses}
-La discr\'etisation en temps se fait en appliquant \`a la variable r\'esolue un $\theta$-sch\'ema au temps $n+\theta$ s'inspirant de la d\'emarche utilis\'ee pour l'\'equation de transport d'un scalaire\footnote{cf. \fort{covofi}}.\\ La vitesse au temps $n+1$ n'\'etant disponible qu'apr\`es l'\'etape de projection, c'est ici une vitesse pr\'edite au temps $n+1$ que l'on utilise pour interpoler :
+\subsubsection*{\bf Velocity prediction step}
+The discretization in time is achieved by applying a $\theta$-scheme
+at time $n+\theta$ to the resolved variable, following the approach used
+for the transport equation of a scalar\footnote{cf. \fort{covofi}}.
+
+The velocity at time $n+1$ not being available until after the projection
+step, a predicted velocity at time $n+1$ is used herein to interpolate:
 \begin{equation}
 \label{Base_Navstv_thetaschema}
 \vect{\widetilde{u}}^{n+\theta} = \theta\, {\vect{\widetilde{u}}}^{n+1}+(1-\theta)\, \vect{u}^{n}
 \end{equation}
-Avec\footnote{Dans le cas où $\theta = 1/2$, le pas de temps $\Delta t$ est supposé uniforme en temps et en espace.} :
+With\footnote{In the $\theta = 1/2$ case, the time step $\Delta t$ is assumed
+to be constant in time and uniform in space.} :
 \begin{equation}
 \left\{
 \begin{array}{ll}
-\theta = 1   & \text{Pour un sch\'ema de type Euler implicite d'ordre 1.}\\
-\theta = 1/2 & \text{Pour un sch\'ema de type Cranck-Nicolson d'ordre 2.}\\
+\theta = 1   & \text{For a first-order implicit Euler scheme.}\\
+\theta = 1/2 & \text{For a second-order Crank-Nicolson scheme.}\\
 \end{array}
 \right.
 \end{equation}
 
-Le champ de vitesse ${\vect{\widetilde{u}}^{n+1}}$ pr\'edit est alors obtenu par
-:\\
-$\bullet\ $ Lin\'earisation partielle de l'op\'erateur de convection engendrant
-un d\'ecouplage des composantes de la vitesse.\\
-$\bullet\ $ Explicitation de la pression.\\
-$\bullet\ $ Explicitation ou extrapolation des grandeurs physiques ({\it i.e}
-$\rho,\,\mu,\,Cp\,...$) et du flux de masse.\\
-$\bullet\ $ Explicitation ou extrapolation des termes sources explicites au
-temps $n+\theta_{S}$ tels que les contributions du gradient transpos\'e, de la
-viscosité secondaire, de la partie extradiagonale des pertes de charges, de la
-masse injectée $\Gamma\,\underline{u_i}$, ...\\
-$\bullet$ Les termes sources implicites linéaires par rapport à la vitesse
-(termes sources utilisateurs implicite, partie diagonale des pertes de charge
-$\tens{K_d}\,\underline{u}$, sources de masse $\Gamma\,\underline{u}$, etc...)
-sont supposés pris au temps $n+\theta$ et sont rattach\'es au tenseur
-$\tens{K}$\footnote{En réalité, les composantes de la vitesse étant découplées,
-seuls les termes linéaires par rapport à la composante résolue sont factorisés de la
-sorte. Les autres termes étant traités comme des termes explicites. On pourra se
-rapporter à \fort{predvv} pour plus de détail.}.\\
+The predicted velocity field ${\vect{\widetilde{u}}^{n+1}}$ is then
+obtained by:
 
-Par souci de clarté, on suppose qu'en l'absence d'indication, les propriétes
-physiques $\Phi\,=\,\rho,\,\mu\,...$ et le flux de masse $(\rho\vect{u})$ pris
-respectivement aux instants $n+\theta_\Phi$ et $n+\theta_F$, où $\theta_\Phi$ et
-$\theta_F$ dépendent des schémas en temps spécifiquement utilisés pour ces
-grandeurs\footnote{cf. \fort{introd}}.
-\\
-On r\'esout donc le syst\`eme suivant, après réécriture des termes instationnaires à l'aide de la conservation de la masse :
+$\bullet\ $ Partial linearization of the convection operator giving rise to a
+decoupling of the velocity components.\\
+$\bullet\ $ Explicitation of the pressure.\\
+$\bullet\ $ Explicitation or extrapolation of the physical quantities ({\it i.e}
+$\rho,\,\mu,\,Cp\,...$) and the mass flux.\\
+$\bullet\ $ Explicitation or extrapolation of the explicit source terms (for example, the contributions of the transpose gradient, secondary viscosity, extra diagonal elements of the head losses, injected mass $\Gamma\,\underline{u_i}$, ...) at time $n+\theta_{S}$. \\
+$\bullet$ The implicit source terms that are linear with respect to the velocity
+(implicit user-specified source terms, diagonal of the head losses
+$\tens{K_d}\,\underline{u}$, sources of mass $\Gamma\,\underline{u}$, etc...)
+are assumed to be evaluated at time $n+\theta$ and are tied to the tensor
+$\tens{K}$\footnote{As the velocity components are decoupled, in practice only
+the linear terms relative to the resolved component are factorised; the other terms are treated as explicit terms. A more detailed explanation can be found in \fort{predvv}.}.\\
+
+For clarification, unless otherwise specified, the physical properties
+$\Phi\,=\,\rho,\,\mu\,...$ and the mass flux $(\rho\vect{u})$ are assumed
+to be evaluated respectively at the instants $n+\theta_\Phi$ and
+$n+\theta_F$, with $\theta_\Phi$ and $\theta_F$ being dependent on the
+specific time-stepping schemes employed for these
+quantities\footnote{cf. \fort{introd}}.
+
+After rewriting the non-stationary terms based on the mass conservation relation,
+we solve the following system:
 \begin{equation}
 \begin{array}{l}
 \displaystyle
@@ -196,19 +205,19 @@ On r\'esout donc le syst\`eme suivant, après réécriture des termes instationnair
 \label{Base_Navstv_eq_prediction_continue}
 \end{array}
 \end{equation}
-avec ~:
+with:
 \begin{equation}
 \begin{array}{l}
 \displaystyle
-\tens{\sigma}^{n+\theta}=\mu\,\,\ggrad\vect{\widetilde{u}}^{n+\theta}\underbrace{-P^{n-1+\theta}\tens{Id}+(\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}}_{\text{termes sources explicites}}\\
+\tens{\sigma}^{n+\theta}=\mu\,\,\ggrad\vect{\widetilde{u}}^{n+\theta}\underbrace{-P^{n-1+\theta}\tens{Id}+(\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}}_{\text{explicit source terms}}\\
 \end{array}
 \end{equation}
 
-\subsubsection*{\bf \'Etape de correction de la pression (ou projection des vitesses)}
-Le champ de vitesse pr\'edit est {\it a priori} \`a divergence non nulle. La seconde
-\'etape corrige la pression en imposant la nullit\'e de la contrainte
-stationnaire pour la vitesse prise \`a l'instant ${t^{n+1}}$.
-On r\'esout donc :
+\subsubsection*{\bf Pressure correction step (or projection of velocities)}
+The predicted velocity has {\it a priori} non-zero divergence. The second step
+corrects the pressure by imposing the nullity of the stationary constraint for
+the velocity computed at time instant ${t^{n+1}}$.
+We then solve:
 \begin{equation}\label{Base_Navstv_eq_correction_continue}
 \left\{\begin{array}{l}
 \displaystyle\frac{(\rho\vect{u})^{n+1}-(\rho\vect{\widetilde{u}})^{n+1}}{\Delta t} =
@@ -218,42 +227,51 @@ On r\'esout donc :
 \end{array}\right.
 \end{equation}
 
-o\`u l'incr\'ement de pression $\delta P^{n+\theta}$ vaut~:
+where the pressure increment $\delta P^{n+\theta}$ is defined as:
 \begin{equation}
 \delta P^{n+\theta}=P^{n+\theta}-P^{n-1+\theta}
 \end{equation}
-\minititre{Remarque}
-Les quantit\'es $\rho$ et $\mu$ sont constantes lors de ces
-deux \'etapes. Leur variation \'eventuelle est effectu\'ee au début du pas de temps suivant, après réactualisation des scalaires (température, fraction massique,...).
+\minititre{Remark 2}
+The  $\rho$ and $\mu$ quantities remain constant over the course of both
+steps. If there has been any variation in the interval, their values will be modified at the start of the next time step, after the scalars (temperature, mass fraction,...) have been updated.
 
-\subsection*{\bf Discr\'etisation spatiale}
-On int\`egre  classiquement sur les volumes de contr\^ole ${\Omega_i}$ (ou cellules) les
-\'equations discr\'etis\'ees en temps.
-\subsubsection*{\bf \'Etape de pr\'ediction des vitesses}
-\paragraph{\bf Second membre\\ }
-Si l'on ne tient pas compte des termes de convection et de diffusion issus du $\theta$-schéma, les termes sources volumiques explicites de l'\'equation (\ref{Base_Navstv_eq_prediction_continue}) s'écrivent pour le syst\`eme portant sur la quantité $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n})$ :\\
+\subsection*{\bf Spatial discretization}
+Following the classical approach, the time-discretized equations are then integrated over the control volumes ${\Omega_i}$ (or cells).
+\subsubsection*{\bf Velocity prediction step}
+\paragraph{\bf Second member\\ }
+If we do not take account of the $\theta$-scheme convection and diffusion
+terms, the explicit volume source terms of the equation (\ref{Base_Navstv_eq_prediction_continue})
+for the system concerning the quantity $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n})$
+	are expressed as:
+
 \begin{equation}\notag
 \begin{array}{c}
 \displaystyle
  -\grad P^{n-1+\theta} + \dive \left[ (\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id} \,\right]+\vect{TS}^{n+\theta_{S}}- \,\tens{K}^{n} \vect{u}^{n}+\vect{u}^{n}\,\dive{(\rho\vect{u})}\\
 \end{array}
 \end{equation}
-Pour int\'egrer ces termes sur une cellule ${\Omega_i}$,  on multiplie leur valeur locale au centre par le volume de la cellule.
+To integrate these terms over a cell ${\Omega_i}$, we multiply their local value
+at the cell centre by the volume of the cell.
 
 \paragraph{\bf Convection  \\}
 
-Apr\`es d\'ecomposition de $\vect{\widetilde{u}}$ \`a l'aide de la relation (\ref{Base_Navstv_thetaschema}), l'int\'egration spatiale des parties convectives   $\theta\,{\dive\left(\vect{\widetilde{u}}^{n+1}\otimes (\rho \vect{u})\right)}$ et $(1-\theta)\,{\dive\left(
-\vect{u}^{n}\otimes (\rho \vect{u})\right)}$ conduit à une somme de flux num\'eriques ${\vect{F}\,_{\,ij}}$ calcul\'es aux faces des cellules purement internes et de flux num\'eriques ${\vect{F}_{\,b_{ik}}}$ calcul\'es aux faces de bord du domaine $\Omega$.
-Soient $Vois(i)$ l'ensemble des centres des cellules voisines de ${\Omega_i}$ et
-$\gamma_b(i)$ l'ensemble des centres des faces de bord de ${\Omega_i}$, on a :
+After decomposition of $\vect{\widetilde{u}}$ based on the relation
+(\ref{Base_Navstv_thetaschema}), spatial integration of the convective
+parts of the velocity field $\theta\,{\dive\left(\vect{\widetilde{u}}^{n+1}\otimes
+(\rho \vect{u})\right)}$ and $(1-\theta)\,{\dive\left(
+\vect{u}^{n}\otimes (\rho \vect{u})\right)}$ yields a sum of the numerical
+fluxes ${\vect{F}\,_{\,ij}}$ calculated at the faces of the internal cells and ${\vect{F}_{\,b_{ik}}}$ calculated at the boundary faces of the domain $\Omega$.
+Taking $Neigh(i)$ as the set of the centres of the neighbouring cells of
+${\Omega_i}$ and $\gamma_b(i)$ the set of the centres of the boundary faces of
+${\Omega_i}$, we obtain:
 
 \begin{equation}\notag
 \int_{\Omega_i}{\dive\left(\vect{u}\otimes (\rho \vect{u})\right)\, d\Omega} =
-\sum_{j\in Vois(i)}{\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})} \\
+\sum_{j\in Neigh(i)}{\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})} \\
 +\sum_{k\in {\gamma_b(i)}} {\vect{F}_{\,{b}_{ik}}((\rho \vect{u}),\vect{u})}
 \end{equation}
 
-en posant :
+with:
 \begin{equation}
 \vect{F}_{\,ij}((\rho \vect{u}), \vect{u}) = \left[{(\rho \vect{u})_{\,ij}} \text{.}\, \vect{S}_{\,ij}\right]
 \ \vect{u}_{\,f,ij}
@@ -262,50 +280,50 @@ en posant :
 \begin{equation}
 {\vect{F}_{\,{b}_{ik}}}((\rho \vect{u}),\vect{u}) =  \left[{(\rho \vect{u})_{\,{b}_{ik}}} \text{.}\, \vect{S}_{\,{b}_{ik}}\right]\,{\vect{u}_f}_{\,{b}_{ik}}
 \end{equation}
-La valeur de ${\vect{F}_{\,ij}}$  d\'epend du type de sch\'ema num\'erique
-choisi. Il en existe trois dans \CS \  :
+The value of the flux ${\vect{F}_{\,ij}}$ depends on the numerical scheme
+selected. Three different schemes are available in \CS:
 \begin{tabular}{ll}
-\multicolumn{2}{l}{$\bullet\ $un sch\'ema d\'ecentr\'e amont d'ordre 1 (upwind)~:}\\
+\multicolumn{2}{l}{$\bullet\ $a  first-order upwind scheme:}\\
 &$\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})=
-\vect{F}^{\it{ amont}}_{\,ij}((\rho \vect{u}),\vect{u})$\\
-o\`u :&$\vect{u}_{\,f,ij}=\vect{u}_{\,I}$ si $(\rho
+\vect{F}^{\it{ upwind}}_{\,ij}((\rho \vect{u}),\vect{u})$\\
+where:&$\vect{u}_{\,f,ij}=\vect{u}_{\,I}$ if $(\rho
 \vect{u})_{\,ij}.\vect{S}_{\,ij}\,\geqslant 0$\\
-&$\vect{u}_{\,f,ij}=\vect{u}_{\,J}$ si $(\rho
+&$\vect{u}_{\,f,ij}=\vect{u}_{\,J}$ if $(\rho
 \vect{u})_{\,ij}.\vect{S}_{\,ij}\,< 0$ ,\\
-\multicolumn{2}{l}{$\bullet\ $un sch\'ema centr\'e d'ordre 2:}\\
+\multicolumn{2}{l}{$\bullet\ $a second-order centred scheme:}\\
 &$\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})=
-\vect{F}^{\text{\it{centr\'e}}}_{\,ij}((\rho\vect{u}),\vect{u})$\\
-avec :&$\vect{u}_{\,f,ij}=
-\alpha_{ij} \vect{u}_{\,I'}+(1-\alpha_{ij}) \vect{u}_{\,J'}$ et $\vect{u}_{K'} = \vect{u}_{K}+(\ggrad{\vect{u}})_K\text{.}\, \vect{KK'}$ pour ${K = I \,\text{ou}\, J}$\\
-\multicolumn{2}{l}{$\bullet\ $un sch\'ema d\'ecentr\'e amont d'ordre 2 SOLU (Second Order Linear Upwind)~:}\\
+\vect{F}^{\text{\it{centred}}}_{\,ij}((\rho\vect{u}),\vect{u})$\\
+with:&$\vect{u}_{\,f,ij}=
+\alpha_{ij} \vect{u}_{\,I'}+(1-\alpha_{ij}) \vect{u}_{\,J'}$ and $\vect{u}_{K'} = \vect{u}_{K}+(\ggrad{\vect{u}})_K\text{.}\, \vect{KK'}$ for ${K = I \,\text{ou}\, J}$\\
+\multicolumn{2}{l}{$\bullet\ $a Second-Order Linear Upwind scheme (SOLU):}\\
 &$\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})=
 \vect{F}^{\text{\it { SOLU}}}_{\,ij}((\rho \vect{u}),\vect{u})$ \\
 \multicolumn{2}{l}{\begin {tabular}{lll}
-avec :&$\vect{u}_{\,f,ij}=$&$
-\vect{u}_{\,I} +\vect{IF}.\,(\ggrad\vect{u})_{\,I}$ \ si $(\rho
+with:&$\vect{u}_{\,f,ij}=$&$
+\vect{u}_{\,I} +\vect{IF}.\,(\ggrad\vect{u})_{\,I}$ \ if $(\rho
 \vect{u})_{\,ij}.\vect{S}_{\,ij}\,\geqslant 0$\\
-&&$\vect{u}_{\,J} + \vect{JF}.\,(\ggrad\vect{u})_J$  \ si $(\rho
+&&$\vect{u}_{\,J} + \vect{JF}.\,(\ggrad\vect{u})_J$  \ if $(\rho
 \vect{u})_{\,ij}.\vect{S}_{\,ij}\,< 0$.
 \end{tabular}}
 \end{tabular}\\
 
 
-La valeur de ${\vect{F}_{\,b_{ik}}}$ est calcul\'ee avec :\\
+The value of ${\vect{F}_{\,b_{ik}}}$ is calculated as:\\
 \begin{equation}
 \begin{array}{ll}
 {\vect{u}_f}_{\,{b}_{ik}} &=\vect{u}_{\,I}
-\ \text{si $(\rho \vect{u})_{\,{b}_{ik}}\,.\,\vect{S}_{\,{b}_{ik}}\,\geqslant 0$}\\
+\ \text{if $(\rho \vect{u})_{\,{b}_{ik}}\,.\,\vect{S}_{\,{b}_{ik}}\,\geqslant 0$}\\
 &={\vect{u}_{\,{b}_{ik}}}
-\  \text{si $(\rho \vect{u})_{\,{b}_{ik}}\,.\, \vect{S}_{\,{b}_{ik}}\,< 0$}
+\  \text{if $(\rho \vect{u})_{\,{b}_{ik}}\,.\, \vect{S}_{\,{b}_{ik}}\,< 0$}
 \end{array}
 \end{equation}
 
-avec ${\vect{u}_{\ {b}_{ik}}}$ valeur au bord donn\'ee directement par les
-conditions aux limites.\\
+with the boundary value ${\vect{u}_{\ {b}_{ik}}}$ obtained from the prescribed
+boundary conditions.
 
-\noindent\minititre{Remarque 2}
-En centr\'e, on \'ecrit en r\'ealit\'e (\'egalit\'e
-conservant l'ordre un en espace) :
+\noindent\minititre{Remark 3}
+When a centred scheme is used, for the simple reason of numerical stability
+we actually write:
 
 \begin{equation}\notag
 \vect{u}_{\,f,ij} = \alpha_{ij} \vect{u}_{\,I} +  (1-\alpha_{ij})
@@ -313,54 +331,53 @@ conservant l'ordre un en espace) :
 \frac{1}{2}\left[(\ggrad{\vect{u}})_I+(\ggrad{\vect{u}})_J\right] \text{.}\, \vect{OF}
 \end{equation}
 
-pour des raisons de stabilit\'e purement num\'erique.\\
-\minititre{Remarque 3 }
-Un test de pente (qui peut introduire des non lin\'earit\'es dans l'op\'erateur
-de convection) permet de
-basculer entre un sch\'ema d'ordre deux et le sch\'ema d\'ecentr\'e amont
-d'ordre un.
-De plus, en mode standard, on utilise en tout point une valeur de
-$\vect{\widetilde{u}}_{\,f,ij}$ issue d'une moyenne barycentrique entre la valeur
-d\'ecentr\'ee amont et la valeur d'ordre 2 (blending, spécifié par l'utilisateur).
+to preserve the order in space.\\
+\minititre{Remark 4}
+A slope test (which may introduce nonlinearities in the convection operator)
+allows switching between a second-order scheme and the first-order upwind scheme.
+Moreover, with standard models, we use at all points a value of the velocity field
+$\vect{\widetilde{u}}_{\,f,ij}$ derived from a barycentric mean between the upwind
+value and the second-order value (blending, specified by the user).
 \paragraph{\bf Diffusion\\}
-De m\^eme, les parties diffusives $\theta\,\,\dive(\mu\,\ggrad{\vect{\widetilde{u}}}^{n+1})$ et $(1-\theta)\,\,\dive(\mu \ggrad{\vect{u}}^{n})$ s'\'ecrivent :
+Likewise, the diffusive components $\theta\,\,\dive(\mu\,\ggrad{\vect{\widetilde{u}}}^{n+1})$ and $(1-\theta)\,\,\dive(\mu \ggrad{\vect{u}}^{n})$ are written:
 \begin{equation}\notag
 \int_{\Omega_i}{\dive(\mu\, \ggrad{\vect{u}}) d\Omega} =
-\sum_{j\in Vois(i)}{\vect{D}_{\,ij}(\mu, \vect{u})}
+\sum_{j\in Neigh(i)}{\vect{D}_{\,ij}(\mu, \vect{u})}
 +\sum_{k\in {\gamma_b(i)}} {\vect{D}_{\,{b}_{ik}}(\mu,\vect{u})}
 \end{equation}
-avec~:
+with:
 \begin{equation}
 \vect{D}_{\,ij}(\mu, \vect{u}) = \mu_{ij}
 \frac{\vect{u}_{\,J'}-\vect{u}_{\,I'}}{\overline{I'J'}} S_{\,ij}
 \end{equation}
-et :
+and:
 \begin{equation}
 \vect{D}_{\,b_{ik}}(\mu, \vect{u}) = \mu_{\,b_{ik}}
 \frac{\vect{u}_{\,b_{ik}}-\vect{u}_{\,I'}}{\overline{I'F}} S_{\,b_{ik}}
 \end{equation}
-en conservant les notations pr\'ec\'edentes et avec
-${\vect{u}_{\,{b}_{ik}}}$ la valeur au bord donn\'ee directement par les conditions aux limites.\\
-La viscosit\'e $\mu_{\,ij}$ \`a la face est calcul\'ee \`a l'aide des valeurs
-aux centres selon une fonction $f$ donn\'ee :
+keeping the same notations employed beforehand and with the value
+${\vect{u}_{\,{b}_{ik}}}$ at the boundary provided directly by the specified
+boundary conditions.
+
+The face value of the viscosity $\mu_{\,ij}$ is calculated from the cell centre
+values using a specified function $f$:
 \begin{equation}\notag
 \mu_{\,ij} = f(\mu_I,\mu_J)
 \end{equation}
-qui est, soit une moyenne arithm\'etique~:
+this function being either an arithmetic mean:
 \begin{equation}
 f(\mu_I,\mu_J)= \frac{1}{2}(\mu_I+\mu_J)
 \end{equation}
-soit une moyenne g\'eom\'etrique~:
+or a geometric mean:
 \begin{equation}
 f(\mu_I,\mu_J) =\displaystyle \frac{\mu_I \mu_J}{\alpha_{\,ij}
 \mu_I+(1-\alpha_{\,ij}) \mu_J}
 \end{equation}
-et la viscosit\'e $\mu_{\,b_{ik}}$ est \'egale \`a :
+and the viscosity value  $\mu_{\,b_{ik}}$ at the boundary face is given by the equality:
 \begin{equation}
 \mu_{\,b_{ik}}=\mu_I
 \end{equation}
-On introduit en outre, pour une utilisation ult\'erieure,
-les notations suivantes~:
+We also introduce here, for later use, the following additional notations:
 \begin{equation}
 \vect{D}^{NRec}_{\,ij}(\mu, \vect{u}) = \mu_{\,ij}
 \frac{\vect{u}_{\,J}-\vect{u}_{\,I}}{\overline{I'J'}} S_{\,ij}
@@ -370,14 +387,15 @@ les notations suivantes~:
 \frac{\vect{u}_{\,b_{ik}}-\vect{u}_{\,I}}{\overline{I'F}} S_{\,b_{ik}}
 \end{equation}
 
-qui correspondent chacune \`a une valeur non reconstruite aux faces internes et de bord.
+which correspond to the non-reconstructed values at the internal and boundary
+faces, respectively.
 
-\paragraph{\bf R\'esolution\\}
-Le syst\`eme (\ref{Base_Navstv_eq_prediction_continue}) pouvant comporter des non
-lin\'earit\'es dues au recours au test de pente ou pouvant conduire {\it via} la
-reconstruction  du gradient (cellule) \`a une matrice quasiment pleine en
-pr\'esence de non orthogonalit\'es, on le r\'esout de mani\`ere it\'erative avec
-la suite $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ d\'efinie par :
+\paragraph{\bf Solution\\}
+As the system (\ref{Base_Navstv_eq_prediction_continue}) may contain nonlinearities
+owing to use of the slope test or may give rise {\it via} the (cell) gradient
+reconstruction to a nearly-full matrix when non orthogonalities are present,
+we solve the system using the iterative sequence
+$(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ defined by:
 \begin{equation}
 \left\{\begin{array}{l}
 \vect{\widetilde{u}}^{n+1,0} = \vect{u}^{n}\\
@@ -385,27 +403,27 @@ la suite $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ d\'efinie par :
 \mathcal{EM}(\delta\vect{\widetilde{u}}^{k+1},I) = -\mathcal{E}(\vect{\widetilde{u}}^{n+1,k},I) \\
 \end{array}\right.
 \end{equation}
-ce qui d\'efinit \'egalement la suite $(\delta\vect{\widetilde{u}}^{k+1})
+which also defines the sequence $(\delta\vect{\widetilde{u}}^{k+1})
 _{k\in \mathbb{N}}$.\\
-Les deux op\'erateurs $\mathcal{E}$ et $\mathcal{EM}$ ont pour expression respective~:
+The two operators $\mathcal{E}$ and $\mathcal{EM}$ have the respective
+expressions:
 \begin{equation}\notag
 \begin{array}{ll}\label{Base_Navstv_eq_pred_exacte}
 \mathcal{E}(\vect{\widetilde{u}},I) &= \theta\, \mathcal{J}(\vect{\widetilde{u}},I)\,+\,(1-\theta)\,\mathcal{J}(\vect{u}^{n},I)\,+ |{\Omega_I}|\displaystyle\frac{\rho_I}{\Delta t}\,(\vect{\widetilde{u}}_{I}-\vect{u}^n_{I}) \\
 & +\,|{\Omega_I}|\left[(\vect{TS})^{n+\theta_{S}}_I-(\grad{P})^{n-1+\theta}_I \, \right]\\
 %-\theta\,(\tens{K}^{n})_{I}\,-\theta\,(\dive(\rho \vect{u}))_{I}\right)\,(\vect{\widetilde{u}_{I}}-\vect{u}^n)_I \\
-&+\sum\limits_{j\in Vois(i)}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{ij}}_{\text{moyenne ou interpolation lin\'eaire entre
-I' et J'}}\text{.}\,\vect{S}_{\,ij}}\\
-&+\sum\limits_{k\in {\gamma_b(i)}}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{\,{b}_{ik}}}_\text{issu des conditions aux limites}\text{.}\,\vect{S}_{\,{b}_{ik}}}\\
+&+\sum\limits_{j\in Neigh(i)}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{ij}}_{\text{average or linear interpolation between I' and J'}}\text{.}\,\vect{S}_{\,ij}}\\
+&+\sum\limits_{k\in {\gamma_b(i)}}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{\,{b}_{ik}}}_\text{obtained from the boundary conditions}\text{.}\,\vect{S}_{\,{b}_{ik}}}\\
 &\\
 \end{array}
 \end{equation}
-avec :
+with:
 \begin{equation}\notag
 \begin{array}{ll}
 \mathcal{J}(\vect{v},I) & = |{\Omega_I}|\,\,[\tens{K}^{n}-\dive(\rho \vect{u})\,]_{I}\,\,\vect{v}_{I} \\
-& + \left(\,\sum\limits_{j\in Vois(i)}{\vect{F}_{\,ij}((\rho\vect{u}),\vect{v})}
+& + \left(\,\sum\limits_{j\in Neigh(i)}{\vect{F}_{\,ij}((\rho\vect{u}),\vect{v})}
 +\,\,\sum\limits_{k\in {\gamma_b(i)}} {\vect{F}_{\,{b}_{ik}}((\rho \vect{u}),\vect{v})}\right)\\
-&-\left(\,\sum\limits_{j\in Vois(i)}{\vect{D}_{\,ij}(\mu,\vect{v})}
+&-\left(\,\sum\limits_{j\in Neigh(i)}{\vect{D}_{\,ij}(\mu,\vect{v})}
 +\,\,\sum\limits_{k\in {\gamma_b(i)}} {\vect{D}_{\,{b}_{ik}}(\mu,\vect{v})}\right)\\
 \end{array}
 \end{equation}
@@ -414,104 +432,101 @@ avec :
 \begin{array}{ll}
 \mathcal{EM}(\delta\vect{u},I) & =
 |{\Omega_I}| \left( \displaystyle\frac{\rho_I}{\Delta t} +\theta\,[\tens{K}^{n}-\dive(\rho \vect{u})\,]_{I}\,\right)\,\delta\vect{u}_{I}\\
-&+\theta\,\left(\,\sum\limits_{j\in Vois(i)}{\vect{F}^{\,amont}_{\,ij}((\rho\vect{u}),\delta\vect{u})}
-+\,\,\sum\limits_{k\in {\gamma_b(i)}} {\vect{F}^{\,amont}_{\,{b}_{ik}}((\rho \vect{u}),\delta\vect{u})}\right)\\
-&-\theta\,\left(\,\sum\limits_{j\in Vois(i)}{\vect{D}^{NRec}_{\,ij}(\mu,\delta\vect{u})}
+&+\theta\,\left(\,\sum\limits_{j\in Neigh(i)}{\vect{F}^{\,upwind}_{\,ij}((\rho\vect{u}),\delta\vect{u})}
++\,\,\sum\limits_{k\in {\gamma_b(i)}} {\vect{F}^{\,upwind}_{\,{b}_{ik}}((\rho \vect{u}),\delta\vect{u})}\right)\\
+&-\theta\,\left(\,\sum\limits_{j\in Neigh(i)}{\vect{D}^{NRec}_{\,ij}(\mu,\delta\vect{u})}
 +\,\,\sum\limits_{k\in {\gamma_b(i)}} {\vect{D}^{NRec}_{\,{b}_{ik}}(\mu,\delta\vect{u})}\right)\\
 \end{array}
 \end{equation}
 
 
-De plus, on suppose que cette suite  $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$
-converge %(au sens de la norme L2 discr\`ete) vers la bonne solution
-vers $\vect{\widetilde{u}}^{n+1}$.\\
+Furthermore, we assume that the sequence  $(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$
+converges %(with respect to the discrete L2 norm) towards the exact solution
+towards $\vect{\widetilde{u}}^{n+1}$.\\
 
-\minititre{Remarque 4}
-Les conditions aux limites associ\'ees aux op\'erateurs $\mathcal{E}$ et
-$\mathcal{EM}$ du syst\`eme (\ref{Base_Navstv_eq_pred_exacte}) sont celles portant sur la
-vitesse $\vect{u}$. Elles sont de type Dirichlet homog\`ene ou de type Neumann
-homog\`ene sur $\delta\vect{u}$ si $\vect{u}$ a une condition de type Dirichlet
-ou de type Neumann respectivement. Elles sont mixtes dans le cas d'une condition
-de sym\'etrie sur une face en biais par rapport aux axes.
+\minititre{Remark 5}
+The boundary conditions associated with the operators $\mathcal{E}$ and
+$\mathcal{EM}$ of the system (\ref{Base_Navstv_eq_pred_exacte}) are those relating to the velocity field $\vect{u}$. They are either homogeneous Dirichlet- or homogeneous Neumann-type conditions on $\delta\vect{u}$, this being dependent on whether the same type of condition, in this case a Dirichlet and a Neumann-type condition has been used for the velocity $\vect{u}$. They are mixed if a symmetry condition applies to a face that is skewed with respect to the reference frame axes.
 
-\minititre{Remarque 5}
-Les deux premi\`eres sommes de type $(\sum\limits_{k\in {\gamma_b(i)}})$,
-{\it i.e.} comportant les termes en $\vect{F}_{\,{b}_{ik}}((\rho \vect{u}),\vect{u})$ et $\vect{D}_{\,{b}_{ik}}(\mu,\vect{u})$, utilisent les conditions aux limites de la vitesse.\\
-Le  terme volumique  :
+\minititre{Remark 6}
+The first two summations of the type $(\sum\limits_{k\in {\gamma_b(i)}})$,
+{\it i.e.} comprising the $\vect{F}_{\,{b}_{ik}}((\rho \vect{u}),\vect{u})$ and
+$\vect{D}_{\,{b}_{ik}}(\mu,\vect{u})$ terms, use the velocity boundary conditions.\\
+The volume term:
 \begin{equation}\notag
-\sum\limits_{j\in Vois(i)}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{ij}}_{\text{moyenne ou interpolation lin\'eaire entre
-I' et J'}}\text{.}\,\vect{S}_{\,ij}}\\
+\sum\limits_{j\in Neigh(i)}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{ij}}_{\text{average or linear interpolation between I' and J'}}\text{.}\,\vect{S}_{\,ij}}\\
 \end{equation}
-de terme de bord associ\'e :
+The associated boundary term:
 \begin{equation}\notag
-\sum\limits_{k\in {\gamma_b(i)}}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{\,{b}_{ik}}}_\text{issu des conditions aux limites}\text{.}\,\vect{S}_{\,{b}_{ik}}}
+\sum\limits_{k\in {\gamma_b(i)}}{ \underbrace{\left((\,\mu\,\,^{t}\ggrad\vect{u})^{n+\theta_{S}}- \frac{2}{3}\,(\,\mu\, \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{\,{b}_{ik}}}_\text{from the boundary conditions}\text{.}\,\vect{S}_{\,{b}_{ik}}}
 \end{equation}
-a un traitement particulier. En effet, pour une cellule $\Omega_i$ jouxtant le
-bord, la contribution du premier terme (en gradient transpos\'e) est annul\'ee, aucune condition \`a la limite correcte ne lui \'etant attribu\'ee pour le moment.
+is treated in a specific way. In effect, the contribution of the first term
+(transposed gradient) is cancelled out for a cell $\Omega_i$ adjoining the
+boundary, no proper boundary condition being attributed to it at this time.
 
-\minititre{Remarque 6}
-L'op\'erateur $\mathcal{EM}$ approche $\mathcal{E}$ (aucun terme n'est
-reconstruit et la partie convective est trait\'ee syst\'ematiquement en sch\'ema
-d\'ecentr\'e amont). Ceci peut g\'en\'erer des
-impr\'ecisions num\'eriques non n\'egligeables si la suite
-$(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ n'a pas converg\'e.
+\minititre{Remark 7}
+The operator $\mathcal{EM}$ approaches $\mathcal{E}$ (there is no reconstruction
+of terms and the convective term is systematically treated using an upwind scheme).
+This can introduce non-negligible numerical diffusion if the sequence
+$(\vect{\widetilde{u}}^{n+1,k})_{k\in \mathbb{N}}$ has not converged.
 
-\subsubsection*{\bf \'Etape de correction de la pression}
-En prenant la divergence de la premi\`ere \'equation du syst\`eme
-(\ref{Base_Navstv_eq_correction_continue}), on obtient~:
+\subsubsection*{\bf Pressure correction step}
+Applying the divergence of the first equation of the system
+(\ref{Base_Navstv_eq_correction_continue}), we obtain:
 \begin{equation}
 \dive\left[(\rho\vect{u})^{n+1}-(\rho\vect{\widetilde{u}})^{n+1}\right]
 =\dive(-\Delta t\, \grad  \delta P^{n+\theta}) \\
 \end{equation}
 
-En utilisant la contrainte stationnaire $\dive(\rho\vect{u})^{n+1}=\Gamma$,
-on a donc~:
+By applying the stationary constraint $\dive(\rho\vect{u})^{n+1}=\Gamma$,
+this becomes:
 
 \begin{equation}
 \dive(\Delta t\, \grad\ \delta P^{n+\theta})=\dive((\rho \vect{\widetilde{u}})^{n+1})-\Gamma
 \end{equation}
 
-soit :
+where:
 \begin{equation}
 \left\{\begin{array}{l}
 \dive(\Delta t\, \grad\ \delta P^{n+\theta})=\dive((\rho \vect{\widetilde{u}})^{n+1})-\Gamma\\
 (\rho\vect{u})^{n+1} = (\rho\vect{\widetilde{u}})^{n+1}-\Delta t\, \grad \delta P^{n+\theta}
 \end{array}\right.
 \end{equation}
-et :
+and:
 \begin{equation}
 \label{Base_Navstv_corrvit}
 \vect{u}^{n+1} = \vect{\widetilde{u}}^{n+1}-\frac{\Delta t}{\rho}\, \grad\delta
 P^{n+\theta}
 \end{equation}
 
-En int\'egrant sur une cellule :
+Integrating over a cell gives the discrete equation:
 \begin{equation}
 \int_{\Omega_i}{\dive(\Delta t \grad\ \delta P^{n+\theta})\, d\Omega} =
-\sum\limits_{j\in Vois(i)}{\vect{D}_{\,ij}(\Delta t, \delta P^{n+\theta})}
+\sum\limits_{j\in Neigh(i)}{\vect{D}_{\,ij}(\Delta t, \delta P^{n+\theta})}
 +\sum_{k\in {\gamma_b(i)}} {\vect{D}_{\,{b}_{ik}}(\Delta t, \delta P^{n+\theta})}
 \label{Base_Navstv_eq_correction_discrete}
 \end{equation}
-et :
+and:
 \begin{equation}
 \int_{\Omega_i}{\dive(\rho \vect{\widetilde{u}})^{n+1}  d\Omega} =
-\sum_{j\in Vois{(i)}}{\left[ (\rho
+\sum_{j\in Neigh{(i)}}{\left[ (\rho
 \vect{\widetilde{u}})^{n+1}_{ij}\text{.}\,\vect{S}_{ij}\right]}
 +\sum_{k\in {\gamma_b(i)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}} \text{.}\, \vect{S}_{\,{b}_{ik}}\right]
 \end{equation}
-On utilise le m\^eme formalisme que pr\'ec\'edemment pour l'int\'egration du
-terme de diffusion de l'\'etape de pr\'ediction. Les conditions aux limites sont
-de type Dirichlet homog\`ene ou de type Neumann homog\`ene sur $\delta P$ si $P$ a une condition de
-type Dirichlet ou de type Neumann respectivement.
+The formalism introduced previously for the integration of the diffusion term in
+the prediction step is also adopted here: the boundary conditions on the
+pressure gradient $\delta P$ are either of the homogeneous Dirichlet or
+homogeneous Neumann type and correspond to the type of condition imposed
+on the pressure $P$, {\it i.e.} a Dirichlet or Neumann-type condition
+respectively.
 
-\paragraph{\bf Calcul du second membre de l'\'equation portant sur l'incr\'ement
-de pression.\\\\ }
+\paragraph{\bf Computation of the second member of the equation relating to the
+pressure increment.\\\\ }
 
-La discr\'etisation de $\sum\limits_{j\in Vois{(i)}}{\left[ (\rho
-\vect{\widetilde{u}})^{n+1}_{ij}\text{.}\,\vect{S}_{\,ij}\right]} + \sum\limits_{k\in {\gamma_b(i)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}} \text{.}\, \vect{S}_{\,{b}_{ik}}\right]$ est particuli\`ere. Le
-choix suivant not\'e $\left[{\ \ }\right]^{Init}$, pour une cellule ne touchant pas
-le bord par exemple, est insatisfaisant avec la discr\'etisation et le sch\'ema utilis\'es ici, en particulier avec l'\'equation
-(\ref{Base_Navstv_corrvit}) :\\
+Discretization of the sum $\sum\limits_{j\in Neigh{(i)}}{\left[ (\rho
+\vect{\widetilde{u}})^{n+1}_{ij}\text{.}\,\vect{S}_{\,ij}\right]} +
+\sum\limits_{k\in {\gamma_b(i)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}} \text{.}\, \vect{S}_{\,{b}_{ik}}\right]$ presents a particularity. The following choice denoted $\left[{\ \ }\right]^{Init}$, for example, yields unsatisfactory results for a cell not touching the boundary with the discretization and numerical scheme here used, particularly for the following equation
+(\ref{Base_Navstv_corrvit}):
 \begin{equation}
 (\rho \vect{\widetilde{u}})^{n+1}_{\,ij}.\,\vect{S}_{\,ij}=
 \left[(\rho \vect{\widetilde{u}})^{n+1}_{\,ij}.\,\vect{S}_{\,ij}\right]^{Init}=
@@ -519,8 +534,8 @@ le bord par exemple, est insatisfaisant avec la discr\'etisation et le sch\'ema 
 (1-\alpha_{ij}) (\rho\vect{\widetilde{u}})^{n+1}_{\,J'}\right].\,\vect{S}_{\,ij}
 \end{equation}
 
-Tout comme pour le calcul du flux num\'erique en centr\'e, on
-utilise de fa\c con licite l'approximation suivante :
+As for the numerical flux calculation in the centred scheme, we legitimately
+use the following approximation:
 \begin{equation}
 \begin{array}{ll}
 (\rho \vect{\widetilde{u}})^{n+1}_{\,ij}&=
@@ -530,25 +545,23 @@ utilise de fa\c con licite l'approximation suivante :
 + (\ggrad{(\rho\vect{\widetilde{u}})^{n+1}})_J\right]\text{.}\, \vect{OF}
 \end{array}
 \end{equation}
-mais ce n'est pas elle qui pose probl\`eme.\\\\
-En fait, $ \left[(\rho\vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Init}$ contient le terme
-$\vect{G}^{\,n}_{\,cel,ij}$, h\'erit\'e de l'\'etape de pr\'ediction, qui vaut :\\
+which does not, in itself, pose a problem.\\\\
+On the other hand, $ \left[(\rho\vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Init}$
+contains the term $\vect{G}^{\,n}_{\,cel,ij}$, effectively inherited from the prediction step, whose value is:\\
 \begin{equation}\notag
 \vect{G}^{\,n-1+\theta}_{\,cel,ij}=\alpha_{\,ij}\, \grad{P}^{\,n-1+\theta}_{I'} +
 (1-\alpha_{\,ij})\, \grad{P}^{\,n-1+\theta}_{J'}
 \end{equation}
 
-Or, sur un maillage orthogonal r\'egulier cart\'esien, \`a partir d'une
-vitesse $\vect{\widetilde{u}}^{n+1}=\vect{0}$
-et d'une pression $P^{\,n-1+\theta}_I=(-1)^{I}$, on
-obtient $\vect{G}^{\,n-1+\theta}_{\,cel,ij}=0$ d'o\`u $\delta P^{n+\theta}=0$~:
-l'irr\'egularit\'e initiale de pression ne peut donc jamais \^etre
-corrig\'ee.
+However, on a regular orthogonal Cartesian mesh, with a velocity field
+$\vect{\widetilde{u}}^{n+1}=\vect{0}$ and a pressure field $P^{\,n-1+\theta}_I=(-1)^{I}$,
+we obtain $\vect{G}^{\,n-1+\theta}_{\,cel,ij}=0$ and hence the pressure gradient
+$\delta P^{n+\theta}=0$. In this case, the initial pressure anomaly can evidently
+never be corrected.
 
-Pour rem\'edier \`a cela, on modifie l'\'ecriture $\left[{\ \ }\right]^{Init}$
-de $(\rho
-\vect{\widetilde{u}})^{n+1}_{\,ij}$ et de $(\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}$ en
-adoptant la valeur  $\left[{\ \ }\right]^{Corr}$  :
+To fix this, we modify the $\left[{\ \ }\right]^{Init}$ expression of $(\rho
+\vect{\widetilde{u}})^{n+1}_{\,ij}$ and $(\rho\vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}$
+by substituting the corrected value  $\left[{\ \ }\right]^{Corr}$:
 \begin{equation}
 \begin{array}{ll}
 (\rho \vect{\widetilde{u}})^{n+1}_{\,ij}.\ \vect{S}_{\,ij}&=
@@ -557,15 +570,13 @@ adoptant la valeur  $\left[{\ \ }\right]^{Corr}$  :
 +\beta\ (-\vect{D}_{\,ij}(\Delta t, P^{n-1+\theta}))\right).\ \vect{S}_{\,ij}
 \end{array}
 \end{equation}
-et,
-pour les conditions aux limites d'entr\'ee, de sym\'etrie (quelconque) ou de
-paroi :
+with, for the inlet, symmetry (if any) or wall boundary conditions:
 \begin{equation}\notag
 (\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}.\ \vect{S}_{\,b_{ik}}=\left[(\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}\right]^{Corr}.\ \vect{S}_{\,b_{ik}}=
 \rho _{\,{b}_{ik}}\vect{u}^{n+1}_{\,{b}_{ik}}.\ \vect{S}_{\,b_{ik}}
 \end{equation}
 
-pour les conditions aux limites de sortie :
+and for the outflow boundary conditions:
 \begin{equation}\notag
 \begin{array}{ll}
 (\rho \vect{\widetilde{u}})^{n+1}_{\,{b}_{ik}}.\ \vect{S}_{\,b_{ik}}& =
@@ -576,65 +587,64 @@ P^{n-1+\theta}))\right).\ \vect{S}_{\,b_{ik}}
 \end{array}
 \end{equation}
 
-$\beta$ est appel\'e coefficient d'Arakawa. Lorsqu'il vaut 1 (valeur par
-d\'efaut), il s'agit du filtre  Rhie~\&~Chow.
+$\beta$ is the Arakawa coefficient. When it has a value of 1 (default value), it is the weighting factor in the Rhie~\&~Chow filter.
 
 
-\minititre{Remarque 7}
-On peut g\'en\'eraliser cette d\'emarche \`a d'autres
-termes sources du m\^eme type, par exemple pour le mod\`ele
-$R_{ij}-\varepsilon$.
-%{\it  i.e.} comportant la quantit\'e
+\minititre{Remark 8}
+This approach can be generalized to other source terms of the same type,
+for example those in the $R_{ij}-\varepsilon$ model.
+%{\it  i.e.} comprising the quantity
 %$\vect{G}^{\,n}_{\,cel,ij}$.\\
 
-\paragraph{\bf R\'esolution\\}
-On construit une suite $(\delta P^{n+1,k})_{k\in \mathbb{N}}$ pour r\'esoudre
-l'\'equation (\ref{Base_Navstv_eq_correction_discrete}), qui peut conduire {\it via} la
-reconstruction  du gradient cellule \`a une matrice quasiment pleine en
-pr\'esence de non orthogonalit\'es, d\'efinie par :
+\paragraph{\bf Solution\\}
+To solve the equation (\ref{Base_Navstv_eq_correction_discrete}), which can
+lead, {\it via}  reconstruction of the cell gradient, to a nearly-full matrix
+when non-orthogonalities are present, we construct a sequence
+$(\delta P^{n+1,k})_{k\in \mathbb{N}}$ defined by:
 \begin{equation}
 \left\{\begin{array}{l}
 \delta P^{n+\theta,0} = 0\\
 \delta P^{n+\theta,k+1} = \delta P^{n+\theta,k} + C_{relax} \delta (\delta P)^{n+\theta,k+1}\\
 \mathcal{FM}(\delta(\delta P)^{n+\theta,k+1},I) = \mathcal{F}(\delta P^{n+\theta,k},I) \\\end{array}\right.
 \end{equation}\\
-ce qui d\'efinit \'egalement la suite $({\delta(\delta P)^{n+\theta,k+1}})_{k\in
+which also defines the sequence $({\delta(\delta P)^{n+\theta,k+1}})_{k\in
 \mathbb{N}}$.\\
-Les op\'erateurs $\mathcal{F}$ et $\mathcal{FM}$ ont pour expression :
+The operators $\mathcal{F}$ and $\mathcal{FM}$ are expressed by:
 \begin{equation}
 \begin{array}{ll}
 \mathcal{F}(\delta P,I) &=
- \sum\limits_{j\in Vois(i)}{\left[\vect{D}_{\,ij}(\Delta t,\delta
+ \sum\limits_{j\in Neigh(i)}{\left[\vect{D}_{\,ij}(\Delta t,\delta
 P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Corr}\right]}\\
 &+\sum\limits_{k\in {\gamma_b(i)}} {\left[\vect{D}_{\,{b}_{ik}}(\Delta
 t^n,\delta P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\,b_{ik}}\right]^{Corr}\right]\,+\,\Gamma}  \end{array}
 \end{equation}
 
-et :
+and:
 \begin{equation}
 \begin{array}{ll}
 \mathcal{FM}(\delta (\delta P),I) =
- \sum\limits_{j\in Vois(i)}{\left[-\vect{D}^{NRec}_{\,ij}(\Delta t,\delta
+ \sum\limits_{j\in Neigh(i)}{\left[-\vect{D}^{NRec}_{\,ij}(\Delta t,\delta
 (\delta P))\right]} +\sum\limits_{k\in {\gamma_b(i)}}
 \left[-\vect{D}^{NRec}_{\,{b}_{ik}}(\Delta t,\delta(\delta P))\right]
 \end{array}
 \end{equation}
 
-respectivement.\\
-$C_{relax}$ est un coefficient de relaxation donn\'e et fix\'e \`a 1 en standard.
-On suppose que la suite $(\delta P^{n+\theta,k})_{k\in \mathbb{N}}$
-converge
-%(au sens de la norme L2 discr\`ete) vers la bonne solution
-vers $\delta P^{n+\theta}$.
+respectively.\\
+$C_{relax}$ is a given coefficient of relaxation set to 1 by default.
+We assume that the sequence $(\delta P^{n+\theta,k})_{k\in \mathbb{N}}$
+converges
+%(with respect to the discrete L2 norm) to the exact solution
+to $\delta P^{n+\theta}$.
 
-Au fur et à mesure des itérations, le flux de masse est mis à jour, en utilisant $\delta(\delta P)$. \`A convergence, le flux de masse actualisé obtenu est :
+The mass flux is updated at each iteration step, using $\delta(\delta P)$. At convergence, the updated mass flux equation is:
 \begin{equation}
 (\rho \vect{u})^{n+1}_{\,ij}\text{.}\vect{S}_{\,ij} =
 \left[(\rho
 \vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Corr}\text{.}\,\vect{S}_{\,ij}-\vect{D}_{\,ij}(\Delta
 t^n,\delta P^{n+\theta})
 \end{equation}
-et on calcule le nouveau champ de vitesse au centre des cellules gr\^ace \`a l'\'egalit\'e :
+and we compute the new velocity field at the centre of the cells thanks
+to the equality:
 %
 % et en fait c'est chiant parcque on ne peut pas ecrire ca justement
 % a cause de Arak !
@@ -648,26 +658,27 @@ et on calcule le nouveau champ de vitesse au centre des cellules gr\^ace \`a l'\
 \vect{\widetilde{u}}^{n+1}-\frac{\Delta t}{\rho}\grad \,\delta P^{n+\theta}
 \end{equation}
 %
-\minititre{Remarque 8}
-Un traitement sp\'ecifique permet d'assurer que la conservation de la masse portant sur le bilan des flux
-de masse aux faces est toujours parfaitement v\'erifi\'ee \`a l'issue de
-l'\'etape de correction, que la suite $(\delta P^{n+\theta,k+1})_{k\in \mathbb{N}}$ ait
-ou non atteint la convergence.
-En effet, $\delta P^{n+\theta,k_{fin}+1}$,
-dernier terme \'evalu\'e de la suite, est donn\'e par :
+\minititre{Remark 9}
+A specific treatment is implemented in order to ensure the conservation of
+mass expressing the mass budget for the fluxes computed at the cell faces
+is always verified to strictly and perfectly uphold at the end of
+the correction step, whether or not the sequence
+$(\delta P^{n+\theta,k+1})_{k\in \mathbb{N}}$ has
+reached convergence. The term $\delta P^{n+\theta,k_{fin}+1}$, which is in
+effect the last term evaluated in the sequence, is given by:
 
 \begin{equation}\label{resol_pression_derniere_it}
 \mathcal{FM}(\delta(\delta P)^{n+\theta,k_{fin}+1},I) = \mathcal{F}(\delta P^{n+\theta,k_{fin}},I)
 \end{equation}
-Au lieu de r\'eactualiser classiquement le flux de masse, on le calcule comme
-suit :
+Instead of updating the mass flux in the classical way, we compute it as
+follows:
 \begin{equation}\notag
 (\rho \vect{u})^{n+1}_{\,ij}\text{.}\ \vect{S}_{\,ij} =
 \left[(\rho \vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Corr}\text{.}\,\vect{S}_{\,ij}
 -\vect{D}_{\,ij}(\Delta t,\delta P^{n+\theta,k_{fin}})
 -\vect{D}^{NRec}_{\,ij}(\Delta t,\delta (\delta P)^{n+\theta,k_{fin}+1})
 \end{equation}
-et :
+and:
 \begin{equation}\notag
 (\rho \vect{u})^{n+1}_{\,b_{ik}}\text{.}\ \vect{S}_{\,b_{ik}} =
 \left[(\rho \vect{\widetilde{u}})^{n+1}_{\,b_{ik}}\right]^{Corr}\text{.}\,\vect{S}_{\,b_{ik}}
@@ -675,22 +686,22 @@ et :
 -\vect{D}^{NRec}_{\,b_{ik}}(\Delta t,\delta (\delta P)^{n+\theta,k_{fin}+1})
 \end{equation}
 
-ce qui conduit bien \`a~:
+enabling to arrive at the formulation:
 \begin{equation}\notag
 \begin{array}{ll}
-\multicolumn{2}{l}{\sum\limits_{j\in Vois(i)}(\rho
+\multicolumn{2}{l}{\sum\limits_{j\in Neigh(i)}(\rho
 \vect{u})^{n+1}_{\,ij}\text{.}\ \vect{S}_{\,ij}
 +\sum\limits_{k\in {\gamma_b(i)}}(\rho\vect{u})^{n+1}_{\,b_{ik}}.\
 \vect{S}_{\,b_{ik}}}\\
 \hspace*{2cm}=&
-\sum\limits_{j\in Vois(i)}{\left[(\rho \vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Corr}.\,
+\sum\limits_{j\in Neigh(i)}{\left[(\rho \vect{\widetilde{u}})^{n+1}_{\,ij}\right]^{Corr}.\,
 \vect{S}_{\,ij}}
 + \sum\limits_{k\in {\gamma_b(i)}}\left[(\rho\vect{\widetilde{u}})^{n+1}_{\,b_{ik}}\right]^{Corr}\text{.}\,\vect{S}_{\,b_{ik}} \\
-\hspace*{2cm}-&\sum\limits_{j\in Vois(i)}
+\hspace*{2cm}-&\sum\limits_{j\in Neigh(i)}
 \vect{D}_{\,ij}(\Delta t,\delta P^{n+\theta,k_{fin}})
 -\sum\limits_{k\in {\gamma_b(i)}}\vect{D}_{\,b_{ik}}(\Delta t,\delta
 P^{n+\theta,k_{fin}})\\
-\hspace*{2cm}-&{\sum\limits_{j\in Vois(i)}\vect{D}^{NRec}_{\,ij}(\Delta t,\delta (\delta
+\hspace*{2cm}-&{\sum\limits_{j\in Neigh(i)}\vect{D}^{NRec}_{\,ij}(\Delta t,\delta (\delta
 P)^{n+\theta,k_{fin}+1})}
 -\sum\limits_{k\in {\gamma_b(i)}}\vect{D}^{NRec}_{\,b_{ik}}(\Delta t,\delta
 (\delta P)^{n+\theta,k_{fin}+1})
@@ -698,25 +709,25 @@ P)^{n+\theta,k_{fin}+1})}
 \end{equation}
 
 
-soit :
+corresponding to:
 \begin{equation}\notag
-\sum\limits_{j\in Vois(i)}(\rho \vect{u})^{n+1}_{\,ij}\text{.}\vect{S}_{\,ij}
+\sum\limits_{j\in Neigh(i)}(\rho \vect{u})^{n+1}_{\,ij}\text{.}\vect{S}_{\,ij}
 +\sum\limits_{k\in {\gamma_b(i)}}(\rho\vect{u})^{n+1}_{\,b_{ik}}.\
 \vect{S}_{\,b_{ik}}= -\mathcal{F}(\delta
 P^{n+\theta,k_{fin}},I)+\mathcal{FM}(\delta(\delta P)^{n+\theta,k_{fin}+1},I) + \Gamma
 \end{equation}
 
-et donc :
+and thus:
 \begin{equation}\notag
 \int_{\Omega_i}{\dive(\rho \vect{u})^{n+1}  d\Omega} = \Gamma
 \end{equation}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Mise en \oe uvre}
+\section*{Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-On se reportera aux sections relatives aux sous-programmes
-\fort{Predvv} (pr\'ediction des vitesses) et \fort{Resopv}
-(correction de pression).
+Refer to the following appendices relating to the subroutines
+\fort{Predvv} (prediction of velocities) and \fort{Resopv}
+(pressure correction).
