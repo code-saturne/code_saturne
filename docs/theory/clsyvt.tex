@@ -29,16 +29,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The aim of this subroutine is to fill the arrays of boundary conditions 
+The aim of this subroutine is to fill the arrays of boundary conditions
  (\var{COEFA} and \var{COEFB}) of the velocity and of the Reynolds stress tensor,
 for the symmetry boundary faces.
 These conditions are express relatively naturally in the local coordinate system
-of the boundary face. The function of \fort{clsyvt} is then to transform these 
-natural boundary conditions (expressed in the local coordinate sytem) in the 
-general coordinate sytem, and then to possibly partly implicit them. 
+of the boundary face. The function of \fort{clsyvt} is then to transform these
+natural boundary conditions (expressed in the local coordinate sytem) in the
+general coordinate sytem, and then to possibly partly implicit them.
 
 It should be noted that the part of the subroutine  \fort{clptur} (for the wall
-boundary conditions) relative to the writing in the local coordinate system and to 
+boundary conditions) relative to the writing in the local coordinate system and to
 the rotation is totally identical.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -47,16 +47,16 @@ the rotation is totally identical.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Figure \ref{Base_Clsyvt_fig_facesym} presents the notations used at the face. 
-The local coordinate system is defined from the normal at the face and 
+Figure \ref{Base_Clsyvt_fig_facesym} presents the notations used at the face.
+The local coordinate system is defined from the normal at the face and
 the velocity at $I'$ :\\
 $\bullet\ \displaystyle\vect{t}
 =\frac{1}{|\vect{u}_{I',\tau}|}\vect{u}_{I',\tau}$ is the first
-vector of the local coordinate system.\\ 
+vector of the local coordinate system.\\
 $\bullet\ \vect{\tilde{n}}=-\vect{n}$ is the second
-vector of the local coordinate system.\\ 
-$\bullet\ \vect{b}=\vect{t}\wedge\vect{\tilde{n}}=\vect{n}\wedge\vect{t}$ 
-is the third 
+vector of the local coordinate system.\\
+$\bullet\ \vect{b}=\vect{t}\wedge\vect{\tilde{n}}=\vect{n}\wedge\vect{t}$
+is the third
 vector of the local coordinate system.\\
 
 \begin{figure}[h]
@@ -66,8 +66,8 @@ vector of the local coordinate system.\\
 
 Here, $\vect{n}$ is the normalized normal vector to the boundary face
 in the sense of  \CS ({\em i.e.}
-directed towards the outside of the computational domain) 
-and $\vect{u}_{I',\tau}$ is the projection of the velocity at $I'$ 
+directed towards the outside of the computational domain)
+and $\vect{u}_{I',\tau}$ is the projection of the velocity at $I'$
 in the plane of the face :
 $\vect{u}_{I',\tau}=\vect{u}_{I'}-(\vect{u}_{I'}.\vect{n})\vect{n}$.\\
 If $\vect{u}_{I',\tau}=\vect{0}$, the direction of $\vect{t}$ in the plane
@@ -80,15 +80,15 @@ coordinate system $(\vect{e}_x,\vect{e}_y,\vect{e}_z)$).
 
 
 For sake of clarity, the following notations will be used :\\
-$\bullet\ $The general coordinate system will write 
+$\bullet\ $The general coordinate system will write
 $\mathcal{R}=(\vect{e}_x,\vect{e}_y,\vect{e}_z)$.\\
 $\bullet\ $The local coordinate system will write
 $\hat{\mathcal{R}}=(\vect{t},-\vect{n},\vect{b})=(\vect{t},\vect{\tilde{n}},\vect{b})$.\\
-$\bullet\ $The matrices of the components of a vector $\vect{u}$ 
-in the coordinate systems 
-$\mathcal{R}$ and $\hat{\mathcal{R}}$ will write 
+$\bullet\ $The matrices of the components of a vector $\vect{u}$
+in the coordinate systems
+$\mathcal{R}$ and $\hat{\mathcal{R}}$ will write
 $\mat{U}$ and $\hat{\mat{U}}$, respectively.\\
-$\bullet\ $The matrices of the components of a tensor $\tens{R}$ (2$^{nd}$ order) 
+$\bullet\ $The matrices of the components of a tensor $\tens{R}$ (2$^{nd}$ order)
 in the coordinate systems $\mathcal{R}$ and $\hat{\mathcal{R}}$ will write
  $\matt{R}$ and $\hat{\matt{R}}$, respectively.\\
 $\bullet\ $ $\matt{P}$ refers to the (orthogonal) matrix transforming
@@ -114,7 +114,7 @@ and for any second order tensor $\tens{R}$ :\\
 \end{equation}
 
 \minititre{Treatment of the velocity}
-In the local coordinate system, the boundary conditions for $\vect{u}$ 
+In the local coordinate system, the boundary conditions for $\vect{u}$
 naturally write :\\
 \begin{equation}
 \left\{\begin{array}{lcl}
@@ -123,7 +123,7 @@ u_{F,\tilde{n}} & = & 0\\
 u_{F,b} & = & u_{I',b}
 \end{array}\right.
 \end{equation}
-or 
+or
 \begin{equation}
 \mat{U}_F = \matt{P}\,.\,\hat{\mat{U}}_F
 = \matt{P}\,.\,\left[
@@ -143,14 +143,14 @@ or
 \end{equation}
 
 
-Let's take 
+Let's take
 $\matt{A}=\matt{P}\,.\,\left[
 \begin{array}{ccc}
 1 & 0 & 0\\
 0 & 0 & 0\\
 0 & 0 & 1
 \end{array}
-\right]\,.\,^t\matt{P}\qquad$ (matrix in the coordinate system $\mathcal{R}$ 
+\right]\,.\,^t\matt{P}\qquad$ (matrix in the coordinate system $\mathcal{R}$
 of the projector orthogonal to the face).
 
 The boundary conditions for  $\vect{u}$ thus write :
@@ -158,7 +158,7 @@ The boundary conditions for  $\vect{u}$ thus write :
 \mat{U}_F = \matt{A}\,.\,\mat{U}_{I'}
 \end{equation}
 
-Since the matrix $\matt{P}$ is orthogonal, it can be shown that 
+Since the matrix $\matt{P}$ is orthogonal, it can be shown that
 \begin{equation}
 \matt{A}=\left[
 \begin{array}{ccc}
@@ -176,7 +176,7 @@ u_{F,x}^{(n+1)} = \underbrace{1-\tilde{n}_x^2}_{\var{COEFB}}u_{I',x}^{(n+1)}
 -\tilde{n}_x\tilde{n}_z u_{I',z}^{(n)}}_{\var{COEFA}}
 \end{equation}
 
-The other components have a similar treatment. Since only the coordinates 
+The other components have a similar treatment. Since only the coordinates
 of $\vect{n}$ are useful, we do not need (for $\vect{u}$) to define
 explicitly the vectors  $\vect{t}$ and $\vect{b}$.
 
@@ -192,7 +192,7 @@ The boundary conditions we want to write are relations of the type:
 \begin{equation}
 \comp{R}_{F,ij}=\sum_{k,l}\alpha_{ijkl}\comp{R}_{I',kl}
 \end{equation}
-We are then naturally brought to introduce the column matrices of the 
+We are then naturally brought to introduce the column matrices of the
 components of $\tens{R}$ in the different coordinate systems.
 
 We write
@@ -208,7 +208,7 @@ and
 \hat{\comp{R}}_{31},\hat{\comp{R}}_{32},\hat{\comp{R}}_{33}]
 \end{equation}
 
-Two functions $q$ and $r$ from $\{1,2,3,4,5,6,7,8,9\}$ to 
+Two functions $q$ and $r$ from $\{1,2,3,4,5,6,7,8,9\}$ to
 $\{1,2,3\}$ are defined. Their values are given in the following table :
 \begin{center}
 \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
@@ -239,7 +239,7 @@ Using equation \ref{Base_Clsyvt_eq_chgtrepR}, we thus have :
 &=&\sum_{j=1}^9\comp{P}_{q(i)q(j)}\comp{P}_{r(i)r(j)}\hat{\comp{S}}_{F,j}
 \end{eqnarray}
 
-Or 
+Or
 \begin{equation}
 \mat{S}_{F}=\matt{A}\,.\,\hat{\mat{S}}_F\quad\text{avec }
 \comp{A}_{ij}=\comp{P}_{q(i)q(j)}\comp{P}_{r(i)r(j)}
@@ -286,9 +286,9 @@ or
 \renewcommand{\arraystretch}{1.}
 
 
-For the symmetry faces which are treated by \fort{clsyvt}, the 
+For the symmetry faces which are treated by \fort{clsyvt}, the
 coefficient $B$ is 1. However a similar treatment is applied in
-\fort{clptur} for the wall faces, and in this $B$ is zero. This 
+\fort{clptur} for the wall faces, and in this $B$ is zero. This
 parameter has to be specified when \fort{clca66} is called
 (see \S\ref{Base_Clsyvt_prg_meo}).
 
@@ -308,8 +308,8 @@ It can be shown that the components of the matrix $\matt{C}$ are :
 \end{equation}
 
 To conclude, it can be noted that, due to the symmetries of the tensor  $\tens{R}$,
- the matrix $\mat{S}$. 
-Thus only the simplified matrices 
+ the matrix $\mat{S}$.
+Thus only the simplified matrices
 $\mat{S}^\prime$ and $\hat{\mat{S}}^\prime$ will be used:
 \begin{equation}
 \mat{S}^\prime=\,^t[\comp{R}_{11},\comp{R}_{22},\comp{R}_{33},
@@ -320,7 +320,7 @@ $\mat{S}^\prime$ and $\hat{\mat{S}}^\prime$ will be used:
 \hat{\comp{R}}_{12},\hat{\comp{R}}_{13},\hat{\comp{R}}_{23}]
 \end{equation}
 
-By gathering different lines of matrix $\matt{C}$, equation 
+By gathering different lines of matrix $\matt{C}$, equation
 \ref{Base_Clsyvt_eq_clsurS} is transformed into the final equation~:
 \begin{equation}
 \mat{S}_F^\prime=\matt{D}\,.\,\mat{S}_{I'}^\prime
@@ -329,7 +329,7 @@ By gathering different lines of matrix $\matt{C}$, equation
 The computation of the matrix $\matt{D}$ is performed in the subroutine
 \fort{clca66}. The methodology is described in annexe B.
 
-From $\matt{D}$, the coefficients of the boundary conditions can be 
+From $\matt{D}$, the coefficients of the boundary conditions can be
  partially implicited ($\var{ICLSYR}=1$) or totally explicited
 ($\var{ICLSYR}=0$).
 
@@ -357,16 +357,16 @@ $\bullet\ ${\sc Total explicitation}\\
 \label{Base_Clsyvt_prg_meo}%
 \etape{Beginning of the loop}
 
-Beginnning of the loop on all the boundary faces  \var{IFAC} with 
+Beginnning of the loop on all the boundary faces  \var{IFAC} with
 symmetry conditions.
-A face is considered as a symmetry face if 
-\var{ICODCL(IFAC,IU(IPHAS))} is 4. The tests in \fort{vericl} are designed 
- for  \var{ICODCL} to be equal to 4 for \var{IU} if and only if it is equal 
-to 4 for the other components of the velocity and for the components of $\tens{R}$ 
+A face is considered as a symmetry face if
+\var{ICODCL(IFAC,IU)} is 4. The tests in \fort{vericl} are designed
+ for  \var{ICODCL} to be equal to 4 for \var{IU} if and only if it is equal
+to 4 for the other components of the velocity and for the components of $\tens{R}$
 (if necessary)\\.
 
-The value 0 is given to  \var{ISYMPA}, which identifies the face as a 
-wall or symmetry face (a face where the mass flux will be set to zero as 
+The value 0 is given to  \var{ISYMPA}, which identifies the face as a
+wall or symmetry face (a face where the mass flux will be set to zero as
 explained in \fort{inimas}).
 
 \etape{Calculation of the basis vectors}
@@ -375,14 +375,14 @@ $\vect{u}_{I'}$ is calculated in \fort{CONDLI}, passed {\em via} \var{COEFU},
 and stored in \var{(UPX,UPY,UPZ)}.
 
 \etape{Case with $R_{ij}-\varepsilon$}
-With the $R_{ij}-\varepsilon$ model (\var{ITURB}=30 or 31), the vectors 
+With the $R_{ij}-\varepsilon$ model (\var{ITURB}=30 or 31), the vectors
  $\vect{t}$ and $\vect{b}$ must be calculated explicitly
 (we use $\matt{P}$, not simply $\matt{A}$).
 They are stored in \var{(TX,TY,TZ)} and
 \var{(T2X,T2Y,T2Z)}, respectively.\\
 The transform matrix $\matt{P}$ is then calculated and stored in the array \var{ELOGLO}.\\
-The subroutine \fort{clca66} is then called to calculate the reduced  
-matrix $\matt{D}$. It is stored in \var{ALPHA}. \fort{clca66} is called 
+The subroutine \fort{clca66} is then called to calculate the reduced
+matrix $\matt{D}$. It is stored in \var{ALPHA}. \fort{clca66} is called
 with a parameter \var{CLSYME} which is 1, and which corresponds to the parameter
 $\omega$ of equation \ref{Base_Clsyvt_eq_clRij}.
 
@@ -390,7 +390,7 @@ $\omega$ of equation \ref{Base_Clsyvt_eq_clRij}.
 \etape{Filling the arrays \var{COEFA} and \var{COEFB}}
 The arrays \var{COEFA} and \var{COEFB} are filled following directly
 equations \ref{Base_Clsyvt_eq_clU}, \ref{Base_Clsyvt_eq_clRimp} and \ref{Base_Clsyvt_eq_clRexp}.\\
-\var{RIJIPB(IFAC,.)} corresponds to the vector $\mat{S}_{I'}^\prime$, computed in 
+\var{RIJIPB(IFAC,.)} corresponds to the vector $\mat{S}_{I'}^\prime$, computed in
 \fort{condli}, and passed as an argument to \var{clsyvt}.
 
 \etape{Filling the arrays \var{COEFAF} and \var{COEFBF}}
@@ -440,7 +440,7 @@ Likewise for $k$ varying from 4 to 6 or from 7 to 9, $q(k)$ being 2 or 3, respec
 \text{(by the bijectivity of $(q,r)$)}\nonumber
 \end{eqnarray}
 
-Thus $^t\matt{A}\,.\,\matt{A}=\matt{Id}$. Similarly, it can be shown that 
+Thus $^t\matt{A}\,.\,\matt{A}=\matt{Id}$. Similarly, it can be shown that
 $\matt{A}\,.\,^t\matt{A}=\matt{Id}$. Thus $\matt{A}$ is an orthogonal matrix.
 
 
@@ -479,9 +479,9 @@ $s(i)$&1&4&5&4&2&6&5&6&3\\
 By construction, we have $\comp{S}_i=\comp{S}^\prime_{s(i)}$ for all $i$ between 1
 and 9.
 
-To compute $\comp{D}_{ij}$, we can choose a value of $m$ to satisfy 
+To compute $\comp{D}_{ij}$, we can choose a value of $m$ to satisfy
 $s(m)=i$ and sum all the $\comp{C}_{mn}$ to have $s(n)=j$. The choice of $m$
-is irrelevent. We can also compute the sum over all $m$ so that  $s(m)=i$ and then 
+is irrelevent. We can also compute the sum over all $m$ so that  $s(m)=i$ and then
 divide by the number of such values of $m$. We will use this method.
 
 We define $N(i)$ the number of integers between 1 and 9 so that $s(m)=i$.
@@ -504,7 +504,7 @@ then $q(m)=r(m)=i$ and $q(n)=r(n)=j$. Thus \\
 (\delta_{k1}+\omega\delta_{k3}+\delta_{k5}+\omega\delta_{k7}+\delta_{k9})
 \end{equation}
 When $k$ belongs to $\{1,5,9\}$, $q(k)=r(k)$ belongs to $\{1,2,3\}$. And for $k=3$ or
-$k=7$, $q(k)=1$ and $r(k)=3$, or the inverse (and for $k$ even the 
+$k=7$, $q(k)=1$ and $r(k)=3$, or the inverse (and for $k$ even the
 the sum of Kronecker symbol is zero). Finally we have :
 \begin{equation}
 \comp{D}_{ij}=\sum_{k=1}^3\comp{P}_{ik}^2\comp{P}_{jk}^2
@@ -525,7 +525,7 @@ $q(m_1)=r(m_2)=1$ and $r(m_1)=q(m_2)=3$. We then have
 $m=1$ and $n=3$.
 
 \item[-] if $j=6$, then $m_1=6$ and $m_2=8$,
-$q(m_1)=r(m_2)=2$ and $r(m_1)=q(m_2)=3$. We then have 
+$q(m_1)=r(m_2)=2$ and $r(m_1)=q(m_2)=3$. We then have
 $m=2$ and $n=3$.
 \end{itemize}
 

@@ -372,7 +372,7 @@ on compl\`ete le flux dans \fort{cfmsvl} imm\'ediatement apr\`es l'appel
 \`a \fort{cfbsc3}.
 En effet, dans ce cas,
 la convection est explicite ($\rho^{n+\frac{1}{2}}=\rho^{n}$,
-obtenu en imposant \var{ICONV(ISCA(IRHO(IPHAS)))=0})
+obtenu en imposant \var{ICONV(ISCA(IRHO))=0})
 et le sous-programme \fort{cfbsc3},
 qui calcule le flux de masse aux faces,
 ne prend pas en compte la contribution du terme
@@ -397,7 +397,7 @@ si la convection est trait\'ee de mani\`ere implicite
 (algorithme non standard, non test\'e,
 associ\'e \`a l'\'equation~(\ref{Cfbl_Cfmsvl_eq_densite_bis_cfmsvl}),
 correspondant au choix $\rho^{n+\frac{1}{2}}=\rho^{n+1}$ et
-obtenu en imposant \var{ICONV(ISCA(IRHO(IPHAS)))=1}).
+obtenu en imposant \var{ICONV(ISCA(IRHO))=1}).
 En effet, apr\`es \fort{cfmsfl}, il faut d\'eterminer la vitesse de
 convection $\vect{w}^n$ pour qu'apparaisse
 $\rho^{n+1} \vect{w}^n\cdot\vect{n}$

@@ -32,7 +32,7 @@ This subroutine is dedicated to the calculation of the wall boundary conditions.
 
 The wall boundary conditions refer to all the boundary conditions for the velocity, the turbulent variables ($k$, $\varepsilon$, $R_{ij}$), the temperature when it has a prescribed value at the wall (or the enthalpy and more generally the {\it VarScalaires}\footnote{As in \fort{condli} the {\it VarScalaire} are any solution of a convection-diffusion equation apart from the velocity, the pressure and the turbulent variables  $k$, $\varepsilon$ and $R_{ij}$. More specifically, the name {\it VarScalaire} can refer to the temperature, the enthalpy or a passive scalar.  } to treat at the wall by using a similarity law for the associated boundary layer). For the {\it VarScalaire} in particular, when the boundary conditions at the wall are of Neumann type (homogeneous or not), they are treated in  \fort{condli} and don't present them here. In particular, the boundary conditions of the {\it VarScalaires} are not treated here because their treatment at the wall is of homogeneous Neumann type.
 
-We present the calculation of the pair of coefficients $A_b$ and $B_b$ which are used during the computation of certain discretized terms of the equations to solve, and which allow in particular to determine a value associated with the boundary faces $f_{b,int}$ (at a point located at the "centre" of the boundary face, the barycentre of its vertices) using the formulae   $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point $I'$, the projection of the centre of the boundary cell onto the line normal to the boundary face and passing through its centre~: see figure~\ref{Base_Clptur_fig_flux_clptur}).   
+We present the calculation of the pair of coefficients $A_b$ and $B_b$ which are used during the computation of certain discretized terms of the equations to solve, and which allow in particular to determine a value associated with the boundary faces $f_{b,int}$ (at a point located at the "centre" of the boundary face, the barycentre of its vertices) using the formulae   $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point $I'$, the projection of the centre of the boundary cell onto the line normal to the boundary face and passing through its centre~: see figure~\ref{Base_Clptur_fig_flux_clptur}).
 
 
 \begin{figure}[h]
@@ -56,38 +56,38 @@ The velocity of the fluid is noted $\vect{u}$. Index $I$, $I'$ or $F$ denotes th
 
 
 
-The orthonormal coordinate system attached to the wall writes 
+The orthonormal coordinate system attached to the wall writes
 $\hat {\mathcal R}=(\vect{\tau},\vect{\tilde{n}},\vect{b})$.
 \begin{itemize}
 \item [$\bullet$] $\vect{\tilde{n}}=-\vect{n}$ is the unit vector orthogonal to the wall and directed towards the interior of the computational domain.
-\item [$\bullet$] $\vect{\tau} = \displaystyle\frac{1}{\|\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\|}\left[\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\right]$ is the unit vector parallel to the projection of the relative velocity at $I'$, $\vect{u}^r_{I'}$, in the plane tangent to the wall  
- ({\it i.e.} orthogonal to $\vect{\tilde{n}}$)~: see 
+\item [$\bullet$] $\vect{\tau} = \displaystyle\frac{1}{\|\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\|}\left[\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\right]$ is the unit vector parallel to the projection of the relative velocity at $I'$, $\vect{u}^r_{I'}$, in the plane tangent to the wall
+ ({\it i.e.} orthogonal to $\vect{\tilde{n}}$)~: see
 figure~\ref{Base_Clptur_fig_flux_clptur}.
 \item [$\bullet$] $\vect{b}$ is the unit vector which completes the positively oriented coordinate system.
 \end{itemize}
 \vspace{0.2cm}
 
-The dimensionless limit distance which separates the viscous sublayer from the logarithmic region writes $y^+_{lim}$. Its value is $1/\kappa$ (with $\kappa = 0,42$) in general (to ensure the continuity of the velocity gradient) and 10.88 in LES (to ensure the continuity of the velocity).  
+The dimensionless limit distance which separates the viscous sublayer from the logarithmic region writes $y^+_{lim}$. Its value is $1/\kappa$ (with $\kappa = 0,42$) in general (to ensure the continuity of the velocity gradient) and 10.88 in LES (to ensure the continuity of the velocity).
 
-In the case of the {\bf two velocity scale model}, 
+In the case of the {\bf two velocity scale model},
 \begin{itemize}
 \item [-] $u_k$ is the friction velocity at the wall obtained from the turbulent kinetic energy.
 We write $u^*$ the friction velocity at the wall calculated from the equation
  $ \displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(y^+_k)$.
 
-\item [-]  
-$y^+_k$  represents a dimensionless wall distance, 
-$y^+_k= \displaystyle\frac{u_k\,I'F}{\nu}$ ($\nu$ is the molecular kinematic viscosity 
+\item [-]
+$y^+_k$  represents a dimensionless wall distance,
+$y^+_k= \displaystyle\frac{u_k\,I'F}{\nu}$ ($\nu$ is the molecular kinematic viscosity
 taken at the centre $I$ of the boundary cell).
 The function $f$ gives the ideal shape of the velocity profile.
-It is piecewisely approximated by the logarithmic law 
- $f(z)=f_1(z)= \displaystyle\frac{1}{\kappa}ln(z)+5,2$ for 
+It is piecewisely approximated by the logarithmic law
+ $f(z)=f_1(z)= \displaystyle\frac{1}{\kappa}ln(z)+5,2$ for
 $z> y^+_{lim}$
 and by the linear law $f(z)=f_2(z)=z$ otherwise.
 
-\item [-] The two velocity scale $u_k$ and $u^*$ are simple to compute 
-but their computation requires the knowledge of the turbulent kinetic energy $k_I$ 
-at the centre of cell adjoint to the boundary face  (with the $R_{ij}-\varepsilon$ model, we use half the trace of the Reynolds stress tensor). 
+\item [-] The two velocity scale $u_k$ and $u^*$ are simple to compute
+but their computation requires the knowledge of the turbulent kinetic energy $k_I$
+at the centre of cell adjoint to the boundary face  (with the $R_{ij}-\varepsilon$ model, we use half the trace of the Reynolds stress tensor).
 
 
 \item [-] The two velocity scale model is the default model in \CS.
@@ -122,11 +122,11 @@ y^+_k \leqslant y^+_{lim}
 
 In the case of the {\bf one velocity scale model},
 
-we write $u^*$ the only 
-friction velocity at the wall solution of the equation 
-$\displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(y^+)$. 
-$y^+$  represents a dimensionless wall distance 
-$y^+=\displaystyle\frac{u^*\,I'F}{\nu}$ ($\nu$ is the molecular kinematic viscosity 
+we write $u^*$ the only
+friction velocity at the wall solution of the equation
+$\displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(y^+)$.
+$y^+$  represents a dimensionless wall distance
+$y^+=\displaystyle\frac{u^*\,I'F}{\nu}$ ($\nu$ is the molecular kinematic viscosity
 taken at the centre $I$ of the boundary cell).
 The function $f$ gives the ideal shape of the velocity profile, as in the case of the two velocity scale model. One can note that this friction velocity, calculated using a more complicated approach (Newton method), can however be obtained without making any reference to the turbulent variables ($k$, $\varepsilon$, $R_{ij}$). For convenience in the case of the one velocity scale model, we write $u_k=u^*$.
 
@@ -150,7 +150,7 @@ u^* \text{ solution de } \left\{\begin{array}{lll}
 \end{equation}
 
 
-{\bf Remark~:} Hereafter, we provide three exemples 
+{\bf Remark~:} Hereafter, we provide three exemples
 based on the two velocity scale model.
 \begin{itemize}
 \item In this way, one can implement a specific wall function~:
@@ -159,15 +159,15 @@ by simply imposing
 $\displaystyle{u^*}=u_{\tau,I'}/g(y^+)$.
 \item It is also possible to use a rough-wall wall function such as~:
 $$\displaystyle\frac{u_{\tau,I'}}{u^*}=\displaystyle\frac{1}{\kappa}\,ln(\frac{y}{\xi})+8,5$$
-where $\xi$ is the height of the roughness elements at the wall~: one just has to impose 
+where $\xi$ is the height of the roughness elements at the wall~: one just has to impose
 $\displaystyle u^*=u_{\tau,I'}/\left[\frac{1}{\kappa}ln(\frac{y}{\xi})+8,5\right]$,
- $y$ being deduced from $y^+$, available as an argument, by the equation 
+ $y$ being deduced from $y^+$, available as an argument, by the equation
 $\displaystyle y=y^+\frac{\nu}{u_k}$.
-\item Even a more general correlation could be used of  
+\item Even a more general correlation could be used of
 Colebrook type~:
 $$u^*=u_{deb}/\left[-4\sqrt{2}log_{10}\left(\displaystyle\frac{2,51}{2\sqrt{2}D_H^+}+\frac{\xi}{3,7\,D_H}\right)\right]$$
 where $D_H^+$ is the hydraulic diameter made dimensionless using $u_k$, $\nu$,
-$u_{deb}$ the mean streamwise velocity 
+$u_{deb}$ the mean streamwise velocity
 and $\displaystyle\frac{\xi}{D_H}$ the relative roughness.
 \end{itemize}
 
@@ -179,18 +179,18 @@ We first consider the boundary conditions used in the case of calculation using 
  $k-\varepsilon$ model. Indeed these cases are the most complex and general.
 
 The boundary conditions are necessary to prescribe at the boundary
- the correct tangential stress $\sigma_\tau=\rho_Iu^*u_k$ in the momentum 
+ the correct tangential stress $\sigma_\tau=\rho_Iu^*u_k$ in the momentum
 equation\footnote{Proposition de modification des conditions aux limites de
 paroi turbulente pour le Solveur Commun dans le cadre du mod\`ele
 $k-\varepsilon$ standard, rapport EDF HI-81/00/019/A, 2000, M. Boucker, J.-D. Mattei.}
-($\rho_I$ is the density at the centre of cell $I$). 
-The term which requires boundary conditions is the one containing the 
+($\rho_I$ is the density at the centre of cell $I$).
+The term which requires boundary conditions is the one containing the
 velocity derivative in the normal direction to the wall\footnote{The transpose gradient term is treated in \fort{visecv}
 and thus will not be considered here.}~:
-$(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$. It appears on the 
+$(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$. It appears on the
 right-hand side of the usual momentum equation (see \fort{bilsc2} and \fort{predvv}).
 
-In the case where the  $k-\varepsilon$  model tends to surestimate 
+In the case where the  $k-\varepsilon$  model tends to surestimate
 the production of turbulent kinetic energy, the length scale of the model,
 $L_{k-\varepsilon}$,
 can become significantly larger than the maximum theoretical length scale
@@ -202,23 +202,23 @@ L_{\text{theo}} = \kappa\, I'F
 \end{array}\right.
 \end{equation}
 
-In the case where $L_{k-\varepsilon}>L_{\text{th\'eo}}$, we thus have 
-$\mu_{t,I}>\mu_{t}^{lm}$ with $\mu_{t,I}$ the turbulent viscosity of the 
-$k-\varepsilon$ model at point $I$ and $\mu_{t}^{lm}=\rho_I L_{\text{theo}}u_k$ 
-the turbulent viscosity of the mixing length model. Additionally, the 
+In the case where $L_{k-\varepsilon}>L_{\text{th\'eo}}$, we thus have
+$\mu_{t,I}>\mu_{t}^{lm}$ with $\mu_{t,I}$ the turbulent viscosity of the
+$k-\varepsilon$ model at point $I$ and $\mu_{t}^{lm}=\rho_I L_{\text{theo}}u_k$
+the turbulent viscosity of the mixing length model. Additionally, the
 tangential stress can write by making the turbulent viscosity appear~:
 \begin{equation}
 \sigma_\tau = \rho_Iu^*u_k = \displaystyle\frac{u^*}{\kappa\, I'F}\underbrace{\rho_I\kappa\, I'F\, u_k}_{\mu^{lm}_t}
 \end{equation}
-The viscosity scale introduced in the stress thus contradicts the one deduced 
-from the neighbouring turbulence calculated by the model. 
-Consequently we prefer to write the stress, by using the velocity scale of the $k-\varepsilon$ model when it is lower than 
-the limit $L_{\text{th\'eo}}$~: 
+The viscosity scale introduced in the stress thus contradicts the one deduced
+from the neighbouring turbulence calculated by the model.
+Consequently we prefer to write the stress, by using the velocity scale of the $k-\varepsilon$ model when it is lower than
+the limit $L_{\text{th\'eo}}$~:
 \begin{equation}
 \sigma_\tau = \displaystyle\frac{u^*}{\kappa\, I'F} max(\mu_{t}^{lm},\mu_{t,I})
 \end{equation}
 
-One can then use this value to calculate the diffusive flux 
+One can then use this value to calculate the diffusive flux
 which depends upon it in the Navier-Stokes equations~:
 \begin{equation}\label{Base_Clptur_eq_grad_sigma_clptur}
 (\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}=-\sigma_\tau \vect{\tau}.
@@ -230,8 +230,8 @@ But the velocity gradient (face gradient) is computed in the code as~:
 \displaystyle\frac{(\mu_I+\mu_{t,I})}{\overline{I'F}}(\vect{u}_F-\vect{u}_{I'})
 \end{equation}
 
-Using (\ref{Base_Clptur_eq_grad_sigma_clptur}) and 
-(\ref{Base_Clptur_eq_grad_uf_clptur}) we obtain the value of $\vect{u}_F$ 
+Using (\ref{Base_Clptur_eq_grad_sigma_clptur}) and
+(\ref{Base_Clptur_eq_grad_uf_clptur}) we obtain the value of $\vect{u}_F$
 to be prescribed, referred to as $\vect{u}_{F,flux}$~(conservation of the momentum flux)~:
 \begin{equation}\label{Base_Clptur_eq_uf_flux_clptur}
 \begin{array}{ll}
@@ -250,7 +250,7 @@ In reality, an extra approximation is made. It consists in imposing a zero
 
 Moreover, if the value obtained for $y^+$ is
 lower than  $y^+_{lim}$ a no-slip condition is applied.
-Finally, one can also make the wall velocity appear in the final expression~: 
+Finally, one can also make the wall velocity appear in the final expression~:
 \begin{equation}
 \begin{array}{l}
 \text{\bf "Flux" boundary conditions of the velocity}\,(k-\varepsilon)\\
@@ -264,7 +264,7 @@ Finally, one can also make the wall velocity appear in the final expression~:
 \end{array}
 \end{equation}
 
-A first pair of coefficients $A_{flux}$ and $B_{flux}$ can then be deduced 
+A first pair of coefficients $A_{flux}$ and $B_{flux}$ can then be deduced
 (for each component of the velocity separately) and it is used only
  to compute the tangential stress dependent term  (see \fort{bilsc2})~:
 \begin{equation}
@@ -282,12 +282,12 @@ A first pair of coefficients $A_{flux}$ and $B_{flux}$ can then be deduced
 \end{equation}
 
 We saw above how to impose a boundary condition to compute directly the stress term.
-Further analysis is necessary to calculate correctly the velocity gradients. We 
-want to find a boundary face value which permits to obtain, 
-with the chosen expression for the gradient, 
- the value the turbulent production as close as possible to its theoretical value 
-(determined by using the logarithmic law), in order to evaluate the normal 
-derivative the tangential velocity. 
+Further analysis is necessary to calculate correctly the velocity gradients. We
+want to find a boundary face value which permits to obtain,
+with the chosen expression for the gradient,
+ the value the turbulent production as close as possible to its theoretical value
+(determined by using the logarithmic law), in order to evaluate the normal
+derivative the tangential velocity.
 Thus, we define (at point $I$)~:
 \begin{equation}\label{Base_Clptur_eq_ptheo_clptur}
 P_{\text{th\'eo}} = \rho_I u^* u_k
@@ -296,7 +296,7 @@ P_{\text{th\'eo}} = \rho_I u^* u_k
 \end{equation}
 
 Morevoer, the dominant term of the production computed in cell $I$ is,
-in classical situations ($y$ is the coordinate on the axis 
+in classical situations ($y$ is the coordinate on the axis
 whose direction vector is $\vect{\tilde{n}}$),
 \begin{equation}
 P_{\text{calc}} =
@@ -305,7 +305,7 @@ P_{\text{calc}} =
 
 The normal gradient of the tangential velocity (cell gradient)
 is calculated in the code using finite volume, and its expression
-on regular orthogonal meshes is (see the notations on 
+on regular orthogonal meshes is (see the notations on
 figure \ref{Base_Clptur_fig_bord_ortho_clptur})~:
 \begin{equation}
 P_{\text{calc}} =
@@ -337,18 +337,18 @@ P_{\text{calc}} &=&
 \caption{\label{Base_Clptur_fig_bord_ortho_clptur}Cellule de bord - Maillage orthogonal.}
 \end{figure}
 
-We then use (\ref{Base_Clptur_eq_ptheo_clptur}) and 
-(\ref{Base_Clptur_eq_pcalc_clptur}) to impose that the calculated 
+We then use (\ref{Base_Clptur_eq_ptheo_clptur}) and
+(\ref{Base_Clptur_eq_pcalc_clptur}) to impose that the calculated
 production is equal to the theoretical production. The preceeding
 formulae are extended with no precaution to non-orthogonal meshes (the velocity
-at $I$ is then simply computed at $I'$). 
+at $I$ is then simply computed at $I'$).
 The following expression for $u_{\tau,F}$ is then obtained~:
 \begin{equation}
 u_{\tau,F,grad} =u_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left(
 2\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k I'F}{\mu_{t,I}} }-\displaystyle\frac{1}{2}\right)
 \end{equation}
 
-Additionally, we force the gradient to remain as stiff as the one 
+Additionally, we force the gradient to remain as stiff as the one
 given by the normal derivative of the theoretical velocity profile
 (logarithmic) at $I'$~:\\
 $\partial_y u_{\tau} = \partial_y (\displaystyle
@@ -358,7 +358,7 @@ u_{\tau,F,grad} =u_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}max\left(1,
 2\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k I'F}{\mu_{t,I}} }-\displaystyle\frac{1}{2}\right)
 \end{equation}
 
-Finally, we clip the velocity at the wall with a minimum value calculated 
+Finally, we clip the velocity at the wall with a minimum value calculated
 assuming that we are in the logarithmic layer~:
 \begin{equation}\label{Base_Clptur_eq_ugrad_clptur}
 u_{\tau,F,grad} =
@@ -370,8 +370,8 @@ u_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,
 
 
 The normal derivative at the wall is prescribed to zero.
-If the $y^+$ value at the wall is lower than  $y^+_{lim}$, 
-a no-slip condition is prescribed. Finally, one can also 
+If the $y^+$ value at the wall is lower than  $y^+_{lim}$,
+a no-slip condition is prescribed. Finally, one can also
 make explicit the velocity of the wall in the final expression~:
 \begin{equation}
 \begin{array}{l}
@@ -391,10 +391,10 @@ u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,
 \end{array}
 \end{equation}
 
-A second pair of coefficients $A_{grad}$ and $B_{grad}$ can then be deduced 
+A second pair of coefficients $A_{grad}$ and $B_{grad}$ can then be deduced
 (for each velocity component separately). It is used when the velocity
 gradient is necessary (except for the terms depending on the tangential shear,
-those being treated in \fort{bilsc2} using $A_{flux}$ and $B_{flux}$)~: 
+those being treated in \fort{bilsc2} using $A_{flux}$ and $B_{flux}$)~:
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associated to the "gradient" boundary conditions of }\\
@@ -420,11 +420,11 @@ u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,
 
 \etape{Boundary conditions of the velocity in $R_{ij}-\varepsilon$\vspace{0,3cm}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The boundary conditions of the velocity with the  $R_{ij}-\varepsilon$ model are 
+The boundary conditions of the velocity with the  $R_{ij}-\varepsilon$ model are
 more simple, since there are only of one type.
-Keeping the same notations as above, we want the tangential velocity gradient 
+Keeping the same notations as above, we want the tangential velocity gradient
 (calculated at $I$, and to be used to evaluate the turbulent production)
-to be consistent with the logarithmic law giving the ideal tangential 
+to be consistent with the logarithmic law giving the ideal tangential
 velocity profile. The theoretical gradient is~:
 
 \begin{equation}\label{Base_Clptur_eq_grad_theo_clptur}
@@ -432,9 +432,9 @@ G_{\text{theo}} = \left(\displaystyle\frac{\partial u_\tau}{\partial y}\right)_{
 \end{equation}
 
 The normal gradient of the tangential velocity (cell gradient) is
-calculated in the code using finite volumes, and its expression in the case 
+calculated in the code using finite volumes, and its expression in the case
 of regular orthogonal meshes is (see notations in figure
-\ref{Base_Clptur_fig_bord_ortho_clptur})~:  
+\ref{Base_Clptur_fig_bord_ortho_clptur})~:
 \begin{equation}
 G_{\text{calc}}=\displaystyle\frac{u_{\tau,G}-u_{\tau,F}}{2d} =
 \displaystyle\frac{u_{\tau,I}+u_{\tau,J}-2u_{\tau,F}}{4d}
@@ -449,17 +449,17 @@ G_{\text{calc}}=\displaystyle\frac{u_{\tau,I}+u_{\tau,I}+2d\displaystyle\frac{u^
 \displaystyle\frac{2u_{\tau,I}+2\displaystyle\frac{u^*}{2\kappa}-2u_{\tau,F}}{4d}=
 \displaystyle\frac{u_{\tau,I}+\displaystyle\frac{u^*}{2\kappa}-u_{\tau,F}}{2d}
 \end{equation}
-We then use the equations (\ref{Base_Clptur_eq_grad_theo_clptur}) and 
-(\ref{Base_Clptur_eq_grad_calc_clptur}) to derive an expression for 
+We then use the equations (\ref{Base_Clptur_eq_grad_theo_clptur}) and
+(\ref{Base_Clptur_eq_grad_calc_clptur}) to derive an expression for
 $u_{\tau,F}$ (the preceeding
-formulae are extended with no precaution to the case non-orthogonal meshes, 
-the velocity at $I$ being simply computed at $I'$)~: 
+formulae are extended with no precaution to the case non-orthogonal meshes,
+the velocity at $I$ being simply computed at $I'$)~:
 \begin{equation}
 u_{\tau,F}= u_{\tau,I'}-\displaystyle\frac{3u^*}{2\kappa }
 \end{equation}
 The normal derivative at the wall is prescribed to zero.
-If the value obtained for $y^+$ at the wall is lower than  $y^+_{lim}$, 
-a no-slip condition is prescribed. Finally, one can also 
+If the value obtained for $y^+$ at the wall is lower than  $y^+_{lim}$,
+a no-slip condition is prescribed. Finally, one can also
 make explicit the velocity of the wall in the final expression~:
 \begin{equation}\label{Base_Clptur_eq_CL_vitesse_rij_clptur}
 \begin{array}{l}
@@ -488,19 +488,19 @@ chaque composante de vitesse s\'epar\'ement)~:
 \end{array}\right.
 \end{array}
 \end{equation}
-A pair of coefficients $A_{grad}$ and $B_{grad}$ can be deduced 
-from the above equation 
+A pair of coefficients $A_{grad}$ and $B_{grad}$ can be deduced
+from the above equation
 (for each velocity component separately).
 
 
 \etape{Boundary conditions of the velocity in laminar\vspace{0,3cm}}
-When no turbulence model is activated, we implicitly use a one velocity 
-scale model (there is no turbulent variables to compute  $u_k$), and the same 
+When no turbulence model is activated, we implicitly use a one velocity
+scale model (there is no turbulent variables to compute  $u_k$), and the same
 conditions
-\footnote{In other words; the boundary conditions are given by  
- (\ref{Base_Clptur_eq_CL_vitesse_rij_clptur}) and 
+\footnote{In other words; the boundary conditions are given by
+ (\ref{Base_Clptur_eq_CL_vitesse_rij_clptur}) and
 (\ref{Base_Clptur_eq_AB_vitesse_rij_clptur}).}
- as in $R_{ij}-\varepsilon$ are used~: the model degenerates automatically. 
+ as in $R_{ij}-\varepsilon$ are used~: the model degenerates automatically.
 
 
 
@@ -515,8 +515,8 @@ $u_k$ (see equation~(\ref{Base_Clptur_Eq_Mod_'2ech_Vit})) :
 k= \displaystyle\frac{u_k^2}{C_\mu^\frac{1}{2}}
 \end{equation}
 
-We want to impose the normal derivative of  $\varepsilon$ from 
-of the following theoretical law 
+We want to impose the normal derivative of  $\varepsilon$ from
+of the following theoretical law
  (see the notations in figure \ref{Base_Clptur_fig_bord_ortho_clptur})~:
 \begin{equation}\label{Base_Clptur_eq_partialep_theo_clptur}
 G_{\text{theo},\varepsilon} = \displaystyle\frac{\partial \left(u_k^3/(\kappa\, y)\right)}{\partial y}
@@ -524,12 +524,12 @@ G_{\text{theo},\varepsilon} = \displaystyle\frac{\partial \left(u_k^3/(\kappa\, 
 
 
 
-We use point $M$ to impose a boundary condition with a higher order of 
-accuracy in space. 
- Indeed, using the simple expression 
-$\varepsilon_F=\varepsilon_I+d\partial_y\varepsilon_I + O(d^2)$ leads to  
+We use point $M$ to impose a boundary condition with a higher order of
+accuracy in space.
+ Indeed, using the simple expression
+$\varepsilon_F=\varepsilon_I+d\partial_y\varepsilon_I + O(d^2)$ leads to
 first order accuracy.
- A second order accuracy can be reached 
+ A second order accuracy can be reached
  using the following Taylor series expansion:
 \begin{equation}
 \left\{\begin{array}{ll}
@@ -548,24 +548,24 @@ Additionally, we have
 \partial_y\varepsilon_F&=\partial_y\varepsilon_M-d\partial^2_y\varepsilon_M+O(d^2)
 \end{array}\right.
 \end{equation}
-The sum of these last two expressions gives 
-$\partial_y\varepsilon_I+\partial_y\varepsilon_F=2\partial_y\varepsilon_M+O(d^2)$ and, 
-using equation 
+The sum of these last two expressions gives
+$\partial_y\varepsilon_I+\partial_y\varepsilon_F=2\partial_y\varepsilon_M+O(d^2)$ and,
+using equation
 (\ref{Base_Clptur_eq_epsf_clptur}), we finally obtain a second order
 approximation for $\varepsilon_F$~:
 \begin{equation}
 \varepsilon_F=\varepsilon_I-d\partial_y\varepsilon_M+O(d^3)
 \end{equation}
 The theoretical value (see equation \ref{Base_Clptur_eq_partialep_theo_clptur})
-is then used in order to evaluate 
+is then used in order to evaluate
  $\partial_y\varepsilon_M$ and thus the value to prescribe at
 the boundary is obtained ($d=I'F$)~:
 \begin{equation}
 \varepsilon_F=\varepsilon_I+d\displaystyle\frac{ u_k^3}{\kappa\, (d/2)^2}
 \end{equation}
 
-This expression is extended to non-orthogonal mesh without any precautions 
-(which is bound to deteriorate the spatial accuracy ot the method).  
+This expression is extended to non-orthogonal mesh without any precautions
+(which is bound to deteriorate the spatial accuracy ot the method).
 
 Additionally, the velocity $u_k$ is set to zero for $y^+\leqslant y^+_{lim}$.
 Consequently, the value of $k$ and the flux of $\varepsilon$ are both zero.
@@ -604,7 +604,7 @@ A_\varepsilon&=I'F\displaystyle\frac{ u_k^3}{\kappa\, (I'F/2)^2}&\text{ and } B_
 \etape{Boundary conditions for $R_{ij}$ and $\varepsilon$
 (standard $R_{ij}-\varepsilon$ model)\vspace{0,3cm}}
 
-The boundary conditions for the Reynolds stresses in the coordinate system 
+The boundary conditions for the Reynolds stresses in the coordinate system
 attached to the wall write ($\hat R$ refers to the local coordinate system)~:
 \begin{equation}
 \begin{array}{lll}
@@ -615,18 +615,18 @@ attached to the wall write ($\hat R$ refers to the local coordinate system)~:
 \end{equation}
 
 
-Additionally, if the value obtained for $y^+$ is lower 
-than  $y^+_{lim}$, all Reynolds stresses are set to zero 
-(we assume that the turbulent stresses are negligible 
+Additionally, if the value obtained for $y^+$ is lower
+than  $y^+_{lim}$, all Reynolds stresses are set to zero
+(we assume that the turbulent stresses are negligible
 compared to the viscous stresses).
 
-Although it is done systematically in the code, 
+Although it is done systematically in the code,
 expressing the above boundary conditions in the computation coordinate
-system is relatively complex (rotation of a tensor):~  
+system is relatively complex (rotation of a tensor):~
 the reader is referred to the documentation of \fort{clsyvt}
-where more details are provided. In what follows, 
+where more details are provided. In what follows,
 the boundary conditions will only be presented in the local
-coordinate system. 
+coordinate system.
 
 Thus we want to impose the boundary values~:
 \begin{equation}
@@ -643,7 +643,7 @@ R_{\tilde{n} b} =0
 \end{array}
 \end{equation}
 
-For the dissipation, the boundary condition applied is identical to the 
+For the dissipation, the boundary condition applied is identical to the
 one applied with the $k-\varepsilon$ model~:
 \begin{equation}
 \begin{array}{l}
@@ -657,15 +657,15 @@ one applied with the $k-\varepsilon$ model~:
 \end{equation}
 
 
-These boundary conditions can be imposed explicitly (by default,  ICLPTR=0) 
-or (semi-)implicitly ( ICLPTR=1). The standard option (explicit) leads to 
+These boundary conditions can be imposed explicitly (by default,  ICLPTR=0)
+or (semi-)implicitly ( ICLPTR=1). The standard option (explicit) leads to
 the following values\footnote{It can be noticed
-that the value of $\varepsilon$ is not reconstructed at $I'$. We thus wish 
-to improve the ''stability'' since $\varepsilon$ has a very steep gradient 
-at the wall ($\varepsilon \approx \displaystyle\frac{1}{y}$), and thus  
-only weak recontruction errors at $I'$ could lead to important 
-deterioration of the results. However, it would be necessary to 
-check if stability is altered with the gradient reconstruction of 
+that the value of $\varepsilon$ is not reconstructed at $I'$. We thus wish
+to improve the ''stability'' since $\varepsilon$ has a very steep gradient
+at the wall ($\varepsilon \approx \displaystyle\frac{1}{y}$), and thus
+only weak recontruction errors at $I'$ could lead to important
+deterioration of the results. However, it would be necessary to
+check if stability is altered with the gradient reconstruction of
 \fort{gradrc}.}
 of the coefficients  $A$ and $B$~:
 
@@ -695,11 +695,11 @@ R_{ij} \text{\bf et } \varepsilon \\
 \end{array}
 \end{equation}
 
-The semi-implicit option leads to the following values for the 
-coefficients $A$ and $B$. They differ from the preceeding ones, only 
-as regards as the diagonal Reynolds stresses and dissipation. 
-In the general case, impliciting of some components of the tensor 
-in the local coordinate system leads to partially impliciting 
+The semi-implicit option leads to the following values for the
+coefficients $A$ and $B$. They differ from the preceeding ones, only
+as regards as the diagonal Reynolds stresses and dissipation.
+In the general case, impliciting of some components of the tensor
+in the local coordinate system leads to partially impliciting
 all the components in the global computation coordinate system~:
 \begin{equation}
 \begin{array}{l}
@@ -730,12 +730,12 @@ all the components in the global computation coordinate system~:
 
 \newpage
 \etape{Boundary conditions of the {\it VarScalaires}\vspace{0,3cm}}
-Only the boundary conditions when a boundary value is imposed 
+Only the boundary conditions when a boundary value is imposed
 (at the wall or away from the wall with a possible external exchange coefficient)
 are treated here.
 The reader is referred to the notations in figure
-\ref{Base_Clptur_fig_flux_clptur} and to the general presentation provided in  
-\fort{condli} (in what follows only the most essential part of the 
+\ref{Base_Clptur_fig_flux_clptur} and to the general presentation provided in
+\fort{condli} (in what follows only the most essential part of the
 presentation is repeated).
 
 The conservation of the normal flux at the boundary for variable $f$ writes~:
@@ -752,11 +752,11 @@ imposed}}} &\text{(Dirichlet condition)}\\
 \end{array}
 \end{equation}
 
-The above two equation are rearranged in order to obtain the value of the 
-numerical flux $f_{b,int}=f_{F}$ to impose at the wall boundary face, 
-according to the values of $f_{imp,ext}$ and $h_{imp,ext}$ set by the user, 
+The above two equation are rearranged in order to obtain the value of the
+numerical flux $f_{b,int}=f_{F}$ to impose at the wall boundary face,
+according to the values of $f_{imp,ext}$ and $h_{imp,ext}$ set by the user,
 and to the value of  $h_{b}$ set by the similarity laws detailed hereafter.
-The coefficients $A$ and $B$  can then be readily derived, and are presented here.  
+The coefficients $A$ and $B$  can then be readily derived, and are presented here.
 
 \begin{equation}\label{Base_Clptur_eq_fbint_clptur}
 \begin{array}{l}
@@ -774,10 +774,10 @@ f_{b,int} =
 
 The only remaining unknown in expression (\ref{Base_Clptur_eq_fbint_clptur})
 is the value of $h_{b}$, since  $h_{int}$ has a numerical value which
-is coherent with the face gradient computation options detailed in  
+is coherent with the face gradient computation options detailed in
  \fort{condli} ($h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$).
-The value of  $h_{b}$ must relate the flux to the values  
-$f_{I'}$ and $f_{b,ext}$ by taking into account the boundary layer 
+The value of  $h_{b}$ must relate the flux to the values
+$f_{I'}$ and $f_{b,ext}$ by taking into account the boundary layer
 (the profile of $f$ is not always linear)~:
 \begin{equation}
 \phi_b=h_b\,(f_{b,ext}-f_{I'})
@@ -785,9 +785,9 @@ $f_{I'}$ and $f_{b,ext}$ by taking into account the boundary layer
 
 
 The following considerations are presented using the general notations.
-In particular, the Prandtl-Schmidt number writes 
+In particular, the Prandtl-Schmidt number writes
 $\sigma=\displaystyle\frac{\nu\,\rho\,C}{\alpha}$.
-When the considered scalar $f$ is the temperature, 
+When the considered scalar $f$ is the temperature,
 we have (see \fort{condli})
 \begin{list}{$\bullet$}{}
 \item $C=C_p$ (specific heat capacity),
@@ -802,8 +802,8 @@ we have (see \fort{condli})
 The reference "Convection Heat Transfer",
 Vedat S. Arpaci and Poul S. Larsen, Prentice-Hall, Inc was used.
 
-The flux at the wall writes for the scalar $f$ (the flux is positive 
-if it enters the fluid domain, as shown by the orientation of the 
+The flux at the wall writes for the scalar $f$ (the flux is positive
+if it enters the fluid domain, as shown by the orientation of the
 $y$ axis)~:
 \begin{equation}\label{Base_Clptur_Eq_Flux_scalaire}
 \phi = -\left(\alpha+C\,\frac{\mu_t}{\sigma_t}\right)
@@ -813,7 +813,7 @@ $y$ axis)~:
                   \frac{\partial f}{\partial y}
 \end{equation}
 
-Similarly for the temperature, with   
+Similarly for the temperature, with
  $a=\displaystyle\frac{\lambda}{\rho\,C_p}$ and
 $a_t=\displaystyle\frac{\mu_t}{\rho\,\sigma_t}$,
 we have~:
@@ -832,8 +832,8 @@ T^* = -\displaystyle\frac{\phi_b}{\rho\,C_p\,u_k}
 \end{equation}
 
 We then divide both sides of equation~(\ref{Base_Clptur_Eq_Flux_scalaire})
-by  $\phi_b$. For the left-hand side, we simplify using the conservation 
-of the flux (and thus the fact that $\phi=\phi_b$). For the right-hand 
+by  $\phi_b$. For the left-hand side, we simplify using the conservation
+of the flux (and thus the fact that $\phi=\phi_b$). For the right-hand
 side, we replace $\phi_b$ by its value $-\rho\,C\,u_k\,f^*$.
 With the notations~:
 \begin{equation}
@@ -849,23 +849,23 @@ we have~:
                   \displaystyle\frac{\partial f^+}{\partial y^+}
 \end{equation}
 
-One can remark at this stage that with the notations used in the 
+One can remark at this stage that with the notations used in the
 preceeding,  $h_b$ can be expressed as a function of $f^+_{I'}$~:
 \begin{equation}
 h_b=\displaystyle\frac{\phi_b}{f_{b,ext}-f_{I'}}=\frac{\rho\,C\,u_k}{f^+_{I'}}
 \end{equation}
 
-In order to compute $h_b$, we integrate 
-equation ~(\ref{Base_Clptur_Eq_Flux_scalaire_adim}) to obtain 
-$f^+_{I'}$. 
-The only difficulty then consists in prescribing a variation law  
+In order to compute $h_b$, we integrate
+equation ~(\ref{Base_Clptur_Eq_Flux_scalaire_adim}) to obtain
+$f^+_{I'}$.
+The only difficulty then consists in prescribing a variation law
 $\mathcal{K}=\displaystyle\frac{1}{\sigma}+
               \displaystyle\frac{1}{\sigma_t}\frac{\nu_t}{\nu}$.
 
 
-In the fully developed turbulent region 
+In the fully developed turbulent region
 (far enough from the wall, for $y^+\geqslant y^+_2$),
-a mixing length hypothesis models the variations of 
+a mixing length hypothesis models the variations of
 $\nu_t$~:
 \begin{equation}
 \nu_t = l^2 \arrowvert \frac{\partial U}{\partial y} \arrowvert =
@@ -873,11 +873,11 @@ $\nu_t$~:
 \end{equation}
 Additionally, the molecular diffusion of $f$
 (or the conduction when $f$ represents the temperature)
-is negligible compared to its turbulent diffusion~: therefore 
-we neglect 
-$\displaystyle\frac{1}{\sigma}$ compared to  
-$\displaystyle\frac{1}{\sigma_t}\frac{\nu_t}{\nu}$. 
-Finally we have 
+is negligible compared to its turbulent diffusion~: therefore
+we neglect
+$\displaystyle\frac{1}{\sigma}$ compared to
+$\displaystyle\frac{1}{\sigma_t}\frac{\nu_t}{\nu}$.
+Finally we have
 \footnote{We make the approximation that the definitions of $y^+$
 from $u^*$ and $u_k$ are equivalent.}~:
 \begin{equation}
@@ -885,15 +885,15 @@ from $u^*$ and $u_k$ are equivalent.}~:
 \end{equation}
 
 On the contrary, in the near-wall region (for $y^+ < y^+_1$)
-the turbulent contribution becomes negligible 
-compared to the molecular contribution and we thus neglect 
-$\displaystyle\frac{1}{\sigma_t}\frac{\nu_t}{\nu}$ compared to  
+the turbulent contribution becomes negligible
+compared to the molecular contribution and we thus neglect
+$\displaystyle\frac{1}{\sigma_t}\frac{\nu_t}{\nu}$ compared to
 $\displaystyle\frac{1}{\sigma}$.
 
-It would be possible to restrict ourselves to these 
-two regions, but Arpaci and Larsen suggest the model 
-can be improved by introducing an intermediate 
-region ($y^+_1 \leqslant y^+ < y^+_2$) 
+It would be possible to restrict ourselves to these
+two regions, but Arpaci and Larsen suggest the model
+can be improved by introducing an intermediate
+region ($y^+_1 \leqslant y^+ < y^+_2$)
 in which the following hypothesis is made~:
 \begin{equation}
 \frac{\nu_t}{\nu} = a_1 (y^+)^3
@@ -904,7 +904,7 @@ experimental correlations~:
 a_1 =\displaystyle\frac{\sigma_t}{1000}
 \end{equation}
 
-Thus the following model is used for $\mathcal{K}$ 
+Thus the following model is used for $\mathcal{K}$
 (see a sketch
 in figure~\ref{Base_Clptur_Fig_a_plus_at_fonction_yplus})~:
 \begin{equation}
@@ -928,19 +928,19 @@ in figure~\ref{Base_Clptur_Fig_a_plus_at_fonction_yplus})~:
 \end{figure}
 
 
-The values of $y^+_1$ and $y^+_2$ are obtained by calculating 
-the intersection points of the variations laws used 
+The values of $y^+_1$ and $y^+_2$ are obtained by calculating
+the intersection points of the variations laws used
 for $\mathcal{K}$.
 
-The existence of an intermediate region depends upon the 
+The existence of an intermediate region depends upon the
 values of $\sigma$.
-Let's first consider the case where $\sigma$ cannot be neglected 
-compared to 1. In practise we consider  $\sigma > 0,1$ 
+Let's first consider the case where $\sigma$ cannot be neglected
+compared to 1. In practise we consider  $\sigma > 0,1$
 (this is the common case when scalar $f$ represents
-the air or the water temperature in normal temperature 
-and pressure conditions). It is assumed that 
-$\displaystyle\frac{1}{\sigma}$ can be neglected compared to 
-$\displaystyle\frac{a_1 (y^+)^3}{\sigma_t}$ in the 
+the air or the water temperature in normal temperature
+and pressure conditions). It is assumed that
+$\displaystyle\frac{1}{\sigma}$ can be neglected compared to
+$\displaystyle\frac{a_1 (y^+)^3}{\sigma_t}$ in the
 intermediate region.
 We thus obtain~:
 \begin{equation}
@@ -959,7 +959,7 @@ f^+ = \displaystyle\frac{\sigma_t}{\kappa}\,ln(y^+)+a_3& \text{if } y^+_2 \leqsl
 \right.
 \end{equation}
 where $a_2$ and $a_3$ are integration constants,
-which have been chosen to obtain 
+which have been chosen to obtain
 a continuous  profile of $f^+$~:
 \begin{equation}
 a_2=15\sigma^{\frac{2}{3}}\qquad\qquad
@@ -968,19 +968,19 @@ a_3=15\sigma^{\frac{2}{3}}-\displaystyle\frac{\sigma_t}{2\kappa}
 ln\left(\displaystyle\frac{1000\kappa}{\sigma_t}\right)\right)
 \end{equation}
 
-Let's now study the case where  $\sigma$ is much smaller than 1. 
-In practise it is assumed that $\sigma \leqslant 0,1$ (this is for 
-instance the case for liquid metals whose thermal conductivity is very 
+Let's now study the case where  $\sigma$ is much smaller than 1.
+In practise it is assumed that $\sigma \leqslant 0,1$ (this is for
+instance the case for liquid metals whose thermal conductivity is very
 large, and who have Prandtl number of values of the order of 0.01).
-The intermediate region then disappears and the coordinate of the 
+The intermediate region then disappears and the coordinate of the
 interface between the law used in the near-wall region and the one
-used away from the wall is given by~: 
+used away from the wall is given by~:
 \begin{equation}
 y^+_0= \displaystyle\frac{\sigma_t}{\kappa\sigma}
 \end{equation}
 
 The dimensionless equation~(\ref{Base_Clptur_Eq_Flux_scalaire_adim})
-is then integrated under the same hypothesis, and the law of 
+is then integrated under the same hypothesis, and the law of
  $f^+$ is obtained~:
 \begin{equation}
 \left\{
@@ -1053,21 +1053,21 @@ ln\left(\displaystyle\frac{1000\kappa}{\sigma_t}\right)\right)
 This subroutines treats the variables \var{IVAR} on the faces \var{IFAC}
 for which \var{ICODCL(IFAC,IVAR)}=5.
 
-First the velocity of the wall (possibly zero) is projected onto 
-the plane parallel to the wall. Its three components in the 
-computation coordinate system are stored in the arrays 
+First the velocity of the wall (possibly zero) is projected onto
+the plane parallel to the wall. Its three components in the
+computation coordinate system are stored in the arrays
 \\  \var{RCODCL(IFAC,IUIPH,1),RCODCL(IFAC,IVIPH,1)RCODCL(IFAC,IWIPH,1)}.
 
 We then compute the local coordinate system  $\hat{\mathcal R}$.
 For each face, it is stored in the vectors   $\vect{\tau}$ \var{(TX, TY, TZ)},
- $\vect{\tilde{n}}$ \var{(-RNX, -RNY,-RNZ)}, 
+ $\vect{\tilde{n}}$ \var{(-RNX, -RNY,-RNZ)},
 and $\vect{b}$ \var{(T2X, -T2Y,-T2Z)}.
 It should be noticed that the third vector is only needed (and thus
-only calculated) when the  $R_{ij}-\varepsilon$ model is used (for the 
+only calculated) when the  $R_{ij}-\varepsilon$ model is used (for the
 second order tensor projection). Additionally, if the norm of the tangential
 velocity is lower than the arbitrary value \var{EPZERO}
 ($10^{-12}$), the indicator  \var{TXN0} is set to 0 (it is 0 otherwise)
-and the vector  $\vect{\tau}$ is 
+and the vector  $\vect{\tau}$ is
 \begin{itemize}
 \item [-] chosen arbritrarily, in the plane orthogonal to $\vect{\tilde{n}}$ in
 $R_{ij}-\varepsilon$  (the components of $\vect{\tilde{n}}$ are used
@@ -1076,76 +1076,76 @@ to construct  $\vect{\tau}$~; if  $\vect{\tilde{n}}$ is the zero vector,
 \item [-] zero, otherwise.
 \end{itemize}
 
-Once the local coordinate system has been calculated, 
-the subroutine \fort{clca66} is called with 
-\footnote{\var{CLSYME} = 0 indicates that we consider wall boundary conditions 
-and not symmetry boundary conditions. One is referred to \var{CLSYVT} for 
+Once the local coordinate system has been calculated,
+the subroutine \fort{clca66} is called with
+\footnote{\var{CLSYME} = 0 indicates that we consider wall boundary conditions
+and not symmetry boundary conditions. One is referred to \var{CLSYVT} for
 more details on  \fort{clca66}.} \var{CLSYME} =0
 (if the $R_{ij}-\varepsilon$  model is activated) in order to compute
-the matrix \var{ALPHA}. The latter will be used to compute the values to 
+the matrix \var{ALPHA}. The latter will be used to compute the values to
 prescribe at the boundary, using the the values of the Reynolds stress
 tensor at the points $I'$.
 
 The friction velocities are then computed and stored in
 \var{UET} ($=u^*$) and \var{UK} ($=u_k$). The subroutine \fort{cs\_wall\_functions.c}
- computes the friction velocity for the one velocity scale model 
-(\var{IDEUCH}=0). Fot the two velocity scale model (\var{IDEUCH}=1), 
-the (more simple) computation of \var{UET} and \var{UK} is performed 
+ computes the friction velocity for the one velocity scale model
+(\var{IDEUCH}=0). Fot the two velocity scale model (\var{IDEUCH}=1),
+the (more simple) computation of \var{UET} and \var{UK} is performed
 directly in  \fort{clptur}.
 
-If one velocity scale model is activated, we impose \var{UK=UET} to 
-keep the coherence of the coding in the following of the subroutine. 
-However, if we are in the viscous sublayer, we force  \var{UK=0} to 
-obtain a zero value for $k$ and a zero flux for $\varepsilon$ 
-(the value  \var{UET} is not used, because the condition of the velocity 
+If one velocity scale model is activated, we impose \var{UK=UET} to
+keep the coherence of the coding in the following of the subroutine.
+However, if we are in the viscous sublayer, we force  \var{UK=0} to
+obtain a zero value for $k$ and a zero flux for $\varepsilon$
+(the value  \var{UET} is not used, because the condition of the velocity
 is a no-slip condition and the Reynolds stresses are zero).
 
 If we are in the viscous sublayer, we compute  \var{UET} again (and
 \var{YPLUS} if we use the one velocity scale model) since the previous
-derivation has been made under the assumption that we were in the 
+derivation has been made under the assumption that we were in the
 logarithmic region.
 
 
 The boundary conditions for the velocity are then completed.
 \begin{itemize}
 
-\item [-] In $k-\varepsilon$, the coefficients $A_{flux}$ 
+\item [-] In $k-\varepsilon$, the coefficients $A_{flux}$
 (coming from the analysis of the tangential velocity) for the three
-components of the velocity are stored in 
+components of the velocity are stored in
  $$\var{COEFA(IFAC,ICLUF)}, \var{COEFA(IFAC,ICLVF)} \,\text{ et
-}\,\var{COEFA(IFAC,ICLWF)}$$, respectively.\\ 
- Similarly, the coefficients $B_{flux}$ are stored in 
+}\,\var{COEFA(IFAC,ICLWF)}$$, respectively.\\
+ Similarly, the coefficients $B_{flux}$ are stored in
 $$\var{COEFB(IFAC,ICLUF)}, \var{COEFB(IFAC,ICLVF)} \,\text{ et
-}\,\var{COEFB(IFAC,ICLWF)}.$$ The boundary conditions 
+}\,\var{COEFB(IFAC,ICLWF)}.$$ The boundary conditions
 coming from the analysis of the velocity gradient $A_{grad}$ and
 $B_{grad}$ are stored in  $$\var{COEFA(IFAC,ICLU)},
-\var{COEFA(IFAC,ICLV)}, \var{COEFA(IFAC,ICLW)}$$ and 
+\var{COEFA(IFAC,ICLV)}, \var{COEFA(IFAC,ICLW)}$$ and
 $$\var{COEFB(IFAC,ICLU)}, \var{COEFB(IFAC,ICLV)}, \var{COEFB(IFAC,ICLW)}.$$
 
-\item [-] When the tangential velocity at $I'$ is lower than 
-\var{EPZERO}, the indicator \var{TXN0} is set to zero (otherwise,  
+\item [-] When the tangential velocity at $I'$ is lower than
+\var{EPZERO}, the indicator \var{TXN0} is set to zero (otherwise,
 \var{TXN0} is 1).
 Likewise,  when the value of
 $y^+$ is lower or equal to $10,88$, the indicator
-\var{UNTURB} is set to 0 (otherwise, it is 1). Both these indicators 
-are used to set to zero the coefficients $A$, and thus to prescribe no-slip 
+\var{UNTURB} is set to 0 (otherwise, it is 1). Both these indicators
+are used to set to zero the coefficients $A$, and thus to prescribe no-slip
 boundary conditions.
 
-\item [-] the velocity of the wall is taken into account in the 
+\item [-] the velocity of the wall is taken into account in the
 boundary conditions (coefficients \var{COEFA}).
 
 \end{itemize}
 
-The conditions of the turbulent variables are then filled in. 
-Additional details are provided for the Reynolds tensor 
+The conditions of the turbulent variables are then filled in.
+Additional details are provided for the Reynolds tensor
 in  $R_{ij}-\varepsilon$.
-Using tensorial notation, we want to obtain 
-$\tens{R}_F = E_{loglo}\,\hat{\tens{R}}_F\,E^t_{loglo}$, where 
-$\hat{\tens{R}}_F$ is the stress tensor to impose in the local 
+Using tensorial notation, we want to obtain
+$\tens{R}_F = E_{loglo}\,\hat{\tens{R}}_F\,E^t_{loglo}$, where
+$\hat{\tens{R}}_F$ is the stress tensor to impose in the local
 coordinate system and $E_{loglo}$ is the transformation matrix.
-The tensor in the local coordinate system is defined by the boundary 
-conditions detailed above,  $\hat{\tens{R}}_F=\hat{\tens{R}}^{B=1}_F$, 
-with \footnote{The parameter 
+The tensor in the local coordinate system is defined by the boundary
+conditions detailed above,  $\hat{\tens{R}}_F=\hat{\tens{R}}^{B=1}_F$,
+with \footnote{The parameter
 $B$ permits to set to zero two terms if needed.}~:
 \begin{equation}
 \hat{\tens{R}}^B_{F}=\left[\begin{array}{lll}
@@ -1155,64 +1155,64 @@ $B$ permits to set to zero two terms if needed.}~:
 \end{array}\right]
 \end{equation}
 
-The Reynolds tensor is stored in a vector with 6 components (at points $I'$ 
-of the boundary faces, these values are stored in \var{RIJIPB(IFAC,II)}, 
-with \var{IFAC} the index of the face and \var{II} the index of the stress, 
-from 1 to 6 \var{II} refers to $R_{11},R_{22}, R_{33}$, 
-$R_{12}, R_{13}$ and $R_{23}$, respectively. The array \var{IFAC} of 
-dimension $6\times 6$ (calculated by \fort{clca66}) is used to perform 
-the necessary change of coordinate system computations, and to obtain 
-the values of $\hat{\tens{R}}^{B=0}_F$ from the values stored in 
+The Reynolds tensor is stored in a vector with 6 components (at points $I'$
+of the boundary faces, these values are stored in \var{RIJIPB(IFAC,II)},
+with \var{IFAC} the index of the face and \var{II} the index of the stress,
+from 1 to 6 \var{II} refers to $R_{11},R_{22}, R_{33}$,
+$R_{12}, R_{13}$ and $R_{23}$, respectively. The array \var{IFAC} of
+dimension $6\times 6$ (calculated by \fort{clca66}) is used to perform
+the necessary change of coordinate system computations, and to obtain
+the values of $\hat{\tens{R}}^{B=0}_F$ from the values stored in
 \var{RIJIPB(IFAC,II)}.
 Thus,
 \begin{itemize}
 \item[-] for each Reynolds stress \var{ISOU},
-in case of explicit boundary conditions (\var{ICLPTR}=0), we set 
-\var{COEFA(IFAC,ISOU)}  to the corresponding value of 
-$\tens{R}^{B=1}_F$ obtained by first computing 
-$\tens{R}^{B=0}_F$ by 
-$\sum_{II=1,6}$\var{ALPHA(ISOU,II)*RIJIPB(IFAC,II)}, and then by adding 
-the quantity factorised by B in the previous sum, in order to obtain 
+in case of explicit boundary conditions (\var{ICLPTR}=0), we set
+\var{COEFA(IFAC,ISOU)}  to the corresponding value of
+$\tens{R}^{B=1}_F$ obtained by first computing
+$\tens{R}^{B=0}_F$ by
+$\sum_{II=1,6}$\var{ALPHA(ISOU,II)*RIJIPB(IFAC,II)}, and then by adding
+the quantity factorised by B in the previous sum, in order to obtain
 the complete value of $\tens{R}^{B=1}_F$. Since the boundary conditions
 are explicit,  \var{COEFB} is set to  0.
 \item[-] in case of semi-implicit boundary conditions (\var{ICLPTR}=1),
 for each Reynolds stress \var{ISOU},
-we store in the array \var{COEFA(IFAC,ISOU)} the corresponding value 
-$\tens{R}^{B=1}_F$  minus the terms which depend upon 
+we store in the array \var{COEFA(IFAC,ISOU)} the corresponding value
+$\tens{R}^{B=1}_F$  minus the terms which depend upon
 \var{RIJIPB(IFAC,ISOU)} (which will be implicited)
 This value is obtained by first calculating \\
 $\sum_{II=1,6|II\neq ISOU}$\var{ALPHA(ISOU,II)*RIJIPB(IFAC,II)},
 and then by adding the quantity  factorised by B in order to obtain
 the value of $\tens{R}^{B=1}_F$ minus the term \\
-\var{ALPHA(ISOU,ISOU) RIJIPB(IFAC,ISOU)}.  
+\var{ALPHA(ISOU,ISOU) RIJIPB(IFAC,ISOU)}.
 \var{ALPHA(ISOU,ISOU)} is then stored in \var{COEFB} (implicit part of
-the boundary conditions)\footnote{the implicit part does not include 
-the tangential stress due to the friction velocities and thus the boundary 
-conditions are not fully implicit.}. 
+the boundary conditions)\footnote{the implicit part does not include
+the tangential stress due to the friction velocities and thus the boundary
+conditions are not fully implicit.}.
 \end{itemize}
 
 The boundary conditions of the scalars are then completed. The coefficients
-\var{COEFA} and \var{COEFB} are simply calculated using the boundary 
+\var{COEFA} and \var{COEFB} are simply calculated using the boundary
 conditions previously described. The only difficulty consists in dealing
-adequatly with the various values necessary to compute the exchange 
+adequatly with the various values necessary to compute the exchange
 coefficient $h_b$ without any mistake.
 
 
-The indicator \var{ISCSTH} gives for each {\it VarScalaires} the value 
-of  $C$ to use in the treatment of the boundary conditions. 
+The indicator \var{ISCSTH} gives for each {\it VarScalaires} the value
+of  $C$ to use in the treatment of the boundary conditions.
 Thus, for \var{ISCSTH}=1,
 the variable should be treated as a temp\'erature, with $C=C_p$. For
-\var{ISCSTH}=0 or 2, the variable should be treated as a passive scalar 
-or as an enthalpy, respectively, with  $C=1$ (dimensionless constant) 
+\var{ISCSTH}=0 or 2, the variable should be treated as a passive scalar
+or as an enthalpy, respectively, with  $C=1$ (dimensionless constant)
 in both cases. For \var{ISCSTH}=3, the variables is the resolved energy
-in the framework of the compressible module  (see \fort{cfxtcl}). We then 
+in the framework of the compressible module  (see \fort{cfxtcl}). We then
 have $C=1$.
 
 Additionally, a strictly positive value of the integer \var{IPCCP}
 indicates that $C_p$ varies in space and that it is available in the
 array \var{PROPCE(IEL,IPCCP )} (filled in \var{USPHYV}). When \var{IPCCP}
-is zero, $C_p$ is constant and it is available 
-as a real number \var{CP0(IPHAS)}.
+is zero, $C_p$ is constant and it is available
+as a real number \var{CP0}.
 
 
 The indicator \var{IHCP} gathers these informations~:
@@ -1224,15 +1224,15 @@ The indicator \var{IHCP} gathers these informations~:
 
 For {\it VarScalaire} \var{LL}, the indicator \var{IVISLS(LL)}
 indicates if $\displaystyle\frac{\alpha_m}{C}$
-is variable in space and available in 
+is variable in space and available in
 the array \var{PROPCE(IEL,IPCVSL)}
-(\var{IVISLS} $> 0$) or if is uniform in space and available 
-as a real number 
+(\var{IVISLS} $> 0$) or if is uniform in space and available
+as a real number
 \var{VISLS0(LL)} (\var{IVISLS} $= 0$). We take \var{RKL}$ =
 \displaystyle\frac{\alpha_m}{C}$.
 
 The local Prandtl number is then calculated as \var{PRDTL} $ =
-\displaystyle\frac{\mu}{\alpha_m/C}$ ($\mu$ is the molecular dynamic viscosity 
+\displaystyle\frac{\mu}{\alpha_m/C}$ ($\mu$ is the molecular dynamic viscosity
 available in \var{VISCLC}).
 
 The coefficient $h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$  is
@@ -1240,11 +1240,11 @@ then calculated and stored in \var{HINT}.
 
 When a turbulence model is activated,
 the subroutine \var{HTURBP} computes \var{HFLUI} $ =
-Pr\displaystyle\frac{y^+}{T^+}$ (or \var{HFLUI}~$ = 1$ 
+Pr\displaystyle\frac{y^+}{T^+}$ (or \var{HFLUI}~$ = 1$
 in the viscous sublayer),
 which is then immediately multiplied by \var{CPP*RKL/DISTBF}$ =
 \displaystyle\frac{\alpha_m}{\overline{I'F}}$ to obtain \var{HFLUI} $ = h_b =
-\displaystyle\frac{\rho C u_k}{T^+}$ (or \var{HFLUI} $ = h_b = \displaystyle\frac{\alpha_m}{\overline{I'F}}$ in the viscous sublayer).  
+\displaystyle\frac{\rho C u_k}{T^+}$ (or \var{HFLUI} $ = h_b = \displaystyle\frac{\alpha_m}{\overline{I'F}}$ in the viscous sublayer).
 If the calculation is performed in laminar, we simply have
  \var{HFLUI} = \var{HINT} ($ = h_b = h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$)
 
@@ -1252,10 +1252,10 @@ In case we wish to store the exchange coefficient (coupling with SYRTHES),
 \var{HFLUI} is kept in the array \var{HBORD}. In case the raditation module
 is used, \var{HFLUI} is stored in the work array \var{RA(IHCONV)}.
 
-We then have all the information necessary to compute the coefficients 
-$A$ and $B$  (\var{COEFA} and \var{COEFB}) relative to the treated variable. 
-Finally one can give the following correspondances 
-to relate the source code implementation to 
+We then have all the information necessary to compute the coefficients
+$A$ and $B$  (\var{COEFA} and \var{COEFB}) relative to the treated variable.
+Finally one can give the following correspondances
+to relate the source code implementation to
 expression (\ref{Base_Clptur_eq_fbint_clptur})~:
 \var{HEXT} $ = h_{imp,ext}$, \var{PIMP} $ = f_{imp,ext}$,
 \var{HREDUI} $ = h_r$, \var{HINT} $ = h_{int}$,  \var{HFLUI} $ = h_b$.
@@ -1271,7 +1271,7 @@ expression (\ref{Base_Clptur_eq_fbint_clptur})~:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-The use of \var{HFLUI/CPP} when \var{ISCSTH} is 2 (case with 
+The use of \var{HFLUI/CPP} when \var{ISCSTH} is 2 (case with
 radiation) needs to be checked (\var{CPP} is actually 1 in this case).
 
 The boundary conditions of the velocity are based on derivations
@@ -1279,30 +1279,30 @@ focusing on only one term of the tangential stress
 $(\mu_I+\mu_{t,I})(\ggrad{\vect{u}})\,\vect{n}$ without taking
 into account the tranpose gradient.
 
-In order to establish the boundary conditions of the velocity in 
+In order to establish the boundary conditions of the velocity in
 $k-\varepsilon$ based on the constraint , a projection onto the plane
-tangent to the wall and an arbitrary zero normal velocity 
+tangent to the wall and an arbitrary zero normal velocity
 are introduced.
 
 The hypothesis made in order to establish formulae for the different types
 of boundary conditions (dissipation, velocities) are based on the assumption
-that the mesh is orthogonal at the wall. This assumption is extended 
+that the mesh is orthogonal at the wall. This assumption is extended
 without any caution to the case of non-orthogonal meshes.
 
-The one velocity scale (\fort{cs\_wall\_functions.c}) wall function requires  
+The one velocity scale (\fort{cs\_wall\_functions.c}) wall function requires
 solving an equation using a Newton algorithm.
-The computational cost of the latter is low. One can also used 
-a  $1/7$ power law (Werner et Wengle) which yields results which are as 
+The computational cost of the latter is low. One can also used
+a  $1/7$ power law (Werner et Wengle) which yields results which are as
 accurate as the logarithmic law in the logarithmic region, and which permits
 analytical resolutions (chosen option in LES mode). Be careful however,
 since with this law, the intersection with the linear law is
 slightly different, which thus requires some adaptations (intersection
-around 11.81 instead of 10.88 for the law adopted here 
-$U^+=8,3\,(y^+)^\frac{1}{7}$).  
+around 11.81 instead of 10.88 for the law adopted here
+$U^+=8,3\,(y^+)^\frac{1}{7}$).
 
 
-The values of all the physical properties are taken at the cell centres, 
-without any reconstruction. Without modifying this approach, it would be 
+The values of all the physical properties are taken at the cell centres,
+without any reconstruction. Without modifying this approach, it would be
 useful to keep this in mind.
 
 %
@@ -1384,9 +1384,9 @@ useful to keep this in mind.
 %quelle que soit la condition \`a la limite utilis\'ee pour la vitesse.
 
 
-For the thermal law with very small Prandtl numbers compared to 1, 
-Arpaci and Larsen suggest $y_0^+ \simeq 5/Pr$ (with proof from 
-experimental data) rather than $Pr_t/(Pr\,\kappa)$  (current value, 
+For the thermal law with very small Prandtl numbers compared to 1,
+Arpaci and Larsen suggest $y_0^+ \simeq 5/Pr$ (with proof from
+experimental data) rather than $Pr_t/(Pr\,\kappa)$  (current value,
 computed as the analytical intersection of the linear and logarithmic
 laws considered). One should address this question.
 

@@ -28,60 +28,60 @@
 \section*{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Boundary conditions are required in at least three principal cases~: 
+Boundary conditions are required in at least three principal cases~:
 \begin{itemize}
 \item calculation of the convection terms (first order derivative in space) at
-the boundary~: the calculation uses a flux at the boundary and requires the 
-value of the convected variable at the boundary when the latter is entering 
+the boundary~: the calculation uses a flux at the boundary and requires the
+value of the convected variable at the boundary when the latter is entering
 the domain in the sens of the characteristic curves of the system (in the sens
-of the velocity, in the case of the single equation of a simple scalar~: 
- sufficient interpretation in the current framework of 
+of the velocity, in the case of the single equation of a simple scalar~:
+ sufficient interpretation in the current framework of
 \CS\footnote{except with the compressible module, see. \fort{cfxtcl}})~;
 \item calculation of the diffusion terms (second order derivative
 in space)~:
-a method to determine the value of the first order spatial derivatives 
-at the boundary is then required 
+a method to determine the value of the first order spatial derivatives
+at the boundary is then required
  (more exactly, the terms that depend upon it are required,
  such as the stresses of the thermal fluxes at the wall)~:
 \item calculation of the cell  gradients~: the variable at the boundary faces
  are required (more generally, the discrete terms of the equations which depend
 upon the gradient inside boundary cells are required, such as the transpose
-gradient terms in the Navier-Stokes equations). 
+gradient terms in the Navier-Stokes equations).
 \end{itemize}
-These considerations only concern the computational variables  
-(velocity, pressure, Reynolds tensor, 
+These considerations only concern the computational variables
+(velocity, pressure, Reynolds tensor,
 scalars solution of a convection-diffussion equation). For these variables
 \footnote{
-The other variables 
-(the physical properties for instance) have a different treatment which will 
-not be detailed here (for instance, for the density, the user defines 
-directly the values at the boundary. This information is then stored~; one 
+The other variables
+(the physical properties for instance) have a different treatment which will
+not be detailed here (for instance, for the density, the user defines
+directly the values at the boundary. This information is then stored~; one
 is referred to \fort{usphyv} or \fort{phyvar} for more information).
 },
-the user has to define the boundary conditions at every boundary face 
+the user has to define the boundary conditions at every boundary face
 (\fort{usclim}).
 
 
 The subroutine \fort{condli} transforms the data provided by the user
-(in \fort{usclim}) into an internal format of representation of the boundary 
- conditions. Verifications of the completeness and coherence are also 
+(in \fort{usclim}) into an internal format of representation of the boundary
+ conditions. Verifications of the completeness and coherence are also
 performed (in \fort{vericl}). More particularly, the smooth-wall boundary conditions
  (\fort{clptur}), the rough-wall boundary conditions (\fort{clptrg})
-and the symmetry boundary conditions for the velocities and 
+and the symmetry boundary conditions for the velocities and
 the Reynolds stress tensor (\fort{clsyvt}) are treated in dedicated subroutines.
 
-The subroutine \fort{condli} 
+The subroutine \fort{condli}
 provides as an output pairs of coefficients
 $A_b$ and $B_b$
 for each variable~$f$ and for each boudary face.
-These are used for the calculation of the discrete terms in the equations 
+These are used for the calculation of the discrete terms in the equations
 to be solved. More specifically, these coefficients are used to calculate
 a value at the boundary faces $f_{b,int}$ (localised at the centre of the
-boundary face, barycentre of its vertices) by the relation  
- $f_{b,int} = A_b+B_b\,f_{I'}$, where $f_{I'}$ is the value of the variable 
-at point $I'$. $I'$ is the projection onto the centre of the cell 
+boundary face, barycentre of its vertices) by the relation
+ $f_{b,int} = A_b+B_b\,f_{I'}$, where $f_{I'}$ is the value of the variable
+at point $I'$. $I'$ is the projection onto the centre of the cell
 adjoin to the boundary on the line normal to the boundary face and passing
-by its centre 
+by its centre
 (see figure~\ref{Base_Condli_fig_flux_condli}).
 
 \begin{figure}[h]
@@ -793,7 +793,7 @@ type de fronti\`ere \var{IPAROI} ou \var{IPARUG}~; d'autres conditions sont poss
 tableau \ref{Base_Condli_table_ICODCL_condli} les pr\'ecise.\\
 $^{e}$La valeur est impos\'ee par l'utilisateur. Il n'y a pas d'implicitation
 temporelle.\\
-$^{f}$Seule la valeur pour IU(IPHAS) est utilis\'ee.
+$^{f}$Seule la valeur pour IU est utilis\'ee.
 }
 \caption{Conditions aux limites standards.}\label{Base_Condli_table_ITYPFB_condli}
 \end{table}
@@ -841,19 +841,19 @@ $^{f}$Seule la valeur pour IU(IPHAS) est utilis\'ee.
 \hline
 6             & vitesse                 & Loi de paroi rugueuse
         &\var{RCODCL(.,.,1)} &            & vitesse de d\'efilement &nulle par d\'efaut\\
-              &                         &                          
+              &                         &
         &\var{RCODCL(.,.,3)} &            & rugosit\'e dynamique &nulle par d\'efaut\\
 \cline{2-7}
-              & $k$, $R_{ij}$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$ & Loi de paroi rugueuse    
+              & $k$, $R_{ij}$, $\varepsilon$, $\varphi$, $\bar{f}$, $\omega$ & Loi de paroi rugueuse
         &                    &            &                         & \\
-              &                         &                          
+              &                         &
         &\var{RCODCL(.,.,3)} &            & rugosit\'e dynamique &nulle par d\'efaut\\
 \cline{2-7}
               & {\it VarScalaire}             & Loi de paroi rugueuse
         &\var{RCODCL(.,.,1)} &$f_{imp,ext}$ & valeur en paroi       &nulle par d\'efaut\\
               & \ (sauf variance)   &
         &\var{RCODCL(.,.,2)} &$h_{imp,ext}$ & coef. d'\'echange&=\var{RINFIN}$=10^{30}$ par d\'efaut\\
-              &                         &                          
+              &                         &
         &\var{RCODCL(.,.,3)} &            & rugosit\'e thermique &nulle par d\'efaut\\
 \hline
 \hline
@@ -996,10 +996,10 @@ pour pr\'eparer le traitement ult\'erieur des conditions aux limites.
 ($R_{ij}-\varepsilon$ avec termes d'\'echo de paroi, modèle LES de Smagorinsky
 avec amortissement de van Driest, modèle $k-\omega$ SST) et que la méthode de
 calcul ``ancienne'' a été choisie (\var{|ICDPAR|=2}, non compatible avec le
-parallélisme et la périodicité), pour chaque phase \var{IPHAS},
+parallélisme et la périodicité),
  on d\'etermine, pour chaque cellule \var{IEL}, le num\'ero de la face
 de paroi la plus proche (cette information est stock\'ee dans
-\var{IA(IIFAPA(IPHAS)-1+IEL)})~; cette distance est inutile pour le traitement
+\var{IA(IIFAPA-1+IEL)})~; cette distance est inutile pour le traitement
 des conditions aux limites, mais \fort{condli} est le sous-programme dans lequel
 la r\'ealisation de ce calcul est la plus simple.
 \item[-] en cas de couplage avec \syrthes, on d\'etermine, pour le scalaire

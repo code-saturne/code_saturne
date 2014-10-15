@@ -166,7 +166,7 @@ $\lambda$         & $W/(m.\,K)$         & conductivit\'e thermique\\
 $\mu$                 & $kg/(m.\,s)$         & viscosit\'e dynamique ordinaire\\
 $\rho$                 & $kg/m^3$         & densit\'e\\
 $\vect{\varphi}_f$
-                & $\lbrack f\rbrack.\,kg/(m^2.\,s)$                 
+                & $\lbrack f\rbrack.\,kg/(m^2.\,s)$
                                 & vecteur flux diffusif du compos\'e $f$\\
 $\varphi_f$         & $\lbrack f\rbrack.\,kg/(m^2.\,s)$
                                 & norme de $\vect{\varphi}_f$\\
@@ -648,9 +648,9 @@ Les \var{NSCAPP} inconnues scalaires associ\'ees \`a la physique
 particuli\`ere sont d\'efinies dans \fort{cfvarp} dans l'ordre
 suivant~:
 \begin{itemize}
-\item la masse volumique \var{RTP(*,ISCA(IRHO(IPHAS)))},
-\item l'énergie totale   \var{RTP(*,ISCA(IENERG(IPHAS)))},
-\item la température     \var{RTP(*,ISCA(ITEMPK(IPHAS)))}
+\item la masse volumique \var{RTP(*,ISCA(IRHO))},
+\item l'énergie totale   \var{RTP(*,ISCA(IENERG))},
+\item la température     \var{RTP(*,ISCA(ITEMPK))}
 \end{itemize}
 
 On souligne que la temp\'erature est d\'efinie en tant que variable ``\var{RTP}'' et
@@ -661,8 +661,8 @@ grandeur \var{RTP} consomme plus qu'une grandeur \var{PROPCE}).
 
 La pression et la vitesse sont classiquement associ\'ees aux tableaux suivants~:
 \begin{itemize}
-\item pression~: \var{RTP(*,IPR(IPHAS))}
-\item vitesse~: \var{RTP(*,IU(IPHAS))}, \var{RTP(*,IV(IPHAS))}, \var{RTP(*,IW(IPHAS))}.
+\item pression~: \var{RTP(*,IPR)}
+\item vitesse~: \var{RTP(*,IU)}, \var{RTP(*,IV)}, \var{RTP(*,IW)}.
 \end{itemize}
 
 
@@ -672,9 +672,9 @@ identifi\'ees ci-dessus, le
 tableau \var{PROPCE} contient \'egalement~:
  \begin{itemize}
 \item la chaleur massique à volume constant $C_v$, stock\'ee dans
-\var{PROPCE(*,IPPROC(ICV(IPHAS)))},
+\var{PROPCE(*,IPPROC(ICV))},
       si  l'utilisateur a indiqué dans \fort{uscfth} qu'elle \'etait variable.
-\item la viscosité en volume \var{PROPCE(*,IPPROC(IVISCV(IPHAS)))}
+\item la viscosité en volume \var{PROPCE(*,IPPROC(IVISCV))}
       si  l'utilisateur a indiqué dans \fort{uscfx2} qu'elle \'etait variable.
 \end{itemize}
 
@@ -687,11 +687,11 @@ dispose des tableaux suivants dans  \var{PROPFB}~:
 \begin{itemize}
 \item flux convectif de quantit\'e de mouvement au bord pour les trois
 composantes dans les tableaux
-\var{PROPFB(*,IPPROB(IFBRHU(IPHAS)))} (composante $x$),
-\var{PROPFB(*,IPPROB(IFBRHV(IPHAS)))} (composante $y$) et
-\var{PROPFB(*,IPPROB(IFBRHW(IPHAS)))} (composante $z$)
+\var{PROPFB(*,IPPROB(IFBRHU))} (composante $x$),
+\var{PROPFB(*,IPPROB(IFBRHV))} (composante $y$) et
+\var{PROPFB(*,IPPROB(IFBRHW))} (composante $z$)
 \item flux convectif d'\'energie au bord
-\var{PROPFB(*,IPPROB(IFBENE(IPHAS)))}
+\var{PROPFB(*,IPPROB(IFBENE))}
 \end{itemize}
 et on dispose \'egalement dans \var{IA}~:
 \begin{itemize}
@@ -970,18 +970,18 @@ les fusionner pour \'eviter qu'ils ne divergent)~:
 %(actuellement pour PVARA et
 %                SMBINI, mais \`a plus long terme pour \'eviter que les
 %                deux sous-programmes ne divergent),
-% propose en patch 1.2.1                
+% propose en patch 1.2.1
 %        \item \fort{cfcdts} et \fort{codits}
 %                (au moins pour PVARA, SMBINI, NSWRSM,
 %                IRESLP, RNORM),
         \item \fort{cfbsc2} et \fort{bilsc2},
         \item \fort{cfbsc3} et \fort{bilsc2}.
         \end{itemize}
-% propose en patch 1.2.1        
+% propose en patch 1.2.1
 %        \item Remplacer la valeur 100 par 90 pour ICCFTH dans \fort{uscfth}
 %                (plus grande coh\'erence avec les choix faits dans le reste de ce
 %                sous-programme).
-% propose en patch 1.2.1        
+% propose en patch 1.2.1
 %        \item \'Eliminer \fort{memcff} qui ne sert plus.
 \item Permettre les suites de calcul incompressible/compressible et
         compressible/incompressible.

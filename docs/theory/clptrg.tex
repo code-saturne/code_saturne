@@ -31,38 +31,38 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Ce sous-programme est dédié au calcul des conditions aux limites en paroi
 rugueuse. On utilise le
-formalisme introduit dans \var{CONDLI} pour les conditions 
-aux limites g\'en\'erales. 
+formalisme introduit dans \var{CONDLI} pour les conditions
+aux limites g\'en\'erales.
 
 Par conditions aux limites en paroi, on entend ici l'ensemble des conditions aux
 limites pour la vitesse, les grandeurs turbulentes ($k$, $\varepsilon$),
-la temp\'erature lorsqu'elle a une valeur de paroi impos\'ee   
-(ou l'enthalpie et plus g\'en\'eralement les 
-{\it VarScalaires}\footnote{Comme dans \fort{condli}, on d\'esignera ici par 
+la temp\'erature lorsqu'elle a une valeur de paroi impos\'ee
+(ou l'enthalpie et plus g\'en\'eralement les
+{\it VarScalaires}\footnote{Comme dans \fort{condli}, on d\'esignera ici par
 {\it VarScalaire} toute variable solution
-d'une \'equation de convection-diffusion autre que la 
+d'une \'equation de convection-diffusion autre que la
 vitesse, la pression et les grandeurs turbulentes $k$, $\varepsilon$. La
-d\'enomination {\it VarScalaire} pourra en particulier se rapporter 
-\`a la temp\'erature, \`a l'enthalpie ou \`a un scalaire passif.} 
+d\'enomination {\it VarScalaire} pourra en particulier se rapporter
+\`a la temp\'erature, \`a l'enthalpie ou \`a un scalaire passif.}
 \`a traiter en paroi en prenant en compte une loi de similitude
 pour la couche limite associ\'ee). Pour les {\it VarScalaires}, en particulier,
 lorsque les conditions aux limites de paroi sont du type Neumann (homog\`ene ou non),
 elles sont trait\'ees dans \fort{condli} et on ne s'y int\'eresse donc pas
 ici. En particulier, les conditions aux limites des  {\it VarScalaires}
 repr\'esentant la variance de fluctuations d'autres  {\it VarScalaires} ne
-sont pas trait\'ees ici car leur traitement en paroi est de type Neumann homog\`ene. 
+sont pas trait\'ees ici car leur traitement en paroi est de type Neumann homog\`ene.
 
-On indique comment sont calcul\'es les couples de coefficients 
-$A_b$ et $B_b$ qui sont utilis\'es pour le calcul de certains 
+On indique comment sont calcul\'es les couples de coefficients
+$A_b$ et $B_b$ qui sont utilis\'es pour le calcul de certains
 termes discrets des \'equations \`a r\'esoudre et qui
-permettent  en particulier de d\'eterminer une valeur associ\'ee aux faces 
-de bord $f_{b,int}$ (en un point localis\'e au ``centre'' de la face de bord, 
+permettent  en particulier de d\'eterminer une valeur associ\'ee aux faces
+de bord $f_{b,int}$ (en un point localis\'e au ``centre'' de la face de bord,
 barycentre de ses sommets) par la
-relation $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ est la valeur de 
+relation $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ est la valeur de
 la variable au point
-$I'$, projet\'e du centre de la cellule jouxtant le bord sur la droite 
-normale \`a 
-la face de bord et passant par son centre~: voir la figure~\ref{fig_flux_clptur}). 
+$I'$, projet\'e du centre de la cellule jouxtant le bord sur la droite
+normale \`a
+la face de bord et passant par son centre~: voir la figure~\ref{fig_flux_clptur}).
 
 \begin{figure}[h]
 \centerline{\includegraphics[height=7cm]{fluxbord}}
@@ -83,20 +83,20 @@ elle ne l'est pas, le code la projette).
 
 La vitesse du fluide est not\'ee $\vect{u}$. L'indice $I$, $I'$ ou $F$ d\'esigne le
 point auquel elle est estim\'ee. La composante tangentielle par rapport \`a la
-paroi est not\'ee $u_\tau$. 
+paroi est not\'ee $u_\tau$.
  La vitesse du fluide dans le rep\`ere li\'e \`a la paroi (vitesse
-``relative'') est not\'ee $\vect{u}^r=\vect{u} - \vect{v}_p$. 
+``relative'') est not\'ee $\vect{u}^r=\vect{u} - \vect{v}_p$.
 
-Le rep\`ere orthonorm\'e li\'e \`a la paroi est not\'e 
-$\hat {\mathcal R}=(\vect{\tau},\vect{\tilde{n}},\vect{b})$. 
+Le rep\`ere orthonorm\'e li\'e \`a la paroi est not\'e
+$\hat {\mathcal R}=(\vect{\tau},\vect{\tilde{n}},\vect{b})$.
 \begin{itemize}
 \item [$\bullet$] $\vect{\tilde{n}}=-\vect{n}$ est le vecteur norm\'e
 orthogonal \`a la paroi et dirig\'e vers l'int\'erieur du domaine de calcul.
-\item [$\bullet$] $\vect{\tau} = \displaystyle\frac{1}{\|\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\|}\left[\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\right]$ est le vecteur norm\'e port\'e par la projection de la vitesse 
+\item [$\bullet$] $\vect{\tau} = \displaystyle\frac{1}{\|\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\|}\left[\vect{u}^r_{I'}-(\vect{u}^r_{I'}\,.\,\vect{\tilde{n}})\right]$ est le vecteur norm\'e port\'e par la projection de la vitesse
 relative en $I'$, $\vect{u}^r_{I'}$, dans le plan tangent \`a la
 paroi ({\it i.e.} orthogonal \`a $\vect{\tilde{n}}$)~: voir la
-figure~\ref{fig_flux_clptur}. 
-\item [$\bullet$] $\vect{b}$ est le vecteur norm\'e compl\'etant le rep\`ere direct. 
+figure~\ref{fig_flux_clptur}.
+\item [$\bullet$] $\vect{b}$ est le vecteur norm\'e compl\'etant le rep\`ere direct.
 \end{itemize}
 
 \vspace{0.5cm}
@@ -107,10 +107,10 @@ Dans le cas du {\bf mod\`ele \`a deux  \'echelles de vitesse}, on note~:
 vitesse de frottement en paroi obtenue \`a partir de l'\'energie turbulente.
 
 \item [-] $u^*$ la vitesse de frottement en paroi d\'etermin\'ee \`a
-partir de la relation $ \displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(z_p)$. 
+partir de la relation $ \displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(z_p)$.
 
 \item [-] $z_p$  représente une distance à la paroi
-      (c'est à dire la distance depuis le bord du domaine de calcul),  soit 
+      (c'est à dire la distance depuis le bord du domaine de calcul),  soit
 $z_p= I'F$ (voir la figure~\ref{fig_flux_clptur}). La fonction $f$ traduit la forme idéale du profil de
       vitesse. Dans l'atmosphère, cette fonction est donnée par
       une loi de type logarithmique faisant intervenir la rugosité dynamique de
@@ -121,18 +121,18 @@ $f(z_p)= \displaystyle\frac{1}{\kappa} ln \left ( \displaystyle \frac
 
 
 \item [-] Les deux \'echelles de vitesse $u_k$ et $u^*$ sont simples \`a
-      calculer mais leur obtention  
+      calculer mais leur obtention
 n\'ecessite la connaissance de l'\'energie turbulente $k_I$ au centre de la
-maille jouxtant la face de bord. 
+maille jouxtant la face de bord.
 
-\item [-] Le mod\`ele \`a deux \'echelles 
-est le mod\`ele par d\'efaut dans \CS. Il permet souvent, et en particulier 
-dans les cas avec transfert thermique, de diminuer les effets de certains 
-d\'efaut li\'es au mod\`ele $k-\varepsilon$ (exemple classique du jet impactant).  
+\item [-] Le mod\`ele \`a deux \'echelles
+est le mod\`ele par d\'efaut dans \CS. Il permet souvent, et en particulier
+dans les cas avec transfert thermique, de diminuer les effets de certains
+d\'efaut li\'es au mod\`ele $k-\varepsilon$ (exemple classique du jet impactant).
 \end{itemize}
 
 On se sert plus bas de $u^*$ et $u_k$ pour les conditions aux limites portant
-sur la vitesse et les scalaires (temp\'erature en particulier). 
+sur la vitesse et les scalaires (temp\'erature en particulier).
 
 
 \begin{equation}
@@ -144,8 +144,8 @@ u_k = C_\mu^\frac{1}{4}k_I^\frac{1}{2}\\
 u^* \text{solution de }  \displaystyle\frac{u^r_{\tau,I'}}{u^*} =
 \displaystyle\frac{1}{\kappa}ln(z_k)\\
 z_k=\displaystyle\frac{I'F+z_0}{z_0} = \displaystyle\frac{z_p+z_0}{z_0}\\
-\text{   avec   } C_\mu =0,09 \text{  et }  \kappa = 0,42 
-\end{array}\right.\\ 
+\text{   avec   } C_\mu =0,09 \text{  et }  \kappa = 0,42
+\end{array}\right.\\
 \end{array}
 \end{equation}
 
@@ -153,18 +153,18 @@ z_k=\displaystyle\frac{I'F+z_0}{z_0} = \displaystyle\frac{z_p+z_0}{z_0}\\
 \vspace{0.5cm}
 
 Dans le cas du {\bf mod\`ele \`a une \'echelle de vitesse}, on note $u^*$ l'unique vitesse
-de frottement en paroi solution de l'\'equation 
+de frottement en paroi solution de l'\'equation
 $\displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(z_p)$. La grandeur
 $z_p$  repr\'esente une distance \`a la paroi, soit
 $z_p=I'F$. La fonction $f$ traduit la forme id\'eale du profil de vitesse comme
-pour le mod\`ele \`a deux \'echelles de vitesses. On peut 
-noter que cette vitesse de frottement, d'un calcul plus d\'elicat (point fixe), 
+pour le mod\`ele \`a deux \'echelles de vitesses. On peut
+noter que cette vitesse de frottement, d'un calcul plus d\'elicat (point fixe),
 s'obtient  cependant sans faire r\'ef\'erence aux
 variables turbulentes ($k$, $\varepsilon$). Par commodit\'e, on posera
 dans le cas du mod\`ele \`a une \'echelle $u_k=u^*$.
 
 On se sert plus bas de $u^*$ et $u_k$ pour les conditions aux limites portant
-sur la vitesse et les scalaires (temp\'erature en particulier). 
+sur la vitesse et les scalaires (temp\'erature en particulier).
 
 \begin{equation}
 \begin{array}{l}
@@ -174,8 +174,8 @@ u_k = u^*\\
 u^* \text{solution de }  \displaystyle\frac{u^r_{\tau,I'}}{u^*} =
 \displaystyle\frac{1}{\kappa}ln(z_k)\\
 z_k=\displaystyle\frac{I'F+z_0}{z_0} = \displaystyle\frac{z_p+z_0}{z_0}\\
-\text{   avec   } C_\mu =0,09 \text{  et }  \kappa = 0,42 
-\end{array}\right.\\ 
+\text{   avec   } C_\mu =0,09 \text{  et }  \kappa = 0,42
+\end{array}\right.\\
 \end{array}
 \end{equation}
 
@@ -183,26 +183,26 @@ z_k=\displaystyle\frac{I'F+z_0}{z_0} = \displaystyle\frac{z_p+z_0}{z_0}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 On consid\`ere tout d'abord les conditions utilis\'ees dans le cas d'un calcul
 r\'ealis\'e avec le mod\`ele $k-\varepsilon$. Ce sont en effet les plus
-complexes et les plus g\'en\'erales. 
+complexes et les plus g\'en\'erales.
 
 Les conditions aux limites sont nécessaires pour imposer au bord la contrainte
 tangentielle $\sigma_\tau=\rho_Iu^*u_k$ adéquate dans l'\'equation de  quantit\'e de
 mouvement\footnote{Proposition de modification des conditions aux limites de
 paroi turbulente pour le Solveur Commun dans le cadre du mod\`ele
-$k-\varepsilon$ standard, rapport EDF HI-81/00/019/A, 2000, M. Boucker, J.-D. Mattei.} 
+$k-\varepsilon$ standard, rapport EDF HI-81/00/019/A, 2000, M. Boucker, J.-D. Mattei.}
 ($\rho_I$ est la masse volumique au centre de la
 cellule $I$). Le terme qui n\'ecessite des conditions aux limites est celui qui contient la
-d\'eriv\'ee de la vitesse dans la direction normale \`a la paroi, 
-soit\footnote{Le terme en gradient transpos\'e est trait\'e dans \fort{visecv} 
+d\'eriv\'ee de la vitesse dans la direction normale \`a la paroi,
+soit\footnote{Le terme en gradient transpos\'e est trait\'e dans \fort{visecv}
 et ne sera pas consid\'er\'e ici.}~:
 $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$. Il appara\^\i t au second membre
-de l'\'equation de quantit\'e de mouvement usuelle (voir \fort{bilsc2} et \fort{predvv}). 
+de l'\'equation de quantit\'e de mouvement usuelle (voir \fort{bilsc2} et \fort{predvv}).
 
 Dans le cas o\`u le mod\`ele $k-\varepsilon$ a tendance \`a surestimer la
 production de l'\'energie turbulente, l'\'echelle de longueur du mod\`ele,
-$L_{k-\varepsilon}$, 
+$L_{k-\varepsilon}$,
 peut devenir significativement plus grande que l'\'echelle th\'eorique maximale
-des tourbillons de la couche limite turbulente $L_{\text{th\'eo}}$. On note : 
+des tourbillons de la couche limite turbulente $L_{\text{th\'eo}}$. On note :
 \begin{equation}
 \left\{\begin{array}{l}
 L_{k-\varepsilon} = C_{\mu}\displaystyle\frac{k^\frac{3}{2}}{\varepsilon}\\
@@ -215,7 +215,7 @@ $\mu_{t,I}>\mu_{t}^{lm}$ avec $\mu_{t,I}$ la viscosit\'e turbulente du mod\`ele
 $k-\varepsilon$ au point $I$ et $\mu_{t}^{lm}=\rho_I L_{\text{th\'eo}}u_k$ la
 viscosit\'e turbulente du mod\`ele de longueur de m\'elange. En outre, la
 contrainte tangentielle peut s'\'ecrire en faisant appara\^\i tre la viscosit\'e
-turbulente, soit~: 
+turbulente, soit~:
 \begin{equation}
 \sigma_\tau = \rho_Iu^*u_k = \displaystyle\frac{u^*}{\kappa\,
  \left(I'F+z_0 \right)}
@@ -225,23 +225,23 @@ L'\'echelle de viscosit\'e introduite dans la contrainte est alors en
 contradiction avec celle d\'eduite de la turbulence calcul\'ee alentour par le
 mod\`ele. On pr\'ef\`ere d\`es lors \'ecrire, en utilisant l'\'echelle de
 longueur du $k-\varepsilon$ chaque fois qu'elle est inf\'erieure \`a la limite
-$L_{\text{th\'eo}}$~: 
+$L_{\text{th\'eo}}$~:
 \begin{equation}
 \sigma_\tau = \displaystyle\frac{u^*}{\kappa\, \left(I'F+z_0 \right)} max(\mu_{t}^{lm},\mu_{t,I})
 \end{equation}
 
 On peut alors utiliser cette valeur  pour le calcul du flux
-diffusif qui en d\'epend dans l'\'equation de Navier-Stokes~: 
+diffusif qui en d\'epend dans l'\'equation de Navier-Stokes~:
 \begin{equation}\label{eq_grad_sigma_clptur}
 (\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}=-\sigma_\tau \vect{\tau}
-\end{equation} 
+\end{equation}
 
 Or, le gradient de vitesse (gradient \`a la face de bord) est calcul\'e dans le
-code sous la forme suivante~: 
+code sous la forme suivante~:
 \begin{equation}\label{eq_grad_uf_clptur}
 (\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}=
 \displaystyle\frac{(\mu_I+\mu_{t,I})}{\overline{I'F}}(\vect{u}_F-\vect{u}_{I'})
-\end{equation} 
+\end{equation}
 
 Du rapprochement de (\ref{eq_grad_sigma_clptur}) et de
 (\ref{eq_grad_uf_clptur}) on tire alors la valeur de $\vect{u}_F$ \`a
@@ -252,8 +252,8 @@ imposer, soit $\vect{u}_{F,flux}$~(respect du flux de quantit\'e de mouvement)~:
                  &=\vect{u}_{I'}-\displaystyle\frac{u^*}{\kappa\,
 		  (\mu_I+\mu_{t,I})} max(\mu_{t}^{lm},\mu_{t,I})
 		  \, \displaystyle\frac {I'F} {\left(I'F+z_0 \right)} \vect{\tau}
-\end{array} 
-\end{equation} 
+\end{array}
+\end{equation}
 
 En r\'ealit\'e, une approximation suppl\'ementaire est r\'ealis\'ee, qui
 consiste \`a imposer la vitesse normale nulle \`a la paroi et \`a utiliser
@@ -262,7 +262,7 @@ paroi, soit~:
 \begin{equation}
 \vect{u}_{F,flux}=\left[u_{\tau,I'}-\displaystyle\frac{u^*}{\kappa\,
 (\mu_I+\mu_{t,I})} max(\mu_{t}^{lm},\mu_{t,I}) \, \displaystyle\frac {I'F} {\left(I'F+z_0 \right)} \right]\vect{\tau}
-\end{equation} 
+\end{equation}
 
 Enfin, on peut \'egalement faire appara\^\i tre la vitesse de la paroi
 dans l'expression finale~:
@@ -272,13 +272,13 @@ dans l'expression finale~:
 \left\{\begin{array}{l}
 \vect{u}_{F,flux}=\vect{v}_p+\left[u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa\,
 (\mu_I+\mu_{t,I})} max(\mu_{t}^{lm},\mu_{t,I})  \, \displaystyle\frac {I'F} {\left(I'F+z_0 \right)}\right]\vect{\tau}
-\end{array}\right.\\ 
-\end{array} 
-\end{equation} 
+\end{array}\right.\\
+\end{array}
+\end{equation}
 
 Un premier couple de coefficients $A_{flux}$ et $B_{flux}$ s'en d\'eduit (pour
 chaque composante de vitesse s\'epar\'ement) et il n'est utilis\'e que pour le
-calcul du terme d\'ependant de la contrainte tangentielle (voir \fort{bilsc2})~: 
+calcul du terme d\'ependant de la contrainte tangentielle (voir \fort{bilsc2})~:
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associ\'es aux conditions aux limites sur la vitesse de
@@ -289,7 +289,7 @@ type ``flux''} (k-\varepsilon)\\
 \vect{B}_{flux} = \vect{0}
 \end{array}\right.
 \end{array}
-\end{equation} 
+\end{equation}
 
 On a vu ci-dessus comment imposer une condition \`a la limite permettant de
 calculer correctement le terme en contrainte. Une analyse suppl\'ementaire est
@@ -298,16 +298,16 @@ valeur en face de bord qui permette d'obtenir, avec la formulation adopt\'ee pou
 plus proche possible de la valeur th\'eorique, elle-m\^eme d\'etermin\'ee
 en utilisant la loi
 logarithmique, pour \'evaluer la d\'eriv\'ee normale de la vitesse tangentielle.
-Ainsi, on d\'efinit (au point $I$)~: 
+Ainsi, on d\'efinit (au point $I$)~:
 \begin{equation}\label{eq_ptheo_clptur}
 P_{\text{th\'eo}} = \rho_I u^* u_k
-\|\displaystyle\frac{\partial u_\tau}{\partial\vect{n}}\|_{I} = 
+\|\displaystyle\frac{\partial u_\tau}{\partial\vect{n}}\|_{I} =
 \rho_I \displaystyle\frac{u_k(u^*)^2}{\kappa\, \left(I'F+z_0 \right)}
 \end{equation}
 
 Par ailleurs, le terme pr\'epond\'erant de la production calcul\'ee dans la
 cellule $I$ est, pour les situations classiques ($z$ est l'ordonn\'ee sur l'axe
-de vecteur directeur $\vect{\tilde{n}}$), 
+de vecteur directeur $\vect{\tilde{n}}$),
 \begin{equation}
 P_{\text{calc}} =
 \mu_{t,I}\left(\displaystyle\frac{\partial u_\tau}{\partial z}\right)^2_{I}
@@ -317,14 +317,14 @@ P_{\text{calc}} =
 \centerline{\includegraphics[height=7cm]{bordortho}}
 \caption{\label{fig_bord_ortho_clptur}Cellule de bord - Maillage orthogonal.}
 \end{figure}
- 
+
 Or, le gradient normal de la vitesse tangentielle (gradient cellule) est
 calcul\'e dans le code en volumes finis et son expression dans le cas d'un
 maillage orthogonal et r\'egulier est la suivante (voir les notations sur la figure~\ref{fig_bord_ortho_clptur})~:
 \begin{equation}
 P_{\text{calc}} =
-\mu_{t,I}\left(\displaystyle\frac{u_{\tau,G}-u_{\tau,F}}{2d}\right)^2 = 
-\mu_{t,I}\left(\displaystyle\frac{u_{\tau,I}+u_{\tau,J}-2u_{\tau,F}}{4d}\right)^2 
+\mu_{t,I}\left(\displaystyle\frac{u_{\tau,G}-u_{\tau,F}}{2d}\right)^2 =
+\mu_{t,I}\left(\displaystyle\frac{u_{\tau,I}+u_{\tau,J}-2u_{\tau,F}}{4d}\right)^2
 \end{equation}
 On suppose alors que $u_{\tau,J}$ peut \^etre obtenu \`a partir de $u_{\tau,I}$
 et du gradient normal de $u_{\tau}$ \'evalu\'e en G \`a partir de la loi
@@ -339,21 +339,21 @@ u_{\tau,I}+2d \, \displaystyle\frac{u^*}{\kappa \left(2d + z_0\right)}
 et l'on obtient alors~:
 \begin{equation}\label{eq_pcalc_clptur}
 \begin{array}{lll}
-P_{\text{calc}} 
+P_{\text{calc}}
 &=&\mu_{t,I}\left(\displaystyle\frac{2u_{\tau,I}+2d  \, \displaystyle\frac{\,u^*}{\kappa
 	     \left(2d + z_0\right) } -2u_{\tau,F}}{4d}\right)^2 \\
 &=&
 \mu_{t,I}\left(\displaystyle\frac{u_{\tau,I}+d \,\displaystyle\frac{\,u^*}{\kappa
-	  \left(2d + z_0\right)} -u_{\tau,F}}{2d}\right)^2 
+	  \left(2d + z_0\right)} -u_{\tau,F}}{2d}\right)^2
 \end{array}
 \end{equation}
 
 On rapproche alors les \'equations (\ref{eq_ptheo_clptur}) et
 (\ref{eq_pcalc_clptur}) pour imposer que la production calcul\'ee soit \'egale
 \`a la la production th\'eorique. On \'etend sans pr\'ecaution les formules
-pr\'ec\'edentes aux maillages non orthogonaux (la vitesse en $I$ est 
-alors simplement prise en $I'$). 
-On obtient alors l'expression suivante pour $u_{\tau,F}$~: 
+pr\'ec\'edentes aux maillages non orthogonaux (la vitesse en $I$ est
+alors simplement prise en $I'$).
+On obtient alors l'expression suivante pour $u_{\tau,F}$~:
 \begin{equation}
 u_{\tau,F,grad} =u_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left(
 2d\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k }{\mu_{t,I} \left(I'F
@@ -369,11 +369,11 @@ $\partial_z u_{\tau} = \partial_z (\displaystyle
 donc~:
 \begin{equation}
 u_{\tau,F,grad} =u_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}max\left(1,
-2d\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k }{\mu_{t,I} \left(I'F + z_0\right)}}-\displaystyle\frac{1}{2 + z_0/I'F}\right) 
+2d\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k }{\mu_{t,I} \left(I'F + z_0\right)}}-\displaystyle\frac{1}{2 + z_0/I'F}\right)
 \end{equation}
 
 
-La vitesse normale \`a la paroi est impos\'ee nulle. 
+La vitesse normale \`a la paroi est impos\'ee nulle.
 De plus, si la vitesse tangentielle en $I'$ est
 nulle (de valeur absolue inf\'erieure \`a une limite num\'erique arbitraire de
 $10^{-12}$) une condition d'adh\'erence est appliqu\'ee. Enfin, on peut
@@ -382,34 +382,34 @@ $10^{-12}$) une condition d'adh\'erence est appliqu\'ee. Enfin, on peut
 \begin{array}{l}
 \text{\bf Conditions aux limites sur la vitesse de type ``gradient''} (k-\varepsilon)\\
 \left\{\begin{array}{l}
-\vect{u}_{F,grad}=\vect{v}_p 
-          \qquad\qquad\text{ si } u^r_{\tau,I'} < 10^{-12}  \\ 
+\vect{u}_{F,grad}=\vect{v}_p
+          \qquad\qquad\text{ si } u^r_{\tau,I'} < 10^{-12}  \\
 \vect{u}_{F,grad}=\vect{v}_p +
 u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,2d\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k }{\mu_{t,I}
 \left(I'F + z_0\right)}}-\displaystyle\frac{1}{2 + z_0/I'F}\right)\right] \vect{\tau}
 \end{array}\right.
 \end{array}
-\end{equation} 
+\end{equation}
 
 Un second couple de coefficients $A_{grad}$ et $B_{grad}$ s'en d\'eduit (pour
 chaque composante de vitesse s\'epar\'ement) et est utilis\'e chaque fois que le
 gradient de la vitesse est n\'ecessaire (hormis pour les termes d\'ependant de
 la contrainte tangentielle, trait\'es dans \fort{bilsc2} au moyen des
-coefficients $A_{flux}$ et $B_{flux}$)~: 
+coefficients $A_{flux}$ et $B_{flux}$)~:
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associ\'es aux conditions aux limites sur la vitesse }\\
 \qquad\qquad\qquad\qquad\text{\bf de type ``gradient''} (k-\varepsilon)\\
 \left\{\begin{array}{l}
-\vect{A}_{grad}=\vect{v}_p 
+\vect{A}_{grad}=\vect{v}_p
                     \qquad\qquad\text{ \ si\ } u^r_{\tau,I'} < 10^{-12}  \\
 \vect{A}_{grad}=\vect{v}_p+
- u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,2d\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k }{\mu_{t,I} 
-\left(I'F + z_0\right)}}-\displaystyle\frac{1}{2 + z_0/I'F}\right)\right] \vect{\tau}\\ 
+ u^r_{\tau,I'}-\displaystyle\frac{u^*}{\kappa}\left[max\left(1,2d\sqrt{\displaystyle\frac{\rho_I\kappa\, u_k }{\mu_{t,I}
+\left(I'F + z_0\right)}}-\displaystyle\frac{1}{2 + z_0/I'F}\right)\right] \vect{\tau}\\
 \vect{B}_{grad} = \vect{0}
 \end{array}\right.
 \end{array}
-\end{equation} 
+\end{equation}
 
 \newpage
 
@@ -417,10 +417,10 @@ coefficients $A_{flux}$ et $B_{flux}$)~:
 $k-\varepsilon$ standard)\vspace{0,3cm}}
 
 On impose sur $k$ une condition de Dirichlet tir\'ee de la vitesse de frottement
-$u_k$ (se reporter \`a l'\'equation~(\ref{Eq_Mod_'2ech_Vit})), soit : 
+$u_k$ (se reporter \`a l'\'equation~(\ref{Eq_Mod_'2ech_Vit})), soit :
 \begin{equation}
 k= \displaystyle\frac{u_k^2}{C_\mu^\frac{1}{2}}
-\end{equation} 
+\end{equation}
 
 
 On cherche \`a imposer la d\'eriv\'ee normale de $\varepsilon$ \`a partir de la
@@ -428,14 +428,14 @@ loi th\'eorique suivante (voir les notations sur la figure \ref{fig_bord_ortho_c
 \begin{equation}\label{eq_partialep_theo_clptur}
 G_{\text{th\'eo},\varepsilon} = \displaystyle\frac{\partial}{\partial z}
  \left[ \displaystyle\frac{u_k^3}{\kappa\, \left(z + z_0\right)}\right]
-\end{equation} 
- 
+\end{equation}
+
 
 
 On utilise le point $M$ pour imposer une condition \`a la limite avec un ordre plus
 \'elev\'e en espace. En effet, la simple utilisation de la relation
 $\varepsilon_F=\varepsilon_I+d\partial_z\varepsilon_I + O(d^2)$ conduit \`a une
-pr\'ecision d'ordre 1. 
+pr\'ecision d'ordre 1.
 En utilisant les d\'eveloppements limit\'es suivants, on peut
 obtenir une pr\'ecision \`a l'ordre 2~:
 \begin{equation}
@@ -444,11 +444,11 @@ obtenir une pr\'ecision \`a l'ordre 2~:
 \varepsilon_M&=\varepsilon_F+\displaystyle\frac{d}{2}\partial_z\varepsilon_F+\displaystyle\frac{d^2}{8}\partial^2_z\varepsilon_F+O(d^3)
 \end{array}\right.
 \end{equation}
-Par diff\'erence, ces relations conduisent \`a 
+Par diff\'erence, ces relations conduisent \`a
 \begin{equation}\label{eq_epsf_clptur}
 \varepsilon_F=\varepsilon_I-\displaystyle\frac{d}{2}(\partial_z\varepsilon_I+\partial_z\varepsilon_F)+O(d^3)
 \end{equation}
-De plus, on a 
+De plus, on a
 \begin{equation}
 \left\{\begin{array}{ll}
 \partial_z\varepsilon_I&=\partial_z\varepsilon_M+d\partial^2_z\varepsilon_M+O(d^2)\\
@@ -473,7 +473,7 @@ Cette relation est \'etendue au cas de maillages non orthogonaux sans
 pr\'ecaution (ce qui doit d\'egrader l'ordre en espace).
 
 On a finalement~:
- 
+
 \begin{equation}
 \begin{array}{l}
 \text{\bf Conditions aux limites sur les variables } k \text { \bf et } \varepsilon \\
@@ -484,14 +484,14 @@ k_F&= \displaystyle\frac{u_k^2}{C_\mu^\frac{1}{2}}\\
 \end{array}\right. \\
 \end{array}
 \end{equation}
-et les coefficients associ\'es 
+et les coefficients associ\'es
 \begin{equation}
 \begin{array}{l}
 \text{\bf Coefficients associ\'es aux conditions aux limites sur les variables }
 k \text { \bf et } \varepsilon \\
 \left\{\begin{array}{llll}
 A_k&= \displaystyle\frac{u_k^2}{C_\mu^\frac{1}{2}} &\text{ et } B_k&= 0 \\
-A_\varepsilon&=I'F\displaystyle\frac{ u_k^3}{\kappa\, (I'F/2 + z_0)^2}&\text{ et } B_\varepsilon&= 1 
+A_\varepsilon&=I'F\displaystyle\frac{ u_k^3}{\kappa\, (I'F/2 + z_0)^2}&\text{ et } B_\varepsilon&= 1
 \end{array}\right.\\
 \end{array}
 \end{equation}
@@ -502,7 +502,7 @@ On ne traite ici que les conditions se pr\'esentant sous la forme d'une valeur
 impos\'ee (\`a la paroi ou en retrait de celle-ci avec un coefficient
 d'\'echange externe \'eventuel). On se reporte aux notations de la figure
 \ref{fig_flux_clptur} et \`a la pr\'esentation g\'en\'erale disponible dans
-\fort{condli} dont on ne reprend que la partie essentielle ci-dessous. 
+\fort{condli} dont on ne reprend que la partie essentielle ci-dessous.
 
 La conservation du flux normal au bord pour la variable $f$ s'\'ecrit sous la forme~:
 \begin{equation}\label{eq_flux_clptur}
@@ -523,70 +523,70 @@ On r\'earrange ces deux \'equations afin d'obtenir la valeur num\'erique
 $f_{b,int}=f_{F}$ \`a imposer en face de paroi, \'etant donn\'ees les valeurs de
 $f_{imp,ext}$ et de $h_{imp,ext}$ fix\'ees par l'utilisateur et la valeur $h_{b}$
 dict\'ee par les lois de similitude qui seront d\'etaill\'ees plus bas. On
-pr\'ecise les coefficients $A$ et $B$ qui s'en d\'eduisent naturellement. 
+pr\'ecise les coefficients $A$ et $B$ qui s'en d\'eduisent naturellement.
 
 \begin{equation}\label{eq_fbint_clptur}
 \begin{array}{l}
 \text{\bf Conditions aux limites sur les {\it VarScalaires} }\\
-f_{b,int} = 
+f_{b,int} =
 \underbrace{\displaystyle\frac{h_{imp,ext}}{h_{int}+h_r h_{imp,ext} } f_{imp,ext}}_{A} +
-\underbrace{\displaystyle\frac{h_{int}+h_{imp,ext}(h_r-1)}{h_{int}+h_r h_{imp,ext} }}_{B} f_{I'} 
+\underbrace{\displaystyle\frac{h_{int}+h_{imp,ext}(h_r-1)}{h_{int}+h_r h_{imp,ext} }}_{B} f_{I'}
 \text{  avec } h_r=\displaystyle\frac{h_{int}}{h_{b}}
 \end{array}
 \end{equation}
 
 
 \newpage
-{\bf Principe de similitude~: calcul de } $h_b$. 
+{\bf Principe de similitude~: calcul de } $h_b$.
 
 Dans l'expression (\ref{eq_fbint_clptur}), seule reste à
 d\'eterminer la valeur de $h_{b}$, celle de $h_{int}$ \'etant une valeur
 num\'erique coh\'erente avec le mode de calcul des gradients aux faces et
 pr\'ecis\'ee dans \fort{condli} ($h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$). La
-valeur de  $h_{b}$ doit permettre de 
-relier le flux \`a l'\'ecart entre les valeurs $f_{I'}$ et $f_{b,ext}$ en 
-prenant en compte la couche limite (le profil de $f$ n'est pas toujours 
+valeur de  $h_{b}$ doit permettre de
+relier le flux \`a l'\'ecart entre les valeurs $f_{I'}$ et $f_{b,ext}$ en
+prenant en compte la couche limite (le profil de $f$ n'est pas toujours
 lin\'eaire)~:
 \begin{equation}
 \phi_b=h_b\,(f_{b,ext}-f_{I'})
-\end{equation} 
+\end{equation}
 
 Les consid\'erations suivantes sont pr\'esent\'ees en adoptant des notations
-g\'en\'erales. En particulier, le nombre de Prandtl-Schmidt est not\'e 
-$\sigma=\displaystyle\frac{\nu\,\rho\,C}{\alpha}$. 
-Lorsque le scalaire $f$ consid\'er\'e est la temp\'erature,  
-on a (voir \fort{condli})~: 
+g\'en\'erales. En particulier, le nombre de Prandtl-Schmidt est not\'e
+$\sigma=\displaystyle\frac{\nu\,\rho\,C}{\alpha}$.
+Lorsque le scalaire $f$ consid\'er\'e est la temp\'erature,
+on a (voir \fort{condli})~:
 \begin{list}{$\bullet$}{}
-\item $C=C_p$ (chaleur massique), 
-\item $\alpha=\lambda$ (conductivit\'e mol\'eculaire), 
-\item $\sigma = \displaystyle\frac{\nu\,\rho\,C_p}{\lambda} = Pr$ 
-       (nombre de Prandtl), 
-\item $\sigma_t = Pr_t$ (nombre de Prandtl turbulent), 
+\item $C=C_p$ (chaleur massique),
+\item $\alpha=\lambda$ (conductivit\'e mol\'eculaire),
+\item $\sigma = \displaystyle\frac{\nu\,\rho\,C_p}{\lambda} = Pr$
+       (nombre de Prandtl),
+\item $\sigma_t = Pr_t$ (nombre de Prandtl turbulent),
 \item $\phi=\left(\lambda+\displaystyle\frac{C_p\mu_t}{\sigma_t}\right)
-        \displaystyle\frac{\partial T}{\partial z}$ (flux en $Wm^{-2}$). 
+        \displaystyle\frac{\partial T}{\partial z}$ (flux en $Wm^{-2}$).
 \end{list}
 
-On s'est appuyé sur la r\'ef\'erence "The atmospheric boundary layer", 
-J. R. Garratt, Cambridge University Press. 
+On s'est appuyé sur la r\'ef\'erence "The atmospheric boundary layer",
+J. R. Garratt, Cambridge University Press.
 
 Le flux en paroi s'écrit, pour le scalaire $f$ (le flux est positif s'il est
-entrant dans le domaine fluide, comme l'indique l'orientation de l'axe $z$)~: 
+entrant dans le domaine fluide, comme l'indique l'orientation de l'axe $z$)~:
 \begin{equation}\label{Eq_Flux_scalaire}
 \phi = -\left(\alpha+C\,\frac{\mu_t}{\sigma_t}\right)
-                  \frac{\partial f}{\partial z} 
+                  \frac{\partial f}{\partial z}
      = -\rho\,C \left(\displaystyle\frac{\alpha}{\rho\,C}+
                                 \frac{\mu_t}{\rho\sigma_t}\right)
                   \frac{\partial f}{\partial z}
 \end{equation}
 
-\noindent Pour la température, avec $a=\displaystyle\frac{\lambda}{\rho\,C_p}$ et 
-$a_t=\displaystyle\frac{\mu_t}{\rho\,\sigma_t}$, 
+\noindent Pour la température, avec $a=\displaystyle\frac{\lambda}{\rho\,C_p}$ et
+$a_t=\displaystyle\frac{\mu_t}{\rho\,\sigma_t}$,
 on a donc, de manière équivalente~:
 \begin{equation}
 \phi = -\rho\,C_p(a+a_t)\frac{\partial T}{\partial z}
 \end{equation}
 
-\noindent On introduit $f^*$ afin d'adimensionner $f$, en utilisant la valeur du flux 
+\noindent On introduit $f^*$ afin d'adimensionner $f$, en utilisant la valeur du flux
 au bord $\phi_b$~:
 \begin{equation}
 f^* = -\displaystyle\frac{\phi_b}{\rho\,C\,u_k}
@@ -600,12 +600,12 @@ T^* = -\displaystyle\frac{\phi_b}{\rho\,C_p\,u_k}
 vitesse de frottement en paroi obtenue \`a partir de l'\'energie
 cinétique moyenne du mouvement turbulent\footnote{$u_k = C_\mu^\frac{1}{4}k_I^\frac{1}{2}$}. Dans le
 cas du  modèle à une échelle de vitesse, on pose $u_k=u^*$ avec $u^*$
-la vitesse de frottement en paroi déterminée à partir de la loi logarithmique. 
+la vitesse de frottement en paroi déterminée à partir de la loi logarithmique.
 
-On divise alors les membres de l'\'equation~(\ref{Eq_Flux_scalaire}) 
-par $\phi_b$. Pour le membre de gauche, on simplifie en utilisant le fait 
-que le flux se conserve et donc que $\phi=\phi_b$. Pour le membre de droite, 
-on remplace $\phi_b$ par sa valeur $-\rho\,C\,u_k\,f^*$. Avec les notations~: 
+On divise alors les membres de l'\'equation~(\ref{Eq_Flux_scalaire})
+par $\phi_b$. Pour le membre de gauche, on simplifie en utilisant le fait
+que le flux se conserve et donc que $\phi=\phi_b$. Pour le membre de droite,
+on remplace $\phi_b$ par sa valeur $-\rho\,C\,u_k\,f^*$. Avec les notations~:
 \begin{equation}
        \nu=\displaystyle\frac{\mu}{\rho}
 \qquad \nu_t=\displaystyle\frac{\mu_t}{\rho}
@@ -618,37 +618,37 @@ on a~:
                   \displaystyle\frac{\partial f^+}{\partial z} \displaystyle\frac{1}{u_k}
 \end{equation}
 
-Remarquons d\`es \`a pr\'esent qu'avec les notations pr\'ec\'edentes, 
+Remarquons d\`es \`a pr\'esent qu'avec les notations pr\'ec\'edentes,
 $h_b$ s'exprime en fonction de $f^+_{I'}$~:
 \begin{equation}
 h_b=\displaystyle\frac{\phi_b}{f_{b,ext}-f_{I'}}=\frac{\rho\,C\,u_k}{f^+_{I'}}
 \end{equation}
 
-Pour d\'eterminer $h_b$, on int\`egre alors 
-l'\'equation~(\ref{Eq_Flux_scalaire_adim}) afin de disposer de $f^+_{I'}$. 
-L'unique difficult\'e consiste alors \`a prescrire une loi de variation de 
+Pour d\'eterminer $h_b$, on int\`egre alors
+l'\'equation~(\ref{Eq_Flux_scalaire_adim}) afin de disposer de $f^+_{I'}$.
+L'unique difficult\'e consiste alors \`a prescrire une loi de variation de
 $\mathcal{K}=\displaystyle\frac{\nu}{\sigma}+
               \displaystyle\frac{\nu_t} {\sigma_t}$
 
 
-Dans la zone turbulente pleinement développ\'ee, une hypoth\`ese de 
+Dans la zone turbulente pleinement développ\'ee, une hypoth\`ese de
 longueur de m\'elange permet de mod\'eliser les variations de $\nu_t$~:
 \begin{equation}
-\nu_t = l^2 \arrowvert \frac{\partial U}{\partial z} \arrowvert = 
+\nu_t = l^2 \arrowvert \frac{\partial U}{\partial z} \arrowvert =
 \kappa\,u^* \left(z + z_0\right)
 \end{equation}
-De plus, les effets de diffusion de $f$ 
-(ou effets "conductifs" lorsque $f$ repr\'esente la temp\'erature) 
-sont n\'egligeables devant les effets turbulents~: on n\'eglige alors  
-$\displaystyle\frac{\nu}{\sigma}$ devant 
-$\displaystyle\frac{\nu_t}{\sigma_t}$. On a donc 
+De plus, les effets de diffusion de $f$
+(ou effets "conductifs" lorsque $f$ repr\'esente la temp\'erature)
+sont n\'egligeables devant les effets turbulents~: on n\'eglige alors
+$\displaystyle\frac{\nu}{\sigma}$ devant
+$\displaystyle\frac{\nu_t}{\sigma_t}$. On a donc
 finalement~:
 \begin{equation}
 \mathcal{K}= \displaystyle\frac{\kappa \,u_k}{\sigma_t}  \left(z+z_0\right)
 \end{equation}
 
 
-On int\`egre l'équation adimensionnelle~(\ref{Eq_Flux_scalaire_adim}) 
+On int\`egre l'équation adimensionnelle~(\ref{Eq_Flux_scalaire_adim})
 sous la m\^eme hypoth\`ese et on obtient alors la loi donnant $f^+$~:
 \begin{equation}
 f^+ = \displaystyle\frac{\sigma_t}{\kappa}\,
@@ -658,7 +658,7 @@ où $z_{o_T}$ est la longueur de rugosité thermique. Son ordre de
 grandeur comparé à la rugosité dynamique  est donné par la
 relation $ln\left(\displaystyle\frac{z_0}{z_{o_T}}\right) \approx 2$ (référence J. R. Garratt).
 
-Pour r\'esumer, le calcul de $h_b$ est r\'ealis\'e en d\'eterminant~:  
+Pour r\'esumer, le calcul de $h_b$ est r\'ealis\'e en d\'eterminant~:
 \begin{eqnarray}
 f^+_{I'}&=& \displaystyle\frac{\sigma_t}{\kappa}\,
  ln\left(\displaystyle\frac{I'F+z_0}{z_{o_T}}\right) \\
@@ -674,13 +674,13 @@ h_b&=&\displaystyle\frac{\phi_b}{f_{b,ext}-f_{I'}}=\frac{\rho\,C\,u_k}{f^+_{I'}}
 
 %\etape{Mode de prescription des conditions aux limites\vspace{0,3cm}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-On traite ici les variables \var{IVAR} sur les faces \var{IFAC} 
-telles que \var{ICODCL(IFAC,IVAR)}=5. 
+On traite ici les variables \var{IVAR} sur les faces \var{IFAC}
+telles que \var{ICODCL(IFAC,IVAR)}=5.
 
 La vitesse de d\'efilement (\'eventuellement nulle) de la paroi est tout d'abord
 projet\'ee dans le plan tangent \`a la paroi. Ses trois composantes dans le
 rep\`ere de calcul sont stock\'ees dans les
-tableaux\\  \var{RCODCL(IFAC,IUIPH,1),RCODCL(IFAC,IVIPH,1)RCODCL(IFAC,IWIPH,1)}. 
+tableaux\\  \var{RCODCL(IFAC,IUIPH,1),RCODCL(IFAC,IVIPH,1)RCODCL(IFAC,IWIPH,1)}.
 
 On d\'etermine ensuite le
 rep\`ere local $\hat{\mathcal R}$. Pour chaque face, il est disponible dans les
@@ -688,7 +688,7 @@ vecteurs $\vect{\tau}$ \var{(TX, TY, TZ)}, $\vect{\tilde{n}}$ \var{(-RNX, -RNY,
 -RNZ)}, et $\vect{b}$ \var{(T2X, -T2Y,-T2Z)}. Par ailleurs, si la norme de la vitesse
 tangentielle est inf\'erieure \`a la valeur arbitraire \var{EPZERO}
 ($10^{-12}$), l'indicateur \var{TXN0} est positionn\'e \`a 0 (il vaut 1 sinon)
-et le vecteur $\vect{\tau}$ est pris 
+et le vecteur $\vect{\tau}$ est pris
 \begin{itemize}
 \item [-] arbitraire, dans le plan perpendiculaire \`a $\vect{\tilde{n}}$ en
 $R_{ij}-\varepsilon$  (on utilise les composantes de $\vect{\tilde{n}}$ pour
@@ -699,7 +699,7 @@ code s'arr\^ete)~;
 
 On calcule ensuite les vitesses de frottement qui sont stock\'ees dans
 \var{UET} ($=u^*$) et dans \var{UK} ($=u_k$). Le sous-programme \fort{atmcls}
- permet de calculer la vitesse de 
+ permet de calculer la vitesse de
 frottement pour le mod\`ele \`a une \'echelle
 de vitesse (\var{IDEUCH}=0). Pour le mod\`ele \`a deux \'echelles
 (\var{IDEUCH}=1), le calcul (plus simple) de \var{UET} et de \var{UK} est fait directement
@@ -714,7 +714,7 @@ Les conditions aux limites pour la vitesse sont ensuite compl\'et\'ees.
 
 \item [-] En $k-\varepsilon$, on affecte, pour les trois composantes de vitesse
 respectivement, \`a $$\var{COEFA(IFAC,ICLU)}, \var{COEFA(IFAC,ICLV)} \,\text{ et
-}\,\var{COEFA(IFAC,ICLW)}$$ les coefficients $A_{flux}$  
+}\,\var{COEFA(IFAC,ICLW)}$$ les coefficients $A_{flux}$
 issus de l'analyse relative \`a la contrainte tangentielle.\\
  De m\^eme, les coefficients $B_{flux}$ sont affect\'es \`a
 $$\var{COEFB(IFAC,ICLU)}, \var{COEFB(IFAC,ICLV)} \,\text{ et
@@ -722,12 +722,12 @@ $$\var{COEFB(IFAC,ICLU)}, \var{COEFB(IFAC,ICLV)} \,\text{ et
 issues de l'analyse portant directement sur le gradient de vitesse $A_{grad}$ et
 $B_{grad}$ sont affect\'ees \`a  $$\var{COEFA(IFAC,ICLUF)},
 \var{COEFA(IFAC,ICLVF)}, \var{COEFA(IFAC,ICLWF)}$$ et
-$$\var{COEFB(IFAC,ICLUF)}, \var{COEFB(IFAC,ICLVF)}, \var{COEFB(IFAC,ICLWF)}.$$ 
+$$\var{COEFB(IFAC,ICLUF)}, \var{COEFB(IFAC,ICLVF)}, \var{COEFB(IFAC,ICLWF)}.$$
 
 \item [-] Lorsque la vitesse tangentielle en $I'$ est inf\'erieure \`a
-\var{EPZERO}, l'indicateur \var{TXN0} est annul\'e (sinon,  \var{TXN0} vaut 1). 
+\var{EPZERO}, l'indicateur \var{TXN0} est annul\'e (sinon,  \var{TXN0} vaut 1).
  Cet  indicateur est utilis\'e pour annuler les coefficients $A$ et
-      imposer des conditions d'adh\'erence. 
+      imposer des conditions d'adh\'erence.
 
 \item [-] la vitesse de d\'efilement de la paroi est prise en compte dans les
 conditions aux limites (coefficients \var{COEFA}).
@@ -735,7 +735,7 @@ conditions aux limites (coefficients \var{COEFA}).
 \end{itemize}
 
 Les conditions sur les grandeurs turbulentes sont ensuite
-compl\'et\'ees. 
+compl\'et\'ees.
 
 
 Les conditions aux limites pour les scalaires sont ensuite compl\'et\'ees. Les
@@ -745,56 +745,56 @@ difficult\'e consiste \`a g\'erer correctement les diff\'erentes grandeurs
 permettant de  calculer le coefficient d'\'echange $h_b$ sans erreur.
 
 L'indicateur \var{ISCSTH} sert, pour chaque {\it VarScalaires} \`a indiquer
-quelle valeur de $C$ utiliser 
+quelle valeur de $C$ utiliser
 au moment du traitement des conditions aux limites. Ainsi, pour \var{ISCSTH}=1,
 la variable doit \^etre trait\'ee comme une temp\'erature, avec $C=C_p$. Pour
 \var{ISCSTH}=0 ou 2, la variable doit \^etre trait\'ee comme un scalaire passif
-ou une enthalpie respectivement, avec  $C=1$ (constante sans dimension) dans les deux cas. 
+ou une enthalpie respectivement, avec  $C=1$ (constante sans dimension) dans les deux cas.
 
 Par ailleurs, une valeur strictement positive de l'entier \var{IPCCP}
 indique que  $C_p$ est variable en espace
 et disponible dans le tableau \var{PROPCE(IEL,IPCCP )} (renseign\'e dans
 \var{USPHYV}). Lorsque \var{IPCCP} est
 nul, $C_p$ est constant et disponible sous
-forme du  r\'eel \var{CP0(IPHAS)}.
+forme du  r\'eel \var{CP0}.
 
-L'indicateur \var{IHCP} permet de rassembler ces informations~: 
+L'indicateur \var{IHCP} permet de rassembler ces informations~:
 \begin{itemize}
-\item [-] \var{IHCP} = 0 : \var{CPP} = $C=1$ 
-\item [-] \var{IHCP} = 1 : \var{CPP} = $C=C_p$ uniforme en espace 
-\item [-] \var{IHCP} = 2 : \var{CPP} = $C=C_p$ variable en espace 
+\item [-] \var{IHCP} = 0 : \var{CPP} = $C=1$
+\item [-] \var{IHCP} = 1 : \var{CPP} = $C=C_p$ uniforme en espace
+\item [-] \var{IHCP} = 2 : \var{CPP} = $C=C_p$ variable en espace
 \end{itemize}
 
-Pour la {\it VarScalaire} \var{LL}, l'indicateur \var{IVISLS(LL)} 
-permet \'egalement de rep\'erer si $\displaystyle\frac{\alpha_m}{C}$  
+Pour la {\it VarScalaire} \var{LL}, l'indicateur \var{IVISLS(LL)}
+permet \'egalement de rep\'erer si $\displaystyle\frac{\alpha_m}{C}$
 est variable en espace et disponible dans le tableau \var{PROPCE(IEL,IPCVSL)}
 (\var{IVISLS} $> 0$) ou uniforme en espace et disponible sous forme du r\'eel
 \var{VISLS0(LL)} (\var{IVISLS} $= 0$). On pose \var{RKL}$ =
-\displaystyle\frac{\alpha_m}{C}$ 
+\displaystyle\frac{\alpha_m}{C}$
 
 Le nombre de Prandtl local est alors calcul\'e \var{PRDTL} $ =
 \displaystyle\frac{\mu}{\alpha_m/C}$ ($\mu$ est la viscosit\'e dynamique mol\'eculaire
-disponible dans  \var{VISCLC}).  
+disponible dans  \var{VISCLC}).
 
 Le coefficient $h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$  est ensuite
-d\'etermin\'e et conserv\'e 
-dans \var{HINT}. 
+d\'etermin\'e et conserv\'e
+dans \var{HINT}.
 
-Lorsqu'un mod\`ele de turbulence est activ\'e, 
+Lorsqu'un mod\`ele de turbulence est activ\'e,
 on calcule  \var{HFLUI} $ = h_b = \displaystyle\frac{\rho C u_k}{T^+}$.
-Si le calcul est r\'ealis\'e en laminaire, on a 
+Si le calcul est r\'ealis\'e en laminaire, on a
 simplement \var{HFLUI} = \var{HINT} ($ = h_b = h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$)
 
 Dans les cas o\`u l'on souhaite stocker le coefficient d'\'echange (couplage
 avec SYRTHES), \var{HFLUI} est conserv\'e dans le tableau \var{HBORD}.
 Dans les cas o\`u l'on utilise le module de rayonnement, \var{HFLUI} est
-stock\'e  dans le tableau de travail \var{RA(IHCONV)}. 
+stock\'e  dans le tableau de travail \var{RA(IHCONV)}.
 
 On dispose alors de tous les \'elements pour calculer les coefficients $A$ et
 $B$ (\var{COEFA} et \var{COEFB}) relatif \`a la variable trait\'ee. Noter pour
-terminer les 
+terminer les
 correspondances suivantes qui permettent de rapprocher le code source de la
-relation (\ref{eq_fbint_clptur})~: 
+relation (\ref{eq_fbint_clptur})~:
 \begin{eqnarray}
 \var{HEXT} &=& h_{imp,ext}
 \nonumber \\
@@ -804,6 +804,6 @@ relation (\ref{eq_fbint_clptur})~:
 \nonumber \\
  \var{HINT} &=&  h_{int}
 \nonumber \\
-\var{HFLUI}  &=& h_b 
+\var{HFLUI}  &=& h_b
 \nonumber
 \end{eqnarray}

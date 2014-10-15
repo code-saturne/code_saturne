@@ -476,8 +476,7 @@ $\tens{R}.\underline{e}_{\var{DIR}}$ aux faces, pour la direction \var{DIR}. Pui
 appelle le sous-programme \fort{divmas} qui en calcule la divergence.\\
 \linebreak
 \item Les termes de viscosit\'{e} secondaire $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \underline\,{u})$ et de gradient
-transpos\'{e} $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ sont calcul\'{e}s (s'ils sont pris en compte \emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, o\`{u} \var{IPHAS} est le
-num\'{e}ro de la phase trait\'{e}e) par le sous-programme \fort{visecv}. Il ne sont calcul\'{e}s qu'\`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}. Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de travail lors de l'appel au sous-programme \fort{visecv}. Il retrouve sa valeur \`{a} la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs \var{W7} \`{a} \var{W9}.
+transpos\'{e} $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ sont calcul\'{e}s (s'ils sont pris en compte \emph{i.e.} \var{IVISSE} = 1. Il ne sont calcul\'{e}s qu'\`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}. Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de travail lors de l'appel au sous-programme \fort{visecv}. Il retrouve sa valeur \`{a} la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs \var{W7} \`{a} \var{W9}.
 \\
 \item Les termes correspondant aux pertes de charges ($\rho \tens{K}_{\,pdc}
 {u}$), s'ils existent (\ $\var{NCEPDP}> 0$\ ), sont calcul\'{e}s par le
@@ -609,7 +608,7 @@ aux cellules la divergence
 $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ et
 l'ajouter directement \`a \var{XNORMP}.
 
-Pour finir, le r\'esidu de normalisation est d\'etermin\'e et stock\'e dans \var{RNORMP(IIPHAS)} par un appel \`a \fort{prodsc}  (qui r\'ealise le calcul de la somme sur les cellules du
+Pour finir, le r\'esidu de normalisation est d\'etermin\'e et stock\'e dans \var{RNORMP} par un appel \`a \fort{prodsc}  (qui r\'ealise le calcul de la somme sur les cellules du
 carr\'e des valeurs de \var{XNORMP} et en prend la racine carr\'ee).\\
 
 

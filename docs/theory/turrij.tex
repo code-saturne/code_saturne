@@ -443,8 +443,8 @@ sont des conditions de Dirichlet puisque la valeur de $\rho^n$ aux faces de bord
 $ik$ (variable \var{IFAC}) est connue et vaut $\rho_{\,b_{\,ik}}$. Pour \'ecrire les conditions aux limites
 sous la forme habituelle, $$\rho_{\,b_{\,ik}} = \var{COEFA} + \var{COEFB}
 \,\rho^n_{\,I'}$$ on pose alors $\var{COEFA}=
-\var{PROPCE(IFAC,IPPROB(IROM(IPHAS)))}$ et $\var{COEFB} = \var{VISCB} = 0$.\\
-$\var{PROPCE(1,IPPROB(IROM(IPHAS)))}$ (resp.$\var{VISCB}$) est utilis\'e en lieu
+\var{PROPCE(IFAC,IPPROB(IROM))}$ et $\var{COEFB} = \var{VISCB} = 0$.\\
+$\var{PROPCE(1,IPPROB(IROM))}$ (resp.$\var{VISCB}$) est utilis\'e en lieu
 et place de l'habituel \var{COEFA} ($\var{COEFB}$), lors de l'appel \`a \fort{grdcel}.\\
 On a donc :\\
 $\displaystyle \var{GRAROX}= \frac{\partial \rho^n}{\partial x}\ $,$\displaystyle \ \var{GRAROY}= \frac{\partial
@@ -630,7 +630,7 @@ $ + \left.\ (1-C_2) \ \var{PRODUC(ISOU,IEL)} -
 $\var{SMBR} = \var{SMBR} + \phi^n_{ij,w}$\\
 Suivant son mode de calcul (\var{ICDPAR}), la distance \`a la paroi est directement accessible
 par \var{RA(IDIPAR+IEL-1)} (\var{|ICDPAR|} = 1) ou bien
-est calcul\'ee \`a partir de $\var{IA(IIFAPA(IPHAS)+IEL - 1)}$,
+est calcul\'ee \`a partir de $\var{IA(IIFAPA+IEL - 1)}$,
 qui donne pour l'\'el\'ement $\var{IEL}$ le num\'ero de la face de bord
 paroi la plus  proche (\var{|ICDPAR|} = 2). Ces tableaux ont \'et\'e renseign\'e une fois pour toutes au
 d\'ebut de calcul.

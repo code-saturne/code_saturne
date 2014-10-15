@@ -138,7 +138,7 @@ avec un \'etat miroir~; on distingue les cas de choc et de
 d\'etente et, dans le cas d'une d\'etente trop forte, une condition de
 Dirichlet homog\`ene est utilis\'ee pour \'eviter de voir appara\^itre une
 pression n\'egative),
-\item si l'utilisateur le souhaite (\var{ICFGRP(IPHAS)=1}), le gradient de
+\item si l'utilisateur le souhaite (\var{ICFGRP=1}), le gradient de
 pression est impos\'e \`a partir du profil de pression hydrostatique.
 \end{itemize}
 \bigskip
@@ -181,7 +181,7 @@ une valeur de bord de l'\'energie ou de la temp\'erature est requise
 (traitement standard des scalaires). Pour cela, on dispose d'une
 seconde valeur de bord qui est stock\'ee au moyen d'un
 couple de coefficients (\var{COEFA}, \var{COEFB}) distinct du pr\'ec\'edent.
-        
+
 {\bf Flux convectifs}~: le flux de masse dans la direction normale \`a la paroi est
 pris nul. De ce fait, les flux convectifs seront nuls quelle que soit les valeurs
 de bord impos\'ees pour les diff\'erentes variables transport\'ees.
@@ -241,7 +241,7 @@ on l'utilise, pour le calcul du flux convectif et du flux diffusif~;
 sinon, on utilise une condition de Neumann homog\`ene (le concept
 de sortie de type 9 ou 10 est couvert par cette approche).
 \end{itemize}
-                        
+
 
 
 %=================================
@@ -1535,12 +1535,12 @@ mouvement et d'\'energie.
 
 Pour la masse, le flux convectif calcul\'e par le sch\'ema de Rusanov
 d\'efinit simplement le flux de masse au bord
-(\var{PROPFB(IFAC,IPPROB(IFLUMA(ISCA(IENERG(IPHAS)))))}).
+(\var{PROPFB(IFAC,IPPROB(IFLUMA(ISCA(IENERG))))}).
 
 Pour la quantit\'e de mouvement, le flux convectif calcul\'e par le sch\'ema de
 Rusanov  est stock\'e dans les tableaux
-\var{PROPFB(IFAC,IPPROB(IFBRHU(IPHAS)))}, \var{PROPFB(IFAC,IPPROB(IFBRHV(IPHAS)))} et
-\var{PROPFB(IFAC,IPPROB(IFBRHW(IPHAS)))}. Il est ensuite ajout\'e au second membre de
+\var{PROPFB(IFAC,IPPROB(IFBRHU))}, \var{PROPFB(IFAC,IPPROB(IFBRHV))} et
+\var{PROPFB(IFAC,IPPROB(IFBRHW))}. Il est ensuite ajout\'e au second membre de
 l'\'equation directement dans \fort{cfqdmv} (boucle sur les faces de bord).
 Comme ce flux contient la contribution du terme convectif usuel
 $\divv(\vect{u}\otimes\vect{Q})$, il ne faut pas l'ajouter dans
@@ -1556,7 +1556,7 @@ dans \fort{cfqdmv}).
 
 Pour l'\'energie, le flux convectif calcul\'e par le sch\'ema de
 Rusanov est stock\'e dans le tableau
-\var{PROPFB(IFAC,IPPROB(IFBENE(IPHAS)))}. Pour les faces auxquelles n'est pas
+\var{PROPFB(IFAC,IPPROB(IFBENE))}. Pour les faces auxquelles n'est pas
 appliqu\'e le sch\'ema de Rusanov, on ajoute la contribution
 du terme de transport de pression $\dive(\vect{Q}\,\frac{P}{\rho})$
 au second membre de l'\'equation dans \fort{cfener}
@@ -1614,7 +1614,7 @@ en imposant une condition de flux nul sur le terme
 $\displaystyle-\dive{\left(\frac{K}{C_v}\,\grad{(\frac{1}{2}\,u^2+\varepsilon_{sup})}\right)}$.
 Les faces IFAC
 concern\'ees sont rep\'er\'ees dans \fort{cfxtcl} par l'indicateur
-\var{IA(IIFBET+IFAC-1+(IPHAS-1)*NFABOR) = 1} (qui vaut 0 sinon, initialis\'e
+\var{IA(IIFBET+IFAC-1) = 1} (qui vaut 0 sinon, initialis\'e
 dans \fort{ppprcl}).
 
 Sur ces faces,
@@ -1641,20 +1641,20 @@ dont l'une est utilis\'ee pour le calcul du flux diffusif sp\'ecifiquement.
 
 Les  faces de paroi  \var{IFAC} \`a température impos\'ee sont identif\'ees par
 l'utilisateur dans \fort{uscfcl} au moyen de  l'indicateur
-\var{ICODCL(IFAC,ISCA(ITEMPK(IPHAS)))=5} (noter que
+\var{ICODCL(IFAC,ISCA(ITEMPK))=5} (noter que
 ce tableau est associ\'e \`a la temp\'erature).
 
-Dans \fort{cfxtcl}, on impose alors \var{ICODCL(IFAC,ISCA(IENERG(IPHAS)))=5} et
+Dans \fort{cfxtcl}, on impose alors \var{ICODCL(IFAC,ISCA(IENERG))=5} et
 on calcule la quantit\'e
 $C_v\,T_{imp,ext}+\frac{1}{2}u^2_{I}+\varepsilon_{sup,I}$, que l'on
-stocke dans \var{RCODCL(IFAC,ISCA(IENERG(IPHAS)),1)} (on ne reconstruit pas les
+stocke dans \var{RCODCL(IFAC,ISCA(IENERG),1)} (on ne reconstruit pas les
 valeurs de $u^2$ et $\varepsilon_{sup}$ au bord, cf. \S\ref{Cfbl_Cfxtcl_prg_a_traiter}).
 
 \`A partir de ces valeurs de \var{ICODCL} et \var{RCODCL},
 on renseigne ensuite dans \fort{clptur}
 les tableaux de conditions aux limites  permettant le calcul du flux~:
-\var{COEFA(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} et
-\var{COEFB(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} (noter
+\var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEFF))} et
+\var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEFF))} (noter
 l'indicateur \var{ICOEFF} qui renvoie aux coefficients d\'edi\'es au flux
 diffusif).
 
@@ -1667,18 +1667,18 @@ diffusif).
 Les  faces de paroi  \var{IFAC} \`a flux thermique
 impos\'e sont identif\'ees par
 l'utilisateur dans \fort{uscfcl} au moyen de  l'indicateur
-\var{ICODCL(IFAC,ISCA(ITEMPK(IPHAS)))=3} (noter que le tableau est
+\var{ICODCL(IFAC,ISCA(ITEMPK))=3} (noter que le tableau est
 associ\'e \`a la temp\'erature).
 
-Dans \fort{cfxtcl}, on impose alors \var{ICODCL(IFAC,ISCA(IENERG(IPHAS)))=3} et
-on transf\`ere la valeur du flux de  \var{RCODCL(IFAC,ISCA(ITEMPK(IPHAS)),3)}
-\`a \var{RCODCL(IFAC,ISCA(IENERG(IPHAS)),3)}.
+Dans \fort{cfxtcl}, on impose alors \var{ICODCL(IFAC,ISCA(IENERG))=3} et
+on transf\`ere la valeur du flux de  \var{RCODCL(IFAC,ISCA(ITEMPK),3)}
+\`a \var{RCODCL(IFAC,ISCA(IENERG),3)}.
 
 \`A partir de ces valeurs de \var{ICODCL} et \var{RCODCL},
 on renseigne ensuite dans \fort{condli} les tableaux de conditions aux limites
 permettant le calcul du flux,
-\var{COEFA(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} et
-\var{COEFB(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} (noter
+\var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEFF))} et
+\var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEFF))} (noter
 l'indicateur \var{ICOEFF} qui renvoie aux coefficients d\'edi\'es au flux
 diffusif).
 
@@ -1690,8 +1690,8 @@ Dans les deux cas (paroi \`a temp\'erature ou \`a flux thermique impos\'e),
 on utilise les tableaux
 \var{COEFA(*,ICLRTP(ISCA(II),ICOEF))},
 \var{COEFB(*,ICLRTP(ISCA(II),ICOEF))} (noter le \var{ICOEF}) pour disposer d'une
-condition de flux nul pour l'\'energie (avec \var{II=IENERG(IPHAS)}) et
-pour la temp\'erature (avec \var{II=ITEMPK(IPHAS)})
+condition de flux nul pour l'\'energie (avec \var{II=IENERG}) et
+pour la temp\'erature (avec \var{II=ITEMPK})
 si un calcul de gradient est requis.
 
 Un gradient est en particulier utile pour les reconstructions
@@ -1716,12 +1716,12 @@ deux jeux de conditions aux limites sont identiques (tableaux
 Si un flux est impos\'e pour l'\'energie totale (condition assez rare,
 l'utilisateur ne raisonnant pas,
 d'ordinaire, en \'energie totale), on le stocke au moyen de
-\var{COEFA(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} et
-\var{COEFB(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} (tableaux associ\'es au flux
+\var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEFF))} et
+\var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEFF))} (tableaux associ\'es au flux
 diffusif). Pour le gradient, une condition de flux nul est stock\'ee
 dans
-\var{COEFA(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEF))} et
-\var{COEFB(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEF))}. On peut remarquer que les deux
+\var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEF))} et
+\var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEF))}. On peut remarquer que les deux
 jeux de conditions aux limites sont identiques pour les faces de sym\'etrie.
 
 %---------------------------------
@@ -1731,19 +1731,19 @@ jeux de conditions aux limites sont identiques pour les faces de sym\'etrie.
 Lors de la construction des seconds membres, dans \fort{cfener}, on utilise les
 conditions aux limites stock\'ees dans les tableaux associ\'es au flux
 diffusif
-\var{COEFA(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} et
-\var{COEFB(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEFF))} pour le terme de flux diffusif
+\var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEFF))} et
+\var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEFF))} pour le terme de flux diffusif
 $\displaystyle\dive{\left(\frac{K}{C_v}\,\grad\,e\right)}$
 en prenant soin d'annuler la contribution de bord du terme
 $\displaystyle-\dive{\left(\frac{K}{C_v}\,\grad{(\frac{1}{2}\,u^2+\varepsilon_{sup})}\right)}$
 sur les faces pour lesquelles cette condition
 prend les deux termes en compte, c'est-\`a-dire sur les faces pour lesquelles
-\var{IA(IIFBET+IFAC-1+(IPHAS-1)*NFABOR) = 1}.
+\var{IA(IIFBET+IFAC-1) = 1}.
 
 Pour tous les autres termes qui requi\`erent une valeur de bord, on utilise les
 conditions aux limites que l'on a stock\'ees au moyen des deux tableaux
-\var{COEFA(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEF))} et
-\var{COEFB(*,ICLRTP(ISCA(IENERG(IPHAS)),ICOEF))}. Ces conditions sont
+\var{COEFA(*,ICLRTP(ISCA(IENERG),ICOEF))} et
+\var{COEFB(*,ICLRTP(ISCA(IENERG),ICOEF))}. Ces conditions sont
 donc en particulier utilis\'ees pour le calcul du gradient de l'\'energie,
 lors des reconstructions sur maillage non orthogonal.
 
@@ -1757,7 +1757,7 @@ lors des reconstructions sur maillage non orthogonal.
 \label{Cfbl_Cfxtcl_prg_a_traiter}%
 % propose en patch 1.2.1
 %Corriger \fort{ppprcl} pour que l'indicateur
-%\var{IA(IIFBET+IFAC-1+(IPHAS-1)*NFABOR)} soit
+%\var{IA(IIFBET+IFAC-1)} soit
 %initialis\'e \`a 0, positionn\'e \`a 1 aux faces de paroi \`a temp\'erature
 %ou flux thermique impos\'e. Dans \fort{cfener}, lorsque l'indicateur vaudra 1,
 %on ne prendra pas en compte le flux correspondant \`a
