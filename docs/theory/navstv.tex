@@ -95,7 +95,7 @@ and thus:
 \begin{equation}\notag
 \begin{array}{lll}
 \left[\divv(\vect{a}\otimes\vect{b})\right]_i &= &
-\der{(a_i\,b_j)}{x_j} 
+\der{(a_i\,b_j)}{x_j}
 \end{array}
 \end{equation}
 
@@ -180,10 +180,10 @@ decoupling of the velocity components.
 \item Explicitation of the pressure.
 \item Explicitation or extrapolation of the physical quantities (\emph{i.e}
 $\rho,\,\mu,\,Cp\,...$) and the mass flux.
-\item Explicitation or extrapolation of the explicit source terms 
-(for example, the contributions of the transpose gradient, secondary viscosity, 
-extra diagonal elements of the head losses, injected mass $\Gamma\,\vect{u}^{in}$, ...) 
-at time $n+\theta_{S}$. 
+\item Explicitation or extrapolation of the explicit source terms
+(for example, the contributions of the transpose gradient, secondary viscosity,
+extra diagonal elements of the head losses, injected mass $\Gamma\,\vect{u}^{in}$, ...)
+at time $n+\theta_{S}$.
 \item The implicit source terms that are linear with respect to the velocity
 (implicit user-specified source terms, diagonal of the head losses
 $\tens{K_d}\,\underline{u}$, sources of mass $\Gamma\,\vect{u}$, etc...)
@@ -290,7 +290,7 @@ selected. Three different schemes are available in \CS:
 where:
 \begin{equation}
 \begin{array}{r c l}
-\vect{u}_{\fij}=\vect{u}_{\celli} &\text{ if }& 
+\vect{u}_{\fij}=\vect{u}_{\celli} &\text{ if }&
 (\rho \vect{u})_{\fij} \cdot \vect{S}_{\ij} \geqslant 0\\
 \vect{u}_{\fij}=\vect{u}_{\cellj} &\text{ if }&
 (\rho \vect{u})_{\fij} \cdot \vect{S}_{\ij}  < 0,\\
@@ -309,7 +309,7 @@ with:
 \item a Second-Order Linear Upwind scheme (SOLU):\\
 $\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})=
 \vect{F}^{\text{\it { SOLU}}}_{\,ij}((\rho \vect{u}),\vect{u})$ \\
-with: 
+with:
 \begin{equation}
 \begin{array}{r c l}
 \vect{u}_{\,f,ij}= &
@@ -547,8 +547,8 @@ pressure increment.\\ }
 
 Discretization of the sum $\sum\limits_{\cellj \in Neigh{(\celli)}}{\left[ (\rho
 \vect{\widetilde{u}})^{n+1}_{\fij} \cdot \vect{S}_{\ij}\right]} +
-\sum\limits_{k\in {\gamma_b(\celli)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\fib}} \cdot \vect{S}_{\ib}\right]$ presents a particularity. The following choice denoted $\left[{\ \ }\right]^{Init}$, 
-for example, yields unsatisfactory results for a cell not touching the boundary with the discretization and 
+\sum\limits_{k\in {\gamma_b(\celli)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\fib}} \cdot \vect{S}_{\ib}\right]$ presents a particularity. The following choice denoted $\left[{\ \ }\right]^{Init}$,
+for example, yields unsatisfactory results for a cell not touching the boundary with the discretization and
 numerical scheme here used, particularly for the following equation
 \eqref{eq:navstv:discrete_correction_velocity}:
 \begin{equation}
@@ -591,25 +591,25 @@ by substituting the corrected value  $\left[{\ \ }\right]^{Corr}$:
 \begin{array}{ll}
 (\rho \vect{\widetilde{u}})^{n+1}_{\fij}.\ \vect{S}_{\ij}&=
 \left[(\rho \vect{\widetilde{u}})^{n+1}_{\ij}\right]^{Corr} \cdot \vect{S}_{\ij}\\
-&= \left(\left[(\rho \vect{\widetilde{u}})^{n+1}-\beta(-\Delta t \grad P^{n-1+\theta})\right]^{Init}_{\fij}
-+\beta\ (-\vect{D}_{\ij}(\Delta t, P^{n-1+\theta}))\right) \cdot \vect{S}_{\ij}
-\end{array}
+&= \left(\left[(\rho \vect{\widetilde{u}})^{n+1}-\beta(-\Delta t \grad P^{n-1+\theta})\right]^{Init}_{\fij} \cdot \vect{S}_{\ij}
++\beta\ (-D_{\ij}(\Delta t, P^{n-1+\theta}))\right)\end{array}
 \end{equation}
 with, for the inlet, symmetry (if any) or wall boundary conditions:
 \begin{equation}\notag
-(\rho \vect{\widetilde{u}})^{n+1}_{\fib} \cdot \vect{S}_{\ib}=\left[(\rho \vect{\widetilde{u}})^{n+1}_{\fib}\right]^{Corr} \cdot \vect{S}_{\ib}=
+(\rho \vect{\widetilde{u}})^{n+1}_{\fib} \cdot \vect{S}_{\ib}=
+\left[(\rho \vect{\widetilde{u}})^{n+1}_{\fib}\right]^{Corr} \cdot \vect{S}_{\ib}=
 \rho_{\fib}\vect{u}^{n+1}_{\fib} \cdot \vect{S}_{\ib}
 \end{equation}
-
+%
 and for the outflow boundary conditions:
 \begin{equation*}
 \begin{array}{ll}
-(\rho \vect{\widetilde{u}})^{n+1}_{\fib}.\ \vect{S}_{\ib}& =
+(\rho \vect{\widetilde{u}})^{n+1}_{\fib} \cdot \vect{S}_{\ib}& =
 \left[(\rho \vect{\widetilde{u}})^{n+1}_{\fib}\right]^{Corr} \cdot \vect{S}_{\ib}
 \\&= \left( \left[\rho _{\fib}\vect{u}^{n+1}_{\fib}-\beta(-\Delta t
-\grad P^{n-1+\theta})_{\centip}\right]+\beta\ (-\vect{D}_{\ib}(\Delta t,
-P^{n-1+\theta}))\right) \cdot \vect{S}_{\ib}
-\end{array}
+\grad P^{n-1+\theta})_{\centip}\right] \cdot \vect{S}_{\ib}
++\beta\ (-D_{\ib}(\Delta t,
+P^{n-1+\theta}))\right)\end{array}
 \end{equation*}
 
 $\beta$ is the Arakawa coefficient. When it has a value of 1 (default value), it is the weighting factor in the Rhie~\&~Chow filter.
@@ -630,7 +630,7 @@ $(\delta P^{n+1,k})_{k\in \mathbb{N}}$ defined by:
 \left\{\begin{array}{l}
 \delta P^{n+\theta,0} = 0\\
 \delta P^{n+\theta,k+1} = \delta P^{n+\theta,k} + C_{relax} \delta (\delta P)^{n+\theta,k+1}\\
-\mathcal{FM}(\delta(\delta P)^{n+\theta,k+1}, \celli) = \mathcal{F}(\delta P^{n+\theta,k}, \celli) 
+\mathcal{FM}(\delta(\delta P)^{n+\theta,k+1}, \celli) = \mathcal{F}(\delta P^{n+\theta,k}, \celli)
 \end{array}\right.
 \end{equation}
 which also defines the sequence $({\delta(\delta P)^{n+\theta,k+1}})_{k\in
@@ -640,9 +640,9 @@ The operators $\mathcal{F}$ and $\mathcal{FM}$ are expressed by:
 \begin{equation}
 \begin{array}{ll}
 \mathcal{F}(\delta P, \celli) &=
- \sum\limits_{\cellj\in Neigh(\celli)}{\left[\vect{D}_{\ij}(\Delta t,\delta
+ \sum\limits_{\cellj\in Neigh(\celli)}{\left[D_{\ij}(\Delta t,\delta
 P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\ij}\right]^{Corr}\right]}\\
-&+\sum\limits_{k\in {\gamma_b(\celli)}} {\left[\vect{D}_{\ib}(\Delta
+&+\sum\limits_{k\in {\gamma_b(\celli)}} {\left[D_{\ib}(\Delta
 t^n,\delta P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\fib}\right]^{Corr}\right]\,+\,\Gamma}
 \end{array}
 \end{equation}
@@ -651,9 +651,9 @@ and:
 \begin{equation}
 \begin{array}{ll}
 \mathcal{FM}(\delta (\delta P), \celli) =
- \sum\limits_{\cellj \in Neigh(\celli)}{\left[-\vect{D}^{NRec}_{\ij}(\Delta t,\delta
+ \sum\limits_{\cellj \in Neigh(\celli)}{\left[-D^{NRec}_{\ij}(\Delta t,\delta
 (\delta P))\right]} +\sum\limits_{k\in {\gamma_b(\celli)}}
-\left[-\vect{D}^{NRec}_{\ib}(\Delta t,\delta(\delta P))\right]
+\left[-D^{NRec}_{\ib}(\Delta t,\delta(\delta P))\right]
 \end{array}
 \end{equation}
 respectively.
