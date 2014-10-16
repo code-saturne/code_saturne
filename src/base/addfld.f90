@@ -107,7 +107,7 @@ itycat = FIELD_INTENSIVE + FIELD_VARIABLE  ! for most variables
 ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
-ilved  = .false.   ! not interleaved by default
+ilved  = .true.   ! interleaved by default
 iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! Postprocessing level for variables
@@ -196,6 +196,19 @@ do iflid = 0, nfld-1
     if (iopchr.eq.1) then
       call field_set_key_int(f_id, keyvis, iopchr)
     endif
+
+    ! Store the drift velocity
+    f_name = 'drift_vel_'//trim(name)
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+
+    ! Set the same visualization options as the scalar
+    call field_get_key_int(iflid, keyvis, iopchr)
+    if (iopchr.eq.1) then
+      call field_set_key_int(f_id, keyvis, iopchr)
+    endif
+
+
 
     ! Interaction time particle--eddies
     if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then

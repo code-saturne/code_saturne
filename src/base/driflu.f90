@@ -120,12 +120,13 @@ double precision, dimension(:), allocatable :: coefap, coefbp
 double precision, dimension(:), allocatable :: cofafp, cofbfp
 double precision, dimension(:,:), allocatable :: coefa1
 double precision, dimension(:,:,:), allocatable :: coefb1
-double precision, dimension(:,:), allocatable :: drift, dudt
+double precision, dimension(:,:), allocatable :: dudt
 double precision, dimension(:), allocatable :: viscf, viscb
 double precision, dimension(:), allocatable :: flumas, flumab
 
 double precision, dimension(:), pointer :: cpro_taup
 double precision, dimension(:), pointer :: cpro_taufpt
+double precision, dimension(:,:), pointer :: cpro_drift
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 double precision, dimension(:), pointer :: imasfl_mix, bmasfl_mix
@@ -224,7 +225,6 @@ endif
 call field_get_name(ivarfl(ivar), fname)
 
 ! Vector containing all the additional convective terms
-allocate(drift(3, ncelet))
 allocate(dudt(3, ncelet))
 allocate(w1(ncelet), viscce(ncelet))
 allocate(coefap(ndimfb), coefbp(ndimfb))
@@ -237,6 +237,10 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
   ! Index of the corresponding relaxation time (cpro_taup)
   call field_get_id('drift_tau_'//trim(fname), f_id)
   call field_get_val_s(f_id, cpro_taup)
+
+  ! Index of the corresponding relaxation time (cpro_taup)
+  call field_get_id('drift_vel_'//trim(fname), f_id)
+  call field_get_val_v(f_id, cpro_drift)
 
   ! Index of the corresponding interaction time particle--eddies (cpro_taufpt)
   if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
@@ -283,9 +287,9 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     do iel = 1, ncel
 
       rho = crom(iel)
-      drift(1, iel) = rho*vdp_i(1, iel)
-      drift(2, iel) = rho*vdp_i(2, iel)
-      drift(3, iel) = rho*vdp_i(3, iel)
+      cpro_drift(1, iel) = rho*vdp_i(1, iel)
+      cpro_drift(2, iel) = rho*vdp_i(2, iel)
+      cpro_drift(3, iel) = rho*vdp_i(3, iel)
 
     enddo
 
@@ -294,9 +298,9 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     do iel = 1, ncel
 
       rho = crom(iel)
-      drift(1, iel) = rho*cpro_taup(iel)*gx
-      drift(2, iel) = rho*cpro_taup(iel)*gy
-      drift(3, iel) = rho*cpro_taup(iel)*gz
+      cpro_drift(1, iel) = rho*cpro_taup(iel)*gx
+      cpro_drift(2, iel) = rho*cpro_taup(iel)*gy
+      cpro_drift(3, iel) = rho*cpro_taup(iel)*gz
 
     enddo
 
@@ -473,9 +477,9 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
      dudt   )
 
     do iel = 1, ncel
-      drift(1, iel) = drift(1, iel) + cpro_taup(iel)*dudt(1, iel)/volume(iel)
-      drift(2, iel) = drift(2, iel) + cpro_taup(iel)*dudt(2, iel)/volume(iel)
-      drift(3, iel) = drift(3, iel) + cpro_taup(iel)*dudt(3, iel)/volume(iel)
+      cpro_drift(1, iel) = cpro_drift(1, iel) + cpro_taup(iel)*dudt(1, iel)/volume(iel)
+      cpro_drift(2, iel) = cpro_drift(2, iel) + cpro_taup(iel)*dudt(2, iel)/volume(iel)
+      cpro_drift(3, iel) = cpro_drift(3, iel) + cpro_taup(iel)*dudt(3, iel)/volume(iel)
     enddo
 
   endif
@@ -528,7 +532,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
        iwarnp ,                                                       &
        epsrgp , climgp ,                                              &
        crom   , brom   ,                                              &
-       drift  ,                                                       &
+       cpro_drift  ,                                                       &
        coefa1 , coefb1 ,                                              &
        flumas , flumab )
 
@@ -632,7 +636,6 @@ enddo
 
 ! Free memory
 deallocate(viscce)
-deallocate(drift)
 deallocate(dudt)
 deallocate(w1)
 deallocate(viscf, viscb)
