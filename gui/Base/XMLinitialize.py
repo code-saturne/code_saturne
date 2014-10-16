@@ -835,6 +835,15 @@ class XMLinit(Variables):
                 if not time_node:
                     node.xmlSetData('time_start', -1.)
 
+        # update velocity node
+        XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
+        self.__XMLVelocityPressureNode = XMLThermoPhysicalNode.xmlInitNode('velocity_pressure')
+        nodeV = self.__XMLVelocityPressureNode.xmlGetNode('variable', name="velocity")
+        if nodeV:
+            if nodeV['label'] == 'VelocityX':
+                nodeV['label'] = 'Velocity'
+
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------
