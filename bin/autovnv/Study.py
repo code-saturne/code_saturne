@@ -884,7 +884,7 @@ class Studies(object):
                     # and have to be added as well
                     if case.pkg.code_name == "NEPTUNE_CFD":
                         sdir = case.pkg.get_cs_dir('pythondir')
-                        sdir = sdir + ":" + case.pkg.get_cs_dir('pythondir')
+                        sdir = sdir + ":" + case.pkg.get_cs_dir('pkgpythondir')
                         pdir = pdir + ":" + sdir
                     retcode, t = run_autovnv_command(cmd, self.__log, pythondir = pdir)
                     os.chdir(repbase)
