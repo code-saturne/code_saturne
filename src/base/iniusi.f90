@@ -85,11 +85,10 @@ implicit none
 
 ! Local variables
 
-integer          n_fields, nmodpp, n_moments, imom, ipp
+integer          nmodpp, ifcvsl
 integer          nscmax, nesmax, nscusi
 integer          ieepre, ieeder, ieecor, ieetot, iihmpu
 integer          ialgce
-integer          iappel
 double precision relaxp, extrap
 
 !===============================================================================
@@ -236,37 +235,30 @@ call usray1
 call fldvar(nmodpp)
 !==========
 
-if (ippmod(icompf).ge.0) then
-
-  ! For compressible model, call to uscfx1 to get ieos.
-  ! With GUI, ieos has been read below in the call to uippmo.
-  call uscfx1
-  !==========
-
-endif
-
 if (iihmpr.eq.1) then
-  call csivis(ivisls, iscalt, itherm, itempk)
+  call csivis(iscalt, itherm)
   !==========
 endif
 
 nscmax = nscamx
 nscusi = nscaus
 iihmpu = iihmpr
-call usipsc(nscmax , nscusi , iihmpu , nfecra , ivisls)
-!==========
 
 if (ippmod(icompf).ge.0) then
-  ! For compressible model, call to uscfx1 to get ivisls(itempk) et iviscv.
-  ! With GUI, iviscv has been read below in the first call to varpos (csvvva).
+
+  ! For the compressible model, call to uscfx1 to get ieos as well as
+  ! scalar_diffusivity_id for itempk and iviscv.
+  ! With the GUI, ieos has been read above in the call to uippmo, and
+  ! iviscv has been read below in the call to fldvar (csvvva).
 
   call uscfx1
   !==========
   ! Dynamic viscosity of reference of the scalar total energy (ienerg).
-  if(ivisls(itempk).gt.0 .or. icv.gt.0) then
-    ivisls(ienerg) = 1
+  call field_get_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0 .or. icv.gt.0) then
+    call field_set_key_int(ivarfl(isca(ienerg)), kivisl, 0)
   else
-    ivisls(ienerg) = 0
+    call field_set_key_int(ivarfl(isca(ienerg)), kivisl, -1)
   endif
 endif
 
@@ -401,11 +393,6 @@ if (iihmpr.eq.1) then
     !==========
   endif
 
-  iappel = 0
-
-  call uiprop (ivisls, ismago, iale, icp)
-  !==========
-
   call uiipsu(iporos)
   !==========
 
@@ -437,46 +424,9 @@ call comcoc(imrgra)
 call varpos
 !==========
 
-call cs_gui_time_moments
-call cs_user_time_moments
-
-! Time moments
-
-n_moments = cs_time_moment_n_moments()
-do imom = 1, n_moments
-  ipp = field_post_id(time_moment_field_id(imom))
-enddo
-
-!===============================================================================
-! 5. INITIALISATION DE PARAMETRES UTILISATEUR (entree sorties)
-!===============================================================================
-
-! --- Entree-sorties
-
-
-!   - Interface Code_Saturne
-!     ======================
-
-call field_get_n_fields(n_fields)
-
-if (iihmpr.eq.1) then
-
-  iappel = 1
-
-  call uiprop (ivisls, ismago, iale, icp)
-  !==========
-
-  call csenso                                                   &
-  !==========
-     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,          &
-       ipstdv, ihisvr, tplfmt, xyzcap )
-
-endif
-
 !----
 ! Formats
 !----
-
 
 return
 end subroutine

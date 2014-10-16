@@ -939,16 +939,6 @@ module optcal
   !>        > 1 : not yet allowed, could be used for multiple Cp definitions
   integer, save ::          iscacp(nscamx)
 
-  !> ivisls : si positif strictement, indique que la viscosite associee
-  !>            au scalaire est variable, et la valeur est le numero
-  !>            d'ordre de la viscosite dans le tableau des viscosites
-  !>            variables
-  integer, save ::          ivisls(nscamx)
-
-  !> ivissa : comme ivisls sauf que sert au stockage de la viscosite au
-  !>          pas de temps precedent
-  integer, save ::          ivissa(nscamx)
-
   !> iclvfl : 0 : clip variances to zero
   !>          1 : clip variances to zero and to f(1-f)
   !>          2 : clip variances to  max(zero,scamin) and scamax
@@ -1145,7 +1135,7 @@ contains
 
   !=============================================================================
 
-  !> \brief If scalar iscal representns the mean of the square of a scalar
+  !> \brief If scalar iscal represents the mean of the square of a scalar
   !> k, return k; otherwise, return 0.
 
   function iscavr(iscal) result(iscvr)

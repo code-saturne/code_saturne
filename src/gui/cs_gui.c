@@ -2400,19 +2400,15 @@ void CS_PROCF (uithsc, UITHSC) (int *iscalt)
  *
  * Fortran Interface:
  *
- * subroutine csivis (ivisls, iscalt, itherm, itempk)
+ * subroutine csivis (iscalt, itherm)
  * *****************
  *
- * integer          ivisls  <--   indicator for the user scalar viscosity
  * integer          iscalt  <-->  number of the user thermal scalar if any
  * integer          itherm  <-->  type of thermal model
- * integer          itempk   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (int *ivisls,
-                                int *iscalt,
-                                int *itherm,
-                                int *itempk)
+void CS_PROCF (csivis, CSIVIS) (int *iscalt,
+                                int *itherm)
 {
   int choice1, choice2;
   int test1, test2;
@@ -2420,32 +2416,33 @@ void CS_PROCF (csivis, CSIVIS) (int *ivisls,
   cs_var_t  *vars = cs_glob_var;
 
   const int keysca = cs_field_key_id("scalar_id");
+  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
-
-#if _XML_DEBUG_
-  bft_printf("==>CSIVIS\n");
-#endif
+  const int n_fields = cs_field_n_fields();
 
   if (vars->model != NULL && *itherm) {
     test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
     test2 = cs_gui_properties_choice("specific_heat", &choice2);
 
-    if (strcmp(vars->model, "thermal_scalar") == 0) {
-      if (test1 && test2) {
-        if (choice1 || choice2)
-          ivisls[*iscalt-1] = 1;
-        else
-          ivisls[*iscalt-1] = 0;
+    if (strcmp(vars->model, "thermal_scalar") == 0 && test1 && test2) {
+
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+        cs_field_t  *f = cs_field_by_id(f_id);
+        if (f->type & CS_FIELD_VARIABLE) {
+          if (cs_field_get_key_int(f, keysca) == *iscalt) {
+            if (choice1 || choice2)
+              cs_field_set_key_int(f, kivisl, 0);
+            else
+              cs_field_set_key_int(f, kivisl, -1);
+          }
+        }
       }
+
     }
-#if _XML_DEBUG_
-    bft_printf("--ivisls(iscalt) = %i\n", i, ivisls[*iscalt-1]);
-#endif
   }
 
-  int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
+    cs_field_t  *f = cs_field_by_id(f_id);
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
       int i = cs_field_get_key_int(f, keysca) - 1;
@@ -2453,23 +2450,19 @@ void CS_PROCF (csivis, CSIVIS) (int *ivisls,
         if (cs_field_get_key_int(f, kscavr) < 0) {
           if (_scalar_properties_choice(i+1, &choice1))
             if (*iscalt != i+1)
-              ivisls[i] = choice1;
+              cs_field_set_key_int(f, kivisl, choice1 - 1);
         }
       }
-#if _XML_DEBUG_
-    bft_printf("--ivisls[%i] = %i\n", i, ivisls[i]);
-#endif
     }
   }
 
-  if (cs_gui_strcmp(vars->model, "compressible_model"))
-  {
-    ivisls[*itempk -1] = 0;
-
+  if (cs_gui_strcmp(vars->model, "compressible_model")) {
+    int d_f_id = -1;
     char *prop_choice = _properties_choice("thermal_conductivity");
     if (cs_gui_strcmp(prop_choice, "variable"))
-      ivisls[*itempk -1] = 1;
+      d_f_id = 0;
     BFT_FREE(prop_choice);
+    cs_field_set_key_int(CS_F_(t_kelvin), kivisl, d_f_id);
   }
 }
 
@@ -3371,55 +3364,6 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
     }
     BFT_FREE(status);
   }
-}
-
-
-/*----------------------------------------------------------------------------
- * Properties array used in the calculation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiprop, UIPROP) (const int *ivisls,
-                                const int *ismago,
-                                const int *iale,
-                                const int *icp)
-{
-  int itype = 0;
-  int nbp = 5;
-
-  const int keysca = cs_field_key_id("scalar_id");
-  const int kscavr = cs_field_key_id("first_moment_id");
-
-  if (*ismago>0) nbp++;
-
-  if (*icp>0) nbp++;
-
-  int n_fields = cs_field_n_fields();
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
-    if (   (f->type & CS_FIELD_VARIABLE)
-        && (f->type & CS_FIELD_USER)) {
-      int i = cs_field_get_key_int(f, keysca) - 1;
-      if (   ivisls[i] > 0
-          && cs_field_get_key_int(f, kscavr) < 0)
-        nbp++;
-    }
-  }
-
-  if (!cs_gui_strcmp(cs_glob_var->model, "compressible_model"))
-    nbp++;
-
-  if (*iale) {
-    cs_gui_get_ale_viscosity_type(&itype);
-    if (itype == 1) {
-      nbp = nbp + 3;
-    } else {
-      nbp++;
-    }
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==>UIPROP %i\n",*iappel);
-#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -4606,7 +4550,6 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * integer          ncelet   <--  number of cells whith halo
  * integer          irom     <--  pointer for density rho
  * integer          icp      <--  pointer for specific heat Cp
- * integer          ivisls   <--  pointer for Lambda/Cp
  * integer          irovar   <--  =1 if rho variable, =0 if rho constant
  * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
  * integer          iscalt   <--  pointer for the thermal scalar in ISCA
@@ -4625,7 +4568,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *ncelet,
                               const cs_int_t  *itherm,
                               const cs_int_t  *icp,
-                              const cs_int_t   ivisls[],
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
                               const cs_int_t  *iscalt,
@@ -4678,26 +4620,27 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   }
 
   /* law for thermal conductivity */
-  if (*iscalt > 0)
-    if (ivisls[*iscalt -1] > 0) {
-      cs_field_t  *cond_dif = NULL;
+  if (*iscalt > 0) {
 
-      cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
+    cs_field_t  *cond_dif = NULL;
 
-      for (i = 0; i < 3; i++)
-        if (_th_f[i]) {
-          if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
-            int k = cs_field_key_id("scalar_diffusivity_id");
-            int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
-            if (cond_diff_id > -1)
-              cond_dif = cs_field_by_id(cond_diff_id);
-            break;
+    cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
+
+    for (i = 0; i < 3; i++)
+      if (_th_f[i]) {
+        if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
+          int k = cs_field_key_id("scalar_diffusivity_id");
+          int cond_diff_id = cs_field_get_key_int(_th_f[i], k);
+          if (cond_diff_id > -1) {
+            cond_dif = cs_field_by_id(cond_diff_id);
+            _physical_property("thermal_conductivity", "thermal_conductivity",
+                               ncel, ncelet, itherm, iscalt, icp,
+                               p0, ro0, cp0, viscl0, visls0,
+                               cond_dif->val);
           }
+          break;
         }
-      _physical_property("thermal_conductivity", "thermal_conductivity",
-                         ncel, ncelet, itherm, iscalt, icp,
-                         p0, ro0, cp0, viscl0, visls0,
-                         cond_dif->val);
+      }
     }
 
   /* law for volumic viscosity (compressible model) */
@@ -4716,6 +4659,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   /* law for scalar diffusivity */
   int user_id = -1;
   int n_fields = cs_field_n_fields();
+  const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -4727,7 +4671,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       int user_law = 0;
 
       if (   cs_field_get_key_int(f, kscavr) < 0
-          && ivisls[user_id] > 0) {
+          && cs_field_get_key_int(f, kivisl) >= 0) {
         char *prop_choice = _properties_choice("name");
         if (cs_gui_strcmp(prop_choice, "variable"))
           user_law = 1;
@@ -4814,14 +4758,13 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
 #if _XML_DEBUG_
   bft_printf("==>UIPHYV\n");
   user_id = -1;
-  const int kscavr = cs_field_key_id("first_moment_id");
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
       user_id++;
       if (   cs_field_get_key_int(f, kscavr) < 0
-          && ivisls[user_id] > 0) {
+          && cs_field_get_key_int(f, kivisl) >= 0) {
         path = cs_xpath_init_path();
         cs_xpath_add_element(&path, "additional_scalars");
         cs_xpath_add_element_num(&path, "variable", user_id +1);

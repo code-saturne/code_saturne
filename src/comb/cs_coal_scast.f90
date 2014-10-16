@@ -113,7 +113,7 @@ integer          numcla , numcha , icla
 integer          ipcgch , ipcgd1 , ipcgd2 , ipcght , ipcsec
 integer          ipghco2 , ipghh2o
 integer          ixchcl , ixckcl
-integer          ipcro2 , ipcte1 , ipcte2 , ipcvsl
+integer          ipcro2 , ipcte1 , ipcte2 , ifcvsl
 integer          ipcdia
 integer          mode, ige
 integer          ipcx2c , icha , ii, jj
@@ -124,7 +124,7 @@ integer          iok1
 integer          keyccl, f_id
 
 double precision xnuss
-double precision aux, rhovst
+double precision aux
 double precision coefe(ngazem)
 double precision t1, t2, hh2ov
 double precision f1mc(ncharm), f2mc(ncharm)
@@ -154,7 +154,7 @@ double precision, dimension (:), allocatable :: tfuel
 double precision, dimension(:), pointer :: vp_x, vp_y, vp_z
 double precision, dimension(:,:), pointer :: vdc
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
 double precision, dimension(:), pointer :: cvara_coke
 double precision, dimension(:), pointer :: taup
@@ -333,8 +333,7 @@ endif
 
 if ( ippmod(iccoal) .eq. 1 ) then
 
-  if ( ivar.ge.isca(ixwt(1)) .and.                                &
-       ivar.le.isca(ixwt(nclacp)) ) then
+  if (ivar.ge.isca(ixwt(1)) .and. ivar.le.isca(ixwt(nclacp))) then
 
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
@@ -352,9 +351,9 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
      ! ---- Calculation of explicit and implicit parts of source terms
 
-     if ( rtpa(iel,ivar).gt. epsicp .and.                         &
+     if ( rtpa(iel,ivar).gt. epsicp .and.                                     &
           xwatch(numcha).gt. epsicp       ) then
-       xw1 = crom(iel)*propce(iel,ipcsec)*volume(iel)    &
+       xw1 = crom(iel)*propce(iel,ipcsec)*volume(iel)                         &
             *(1.d0/propce(iel,ipcx2c))*(1.d0/xwatch(numcha))
 
        rovsdt(iel) = rovsdt(iel) + max(xw1,zero)
@@ -427,7 +426,6 @@ if (i_coal_drift.eq.1) then
     call field_get_id('drift_tau_'//trim(name), f_id)
     call field_get_val_s(f_id, taup)
 
-
     if (fname(1:6).eq.'v_x_p_') then
 
       write(name,'(a,i2.2)')'v_x_p_' ,icla
@@ -457,7 +455,7 @@ if (i_coal_drift.eq.1) then
         endif
 
         ! relaxation to drop velocity
-        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                           &
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
                *(vel(1,iel)+vdc(1,iel)+vg_lim_pi(1, iel)-vp_x(iel))
 
         smbrs(iel) = smbrs(iel) + smbrs1
@@ -487,7 +485,7 @@ if (i_coal_drift.eq.1) then
         endif
 
         ! relaxation to drop velocity
-        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                           &
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
                *(vel(2,iel)+vdc(2, iel)+vg_lim_pi(2, iel)-vp_y(iel))
         smbrs(iel) = smbrs(iel) + smbrs1
         rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
@@ -517,7 +515,7 @@ if (i_coal_drift.eq.1) then
         endif
 
         ! relaxation to drop velocity
-        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                           &
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
                *(vel(3,iel)+vdc(3, iel)+vg_lim_pi(3, iel)-vp_z(iel))
 
         smbrs(iel) = smbrs(iel) + smbrs1
@@ -579,13 +577,18 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   ! ------ Calculation of lambda in W1
 
   xnuss = 2.d0
+
+  call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_viscls)
+  endif
+
   do iel = 1, ncel
-    if ( ivisls(iscalt).gt.0 ) then
-      ipcvsl = ipproc(ivisls(iscalt))
+    if (ifcvsl.ge.0) then
       if (icp.gt.0) then
-        w1(iel) = propce(iel,ipcvsl) * cpro_cp(iel)
+        w1(iel) = cpro_viscls(iel) * cpro_cp(iel)
       else
-        w1(iel) = propce(iel,ipcvsl) * cp0
+        w1(iel) = cpro_viscls(iel) * cp0
       endif
     else
       if (icp.gt.0) then

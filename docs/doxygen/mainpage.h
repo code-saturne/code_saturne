@@ -211,10 +211,8 @@
   the calculation). This operation is done by blocks so as to
   limit local memory consumption, possibly incurring a slight processing
   overhead. The aim is to never build a full global array on a single
-  processor, so as to ensure scalability. Thus, FVM may produce
-  EnSight Gold files for a 100 million cell mesh distributed on several
-  thousand processors on an IBM Blue Gene/L machine with only
-  512 Mb memory per core.
+  processor, so as to ensure scalability. This is fully implemented
+  at least for the EnSight Gold format.
 
   As an option, generic polygonal or polyhedral elements may be
   split into simpler elements (triangles, tetrahedra, and pyramids)

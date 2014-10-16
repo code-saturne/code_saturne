@@ -81,7 +81,7 @@ character(len=80) :: chaine
 integer          ivar  , iscal
 integer          iel
 integer          iclip , iok   , ii
-integer          imodif
+integer          imodif, ifcven, ifclam
 integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_id_prv, c_id, f_dim
 
@@ -105,7 +105,7 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cpro_prtot
+double precision, dimension(:), pointer :: cpro_prtot, cpro_venerg, cpro_lambda
 
 !===============================================================================
 
@@ -148,25 +148,28 @@ if  (ippmod(icompf).ge.0) then
   ! On initialise la diffusivite thermique
   visls0(ienerg) = visls0(itempk)/cv0
 
-  if(ivisls(ienerg).gt.0) then
-    if(ivisls(itempk).gt.0) then
+  call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifcven)
+  if (ifcven.ge.0) then
+
+    call field_get_val_s(ifcven, cpro_venerg)
+
+    call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifclam)
+    if (ifclam.ge.0) then
+
+      call field_get_val_s(ifclam, cpro_lambda)
+
       if(icv.gt.0) then
         do iel = 1, ncel
-          propce(iel,ipproc(ivisls(ienerg))) =                                &
-                                           propce(iel,ipproc(ivisls(itempk))) &
-                                         / propce(iel,ipproc(icv))
+          cpro_venerg(iel) = cpro_lambda(iel) / propce(iel,ipproc(icv))
         enddo
       else
         do iel = 1, ncel
-          propce(iel,ipproc(ivisls(ienerg))) =                                &
-                                           propce(iel,ipproc(ivisls(itempk))) &
-                                         / cv0
+          cpro_venerg(iel) = cpro_lambda(iel) / cv0
         enddo
       endif
     else
       do iel = 1, ncel
-        propce(iel,ipproc(ivisls(ienerg))) =  visls0(itempk) &
-                                            / propce(iel,ipproc(icv))
+        cpro_venerg(iel) =  visls0(itempk) / propce(iel,ipproc(icv))
       enddo
     endif
   endif
@@ -214,7 +217,7 @@ else
   call ppiniv(nvar, nscal, dt, rtp, propce)
   !==========
 
-  if  (ippmod(icompf).ge.0) then
+  if (ippmod(icompf).ge.0) then
 
     allocate(w1(ncelet), w2(ncelet))
     imodif = 1

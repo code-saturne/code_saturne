@@ -189,7 +189,7 @@ endif
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!      IVISLS, ICP
+!      scalar_diffusivity_id, ICP
 !===============================================================================
 
 do isc = 1, nscapp
@@ -200,7 +200,7 @@ do isc = 1, nscapp
 !                                              scalaires ISCAPP(ISC)
 !        Pour l'enthalpie en particulier.
 !        Pour le potentiel vecteur, voir plus bas
-    ivisls(iscapp(isc)) = 1
+    call field_set_key_int(ivarfl(isca(iscapp(isc))), kivisl, 0)
 
   endif
 
@@ -210,7 +210,7 @@ enddo
 !                                  pour le potentiel vecteur en Arc
 if (ippmod(ielarc).ge.2) then
   do idimve = 1, ndimve
-    ivisls(ipotva(idimve)) = 0
+    call field_set_key_int(ivarfl(isca(ipotva(idimve))), kivisl, -1)
   enddo
 endif
 

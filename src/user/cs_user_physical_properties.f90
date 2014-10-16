@@ -41,8 +41,9 @@
 !>    in \ref usipph if we wish to define a variable specific heat
 !>    cpro_cp (otherwise: memory overwrite).
 !>
-!> - ivisls = 1 must <b> have been specified </b>
-!>    in \ref usipsc if we wish to define a variable viscosity
+!> - the kivisl field integer key (scalar_diffusivity_id)
+!>    <b> have been specified </b>
+!>    in \ref usipsu if we wish to define a variable viscosity
 !>    \c viscls (otherwise: memory overwrite).
 !>
 !>
@@ -136,7 +137,7 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          ivart, iel, ifac
-integer          ith, iscal, ii
+integer          ith, iscal, ii, ifcvsl
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
@@ -430,17 +431,18 @@ if (.false.) then
 
   ! --- Lambda/Cp of the thermal (or Lambda if temperature is used)
 
-  if (ivisls(iscalt).gt.0) then
-    call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_vscalt)
+  call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_vscalt)
   else
     cpro_vscalt => NULL()
   endif
 
   ! --- Stop if Lambda/CP (or Lambda if temperature is used) is not variable
 
-  if (ivisls(iscalt).le.0) then
-    write(nfecra,1010)                                          &
-         iscalt, iscalt, ivisls(iscalt)
+  if (ifcvsl.lt.0) then
+    write(nfecra,1010) iscalt
     call csexit (1)
   endif
 
@@ -566,16 +568,17 @@ if (.false.) then
 
       ! --- Scalar's Lambda
 
-      if (ivisls(iscal).gt.0) then
-        call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_vscalt)
+      call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+      if (ifcvsl.ge.0) then
+        call field_get_val_s(ifcvsl, cpro_vscalt)
       else
         cpro_vscalt => NULL()
       endif
 
       ! --- Stop if Lambda is not variable
 
-      if (ivisls(iscal).le.0) then
-        write(nfecra,1010) iscal, iscal, ivisls(iscal)
+      if (ifcvsl.lt.0) then
+        write(nfecra,1010) iscal
         call csexit (1)
       endif
 
@@ -638,14 +641,13 @@ endif ! --- Test on .false.
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@    Pour le scalaire ',I10                                   ,/,&
-'@      usipsc indique que la diffusivite est uniforme        ',/,&
-'@        ivisls(',i10   ,') = ',i10   ,' alors que           ',/,&
+'@    Pour le scalaire ', i10                                  ,/,&
+'@      la diffusivite est uniforme alors que                 ',/,&
 '@      usphyv impose une diffusivite variable.               ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usipsc ou usphyv.                              ',/,&
+'@    Modifier usipsu ou usphyv.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -701,8 +703,7 @@ endif ! --- Test on .false.
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
 '@    For scalar', i10,/,                                         &
-'@      usipsu specifies that the diffusivity is uniform',/,      &
-'@        ivisls(',i10   ,') = ',i10   ,' while',/,               &
+'@      the diffusivity is uniform while',/,                      &
 '@      usphyv prescribes a variable diffusivity.',/,             &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
@@ -875,7 +876,7 @@ double precision dt(ncelet)
 
 ! Local variables
 
-integer          iel
+integer          iel, ifcvsl
 integer          mode
 
 double precision tp
@@ -977,10 +978,9 @@ if (ippmod(ieljou).ge.1) then
 !                                visls0(ipotr) et visls0(ipoti)
 
 !       Informatiquement, ceci se traduit par le fait que
-!                                icp > 0, ivisls(iscalt) > 0,
-!                                ivisls(ipotr) > 0 et ivisls(ipoti) > 0
-
-
+!                                icp > 0, et le numero associe au mot cle
+!                                scalar_diffusivity_id est >= 0 pour
+!                                les scalaires iscalt, ipotr, ipoti
 
 
 
@@ -991,13 +991,13 @@ if (ippmod(ieljou).ge.1) then
 !         matiere de loi H-T (T en Kelvin)
 
 !       On demande de fournir cette loi dans le sous programme usthht
-!          (USERS/base/usthht.F)
+!          (USERS/base/usthht.f90)
 !           usthht fournit en particulier un exemple d'interpolation
 !            a partir d'une tabulation utilisateur
 !           usthht en mode T->H sera utilise pour l'initialisation
 !            de l'enthalpie dans useliv.
 
-!       MODE = 1 : H=RTP(IEL,ISCA(IHM)) -> T=PROPCE(IEL,IPPROC(ITEMP))
+!       mode = 1 : h=rtp(iel,isca(ihm)) -> t=propce(iel,ipproc(itemp))
   mode = 1
 
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
@@ -1107,10 +1107,11 @@ if (ippmod(ieljou).ge.1) then
 
 !          Plard (HE-25/94/017)
 
-  call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_vscalt)
+  call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  call field_get_val_s(ifcvsl, cpro_vscalt)
 
   do iel = 1, ncel
-    xbr = 85.25d0                                                 &
+    xbr = 85.25d0                                                      &
          -5.93d-2*(cpro_temp(iel)-tkelvi)                              &
          +2.39d-5*(cpro_temp(iel)-tkelvi)**2
     xkr = 16.d0*stephn*(1.4d0)**2*(cpro_temp(iel))**3                  &
@@ -1138,7 +1139,8 @@ if (ippmod(ieljou).ge.1) then
 
 !         SIGMA  (Plard HE-25/94/017)
 
-  call field_get_val_s(iprpfl(ivisls(ipotr)), cpro_vpotr)
+  call field_get_key_int(ivarfl(isca(ipotr)), kivisl, ifcvsl)
+  call field_get_val_s(ifcvsl, cpro_vpotr)
   do iel = 1, ncel
     cpro_vpotr(iel) =                                                  &
          exp(7.605d0-7200.d0/cpro_temp(iel))
@@ -1158,7 +1160,8 @@ if (ippmod(ieljou).ge.1) then
 !     Sinon, on pourrait faire ceci :
   if (1.eq.0) then
     if ( ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
-      call field_get_val_s(iprpfl(ivisls(ipoti)), cpro_vpoti)
+      call field_get_key_int(ivarfl(isca(ipoti)), kivisl, ifcvsl)
+      call field_get_val_s(ifcvsl, cpro_vpoti)
       do iel = 1, ncel
         cpro_vpoti(iel) = cpro_vpotr(iel)
       enddo

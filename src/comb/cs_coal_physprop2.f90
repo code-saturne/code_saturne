@@ -82,7 +82,7 @@ integer          ncelet , ncel
 double precision rtp(ncelet,nflown:nvar) , propce(ncelet,*)
 
 ! Local variables
-character*80     name
+character(len=80) :: name
 
 integer          nbrint
 parameter       (nbrint=8)

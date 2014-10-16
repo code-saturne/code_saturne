@@ -131,12 +131,12 @@ if (ippmod(imixg).ge.0) then
   call add_property_field('mix_mol_mas', 'Mix_mol_mass', f_id)
 endif
 
-! Mixing gas with Air/Helium and the Helium gas deduced 
+! Mixing gas with Air/Helium and the Helium gas deduced
 if (ippmod(imixg).eq.0) then
   call add_property_field('y_he', 'Y_He', f_id)
 endif
 
-! Mixing gas with Air/Hydrogen and the Hydrogen gas deduced 
+! Mixing gas with Air/Hydrogen and the Hydrogen gas deduced
 if (ippmod(imixg).eq.1) then
   call add_property_field('y_h2', 'Y_H2', f_id)
 endif

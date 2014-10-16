@@ -93,7 +93,7 @@ character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct, idfm
 integer          nn
-integer          mbrom , ipcvst
+integer          mbrom , ipcvst, ifcvsl
 integer          ipccp , ipcvis, ipcvma
 integer          iclipc
 Double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
@@ -157,8 +157,8 @@ endif
 if (iihmpr.eq.1) then
   call uiphyv &
   !===========
-( ncel   , ncelet , itherm , icp    , ivisls , irovar , ivivar ,          &
-  iscalt , iviscv , itempk ,                                              &
+( ncel   , ncelet , itherm , icp    , irovar , ivivar ,           &
+  iscalt , iviscv , itempk ,                                      &
   p0     , t0     , ro0    , cp0    , viscl0 , visls0 , viscv0 )
 endif
 
@@ -172,14 +172,8 @@ call usphyv &
 ! Finalization of physical properties for specific physics
 ! AFTER the user
 if (ippmod(iphpar).ge.1) then
-
-  call cs_physical_properties2 &
- ( nvar   , nscal  ,                                              &
-   mbrom  ,                                                       &
-   dt     , rtp    , propce )
-
+  call cs_physical_properties2(propce)
 endif
-
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
 
@@ -695,14 +689,14 @@ if (nscal.ge.1) then
   iok1 = 0
   do iscal = 1, nscal
 
-    if (ivisls(iscal).gt.0) then
-      call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vis)
+    call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+    if (ifcvsl.ge.0) then
+      call field_get_val_s(ifcvsl, cpro_vis)
     endif
-
 
     vismax(iscal) = -grand
     vismin(iscal) =  grand
-    if (ivisls(iscal).gt.0) then
+    if (ifcvsl.ge.0) then
       do iel = 1, ncel
         vismax(iscal) = max(vismax(iscal),cpro_vis(iel))
         vismin(iscal) = min(vismin(iscal),cpro_vis(iel))

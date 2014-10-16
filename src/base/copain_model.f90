@@ -77,7 +77,7 @@ use field
 use mesh
 use cs_c_bindings
 use cs_f_interfaces
-use cs_tagmr, only: tmur, tpar0, nmur
+use cs_tagmr, only: tmur, tpar0
 
 !===============================================================================
 
@@ -94,8 +94,7 @@ double precision hpcond(nfbpcd)
 ! Local variables
 
 integer          ii, iel, ifac, iesp
-integer          iscal
-integer          ivar, f_id
+integer          ivar, f_id, ifcvsl
 
 double precision flux
 double precision sink_term, gamma_cond
@@ -171,6 +170,7 @@ lcar = 1.d0 ;l_cell = 1.d0
 !- Define the vaporization Latent heat (lambda_cond)
 !------------------------------------------------------
 lcond = 2278.0d+3
+
 !===============================================================================
 ! 2 - Pointers to phys. properties for mixing flow at cell center.
 !===============================================================================
@@ -202,12 +202,12 @@ else
   call csexit (1)
 endif
 
-
 !-- (Lambda/Cp) of the thermal scalar
-if (ivisls(iscalt).gt.0) then
-  call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_venth)
+call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+if (ifcvsl.ge.0) then
+  call field_get_val_s(ifcvsl, cpro_venth)
 else
-  write(nfecra,1010) iscalt, iscalt, ivisls(iscalt)
+  write(nfecra,1010) iscalt
   call csexit (1)
 endif
 
@@ -647,14 +647,12 @@ endif
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@    Pour le scalaire ',I10                                   ,/,&
-'@      usipsc indique que la diffusivite est uniforme        ',/,&
-'@        IVISLS(',I10   ,') = ',I10   ,' alors que           ',/,&
-'@      copain model impose une diffusivite variable.         ',/,&
+'@    La diffusivite du scalaire ',i10,' est uniforme alors   ',/,&
+'@      que copain model impose une diffusivite variable.     ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usipsc ou copain model.                        ',/,&
+'@    Modifier usipsu ou copain model.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

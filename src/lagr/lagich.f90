@@ -93,7 +93,7 @@ double precision cpgd1(nbpart), cpgd2(nbpart), cpght(nbpart)
 ! Local variables
 
 integer          npt , iel , icha , mode , iii
-integer          ilayer , ilayer_het
+integer          ilayer , ilayer_het, ifcvsl
 double precision aux1 , aux2 , aux3 , aux4 , aux5
 double precision volume_couche , rayon(nlayer) , mlayer(nlayer)
 double precision mwater(nlayer) , mwat_max, fwat(nlayer), fcoke(nlayer)
@@ -108,7 +108,7 @@ double precision skp1(nlayer) , skp2(nlayer) , skglob, gamhet, deltah
 double precision precis, lv, tebl, tlimit, tmini
 
 double precision, dimension(:), pointer :: cromf
-double precision, dimension(:), pointer :: viscl
+double precision, dimension(:), pointer :: viscl, cpro_viscls
 
 precis = 1.d-15                   ! Petit nombre (pour la precision numerique)
 lv = 2.263d+6                     ! Chaleur Latente en J/kg
@@ -162,6 +162,14 @@ endif
 
 call field_get_val_s(iprpfl(iviscl), viscl)
 
+ifcvsl = -1
+if (iscalt.gt.0) then
+  call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_viscls)
+  endif
+endif
+
 !===============================================================================
 ! 3. Boucle principale sur l'ensemble des particules
 !===============================================================================
@@ -186,8 +194,8 @@ do npt = 1,nbpart
     ! Calcul du Prandtl et du Sherwood
     if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
       xrkl = diftl0 / cromf(iel)
-    else if (ivisls(iscalt).ge.1) then
-      xrkl = propce(iel,ipproc(ivisls(iscalt))) / cromf(iel)
+    else if (ifcvsl.ge.0) then
+      xrkl = cpro_viscls(iel) / cromf(iel)
     else
       xrkl = visls0(iscalt) / cromf(iel)
     endif

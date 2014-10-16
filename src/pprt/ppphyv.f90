@@ -34,8 +34,8 @@
 !>  - it is forbidden to modify the turbulent viscosity here.
 !>  - \ref icp must be set to 1 if one wants the specific heat to be variable
 !>    in space
-!>  - ivisls(iscal) must be set to 1 if one wants the specific heat to be
-!>    variable in space
+!>  - it is necessary to call field_set_key_int(ivarfl(isca(iscal)), kivisl, 0)
+!>    if one wants the specific heat to be variable in space
 !> \remarks:
 !>  - this routine is called at the begining of each time step,
 !>    thus, at the first time step, the only initialized variables are:
@@ -212,18 +212,11 @@ end subroutine cs_physical_properties1
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     mbrom         indicator of prescribed density at the boundary
-!> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                               (at current time steps)
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine cs_physical_properties2 &
- ( nvar   , nscal  ,                                              &
-   mbrom  ,                                                       &
-   dt     , rtp    , propce )
+ ( propce )
 
 !===============================================================================
 ! Module files
@@ -248,11 +241,6 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-
-integer          mbrom
-
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables

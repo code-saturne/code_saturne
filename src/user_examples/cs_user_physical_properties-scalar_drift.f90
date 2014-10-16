@@ -66,6 +66,7 @@ use field
 use lagran, only: kboltz
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -82,7 +83,7 @@ double precision dt(ncelet)
 
 !< [loc_var_dec]
 integer          ivart, iel, ifac
-integer          iscal, iflid, iscdri
+integer          iscal, iflid, iscdri, ifcvsl
 integer          f_id, keydri, nfld, keysca
 double precision rho, viscl
 double precision diamp, rhop, cuning
@@ -169,8 +170,9 @@ do iflid = 0, nfld-1
 
     ! --- Scalar's diffusivity (Brownian motion)
 
-    if (ivisls(iscal).gt.0) then
-      call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vscal)
+    call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+    if (ifcvsl.ge.0) then
+      call field_get_val_s(ifcvsl, cpro_vscal)
     else
       cpro_vscal => NULL()
     endif
@@ -259,8 +261,9 @@ do iflid = 0, nfld-1
     !-----------------------------------
 
     ! --- Stop if the diffusivity is not variable
-    if (ivisls(iscal).le.0) then
-      write(nfecra,1010) iscal, iscal, ivisls(iscal)
+    call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+    if (ifcvsl.lt.0) then
+      write(nfecra,1010) iscal
       call csexit (1)
     endif
 
@@ -293,13 +296,12 @@ enddo
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
 '@    Pour le scalaire ',I10                                   ,/,&
-'@      usipsc indique que la diffusivite est uniforme        ',/,&
-'@        ivisls(',i10   ,') = ',i10   ,' alors que           ',/,&
+'@      la diffusivite est uniforme alors que                 ',/,&
 '@      usphyv impose une diffusivite variable.               ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usipsc ou usphyv.                              ',/,&
+'@    Modifier usipsu ou usphyv.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -337,8 +339,7 @@ enddo
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
 '@    For scalar', i10,/,                                         &
-'@      usipsu specifies that the diffusivity is uniform',/,      &
-'@        ivisls(',i10   ,') = ',i10   ,' while',/,               &
+'@      the diffusivity is uniform while',/,                      &
 '@      usphyv prescribes a variable diffusivity.',/,             &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &

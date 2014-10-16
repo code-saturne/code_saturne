@@ -2239,7 +2239,7 @@ perfect gases}
 negative value: not initialised\\
 useful if 1$\leqslant$J$\leqslant$ {\tt nscal}, unless the user specifies the
 molecular diffusivity in the appropriate user subroutine (\texttt{usphyv} for
-the standard physics) ({\tt ivisls(iscal)} $>$ 0)\\
+the standard physics) ({\tt field\_get\_key\_id(ivarfl(isca(iscal)),kivisl,...)} $>$ -1)\\
 {\em Warning: {\tt visls0} corresponds to the diffusivity. For the temperature, it is
 therefore defined as $\lambda/C_p$ where $\lambda$ and $C_p$ are the
 conductivity and specific heat. When using the Graphical Interface, $\lambda$ and
@@ -2252,20 +2252,6 @@ With gas or coal combustion, the molecular diffusivity of the enthalpy
 With the electric module, for the Joule effect, the diffusivity is specified by
 the user in \texttt{uselph} (even if it is constant). For the electric arcs, it
 is calculated from the thermochemical data file}}
-
-\motcleb{ivisls}{ia}{positive or zero integer}{0}{O}{L1}
-{indicates if the viscosity related to the scalar {\tt iscal} is variable
-({\tt ivisls(iscal)}=1) or not (0). The user must specify {\tt ivisls} only for the
-user scalars ({\tt iscal} $\leqslant$ {\tt nscaus}).\\
-When {\tt ivisls(iscal)}=1 is specified, the code automatically modifies this value to
-make {\tt ivisls(iscal)} designate the effective index-number of the property
-``diffusivity of the scalar {\tt iscal}''. For each cell {\tt iel}, the value
-is then specified by the user in the appropriate subroutine
-(\texttt{usphyv} for the standard physics) and stored in the array\\
-{\tt propce(iel,ipproc(ivisls))}
-({\em see p.~\pageref{sec:prg_propvar} for specific conditions of use})\\
-useful if 1$\leqslant${\tt n}$\leqslant${\tt nscal}}
-
 
 \motcleb{diftl0}{r}{real number $>$ 0}{\tt -grand}{C}{L1}
 {molecular diffusivity for the enthalpy ($kg.m^{-1}.s^{-1}$) for gas or coal

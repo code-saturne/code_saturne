@@ -38,7 +38,7 @@
 !>
 !> \c rom and \c viscl values are equal to \c ro0 and \c viscl0 or initialize
 !> by reading the restart file.
-!> viscls and cp variables (when there are defined) have no value
+!> variable diffusivity and cp variables (when there are defined) have no value
 !> excepted if they are read from a restart file.
 !>
 !> Physical quantities are defined in the following arrays:
@@ -51,7 +51,6 @@
 !>  propce(iel, ipproc(irom  )) ! means rom  (iel)
 !>  propce(iel, ipproc(iviscl)) ! means viscl(iel)
 !>  propce(iel, ipproc(icp   )) ! means cp   (iel)
-!>  propce(iel, ipproc(ivisls(iscal))) ! means visls(iel, iscal)
 !> \endcode
 !>
 !> Modification of the behaviour law of physical quantities (rom, viscl,

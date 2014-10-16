@@ -90,15 +90,6 @@ call add_model_scalar_field('humidity', 'Humidity', ihumid)
 ! 2. Physical properties
 !===============================================================================
 
-do isc = 1, nscapp
-
-  if (iscavr(iscapp(isc)).le.0) then
-    ! Reference dynamic viscosity relative to this scalar
-    ivisls(iscapp(isc)) = 0
-  endif
-
-enddo
-
 ! Cp is variable
 
 icp = 1

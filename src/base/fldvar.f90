@@ -73,7 +73,7 @@ integer       nmodpp
 
 ! Local variables
 
-integer       ipp   , ii
+integer       ipp
 integer       iok   , ippok,  keycpl
 
 !===============================================================================
@@ -103,14 +103,12 @@ ippok = 0
 call field_get_key_id('coupled', keycpl)
 
 !===============================================================================
-! CALCUL DE NSCAPP
-! VERIFICATION DU NOMBRE DE SCALAIRES
-! CONSTRUCTION DE ISCAPP
-! CALCUL DE NSCAL
+! Calcul de nscapp
+! Verification du nombre de scalaires
+! Construction de iscapp
+! Calcul de nscal
 
 !  A la sortie de cette section, NSCAL, NSCAUS et NSCAPP sont connus.
-!  On renseignera egalement ici les valeurs de ivisls
-!    pour les scalaires physiques particulieres en question.
 !  On en profite aussi pour remplir ITYTUR et ITYTURT puisque ITURB et ITURT
 !    viennent d'etre definis.
 !  On remplit aussi itycor puisque irccor, iturb et itytur viennent d'etre
@@ -294,16 +292,6 @@ if (nmodpp.eq.0) then
     call uithsc(iscalt)
   endif
 
-endif
-
-! Initialise ivisls for specific physics fields other than variances
-
-if (nscapp.gt.0) then
-  do ii = 1, nscapp
-    if (iscavr(iscapp(ii)).le.0 .and. ivisls(iscapp(ii)).lt.0) then
-      ivisls(iscapp(ii)) = 0
-    endif
-  enddo
 endif
 
 call add_user_scalar_fields

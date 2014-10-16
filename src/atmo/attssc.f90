@@ -89,7 +89,7 @@ double precision crvexp(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar,  iel
 
 integer i

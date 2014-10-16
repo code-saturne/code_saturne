@@ -26,7 +26,7 @@
 
 /*!
 
-  \page cs_lagrangian_particle_tracking_moduleLagrangian volume statistical variable (uslaen.f90)
+  \page cs_lagrangian_particle_tracking_module Lagrangian volume statistical variable (uslaen.f90)
   
   \brief For the writing of the listing and the post-processing:
 Average of the Lagrangian volume statistical variables.

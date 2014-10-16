@@ -83,8 +83,8 @@ double precision rap,rscp,tmoy, rhmoy
 double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
 
-character*80     ccomnt
-character*1      csaute
+character(len=80) :: ccomnt
+character(len=1)  :: csaute
 
 !===============================================================================
 

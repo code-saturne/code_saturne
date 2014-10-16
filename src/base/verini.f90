@@ -86,7 +86,7 @@ integer          nbsccp
 integer          c_id, f_id, f_dim, n_fields, ippf
 integer          ipp   , nbccou
 integer          iokpre, indest, iiidef, istop
-integer          kscmin, kscmax
+integer          kscmin, kscmax, ifcvsl
 integer          keyvar, keysca
 double precision arakfr, scmaxp, scminp
 
@@ -400,13 +400,14 @@ if ( icpext.gt.0 .and. icp.le.0 ) then
   iok = iok + 1
 endif
 do iscal = 1, nscal
-  if ( ivsext(iscal).gt.0 .and. ivisls(iscal).le.0 ) then
-    write(nfecra,2136) iscal, ivsext(iscal), ivisls(iscal)
-    iok = iok + 1
+  if (ivsext(iscal).gt.0) then
+    call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+    if (ifcvsl.lt.0) then
+      write(nfecra,2136) iscal, ivsext(iscal), ifcvsl
+      iok = iok + 1
+    endif
   endif
 enddo
-
-
 
 !     Pour les tests suivants : Utilise-t-on un estimateur d'erreur ?
 indest = 0
@@ -1449,9 +1450,10 @@ if (nscal.gt.0) then
 !     Valeur de la diffusivite positive (si cste)
 !        si pas cste, on verifiera apres usphyv
   do ii = 1, nscal
-    if (ivisls(ii).le.0.and.visls0(ii).lt.0d0) then
+    call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
+    if (ifcvsl.le.0.and.visls0(ii).lt.0d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4340)chaine(1:16),ii,ii,ivisls(ii),visls0(ii)
+      write(nfecra,4340)chaine(1:16),ii,ifcvsl,visls0(ii)
       iok = iok + 1
     endif
   enddo
@@ -2186,7 +2188,7 @@ endif
 '@     La  diffusivite      est extrapolee en temps avec',      /,&
 '@       IVSEXT(ISCAL) = ', i10,                                /,&
 '@     Pour cela, elle doit etre variable, or',                 /,&
-'@       IVISLS(ISCAL) = ', i10,                                /,&
+'@       scalar_diffusivity_id = ', i10, ' pour ce champ.'      /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute',                             /,&
 '@',                                                            /,&
@@ -3694,14 +3696,15 @@ endif
 '@    =========',                                               /,&
 '@    SCALAIRE ', a16,                                          /,&
 '@    VISLS0(',i10,   ') DOIT ETRE UN REEL POSITIF',            /,&
-'@      QUAND IVISLS(',i10,   ') = ', i10,                      /,&
+'@      QUAND scalar_diffusivity_id = ', i10,                   /,&
 '@    IL VAUT ICI', e14.5,                                      /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
 '@  VISLS0(I) est le coefficient de diffusion moleculaire du',  /,&
-'@    scalaire et doit etre positif quand ivisls est different',/,&
-'@    de 1 (dans ce cas, un coefficient variable est donne',    /,&
+'@    scalaire et doit etre positif quand la valeur de son',    /,&
+'@    mot cle scalar_diffusivity_id est inferieur a 0',         /,&
+'@    (dans ce cas, un coefficient variable est donne',         /,&
 '@    via l''interface ou usphyv).',                            /,&
 '@  Verifier les parametres donnes via l''interface',           /,&
 '@    ou cs_user_parameters.f90.',                              /,&
@@ -4692,7 +4695,7 @@ endif
 '@    Diffusivity   is extrapolated in time wih',               /,&
 '@       IVSEXT(ISCAL) = ', i10,                                /,&
 '@     it should thus be a variable, or',                       /,&
-'@       IVISLS(ISCAL) = ', i10,                                /,&
+'@       scalar_diffusivity_id = ', i10, ' for this field.'     /,&
 '@',                                                            /,&
 '@ Computation will  NOT  proceed',                             /,&
 '@',                                                            /,&
@@ -5111,7 +5114,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    ANOMAX DOIT ETRE A REAL POSITIVE or NUL AND',             /,&
+'@    ANOMAX MUST BE A REAL POSITIVE or NUL AND',               /,&
 '@                             LESS THAN or EQUAL TO PI/2',     /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
@@ -5453,12 +5456,12 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    VARIABLE', a16,                                           /,&
-'@    CDTVAR(',i10,   ') DOIT ETRE A  STRICTLY POSITIVE REAL',  /,&
+'@    CDTVAR(',i10,   ') MUST BE A  STRICTLY POSITIVE REAL',    /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  CDTVAR(I) multiplyer coefficient applied to the',           /,&
+'@  CDTVAR(I) multiplier coefficient applied to the',           /,&
 '@  timestep for the  resolution of variable I.',               /,&
 '@ Check the input data given through the User Interface',      /,&
 '@   or in cs_user_parameters.f90.',                            /,&
@@ -6195,15 +6198,16 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    VISLS0(',i10,   ') MUST BE   A  REAL POSITIVE',           /,&
-'@      WHILE IVISLS(',i10,   ') = ', i10,                      /,&
+'@    VISLS0(',i10,   ') MUST BE   A  POSITIVE REAL',           /,&
+'@      WHILE scalar_diffusivity_id = ', i10,                   /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
 '@  VISLS0(I) is the molecular diffusion coefficient  of the',  /,&
-'@    scalar and  MUST BE POSITIVE when ivisls is  different',  /,&
-'@    from 1 (in which case a variable coefficient is given',   /,&
+'@    scalar and  MUST BE POSITIVE when that field''s',         /,&
+'@    scalar_diffusivity_id key value is less than 0',          /,&
+'@    (in which case a variable coefficient is given',          /,&
 '@    using the User Interface or usphyv).',                    /,&
 '@',                                                            /,&
 '@ Check the input data given through the User Interface',      /,&
@@ -6218,7 +6222,7 @@ endif
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
 '@    SCALAR ', a16,                                            /,&
-'@    SIGMAS(',i10,   ') MUST BE   A  REAL POSITIVE',           /,&
+'@    SIGMAS(',i10,   ') MUST BE   A  POSITIVE REAL',           /,&
 '@   IT HAS VALUE', e14.5,                                      /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&

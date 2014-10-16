@@ -1036,9 +1036,9 @@ do iscal = 1, nscal
 enddo
 
 
-! ---> VISLS0 (ivisls ont ete verifies dans fldvar et fldprp)
+! ---> VISLS0
 
-! For scalars which are not variances, define the default diffusivity
+! For scalars which are not variances, define the reference diffusivity
 
 ! Pour les variances de fluctuations, les valeurs du tableau
 ! precedent ne doivent pas avoir ete modifiees par l'utilisateur

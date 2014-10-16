@@ -99,8 +99,6 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar)
 
 ! Local variables
 
-character*80     name
-
 integer          iel, ige, mode, icla, icha, ifac
 
 double precision t1init, h1init, coefe(ngazem)

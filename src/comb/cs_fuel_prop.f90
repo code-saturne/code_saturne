@@ -66,7 +66,6 @@ implicit none
 
 integer          icla
 integer          f_id, itycat, ityloc, idim1, idim3, nprini
-integer          keyccl
 integer          iopchr
 
 logical          ilved, iprev, inoprv

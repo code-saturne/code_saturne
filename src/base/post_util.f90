@@ -151,7 +151,7 @@ if (iscalt.gt.0) then
       tcel =   tscalp(iel)                                                  &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
-      if (ifcvsl.gt.0) then
+      if (ifcvsl.ge.0) then
         xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
@@ -178,7 +178,7 @@ if (iscalt.gt.0) then
 
       tcel = tscalp(iel)
 
-      if (ifcvsl.gt.0) then
+      if (ifcvsl.ge.0) then
         xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
@@ -493,7 +493,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
       tcel =   tscalp(iel)                                                 &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
-      if (ifcvsl.gt.0) then
+      if (ifcvsl.ge.0) then
         xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)
@@ -525,7 +525,7 @@ if (itstar.ge.0 .and. itplus.ge.0) then
 
       tcel = tscalp(iel)
 
-      if (ifcvsl.gt.0) then
+      if (ifcvsl.ge.0) then
         xvsl = cviscl(iel)
       else
         xvsl = visls0(iscalt)

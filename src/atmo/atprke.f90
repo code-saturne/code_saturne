@@ -56,7 +56,6 @@ subroutine atprke &
 !===============================================================================
 
 use paramx
-use dimens, only: nvar
 use numvar
 use entsor
 use cstnum

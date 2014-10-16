@@ -2103,7 +2103,7 @@ if (nscal.ge.1) then
     f_id = ivarfl(isca(ii))
     call field_get_label(f_id, chaine)
     write(nfecra,6021) chaine(1:16),ii,iscacp(ii),      &
-                       ivisls(ii),iturt(ii),visls0(ii),sigmas(ii)
+                       iturt(ii),visls0(ii),sigmas(ii)
   enddo
   write(nfecra,6031)
   write(nfecra,6012)
@@ -2145,11 +2145,11 @@ endif
  6010 format(                                                            &
 '       ITBRRB = ',4x,i10,    ' (Reconstruction T ou H au brd)',/)
  6011 format(                                                            &
-'---------------------------------------------------------------------',/,&
-' Variable         Numero ISCACP IVISLS  ITURT      VISLS0      SIGMAS',/,&
-'---------------------------------------------------------------------'  )
+'-------------------------------------------------------------',       /,&
+' Variable         Numero ISCACP ITURT      VISLS0      SIGMAS',       /,&
+'-------------------------------------------------------------'  )
  6021 format( &
- 1x,    a16,    i7,    i7,    i7,    i7,      e12.4,      e12.4  )
+ 1x,    a16,    i7,    i7,    i7,      e12.4,      e12.4  )
  6031 format( &
 '---------------------------------------------------------------------',/)
  6012 format( &
@@ -2178,7 +2178,6 @@ endif
 '         NSCAUS+1 a NSCAPP+NSCAUS=NSCAL.',                     /,&
                                                                 /,&
 '       ISCACP = 0 ou 1         (Utilisation de Cp ou non    )',/,&
-'       IVISLS = 0 ou >0        (Viscosite constante ou non  )',/,&
 '       VISLS0 = >0             (Viscosite de reference      )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
 '       RVARFL = >0             (Rf, cf dissipation variance )',/,&
@@ -2214,11 +2213,11 @@ endif
  6010 format(                                                     &
 '       ITBRRB = ',4x,i10,    ' (T or H reconstruction at bdy)',/)
  6011 format(                                                     &
-'---------------------------------------------------------------------',/,&
-' Variable         Number ISCACP IVISLS  ITURT      VISLS0      SIGMAS',/,&
-'---------------------------------------------------------------------'  )
+'-------------------------------------------------------------',/,&
+' Variable         Number ISCACP ITURT      VISLS0      SIGMAS',/,&
+'-------------------------------------------------------------'  )
  6021 format( &
- 1x,    a16,    i7,    i7,    i7,     i7,     e12.4,      e12.4  )
+ 1x,    a16,    i7,    i7,    i7,     e12.4,      e12.4  )
  6031 format( &
 '---------------------------------------------------------------------',/)
  6012 format( &
@@ -2247,7 +2246,6 @@ endif
 '         NSCAUS+1 to NSCAPP+NSCAUS=NSCAL.',                    /,&
                                                                 /,&
 '       ISCACP = 0 or 1     2   (use Cp or not               )',/,&
-'       IVISLS = 0 or >0        (Viscosity: constant or not  )',/,&
 '       VISLS0 = >0             (Reference viscosity         )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
 '       RVARFL = >0             (Rf, cf variance dissipation )',/,&

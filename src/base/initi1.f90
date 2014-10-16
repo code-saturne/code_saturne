@@ -47,7 +47,7 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp
+integer          iok, ipp, nmodpp, imom, n_moments
 double precision ttsuit, wtsuit
 
 !===============================================================================
@@ -106,14 +106,42 @@ call iniusi
 call ppini1
 !==========
 
+call addfld
+!==========
+
+! Time moments
+
+call cs_gui_time_moments
+call cs_user_time_moments
+
+n_moments = cs_time_moment_n_moments()
+do imom = 1, n_moments
+  ipp = field_post_id(time_moment_field_id(imom))
+enddo
+
+! Postprocessing and logging
+
+if (iihmpr.eq.1) then
+  call csenso                                                   &
+  !==========
+     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,          &
+       ipstdv, ihisvr, tplfmt, xyzcap )
+endif
+
+! Restart
+
 ttsuit = -1.d0
 wtsuit = -1.d0
 
 call dflsui(ntsuit, ttsuit, wtsuit);
 !==========
 
+! Radiative model options
+
 call rayopt
 !==========
+
+! Lagrangian model options
 
 call lagopt
 !==========
@@ -149,8 +177,6 @@ call modini
 
 call fldini
 !==========
-
-call addfld
 
 call gui_postprocess_fields
 

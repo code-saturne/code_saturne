@@ -71,9 +71,8 @@ implicit none
 
 ! Local variables
 
-character(len=80) :: f_label, f_name, s_label, s_name
-integer           :: iscal , f_id
-integer           :: ii    , jj    , kk    , ll
+character(len=80) :: f_label, f_name, s_name
+integer           :: ii
 integer           :: iok   , ippok
 integer           :: iest  , ipropp, idim1, idim6, iflid
 logical           :: has_previous
@@ -120,83 +119,6 @@ ippok = 0
 !      -----------------
 
 iok = 0
-
-! --- ivisls(iscal) doit etre non initialise pour les variances
-!     Il prend la valeur du scalaire associe
-!     Tous les tests qui suivent sont utilises pour le message
-!       d'erreur eventuel.
-
-if (nscaus.gt.0) then
-  do jj = 1, nscaus
-    ii    = jj
-    iscal = iscavr(ii)
-    ! Si on a une variance avec ivisls initialise : erreur
-    if ((iscal.gt.0.and.iscal.le.nscal).and.ivisls(ii).ne.-1) then
-      ll = 0
-      do kk = 1, nscaus
-        if (kk .eq.iscal) ll = kk
-      enddo
-      do kk = 1, nscapp
-        if (iscapp(kk).eq.iscal) ll = -kk
-      enddo
-      if (ll.gt.0) then
-        write(nfecra,7040) ii,ii,jj,iscal,ll,jj,ivisls(iscal)
-      else
-        write(nfecra,7041) ii,ii,jj,iscal,-ll,jj,ivisls(iscal)
-      endif
-      iok = iok + 1
-      !     Si on n'a pas une variance std mais que ivisls est incorrect : erreur
-    else if ( (iscal.le.0 .or.iscal.gt.nscal).and.                &
-             (ivisls(ii).ne.0.and.ivisls(ii).ne.1)) then
-      write(nfecra,7050) ii,jj,jj,ivisls(ii)
-      iok = iok + 1
-    endif
-  enddo
-endif
-
-if (nscapp.gt.0) then
-  do jj = 1, nscapp
-    ii    = iscapp(jj)
-    iscal = iscavr(ii)
-    !       Si on a une variance avec ivisls initialise : erreur
-    if ((iscal.gt.0.and.iscal.le.nscal).and.ivisls(ii).ne.-1) then
-      ll = 0
-      do kk = 1, nscaus
-        if (kk .eq.iscal) ll = kk
-      enddo
-      do kk = 1, nscapp
-        if (iscapp(kk).eq.iscal) ll = -kk
-      enddo
-      if (ll.gt.0) then
-        write(nfecra,7042) ii,ii,jj,iscal,ll,jj,ivisls(iscal)
-      else
-        write(nfecra,7043) ii,ii,jj,iscal,-ll,jj,ivisls(iscal)
-      endif
-      iok = iok + 1
-      ! Si on n'a pas une variance std mais que ivisls est incorrect : erreur
-    else if ( (iscal.le.0 .or.iscal.gt.nscal).and.                &
-              (ivisls(ii).ne.0.and.ivisls(ii).ne.1) ) then
-      write(nfecra,7051)ii,jj,jj,ivisls(ii)
-      iok = iok + 1
-    endif
-  enddo
-endif
-
-! On initialise les ivisls des variances
-if (nscal.gt.0) then
-  do ii = 1, nscal
-    iscal = iscavr(ii)
-    if (iscal.gt.0.and.iscal.le.nscal) then
-      ivisls(ii) = ivisls(iscal)
-      if (ivisls(ii).gt.0) then
-        call field_set_key_int(ivarfl(isca(ii)), kivisl,    &
-                               iprpfl(ivisls(iscal)))
-      endif
-    else if (ivisls(ii).lt.0) then
-      ivisls(ii) = 0
-    endif
-  enddo
-endif
 
 ! ---> VISCOSITE ALE
 if (iale.eq.1) then
@@ -323,68 +245,6 @@ if (iescal(iestot).gt.0) then
   call add_property_field(f_name, f_label, iestim(iestot))
 endif
 
-!   Proprietes des scalaires : viscls si elle est variable
-!     On utilisera ivisls comme suit :
-!       Pour le scalaire II
-!         si ivisls(ii) = 0    : visc = visls0(ii)
-!         si ivisls(ii) .gt. 0 : visc = propce(iel ,ipproc(ivisls(ii)))
-!     Ceci permet de ne pas reserver des tableaux vides pour les
-!       scalaires a viscosite constante
-
-! Add a scalar diffusivity when defined as variable
-
-if (nscal.ge.1) then
-  do ii = 1, nscal
-    if (ivisls(ii).ne.0 .and. iscavr(ii).le.0) then
-      ! Build name and label, using a general rule, with a
-      ! fixed name for temperature or enthalpy
-      f_id = ivarfl(isca(ii))
-      call field_get_name(f_id, s_name)
-      call field_get_label(f_id, s_label)
-      if (ii.eq.iscalt) then
-        s_name = 'thermal'
-        s_label = 'Th'
-      endif
-      if (iscacp(ii).gt.0) then
-        f_name  = trim(s_name) // '_conductivity'
-        f_label = trim(s_label) // ' Cond'
-      else
-        f_name  = trim(s_name) // '_diffusivity'
-        f_label = trim(s_label) // ' Diff'
-      endif
-      ! Special case for electric arcs: real and imaginary electric
-      ! conductivity is the same (and ipotr < ipoti)
-      if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-        if (ii.eq.ipotr) then
-          f_name = 'elec_sigma'
-          f_label = 'Sigma'
-        else if (ii.eq.ipoti) then
-          ivisls(ipoti) = ivisls(ipotr)
-          cycle ! go to next scalar in loop, avoid creating property
-        endif
-      endif
-      ! Now create matching property
-      call add_property_field(f_name, f_label, ivisls(ii))
-      call field_set_key_int(ivarfl(isca(ii)), kivisl, iprpfl(ivisls(ii)))
-    endif
-  enddo
-endif
-
-!  Pour les fluctuations, le pointeur de la diffusivite
-!    envoie directement sur la diffusivite du scalaire associe.
-
-do ii = 1, nscal
-  if (ivisls(ii).gt.0) then
-    if (iscavr(ii).gt.0) then
-      ivisls(ii) = ivisls(iscavr(ii))
-      if (ivisls(ii).gt.0) then
-        call field_set_key_int(ivarfl(isca(ii)), kivisl,    &
-                               iprpfl(ivisls(iscavr(ii))))
-      endif
-    endif
-  endif
-enddo
-
 !     Numero max des proprietes ; ressert plus bas pour
 !       ajouter celles relatives a la physique particuliere
 
@@ -455,146 +315,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 7040 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  Le scalaire ',i10                                          ,/,&
-'@    (scalaire utilisateur           ',i10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',i10           ,/,&
-'@    (scalaire utilisateur           ',i10   ,')             ',/,&
-'@    d''apres la valeur du mot cle first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  L''indicateur de diffusivite ivisls(',i10  ,')            ',/,&
-'@    ne doit pas etre renseigne.                             ',/,&
-'@  Il sera pris automatiquement egal a celui du scalaire     ',/,&
-'@    associe, soit ',i10                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7041 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  Le scalaire ',i10                                          ,/,&
-'@    (scalaire utilisateur           ',i10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',i10           ,/,&
-'@    (scalaire physique particuliere ',i10   ,')             ',/,&
-'@    d''apres la valeur du mot cle first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  L''indicateur de diffusivite ivisls(',i10  ,')            ',/,&
-'@    ne doit pas etre renseigne.                             ',/,&
-'@  Il sera pris automatiquement egal a celui du scalaire     ',/,&
-'@    associe, soit ',i10                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7042 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  Le scalaire ',i10                                          ,/,&
-'@    (scalaire physique particuliere ',i10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',i10           ,/,&
-'@    (scalaire utilisateur           ',i10   ,')             ',/,&
-'@    d''apres la valeur du mot cle first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  L''indicateur de diffusivite ivisls(iscapp(',i10  ,'))    ',/,&
-'@    ne doit pas etre renseigne.                             ',/,&
-'@  Il sera pris automatiquement egal a celui du scalaire     ',/,&
-'@    associe, soit ',i10                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7043 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  Le scalaire ',i10                                          ,/,&
-'@    (scalaire physique particuliere ',i10   ,') represente  ',/,&
-'@    la variance des fluctuations du scalaire ',i10           ,/,&
-'@    (scalaire physique particuliere ',i10   ,')             ',/,&
-'@    d''apres la valeur du mot cle first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  L''indicateur de diffusivite ivisls(iscapp(',i10  ,'))    ',/,&
-'@    ne doit pas etre renseigne.                             ',/,&
-'@  Il sera pris automatiquement egal a celui du scalaire     ',/,&
-'@    associe, soit ',i10                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7050 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  L''indicateur de diffusivite variable                     ',/,&
-'@    du scalaire utilisateur           ',i10                  ,/,&
-'@    ivisls(',i10   ,')                                      ',/,&
-'@    doit etre un entier egal a 0 ou 1.                      ',/,&
-'@    Il vaut ici ',i10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7051 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  L''indicateur de diffusivite variable                     ',/,&
-'@    du scalaire physique particuliere ',i10                  ,/,&
-'@    ivisls(iscapp(',i10   ,'))                              ',/,&
-'@    doit etre un entier egal a 0 ou 1.                      ',/,&
-'@    Il vaut ici ',i10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7070 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -636,146 +356,6 @@ return
 
 #else
 
- 7040 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  The scalar  ',i10                                          ,/,&
-'@    (user scalar                    ',i10   ,') represents  ',/,&
-'@    the variance of fluctuations of a scalar ',i10           ,/,&
-'@    (user scalar                    ',i10   ,')             ',/,&
-'@    according to value of keyword first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  The diffusivity index        ivisls(',i10  ,')            ',/,&
-'@    has not been set.                                       ',/,&
-'@  It will be automatically set equal to that of the         ',/,&
-'@    associated scalar ',i10                                  ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7041 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  The scalar  ',i10                                          ,/,&
-'@    (user scalar                    ',i10   ,') represents  ',/,&
-'@    the variance of fluctuations of a scalar ',i10           ,/,&
-'@    (scalar of a specific physics ',i10   ,')               ',/,&
-'@    according to value of keyword first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  The diffusivity index        ivisls(',i10  ,')            ',/,&
-'@    has not been set.                                       ',/,&
-'@  It will be automatically set equal to that of the         ',/,&
-'@    associated scalar ',i10                                  ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7042 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  The scalar  ',i10                                          ,/,&
-'@    (scalar of a specific physics ',i10   ,') represents    ',/,&
-'@    the variance of fluctuations of a scalar ',i10           ,/,&
-'@    (user scalar                    ',i10   ,')             ',/,&
-'@    according to value of keyword first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  The diffusivity index        ivisls(iscapp(',i10  ,'))    ',/,&
-'@    has not been set.                                       ',/,&
-'@  It will be automatically set equal to that of the         ',/,&
-'@    associated scalar ',i10                                  ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7043 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  The scalar  ',i10                                          ,/,&
-'@    (scalar of a specific physics ',i10   ,') represents    ',/,&
-'@    the variance of fluctuations of a scalar ',i10           ,/,&
-'@    (scalar of a specific physics ',i10   ,')               ',/,&
-'@    according to value of keyword first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  The diffusivity index        ivisls(iscapp(',i10  ,'))    ',/,&
-'@    has not been set.                                       ',/,&
-'@  It will be automatically set equal to that of the         ',/,&
-'@    associated scalar ',i10                                  ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7050 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  The variable diffusivity index of the                     ',/,&
-'@    user scalar                       ',i10                  ,/,&
-'@    ivisls(',i10   ,')                                      ',/,&
-'@    must be set equal to 0 or 1.                            ',/,&
-'@    Here it is  ',i10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7051 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    SCALAR   ',i10                                           ,/,&
-'@                                                            ',/,&
-'@  The variable diffusivity index of the                     ',/,&
-'@    scalar of a specific physics    ',i10                    ,/,&
-'@    ivisls(iscapp(',i10   ,'))                              ',/,&
-'@    must be set equal to 0 or 1.                            ',/,&
-'@    Here it is  ',i10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   ivisls.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7070 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1296,11 +876,11 @@ end subroutine fldprp_check_nproce
 !> \param[in]     name          field name
 !> \param[in]     label         field default label, or empty
 !> \param[in]     dim           field dimension
-!> \param[out]    iprop         matching field property id
+!> \param[out]    f_id          matching field id
 !_______________________________________________________________________________
 
 subroutine add_property_field_owner &
- ( name, label, dim, has_previous, iprop )
+ ( name, label, dim, has_previous, f_id )
 
 !===============================================================================
 ! Module files
@@ -1321,11 +901,11 @@ implicit none
 character(len=*), intent(in) :: name, label
 integer, intent(in)          :: dim
 logical, intent(in)          :: has_previous
-integer, intent(out)         :: iprop
+integer, intent(out)         :: f_id
 
 ! Local variables
 
-integer  type_flag, location_id, ii, keyprp, f_id
+integer  type_flag, location_id, ipp
 logical  interleaved
 
 !===============================================================================
@@ -1348,6 +928,9 @@ call field_create(name, type_flag, location_id, dim, interleaved, has_previous, 
 
 call field_set_key_int(f_id, keyvis, 1)
 call field_set_key_int(f_id, keylog, 1)
+
+ipp = field_post_id(f_id)
+call field_set_key_int(f_id, keyipp, ipp)
 
 if (len(trim(label)).gt.0) then
   call field_set_key_str(f_id, keylbl, trim(label))

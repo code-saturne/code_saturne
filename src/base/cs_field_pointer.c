@@ -456,6 +456,11 @@ cs_field_pointer_map_compressible(void)
 
   cs_field_pointer_map(CS_ENUMF_(t_kelvin),
                        cs_field_by_name_try("temperature"));
+
+  /* Also map to main temperature pointer */
+
+  cs_field_pointer_map(CS_ENUMF_(t),
+                       cs_field_by_name_try("temperature"));
 }
 
 /*----------------------------------------------------------------------------*/

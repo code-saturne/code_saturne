@@ -89,7 +89,7 @@ integer          iscdri, keydri, iflid, nfld, keyccl
 integer          f_id
 integer          iok1,iok2,iok3
 
-character*80     fname, name
+character(len=80) :: fname, name
 
 double precision x1sro1, x2sro2, srrom1, uns1pw
 double precision x2tot, wmolme, unsro1
@@ -115,11 +115,10 @@ double precision, dimension(:), pointer :: v_x_pi,v_y_pi,v_z_pi
 double precision, dimension(:,:), pointer :: vdp_i
 double precision, dimension(:,:), pointer :: vg_pi
 
-
 !===============================================================================
 !
 !===============================================================================
-! 0. Counting the passages
+! 0. Counting the calls
 !===============================================================================
 
 ipass = ipass + 1

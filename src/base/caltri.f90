@@ -502,11 +502,8 @@ call fldtri(nproce, dt, rtpa, rtp, propce)
 call field_allocate_or_map_all
 !=============================
 
-call iniva0 &
+call iniva0(nvar, nscal, dt, propce, frcxt, prhyd)
 !==========
- ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd  )
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then

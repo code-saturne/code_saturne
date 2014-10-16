@@ -1045,11 +1045,13 @@ contains
     logical(c_bool) :: c_is_set
     type(c_ptr) :: f
 
+    is_set = .false.
+
     c_f_id = f_id
     c_k_id = k_id
     f = cs_field_by_id(c_f_id)
     c_is_set = cs_field_is_key_set(f, k_id)
-    is_set = c_is_set
+    if (c_is_set.eqv..true.) is_set = .true.
 
   end subroutine field_is_key_set
 

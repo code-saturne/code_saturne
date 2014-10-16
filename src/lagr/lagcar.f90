@@ -111,7 +111,7 @@ double precision energi(ncelet) , dissip(ncelet), romp(nbpart)
 
 ! Local variables
 
-integer          iel , ip , id , iscath
+integer          iel , ip , id, ifcvsl
 
 double precision cd1 , cd2 , rec , cl , c0 , cb , cbcb
 double precision upart , vpart , wpart
@@ -127,7 +127,7 @@ double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: viscl, visls, cpro_cp
+double precision, dimension(:), pointer :: viscl, cpro_viscls, cpro_cp
 
 !===============================================================================
 
@@ -212,6 +212,14 @@ do ip = 1,nbpart
   endif
 enddo
 
+ifcvsl = -1
+if (iscalt.gt.0) then
+  call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_viscls)
+  endif
+endif
+
 !===============================================================================
 ! 2. CALCUL DE Tp ET DE Tc SI THERMIQUE
 !===============================================================================
@@ -274,17 +282,14 @@ do ip = 1,nbpart
 
 !     CALCUL DU NUSSELT LOCAL
 
-      iscath = iscalt
-
 ! a priori en combustion gaz ou CP, la diffusvite est toujours constante
 
       if (ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.2) then
         xrkl = diftl0 / rom
-      else if (ivisls(iscath).ge.1) then
-        call field_get_val_s(iprpfl(ivisls(iscath)), visls)
-        xrkl = visls(iel) / rom
+      else if (ifcvsl.ge.0) then
+        xrkl = cpro_viscls(iel) / rom
       else
-        xrkl = visls0(iscath) / rom
+        xrkl = visls0(iscalt) / rom
       endif
 
       prt  = xnul / xrkl

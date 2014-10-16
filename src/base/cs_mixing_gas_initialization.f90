@@ -58,7 +58,6 @@ use ppthch
 use ppincl
 use mesh
 use field
-use cfpoin, only:ithvar
 use cs_c_bindings
 
 !===============================================================================
@@ -79,15 +78,13 @@ integer          f_id
 
 character(len=80) :: name_d
 
-double precision valmax, valmin, vfmin , vfmax
 double precision volgas, vol_d
 
 type(severe_acc_species_prop) s_d, s_k
 
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_d
-double precision, dimension(:), pointer :: cpro_rho, cpro_viscl
-double precision, dimension(:), pointer :: cpro_cp , cpro_venth
+double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:), pointer :: mix_mol_mas
 
 !===============================================================================
@@ -95,7 +92,6 @@ double precision, dimension(:), pointer :: mix_mol_mas
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
-
 
 iok = 0
 
@@ -114,11 +110,11 @@ call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
 !Deduced species (h2o_g) with steam gas
 ! or Helium or Hydrogen  with no condensable gases
 if (ippmod(imixg).eq.0) then
-  name_d = "y_he" 
+  name_d = "y_he"
 elseif (ippmod(imixg).eq.1) then
-  name_d = "y_h2" 
+  name_d = "y_h2"
 elseif (ippmod(imixg).ge.2) then
-  name_d = "y_h2o_g" 
+  name_d = "y_h2o_g"
 endif
 call field_get_val_s_by_name(name_d, y_d)
 call field_get_id(name_d, f_id)
@@ -204,6 +200,7 @@ endif
 !===============================================================================
 ! 4. Print to the listing to check the variables intialization
 !===============================================================================
+
 write(nfecra, 200)
 write(nfecra, 203) volgas , vol_d
 

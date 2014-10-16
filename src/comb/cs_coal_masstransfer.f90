@@ -67,6 +67,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use field
+
 !===============================================================================
 
 implicit none
@@ -84,7 +85,7 @@ integer          iel    , icha   , icla
 integer          ipcte1 , ipctem , ipcro2 , ipcdia
 integer          ipcgd1 , ipcgd2 , ipcgch , ipcght , ipcyox
 integer          ipcsec
-integer          ipcvsl , iromf , ipcte2
+integer          ifcvsl , iromf , ipcte2
 integer          npoin1,npoin2,npoin3,npoin4,npoin63,npoint
 integer          npyv, modntl
 
@@ -102,7 +103,7 @@ double precision pprco2,pprh2o
 integer          iok1
 double precision, dimension (:), allocatable :: x2, x2srho2, rho1, w1
 double precision, dimension(:), pointer ::  crom
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
 
 !===============================================================================
 ! 1. Initialization and preliminary computations
@@ -495,15 +496,19 @@ if ( ippmod(iccoal) .ge. 1 ) then
   tlimit = 302.24d0
   tmini   = tlimit*(1.d0-tlimit/(lv*xmeau))
 
+  call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_viscls)
+  endif
+
   if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
   do iel = 1, ncel
-    if ( ivisls(iscalt).gt.0 ) then
-      ipcvsl = ipproc(ivisls(iscalt))
+    if (ifcvsl.ge.0) then
       if (icp.gt.0) then
-        w1(iel) = propce(iel,ipcvsl) * cpro_cp(iel)
+        w1(iel) = cpro_viscls(iel) * cpro_cp(iel)
       else
-        w1(iel) = propce(iel,ipcvsl) * cp0
+        w1(iel) = cpro_viscls(iel) * cp0
       endif
     else
       if (icp.gt.0) then

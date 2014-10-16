@@ -138,7 +138,7 @@ integer          ii, ifac , iel, isou
 integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
-integer          ipcvsl, iflmas, iflmab
+integer          ifcvsl, iflmas, iflmab
 integer          ipcvso
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -181,6 +181,7 @@ double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: visct, cpro_cp, c_st_scal
+double precision, dimension(:), pointer :: cpro_viscls
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
@@ -253,10 +254,9 @@ if (lprev) then
 endif
 call field_get_val_s(iprpfl(ivisct), visct)
 
-if (ivisls(iscal).gt.0) then
-  ipcvsl = ipproc(ivisls(iscal))
-else
-  ipcvsl = 0
+call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+if (ifcvsl.ge.0) then
+  call field_get_val_s(ifcvsl, cpro_viscls)
 endif
 
 ! --- Numero du terme source dans PROPCE si extrapolation
@@ -465,7 +465,7 @@ if (iirayo.ge.1) then
       call cs_fuel_radst &
      !==================
     ( ivar  ,ncelet, ncel  ,                      &
-      volume,rtpa  , propce,smbrs,rovsdt)
+      volume,rtpa  , propce, smbrs, rovsdt)
 
     endif
   endif
@@ -515,7 +515,7 @@ if (ncesmp.gt.0) then
 
   deallocate(srcmas)
 
-  ! Si on extrapole les TS on met Gamma Pinj dans PROPCE
+  ! Si on extrapole les TS on met Gamma Pinj dans c_st_scal
   if (st_prv_id .ge. 0) then
     do iel = 1, ncel
       c_st_scal(iel) = c_st_scal(iel) + w1(iel)
@@ -596,7 +596,6 @@ if (itspdv.eq.1) then
       ! On prend la viscosite a l'instant n, meme si elle est extrapolee
       ipcvso = ipproc(ivisct)
       if (iviext.gt.0) ipcvso = ipproc(ivista)
-
 
       ! iscal is the variance of the scalar iiscav
       ! with modelized turbulent fluxes GGDH or AFM or DFM
@@ -751,14 +750,14 @@ if (idiff(ivar).ge.1) then
     if (ityturt(iscal).eq.3) then
       idifftp = 0
     endif
-    if (ipcvsl.eq.0) then
+    if (ifcvsl.lt.0) then
       do iel = 1, ncel
         w1(iel) = visls0(iscal)                                     &
            + idifftp*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
-        w1(iel) = propce(iel,ipcvsl)                                &
+        w1(iel) = cpro_viscls(iel)                                &
            + idifftp*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     endif
@@ -790,7 +789,7 @@ if (idiff(ivar).ge.1) then
 
     call field_get_val_v(ivsten, visten)
 
-    if (ipcvsl.eq.0) then
+    if (ifcvsl.lt.0) then
       do iel = 1, ncel
 
         temp = idifft(ivar)*xcpp(iel)*ctheta(iscal)/csrij
@@ -806,9 +805,9 @@ if (idiff(ivar).ge.1) then
       do iel = 1, ncel
 
         temp = idifft(ivar)*xcpp(iel)*ctheta(iscal)/csrij
-        viscce(1,iel) = temp*visten(1,iel) + propce(iel,ipcvsl)
-        viscce(2,iel) = temp*visten(2,iel) + propce(iel,ipcvsl)
-        viscce(3,iel) = temp*visten(3,iel) + propce(iel,ipcvsl)
+        viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
+        viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
+        viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)
         viscce(4,iel) = temp*visten(4,iel)
         viscce(5,iel) = temp*visten(5,iel)
         viscce(6,iel) = temp*visten(6,iel)
@@ -913,7 +912,7 @@ if (iscdri.ge.1) then
  call driflu &
  !=========
  ( iflid  ,                                                       &
-   dt     , rtpa   , propce ,                                     &
+   dt     , rtpa   ,                                              &
    imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
 endif

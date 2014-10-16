@@ -91,7 +91,7 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          iel    , ifac   , iutile
-integer          idimve , jaiex
+integer          idimve , jaiex  , ifcsig
 
 double precision somje , coepoa , coefav , coepot
 double precision emax  , aiex   , amex
@@ -102,7 +102,7 @@ double precision xelec , yelec  , zelec, diff
 double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cscalt, cpotr
-double precision, dimension(:), pointer :: vspotr, efjou, djr3
+double precision, dimension(:), pointer :: cpro_sig, efjou, djr3
 double precision, dimension(:,:), pointer :: djr
 
 !===============================================================================
@@ -175,13 +175,15 @@ if ( ippmod(ielarc).ge.1 ) then
 !     les composantes du champ electrique : J/SIGMA
 
       call field_get_val_v(iprpfl(idjr(1)), djr)
-      call field_get_val_s(iprpfl(ivisls(ipotr)), vspotr)
+
+      call field_get_key_int (ivarfl(isca(ipotr)), kivisl, ifcsig)
+      call field_get_val_s(ifcsig, cpro_sig)
 
       do iel = 1, ncel
 
-        xelec = djr(1,iel)/vspotr(iel)
-        yelec = djr(2,iel)/vspotr(iel)
-        zelec = djr(3,iel)/vspotr(iel)
+        xelec = djr(1,iel)/cpro_sig(iel)
+        yelec = djr(2,iel)/cpro_sig(iel)
+        zelec = djr(3,iel)/cpro_sig(iel)
 
 !       Calcul du champ E
         w1(iel) = sqrt ( xelec**2 + yelec**2 + zelec**2 )

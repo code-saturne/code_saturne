@@ -28,7 +28,7 @@
 
 /*!
 
-  \page cs_user_radiative_transfer_parameters Examples of data settings for radiative tranferts (usray2.f90)
+  \page cs_user_radiative_transfer_parameters Examples of data settings for radiative transfers (usray2.f90)
   
 \image html radiative_tr_sketch.gif "Sketch of thermal flux in boundary walls"
 

@@ -71,7 +71,6 @@ use paramx
 use numvar
 use optcal
 use entsor
-use lagdim, only: nbpmax
 use lagpar
 use lagran
 use mesh

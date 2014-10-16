@@ -70,7 +70,7 @@ implicit none
 
 ! Local variables
 
-integer       iscal , id, ityloc, itycat
+integer       iscal , id, ityloc, itycat, ifcvsl
 integer       ii
 integer       iok   , ippok
 integer       ivisph
@@ -460,15 +460,10 @@ if (nscal.ge.1) then
     if (isso2t(ii).gt.0) then
       call add_source_term_prev_field(ivarfl(isca(ii)))
     endif
-    if (ivisls(ii).ne.0) then
+    call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
+    if (ifcvsl.ge.0.and.iscavr(ii).le.0) then
       if (ivsext(ii).gt.0) then
-        if (iscavr(ii).le.0) then
-          nproce = nproce + 1
-          ivissa(ii) = nproce
-          call field_set_n_previous(iprpfl(ivissa(ii)), 1)
-        else if (iscavr(ii).gt.0.and.iscavr(ii).le.nscal) then
-          ivissa(ii) = ivissa(iscavr(ii))
-        endif
+        call field_set_n_previous(ifcvsl, 1)
       endif
     endif
   enddo

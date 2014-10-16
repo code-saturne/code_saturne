@@ -84,7 +84,7 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          iel
-integer          ipcefj, ipcsig, ipcsii
+integer          ipcefj, ifcsig, ifcsii
 integer          ipcla1, ipcla2, ipcla3
 integer          ipcdc1, ipcdc2, ipcdc3
 integer          ipcdi1, ipcdi2, ipcdi3
@@ -95,6 +95,7 @@ double precision vrmin, vrmax, var
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:,:) :: grad
+double precision, dimension(:), pointer :: cpro_sig, cpro_sigi
 
 !===============================================================================
 
@@ -108,7 +109,6 @@ allocate(grad(3, ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
-ipcsii = 0
 ipcdi1 = 0
 ipcdi2 = 0
 ipcdi3 = 0
@@ -117,10 +117,17 @@ ipcla2 = 0
 ipcla3 = 0
 
 ! --- Numero des grandeurs physiques
-ipcsig = ipproc(ivisls(ipotr))
+call field_get_key_int (ivarfl(isca(ipotr)), kivisl, ifcsig)
+if (ifcsig.ge.0) then
+  call field_get_val_s(ifcsig, cpro_sig)
+endif
 
+! Note: cpro_sigi = cpro_sig according to initializations in addfld
 if (ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
-  ipcsii = ipproc(ivisls(ipoti))
+  call field_get_key_int (ivarfl(isca(ipoti)), kivisl, ifcsii)
+  if (ifcsii.ge.0) then
+    call field_get_val_s(ifcsii, cpro_sigi)
+  endif
 endif
 
 ipcefj = ipproc(iefjou)
@@ -178,14 +185,13 @@ if (iappel.eq.1) then
 
 !   2.3 Calcul de la densite de courant j = sig E  :
 !  -------------------------------------------------
-!                                   PROPCE(IEL,IPCSIG)
 
 
   if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
     do iel = 1, ncel
-      propce(iel,ipcdc1)= - propce(iel,ipcsig) * grad(1,iel)
-      propce(iel,ipcdc2)= - propce(iel,ipcsig) * grad(2,iel)
-      propce(iel,ipcdc3)= - propce(iel,ipcsig) * grad(3,iel)
+      propce(iel,ipcdc1)= - cpro_sig(iel) * grad(1,iel)
+      propce(iel,ipcdc2)= - cpro_sig(iel) * grad(2,iel)
+      propce(iel,ipcdc3)= - cpro_sig(iel) * grad(3,iel)
     enddo
   endif
 
@@ -194,7 +200,7 @@ if (iappel.eq.1) then
 !                                                           sig E.E
   do iel = 1, ncel
     propce(iel,ipcefj)=                                           &
-         propce(iel,ipcsig)*(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2)
+         cpro_sig(iel)*(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2)
   enddo
 
 
@@ -248,11 +254,11 @@ if (iappel.eq.1) then
     endif
     write(nfecra,1010)'Gr_PotRZ',vrmin,vrmax
 
-    var    = -propce(1,ipcsig) * grad(1,1)
+    var    = -cpro_sig(1) * grad(1,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * grad(1,iel)
+      var = -cpro_sig(iel) * grad(1,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -262,11 +268,11 @@ if (iappel.eq.1) then
     endif
     write(nfecra,1010)'Cour_ReX',vrmin,vrmax
 
-    var    = -propce(1,ipcsig) * grad(2,1)
+    var    = -cpro_sig(1) * grad(2,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * grad(2,iel)
+      var = -cpro_sig(iel) * grad(2,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -276,11 +282,11 @@ if (iappel.eq.1) then
     endif
     write(nfecra,1010)'Cour_ReY',vrmin,vrmax
 
-    var    = -propce(1,ipcsig) * grad(3,1)
+    var    = -cpro_sig(1) * grad(3,1)
     vrmin = var
     vrmax = var
     do iel = 1, ncel
-      var = -propce(iel,ipcsig) * grad(3,iel)
+      var = -cpro_sig(iel) * grad(3,iel)
       vrmin = min(vrmin,var)
       vrmax = max(vrmax,var)
     enddo
@@ -321,13 +327,13 @@ if (iappel.eq.1) then
 
 !   3.3 Partie imaginaire de la densite de courant :
 !  ------------------------------------------------
-!                                   PROPCE(IEL,IPCSIG)
+!                                   CPRO_SIG(IEL)
 
   if ( ippmod(ieljou).eq.4 ) then
     do iel = 1, ncel
-      propce(iel,ipcdi1)= -propce(iel,ipcsig)*grad(1,iel)
-      propce(iel,ipcdi2)= -propce(iel,ipcsig)*grad(2,iel)
-      propce(iel,ipcdi3)= -propce(iel,ipcsig)*grad(3,iel)
+      propce(iel,ipcdi1)= -cpro_sig(iel)*grad(1,iel)
+      propce(iel,ipcdi2)= -cpro_sig(iel)*grad(2,iel)
+      propce(iel,ipcdi3)= -cpro_sig(iel)*grad(3,iel)
     enddo
   endif
 
@@ -339,7 +345,7 @@ if (iappel.eq.1) then
 
 !             ajout de la partie imaginaire et ...
       propce(iel,ipcefj) = propce(iel,ipcefj)                     &
-         + propce(iel,ipcsii)*(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2)
+         + cpro_sigi(iel)*(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2)
 !             .    ..division par 2
       propce(iel,ipcefj) = 0.5d0*propce(iel,ipcefj)
 
@@ -396,11 +402,11 @@ if (iappel.eq.1) then
       write(nfecra,1010)'Gr_PotIZ',vrmin,vrmax
 
 !     j=sigma E
-      var    = -propce(1,ipcsii) * grad(1,1)
+      var    = -cpro_sigi(1) * grad(1,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * grad(1,iel)
+        var = -cpro_sigi(iel) * grad(1,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -410,11 +416,11 @@ if (iappel.eq.1) then
       endif
       write(nfecra,1010)'Cour_ImX',vrmin,vrmax
 
-      var    = -propce(1,ipcsii) * grad(2,1)
+      var    = -cpro_sigi(1) * grad(2,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * grad(2,iel)
+        var = -cpro_sigi(iel) * grad(2,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo
@@ -424,11 +430,11 @@ if (iappel.eq.1) then
       endif
       write(nfecra,1010)'Cour_ImY',vrmin,vrmax
 
-      var    = -propce(1,ipcsii) * grad(3,1)
+      var    = -cpro_sigi(1) * grad(3,1)
       vrmin = var
       vrmax = var
       do iel = 1, ncel
-        var = -propce(iel,ipcsii) * grad(3,iel)
+        var = -cpro_sigi(iel) * grad(3,iel)
         vrmin = min(vrmin,var)
         vrmax = max(vrmax,var)
       enddo

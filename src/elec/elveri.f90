@@ -61,6 +61,7 @@ use ppthch
 use ppincl
 use elincl
 use radiat
+use field
 
 !===============================================================================
 
@@ -72,7 +73,7 @@ integer          iok
 
 ! Local variables
 
-integer          imono , ntf
+integer          imono , ntf, ifcvsl
 
 !===============================================================================
 
@@ -169,27 +170,25 @@ if(icp.le.0) then
                     '       icp'
   iok = iok + 1
 endif
-if(ivisls(iscalt).le.0) then
-  write(nfecra,2012)'  ivisls(iscalt)',   ivisls(iscalt),               &
-                    '  ivisls(iscalt)','la propriete lambda/Cp  ',   &
-                    '  ivisls(iscalt)'
+
+call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+if (ifcvsl.lt.0) then
+  write(nfecra,2013) ifcvsl
   iok = iok + 1
 endif
 
 ! --> Conductivites electriques variables
 !     Pour le potentiel reel
-if(ivisls(ipotr).le.0) then
-  write(nfecra,2012)'ivisls(ipotr)', ivisls(ipotr),               &
-                    'ivisls(ipotr)','la cond. elec. reelle   ',   &
-                    'ivisls(ipotr)'
+call field_get_key_int (ivarfl(isca(ipotr)), kivisl, ifcvsl)
+if (ifcvsl.lt.0) then
+  write(nfecra,2014)'reel', ifcvsl, 'ipotr'
   iok = iok + 1
 endif
 !     Pour le potentiel imaginaire (Joule)
 if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4 ) then
-  if(ivisls(ipoti).le.0) then
-  write(nfecra,2012)'ivisls(ipoti)', ivisls(ipoti),               &
-                    'ivisls(ipoti)','la cond. elec. imag.    ',   &
-                    'ivisls(ipoti)'
+  call field_get_key_int (ivarfl(isca(ipoti)), kivisl, ifcvsl)
+  if (ifcvsl.lt.0) then
+    write(nfecra,2014)'imaginaire', ifcvsl, 'ipoti'
     iok = iok + 1
   endif
 endif
@@ -451,6 +450,52 @@ endif
 '@    par fichier de donnees.                                 ',/,&
 '@  ',A13,      ' ne doit pas etre modifie par                ',/,&
 '@    l''utilisateur lorsque le module electrique est active. ',/,&
+'@                                                            ',/,&
+'@  Verifier useli1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2013 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@                MODULE ELECTRIQUE                           ',/,&
+'@                                                            ',/,&
+'@  Le numero de champ associe a la propriete lambda/Cp       ',/,&
+'@    doit etre positif ou nul                                ',/,&
+'@                                                            ',/,&
+'@    Il vaut ici ', i10                                       ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  field_set_key_int(ivarfl(isca(iscalt)), kivisl, ...)      ',/,&
+'@    ne doit pas etre appele par l''utilisateur lorsque      ',/,&
+'@    le module electrique est active.                        ',/,&
+'@                                                            ',/,&
+'@  Verifier useli1.                                          ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 2014 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@                MODULE ELECTRIQUE                           ',/,&
+'@                                                            ',/,&
+'@  Le numero de champ associe a la conductivite electrique   ',/,&
+'@    pour le potentiel ', a, ' doit etre positif ou nul      ',/,&
+'@                                                            ',/,&
+'@    Il vaut ici ', i10                                       ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne peut etre execute.                           ',/,&
+'@                                                            ',/,&
+'@  field_set_key_int(ivarfl(isca(',a,')), kivisl, ...)      ',/,&
+'@    ne doit pas etre appele par l''utilisateur lorsque      ',/,&
+'@    le module electrique est active.                        ',/,&
 '@                                                            ',/,&
 '@  Verifier useli1.                                          ',/,&
 '@                                                            ',/,&

@@ -50,6 +50,7 @@ use ppppar
 use ppthch
 use ppincl
 use ihmpre
+use field
 
 !===============================================================================
 
@@ -85,7 +86,6 @@ end interface
 
 if (ippmod(icompf).ge.0) then
 
-
   ! Pointers and reference values definition
 
   ! Total energy
@@ -101,11 +101,11 @@ if (ippmod(icompf).ge.0) then
 
   ! Pointer and reference value for conductivity of temperature scalar
   ! TODO itempk should be a property
-  ivisls(itempk) = 0
+  call field_set_key_int (ivarfl(isca(itempk)), kivisl, -1)
   visls0(itempk) = epzero
 
   ! Pointer and reference value for diffusivity of total energy scalar
-  ivisls(ienerg) = 0
+  call field_set_key_int (ivarfl(isca(ienerg)), kivisl, -1)
   visls0(ienerg) = epzero
 
   ! Pointer and reference value for volumetric molecular viscosity
@@ -127,7 +127,6 @@ if (ippmod(icompf).ge.0) then
   icv = 0
   cv0 = 0.d0
   call cf_set_thermo_options
-
 
   ! Variability of volumetric molecular viscosity (gui setting)
   if (iihmpr.eq.1) then

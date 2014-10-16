@@ -454,10 +454,6 @@ iprtot = 0
 
 ibeta  = 0
 
-do iscal = 1, nscamx
-  ivisls(iscal) = -1
-enddo
-
 ! --- Ici tout numvar est initialise.
 
 !===============================================================================
@@ -1216,8 +1212,6 @@ uref    = -grand*10.d0
 !       L'utilisateur devra remplir VISLS0
 !       On remplira plus tard, selon les modifs utilisateur,
 !         ISCSTH
-!       On modifiera eventuellement plus tard, selon modifs utilisateur,
-!         ivisls, ce dernier a ete initialise plus haut
 !       On donne la valeur par defaut pour les autres
 !       En particulier, on suppose qu'on n'a pas de variance
 !         (field first_moment_id < 0)

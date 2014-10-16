@@ -81,7 +81,7 @@ double precision rtpa(ncelet,nflown:nvar), propce(ncelet,*)
 integer          iel    , icla
 integer          ipcte1 , ipcte2 , ipcro2 , ipcdia
 integer          ipcgev , ipcght , ipcyox
-integer          ipcvsl , ipchgl
+integer          ifcvsl , ipchgl
 
 double precision xng,xnuss
 double precision pparo2 , xdffli , xdfext , xdftot0 , xdftot1
@@ -93,7 +93,7 @@ double precision  pref
 double precision dhet1, dhet2
 double precision deva1, deva2
 double precision, dimension(:), pointer :: crom
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
 
 !===============================================================================
 ! 1. Initializations and preliminary calculations
@@ -117,7 +117,8 @@ call field_get_val_s(icrom, crom)
 ipcte1 = ipproc(itemp1)
 ipcyox = ipproc(iym1(io2))
 !
-  pref = 1.013d0
+pref = 1.013d0
+
 !===============================================================================
 ! 2. Source terms for liquid enthalpy
 !===============================================================================
@@ -126,6 +127,13 @@ ipcyox = ipproc(iym1(io2))
 ! of exchanges by molecular diffusion
 ! 6 Lambda Nu / diam**2 / Rho2 * Rho * (T1-T2)
 !
+call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+if (ifcvsl.ge.0) then
+  call field_get_val_s(ifcvsl, cpro_viscls)
+endif
+
+if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
+
 do icla = 1, nclafu
 
   ipcro2 = ipproc(irom2 (icla))
@@ -136,18 +144,15 @@ do icla = 1, nclafu
 
   xnuss = 2.d0
 
-  if ( icp.gt.0 ) call field_get_val_s(iprpfl(icp), cpro_cp)
-
   do iel = 1, ncel
-    if ( ivisls(iscalt).gt.0 ) then
-      ipcvsl = ipproc(ivisls(iscalt))
-      if ( icp.gt.0 ) then
-        lambda = propce(iel,ipcvsl) * cpro_cp(iel)
+    if (ifcvsl.ge.0) then
+      if (icp.gt.0) then
+        lambda = cpro_viscls(iel) * cpro_cp(iel)
       else
-        lambda = propce(iel,ipcvsl) * cp0
+        lambda = cpro_viscls(iel) * cp0
       endif
     else
-      if ( icp.gt.0 ) then
+      if (icp.gt.0) then
         lambda = visls0(iscalt) * cpro_cp(iel)
       else
         lambda = visls0(iscalt) * cp0

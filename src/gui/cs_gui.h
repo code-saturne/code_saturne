@@ -137,19 +137,15 @@ void CS_PROCF (uithsc, UITHSC) (int *iscalt);
  *
  * Fortran Interface:
  *
- * subroutine csivis (ivisls, iscalt, itherm, itempk)
+ * subroutine csivis (iscalt, itherm)
  * *****************
  *
- * integer          ivisls  <--   indicator for the user scalar viscosity
  * integer          iscalt  <-->  number of the user thermal scalar if any
  * integer          itherm  <-->  type of thermal model
- * integer          itempk   -->  rtp index for temperature (in K)
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (int *ivisls,
-                                int *iscalt,
-                                int *itherm,
-                                int *itempk);
+void CS_PROCF (csivis, CSIVIS) (int *iscalt,
+                                int *itherm);
 
 /*----------------------------------------------------------------------------
  * Time passing parameter.
@@ -326,15 +322,6 @@ void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
                                 double     *cp0);
 
 /*----------------------------------------------------------------------------
- * Array of properties used in the calculation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiprop, UIPROP) (const int  *ivisls,
-                                const int  *ismago,
-                                const int  *iale,
-                                const int  *icp);
-
-/*----------------------------------------------------------------------------
  * Turbulence initialization parameters.
  *
  * Fortran Interface:
@@ -475,7 +462,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
  * integer          ncelet   <--  number of cells whith halo
  * integer          irom     <--  pointer for density rho
  * integer          icp      <--  pointer for specific heat Cp
- * integer          ivisls   <--  pointer for Lambda/Cp
  * integer          irovar   <--  =1 if rho variable, =0 if rho constant
  * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
  * integer          iscalt   <--  pointer for the thermal scalar in ISCA
@@ -494,7 +480,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *ncelet,
                               const cs_int_t  *itherm,
                               const cs_int_t  *icp,
-                              const cs_int_t   ivisls[],
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
                               const cs_int_t  *iscalt,

@@ -39,7 +39,6 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     rtpa          calculated variables at cell centers
 !>                               (at previous time step)
-!> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] imasfl        scalar mass flux at interior face centers
 !> \param[in,out] bmasfl        scalar mass flux at boundary face centers
 !> \param[in,out] rovsdt        unsteady term and mass aggregation term
@@ -48,7 +47,7 @@
 
 subroutine driflu &
 ( iflid  ,                                                       &
-  dt     , rtpa   , propce ,                                     &
+  dt     , rtpa   ,                                              &
   imasfl , bmasfl ,                                              &
   rovsdt , smbrs  )
 
@@ -82,7 +81,6 @@ implicit none
 integer          iflid
 
 double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
-double precision propce(ncelet,*)
 double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
 
@@ -91,7 +89,7 @@ double precision rovsdt(ncelet), smbrs(ncelet)
 integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg
-integer          ipcvsl, iflmas, iflmab
+integer          ifcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp
 integer          ircflp, ischcp, isstpp
@@ -138,7 +136,7 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: visct
+double precision, dimension(:), pointer :: visct, cpro_viscls
 
 !===============================================================================
 
@@ -215,10 +213,9 @@ elseif (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
 endif
 
 ! --- Brownian diffusivity
-if (ivisls(iscal).gt.0) then
-  ipcvsl = ipproc(ivisls(iscal))
-else
-  ipcvsl = 0
+call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+if (ifcvsl.ge.0) then
+  call field_get_val_s(ifcvsl, cpro_viscls)
 endif
 
 ! Name of the scalar
@@ -353,13 +350,13 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
   if (btest(iscdri, DRIFT_SCALAR_THERMOPHORESIS)) then
 
-    ! propce(iel,ipcvsl): contains the Brownian motion
-    !------------------------------------------------
+    ! cpro_viscls(iel): contains the Brownian motion
+    !-----------------------------------------------
 
-    if (ipcvsl.gt.0) then
+    if (ifcvsl.ge.0) then
 
       do iel = 1, ncel
-        viscce(iel) = viscce(iel) + propce(iel,ipcvsl)
+        viscce(iel) = viscce(iel) + cpro_viscls(iel)
       enddo
 
     else

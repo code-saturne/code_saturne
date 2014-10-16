@@ -88,7 +88,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc
 integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp
-integer          ipcvsl, iflmas, iflmab
+integer          ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
@@ -104,7 +104,7 @@ double precision, allocatable, dimension(:) :: whsad
 double precision, allocatable, dimension(:) :: xcpp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: visct, cpro_cp
+double precision, dimension(:), pointer :: visct, cpro_cp, cpro_viscls
 
 !===============================================================================
 
@@ -182,10 +182,9 @@ do iscal = 1, nscal
   ! Diffusion velocity
 
   ! Index for molecular diffusivity
-  if (ivisls(iscal).gt.0) then
-    ipcvsl = ipproc(ivisls(iscal))
-  else
-    ipcvsl = 0
+  call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_viscls)
   endif
 
   ! Index for turbulent diffusivity
@@ -198,14 +197,14 @@ do iscal = 1, nscal
     ! The positive part of (K+K_t) would have been considered
     ! but should allow negative K_t that is considered non physical here
 
-    if(ipcvsl.eq.0)then
+    if(ifcvsl.lt.0)then
       do iel = 1, ncel
         vistot(iel) = visls0(iscal)                                     &
            + idifft(ivar)*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     else
       do iel = 1, ncel
-        vistot(iel) = propce(iel,ipcvsl)                                &
+        vistot(iel) = cpro_viscls(iel)                                  &
            + idifft(ivar)*xcpp(iel)*max(visct(iel),zero)/sigmas(iscal)
       enddo
     endif

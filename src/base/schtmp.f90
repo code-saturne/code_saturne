@@ -79,14 +79,14 @@ double precision propce(ncelet,*)
 
 integer          iel    , ifac   , iscal
 integer          iflmas , iflmab
-integer          ipcvsa , ipcvta , ipcvsl
+integer          ipcvsa , ipcvta , ifcvsl
 integer          iicpa
 double precision flux   , theta  , aa, bb, viscos, xmasvo, varcp
 double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: i_mass_flux_prev, b_mass_flux_prev
 double precision, dimension(:), pointer :: brom, crom, broma, croma
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cpro_cp, cpro_viscls, cproa_viscls
 
 !===============================================================================
 
@@ -167,17 +167,18 @@ if (iappel.eq.1) then
     endif
   endif
 
-!     Remarque : si on faisant cette operation pour tous les
+!     Remarque : si on faisait cette operation pour tous les
 !       scalaires, on la ferait plusieurs fois pour les scalaires
 !       ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          ipcvsl = ipproc(ivisls(iscal))
-          ipcvsa = ipproc(ivissa(iscal))
+          call field_get_val_s(ifcvsl, cpro_viscls)
+          call field_get_val_prev_s(ifcvsl, cproa_viscls)
           do iel = 1, ncel
-            propce(iel,ipcvsa) = propce(iel,ipcvsl)
+            cproa_viscls(iel) = cpro_viscls(iel)
           enddo
         endif
       endif
@@ -243,12 +244,13 @@ elseif (iappel.eq.2) then
     do iscal = 1, nscal
       if (initvs(iscal).ne.1) then
         initvs(iscal) = 1
-        if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+        call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+        if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
           if (ivsext(iscal).gt.0) then
-            ipcvsl = ipproc(ivisls(iscal))
-            ipcvsa = ipproc(ivissa(iscal))
+            call field_get_val_s(ifcvsl, cpro_viscls)
+            call field_get_val_prev_s(ifcvsl, cproa_viscls)
             do iel = 1, ncel
-              propce(iel,ipcvsa) = propce(iel,ipcvsl)
+              cproa_viscls(iel) = cpro_viscls(iel)
             enddo
           endif
         endif
@@ -321,26 +323,24 @@ elseif (iappel.eq.2) then
 !       ayant une variance ET CE SERAIT FAUX
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
           theta  = thetvs(iscal)
-          ipcvsl = ipproc(ivisls(iscal))
-          ipcvsa = ipproc(ivissa(iscal))
-          if (ipcvsl.gt.0) then
-            do iel = 1, ncel
-              viscos = propce(iel,ipcvsl)
-              propce(iel,ipcvsl) = (1.d0+theta)*propce(iel,ipcvsl)&
-                                 -       theta *propce(iel,ipcvsa)
-              propce(iel,ipcvsa) = viscos
-            enddo
-          endif
+          call field_get_val_s(ifcvsl, cpro_viscls)
+          call field_get_val_prev_s(ifcvsl, cproa_viscls)
+          do iel = 1, ncel
+            viscos = cpro_viscls(iel)
+            cpro_viscls(iel) = (1.d0+theta)*cpro_viscls(iel) &
+                                    -theta *cproa_viscls(iel)
+            cproa_viscls(iel) = viscos
+          enddo
         endif
       endif
     enddo
   endif
 
   return
-
 
 
 !===============================================================================
@@ -526,12 +526,13 @@ elseif (iappel.eq.5) then
 !       ayant une variance
   if (nscal.ge.1) then
     do iscal = 1, nscal
-      if (ivisls(iscal).gt.0.and.iscavr(iscal).le.0) then
+      call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+      if (ifcvsl.ge.0.and.iscavr(iscal).le.0) then
         if (ivsext(iscal).gt.0) then
-          ipcvsl = ipproc(ivisls(iscal))
-          ipcvsa = ipproc(ivissa(iscal))
+          call field_get_val_s(ifcvsl, cpro_viscls)
+          call field_get_val_prev_s(ifcvsl, cproa_viscls)
           do iel = 1, ncel
-            propce(iel,ipcvsl) = propce(iel,ipcvsa)
+            cpro_viscls(iel) = cproa_viscls(iel)
           enddo
         endif
       endif

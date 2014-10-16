@@ -61,6 +61,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use field
 
 !===============================================================================
 
@@ -72,7 +73,8 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          iel
+integer :: iel, ifcven, ifclam
+double precision, dimension(:), pointer :: cpro_venerg, cpro_lambda
 
 !===============================================================================
 
@@ -86,28 +88,29 @@ integer          iel
 !     le moment, on est en gaz parfait avec CV constant : si quelqu'un
 !     essaye du CV variable, ce serait dommage que cela lui explose à la
 !     figure pour de mauvaises raisons.
-! Si IVISLS(IENERG).EQ.0, on a forcement IVISLS(ITEMPK).EQ.0
-!     et ICV.EQ.0, par construction de IVISLS(IENERG) dans
+! Si la diffusivite de ienerg est constante, celle de itempk est forcement
+!     constante ainsi que ICV.EQ.0, par construction dans
 !     le sous-programme cfvarp
 
-if(ivisls(ienerg).gt.0) then
+call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifcven)
+if (ifcven.ge.0) then
 
-  if(ivisls(itempk).gt.0) then
+  call field_get_val_s(ifcven, cpro_venerg)
 
+  call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifclam)
+  if (ifclam.ge.0) then
+    call field_get_val_s(ifclam, cpro_lambda)
     do iel = 1, ncel
-      propce(iel,ipproc(ivisls(ienerg))) =               &
-           propce(iel,ipproc(ivisls(itempk)))
+      cpro_venerg(iel) = cpro_lambda(iel)
     enddo
-
   else
     do iel = 1, ncel
-      propce(iel,ipproc(ivisls(ienerg))) =               &
-           visls0(itempk)
+      cpro_venerg(iel) = visls0(itempk)
     enddo
 
   endif
 
-  if(icv.gt.0) then
+  if (icv.gt.0) then
 
     do iel = 1, ncel
       if(propce(iel,ipproc(icv)).le.0.d0) then
@@ -118,17 +121,13 @@ if(ivisls(ienerg).gt.0) then
     enddo
 
     do iel = 1, ncel
-      propce(iel,ipproc(ivisls(ienerg))) =               &
-           propce(iel,ipproc(ivisls(ienerg)))            &
-           / propce(iel,ipproc(icv))
+      cpro_venerg(iel) = cpro_venerg(iel) / propce(iel,ipproc(icv))
     enddo
 
   else
 
     do iel = 1, ncel
-      propce(iel,ipproc(ivisls(ienerg))) =               &
-           propce(iel,ipproc(ivisls(ienerg)))            &
-           / cv0
+      cpro_venerg(iel) = cpro_venerg(iel) / cv0
     enddo
 
   endif

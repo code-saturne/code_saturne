@@ -28,8 +28,8 @@
 !>
 !> \brief This subroutine fills physical properties which are variable in time
 !>        for the mixing gas modelling with or without steam inside the fluid
-!>        domain. In presence of steam, this one is deduced from the 
-!>        noncondensable gases transported as scalars 
+!>        domain. In presence of steam, this one is deduced from the
+!>        noncondensable gases transported as scalars
 !>        (by means of the mass fraction of each species).
 !>
 !-------------------------------------------------------------------------------
@@ -68,7 +68,6 @@ use mesh
 use field
 use cavitation
 use cs_c_bindings
-use dimens, only: nscal
 use cs_f_interfaces
 
 !===============================================================================
@@ -79,7 +78,7 @@ implicit none
 
 ! Local variables
 
-integer          iel   , iscal, iesp, jesp, ierror
+integer          iel   , iscal, ifcvsl, iesp, jesp, ierror
 integer          f_id  , ii
 
 character(len=80) :: name_i, name_j, name_d
@@ -101,7 +100,6 @@ double precision, dimension(:), pointer :: cvar_yi, cvar_yj
 double precision, dimension(:), pointer :: y_d, ya_d
 double precision, dimension(:), pointer :: mix_mol_mas
 
-
 !===============================================================================
 
 !===============================================================================
@@ -116,7 +114,6 @@ if (icp.le.0)    ierror = 1
 if (ierror.gt.0) then
   call csexit(1)
 endif
-
 
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
 
@@ -135,12 +132,14 @@ else
 endif
 
 ! Lambda/CP
-call field_get_val_s(iprpfl(ivisls(iscalt)), cpro_venth)
+
+call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
+call field_get_val_s(ifcvsl, cpro_venth)
 
 call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
 
 ! Deduce mass fraction (y_d) which is
-! y_h2o_g in presence of steam or 
+! y_h2o_g in presence of steam or
 ! y_he/y_h2 with noncondensable gases
 if (ippmod(imixg).eq.0) then
   name_d = "y_he"
@@ -159,9 +158,9 @@ allocate(s_k(nscasp+1))
 
 !===============================================================================
 !2. Define the physical properties for the mixing flow with:
-!   - the density (rho_m) and specific heat (cp_m) of the mixing gas function 
+!   - the density (rho_m) and specific heat (cp_m) of the mixing gas function
 !     temperature and species scalars (yk),
-!   - the dynamic viscosity (mu_m) and conductivity (lbd_m) coefficient of 
+!   - the dynamic viscosity (mu_m) and conductivity (lbd_m) coefficient of
 !     the mixing gas function ot the enthalpy and species scalars,
 !   - the diffusivity coefficients of the scalars (Dk, D_enh).
 !===============================================================================
@@ -172,7 +171,7 @@ do iel=1, ncelet
 enddo
 
 !-----------------------------------------
-! Compute the mass fraction (y_d) deduced 
+! Compute the mass fraction (y_d) deduced
 ! from the mass fraction (yk) transported
 !-----------------------------------------
 
@@ -225,10 +224,10 @@ enddo
 !             cp_m(iel) = Sum( yk.cpk)_k[0, nscasp]
 !                       + y_d.cp_d
 !             -----------------------------
-! remark: the mass fraction deduced depending of the 
+! remark: the mass fraction deduced depending of the
 !         modelling chosen by the user.
 !         with:
-!             - imixg = 0 or 1, a noncondensable gas 
+!             - imixg = 0 or 1, a noncondensable gas
 !             - imixg > 2     , a condensable gas (steam)
 !=========================================================
 do iesp = 1, nscasp
@@ -259,7 +258,7 @@ enddo
 !         M_i  : molar fraction [kg/mole]
 !         rr   : prefect gas constant [J/mole/K]
 !         p0   : atmos. pressure (Pa)
-!         pther: pressure (Pa) integrated on the 
+!         pther: pressure (Pa) integrated on the
 !                fluid domain
 !=====================================================
 
@@ -275,7 +274,7 @@ enddo
 
 !==================================================
 ! Dynamic viscosity and conductivity coefficient
-! the physical properties associated to the gas 
+! the physical properties associated to the gas
 ! mixture with or without condensable gas.
 !==================================================
 
@@ -284,7 +283,7 @@ do iesp = 1, nscasp+1
 
   s_i => s_k(iesp)
 
-  ! Mass fraction deduced 
+  ! Mass fraction deduced
   ! (as steam or noncondensable gas)
   if (iesp.eq.nscasp+1) then
     cvar_yi => y_d
@@ -299,10 +298,10 @@ do iesp = 1, nscasp+1
 
     tk = cvar_enth(iel) / cpro_cp(iel)
     ! Viscosity and conductivity laws
-    ! for each mass fraction species 
+    ! for each mass fraction species
     call cs_local_physical_properties &
     !================================
-   ( mu_i, lambda_i, tk, tkelvi, s_i, name_i) 
+   ( mu_i, lambda_i, tk, tkelvi, s_i, name_i)
 
     xsum_mu = 0.d0
     xsum_lambda = 0.d0
@@ -325,7 +324,7 @@ do iesp = 1, nscasp+1
 
       call cs_local_physical_properties &
       !================================
-    ( mu_j, lambda_j, tk, tkelvi, s_j, name_j) 
+    ( mu_j, lambda_j, tk, tkelvi, s_j, name_j)
 
       phi_mu = (1.d0/sqrt(8.d0))                              &
           *(1.d0 +  s_i%mol_mas / s_j%mol_mas)**(-0.5d0)      &
@@ -357,8 +356,8 @@ do iesp = 1, nscasp+1
 enddo
 
 !=====================================================
-! Dynamic viscosity and conductivity coefficient 
-! the physical properties 
+! Dynamic viscosity and conductivity coefficient
+! the physical properties
 !=====================================================
 ! Same diffusivity for all the scalars except the enthalpy
 do ii = 1, nscapp
@@ -367,7 +366,8 @@ do ii = 1, nscapp
 
   if (iscal.ne.iscalt) then
 
-    call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vyk)
+    call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+    call field_get_val_s(ifcvsl, cpro_vyk)
 
     do iel = 1, ncel
       cpro_vyk(iel)= cpro_viscl(iel)
@@ -438,7 +438,7 @@ end subroutine cs_mixing_gas_physical_properties
 !> \param[out]    lambda        conductivity coefficient of the gas species
 !> \param[in]     tk            temperature variable in kelvin
 !> \param[in]     tkelvin       reference temperature value
-!> \param[in]     spro          constants used for the physcial laws 
+!> \param[in]     spro          constants used for the physcial laws
 !> \param[in]     name          name of the field associated to the gas species
 !_______________________________________________________________________________
 
@@ -454,7 +454,7 @@ implicit none
 
 ! Arguments
 
-double precision mu, lambda 
+double precision mu, lambda
 double precision tk, tkelvin
 
 character(len=80) :: name

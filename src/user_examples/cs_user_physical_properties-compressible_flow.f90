@@ -63,9 +63,9 @@
 !> selected by the user.
 !>
 !> To set a variable diffusivity for a given user-defined scalar, the
-!> variable \c ivisls(scalar_number) must have been set to 1 in the user
-!> subroutine \ref usipsc or in the GUI (otherwise, a memory problem is
-!> expected).
+!> variable integer key kivisl (scalar_diffusivity_id) must have been set to 0
+!> or a field id for the matching field in the user subroutine \ref usipsu or
+!> in the GUI (otherwise, a memory problem is expected).
 !>
 !> Examples are provided in the present subroutine (but they do not have
 !> any physical signification).
@@ -135,7 +135,7 @@ double precision dt(ncelet)
 
 !< [loc_var_dec]
 integer          ivart, iel
-integer          ith, iscal
+integer          ith, iscal, ifcvsl
 double precision varam, varbm, varcm, vardm
 double precision varal, varbl, varcl, vardl
 double precision varac, varbc
@@ -341,8 +341,9 @@ call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
 ! --- Molecular thermal conductivity
 
-if (ivisls(itempk).gt.0) then
-  call field_get_val_s(iprpfl(ivisls(itempk)), cpro_vtmpk)
+call field_get_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
+if (ifcvsl.ge.0) then
+  call field_get_val_s(ifcvsl, cpro_vtmpk)
 else
   cpro_vtmpk => NULL()
 endif
@@ -350,8 +351,8 @@ endif
 ! --- Stop if the molecular thermal conductivity has not
 !     been defined as variable
 
-if (ivisls(itempk).le.0) then
-  write(nfecra,1010) itempk, itempk, ivisls(itempk)
+if (ifcvsl.lt.0) then
+  write(nfecra,1010) itempk
   call csexit (1)
 endif
 
@@ -414,16 +415,17 @@ do iscal = 1, nscaus
 
     ! --- Molecular diffusivity of the current scalar iscal
 
-    if (ivisls(iscal).gt.0) then
-      call field_get_val_s(iprpfl(ivisls(iscal)), cpro_vscal)
+    call field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+    if (ifcvsl.ge.0) then
+      call field_get_val_s(ifcvsl, cpro_vscal)
     else
       cpro_vscal => NULL()
     endif
 
     ! --- Stop if the molecular diffusivity has not been defined as variable
 
-    if (ivisls(iscal).le.0) then
-      write(nfecra,1010) iscal, iscal, ivisls(iscal)
+    if (ifcvsl.lt.0) then
+      write(nfecra,1010) iscal
       call csexit (1)
     endif
 
@@ -510,16 +512,16 @@ enddo
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
 '@     For the scalar ',i10,/,                                    &
-'@       in the GUI or in the user subroutine ''usipsc'', the',/, &
+'@       in the GUI or in the user subroutine ''usipsu'', the',/, &
 '@         molecular diffusivity is declared as a property',/,    &
-'@         uniform in space: ivisls(',i10   ,') = ',i10   ,/,     &
+'@         uniform in space.',/,                                  &
 '@       in the user subroutine ''usphyv'', however, it is',/,    &
 '@         assumed to be potentially non uniform in space.',/,    &
 '@@',/,                                                           &
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
 '@  Ensure consistency by modifying the GUI input data or the',/, &
-'@    user subroutines ''usipsc'' or ''usphyv''.',/,              &
+'@    user subroutines ''usipsu'' or ''usphyv''.',/,              &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

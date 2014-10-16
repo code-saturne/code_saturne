@@ -267,14 +267,11 @@ _attribute_value(char               **path,
 
   cs_xpath_add_attribute(path, "status");
 
-  if (cs_gui_get_status(*path, &result)) {
-    *keyword = result;
-  }
-  else {
+  if (   cs_gui_strcmp(child, "postprocessing_recording")
+      || cs_gui_strcmp(child, "listing_printing")) *keyword = -999;
 
-    if (cs_gui_strcmp(child, "postprocessing_recording") ||
-        cs_gui_strcmp(child, "listing_printing")) *keyword = 1;
-  }
+  if (cs_gui_get_status(*path, &result))
+    *keyword = result;
 
   BFT_FREE(*path);
 }
@@ -425,13 +422,14 @@ _variable_post(int         f_id,
   _variable_attribute(f->name,
                       "postprocessing_recording",
                       &f_post);
+  if (f_post != -999)
+    cs_field_set_key_int(f, k_post, f_post);
 
   _variable_attribute(f->name,
                       "listing_printing",
                       &f_log);
-
-  cs_field_set_key_int(f, k_post, f_post);
-  cs_field_set_key_int(f, k_log, f_log);
+  if (f_log != -999)
+    cs_field_set_key_int(f, k_log, f_log);
 
   nb_probes = _variable_number_probes(f->name);
 
@@ -606,14 +604,15 @@ _property_post(int         f_id,
   _property_output_status(f->name,
                           "postprocessing_recording",
                           &f_post);
+  if (f_post != -999)
+    cs_field_set_key_int(f, k_post, f_post);
 
   /* Listing output frequency */
   _property_output_status(f->name,
                           "listing_printing",
                           &f_log);
-
-  cs_field_set_key_int(f, k_post, f_post);
-  cs_field_set_key_int(f, k_log, f_log);
+  if (f_log != -999)
+    cs_field_set_key_int(f, k_log, f_log);
 
   /* Activated probes */
   nb_probes = _property_number_probes(f->name);
@@ -757,20 +756,20 @@ _time_moment_post(int         f_id,
   int f_post = 0, f_log = 0;
   const int k_post = cs_field_key_id("post_vis");
   const int k_log  = cs_field_key_id("log");
-  const int k_lbl = cs_field_key_id("label");
 
   /* Visualization outputs frequency */
   _time_moment_output_status(moment_id,
                              "postprocessing_recording",
                              &f_post);
+  if (f_post != -999)
+    cs_field_set_key_int(f, k_post, f_post);
 
   /* Listing output frequency */
   _time_moment_output_status(moment_id,
                              "listing_printing",
                              &f_log);
-
-  cs_field_set_key_int(f, k_post, f_post);
-  cs_field_set_key_int(f, k_log, f_log);
+  if (f_log != -999)
+    cs_field_set_key_int(f, k_log, f_log);
 
   /* Activated probes */
   nb_probes = _time_moment_number_probes(moment_id);
@@ -1121,6 +1120,9 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   int *ippfld;
   char fmtprb[16];
 
+  if (!cs_gui_file_is_loaded())
+    return;
+
   {
     int n_fields = cs_field_n_fields();
     int ipp_max = 1;
@@ -1420,6 +1422,8 @@ cs_gui_postprocess_writers(void)
 void
 cs_gui_postprocess_fields(void)
 {
+  if (!cs_gui_file_is_loaded())
+    return;
 }
 
 /*----------------------------------------------------------------------------*/

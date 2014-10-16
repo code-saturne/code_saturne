@@ -143,7 +143,7 @@ call field_set_key_double(f_id, kscmax, 0.25d0)
 !===============================================================================
 ! 2. PROPRIETES PHYSIQUES
 !    A RENSEIGNER OBLIGATOIREMENT (sinon pb dans varpos)
-!    - PROPRES AUX SCALAIRES   : ivisls
+!    - PROPRES AUX SCALAIRES   : scalar_diffusivity_id
 !      Rq : pas de variance associee a un scalaire dans notre cas
 !    - PROPRES A LA SUSPENSION : icp
 !===============================================================================
@@ -152,7 +152,7 @@ do isc = 1, nscapp
 
   if (iscavr(iscapp(isc)).le.0) then
     ! Reference dynamic viscosity relative to this scalar
-    ivisls(iscapp(isc)) = 0
+    call field_set_key_int(ivarfl(isca(iscapp(isc))), kivisl, -1)
   endif
 
 enddo

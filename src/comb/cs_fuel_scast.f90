@@ -108,7 +108,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar , iel, icla , numcla
 integer          iexp1 , iexp2 , iexp3
 integer          ipcro2 , ipcte1 , ipcte2

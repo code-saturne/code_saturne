@@ -78,8 +78,8 @@ double precision dt(ncelet), volume(ncelet)
 
 ! Local variables
 
-integer          ic, icel, ivar, ipp, f_id, f_id_prv, c_id, f_dim
-integer          ippf, kval, nfld, f_type, isqrt
+integer          ic, icel, f_id, c_id, f_dim
+integer          kval, nfld, f_type, isqrt
 logical          interleaved
 character(len=200) :: chain, chainc, flabel,fname
 

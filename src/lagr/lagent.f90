@@ -136,7 +136,6 @@ double precision dmasse , rd(1) , aa
 double precision xxpart , yypart , zzpart
 double precision swpart , uupart , vvpart , wwpart
 double precision ddpart , ttpart
-double precision surf   , volp , vitp
 double precision dintrf(1)
 
 integer, dimension(3) :: shpe

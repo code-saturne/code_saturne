@@ -36,7 +36,6 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[out]    dt            time step value
-!> \param[out]    rtp           calculation variables at cells center
 !> \param[out]    propce        physical properties at cell centers
 !> \param[out]    frcxt         external stress generating hydrostatic pressure
 !> \param[out]    prhyd         hydrostatic pressure predicted
@@ -44,8 +43,7 @@
 
 subroutine iniva0 &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce ,                                     &
-   frcxt  , prhyd)
+   dt     , propce , frcxt  , prhyd)
 
 !===============================================================================
 ! Module files
@@ -78,7 +76,7 @@ implicit none
 integer          nvar   , nscal
 
 double precision frcxt(3,ncelet), prhyd(ncelet)
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet), propce(ncelet,*)
 
 ! Local variables
 
@@ -87,17 +85,15 @@ integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
 integer          iivisa, iivism
 integer          iicpa
-integer          iiviss
+integer          ifcvsl
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          f_id, f_id_prv, f_dim
 integer          kscmin, kscmax
 
-logical          interleaved
+logical          interleaved, have_previous
 
 double precision xxk, xcmu, trii
-
-double precision rvoid(1)
 
 double precision, dimension(:), pointer :: brom, crom, crom_prev2
 double precision, dimension(:), pointer :: cofbcp
@@ -112,6 +108,7 @@ double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nus
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
+double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls
 
 !===============================================================================
 
@@ -229,26 +226,30 @@ endif
 
 ! Diffusivite des scalaires
 do iscal = 1, nscal
-  if (ivisls(iscal).gt.0) then
-    iiviss = ipproc(ivisls(iscal))
-    ! Diffusivite aux cellules (et au pdt precedent si ordre2)
+  call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+  ! Diffusivite aux cellules (et au pdt precedent si ordre2)
+  if (ifcvsl.ge.0) then
+    call field_get_val_s(ifcvsl, cpro_viscls)
     do iel = 1, ncel
-      propce(iel,iiviss) = visls0(iscal)
+      cpro_viscls(iel) = visls0(iscal)
     enddo
-    if (ivsext(iscal).gt.0) then
-      iivisa = ipproc(ivissa(iscal))
+    call field_have_previous(ifcvsl, have_previous)
+    if (have_previous) then
+      call field_get_val_prev_s(ifcvsl, cproa_viscls)
       do iel = 1, ncel
-        propce(iel,iivisa) = propce(iel,iiviss)
+        cproa_viscls(iel) = visls0(iscal)
       enddo
     endif
   endif
+enddo
 
-  if (iscal.eq.iscalt.and.iturt(iscal).gt.0.and.irovar.eq.1) then
+if (iscalt.gt.0.and.irovar.eq.1) then
+  if (iturt(iscalt).gt.0) then
     do iel = 1, ncelet
       propce(iel,ipproc(ibeta)) = 0.d0
     enddo
   endif
-enddo
+endif
 
 ! Initialisation of source terms for weakly compressible algorithm
 if (idilat.ge.4) then

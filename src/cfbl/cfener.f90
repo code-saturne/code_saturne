@@ -103,7 +103,7 @@ character(len=80) :: chaine
 integer          ivar
 integer          ifac  , iel
 integer          init  , isqrt , iii
-integer          ipcvsl, iflmas, iflmab
+integer          ifcvsl, iflmas, iflmab
 integer          icvflb
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -139,7 +139,7 @@ double precision, dimension(:,:), pointer :: vel
 
 double precision, dimension(:), pointer :: cvar_pr, cvar_energ, cvara_energ
 double precision, dimension(:), pointer :: cvar_tempk
-double precision, dimension(:), pointer :: visct, cpro_cp
+double precision, dimension(:), pointer :: visct, cpro_cp, cpro_viscls
 
 !===============================================================================
 
@@ -183,10 +183,9 @@ call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-if(ivisls(iscal).gt.0) then
-  ipcvsl = ipproc(ivisls(iscal))
-else
-  ipcvsl = 0
+call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+if (ifcvsl.ge.0) then
+  call field_get_val_s(ifcvsl, cpro_viscls)
 endif
 
 ! Prints
@@ -427,13 +426,13 @@ if( idiff(ivar).ge. 1 ) then
     enddo
   endif
 !     (CP/CV)*MUT/SIGMAS+LAMBDA/CV
-  if(ipcvsl.eq.0)then
+  if(ifcvsl.lt.0)then
     do iel = 1, ncel
       w1(iel) = w1(iel) + visls0(iscal)
     enddo
   else
     do iel = 1, ncel
-      w1(iel) = w1(iel) + propce(iel,ipcvsl)
+      w1(iel) = w1(iel) + cpro_viscls(iel)
     enddo
   endif
 

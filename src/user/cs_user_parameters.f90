@@ -657,106 +657,6 @@ endif
 return
 end subroutine usipph
 
-!===============================================================================
-
-
-subroutine usipsc &
-!================
-
- ( nscmax, nscaus, ixmlpu, nfecra, ivisls )
-
-
-!===============================================================================
-! Purpose:
-! -------
-
-! User subroutine for the input of parameters depending on the
-!   number of user scalars.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nscmax           ! i  ! <-- ! maximum number of scalars                      !
-! nscaus           ! i  ! <-- ! number of user scalars                         !
-! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
-!                  !    !     ! used (1: yes, 0: no)                           !
-! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
-! ivisls(nscmax)   ! ia ! <-> ! uniform scalar diffusivity flag                !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-! No module should appear here
-
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer nscmax, nscaus, ixmlpu, nfecra
-integer ivisls(nscmax)
-
-! Local variables
-
-integer iscal
-
-!===============================================================================
-
-!     In this subroutine, only the parameters which already appear may
-
-!       be set, to the exclusion of any other.
-!               ================
-
-
-!     If we are not using the Code_Saturne GUI:
-
-!       All the parameters which appear in this subroutine must be set.
-!       ===
-
-!===============================================================================
-
-! --- Variable diffusivity (ivisls=1) or constant diffusivity (ivisls=0) for
-!       the thermal scalar and USER scalars.
-
-!     For user scalars iscal which represent the variance of another user
-!       scalar, the diffusivity of the variance of a scalar is assumed to
-!       have the same behavior as the diffusivity of this scalar,
-!       so values set here will be ignored.
-
-!     For non-user scalars relative to specific physics (coal, combustion,
-!       electric arcs: see usppmo) implicitly defined in the model,
-!       the corresponding information is given automatically, and
-!       ivisls should not be modified here.
-
-!     Caution:    complete usphyv with the law defining the diffusivity
-!     =========   if and only if ivisls = 1 has been set here.
-
-if (.false.) then
-
-  do iscal = 1, nscaus
-    ivisls(iscal) = 0
-  enddo
-
-endif
-
-!----
-! Formats
-!----
-
-return
-end subroutine usipsc
-
 
 !===============================================================================
 
@@ -966,7 +866,7 @@ integer nmodpp
 
 logical       ilved, inoprv
 integer       ii, jj, kscmin, kscmax, keydri
-integer       f_id, idim1, itycat, ityloc, iscdri, iscal
+integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl
 
 !===============================================================================
 
@@ -1431,6 +1331,38 @@ if (.false.) then
     if (iscavr(jj).le.0) then
       ! We define the diffusivity
       visls0(jj) = viscl0
+    endif
+  enddo
+
+endif
+
+! --- Variable diffusivity field id (ifcsl>=0) or constant diffusivity (ifcvsl=1) for
+!       the thermal scalar and USER scalars.
+
+!     With ifcvsl = 0, the field will be added automatically, and later calls to
+!       field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
+!       will return its id.
+!     With ifcvsl > 0, the id of an existing, predifined field is given. This
+!       may allow sharing a diffusivity between multiple scalars.
+
+!     For user scalars iscal which represent the variance of another user
+!       scalar, the diffusivity of the variance of a scalar is assumed to
+!       have the same behavior as the diffusivity of this scalar,
+!       so values set here will be ignored.
+
+!     For non-user scalars relative to specific physics (coal, combustion,
+!       electric arcs: see usppmo) implicitly defined in the model,
+!       the diffusivity should not be modified here.
+
+!     Caution:    complete usphyv with the law defining the diffusivity
+!     =========   if and only if ifcvsl = 0 has been set here.
+
+if (.false.) then
+
+  do iscal = 1, nscaus
+    if (iscavr(iscal).le.0) then
+      ifcvsl = -1
+      call field_set_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
     endif
   enddo
 
@@ -2319,6 +2251,7 @@ use period
 use ppppar
 use ppthch
 use ppincl
+use field
 
 !===============================================================================
 
@@ -2328,6 +2261,8 @@ implicit none
 
 
 ! Local variables
+
+integer :: ifcvsl
 
 !===============================================================================
 
@@ -2375,10 +2310,11 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
   ieos = 1
 
 ! --> Molecular thermal conductivity
-!       constant  : ivisls = 0
-!       variable  : ivisls = 1
+!       constant  : ifcvsl = -1
+!       variable  : ifcvsl = 0
 
-  ivisls(itempk) = 0
+  ifcvsl = -1
+  call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
 
 ! --> Volumetric molecular viscosity
 !       iviscv = 0 : uniform  in space and constant in time
