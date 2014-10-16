@@ -67,6 +67,8 @@ implicit none
 ! Local variables
 
 integer          f_id
+integer          idim1
+logical       :: has_previous
 
 !===============================================================================
 
@@ -125,9 +127,26 @@ if (ippmod(iatmos).ge.1) then
   !==========
 endif
 
-! Condensation modelling
-if (ippmod(icond).ge.0) then
-  call add_property_field('y_h2o_g', 'Y_H2O_g', f_id)
+if (ippmod(imixg).ge.0) then
+  call add_property_field('mix_mol_mas', 'Mix_mol_mass', f_id)
+endif
+
+! Mixing gas with Air/Helium and the Helium gas deduced 
+if (ippmod(imixg).eq.0) then
+  call add_property_field('y_he', 'Y_He', f_id)
+endif
+
+! Mixing gas with Air/Hydrogen and the Hydrogen gas deduced 
+if (ippmod(imixg).eq.1) then
+  call add_property_field('y_h2', 'Y_H2', f_id)
+endif
+
+! Mixing gas with steam with/without condensation modelling
+! the steam gas will be deduced from the gas species transported
+if (ippmod(imixg).ge.2) then
+  idim1 =  1
+  has_previous = .true.
+  call add_property_field_owner('y_h2o_g', 'Y_H2O_g', idim1, has_previous, f_id)
 endif
 
 end subroutine ppprop

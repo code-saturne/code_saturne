@@ -412,6 +412,31 @@ do f_id = 1, nfld
 
     call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
 
+  else if (name.eq.'y_he') then
+
+    sasp%mol_mas = 0.004d0
+    sasp%cp = 5194.d0
+    sasp%vol_dif = 2.67d0
+    sasp%mu_a = 18.5752d-6
+    sasp%mu_b = 0.0d0
+    sasp%lambda_a = 0.144d0
+    sasp%lambda_b = 0.0d0
+
+    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+
+
+  else if (name.eq.'y_h2') then
+
+    sasp%mol_mas = 0.002d0
+    sasp%cp = 14560.d0
+    sasp%vol_dif = 6.12d0
+    sasp%mu_a = 1.93d-9
+    sasp%mu_b = 8.40d-6
+    sasp%lambda_a = 4.431d-4
+    sasp%lambda_b = 5.334d-2
+
+    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+
   else if (name.eq.'y_h2o_g') then
 
     sasp%mol_mas = 0.018d0

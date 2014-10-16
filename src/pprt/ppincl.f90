@@ -227,12 +227,15 @@ module ppincl
   ! - ippmod(iaeros) = 2 Merkel's model
   integer ::  iaeros
 
-  !> pointer to specify modelling of condensation
-  !> - ippmod(icond) =-1 module not activated
-  !> - ippmod(icond) = 0 condensation source terms activated
-  !> - ippmod(icond) = 1 condensation source terms with metal
-  !>                     structures activate
-  integer ::  icond
+  !> pointer to specify mixing gases flow module with indicator ippmod(imixg)
+  !> - ippmod(imixg) =-1 module not activated
+  !> - ippmod(imixg) = 0  Air/Helium   mixing gases
+  !> - ippmod(imixg) = 1  Air/Hydrogen mixing gases
+  !> - ippmod(imixg) = 2  Air/Steam    mixing gases
+  !> - ippmod(imixg) = 3  Air/Helium/Steam mixing gases
+  !> - ippmod(imixg) = 4  Air/Hydrogen/Steam mixing gases
+
+  integer ::  imixg
 
 
   parameter       (iphpar = 1 , icod3p = 2 , icodeq = 3 ,           &
@@ -240,7 +243,7 @@ module ppincl
                    icpl3c = 7 , icfuel = 8 , ieljou = 9 ,           &
                    ielarc = 10, ielion = 11, icompf = 12,           &
                    iatmos = 13, iaeros = 14, iccoal = 15,           &
-                   icond  = 16)
+                   imixg  = 16)
 
   !> \}
 
@@ -260,6 +263,23 @@ module ppincl
 
 
   !> \}
+
+  !--> PARAMETERS ASSOCIATED WITH THE SEVERE ACCIDENTS  SPECIFIC MIXING GAS
+
+  !> \defgroup severe_accidents parameters chosen by the user
+
+  !> \addtogroup severe_accidents
+  !> \{
+
+  !> Specific condensation modelling
+  !>      if = -1 module not activated
+  !>      if =  0 condensation source terms activated
+  !>      if =  1 condensation source terms with metal
+  !>                               structures activate
+  integer, save ::  icond
+
+  !> \}
+
 
   !--> POINTEURS VARIABLES COMBUSTION GAZ
 

@@ -20,8 +20,9 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file cs_condensation_initialization.f90
-!> \brief Initialization of calculation variables for condensation modelling
+!> \file cs_mixing_gas_initialization.f90
+!> \brief Initialization of calculation variables for mixing gas modelling
+!> in presence of steam gas as variable deduced and not solved.
 !>
 !------------------------------------------------------------------------------
 
@@ -35,7 +36,7 @@
 !> \param[in]     dt            time step
 !______________________________________________________________________________
 
-subroutine cs_condensation_initialization &
+subroutine cs_mixing_gas_initialization &
  ( nvar   , nscal  , dt )
 
 !===============================================================================
@@ -76,15 +77,18 @@ integer          iel, iesp
 integer          iok
 integer          f_id
 
+character(len=80) :: name_d
+
 double precision valmax, valmin, vfmin , vfmax
-double precision volgas, volvap
+double precision volgas, vol_d
 
-type(severe_acc_species_prop) s_h2o_g, s_k
+type(severe_acc_species_prop) s_d, s_k
 
-double precision, allocatable, dimension(:) :: mix_mol_mas
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
-double precision, dimension(:), pointer :: y_h2o_g
-double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_venth
+double precision, dimension(:), pointer :: y_d
+double precision, dimension(:), pointer :: cpro_rho, cpro_viscl
+double precision, dimension(:), pointer :: cpro_cp , cpro_venth
+double precision, dimension(:), pointer :: mix_mol_mas
 
 !===============================================================================
 
@@ -104,13 +108,23 @@ else
   call csexit (1)
 endif
 
-! Enthaltpy
+! Enthalpy
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
 
-! Condensable gas H20 (vapor)
-call field_get_val_s_by_name("y_h2o_g", y_h2o_g)
-call field_get_id("y_h2o_g", f_id)
-call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)
+!Deduced species (h2o_g) with steam gas
+! or Helium or Hydrogen  with no condensable gases
+if (ippmod(imixg).eq.0) then
+  name_d = "y_he" 
+elseif (ippmod(imixg).eq.1) then
+  name_d = "y_h2" 
+elseif (ippmod(imixg).ge.2) then
+  name_d = "y_h2o_g" 
+endif
+call field_get_val_s_by_name(name_d, y_d)
+call field_get_id(name_d, f_id)
+call field_get_key_struct_severe_acc_species_prop(f_id, s_d)
+
+call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
 
 !===============================================================================
 ! 2. User initialization
@@ -121,18 +135,16 @@ call cs_user_initialization &
   dt     )
 
 !===============================================================================
-! 3. Deduce the mass fraction of vapor H2O from the mass fraction of
-!    non-condensable gases
+! 3. Deduce the mass fraction (y_d) from the mass fractions (yk) of
+!    the condensable and noncondensable gases transported
 !===============================================================================
-
-allocate(mix_mol_mas(ncelet))
 
 ! Initialization
 volgas = 0.d0
-volvap = 0.d0
+vol_d  = 0.d0
 
 do iel = 1, ncel
-  y_h2o_g(iel) = 1.d0
+  y_d(iel) = 1.d0
 
   ! Specific Heat of the mix
   cpro_cp(iel) = 0.d0
@@ -142,9 +154,7 @@ do iel = 1, ncel
 enddo
 
 do iesp = 1, nscasp
-  ! mass fraction array of the different
-  ! species (O2, N2)
-  !-------------------------------------------------
+  ! Mass fraction array of the different species
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
 
   call field_get_key_struct_severe_acc_species_prop( &
@@ -154,7 +164,7 @@ do iesp = 1, nscasp
     if (cvar_yk(iel).gt.1.d0.or.cvar_yk(iel).lt.0.d0) then
       iok = iok + 1
     endif
-    y_h2o_g(iel) = y_h2o_g(iel)-cvar_yk(iel)
+    y_d(iel) = y_d(iel)-cvar_yk(iel)
 
     ! Mixing specific heat (Cp_m0)
     cpro_cp(iel) = cpro_cp(iel) + cvar_yk(iel)*s_k%cp
@@ -165,41 +175,37 @@ enddo
 
 ! Finalization and check
 do iel = 1, ncel
-  if (y_h2o_g(iel).gt.1.d0.or.y_h2o_g(iel).lt.0.d0) then
+  if (y_d(iel).gt.1.d0.or.y_d(iel).lt.0.d0) then
     iok = iok + 1
   endif
-  y_h2o_g(iel) = min(max(y_h2o_g(iel), 0.d0), 1.d0)
+  y_d(iel) = min(max(y_d(iel), 0.d0), 1.d0)
 
   ! Mixing specific heat (Cp_m0)
-  cpro_cp(iel) = cpro_cp(iel) + y_h2o_g(iel)*s_h2o_g%cp
+  cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 
   !-- enthalpy initialization
   cvar_enth(iel) = cpro_cp(iel)*t0
 
-  mix_mol_mas(iel) = mix_mol_mas(iel) + y_h2o_g(iel)/s_h2o_g%mol_mas
+  mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
   mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
 
-  !-- Helium volume and Total gas volume injected
-  volvap = volvap + volume(iel)*    &
-          (y_h2o_g(iel)/18.d0) * (mix_mol_mas(iel)*1000.d0)
+  !-- steam volume and Total gas volume injected
+  vol_d = vol_d + volume(iel)*    &
+          (y_d(iel)/18.d0) * (mix_mol_mas(iel)*1000.d0)
   volgas = volgas +volume(iel)
 
 enddo
 
 if (irangp.ge.0) then
  call parsom(volgas)
- call parsom(volvap)
+ call parsom(vol_d)
 endif
 
-
-! Deallocate the temporary array
-deallocate(mix_mol_mas)
-
 !===============================================================================
-! 4. Print to the listing to Check the variables intialization
+! 4. Print to the listing to check the variables intialization
 !===============================================================================
 write(nfecra, 200)
-write(nfecra, 203) volgas , volvap
+write(nfecra, 203) volgas , vol_d
 
 !===============================================================================
 ! 5. Stop if problem
@@ -216,16 +222,16 @@ write(nfecra,3000)
 ! Formats
 !--------
 
- 200 format                                                   &
- (/,                                                          &
- 5x,'-------------------------------------------------' ,/,&
- 5x,'** Condensation: Check variables initialization**' ,/,&
- 5x,'-------------------------------------------------' ,/)
+ 200 format                                                         &
+ (/,                                                                &
+ 5x,'----------------------------------------------------------' ,/,&
+ 5x,'**      Mixing gas : Check variables initialization     **' ,/,&
+ 5x,'----------------------------------------------------------' ,/)
 
  203 format( &
- 3x, '   Total gas Volume:', 3x, g17.9                     ,/,&
- 3x, '   Steam gas Volume:', 3x, g17.9                     ,/,&
- 3x,                                                          &
+ 3x, '   Total   gas Volume:', 3x, g17.9                         ,/,&
+ 3x, '   Deduced gas Volume:', 3x, g17.9                         ,/,&
+ 3x,                                                                &
  '========================================================' )
 
  3000 format(/,/,                                                 &
@@ -264,4 +270,4 @@ write(nfecra,3000)
 !----
 
 return
-end subroutine
+end subroutine cs_mixing_gas_initialization

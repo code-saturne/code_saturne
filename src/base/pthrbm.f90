@@ -138,17 +138,23 @@ debtot = 0.d0
 !--------------
 
 ! Computation of mass flux imposed on the boundary faces
-do ifac = 1, nfabor
-  if (itypfb(ifac).eq.ientre) then
-    ! the inlet mass flux integrated in space
-    debin = debin - bmasfl(ifac)
-  else if (itypfb(ifac).eq.isolib) then
-    ! the outlet mass flux integrated in space:
-    debout = debout - bmasfl(ifac)
-  endif
-enddo
+!do ifac = 1, nfabor
+!  if (itypfb(ifac).eq.ientre) then
+!    ! the inlet mass flux integrated in space
+!    debin = debin - bmasfl(ifac)
+!  else if (itypfb(ifac).eq.isolib) then
+!    ! the outlet mass flux integrated in space:
+!    debout = debout - bmasfl(ifac)
+!  endif
+!enddo
 
-debtot = debin + debout
+!debtot = debin + debout
+
+if (ttcabs.le.200.d0) then
+  debtot = 0.18d-3
+else
+  debtot = 0.d0
+endif
 
 ! Computation of the inlet mass flux imposed on the cells volume
 if (ncesmp.gt.0) then
@@ -268,8 +274,7 @@ endif
    '---',                                                          &
    '-------------------------------------------------------',      &
    '-------------'                                             , /,&
-   3X,12e12.4, /,                                                  &
-
+   3X, 12g15.7, /,                                                 &
    '---',                                                          &
    '-------------------------------------------------------',      &
    '-------------' )

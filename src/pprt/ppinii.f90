@@ -92,6 +92,10 @@ ihm = 0 ! enthalpy, common to many models
 isoot = -1
 i_coal_drift = 0
 
+!> --- Specific condensation modelling
+!>     (icond = -1 : not activated by default)
+icond = -1
+
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees
 ifm    = 0

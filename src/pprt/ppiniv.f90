@@ -199,11 +199,11 @@ if ( ippmod(iaeros).ge.0 ) then
 
 endif
 
-! Condensation modelling
+! Mixing gas modelling in presence of stream gas
 
-if (ippmod(icond).ge.0) then
+if (ippmod(imixg).ge.2) then
 
-  call cs_condensation_initialization &
+  call cs_mixing_gas_initialization &
   ( nvar   , nscal  ,                                            &
     dt     )
 

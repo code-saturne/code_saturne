@@ -165,11 +165,10 @@ if (ippmod(iaeros).ge.0) then
   !==========
 endif
 
-! 8. Condensation modelling
+! 8. Mixing gas modelling
 !--------------------------
 
-if (ippmod(icond).ge.0) then
-
+if (ippmod(imixg).ge.0) then
   itherm = 2
   call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
   iscalt = ihm
@@ -192,6 +191,23 @@ if (ippmod(icond).ge.0) then
   call field_set_key_double(f_id, kscmax, scmaxp)
 
   nscasp = 2
+  if (ippmod(imixg).eq.3) then
+    call add_model_scalar_field('y_he', 'Y_He', iscasp(3))
+    ivisls(iscasp(3)) = 1
+    f_id = ivarfl(isca(iscasp(3)))
+    call field_set_key_double(f_id, kscmin, scminp)
+    call field_set_key_double(f_id, kscmax, scmaxp)
+
+    nscasp = 3
+  elseif (ippmod(imixg).eq.4) then
+    call add_model_scalar_field('y_h2', 'Y_H2', iscasp(3))
+    ivisls(iscasp(3)) = 1
+    f_id = ivarfl(isca(iscasp(3)))
+    call field_set_key_double(f_id, kscmin, scminp)
+    call field_set_key_double(f_id, kscmax, scmaxp)
+
+    nscasp = 3
+  endif
 endif
 
 

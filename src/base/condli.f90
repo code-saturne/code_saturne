@@ -301,7 +301,7 @@ call field_get_coefbf_v(ivarfl(iu), cofbfu)
 ! 2. Treatment of types of BCs given by itypfb
 !===============================================================================
 
-if (ippmod(iphpar).ge.1.and.ippmod(icond).eq.-1) then
+if (ippmod(iphpar).ge.1.and.ippmod(imixg).eq.-1) then
   call pptycl &
   !==========
  ( nvar   ,                                                       &
@@ -643,7 +643,7 @@ deallocate(grad)
 ! Initialization of the array storing yplus
 !  which is computed in clptur.f90 and/or clptrg.f90
 
-if (ipstdv(ipstyp).ne.0.or.ippmod(icond).ge.0) then
+if (ipstdv(ipstyp).ne.0.or.icond.ge.0) then
   do ifac = 1, nfabor
     yplbr(ifac) = 0.d0
   enddo

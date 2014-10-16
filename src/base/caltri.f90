@@ -302,6 +302,7 @@ endif
 ! ------------------------------
 
 call cs_user_boundary_mass_source_terms &
+!======================================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ivoid  , ivoid  , izftcd ,                                     &
@@ -757,7 +758,7 @@ if (nftcdt.gt.0) then
   iappel = 2
 
   call cs_user_boundary_mass_source_terms &
-  !==============================
+  !======================================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &

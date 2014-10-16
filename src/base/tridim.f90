@@ -645,7 +645,7 @@ if (nftcdt.gt.0) then
   enddo
 
   call cs_user_boundary_mass_source_terms &
-  !==============================
+  !======================================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
@@ -1105,7 +1105,7 @@ do while (iterns.le.nterup)
 
   if (nftcdt.gt.0) then
 
-    if (ippmod(icond).eq.0) then
+    if (icond.eq.0) then
 
       ! Empiric laws used by COPAIN condensation model to
       ! the compute of the condensation source term and

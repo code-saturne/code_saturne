@@ -324,13 +324,18 @@ if (ixmlpu.eq.0) then
 
 endif
 
-! Handling condensation source terms
-!        if = -1   module not activated
-!        if =  0   condensation source terms activated
-!        if =  1   condensation source terms with metal structures activated
+! --- imixg: Mixing gases flow
+! ==========
+!        if =-1 module not activated
+!        if = 0  Air/Helium   mixing gases
+!        if = 1  Air/Hydrogen mixing gases
+!        if = 2  Air/Steam    mixing gases
+!        if = 3  Air/Helium/Steam mixing gases
+!        if = 4  Air/Hydrogen/Steam mixing gases
+
 
 if (.false.) then
-  ippmod(icond) = 0
+  ippmod(imixg) = 0
 endif
 
 !===============================================================================
@@ -412,6 +417,16 @@ if (ixmlpu.eq.0) then
   if (ippmod(iatmos).ge.0) then
     ficmet = 'meteo'
   endif
+
+ if ( ippmod(imixg).ge.0 ) then
+   !> Specific condensation modelling
+   !>      if = -1 module not activated
+   !>      if =  0 condensation source terms activated
+   !>      if =  1 condensation source terms with metal
+   !>                               structures activate
+   icond = -1
+
+ endif
 
 endif
 
@@ -1347,6 +1362,8 @@ if (.false.) then
   irovar = 1
   ivivar = 1
 endif
+
+
 
 ! --- Minimum and maximum admissible values for each USER scalar:
 

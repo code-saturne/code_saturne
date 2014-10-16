@@ -274,10 +274,10 @@ if (ippmod(icompf).ge.0) then
 
 endif
 
-! Condensation modelling
-if (ippmod(icond).ge.0) then
+! Mixing gas modelling in presence of steam
+if (ippmod(imixg).ge.2) then
 
-  call cs_condensation_physical_properties
+  call cs_mixing_gas_physical_properties
 
 endif
 

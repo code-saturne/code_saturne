@@ -106,6 +106,7 @@ use period
 use cs_f_interfaces
 use atchem
 use darcy_module
+use pointe, only: itypfb
 
 !===============================================================================
 
@@ -774,6 +775,10 @@ if (idiff(ivar).ge.1) then
    ( imvisf ,                      &
      w1     ,                      &
      viscf  , viscb  )
+
+    do ifac = 1, nfabor
+      if (itypfb(ifac).eq.ientre) viscb(ifac) = 0.d0
+    enddo
 
   ! Symmetric tensor diffusivity (GGDH)
   elseif (idftnp.eq.6) then

@@ -212,8 +212,6 @@ csclli.f90 \
 cscloc.f90 \
 cspcev.f90 \
 cscpfb.f90 \
-cs_condensation_initialization.f90 \
-cs_condensation_physical_properties.f90 \
 cs_control.c \
 cs_coupling.c \
 cs_ext_neighborhood.c \
@@ -228,6 +226,8 @@ cs_log_iteration.c \
 cs_numbering.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
+cs_mixing_gas_initialization.f90 \
+cs_mixing_gas_physical_properties.f90 \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \
