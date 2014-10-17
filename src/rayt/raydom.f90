@@ -106,7 +106,7 @@ integer          mode   , icla   , ipcla  , ivar0
 integer          idverl
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
-double precision aa, bb, ckmin, unspi, xlimit, flunmn
+double precision aa, bb, ckmin, ckmax, unspi, xlimit, flunmn
 double precision flux(nozrdm)
 double precision vv, sf, xlc, xkmin, pp
 
@@ -188,15 +188,17 @@ if (ippmod(iphpar).ge.2) then
   call ppcabs(propce)
   !==========
 
-  !---> ckmel stores temporarly the absorbption coefficient
-  !     of gaz-particle mixing
+  !---> ckmel is the absorbption coefficient
+  !     of gas-particle mixing
 
   if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0  ) then
 
+    ! Absoption coefficient of the gas
     do iel = 1, ncel
       ckmel(iel) = propce(iel,ipproc(icak(1)))
     enddo
 
+    ! Absoption coefficient of the dispersed phase
     if (ippmod(iccoal).ge.0 ) then
       do icla = 1,nclacp
         ipcla = 1+icla
@@ -218,9 +220,6 @@ if (ippmod(iphpar).ge.2) then
       enddo
     endif
 
-    do iel = 1, ncel
-      propce(iel,ipproc(icak(1))) = ckmel(iel)
-    enddo
   endif
 
 else
@@ -319,14 +318,14 @@ endif
 !---> Check of a transparent case
 idverl = idiver
 
-aa = zero
+ckmax = 0.d0
 do iel = 1, ncel
-  aa = aa + propce(iel,ipproc(icak(1)))
+  ckmax = max(ckmax, propce(iel,ipproc(icak(1))))
 enddo
 if (irangp.ge.0) then
-  call parmax(aa)
+  call parmax(ckmax)
 endif
-if (aa.le.epzero) then
+if (ckmax.le.epzero) then
   write(nfecra,1100)
   idverl = -1
 endif
@@ -570,7 +569,7 @@ if (iirayo.eq.2) then
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     tparo  , bqinci , beps   ,                                     &
-    propce(1,ipproc(icak(1))), ckmel )
+    ckmel )
 
   ! Solving
 
@@ -666,7 +665,7 @@ else if (iirayo.eq.1) then
     coefap , coefbp ,                                              &
     cofafp , cofbfp ,                                              &
     tparo  , bqinci , beps   ,                                     &
-    propce(1,ipproc(icak(1))), ckmel )
+    ckmel )
 
   ! Solving
 

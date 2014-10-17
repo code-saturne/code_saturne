@@ -30,7 +30,7 @@ subroutine raycll &
    izfrdp ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
-   tparoi , qincid , eps    ,  ck   , ckmel  )
+   tparoi , qincid , eps    ,  ckmel  )
 
 !===============================================================================
 !  Purpose:
@@ -82,9 +82,7 @@ subroutine raycll &
 ! xlamp(nfabor)    ! ra ! --> ! conductivity (W/m/K)                           !
 ! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
 ! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
-! ck(ncelet)       ! ra ! <-- ! absoprtion coefficient                         !
-! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
-!                  !    !     !   gaz-particules de charbon                    !
+! ckmel(ncelet)    ! tr ! <-- ! absorption coefficient of the bulk             !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -125,7 +123,6 @@ double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision tparoi(nfabor), qincid(nfabor)
 double precision eps(nfabor)
-double precision ck(ncelet)
 double precision ckmel(ncelet)
 
 ! Local variables
@@ -262,7 +259,7 @@ else if (iirayo.eq.2) then
 
       distbf = distb(ifac)
 
-      xit = 1.5d0 *distbf *ck(iel) * (2.d0 /(2.d0-eps(ifac)) -1.d0)
+      xit = 1.5d0 *distbf *ckmel(iel) * (2.d0 /(2.d0-eps(ifac)) -1.d0)
       cfl = 1.d0/xit
 
       ! Convective Boundary Condition
