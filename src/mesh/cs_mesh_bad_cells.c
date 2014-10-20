@@ -90,13 +90,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-static const int _type_flag_mask[] = {CS_BAD_CELL_ORTHO_NORM,
-                                      CS_BAD_CELL_OFFSET,
-                                      CS_BAD_CELL_LSQ_GRAD,
-                                      CS_BAD_CELL_RATIO,
-                                      CS_BAD_CELL_GUILT,
-                                      CS_BAD_CELL_USER};
-
 /* compute and visualize flags (-1 initially, mask afterwards;
    first value: at initialization: second value: at each time step) */
 
@@ -166,8 +159,8 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     i_face_ortho = cos_alpha;
 
     if (i_face_ortho < 0.1) {
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
-      bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[0];
+      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_ORTHO_NORM;
+      bad_cell_flag[cell2] = bad_cell_flag[cell2] | CS_BAD_CELL_ORTHO_NORM;
     }
   }
 
@@ -202,7 +195,7 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     b_face_ortho = cos_alpha;
 
     if (b_face_ortho < 0.1)
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[0];
+      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_ORTHO_NORM;
   }
 
   if (mesh->halo != NULL)
@@ -253,9 +246,9 @@ _compute_offsetting(const cs_mesh_t             *mesh,
     off_2 = 1 - pow(of_n / mesh_quantities->cell_vol[cell2], 1/3.);
 
     if (off_1 < 0.1)
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | _type_flag_mask[1];
+      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_OFFSET;
     if (off_2 < 0.1)
-      bad_cell_flag[cell2] = bad_cell_flag[cell2] | _type_flag_mask[1];
+      bad_cell_flag[cell2] = bad_cell_flag[cell2] | CS_BAD_CELL_OFFSET;
 
   }
 
@@ -443,7 +436,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     lsq = min_diag / max_diag;
 
     if (lsq < 0.1)
-      bad_cell_flag[cell_id] = _type_flag_mask[2];
+      bad_cell_flag[cell_id] = bad_cell_flag[cell_id] | CS_BAD_CELL_LSQ_GRAD;
   }
 
   BFT_FREE(w1);
@@ -490,8 +483,8 @@ _compute_volume_ratio(const cs_mesh_t             *mesh,
                      volume[cell2] / volume[cell1]);
 
     if (vol_ratio < 0.1*0.1) {
-      bad_cell_flag[cell1] = _type_flag_mask[3];
-      bad_cell_flag[cell2] = _type_flag_mask[3];
+      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_RATIO;
+      bad_cell_flag[cell2] = bad_cell_flag[cell2] | CS_BAD_CELL_RATIO;
     }
   }
 
@@ -648,7 +641,7 @@ cs_mesh_bad_cells_set_options(int  type_flag_mask,
     _type_flag_visualize[i] = 0;
   }
 
-  for (i = 0; i < (int)(sizeof(int))*8; i++) {
+  for (i = 0; i < 6; i++) {
     int mask = (1 << i);
     if (type_flag_mask == 0 || (type_flag_mask & mask)) {
       if (compute > 0) {
@@ -779,7 +772,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
-      if (bad_cell_flag[i] & _type_flag_mask[0]) {
+      if (bad_cell_flag[i] & CS_BAD_CELL_ORTHO_NORM) {
         ibad++;
         iwarning++;
       }
@@ -810,7 +803,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
-      if (bad_cell_flag[i] & _type_flag_mask[1]) {
+      if (bad_cell_flag[i] & CS_BAD_CELL_OFFSET) {
         ibad++;
         iwarning++;
       }
@@ -840,7 +833,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
-      if (bad_cell_flag[i] & _type_flag_mask[2]) {
+      if (bad_cell_flag[i] & CS_BAD_CELL_LSQ_GRAD) {
         ibad++;
         iwarning++;
       }
@@ -870,7 +863,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
-      if (bad_cell_flag[i] & _type_flag_mask[3]) {
+      if (bad_cell_flag[i] & CS_BAD_CELL_RATIO) {
         ibad++;
         iwarning++;
       }
@@ -918,7 +911,7 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
       if (bad_guilt_cells[i] >= 5 && bad_cell_flag[i] == 0) {
         ibad++;
         iwarning++;
-        bad_cell_flag[i] = _type_flag_mask[4];
+        bad_cell_flag[i] = CS_BAD_CELL_GUILT;
       }
     }
 
