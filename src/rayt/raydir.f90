@@ -597,8 +597,8 @@ elseif (i_quadrature.eq.8) then
   sz(5)   = vec(3)
   sz(6)   = vec(2)
 
-  poids(1) = 0.121876566
-  poids(2) = 0.139922822
+  poids(1) = 0.2437531319
+  poids(2) = 0.2798456437
 
   angsol(1) = poids(1)
   angsol(2) = poids(2)
