@@ -945,9 +945,6 @@
             </property>
             <item>
              <widget class="QComboBox" name="comboBoxAl">
-              <property name="toolTip">
-               <string>Code_Saturne key word: IVISLS</string>
-              </property>
              </widget>
             </item>
             <item>
@@ -1118,9 +1115,6 @@
             </property>
             <item>
              <widget class="QComboBox" name="comboBoxDiftl0">
-              <property name="toolTip">
-               <string>Code_Saturne key word: IVISLS</string>
-              </property>
              </widget>
             </item>
             <item>

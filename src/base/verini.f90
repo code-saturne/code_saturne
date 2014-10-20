@@ -1451,7 +1451,7 @@ if (nscal.gt.0) then
 !        si pas cste, on verifiera apres usphyv
   do ii = 1, nscal
     call field_get_key_int (ivarfl(isca(ii)), kivisl, ifcvsl)
-    if (ifcvsl.le.0.and.visls0(ii).lt.0d0) then
+    if (ifcvsl.lt.0.and.visls0(ii).lt.0d0) then
       call field_get_label(ivarfl(isca(ii)), chaine)
       write(nfecra,4340)chaine(1:16),ii,ifcvsl,visls0(ii)
       iok = iok + 1

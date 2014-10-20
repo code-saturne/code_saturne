@@ -42,9 +42,9 @@
 !>    cpro_cp (otherwise: memory overwrite).
 !>
 !> - the kivisl field integer key (scalar_diffusivity_id)
-!>    <b> have been specified </b>
+!>    must <b> have been specified </b>
 !>    in \ref usipsu if we wish to define a variable viscosity
-!>    \c viscls (otherwise: memory overwrite).
+!>    \c viscls.
 !>
 !>
 !> \remarks

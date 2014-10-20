@@ -41,10 +41,10 @@
      in \ref usipph if we wish to define a variable specific heat
      cpro_cp (otherwise: memory overwrite).
  
-  - ivisls = 1 must <b> have been specified </b>
-     in \ref usipsc if we wish to define a variable viscosity
-     \c viscls (otherwise: memory overwrite).
- 
+  - the kivisl field integer key (scalar_diffusivity_id)
+    must <b> have been specified </b>
+    in \ref usipsu if we wish to define a variable viscosity
+    \c viscls.
  
   \remarks
    - This routine is called at the beginning of each time step
