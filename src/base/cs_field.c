@@ -821,7 +821,7 @@ void
 cs_f_field_bc_coeffs_ptr_by_id(int          id,
                                int          pointer_type,
                                int          pointer_rank,
-                               int          dim[2],
+                               int          dim[3],
                                cs_real_t  **p)
 {
   cs_field_t *f = cs_field_by_id(id);
