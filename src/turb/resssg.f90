@@ -168,9 +168,13 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
-double precision, dimension(:), pointer :: cvar_var, cvara_var, w8
-double precision, allocatable, dimension(:,:,:) :: cvara_ndrey
+double precision, dimension(:), pointer :: cvar_var, cvara_var
 double precision, dimension(:), pointer :: viscl, c_st_prv
+
+type pmapper_double_r1
+   double precision, dimension(:),  pointer :: p !< rank 1 array pointer
+end type pmapper_double_r1
+type(pmapper_double_r1), allocatable, dimension(:,:) :: cvara_ndrey
 
 !===============================================================================
 
@@ -426,11 +430,12 @@ indrey(2,1) = indrey(1,2)
 indrey(3,1) = indrey(1,3)
 indrey(3,2) = indrey(2,3)
 
-allocate(cvara_ndrey(ncelet,3,3))
+! Arrays of pointers containing the fields values for each pair of indices
+! (loop on cells outside loop on indices)
+allocate(cvara_ndrey(3,3))
 do ii = 1, 3
   do kk = 1, 3
-    call field_get_val_prev_s(ivarfl(indrey(ii,kk)), w8)
-    cvara_ndrey(:,ii,kk) = w8
+    call field_get_val_prev_s(ivarfl(indrey(ii,kk)), cvara_ndrey(ii,kk)%p)
   enddo
 enddo
 
@@ -491,8 +496,8 @@ do iel=1,ncel
         do jj = ii, 3
           do kk = 1, 3
             xprod(ii,jj) = xprod(ii,jj)                             &
-                 - ccorio*( matrot(ii,kk)*cvara_ndrey(iel,jj,kk)    &
-                 + matrot(jj,kk)*cvara_ndrey(iel,ii,kk) )
+                 - ccorio*( matrot(ii,kk)*cvara_ndrey(jj,kk)%p(iel) &
+                 + matrot(jj,kk)*cvara_ndrey(ii,kk)%p(iel) )
           enddo
         enddo
       enddo
