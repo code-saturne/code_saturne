@@ -629,8 +629,8 @@ cs_f_field_var_ptr_by_id(int          id,
   cs_field_t *f = cs_field_by_id(id);
   int cur_p_rank = 1;
 
+  dim[0] = 0;
   dim[1] = 0;
-  dim[2] = 0;
   *p = NULL;
 
   if (pointer_type == 1 || pointer_type == 2) {
@@ -698,9 +698,9 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
   cs_field_t *f = cs_field_by_id(id);
   int cur_p_rank = 1;
 
+  dim[0] = 0;
   dim[1] = 0;
   dim[2] = 0;
-  dim[3] = 0;
   *p = NULL;
 
   const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
