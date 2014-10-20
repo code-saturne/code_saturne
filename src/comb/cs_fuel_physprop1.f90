@@ -84,8 +84,6 @@
 !> \param[in]     f4p2m         variance of tracer 4 (air)
 !> \param[in]     enth          enthalpy in \f$j . kg^{-1}\f$  either gaz
 !>                              or mixture
-!> \param[in]     rtp           calculation variables in cell centers
-!>                              (current instant)
 !> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________!
 
@@ -94,7 +92,7 @@ subroutine cs_fuel_physprop1 &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth   , enthox ,                                      &
-   rtp    , propce , rom1   )
+   propce , rom1   )
 
 !===============================================================================
 ! Module files
@@ -130,7 +128,7 @@ double precision f4m(ncelet), f5m(ncelet) , f6m(ncelet)
 double precision f7m(ncelet), f8m(ncelet) , f9m(ncelet)
 double precision fvp2m(ncelet)
 double precision enth(ncelet),enthox(ncelet)
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 double precision rom1(ncelet)
 ! Local variables
 integer          iel , ii ,ice , icla
@@ -151,6 +149,7 @@ double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
 double precision, dimension(:), pointer :: cpro_x1
+double precision, dimension(:), pointer :: cvar_yfolcl
 
 integer          ipass
 data ipass / 0 /
@@ -273,7 +272,6 @@ call cs_gascomb &
 !==============
  ( ncelet , ncel   , ifo0 , ifov ,                                &
    intpdf ,                                                       &
-   rtp    ,                                                       &
    f1m    , f2m , f3m , f4m , f5m , f6m , f7m , f8m , f9m ,       &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                   &
    af1    , af2    , cx1m     , cx2m   , wmf1   , wmf2 ,          &
@@ -335,7 +333,7 @@ do iel = 1, ncel
 
   propce(iel,ipproc(immel)) = 1.d0 / wmolme
 
-  ! ---- We do not include the mecanical pressure rtp(iel,ipr)
+  ! ---- We do not include the mecanical pressure IPR
   !      but P0
 
   rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
@@ -357,7 +355,7 @@ if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                     &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,         &
    fs3no  , fs4no  , yfs4no , enthox ,                            &
-   rtp    , propce  )
+   propce  )
 
 else if ( ieqnox .eq. 1 ) then
 
@@ -400,6 +398,7 @@ do iel=1,ncel
 enddo
 
 do icla = 1, nclafu
+  call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
   do iel = 1, ncel
 
     somch = cfol + hfol + ofol
@@ -408,13 +407,13 @@ do icla = 1, nclafu
     cfolo  = ofol/somch
 
     propce(iel,ipproc(ibcarbone )) = propce(iel,ipproc(ibcarbone ))    &
-                                    +rtp(iel,isca(iyfol(icla)))*cfolc
+                                    +cvar_yfolcl(iel)*cfolc
 
     propce(iel,ipproc(iboxygen )) = propce(iel,ipproc(iboxygen ))    &
-                                   +rtp(iel,isca(iyfol(icla)))*cfolo
+                                   +cvar_yfolcl(iel)*cfolo
 
     propce(iel,ipproc(ibhydrogen)) = propce(iel,ipproc(ibhydrogen))  &
-                                    +rtp(iel,isca(iyfol(icla)))*cfolh
+                                    +cvar_yfolcl(iel)*cfolh
 
   enddo
 enddo

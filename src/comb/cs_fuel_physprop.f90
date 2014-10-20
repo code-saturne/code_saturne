@@ -36,16 +36,14 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     mbrom         filling indicator of romb
-!> \param[in]     izfppp        zone number of the edge face for the
+!> \param[in]     izfpp        zone number of the edge face for the
 !>                              specific physic modul
-!> \param[in]     rtp           calculated variables at cell centers
-!>                              (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_fuel_physprop &
- ( mbrom  , izfppp ,                                              &
-   rtp    , propce )
+ ( mbrom  , izfpp ,                                              &
+   propce )
 
 !===============================================================================
 ! Module files
@@ -68,7 +66,9 @@ use ppcpfu
 use cs_coal_incl
 use cs_fuel_incl
 use mesh
+use pointe
 use field
+
 !===============================================================================
 
 implicit none
@@ -76,9 +76,8 @@ implicit none
 ! Arguments
 
 integer          mbrom
-integer          izfppp(nfabor)
+integer          izfpp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -100,8 +99,15 @@ double precision , dimension ( : )     , allocatable :: f1m,f2m,f3m,f4m,f5m
 double precision , dimension ( : )     , allocatable :: f6m,f7m,f8m,f9m
 double precision , dimension ( : )     , allocatable :: enth1 , fvp2m
 double precision , dimension ( : )     , allocatable :: xoxyd,enthox
-double precision, dimension(:), pointer ::  brom, crom
+double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cpro_x1
+double precision, dimension(:), pointer :: cvar_h2cl
+double precision, dimension(:), pointer :: cvar_fvap
+double precision, dimension(:), pointer :: cvar_f4m, cvar_f5m, cvar_f7m
+double precision, dimension(:), pointer :: cvar_fvp2m, cvar_hox
+double precision, dimension(:), pointer :: cvar_scalt
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_yfol
+
 !===============================================================================
 !
 !===============================================================================
@@ -113,6 +119,27 @@ ipass = ipass + 1
 !===============================================================================
 ! 1. Initializations to be kept
 !===============================================================================
+
+call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
+if ( noxyd .ge. 2 ) then
+  call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
+  if ( noxyd .eq. 3 ) then
+    call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
+  endif
+endif
+call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
+call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
+if ( ieqnox .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
+endif
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+! Arrays of pointers containing the fields values for each class
+! (loop on cells outside loop on classes)
+allocate(cvar_yfol(nclafu))
+do icla = 1, nclafu
+  call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfol(icla)%p)
+enddo
 
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", cpro_x1)
@@ -153,7 +180,7 @@ iromf = ipproc(irom1)
 !    Mass density
 !===============================================================================
 !
-call cs_fuel_physprop2 ( ncelet , ncel , rtp , propce )
+call cs_fuel_physprop2 ( ncelet , ncel , propce )
 !=====================
 
 !===============================================================================
@@ -204,12 +231,12 @@ enddo
 
 do icla = 1, nclafu
   do iel = 1, ncel
-    cpro_x1(iel) = cpro_x1(iel) - rtp(iel,isca(iyfol(icla)))
+    cpro_x1(iel) = cpro_x1(iel) - cvar_yfol(icla)%p(iel)
   enddo
 enddo
 
 do iel = 1, ncel
-  f2m(iel) =  f2m(iel) + rtp(iel,isca(ifvap))
+  f2m(iel) =  f2m(iel) + cvar_fvap(iel)
 enddo
 
 if ( ieqnox .eq. 1 ) then
@@ -232,17 +259,17 @@ do iel = 1, ncel
    !  because it is not declared in fulecd.f90. We have to add it in this
    !  subroutine (keyword: oxycombustion).
   if ( noxyd .ge. 2 ) then
-    f4m(iel) = rtp(iel,isca(if4m))
+    f4m(iel) = cvar_f4m(iel)
     if ( noxyd .eq. 3 ) then
-      f5m(iel) = rtp(iel,isca(if5m))
+      f5m(iel) = cvar_f5m(iel)
     endif
   endif
 
   ! - Relative scalar for the heterogeneous combustion.
-  f7m(iel) =  rtp(iel,isca(if7m))
+  f7m(iel) =  cvar_f7m(iel)
 
   ! The transported variance.
-  fvp2m(iel) = rtp(iel,isca(ifvp2m))
+  fvp2m(iel) = cvar_fvp2m(iel)
 
   ! Units: [kg scalars / kg gas]
   f1m(iel)  = f1m(iel)    *uns1pw
@@ -264,7 +291,7 @@ do iel = 1, ncel
   ff3min = min(ff3min,f3m(iel))
 
   if ( ieqnox .eq. 1 ) then
-    enthox(iel) = rtp(iel,isca(ihox))/xoxyd(iel)
+    enthox(iel) = cvar_hox(iel)/xoxyd(iel)
   endif
 
 enddo
@@ -288,12 +315,13 @@ endif
 ! ---- Gas enthalpy H1
 enth1( : ) =0.D0
 do icla = 1, nclafu
+  call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
   do iel = 1, ncel
-    enth1(iel) =  enth1(iel) + rtp(iel,isca(ih2(icla)))
+    enth1(iel) =  enth1(iel) + cvar_h2cl(iel)
   enddo
 enddo
 do iel = 1, ncel
-  enth1(iel) = (rtp(iel,isca(iscalt))-enth1(iel))/ cpro_x1(iel)
+  enth1(iel) = (cvar_scalt(iel)-enth1(iel))/ cpro_x1(iel)
 enddo
 
 call cs_fuel_physprop1 &
@@ -302,7 +330,7 @@ call cs_fuel_physprop1 &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth1  , enthox ,                                      &
-   rtp    , propce , propce(1,iromf)   )
+   propce , propce(1,iromf)   )
 
 !===============================================================================
 ! 4. Calculation of physics properties of the dispersed phase
@@ -313,7 +341,7 @@ call cs_fuel_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_fuel_thfieldconv2 ( ncelet , ncel , rtp , propce )
+call  cs_fuel_thfieldconv2 ( ncelet , ncel , propce )
 !=========================
 
 !===============================================================================
@@ -341,14 +369,13 @@ do iel = 1, ncel
 
   do icla = 1, nclafu
     ipcro2 = ipproc(irom2(icla))
-    x2sro2 = x2sro2 + rtp(iel,isca(iyfol(icla))) / propce(iel,ipcro2)
+    x2sro2 = x2sro2 + cvar_yfol(icla)%p(iel) / propce(iel,ipcro2)
   enddo
   x1sro1 = cpro_x1(iel) / propce(iel,iromf)
   ! ---- Under eventual relaxation to give in ppini1.F
   crom(iel) = srrom1*crom(iel)                  &
                      + (1.d0-srrom1)/(x1sro1+x2sro2)
 enddo
-
 
 !===============================================================================
 ! 6. Calculation of the rho of the mixture
@@ -373,7 +400,7 @@ enddo
 if ( ipass.gt.1 .or. isuite.eq.1 ) then
   do ifac = 1, nfabor
 
-    izone = izfppp(ifac)
+    izone = izfpp(ifac)
     if(izone.gt.0) then
       if ( ientat(izone).eq.1 .or. ientfl(izone).eq.1 ) then
         x2sro2 = zero
@@ -408,6 +435,7 @@ endif
 deallocate(f1m,f2m,f3m,f4m,f5m,STAT=iok1)
 deallocate(f6m,f7m,f8m,f9m,    STAT=iok2)
 deallocate(enth1,fvp2m,     STAT=iok3)
+deallocate(cvar_yfol)
 
 if (iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '

@@ -37,14 +37,12 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     rtpa          calculation variables in cell centers
-!>                                 (previous instant)
 !> \param[in,out] propce        physic properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_fuel_masstransfer &
  ( ncelet , ncel   ,            &
-   rtpa   , propce )
+   propce )
 
 !===============================================================================
 ! Module files
@@ -74,7 +72,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision rtpa(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -94,6 +92,7 @@ double precision dhet1, dhet2
 double precision deva1, deva2
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
+double precision, dimension(:), pointer :: cvara_yfolcl, cvara_ngcl
 
 !===============================================================================
 ! 1. Initializations and preliminary calculations
@@ -144,6 +143,9 @@ do icla = 1, nclafu
 
   xnuss = 2.d0
 
+  call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
+  if ( icp.gt.0 ) call field_get_val_s(iprpfl(icp), cpro_cp)
+
   do iel = 1, ncel
     if (ifcvsl.ge.0) then
       if (icp.gt.0) then
@@ -159,11 +161,11 @@ do icla = 1, nclafu
       endif
     endif
 
-    if ( rtpa(iel,isca(iyfol(icla))) .gt. epsifl  .and.                    &
+    if ( cvara_yfolcl(iel) .gt. epsifl  .and.                              &
          propce(iel,ipcte1).gt. propce(iel,ipcte2)        ) then
 
        propce(iel,ipchgl) = 6.d0*lambda*xnuss/propce(iel,ipcdia)**2        &
-                           /propce(iel,ipcro2)*rtpa(iel,isca(iyfol(icla)))
+                           /propce(iel,ipcro2)*cvara_yfolcl(iel)
 
     endif
 
@@ -177,6 +179,8 @@ enddo
 
 do icla = 1, nclafu
 
+  call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
+  call field_get_val_prev_s(ivarfl(isca(ing(icla))), cvara_ngcl)
   ipcro2 = ipproc(irom2 (icla))
   ipcdia = ipproc(idiam2(icla))
   ipcte2 = ipproc(itemp2(icla))
@@ -189,7 +193,7 @@ do icla = 1, nclafu
     propce(iel,ipcgev) = zero
     propce(iel,ipcght) = zero
 
-    if (rtpa(iel,isca(iyfol(icla))) .gt. epsifl ) then
+    if (cvara_yfolcl(iel) .gt. epsifl ) then
 
 !===============================================================================
 ! Evaporation
@@ -201,8 +205,8 @@ do icla = 1, nclafu
 ! c) Checking of the gas phase and drop temperature. It is necessary to have
 !     Tgaz > Tgoutte
 
-    deva1 =  rtpa(iel,isca(iyfol(icla)))                                   &
-             /(rtpa(iel,isca(ing(icla)))*rho0fl)
+    deva1 =  cvara_yfolcl(iel)                                             &
+             /(cvara_ngcl(iel)*rho0fl)
     deva2 =  (pi*(diniin(icla)**3)/6.d0)+(pi*(dinikf(icla)**3)/6.d0)
 
       if ( propce(iel,ipcte2)    .gt. tevap1               .and.           &
@@ -226,16 +230,16 @@ do icla = 1, nclafu
 ! b) If dhet1.gt.dhet2 it remains coal. If not the particle is only composed of
 !    inerts.
 
-    dhet1= rtpa(iel,isca(iyfol(icla)))                                     &
-            /(rtpa(iel,isca(ing(icla)))*rho0fl)
+    dhet1= cvara_yfolcl(iel)                                               &
+            /(cvara_ngcl(iel)*rho0fl)
     dhet2= pi*(diniin(icla)**3)/6.d0
 
       if (deva1.le.deva2.and.dhet1.gt.dhet2 ) then
 
       ! We consider that the remaining coke mass as a spheric particle. The
       !   correspondent diameter is dcoke.
-      dcoke = ( ( rtpa(iel,isca(iyfol(icla)))                              &
-              /(rtpa(iel,isca(ing(icla)))*rho0fl)                          &
+      dcoke = ( ( cvara_yfolcl(iel)                                        &
+              /(cvara_ngcl(iel)*rho0fl)                                    &
               -pi*(diniin(icla)**3)/6.d0  )                                &
                *6.d0/pi )**(1.d0/3.d0)
 
@@ -271,7 +275,7 @@ do icla = 1, nclafu
       surf = pi*(dcoke**2)
 
       ! Number of particles in the cell.
-      xng   = rtpa(iel,isca(ing(icla)))
+      xng   = cvara_ngcl(iel)
 
         if (iofhet.eq.1) then
         propce(iel,ipcght) = - xdftot1*surf*xng

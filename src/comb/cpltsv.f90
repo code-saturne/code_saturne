@@ -25,7 +25,6 @@ subroutine cpltsv &
 
  ( iscal  , iscala ,                                              &
    itypfb ,                                                       &
-   rtpa   , rtp    ,                                              &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -53,8 +52,6 @@ subroutine cpltsv &
 ! itypfb           ! ia ! <-- ! boundary face types                            !
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -96,7 +93,6 @@ integer          iscal  , iscala
 
 integer          itypfb(nfabor)
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -117,6 +113,8 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m, cvar_f3m
+double precision, dimension(:), pointer :: cvar_varsc, cvara_varsc
 
 !===============================================================================
 
@@ -202,19 +200,23 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
       w2(iel) = zero
     enddo
     do icha = 1, ncharb
+      call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+      call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
       do iel = 1, ncel
-        w1(iel) =  w1(iel) + rtp(iel,isca(if1m(icha)))
-        w2(iel) =  w2(iel) + rtp(iel,isca(if2m(icha)))
+        w1(iel) =  w1(iel) + cvar_f1m(iel)
+        w2(iel) =  w2(iel) + cvar_f2m(iel)
       enddo
     enddo
+    call field_get_val_s(ivarfl(isca(if3m)), cvar_f3m)
     do iel = 1, ncel
-      w7(iel) = 1.d0 - ( w1(iel) + w2(iel) + rtp(iel,isca(if3m)))
+      w7(iel) = 1.d0 - (w1(iel) + w2(iel) + cvar_f3m(iel))
     enddo
     ! Free some work arrays
     deallocate(w1, w2)
   else
+    call field_get_val_s(ivarfl(ivarsc), cvar_varsc)
     do iel = 1, ncel
-      w7(iel) = rtp(iel,ivarsc)
+      w7(iel) = cvar_varsc(iel)
     enddo
   endif
 
@@ -254,6 +256,8 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   ! Free memory
   deallocate(coefap, coefbp)
 
+  call field_get_val_prev_s(ivarfl(ivarsc), cvara_varsc)
+
   do iel = 1, ncel
     if ( itytur.eq.2 .or. iturb.eq.50 ) then
       xk = cvara_k(iel)
@@ -272,7 +276,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     smbrs(iel) = smbrs(iel) +                                        &
                 2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
                 * (grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2) &
-                - rhovst*rtpa(iel,ivar)
+                - rhovst*cvara_varsc(iel)
   enddo
 
   ! Free memory

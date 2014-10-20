@@ -27,7 +27,7 @@ subroutine cplph1 &
    nitbcp , nrtbcp , nitbmc , nrtbmc , nitbwo , nrtbwo ,          &
    f1m    , f2m    , f3m    , f4m    , f3p2m  , f4p2m  ,          &
    enth   ,                                                       &
-   rtp    , propce , rom1   )
+   propce , rom1   )
 
 !===============================================================================
 ! FONCTION :
@@ -107,8 +107,6 @@ subroutine cplph1 &
 ! f4p2m            ! tr ! <-- ! variance du traceur 4 (air)                    !
 ! enth             ! tr ! <-- ! enthalpie en j/kg  soit du gaz                 !
 !                  !    !     !                    soit du melange             !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -151,7 +149,7 @@ double precision f3m(ncelet), f4m(ncelet)
 double precision f3p2m(ncelet), f4p2m(ncelet)
 double precision enth(ncelet), rom1(ncelet)
 
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -263,7 +261,6 @@ ipcyin = ipproc(iym1(in2  ))
 call cplym1                                                       &
 !==========
  ( ncelet , ncel   , nitbmc , nrtbmc ,                            &
-   rtp    ,                                                       &
    f1m    , f2m    , f3m    , f4m    ,                            &
    itbcp(1,1) ,                                                   &
 !          INTPDF
@@ -333,7 +330,7 @@ do iel = 1, ncel
 
   propce(iel,ipproc(immel)) = 1.d0 / wmolme
 
-! ---- On ne met pas la pression mecanique RTP(IEL,IPR)
+! ---- On ne met pas la pression mecanique IPR
 !      mais P0
 
   rom1(iel) = p0/(wmolme*rr*propce(iel,ipcte1))

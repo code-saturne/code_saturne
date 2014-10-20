@@ -37,14 +37,12 @@
 !> \param[in]     mbrom         filling indicator of romb
 !> \param[in]     izfppp        area number of the edge face
 !>                               for the specific physic module
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time step)
 !> \param[in]     propce        physic properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_coal_physprop &
  ( mbrom  , izfppp ,                                              &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! Module files
@@ -77,7 +75,6 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -114,6 +111,11 @@ double precision, dimension(:,:), pointer :: vdc
 double precision, dimension(:), pointer :: v_x_pi,v_y_pi,v_z_pi
 double precision, dimension(:,:), pointer :: vdp_i
 double precision, dimension(:,:), pointer :: vg_pi
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
+double precision, dimension(:), pointer :: cvar_f4m, cvar_f5m, cvar_f6m
+double precision, dimension(:), pointer :: cvar_f7m, cvar_f8m, cvar_f9m
+double precision, dimension(:), pointer :: cvar_fvp2m
+double precision, dimension(:), pointer :: cvar_hox, cvar_hgas
 
 !===============================================================================
 !
@@ -132,6 +134,28 @@ call field_get_val_s_by_name("x_c", cpro_x1)
 
 ! Number of fields
 call field_get_n_fields(nfld)
+
+if ( noxyd .ge. 2 ) then
+  call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
+  if ( noxyd .eq. 3 ) then
+    call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
+  endif
+endif
+if ( ippmod(iccoal) .ge. 1 ) then
+  call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
+endif
+call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
+if ( ihtco2 .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
+endif
+if ( ihth2o .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
+endif
+call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
+if ( ieqnox .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
+endif
+call field_get_val_s(ivarfl(isca(ihgas)), cvar_hgas)
 
 !===============================================================================
 ! Deallocation dynamic arrays
@@ -168,7 +192,7 @@ iromf = ipproc(irom1)
 !    Mass density
 !===============================================================================
 
-call cs_coal_physprop2 ( ncelet , ncel , rtp , propce )
+call cs_coal_physprop2 ( ncelet , ncel , propce )
 !=====================
 
 !===============================================================================
@@ -211,9 +235,11 @@ do iel = 1, ncel
 enddo
 
 do icha = 1, ncharb
+  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
   do iel = 1, ncel
-    f1m(iel) =  f1m(iel) + rtp(iel,isca(if1m(icha)))
-    f2m(iel) =  f2m(iel) + rtp(iel,isca(if2m(icha)))
+    f1m(iel) =  f1m(iel) + cvar_f1m(iel)
+    f2m(iel) =  f2m(iel) + cvar_f2m(iel)
   enddo
 enddo
 
@@ -232,27 +258,27 @@ valmax =-1.d+20
 do iel = 1, ncel
   uns1pw = 1.d0/ cpro_x1(iel)
   if ( noxyd .ge. 2 ) then
-    f4m(iel) = rtp(iel,isca(if4m))
+    f4m(iel) = cvar_f4m(iel)
     if ( noxyd .eq. 3 ) then
-      f5m(iel) = rtp(iel,isca(if5m))
+      f5m(iel) = cvar_f5m(iel)
     endif
   endif
 
   if ( ippmod(iccoal) .ge. 1 ) then
-    f6m(iel) = rtp(iel,isca(if6m))
+    f6m(iel) = cvar_f6m(iel)
   endif
 
-  f7m(iel) =  rtp(iel,isca(if7m))
+  f7m(iel) =  cvar_f7m(iel)
 
   if ( ihtco2 .eq. 1 ) then
-    f8m(iel) = rtp(iel,isca(if8m))
+    f8m(iel) = cvar_f8m(iel)
   endif
 
   if ( ihth2o .eq. 1 ) then
-    f9m(iel) = rtp(iel,isca(if9m))
+    f9m(iel) = cvar_f9m(iel)
   endif
 
-  fvp2m(iel) = rtp(iel,isca(ifvp2m))
+  fvp2m(iel) = cvar_fvp2m(iel)
 
   f1m(iel)  = f1m(iel)    *uns1pw
   f2m(iel)  = f2m(iel)    *uns1pw
@@ -273,7 +299,7 @@ do iel = 1, ncel
   ff3min = min(ff3min,f3m(iel))
 
   if ( ieqnox .eq. 1 ) then
-    enthox(iel) = rtp(iel,isca(ihox))/xoxyd(iel)
+    enthox(iel) = cvar_hox(iel)/xoxyd(iel)
   endif
 
 enddo
@@ -297,7 +323,7 @@ endif
 
 ! ---- Gas Enthalpy h1 (cpro_x1 h1 is transported)
 do iel = 1, ncel
-  enth1(iel) = rtp(iel,isca(ihgas)) / cpro_x1(iel)
+  enth1(iel) = cvar_hgas(iel) / cpro_x1(iel)
 enddo
 
 call cs_coal_physprop1 &
@@ -306,7 +332,7 @@ call cs_coal_physprop1 &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth1  , enthox ,                                      &
-   rtp    , propce , propce(1,iromf)   )
+   propce , propce(1,iromf)   )
 
 !===============================================================================
 ! 4. Calculation of the physic properties of the dispersed phase
@@ -317,7 +343,7 @@ call cs_coal_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_coal_thfieldconv2  ( ncelet , ncel , rtp , propce )
+call  cs_coal_thfieldconv2  ( ncelet , ncel , propce )
 !=========================
 
 !===============================================================================

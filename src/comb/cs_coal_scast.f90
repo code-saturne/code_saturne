@@ -57,8 +57,6 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     iscal         scalar number
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in,out] propce        physic properties at cell centers
 !> \param[in,out] smbrs         explicit second member
 !> \param[in,out] rovsdt        implicit diagonal part
@@ -66,7 +64,7 @@
 
 subroutine cs_coal_scast &
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -90,6 +88,7 @@ use ppincl
 use ppcpfu
 use cs_coal_incl
 use mesh
+use pointe
 use field
 use radiat
 
@@ -101,7 +100,6 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
@@ -161,6 +159,17 @@ double precision, dimension(:), pointer :: taup
 double precision, dimension(:), pointer :: smbrsh1, rovsdth1
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer ::  vg_lim_pi
+double precision, dimension(:), pointer :: cvar_xchcl
+double precision, dimension(:), pointer :: cvar_xckcl, cvara_xckcl
+double precision, dimension(:), pointer :: cvar_xnpcl
+double precision, dimension(:), pointer :: cvar_xwtcl, cvara_xwtcl
+double precision, dimension(:), pointer :: cvar_yno, cvara_yno
+double precision, dimension(:), pointer :: cvara_yhcn, cvara_ynh3
+double precision, dimension(:), pointer :: cvara_var
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_xck, cvara_xck
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_xch, cvara_xch
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_xnp
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_xwt
 
 ! Pointers of variables of state
 ! ------------------------------
@@ -196,6 +205,7 @@ double precision mckcl1, mckcl2
 ! --- Scalar number to treat: iscal
 ! --- Number of the associated to the scalar to treat variable iscal
 ivar = isca(iscal)
+call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_var)
 
 ! --- Name of the variable associated to the scalar to treat iscal
 call field_get_label(ivarfl(ivar), chaine)
@@ -205,8 +215,6 @@ call field_get_val_s(icrom, crom)
 if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 ipcte1 = ipproc(itemp1)
 
-call field_get_val_prev_s(ivarfl(ik), cvara_k)
-call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_v(ivarfl(iu), vel)
 
 ! Key id of the coal scalar class
@@ -215,6 +223,13 @@ call field_get_key_id("scalar_class", keyccl)
 ! source term for gas enthalpy due to inter-phase fluxes
 call field_get_val_s_by_name('x_h_c_exp_st',smbrsh1)
 call field_get_val_s_by_name('x_h_c_imp_st',rovsdth1)
+
+if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
+  call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
+  call field_get_val_prev_s(ivarfl(isca(iyno)), cvara_yno)
+  call field_get_val_prev_s(ivarfl(isca(iyhcn)), cvara_yhcn)
+  call field_get_val_prev_s(ivarfl(isca(iynh3)), cvara_ynh3)
+endif
 
 !===============================================================================
 ! Deallocation dynamic arrays
@@ -260,7 +275,7 @@ if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
     ! ---- Calculation of explicit and implicit parts of source terms
 
     rovsdt(iel) = rovsdt(iel) + max(xw1,zero)
-    smbrs (iel) = smbrs(iel)  - xw1*rtpa(iel,ivar)
+    smbrs (iel) = smbrs(iel)  - xw1*cvara_var(iel)
 
   enddo
 
@@ -279,11 +294,11 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
   ! index of the coal particle class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
+  call field_get_val_s(ivarfl(isca(ixch(numcla))), cvar_xchcl)
+  call field_get_val_prev_s(ivarfl(isca(ixck(numcla))), cvara_xckcl)
   ipcgch = ipproc(igmdch(numcla))
   ipcgd1 = ipproc(igmdv1(numcla))
   ipcgd2 = ipproc(igmdv2(numcla))
-  ixchcl = isca(ixch(numcla))
-  ixckcl = isca(ixck(numcla))
   ipcght = ipproc(igmhet(numcla))
   if ( ihtco2 .eq. 1 ) then
     ipghco2 = ipproc(ighco2(numcla))
@@ -297,12 +312,13 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
     exp_st = 0.d0
     ! volatile formation minus coal consuming = char formation
     ! (Coke formation in French)
-    ! NB: we take rtp and not rtpa to be conservative in mass
-    char_formation = crom(iel)*rtp(iel,ixchcl)*volume(iel)                     &
+    ! NB: we take values at current and not previous time step
+    !     to be conservative in mass
+    char_formation = crom(iel)*cvar_xchcl(iel)*volume(iel)                     &
                    *(propce(iel,ipcgd1)+propce(iel,ipcgd2)-propce(iel,ipcgch))
 
     ! Compute the implict part of the Source term
-    if (rtpa(iel,ixckcl) .gt. epsicp) then
+    if (cvara_xckcl(iel) .gt. epsicp) then
 
       ! Reaction C(s) + O2 ---> 0.5CO
       exp_st = propce(iel,ipcght)
@@ -313,11 +329,11 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
       ! Reaction C(s) + H2O ---> CO + H2
       if (ihth2o .eq. 1) exp_st = exp_st + propce(iel,ipghh2o)
 
-      exp_st = -2.d0/3.d0 * crom(iel) * exp_st * volume(iel) / rtpa(iel,ixckcl)**(1.d0/3.d0)
+      exp_st = -2.d0/3.d0 * crom(iel) * exp_st * volume(iel) / cvara_xckcl(iel)**(1.d0/3.d0)
     endif
 
     ! Compute the explicit part of the Source term
-    imp_st = -3.d0/2.d0 * exp_st * rtpa(iel,ixckcl)
+    imp_st = -3.d0/2.d0 * exp_st * cvara_xckcl(iel)
 
     rovsdt(iel) = rovsdt(iel) + max(exp_st, 0.d0)
     smbrs(iel) = smbrs(iel) + char_formation + imp_st
@@ -351,13 +367,13 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
      ! ---- Calculation of explicit and implicit parts of source terms
 
-     if ( rtpa(iel,ivar).gt. epsicp .and.                                     &
+     if ( cvara_var(iel).gt. epsicp .and.                         &
           xwatch(numcha).gt. epsicp       ) then
        xw1 = crom(iel)*propce(iel,ipcsec)*volume(iel)                         &
             *(1.d0/propce(iel,ipcx2c))*(1.d0/xwatch(numcha))
 
        rovsdt(iel) = rovsdt(iel) + max(xw1,zero)
-       smbrs(iel)  = smbrs(iel)  - xw1*rtpa(iel,ivar)
+       smbrs(iel)  = smbrs(iel)  - xw1*cvara_var(iel)
      endif
 
     enddo
@@ -377,11 +393,13 @@ if (i_coal_drift.ge.1) then
   ! index of the coal particle class
   call field_get_key_int(ivarfl(ivar), keyccl, icla)
 
+  call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+
   ! Particle age source term
   if (fname(1:7).eq.'n_p_age') then
 
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) + crom(iel) * volume(iel)*rtp(iel,isca(inp(icla)))
+      smbrs(iel) = smbrs(iel) + crom(iel) * volume(iel)*cvar_xnpcl(iel)
     enddo
 
   endif
@@ -550,9 +568,14 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   ! index of the coal particle class
   call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
+  call field_get_val_s(ivarfl(isca(ixch(numcla))), cvar_xchcl)
+  call field_get_val_s(ivarfl(isca(ixck(numcla))), cvar_xckcl)
+  call field_get_val_prev_s(ivarfl(isca(ixck(numcla))), cvara_xckcl)
+  if ( ippmod(iccoal) .eq. 1 ) then
+    call field_get_val_s(ivarfl(isca(ixwt(numcla))), cvar_xwtcl)
+    call field_get_val_prev_s(ivarfl(isca(ixwt(numcla))), cvara_xwtcl)
+  endif
   numcha = ichcor(numcla)
-  ixchcl = isca(ixch(numcla))
-  ixckcl = isca(ixck(numcla))
   ipcx2c = ipproc(ix2(numcla))
   ipcro2 = ipproc(irom2(numcla ))
   ipcdia = ipproc(idiam2(numcla))
@@ -567,8 +590,6 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   ipcgd1 = ipproc(igmdv1(numcla))
   ipcgd2 = ipproc(igmdv2(numcla))
   ipcgch = ipproc(igmdch(numcla))
-  ixchcl = isca(ixch(numcla))
-  ixckcl = isca(ixck(numcla))
 
   ! ---- Contribution to the explicit and implicit balance
   !        exchanges by molecular distribution
@@ -634,10 +655,10 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
     !        Gama Dev1 et Gama Dev2
 
-    gamdv1 = crom(iel)*rtp(iel,ixchcl)                   &
+    gamdv1 = crom(iel)*cvar_xchcl(iel)                   &
             *propce(iel,ipcgd1)
 
-    gamdv2 = crom(iel)*rtp(iel,ixchcl)                   &
+    gamdv2 = crom(iel)*cvar_xchcl(iel)                   &
             *propce(iel,ipcgd2)
 
     !        H(mv1,T2)
@@ -739,12 +760,12 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
     !         Contribution to explicit and implicit balances
 
-    if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+    if ( cvara_xckcl(iel) .gt. epsicp ) then
 
       gamhet = crom(iel)*propce(iel,ipcght)              &
-               * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +              &
-                2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))      &
-                 /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+               * ( (cvara_xckcl(iel))**(2.d0/3.d0) +              &
+                2.d0/3.d0*(cvar_xckcl(iel)-cvara_xckcl(iel))      &
+                 /(cvara_xckcl(iel))**(1.d0/3.d0) )
 
     else
       gamhet = 0.d0
@@ -797,12 +818,12 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
       !         Contribution to explicit and implicit balances
 
-      if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+      if ( cvara_xckcl(iel) .gt. epsicp ) then
 
         gamhet = crom(iel)*propce(iel,ipghco2)           &
-                 * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +            &
-                2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))      &
-                 /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                 * ( (cvara_xckcl(iel))**(2.d0/3.d0) +            &
+                2.d0/3.d0*(cvar_xckcl(iel)-cvara_xckcl(iel))      &
+                 /(cvara_xckcl(iel))**(1.d0/3.d0) )
 
       else
         gamhet = 0.d0
@@ -871,12 +892,12 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
       !         Contribution to explicit and implicit balances
 
-      if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+      if ( cvara_xckcl(iel) .gt. epsicp ) then
 
         gamhet = crom(iel)*propce(iel,ipghh2o)           &
-                 * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +            &
-                2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))      &
-                 /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                 * ( (cvara_xckcl(iel))**(2.d0/3.d0) +            &
+                2.d0/3.d0*(cvar_xckcl(iel)-cvara_xckcl(iel))      &
+                 /(cvara_xckcl(iel))**(1.d0/3.d0) )
 
       else
         gamhet = 0.d0
@@ -926,11 +947,11 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
 !         Contribution to explicit balance
 
-      if ( rtpa(iel,isca(ixwt(numcla))).gt. epsicp .and.          &
+      if ( cvara_xwtcl(iel).gt. epsicp .and.          &
            xwatch(numcha) .gt. epsicp       ) then
 
         aux = -crom(iel)*propce(iel,ipcsec)              &
-       *(rtp(iel,isca(ixwt(numcla)))/propce(iel,ipcx2c))          &
+       *(cvar_xwtcl(iel)/propce(iel,ipcx2c))             &
        *(1.d0                    /xwatch(numcha))                 &
              *hh2ov
 
@@ -988,10 +1009,10 @@ if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
   enddo
   do icla = 1, nclacp
     ipcgd1 = ipproc(igmdv1(icla))
-    ixchcl = isca(ixch(icla))
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     if ( ichcor(icla).eq.numcha ) then
       do iel = 1, ncel
-        w1(iel) = w1(iel) - crom(iel)*rtp(iel,ixchcl)    &
+        w1(iel) = w1(iel) - crom(iel)*cvar_xchcl(iel)    &
                 * propce(iel,ipcgd1)
       enddo
     endif
@@ -1022,10 +1043,10 @@ if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
   enddo
   do icla = 1, nclacp
     ipcgd2 = ipproc(igmdv2(icla))
-    ixchcl = isca(ixch(icla))
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     if ( ichcor(icla).eq.numcha ) then
       do iel = 1, ncel
-        w1(iel) = w1(iel) - crom(iel)*rtp(iel,ixchcl)    &
+        w1(iel) = w1(iel) - crom(iel)*cvar_xchcl(iel)    &
                 * propce(iel,ipcgd2)
       enddo
     endif
@@ -1057,14 +1078,15 @@ if ( ivar.eq.isca(if7m) ) then
 
   do icla = 1, nclacp
     ipcght = ipproc(igmhet(icla))
-    ixckcl = isca(ixck(icla))
+    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+    call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
     do iel = 1, ncel
-      if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+      if ( cvara_xckcl(iel) .gt. epsicp ) then
         w1(iel) = w1(iel)                                         &
                  - crom(iel)*propce(iel,ipcght)          &
-                 * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +            &
-                    2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))  &
-                    /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                 * ( (cvara_xckcl(iel))**(2.d0/3.d0) +            &
+                    2.d0/3.d0*(cvar_xckcl(iel)-cvara_xckcl(iel))  &
+                    /(cvara_xckcl(iel))**(1.d0/3.d0) )
       endif
     enddo
   enddo
@@ -1096,14 +1118,15 @@ if ( ihtco2 .eq. 1 ) then
 
     do icla = 1, nclacp
       ipcght = ipproc(ighco2(icla))
-      ixckcl = isca(ixck(icla))
+      call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
       do iel = 1, ncel
-        if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+        if ( cvara_xckcl(iel) .gt. epsicp ) then
           w1(iel) = w1(iel)                                        &
                    - crom(iel)*propce(iel,ipcght)         &
-                   * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +           &
-                      2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl)) &
-                      /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                   * ( (cvara_xckcl(iel))**(2.d0/3.d0) +           &
+                      2.d0/3.d0*(cvar_xckcl(iel)-cvara_xckcl(iel)) &
+                      /(cvara_xckcl(iel))**(1.d0/3.d0) )
         endif
       enddo
     enddo
@@ -1136,14 +1159,15 @@ if ( ihth2o .eq. 1 ) then
 
     do icla = 1, nclacp
       ipcght = ipproc(ighh2o(icla))
-      ixckcl = isca(ixck(icla))
+      call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
       do iel = 1, ncel
-        if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+        if ( cvara_xckcl(iel) .gt. epsicp ) then
           w1(iel) = w1(iel)                                        &
                    - crom(iel)*propce(iel,ipcght)        &
-                   * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +           &
-                      2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl)) &
-                      /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                   * ( (cvara_xckcl(iel))**(2.d0/3.d0) +           &
+                      2.d0/3.d0*(cvar_xckcl(iel)-cvara_xckcl(iel)) &
+                      /(cvara_xckcl(iel))**(1.d0/3.d0) )
         endif
       enddo
     enddo
@@ -1170,7 +1194,7 @@ if ( ivar.eq.isca(ifvp2m) ) then
   call cs_coal_fp2st                                               &
  !==================
  ( iscal  ,                                                        &
-   rtpa   , rtp    , propce ,                                      &
+   propce ,                                                        &
    smbrs  , rovsdt )
 
 endif
@@ -1194,19 +1218,21 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
     do icla = 1, nclacp
 
+      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+      call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
       ipcsec = ipproc(igmsec(icla))
       ipcx2c = ipproc(ix2(icla))
       numcha = ichcor(icla)
 
       do iel = 1, ncel
 
-        if (  rtpa(iel,isca(ixwt(icla))).gt. epsicp               &
+        if (  cvara_xwtcl(iel).gt. epsicp               &
             .and.                                                 &
               xwatch(numcha) .gt. epsicp       ) then
 
           w1(iel) = w1(iel)                                       &
       + crom(iel)*propce(iel,ipcsec)                     &
-       *(rtp(iel,isca(ixwt(icla)))/propce(iel,ipcx2c))            &
+       *(cvar_xwtcl(iel)/propce(iel,ipcx2c))             &
        *(1.d0                  /xwatch(numcha))
 
         endif
@@ -1232,6 +1258,9 @@ if ( ieqco2 .eq. 1 ) then
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
+
+    call field_get_val_prev_s(ivarfl(ik), cvara_k)
+    call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
     ! ---- Contribution of interfacial source term to explicit and implicit balances
 
@@ -1452,23 +1481,31 @@ if ( ieqco2 .eq. 1 ) then
 
    if ( ihtco2 .eq. 1) then
 
+     ! Arrays of pointers containing the fields values for each class
+     ! (loop on cells outside loop on classes)
+     allocate(cvara_xck(nclacp))
+     do icla = 1,nclacp
+       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
+     enddo
+
      do iel = 1, ncel
 
        aux = 0.d0
        do icla = 1,nclacp
 
-         ixckcl = isca(ixck(icla))
          ipghc2 = ipproc(ighco2(icla))
 
          aux = aux                                                &
               + crom(iel)*propce(iel,ipghc2)             &
-               *(rtpa(iel,ixckcl))**(2.d0/3.d0)*volume(iel)
+               *(cvara_xck(icla)%p(iel))**(2.d0/3.d0)*volume(iel)
 
        enddo
 
        rovsdt(iel) = rovsdt(iel) - aux*(wmole(ico2)/0.012)
 
      enddo
+
+     deallocate(cvara_xck)
 
    endif
 
@@ -1485,6 +1522,23 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
   if ( ivar .eq. isca(ihox) ) then
 
+     ! Arrays of pointers containing the fields values for each class
+     ! (loop on cells outside loop on classes)
+     allocate(cvar_xck(nclacp), cvara_xck(nclacp))
+     allocate(cvar_xch(nclacp), cvar_xnp(nclacp))
+     if ( ippmod(iccoal) .eq. 1 ) then
+       allocate(cvar_xwt(nclacp))
+     endif
+     do icla = 1,nclacp
+       call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xck(icla)%p)
+       call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
+       call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xch(icla)%p)
+       call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnp(icla)%p)
+       if ( ippmod(iccoal) .eq. 1 ) then
+         call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwt(icla)%p)
+       endif
+     enddo
+
     !  Calculation of T2 average on particles
 
     tfuelmin = 1.d+20
@@ -1493,15 +1547,15 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
       xmx2 = 0.d0
       do icla = 1, nclacp
-        xck  = rtp(iel,isca(ixck(icla)))
-        xch  = rtp(iel,isca(ixch(icla)))
-        xash = rtp(iel,isca(inp (icla)))*xmash(icla)
+        xck  = cvar_xck(icla)%p(iel)
+        xch  = cvar_xch(icla)%p(iel)
+        xash = cvar_xnp(icla)%p(iel)*xmash(icla)
         xmx2   = xmx2 + xch + xck + xash
 
         !   Taking into account humidity
 
         if ( ippmod(iccoal) .eq. 1 ) then
-          xmx2 = xmx2+rtp(iel,isca(ixwt(icla)))
+          xmx2 = xmx2+cvar_xwt(icla)%p(iel)
         endif
       enddo
 
@@ -1510,15 +1564,15 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         do icla=1,nclacp
           ipcte2=ipproc(itemp2(icla))
           tfuel(iel) = tfuel(iel)                                              &
-                      +( rtp(iel,isca(ixck(icla)))                             &
-                        +rtp(iel,isca(ixch(icla)))                             &
-                        +rtp(iel,isca(inp (icla)))*xmash(icla) )               &
+                      +( cvar_xck(icla)%p(iel)                                 &
+                        +cvar_xch(icla)%p(iel)                                 &
+                        +cvar_xnp(icla)%p(iel)*xmash(icla) )                   &
                         *propce(iel,ipcte2)
 
           !  Taking into account humidity
 
           if ( ippmod(iccoal) .eq. 1 ) then
-            tfuel(iel) = tfuel(iel) + (rtp(iel,isca(ixwt(icla))))              &
+            tfuel(iel) = tfuel(iel) + (cvar_xwt(icla)%p(iel))              &
                          *propce(iel,ipcte2)
           endif
         enddo
@@ -1572,13 +1626,12 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       ( mode  , xho2    , coefe  , f1mc   , f2mc   , t1    )
 
       do icla=1,nclacp
-        ixckcl = isca(ixck(icla))
         ipcght = ipproc(igmhet(icla))
-        if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+        if ( cvara_xck(icla)%p(iel) .gt. epsicp ) then
           gamhet = crom(iel)*propce(iel,ipcght)              &
-                   * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +              &
-                  2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))        &
-                    /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                   * ( (cvara_xck(icla)%p(iel))**(2.d0/3.d0) +              &
+                  2.d0/3.d0*(cvar_xck(icla)%p(iel)-cvara_xck(icla)%p(iel))  &
+                    /(cvara_xck(icla)%p(iel))**(1.d0/3.d0) )
         else
           gamhet = 0.d0
         endif
@@ -1630,13 +1683,12 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         ( mode  , xhco2    , coefe  , f1mc   , f2mc   , t1    )
 
         do icla=1,nclacp
-          ixckcl  = isca(ixck(icla))
           ipghco2 = ipproc(ighco2(icla))
-          if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+          if ( cvara_xck(icla)%p(iel) .gt. epsicp ) then
             gamhet = crom(iel)*propce(iel,ipghco2)              &
-                     * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +               &
-                    2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))         &
-                      /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                     * ( (cvara_xck(icla)%p(iel))**(2.d0/3.d0) +               &
+                    2.d0/3.d0*(cvar_xck(icla)%p(iel)-cvara_xck(icla)%p(iel))   &
+                      /(cvara_xck(icla)%p(iel))**(1.d0/3.d0) )
           else
             gamhet = 0.d0
           endif
@@ -1706,13 +1758,12 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
       ( mode  , xhh2o    , coefe  , f1mc   , f2mc   , t1    )
 
         do icla=1,nclacp
-          ixckcl  = isca(ixck(icla))
           ipghh2o = ipproc(ighh2o(icla))
-          if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+          if ( cvara_xck(icla)%p(iel) .gt. epsicp ) then
             gamhet = crom(iel)*propce(iel,ipghh2o)           &
-                     * ( (rtpa(iel,ixckcl))**(2.d0/3.d0) +            &
-                    2.d0/3.d0*(rtp(iel,ixckcl)-rtpa(iel,ixckcl))      &
-                      /(rtpa(iel,ixckcl))**(1.d0/3.d0) )
+                     * ( (cvara_xck(icla)%p(iel))**(2.d0/3.d0) +             &
+                    2.d0/3.d0*(cvar_xck(icla)%p(iel)-cvara_xck(icla)%p(iel)) &
+                      /(cvara_xck(icla)%p(iel))**(1.d0/3.d0) )
           else
             gamhet = 0.d0
           endif
@@ -1735,6 +1786,8 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
         numcha = ichcor(icla)
 
+        call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+        call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
         ipcsec = ipproc(igmsec(icla))
         ipcte2 = ipproc(itemp2(icla))
         ipcx2c = ipproc(ix2(icla))
@@ -1759,11 +1812,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
           !  Contribution to explicit balance
 
-          if ( rtpa(iel,isca(ixwt(icla))).gt. epsicp .and.          &
+          if ( cvara_xwtcl(iel).gt. epsicp .and.          &
                xwatch(numcha) .gt. epsicp       ) then
 
             aux = crom(iel)*propce(iel,ipcsec)             &
-                 *(rtp(iel,isca(ixwt(icla)))/propce(iel,ipcx2c))    &
+                 *(cvar_xwtcl(iel)/propce(iel,ipcx2c))     &
                  *(1.d0                    /xwatch(numcha))         &
                  *hh2ov
 
@@ -1779,6 +1832,11 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
 
     endif
 
+    deallocate(cvar_xck, cvara_xck, cvar_xch, cvar_xnp)
+    if ( ippmod(iccoal) .eq. 1 ) then
+      deallocate(cvar_xwt)
+    endif
+
   endif
 endif
 
@@ -1789,7 +1847,6 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) ) then
 
     !  Pointer source terms
-
     iexp1  = ipproc(ighcn1)
     iexp2  = ipproc(ighcn2)
     iexp3  = ipproc(ignoth)
@@ -1809,17 +1866,25 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
+      ! Arrays of pointers containing the fields values for each class
+      ! (loop on cells outside loop on classes)
+      allocate(cvara_xck(nclacp), cvara_xch(nclacp))
+      do icla = 1,nclacp
+        call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
+        call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xch(icla)%p)
+      enddo
+
       do iel=1,ncel
         wmel=propce(iel,ipproc(immel))
         xo2= propce(iel,ipproc(iym1(io2)))*wmel/wmo2
 
         aux = volume(iel)*crom(iel)                      &
              *(propce(iel,iexp2)+propce(iel,iexp1)                &
-             *rtpa(iel,isca(iyno))                                &
+             *cvara_yno(iel)                             &
              *propce(iel,ipproc(immel))                           &
              /wmno)
 
-        smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
+        smbrs(iel)  = smbrs(iel)  - aux*cvara_var(iel)
         rovsdt(iel) = rovsdt(iel) + aux
 
         do icha=1,ncharb
@@ -1835,15 +1900,15 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
           gmdev1(icha) = gmdev1(icha)                              &
                +propce(iel,ipproc(igmdv1(icla)))                   &
                *crom(iel)                                 &
-               *rtpa(iel,isca(ixch(icla)))
+               *cvara_xch(icla)%p(iel)
           gmdev2(icha) = gmdev2(icha)                              &
                +propce(iel,ipproc(igmdv2(icla)))                   &
                *crom(iel)                                 &
-               *rtpa(iel,isca(ixch(icla)))
+               *cvara_xch(icla)%p(iel)
           gmhet(icha) = gmhet(icha)                                &
                +propce(iel,ipproc(igmhet(icla)))                   &
                *crom(iel)                                 &
-               *rtpa(iel,isca(ixck(icla)))**(2.d0/3.d0)
+               *cvara_xck(icla)%p(iel)**(2.d0/3.d0)
 
         enddo
 
@@ -1863,6 +1928,8 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
       enddo
 
+      deallocate(cvara_xck, cvara_xch)
+
     endif
 
     if ( ivar.eq.isca(iyno) ) then
@@ -1878,16 +1945,16 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
         wmel=propce(iel,ipproc(immel))
 
         aux1 = volume(iel)*crom(iel)                     &
-              *propce(iel,iexp1)*rtpa(iel,isca(iyhcn))            &
+              *propce(iel,iexp1)*cvara_yhcn(iel)         &
               *propce(iel,ipproc(immel))/wmhcn
         aux2 = volume(iel)*crom(iel)                     &
-              *propce(iel,iexp2)*rtpa(iel,isca(iyhcn))            &
+              *propce(iel,iexp2)*cvara_yhcn(iel)         &
               *wmno/wmhcn
         aux3 = volume(iel)*crom(iel)**1.5d0              &
               *propce(iel,iexp3)                                  &
               *propce(iel,ipproc(iym1(in2)))
 
-        smbrs(iel)  = smbrs(iel) - aux1*rtpa(iel,ivar)            &
+        smbrs(iel)  = smbrs(iel) - aux1*cvara_var(iel)            &
                                  + aux2 + aux3
         rovsdt(iel) = rovsdt(iel) + aux1
       enddo
@@ -1904,6 +1971,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
   if ( ivar.eq.isca(iyhcn) .or. ivar.eq.isca(iyno) .or. ivar.eq.isca(iynh3)    &
      ) then
+
+    ! Arrays of pointers containing the fields values for each class
+    ! (loop on cells outside loop on classes)
+    allocate(cvara_xck(nclacp), cvara_xch(nclacp))
+    do icla = 1,nclacp
+      call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xck(icla)%p)
+      call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xch(icla)%p)
+    enddo
 
     ! Pointer Source terms NO gas phase
     iexp1  = ipproc(ighcn1)
@@ -1950,10 +2025,10 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         !  Coefficient of reactions HCN + O2 et HCN + NO
         aux = volume(iel)*crom(iel)                                   &
              *(propce(iel,iexp2)+propce(iel,iexp1)                             &
-             *rtpa(iel,isca(iyno))                                             &
+             *cvara_yno(iel)                                          &
              *wmel/wmno)
 
-        smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
+        smbrs(iel)  = smbrs(iel)  - aux*cvara_var(iel)
         rovsdt(iel) = rovsdt(iel) + aux
 
         !  Reburning ?
@@ -1966,7 +2041,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                   + ( propce(iel,ipcyf2) * wmel/wmchx2 )
 
              aux = volume(iel)*wmhcn*propce(iel,iexprb)                        &
-                 * rtpa(iel,isca(iyno))*wmel/wmno                              &
+                 * cvara_yno(iel)*wmel/wmno                           &
                  * ychx
 
              smbrs(iel)  = smbrs(iel)  + aux
@@ -2035,14 +2110,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( (core1 + core2) * para2 )                                &
-                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
+                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               else
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( core1 + core2 )                                          &
-                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
+                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               endif
@@ -2108,14 +2183,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( (core1 + core2) * para2 )                                &
-                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
+                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               else
 
               aux = ( volume(iel)*wmhcn )                                      &
                   * ( core1 + core2 )                                          &
-                  * ( rtp(iel,isca(iyno))*crom(iel)/wmno )                     &
+                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               endif
@@ -2143,7 +2218,6 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
           icha   = ichcor(icla)
           ipctem = ipproc(itemp2(icla))
-          ixckcl = isca(ixck(icla))
           ipcght = ipproc(igmhet(icla))
 
           mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
@@ -2156,20 +2230,20 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           gmdev1(icha) = gmdev1(icha)                                          &
                +propce(iel,ipproc(igmdv1(icla)))                               &
                *crom(iel)                                             &
-               *rtpa(iel,isca(ixch(icla)))
+               *cvara_xch(icla)%p(iel)
 
           !  Forming rate of the second pyrolisis reaction
           gmdev2(icha) = gmdev2(icha)                                          &
                +propce(iel,ipproc(igmdv2(icla)))                               &
                *crom(iel)                                             &
-               *rtpa(iel,isca(ixch(icla)))
+               *cvara_xch(icla)%p(iel)
 
-          if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+          if ( cvara_xck(icla)%p(iel) .gt. epsicp ) then
             !  Reaction rate of the heterogeneous combustion
             gmhet(icha) = gmhet(icha)                                          &
                +propce(iel,ipcght)                                             &
                *crom(iel)                                             &
-               *( rtpa(iel,ixckcl)*((1.d0/(mckcl2/mckcl1+1.d0))*yhcnc1(icha)   &
+               *( cvara_xck(icla)%p(iel)*((1.d0/(mckcl2/mckcl1+1.d0))*yhcnc1(icha)   &
                    +(1.d0/(mckcl1/mckcl2+1.d0))*yhcnc2(icha)) )**(2.d0/3.d0)
           endif
 
@@ -2228,9 +2302,9 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         !  Coefficient of reactions NH3 + O2 and NH3 + NO
         aux  =   volume(iel)*crom(iel)                                &
              * ( propce(iel,iexp4) + propce(iel,iexp5)                         &
-             *   rtpa(iel,isca(iyno))*wmel/wmno )
+             *   cvara_yno(iel)*wmel/wmno )
 
-        smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
+        smbrs(iel)  = smbrs(iel)  - aux*cvara_var(iel)
         rovsdt(iel) = rovsdt(iel) + aux
 
         !  Initialization of variables
@@ -2250,13 +2324,13 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           gmdev1(icha) = gmdev1(icha)                                          &
                +propce(iel,ipproc(igmdv1(icla)))                               &
                *crom(iel)                                             &
-               *rtpa(iel,isca(ixch(icla)))
+               *cvara_xch(icla)%p(iel)
 
           !  Forming rate of the second pyrolisis reaction
           gmdev2(icha) = gmdev2(icha)                                          &
                +propce(iel,ipproc(igmdv2(icla)))                               &
                *crom(iel)                                             &
-               *rtpa(iel,isca(ixch(icla)))
+               *cvara_xch(icla)%p(iel)
 
         enddo
 
@@ -2304,14 +2378,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         !  Coefficient of reaction HCN + NO
         aux1 = volume(iel)*crom(iel)                                  &
-              *propce(iel,iexp1)*rtpa(iel,isca(iyhcn))                         &
+              *propce(iel,iexp1)*cvara_yhcn(iel)                      &
               *wmel/wmhcn
 
-        propce(iel,ipproc(icnohc)) = aux1*rtpa(iel,ivar)
+        propce(iel,ipproc(icnohc)) = aux1*cvara_var(iel)
 
         !  Coefficient of reaction HCN + O2
         aux2 = volume(iel)*crom(iel)                                  &
-              *propce(iel,iexp2)*rtpa(iel,isca(iyhcn))                         &
+              *propce(iel,iexp2)*cvara_yhcn(iel)                      &
               *wmno/wmhcn
 
         propce(iel,ipproc(ifnohc)) = aux2
@@ -2327,17 +2401,17 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         !  Coefficient of reaction NH3 + O2 --> NO + ...
         aux4 = volume(iel)*crom(iel)                                  &
-              *propce(iel,iexp4)*rtpa(iel,isca(iynh3))                         &
+              *propce(iel,iexp4)*cvara_ynh3(iel)                       &
               *wmno/wmnh3
 
         propce(iel,ipproc(ifnonh)) = aux4
 
         !  Coefficient of reaction NH3 + NO --> N2 + ...
         aux5 = volume(iel)*crom(iel)                                  &
-              *propce(iel,iexp5)*rtpa(iel,isca(iynh3))                         &
+              *propce(iel,iexp5)*cvara_ynh3(iel)                       &
               *wmel/wmnh3
 
-        propce(iel,ipproc(icnonh)) = aux5*rtpa(iel,ivar)
+        propce(iel,ipproc(icnonh)) = aux5*cvara_var(iel)
 
         !  Reburning ?
         !  Chen's model
@@ -2349,7 +2423,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                   + ( propce(iel,ipcyf2) * wmel/wmchx2 )
 
              aux = volume(iel)*wmhcn*propce(iel,iexprb)                        &
-                 * rtpa(iel,isca(iyno)) * wmel/wmno  * ychx
+                 * cvara_yno(iel) * wmel/wmno  * ychx
 
              smbrs(iel)  = smbrs(iel)  - aux
 
@@ -2429,14 +2503,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               auxrb1 = ( volume(iel)*wmno )                                    &
                      * ( (core1 + core2 + core3) * para2 )                     &
                      * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
-                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
+                     * ( cvar_yno(iel) * crom(iel)/wmno )
 
               else
 
               auxrb1 = ( volume(iel)*wmno )                                    &
                      * ( core1 + core2 + core3 )                               &
                      * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
-                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
+                     * ( cvar_yno(iel) * crom(iel)/wmno )
 
               endif
 
@@ -2515,14 +2589,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               auxrb2 = ( volume(iel)*wmno )                                    &
                      * ( (core1 + core2 + core3) * para2 )                     &
                      * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
-                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
+                     * ( cvar_yno(iel) * crom(iel)/wmno )
 
               else
 
               auxrb2 = ( volume(iel)*wmno )                                    &
                      * ( core1 + core2 + core3 )                               &
                      * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
-                     * ( rtp(iel,isca(iyno)) * crom(iel)/wmno )
+                     * ( cvar_yno(iel) * crom(iel)/wmno )
 
               endif
 
@@ -2548,7 +2622,6 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
           icha   = ichcor(icla)
           ipctem = ipproc(itemp2(icla))
-          ixckcl = isca(ixck(icla))
 
           mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
                    *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
@@ -2557,11 +2630,11 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                    *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
 
           !  Reaction rate of the heterogeneous combustion
-          if ( rtpa(iel,ixckcl) .gt. epsicp ) then
+          if ( cvara_xck(icla)%p(iel) .gt. epsicp ) then
           gmhet(icha) = gmhet(icha)                                            &
                +propce(iel,ipproc(igmhet(icla)))                               &
                *crom(iel)                                             &
-               *( rtpa(iel,ixckcl)*((1.d0/(mckcl2/mckcl1+1.d0))*ynoch1(icha)   &
+               *( cvara_xck(icla)%p(iel)*((1.d0/(mckcl2/mckcl1+1.d0))*ynoch1(icha)   &
                    +(1.d0/(mckcl1/mckcl2+1.d0))*ynoch2(icha)) )**(2.d0/3.d0)
           endif
 
@@ -2575,8 +2648,8 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           propce(iel,ipproc(ifnoch)) = propce(iel,ipproc(ifnoch)) + auxhet
 
 
-          smbrs(iel)  = smbrs(iel) - aux1*rtpa(iel,ivar)                       &
-                                   - aux5*rtpa(iel,ivar)                       &
+          smbrs(iel)  = smbrs(iel) - aux1*cvara_var(iel)                       &
+                                   - aux5*cvara_var(iel)                       &
                                    + aux2 + aux3 + aux4 + auxhet
 
           rovsdt(iel) = rovsdt(iel) + aux1 + aux5
@@ -2586,6 +2659,8 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
       enddo
 
     endif
+
+    deallocate(cvara_xck, cvara_xch)
 
   endif
 

@@ -44,13 +44,11 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     rtp           calculation variables in cell centers
-!>                                 (current instant)
 !> \param[in,out] propce        physic properties at cell centers
 !______________________________________________________________________________!
 
 subroutine cs_coal_physprop2  &
- ( ncelet , ncel , rtp , propce )
+ ( ncelet , ncel , propce )
 
 !===============================================================================
 ! Module files
@@ -79,7 +77,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision rtp(ncelet,nflown:nvar) , propce(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 character(len=80) :: name
@@ -98,6 +96,8 @@ double precision dchmin , dchmax , romin  , romax , coedmi
 double precision ro2ini , roh2o
 
 double precision, dimension(:), pointer :: nagcpi, agecpi
+double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
+double precision, dimension(:), pointer :: cvar_xwtcl
 
 !===============================================================================
 
@@ -143,14 +143,21 @@ do icla = 1, nclacp
     call field_get_val_s_by_name(name,agecpi)
   endif
 
+  call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+  call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+  call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+  if ( ippmod(iccoal) .ge. 1 ) then
+    call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+  endif
+
   do iel = 1, ncel
 
     ipcx2c = ipproc(ix2(icla))
     ipcro2 = ipproc(irom2(icla))
     ipcdi2 = ipproc(idiam2(icla))
-    xck    = rtp(iel,isca(ixck(icla)))
-    xch    = rtp(iel,isca(ixch(icla)))
-    xnp    = rtp(iel,isca(inp(icla)))
+    xck    = cvar_xckcl(iel)
+    xch    = cvar_xchcl(iel)
+    xnp    = cvar_xnpcl(iel)
     xashcl = xashch(ichcor(icla))
     xuash  = xnp*xmp0(icla)*(1.d0-xashcl)
     ! --- Calculation of the solid mass fraction
@@ -158,7 +165,7 @@ do icla = 1, nclacp
     !     Taking into account the humidity
     if ( ippmod(iccoal) .ge. 1 ) then
       propce(iel,ipcx2c) = propce(iel,ipcx2c)                     &
-                          +rtp(iel,isca(ixwt(icla)))
+                          +cvar_xwtcl(iel)
     endif
     ! ---- Eventual clipping for the solid mass fraction
     if ( propce(iel,ipcx2c) .gt. (1.d0+epsicp) ) then
@@ -220,7 +227,7 @@ do icla = 1, nclacp
       if ( ippmod(iccoal) .eq. 1 ) then
       !     at the moment we asume that ROH2O is constant
         roh2o = 998.203
-        ro2ini = rho20(icla)+ rtp(iel,isca(ixwt(icla)))           &
+        ro2ini = rho20(icla)+ cvar_xwtcl(iel)                     &
                              *roh2o
       endif
 

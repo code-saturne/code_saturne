@@ -24,7 +24,7 @@ subroutine cs_coal_fp2st &
 !=======================
 
  ( iscal  ,                                                        &
-   rtpa   , rtp    , propce ,                                      &
+   propce ,                                                        &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -40,8 +40,6 @@ subroutine cs_coal_fp2st &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
@@ -84,17 +82,16 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           iel    , ifac   , ivar   ,ivar0 , ivarsc
+integer           iel    , ifac   , ivar0
 integer           icla   , icha   , numcha
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
 integer           ipcx2c
-integer           ixchcl , ixckcl , ixnpcl , ipcgd1 , ipcgd2
+integer           ipcgd1 , ipcgd2
 integer           iold
 
 double precision xk     , xe     , rhovst
@@ -111,6 +108,10 @@ double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
+double precision, dimension(:), pointer :: cvar_xwtcl
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
+double precision, dimension(:), pointer :: cvara_scal
 
 !===============================================================================
 ! 1. Initialization
@@ -129,8 +130,7 @@ endif
 !===============================================================================
 
 ! --- La variance n'est pas associé a un scalaire mais a f1+f2
-ivarsc = 0
-ivar   = isca(iscal)
+call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
@@ -169,16 +169,19 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
   x1( : ) = 1.d0
   do icla = 1, nclacp
-    ixchcl = isca(ixch(icla))
-    ixckcl = isca(ixck(icla))
-    ixnpcl = isca(inp(icla ))
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    if ( ippmod(iccoal) .ge. 1 ) then
+      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+    endif
     do iel = 1, ncel
       x1(iel) =   x1(iel)                                        &
-               -( rtp(iel,ixchcl)                                &
-                 +rtp(iel,ixckcl)                                &
-                 +rtp(iel,ixnpcl)*xmash(icla) )
+               -( cvar_xchcl(iel)                                &
+                 +cvar_xckcl(iel)                                &
+                 +cvar_xnpcl(iel)*xmash(icla) )
       if ( ippmod(iccoal) .ge. 1 ) then
-        x1(iel) = x1(iel) - rtp(iel,isca(ixwt(icla)))
+        x1(iel) = x1(iel) - cvar_xwtcl(iel)
       endif
     enddo
   enddo
@@ -186,10 +189,12 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 ! --> calcul de F=F1+F2
   f1f2( : ) = zero
   do icha = 1, ncharb
+    call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+    call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
     do iel = 1, ncel
       f1f2(iel) =  f1f2(iel)                                     &
-                 + rtp(iel,isca(if1m(icha)))                     &
-                 + rtp(iel,isca(if2m(icha)))
+                 + cvar_f1m(iel)                                 &
+                 + cvar_f2m(iel)
     enddo
   enddo
   do iel = 1, ncel
@@ -247,7 +252,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
     smbrs(iel) = smbrs(iel)                                            &
                 + 2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
                  *( grad(iel,1)**2.d0 + grad(iel,2)**2.d0              &
-                  + grad(iel,3)**2.d0 )*x1(iel) - rhovst*rtpa(iel,ivar)
+                  + grad(iel,3)**2.d0 )*x1(iel) - rhovst*cvara_scal(iel)
 
   enddo
 
@@ -268,25 +273,24 @@ if ( iold .eq. 1 ) then
   do icla=1,nclacp
     numcha = ichcor(icla)
     ipcx2c = ipproc(ix2(icla))
-    ixchcl = isca(ixch(icla))
-    ixckcl = isca(ixck(icla))
-    ixnpcl = isca(inp(icla ))
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
     ipcgd1 = ipproc(igmdv1(icla))
     ipcgd2 = ipproc(igmdv2(icla))
     do iel = 1, ncel
       gdev1 = -crom(iel)*propce(iel,ipcgd1)               &
-                                 *rtp(iel,ixchcl)
+                                 *cvar_xchcl(iel)
       gdev2 = -crom(iel)*propce(iel,ipcgd2)               &
-                                 *rtp(iel,ixchcl)
+                                 *cvar_xchcl(iel)
       gdev  = gdev1 + gdev2
 !
-      if ( rtp(iel,ixnpcl) .gt. epsicp ) then
+      if ( cvar_xnpcl(iel) .gt. epsicp ) then
         diamdv = diam20(icla)
         fsd  =  1.d0 - (1.d0-f1f2(iel))                            &
-               * exp( ( rtp(iel,ixchcl)                            &
+               * exp( ( cvar_xchcl(iel)                            &
                        *(propce(iel,ipcgd1)+propce(iel,ipcgd2))  ) &
                      /( 2.d0*pi*2.77d-4*diamdv                     &
-                        *rtp(iel,ixnpcl)*crom(iel) ) )
+                        *cvar_xnpcl(iel)*crom(iel) ) )
         fdev = 1.d0
 !
 ! ts explicite
@@ -306,27 +310,26 @@ else
   do icla=1,nclacp
     numcha = ichcor(icla)
     ipcx2c = ipproc(ix2(icla))
-    ixchcl = isca(ixch(icla))
-    ixckcl = isca(ixck(icla))
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
     do iel = 1, ncel
       gdev1 = -crom(iel)*propce(iel,ipproc(igmdv1(icla)))       &
-                                 *rtp(iel,ixchcl)
+                                 *cvar_xchcl(iel)
       gdev2 = -crom(iel)*propce(iel,ipproc(igmdv2(icla)))       &
-                                 *rtp(iel,ixchcl)
+                                 *cvar_xchcl(iel)
 !
       aux  = (gdev1+gdev2)               *(1.d0-f1f2(iel))**2.d0
 !
 ! ts implicite : pour l'instant on implicite de facon simple
 !
       if ( abs(f1f2(iel)*(1.d0-f1f2(iel))) .GT. epsicp ) then
-        rhovst = aux*rtpa(iel,ivar)/((f1f2(iel)*(1-f1f2(iel)))**2.d0)      &
+        rhovst = aux*cvara_scal(iel)/((f1f2(iel)*(1-f1f2(iel)))**2.d0)     &
                     *volume(iel)
       else
         rhovst = 0.d0
       endif
       rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
 ! ts explicite
-      smbrs(iel) = smbrs(iel)+aux*volume(iel)-rhovst*rtpa(iel,ivar)
+      smbrs(iel) = smbrs(iel)+aux*volume(iel)-rhovst*cvara_scal(iel)
 
     enddo
   enddo

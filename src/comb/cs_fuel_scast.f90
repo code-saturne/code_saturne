@@ -60,8 +60,6 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     iscal         scalar number
-!> \param[in]     rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] smbrs         second explicit member
 !> \param[in,out] rovsdt        implicit diagonal part
@@ -69,7 +67,7 @@
 
 subroutine cs_fuel_scast &
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  , rovsdt )
 !===============================================================================
 ! Module files
@@ -92,6 +90,7 @@ use cs_fuel_incl
 use ppincl
 use ppcpfu
 use mesh
+use pointe
 use field
 
 !===============================================================================
@@ -102,7 +101,6 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
@@ -136,8 +134,12 @@ double precision ymoy
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ,xden
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
+double precision, dimension(:), pointer :: cvar_yfolcl, cvara_yfolcl
+double precision, dimension(:), pointer :: cvara_yno, cvara_yhcn
+double precision, dimension(:), pointer :: cvara_var
+type(pmapper_double_r1), dimension(:), allocatable :: cvara_yfol
 
 !===============================================================================
 ! 1. Initialization
@@ -147,15 +149,13 @@ double precision, dimension(:), pointer :: cvara_k, cvara_ep
 
 ! --- Number of the variable associated to the scalar to treat iscal
 ivar = isca(iscal)
+call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_var)
 
 ! --- Name of the variable associated to scalar to treat iscal
 call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Number of the physic bulks (Cf cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)
-
-call field_get_val_prev_s(ivarfl(ik), cvara_k)
-call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 ! --- Gas phase temperature
 
@@ -177,6 +177,7 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
 
   numcla = ivar-isca(ih2(1))+1
 
+  call field_get_val_prev_s(ivarfl(isca(iyfol(numcla))), cvara_yfolcl)
   ipcro2 = ipproc(irom2 (numcla))
   ipcdia = ipproc(idiam2(numcla))
   ipcte2 = ipproc(itemp2(numcla))
@@ -204,7 +205,7 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
   imode = -1
   do iel = 1, ncel
 
-    if ( rtpa(iel,isca(iyfol(numcla))) .gt. epsifl ) then
+    if ( cvara_yfolcl(iel) .gt. epsifl ) then
 
       rom = crom(iel)
 
@@ -267,9 +268,9 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
 
     smbrs(iel) = smbrs(iel)                                       &
          - crom(iel)*volume(iel)*(gmvap+gmhet)
-    if ( rtpa(iel,ivar).gt.epsifl ) then
-      rhovst = crom(iel)*volume(iel)*(gmvap + gmhet)       &
-              / rtpa(iel,ivar)
+    if ( cvara_var(iel).gt.epsifl ) then
+      rhovst = crom(iel)*volume(iel)*(gmvap + gmhet)              &
+              / cvara_var(iel)
     else
       rhovst = 0.d0
     endif
@@ -287,15 +288,17 @@ elseif ( ivar .eq. isca(ifvap) ) then
 
   do icla = 1, nclafu
 
+    call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
+    call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
     ipcte2 = ipproc(itemp2(icla))
     ipcgev = ipproc(igmeva(icla))
 
     do iel = 1, ncel
 
       t2mt1 = propce(iel,ipcte2)-propce(iel,ipcte1)
-      if ( rtpa(iel,isca(iyfol(icla))) .gt. epsifl ) then
-        gmvap = -propce(iel,ipcgev)*t2mt1*rtp(iel,isca(iyfol(icla)))    &
-                / rtpa(iel,isca(iyfol(icla)))
+      if ( cvara_yfolcl(iel) .gt. epsifl ) then
+        gmvap = -propce(iel,ipcgev)*t2mt1*cvar_yfolcl(iel)        &
+                / cvara_yfolcl(iel)
       else
         gmvap = -propce(iel,ipcgev)*t2mt1
       endif
@@ -316,14 +319,16 @@ elseif ( ivar .eq. isca(if7m) ) then
 
   do icla = 1, nclafu
 
+    call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
+    call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfolcl)
     ipcght = ipproc(igmhtf(icla))
 
     do iel = 1, ncel
-      if (rtpa(iel,isca(iyfol(icla))) .gt. epsifl) then
+      if (cvara_yfolcl(iel) .gt. epsifl) then
         smbrs(iel) = smbrs(iel)                                        &
-             -crom(iel)*propce(iel,ipcght)*volume(iel)        &
-                                *rtp(iel,isca(iyfol(icla)))            &
-                                /rtpa(iel,isca(iyfol(icla)))
+             -crom(iel)*propce(iel,ipcght)*volume(iel)                 &
+                                *cvar_yfolcl(iel)                      &
+                                /cvara_yfolcl(iel)
       else
         smbrs(iel) = smbrs(iel)                                        &
                     -crom(iel)*propce(iel,ipcght)*volume(iel)
@@ -349,7 +354,7 @@ if ( ivar.eq.isca(ifvp2m) ) then
   call cs_fuel_fp2st &
  !==================
  ( iscal  ,                                                        &
-   rtpa   , rtp    , propce ,                                      &
+   propce ,                                                        &
    smbrs  , rovsdt )
 
 endif
@@ -364,6 +369,16 @@ if ( ieqco2 .ge. 1 ) then
     if (iwarni(ivar).ge.1) then
       write(nfecra,1000) chaine(1:8)
     endif
+
+    call field_get_val_prev_s(ivarfl(ik), cvara_k)
+    call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+    ! Arrays of pointers containing the fields values for each class
+    ! (loop on cells outside loop on classes)
+    allocate(cvara_yfol(nclafu))
+    do icla = 1, nclafu
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol(icla)%p)
+    enddo
 
     ! ---- Contribution of the interfacial source term to the explicit and implicit balances
 
@@ -535,7 +550,7 @@ if ( ieqco2 .ge. 1 ) then
 
        x2 = 0.d0
        do icla = 1, nclafu
-         x2 = x2 + rtpa(iel,isca(iyfol(icla)))
+         x2 = x2 + cvara_yfol(icla)%p(iel)
        enddo
 
        !    We transport CO2
@@ -555,6 +570,8 @@ if ( ieqco2 .ge. 1 ) then
      endif
 
    enddo
+
+   deallocate(cvara_yfol)
 
    if(irangp.ge.0) then
      call parcpt(nberic)
@@ -612,20 +629,22 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
+      call field_get_val_prev_s(ivarfl(isca(iyno)), cvara_yno)
+
       auxmin = 1.d+20
       auxmax =-1.d+20
 
       do iel=1,ncel
 
-        xxo2 = propce(iel,ipproc(iym1(io2)))                        &
+        xxo2 = propce(iel,ipproc(iym1(io2)))                       &
               *propce(iel,ipproc(immel))/wmo2
 
-        aux = volume(iel)*crom(iel)                       &
+        aux = volume(iel)*crom(iel)                                &
              *( propce(iel,iexp2)                                  &
-               +propce(iel,iexp1)*rtpa(iel,isca(iyno))             &
+               +propce(iel,iexp1)*cvara_yno(iel)                   &
                                  *propce(iel,ipproc(immel))/wmno )
 
-        smbrs(iel)  = smbrs(iel)  - aux*rtpa(iel,ivar)
+        smbrs(iel)  = smbrs(iel)  - aux*cvara_var(iel)
         rovsdt(iel) = rovsdt(iel) + aux
 
         gmvap = 0.d0
@@ -638,7 +657,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           ipcte1 = ipproc(itemp1)
 
           gmvap = gmvap                                           &
-                 + crom(iel)*propce(iel,ipcgev)          &
+                 + crom(iel)*propce(iel,ipcgev)                   &
                   *(propce(iel,ipcte2)-propce(iel,ipcte1))
 
           gmhet = gmhet                                           &
@@ -666,19 +685,21 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
+      call field_get_val_prev_s(ivarfl(isca(iyhcn)), cvara_yhcn)
+
       do iel=1,ncel
 
         aux1 = volume(iel)*crom(iel)                     &
-              *propce(iel,iexp1)*rtpa(iel,isca(iyhcn))            &
+              *propce(iel,iexp1)*cvara_yhcn(iel)         &
               *propce(iel,ipproc(immel))/wmhcn
         aux2 = volume(iel)*crom(iel)                     &
-              *propce(iel,iexp2)*rtpa(iel,isca(iyhcn))            &
+              *propce(iel,iexp2)*cvara_yhcn(iel)         &
               *wmno/wmhcn
         aux3 = volume(iel)*crom(iel)**1.5d0              &
-              *propce(iel,iexp3)                                  &
+              *propce(iel,iexp3)                         &
               *propce(iel,ipproc(iym1(in2)))
 
-        smbrs(iel)  = smbrs(iel) - aux1*rtpa(iel,ivar)            &
+        smbrs(iel)  = smbrs(iel) - aux1*cvara_var(iel)   &
                                + aux2 + aux3
         rovsdt(iel) = rovsdt(iel) + aux1
       enddo

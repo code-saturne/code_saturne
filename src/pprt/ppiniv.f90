@@ -139,21 +139,21 @@ endif
 ! ---> Combustion charbon pulverise
 
 if (ippmod(iccoal).ge.0) then
-  call cs_coal_varini(nvar, nscal, dt, rtp)
+  call cs_coal_varini(nvar, nscal, dt)
   !==================
 endif
 
 ! ---> Combustion charbon pulverise couples Lagrangien
 
 if (ippmod(icpl3c).ge.0) then
-  call cplini(rtp)
+  call cplini
   !==========
 endif
 
 ! ---> Combustion fuel
 
 if  (ippmod(icfuel).ge.0) then
-  call cs_fuel_varini(nvar, nscal, dt, rtp)
+  call cs_fuel_varini(nvar, nscal, dt)
   !==================
 endif
 

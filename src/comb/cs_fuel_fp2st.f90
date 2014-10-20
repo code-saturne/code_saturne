@@ -24,7 +24,7 @@ subroutine cs_fuel_fp2st &
 !=======================
 
  ( iscal  ,                                                        &
-   rtpa   , rtp    , propce ,                                      &
+   propce ,                                                        &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -40,8 +40,6 @@ subroutine cs_fuel_fp2st &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
@@ -84,13 +82,12 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           iel    , ifac   , ivar   ,ivar0 , ivarsc
+integer           iel    , ifac   , ivar0
 integer           icla
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
 integer           ipcte1 , ipcte2
@@ -108,6 +105,9 @@ double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_scal
+double precision, dimension(:), pointer :: cvar_fvap
+!double precision, dimension(:), pointer :: cvar_yfolcl
 
 !===============================================================================
 ! 1. Initialization
@@ -127,12 +127,13 @@ endif
 !===============================================================================
 
 ! --- La variance n'est pas associe a un scalaire
-ivarsc = 0
-ivar   = isca(iscal)
+call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
 
 ! --- Numero des grandeurs physiques
 call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
 
 if ( itytur.eq.2 .or. iturb.eq.50 ) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -163,14 +164,15 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   climgp = climgr(isca(ifvap))
   extrap = extrag(isca(ifvap))
 
-! --> calcul de X1 et X2
+! --> calcul de X1
 
   x1  ( : ) = 1.d0
   f1f2( : ) = 0.d0
   do icla = 1, nclafu
+    ! call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
     do iel = 1, ncel
-      f1f2(iel) = f1f2(iel) + rtp(iel,isca(ifvap))
-      ! x1(iel)   = x1(iel)   - rtp(iel,isca(iyfol(icla)))
+      f1f2(iel) = f1f2(iel) + cvar_fvap(iel)
+      ! x1(iel)   = x1(iel)   - cvar_yfolcl(iel)
     enddo
   enddo
 
@@ -229,10 +231,10 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 
     rhovst = propce(iel,ipproc(irom1))*xe/(xk*rvarfl(iscal))*volume(iel)
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
-    smbrs(iel) = smbrs(iel)                                                  &
-                +2.d0*visct(iel)*volume(iel)/sigmas(iscal)                   &
-                 *(grad(iel,1)**2.d0 + grad(iel,2)**2.d0 + grad(iel,3)**2.d0)&
-                 *x1(iel) -rhovst*rtpa(iel,ivar)
+    smbrs(iel) = smbrs(iel)                                                   &
+                +2.d0*visct(iel)*volume(iel)/sigmas(iscal)                    &
+                 *(grad(iel,1)**2.d0 + grad(iel,2)**2.d0 + grad(iel,3)**2.d0) &
+                 -rhovst*cvara_scal(iel)
   enddo
 
 endif
@@ -257,14 +259,14 @@ do icla=1,nclafu
 ! ts implicite : pour l'instant on implicite de facon simple
 !
     if ( abs(f1f2(iel)*(1.d0-f1f2(iel))) .GT. epsicp ) then
-      rhovst = aux*rtpa(iel,ivar)/((f1f2(iel)*(1-f1f2(iel)))**2.d0)      &
+      rhovst = aux*cvara_scal(iel)/((f1f2(iel)*(1-f1f2(iel)))**2.d0)           &
                   *volume(iel)
     else
       rhovst = 0.d0
     endif
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
 ! ts explicite
-    smbrs(iel) = smbrs(iel)+aux*volume(iel)-rhovst*rtpa(iel,ivar)
+    smbrs(iel) = smbrs(iel)+aux*volume(iel)-rhovst*cvara_scal(iel)
 !
   enddo
 enddo

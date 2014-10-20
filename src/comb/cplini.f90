@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine cplini &
-!================
-
- ( rtp    )
+subroutine cplini
 
 !===============================================================================
 ! FONCTION :
@@ -63,8 +60,6 @@ subroutine cplini &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -97,8 +92,6 @@ use field
 
 implicit none
 
-double precision rtp(ncelet,nflown:nvar)
-
 ! Local variables
 
 integer          iel, ige, mode, icha
@@ -111,6 +104,9 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
+double precision, dimension(:), pointer :: cvar_f3m, cvar_f4p2m
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -151,6 +147,8 @@ elseif (iturb.eq.60) then
 elseif (iturb.eq.70) then
   call field_get_val_s(ivarfl(inusa), cvar_nusa)
 endif
+
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
 !===============================================================================
 ! 2. INITIALISATION DES INCONNUES :
@@ -234,20 +232,24 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
    t1init )
 
   do iel = 1, ncel
-    rtp(iel,isca(iscalt)) = h1init
+    cvar_scalt(iel) = h1init
   enddo
 
 ! Fraction massique et variance
 
   do icha = 1, ncharb
+    call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+    call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
     do iel = 1, ncel
-      rtp(iel,isca(if1m(icha))) = zero
-      rtp(iel,isca(if2m(icha))) = zero
+      cvar_f1m(iel) = zero
+      cvar_f2m(iel) = zero
     enddo
   enddo
+  call field_get_val_s(ivarfl(isca(if3m)), cvar_f3m)
+  call field_get_val_s(ivarfl(isca(if4p2m)), cvar_f4p2m)
   do iel = 1, ncel
-    rtp(iel,isca(if3m)) = zero
-    rtp(iel,isca(if4p2m)) = zero
+    cvar_f3m(iel) = zero
+    cvar_f4p2m(iel) = zero
   enddo
 
 endif

@@ -146,7 +146,7 @@ double precision propce(ncelet,*)
 ! ---> Flamme charbon pulverise
 
    if (ippmod(iccoal).ge.0) then
-     call cs_coal_physprop(mbrom, izfppp, rtp, propce)
+     call cs_coal_physprop(mbrom, izfppp, propce)
    endif
 
 
@@ -154,13 +154,13 @@ double precision propce(ncelet,*)
 !      des particules de charbon
 
   if (ippmod(icpl3c).ge.0) then
-    call cplphy(mbrom, izfppp, rtp, propce)
+    call cplphy(mbrom, izfppp, propce)
   endif
 
 ! ---> Flamme fuel
 
   if (ippmod(icfuel).ge.0) then
-    call cs_fuel_physprop(mbrom, izfppp, rtp, propce)
+    call cs_fuel_physprop(mbrom, izfppp, propce)
   endif
 
 ! ---> Physique particuliere : Versions electriques

@@ -155,7 +155,7 @@ if (nscapp.gt.0) then
     call cs_coal_masstransfer &
     !=======================
    ( ncelet , ncel   ,        &
-     rtpa   , propce , volume )
+     propce , volume )
 
   endif
 
@@ -167,7 +167,7 @@ if (nscapp.gt.0) then
     call cs_fuel_masstransfer &
     !=======================
    ( ncelet , ncel   ,        &
-     rtpa   , propce )
+     propce )
 
   endif
 

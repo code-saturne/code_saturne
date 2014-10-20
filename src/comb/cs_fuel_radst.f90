@@ -23,7 +23,7 @@
 subroutine cs_fuel_radst &
 !=======================
   ( ivar   , ncelet , ncel   ,                                    &
-    volume , rtpa   , propce , smbrs  , rovsdt )
+    volume , propce , smbrs  , rovsdt )
 
 
 !===============================================================================
@@ -46,8 +46,6 @@ subroutine cs_fuel_radst &
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! volume(ncelet    ! tr ! <-- ! volume des cellules                            !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet     ! tr ! <-- ! second membre du systeme                       !
 ! rovsdt(ncelet    ! tr ! <-- ! diagonale du systeme                           !
@@ -73,6 +71,7 @@ use ppppar
 use ppthch
 use ppincl
 use radiat
+use field
 
 !===============================================================================
 
@@ -85,12 +84,13 @@ integer          ivar , ncelet, ncel
 double precision volume(ncelet)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
-double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
 
 integer          iel , numcla , ipcl
+
+double precision, dimension(:), pointer :: cvara_yfolcl
 
 !===============================================================================
 
@@ -100,6 +100,8 @@ integer          iel , numcla , ipcl
 
 numcla = ivar-isca(ih2(1))+1
 ipcl   = 1+numcla
+
+call field_get_val_prev_s(ivarfl(isca(iyfol(numcla))), cvara_yfolcl)
 
 !===============================================================================
 ! 2. PRISE EN COMPTE DES TERMES SOURCES RADIATIFS
@@ -116,7 +118,7 @@ do iel = 1,ncel
 !--> PARTIE EXPLICITE
 
     smbrs(iel)  = smbrs(iel) +  propce(iel,ipproc(itsre(ipcl)))*volume(iel)  &
-                               *rtpa(iel,isca(iyfol(numcla)))
+                               *cvara_yfolcl(iel)
 
 !--> PARTIE IMPLICITE
 

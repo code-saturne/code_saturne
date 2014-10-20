@@ -24,7 +24,7 @@ subroutine cplphy &
 !================
 
  ( mbrom  , izfppp ,                                              &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -90,8 +90,6 @@ subroutine cplphy &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -131,7 +129,6 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -148,6 +145,10 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8
 double precision, dimension(:), pointer :: brom,  crom
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
+double precision, dimension(:), pointer :: cvar_f3m, cvar_f4p2m
+
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -208,18 +209,24 @@ enddo
 !      W5 = F4M = 1. - F1M - F2M - F3M
 !      W7 = F4P2M
 
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
 do icha = 1, ncharb
+  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
   do iel = 1, ncel
-    w2(iel) =  w2(iel) + rtp(iel,isca(if1m(icha)))
-    w3(iel) =  w3(iel) + rtp(iel,isca(if2m(icha)))
+    w2(iel) =  w2(iel) + cvar_f1m(iel)
+    w3(iel) =  w3(iel) + cvar_f1m(iel)
   enddo
 enddo
 
+call field_get_val_s(ivarfl(isca(if3m)), cvar_f3m)
+call field_get_val_s(ivarfl(isca(if4p2m)), cvar_f4p2m)
 do iel = 1,ncel
-  w4(iel) =  rtp(iel,isca(if3m))
+  w4(iel) = cvar_f3m(iel)
   w5(iel) = 1.d0 - w2(iel) - w3(iel) -w4(iel)
-  w7(iel) =  rtp(iel,isca(if4p2m))
-  w8(iel) = rtp(iel,isca(iscalt))
+  w7(iel) = cvar_f4p2m(iel)
+  w8(iel) = cvar_scalt(iel)
 enddo
 
 ! ------ Macro tableau d'entiers TBCPI : NTBCPI
@@ -248,7 +255,7 @@ call cplph1                                                       &
 !         F1M      F2M      F3M      F4M      F3P2M    F4P2M
    w8     ,                                                       &
 !         ENTH
-   rtp    , propce  , w1    )
+   propce  , w1    )
 !                          ----
 !                 ATTENTION W1 contient RHO1
 

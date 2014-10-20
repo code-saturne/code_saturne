@@ -74,8 +74,6 @@
 !> \param[in]     f4m           average of the tracer 5 (H2O)
 !> \param[in]     enth          enthalpy in \f$ j . kg^{-1} \f$  either of
 !>                                         the gaz or of the mixture melange
-!> \param[in]     rtp           calculation variables at cell centers
-!>                               (current instant)
 !> \param[in,out] propce        physic properties at cell centers
 !_______________________________________________________________________________!
 
@@ -84,7 +82,7 @@ subroutine cs_coal_physprop1 &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth   , enthox ,                                      &
-   rtp    , propce , rom1   )
+   propce , rom1   )
 
 
 !===============================================================================
@@ -106,6 +104,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use pointe
 use field
 
 !===============================================================================
@@ -120,7 +119,7 @@ double precision f4m(ncelet), f5m(ncelet) , f6m(ncelet)
 double precision f7m(ncelet), f8m(ncelet) , f9m(ncelet)
 double precision fvp2m(ncelet)
 double precision enth(ncelet),enthox(ncelet)
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 double precision rom1(ncelet)
 
 ! Local variables
@@ -146,6 +145,9 @@ double precision , dimension ( : )     , allocatable :: fs3no  , fs4no
 double precision , dimension ( : , : ) , allocatable :: yfs4no
 double precision, allocatable, dimension(:) :: tpdf
 double precision, dimension(:), pointer :: x1
+double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
+double precision, dimension(:), pointer :: cvar_xwtcl
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_f1m, cvar_f2m
 
 integer          ipass
 data ipass / 0 /
@@ -196,6 +198,13 @@ endif
 ! 1. Initialization
 !===============================================================================
 
+! Arrays of pointers containing the fields values for each class
+! (loop on cells outside loop on classes)
+allocate(cvar_f1m(ncharb), cvar_f2m(ncharb))
+do icha = 1, ncharb
+  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m(icha)%p)
+  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m(icha)%p)
+enddo
 
 ! pointer
 ipcyf1 = ipproc(iym1(ichx1))
@@ -262,8 +271,8 @@ do iel=1,ncel
 
   do icha = 1, ncharb
 
-    f1mc = rtp(iel,isca(if1m(icha))) / x1(iel)
-    f2mc = rtp(iel,isca(if2m(icha))) / x1(iel)
+    f1mc = cvar_f1m(icha)%p(iel) / x1(iel)
+    f2mc = cvar_f2m(icha)%p(iel) / x1(iel)
 
     den1 = 1.d0                                                    &
           / ( a1(icha)*wmole(ichx1c(icha))+b1(icha)*wmole(ico)     &
@@ -338,11 +347,12 @@ do iel=1,ncel
 
 enddo
 
+deallocate(cvar_f1m, cvar_f2m)
+
 call cs_gascomb &
 !==============
  ( ncelet , ncel   , ichx1 , ichx2 ,                              &
    intpdf ,                                                       &
-   rtp    ,                                                       &
    f1m    , f2m , f3m , f4m , f5m , f6m , f7m , f8m , f9m ,       &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                   &
    af1    , af2    , cx1m     , cx2m   , wmchx1   , wmchx2 ,      &
@@ -380,7 +390,7 @@ ipcte1 = ipproc(itemp1)
 call cs_coal_thfieldconv1 &
 !========================
  ( ncelet , ncel   ,                                              &
-   enth   ,          rtp ,                                        &
+   enth   ,                                                       &
    propce(1,ipcyf1), propce(1,ipcyf2), propce(1,ipcyf3),          &
    propce(1,ipcyf4), propce(1,ipcyf5), propce(1,ipcyf6),          &
    propce(1,ipcyf7), propce(1,ipcyox), propce(1,ipcyp1),          &
@@ -405,8 +415,8 @@ do iel = 1, ncel
 
   propce(iel,ipproc(immel)) = 1.d0 / wmolme
 
-  ! ---- Mecanic pressure is not meant to be included rtp(iel,ipr)
-  !      mais P0
+  ! ---- Mecanic pressure is not meant to be included IPR
+  !      but P0
 
   rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
 enddo
@@ -427,7 +437,7 @@ if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                     &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,         &
    fs3no  , fs4no  , yfs4no , enthox ,                            &
-   rtp    , propce  )
+   propce  )
 
 else if ( ieqnox .eq. 1 ) then
 
@@ -487,12 +497,18 @@ enddo
 
 do icla = 1, nclacp
   icha = ichcor(icla)
+  call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+  call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+  call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+  if ( ippmod(iccoal) .eq. 1 ) then
+    call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+  endif
   do iel = 1, ncel
-    xch  = rtp(iel,isca(ixch(icla)))
-    xck  = rtp(iel,isca(ixck(icla)))
-    xash = rtp(iel,isca(inp (icla)))*xmash(icla)
+    xch  = cvar_xchcl(iel)
+    xck  = cvar_xckcl(iel)
+    xash = cvar_xnpcl(iel)*xmash(icla)
     if ( ippmod(iccoal) .eq. 1 ) then
-      xwat = rtp(iel,isca(ixwt(icla)))
+      xwat = cvar_xwtcl(iel)
     else
       xwat = 0.d0
     endif

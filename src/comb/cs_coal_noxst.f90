@@ -28,7 +28,7 @@ subroutine cs_coal_noxst &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                             &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,                 &
    fs3no  , fs4no  , yfs4no , enthox ,                                    &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -74,6 +74,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use field
 
 !===============================================================================
 
@@ -91,7 +92,7 @@ double precision doxyd(ncel) , hrec(ncel)
 double precision fs3no(ncel) , fs4no(ncel) , yfs4no(ncel,ngazg)
 double precision enthox(ncel)
 
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 !
 ! VARIABLES LOCALES
 !
@@ -145,7 +146,9 @@ integer iexp4,iexp5,iexprb
 ! ---------------------------------------
 integer ipdf4,ipdf5
 
-
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_xckcl, cvar_xchcl
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_xnpcl, cvar_xwtcl
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_f1m, cvar_f2m
 
 !
 !===============================================================================
@@ -253,7 +256,28 @@ enddo
 !
 if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 .or. ipdf4.eq.1 .or.     &
      ipdf5.eq.1 ) then
-!
+
+  ! Arrays of pointers containing the fields values for each class
+  ! (loop on cells outside loop on classes)
+  allocate(cvar_xckcl(nclacp), cvar_xchcl(nclacp))
+  allocate(cvar_xnpcl(nclacp), cvar_xwtcl(nclacp))
+  allocate(cvar_f1m(ncharb), cvar_f2m(ncharb))
+
+  do icla = 1, nclacp
+    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl(icla)%p)
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl(icla)%p)
+    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl(icla)%p)
+    if ( ippmod(iccoal) .eq. 1 ) then
+      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl(icla)%p)
+    endif
+  enddo
+
+  do numcha = 1, ncharb
+    call field_get_val_s(ivarfl(isca(if1m(numcha))), cvar_f1m(numcha)%p)
+    call field_get_val_s(ivarfl(isca(if2m(numcha))), cvar_f2m(numcha)%p)
+  enddo
+
+  !
   inok = 0
   i300 = 0
   i000 = 0
@@ -380,29 +404,29 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 .or. ipdf4.eq.1 .or.     &
       xmx2  = 0.d0
 !
       do icla = 1, nclacp
-        xck  = rtp(iel,isca(ixck(icla)))
-        xch  = rtp(iel,isca(ixch(icla)))
-        xash = rtp(iel,isca(inp (icla)))*xmash(icla)
+        xck  = cvar_xckcl(icla)%p(iel)
+        xch  = cvar_xchcl(icla)%p(iel)
+        xash = cvar_xnpcl(icla)%p(iel)*xmash(icla)
         xmx2   = xmx2 + xch + xck + xash
 !
 !         Prise en compte de l'humidite
 !
         if ( ippmod(iccoal) .eq. 1 ) then
-          xmx2 = xmx2+rtp(iel,isca(ixwt(icla)))
+          xmx2 = xmx2+cvar_xwtcl(icla)%p(iel)
         endif
       enddo
       if ( xmx2 .gt. 0.d0 ) then
         do icla=1,nclacp
           ipctem=ipproc(itemp2(icla))
-          tfuel = tfuel +(rtp(iel,isca(ixck(icla)))                            &
-                        + rtp(iel,isca(ixch(icla)))                            &
-                        + rtp(iel,isca(inp (icla)))*xmash(icla))*              &
+          tfuel = tfuel +(cvar_xckcl(icla)%p(iel)                            &
+                        + cvar_xchcl(icla)%p(iel)                            &
+                        + cvar_xnpcl(icla)%p(iel)*xmash(icla))*              &
                           propce(iel,ipctem)
 !
 !         Prise en compte de l'humidite
 !
           if ( ippmod(iccoal) .eq. 1 ) then
-            tfuel = tfuel +(rtp(iel,isca(ixwt(icla))))*propce(iel,ipctem)
+            tfuel = tfuel +(cvar_xwtcl(icla)%p(iel))*propce(iel,ipctem)
           endif
         enddo
 !
@@ -586,10 +610,10 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 .or. ipdf4.eq.1 .or.     &
         !======================
         ( mode , xhf2 , coefe , f1mc , f2mc , tfuel )
 
-        xxf = xxf + rtp(iel,isca(if1m(numcha)))                   &
-                  + rtp(iel,isca(if2m(numcha)))
-        hhf = hhf + rtp(iel,isca(if1m(numcha)))*xhf1              &
-                  + rtp(iel,isca(if2m(numcha)))*xhf2
+        xxf = xxf + cvar_f1m(numcha)%p(iel)                   &
+                  + cvar_f2m(numcha)%p(iel)
+        hhf = hhf + cvar_f1m(numcha)%p(iel)*xhf1              &
+                  + cvar_f2m(numcha)%p(iel)*xhf2
 
       enddo
 !
@@ -852,6 +876,10 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 .or. ipdf4.eq.1 .or.     &
 
     endif
   enddo
+
+  deallocate(cvar_xckcl, cvar_xchcl)
+  deallocate(cvar_xnpcl, cvar_xwtcl)
+  deallocate(cvar_f1m, cvar_f2m)
 
   if ( irangp .ge. 0 ) then
     call parcpt(inok)

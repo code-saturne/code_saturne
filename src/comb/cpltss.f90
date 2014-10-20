@@ -25,7 +25,6 @@ subroutine cpltss &
 
  ( iscal  ,                                                       &
    itypfb ,                                                       &
-   rtpa   , rtp    ,                                              &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -75,8 +74,6 @@ subroutine cpltss &
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! itypfb(nfabor    ! te ! --> ! type des faces de bord                         !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 ! tslagr           ! tr ! <-- ! terme de couplage retour du                    !
@@ -122,7 +119,6 @@ integer          iscal
 
 integer          itypfb(nfabor)
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)
 
@@ -225,7 +221,6 @@ if ( ivar.eq.isca(if4p2m) ) then
   !==========
  ( iscal  , iscala ,                                              &
    itypfb ,                                                       &
-   rtpa   , rtp    ,                                              &
    smbrs  , rovsdt )
 
 endif

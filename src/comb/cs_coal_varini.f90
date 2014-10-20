@@ -24,7 +24,7 @@ subroutine cs_coal_varini &
 !========================
 
  ( nvar   , nscal  ,                                            &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +59,6 @@ subroutine cs_coal_varini &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,7 +93,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -113,6 +111,16 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
+double precision, dimension(:), pointer :: cvar_xwtcl
+double precision, dimension(:), pointer :: cvar_h2cl
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
+double precision, dimension(:), pointer :: cvar_f4m, cvar_f5m, cvar_f6m
+double precision, dimension(:), pointer :: cvar_f7m, cvar_f8m, cvar_f9m
+double precision, dimension(:), pointer :: cvar_fvp2m
+double precision, dimension(:), pointer :: cvar_yco2, cvar_yhcn, cvar_ynh3
+double precision, dimension(:), pointer :: cvar_yno, cvar_hox
 double precision, dimension(:), pointer :: x1, b_x1
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
@@ -152,6 +160,35 @@ elseif (iturb.eq.50) then
 elseif (iturb.eq.60) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iomg), cvar_omg)
+endif
+
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+if ( noxyd .ge. 2 ) then
+  call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
+endif
+if ( noxyd .ge. 3 ) then
+  call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
+endif
+if ( ippmod(iccoal) .ge. 1 ) then
+  call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
+endif
+call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
+if ( ihtco2 .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
+endif
+if ( ihth2o .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
+endif
+call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
+if ( ieqco2.ge.1 ) then
+  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+endif
+if ( ieqnox .eq. 1 ) then
+  call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
+  call field_get_val_s(ivarfl(isca(iynh3)), cvar_ynh3)
+  call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
+  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
 endif
 
 !===============================================================================
@@ -221,14 +258,22 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   do icla = 1, nclacp
     icha = ichcor(icla)
 
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
+    if ( ippmod(iccoal) .eq. 1 ) then
+      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+    endif
+
     do iel = 1, ncel
 
-      rtp(iel,isca(ixch(icla))) = zero
-      rtp(iel,isca(ixck(icla))) = zero
-      rtp(iel,isca(inp(icla) )) = zero
-      rtp(iel,isca(ih2(icla) )) = zero
+      cvar_xchcl(iel) = zero
+      cvar_xckcl(iel) = zero
+      cvar_xnpcl(iel) = zero
+      cvar_h2cl(iel) = zero
       if ( ippmod(iccoal) .eq. 1 ) then
-        rtp(iel,isca(ixwt(icla))) = zero
+        cvar_xwtcl(iel) = zero
       endif
 
     enddo
@@ -263,39 +308,43 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
  !============================
 
   do iel = 1, ncel
-    rtp(iel,isca(iscalt)) = h1init
+    cvar_scalt(iel) = h1init
   enddo
 
 ! ------ Variables de transport relatives au melange gazeux
 !        (scalaires passifs et variances associees)
 
+  do icha = 1, ncharb
+    call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+    call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
+    do iel = 1, ncel
+      cvar_f1m(iel) = zero
+      cvar_f2m(iel) = zero
+    enddo
+  enddo
+
   do iel = 1, ncel
 !
-    do icha = 1, ncharb
-      rtp(iel,isca(if1m(icha))) = zero
-      rtp(iel,isca(if2m(icha))) = zero
-    enddo
-!
     if ( noxyd .ge. 2 ) then
-      rtp(iel,isca(if4m)) = zero
+      cvar_f4m(iel) = zero
     endif
     if ( noxyd .ge. 3 ) then
-      rtp(iel,isca(if5m)) = zero
+      cvar_f5m(iel) = zero
     endif
     if ( ippmod(iccoal) .ge. 1 ) then
-      rtp(iel,isca(if6m)) = zero
+      cvar_f6m(iel) = zero
     endif
 !
-    rtp(iel,isca(if7m)) = zero
+    cvar_f7m(iel) = zero
 !
     if ( ihtco2 .eq. 1 ) then
-      rtp(iel,isca(if8m)) = zero
+      cvar_f8m(iel) = zero
     endif
     if ( ihth2o .eq. 1 ) then
-      rtp(iel,isca(if9m)) = zero
+      cvar_f9m(iel) = zero
     endif
 !
-    rtp(iel,isca(ifvp2m)) = zero
+    cvar_fvp2m(iel) = zero
 !
     if ( ieqco2.ge.1 ) then
 
@@ -307,15 +356,15 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       dmas = ( oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2               &
               +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
       xco2 = oxyco2(ioxy)*wmco2/dmas
-      rtp(iel,isca(iyco2)) = oxyco2(ioxy)*wmco2/dmas
+      cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
     endif
 !
     if ( ieqnox .eq. 1 ) then
-      rtp(iel,isca(iyhcn)) = zero
+      cvar_yhcn(iel) = zero
 ! Initialisation du NH3
-      rtp(iel,isca(iynh3)) = zero
-      rtp(iel,isca(iyno )) = zero
-      rtp(iel,isca(ihox )) = h1init
+      cvar_ynh3(iel) = zero
+      cvar_yno(iel) = zero
+      cvar_hox(iel) = h1init
     endif
 
     ! Initialization of the continuous mass fraction

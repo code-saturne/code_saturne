@@ -24,7 +24,6 @@ subroutine cplym1 &
 !================
 
  ( ncelet , ncel   , nitbmc , nrtbmc ,                            &
-   rtp    ,                                                       &
    f1m    , f2m    , f3m    , f4m    ,                            &
    indpdf , si7    , si8    , sp2m   , f4i7   ,                   &
    dsi7   , dsi8   , sdeb   , sfin   , haut   ,                   &
@@ -58,8 +57,6 @@ subroutine cplym1 &
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! nitbmc           ! e  ! <-- ! taille du macro tableau mc entiers             !
 ! nrtbmc           ! e  ! <-- ! taille du macro tableau mc reels               !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant)                  !
 ! f1m              ! tr ! <-- ! moyenne du traceur 1 mvl [chx1m+co]            !
 ! f2m              ! tr ! <-- ! moyenne du traceur 2 mvl [chx2m+co]            !
 ! f3m              ! tr ! <-- ! moyenne du traceur 3 (co c.het)                !
@@ -119,6 +116,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use field
 
 !===============================================================================
 
@@ -131,7 +129,6 @@ integer          nitbmc , nrtbmc
 integer          itbmc(ncelet,nitbmc)
 integer          indpdf(ncelet) , ipi7i8(ncelet)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision f1m(ncelet)  , f2m(ncelet)
 double precision f3m(ncelet)  , f4m(ncelet)
 double precision dsi7(ncelet) , dsi8(ncelet) , sdeb(ncelet)
@@ -192,6 +189,8 @@ double precision zchx13 , zchx23 , zco3   , zco23
 double precision zn23   , zh2o3  , zo23
 double precision reac1  , reac2  , reac3
 
+double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
+
 !===============================================================================
 
 !===============================================================================
@@ -225,9 +224,11 @@ enddo
 !        RTBMC(IF2MC(ICHA)) = F2M(ICHA)
 
 do icha = 1, ncharb
+  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
+  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
   do iel = 1, ncel
-    rtbmc(iel,if1mc(icha)) = rtp(iel,isca(if1m(icha)))
-    rtbmc(iel,if2mc(icha)) = rtp(iel,isca(if2m(icha)))
+    rtbmc(iel,if1mc(icha)) = cvar_f1m(iel)
+    rtbmc(iel,if2mc(icha)) = cvar_f2m(iel)
   enddo
 enddo
 

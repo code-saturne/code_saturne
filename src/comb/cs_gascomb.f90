@@ -24,7 +24,6 @@ subroutine cs_gascomb &
 !====================
  ( ncelet , ncel   , icb1 , icb2 ,                                        &
    indpdf ,                                                               &
-   rtp    ,                                                               &
    f1m    , f2m    , f3m      , f4m    , f5m  , f6m , f7m , f8m , f9m ,   &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                           &
    af1    , af2    , cx1m     , cx2m   , wmf1   , wmf2 ,                  &
@@ -110,7 +109,6 @@ integer          ncelet , ncel
 integer          icb1   , icb2
 integer          indpdf(ncel)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision f1m(ncel)  , f2m(ncel) , f3m(ncel)
 double precision f4m(ncel)  , f5m(ncel) , f6m(ncel)
 double precision f7m(ncel)  , f8m(ncel) , f9m(ncel)
@@ -152,10 +150,13 @@ double precision zz(ngazem) , zzox(ngazem) , zzcl(ngazem)
 double precision zzs1(ngazem),zzs2(ngazem),zzs3(ngazem),zzs4(ngazem)
 
 double precision, dimension(:), pointer :: x1
+double precision, dimension(:), pointer :: cvar_yco2
 
 !===============================================================================
 ! 1. CALCULS PRELIMINAIRES
 !===============================================================================
+
+call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
 
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)
@@ -200,7 +201,7 @@ do iel = 1, ncel
 
 ! --> Calculs preliminaires
     if ( ieqco2 .eq. 1 ) then
-      zco2t = (rtp(iel,isca(iyco2))/ x1(iel))/wmco2
+      zco2t = (cvar_yco2(iel)/ x1(iel))/wmco2
     else
       zco2t = 0.d0
     endif
@@ -291,7 +292,7 @@ do iel = 1, ncel
 ! --> Calculs preliminaires
 
     if ( ieqco2 .eq. 1 ) then
-      zco2t = (rtp(iel,isca(iyco2))/x1(iel))/wmco2
+      zco2t = (cvar_yco2(iel)/x1(iel))/wmco2
     else
       zco2t = 0.d0
     endif

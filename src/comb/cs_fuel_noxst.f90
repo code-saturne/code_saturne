@@ -28,7 +28,7 @@ subroutine cs_fuel_noxst &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                             &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,                 &
    fs3no  , fs4no  , yfs4no , enthox ,                                    &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -74,8 +74,8 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use field
 use cs_fuel_incl
-
 
 !===============================================================================
 
@@ -93,7 +93,7 @@ double precision doxyd(ncel) , hrec(ncel)
 double precision fs3no(ncel) , fs4no(ncel) , yfs4no(ncel,ngazg)
 double precision enthox(ncel)
 
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 !
 ! VARIABLES LOCALES
 !
@@ -130,6 +130,9 @@ double precision somm  , sommax , sommin , ts4admin,ts4admax
 double precision yo2min,yo2max,yo2min1,yo2max1
 double precision yo2oxmin,yo2oxmax
 double precision toxmin,toxmax
+
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_yfolcl, cvar_h2cl
+
 !
 !
 !===============================================================================
@@ -207,6 +210,15 @@ enddo
 !===============================================================================
 !
 if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
+
+  ! Arrays of pointers containing the fields values for each class
+  ! (loop on cells outside loop on classes)
+  allocate(cvar_yfolcl(nclafu), cvar_h2cl(nclafu))
+  do icla = 1, nclafu
+    call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl(icla)%p)
+    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl(icla)%p)
+  enddo
+
 !
   inok = 0
   i300 = 0
@@ -332,12 +344,12 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
       xmx2  = 0.d0
 !
       do icla = 1, nclafu
-        xmx2 = xmx2 + rtp(iel,isca(iyfol(icla)))
+        xmx2 = xmx2 + cvar_yfolcl(icla)%p(iel)
       enddo
       if ( xmx2 .gt. 0.d0 ) then
         do icla=1,nclafu
           ipctem=ipproc(itemp2(icla))
-          tfuel = tfuel +rtp(iel,isca(iyfol(icla)))*propce(iel,ipctem)
+          tfuel = tfuel +cvar_yfolcl(icla)%p(iel)*propce(iel,ipctem)
         enddo
 !
         tfuel = tfuel/xmx2
@@ -458,7 +470,7 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
       hhf = 0.D0
       do icla=1,nclafu
-        hhf = hhf + rtp(iel,isca(ih2(icla)))
+        hhf = hhf + cvar_h2cl(icla)%p(iel)
       enddo
 !
       if ( xmx2 .gt. epsifl ) then
@@ -662,6 +674,9 @@ if ( ipdf1 .eq. 1 .or. ipdf2 .eq. 1 .or. ipdf3 .eq. 1 ) then
 !
     endif
   enddo
+
+  deallocate(cvar_yfolcl, cvar_h2cl)
+
 !
   if ( irangp .ge. 0 ) then
     call parcpt(inok)

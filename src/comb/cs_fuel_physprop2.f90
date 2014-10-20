@@ -40,14 +40,12 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     rtp           calculation variables at cell centers
-!>                                 (current instant)
 !> \param[in]     propce        physic properties at cell centers
 !>______________________________________________________________________________!
 
 subroutine cs_fuel_physprop2 &
  ( ncelet , ncel   ,                              &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! Module files
@@ -67,6 +65,7 @@ use coincl
 use cpincl
 use cs_fuel_incl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -76,7 +75,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision rtp(ncelet,nflown:nvar) , propce(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
@@ -84,6 +83,8 @@ integer          iel
 integer          n1     , n2     , ipcdia , ipcro2 , icla
 double precision xnp    ,  d1s3
 double precision diam2m , diam2x
+
+double precision, dimension(:), pointer :: cvar_yfolcl, cvar_ngcl
 
 !===============================================================================
 
@@ -107,6 +108,8 @@ do icla = 1, nclafu
   diam2m =  1.d0
   diam2x =  0.d0
 
+  call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
+  call field_get_val_s(ivarfl(isca(ing(icla))), cvar_ngcl)
   ipcdia = ipproc(idiam2(icla))
   ipcro2 = ipproc(irom2 (icla))
 
@@ -117,8 +120,8 @@ do icla = 1, nclafu
 
     ! --- Calculation of the particle diameter
 
-    yfol   = rtp(iel,isca(iyfol(icla)))
-    xnp    = rtp(iel,isca(ing  (icla)))
+    yfol   = cvar_yfolcl(iel)
+    xnp    = cvar_ngcl(iel)
     if ( yfol .gt. epsifl .and. (xnp*yfol) .gt. 0.d0) then
 
       propce(iel,ipcdia) = ( (yfol / propce(iel,ipcro2) )           &

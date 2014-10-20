@@ -24,7 +24,7 @@ subroutine cs_fuel_varini &
 !========================
 
  ( nvar   , nscal  ,                                            &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +59,6 @@ subroutine cs_fuel_varini &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,7 +93,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -110,6 +108,11 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_yfolcl, cvar_ngcl, cvar_h2cl
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_fvap, cvar_f7m, cvar_fvp2m
+double precision, dimension(:), pointer :: cvar_yco2
+double precision, dimension(:), pointer :: cvar_yhcn, cvar_yno, cvar_hox
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -144,6 +147,20 @@ elseif (iturb.eq.50) then
 elseif (iturb.eq.60) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iomg), cvar_omg)
+endif
+
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
+call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
+call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
+if ( ieqco2.ge.1 ) then
+  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+endif
+if ( ieqnox.eq.1 ) then
+  call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
+  call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
+  call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
 endif
 
 !===============================================================================
@@ -209,10 +226,13 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
 ! ------ Variables de transport relatives a la phase liquide
   do icla = 1, nclafu
+    call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
+    call field_get_val_s(ivarfl(isca(ing(icla))), cvar_ngcl)
+    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
     do iel = 1, ncel
-      rtp(iel,isca(iyfol(icla))) = zero
-      rtp(iel,isca(ing(icla) ))  = zero
-      rtp(iel,isca(ih2(icla) ))  = zero
+      cvar_yfolcl(iel) = zero
+      cvar_ngcl(iel) = zero
+      cvar_h2cl(iel) = zero
     enddo
   enddo
 
@@ -238,16 +258,16 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   call cs_fuel_htconvers1 ( mode   , h1init , coefe  ,  t1init )
  !=======================
   do iel = 1, ncel
-    rtp(iel,isca(iscalt)) = h1init
+    cvar_scalt(iel) = h1init
   enddo
 
 ! ------ Variables de transport relatives au melange gazeux
 !        (scalaires passifs et variances associees)
 
   do iel = 1, ncel
-    rtp(iel,isca(ifvap))   = zero
-    rtp(iel,isca(if7m ))   = zero
-    rtp(iel,isca(ifvp2m))  = zero
+    cvar_fvap(iel) = zero
+    cvar_f7m(iel) = zero
+    cvar_fvp2m(iel) = zero
     if ( ieqco2.ge.1 ) then
       ioxy   =  1
       wmo2   = wmole(io2)
@@ -256,12 +276,12 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       wmn2   = wmole(in2)
       dmas = ( oxyo2 (ioxy)*wmo2 +oxyn2 (ioxy)*wmn2               &
               +oxyh2o(ioxy)*wmh2o+oxyco2(ioxy)*wmco2 )
-      rtp(iel,isca(iyco2)) = oxyco2(ioxy)*wmco2/dmas
+      cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
     endif
     if ( ieqnox.eq.1 ) then
-      rtp(iel,isca(iyhcn)) = zero
-      rtp(iel,isca(iyno))  = zero
-      rtp(iel,isca(ihox))  = h1init
+      cvar_yhcn(iel) = zero
+      cvar_yno(iel) = zero
+      cvar_hox(iel) = h1init
     endif
   enddo
 

@@ -35,8 +35,6 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     rtp           variables calculation in cell centers
-!>                               (current instant)
 !> \param[in,out] propce        physical properties at cell centers
 !> \param[in,out] eh0           real work array
 !> \param[in,out] eh1           real work array
@@ -44,7 +42,7 @@
 
 subroutine cs_coal_thfieldconv2 &
  ( ncelet , ncel   ,                                              &
-   rtp    , propce )
+   propce )
 
 !==============================================================================
 ! Module files
@@ -62,6 +60,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -70,11 +69,11 @@ implicit none
 ! Arguments
 
 integer          ncelet, ncel
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 
 ! Local variables
 
-integer          i      , icla   , icha   , icel
+integer          i      , icla   , icha   , iel
 integer          ipcte1 , ipcte2
 integer          ihflt2
 double precision h2     , x2     , xch    , xck
@@ -82,6 +81,10 @@ double precision xash   , xnp    , xtes   , xwat
 
 integer          iok1
 double precision , dimension ( : )     , allocatable :: eh0,eh1
+
+double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
+double precision, dimension(:), pointer :: cvar_xwtcl
+double precision, dimension(:), pointer :: cvar_h2cl
 
 !===============================================================================
 ! Conversion method
@@ -113,8 +116,8 @@ eh1( : ) = zero
 ipcte1 = ipproc(itemp1)
 do icla = 1, nclacp
   ipcte2 = ipproc(itemp2(icla))
-  do icel = 1, ncel
-    propce(icel,ipcte2) = propce(icel,ipcte1)
+  do iel = 1, ncel
+    propce(iel,ipcte2) = propce(iel,ipcte1)
   enddo
 enddo
 
@@ -127,11 +130,12 @@ if ( ihflt2.eq.0 ) then
 ! --> H2 linear function of T2
 
   do icla = 1, nclacp
+    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
     ipcte2 = ipproc(itemp2(icla))
     icha = ichcor(icla)
-    do icel = 1, ncel
-      propce(icel,ipcte2) =                                       &
-            (rtp(icel,isca(ih2(icla)))-h02ch(icha))               &
+    do iel = 1, ncel
+      propce(iel,ipcte2) =                                       &
+            (cvar_h2cl(iel)-h02ch(icha))                         &
             / cp2ch(icha) + trefth
     enddo
   enddo
@@ -142,16 +146,23 @@ else
 
   do icla = 1, nclacp
 
+    call field_get_val_s(ivarfl(isca(ixch(icla))), cvar_xchcl)
+    call field_get_val_s(ivarfl(isca(ixck(icla))), cvar_xckcl)
+    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
+    if ( ippmod(iccoal) .eq. 1 ) then
+      call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
+    endif
+    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_h2cl)
     ipcte2 = ipproc(itemp2(icla))
 
     i = npoc-1
-    do icel = 1, ncel
-      xch  = rtp(icel,isca(ixch(icla)))
-      xnp  = rtp(icel,isca(inp(icla)))
-      xck  = rtp(icel,isca(ixck(icla)))
+    do iel = 1, ncel
+      xch  = cvar_xchcl(iel)
+      xck  = cvar_xckcl(iel)
+      xnp  = cvar_xnpcl(iel)
       xash = xmash(icla)*xnp
       if ( ippmod(iccoal) .eq. 1 ) then
-        xwat = rtp(icel,isca(ixwt(icla)))
+        xwat = cvar_xwtcl(iel)
       else
         xwat = 0.d0
       endif
@@ -160,17 +171,17 @@ else
 
       if ( x2 .gt. epsicp*100.d0 ) then
 
-        h2   = rtp(icel,isca(ih2(icla)))/x2
+        h2   = cvar_h2cl(iel)/x2
 
         xtes = xmp0(icla)*xnp
 
         if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
-          eh1(icel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)    &
-                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1)    &
-                    + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)    &
+          eh1(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)    &
+                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1)   &
+                    + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)   &
                     + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
-          if ( h2.ge.eh1(icel) ) then
-            propce(icel,ipcte2) = thc(i+1)
+          if ( h2.ge.eh1(iel) ) then
+            propce(iel,ipcte2) = thc(i+1)
 
           endif
         endif
@@ -180,13 +191,13 @@ else
     enddo
 
     i = 1
-    do icel = 1, ncel
-      xch  = rtp(icel,isca(ixch(icla)))
-      xnp  = rtp(icel,isca(inp(icla)))
-      xck  = rtp(icel,isca(ixck(icla)))
+    do iel = 1, ncel
+      xch  = cvar_xchcl(iel)
+      xck  = cvar_xckcl(iel)
+      xnp  = cvar_xnpcl(iel)
       xash = xmash(icla)*xnp
       if ( ippmod(iccoal) .eq. 1 ) then
-        xwat = rtp(icel,isca(ixwt(icla)))
+        xwat = cvar_xwtcl(iel)
       else
         xwat = 0.d0
       endif
@@ -195,17 +206,17 @@ else
 
       if ( x2 .gt. epsicp*100.d0 ) then
 
-        h2   = rtp(icel,isca(ih2(icla)))/x2
+        h2   = cvar_h2cl(iel)/x2
 
         xtes = xmp0(icla)*xnp
 
         if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
-          eh0(icel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i)      &
-                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i)      &
-                    + xash/x2 * ehsoli(iash(ichcor(icla)),i)      &
+          eh0(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i)      &
+                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i)     &
+                    + xash/x2 * ehsoli(iash(ichcor(icla)),i)     &
                     + xwat/x2 * ehsoli(iwat(ichcor(icla)),i)
-          if ( h2.le.eh0(icel) ) then
-            propce(icel,ipcte2) = thc(i)
+          if ( h2.le.eh0(iel) ) then
+            propce(iel,ipcte2) = thc(i)
           endif
         endif
 
@@ -214,13 +225,13 @@ else
     enddo
 
     do i = 1, npoc-1
-      do icel = 1, ncel
-        xch  = rtp(icel,isca(ixch(icla)))
-        xnp  = rtp(icel,isca(inp(icla)))
-        xck  = rtp(icel,isca(ixck(icla)))
+      do iel = 1, ncel
+        xch  = cvar_xchcl(iel)
+        xck  = cvar_xckcl(iel)
+        xnp  = cvar_xnpcl(iel)
         xash = xmash(icla)*xnp
         if ( ippmod(iccoal) .eq. 1 ) then
-          xwat = rtp(icel,isca(ixwt(icla)))
+          xwat = cvar_xwtcl(iel)
         else
           xwat = 0.d0
         endif
@@ -229,24 +240,24 @@ else
 
         if ( x2 .gt. epsicp*100.d0 ) then
 
-          h2   = rtp(icel,isca(ih2(icla)))/x2
+          h2   = cvar_h2cl(iel)/x2
 
           xtes = xmp0(icla)*xnp
 
           if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
-            eh0(icel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i  )  &
-                      + xck /x2 * ehsoli(ick(ichcor(icla) ),i  )  &
-                      + xash/x2 * ehsoli(iash(ichcor(icla)),i  )  &
+            eh0(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i  )  &
+                      + xck /x2 * ehsoli(ick(ichcor(icla) ),i  ) &
+                      + xash/x2 * ehsoli(iash(ichcor(icla)),i  ) &
                       + xwat/x2 * ehsoli(iwat(ichcor(icla)),i  )
 
-            eh1(icel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)  &
-                      + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1)  &
-                      + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)  &
+            eh1(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)  &
+                      + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1) &
+                      + xash/x2 * ehsoli(iash(ichcor(icla)),i+1) &
                       + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
 
-            if ( h2.ge.eh0(icel) .and. h2.le.eh1(icel) ) then
-              propce(icel,ipcte2) = thc(i) + (h2-eh0(icel)) *     &
-                    (thc(i+1)-thc(i))/(eh1(icel)-eh0(icel))
+            if ( h2.ge.eh0(iel) .and. h2.le.eh1(iel) ) then
+              propce(iel,ipcte2) = thc(i) + (h2-eh0(iel)) *     &
+                    (thc(i+1)-thc(i))/(eh1(iel)-eh0(iel))
             endif
           endif
 

@@ -448,7 +448,7 @@ if (iirayo.ge.1) then
 
       call cs_coal_radst &
       !=================
-      ( ivar   , ncelet , ncel  ,                &
+      ( ivar   , ncelet , ncel  ,               &
         volume , propce , smbrs , rovsdt )
 
     endif
@@ -464,8 +464,8 @@ if (iirayo.ge.1) then
 
       call cs_fuel_radst &
      !==================
-    ( ivar  ,ncelet, ncel  ,                      &
-      volume,rtpa  , propce, smbrs, rovsdt)
+     ( ivar   , ncelet , ncel  ,                &
+       volume , propce , smbrs , rovsdt)
 
     endif
   endif

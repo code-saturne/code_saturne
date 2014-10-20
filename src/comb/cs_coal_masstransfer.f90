@@ -39,13 +39,12 @@
 !______________________________________________________________________________!
 !> \param[in]      ncelet        number of extended (real + ghost) cells
 !> \param[in]      ncel          number of cells
-!> \param[in]      rtpa          calculation variables at cell centers
 !> \param[in,out]  propce        physic properties at cell centers
 !> \param[in]      volume        cell volumes
 !______________________________________________________________________________!
 
 subroutine cs_coal_masstransfer &
- ( ncelet , ncel , rtpa , propce , volume )
+ ( ncelet , ncel , propce , volume )
 
 !===============================================================================
 ! Module files
@@ -76,7 +75,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision rtpa(ncelet,nflown:nvar), propce(ncelet,*)
+double precision propce(ncelet,*)
 double precision volume(ncelet)
 
 ! Local variables
@@ -104,6 +103,8 @@ integer          iok1
 double precision, dimension (:), allocatable :: x2, x2srho2, rho1, w1
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
+double precision, dimension(:), pointer :: cvara_xchcl, cvara_xckcl, cvara_xnpcl
+double precision, dimension(:), pointer :: cvara_xwtcl
 
 !===============================================================================
 ! 1. Initialization and preliminary computations
@@ -144,16 +145,23 @@ x2     ( : ) = zero
 x2srho2( : ) = zero
 do icla = 1, nclacp
   ipcro2 = ipproc(irom2(icla))
+  call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
+  call field_get_val_prev_s(ivarfl(isca(ixck(icla))), cvara_xckcl)
+  call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
+  if ( ippmod(iccoal) .eq. 1 ) then
+    call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
+  endif
+
   do iel = 1, ncel
-    xck  = rtpa(iel,isca(ixck(icla)))
-    xch  = rtpa(iel,isca(ixch(icla)))
-    xash = rtpa(iel,isca(inp (icla)))*xmash(icla)
+    xch  = cvara_xchcl(iel)
+    xck  = cvara_xckcl(iel)
+    xash = cvara_xnpcl(iel)*xmash(icla)
     xx2   = xch + xck + xash
 
    ! ---- Taking into account humidity
 
     if ( ippmod(iccoal) .eq. 1 ) then
-      xx2 = xx2+rtpa(iel,isca(ixwt(icla)))
+      xx2 = xx2+cvara_xwtcl(iel)
     endif
 
     x2    (iel) = x2(iel)     + xx2
@@ -224,10 +232,11 @@ enddo
 
 call field_get_val_s(icrom, crom)
 do icla = 1, nclacp
+  call field_get_val_prev_s(ivarfl(isca(ixch(icla))), cvara_xchcl)
   ipcgd1 = ipproc(igmdv1(icla))
   ipcgd2 = ipproc(igmdv2(icla))
   do iel = 1, ncel
-    xch = rtpa(iel,isca(ixch(icla)))
+    xch = cvara_xchcl(iel)
     devto1(ichcor(icla)) = devto1(ichcor(icla)) -                 &
       ( propce(iel,ipcgd1)*xch*crom(iel)                 &
         *volume(iel) )
@@ -260,6 +269,7 @@ ipcte1 = ipproc(itemp1)
 
 do icla = 1, nclacp
 
+  call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
   ipcght = ipproc(igmhet(icla))
   ipcdia = ipproc(idiam2(icla))
   icha   = ichcor(icla)
@@ -267,7 +277,7 @@ do icla = 1, nclacp
 
   do iel = 1, ncel
 
-    xnp   = rtpa(iel,isca(inp(icla)))
+    xnp   = cvara_xnpcl(iel)
     xuash = xnp*(1.d0-xashch(icha))*xmp0(icla)
 
     ! --- Calculation of the partial pressure of oxygen [atm]
@@ -335,6 +345,7 @@ if ( ihtco2 .eq. 1) then
 
   do icla = 1, nclacp
 
+    call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
     ipcght = ipproc(ighco2(icla))
     ipcdia = ipproc(idiam2(icla))
     icha   = ichcor(icla)
@@ -342,7 +353,7 @@ if ( ihtco2 .eq. 1) then
 
     do iel = 1, ncel
 
-      xnp   = rtpa(iel,isca(inp(icla)))
+      xnp   = cvara_xnpcl(iel)
       xuash = xnp*(1.d0-xashch(icha))*xmp0(icla)
 
       ! --- Calculation of partial pressure of CO2 [atm]
@@ -413,6 +424,7 @@ if ( ihth2o .eq. 1) then
 
   do icla = 1, nclacp
 
+    call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
     ipcght = ipproc(ighh2o(icla))
     ipcdia = ipproc(idiam2(icla))
     icha   = ichcor(icla)
@@ -420,7 +432,7 @@ if ( ihth2o .eq. 1) then
 
     do iel = 1, ncel
 
-      xnp   = rtpa(iel,isca(inp(icla)))
+      xnp   = cvara_xnpcl(iel)
       xuash = xnp*(1.d0-xashch(icha))*xmp0(icla)
 
       ! --- Calculation of partial pressure of H2O [atm]
@@ -555,15 +567,18 @@ if ( ippmod(iccoal) .ge. 1 ) then
     npyv  = 0
     yymax = 0.d0
 
+    call field_get_val_prev_s(ivarfl(isca(inp(icla))), cvara_xnpcl)
+    call field_get_val_prev_s(ivarfl(isca(ixwt(icla))), cvara_xwtcl)
+
     do iel = 1, ncel
 
       propce(iel,ipcsec) = 0.d0
 
-      if ( rtpa(iel,isca(ixwt(icla))) .gt. epsicp  ) then
+      if ( cvara_xwtcl(iel) .gt. epsicp  ) then
 
         npoin1 = npoin1 + 1
 
-        xnp = rtpa(iel,isca(inp(icla)))
+        xnp = cvara_xnpcl(iel)
 
         !             Calculation of the diameter of the particules in W2
         !             d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
