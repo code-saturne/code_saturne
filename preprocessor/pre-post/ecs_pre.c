@@ -30,6 +30,8 @@
  *                                 Visibilité
  *============================================================================*/
 
+#include "cs_config.h"
+
 /*----------------------------------------------------------------------------
  *  Fichiers `include' librairie standard C
  *----------------------------------------------------------------------------*/
@@ -37,7 +39,16 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
+#if defined(HAVE_RELOCATABLE)
+#include <errno.h>
+#endif
 
+#if defined(HAVE_DLOPEN)
+#include <dlfcn.h>
+#endif
 
 /*----------------------------------------------------------------------------
  *  Fichiers `include' visibles du  paquetage global "Utilitaire"
@@ -93,6 +104,14 @@
 /*============================================================================
  *                       Définition des structures
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Function pointer types
+ *----------------------------------------------------------------------------*/
+
+typedef ecs_maillage_t *
+(ecs_pre_lit_maillage_t)(const char  *nom_fic_maillage,
+                         int          num_maillage);
 
 /* Structures associées aux formats supportés */
 /*--------------------------------------------*/
@@ -196,6 +215,137 @@ static ecs_pre_format_desc_t _ecs_pre_formats[9] = {
  *                              Fonctions privées
  *============================================================================*/
 
+#if defined(HAVE_PLUGINS)
+
+/*----------------------------------------------------------------------------
+ * Return a string providing path information.
+ *
+ * This is normally the path determined upon configuration, but may be
+ * adapted for movable installs using the CS_ROOT_DIR environment variable
+ * or by a guess on the assumed relative path.
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_get_path(const char   *dir_path,
+          const char   *build_path,
+          char        **env_path)
+{
+#if defined(HAVE_RELOCATABLE)
+  {
+    const char *cs_root_dir = NULL;
+    const char *rel_path = NULL;
+
+    /* Allow for displacable install */
+
+    if (*env_path != NULL)
+      return *env_path;
+
+    /* First try with an environment variable CS_ROOT_DIR */
+
+    if (getenv("CS_ROOT_DIR") != NULL) {
+      cs_root_dir = getenv("CS_ROOT_DIR");
+      rel_path = "/";
+    }
+
+    /* Second try with an environment variable CFDSTUDY_ROOT_DIR */
+
+    else if (getenv("CFDSTUDY_ROOT_DIR") != NULL) {
+      cs_root_dir = getenv("CFDSTUDY_ROOT_DIR");
+      rel_path = "/";
+    }
+
+#if defined(HAVE_GETCWD)
+
+    /*
+      Then, try to guess a relative path, knowing that executables are
+      located in libexecdir/code_saturne
+    */
+
+    else {
+
+      int buf_size = 128;
+      char *buf = NULL;
+
+      while (cs_root_dir == NULL) {
+        buf_size *= 2;
+        ECS_REALLOC(buf, buf_size, char);
+        cs_root_dir = getcwd(buf, buf_size);
+        if (cs_root_dir == NULL && errno != ERANGE)
+          ecs_error(__FILE__, __LINE__, errno,
+                    _("Error querying working directory.\n"));
+      }
+
+      rel_path = "/../../";
+
+    }
+#endif /* defined(HAVE_GETCWD) */
+
+    ECS_MALLOC(*env_path,
+               strlen(cs_root_dir) + strlen(rel_path) + strlen(dir_path) + 1,
+               char);
+    strcpy(*env_path, cs_root_dir);
+    strcat(*env_path, rel_path);
+    strcat(*env_path, dir_path);
+
+    return *env_path;
+  }
+#endif /* defined(HAVE_RELOCATABLE) */
+
+  /* Standard install */
+
+  return build_path;
+}
+
+/*----------------------------------------------------------------------------
+ * Load Plugin reader.
+ *
+ * parameters:
+ *   wf <-> pointer to library format writer.
+ *----------------------------------------------------------------------------*/
+
+static void *
+_load_plugin_reader(const char  *dl_name,
+                    const char  *f_name)
+{
+  char  *lib_path = NULL;
+  void  *dl_lib = NULL;
+  static char *env_pkglibdir = NULL;
+  const char *pkglibdir = _get_path("lib/" PACKAGE_NAME, PKGLIBDIR,
+                                    &env_pkglibdir);
+
+  void * retval = NULL, *error = NULL;
+
+  /* Open from shared library */
+
+  ECS_MALLOC(lib_path,
+             strlen(pkglibdir) + 1 + 3 + strlen(dl_name) + 3 + 1,
+             char);
+  sprintf(lib_path, "%s/%s.so", pkglibdir, dl_name);
+
+  dl_lib = dlopen(lib_path, RTLD_LAZY);
+
+  ECS_FREE(lib_path);
+
+  /* Load symbols from shared library */
+
+  if (dl_lib == NULL)
+    ecs_error(__FILE__, __LINE__, 0,
+              _("Error loading %s: %s."), lib_path, dlerror());
+
+  dlerror();    /* Clear any existing error */
+
+  retval = dlsym(dl_lib, f_name);
+
+  error = dlerror();
+
+  if (error != NULL)
+    ecs_error(__FILE__, __LINE__, 0,
+              _("Error calling dlsym: %s\n"), error);
+
+  return retval;
+}
+
+#endif /* defined(HAVE_PLUGINS)*/
 
 /*============================================================================
  *                             Fonctions publiques
@@ -383,8 +533,19 @@ ecs_pre__lit_maillage(const char        *nom_fic,
 
 #if defined(HAVE_CCM)
   case ECS_PRE_FORMAT_CCM:
-    maillage = ecs_pre_ccm__lit_maillage(nom_fic,
-                                         num_maillage);
+    {
+#if defined(HAVE_PLUGINS)
+      {
+        ecs_pre_lit_maillage_t *lit_maillage = NULL;
+        lit_maillage = (ecs_pre_lit_maillage_t *) (intptr_t)
+          _load_plugin_reader("ecs_ccm",
+                              "ecs_pre_ccm__lit_maillage");
+        maillage = lit_maillage(nom_fic, num_maillage);
+      }
+#else
+      maillage = ecs_pre_ccm__lit_maillage(nom_fic, num_maillage);
+#endif
+    }
     break;
 
 #endif /* HAVE_CCM */

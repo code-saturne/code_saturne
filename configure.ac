@@ -894,6 +894,8 @@ if test "x$enable_shared" = "xyes" ; then
       cs_have_plugins=yes
     elif test x$cs_have_catalyst = xyes ; then
       cs_have_plugins=yes
+    elif test x$cs_have_ccm = xyes ; then
+      cs_have_plugins=yes
     fi
   fi
 fi

@@ -28,6 +28,19 @@ if HAVE_RELOCATABLE
 ORIGINRUNPATH = -R '\$$ORIGIN/../../lib'
 endif
 
+if HAVE_PLUGINS
+  PLUGINRUNPATH = $(PLUGINRUNPATH_R)$(PLUGINRUNPATH_N)
+endif
+
+# CCM
+
+if HAVE_CCM
+if HAVE_PLUGINS
+else
+  LDADD_CCM = $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS)
+endif
+endif
+
 # Main part
 
 AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
@@ -36,7 +49,7 @@ AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" \
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 # Global LDFLAGS must be used so as to handle the possibility of a CXX link.
-AM_LDFLAGS = $(ORIGINRUNPATH)
+AM_LDFLAGS = $(ORIGINRUNPATH) $(PLUGINRUNPATH)
 
 # Main program
 
@@ -50,7 +63,9 @@ else
 cs_preprocess_LINK = $(LINK)
 endif
 
-cs_preprocess_CPPFLAGS = $(AM_CPPFLAGS) \
+cs_preprocess_CPPFLAGS = \
+-DLOCALEDIR=\"$(localedir)\" \
+$(AM_CPPFLAGS) \
 $(HDF5_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 
 cs_preprocess_SOURCES = \
@@ -64,7 +79,7 @@ cs_preprocess_LDADD = \
 $(top_builddir)/preprocessor/pre-post/libprepostecs.la \
 $(top_builddir)/preprocessor/base/libbaseecs.la \
 $(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
-$(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
+$(LDADD_CCM) \
 $(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(HDF5_LDFLAGS) $(HDF5RUNPATH) $(HDF5_LIBS) $(HDF5_MPI_LIBS) \

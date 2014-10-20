@@ -26,10 +26,10 @@
 
 AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
 $(HDF5_CPPFLAGS) $(HDF5_CPPFLAGS_MPI) \
-$(CCM_CPPFLAGS) $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
+$(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = \
-$(CCM_LDFLAGS) $(MED_LDFLAGS) $(CGNS_LDFLAGS) $(HDF5_LDFLAGS) $(HDF5_LDFLAGS_MPI)
+$(MED_LDFLAGS) $(CGNS_LDFLAGS) $(HDF5_LDFLAGS) $(HDF5_LDFLAGS_MPI)
 
 # Headers
 
@@ -62,7 +62,14 @@ ecs_pre_nopo.h
 
 # Library source files
 
+lib_LTLIBRARIES =
+pkglib_LTLIBRARIES = 
 noinst_LTLIBRARIES = libprepostecs.la
+libprepostecs_la_LIBADD =
+
+libprepostecs_la_CPPFLAGS = \
+-DPKGLIBDIR=\"$(pkglibdir)\" \
+$(AM_CPPFLAGS)
 
 libprepostecs_la_SOURCES = \
 ecs_table_comm.c \
@@ -79,7 +86,6 @@ ecs_post_cgns.c \
 ecs_post_ens.c \
 ecs_post_med.c \
 ecs_pre.c \
-ecs_pre_ccm.c \
 ecs_pre_cgns.c \
 ecs_pre_ens.c \
 ecs_pre_gambit.c \
@@ -87,6 +93,36 @@ ecs_pre_gmsh.c \
 ecs_pre_ideas.c \
 ecs_pre_med.c \
 ecs_pre_nopo.c
+
+# CCMIO (plugin or linked)
+
+if HAVE_CCM
+
+if HAVE_PLUGINS
+
+ecs_ccm_la_CPPFLAGS = \
+-I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CCM_CPPFLAGS) $(CCM_CXXFLAGS) $(MPI_CPPFLAGS)
+ecs_ccm_la_LIBADD = $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
+ecs_ccm_la_SOURCES = ecs_pre_ccm.c
+pkglib_LTLIBRARIES += ecs_ccm.la
+ecs_ccm_la_LDFLAGS = -module -avoid-version
+
+else
+
+libecs_ccm_la_CPPFLAGS = \
+-I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CCM_CPPFLAGS) $(CCM_CXXFLAGS) $(MPI_CPPFLAGS)
+libecs_ccm_la_LIBADD = $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
+libecs_ccm_la_SOURCES = ecs_pre_ccm.c
+noinst_LTLIBRARIES += libecs_ccm.la
+libprepostecs_la_LIBADD += libecs_ccm.la
+
+endif
+
+endif
 
 libprepostecs_la_LDFLAGS = -no-undefined
 

@@ -455,6 +455,16 @@ files from the libCCMIO libraries directory if also building
 for CCMIO, and are are an obsolete version of CGNS, which
 may interfere with the version used by \CS.
 
+Note that libCCMIO uses a modified version of CGNS's ADF library,
+which may not be compatible with that of CGNS. When building
+with shared libraries, the reader for libCCMIO uses a plugin
+architecture to load the library dynamically. For a static
+build with both libCCMIO and CGNS support, reading ADF-based
+CGNS files may fail. To work around this issue, CGNS files
+may be converted to HDF5 using the \texttt{adf2hdf} utility
+(from the CGNS tools). By default, CGNS postprocessing output
+files use HDF5, so this issue is rarer on output.
+
 \subsubsection{libxml2\label{sec:ext:libxml2}}
 
 This library is usually available on all general purpose Linux
