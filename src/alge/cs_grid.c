@@ -2627,7 +2627,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
         count = 0;
 
         if (   aggr_crit[face_f] < (1. - epsilon)
-            && f_c_cell[ii]*f_c_cell[jj] < 1) {
+            && (f_c_cell[ii] < 1 || f_c_cell[jj] < 1)) {
 
           if (f_c_cell[ii] > 0 && f_c_cell[jj] < 1 ) {
             if (c_aggr_count[f_c_cell[ii] -1] < _max_aggregation +1) {
@@ -2651,7 +2651,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
             count++;
           }
         }
-        if (count == 0 && f_c_cell[ii]*f_c_cell[jj] < 1) {
+        if (count == 0 && (f_c_cell[ii] < 1 || f_c_cell[jj] < 1)) {
           merge_flag[r_n_faces] = c_face +1;
           face_order[r_n_faces] = r_n_faces;
           r_n_faces++;

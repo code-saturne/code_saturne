@@ -484,8 +484,7 @@ _cs_timer_initialize(void)
 double
 cs_timer_wtime(void)
 {
-  cs_timer_t time_current;
-  cs_timer_counter_t time_diff;
+  cs_timer_t t1;
 
   /* Ensure initialization */
 
@@ -494,11 +493,13 @@ cs_timer_wtime(void)
 
   /* Compute elapsed time */
 
-  _cs_timer_wall(&time_current);
+  _cs_timer_wall(&t1);
 
-  time_diff = cs_timer_diff(&_cs_timer_start, &time_current);
+  long long wall_nsec
+    =  (t1.wall_sec - _cs_timer_start.wall_sec) * (long long)1000000000
+      + t1.wall_nsec - _cs_timer_start.wall_nsec;
 
-  return time_diff.wall_nsec*1.e-9;
+  return wall_nsec*1.e-9;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -519,8 +520,7 @@ cs_timer_wtime(void)
 double
 cs_timer_cpu_time(void)
 {
-  cs_timer_t time_current;
-  cs_timer_counter_t time_diff;
+  cs_timer_t t1;
 
   /* Ensure initialization */
 
@@ -529,11 +529,13 @@ cs_timer_cpu_time(void)
 
   /* Compute CPU time */
 
-  _cs_timer_cpu(&time_current);
+  _cs_timer_cpu(&t1);
 
-  time_diff = cs_timer_diff(&_cs_timer_start, &time_current);
+  long long cpu_nsec
+    =  (t1.cpu_sec - _cs_timer_start.cpu_sec) * (long long)1000000000
+       + t1.cpu_nsec - _cs_timer_start.cpu_nsec;
 
-  return time_diff.cpu_nsec*1.e-9;
+  return cpu_nsec*1.e-9;
 }
 
 /*----------------------------------------------------------------------------*/
