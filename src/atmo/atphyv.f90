@@ -23,8 +23,7 @@
 subroutine atphyv &
 !================
 
-   ( rtp    ,                                                       &
-     propce )
+   ( propce )
 
 !===============================================================================
 ! FONCTION :
@@ -82,8 +81,6 @@ subroutine atphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -121,7 +118,6 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -133,7 +129,10 @@ double precision xrtp, rhum, rscp, pp, zent
 double precision lrhum, lrscp
 double precision qsl, deltaq
 double precision qliq, qwt, tliq, dum
+
 double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
+
 logical activate
 
 ! External function
@@ -183,6 +182,9 @@ endif
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
+call field_get_val_s(ivarfl(ivart), cvar_vart)
+if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+
 ipctem = ipproc(itempc)
 
 ! From potential temperature, compute:
@@ -200,12 +202,12 @@ lrscp = rair/cp0
 
 do iel = 1, ncel
 
-  xrtp = rtp(iel,ivart) !  The thermal scalar is potential temperature
+  xrtp = cvar_vart(iel) !  The thermal scalar is potential temperature
 
   if (ippmod(iatmos).ge.2) then  ! humid atmosphere
-    lrhum = rair*(1.d0 + (rvsra - 1.d0)*rtp(iel, isca(itotwt)))
+    lrhum = rair*(1.d0 + (rvsra - 1.d0)*cvar_totwt(iel))
     lrscp = (rair/cp0)*(1.d0 + (rvsra - cpvcpa)*                    &
-            rtp(iel,isca(itotwt)))
+            cvar_totwt(iel))
   endif
 
   zent = xyzcen(3,iel)
@@ -304,9 +306,9 @@ do iel = 1, ncel
          ztmet , tmmet , phmet , zent, ttcabs, pp )
   endif
 
-  xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
+  xrtp = cvar_vart(iel) ! thermal scalar: liquid potential temperature
   tliq = xrtp*(pp/ps)**rscp ! liquid temperature
-  qwt  = rtp(iel, isca(itotwt)) !total water content
+  qwt  = cvar_totwt(iel) !total water content
   qsl = qsatliq(tliq, pp) ! saturated vapor content
   deltaq = qwt - qsl
 
@@ -408,9 +410,9 @@ do iel = 1, ncel
     call intprf(nbmett, nbmetm, ztmet , tmmet , phmet , zent, ttcabs, pp)
   endif
 
-  xrtp = rtp(iel,ivart) ! thermal scalar: liquid potential temperature
+  xrtp = cvar_vart(iel) ! thermal scalar: liquid potential temperature
   tliq = xrtp*(pp/ps)**rscp ! liquid temperature
-  qwt  = rtp(iel, isca(itotwt)) ! total water content
+  qwt  = cvar_totwt(iel) ! total water content
   qsl = qsatliq(tliq, pp) ! saturated vapor content
   deltaq = qwt - qsl
   alpha = (clatev*qsl/(rvap*tliq**2))*(pp/ps)**rscp

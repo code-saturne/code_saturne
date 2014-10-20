@@ -24,7 +24,7 @@ subroutine attssc &
 !================
 
    ( iscal  ,                                                       &
-     rtpa   , rtp    , propce ,                                     &
+     propce ,                                                       &
      crvexp )
 
 !===============================================================================
@@ -45,8 +45,6 @@ subroutine attssc &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !
@@ -83,7 +81,6 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision crvexp(ncelet)
 
@@ -105,7 +102,8 @@ integer, save :: treated_scalars = 0
 
 double precision, dimension(:), allocatable :: pphy
 double precision, dimension(:), allocatable :: refrad
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_scapp3
 double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
@@ -143,7 +141,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1) then
     ! --- Computes the divergence of the ir and solar radiative fluxes :
 
     ! --- Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
-    call atr1vf(rtpa, propce )
+    call atr1vf(propce)
 
     call mscrss   &
          (idrayi, 1, ray3Di)
@@ -183,6 +181,8 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
 
     if (.not.r3_is_defined)then
 
+      call field_get_val_s(ivarfl(isca(iscapp(3))), cvar_scapp3)
+
       ! First : diagnose the droplet number
 
       if(modnuc.gt.0)then
@@ -212,7 +212,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         enddo
 
         call nuclea (                                                 &
-             rtp(1,isca(iscapp(3))),                                  &
+             cvar_scapp3,                                             &
              vel,                                                     &
              crom,                                                    &
              propce(1,ipproc(itempc)),                                &
@@ -316,7 +316,7 @@ r3max = 0.d0
 do iel = 1, ncel
   rho = crom(iel)
   qliq = propce(iel,ipproc(iliqwt))
-  nc = rtp(iel,isca(iscapp(3)))
+  nc = cvar_scapp3(iel)
   if(qliq.ge.1e-8)then
     nc = max(nc,1.d0)
     r3(iel) = ((rho*qliq)/(rho_water*nc*conversion))**(1.d0/3.d0)
@@ -479,8 +479,8 @@ allocate(local_field(ncelet))
 ! --------------------------------------------------------
 
 do iel = 1, ncel
-  local_field(iel) = rtp(iel,isca(iscapp(3))) & ! number of droplets 1/cm**3
-       *vit_sed( r3(iel) )                    & ! deposition velocity m/s
+  local_field(iel) = cvar_scapp3(iel)   & ! number of droplets 1/cm**3
+       *vit_sed( r3(iel) )              & ! deposition velocity m/s
        *exp(-sigc**2)                     ! coefficient coming from log-normal
                                           ! law of the droplet spectrum
 enddo

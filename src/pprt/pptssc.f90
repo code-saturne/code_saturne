@@ -206,7 +206,7 @@ if (ippmod(iatmos).ge.0) then
    call attssc                                                    &
    !==========
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  )
 endif
 

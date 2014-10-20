@@ -22,7 +22,7 @@
 
 subroutine atr1vf &
 !================
-     ( rtpa, propce )
+     ( propce )
 
 !===============================================================================
 !  Purpose:
@@ -39,8 +39,6 @@ subroutine atr1vf &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (preceding time step)                         !
 ! propce           ! ra ! <-- ! properties cell centers                        !
 !  (ncelet, *)     !    !     !  (current time step)                           !
 !__________________!____!_____!________________________________________________!
@@ -78,7 +76,6 @@ implicit none
 ! Arguments
 
 double precision propce(ncelet,*)
-double precision rtpa(ncelet,nflown:nvar)
 
 ! Local variables
 integer k, ii, jj
@@ -98,6 +95,7 @@ double precision, allocatable :: zproj(:), ttvert(:), qvvert(:), romvert(:)
 double precision, allocatable :: aeroso(:)
 double precision, allocatable :: coords(:,:,:), infrad(:)
 double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvara_totwt
 
 save ideb
 data ideb/0/
@@ -148,6 +146,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   enddo
 
   call field_get_val_s(icrom, crom)
+  call field_get_val_prev_s(ivarfl(isca(itotwt)), cvara_totwt)
 
   !===============================================================================
   ! 2.  Computing long-wave and short-wave radiative fluxes
@@ -173,7 +172,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   call gripol(igrid, propce(:,ipproc(itempc)), ttvert)
   !===========
-  call gripol(igrid, rtpa(:,isca(itotwt)), qvvert)
+  call gripol(igrid, cvara_totwt, qvvert)
   !===========
   call gripol(igrid, crom, romvert)
   !===========

@@ -36,14 +36,12 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     iscal         scalar number
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (preceding time steps)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
 
 subroutine chem_source_terms &
- ( iscal  , rtpa   ,                                      &
+ ( iscal  ,                  &
    crvexp , crvimp)
 
 
@@ -72,7 +70,6 @@ implicit none
 ! Arguments
 
 integer          iscal
-double precision rtpa(ncelet,nflown:nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
@@ -85,10 +82,19 @@ double precision rom
 double precision conv_factor(nespg) ! conversion factors for reaction rates
 
 double precision, dimension(:), pointer :: crom
+type(pmapper_double_r1), dimension(:), allocatable :: cvara_espg
 
 !===============================================================================
 
+allocate(cvara_espg(nespg))
+
 call field_get_val_s(icrom, crom)
+
+! Arrays of pointers containing the fields values for each species
+! (loop on cells outside loop on species)
+do ii = 1, nespg
+  call field_get_val_prev_s(ivarfl(isca(ii)), cvara_espg(ii)%p)
+enddo
 
 do iel = 1, ncel
 
@@ -102,7 +108,7 @@ do iel = 1, ncel
 
   ! Filling working arrays
   do ii = 1, nespg
-    dlconc(chempoint(ii)) = rtpa(iel,isca(ii))  ! rtpa
+    dlconc(chempoint(ii)) = cvara_espg(ii)%p(iel)
     conv_factor(chempoint(ii)) = rom*navo*(1.0d-12)/dmmk(ii)
     source(ii) = 0.0d0
   enddo
@@ -128,6 +134,8 @@ do iel = 1, ncel
   crvexp(iel) = crvexp(iel)+dchema(chempoint(iscal))*rom*volume(iel)
 
 enddo
+
+deallocate(cvara_espg)
 
 !--------
 ! FORMATS

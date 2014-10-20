@@ -32,12 +32,11 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     rtp           calculated variables at cell centers
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine kinrates &
- (rtp    , propce)
+ (propce)
 
 !===============================================================================
 ! Module files
@@ -67,7 +66,6 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -84,7 +82,8 @@ double precision heurtu              ! yime (UTC)
 double precision albe                ! albedo, useless here
 double precision fo                  ! solar constant, useless here
 
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_totwt
 
 ! Initialisation
 
@@ -94,6 +93,7 @@ press = dens*rair*temp ! ideal gas law
 hspec = 0.0d0
 
 if (ippmod(iatmos).ge.1) call field_get_val_s(icrom, crom)
+if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
 
 ! Computation of kinetic rates in every cell
 
@@ -139,7 +139,7 @@ do iel = 1, ncel
   ! Specific hymidity
   ! Humid atmosphere
   if (ippmod(iatmos).ge.2) then
-    hspec = (rtp(iel,isca(itotwt))-propce(iel,ipproc(iliqwt)))    &
+    hspec = (cvar_totwt(iel)-propce(iel,ipproc(iliqwt)))    &
           / (1.d0-propce(iel,ipproc(iliqwt)))
 
   ! Constant density or dry atmosphere with a meteo file

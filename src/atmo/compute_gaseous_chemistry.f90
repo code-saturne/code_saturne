@@ -35,13 +35,10 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (preceding time steps)
-!> \param[in,out] rtp           calculated variables at cell centers
 !_______________________________________________________________________________
 
 subroutine compute_gaseous_chemistry &
-( dt     , rtpa   , rtp    )
+( dt )
 
 !===============================================================================
 ! Module files
@@ -56,6 +53,7 @@ use cstphy
 use cstnum
 use parall
 use period
+use pointe
 use ppppar
 use ppthch
 use ppincl
@@ -72,7 +70,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local Variables
 
@@ -90,10 +88,20 @@ integer ncycle
 double precision dtrest
 
 double precision, dimension(:), pointer :: crom
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_espg, cvara_espg
 
 !===============================================================================
 
+allocate(cvar_espg(nespg), cvara_espg(nespg))
+
 call field_get_val_s(icrom, crom)
+
+! Arrays of pointers containing the fields values for each species
+! (loop on cells outside loop on species)
+do ii = 1, nespg
+  call field_get_val_s(ivarfl(isca(ii)), cvar_espg(ii)%p)
+  call field_get_val_prev_s(ivarfl(isca(ii)), cvara_espg(ii)%p)
+enddo
 
 do iel = 1, ncel
 
@@ -118,9 +126,9 @@ do iel = 1, ncel
     ! -- splitted Rosenbrock solver
     ! -----------------------------
 
-    ! Filling working array dlconc with rtp
+    ! Filling working array dlconc with values at current time step
     do ii = 1, nespg
-      dlconc(chempoint(ii)) = rtp(iel,isca(ii))
+      dlconc(chempoint(ii)) = cvar_espg(ii)%p(iel)
     enddo
 
   else
@@ -128,9 +136,9 @@ do iel = 1, ncel
     ! -- semi-coupled Rosenbrock solver
     ! -----------------------------
 
-    ! Filling working array dlconc with rtpa
+    ! Filling working array dlconc with values at previous time step
     do ii = 1, nespg
-      dlconc(chempoint(ii)) = rtpa(iel,isca(ii))
+      dlconc(chempoint(ii)) = cvara_espg(ii)%p(iel)
     enddo
 
     ! Computation of C(Xn)
@@ -152,7 +160,7 @@ do iel = 1, ncel
     ! (X*-Xn)/dt(dynamics) - C(Xn). See usatch.f90
     ! The first nespg user scalars are supposed to be chemical species
     do ii = 1, nespg
-      source(chempoint(ii)) = (rtp(iel,isca(ii))-rtpa(iel,isca(ii)))/dtc  &
+      source(chempoint(ii)) = (cvar_espg(ii)%p(iel)-cvara_espg(ii)%p(iel))/dtc  &
                             - dchema(chempoint(ii))
     enddo
 
@@ -172,12 +180,14 @@ do iel = 1, ncel
     call roschem (dlconc,source,source,conv_factor,dtrest,rk,rk)
   endif
 
-  ! Update of rtp
+  ! Update of values at current time step
   do ii = 1, nespg
-    rtp(iel,isca(ii)) = dlconc(chempoint(ii))
+    cvar_espg(ii)%p(iel) = dlconc(chempoint(ii))
   enddo
 
 enddo
+
+deallocate(cvar_espg, cvara_espg)
 
 ! TODO: clipping or not ?
 ! Clipping

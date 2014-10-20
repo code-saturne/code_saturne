@@ -186,7 +186,7 @@ if ( ippmod(iatmos).ge.0 ) then
   call atiniv                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 
 endif
 

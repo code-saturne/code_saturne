@@ -110,7 +110,7 @@ ipass = ipass + 1
 
 if (ichemistry.ge.1 .and. nscal.gt.0) then
   ! Computation of kinetics rates
-  call kinrates(rtp, propce)
+  call kinrates(propce)
   !==========
 endif
 
@@ -457,12 +457,12 @@ endif
 ! Atmospheric gaseous chemistry
 ! Resolution of chemical evolution of species
 if (ichemistry.ge.1 .and. nscal.gt.0) then
-  call compute_gaseous_chemistry(dt, rtpa, rtp)
+  call compute_gaseous_chemistry(dt)
 endif
 
 ! Atmospheric aerosol chemistry
 if (iaerosol.eq.1 .and. nscal.gt.0) then
-  call compute_siream(dt, rtp, propce)
+  call compute_siream(dt, propce)
 endif
 
 ! Free memory

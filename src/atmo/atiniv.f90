@@ -24,7 +24,7 @@ subroutine atiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +59,6 @@ subroutine atiniv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -94,7 +92,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -110,6 +108,8 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
+double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
 
 !===============================================================================
 
@@ -187,17 +187,17 @@ if (ifilechemistry.ge.1) then
   ! Volume initilization with profiles for species present
   ! in the chemical profiles file
   if (init_at_chem.eq.1) then
-    do iel = 1, ncel
+    do k = 1, nespgi
+      call field_get_val_s(ivarfl(isca(idespgi(k))), cvar_despgi)
 
-      zent = xyzcen(3,iel)
-
-      do k = 1, nespgi
+      do iel = 1, ncel
+        zent = xyzcen(3,iel)
         call intprf                                                         &
         !==========
         (nbchmz, nbchim,                                                    &
          zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
         ! The first nespg user scalars are supposed to be chemical species
-        rtp(iel,isca(idespgi(k))) = xcent
+        cvar_despgi(iel) = xcent
       enddo
 
     enddo
@@ -212,10 +212,11 @@ if (iaerosol.eq.1) then
 
   ! Initialization
   if (init_at_chem.eq.1) then
-    do iel = 1, ncel
-      do ii = 1, nesp_aer*nbin_aer + nbin_aer
-        isc = (isca_chem(1) - 1) + nespg_siream + ii
-        rtp(iel,isca(isc)) = dlconc0(ii)
+    do ii = 1, nesp_aer*nbin_aer + nbin_aer
+      isc = (isca_chem(1) - 1) + nespg_siream + ii
+      call field_get_val_s(ivarfl(isca(isc)), cvar_sc)
+      do iel = 1, ncel
+        cvar_sc(iel) = dlconc0(ii)
       enddo
     enddo
   endif
@@ -244,21 +245,30 @@ endif
 if (isuite.eq.0) then
 
   if (initmeteo.eq.1) then
+
+    if (ippmod(iatmos).eq.1) then
+      call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+    else if (ippmod(iatmos).eq.2) then
+      call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+      call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+      call field_get_val_s(ivarfl(isca(intdrp)), cvar_ntdrp)
+    endif
+
     if (imeteo.eq.0) then
 
       if (ippmod(iatmos).eq.1) then
         ! The thermal scalar is potential temperature
         do iel = 1, ncel
-          rtp(iel,isca(iscalt)) = t0
+          cvar_scalt(iel) = t0
         enddo
       endif
 
       if (ippmod(iatmos).eq.2) then
         ! The thermal scalar is liquid potential temperature
         do iel = 1, ncel
-          rtp(iel,isca(iscalt)) = t0
-          rtp(iel,isca(itotwt)) = 0.d0
-          rtp(iel,isca(intdrp)) = 0.d0
+          cvar_scalt(iel) = t0
+          cvar_totwt(iel) = 0.d0
+          cvar_ntdrp(iel) = 0.d0
         enddo
       endif
 
@@ -335,7 +345,7 @@ if (isuite.eq.0) then
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
 
-            rtp(iel,isca(iscalt)) = tpent
+            cvar_scalt(iel) = tpent
         endif
 
         if (ippmod(iatmos).eq.2) then
@@ -344,19 +354,19 @@ if (isuite.eq.0) then
             !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
-            rtp(iel,isca(iscalt)) = tpent
+            cvar_scalt(iel) = tpent
 
             call intprf                                                 &
             !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
-            rtp(iel,isca(itotwt)) = qvent
+            cvar_totwt(iel) = qvent
 
             call intprf                                                 &
             !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
-            rtp(iel,isca(intdrp)) = ncent
+            cvar_ntdrp(iel) = ncent
         endif
 
       enddo
