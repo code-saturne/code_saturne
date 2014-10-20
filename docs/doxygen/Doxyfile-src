@@ -813,7 +813,7 @@ EXCLUDE                = .deps \
                          .libs \
                          .svn \
                          $(srcdir)/src/user_examples \
-                         $(srcdir)/docs/doxygen/doxypy.py
+                         $(srcdir)/docs/doxygen/doxypypy.py
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

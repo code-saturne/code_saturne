@@ -424,6 +424,6 @@ def suite():
 
 
 def runTest():
-    print "TurboMachineryTestCase"
+    print("TurboMachineryTestCase")
     runner = unittest.TextTestRunner()
     runner.run(suite())

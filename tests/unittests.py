@@ -190,7 +190,7 @@ def starttest48():
 
 if __name__ == '__main__':
 
-    print 'DEBUT DES TESTS'
+    print('STARTING GUI UNIT TESTS')
     #sys.exit(0)
     starttest1()
     starttest2()
