@@ -5,6 +5,8 @@ Release 3.2.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix minor bugs detected by Address / Undefined Behavior Sanitizer.
+
 - Fix bug when iphydr=1 and (icorio or iturbo=1)
 
 - Fix the boundary conditions coefficients for the second pressure correction in
