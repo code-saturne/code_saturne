@@ -110,10 +110,6 @@ if (irangp.ge.0) then
   call parmax (pormax)
   call parmin (pormin)
 endif
-
-if (iperio.eq.1.or.irangp.ge.0) then
-  call synsca(cpro_porosi)
-endif
 !< [parallelism]
 
 return

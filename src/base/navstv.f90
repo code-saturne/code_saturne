@@ -1465,6 +1465,9 @@ if (iwarni(iu).ge.1) then
   ! With porosity
   if (iporos.ge.1) then
     call field_get_val_s(ipori, porosi)
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(porosi)
+    endif
   endif
 
   rnorma = -grand

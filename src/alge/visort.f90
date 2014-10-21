@@ -173,6 +173,10 @@ else
 
   call field_get_val_s(ipori, porosi)
 
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(porosi)
+  endif
+
   ! Arithmetic mean
   if (imvisf.eq.0) then
 

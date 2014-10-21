@@ -230,6 +230,7 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
   if (halo != NULL) {
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_halo_sync_var(halo, halo_type, c_visc);
+    if (porosi != NULL) cs_halo_sync_var(halo, halo_type, porosi);
   }
 
   /* Without porosity */
