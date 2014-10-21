@@ -1117,7 +1117,7 @@ do while (iterns.le.nterup)
       !=============================
   (   nfbpcd , ifbpcd ,                        &
       tpar   ,                                 &
-      spcond(1, ipr)  , hpcond )
+      spcond(:, ipr)  , hpcond )
 
     endif
 
