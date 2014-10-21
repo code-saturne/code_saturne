@@ -88,7 +88,7 @@ integer          f_id
 integer          icla
 integer          iscdri, keydri, iflid, nfld, keyccl
 
-double precision xrtp
+double precision xvart
 double precision aa1, bb1, cc1, dd1
 double precision aa2, bb2, cc2, dd2
 double precision aa3, bb3, cc3, dd3
@@ -216,20 +216,20 @@ dd7 = 2.9979d-15
 
 !-------------------------------------------------------------------------------
 !      law                    mu   = a + b T + c T**2 + d T**3
-!      so      cpro_viscl(iel) = a +b*xrtp+c*xrtp**2 + d*xrtp**3
+!      so      cpro_viscl(iel) = a +b*xvart+c*xvart**2 + d*xvart**3
 !-------------------------------------------------------------------------------
 
 if (ntcabs.gt.1) then
   do iel = 1, ncel
 
-    xrtp = cpro_temp1(iel)
-    visco_O2  = aa1 + xrtp*bb1 + cc1*xrtp**2 + dd1*xrtp**3
-    visco_CO  = aa2 + xrtp*bb2 + cc2*xrtp**2 + dd2*xrtp**3
-    visco_H2  = aa3 + xrtp*bb3 + cc3*xrtp**2 + dd3*xrtp**3
-    visco_N2  = aa4 + xrtp*bb4 + cc4*xrtp**2 + dd4*xrtp**3
-    visco_SO2 = aa5 + xrtp*bb5 + cc5*xrtp**2 + dd5*xrtp**3
-    visco_NH3 = aa6 + xrtp*bb6 + cc6*xrtp**2 + dd6*xrtp**3
-    visco_CO2 = aa7 + xrtp*bb7 + cc7*xrtp**2 + dd7*xrtp**3
+    xvart = cpro_temp1(iel)
+    visco_O2  = aa1 + xvart*bb1 + cc1*xvart**2 + dd1*xvart**3
+    visco_CO  = aa2 + xvart*bb2 + cc2*xvart**2 + dd2*xvart**3
+    visco_H2  = aa3 + xvart*bb3 + cc3*xvart**2 + dd3*xvart**3
+    visco_N2  = aa4 + xvart*bb4 + cc4*xvart**2 + dd4*xvart**3
+    visco_SO2 = aa5 + xvart*bb5 + cc5*xvart**2 + dd5*xvart**3
+    visco_NH3 = aa6 + xvart*bb6 + cc6*xvart**2 + dd6*xvart**3
+    visco_CO2 = aa7 + xvart*bb7 + cc7*xvart**2 + dd7*xvart**3
 
     ! Viscosity of the mixing
     visco(iel) = ( cpro_ym1_8(iel) * visco_O2                     &

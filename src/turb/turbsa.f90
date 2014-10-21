@@ -457,7 +457,7 @@ enddo
 !===============================================================================
 ! 8. Explicit mass source terms
 
-!    Gamma*RTPAi is stored in w1
+!    Gamma.var_prev is stored in w1
 !===============================================================================
 
 if (ncesmp.gt.0) then
@@ -466,7 +466,7 @@ if (ncesmp.gt.0) then
   iiun = 1
 
   ! --- Explicit and Implicit part
-  !     -Gamma RTPA is added to the RHS and Gamma*theta to tinssa
+  !     -Gamma.var_prev is added to the RHS and Gamma*theta to tinssa
   ivar = inusa
 
   call catsma &
@@ -477,8 +477,8 @@ if (ncesmp.gt.0) then
    volume , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
    rhssa  , tinssa , w1 )
 
-  ! --- Explicit part: Gamma*RTPAi
-  !     (if we extrapolate source terms, Gamma*RTPAi is stored in prev. TS)
+  ! --- Explicit part: Gamma Pinj
+  !     (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS)
   if (istprv.ge.0) then
     do iel = 1, ncel
       c_st_nusa_p(iel) = c_st_nusa_p(iel) + w1(iel)

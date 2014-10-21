@@ -46,7 +46,7 @@
 !> \param[in,out] viscb         work array
 !> \param[in,out] dam           work array
 !> \param[in,out] xam           work array
-!> \param[in,out] drtp          work array
+!> \param[in,out] dpvar         work array
 !> \param[in,out] smbr          work array
 !______________________________________________________________________________
 
@@ -58,7 +58,7 @@ subroutine calhyd &
    cofafp , cofbfp ,                                              &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
-   drtp   , smbr   )
+   dpvar  , smbr   )
 
 !===============================================================================
 ! Module files
@@ -90,7 +90,7 @@ double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac)
-double precision drtp(ncelet)
+double precision dpvar(ncelet)
 double precision smbr(ncelet)
 
 ! Local variables
@@ -265,11 +265,11 @@ nswmpr = nswrsm(ipr)
 
 ! --- Mise a zero des variables
 !       RTP(.,IPR) sera l'increment de pression cumule
-!       DRTP       sera l'increment d'increment a chaque sweep
+!       DPVAR      sera l'increment d'increment a chaque sweep
 !       W7         sera la divergence du flux de masse predit
 do iel = 1,ncel
   phydr(iel) = 0.d0
-  drtp(iel) = 0.d0
+  dpvar(iel) = 0.d0
   smbr(iel) = 0.d0
 enddo
 
@@ -299,9 +299,9 @@ do isweep = 1, nswmpr
 
   endif
 
-! --- Resolution implicite sur l'increment d'increment DRTP
+! --- Resolution implicite sur l'increment d'increment DPVAR
   do iel = 1, ncel
-    drtp(iel) = 0.d0
+    dpvar(iel) = 0.d0
   enddo
 
   iwarnp = iwarni(ipr)
@@ -312,12 +312,12 @@ do isweep = 1, nswmpr
 
   call sles_solve_native(f_id, chaine,                            &
                          isym, ibsize, iesize, dam, xam, iinvpe,  &
-                         epsilp, rnorm, niterf, residu, smbr, drtp)
+                         epsilp, rnorm, niterf, residu, smbr, dpvar)
 
   if( isweep.eq.nswmpr ) then
 !     Mise a jour de l'increment de pression
     do iel = 1, ncel
-      phydr(iel) = phydr(iel) + drtp(iel)
+      phydr(iel) = phydr(iel) + dpvar(iel)
     enddo
 
 
@@ -329,7 +329,7 @@ do isweep = 1, nswmpr
 !       (avec reconstruction)
 
     do iel = 1, ncel
-      phydr(iel) = phydr(iel) + drtp(iel)
+      phydr(iel) = phydr(iel) + dpvar(iel)
     enddo
 
     iccocg = 1

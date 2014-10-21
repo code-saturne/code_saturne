@@ -156,7 +156,7 @@ double precision epsrgp, climgp, extrap, relaxp, blencp, epsilp
 double precision epsrsp
 double precision rhovst, xk    , xe    , sclnor
 double precision thetv , thets , thetap, thetp1
-double precision smbexp, drtp
+double precision smbexp, dvar
 double precision temp, idifftp
 
 double precision rvoid(1)
@@ -1026,10 +1026,10 @@ endif
 if (idilat.ge.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
   do iel = 1, ncel
     ivar = isca(iscalt)
-    drtp = rtp(iel,ivar)-rtpa(iel,ivar)
+    dvar = rtp(iel,ivar)-rtpa(iel,ivar)
     propce(iel,ipproc(iustdy(iscalt))) = &
     propce(iel,ipproc(iustdy(iscalt)))   &
-    - propce(iel,ipproc(itsri(1)))*drtp*volume(iel)
+    - propce(iel,ipproc(itsri(1)))*dvar*volume(iel)
   enddo
 endif
 

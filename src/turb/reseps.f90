@@ -291,10 +291,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-  !       Integer equal to 1 (forr navsto: nb of sur-iter)
+  ! Integer equal to 1 (forr navsto: nb of sur-iter)
   iiun = 1
 
-  !       We incremente smbr with -Gamma rtpa and rovsdt with Gamma (*theta)
+  ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma (*theta)
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
@@ -302,12 +302,12 @@ if (ncesmp.gt.0) then
    volume , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   , rovsdt , w1 )
 
-  !       If we extrapolate the source terms, we put Gamma Pinj in propce
+  ! If we extrapolate the source terms, we put Gamma Pinj in propce
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       c_st_prv(iel) = c_st_prv(iel) + w1(iel)
     enddo
-  !       Otherwise we put it directly in smbr
+  ! Otherwise we put it directly in smbr
   else
     do iel = 1, ncel
       smbr(iel) = smbr(iel) + w1(iel)

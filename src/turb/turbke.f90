@@ -816,7 +816,7 @@ if (ncesmp.gt.0) then
   ! Integer equal to 1 (for navsto: nb of sur-iter)
   iiun = 1
 
-  ! We incremente smbrs with -Gamma rtpa and rovsdt with Gamma (*theta)
+  ! We incremente smbrs with -Gamma.var_prev and rovsdt with Gamma (*theta)
   ivar = ik
 
   call catsma &

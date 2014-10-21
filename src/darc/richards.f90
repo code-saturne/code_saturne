@@ -131,7 +131,7 @@ double precision rvoid(1)
 
 double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:,:) :: xam, weighf, uvwk
-double precision, allocatable, dimension(:) :: drtp, dam, presa, rhs, w1, weighb
+double precision, allocatable, dimension(:) :: dpvar, dam, presa, rhs, w1, weighb
 double precision, allocatable, dimension(:) :: rovsdt, rhs0, viscf, viscb
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -154,7 +154,7 @@ if (darcy_convergence_criterion.eq.0) then
 else
   allocate(uvwk(3,ncelet))
 endif
-allocate(drtp(ncelet))
+allocate(dpvar(ncelet))
 allocate(presa(ncelet))
 allocate(rhs(ncelet), rovsdt(ncelet), rhs0(ncelet))
 allocate(viscf(nfac), viscb(ndimfb))
@@ -329,9 +329,9 @@ call matrix &
 
 nswmpr = nswrsm(ipr)
 
-! Initialization of drtp for avoiding warnings
+! Initialization of dpvar for avoiding warnings
 do iel = 1, ncel
-  drtp(iel) = 0.d0
+  dpvar(iel) = 0.d0
 enddo
 
 ! We compute the first residue (rhs)
@@ -451,19 +451,19 @@ do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
 
   call sles_solve_native(ivarfl(ipr), chaine,                         &
                          isym, ibsize, iesize, dam, xam, iinvpe,      &
-                         epsilp, rnormp, niterf, ressol, rhs, drtp)
+                         epsilp, rnormp, niterf, ressol, rhs, dpvar)
 
   if (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) then
     do iel = 1, ncel
       presa(iel) = cvar_pr(iel)
-      cvar_pr(iel) = presa(iel) + relaxv(ipr)*drtp(iel)
+      cvar_pr(iel) = presa(iel) + relaxv(ipr)*dpvar(iel)
     enddo
 
     ! If it is the last sweep, update with the total increment
   else
     do iel = 1, ncel
       presa(iel) = cvar_pr(iel)
-      cvar_pr(iel) = presa(iel) + drtp(iel)
+      cvar_pr(iel) = presa(iel) + dpvar(iel)
     enddo
   endif
 
@@ -595,7 +595,7 @@ if (darcy_anisotropic_permeability.eq.0) then
    iwarnp ,                                                                    &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
-   drtp  ,                                                                     &
+   dpvar  ,                                                                    &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                                   &
    viscf  , viscb  ,                                                           &
    cpro_permeability, cpro_permeability, cpro_permeability,                    &
@@ -630,7 +630,7 @@ else if (darcy_anisotropic_permeability.eq.1) then
    iphydr , iwarnp ,                                               &
    epsrgp , climgp , extrap ,                                      &
    rvoid  ,                                                        &
-   drtp  ,                                                         &
+   dpvar  ,                                                        &
    coefa_p , coefb_p , coefaf_p , coefbf_p ,                       &
    viscf  , viscb  ,                                               &
    cpro_permeability_6 ,                                           &
@@ -731,7 +731,7 @@ call field_set_key_struct_solving_info(ivarfl(ipr), sinfo)
 ! Free memory
 deallocate(gradp)
 deallocate(uvwk)
-deallocate(drtp)
+deallocate(dpvar)
 deallocate(presa)
 deallocate(rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)

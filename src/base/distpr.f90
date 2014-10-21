@@ -97,7 +97,7 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: coefad, coefbd
 double precision, allocatable, dimension(:) :: cofafd, cofbfd
 double precision, allocatable, dimension(:) :: dam, xam
-double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
+double precision, allocatable, dimension(:) :: dvarp, smbdp, rovsdp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w7, w8, w9
@@ -114,7 +114,7 @@ allocate(viscf(nfac), viscb(nfabor))
 allocate(coefad(nfabor), coefbd(nfabor))
 allocate(cofafd(nfabor), cofbfd(nfabor))
 allocate(dam(ncelet), xam(nfac))
-allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
+allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
@@ -227,7 +227,7 @@ nswrsl = nswrsy
 
 do iel = 1, ncelet
   distpa(iel) = 0.d0
-  rtpdp(iel)  = 0.d0
+  dvarp(iel)  = 0.d0
 enddo
 
 ! -- RHS
@@ -250,22 +250,22 @@ do isweep = 0, nswrsl
   if (rnorm.le.10.d0*epsily*rnoini) goto 100
 
   do iel = 1, ncelet
-    rtpdp(iel) = 0.d0
+    dvarp(iel) = 0.d0
   enddo
 
   call sles_solve_native(-1, nomva0,                                   &
                          isym, ibsize, iesize, dam, xam, iinvpe,       &
-                         epsily, rnorm, niterf, residu, smbdp, rtpdp)
+                         epsily, rnorm, niterf, residu, smbdp, dvarp)
 
   nittot = nittot + niterf
   do iel = 1, ncel
-    distpa(iel) = distpa(iel) + rtpdp(iel)
+    distpa(iel) = distpa(iel) + dvarp(iel)
   enddo
 
   ! - Synchronization for parallelism
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(rtpdp)
+    call synsca(dvarp)
     !==========
   endif
 
@@ -287,7 +287,7 @@ do isweep = 0, nswrsl
    ischcy , isstpy , inc    , imrgra , iccocg ,                   &
    iwarny , imucpp , idftnp ,                                     &
    blency , epsrgy , climgy , extray , relaxp , thetap ,          &
-   rtpdp  , rtpdp  , coefad , coefbd , coefad , cofbfd ,          &
+   dvarp  , dvarp  , coefad , coefbd , coefad , cofbfd ,          &
    viscf  , viscb  , viscf  , viscb  , rvoid  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
@@ -321,7 +321,7 @@ endif
  100  continue
 
 do iel=1,ncel
-  rtpdp(iel)  = distpa(iel)
+  dvarp(iel)  = distpa(iel)
 enddo
 
 !===============================================================================
@@ -334,7 +334,7 @@ allocate(grad(ncelet,3))
 ! - Synchronization for parallelism and periodicity
 
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(rtpdp)
+  call synsca(dvarp)
   !==========
 endif
 
@@ -348,13 +348,13 @@ call grdcel                                                       &
 !==========
  ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
    iwarny , nfecra , epsrgy , climgy , extray ,                   &
-   rtpdp  , coefad , coefbd ,                                     &
+   dvarp  , coefad , coefbd ,                                     &
    grad   )
 
 do iel = 1, ncel
   w1(iel) = grad(iel,1)**2.d0+grad(iel,2)**2.d0+grad(iel,3)**2.d0
-  if(w1(iel)+2.d0*rtpdp(iel).gt.0.d0) then
-    distpa(iel) = - sqrt(w1(iel)) + sqrt(w1(iel)+2.d0*rtpdp(iel))
+  if(w1(iel)+2.d0*dvarp(iel).gt.0.d0) then
+    distpa(iel) = - sqrt(w1(iel)) + sqrt(w1(iel)+2.d0*dvarp(iel))
   else
     write(nfecra,8000)iel, xyzcen(1,iel),xyzcen(2,iel),xyzcen(3,iel)
   endif
@@ -387,7 +387,7 @@ deallocate(viscf, viscb)
 deallocate(coefad, coefbd)
 deallocate(cofafd, cofbfd)
 deallocate(dam, xam)
-deallocate(rtpdp, smbdp, rovsdp)
+deallocate(dvarp, smbdp, rovsdp)
 deallocate(w1, w2, w3)
 deallocate(w7, w8, w9)
 

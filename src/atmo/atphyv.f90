@@ -125,7 +125,7 @@ double precision propce(ncelet,*)
 integer          ivart, iel
 integer          ipctem, ipcliq
 
-double precision xrtp, rhum, rscp, pp, zent
+double precision xvart, rhum, rscp, pp, zent
 double precision lrhum, lrscp
 double precision qsl, deltaq
 double precision qliq, qwt, tliq, dum
@@ -202,7 +202,7 @@ lrscp = rair/cp0
 
 do iel = 1, ncel
 
-  xrtp = cvar_vart(iel) !  The thermal scalar is potential temperature
+  xvart = cvar_vart(iel) !  The thermal scalar is potential temperature
 
   if (ippmod(iatmos).ge.2) then  ! humid atmosphere
     lrhum = rair*(1.d0 + (rvsra - 1.d0)*cvar_totwt(iel))
@@ -226,14 +226,14 @@ do iel = 1, ncel
   ! ---------------------------------------
   ! law: T = theta * (p/ps) ** (Rair/Cp0)
 
-  propce(iel, ipctem) = xrtp*(pp/ps)**lrscp
+  propce(iel, ipctem) = xvart*(pp/ps)**lrscp
   propce(iel, ipctem) = propce(iel, ipctem) - tkelvi
 
   !   Density in cell centers:
   !   ------------------------
   !   law:    RHO       =   P / ( Rair * T(K) )
 
-  crom(iel) = pp/(lrhum*xrtp)*(ps/pp)**lrscp
+  crom(iel) = pp/(lrhum*xvart)*(ps/pp)**lrscp
 
 enddo
 
@@ -306,14 +306,14 @@ do iel = 1, ncel
          ztmet , tmmet , phmet , zent, ttcabs, pp )
   endif
 
-  xrtp = cvar_vart(iel) ! thermal scalar: liquid potential temperature
-  tliq = xrtp*(pp/ps)**rscp ! liquid temperature
+  xvart = cvar_vart(iel) ! thermal scalar: liquid potential temperature
+  tliq = xvart*(pp/ps)**rscp ! liquid temperature
   qwt  = cvar_totwt(iel) !total water content
   qsl = qsatliq(tliq, pp) ! saturated vapor content
   deltaq = qwt - qsl
 
   if (activate) then
-    write(nfecra,*)"atphyv::all_or_nothing::xrtp = ",xrtp
+    write(nfecra,*)"atphyv::all_or_nothing::xvart = ",xvart
     write(nfecra,*)"atphyv::all_or_nothing::tliq = ",tliq
     write(nfecra,*)"atphyv::all_or_nothing::qwt = ",qwt
     write(nfecra,*)"atphyv::all_or_nothing::qsl = ",qsl
@@ -410,8 +410,8 @@ do iel = 1, ncel
     call intprf(nbmett, nbmetm, ztmet , tmmet , phmet , zent, ttcabs, pp)
   endif
 
-  xrtp = cvar_vart(iel) ! thermal scalar: liquid potential temperature
-  tliq = xrtp*(pp/ps)**rscp ! liquid temperature
+  xvart = cvar_vart(iel) ! thermal scalar: liquid potential temperature
+  tliq = xvart*(pp/ps)**rscp ! liquid temperature
   qwt  = cvar_totwt(iel) ! total water content
   qsl = qsatliq(tliq, pp) ! saturated vapor content
   deltaq = qwt - qsl

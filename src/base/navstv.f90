@@ -140,7 +140,7 @@ double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
 double precision, allocatable, dimension(:,:,:), target :: wvisfi
 double precision, allocatable, dimension(:), target :: wvisbi
-double precision, allocatable, dimension(:) :: drtp
+double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10
@@ -185,7 +185,7 @@ interface
      smacel , spcond ,                                            &
      frcxt  , dfrcxt , tpucou , trav   ,                          &
      viscf  , viscb  ,                                            &
-     drtp   , tslagr ,                                            &
+     dpvar  , tslagr ,                                            &
      trava  )
 
     use dimens, only: ndimfb
@@ -208,7 +208,7 @@ interface
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision trav(3,ncelet)
     double precision viscf(nfac), viscb(ndimfb)
-    double precision drtp(ncelet)
+    double precision dpvar(ncelet)
     double precision tslagr(ncelet,*)
     double precision trava(ndim,ncelet)
     double precision coefav(3  ,ndimfb)
@@ -804,7 +804,7 @@ if (iwarni(iu).ge.1) then
 endif
 
 ! Allocate temporary arrays for the pressure resolution
-allocate(drtp(ncelet))
+allocate(dpvar(ncelet))
 
 if (ippmod(icompf).lt.0) then
 
@@ -818,7 +818,7 @@ if (ippmod(icompf).lt.0) then
   smacel , spcond ,                                              &
   frcxt  , dfrcxt , dttens , trav   ,                            &
   viscf  , viscb  ,                                              &
-  drtp   , tslagr ,                                              &
+  dpvar  , tslagr ,                                              &
   trava  )
 
 endif
@@ -865,19 +865,19 @@ if (ippmod(icompf).lt.0) then
     if (idtvar.lt.0) then
       !$omp parallel do
       do iel = 1, ncel
-        drtp(iel) = (cvar_pr(iel) -cvara_pr(iel)) / relaxv(ipr)
+        dpvar(iel) = (cvar_pr(iel) -cvara_pr(iel)) / relaxv(ipr)
       enddo
     else
       !$omp parallel do
       do iel = 1, ncel
-        drtp(iel) = cvar_pr(iel) -cvara_pr(iel)
+        dpvar(iel) = cvar_pr(iel) -cvara_pr(iel)
       enddo
     endif
 
     ! --->    TRAITEMENT DU PARALLELISME ET DE LA PERIODICITE
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(drtp)
+      call synsca(dpvar)
       !==========
     endif
 
@@ -900,7 +900,7 @@ if (ippmod(icompf).lt.0) then
       ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
         iwarnp , epsrgp , climgp , extrap ,                            &
         dfrcxt ,                                                       &
-        drtp   , coefa_dp        , coefb_dp        ,                   &
+        dpvar  , coefa_dp        , coefb_dp        ,                   &
         gradp  )
     else
       allocate(xinvro(ncelet))
@@ -912,7 +912,7 @@ if (ippmod(icompf).lt.0) then
       !==========
       ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
         iwarnp , epsrgp , climgp , extrap ,                            &
-        drtp   , xinvro , coefa_dp , coefb_dp ,                        &
+        dpvar  , xinvro , coefa_dp , coefb_dp ,                        &
         gradp  )
 
       deallocate(xinvro)
@@ -1551,7 +1551,7 @@ endif
 
 ! Free memory
 deallocate(viscf, viscb)
-deallocate(drtp)
+deallocate(dpvar)
 deallocate(trav)
 deallocate(dfrcxt)
 deallocate(w1)

@@ -139,7 +139,7 @@ integer          ith, iscal, ifcvsl
 double precision varam, varbm, varcm, vardm
 double precision varal, varbl, varcl, vardl
 double precision varac, varbc
-double precision xrtp
+double precision xvart
 
 double precision, dimension(:), pointer :: cpro_viscl, cpro_viscv
 double precision, dimension(:), pointer :: cpro_vtmpk, cpro_vscal
@@ -205,11 +205,11 @@ vardm =  1.6935d-3
 !     In this example, mu is provided as a function of the temperature T:
 !       mu(T)              =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
 !     that is:
-!       cpro_viscl(iel) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+!       cpro_viscl(iel) =   xvart*(xvart*(varam*xvart+varbm)+varcm)+vardm
 
 do iel = 1, ncel
-  xrtp = cvar_scalt(iel)
-  cpro_viscl(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  xvart = cvar_scalt(iel)
+  cpro_viscl(iel) = xvart*(xvart*(varam*xvart+varbm)+varcm)+vardm
 enddo
 !< [example_1]
 
@@ -255,11 +255,11 @@ vardm =  1.6935d-3
 !     In this example, kappa is provided as a function of the temperature T:
 !       kappa(T)           =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
 !     that is:
-!       cpro_viscv(iel) =   xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+!       cpro_viscv(iel) =   xvart*(xvart*(varam*xvart+varbm)+varcm)+vardm
 
 do iel = 1, ncel
-  xrtp = cvar_scalt(iel)
-  cpro_viscv(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  xvart = cvar_scalt(iel)
+  cpro_viscv(iel) = xvart*(xvart*(varam*xvart+varbm)+varcm)+vardm
 enddo
 !< [example_2]
 
@@ -311,11 +311,11 @@ varbc = 1000.0d0
 !     In this example, cpro_cp is provided as a function of the temperature T:
 !       cpro_cp(T)              =      ac * T  + ab
 !     that is:
-!       cpro_cp(iel)            =    varac*xrtp+varbc
+!       cpro_cp(iel)            =    varac*xvart+varbc
 
 do iel = 1, ncel
-  xrtp = cvar_scalt(iel)
-  cpro_cp(iel) = varac*xrtp + varbc
+  xvart = cvar_scalt(iel)
+  cpro_cp(iel) = varac*xvart + varbc
 enddo
 
 ! --- The isochoric specific heat is deduced from the isobaric specific heat
@@ -369,11 +369,11 @@ vardl =  0.58923d0
 !     In this example, lambda is provided as a function of the temperature T:
 !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
 !     that is:
-!       cpro_vtmpk(iel) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+!       cpro_vtmpk(iel) =   xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl
 
 do iel = 1, ncel
-  xrtp = cvar_scalt(iel)
-  cpro_vtmpk(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+  xvart = cvar_scalt(iel)
+  cpro_vtmpk(iel) = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
 enddo
 !< [example_4]
 
@@ -442,11 +442,11 @@ do iscal = 1, nscaus
     !     In this example, lambda is provided as a function of the temperature T:
     !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
     !     that is:
-    !       cpro_vscal(iel) =   xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl
+    !       cpro_vscal(iel) =   xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl
 
     do iel = 1, ncel
-      xrtp = cvar_scalt(iel)
-      cpro_vscal(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+      xvart = cvar_scalt(iel)
+      cpro_vscal(iel) = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
     enddo
 
 

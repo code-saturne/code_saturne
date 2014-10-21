@@ -118,7 +118,7 @@ double precision dismax, dismin, usna
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: rtpdp, smbdp, rovsdp
+double precision, allocatable, dimension(:) :: dvarp, smbdp, rovsdp
 double precision, allocatable, dimension(:,:) :: q
 double precision, allocatable, dimension(:) :: flumas, flumab
 double precision, allocatable, dimension(:) :: rom, romb
@@ -142,7 +142,7 @@ save             ipass
 !===============================================================================
 
 ! Allocate temporary arrays for the distance resolution
-allocate(rtpdp(ncelet), smbdp(ncelet), rovsdp(ncelet))
+allocate(dvarp(ncelet), smbdp(ncelet), rovsdp(ncelet))
 allocate(q(3,ncelet))
 allocate(flumas(nfac), flumab(nfabor))
 allocate(rom(nfac), romb(nfabor))
@@ -435,14 +435,14 @@ endif
 
 if(ipass.eq.1) then
   do iel = 1, ncelet
-    rtpdp(iel) = xusnmx
+    dvarp(iel) = xusnmx
   enddo
 else
   do iel = 1, ncel
     usna = disty(iel)/max(distpa(iel),epzero)
     usna = max(usna,xusnmn)
     usna = min(usna,xusnmx)
-    rtpdp(iel) = usna
+    dvarp(iel) = usna
   enddo
 endif
 
@@ -481,7 +481,7 @@ do isweep = 1, ntcmxy
   if(isweep.gt.1.or.ipass.gt.1) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtpdp)
+      call synsca(dvarp)
       !==========
     endif
 
@@ -492,7 +492,7 @@ do isweep = 1, ntcmxy
   !===========================================
 
   do iel = 1, ncel
-    w1(iel) = rtpdp(iel)
+    w1(iel) = dvarp(iel)
   enddo
 
   ! Right hand side
@@ -537,14 +537,14 @@ do isweep = 1, ntcmxy
    iwarny ,                                                       &
    blency , epsily , epsrsy , epsrgy , climgy , extray ,          &
    relaxp , thetap ,                                              &
-   rtpdp  , rtpdp  ,                                              &
+   dvarp  , dvarp  ,                                              &
    coefap , coefbp ,                                              &
    coefap , coefbp ,                                              &
    flumas , flumab ,                                              &
    flumas , flumab , rvoid  , flumas , flumab , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdp , smbdp  , rtpdp  , dpvar  ,                            &
+   rovsdp , smbdp  , dvarp  , dpvar  ,                            &
    rvoid  , rvoid  )
 
 
@@ -552,8 +552,8 @@ do isweep = 1, ntcmxy
   !==========                                   temps precedent)
 
   do iel = 1, ncel
-    rtpdp(iel) = max(rtpdp(iel),xusnmn)
-    rtpdp(iel) = min(rtpdp(iel),xusnmx)
+    dvarp(iel) = max(dvarp(iel),xusnmn)
+    dvarp(iel) = min(dvarp(iel),xusnmx)
   enddo
 
   ! Stopping test
@@ -571,7 +571,7 @@ do isweep = 1, ntcmxy
   xnorme = -grand
   do iel = 1, ncel
     if(distpa(iel)*xusnmn.le.yplmxy) then
-      xnorme = max(xnorme,(rtpdp(iel)-w1(iel))**2)
+      xnorme = max(xnorme,(dvarp(iel)-w1(iel))**2)
     endif
   enddo
   if (irangp.ge.0) then
@@ -597,7 +597,7 @@ write(nfecra,8000) xnorme, xnorm0, xnorme/xnorm0, ntcmxy
 
 
 do iel = 1, ncel
-  disty(iel) = rtpdp(iel)*distpa(iel)
+  disty(iel) = dvarp(iel)*distpa(iel)
 enddo
 
 dismax = -grand
@@ -618,7 +618,7 @@ if (iwarny.ge.1) then
 endif
 
 ! Free memory
-deallocate(rtpdp, smbdp, rovsdp)
+deallocate(dvarp, smbdp, rovsdp)
 deallocate(q)
 deallocate(flumas, flumab)
 deallocate(rom, romb)

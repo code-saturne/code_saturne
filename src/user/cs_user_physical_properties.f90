@@ -141,7 +141,7 @@ integer          ith, iscal, ii, ifcvsl
 double precision vara, varb, varc, varam, varbm, varcm, vardm
 double precision                   varal, varbl, varcl, vardl
 double precision                   varac, varbc
-double precision xrtp
+double precision xvart
 
 double precision, dimension(:), pointer :: coefap, coefbp
 double precision, dimension(:), pointer :: bfpro_rom, cpro_rom
@@ -227,19 +227,19 @@ if (.false.) then
   ! Density at cell centers
   !------------------------
   ! law                    rho  = t  * ( a *  t +  b) +   c
-  ! so      cpro_rom(iel) = xrtp * (vara*xrtp+varb) + varc
+  ! so      cpro_rom(iel) = xvart * (vara*xvart+varb) + varc
 
   ! Volumic thermal expansion coefficient
   !--------------------------------------
   ! law                     cpro_beta  = -1/rho * (d rho / d T)
-  ! so cpro_beta(iel) = (-1.d0/cpro_rom(iel))*(2.d0*vara*xrtp+varb)
+  ! so cpro_beta(iel) = (-1.d0/cpro_rom(iel))*(2.d0*vara*xvart+varb)
 
   call field_get_val_s(iprpfl(ibeta), cpro_beta)
 
   do iel = 1, ncel
-    xrtp = cvar_scalt(iel)
-    cpro_rom(iel) = xrtp * (vara*xrtp+varb) + varc
-    cpro_beta(iel)= (-1.d0/cpro_rom(iel))*(2.d0*vara*xrtp+varb)
+    xvart = cvar_scalt(iel)
+    cpro_rom(iel) = xvart * (vara*xvart+varb) + varc
+    cpro_beta(iel)= (-1.d0/cpro_rom(iel))*(2.d0*vara*xvart+varb)
   enddo
 
 
@@ -261,7 +261,7 @@ if (.false.) then
 
   ! If we wish to specify a law anyways:
   !                        rho  = t  * ( a *  t +  b) +   c
-  ! so      bfpro_rom(ifac) = xrtp * (vara*xrtp+varb) + varc
+  ! so      bfpro_rom(ifac) = xvart * (vara*xvart+varb) + varc
 
   ! 't' being the temperature at boundary face centers, we may use the
   ! following lines of code (voluntarily deactived, as the must be used
@@ -285,8 +285,8 @@ if (.false.) then
 
       ! ifabor(ifac) is the cell adjacent to the boundary face
       iel = ifabor(ifac)
-      xrtp = coefap(ifac) + cvar_scalt(iel)*coefbp(ifac)
-      bfpro_rom(ifac) = xrtp * (vara*xrtp+varb) + varc
+      xvart = coefap(ifac) + cvar_scalt(iel)*coefbp(ifac)
+      bfpro_rom(ifac) = xvart * (vara*xvart+varb) + varc
     enddo
 
   endif ! --- Test on .false.
@@ -335,11 +335,11 @@ if (.false.) then
   ! Molecular dynamic viscosity in kg/(m.s) at cell centers
   !--------------------------------------------------------
   ! law                    mu   = t * (t * (am * t + bm) + cm) + dm
-  ! so      cpro_viscl(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+  ! so      cpro_viscl(iel) = xvart*(xvart*(varam*xvart+varbm)+varcm)+vardm
 
   do iel = 1, ncel
-    xrtp = cvar_scalt(iel)
-    cpro_viscl(iel) = xrtp*(xrtp*(varam*xrtp+varbm)+varcm)+vardm
+    xvart = cvar_scalt(iel)
+    cpro_viscl(iel) = xvart*(xvart*(varam*xvart+varbm)+varcm)+vardm
   enddo
 
 endif ! --- Test on .false.
@@ -391,11 +391,11 @@ if (.false.) then
   ! Specific heat in J/(kg.degrees) at cell centers
   !------------------------------------------------
   ! law                    cpro_cp  = ac * t + bm
-  ! so          cpro_cp(iel) = varac*xrtp + varbc
+  ! so          cpro_cp(iel) = varac*xvart + varbc
 
   do iel = 1, ncel
-    xrtp = cvar_scalt(iel)
-    cpro_cp(iel) = varac*xrtp + varbc
+    xvart = cvar_scalt(iel)
+    cpro_cp(iel) = varac*xvart + varbc
   enddo
 
 endif ! --- Test on .false.
@@ -465,7 +465,7 @@ if (.false.) then
     !--------------------------------------
     ! law    Lambda/Cp = {t * (t * (al * t +  bl) + cl) + dl} / Cp
     ! so     cpro_vscalt(iel) &
-    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)/cp0
+    !             = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)/cp0
 
     ! We assume Cp has been defined previously.
 
@@ -473,9 +473,9 @@ if (.false.) then
 
       ! --- If Cp is uniform, we use cp0
       do iel = 1, ncel
-        xrtp = cvar_scalt(iel)
-        cpro_vscalt(iel) =                                              &
-             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
+        xvart = cvar_scalt(iel)
+        cpro_vscalt(iel) =                                           &
+             (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)         &
              /cp0
       enddo
 
@@ -483,9 +483,9 @@ if (.false.) then
 
       ! --- If Cp is not uniform, we use cpro_vscalt above
       do iel = 1, ncel
-        xrtp = cvar_scalt(iel)
-        cpro_vscalt(iel) =                                              &
-             (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)         &
+        xvart = cvar_scalt(iel)
+        cpro_vscalt(iel) =                                           &
+             (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)         &
              /cpro_cp(iel)
       enddo
 
@@ -506,11 +506,11 @@ if (.false.) then
     !--------------------------------------
     ! law    Lambda = {t * (t * (al * t +  bl) + cl) + dl}
     ! so     cpro_vscalt(iel) &
-    !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+    !             = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
 
     do iel = 1, ncel
-      xrtp = cvar_scalt(iel)
-      cpro_vscalt(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+      xvart = cvar_scalt(iel)
+      cpro_vscalt(iel) = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
     enddo
 
   endif
@@ -594,11 +594,11 @@ if (.false.) then
       !--------------------------------------
       ! law    Lambda = {t * (t * (al * t +  bl) + cl) + dl}
       ! so     cpro_vscalt(iel) &
-      !             = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+      !             = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
 
       do iel = 1, ncel
-        xrtp = cvar_scalt(iel)
-        cpro_vscalt(iel) = (xrtp*(xrtp*(varal*xrtp+varbl)+varcl)+vardl)
+        xvart = cvar_scalt(iel)
+        cpro_vscalt(iel) = (xvart*(xvart*(varal*xvart+varbl)+varcl)+vardl)
       enddo
 
     endif ! --- Tests on 'ith' and 'iscavr'
@@ -991,13 +991,13 @@ if (ippmod(ieljou).ge.1) then
 !         matiere de loi H-T (T en Kelvin)
 
 !       On demande de fournir cette loi dans le sous programme usthht
-!          (USERS/base/usthht.f90)
+!          (users/usthht.f90)
 !           usthht fournit en particulier un exemple d'interpolation
 !            a partir d'une tabulation utilisateur
 !           usthht en mode T->H sera utilise pour l'initialisation
 !            de l'enthalpie dans useliv.
 
-!       mode = 1 : h=rtp(iel,isca(ihm)) -> t=propce(iel,ipproc(itemp))
+!       mode = 1 : h => ivarfl(isca(ihm)) -> t => iprpfl(itemp)
   mode = 1
 
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)

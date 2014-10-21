@@ -585,7 +585,7 @@ if (ncesmp.gt.0) then
   !       Integer equal to 1 (for navsto: nb of over-iter)
   iiun = 1
 
-  !       We increment smbr by -Gamma rtpa ans rovsdt by Gamma (*theta)
+  !       We increment smbr by -Gamma.var_prev and rovsdt by Gamma (*theta)
   call catsma                                                     &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
@@ -641,12 +641,13 @@ do iel = 1, ncel
   xrom = cromo(iel)
   xnu  = cpro_pcvlo(iel)/xrom
   if (iturb.eq.50) then
-    !     The term in f_barre is taken in rtp and not in rtpa
-    !     ... a priori better
-    !     Remark: if we stay in rtp, we have to modify the case
-    !             of the second-ordre (which need rtpa for extrapolation).
+    ! The term in f_bar is taken at the current and not previous time step
+    ! ... a priori better
+    ! Remark: if we keep this choice, we have to modify the case
+    !         of the second-order (which need the previous value time step
+    !         for extrapolation).
     w2(iel)   =  volume(iel)*                                       &
-         ( xrom*cvar_fb(iel)                                            &
+         ( xrom*cvar_fb(iel)                                        &
            +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
   elseif (iturb.eq.51) then
     ttke = xk / xe
@@ -655,7 +656,7 @@ do iel = 1, ncel
     fhomog = -1.d0/tt*(cpalc1-1.d0+cpalc2*prdv2f(iel)/xe/xrom)*     &
              (cvara_phi(iel)-d2s3)
     w2(iel)   = volume(iel)*                                        &
-         ( cvara_al(iel)**3*fhomog*xrom                                 &
+         ( cvara_al(iel)**3*fhomog*xrom                             &
            +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
   endif
 

@@ -68,8 +68,8 @@ double precision, allocatable, dimension(:,:) :: rmet, tpmet, phmet
 
 double precision, allocatable, dimension(:) :: nebdia, nn
 
-! 1.2 Pointers for the positions of the variables (in rtp, rtpa)
-!---------------------------------------------------------------
+! 1.2 Pointers for the positions of the variables
+!------------------------------------------------
 
 !   Variables specific to the atmospheric physics:
 !   ippmod(iatmos) = 1 (Dry atmosphere):

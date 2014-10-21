@@ -93,7 +93,7 @@ integer          iflmas , iflmab , ipccp
 integer          iscal
 integer          ilelt  , nlelt
 
-double precision xrtpa  , xrtp
+double precision xvara  , xvar
 double precision xbilan , xbilvl , xbilpa , xbilpt
 double precision xbilsy , xbilen , xbilso , xbildv
 double precision xbilmi , xbilma
@@ -273,11 +273,11 @@ if (inpdt0.eq.0) then
   ! of the time step using the temperature from the previous time step.
 
   do iel = 1, ncel
-    xrtpa = cvara_scal(iel)
-    xrtp  = cvar_scal(iel)
+    xvara = cvara_scal(iel)
+    xvar  = cvar_scal(iel)
     xbilvl =   xbilvl                              &
              + volume(iel) * xcp(iel) * crom(iel)  &
-                           * (xrtpa - xrtp)
+                           * (xvara - xvar)
   enddo
 
   ! --> Balance on all faces (interior and boundary), for div(rho u)
@@ -315,11 +315,11 @@ if (inpdt0.eq.0) then
   if (ncetsm.gt.0) then
     do ieltsm = 1, ncetsm
       iel = icetsm(ieltsm)
-      xrtp  = cvar_scal(iel)
+      xvar  = cvar_scal(iel)
       xgamma = smacel(ieltsm,ipr)
       xbildv =   xbildv                            &
                - volume(iel) * xcp(iel) * dt(iel)  &
-                             * xgamma * xrtp
+                             * xgamma * xvar
     enddo
   endif
 
@@ -477,25 +477,25 @@ if (inpdt0.eq.0) then
       iel = icetsm(ieltsm)
       xgamma = smacel(ieltsm,ipr)
       if (itypsm(ieltsm,ivar).eq.0 .or. xgamma.lt.0.d0) then
-        xrtp = cvar_scal(iel)
+        xvar = cvar_scal(iel)
       else
-        xrtp = smacel(ieltsm,ivar)
+        xvar = smacel(ieltsm,ivar)
       endif
       if (icp.gt.0) then
         if (xgamma.lt.0.d0) then
           xbilma =   xbilma  &
-                   + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xvar
         else
           xbilmi =   xbilmi  &
-                   + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cpro_cp(iel) * dt(iel) * xgamma * xvar
         endif
       else
         if (xgamma.lt.0.d0) then
           xbilma =   xbilma  &
-                   + volume(iel) * cp0 * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cp0 * dt(iel) * xgamma * xvar
         else
           xbilmi =   xbilmi  &
-                   + volume(iel) * cp0 * dt(iel) * xgamma * xrtp
+                   + volume(iel) * cp0 * dt(iel) * xgamma * xvar
         endif
       endif
     enddo

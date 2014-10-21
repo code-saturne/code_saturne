@@ -126,8 +126,6 @@ double precision hint, qimp, epsrsp, blencp, relaxp
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: drtp
-
 double precision, allocatable, dimension(:) :: coefap, cofafp, coefbp, cofbfp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
@@ -172,7 +170,6 @@ isqrt = 1
 !===============================================================================
 
 ! --- Allocate temporary arrays
-allocate(drtp(ncelet))
 allocate(dpvar(ncelet))
 allocate(viscf(nfac), viscb(nfabor))
 allocate(xinvro(ncelet))
@@ -182,7 +179,6 @@ allocate(smbr(ncelet), rovsdt(ncelet))
 do iel = 1, ncel
   xinvro(iel) = 1.d0/crom(iel)
   rovsdt(iel) = 0.d0
-  drtp(iel)   = 0.d0
   smbr(iel)   = 0.d0
 enddo
 

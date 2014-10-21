@@ -317,7 +317,7 @@ if (ncesmp.gt.0) then
   !       Integer equal to 1 (for navsto: nb of sur-iter)
   iiun = 1
 
-  ! We incremente smbr with -Gamma rtpa and rovsdr with Gamma (*theta)
+  ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma (*theta)
   call catsma &
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
