@@ -191,7 +191,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         t_outputs = (("tplus", "Tplus", False),
                      ("input_thermal_flux", "Thermal flux", True),
                      ("boundary_temperature", "Boundary temperature", True),
-                     ("boundary_layer_nusselt", "Boundary layer Nusselt", False))
+                     ("boundary_layer_nusselt", "Dimensionless Thermal flux", False))
 
         if thermal_scalar != 'off' or self.isSpecificPhysicActiv():
             for v in t_outputs:

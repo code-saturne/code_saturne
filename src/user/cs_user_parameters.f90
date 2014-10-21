@@ -1455,9 +1455,9 @@ endif
 ! Postprocessing-related fields
 ! =============================
 
-! Example: enforce existence of 'tplus' and 'tstar' fields, so that
-!          a boundary temperature or Nusselt number may be computed using the
-!          post_boundary_temperature or post_boundary_nusselt subroutines.
+! Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
+!          yplus, a boundary temperature or Nusselt number may be computed using
+!          the post_boundary_temperature or post_boundary_nusselt subroutines.
 !          When postprocessing of these quantities is activated, those fields
 !          are present, but if we need to compute them in the
 !          cs_user_extra_operations user subroutine without postprocessing them,
@@ -1472,14 +1472,28 @@ if (.false.) then
   ilved = .true. ! interleaved
   inoprv = .false. ! no previous time step values needed
 
-  call field_get_id('tplus', f_id)
+  call field_get_id_try('yplus', f_id)
   if (f_id.lt.0) then
-    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+    ! yplus postreated and in the log
+    call field_set_key_int(f_id, keyvis, 1)
+    call field_set_key_int(f_id, keylog, 1)
   endif
 
-  call field_get_id('tstar', f_id)
+  call field_get_id_try('tplus', f_id)
+  if (f_id.lt.0) then
+    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, f_id)
+    ! tplus postreated and in the log
+    call field_set_key_int(f_id, keyvis, 1)
+    call field_set_key_int(f_id, keylog, 1)
+  endif
+
+  call field_get_id_try('tstar', f_id)
   if (f_id.lt.0) then
     call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
+    ! tplus postreated and in the log
+    call field_set_key_int(f_id, keyvis, 1)
+    call field_set_key_int(f_id, keylog, 1)
   endif
 
 endif

@@ -219,17 +219,13 @@ $\geqslant$ 10}
 \motcleb{ipstdv}{ia}{integer: see below}
 {0}{O}{L1}
 {indicates the data to post-process on the boundary mesh (the boundary mesh must
-have been activated with {\tt ichrbo=1}).%FIXME 
+have been activated with {\tt ichrbo=1}).%FIXME
  The value of {\tt ipstdv} is
 the product of the following integers, depending on the variables that should be
 post-processed:\\
 \hspace*{1.3cm}{\tt ipstyp}\index{ipstyp}: $y^+$ at the boundary\\
-\hspace*{1.3cm}{\tt ipstcl}\index{ipstcl}: value of the variables at the
-boundary (using the boundary conditions but without reconstruction)\\
 \hspace*{1.3cm}{\tt ipstft}\index{ipstft}: thermal flux at the boundary
 ($W\,m^{-2}$), if a thermal scalar has been defined ({\tt iscalt})\\
-For instance, with {\tt ipstdv=ipstyp*ipstcl}, $y^+$ and the variables will be
-post-processed at the boundaries.\\
 With {\tt ipstdv=1}, none of these data are post-processed at the boundaries.\\
 always useful if {\tt ichrbo=1}}
 
@@ -353,7 +349,7 @@ useful if and only if the subroutine \texttt{ushist} is used}
 %==================================
 \subsubsection{Time averages}
 %==================================
-See \doxygenfile{parameters.html}{the dedicated \texttt{Doxygen} documentation}.  
+See \doxygenfile{parameters.html}{the dedicated \texttt{Doxygen} documentation}.
 
 %==================================
 \subsubsection{Others}

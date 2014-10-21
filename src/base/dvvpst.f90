@@ -439,31 +439,6 @@ else if (numtyp .eq. -2) then
 
   enddo ! End of loop on variables
 
-  ! output y+ at the boundary
-  ! -------------------------
-
-  if (ipstdv(ipstyp).ne.0) then
-
-    idimt = 1  ! variable dimension
-    call field_get_val_s(iyplbr, yplbr)
-
-    ! Compute variable on boundary faces
-
-    do iloc = 1, nfbrps
-      ifac = lstfbr(iloc)
-      trafbr(1 + (iloc-1)*idimt) = yplbr(ifac)
-    enddo
-
-    ! Non interleaved values, defined in work array
-
-    ientla = .true.
-    ivarpr = .false.
-
-    call post_write_var(nummai, 'Yplus', idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif ! end of test on output of y+
-
   ! Handle efforts at boundary
   ! --------------------------------
 
@@ -586,7 +561,7 @@ else if (numtyp .eq. -2) then
 
     call post_boundary_nusselt(nfbrps, lstfbr, trafbr)
 
-    call post_write_var(nummai, 'Wall law Nusselt', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, 'Dimensionless heat flux', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif ! end of test on output of Nusselt

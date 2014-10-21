@@ -346,6 +346,11 @@ endif
 
 if (ipstdv(ipstyp).ne.0) then
   call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
+  ! yplus postreated and in the log
+  call field_set_key_str(iyplbr, keylbl,'Yplus')
+  call field_set_key_int(iyplbr, keyvis, 1)
+!FIXME adapt the log before
+!  call field_set_key_int(iyplbr, keylog, 1)
 endif
 
 !===============================================================================

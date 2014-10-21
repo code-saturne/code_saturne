@@ -1800,7 +1800,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
      direction.
 
      To avoid this, we multiply extrap by isympa which is zero for
-     symmetries : the gradient is thus not extrapolated on those faces. */
+     symmetries: the gradient is thus not extrapolated on those faces. */
 
   /* Initialize gradient */
   /*---------------------*/

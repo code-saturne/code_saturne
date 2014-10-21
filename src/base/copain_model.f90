@@ -94,7 +94,7 @@ double precision hpcond(nfbpcd)
 ! Local variables
 
 integer          ii, iel, ifac, iesp
-integer          ivar, f_id, ifcvsl
+integer          ivar, f_id, ifcvsl, yplus_id
 
 double precision flux
 double precision sink_term, gamma_cond
@@ -145,7 +145,10 @@ flmin = 1.d+20 ; flmax = -1.d+20
 
 sink_term = 0.d0
 
-if (ipstdv(ipstyp).ne.0) call field_get_val_s(iyplbr, yplbr)
+yplbr => null()
+
+call field_get_id_try('yplus', yplus_id)
+if (yplus_id.ge.0) call field_get_val_s(yplus_id, yplbr)
 
 call field_get_id("y_h2o_g", f_id)
 call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)

@@ -364,12 +364,8 @@ module entsor
   !> the product of the following integers, depending on the variables
   !> that should be post-processed:
   !> \ref ipstyp: \f$ y^+ \f$ at the boundary
-  !> \ref ipstcl: value of the variables at the
-  !> boundary (using the boundary conditions but without reconstruction)
   !> \ref ipstft}: thermal flux at the boundary
   !> ( \f$ W\,m^{-2} \f$ ), if a thermal scalar has been defined (\ref iscalt)
-  !> For instance, with \ref ipstdv=ipstyp*ipstcl,
-  !> \f$ y^+ \f$ and the variables will be post-processed at the boundaries.
   !> With \ref ipstdv=1, none of these data are post-processed at the boundaries.
   !> always useful if \ref ichrbo=1
   integer, save :: ipstdv(6)

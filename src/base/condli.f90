@@ -253,10 +253,21 @@ rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
 
-! pointers to T+ and T* if saved
+! pointers to y+, T+ and T* if saved
 
+yplbr => null()
 tplusp => null()
 tstarp => null()
+
+! Initialization of the array storing yplus
+!  which is computed in clptur.f90 and/or clptrg.f90
+call field_get_id_try('yplus', f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, yplbr)
+  do ifac = 1, nfabor
+    yplbr(ifac) = 0.d0
+  enddo
+endif
 
 call field_get_id_try('tplus', itplus)
 if (itplus.ge.0) then
@@ -289,7 +300,6 @@ if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
 if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
-if (ipstdv(ipstyp).ne.0) call field_get_val_s(iyplbr, yplbr)
 
 ! Pointers to velcocity BC coefficients
 call field_get_coefa_v(ivarfl(iu), coefau)
@@ -639,15 +649,6 @@ deallocate(grad)
 !       (u,v,w,k,epsilon,Rij,temperature)
 !===============================================================================
 ! --- On a besoin de velipb et de rijipb (et theipb pour le rayonnement)
-
-! Initialization of the array storing yplus
-!  which is computed in clptur.f90 and/or clptrg.f90
-
-if (ipstdv(ipstyp).ne.0.or.icond.ge.0) then
-  do ifac = 1, nfabor
-    yplbr(ifac) = 0.d0
-  enddo
-endif
 
 !     On initialise visvdr a -999.d0.
 !     Dans clptur, on amortit la viscosite turbulente sur les cellules

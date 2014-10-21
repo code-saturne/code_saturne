@@ -2412,7 +2412,6 @@ write(nfecra,7532)
 !   - Post-traitement automatique (bord)
 
 write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
-                     'ipstyp', ipstdv(ipstyp),                     &
                      'ipstft', ipstdv(ipstft),                     &
                      'ipsttb', ipstdv(ipsttb),                     &
                      'ipstnu', ipstdv(ipstnu)
@@ -2456,10 +2455,10 @@ write(nfecra,9900)
 ' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
 '       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
 '       ',6x,'   ',4x,10x,    '   le fluide sur le bord)',      /,&
-'       ',a6,' = ',4x,i10,    ' (Yplus          au bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Flux thermique au bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Temperature    au bord)',      /,&
-'       ',a6,' = ',4x,i10,    ' (Nusselt        au bord)',      /)
+'       ',a6,' = ',4x,i10,    ' (Flux thermique',               /,&
+'       ',6x,'   ',4x,10x,    '  sans dimension au bord)',      /)
 
 #else
 
@@ -2497,10 +2496,10 @@ write(nfecra,9900)
 ' --- Additional post-processing variables (ipstdv)',           /,&
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
 '       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /,&
-'       ',a6,' = ',4x,i10,    ' (Yplus          at boundary)',  /,&
-'       ',a6,' = ',4x,i10,    ' (Thermal flow   at boundary)',  /,&
+'       ',a6,' = ',4x,i10,    ' (Thermal flux   at boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Temperature    at boundary)',  /,&
-'       ',a6,' = ',4x,i10,    ' (Nusselt        at boundary)',  /)
+'       ',a6,' = ',4x,i10,    ' (Dimensionless thermal',        /,&
+'       ',6x,'   ',4x,10x,    '            flux at boundary)',  /)
 
 #endif
 
