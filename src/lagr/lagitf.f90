@@ -23,7 +23,7 @@
 subroutine lagitf &
 !================
 
- ( rtp    , propce )
+ ( iprev, propce )
 
 !===============================================================================
 ! FONCTION :
@@ -40,8 +40,9 @@ subroutine lagitf &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
+! iprev            ! e  ! <-- ! time step indicator for fields                 !
+!                  !    !     !   0: use fields at current time step           !
+!                  !    !     !   1: use fields at previous time step          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -76,7 +77,8 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar)
+integer          iprev
+
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -90,6 +92,7 @@ double precision, allocatable, dimension(:) :: tempf
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_omg
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), allocatable :: auxl1
 
 !===============================================================================
@@ -111,17 +114,40 @@ ct = 1.d0
 
 mode = 1
 
-if (itytur.eq.2.or.iturb.eq.50) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (itytur.eq.3) then
-  call field_get_val_s(ivarfl(ir11), cvar_r11)
-  call field_get_val_s(ivarfl(ir22), cvar_r22)
-  call field_get_val_s(ivarfl(ir33), cvar_r33)
-  call field_get_val_s(ivarfl(iep), cvar_ep)
-elseif (iturb.eq.60) then
-  call field_get_val_s(ivarfl(ik), cvar_k)
-  call field_get_val_s(ivarfl(iomg), cvar_omg)
+if (iprev.eq.0) then
+
+  if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+  if (itytur.eq.2.or.iturb.eq.50) then
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+  elseif (itytur.eq.3) then
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
+  elseif (iturb.eq.60) then
+    call field_get_val_s(ivarfl(ik), cvar_k)
+    call field_get_val_s(ivarfl(iomg), cvar_omg)
+  endif
+
+else if (iprev.eq.1) then
+
+  if (iscalt.gt.0) call field_get_val_prev_s(ivarfl(isca(iscalt)), cvar_scalt)
+
+  if (itytur.eq.2.or.iturb.eq.50) then
+    call field_get_val_prev_s(ivarfl(ik), cvar_k)
+    call field_get_val_prev_s(ivarfl(iep), cvar_ep)
+  elseif (itytur.eq.3) then
+    call field_get_val_prev_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_prev_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_prev_s(ivarfl(ir33), cvar_r33)
+    call field_get_val_prev_s(ivarfl(iep), cvar_ep)
+  elseif (iturb.eq.60) then
+    call field_get_val_prev_s(ivarfl(ik), cvar_k)
+    call field_get_val_prev_s(ivarfl(iomg), cvar_omg)
+  endif
+
 endif
 
 !===============================================================================
@@ -147,17 +173,17 @@ else if ( ippmod(icod3p).ge.0 .or.                                &
 
 else if (itherm.eq.1 .and. itpscl.eq.2) then
   do iel = 1,ncel
-    tempf(iel) = rtp(iel,isca(iscalt))
+    tempf(iel) = cvar_scalt(iel)
   enddo
 
 else if (itherm.eq.1 .and. itpscl.eq.1) then
   do iel = 1,ncel
-    tempf(iel) = rtp(iel,isca(iscalt)) - tkelvi
+    tempf(iel) = cvar_scalt(iel) - tkelvi
   enddo
 
 else if (itherm.eq.2) then
   do iel = 1,ncel
-    call usthht (mode, rtp(iel,isca(iscalt)), tempf(iel))
+    call usthht (mode, cvar_scalt(iel), tempf(iel))
     !==========
   enddo
 endif

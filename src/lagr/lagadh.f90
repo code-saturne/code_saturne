@@ -24,7 +24,7 @@ subroutine lagadh &
 !================
 
  ( ip     ,                                                       &
-   rtp    , adhesion_energ)
+   cvar_scalt_iel , adhesion_energ)
 
 !===============================================================================
 
@@ -43,8 +43,7 @@ subroutine lagadh &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ip               ! i  ! <-- ! particle number                                !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
+! cvar_scalt_iel   ! r  ! <-- ! thermal scalar value at current time step      !
 ! adhesion_energ   ! r  ! --> ! particle adhesion energy                       !
 !__________________!____!_____!________________________________________________!
 
@@ -81,7 +80,7 @@ implicit none
 
 integer          ip
 
-double precision rtp (ncelet,nflown:nvar)
+double precision cvar_scalt_iel
 double precision adhesion_energ
 
 ! Local variables
@@ -94,12 +93,12 @@ double precision dismin, distcc, distp
 double precision udlvor(2), uvdwsp, uvdwss, uedlsp, uedlss
 double precision fadhes
 
-
 ! Variables for the adhesion moment
 double precision dismom, omsurf
 
-integer iel, mode
+integer mode
 double precision tempf
+
 ! ==========================================================================
 ! 0.    initialization
 ! ==========================================================================
@@ -115,22 +114,20 @@ scovag = pi * rayasg**2 / espasg**2
 ! Determination of the temperature
 
 
-  iel = ipepa(jisor,ip)
-
-  if (iscalt.gt.0) then
-    if (itherm.eq.1) then
-      if (itpscl.eq.2) then
-        tempf = rtp(iel,isca(iscalt)) + tkelvi
-      else if (itpscl.eq. 1) then
-        tempf = rtp(iel,isca(iscalt))
-      endif
-    else if (itherm.eq.2) then
-      mode = 1
-      call usthht(mode,rtp(iel,isca(iscalt)),tempf)
+if (iscalt.gt.0) then
+  if (itherm.eq.1) then
+    if (itpscl.eq.2) then
+      tempf = cvar_scalt_iel + tkelvi
+    else if (itpscl.eq. 1) then
+      tempf = cvar_scalt_iel
     endif
-  else
-    tempf = t0
+  else if (itherm.eq.2) then
+    mode = 1
+    call usthht(mode,cvar_scalt_iel,tempf)
   endif
+else
+  tempf = t0
+endif
 
 
 ! ==========================================================================

@@ -24,7 +24,7 @@ subroutine lagphy &
 !================
 
  ( ntersl , nvlsta , nvisbr ,                                     &
-   dt     , rtp    , propce ,                                     &
+   iprev  , dt     , propce ,                                     &
    taup   , tlag   , tempct ,                                     &
    cpgd1  , cpgd2  , cpght  )
 
@@ -53,9 +53,10 @@ subroutine lagphy &
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
+! iprev            ! e  ! <-- ! time step indicator for fields                 !
+!                  !    !     !   0: use fields at current time step           !
+!                  !    !     !   1: use fields at previous time step          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
@@ -94,8 +95,9 @@ implicit none
 ! Arguments
 
 integer          ntersl , nvlsta , nvisbr
+integer          iprev
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3) , tempct(nbpart,2)
 double precision cpgd1(nbpart) , cpgd2(nbpart) , cpght(nbpart)
@@ -117,7 +119,7 @@ if ( iphyla.eq.2 .or. (iphyla.eq.1 .and. itpvar.eq.1) ) then
 
   call lagitf                                                     &
   !==========
-  ( rtp    , propce )
+  ( iprev, propce )
 
 endif
 

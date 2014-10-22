@@ -942,7 +942,7 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   !==========
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     , propce )
 
 endif
 

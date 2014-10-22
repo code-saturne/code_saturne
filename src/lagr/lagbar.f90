@@ -23,7 +23,7 @@
 subroutine lagbar &
 !================
 
- ( rtp , energt )
+ ( energt )
 
 !=================================================================
 !===============================================================================
@@ -38,8 +38,6 @@ subroutine lagbar &
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________
-! rtp        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)    !     !     !  (at current time step)
 !energt
 !  (nfabor)  ! tr ! --> ! energy barrier at boundary faces
 !===============================================================================
@@ -58,6 +56,7 @@ use optcal
 use numvar
 use cstphy
 use cstnum
+use field
 
 !===============================================================================
 
@@ -66,7 +65,6 @@ implicit none
 ! Arguments
 
 double precision  energt(nfabor)
-double precision  rtp (ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -75,6 +73,9 @@ double precision aux1  , aux2 , bg , bd , fc , fg , cc
 integer          cpt
 integer          ncmax
 integer          ifac , iel , mode
+
+double precision, dimension(:), pointer :: cvar_scalt
+
 parameter (ncmax=2000)
 
 !===============================================================================
@@ -83,6 +84,8 @@ parameter (ncmax=2000)
 
 ! Determination of the temperature
 
+if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
 do ifac = 1, nfabor
 
   iel = ifabor(ifac)
@@ -90,13 +93,13 @@ do ifac = 1, nfabor
   if (iscalt.gt.0) then
     if (itherm.eq.1) then
       if (itpscl.eq.2) then
-        tempf = rtp(iel,isca(iscalt)) + tkelvi
+        tempf = cvar_scalt(iel) + tkelvi
       else if (itpscl.eq. 1) then
-        tempf = rtp(iel,isca(iscalt))
+        tempf = cvar_scalt(iel)
       endif
     else if (itherm.eq.2) then
       mode = 1
-      call usthht(mode,rtp(iel,isca(iscalt)),tempf)
+      call usthht(mode,cvar_scalt(iel),tempf)
     endif
   else
     tempf = t0

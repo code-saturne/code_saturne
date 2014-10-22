@@ -23,7 +23,7 @@
 subroutine lagdep &
 !================
 
- ( rtpa   , propce ,                                              &
+ ( propce ,                                                       &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    fextla , vislen)
@@ -50,8 +50,6 @@ subroutine lagdep &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (pas de temps precedent)           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
@@ -97,7 +95,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
@@ -130,6 +127,8 @@ double precision, dimension(:), pointer :: cromf
 double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: viscl
 
+double precision, dimension(:), pointer :: cvara_scalt
+
 !===============================================================================
 
 ! Map field arrays
@@ -159,6 +158,8 @@ if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0) then
 else
   call field_get_val_s(icrom, cromf)
 endif
+
+if (iscalt.gt.0) call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
 call field_get_val_s(iprpfl(iviscl), viscl)
 
@@ -192,13 +193,13 @@ call field_get_val_s(iprpfl(iviscl), viscl)
       else if (iscalt.gt.0) then
         if (itherm.eq.1) then
           if (itpscl.eq.2) then
-            tempf = rtpa(iel,isca(iscalt)) + tkelvi
+            tempf = cvara_scalt(iel) + tkelvi
           else if (itpscl.eq.1 ) then
-            tempf = rtpa(iel,isca(iscalt))
+            tempf = cvara_scalt(iel)
           endif
         else if (itherm.eq.2) then
           mode = 1
-          call usthht(mode,rtpa(iel,isca(iscalt)),tempf)
+          call usthht(mode,cvara_scalt(iel),tempf)
           !==========
           tempf = tempf+tkelvi
         endif

@@ -25,7 +25,7 @@ subroutine lagesp &
 
  ( nvar   , nscal  ,                                              &
    ntersl , nvlsta , nvisbr ,                                     &
-   dt     , rtpa   , propce ,                                     &
+   dt     , propce ,                                              &
    statis , stativ , taup   , tlag   , piil   ,                   &
    bx     , tsfext ,                                              &
    gradpr , gradvf , terbru , vislen  )
@@ -55,8 +55,6 @@ subroutine lagesp &
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! statis           ! tr ! <-- ! cumul pour les moyennes des                    !
 !(ncelet,nvlsta    !    !     !   statistiques volumiques                      !
@@ -107,7 +105,7 @@ implicit none
 integer          nvar   , nscal
 integer          ntersl , nvlsta , nvisbr
 
-double precision dt(ncelet) , rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision statis(ncelet,*),stativ(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
@@ -213,7 +211,7 @@ if (nordre.eq.1) then
 
   call lages1                                                     &
   !==========
-   ( rtpa   , propce ,                                            &
+   ( propce ,                                                     &
      taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &
      brgaus , terbru , fextla )
@@ -227,7 +225,7 @@ if (nordre.eq.1) then
 
      call lagdep                                                  &
     !==========
-   ( rtpa   , propce ,                                            &
+   ( propce ,                                                     &
      taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &
      fextla , vislen)
@@ -242,7 +240,7 @@ else
 
   call lages2                                                     &
   !==========
-   ( rtpa   , propce ,                                            &
+   ( propce ,                                                     &
      taup   , tlag   , piil   ,                                   &
      tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
      gradpr ,                                                     &

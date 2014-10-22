@@ -23,7 +23,7 @@
 subroutine lagres &
 !================
 
- ( rtp , parbor, nvisbr)
+ ( parbor, nvisbr)
 
 !===============================================================================
 
@@ -43,8 +43,6 @@ subroutine lagres &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant ou prec)          !
 ! parbor           ! tr ! <-->! infos sur interaction des particules           !
 !(nfabor,nvisbr)   !    !     !   aux faces de bord                            !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
@@ -70,9 +68,12 @@ use cstphy
 use cstnum
 use lagpar
 use lagran
+use numvar
+use optcal
 use ppthch
 use entsor
 use mesh
+use field
 
 !===============================================================================
 
@@ -82,14 +83,13 @@ implicit none
 
 integer          nvisbr
 
-double precision rtp (ncelet,nflown:nvar)
 double precision parbor(nfabor,nvisbr)
 
 ! Local variables
 
-integer ip, ii, ndiam, test_colli
+integer ip, ii, iel, ndiam, test_colli
 double precision kinetic_energy
-double precision  adhesion_energ
+double precision adhesion_energ
 double precision norm_velocity, norm_face
 
 
@@ -97,10 +97,13 @@ double precision omep, domep
 double precision v_part_t, v_part_t_dt, v_part_inst
 double precision sub_dt
 
+double precision, dimension(:), pointer :: cvar_scalt
+
 ! ==========================================================================
 ! 0.    initialization
 ! ==========================================================================
 
+if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
 ! ==========================================================================
 ! 1.    Resuspension sub model
@@ -110,12 +113,14 @@ do ip = 1, nbpart
 
    test_colli = 0
 
+   iel = ipepa(jisor,ip)
+
    if (ipepa(jdepo,ip).eq.1) then
 
       ! The particle has just deposited
       ! The adhesion force is calculated
 
-      call lagadh(ip, rtp, adhesion_energ)
+      call lagadh(ip, cvar_scalt(iel), adhesion_energ)
 
    elseif (ipepa(jdepo,ip).eq.2) then
 
@@ -135,7 +140,7 @@ do ip = 1, nbpart
 
          pepa(jndisp,ip) = 0.d0
 
-         call lagadh(ip, rtp, adhesion_energ)
+         call lagadh(ip, cvar_scalt(iel), adhesion_energ)
 
             if ((test_colli.eq.1) .and. (ipepa(jnbasg,ip).gt.0)) then
 
@@ -193,7 +198,7 @@ do ip = 1, nbpart
 
          do while ((ii.le.ndiam).and.(ipepa(jdepo,ip).eq.2))
 
-            call lagadh(ip, rtp, adhesion_energ)
+            call lagadh(ip, cvar_scalt(iel), adhesion_energ)
 
             ! Reconstruct an estimate of the particle velocity
             ! at the current sub-time-step assuming linear variation

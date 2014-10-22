@@ -23,7 +23,7 @@
 subroutine lages2 &
 !================
 
- ( rtpa   , propce ,                                              &
+ ( propce ,                                                       &
    taup   , tlag   , piil   ,                                     &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr ,                                              &
@@ -49,8 +49,6 @@ subroutine lages2 &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ntersl           ! e  ! <-- ! nbr termes sources de couplage retour          !
-! rtpa             ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! statis           ! tr ! <-- !  cumul des statistiques volumiques             !
 !(ncelet,nvlsta    !    !     !                                                !
@@ -102,7 +100,6 @@ implicit none
 
 ! Arguments
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
@@ -286,7 +283,7 @@ if (nor.eq.1) then
 
   call lages1                                                     &
   !==========
- ( rtpa   , propce ,                                              &
+ ( propce ,                                                       &
    taup   , tlag   , piil   ,                                     &
    bx     , vagaus , gradpr , romp   ,                            &
    brgaus , terbru , fextla )

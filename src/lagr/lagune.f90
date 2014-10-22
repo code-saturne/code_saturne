@@ -25,7 +25,7 @@ subroutine lagune &
 
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
-   dt     , rtpa   , rtp    , propce )
+   dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -49,8 +49,6 @@ subroutine lagune &
 ! nvlsta           ! e  ! <-- ! nombre de var statistiques lagrangien          !
 ! nvisbr           ! e  ! <-- ! nombre de statistiques aux frontieres          !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules (instant courant et prec)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -90,7 +88,7 @@ implicit none
 integer          lndnod
 integer          nvar   , nscal
 
-double precision dt(ncelet) , rtp(ncelet,nflown:nvar) , rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -126,6 +124,8 @@ double precision, allocatable, dimension(:) :: tempp
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:), pointer :: viscl
+
+double precision, dimension(:), pointer :: cvar_scalt
 
 integer ii
 integer nbpartall, nbpper
@@ -174,7 +174,8 @@ endif
 iplar = iplar + 1
 iplas = iplas + 1
 
-!-->Sur Champ fige Lagrangien : RTPA = RTP
+!-->Sur Champ fige Lagrangien :
+!   values at previous time step = values at current time step
 !   Rem : cette boucle pourrait etre faite au 1er passage
 !         mais la presence de cs_user_extra_operations incite a la prudence...
 
@@ -300,17 +301,19 @@ dnbres = 0.d0
 
 if ( iclogst.eq.1 ) then
 
+  if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
   do ifac = 1,nfabor
     iel = ifabor(ifac)
 
     if (iscalt.gt.0) then
 
       if (itherm.eq.1 .and. itpscl.eq.2) then
-        tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
+        tempp(ifac) = cvar_scalt(iel) + tkelvi
       else if (itherm.eq.1 .and. itpscl.eq.2) then
-        tempp(ifac) = rtp(iel,isca(iscalt))
+        tempp(ifac) = cvar_scalt(iel)
       else if (itherm.eq.2) then
-        call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
+        call usthht(1,cvar_scalt(iel),tempp(ifac))
       endif
 
     else
@@ -332,17 +335,19 @@ endif
 
 if ( irough .eq. 1 ) then
 
+  if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+
   do ifac = 1,nfabor
     iel = ifabor(ifac)
 
     if (iscalt.gt.0) then
 
       if (itherm.eq.1 .and. itpscl.eq.2) then
-        tempp(ifac) = rtp(iel,isca(iscalt)) + tkelvi
+        tempp(ifac) = cvar_scalt(iel) + tkelvi
       else if (itherm.eq.1 .and. itpscl.eq.2) then
-        tempp(ifac) = rtp(iel,isca(iscalt))
+        tempp(ifac) = cvar_scalt(iel)
       else if (itherm.eq.2) then
-        call usthht(1,rtp(iel,isca(iscalt)),tempp(ifac))
+        call usthht(1,cvar_scalt(iel),tempp(ifac))
       endif
 
     else
@@ -363,8 +368,9 @@ endif
 ! 2.  MISE A JOUR DES NOUVELLES PARTICULES ENTREES DANS LE DOMAINE
 !===============================================================================
 
-! Au premier pas de temps on initalise les particules avec RTP et
-! non RTPA car RTPA = initialisation
+! At the first time step we initialize particles to
+! values at current time step and not at previous time step, because
+! values at previous time step = initialization
 
 if ( ntcabs.eq.1 ) then
   ! Use fields at current time step
@@ -444,8 +450,9 @@ enddo
 ! 4.  GRADIENT DE PRESSION ET DE LA VITESSE FLUIDE
 !===============================================================================
 
-! Au premier pas de temps on calcul les gradient avec RTP et
-! non RTPA car RTPA = initialisation (gradients nuls)
+! At the first time step we initialize particles to
+! values at current time step and not at previous time step, because
+! values at previous time step = initialization (null gradients)
 
 if (ntcabs.eq.1) then
 
@@ -499,8 +506,8 @@ if (nor.eq.1) then
 
 endif
 
-!-----> CALCUL GRADIENT DE PRESSION ET DE LA VITESSE FLUIDE
-!       EN N+1 (avec RTP)
+!-----> COMPUTATION OF THE FLUID'S PRESSURE AND VELOCITY GRADIENT
+!       AT N+1 (with values at current time step)
 
 if (nor.eq.2 .and. iilagr.ne.3) then
 
@@ -536,7 +543,7 @@ call lagesp                                                       &
 !==========
    ( nvar   , nscal  ,                                            &
      ntersl , nvlsta , nvisbr ,                                   &
-     dt     , rtpa   , propce ,                                   &
+     dt     , propce ,                                            &
      statis , stativ , taup   , tlag   , piil   ,                 &
      bx     , tsfext ,                                            &
      gradpr , gradvf , terbru , vislen)
@@ -547,20 +554,19 @@ call lagesp                                                       &
 if (iphyla.eq.1 .or. iphyla.eq.2) then
 
   if ( nor.eq.1 ) then
-    call lagphy                                                   &
-    !==========
-    ( ntersl , nvlsta , nvisbr ,                                  &
-      dt     , rtpa   , propce ,                                  &
-      taup   , tlag   , tempct ,                                  &
-      cpgd1  , cpgd2  , cpght  )
+    ! Use fields at previous time step
+    iprev = 1
   else
-    call lagphy                                                   &
-    !==========
-    ( ntersl , nvlsta , nvisbr ,                                  &
-      dt     , rtp    , propce ,                                  &
-      taup   , tlag   , tempct ,                                  &
-      cpgd1  , cpgd2  , cpght  )
+    ! Use fields at current time step
+    iprev = 0
   endif
+
+  call lagphy                                                   &
+  !==========
+  ( ntersl , nvlsta , nvisbr ,                                  &
+    iprev  , dt     , propce ,                                  &
+    taup   , tlag   , tempct ,                                  &
+    cpgd1  , cpgd2  , cpght  )
 
 endif
 
@@ -586,7 +592,7 @@ endif
 
 if (idlvo.eq.1) then
 
-   call lagbar (rtp, energt)
+   call lagbar (energt)
    !==========
 
 endif
@@ -688,7 +694,7 @@ if (ireent.gt.0) then
 
   call lagres                                                     &
   !==========
- ( rtp , parbor, nvisbr)
+ ( parbor, nvisbr)
 
 endif
 
