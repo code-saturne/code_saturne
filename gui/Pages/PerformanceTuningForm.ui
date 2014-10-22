@@ -479,12 +479,12 @@ p, li { white-space: pre-wrap; }
   <customwidget>
    <class>RankSpinBoxWidget</class>
    <extends>QSpinBox</extends>
-   <header>Base.QtPage</header>
+   <header>code_saturne.Base.QtPage</header>
   </customwidget>
   <customwidget>
    <class>BufferSpinBoxWidget</class>
    <extends>QSpinBox</extends>
-   <header>Base.QtPage</header>
+   <header>code_saturne.Base.QtPage</header>
   </customwidget>
  </customwidgets>
  <resources>
