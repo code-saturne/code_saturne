@@ -20,10 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ctphyv &
-!================
-
- ( rtp    )
+subroutine ctphyv
 
 !===============================================================================
 ! FONCTION :
@@ -80,8 +77,6 @@ subroutine ctphyv &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -112,8 +107,6 @@ implicit none
 
 ! Arguments
 
-double precision rtp(ncelet,nflown:nvar)
-
 ! Local variables
 
 integer          iel
@@ -122,8 +115,10 @@ integer          ivart
 double precision rho   , r     , cpa   , cpe , cpv , del
 double precision hv0 , hvti , rhoj , tti , xxi,  xsati , dxsati
 double precision rho0 , t00 , p00 , t1
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: cvar_temp4, cvar_humid
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -155,6 +150,9 @@ ivart = isca(itemp4)
 
 call field_get_val_s(icrom, crom)
 
+call field_get_val_s(ivarfl(isca(itemp4)), cvar_temp4)
+call field_get_val_s(ivarfl(isca(ihumid)), cvar_humid)
+
 ! --- Coefficients des lois choisis et imposes par l'utilisateur
 !       Les valeurs donnees ici sont fictives
 
@@ -171,8 +169,8 @@ r    = 8.3143d0
 
 do iel = 1, ncel
 
-  tti = rtp(iel,isca(itemp4))
-  xxi = rtp(iel,isca(ihumid))
+  tti = cvar_temp4(iel)
+  xxi = cvar_humid(iel)
 
   call xsath(tti,xsati)
   !==========
@@ -236,8 +234,8 @@ if (ippmod(iaeros).eq.1) then
 
   do iel = 1, ncel
 
-    tti = rtp(iel,isca(itemp4))
-    xxi = rtp(iel,isca(ihumid))
+    tti = cvar_temp4(iel)
+    xxi = cvar_humid(iel)
 
     call xsath(tti,xsati)
     !==========
@@ -257,7 +255,7 @@ elseif (ippmod(iaeros).eq.2) then
 
   do iel = 1, ncel
 
-    tti = rtp(iel,isca(itemp4))
+    tti = cvar_temp4(iel)
 
     call xsath(tti,xsati)
     !==========

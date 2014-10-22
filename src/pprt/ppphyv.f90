@@ -181,14 +181,14 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   !==========
  ( nvar   , nscal  ,                                              &
    mbrom  , izfppp ,                                              &
-   dt     , rtp    )
+   dt     )
 
 endif
 
 ! ---> Aerorefrigerants
 
 if (ippmod(iaeros).ge.0) then
-   call ctphyv(rtp)
+   call ctphyv
 endif
 
 ! ---> Atmospheric Flows (except constant density: ippmod(iatmos) = 0)

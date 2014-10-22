@@ -24,8 +24,8 @@ subroutine elphyv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   mbrom  , izfppp ,                                              &
-   dt     , rtp    )
+   mbrom  , izfpp  ,                                              &
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -97,11 +97,9 @@ subroutine elphyv &
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 !        !    !     !                                                !
-! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
+! izfpp            ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time steps)                       !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -120,6 +118,7 @@ use optcal
 use cstnum
 use cstphy
 use entsor
+use pointe
 use ppppar
 use ppthch
 use ppincl
@@ -136,9 +135,9 @@ implicit none
 integer          nvar   , nscal
 
 integer          mbrom
-integer          izfppp(nfabor)
+integer          izfpp(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -157,6 +156,8 @@ double precision roesp (ngazgm),visesp(ngazgm),cpesp(ngazgm)
 double precision sigesp(ngazgm),xlabes(ngazgm),xkabes(ngazgm)
 double precision, dimension(:), pointer :: crom, cpro_sig, cpro_ray
 double precision, dimension(:), pointer :: viscl, viscls, cpro_cp, cpro_temp
+double precision, dimension(:), pointer :: cvar_scalt
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_ycoel
 
 integer          ipass
 data             ipass /0/
@@ -224,26 +225,34 @@ if (ippmod(ielarc).ge.1) then
     write(nfecra,1000)
   endif
 
+  ! Array of pointers containing the field values for each species
+  ! (loop on cells outside loop on species)
+  allocate(cvar_ycoel(ngazg-1))
+  do iesp = 1, ngazg-1
+    call field_get_val_s(ivarfl(isca(iycoel(iesp))), cvar_ycoel(iesp)%p)
+  enddo
+
 !      Calcul de la temperature a partir de l'enthalpie
 
   mode = 1
 
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
   call field_get_val_s(iprpfl(itemp), cpro_temp)
 
   if (ngazg .eq. 1) then
     ym(1) = 1.d0
     mode = 1
     do iel = 1, ncel
-      call elthht(mode, ngazg, ym, rtp(iel,isca(iscalt)), cpro_temp(iel))
+      call elthht(mode, ngazg, ym, cvar_scalt(iel), cpro_temp(iel))
     enddo
   else
     do iel = 1, ncel
       ym(ngazg) = 1.d0
       do iesp = 1, ngazg-1
-        ym(iesp) = rtp(iel,isca(iycoel(iesp)))
+        ym(iesp) = cvar_ycoel(iesp)%p(iel)
         ym(ngazg) = ym(ngazg) - ym(iesp)
       enddo
-      call elthht(mode, ngazg, ym, rtp(iel,isca(iscalt)), cpro_temp(iel))
+      call elthht(mode, ngazg, ym, cvar_scalt(iel), cpro_temp(iel))
     enddo
   endif
 
@@ -299,7 +308,7 @@ if (ippmod(ielarc).ge.1) then
 
     ym(ngazg) = 1.d0
     do iesp = 1, ngazg-1
-      ym(iesp)  = rtp(iel,isca(iycoel(iesp)))
+      ym(iesp)  = cvar_ycoel(iesp)%p(iel)
       ym(ngazg) = ym(ngazg) - ym(iesp)
     enddo
 
@@ -510,6 +519,8 @@ if (ippmod(ielarc).ge.1) then
 
   enddo
 
+  deallocate(cvar_ycoel)
+
 !       Diffusivite variable a l'exclusion de l'enthalpie et de IPOTR
 !       -------------------------------------------------------------
 !         Il n'y a pas d'autres scalaires, et la boucle ne fait donc rien
@@ -665,7 +676,7 @@ endif
 call uselph                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
-   mbrom  , izfppp ,                                              &
+   mbrom  , izfpp  ,                                              &
    dt     )
 
 

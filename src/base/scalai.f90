@@ -338,7 +338,7 @@ if (nscapp.gt.0) then
 
           if ( ielcor .eq.1  .and. ntcabs .gt. 1 ) then
 
-            call elreca(dt, rtp, propce)
+            call elreca(dt, propce)
             !==========
 
             call uselrc(nvar, nscal, dt)

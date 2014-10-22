@@ -24,7 +24,7 @@ subroutine eliniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +59,6 @@ subroutine eliniv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -92,7 +90,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet), propce(ncelet,*)
 
 ! Local variables
 
@@ -105,6 +103,9 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_ycoelsp
+double precision, dimension(:), pointer :: cvar_potr, cvar_poti, cvar_potva
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -121,6 +122,12 @@ ipass = ipass + 1
 
 
 d2s3 = 2.d0/3.d0
+
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+call field_get_val_s(ivarfl(isca(ipotr)), cvar_potr)
+if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
+  call field_get_val_s(ivarfl(isca(ipoti)), cvar_poti)
+endif
 
 if (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
@@ -227,19 +234,21 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 !    -- Valeurs de l'enthalpie
 
   do iel = 1, ncel
-    rtp(iel,isca(iscalt)) = hinit
+    cvar_scalt(iel) = hinit
   enddo
 
 
 ! --> Fractions massiques = 1 ou 0
 
   if ( ngazg .gt. 1 ) then
+    call field_get_val_s(ivarfl(isca(iycoel(1))), cvar_ycoelsp)
     do iel = 1, ncel
-      rtp(iel,isca(iycoel(1))) = 1.d0
+      cvar_ycoelsp(iel) = 1.d0
     enddo
     do iesp = 2, ngazg-1
+      call field_get_val_s(ivarfl(isca(iycoel(iesp))), cvar_ycoelsp)
       do iel = 1, ncel
-        rtp(iel,isca(iycoel(iesp))) = 0.d0
+        cvar_ycoelsp(iel) = 0.d0
       enddo
     enddo
   endif
@@ -249,21 +258,22 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
 !     -- Potentiel Reel
   do iel = 1, ncel
-    rtp(iel,isca(ipotr)) = 0.d0
+    cvar_potr(iel) = 0.d0
   enddo
 
 !     -- Potentiel Imaginaire (Joule)
   if(ippmod(ieljou).eq.2 .or. ippmod(ieljou).eq.4) then
     do iel = 1, ncel
-      rtp(iel,isca(ipoti)) = 0.d0
+      cvar_poti(iel) = 0.d0
     enddo
   endif
 
 !     -- Potentiel vecteur (arc elec. 3D)
   if ( ippmod(ielarc).ge.2 ) then
     do idimve = 1, ndimve
+      call field_get_val_s(ivarfl(isca(ipotva(idimve))), cvar_potva)
       do iel = 1, ncel
-        rtp(iel,isca(ipotva(idimve))) = 0.d0
+        cvar_potva(iel) = 0.d0
       enddo
     enddo
   endif

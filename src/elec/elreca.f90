@@ -23,7 +23,7 @@
 subroutine elreca &
 !================
 
- ( dt     , rtp    , propce )
+ ( dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -42,8 +42,6 @@ subroutine elreca &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -78,7 +76,7 @@ implicit none
 
 ! Arguments
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -92,7 +90,9 @@ double precision dtj   , dtjm   , delhsh , cdtj , cpmx
 
 logical          ok
 
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_potr, cvar_poti
 
 !===============================================================================
 
@@ -204,15 +204,16 @@ if ( ippmod(ielarc).ge.1 ) then
     cdtj= 20.d0
 
     call field_get_val_s(icrom, crom)
+    call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
     do iel = 1, ncel
       if (crom(iel).ne.0.d0)                               &
         delhsh =  propce(iel,ipcefj) * dt(iel) /crom(iel)
 
       if(delhsh.ne.0.d0) then
-        dtjm= rtp(iel,isca(iscalt))/delhsh
+        dtjm = cvar_scalt(iel)/delhsh
       else
-        dtjm= dtj
+        dtjm = dtj
       endif
       dtjm=abs(dtjm)
       dtj =min(dtj,dtjm)
@@ -246,8 +247,9 @@ if ( ippmod(ielarc).ge.1 ) then
 !   Potentiel Electrique (on pourrait eviter ; c'est pour le post)
 !   --------------------
 
+    call field_get_val_s(ivarfl(isca(ipotr)), cvar_potr)
     do iel = 1, ncel
-      rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
+      cvar_potr(iel) = cvar_potr(iel)*coepot
     enddo
 
 
@@ -326,8 +328,9 @@ if ( ippmod(ieljou).ge.1 ) then
 !       --------------------
 
   if ( ippmod(ieljou).ne.3 .and. ippmod(ieljou).ne.4 ) then
+    call field_get_val_s(ivarfl(isca(ipotr)), cvar_potr)
     do iel = 1, ncel
-      rtp(iel,isca(ipotr)) = rtp(iel,isca(ipotr))*coepot
+      cvar_potr(iel) = cvar_potr(iel)*coepot
     enddo
   endif
 
@@ -335,8 +338,9 @@ if ( ippmod(ieljou).ge.1 ) then
 !      -----------------
 
   if ( ippmod(ieljou).eq.2 ) then
+    call field_get_val_s(ivarfl(isca(ipoti)), cvar_poti)
     do iel = 1, ncel
-      rtp(iel,isca(ipoti)) = rtp(iel,isca(ipoti))*coepot
+      cvar_poti(iel) = cvar_poti(iel)*coepot
     enddo
   endif
 
