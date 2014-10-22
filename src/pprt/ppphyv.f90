@@ -119,7 +119,7 @@ double precision propce(ncelet,*)
 ! ---> Flamme de diffusion chimie 3 points
 
   if (ippmod(icod3p).ge.0) then
-    call d3pphy(mbrom, izfppp, rtp, propce)
+    call d3pphy(mbrom, izfppp, propce)
   endif
 
 ! ---> Flamme de diffusion chimie equilibre
@@ -129,7 +129,7 @@ double precision propce(ncelet,*)
 ! ---> Flamme de premelange : Modele EBU
 
   if (ippmod(icoebu).ge.0) then
-    call ebuphy(mbrom, izfppp, rtp, propce)
+    call ebuphy(mbrom, izfppp, propce)
   endif
 
 ! ---> Flamme de premelange : Modele BML
@@ -140,7 +140,7 @@ double precision propce(ncelet,*)
 ! ---> Flamme de premelange : Modele LWC
 
   if (ippmod(icolwc).ge.0) then
-    call lwcphy(mbrom, izfppp, rtp, propce)
+    call lwcphy(mbrom, izfppp, propce)
   endif
 
 ! ---> Flamme charbon pulverise

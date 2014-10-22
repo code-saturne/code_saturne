@@ -24,7 +24,6 @@ subroutine ebutss &
 !================
 
  ( iscal  ,                                                       &
-   rtpa   ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -67,8 +66,6 @@ subroutine ebutss &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
 !__________________!____!_____!________________________________________________!
@@ -106,7 +103,6 @@ implicit none
 
 integer          iscal
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
@@ -118,6 +114,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_scal
 
 !===============================================================================
 !===============================================================================
@@ -138,6 +135,10 @@ call field_get_label(ivarfl(ivar), chaine)
 
 ! --- Numero des grandeurs physiques (voir cs_user_boundary_conditions)
 call field_get_val_s(icrom, crom)
+
+if ( ivar.eq.isca(iygfm) ) then
+  call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
+endif
 
 if (itytur.eq.2.or.iturb.eq.50) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -203,8 +204,8 @@ if ( ivar.eq.isca(iygfm) ) then
          w2(iel).gt.epzero       ) then
       w3(iel) = cebu*w2(iel)/w1(iel)                              &
                    *crom(iel)*volume(iel)                &
-                   *(1.d0 - rtpa(iel,ivar))
-      smbrs(iel) = smbrs(iel) - rtpa(iel,ivar)*w3(iel)
+                   *(1.d0 - cvara_scal(iel))
+      smbrs(iel) = smbrs(iel) - cvara_scal(iel)*w3(iel)
       rovsdt(iel) = rovsdt(iel) + max(w3(iel),zero)
     endif
   enddo

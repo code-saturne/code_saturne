@@ -24,7 +24,7 @@ subroutine lwctss &
 !================
 
  ( iscal  ,                                                       &
-   rtpa   , propce ,                                              &
+   propce ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -67,8 +67,6 @@ subroutine lwctss &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
@@ -110,7 +108,6 @@ implicit none
 
 integer          iscal
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
@@ -132,6 +129,8 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:), pointer :: cvara_scal
+double precision, dimension(:), pointer :: cvara_yfm, cvara_fm
 
 !===============================================================================
 
@@ -149,6 +148,10 @@ ivar = isca(iscal)
 ! ---
 call field_get_val_s(icrom, crom)
 call field_get_val_s(iprpfl(ivisct), visct)
+
+call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
+call field_get_val_prev_s(ivarfl(isca(iyfm)), cvara_yfm)
+call field_get_val_prev_s(ivarfl(isca(ifm)), cvara_fm)
 
 if (itytur.eq.2.or.iturb.eq.50) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -188,8 +191,8 @@ if (ivar.eq.isca(iyfm)) then
 
 ! terme implicite
 
-      if (rtpa(iel,ivar).gt.epsi) then
-        rovsdt(iel) = rovsdt(iel) + max(-sum/rtpa(iel,ivar),zero)
+      if (cvara_scal(iel).gt.epsi) then
+        rovsdt(iel) = rovsdt(iel) + max(-sum/cvara_scal(iel),zero)
       endif
 
 ! terme explicite
@@ -208,7 +211,7 @@ if (ivar.eq.isca(iyfp2m)) then
     sum = zero
     do idirac = 1, ndirac
       sum  = sum + (propce(iel,iptscl(idirac))*volume(iel)        &
-        *(propce(iel,ipfmal(idirac)) - rtpa(iel,isca(iyfm)))      &
+        *(propce(iel,ipfmal(idirac)) - cvara_yfm(iel))           &
              *propce(iel,iprhol(idirac)))
     enddo
     smbrs(iel) = smbrs(iel) + sum
@@ -231,7 +234,7 @@ if (ivar.eq.isca(icoyfp)) then
 
   ii = isca(ifm)
   do iel = 1, ncel
-    w10(iel) = rtpa(iel,ii)
+    w10(iel) = cvara_fm(iel)
   enddo
 
   iprev = 1
@@ -247,7 +250,7 @@ if (ivar.eq.isca(icoyfp)) then
 
   ii = isca(iyfm)
   do iel = 1, ncel
-    w11(iel) = rtpa(iel,ii)
+    w11(iel) = cvara_yfm(iel)
   enddo
 
   iprev = 1
@@ -326,7 +329,7 @@ if (ivar.eq.isca(icoyfp)) then
 
 ! terme de dissipation
 
-    tsdiss = -w11(iel) * rtpa(iel,ivar)
+    tsdiss = -w11(iel) * cvara_scal(iel)
 
 ! terme de chimique
 
@@ -334,7 +337,7 @@ if (ivar.eq.isca(icoyfp)) then
     do idirac = 1, ndirac
       tschim =   tschim                                           &
            + (propce(iel,iptscl(idirac))                          &
-           *(propce(iel,ipfmel(idirac))-rtpa(iel,isca(ifm)))      &
+           *(propce(iel,ipfmel(idirac))-cvara_fm(iel))      &
            *volume(iel))*propce(iel,iprhol(idirac))
     enddo
 

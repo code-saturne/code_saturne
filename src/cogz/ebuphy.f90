@@ -24,7 +24,7 @@ subroutine ebuphy &
 !================
 
  ( mbrom  , izfppp ,                                              &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -41,8 +41,6 @@ subroutine ebuphy &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! <-- ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -80,7 +78,6 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -97,8 +94,11 @@ double precision masmgb, hgb, tgb, masmgf, masmg
 double precision, allocatable, dimension(:) :: yfuegf, yoxygf, yprogf
 double precision, allocatable, dimension(:) :: yfuegb, yoxygb, yprogb
 double precision, allocatable, dimension(:) :: temp, masmel
-double precision, dimension(:), pointer ::  brom, crom
+double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: bsval
+double precision, dimension(:), pointer :: cvar_ygfm, cvar_fm
+double precision, dimension(:), pointer :: cvar_scalt
+
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -152,6 +152,13 @@ if ( iirayo.gt.0 ) then
   ipt3 = ipproc(it3m)
 endif
 
+call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
+if ( ippmod(icoebu).ne.0 .and. ippmod(icoebu).ne.1 ) then
+  call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+endif
+if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+endif
 
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES
@@ -202,7 +209,7 @@ do iel = 1, ncel
   if ( ippmod(icoebu).eq.0 .or. ippmod(icoebu).eq.1 ) then
     fmel = frmel
   else
-    fmel = rtp(iel,isca(ifm))
+    fmel = cvar_fm(iel)
   endif
 
   yfuegf(iel) = fmel
@@ -259,7 +266,7 @@ do iel = 1, ncel
   enddo
   masmgb = 1.d0/nbmol
 
-  ygfm = rtp(iel,isca(iygfm))
+  ygfm = cvar_ygfm(iel)
   ygbm = 1.d0 - ygfm
 
 ! ---> Masse molaire du melange
@@ -275,7 +282,7 @@ do iel = 1, ncel
 ! ---- EBU Standard et modifie en conditions permeatiques (avec H)
     hgb = hgf
     if ( ygbm.gt.epsi ) then
-      hgb = ( rtp(iel,isca(iscalt))-hgf*ygfm ) / ygbm
+      hgb = ( cvar_scalt(iel)-hgf*ygfm ) / ygbm
     endif
   endif
 

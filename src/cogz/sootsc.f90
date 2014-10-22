@@ -56,8 +56,6 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     iscal         scalar index
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in,out] smbrs         explicit right hand side
 !> \param[in,out] rovsdt        implicit terms
@@ -65,7 +63,7 @@
 
 subroutine sootsc &
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  , rovsdt )
 
 !===============================================================================
@@ -99,7 +97,6 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 
@@ -114,7 +111,9 @@ double precision d1s3, d2s3, cexp, cimp
 double precision zetan, zetas, rho, xfu, xm, temp, nn0
 double precision ka, kb, kz, kt, chi, po2, wox
 double precision aa, bb, cc, taa, tcc, caa, cbb, ccc, dd
-double precision, dimension(:), pointer ::  crom
+double precision, dimension(:), pointer :: crom
+double precision, dimension(:), pointer :: cvar_scal, cvara_scal
+double precision, dimension(:), pointer :: cvara_fsm, cvara_npm
 
 !===============================================================================
 
@@ -125,6 +124,13 @@ double precision, dimension(:), pointer ::  crom
 ivar = isca(iscal)
 call field_get_label(ivarfl(ivar), chaine)
 call field_get_val_s(icrom, crom)
+
+if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
+  call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+  call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
+  call field_get_val_prev_s(ivarfl(isca(ifsm)), cvara_fsm)
+  call field_get_val_prev_s(ivarfl(isca(inpm)), cvara_npm)
+endif
 
 !===============================================================================
 ! 2. Writings
@@ -155,7 +161,7 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(propce(1,ipproc(itemp)))
-    call synsca(rtp(1,ivar))
+    call synsca(cvar_scal)
   endif
 
   do iel = 1, ncel
@@ -198,8 +204,8 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
 
    ! -------------------------------------------------------------
 
-    zetas = rtpa(iel,isca(ifsm)) ! fraction massique de suies (SU)
-    zetan = rtpa(iel,isca(inpm)) ! densite de precurseurs (SU)
+    zetas = cvara_fsm(iel) ! fraction massique de suies (SU)
+    zetan = cvara_npm(iel) ! densite de precurseurs (SU)
 
     if (ivar.eq.isca(ifsm)) then
 
@@ -215,7 +221,7 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
       cexp = volume(iel) * ( aa )
     endif
 
-    smbrs(iel)  = smbrs(iel)  + cexp + cimp*rtpa(iel,ivar)
+    smbrs(iel)  = smbrs(iel)  + cexp + cimp*cvara_scal(iel)
     rovsdt(iel) = rovsdt(iel) + max(-cimp,0.d0)
 
   enddo

@@ -116,7 +116,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar)
   call d3pini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
   endif
 
 ! ---> Combustion gaz
@@ -126,7 +126,7 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar)
   call ebuini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 endif
 
 ! ---> Combustion gaz
@@ -136,7 +136,7 @@ endif
   call lwcini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 endif
 
 

@@ -24,7 +24,7 @@ subroutine lwcphy &
 !================
 
  ( mbrom  , izfppp ,                                              &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! FONCTION :
@@ -41,8 +41,6 @@ subroutine lwcphy &
 ! mbrom            ! te ! <-- ! indicateur de remplissage de romb              !
 ! izfppp           ! te ! --> ! numero de zone de la face de bord              !
 ! (nfabor)         !    !     !  pour le module phys. part.                    !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time step)                        !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -80,7 +78,6 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -91,6 +88,10 @@ double precision coefg(ngazgm)
 double precision nbmol , temsmm
 double precision masmg
 double precision, dimension(:), pointer :: brom,  crom
+double precision, dimension(:), pointer :: cvar_yfm, cvar_yfp2m
+double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
+double precision, dimension(:), pointer :: cvar_coyfp
+
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -121,6 +122,12 @@ enddo
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+call field_get_val_s(ivarfl(isca(iyfm)), cvar_yfm)
+call field_get_val_s(ivarfl(isca(iyfp2m)), cvar_yfp2m)
+if (ippmod(icolwc).ge.2) call field_get_val_s(ivarfl(isca(icoyfp)), cvar_coyfp)
+
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES MOYENNES
 !===============================================================================
@@ -131,35 +138,35 @@ if ( (ippmod(icolwc).eq.0) .or. (ippmod(icolwc).eq.1) ) then
   call pdflwc                                                     &
   !==========
    ( ncelet        , ncel          ,                              &
-     rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
-     rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
+     cvar_fm       , cvar_fp2m     ,                              &
+     cvar_yfm      , cvar_yfp2m    ,                              &
      propce   )
 
 endif
 
- if ( (ippmod(icolwc).eq.2) .or. (ippmod(icolwc).eq.3) ) then
+if ( (ippmod(icolwc).eq.2) .or. (ippmod(icolwc).eq.3) ) then
 
   call pdfpp3                                                     &
   !==========
    ( ncelet        , ncel          ,                              &
-     rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
-     rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
-     rtp(1,isca(icoyfp)) ,                                        &
+     cvar_fm       , cvar_fp2m     ,                              &
+     cvar_yfm      , cvar_yfp2m    ,                              &
+     cvar_coyfp    ,                                              &
      propce   )
 
- endif
+endif
 
- if ( (ippmod(icolwc).eq.4).or.(ippmod(icolwc).eq.5) ) then
+if ( (ippmod(icolwc).eq.4).or.(ippmod(icolwc).eq.5) ) then
 
   call pdfpp4                                                     &
   !==========
    ( ncelet        , ncel          ,                              &
-     rtp(1,isca(ifm))    , rtp(1,isca(ifp2m))  ,                  &
-     rtp(1,isca(iyfm))   , rtp(1,isca(iyfp2m)) ,                  &
-     rtp(1,isca(icoyfp)) ,                                        &
+     cvar_fm       , cvar_fp2m     ,                              &
+     cvar_yfm      , cvar_yfp2m    ,                              &
+     cvar_coyfp    ,                                              &
      propce   )
 
- endif
+endif
 
 !===============================================================================
 ! 3. CALCUL DE RHO ET DES FRACTIONS MASSIQUES DES ESPECES GLOBALES

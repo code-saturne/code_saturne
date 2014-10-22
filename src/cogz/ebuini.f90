@@ -24,7 +24,7 @@ subroutine ebuini &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -59,8 +59,6 @@ subroutine ebuini &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,7 +93,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -110,6 +108,9 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:), pointer :: cvar_ygfm, cvar_fm
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_scal
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -131,6 +132,14 @@ do igg = 1, ngazgm
 enddo
 
 d2s3 = 2.d0/3.d0
+
+call field_get_val_s(ivarfl(isca(iygfm)), cvar_ygfm)
+if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
+  call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+endif
+if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+endif
 
 if (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
@@ -233,18 +242,18 @@ if ( isuite.eq.0 ) then
 
 ! ----- Fraction massique de gaz frais
 
-      rtp(iel,isca(iygfm)) = 1.d0
+      cvar_ygfm(iel) = 1.d0
 
 ! ----- Fraction de melange
 
       if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
-        rtp(iel,isca(ifm)) = zero
+        cvar_fm(iel) = zero
       endif
 
 ! ----- Enthalpie du melange
 
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-        rtp(iel,isca(iscalt)) = hair
+        cvar_scalt(iel) = hair
       endif
 
     enddo
@@ -290,18 +299,18 @@ if ( isuite.eq.0 ) then
 
 ! ----- Fraction massique de gaz frais
 
-      rtp(iel,isca(iygfm)) = 5.d-1
+      cvar_ygfm(iel) = 5.d-1
 
 ! ----- Fraction de melange
 
       if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
-        rtp(iel,isca(ifm)) = fmelm
+        cvar_fm(iel) = fmelm
       endif
 
 ! ----- Enthalpie du melange
 
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-        rtp(iel,isca(iscalt)) = hinit
+        cvar_scalt(iel) = hinit
       endif
 
     enddo
@@ -314,17 +323,17 @@ if ( isuite.eq.0 ) then
     dt     )
 
 ! ----- En periodique et en parallele,
-!       il faut echanger ces initialisations (qui sont en fait dans RTPA)
+!       il faut echanger ces initialisations
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,isca(iygfm)))
+      call synsca(cvar_ygfm)
       !==========
       if ( ippmod(icoebu).eq.2 .or. ippmod(icoebu).eq.3 ) then
-        call synsca(rtp(1,isca(ifm)))
+        call synsca(cvar_fm)
         !==========
       endif
       if ( ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 ) then
-        call synsca(rtp(1,isca(iscalt)))
+        call synsca(cvar_scalt)
         !==========
       endif
     endif
@@ -337,11 +346,12 @@ if ( isuite.eq.0 ) then
     do ii  = 1, nscapp
       iscal = iscapp(ii)
       ivar  = isca(iscal)
+      call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
       valmax = -grand
       valmin =  grand
       do iel = 1, ncel
-        valmax = max(valmax,rtp(iel,ivar))
-        valmin = min(valmin,rtp(iel,ivar))
+        valmax = max(valmax,cvar_scal(iel))
+        valmin = min(valmin,cvar_scal(iel))
       enddo
       call field_get_label(ivarfl(ivar), chaine)
       if (irangp.ge.0) then

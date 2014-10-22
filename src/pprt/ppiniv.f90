@@ -117,14 +117,14 @@ double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
   call d3pini                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
   endif
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 
  if (ippmod(icoebu).ge.0) then
-  call ebuini(nvar, nscal, dt, rtp)
+  call ebuini(nvar, nscal, dt)
   !==========
 endif
 
@@ -132,7 +132,7 @@ endif
 !      Flamme de premelange : modele LWC
 
 if (ippmod(icolwc).ge.0) then
-  call lwcini(nvar, nscal, dt, rtp)
+  call lwcini(nvar, nscal, dt)
   !==========
 endif
 

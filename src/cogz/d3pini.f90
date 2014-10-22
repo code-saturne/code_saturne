@@ -24,7 +24,7 @@ subroutine d3pini &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -60,8 +60,6 @@ subroutine d3pini &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -96,7 +94,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
@@ -105,6 +103,11 @@ integer           iel, igg, mode
 integer           iscal, ivar, ii
 double precision coefg(ngazgm), hair, tinitk
 double precision valmax, valmin
+
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
+double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
+double precision, dimension(:), pointer :: cvar_scal
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -119,6 +122,13 @@ save             ipass
 
 ipass = ipass + 1
 
+if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+if (isoot.eq.1) then
+  call field_get_val_s(ivarfl(isca(inpm)), cvar_npm)
+  call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
+endif
 
 do igg = 1, ngazgm
   coefg(igg) = zero
@@ -154,19 +164,19 @@ if ( isuite.eq.0 ) then
 
 ! ----- Moyenne et variance du taux de melange
 
-      rtp(iel,isca(ifm))   = zero
-      rtp(iel,isca(ifp2m)) = zero
+      cvar_fm(iel)   = zero
+      cvar_fp2m(iel) = zero
 
 ! ----- Enthalpie
 
       if ( ippmod(icod3p).eq.1 ) then
-        rtp(iel,isca(iscalt)) = hair
+        cvar_scalt(iel) = hair
       endif
 
 ! ---- Soot
       if (isoot.eq.1) then
-        rtp(iel,isca(inpm)) = 0.d0
-        rtp(iel,isca(ifsm)) = 0.d0
+        cvar_npm(iel) = 0.d0
+        cvar_fsm(iel) = 0.d0
       endif
     enddo
 
@@ -178,19 +188,19 @@ if ( isuite.eq.0 ) then
 
 ! ----- Moyenne et variance du taux de melange
 
-      rtp(iel,isca(ifm))   = fs(1)
-      rtp(iel,isca(ifp2m)) = zero
+      cvar_fm(iel)   = fs(1)
+      cvar_fp2m(iel) = zero
 
 ! ----- Enthalpie
 
       if ( ippmod(icod3p).eq.1 ) then
-        rtp(iel,isca(iscalt)) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
+        cvar_scalt(iel) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
       endif
 
 ! ---- Soot
       if (isoot.eq.1) then
-        rtp(iel,isca(inpm)) = 0.d0
-        rtp(iel,isca(ifsm)) = 0.d0
+        cvar_npm(iel) = 0.d0
+        cvar_fsm(iel) = 0.d0
       endif
 
 
@@ -207,20 +217,20 @@ if ( isuite.eq.0 ) then
 !       il faut echanger ces initialisations
 
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(rtp(1,isca(ifm)))
+      call synsca(cvar_fm)
       !==========
-      call synsca(rtp(1,isca(ifp2m)))
+      call synsca(cvar_fp2m)
       !==========
       if ( ippmod(icod3p).eq.1 ) then
-        call synsca(rtp(1,isca(iscalt)))
+        call synsca(cvar_scalt)
         !==========
       endif
     endif
 
       ! ---- Soot
       if (isoot.eq.1) then
-        call synsca(rtp(1,isca(inpm)))
-        call synsca(rtp(1,isca(ifsm)))
+        call synsca(cvar_npm)
+        call synsca(cvar_fsm)
       endif
 
 
@@ -231,11 +241,12 @@ if ( isuite.eq.0 ) then
     do ii  = 1, nscapp
       iscal = iscapp(ii)
       ivar  = isca(iscal)
+      call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
       valmax = -grand
       valmin =  grand
       do iel = 1, ncel
-        valmax = max(valmax,rtp(iel,ivar))
-        valmin = min(valmin,rtp(iel,ivar))
+        valmax = max(valmax,cvar_scal(iel))
+        valmin = min(valmin,cvar_scal(iel))
       enddo
       call field_get_label(ivarfl(ivar), chaine)
       if (irangp.ge.0) then

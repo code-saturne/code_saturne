@@ -127,14 +127,14 @@ if (isoot.eq.1) then
   call sootsc                                                     &
   !==========
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  , rovsdt )
 endif
 
 ! ---> Flamme de premelange : Modele EBU
 
 if (ippmod(icoebu).ge.0) then
-  call ebutss(iscal, rtpa, smbrs, rovsdt)
+  call ebutss(iscal, smbrs, rovsdt)
   !==========
 endif
 
@@ -150,7 +150,7 @@ if (ippmod(icolwc).ge.0) then
   call lwctss                                                     &
   !==========
  ( iscal  ,                                                       &
-   rtpa   , propce ,                                              &
+   propce ,                                                       &
    smbrs  , rovsdt )
 endif
 

@@ -38,13 +38,11 @@
 !______________________________________________________________________________!
 !> \param[out]    mbrom         indicator of boundary density array filling
 !> \param[in]     izfppp        boundary zone index for specific physic
-!> \param[in]     rtp           calculated variables at cell centers
-!>                               (at current time steps)
 !> \param[in,out] propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 subroutine d3pphy &
- ( mbrom  , izfppp , rtp    , propce )
+ ( mbrom  , izfppp , propce )
 
 !===============================================================================
 
@@ -77,7 +75,6 @@ implicit none
 integer          mbrom
 integer          izfppp(nfabor)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -97,6 +94,8 @@ double precision, allocatable, dimension(:) :: hrec, tpdf
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, dimension(:), pointer :: brom,  crom
 double precision, dimension(:), pointer :: bsval
+double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
+
 integer       ipass
 data          ipass /0/
 save          ipass
@@ -127,6 +126,9 @@ allocate(w1(ncelet), w2(ncelet))
 !     par les PDF (on le garde pendant tout le sous-programme
 
 allocate(indpdf(ncelet))
+
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
 
 !===============================================================================
 ! 2. DETERMINATION DES GRANDEURS THERMOCHIMIQUES
@@ -245,7 +247,7 @@ call pppdfr &
 !==========
  ( ncelet, ncel  , indpdf,                                 &
    tpdf  ,                                                 &
-   rtp(1,isca(ifm))      , rtp(1,isca(ifp2m)),             &
+   cvar_fm       , cvar_fp2m ,                             &
    w1    , w2    ,                                         &
    dirmin, dirmax, fdeb  , ffin, hrec )
 
@@ -264,7 +266,7 @@ call d3pint &
 !==========
  ( indpdf ,                                                       &
    dirmin , dirmax , fdeb   , ffin , hrec , tpdf ,                &
-   rtp    , propce , w1 )
+   propce , w1 )
 
 ! Free memory
 deallocate(indpdf)

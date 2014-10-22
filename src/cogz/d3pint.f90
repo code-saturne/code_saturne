@@ -44,7 +44,6 @@
 !> \param[in]     fdeb          abscissa of rectangle low boundary
 !> \param[in]     ffin          abscissa of rectangle high boundary
 !> \param[in]     hrec          rectangle height
-!> \param[in]     rtp           calculated variables at cell centers
 !> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     w1            work array
 !_______________________________________________________________________________
@@ -52,7 +51,7 @@
 subroutine d3pint &
  ( indpdf ,                                                       &
    dirmin , dirmax , fdeb   , ffin   , hrec   , tpdf ,            &
-   rtp    , propce , w1      )
+   propce , w1      )
 
 !===============================================================================
 
@@ -83,7 +82,7 @@ implicit none
 integer          indpdf(ncelet)
 double precision dirmin(ncelet), dirmax(ncelet)
 double precision fdeb(ncelet), ffin(ncelet), hrec(ncelet), tpdf(ncelet)
-double precision rtp(ncelet,nflown:nvar), propce(ncelet,*), w1(ncelet)
+double precision propce(ncelet,*), w1(ncelet)
 
 
 ! Local variables
@@ -99,8 +98,10 @@ double precision dtsmdf  , dd1df  , dd2df  , df1df  , df2df  , dhrecdf
 double precision dtsmdfp2, dd1dfp2, dd2dfp2, df1dfp2, df2dfp2, dhrecdfp2
 double precision dtsmdd1, dtsmdd2, dtsmdf1, dtsmdf2, dtsmdhrec, dtsmdhs
 double precision dadhs, dbdhs, yprod
-double precision, dimension(:), pointer ::  cpro_rho
-double precision, dimension(:), pointer ::  cproaa_rho
+double precision, dimension(:), pointer :: cpro_rho
+double precision, dimension(:), pointer :: cproaa_rho
+double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 
 !===============================================================================
 
@@ -129,6 +130,9 @@ bb2 = 0.d0
 
 ipass = ipass + 1
 
+if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
 
 !===============================================================================
 ! 1. INTEGRATION DES NGAZG FRACTIONS MASSIQUES D'ESPECES GLOBALES
@@ -143,8 +147,8 @@ fmaxi = 1.d0
 
 do iel = 1, ncel
 
-  fm   = rtp(iel,isca(ifm))
-  fp2m = rtp(iel,isca(ifp2m))
+  fm   = cvar_fm(iel)
+  fp2m = cvar_fp2m(iel)
 
   do icg = 1, ngazg
 
@@ -238,7 +242,7 @@ if (ippmod(icod3p).eq.1) then
   !==========
   ( ncelet , ncel    , indpdf ,                                   &
     dirmin , dirmax  , fdeb   , ffin   , hrec   ,                 &
-    rtp(1,isca(ifm)) , rtp(1,isca(iscalt)),                          &
+    cvar_fm          , cvar_scalt      ,                          &
     w1      )
 
 endif
@@ -269,8 +273,8 @@ endif
 
 do iel = 1, ncel
 
-  fm   = rtp(iel,isca(ifm))
-  fp2m = rtp(iel,isca(ifp2m))
+  fm   = cvar_fm(iel)
+  fp2m = cvar_fp2m(iel)
 
   if (indpdf(iel).eq.1) then
 
