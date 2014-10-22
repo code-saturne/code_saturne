@@ -119,7 +119,7 @@ double precision, dimension(:), pointer :: tplusp
 double precision, dimension(:), pointer :: valsp, coefap, coefbp
 double precision, dimension(:,:), pointer :: valvp, cofavp, cofbvp
 double precision, dimension(:,:,:), pointer :: cofbtp
-double precision, dimension(:), pointer :: crom, yplbr
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpotr, cpoti, cvisii
 double precision, dimension(:), pointer :: cvar_pr
