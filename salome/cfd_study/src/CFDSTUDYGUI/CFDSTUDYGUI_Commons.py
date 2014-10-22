@@ -135,7 +135,7 @@ def CheckCFD_CodeEnv(code):
 
     if code == CFD_Saturne:
         try:
-            from cs_package import package
+            from code_saturne.cs_package import package
             iok = True
         except ImportError,e:
             mess = ObjectTR.tr("INFO_DLG_INVALID_ENV").arg(code) + e.__str__()
@@ -146,7 +146,7 @@ def CheckCFD_CodeEnv(code):
             iok = False
     elif code == CFD_Neptune:
         try:
-            from nc_package import package
+            from neptune_cfd.nc_package import package
             iok = True
         except ImportError,e:
             mess = ObjectTR.tr("INFO_DLG_INVALID_ENV").arg(code) + e.__str__()
@@ -186,12 +186,12 @@ def BinCode():
     c = ""
     mess = ""
     if CFD_Code() == CFD_Saturne:
-        from cs_package import package
+        from code_saturne.cs_package import package
         pkg = package()
         bindir = pkg.get_dir('bindir')
         b = os.path.join(bindir, "code_saturne")
     elif CFD_Code() == CFD_Neptune:
-        from nc_package import package
+        from neptune_cfd.nc_package import package
         pkg = package()
         bindir = pkg.get_dir('bindir')
         b = os.path.join(bindir, "neptune_cfd")
