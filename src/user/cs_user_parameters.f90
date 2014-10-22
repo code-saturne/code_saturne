@@ -1325,19 +1325,24 @@ endif
 
 if (.false.) then
 
+  ! Thermal model:
+  ! In case of specific physic, this value could be automatically set and should
+  ! not be modified.
+  if (iscalt.gt.0)  visls0(iscalt) = viscl0
+
   ! We loop on user scalars:
   do jj = 1, nscaus
     ! For scalars which are not variances
     if (iscavr(jj).le.0) then
-      ! We define the diffusivity
+      ! We define the scalar diffusivity
       visls0(jj) = viscl0
     endif
   enddo
 
 endif
 
-! --- Variable diffusivity field id (ifcsl>=0) or constant diffusivity (ifcvsl=1) for
-!       the thermal scalar and USER scalars.
+! --- Variable diffusivity field id (ifcsl>=0) or constant
+!     diffusivity (ifcvsl=1) for the thermal scalar and USER scalars.
 
 !     With ifcvsl = 0, the field will be added automatically, and later calls to
 !       field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
