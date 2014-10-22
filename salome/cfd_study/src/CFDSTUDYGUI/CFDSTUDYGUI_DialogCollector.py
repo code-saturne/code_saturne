@@ -136,14 +136,14 @@ class InfoDialogHandler(InfoDialog):
             self.NeptuneRB.setEnabled(True)
             self.NeptuneRB.setChecked(True)
             self.SaturneRB.setEnabled(env_saturne)
-            from nc_package import package
+            from neptune_cfd.nc_package import package
 
         elif env_saturne:
             code = CFD_Saturne
             self.SaturneRB.setEnabled(True)
             self.SaturneRB.setChecked(True)
             self.NeptuneRB.setEnabled(env_neptune)
-            from cs_package import package
+            from code_saturne.cs_package import package
 
         else:
             raise DialogError, "Invalid CFD_Code in InfoDialog class"
@@ -158,11 +158,11 @@ class InfoDialogHandler(InfoDialog):
         if self.sender() == self.SaturneRB:
             self.NeptuneRB.setChecked(False)
             _SetCFDCode(CFD_Saturne)
-            from cs_package import package
+            from code_saturne.cs_package import package
         if self.sender() == self.NeptuneRB:
             self.SaturneRB.setChecked(False)
             _SetCFDCode(CFD_Neptune)
-            from nc_package import package
+            from neptune_cfd.nc_package import package
 
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
