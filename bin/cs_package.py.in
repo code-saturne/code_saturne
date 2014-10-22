@@ -112,7 +112,7 @@ class package:
 
         # Third, assume that SALOME is being used
         if prefix == None:
-            prefix = os.getenv('CFDSTUDY_ROOT_DIR')
+            prefix = os.getenv('CFDMODULE_ROOT_DIR')
 
         # Last, assume that code_saturne main script is used
         if prefix == None:
