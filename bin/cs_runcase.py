@@ -23,7 +23,7 @@
 
 #-------------------------------------------------------------------------------
 
-import sys
+import sys, os
 
 try:
     import ConfigParser  # Python2
@@ -51,6 +51,7 @@ class runcase(object):
         """
 
         self.path = path
+        self.package = package
 
         try:
             f = open(self.path, mode = 'r')
@@ -81,6 +82,9 @@ class runcase(object):
 
         f = open(self.path, mode = 'w')
         for line in self.lines:
+            if line.startswith('export PATH='):
+                if self.package != None:
+                    line = "export PATH=" + self.package.get_dir("bindir")  + ":$PATH\n"
             f.write(line + '\n')
         f.close()
 
