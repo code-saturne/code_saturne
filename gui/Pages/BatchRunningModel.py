@@ -700,7 +700,6 @@ class BatchRunningModelTestCase(unittest.TestCase):
         """ Check whether the BatchRunningModel class could be read file"""
         self.case['batch_type'] = 'PBS'
         mdl = BatchRunningModel(self.case)
-        mdl.readBatchFile()
 
         dico_PBS = {\
         'job_nodes': '16',
@@ -719,11 +718,9 @@ class BatchRunningModelTestCase(unittest.TestCase):
     def checkUpdateBatchFile(self):
         """ Check whether the BatchRunningModel class could update file"""
         mdl = BatchRunningModel(self.case)
-        mdl.readBatchFile()
         mdl.dictValues['job_procs']=48
         dico_updated = mdl.dictValues
         mdl.updateBatchFile()
-        mdl.readBatchFile()
         dico_read = mdl.dictValues
 
         assert dico_updated == dico_read, 'error on updating batch script file'
@@ -732,11 +729,9 @@ class BatchRunningModelTestCase(unittest.TestCase):
     def checkUpdateBatchPBS(self):
         """ Check whether the BatchRunningModel class could update file"""
         mdl = BatchRunningModel(self.case)
-        mdl.readBatchFile()
         mdl.dictValues['job_walltime']='12:42:52'
         dicojob_updated = mdl.dictValues
         mdl.updateBatchFile()
-        mdl.readBatchFile()
         dicojob_read = mdl.dictValues
 
         assert dicojob_updated == dicojob_read, 'error on updating PBS batch script file'

@@ -1052,7 +1052,7 @@ class MainView(object):
                                os.path.join(os.path.abspath(os.path.split(file_dir)[0],
                                                             'MESH')))
         self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
-                                                               self.batch_file))
+                                                               self.batch_file), package=self.package)
         del IdentityAndPathesModel
 
         self.updateStudyId()

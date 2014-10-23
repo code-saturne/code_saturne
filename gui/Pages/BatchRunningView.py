@@ -497,7 +497,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 if self.case['package'].runcase in os.listdir(self.case['scripts_path']):
                     runcase_path = os.path.join(self.case['scripts_path'],
                                                 self.case['package'].runcase)
-                    self.case['runcase'] = cs_runcase.runcase(runcase_path)
+                    self.case['runcase'] = cs_runcase.runcase(runcase_path,
+                                                              package=self.case['package'])
 
         # Get batch type
 
@@ -1095,9 +1096,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             setGreenColor(self.toolButtonSearchBatch, False)
 
             if self.case['scripts_path'] == os.path.dirname(file_name):
-                self.case['runcase'] = cs_runcase.runcase(launcher)
+                self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
+                                                                       launcher),
+                                                          package=self.case['package'])
                 self.labelBatchName.setText(str(launcher))
-                self.jmdl.readBatchFile()
                 self.hideBatchInfo()
                 if self.case['batch_type'] != None:
                     self.displayBatchInfo()
