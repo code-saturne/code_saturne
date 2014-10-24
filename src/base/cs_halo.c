@@ -741,15 +741,16 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
       cs_lnum_t length = (  halo->send_index[2*rank_id + 2]
                           - halo->send_index[2*rank_id]);
 
-      if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
-        MPI_Irecv(send_buf + start,
-                  length,
-                  CS_MPI_LNUM,
-                  halo->c_domain_rank[rank_id],
-                  local_rank,
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
-
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+        if (length > 0)
+          MPI_Irecv(send_buf + start,
+                    length,
+                    CS_MPI_LNUM,
+                    halo->c_domain_rank[rank_id],
+                    local_rank,
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
+      }
       else
         local_rank_id = rank_id;
 
@@ -898,18 +899,21 @@ cs_halo_sync_untyped(const cs_halo_t  *halo,
       length = (  halo->index[2*rank_id + end_shift]
                 - halo->index[2*rank_id]);
 
-      if (halo->c_domain_rank[rank_id] != local_rank && length > 0) {
+      if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        unsigned char *dest = _val + (halo->n_local_elts*size) + start*size;
+        if (length > 0) {
 
-        MPI_Irecv(dest,
-                  length * size,
-                  MPI_UNSIGNED_CHAR,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+          unsigned char *dest = _val + (halo->n_local_elts*size) + start*size;
 
+          MPI_Irecv(dest,
+                    length * size,
+                    MPI_UNSIGNED_CHAR,
+                    halo->c_domain_rank[rank_id],
+                    halo->c_domain_rank[rank_id],
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
+
+        }
       }
       else
         local_rank_id = rank_id;
@@ -1043,15 +1047,18 @@ cs_halo_sync_num(const cs_halo_t  *halo,
       start = halo->index[2*rank_id];
       length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
 
-      if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
-        MPI_Irecv(num + halo->n_local_elts + start,
-                  length,
-                  CS_MPI_INT,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+      if (halo->c_domain_rank[rank_id] != local_rank) {
 
+        if (length > 0)
+          MPI_Irecv(num + halo->n_local_elts + start,
+                    length,
+                    CS_MPI_INT,
+                    halo->c_domain_rank[rank_id],
+                    halo->c_domain_rank[rank_id],
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
+
+      }
       else
         local_rank_id = rank_id;
 
@@ -1172,15 +1179,16 @@ cs_halo_sync_var(const cs_halo_t  *halo,
       start = halo->index[2*rank_id];
       length = halo->index[2*rank_id + end_shift] - halo->index[2*rank_id];
 
-      if (halo->c_domain_rank[rank_id] != local_rank && length > 0)
-        MPI_Irecv(var + halo->n_local_elts + start,
-                  length,
-                  CS_MPI_REAL,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
-
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+        if (length > 0)
+          MPI_Irecv(var + halo->n_local_elts + start,
+                    length,
+                    CS_MPI_REAL,
+                    halo->c_domain_rank[rank_id],
+                    halo->c_domain_rank[rank_id],
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
+      }
       else
         local_rank_id = rank_id;
 
@@ -1314,18 +1322,21 @@ cs_halo_sync_var_strided(const cs_halo_t  *halo,
       length = (  halo->index[2*rank_id + end_shift]
                 - halo->index[2*rank_id]) * stride;
 
-      if (halo->c_domain_rank[rank_id] != local_rank && length > 0) {
+      if (halo->c_domain_rank[rank_id] != local_rank) {
 
-        buffer = var + (halo->n_local_elts + halo->index[2*rank_id])*stride;
+        if (length > 0) {
 
-        MPI_Irecv(buffer,
-                  length,
-                  CS_MPI_REAL,
-                  halo->c_domain_rank[rank_id],
-                  halo->c_domain_rank[rank_id],
-                  cs_glob_mpi_comm,
-                  &(_cs_glob_halo_request[request_count++]));
+          buffer = var + (halo->n_local_elts + halo->index[2*rank_id])*stride;
 
+          MPI_Irecv(buffer,
+                    length,
+                    CS_MPI_REAL,
+                    halo->c_domain_rank[rank_id],
+                    halo->c_domain_rank[rank_id],
+                    cs_glob_mpi_comm,
+                    &(_cs_glob_halo_request[request_count++]));
+
+        }
       }
       else
         local_rank_id = rank_id;
