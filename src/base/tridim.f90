@@ -615,8 +615,7 @@ if(nctsmt.gt.0) then
   enddo
 
   iappel = 3
-  call  ustsma &
-  !===========
+  call  cs_user_mass_source_terms &
 ( nvar   , nscal  , ncepdc ,                                     &
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &

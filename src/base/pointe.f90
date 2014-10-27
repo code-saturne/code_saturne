@@ -278,11 +278,11 @@ module pointe
   double precision, allocatable, dimension(:) :: b_head_loss
 
   !> number of the \c ncetsm cells in which a mass source term is imposed.
-  !> See \c iicesm and the user subroutine \ref ustsma
+  !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms
   integer, save :: ncetsm
 
   !> number of the \c ncetsm cells in which a mass source term is imposed.
-  !> See \c iicesm and the user subroutine \ref ustsma}}
+  !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms}}
   integer, allocatable, dimension(:) :: icetsm
 
   !> zone where a mass source term is imposed.
@@ -291,12 +291,12 @@ module pointe
   !> type of mass source term for each variable
   !> - 0 for an injection at ambient value,
   !> - 1 for an injection at imposed value.
-  !> See the user subroutine \ref ustsma
+  !> See the user subroutine \ref cs_user_mass_source_terms
   integer, allocatable, dimension(:,:) :: itypsm
 
   !> value of the mass source term for pressure.
   !> For the other variables, eventual imposed injection value.
-  !> See the user subroutine \ref ustsma
+  !> See the user subroutine \ref cs_user_mass_source_terms
   double precision, allocatable, dimension(:,:) :: smacel
 
   !> liquid-vapour mass transfer term for cavitating flows

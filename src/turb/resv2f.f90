@@ -42,7 +42,7 @@
 !> \param[in]     icepdc        number of ncepdp cells with head losses
 !> \param[in]     icetsm        number of cells with mass source
 !> \param[in]     itypsm        type of masss source for the
-!>                              variables (cf. ustsma)
+!>                              variables (cf. cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        work array for head losses
 !> \param[in]     smacel        value of variables associated to the

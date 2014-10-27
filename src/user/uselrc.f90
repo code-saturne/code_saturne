@@ -47,7 +47,7 @@ subroutine uselrc &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
+! (ncesmp,nvar)    !    !     !  variables (cf. cs_user_mass_source_terms)     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! smacel           ! tr ! <-- ! valeur des variables associee a la             !
 ! (ncesmp,*   )    !    !     !  source de masse                               !

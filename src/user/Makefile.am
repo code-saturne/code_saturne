@@ -79,6 +79,7 @@ cs_user_fluid_structure_interaction.f90 \
 cs_user_head_losses.f90 \
 cs_user_initialization.f90 \
 cs_user_les_inflow.f90 \
+cs_user_mass_source_terms.f90 \
 cs_user_mesh.c \
 cs_user_parameters.c \
 cs_user_particle_tracking.f90 \
@@ -103,7 +104,6 @@ uspt1d.f90 \
 usray1.f90 \
 usray2.f90 \
 usthht.f90 \
-ustsma.f90 \
 usvort.f90 \
 usvosy.f90
 

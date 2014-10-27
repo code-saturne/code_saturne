@@ -276,8 +276,7 @@ endif
 ! Mass source terms
 ! -----------------
 
-call ustsma &
-!==========
+call cs_user_mass_source_terms &
 ( nvar   , nscal  , ncepdc ,                                     &
   ncetsm , iappel ,                                              &
   ivoid  ,                                                       &
@@ -724,17 +723,16 @@ if(ncpdct.gt.0) then
 
 endif
 
-! On appelle ustsma lorqu'il y a sur un processeur au moins des cellules
+! On appelle cs_user_mass_source_terms lorqu'il y a sur un processeur au moins des cellules
 !     avec terme source de masse.
 !     On ne fait que remplir le tableau d'indirection des cellules
-!     On appelle cependant ustsma avec tous les processeurs, au cas ou
+!     On appelle cependant cs_user_mass_source_terms avec tous les processeurs, au cas ou
 !     l'utilisateur aurait mis en oeuvre des operations globales.
 
 if(nctsmt.gt.0) then
 
   iappel = 2
-  call ustsma &
-  !==========
+  call cs_user_mass_source_terms &
 ( nvar   , nscal  , ncepdc ,                                     &
   ncetsm , iappel ,                                              &
   icepdc ,                                                       &

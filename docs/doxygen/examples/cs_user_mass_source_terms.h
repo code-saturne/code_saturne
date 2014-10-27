@@ -24,32 +24,30 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
-
 /*!
 
-  \page cs_user_mass_source_terms Examples of data settings for mass source terms (cs_user_mass_source_terms.f90)
-  
+\page cs_user_mass_source_terms Examples of data settings for mass source terms (cs_user_mass_source_terms.f90)
 
 
-The subroutine \ref ustsma is called at three different stages in the code <tt> (iappel = 1, 2 or 3):</tt>
+
+The subroutine \ref cs_user_mass_source_terms is called at three different stages in the code <tt> (iappel = 1, 2 or 3):</tt>
   - \c iappel = 1: Calculation of the number of cells where a mass source is imposed: \c ncesmp. Called once at the beginning of the calculation.
   - \c iappel = 2: Identification of the cells where a mass source term is imposed: array \c icesmp(ncesmp). Called once at the beginning of the calculation.
-  - \c iappel = 3: Calculation of the values of the mass source terms. Called at each time step.  
+  - \c iappel = 3: Calculation of the values of the mass source terms. Called at each time step.
 
 
-The equation for mass conservation becomes: \f$ \dfrac{\partial \rho}{\partial t}+\divs{(\rho \vect{u})}=\gamma \f$
+The equation for mass conservation becomes: \f$ \dfrac{\partial \rho}{\partial t}+\divs{(\rho \vect{u})}=\Gamma \f$
 
-The equation for a variable \f$ f \f$ becomes:\f$ \dfrac{df}{dt} = ... + \gamma(f_i - f) \f$  discretized as \f$ \rho \dfrac{f^{(n+1)} - f^{(n)}}{dt} = ... + \gamma(f_i - f^{(n+1)}) \f$
+The equation for a variable \f$ f \f$ becomes:\f$ \dfrac{df}{dt} = ... + \Gamma(f_i - f) \f$  discretized as \f$ \rho \dfrac{f^{(n+1)} - f^{(n)}}{dt} = ... + \Gamma(f_i - f^{(n+1)}) \f$
 
-\f$ f_i \f$ is the value of \f$ f \f$ associated to the injected mass. 
+\f$ f_i \f$ is the value of \f$ f \f$ associated to the injected mass.
 
 Two options are available:
   - the mass flux is injected with the local value of variable \f$ f \f$: \f$ f_i = f^{(n+1)} \f$ (the equation for \f$ f \f$ is therefore not modified)
   - the mass flux is injected with a specific value for \f$ f \f$: \f$ f_i \f$ is specified by the user
 
 
-  \section var_user Variables to be specified by the user
+\section var_user Variables to be specified by the user
 
  - \c ncesmp: number of cells where a mass source term is imposed
 
@@ -74,7 +72,7 @@ Two options are available:
                        a mass source term
                                   except for <tt> ivar=ipr </tt>
 
-  \remark 
+\remark
  - if \c itypsm(ieltsm,ivar)=0, \c smacel(ieltsm,ivar) is not used
 
  - if \c smacel(ieltsm,ipr)<0, mass is removed from the system,
@@ -91,109 +89,96 @@ Two options are available:
      injection at the local value of the variable). The proper source
      term should be added directly in \ref ustssc.
 
-  \remark <b> Idenfication of the cells:</b> \n
+\remark <b> Idenfication of the cells:</b> \n
 The selection of cells where to apply the source term is based on a \ref getcel command. For more info on the syntax of the \ref getcel command, refer to the user manual or to the comments on the similar command \ref getfbr in the routine \ref cs_user_boundary_conditions.
 
-  \section loc_var_ms Local variables
+\section loc_var_ms Local variables
 
-  \snippet cs_user_mass_source_terms.f90 loc_var
+\snippet cs_user_mass_source_terms.f90 loc_var
 
-  \section init_and_finit Initialization and finalization
- 
-The following initialization block needs to be added for the following examples:   
-   \snippet cs_user_mass_source_terms.f90 allocate
- 
+\section init_and_finit Initialization and finalization
+
+The following initialization block needs to be added for the following examples:
+\snippet cs_user_mass_source_terms.f90 allocate
+
 At the end of the subroutine, it is recommended to deallocate the work array:
-   \snippet cs_user_mass_source_terms.f90 deallocate
- 
+\snippet cs_user_mass_source_terms.f90 deallocate
+
 In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their alloacation is good pratice, and avoids using a different logic C and Fortran.
- 
-   \section one_or_two First or second call
+
+\section one_or_two First or second call
 
  - First call: <tt> iappel = 1</tt>: \c ncesmp: calculation of the number of cells with mass source term
 
  - Second call (if \c ncesmp>0): <tt>iappel = 2</tt>: \c icetsm: index number of cells with mass source terms
 
-
-
-\warning 
+\warning
   - Do not use \c smacel in this section (it is set on the third call, <tt> iappel = 3 </tt>)
   - Do not use \c icetsm in this section on the first call (\c iappel=1)
 
+This section <tt> (iappel = 1 or 2) </tt> is only accessed at the beginning of a calculation. Should the localization of the mass source terms evolve in time, the user must identify at the beginning all cells that can potentially become a mass source term.
+
+\snippet cs_user_mass_source_terms.f90 one_or_two
 
 
-This section <tt> (iappel = 1 or 2) </tt> is only accessed at the beginning of a calculation. Should the localization of the mass source terms evolve in time, the user must identify at the beginning all cells that can potentially become a mass source term. 
+\subsection example1_1 Example 1
+No mass source term (default)
 
-   \snippet cs_user_mass_source_terms.f90 one_or_two
-   
+\snippet cs_user_mass_source_terms.f90 example_1_1
 
+\subsection example1_2 Example 2
+Mass source term in the cells that have boundary face of color 3 and the cells with a coordinate X between 2.5 and 5.
 
-  \subsection example1_1 Example 1
- No mass source term (default)
+In this test in two parts, one must pay attention not to count
+the cells twice (a cell with a boundary face of color 3 can
+also have a coordinate X between 2.5 and 5).
+One should also pay attention that, on the first call, the
+array \ref icetsm doesn't exist yet. It mustn't be used outside
+of tests (\c iappel.eq.2).
 
-  \snippet cs_user_mass_source_terms.f90 example_1_1
+\snippet  cs_user_mass_source_terms.f90 example_1_2
 
-  \subsection example1_2 Example 2
- Mass source term in the cells that have boundary face of color 3 and the cells with a coordinate X between 2.5 and 5.
-
-  In this test in two parts, one mut pay attention not to count
-  the cells twice (a cell with a boundary face of color 3 can
-  also have a coordinate X between 2.5 and 5).
-  One should also pay attention that, on the first call, the
-  array \ref icetsm doesn't exist yet. It mustn't be used outside
-  of tests (\c iappel.eq.2).
-
- \warning It is quite frequent to forget to remove this example when it is
-  not needed. Therefore the following test is designed to prevent
-  any bad surprise.
-  
-  \snippet  cs_user_mass_source_terms.f90 example_1_2
-
-  \subsection genric_sub Generic subsection: do not modify
+\subsection genric_sub Generic subsection: do not modify
 
   - For \c iappel = 1: specification of \c ncesmp. This block is valid for both examples.
 
-  \snippet  cs_user_mass_source_terms.f90 generic_sub 
+\snippet  cs_user_mass_source_terms.f90 generic_sub
 
 
- \section three Third call (for ncesmp > 0)   
+\section three Third call (for ncesmp > 0)
 
-  \c iappel = 3: -  \c itypsm: type of mass source term 
+  \c iappel = 3: -  \c itypsm: type of mass source term
                  -  \c smacel : mass source term
 
-  \remark If \c itypsm(ieltsm,var) is set to 1, \c smaccel(ieltsm,var) must be set.
+\remark If \c itypsm(ieltsm,var) is set to 1, \c smaccel(ieltsm,var) must be set.
 
-  \subsection example2_1 Example 1
+\subsection example2_1 Example 1
 
 Simulation of an inlet condition by mass source terms and printing of the total mass rate.
 
-  \snippet  cs_user_mass_source_terms.f90 example_2_1 
+\snippet  cs_user_mass_source_terms.f90 example_2_1
 
- Calculation of the inlet conditions for k and epsilon with standard laws in a circular pipe
+Calculation of the inlet conditions for k and epsilon with standard laws in a circular pipe
 
- \snippet cs_user_mass_source_terms.f90 inlet_cal 
+\snippet cs_user_mass_source_terms.f90 inlet_cal
 
- \subsection example2_2 Example 2
+\subsection example2_2 Example 2
 Simulation of a suction (by a pump for instance) with a total rate of\f$80 000 \: kg \cdot s^{-1}\f$. The suction rate is supposed to be uniformly distributed on all the cells selected above.
 
-\warning It is quite frequent to forget to remove this example when it is not needed. Therefore the following test is designed to prevent any bad surprise.
+Calculation of the total volume of the area where the mass source term is imposed (the case of parallel computing is taken into account with the call to \c parsom).
 
-  \snippet cs_user_mass_source_terms.f90 test_2_2
+\snippet cs_user_mass_source_terms.f90  calcul_total
 
-  Calculation of the total volume of the area where the mass source term is imposed (the case of parallel computing is taken into account with the call to \c parsom).
+The mass suction rate is \f$ \Gamma = - \dfrac{80000}{v_{tot}} \f$ (in \f$ kg \cdot m^{-3} \cdot s^{-1}\f$). It is set below, with a test for cases where \f$ v_{tot} = 0 \f$. The total mass rate is calculated for verification.
 
- \snippet   cs_user_mass_source_terms.f90  calcul_total
+\snippet cs_user_mass_source_terms.f90  mass_suction
 
- The mass suction rate is \f$ \gamma = - \dfrac{80000}{v_{tot}} \f$ (in \f$ kg \cdot m^{-3} \cdot s^{-1}\f$). It is set below, with a test for cases where \f$ v_{tot} = 0 \f$. The total mass rate is calculated for verification.
+\subsection end3 End third call
 
-\snippet  cs_user_mass_source_terms.f90  mass_suction  
-
-\subsection end3 End third call 
-
-\snippet  cs_user_mass_source_terms.f90 end_call_3
+\snippet cs_user_mass_source_terms.f90 end_call_3
 
 \subsection format Formats
 
-\snippet  cs_user_mass_source_terms.f90 format 
- 
+\snippet cs_user_mass_source_terms.f90 format
+
 */

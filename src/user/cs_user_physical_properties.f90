@@ -1246,7 +1246,7 @@ end subroutine uselph
 !> \param[in]     icepdc        head loss cell numbering
 !> \param[in]     icetsm        numbering of cells with mass source term
 !> \param[in]     itypsm        kind of mass source for each variable
-!>                               (cf. \ref ustsma)
+!>                               (cf. \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source
@@ -1420,7 +1420,7 @@ subroutine ussmag &
 ! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
 ! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. ustsma)                        !
+! (ncesmp,nvar)    !    !     !  variables (cf. cs_user_mass_source_terms)     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
 !  (ncepdp,6)      !    !     !                                                !

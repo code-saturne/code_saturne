@@ -41,7 +41,7 @@
 !>                                                + (1-\theta)\varia^n \f$
 !> \param[in]     icetsm        source mass cells pointer
 !> \param[in]     itpsmp        mass source type for the working variable
-!>                              (cf. \ref ustsma)
+!>                              (cf. \ref cs_user_mass_source_terms)
 !> \param[in]     volume        cells volume
 !> \param[in]     vela          variable value at time step beginning
 !> \param[in]     smcelv        value of the variable associated to the mass

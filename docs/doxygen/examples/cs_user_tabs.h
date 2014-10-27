@@ -31,11 +31,11 @@ Here is a list of user examples. Thorougly documented snippets are provided.
 
    - \subpage cs_user_initialization "Physical fields user initialization"
    - \subpage cs_user_boundary_conditions_examples "User boundary conditions definitions"
-   - \subpage les_inflow
+   - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage f_parameters
    - \subpage parameters
    - \subpage cavit
-   - \subpage physical_properties 
+   - \subpage physical_properties
    - \subpage drift_coal_scalars
    - \subpage drift_scalars
    - \subpage cs_porosity

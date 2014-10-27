@@ -2433,18 +2433,18 @@ which a pressure drop is imposed. See the user subroutine \texttt{cs\_user\_head
 
 \variab{icetsm}{icetsm(ncetsm)}{ia}{Number of the \texttt{ncetsm}
 cells in which a mass source term is imposed. See \texttt{iicesm} and the user
-subroutine \texttt{ustsma}}
+subroutine \texttt{cs\_user\_mass\_source\_terms}}
 
 \variab{itypsm}{itypsm(ncetsm,nvar)}{ia}{Type of mass source term
 for each variable (0 for an injection at ambient value, 1 for an
-injection at imposed value). See the user subroutine \texttt{ustsma}}
+injection at imposed value). See the user subroutine \texttt{cs\_user\_mass\_source\_terms}}
 
 \variab{ncetsm}{ncetsm}{i}{Number of cells with
-mass sources. See the user subroutine \texttt{ustsma}}
+mass sources. See the user subroutine \texttt{cs\_user\_mass\_source\_terms}}
 
 \variab{smacel}{smacel(ncetsm,nvar)}{ra}{Value of the mass source
 term for pressure. For the other variables, eventual imposed injection
-value. See the user subroutine \texttt{ustsma}}
+value. See the user subroutine \texttt{cs\_user\_mass\_source\_terms}}
 
 \minititre{Wall 1D thermal module}
 
@@ -5495,7 +5495,7 @@ for each cell in order to give the porosity.
 \subsection{Management of the mass sources}
 %==================================
 
-The subroutine \texttt{ustsma} is used to add a density source term in some cells of
+The subroutine \texttt{cs\_user\_mass\_source\_terms} is used to add a density source term in some cells of
 the domain (called at each time step). The mass conservation equation is then modified as follows:
 \begin{displaymath}
 \frac{\partial \rho}{\partial t} + div(\rho\vect{u})=\Gamma
@@ -5537,7 +5537,7 @@ This subroutine is called three times every time step.
 \item During the first call, all the cells are checked to know the
       number of cells containing a mass source term.
       This number is called \texttt{ncesmp\index{ncesmp}} in
-      \texttt{ustsma} (and corresponds to
+      \texttt{cs\_user\_mass\_source\_terms} (and corresponds to
       \texttt{ncetsm\index{ncetsm}}). It is used to lay out the arrays
       related to the mass sources. If there is no mass source,
       \texttt{ncesmp} must be equal to zero (it is the default value, and the
