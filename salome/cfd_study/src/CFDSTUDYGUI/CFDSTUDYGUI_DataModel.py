@@ -93,9 +93,11 @@ import salome
 
 from CFDSTUDYGUI_Commons import CFD_Code, BinCode, Trace, sgPyQt, sg
 from CFDSTUDYGUI_Commons import CaseInProcessStart, CaseInProcessEnd
+from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
 import CFDSTUDYGUI_SolverGUI
 from CFDSTUDYGUI_CommandMgr import runCommand
 
+from cs_exec_environment import separate_args
 #-------------------------------------------------------------------------------
 # For Error Message Box
 #-------------------------------------------------------------------------------
@@ -383,7 +385,10 @@ def _findOrCreateComponent():
     return father
 
 
-def _SetStudyLocation(theStudyPath, theCaseNames):
+def _SetStudyLocation(theStudyPath, theCaseNames,
+                      theCreateOpt = None, theMeshOpt = None,
+                      thePostOpt = None, theCopyOpt = None,
+                      theNameRef = ""):
     """
     Constructs the tree representation of a CFD study (with the
     associated cases) for the Object Browser. All branch of the tree is
@@ -405,9 +410,9 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
         aStudyDir = lst[0]
         aStudyName = lst[1]
         if aStudyName == "":
-            raise StudyError, "Empty Study Name!"
+            raise ValueError, "Empty Study Name!"
         if aStudyDir == "":
-            raise StudyError, "Empty Study Directory!"
+            raise ValueError, "Empty Study Directory!"
 
         studyObject  = builder.NewObject(father)
         attr = builder.FindOrCreateAttribute(studyObject, "AttributeLocalID")
@@ -422,15 +427,19 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
         CreateStudy = True
         if os.path.exists(theStudyPath):
             CreateStudy = False
-        iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
+        if theCopyOpt:
+            if not os.path.exists(theNameRef):
+                raise ValueError, "reference case is not a repository"
+        iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
+                                theMeshOpt, thePostOpt, theCopyOpt, theNameRef)
         if iok :
             UpdateSubTree(studyObject)
     else :
-
         CreateStudy = True
         if os.path.exists(theStudyPath):
             CreateStudy = False
-            iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames)
+            iok = _CallCreateScript(theStudyPath, CreateStudy, theCaseNames,
+                                    theMeshOpt, thePostOpt, theCopyOpt, theNameRef)
         # here, if CreateStudy is True, _SetStudyLocation is used to add a case into a CFD study
         #updating Object browser : optimization : UpdateSubTree(studyObject) updates all the cases inside of de studyObject
         # here it only updates the concerned cases
@@ -460,7 +469,8 @@ def _SetStudyLocation(theStudyPath, theCaseNames):
                         UpdateSubTree(caseObject)
     return iok
 
-def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
+def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
+                      theMeshOpt, thePostOpt, theCopyOpt, theNameRef):
     """
     Builds new CFD study, and/or new cases on the file system.
 
@@ -494,6 +504,10 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
             for i in theCaseNames.split(' '):
                 args.append("--case")
                 args.append(i)
+            if theCopyOpt:
+                args.append("--copy-from")
+                args.append(theNameRef)
+
             if Trace():
                 print '_CreateStudy',theStudyPath,theCaseNames,'curdir',curd
                 print 'CFDSTUDYGUI_DataModel : _CallCreateScript : scrpt = ',scrpt
@@ -501,6 +515,14 @@ def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames):
                 print 'CFDSTUDYGUI_DataModel : _CallCreateScript : start_dir = ',start_dir
             runCommand(args, start_dir, "")
 
+            if theMeshOpt:
+                path = os.path.join(theStudyPath, "MESH")
+                if not os.path.exists(path):
+                    os.mkdir(path)
+            if thePostOpt:
+                path = os.path.join(theStudyPath, "POST")
+                if not os.path.exists(path):
+                    os.mkdir(path)
             os.chdir(curd)
         else:
             QMessageBox.critical(None,
@@ -1530,6 +1552,87 @@ def checkCaseLaunchGUI(theCase):
         return False
 
     return True
+
+
+def checkCode(theCase):
+    """
+    Checks if I{theCase} is code_saturne or neptune_cfd.
+
+    @type theCase: C{SObject}
+    @param theCase: object from the Object Browser.
+    @rtype: C{CFD_Saturne} or C{CFD_Neptune}
+    @return: C{True} if C{theCase} has the script to start GUI in the DATA folder.
+    """
+    if not checkType(theCase, dict_object["Case"]):
+        return CFD_Code()
+
+    aChildList = ScanChildren(theCase, "^DATA$")
+    if not len(aChildList) == 1:
+        # no DATA folder
+        print "There are not data folder in selected by user case"
+        return CFD_Code()
+
+    aDataObj =  aChildList[0]
+    aDataPath = _GetPath(aDataObj)
+
+    import sys
+    if sys.platform.startswith("win"):
+        aChildList = ScanChildren(aDataObj, "^SaturneGUI.bat$")
+        if len(aChildList) == 1:
+            return CFD_Saturne
+        aChildList = ScanChildren(aDataObj, "^NeptuneGUI.bat$")
+        if len(aChildList) == 1:
+            return CFD_Neptune
+    else:
+        aChildList = ScanChildren(aDataObj, "^SaturneGUI$")
+        if len(aChildList) == 1:
+            return CFD_Saturne
+        aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
+        if len(aChildList) == 1:
+            return CFD_Neptune
+    ### try in SCRIPTS
+    aChildList = ScanChildren(theCase, "^SCRIPTS$")
+    if not len(aChildList) == 1:
+        # no SCRIPTS folder
+        print "There are not scripts folder in selected by user case"
+        return CFD_Code()
+
+    aDataObj =  aChildList[0]
+    aDataPath = _GetPath(aDataObj)
+    aChildList = ScanChildren(aDataObj, "^runcase$")
+    if len(aChildList) == 1:
+        path = os.path.join(aDataPath, "runcase")
+        try:
+            f = open(path, mode = 'r')
+            lines = f.readlines()
+            f.close()
+
+            for i in range(len(lines) - 1, -1, -1):
+                line = lines[i]
+                # Skip comment and empty lines
+                if len(line) == 0:
+                    continue
+                if line[0] == '#' or line[0:4] == 'rem ':
+                    continue
+                j = line.find('#')
+                if j > -1:
+                    line = line[0:j]
+                args = separate_args(line)
+                if args.count('run') == 1:
+                    if args.index('run') == 1: # "<package_name> run"
+                        for name in ('code_saturne', 'neptune_cfd'):
+                            if not sys.platform.startswith('win'):
+                                test_name = '\\' + name
+                            else:
+                                test_name = name
+                            if args[0].find(test_name) == 0:
+                                if name == 'code_saturne':
+                                    return CFD_Saturne
+                                else:
+                                    return CFD_Neptune
+        except IOError:
+            print("Error: can not open or read %s\n" % path)
+            return CFD_Code()
 
 
 def isLinkPathObject(theObject):

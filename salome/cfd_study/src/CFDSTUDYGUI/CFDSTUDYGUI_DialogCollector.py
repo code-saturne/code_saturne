@@ -103,16 +103,6 @@ class InfoDialogHandler(InfoDialog):
         aBtn = self.findChild(QtGui.QPushButton, "OKButton")
         aBtn.setText(self.tr("DLG_OK_BUTTON_TEXT"))
 
-        codeBG = self.findChild(QtGui.QGroupBox, "CodeBG")
-        codeBG.setTitle(self.tr("INFO_DLG_CFDCODE_TITLE"))
-
-        self.SaturneRB = self.findChild(QtGui.QRadioButton, "SaturneRB")
-        self.SaturneRB.setText(self.tr("INFO_DLG_SATURNE_TEXT"))
-        self.SaturneRB.setChecked(True)
-
-        self.NeptuneRB = self.findChild(QtGui.QRadioButton, "NeptuneRB")
-        self.NeptuneRB.setText(self.tr("INFO_DLG_NEPTUNE_TEXT"))
-
         self.setWindowTitle(self.tr("INFO_DLG_CAPTION"))
 
 
@@ -133,16 +123,10 @@ class InfoDialogHandler(InfoDialog):
     def setCode(self, env_saturne, env_neptune):
         if env_neptune:
             code = CFD_Neptune
-            self.NeptuneRB.setEnabled(True)
-            self.NeptuneRB.setChecked(True)
-            self.SaturneRB.setEnabled(env_saturne)
             from nc_package import package
 
         elif env_saturne:
             code = CFD_Saturne
-            self.SaturneRB.setEnabled(True)
-            self.SaturneRB.setChecked(True)
-            self.NeptuneRB.setEnabled(env_neptune)
             from cs_package import package
 
         else:
@@ -151,22 +135,21 @@ class InfoDialogHandler(InfoDialog):
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
         self.labelPrefixValue.setText(pkg.get_dir('prefix'))
+        self.labelCodeValue.setText(pkg.name)
         _SetCFDCode(code)
 
 
-    def onCodeChanged(self):
-        if self.sender() == self.SaturneRB:
-            self.NeptuneRB.setChecked(False)
-            _SetCFDCode(CFD_Saturne)
+    def update(self, code):
+        if code == CFD_Saturne:
             from cs_package import package
-        if self.sender() == self.NeptuneRB:
-            self.SaturneRB.setChecked(False)
-            _SetCFDCode(CFD_Neptune)
+        if code == CFD_Neptune:
             from nc_package import package
 
         pkg = package()
         self.labelVersionValue.setText(pkg.version)
         self.labelPrefixValue.setText(pkg.get_dir('prefix'))
+        self.labelCodeValue.setText(pkg.name)
+
 
 
 #-----------------------------------------------------------------------------------------------------------
@@ -194,7 +177,6 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         Constructor. Initialize text and label of the QDialog.
         """
         SetTreeLocationDialog.__init__(self, parent)
-        #AB add case mode
         self.isCaseMode = False
 
         aBtn = self.findChild(QtGui.QPushButton,"OKButton")
@@ -207,17 +189,9 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
 
         self.setWindowTitle(self.tr("LOCATION_DLG_CAPTION"))
 
-        aLabel = self.findChild(QtGui.QLabel,"NameLabel")
-        if not aLabel == None:
-            aLabel.setText(self.tr("LOCATION_DLG_STUDY_NAME"))
-
         aLabel = self.findChild(QtGui.QLabel,"CaseLabel")
         if not aLabel == None:
             aLabel.setText(self.tr("LOCATION_DLG_CASE_NAME"))
-
-        aGB = self.findChild(QtGui.QGroupBox, "CaseGroupBox")
-        if not aGB == None:
-            aGB.setTitle(self.tr("LOCATION_DLG_ADD_CASE"))
 
         aLabel = self.findChild(QtGui.QLabel,"StudyDirLabel")
         if not aLabel == None:
@@ -237,7 +211,50 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
 
         self.StudyPath = ''
         self.StudyName = ''
-        self.adjustSize()
+        self.CaseRefName = ''
+        neptune_status, mess2 = CheckCFD_CodeEnv(CFD_Neptune)
+        if not neptune_status:
+            self.findChild(QtGui.QRadioButton,"radioButtonNeptune").setEnabled(False)
+
+        self.Create = self.findChild(QtGui.QCheckBox,"checkBoxCreate")
+        self.connect(self.Create, SIGNAL("clicked()"), self.slotCreateCase)
+        self.Load = self.findChild(QtGui.QCheckBox,"checkBoxLoad")
+        self.connect(self.Load, SIGNAL("clicked()"), self.slotLoadCase)
+        self.CopyFrom = self.findChild(QtGui.QCheckBox,"checkBoxCopyFrom")
+        self.connect(self.CopyFrom, SIGNAL("clicked()"), self.slotCopyFrom)
+
+        # Define option when openning
+        self.findChild(QtGui.QCheckBox,"checkBoxCreate").setChecked(False)
+        self.findChild(QtGui.QCheckBox,"checkBoxLoad").setChecked(True)
+        self.findChild(QtGui.QRadioButton,"radioButtonSaturne").setChecked(True)
+        self.findChild(QtGui.QRadioButton,"radioButtonNeptune").setChecked(False)
+        self.findChild(QtGui.QGroupBox,"CaseGroupBox").setEnabled(False)
+        self.findChild(QtGui.QCheckBox, "checkBoxMesh").setChecked(True)
+        self.findChild(QtGui.QCheckBox, "checkBoxPOST").setChecked(True)
+        self.findChild(QtGui.QPushButton, "BrowseButtonCopy").setEnabled(False)
+
+        self.setCaseMode(self.isCaseMode)
+
+
+    def slotCreateCase(self):
+        self.Load.setChecked(False)
+        self.findChild(QtGui.QGroupBox,"CaseGroupBox").setEnabled(True)
+        self.findChild(QtGui.QCheckBox,"checkBoxCreate").setChecked(True)
+        self.findChild(QtGui.QCheckBox,"checkBoxLoad").setChecked(False)
+
+
+    def slotLoadCase(self):
+        self.Create.setChecked(False)
+        self.findChild(QtGui.QGroupBox,"CaseGroupBox").setEnabled(False)
+        self.findChild(QtGui.QCheckBox,"checkBoxCreate").setChecked(False)
+        self.findChild(QtGui.QCheckBox,"checkBoxLoad").setChecked(True)
+
+
+    def slotCopyFrom(self):
+        if self.CopyFrom.isChecked():
+            self.findChild(QtGui.QPushButton, "BrowseButtonCopy").setEnabled(True)
+        else:
+            self.findChild(QtGui.QPushButton, "BrowseButtonCopy").setEnabled(False)
 
 
     def onBrowsePath(self):
@@ -253,10 +270,27 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             if not new_path or new_path == "":
                 return
         new_path = os.path.abspath(str(new_path))
-        if os.path.exists(os.path.join(new_path , 'MAILLAGE')) or os.path.exists(os.path.join(new_path, 'MESH')):
+        if os.path.exists(os.path.join(new_path, 'MESH')):
             new_path, self.StudyName = os.path.split(new_path)
         aLE.setText(new_path)
         self.findChild(QtGui.QLineEdit, "StudyLineEdit").setText(self.StudyName)
+
+
+    def onBrowsePathCopy(self):
+        """
+        Call into ui_SetTreeLocationDialog.py from setTreeLocationDialog.ui built with qtdesigner
+        for option --copy-from
+        """
+        aLE = self.findChild(QtGui.QLineEdit,"StudyDirName")
+        if aLE != None:
+            new_path = aLE.text()
+
+            new_path = sgPyQt.getExistingDirectory(self, new_path, str(self.tr("SET_CASE_LOCATION_BROWSE_CAPTION").toLatin1()))
+
+            if not new_path or new_path == "":
+                return
+        # TODO check if it is a case directory
+        self.CaseRefName = os.path.abspath(str(new_path))
 
 
     def setCaseMode(self, flag):
@@ -267,33 +301,42 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
         """
         self.isCaseMode = flag
         if self.isCaseMode == True:
-            self.findChild(QtGui.QPushButton,"BrowseButton").hide()
-            self.findChild(QtGui.QLineEdit,"StudyLineEdit").hide()
-            self.findChild(QtGui.QLineEdit,"StudyDirName").hide()
-            self.findChild(QtGui.QLabel,"NameLabel").hide()
-            self.findChild(QtGui.QLabel,"StudyDirLabel").hide()
-            self.findChild(QtGui.QGroupBox,"CaseGroupBox").setCheckable(False)
-        else:
-            self.findChild(QtGui.QPushButton,"BrowseButton").show()
-            self.findChild(QtGui.QLineEdit,"StudyLineEdit").show()
-            self.findChild(QtGui.QLineEdit,"StudyDirName").show()
-            self.findChild(QtGui.QLabel,"NameLabel").show()
-            self.findChild(QtGui.QLabel,"StudyDirLabel").show()
+            self.findChild(QtGui.QCheckBox,"checkBoxCreate").setChecked(True)
+            self.findChild(QtGui.QCheckBox,"checkBoxCreate").setCheckable(False)
+            self.findChild(QtGui.QCheckBox,"checkBoxLoad").setChecked(False)
+            self.findChild(QtGui.QCheckBox,"checkBoxLoad").setCheckable(False)
+            self.findChild(QtGui.QGroupBox,"CaseGroupBox").setEnabled(True)
 
-            self.findChild(QtGui.QGroupBox,"CaseGroupBox").setCheckable(True)
-            self.findChild(QtGui.QGroupBox,"CaseGroupBox").setChecked(True)
+            self.findChild(QtGui.QGroupBox,"groupBox").hide()
+            self.findChild(QtGui.QPushButton,"BrowseButton").hide()
+            self.findChild(QtGui.QLineEdit,"StudyDirName").hide()
+            self.findChild(QtGui.QLabel,"StudyDirLabel").hide()
+        else:
+            self.findChild(QtGui.QCheckBox,"checkBoxCreate").setChecked(False)
+            self.findChild(QtGui.QCheckBox,"checkBoxCreate").setCheckable(True)
+            self.findChild(QtGui.QCheckBox,"checkBoxLoad").setChecked(True)
+            self.findChild(QtGui.QCheckBox,"checkBoxLoad").setCheckable(True)
+
+            self.findChild(QtGui.QGroupBox,"groupBox").show()
+            self.findChild(QtGui.QPushButton,"BrowseButton").show()
+            self.findChild(QtGui.QLineEdit,"StudyDirName").show()
+            self.findChild(QtGui.QLabel,"StudyDirLabel").show()
 
         self.adjustSize();
 
 
     def accept(self):
-        aDirLE = self.findChild(QtGui.QLineEdit,"StudyDirName")
-        aNameLE = self.findChild(QtGui.QLineEdit,"StudyLineEdit")
-        aCaseGB = self.findChild(QtGui.QGroupBox,"CaseGroupBox")
-        aCaseLE = self.findChild(QtGui.QLineEdit,"CaseLineEdit")
+        aDirLE       = self.findChild(QtGui.QLineEdit,"StudyDirName")
+        aNameLE      = self.findChild(QtGui.QLineEdit,"StudyLineEdit")
+        aCaseLE      = self.findChild(QtGui.QLineEdit,"CaseLineEdit")
+        CreateOption = self.findChild(QtGui.QCheckBox,"checkBoxCreate")
+        Neptune      = self.findChild(QtGui.QRadioButton,"radioButtonNeptune")
+        Saturne      = self.findChild(QtGui.QRadioButton,"radioButtonSaturne")
+        MeshOpt      = self.findChild(QtGui.QCheckBox, "checkBoxMesh")
+        PostOpt      = self.findChild(QtGui.QCheckBox, "checkBoxPOST")
+        CopyFromOpt  = self.findChild(QtGui.QCheckBox, "checkBoxCopyFrom")
 
-        if aDirLE == None  or aNameLE == None \
-               or aCaseGB == None or aCaseLE == None:
+        if aDirLE == None or aNameLE == None:
             raise DialogError, "Can't find control widget!"
 
         if self.isCaseMode == False:
@@ -301,7 +344,6 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
             aStudyDir = str(aDirLE.text().toLatin1())
 
             # create from study dir + study name
-
             if aNameLE.text().toLatin1() != aNameLE.text():
                 raise DialogError, "Names must not contain special characters."
 
@@ -334,15 +376,29 @@ class SetTreeLocationDialogHandler(SetTreeLocationDialog):
                 return False
 
         # ckeck case name
-        if aCaseGB.isChecked() or self.isCaseMode == True:
+        if CreateOption.isChecked() or self.isCaseMode == True:
             if aCaseLE.text() == "":
                 QMessageBox.critical(self, "Error", "Case name is empty!", QMessageBox.Ok, QMessageBox.NoButton)
                 return False
             self.CaseNames = str(aCaseLE.text().toLatin1())
+            self.CreateOption = True
+            if Neptune.isChecked():
+                self.code = CFD_Neptune
+            else:
+                self.code = CFD_Saturne
+            self.meshOption = MeshOpt.isChecked()
+            self.postOption = PostOpt.isChecked()
+            self.CopyFromOption = CopyFromOpt.isChecked()
         else:
             self.CaseNames = ""
+            self.CreateOption = False
+            self.code = None
+            self.meshOption = None
+            self.postOption = None
+            self.CopyFromOption = None
 
         SetTreeLocationDialog.accept(self)
+
 
 #----------------------------------------------------------------------------------------------------------------------
 
@@ -691,118 +747,6 @@ class CopyDialogHandler(CopyDialog):
 
     def destCaseName(self):
         return str(self.DestDirLE.text().toLatin1())
-
-
-#class CopyDialog(QtGui.QDialog, Ui_CopyDialog):
-    #"""
-    #Dialog informations about environment variables
-    #"""
-    #def __init__(self, parent=None):
-        #"""
-        #"""
-        #QtGui.QDialog.__init__(self, parent)
-        #Ui_CopyDialog.__init__(self)
-
-        #self.setupUi(self)
-
-
-#class CopyDialogHandler(CopyDialog):
-    #"""
-    #"""
-    #def __init__(self, parent = None):
-        #CopyDialog.__init__(self, parent)
-        #self.CopyBtn = self.findChild(QtGui.QPushButton, "CopyBtn")
-        #self.CopyBtn.setText(self.tr("COPY_DLG_COPY_BUTTON"))
-
-        #aBtn = self.findChild(QtGui.QPushButton, "CancelBtn")
-        #aBtn.setText(self.tr("DLG_CANCEL_BUTTON_TEXT"))
-
-        #aLabel = self.findChild(QtGui.QLabel, "DestCaseLabel")
-        #aLabel.setText(self.tr("COPY_DLG_DEST_CASE_LABEL"))
-
-        #aLabel = self.findChild(QtGui.QLabel, "SourceCaseLabel")
-        #aLabel.setText(self.tr("COPY_DLG_SOURCE_CASE_LABEL"))
-
-        #aLabel = self.findChild(QtGui.QLabel, "FileNameLabel")
-        #aLabel.setText(self.tr("COPY_DLG_FILE_NAME_LABEL"))
-
-        #self.FileName = self.findChild(QtGui.QLabel, "FileName")
-        #self.SourceCaseName = self.findChild(QtGui.QLabel, "SourceCaseName")
-        #self.DestDirLE = self.findChild(QtGui.QComboBox, "DestDirLE")
-
-        #self.setWindowTitle(self.tr("COPY_DLG_CAPTION"))
-
-
-    #def show(self):
-        #aStudy = CFDSTUDYGUI_DataModel.GetFirstStudy()
-
-        #self.DestDirLE.clear()
-        #if self.CopyBtn.isEnabled():
-            #aCaseList = CFDSTUDYGUI_DataModel.GetCaseNameList(aStudy)
-
-            #if len(aCaseList) == 0:
-                #self.DestDirLE.setEnabled(False)
-                #self.CopyBtn.setEnabled(False)
-            #else:
-                #self.DestDirLE.setEnabled(True)
-                #self.CopyBtn.setEnabled(True)
-
-                #sourceCase = str(self.SourceCaseName.text().toLatin1())
-
-                #for i in aCaseList:
-                    #if not i == sourceCase:
-                        #self.DestDirLE.addItem(i)
-
-        #CopyDialog.exec_(self)
-
-
-    #def setCurrentObject(self, sobj):
-        #self.Object = sobj
-        #aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
-        #if not sobj == None and not aCase == None:
-            #self.FileName.setText(sobj.GetName())
-            #self.SourceCaseName.setText(aCase.GetName())
-
-            #self.DestDirLE.setEnabled(True)
-            #self.CopyBtn.setEnabled(True)
-
-        #else:
-            #self.FileName.setText("")
-            #self.SourceCaseName.SetText("")
-            #self.DestDirLE.setEnabled(False)
-            #self.CopyBtn.setEnabled(False)
-
-
-    #def accept(self):
-        #aSourceFilePath = CFDSTUDYGUI_DataModel._GetPath(self.Object)
-        #aSourceCase = CFDSTUDYGUI_DataModel.GetCase(self.Object)
-        #aSourceCasePath = CFDSTUDYGUI_DataModel._GetPath(aSourceCase)
-
-        #aSourceCaseName = str(self.SourceCaseName.text().toLatin1())
-        #aDestCaseName = str(self.DestDirLE.currentText().toLatin1())
-
-        ##check for existing of file in destinate CASE
-        #aDestCasePath = str(QString(aSourceCasePath).left(len(aSourceCasePath)-len(aSourceCaseName)).toLatin1())
-        #aDestCasePath += aDestCaseName
-
-        #aDestFilePath = aDestCasePath + str(QString(aSourceFilePath).right(len(aSourceFilePath)-len(aSourceCasePath)).toLatin1())
-
-        #if os.path.exists(aDestFilePath) and os.path.isfile(aDestFilePath):
-            #QMessageBox.critical(self, self.tr("COPY_DLG_EXISTS_ERROR_CAPTION"), self.tr("COPY_DLG_EXISTS_ERROR_TEXT"), 1, 0)
-            #return False
-
-        #aCmd = "cp " + aSourceFilePath + " " + aDestFilePath
-
-        #status = os.system(aCmd)
-        #if not status == 0:
-            #QMessageBox.critical(self, self.tr("COPY_DLG_COPY_ERROR_CAPTION"), self.tr("COPY_DLG_COPY_ERROR_TEXT"), 1, 0)
-            #return False
-
-        #CopyDialog.accept(self)
-
-
-    #def destCaseName(self):
-        #return str(self.DestDirLE.currentText().toLatin1())
 
 
 #----------------------------------------------------------------------------------------------------------------------

@@ -40,7 +40,7 @@ import logging
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtGui import QDialog, QMessageBox, QDockWidget
+from PyQt4.QtGui import QDialog, QMessageBox, QDockWidget, QCursor, QApplication
 from PyQt4.QtCore import Qt, QObject, SIGNAL
 
 #-------------------------------------------------------------------------------
@@ -226,11 +226,7 @@ def activate():
             else:
                 ActionHandler.DialogCollector.InfoDialog.setCode(env_saturne, False)
 
-        ActionHandler.DialogCollector.InfoDialog.exec_()
-
-        if not ActionHandler.DialogCollector.InfoDialog.result() == QDialog.Accepted:
-            d_activation[studyId] = 1
-            return False
+        ActionHandler.slotStudyLocation()
 
     ActionHandler.connect(ActionHandler._SalomeSelection,
                           SIGNAL('currentSelectionChanged()'),

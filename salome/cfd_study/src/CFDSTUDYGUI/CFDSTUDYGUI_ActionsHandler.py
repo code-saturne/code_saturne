@@ -63,7 +63,8 @@ import CFDSTUDYGUI_DataModel
 import CFDSTUDYGUI_Commons
 import CFDSTUDYGUI_CommandMgr
 from CFDSTUDYGUI_Agents import *
-from CFDSTUDYGUI_Commons import CFD_Code, BinCode, CFD_Saturne, CFD_Neptune, sgPyQt, sg, CheckCFD_CodeEnv
+from CFDSTUDYGUI_Commons import _SetCFDCode, CFD_Code, BinCode, CFD_Saturne
+from CFDSTUDYGUI_Commons import CFD_Neptune, sgPyQt, sg, CheckCFD_CodeEnv
 import CFDSTUDYGUI_SolverGUI
 
 #-------------------------------------------------------------------------------
@@ -97,7 +98,6 @@ CopyInSRCAction               = 25
 CopyCaseFileAction            = 26
 
 #export/convert actions
-
 ExportInParaViSAction         = 40
 ExportInSMESHAction           = 41
 ConvertMeshToMed              = 42
@@ -227,7 +227,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("ADD_CFDSTUDY_CASE_TIP"),\
                                       ObjectTR.tr("ADD_CFDSTUDY_CASE_SB"),\
                                       ObjectTR.tr("ADD_CFDSTUDY_CASE_ICON"))
-        #sgPyQt.createMenu(action, menu_id)
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
@@ -244,7 +243,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_SB"),\
                                       ObjectTR.tr("LAUNCH_CFDSTUDY_GUI_ICON"))
         # popup launch GUI on CFD CASE with slotRunGUI
-        #sgPyQt.createMenu(action, menu_id)
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
@@ -283,7 +281,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                                       ObjectTR.tr("UPDATE_CFDSTUDY_OBJBROWSER_SB"),\
                                       ObjectTR.tr("UPDATE_CFDSTUDY_OBJBROWSER_ICON"))
         sgPyQt.createMenu(action, menu_id)
-        #sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._CommonActionIdMap[UpdateObjBrowserAction] = action_id
@@ -374,7 +371,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._CommonActionIdMap[CopyCaseFileAction] = action_id
 
         #export/convert actions
-
         action = sgPyQt.createAction(-1,
                                       ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TEXT"),
                                       ObjectTR.tr("EXPORT_IN_PARAVIS_ACTION_TIP"),
@@ -665,27 +661,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._HelpActionIdMap[SolverHelpRefcard] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpRefcard)
 
-#        action_id = sgPyQt.createMenu(ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION"), -1, -1)
-#        self._CommonActionIdMap[SolverHelpGuidesMenu] = action_id
-
-        #action = sgPyQt.createAction(-1,\
-                                      #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_SHADED"),\
-                                      #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_SHADED"),\
-                                      #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_SHADED"))
-        #action_id = sgPyQt.actionId(action)
-        #self._ActionMap[action_id] = action
-        #self._CommonActionIdMap[DisplayTypeSHADED] = action_id
-        #self.connect(action, SIGNAL("activated()"), self.slotDisplayTypeSHADED)
-
-        #action = sgPyQt.createAction(-1,\
-                                      #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_WIREFRAME"),\
-                                      #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_WIREFRAME"),\
-                                      #ObjectTR.tr("MESH_OR_GROUP_REPRESENTATION_WIREFRAME"))
-        #action_id = sgPyQt.actionId(action)
-        #self._ActionMap[action_id] = action
-        #self._CommonActionIdMap[DisplayTypeWIREFRAME] = action_id
-        #self.connect(action, SIGNAL("activated()"), self.slotDisplayTypeWIREFRAME)
-
 
     def updateActions(self):
         """
@@ -715,6 +690,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             self.commonAction(RunCaseAction).setEnabled(isStudy)
             aStudy = CFDSTUDYGUI_DataModel.GetStudyByObj(sobj)
             aCase = CFDSTUDYGUI_DataModel.GetCase(sobj)
+
+            if aCase != None:
+                code = CFDSTUDYGUI_DataModel.checkCode(aCase)
+                _SetCFDCode(code)
+                dialog = self.DialogCollector.InfoDialog
+                dialog.update(code)
 
             if aStudy != None and aCase != None:
                 self.commonAction(LaunchGUIAction).setEnabled(CFDSTUDYGUI_DataModel.checkCaseLaunchGUI(aCase))
@@ -901,8 +882,14 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         cursor = QCursor(Qt.BusyCursor)
         QApplication.setOverrideCursor(cursor)
 
+        _SetCFDCode(dialog.code)
         iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
-                                                      theCaseNames = dialog.CaseNames)
+                                                      theCaseNames = dialog.CaseNames,
+                                                      theCreateOpt = dialog.CreateOption,
+                                                      theMeshOpt   = dialog.meshOption,
+                                                      thePostOpt   = dialog.postOption,
+                                                      theCopyOpt   = dialog.CopyFromOption,
+                                                      theNameRef   = dialog.CaseRefName)
         if iok:
             studyId = sgPyQt.getStudyId()
             sgPyQt.updateObjBrowser(studyId, 1)
@@ -931,15 +918,20 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             return
 
         dialog.exec_()
-        if  not self.DialogCollector.SetTreeLocationDialog.result() == QDialog.Accepted:
+        if not self.DialogCollector.SetTreeLocationDialog.result() == QDialog.Accepted:
             #cancel of new case creation
             dialog.setCaseMode(False)
             return
 
         dialog.setCaseMode(False)
-
+        _SetCFDCode(dialog.code)
         iok = CFDSTUDYGUI_DataModel._SetStudyLocation(theStudyPath = dialog.StudyPath,
-                                                      theCaseNames = dialog.CaseNames)
+                                                      theCaseNames = dialog.CaseNames,
+                                                      theCreateOpt = dialog.CreateOption,
+                                                      theMeshOpt   = dialog.meshOption,
+                                                      thePostOpt   = dialog.postOption,
+                                                      theCopyOpt   = dialog.CopyFromOption,
+                                                      theNameRef   = dialog.CaseRefName)
         self.updateObjBrowser()
 
 
@@ -1061,30 +1053,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             builder = study.NewBuilder()
 
             attr = builder.FindOrCreateAttribute(sobj, "AttributeLocalID")
-
-            # chechpoint and mesh_input
-            #if attr.Value() == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"] or \
-               #attr.Value() == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]:
-                #case = CFDSTUDYGUI_DataModel.GetCase(sobj)
-                #if not case == None:
-                    #iter  = study.NewChildIterator(case)
-                    #while iter.More():
-                        #if iter.Value().GetName() == "DATA":
-                            #newpath = os.path.join(CFDSTUDYGUI_DataModel._GetPath(iter.Value()), sobj.GetName())
-
-                            ##remove if exists
-                            #if os.path.exists(newpath):
-                                #mess = ObjectTR.tr("OVERWRITE_CONFIRM_MESS").arg(sobj.GetName())
-                                #if QMessageBox.warning(None, "Warning", mess, QMessageBox.Yes, QMessageBox.No) == QMessageBox.No:
-                                    #return
-                                #os.remove(newpath)
-
-                            #shutil.copy2(path, CFDSTUDYGUI_DataModel._GetPath(iter.Value()))
-                            #CFDSTUDYGUI_DataModel._RebuildTreeRecursively(case)
-                            #break
-                        #iter.Next()
-                    #sgPyQt.updateObjBrowser(studyId,1)
-            #else:
             parent = sobj.GetFather()
             if not parent == None:
                 parent = parent.GetFather()

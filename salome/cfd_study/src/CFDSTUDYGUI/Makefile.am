@@ -57,7 +57,6 @@ UIFILES = \
 CFDSTUDYGUI_QProcessDialog.ui \
 CopyDialog.ui \
 ECSConversionDialog.ui \
-EnvSettingsDialog.ui \
 GUIActivationDialog.ui \
 InfoDialog.ui \
 RunCaseDialog.ui \
@@ -67,7 +66,6 @@ PYUI_FILES = \
 ui_CFDSTUDYGUI_QProcessDialog.py \
 ui_CopyDialog.py \
 ui_ECSConversionDialog.py \
-ui_EnvSettingsDialog.py \
 ui_GUIActivationDialog.py \
 ui_InfoDialog.py \
 ui_RunCaseDialog.py \
@@ -93,10 +91,10 @@ install-exec-local: $(PYUI_FILES)
 #%_moc.cxx: %.h
 #	$(MOC) $< -o $@
 
-## translation (*.qm) files generation (lrelease)	
+## translation (*.qm) files generation (lrelease)
 %.qm: %.ts
 	$(LRELEASE) $< -qm $@
 
 mostlyclean-local:
 	rm -f @builddir@/*_moc.cxx
-	rm -f @builddir@/*.qm	
+	rm -f @builddir@/*.qm
