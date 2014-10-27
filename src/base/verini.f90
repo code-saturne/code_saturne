@@ -468,8 +468,8 @@ endif
 if (nterup.gt.1) then
 
   if (ipucou.eq.1.or.indest.eq.1.or.                              &
-       ippmod(icompf).ge.0.or.iccvfg.eq.1.or.                     &
-       iphydr.eq.1.or.icalhy.eq.1.or.idtvar.eq.-1) then
+      ippmod(icompf).ge.0.or.iccvfg.eq.1.or.                     &
+      idtvar.eq.-1) then
     write(nfecra,2141) nterup
     iok = iok + 1
   endif
@@ -2269,8 +2269,6 @@ endif
 '@    options suivantes a ete activee (c''est le cas ici) :',   /,&
 '@    - utilisation d''un estimateur d''erreur (IESCAL)',       /,&
 '@    - couplage instationnaire (IPUCOU)',                      /,&
-'@    - prise en compte specifique de la pression',             /,&
-'@      hydrostatique (IPHYDR et ICALHY)',                      /,&
 '@    - algorithme stationnaire (IDTVAR=-1)',                   /,&
 '@    - module compressible (IPPMOD(ICOMPF)>=0)',               /,&
 '@    - champ de vitesse fige (ICCVFG=1)',                      /,&
@@ -4774,8 +4772,6 @@ endif
 '@  one of the following options (which has been activated ):', /,&
 '@    - Error estimation (IESCAL)',                             /,&
 '@    - reinforced U-P coupling (IPUCOU)',                      /,&
-'@    - specific treatment of hydrostatic pressure',            /,&
-'@      contribution  (IPHYDR et ICALHY)',                      /,&
 '@    - time-step variable with space or iteration or',         /,&
 '@      steady-state   algorithm(IDTVAR=-1)',                   /,&
 '@    - compressible module (IPPMOD(ICOMPF)>=0)',               /,&

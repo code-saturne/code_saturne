@@ -1294,7 +1294,7 @@ endif
 !      into account (only for the first call, the second one is dedicated
 !      to error estimators)
 
-if (iappel.eq.1.and.iphydr.eq.1) then !FIXME iterns ?
+if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
 
 ! force ext au pas de temps precedent :
 !     FRCXT a ete initialise a zero
@@ -1433,7 +1433,7 @@ if (iterns.eq.1) then
     !==========
   endif
 
-  if (iphydr.eq.1) then
+  if (iphydr.eq.1.and.iterns.eq.1) then
 
     do iel = 1, ncel
       dvol = 1.d0/volume(iel)
