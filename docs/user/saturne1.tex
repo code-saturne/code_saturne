@@ -4332,7 +4332,8 @@ The standard keywords used by the indicator \texttt{itypfb} are:
 \hspace*{1cm}\texttt{rcodcl(ifac,ivar,1)}=imposed value\\
 \item Imposed flux at the wall. The user must write\\
 \hspace*{1cm}\texttt{icodcl(ifac,ivar)}=3\\
-\hspace*{1cm}\texttt{rcodcl(ifac,ivar,3)}=imposed flux value (depending on the variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_clnonstandard} for the flux definition).
+\hspace*{1cm}\texttt{rcodcl(ifac,ivar,3)}=imposed flux value (depending on the
+variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_clnonstandard} for the flux definition).
 \item If the user does not fill these arrays, the default condition
       is zero flux.
 \end{list}
@@ -4436,7 +4437,8 @@ easily isolate some boundary faces, in order for instance to calculate balances.
 Ifa face does not correspond to a standard type, the user
 must completely fill the arrays \texttt{itypfb}, \texttt{icodcl} and
 \texttt{rcodcl}. \texttt{itypfb(ifac)} is then equal to \texttt{iindef}
-or another value defined by the user (see note at the end of \S~\ref{sec:prg_clstandard}). The arrays \texttt{icodcl} and \texttt{rcodcl}
+or another value defined by the user (see note at the end of
+\S~\ref{sec:prg_clstandard}). The arrays \texttt{icodcl} and \texttt{rcodcl}
 must be filled as follows:
 
 \begin{list}{$\bullet$}{}
@@ -4474,7 +4476,8 @@ must be filled as follows:
 \item $J^2.kg^{-2}$ for enthalpy fluctuations
 \end{list}
 
-\item \texttt{rcodcl(ifac,ivar,2)} has the following units (defined in such way that when multiplying the exchange coefficient by the variable, the
+\item \texttt{rcodcl(ifac,ivar,2)} has the following units (defined in such way
+      that when multiplying the exchange coefficient by the variable, the
       given flux has the same units as the flux defined below when
       \texttt{icodcl=3)}:
 

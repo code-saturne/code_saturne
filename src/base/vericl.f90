@@ -50,6 +50,8 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -312,11 +314,13 @@ if (itytur.eq.2) then
         icodcl(ifac,ik ).ne. 2.and.                          &
         icodcl(ifac,ik ).ne. 3.and.                          &
         icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne.13.and.                          &
         icodcl(ifac,ik ).ne. 6     ).or.                     &
        (icodcl(ifac,iep).ne. 1.and.                          &
         icodcl(ifac,iep).ne. 2.and.                          &
         icodcl(ifac,iep).ne. 3.and.                          &
         icodcl(ifac,iep).ne. 5.and.                          &
+        icodcl(ifac,iep).ne.13.and.                          &
         icodcl(ifac,iep).ne. 6     ) )then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
@@ -337,7 +341,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -351,7 +355,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -365,7 +369,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -379,7 +383,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -393,7 +397,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -407,7 +411,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6     ) then
+        icode.ne. 4.and.icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -420,7 +424,7 @@ elseif(itytur.eq.3) then
   do ifac = 1, nfabor
     icode = icodcl(ifac,iep)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-        icode.ne. 5.and.icode.ne.6) then
+        icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
       if (itypfb(ifac).gt.0) then
         itypfb(ifac) = -itypfb(ifac)
       endif
@@ -435,7 +439,7 @@ elseif(itytur.eq.3) then
     do ifac = 1, nfabor
       icode = icodcl(ifac,ial)
       if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
-          icode.ne. 5.and.icode.ne.6) then
+          icode.ne. 5.and.icode.ne. 6 .and.icode.ne.13) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)
         endif
@@ -468,6 +472,7 @@ elseif (iturb.eq.50) then
         icodcl(ifac,ik ).ne. 2.and.                          &
         icodcl(ifac,ik ).ne. 3.and.                          &
         icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne.13.and.                          &
         icodcl(ifac,ik ).ne. 6     ).or.                     &
        (icodcl(ifac,iep).ne. 1.and.                          &
         icodcl(ifac,iep).ne. 2.and.                          &
@@ -478,11 +483,13 @@ elseif (iturb.eq.50) then
         icodcl(ifac,iphi).ne. 2.and.                         &
         icodcl(ifac,iphi).ne. 3.and.                         &
         icodcl(ifac,iphi).ne. 5.and.                         &
+        icodcl(ifac,iphi).ne.13.and.                         &
         icodcl(ifac,iphi).ne. 6     ).or.                    &
        (icodcl(ifac,ifb).ne. 1.and.                          &
         icodcl(ifac,ifb).ne. 2.and.                          &
         icodcl(ifac,ifb).ne. 3.and.                          &
         icodcl(ifac,ifb).ne. 5.and.                          &
+        icodcl(ifac,ifb).ne.13.and.                          &
         icodcl(ifac,ifb).ne. 6     ) )then
 
       if (itypfb(ifac).gt.0) then
@@ -511,21 +518,25 @@ elseif (iturb.eq.51) then
         icodcl(ifac,ik ).ne. 2.and.                          &
         icodcl(ifac,ik ).ne. 3.and.                          &
         icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne.13.and.                          &
         icodcl(ifac,ik ).ne. 6     ).or.                     &
        (icodcl(ifac,iep).ne. 1.and.                          &
         icodcl(ifac,iep).ne. 2.and.                          &
         icodcl(ifac,iep).ne. 3.and.                          &
         icodcl(ifac,iep).ne. 5.and.                          &
+        icodcl(ifac,iep).ne.13.and.                          &
         icodcl(ifac,iep).ne. 6     ).or.                     &
        (icodcl(ifac,iphi).ne. 1.and.                         &
         icodcl(ifac,iphi).ne. 2.and.                         &
         icodcl(ifac,iphi).ne. 3.and.                         &
         icodcl(ifac,iphi).ne. 5.and.                         &
+        icodcl(ifac,iphi).ne.13.and.                         &
         icodcl(ifac,iphi).ne. 6     ).or.                    &
        (icodcl(ifac,ial).ne. 1.and.                          &
         icodcl(ifac,ial).ne. 2.and.                          &
         icodcl(ifac,ial).ne. 3.and.                          &
         icodcl(ifac,ial).ne. 5.and.                          &
+        icodcl(ifac,ial).ne.13.and.                          &
         icodcl(ifac,ial).ne. 6     ) )then
 
       if (itypfb(ifac).gt.0) then
@@ -554,11 +565,13 @@ elseif (iturb.eq.60) then
         icodcl(ifac,ik ).ne. 2.and.                          &
         icodcl(ifac,ik ).ne. 3.and.                          &
         icodcl(ifac,ik ).ne. 5.and.                          &
+        icodcl(ifac,ik ).ne.13.and.                          &
         icodcl(ifac,ik ).ne. 6     ).or.                     &
        (icodcl(ifac,iomg).ne. 1.and.                         &
         icodcl(ifac,iomg).ne. 2.and.                         &
         icodcl(ifac,iomg).ne. 3.and.                         &
         icodcl(ifac,iomg).ne. 5.and.                         &
+        icodcl(ifac,iomg).ne.13.and.                         &
         icodcl(ifac,iomg).ne. 6     ) )then
 
       if (itypfb(ifac).gt.0) then
@@ -583,6 +596,7 @@ elseif (iturb.eq.70) then
        icodcl(ifac,inusa ).ne. 2.and.                          &
        icodcl(ifac,inusa ).ne. 3.and.                          &
        icodcl(ifac,inusa ).ne. 5.and.                          &
+       icodcl(ifac,inusa ).ne.13.and.                          &
        icodcl(ifac,inusa ).ne. 6           )then
 
       if (itypfb(ifac).gt.0) then
@@ -606,6 +620,7 @@ if(nscal.ge.1) then
       if(icodcl(ifac,ivar).ne. 1.and.                             &
          icodcl(ifac,ivar).ne. 3.and.                             &
          icodcl(ifac,ivar).ne. 5.and.                             &
+         icodcl(ifac,ivar).ne.13.and.                             &
          icodcl(ifac,ivar).ne. 6 ) then
         if (itypfb(ifac).gt.0) then
           itypfb(ifac) = -itypfb(ifac)

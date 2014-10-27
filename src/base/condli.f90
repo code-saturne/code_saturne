@@ -1044,13 +1044,16 @@ do ifac = 1, nfabor
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , cfl               , hint )
 
+  ! Imposed value for the convection operator, imposed flux for diffusion
+  !----------------------------------------------------------------------
+
   elseif (icodcl(ifac,ipr).eq.13) then
 
     pimp = rcodcl(ifac,ipr,1)
     qimp = rcodcl(ifac,ipr,3)
 
     call set_dirichlet_conv_neumann_diff_scalar &
-         !===========================
+         !=====================================
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , qimp )
@@ -1212,6 +1215,21 @@ if (itytur.eq.2.or.iturb.eq.60) then
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
 
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
+
       endif
 
     enddo
@@ -1360,6 +1378,24 @@ elseif (itytur.eq.3) then
         cofadp(ifac) = coefap(ifac)
         cofbdp(ifac) = coefbp(ifac)
 
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
+        ! Boundary conditions for the momentum equation
+        cofadp(ifac) = coefap(ifac)
+        cofbdp(ifac) = coefbp(ifac)
+
       endif
 
     enddo
@@ -1482,6 +1518,21 @@ elseif (itytur.eq.3) then
              coefbp(ifac), cofbfp(ifac),                      &
              pimp              , cfl               , hint )
 
+
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
     endif
 
   enddo
@@ -1546,6 +1597,21 @@ elseif (itytur.eq.3) then
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
+
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
 
       endif
 
@@ -1631,6 +1697,21 @@ elseif (itytur.eq.5) then
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
 
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
+
       endif
 
     enddo
@@ -1701,6 +1782,21 @@ elseif (itytur.eq.5) then
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
 
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
+
       endif
 
     enddo
@@ -1768,6 +1864,21 @@ elseif (itytur.eq.5) then
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
+
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
 
       endif
 
@@ -1840,6 +1951,21 @@ elseif (iturb.eq.70) then
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
            pimp              , cfl               , hint )
+
+    ! Imposed value for the convection operator, imposed flux for diffusion
+    !----------------------------------------------------------------------
+
+    elseif (icodcl(ifac,ivar).eq.13) then
+
+      pimp = rcodcl(ifac,ivar,1)
+      qimp = rcodcl(ifac,ivar,3)
+
+      call set_dirichlet_conv_neumann_diff_scalar &
+           !=====================================
+         ( coefap(ifac), cofafp(ifac),                         &
+           coefbp(ifac), cofbfp(ifac),                         &
+           pimp              , qimp )
+
 
     endif
 
@@ -2150,6 +2276,21 @@ if (nscal.ge.1) then
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
+
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
+
+      elseif (icodcl(ifac,ivar).eq.13) then
+
+        pimp = rcodcl(ifac,ivar,1)
+        qimp = rcodcl(ifac,ivar,3)
+
+        call set_dirichlet_conv_neumann_diff_scalar &
+             !=====================================
+           ( coefap(ifac), cofafp(ifac),                         &
+             coefbp(ifac), cofbfp(ifac),                         &
+             pimp              , qimp )
+
 
       endif
 
