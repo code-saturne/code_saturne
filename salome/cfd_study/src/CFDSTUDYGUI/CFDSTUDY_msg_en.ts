@@ -46,6 +46,10 @@
             <translation>Choose CFD study location</translation>
         </message>
         <message>
+            <source>SET_CASE_LOCATION_BROWSE_CAPTION</source>
+            <translation>Choose CFD case location</translation>
+        </message>
+        <message>
             <source>SET_CFDSTUDY_ENVIRONMENT_PROFILE</source>
             <translation>Choose the environment profile file</translation>
         </message>
@@ -228,7 +232,7 @@
         <message>
             <source>SOLVER_HELPABOUT_ACTION_SB</source>
             <translation>About</translation>
-        </message>    
+        </message>
         <message>
             <source>SATURNE_FILE_MENU_TEXT</source>
             <translation>Code_Saturne</translation>
@@ -248,7 +252,7 @@
         <message>
             <source>SATURNE_SAVEAS_ACTION_TEXT</source>
             <translation>Save as SaturneGUI data xml file</translation>
-        </message>    
+        </message>
         <message>
             <source>SATURNE_SAVEAS_ACTION_TIP</source>
             <translation>Save as SaturneGUI data xml file</translation>
@@ -603,67 +607,12 @@
             <translation>Edit environnement...</translation>
         </message>
         <message>
-            <source>INFO_DLG_CFDCODE_TITLE</source>
-            <translation>Select CFD code</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_SATURNE_TEXT</source>
-            <translation>Code_Saturne</translation>
-        </message>
-        <message>
-            <source>INFO_DLG_NEPTUNE_TEXT</source>
-            <translation>NEPTUNE_CFD</translation>
-        </message>
-        <message>
             <source>INFO_DLG_INVALID_ENV</source>
             <translation>Invalid environment! Please, correct required or non-existent variables:</translation>
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
             <translation>OK</translation>
-        </message>
-    </context>
-    <context>
-        <name>EnvSettingsDialogHandler</name>
-        <message>
-            <source>ENV_DLG_HEADER_VARIABLE</source>
-            <translation>Variable</translation>
-        </message>
-        <message>
-            <source>ENV_DLG_HEADER_MEANING</source>
-            <translation>Meaning</translation>
-        </message>
-        <message>
-            <source>ENV_DLG_BTN_TOOLTIP</source>
-            <translation>Click for browsing environment variable from Salome Browser</translation>
-        </message>
-        <message>
-            <source>ENV_DLG_LOAD_BTN_TEXT</source>
-            <translation>Load from file</translation>
-        </message>
-        <message>
-            <source>DLG_OK_BUTTON_TEXT</source>
-            <translation>OK</translation>
-        </message>
-        <message>
-            <source>DLG_ABORT_BUTTON_TEXT</source>
-            <translation>Abort</translation>
-        </message>
-        <message>
-            <source>ENV_DLG_CAPTION</source>
-            <translation>CFDSTUDY environment</translation>
-        </message>
-        <message>
-            <source>ENV_DLG_INVALID_ENV</source>
-            <translation>Directory of %1 variable does not exists!!!</translation>
-        </message>
-        <message>
-            <source>SET_CFDSTUDY_ENVIRONMENT_PROFILE</source>
-            <translation>Choose the environment profile file</translation>
-        </message>
-        <message>
-            <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choose CFDSTUDY Study location</translation>
         </message>
     </context>
     <context>
@@ -674,23 +623,15 @@
         </message>
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>CANCEL</translation>
+            <translation>Cancel</translation>
         </message>
         <message>
             <source>LOCATION_DLG_CAPTION</source>
             <translation>Location of CFDSTUDY study</translation>
         </message>
         <message>
-            <source>LOCATION_DLG_STUDY_NAME</source>
-            <translation>Study name</translation>
-        </message>
-        <message>
             <source>LOCATION_DLG_CASE_NAME</source>
             <translation>Cases</translation>
-        </message>
-        <message>
-            <source>LOCATION_DLG_ADD_CASE</source>
-            <translation>Add new Cases</translation>
         </message>
         <message>
             <source>LOCATION_DLG_STUDY_DIR_LABEL</source>
