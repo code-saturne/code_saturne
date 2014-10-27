@@ -503,11 +503,11 @@
         </message>
         <message>
             <source>CFDSTUDY_PREF_EDITOR</source>
-            <translation>xemacs</translation>
+            <translation>editor</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_READER</source>
-            <translation>xemacs</translation>
+            <translation>editor</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DIFF</source>
