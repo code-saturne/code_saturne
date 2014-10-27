@@ -79,13 +79,16 @@ install-html-local:
 	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
 	if test -d pre/html; \
 	then \
-	  \cp -R pre/html $(DESTDIR)$(htmldir)/doxygen/pre ;\
+		$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/pre"; \
+	  \cp -R pre/html/* $(DESTDIR)$(htmldir)/doxygen/pre/ ;\
 	fi ;\
 	if test -d ui/html; \
 	then \
-	  \cp -R ui/html  $(DESTDIR)$(htmldir)/doxygen/ui ;\
+		$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/ui"; \
+	  \cp -R ui/html/*  $(DESTDIR)$(htmldir)/doxygen/ui/ ;\
 	fi ;\
-	\cp -R src/html $(DESTDIR)$(htmldir)/doxygen/src
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen/src"; \
+	\cp -R src/html/* $(DESTDIR)$(htmldir)/doxygen/src/
 
 uninstall-local:
 	-rm -rf $(htmldir)/doxygen
