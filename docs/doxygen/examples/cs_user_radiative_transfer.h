@@ -24,48 +24,50 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
+
 
 /*!
 
-  \page cs_user_radiative_transfer_parameters Examples of data settings for radiative transfers (usray2.f90)
-  
+  \page cs_user_radiative_transfer Examples of data settings for radiative transfers
+
 \image html radiative_tr_sketch.gif "Sketch of thermal flux in boundary walls"
 
 
-The radiative boundary condition is based on the calculation of a new wall temperature. This temperature is  computed with a thermal flux balance:
+The radiative boundary condition is based on the calculation of a new wall
+temperature. This temperature is  computed with a thermal flux balance:
 
 \f[{ Q_{conduction} = Q_{convection} + (Q_{rayt_{absorption}} - Q_{rayt_{emission}}}) \f]
 
 Therefore :
 
-\f[ \dfrac{XLAMP}{EPAP}  (T_{fluide} - T_{parop}) = H_{fluide}  (T_{fluide} - T_{parop}) + EPSP  (Q_{incid} - \sigma * T_{parop}) \f]
+\f[ \dfrac{xlamp}{epap}  (T_{fluid} - T_{wall})
+= h_{fluid}  (T_{fluid} - T_{wall}) + epsp  (Q_{incid} - \sigma * T_{wall}) \f]
 
 
  \note In \c Code_Saturne the flux is positive when it is oriented from inside to outside.
 
 
-  |  Corps                       |     Emissivity    |          
-  |------------------------------|------------------:|  
-  |  polished steel              |       0.06        |      
-  |  oxidized steel              |       0.80        |     
-  |  steel rough                 |       0.94        |       
-  |  polished aluminium          |       0.04        |        
-  |  oxidiezd aluminium (inside) |       0.09        |      
-  |  oxidized aluminium (wet air)|       0.90        |          
-  |  brick                       |       0.93        |          
-  |  concrete                    |       0.93        |      
-  |  paper                       |       0.8 to 0.9  |         
-  |  water                       |       0.96        |       
+  |  Corps                       |     Emissivity    |
+  |------------------------------|------------------:|
+  |  polished steel              |       0.06        |
+  |  oxidized steel              |       0.80        |
+  |  steel rough                 |       0.94        |
+  |  polished aluminium          |       0.04        |
+  |  oxidiezd aluminium (inside) |       0.09        |
+  |  oxidized aluminium (wet air)|       0.90        |
+  |  brick                       |       0.93        |
+  |  concrete                    |       0.93        |
+  |  paper                       |       0.8 to 0.9  |
+  |  water                       |       0.96        |
 
 
-  \section bound_faces Bondary faces identification
+  \section bound_faces Boundary faces identification
 
    Boundary faces may be identified using the \ref getfbr subroutine. The syntax of this subroutine is described in the \ref cs_user_boundary_conditions subroutine, but a more thorough description can be found in the user guide.
 
 \note These usefull constant are definded \n
 \f$ TKELVI = 273.16D0 \f$ \n
-\f$ SIG = 5.6703D-8 \f$ 
+\f$ SIG = 5.6703D-8 \f$
 
 
   \section init_fin Initialization and finalization
@@ -73,12 +75,12 @@ Therefore :
 
    The following initialization block needs to be added for the following examples:
 
-  \snippet cs_user_radiative_transfer_parameters.f90 allocate
+  \snippet cs_user_radiative_transfer_bcs.f90 allocate
 
   At the end of the subroutine, it is recommended to deallocate the work array:
 
-  \snippet cs_user_radiative_transfer_parameters.f90 deallocate
- 
+  \snippet cs_user_radiative_transfer_bcs.f90 deallocate
+
   In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic for C and Fortran.
 
  <b> Remaining initialisation</b>
@@ -86,13 +88,13 @@ Therefore :
 
   ivar: number of the thermal variable
 
-   \snippet cs_user_radiative_transfer_parameters.f90 ivar
+   \snippet cs_user_radiative_transfer_bcs.f90 ivar
 
   Min and Max values for the wall temperatures (clipping otherwise)
- 
+
  \f$ T_{min} \f$ and \f$T_{max} \f$ are given in Kelvin.
 
-  \snippet  cs_user_radiative_transfer_parameters.f90 temp
+  \snippet  cs_user_radiative_transfer_bcs.f90 temp
 
    \section assign2 Assign boundary conditions to boundary wall
 
@@ -104,17 +106,17 @@ Therefore :
 
  For each boundary face ifac (not just the faces of wall)
    the user defines his own choice by a number of zone
-   \c IZFRDP(ifac) from color of the boundary face
+   \c izfrdp(ifac) from color of the boundary face
      or more generally, their properties (color, groups ...),
      or boundary conditions specified in \ref cs_user_boundary_conditions,
      or even of their coordinates.
+
 \warning It is essential that ALL boundary faces
    have been assigned to a zone.
- The number of zones (the value of \c IZFRDP(ifac)) is
+   The number of zones (the value of \c izfrdp(ifac)) is
    arbitrarily chosen by the user, but must be a
-   positive integer and less than or equal to \c NBZRDM
+   positive integer and less than or equal to \c nbzrdm
    (value set in parameter \ref radiat.h).
- 
 
 
 \subsection wall_carac Wall caracteristics
@@ -138,96 +140,95 @@ Therefore :
 
   - \c rcodcl = conduction flux
   - \c epsp   = emissivity
-  - \c xlamp  = conductivity (\f$W \cdot m^{-1} \cdot K^{-1}\f$)
+  - \c xlamp  = conductivity (\f$W.m^{-1}.K^{-1}\f$)
   - \c epap   = thickness (\f$m\f$)
   - \c textp  = outside temperature (\f$K\f$)
-\section ex Examples
+
+
+\section ex Examples of boundary conditions
 
 Here is a list of examples:
 
-   - \subpage radiative_transfer_parameters_examples
-
-
-
-*/
-// __________________________________________________________________________________
-/*!
- \page radiative_transfer_parameters_examples Radiative transfert parameters examples
-
-  \section ex1 Example 1
+  \subsection ex1 Gray or black wall with profil of fixed inside temperature
 
   For wall boundary faces, selection criteria: color 1  \n
-  Gray or black wall with profil of fixed inside temperature
 
-  \snippet   cs_user_radiative_transfer_parameters.f90  example_1
-  
-   \section ex2 Example 2
+  \snippet   cs_user_radiative_transfer_bcs.f90  example_1
+
+
+  \subsection ex2 Gray or black wall with fixed outside temperature \f$ T_{ext} \f$
 
   For wall boundary faces, selection criteria: color 2  \n
-  Gray or black wall with fixed outside temperature \f$ T_{EXTP} \f$
-   
-  \snippet  cs_user_radiative_transfer_parameters.f90 example_2
 
-  \section ex3 Example 3 
-  
+  \snippet  cs_user_radiative_transfer_bcs.f90 example_2
+
+
+  \subsection ex3 Reflecting wall (\f$ epsp = 0 \f$) with fixed outside temperature \f$ T_{ext} \f$
+
   For wall boundary faces, selection criteria: color 3 \n
-  Reflecting wall (EPSP = 0) with fixed outside temperature \f$ T_{EXTP} \f$
 
-  \snippet  cs_user_radiative_transfer_parameters.f90 example_3
+  \snippet  cs_user_radiative_transfer_bcs.f90 example_3
 
-  \section ex4 Example 4
+
+  \subsection ex4 Gray or black wall and fixed conduction flux through the wall
 
 For wall boundary faces which have the color 4: \n
-Gray or black wall and fixed conduction flux through the wall
 
-\f[ \frac{XLAMP}{EPAP} \cdot (T_{parop} - T_{extp}) = \text{fixed conduction flux in } W\cdot m^{-2} \f]
-\f[ \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: \: = RODCL(IFAC,IVAR,3) \f]
+\f[
+\begin{array}{rcl}
+\frac{\texttt{xlamp}}{\texttt{epap}} \cdot (T_{wall} - T_{ext})
+&=& \text{fixed conduction flux in } W.m^{-2} \\
+&=& \texttt{rodcl(ifac,ivar,3)}
+\end{array}
+\f]
 
-If the conduction flux is zero then the wall is adiabatic. The array \f$ RCODCL(IFAC,IVAR,3)\f$ has the value of the flux. \n
+If the conduction flux is zero then the wall is adiabatic. The array \f$ \texttt{rcodcl(ifac,ivar,3)}\f$ has the value of the flux. \n
 Flux density (< 0 if gain for the fluid)
- - For temperature \f$T\f$, in \f$ W\cdot m^{-2}\f$:
- 
- \f[ RCODCL(IFAC,IVAR,3)=C_p (VISCLS+\frac{VISCT}{\sigma})\cdot \grad{T}\cdot \vect{n} \f]
+ - For temperature \f$T\f$, in \f$ W.m^{-2}\f$:
 
- - For enthalpy \f$h\f$, in \f$ W \cdot m^{-2} \f$:
- \f[ RCODC(IFAC,IVAR,3)=(VISCLS+\frac{VISCT}{\sigma})\cdot \grad{H} \cdot \vect{n}\f]
+ \f[ rcodcl(ifac,ivar,3)=C_p (viscls+\frac{visct}{\sigma})\cdot \grad{T}\cdot \vect{n} \f]
+
+ - For enthalpy \f$h\f$, in \f$ W.m^{-2} \f$:
+ \f[ RCODC(IFAC,IVAR,3)=(viscls+\frac{visct}{\sigma})\cdot \grad{H} \cdot \vect{n}\f]
+
+\snippet  cs_user_radiative_transfer_bcs.f90 example_4
 
 
-\snippet  cs_user_radiative_transfer_parameters.f90 example_4
-
-\section ex5 Example 5
+\subsection ex5 Reflecting wall and fixed conduction flux through the wall
 
 For wall boundary faces which have the color 5:\n
-reflecting wall and fixed conduction flux through the wall
 
-\f[ \frac{XLAMP}{EPAP} \cdot (T_{parop} - T_{extp}) = \text{fixed conduction flux}\f]
-and \f$ EPSP = 0 \f$
+\f[
+\frac{xlamp}{epap} \cdot (T_{wall} - T_{ext}) = \text{fixed conduction flux}
+\f]
+and \f$ epsp = 0 \f$
 
 If the conduction flux is zero then the wall is adiabatic.
  Flux density (< 0 if gain for the fluid)
-  - For temperatures \f$T\f$,    in \f$ W\cdot m^{-2} \f$:
-    \f[  RCODCL(IFAC,IVAR,3) = C_p  (VISCLS+\frac{VISCT}{\sigma}) \cdot \grad{T}\cdot \vect{n} \f]
-  - For enthalpies \f$h\f$,      in \f$ W \cdot m^{-2} \f$:
-    \f[  RCODCL(IFAC,IVAR,3) =    (VISCLS+\frac{VISCT}{\sigma})  \cdot \grad{H} \cdot \vect{n} \f]
+  - For temperatures \f$T\f$,    in \f$ W.m^{-2} \f$:
+    \f[  rcodcl(ifac,ivar,3) = C_p  (viscls+\frac{visct}{\sigma}) \cdot \grad{T}\cdot \vect{n} \f]
+  - For enthalpies \f$h\f$,      in \f$ W.m^{-2} \f$:
+    \f[  rcodcl(ifac,ivar,3) =    (viscls+\frac{visct}{\sigma})  \cdot \grad{H} \cdot \vect{n} \f]
 
-\snippet  cs_user_radiative_transfer_parameters.f90 example_5
+\snippet  cs_user_radiative_transfer_bcs.f90 example_5
 
-\section w Warning 
 
-For all boundary faces that are not wall it is MANDATORY to impose a number of zone in the array \c izfrdp. For each zone, informations will be displayed in the listing.
+\section w Warning
 
-\snippet cs_user_radiative_transfer_parameters.f90 w
+For all boundary faces that are not wall it is MANDATORY to impose a number of
+zone in the array \c izfrdp. For each zone, informations will be displayed in the listing.
 
-\section ex6 Example 6 
+\snippet cs_user_radiative_transfer_bcs.f90 w
 
 Verification that all boundary faces have been treated
 
-\snippet  cs_user_radiative_transfer_parameters.f90 example_6 
+\snippet  cs_user_radiative_transfer_bcs.f90 check
+
 
 \section end_loop End of the loop on the boundary faces
 
-\snippet  cs_user_radiative_transfer_parameters.f90 end_radiative 
+\snippet  cs_user_radiative_transfer_bcs.f90 end_radiative
 \section format_radiative_trans Format
-\snippet cs_user_radiative_transfer_parameters.f90 format_radiative
+\snippet cs_user_radiative_transfer_bcs.f90 format_radiative
 
-*/  
+*/

@@ -3092,7 +3092,7 @@ define a subset of the mesh, for example:
 
 \begin{list}{-}{}
 \item boundary regions (cf. \texttt{cs\_user\_boundary\_conditions}, \texttt{usalcl},
-\texttt{usray2}, \texttt{uslag2}, ...),
+\texttt{cs\_user\_radiative\_transfer\_bcs.f90}, \texttt{uslag2}, ...),
 \item volume initialization (cf. \texttt{cs\_user\_initialization}, ...),
 \item head-loss region (cf. \texttt{cs\_user\_head\_losses.f90}),
 \item source terms region (cf. \texttt{cs\_user\_source\_terms}),
@@ -7055,7 +7055,13 @@ keyword list (\S~\ref{sec:prg_motscles}).
 %==================================
 \subsubsection{Radiative transfers boundary conditions}
 %==================================
-These informations can be filled by the user through the Graphical User Interface (GUI) or by using the subroutine \texttt{usray2} (called every time step). If the interface is used, when one of the ``Radiative transfers'' options is selected in \figurename~\ref{fig:0_ray}, it activates specific boundary conditions each time a ``Wall'' is defined, see \figurename~\ref{fig:6_ray}. The user can then choose between 3 cases. The parameters the user must specify are displayed for one of them in \figurename~\ref{fig:7_ray}.
+These informations can be filled by the user through the Graphical User Interface
+(GUI) or by using the subroutine \texttt{cs\_user\_radiative\_transfer\_bcs.f90} (called every time step). If the
+interface is used, when one of the ``Radiative transfers'' options is selected in
+\figurename~\ref{fig:0_ray}, it activates specific boundary conditions each time
+a ``Wall'' is defined, see \figurename~\ref{fig:6_ray}. The user can then choose
+between 3 cases. The parameters the user must specify are displayed for one of
+them in \figurename~\ref{fig:7_ray}.
 
 \begin{figure}[ht]
 \begin{center}
@@ -7073,14 +7079,15 @@ These informations can be filled by the user through the Graphical User Interfac
 \end{center}
 \end{figure}
 
-When the GUI is not used, \texttt{usray2} is the second subroutine necessary for every calculation which includes radiative thermal transfers. It is used to give all the
+When the GUI is not used, \texttt{cs\_user\_radiative\_transfer\_bcs.f90} is the second subroutine necessary for
+every calculation which includes radiative thermal transfers. It is used to give all the
 necessary parameters concerning, in the one case, the wall temperature
 calculation, and in the other, the coupling between the thermal
 scalar (temperature or enthalpy), and the radiation module at the
 calculation domain boundaries. It must be noted that the boundary conditions
 concerning the thermal scalar which may have been defined in the
 subroutine \texttt{cs\_user\_boundary\_conditions} will be modified by the radiation module
-according to the data given in \texttt{usray2} (cf. \S\ref{sec:fvm_selector}).\\
+according to the data given in \texttt{cs\_user\_radiative\_transfer\_bcs.f90} (cf. \S\ref{sec:fvm_selector}).\\
 A zone number must be given to each boundary face \footnote{This must be less
  than the maximum allowable by the code, \texttt{nozrdm}. This is fixed at 2000
  in \texttt{radiat} and cannot be modified.}and, specifically for

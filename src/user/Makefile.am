@@ -89,6 +89,7 @@ cs_user_postprocess.c \
 cs_user_postprocess_var.f90 \
 cs_user_porosity.f90 \
 cs_user_radiative_transfer.f90 \
+cs_user_radiative_transfer_bcs.f90 \
 cs_user_solver.c \
 cs_user_source_terms.f90 \
 cs_user_turbomachinery.c \
@@ -102,7 +103,6 @@ uslag1.f90 \
 uslag2.f90 \
 uspt1d.f90 \
 usray1.f90 \
-usray2.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

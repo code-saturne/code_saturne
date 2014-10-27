@@ -116,7 +116,7 @@ cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-scalar_drift.f90 \
 cs_user_porosity.f90 \
 cs_user_postprocess-sfc.c \
-cs_user_radiative_transfer_parameters.f90 \
+cs_user_radiative_transfer_bcs.f90 \
 cs_user_source_terms.f90 \
 cs_user_source_terms-scalar_in_a_channel.f90 \
 usatch_4spe5reac.f90

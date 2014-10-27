@@ -255,7 +255,7 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
 
   endif
 
-  call usray2 &
+  call cs_user_radiative_transfer_bcs &
   !==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
@@ -311,7 +311,7 @@ if (iihmpr.eq.1) then
 
 endif
 
-call usray2 &
+call cs_user_radiative_transfer_bcs &
 !==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
@@ -920,7 +920,8 @@ deallocate(text, tint)
 '@'                                                            ,/,&
 '@  Le calcul ne peut etre execute.'                           ,/,&
 '@'                                                            ,/,&
-'@  Verifier les conditions aux limites dans usray2.'          ,/,&
+'@  Verifier les conditions aux limites dans'                  ,/,&
+'@   cs_user_radiative_transfer_bcs.f90.'                      ,/,&
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)

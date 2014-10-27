@@ -22,9 +22,60 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine usray2 &
-!================
 
+!===============================================================================
+! Purpose:
+! --------
+!> \file cs_user_radiative_transfer_bcs.f90
+!> \brief User subroutine for input of radiative transfer parameters: boundary conditions
+
+!> See \subpage cs_user_radiative_transfer for more information.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+! _____________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     icodcl        boundary condition code
+!>                                - 1  -> Dirichlet
+!>                                - 2  -> convective outelet
+!>                                - 3  -> flux density
+!>                                - 4  -> sliding wall and u.n=0 (velocity)
+!>                                - 5  -> friction and u.n=0 (velocity)
+!>                                - 6  -> roughness and u.n=0 (velocity)
+!>                                - 9  -> free inlet/outlet (velocity)
+!>                                inflowing possibly blocked
+!> \param[in]     izfrdp        boundary faces -> zone number
+!> \param[in]     isothp        boundary face type for radative transfer
+!>                                - itpimp -> Gray wall with fixed inside temp
+!>                                - ipgrno -> Gray wall with fixed outside temp
+!>                                - iprefl -> Reflecting wall with fixed
+!>                                         outside temp
+!>                                - ifgrno -> Gray wall with fixed
+!>                                      conduction flux
+!>                                - ifrefl -> Reflecting wall with fixed
+!>                                      conduction flux
+!> \param[in]     tmin          min value of the wall temperature
+!> \param[in]     tmax          max value of the wall temperature
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     rcodcl        boundary condition values
+!>                                rcodcl(3) = flux density value
+!>                                (negative for gain) in W/m2
+!> \param[in]     thwall        inside current wall temperature (K)
+!> \param[in]     qincid        radiative incident flux  (W/m2)
+!> \param[in]     hfcnvp        convective exchange coefficient (W/m2/K)
+!> \param[in]     flcnvp        convective flux (W/m2)
+!> \param[out]    xlamp         conductivity (W/m/K)
+!> \param[out]    epap          thickness (m)
+!> \param[out]    epsp          emissivity (>0)
+!> \param[out]    textp         outside temperature (K)
+!> \param[out]    tintp         initial inside temperature (K)
+! _____________________________________________________________________________!
+
+subroutine cs_user_radiative_transfer_bcs &
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    icodcl , izfrdp , isothp ,                                     &
@@ -32,144 +83,6 @@ subroutine usray2 &
    dt     , rcodcl ,                                              &
    thwall , qincid , hfcnvp , flcnvp ,                            &
    xlamp  , epap   , epsp   , textp  , tintp  )
-
-!===============================================================================
-! Purpose:
-! --------
-
-! User subroutine for input of radiative transfer parameters: boundary conditions
-
-! Sketch of thermal flux in boundary wall
-
-
-!  Outside      Inside wall       Fluid domain
-!            |               |
-!            |               |
-!            |               |
-!            | EPSP Qincid<--|<----- Qincid             [Incident flux]
-!            |               |
-!            | [absorption]  |
-!            |               |
-!            |               |-----> (1-EPSP) Qincid    [reflexion]
-!            |               |
-!            |               |
-!            |               |                       4
-!            |               |-----> EPSP sigma Tparop  [emission]
-!            |               |
-!            |               |
-!            |               |
-!            | [conduction]  |     .....o Tfluide       [convection]
-!            |               |    .
-!            |     XLAMP     |   .    Hfluide
-!            |               |  .
-!            |            ...o..
-!            |          ..   | Tparop (Inside wall temperature)
-!            |         .     |
-!            |       ..      |
-!            |      .        |
-!            |    ..         |
-!            |   .           |
-!            o...            |
-!       Textp|               |
-!(Outside    |               |
-! wall       |<------------->|
-! temprature)|     EPAP      |
-!            |               |
-
-
-!  The radiative boundary condition ios based on the calculation of
-!  a new wall temperature.
-!  This temparature is computed with a thermal flux balance:
-
-!  Q           =  Q           + (Qrayt           - Qrayt        )
-!   conduction     convection         absorption        emission
-
-!  therfore:
-
-!   XLAMP
-!   -----(Tparop-Textp) =
-!   EPAP
-!                                                             4
-!         Hfluide (Tfluide-Tparop) + EPSP (QINCID - SIGMA Tparop )
-
-!  Note: in Code_Saturne the flux is positive when it is oriented
-!  from inside to outside.
-!
-!
-!      CORPS                     Emissivity
-!      ------------------------------------
-!      polished steel               0,06
-!      oxidized steel               0,80
-!      steel rough                  0,94
-!      polished aluminium           0,04
-!      oxidized aluminium (inside)  0,09
-!      oxidized aluminium (wet air) 0,90
-!      brick                        0,93
-!      concrete                     0,93
-!      paper                        0,8 to 0,9
-!      water                        0,96
-
-
-! Boundary faces identification
-! =============================
-
-! Boundary faces may be identified using the 'getfbr' subroutine.
-! The syntax of this subroutine is described in the
-! 'cs_user_boundary_conditions' subroutine,
-! but a more thorough description can be found in the user guide.
-
-! Note: these useful constants are defined
-!       TKELVI = 273.16D0
-!       SIG    = 5.6703D-8
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! itypfb           ! ia ! <-- ! boundary face types                            !
-! icodcl           ! ia ! <-- ! boundary condition code                        !
-!  (nfabor, nvar)  !    !     ! = 1  -> Dirichlet                              !
-!                  !    !     ! = 2  -> convective outelet                     !
-!                  !    !     ! = 3  -> flux density                           !
-!                  !    !     ! = 4  -> sliding wall and u.n=0 (velocity)      !
-!                  !    !     ! = 5  -> friction and u.n=0 (velocity)          !
-!                  !    !     ! = 6  -> roughness and u.n=0 (velocity)         !
-!                  !    !     ! = 9  -> free inlet/outlet (velocity)           !
-!                  !    !     !         inflowing possibly blocked             !
-! izfrdp(nfabor)   ! ia ! --> ! boundary faces -> zone number                  !
-! isothp(nfabor)   ! ia ! --> ! boundary face type for radative transfer       !
-!                  !    !     ! = itpimp -> Gray wall with fixed inside temp   !
-!                  !    !     ! = ipgrno -> Gray wall with fixed outside temp  !
-!                  !    !     ! = iprefl -> Reflecting wall with fixed         !
-!                  !    !     !                                  outside temp  !
-!                  !    !     ! = ifgrno -> Gray wall with fixed               !
-!                  !    !     !                               conduction flux  !
-!                  !    !     ! = ifrefl -> Reflecting wall with fixed         !
-!                  !    !     !                               conduction flux  !
-! tmin             ! r  !     ! min value of the wall temperature              !
-! tmax             ! r  !     ! max value of the wall temperature              !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rcodcl           ! ra ! --> ! boundary condition values                      !
-!                  !    !     ! rcodcl(3) = flux density value                 !
-!                  !    !     !  (negative for gain) in w/m2                   !
-! thwall(nfabor)   ! ra ! <-- ! inside current wall temperature (K)            !
-! qincid(nfabor)   ! ra ! <-- ! radiative incident flux  (W/m2)                !
-! hfcnvp(nfabor)   ! ra ! <-- ! convective exchange coefficient (W/m2/K)       !
-! flcnvp(nfabor)   ! ra ! <-- ! convective flux (W/m2)                         !
-! xlamp(nfabor)    ! ra ! --> ! conductivity (W/m/K)                           !
-! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
-! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
-! textp(nfabor)    ! ra ! --> ! outside temperature (K)                        !
-! tintp(nfabor)    ! ra ! --> ! initial inside temperature (K)                 !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -211,66 +124,41 @@ double precision xlamp(nfabor), epap(nfabor)
 double precision epsp(nfabor)
 double precision textp(nfabor), tintp(nfabor)
 
+!< [loc_var]
 ! Local variables
 
 integer          ifac , ivar, iok
 integer          ilelt, nlelt
 
 integer, allocatable, dimension(:) :: lstelt
+!< [loc_var]
 
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-  !==========
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',/,   &
-'@    =======',/,                                                 &
-'@     The user subroutine ''usray2'' must be completed.',/, &
-'@',/,                                                            &
-'@  The calculation will not be run.',/,                          &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 !===============================================================================
 ! 0. Initialization
 !===============================================================================
 
+!< [allocate]
 ! Allocate a temporary array for boundary faces selection
 allocate(lstelt(nfabor))
-
+!< [allocate]
 
 !===============================================================================
 ! 1. IVAR: number of the thermal variable
 !===============================================================================
 
+!< [ivar]
 ivar = isca(iscalt)
+!< [ivar]
 
 !===============================================================================
 !  2. Min and max values for the wall temperatures (clipping otherwise)
 !   TMIN and TMAX are given in Kelvin.
 !===============================================================================
 
+!< [temp]
 tmin = 0.d0
 tmax = grand + tkelvi
+!<[temp]
 
 !===============================================================================
 ! 3. Assign boundary conditions to boundary wall
@@ -343,7 +231,10 @@ tmax = grand + tkelvi
 !     ========
 
 !    Indicator for forgotten faces.
+
+!< [forg]
 iok = 0
+!< [forg]
 
 !   -------------------------------------------------------------------
 !-->  Example 1:
@@ -351,30 +242,31 @@ iok = 0
 !       Gray or black wall with profil of fixed inside temperature
 !       ------------------------------------
 
+!< [example_1]
 call getfbr('1',nlelt,lstelt)
-!==========
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac).eq.iparoi ) then
+  if (itypfb(ifac).eq.iparoi) then
 
-!      zone number
+    ! zone number
     izfrdp(ifac) = 51
 
-!      Type of condition: gray or black wall with fixed inside temperature
+    ! Type of condition: gray or black wall with fixed inside temperature
     isothp(ifac) = itpimp
 
-!      Emissivity
+    ! Emissivity
     epsp  (ifac) = 0.1d0
 
-!      Profil of fixed inside temperature
+     ! Profil of fixed inside temperature
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
 
 enddo
+!< [example_1]
 
 !   -------------------------------------------------------------------
 !-->  Example 2 :
@@ -382,35 +274,36 @@ enddo
 !       Gray or black wall with fixed outside temperature TEXTP
 !       ------------------------------------
 
-CALL GETFBR('2',NLELT,LSTELT)
-!==========
+!< [example_2]
+call getfbr('2',nlelt,lstelt)
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac).eq.iparug ) then
+  if (itypfb(ifac).eq.iparug) then
 
-!      zone number
+    ! zone number
     izfrdp(ifac) = 52
 
-!      Type of condition: gray or black wall with fixed outside temperature TEXTP
+    ! Type of condition: gray or black wall with fixed outside temperature TEXTP
     isothp(ifac) = ipgrno
 
-!        Emissivity
+    ! Emissivity
     epsp  (ifac) = 0.9d0
-!        Conductivity (W/m/K)
+    ! Conductivity (W/m/K)
     xlamp (ifac) = 3.0d0
-!        Thickness    (m)
+    ! Thickness    (m)
     epap  (ifac) = 0.1d0
-!        Fixed outside temperature: 473.16 K
+    ! Fixed outside temperature: 473.16 K
     textp (ifac) = 200.d0 + tkelvi
-!        Initial inside temperature: 473.16 K
+    ! Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
 
 enddo
+!< [example_2]
 
 !   -------------------------------------------------------------------
 !-->  Exemple 3 :
@@ -418,33 +311,34 @@ enddo
 !       Reflecting wall (EPSP = 0) with fixed outside temperature TEXTP
 !       ------------------------------------
 
-CALL GETFBR('3',NLELT,LSTELT)
-!==========
+!< [example_3]
+call getfbr('3',nlelt,lstelt)
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac).eq.iparoi ) then
+  if (itypfb(ifac).eq.iparoi) then
 
-!      zone number
+    ! zone number
     izfrdp(ifac) = 53
 
-!      Type of condition: reflecting wall with fixed outside temperature TEXTP
+    ! Type of condition: reflecting wall with fixed outside temperature TEXTP
     isothp(ifac) = iprefl
 
-!        Conductivity (W/m/K)
+    ! Conductivity (W/m/K)
     xlamp (ifac) = 3.0d0
-!        Thickness    (m)
+    ! Thickness    (m)
     epap  (ifac) = 0.1d0
-!        Fixed outside temperature: 473.16 K
+    ! Fixed outside temperature: 473.16 K
     textp (ifac) = 200.d0 + tkelvi
-!        Initial inside temperature: 473.16 K
+    ! Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
 
 enddo
+!< [example_3]
 
 !   -------------------------------------------------------------------
 !-->  Example 4 :
@@ -465,41 +359,39 @@ enddo
 !            RCODCL(IFAC,IVAR,3) =    (VISCLS+VISCT/SIGMAS) * GRAD H
 !       ------------------------------------
 
-CALL GETFBR('4',NLELT,LSTELT)
-!==========
+!< [example_4]
+call getfbr('4',nlelt,lstelt)
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac).eq.iparoi ) then
+  if (itypfb(ifac).eq.iparoi) then
 
 !      zone number
     izfrdp(ifac) = 54
 
-!      Type of condition: gray or black wall with fixed conduction flux through the wall
+    ! Type of condition: gray or black wall with fixed conduction flux through the wall
     isothp(ifac) = ifgrno
 
-!      Emissivity
+    ! Emissivity
     epsp  (ifac) = 0.9d0
-!      Conduction flux (W/m2)
+    ! Conduction flux (W/m2)
     rcodcl(ifac,ivar,3) = 0.d0
-!      Initial inside temperature: 473.16 K
+    ! Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
 
 enddo
+!< [example_4]
 
 !   -------------------------------------------------------------------
 !-->  Example 5 :
-!      Pour les faces PAROI de couleur 5 :
-!           Paroi reflechissante (EPSP = 0) et
-!           Flux de conduction impose dans la paroi
 !      For wall boundary faces which have the color 5:
 !           reflecting wall and fixed conduction flux through the wall
 
-!      Equivalent a imposer une condition de flux au fluide
+!      Equivalent to impose a Neumann to the fluid
 
 !        XLAMP
 !        -----(Tparop-Textp) = fixed conduction flux and EPSP = 0
@@ -514,29 +406,30 @@ enddo
 !            RCODCL(IFAC,IVAR,3) =    (VISCLS+VISCT/SIGMAS) * GRAD H
 !       ------------------------------------
 
-CALL GETFBR('5',NLELT,LSTELT)
-!==========
+!< [example_5]
+call getfbr('5',nlelt,lstelt)
 
 do ilelt = 1, nlelt
 
   ifac = lstelt(ilelt)
 
-  if ( itypfb(ifac).eq.iparoi ) then
+  if (itypfb(ifac).eq.iparoi) then
 
-!      zone number
+    ! zone number
     izfrdp(ifac) = 55
 
-!      Type of condition: reflecting wall with fixed conduction flux through the wall
+    ! Type of condition: reflecting wall with fixed conduction flux through the wall
     isothp(ifac) = ifrefl
 
-!      Conduction flux (W/m2)
+    ! Conduction flux (W/m2)
     rcodcl(ifac,ivar,3) = 0.d0
-!      Initial inside temperature: 473.16 K
+    ! Initial inside temperature: 473.16 K
     tintp (ifac) = 200.d0 + tkelvi
 
   endif
 
 enddo
+!< [example_5]
 
 !                           WARNING
 
@@ -546,6 +439,7 @@ enddo
 !      For each zone, informations will be displayed in the listing.
 !       ------------------------------------
 
+!< [w]
 do ifac = 1, nfabor
 
   if     ( itypfb(ifac).eq.isolib                  ) then
@@ -558,14 +452,14 @@ do ifac = 1, nfabor
     izfrdp(ifac) = 63
   elseif ( itypfb(ifac).eq.isymet                  ) then
     izfrdp(ifac) = 64
-
-
+!<[w]
 
 !   -------------------------------------------------------------------
-!-->  Example 7 :
+!-->
 !      Verification that all boundary faces have been treated.
 !       ------------------------------------
 
+!< [check]
   elseif ( itypfb(ifac).eq.iparoi .or.                      &
            itypfb(ifac).eq.iparug     ) then
     if (izfrdp(ifac) .eq. -1) then
@@ -573,13 +467,13 @@ do ifac = 1, nfabor
       iok = iok + 1
     endif
   endif
-
-
+!< [check]
 
 
 !     End of the loop on the boundary faces
 !     -------------------------------------
 
+!< [end_radiative]
 enddo
 
 ! Stop if there are forgotten faces
@@ -587,12 +481,13 @@ if(iok.ne.0) then
   call csexit (1)
   !==========
 endif
+!< [end_radiative]
 
 ! -------
-! FORMAT
+! Format
 ! -------
 
-
+!< [format_radiative]
  1000 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -601,19 +496,23 @@ endif
 '@    =======',/,                                                 &
 '@   Radiative data are missing for face: ',I10,/,                &
 '@',/,                                                            &
-'@     The user subroutine ''usray2'' must be completed.',/, &
-'@',/,                                                            &
-'@  The calculation will not be run.',/,                          &
-'@                                                            ',/,&
+'@   The user subroutine ''cs_user_radiative_transfer_bcs.f90' ,/,&
+'@   must be completed.'                                       ,/,&
+'@'                                                            ,/,&
+'@  The calculation will not be run.'                          ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
+!< [format_radiative]
 
 ! ---
-! END
+! End
 ! ---
 
+!< [deallocate]
 ! Deallocate the temporary array
 deallocate(lstelt)
+!< [deallocate]
 
 return
-end subroutine usray2
+end subroutine cs_user_radiative_transfer_bcs

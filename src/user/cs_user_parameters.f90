@@ -985,7 +985,7 @@ endif
 !     radiative model, as it is a source of user errors in this case:
 !     Indeed, the boundary conditions for the fluid temperature will then be
 !     in degrees Celsius, while the boundary conditions for radiation in
-!     usray2 must still be in Kelvin.
+!     cs_user_radiative_transfer_bcs.f90 must still be in Kelvin.
 
 if (.false.) then
 
