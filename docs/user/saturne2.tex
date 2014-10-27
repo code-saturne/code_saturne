@@ -2137,9 +2137,7 @@ $\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}$\\
 hence, with a zero value, there is no sub-relaxation.
 With combustion and pulverised coal, {\tt srrom} is initialised to {\tt -grand}
 and the user must specify a proper value through the Interface or the
-initialisation subroutines (\texttt{usd3p1},
- \texttt{usebu1}, \texttt{uslwc1}, \texttt{uscpi1} or
-\texttt{uscpl1}). With the electric module, {\tt srrom} is initialised in to 0
+initialisation subroutines (\texttt{cs\_user\_combustion}). With the electric module, {\tt srrom} is initialised in to 0
 and may be modified by the user in \texttt{useli1}.\\
 With gas combustion, pulverised coal or electric arcs, {\tt srrom} is
 automatically used after the second time-step. With the Joule effect module,
@@ -2244,7 +2242,7 @@ With the compressible module, {\tt visls0} (given in \texttt{uscfx2}) is directl
 thermal conductivity $W.m^{-1}.K^{-1}$\\
 With gas or coal combustion, the molecular diffusivity of the enthalpy
 ($kg.m^{-1}.s^{-1}$) must be specified by the user in the variable {\tt diftl0}
-(\texttt{usebu1}, \texttt{usd3p1}, \texttt{uslwc1}, \texttt{uscpi1}, \texttt{uscpl1})\\
+(\texttt{cs\_user\_combustion})\\
 With the electric module, for the Joule effect, the diffusivity is specified by
 the user in \texttt{uselph} (even if it is constant). For the electric arcs, it
 is calculated from the thermochemical data file}}

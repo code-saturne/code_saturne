@@ -211,8 +211,7 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-call uscpl1
-!==========
+call cs_user_combustion
 
 !===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
@@ -233,7 +232,7 @@ endif
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                                    (uscpl1).',/)
+'                                        (cs_user_combustion).',/)
  9999 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -249,7 +248,7 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier uscpl1.                                          ',/,&
+'@  Verifier cs_user_combustion.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

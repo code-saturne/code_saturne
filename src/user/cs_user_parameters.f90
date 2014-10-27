@@ -1906,21 +1906,32 @@ end subroutine usati1
 
 
 !===============================================================================
-
-
-subroutine usd3p1
-!================
-
-
-!===============================================================================
-!  Features of this subroutine:
-!  ----------------------------
-!  1. Additional Calculation Options
-!     a. Density Relaxation
+! Purpose:
+! -------
 !
-!  2. Physical Constants
-!     a.Dynamic Diffusion Coefficient
+!> 1. Additional Calculation Options
+!>    a. Density Relaxation
+!>
+!> 2. Physical Constants
+!>    a.Dynamic Diffusion Coefficient
+!>    b.Constants of the chosen model (EBU, Libby-Williams, ...)
+!
+!> This routine is called:
+!> ----------------------
+!>
+!>  - Eddy Break Up pre-mixed flame
+!>  - Diffusion flame in the framework of ``3 points'' rapid complete chemistry
+!>  - Libby-Williams pre-mixed flame
+!>  - Lagrangian module coupled with pulverized coal:
+!>    Eulerian combustion of pulverized coal and
+!>    Lagrangian transport of coal particles
+!>  - Pulverised coal combustion
+!>  - Fuel (oil) combustion
+!
 !===============================================================================
+
+subroutine cs_user_combustion
+
 
 !===============================================================================
 ! Module files
@@ -1931,14 +1942,19 @@ use dimens
 use numvar
 use optcal
 use cstphy
+use entsor
 use cstnum
 use parall
+use ihmpre
 use period
 use ppppar
 use ppthch
 use coincl
 use cpincl
 use ppincl
+use ppcpfu
+use cs_coal_incl
+use cs_fuel_incl
 use radiat
 
 !===============================================================================
@@ -1968,173 +1984,30 @@ srrom = 0.8d0
 ! 2. Physical Constants
 !===============================================================================
 
-!       DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
+! diftl0: Dynamic Diffusion Coefficient (kg/(m s))
 diftl0 = 4.25d-5
+
+
+! -----------------------------------------------------------------------------
+! 2.1 For 3 points combusution model ONLY
+! -----------------------------------------------------------------------------
 
 ! Reference temperature for fuel and oxydant (K)
 tinfue = 436.d0
 tinoxy = 353.d0
 
-!----
-! End
-!----
 
-return
-end subroutine usd3p1
-
-
-!===============================================================================
-
-
-subroutine usebu1
-
-!===============================================================================
-!  PURPOSE:
-!  --------
-!  1. Additional Calculation Options
-!     a. Density Relaxation
-!
-!  2. Physical Constants
-!     a.Dynamic Diffusion Coefficient
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use ppincl
-use radiat
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-! 1. Additional Calculation Options
-!===============================================================================
-
-! -->  Density Relaxation
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-
-srrom = 0.8d0
-
-
-!===============================================================================
-! 2. Physical Constants
-!===============================================================================
-
-! DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
-
-diftl0 = 4.25d-5
+! -----------------------------------------------------------------------------
+! 2.2 For EBU-model ONLY
+! -----------------------------------------------------------------------------
 
 ! cebu: EBU-model constant
-
 cebu   = 2.5d0
 
-!----
-! End
-!----
 
-return
-end subroutine usebu1
-
-
-!===============================================================================
-
-
-subroutine uslwc1
-
-
-!===============================================================================
-!  PURPOSE:
-!  --------
-!  1. Additional Calculation Options
-!     a. Density Relaxation
-!
-!  2. Physical Constants
-!     a.Dynamic Diffusion Coefficient
-!     b.Constants of the Libby-Williams Model
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use ppincl
-use radiat
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-! 1. Additional Calculation Options
-!===============================================================================
-
-! -->  Density Relaxation
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1))
-
-srrom = 0.95d0
-
-
-!===============================================================================
-! 2. Physical Constants
-!===============================================================================
-
-! --> DIFTL0: Dynamic Diffusion Coefficient (kg/(m s))
-diftl0 = 4.25d-5
-
-! --> Constants of the Libby-Williams Model
+! -----------------------------------------------------------------------------
+! 2.3 For Libby-Williams model ONLY
+! -----------------------------------------------------------------------------
 
 ! Reference velocity
 vref = 60.d0
@@ -2150,7 +2023,7 @@ tstar= 0.12d4
 !----
 
 return
-end subroutine uslwc1
+end subroutine cs_user_combustion
 
 
 !===============================================================================
@@ -2431,280 +2304,6 @@ endif
 
 return
 end subroutine uscfx2
-
-
-!===============================================================================
-
-
-subroutine uscpl1
-!================
-
-
-!===============================================================================
-!  Purpose:
-!  -------
-
-!   Lagrangian module coupled with pulverized coal:
-!   -----------------------------------------------
-
-!      Eulerian combustion of pulverized coal and
-!      Lagrangian transport of coal particles
-
-!    User subroutine for calculation parameter definitions (modules)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use ihmpre
-use period
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use ppincl
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-! 0. This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in data input',/,                          &
-'@    =======',/,                                                 &
-'@     The user subroutine ''uscpl1'' must be completed',/,       &
-'@     for pulverized coal combustion coupled with',/,            &
-'@     lagrangian transport of coal particles',/,                 &
-'@',/,                                                            &
-'@  The calculation will not be run.',/,                          &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-!===============================================================================
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-! 1. Calculation options
-!===============================================================================
-
-! Relaxation coefficient for density
-! rho(n+1) = srrom * rho(n) + (1-srrom) * rho(n+1)
-
-srrom = 0.8d0
-
-
-!===============================================================================
-! 2. Physical constants
-!===============================================================================
-
-! Laminar viscosity associated t Enthalpy scalar
-! DIFTL0 (dynamic diffusivity in kg/(m s))
-diftl0 = 4.25d-5
-
-
-!----
-! End
-!----
-
-return
-
-end subroutine uscpl1
-
-
-!===============================================================================
-
-
-subroutine user_coal_ini1
-!========================
-
-
-!===============================================================================
-!  Purpose:
-!  ---------
-
-!  User's routine to control outing of variables for pulverised coal combustion
-!  (these parameters are in a module)
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ihmpre
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use ppincl
-use ppcpfu
-use cs_coal_incl
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!===============================================================================
-! 1. Computation OPTION
-!===============================================================================
-
-! --- Relaxation for density (Advisable when starting combustion computation)
-!                            (Forbidden for unsteady computation)
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-
-srrom = 0.95d0
-
-!===============================================================================
-! 2. Physical constants
-!===============================================================================
-
-! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
-diftl0 = 4.25d-5
-
-!----
-! End
-!----
-
-
-end subroutine user_coal_ini1
-
-
-!===============================================================================
-
-
-subroutine user_fuel_ini1
-!========================
-
-!===============================================================================
-!  Purpose:
-!  --------
-
-!  User routine for definition of computation parameters dealing with fuel
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use optcal
-use cstphy
-use entsor
-use cstnum
-use parall
-use period
-use ppppar
-use ppthch
-use coincl
-use cpincl
-use cs_fuel_incl
-use ppincl
-use ppcpfu
-
-!===============================================================================
-
-implicit none
-
-!===============================================================================
-
-!===============================================================================
-! 1. Computation OPTION
-!===============================================================================
-
-! --- Relaxation for density (Advisable when starting combustion computation)
-!                            (Forbidden for unsteady computation)
-!      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
-
-srrom = 0.7d0
-
-
-!===============================================================================
-! 2. Physical constants
-!===============================================================================
-
-! ---  Laminar viscosity for enthalpy (dynamical diffusivity) kg/(m.s)
-diftl0 = 4.25d-5
-
-!----
-! End
-!----
-
-return
-
-end subroutine user_fuel_ini1
 
 
 !===============================================================================

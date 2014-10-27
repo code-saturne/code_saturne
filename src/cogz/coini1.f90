@@ -175,7 +175,7 @@ enddo
  endif
 
 ! On met les constantes a -GRAND pour obliger l'utilisateur a les definir
-!  (ou les laisser) dans usebu1, usd3p1 ou uslwc1.
+!  (ou les laisser) dans cs_user_combustion.
 ! --> Constante modele EBU par defaut
 cebu   =-grand
 
@@ -211,24 +211,25 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
+! GUI
 if (ippmod(icoebu).ge.0) then
   if (iihmpr.eq.1) then
     call uicpi1 (srrom, diftl0)
     cebu   = 2.5d0
   endif
-  call usebu1
-  !==========
-else if( ippmod(icod3p).ge.0 ) then
+else if (ippmod(icod3p).ge.0) then
   if (iihmpr.eq.1) then
     call uicpi1 (srrom, diftl0)
     call uicpi2 (tinoxy, tinfue)
   endif
-  call usd3p1
-  !==========
-else if( ippmod(icolwc).ge.0 ) then
-  call uslwc1
-  !==========
+else if (ippmod(icolwc).ge.0) then
+  if (iihmpr.eq.1) then
+    !TODO no GUI yet
+  endif
 endif
+
+! User subroutines
+call cs_user_combustion
 
 !===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
@@ -294,7 +295,7 @@ endif
  9990 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                                    (usd3p1).',/)
+'                                        (cs_user_combustion).',/)
  9991 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -309,7 +310,7 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier usd3p1.                                          ',/,&
+'@  Verifier cs_user_combustion.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

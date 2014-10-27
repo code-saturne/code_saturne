@@ -785,8 +785,7 @@ module ppincl
   !> hence, with a zero value, there is no sub-relaxation.
   !> With combustion and pulversied coal, \ref srrom is initialised to \ref -grand
   !> and the user must specify a proper value through the Interface or the
-  !> initialisation subroutines (\ref usd3p1,
-  !> \ref usebu1, \ref uslwc1, \ref uscpi1 or
+  !> initialisation subroutines (\ref cs_user_combustion or
   !> \ref uscpl1). With the electric module, \ref srrom is initialised in to 0
   !> and may be modified by the user in \ref useli1.
   !> With gas combustion, pulverised coal or electric arcs, \ref srrom is

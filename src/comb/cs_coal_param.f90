@@ -186,7 +186,7 @@ do icha = 1, ncharb
 enddo
 
 ! On met SRROM et DIFTL0 a -GRAND pour forcer l'utilisateur a les
-! definir dans user_coal_ini1
+! definir dans cs_user_combustion
 ! ---> Coefficient de relaxation de la masse volumique
 !      RHO(n+1) = SRROM * RHO(n) + (1-SRROM) * RHO(n+1)
 srrom = -grand
@@ -219,8 +219,7 @@ if (iihmpr.eq.1) then
 
 endif
 
-call user_coal_ini1
-!==================
+call cs_user_combustion
 
 !===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
@@ -245,7 +244,7 @@ endif
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                            (user_coal_ini1).',/)
+'                                        (cs_user_combustion).',/)
  9999 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -260,7 +259,7 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier user_coal_ini1.                                  ',/,&
+'@  Verifier cs_user_combustion.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

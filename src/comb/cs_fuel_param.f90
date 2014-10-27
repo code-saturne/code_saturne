@@ -189,8 +189,7 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-call user_fuel_ini1
-!==================
+call cs_user_combustion
 
 !===============================================================================
 ! 4. VERIFICATION DES DONNERS FOURNIES PAR L'UTLISATEUR
@@ -212,7 +211,7 @@ endif
  9998 format(                                                     &
 '                                                             ',/,&
 ' Pas d erreur detectee lors de la verification des donnees   ',/,&
-'                                            (user_fuel_ini1).',/)
+'                                        (cs_user_combustion).',/)
  9999 format(                                                     &
 '@                                                            ',/,&
 '@                                                            ',/,&
@@ -227,7 +226,7 @@ endif
 '@                                                            ',/,&
 '@  Se reporter aux impressions precedentes pour plus de      ',/,&
 '@    renseignements.                                         ',/,&
-'@  Verifier user_fuel_ini1.                                  ',/,&
+'@  Verifier cs_user_combustion.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

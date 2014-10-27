@@ -478,7 +478,7 @@ compulsory.
 
         \item {\em very useful:}
         \begin{list}{-}{}
-            \item  \texttt{usebu1}, \texttt{usd3p1} or \texttt{uslwc1}
+            \item  \texttt{cs\_user\_combustion}
                    (in \texttt{cs\_user\_parameters.f90}),
                    depending on the selected combustion model,
                    to specify the calculation options
@@ -498,7 +498,7 @@ compulsory.
 
         \item {\em very useful:}
         \begin{list}{-}{}
-            \item  \texttt{uscpi1}, \texttt{user\_coal\_ini1}
+            \item  \texttt{cs\_user\_combustion}
                (in \texttt{cs\_user\_parameters.f90})
                to specify the calculation options
                    for the variables
@@ -506,7 +506,7 @@ compulsory.
         \end{list}
     \end{list}
 
-or \texttt{user\_fuel\_ini1}
+or \texttt{cs\_user\_combustion}
   \item{\bf For the ``heavy fuel combustion'' specific physics:}
 
  (not accessible through the Graphical User Interface in version \verscs)
@@ -515,7 +515,7 @@ or \texttt{user\_fuel\_ini1}
         \begin{list}{-}{}
             \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
                to select the specific physics module
-            \item \texttt{user\_fuel\_ini1}
+            \item \texttt{cs\_user\_combustion}
                (in \texttt{cs\_user\_parameters.f90})
                to specify the calculation options
                    for the variables
@@ -6768,7 +6768,7 @@ view concerns the faces whose boundary conditions belong to the type
 %==================================
 \subsubsection{Initialisation of the options of the variables}
 %==================================
-In the case of coal combustion, time averages, chronological records and listings follow-ups can be set in the Graphical User Interface (GUI) or in the subroutines \texttt{usebu1, usd3p1, uslwc1, uscpi1} and \texttt{uscpl1}. In the GUI, under the heading ``Calculation control'', additional variables appear in the list in the items ``Time averages'' and ``Profiles'', as well as in the item Volume solution control'', see \figurename~\ref{fig:t_average-coal} and \figurename~\ref{fig:V_control-coal}.
+In the case of coal combustion, time averages, chronological records and listings follow-ups can be set in the Graphical User Interface (GUI) or in the subroutines \texttt{cs\_user\_combustion}. In the GUI, under the heading ``Calculation control'', additional variables appear in the list in the items ``Time averages'' and ``Profiles'', as well as in the item Volume solution control'', see \figurename~\ref{fig:t_average-coal} and \figurename~\ref{fig:V_control-coal}.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -6789,7 +6789,7 @@ In the case of coal combustion, time averages, chronological records and listing
 In this section, ``specific physics'' refers to gas combustion or
 pulverised coal combustion.
 
-For gas combustion or if the GUI is not used for coal combustion, the 3 subroutines \texttt{usebu1, usd3p1, uslwc1, uscpi1} and \texttt{uscpl1} can be used to complete \texttt{cs\_user\_parameters.f90} for the
+For gas combustion or if the GUI is not used for coal combustion, the 3 subroutines \texttt{cs\_user\_combustion} can be used to complete \texttt{cs\_user\_parameters.f90} for the
 considered specific physics. These subroutines are called at the calculation start.
 They allow to:
 \begin{list}{$\bullet$}{}
@@ -6940,7 +6940,7 @@ $\rho^{n+1}=\texttt{srrom}*\rho^{n}+(1-\texttt{srrom})\rho^{n+1}$\\
       equation of enthalpy).
 
  \item set the value of the constant \texttt{cebu\index{cebu}} of the Eddy Break
-      Up model (only in \texttt{usebu1}. By default \texttt{cebu}=2.5)
+      Up model (only in \texttt{cs\_user\_combustion}. By default \texttt{cebu}=2.5)
 \end{list}
 
 %==================================
