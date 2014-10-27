@@ -102,7 +102,6 @@ uslaen.f90 \
 uslag1.f90 \
 uslag2.f90 \
 uspt1d.f90 \
-usray1.f90 \
 usthht.f90 \
 usvort.f90 \
 usvosy.f90

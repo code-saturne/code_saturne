@@ -31,19 +31,47 @@ module radiat
 
   implicit none
 
+  !> \defgroup radiat Module for Radiative tranfer
+
+  !> \addtogroup radiat
+  !> \{
+
   !===========================================================================
 
-  !-->  IIRAYO = 0 pas de rayonnement, 1 DOM, 2 P-1
-  !-->  NRPHAS = 1 (phase qui rayonne) augmentee eventuellement
-  !              du nombre de classe (Charbon, Fioul)
-  !-->  IIMPAR = 0,1,2 niveau d'impression du calcul des temperatures de paroi
-  !-->  IIMLUM = 0,1,2 niveau d'impression de la resolution luminance
-  !-->  IMODAK = 1 calcul du coefficient d'absorption a l'aide de Modak
-  !            = 0 on n'utilise pas Modak
+  !> Activation of the radiative transfer module:
+  !>  - 0: not activated
+  !>  - 1: DOM
+  !>  - 2: P1
+  integer, save :: iirayo
 
-  integer, save :: iirayo, nrphas, iimpar, iimlum, imodak
+  !> Phase which radiats (Bulk by default, but may be coal class or fuel
+  !> drolplets phase)
 
-  !--> pointeur dans le macrotableau PROPCE :
+  integer, save :: nrphas
+
+  !> Verbosity level in the listing concerning the calculation of
+  !> the wall temperatures:
+  !>  - 0: no display
+  !>  - 1: standard
+  !>  - 2: complete
+  !> useful if and only if the radiation module is activated
+  integer, save :: iimpar
+
+  !> Verbosity level in the listing concerning the solution of
+  !> the radiative transfer equation:
+  !>  - 0: no display
+  !>  - 1: standard
+  !>  - 2: complete
+  !> Useful if and only if the radiation module is activated
+  integer, save :: iimlum
+
+  !> When gas or coal combustion is activated, \ref imodak indicates whether the
+  !> absorption coefficient shall be calculated ``automatically'' (=1) or read from
+  !> the data file (=0)
+  !> Useful if the radiation module is activated
+  integer, save :: imodak
+
+  !--> pointeur dans le macrotableau propce :
 
   !                       ITSRE --> Terme source explicite
   !                       ITSRI --> Terme source implicite
@@ -52,7 +80,7 @@ module radiat
   !                       IEMI --> part d'emission dans le terme source explicite
   !                       ICAK --> coefficient d'absorption
   !                       ILUMIN --> POINTEUR QUI PERMET DE REPERER L INTEGRALE DE LA
-  !                                  LUMINANCE DANS LA TABLEAU PROPCE
+  !                                  LUMINANCE DANS LA TABLEAU propce
 
   integer, save ::  itsre(1+nclcpm) , itsri(1+nclcpm) ,                      &
                     iqx   ,   iqy   , iqz   ,                                &
@@ -81,39 +109,66 @@ module radiat
   !--> XNP1MX : pour le modele P-1,
   !     pourcentage de cellules pour lesquelles on admet que l'epaisseur
   !     optique depasse l'unite bien que ce ne soit pas souhaitable
-
+  !> With the P-1 model (\ref iirayo =2), \ref xnp1mx is the percentage of cells of
+  !> the calculation domain for which it is acceptable that the optical
+  !> thickness is lower than unity (more precisely, where \f$ KL \f$ is lower than
+  !> 1, where \f$ K \f$ is the absorption coefficient of the medium and \f$ L \f$ is a
+  !> characteristic length of the domain), although it is not to be desired
+  !> Useful if and only if the radiation module is activated with the P-1 method
   double precision, save ::  xnp1mx
 
   !--> ISTPP1 : pour le modele P-1,
   !     indicateur d'arret mis a 1 dans ppcabs si le pourcentage de cellules
   !     pour lesquelles l'epaisseur optique depasse l'unite est superieur a
   !     XNP1MX  (on s'arrete a la fin du pas de temps)
-
   integer, save ::           istpp1
 
-  !--> IDIVER =0 1 ou 2 suivant le calcul du terme source explicite
-
+  !> Indicates the method used to calculate the radiative source term:
+  !>  - 0: semi-analytic calculation (compulsory with transparent media)
+  !>  - 1: conservative calculation
+  !>  - 2: semi-analytic calculation corrected in order to be globally conservative
+  !> Useful if and only if the radiation module is activated
+  !> \remark If the medium is transparent, the choice has no effect on the calculation
   integer, save ::           idiver
 
-  !--> index of the quadrature and number of directions for a single octant
+  !> Index of the quadrature and number of directions for a single octant
+  !> - Quadrature Sn (n(n+2) directions)
+  !>
+  !>   - 1: S4 (24 directions)
+  !>   - 2: S6 (48 directions)
+  !>   - 3: S8 (80 directions)
+  !>
+  !> - Quadrature Tn (8n^2 directions)
+  !>
+  !>   - 4: T2 (32 directions)
+  !>   - 5: T2 (128 directions)
+  !>   - 6: Tn (8*ndirec^2 directions)
+  integer, save :: i_quadrature
 
-  integer, save ::           i_quadrature, ndirs
-
-  !--> parameter assiociated to the Tn
-
+  !> Parameter assiociated to the Tn
   integer, save :: ndirec
+
+  !> For the Tn quadrature, \ref ndirec squared
+  integer, save :: ndirs
 
   !--> directions of angular values of the quadrature sx, sy, sz
   !    and weight of the solid angle associated
 
   double precision, dimension(:), allocatable :: sx, sy, sz, angsol
 
-  !--> suite de calcul (0 : non, 1 : oui)
+  !> Indicates whether the radiation variables should be initialised (=0) or read
+  !> from a restart file (=1)
+  !> Useful if and only if the radiation module is activated (in this case, a
+  !> restart file rayamo must be available)
+  integer, save :: isuird
 
-  integer, save ::           isuird
-
-  !--> frequence de passage dans le module (=1 si tous les pas de temps)
-
+  !> Period of the radiation module.
+  !> The radiation module is called every \ref nfreqr time steps (more precisely,
+  !> every time \ref ntcabs is a multiple of \ref nfreqr). Also, in order to
+  !> have proper initialisation of the variables, whatever the value of \ref nfreqr,
+  !> the radiation module is called at the first time step of a calculation
+  !> (restart or not).
+  !> Useful if and only if the radiation module is activated}
   integer, save ::           nfreqr
 
   !--> Informations sur les zones frontieres
@@ -144,6 +199,8 @@ module radiat
 
   integer   itpimp   , ipgrno   , iprefl   , ifgrno   , ifrefl
   parameter(itpimp=1 , ipgrno=21, iprefl=22, ifgrno=31, ifrefl=32)
+
+  !> \}
 
   !=============================================================================
 

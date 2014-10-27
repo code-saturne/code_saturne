@@ -117,6 +117,12 @@
 
   \snippet cs_user_parameters-output.f90 usipes_ex_08
 
+
+	Probes for Radiative Transfer (Luminance and radiative density flux vector)
+  for all probes (ihisvr = -1)
+
+  \snippet cs_user_parameters-output.f90 usipes_ex_10
+
   \subsection cs_f_user_parameters_h_example_1 Postprocess at boundary
 
    Force postprocessing of projection of some variables at boundary

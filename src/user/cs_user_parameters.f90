@@ -70,6 +70,7 @@ subroutine usppmo &
 !      - compressible flows
 !      - electric arcs
 !      - atmospheric modelling
+!      - radiative transfer
 !      - cooling towers modelling
 
 !    Only one specific physics module can be activated at once.
@@ -101,6 +102,7 @@ use ppthch
 use ppincl
 use ppcpfu
 use coincl
+use radiat
 use cs_c_bindings
 
 !===============================================================================
@@ -336,6 +338,17 @@ endif
 
 if (.false.) then
   ippmod(imixg) = 0
+endif
+
+
+! Radiative transfer module (iirayo)
+!--------------------------
+!        if = 0: not activated (Default)
+!        if = 1: DOM
+!        if = 2: approximation P1 method
+
+if (.false.) then
+  iirayo = 1
 endif
 
 !===============================================================================
@@ -2028,6 +2041,111 @@ end subroutine cs_user_combustion
 
 !===============================================================================
 
+!===============================================================================
+!  Purpose  :
+!  -------
+!          User subroutines for input of calculation parameters,
+!       and to initialize variables used for radiative transfer module
+!
+!-------------------------------------------------------------------------------
+subroutine cs_user_radiative_transfer_param
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use numvar
+use entsor
+use optcal
+use cstphy
+use parall
+use period
+use ppppar
+use radiat
+
+!===============================================================================
+
+implicit none
+
+!===============================================================================
+! 1. Parameters for the radiative transfer module
+!===============================================================================
+
+! Indicator: indicates whether the radiation variables should be
+! initialised (=0) or read from a restart file (=1)
+! Useful if and only if the radiation module is activated (in this case, a
+! restart file rayamo must be available)
+
+if (.false.) then
+  isuird = isuite
+endif
+
+! Period of the radiation module.
+
+if (.false.) then
+  nfreqr = 1
+endif
+
+!-->  Quadrature Sn (n(n+2) directions)
+!
+! 1: S4 (24 directions)
+! 2: S6 (48 directions)
+! 3: S8 (80 directions)
+!
+!-->  Quadrature Tn (8n^2 directions)
+!
+! 4: T2 (32 directions)
+! 5: T2 (128 directions)
+! 6: Tn (8*ndirec^2 directions)
+
+if (.false.) then
+  i_quadrature = 4
+
+  ndirec =  3
+endif
+
+! Indicates the method used to calculate the radiative source term:
+!  - 0: semi-analytic calculation (compulsory with transparent media)
+!  - 1: conservative calculation
+!  - 2: semi-analytic calculation corrected in order to be globally conservative
+! Useful if and only if the radiation module is activated
+! Note: If the medium is transparent, the choice has no effect on the calculation
+
+if (.false.) then
+  idiver = 2
+endif
+
+! Verbosity level in the listing concerning the calculation of
+! the wall temperatures (0, 1 or 2)
+
+if (.false.) then
+  iimpar = 1
+endif
+
+! Verbosity mode for the Luminance (0, 1 or 2)
+
+if (.false.) then
+  iimlum = 0
+endif
+
+! Compute the absorption coefficient through Modak (if 1), or do not use
+! Modak (if 0)
+! Useful ONLY when gas or coal combustion is activated
+
+if (.false.) then
+  imodak = 0
+endif
+
+!===============================================================================
+
+return
+
+end subroutine cs_user_radiative_transfer_param
+
+
+!===============================================================================
 
 subroutine uscfx1
 !================

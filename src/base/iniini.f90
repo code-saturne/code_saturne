@@ -51,6 +51,7 @@ use mesh
 use field
 use cavitation
 use darcy_module
+use radiat
 
 !===============================================================================
 
@@ -852,6 +853,9 @@ igprij = 0
 !        0: no vaporization/condensation model
 !        1: Merkle's model
 icavit = -1
+
+! --- Radiative Transfert (not activated by default)
+iirayo = 0
 
 ! --- Darcy module (not activated by default)
 !        0: module not activated

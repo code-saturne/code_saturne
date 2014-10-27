@@ -404,9 +404,27 @@ if (iand(iflpst, 2) .eq. 0) then
 endif
 !< [usipes_ex_09]
 
-!----
+! Probes for Radiative Transfer (Luminance and radiative density flux vector)
+! for all probes (ihisvr = -1)
+
+!< [usipes_ex_10]
+call field_get_id_try('luminance', f_id)
+ipp = field_post_id(f_id)
+ihisvr(ipp,1) = -1
+
+call field_get_id_try('radiative_flux', f_id)
+! X component
+ipp = field_post_id(f_id)
+ihisvr(ipp,1) = -1
+! Y component
+ihisvr(ipp+1,1) = -1
+! Z component
+ihisvr(ipp+2,1) = -1
+!< [usipes_ex_10]
+
+!--------
 ! Formats
-!----
+!--------
 
 return
 end subroutine usipes

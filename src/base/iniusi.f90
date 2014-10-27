@@ -190,20 +190,6 @@ if (iihmpr.eq.1) then
 
 endif
 
-! User subroutine
-
-! Initialize specific physics modules not available at the moment
-
-ippmod(icobml) = -1  ! premix model of Bray - Moss - Libby
-ippmod(icodeq) = -1  ! diffusion flame with fast equilibrium chemistry
-ippmod(ielion) = -1  ! ionic mobility
-
-! User initialization
-
-iihmpu = iihmpr
-call usppmo(iihmpu)
-!==========
-
 ! --- Activation du module transferts radiatifs
 
 !     Il est necessaire de connaitre l'activation du module transferts
@@ -220,10 +206,18 @@ if (iihmpr.eq.1) then
 
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
+! User subroutine
 
-call usray1
+! Initialize specific physics modules not available at the moment
+
+ippmod(icobml) = -1  ! premix model of Bray - Moss - Libby
+ippmod(icodeq) = -1  ! diffusion flame with fast equilibrium chemistry
+ippmod(ielion) = -1  ! ionic mobility
+
+! User initialization
+
+iihmpu = iihmpr
+call usppmo(iihmpu)
 !==========
 
 ! Define fields for variables, check and build iscapp

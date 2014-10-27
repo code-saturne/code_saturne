@@ -103,13 +103,6 @@ enddo
 !                        ^^^^^^
 !===============================================================================
 
-!-->  IIRAYO = 0 : PAS DE TRANSFERTS RADIATIFS
-!            = 1 : TRANSFERTS RADIATIFS, METHODE DES ORDONNEES DISCRETES
-!            = 2 : TRANSFERTS RADIATIFS, APPROXIMATION P-1
-!     On initialise a -1 pour montrer que ce n'est pas initialise ...
-!        (on fera un test apres usray1)
-iirayo = -1
-
 !-->  CALCUL DU COEFFICIENT D'ABSORPTION
 !      IMODAK = 0 : sans utiliser modak
 !               1 : a l'aide modak
@@ -118,16 +111,16 @@ imodak = 0
 
 !-->  INDICATEUR SUITE DE CALCUL (LECTURE DU FICHIER SUITE)
 
-isuird = -1
+isuird = isuite
 
 !-->  FREQUENCE DE PASSAGE DANS LE MODULE RAYONNEMENT
 
-nfreqr = -1
+nfreqr = 1
 
 !-->  NUMERO DE LA QUADRATURE ET PARAMETRE DE LA Tn
 
-i_quadrature = 1
-ndirec = -1
+i_quadrature = 4
+ndirec = 3
 
 !-->  POURCENTAGE DE CELLULES OU L'ON ADMET QUE LA LONGUEUR OPTIQUE DEPASSE
 !       L'UNITE POUR LE MODELE P-1
@@ -140,15 +133,15 @@ xnp1mx = 10.d0
 !     IDIVER = 2 => CALCUL SEMI-ANALYTIQUE CORRIGE POUR ETRE CONSERVATIF
 !     REMARQUE : SI TRANSPARENT IDIVER = -1 AUTOMATIQUEMENT DANS RAYDOM
 
-idiver = -1
+idiver = 2
 
 !--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS TEMPERATURE DE PAROI
 
-iimpar = -1
+iimpar = 1
 
 !--> NIVEAU D'AFFICHAGE (0,1,2) DES RENSEIGNEMENTS RESOLUTION LUMINANCE
 
-iimlum = -1
+iimlum = 0
 
 !   - Interface Code_Saturne
 !     ======================
@@ -160,8 +153,8 @@ if (iihmpr.eq.1) then
 
 endif
 
-call usray1
-!==========
+! User paramters
+call cs_user_radiative_transfer_param
 
 !===============================================================================
 ! 2. VERIFICATION LA COHERENCE D'UTILISATION DU MODULE DE RAYONNEMENT
@@ -171,10 +164,6 @@ call usray1
 iok = 0
 
 !--> IIRAYO = 0 (pas de rayonnement).
-
-if(iirayo.eq.-1) then
-  iirayo = 0
-endif
 
 if (iirayo.ne.0 .and. iirayo.ne.1 .and. iirayo.ne.2) then
   write(nfecra,1010) iirayo
@@ -240,8 +229,117 @@ endif
 
 if(iok.ne.0) then
   call csexit (1)
-  !==========
 endif
+
+!===============================================================================
+! 3. VERIFICATIONS (uniquement s'il y a du rayonnement)
+!===============================================================================
+
+iok = 0
+
+if (iirayo.gt.0) then
+
+! Positionnement des pointeurs
+
+  call rayprp
+  !==========
+
+! --> ISUIRD
+
+  if (isuird.ne.0 .and. isuird.ne.1 ) then
+    write(nfecra,4000) isuird
+    iok = iok + 1
+  endif
+
+! --> NFREQR
+
+  if (nfreqr.le.0) then
+    write(nfecra,4010) nfreqr
+    iok = iok + 1
+  endif
+
+! --> i_quadrature
+!     Selection de la quadrature
+  if (iirayo.eq.1) then
+    if (i_quadrature.lt.1 .or. i_quadrature.gt.8) then
+      write(nfecra, 4015) i_quadrature
+      iok = iok + 1
+    endif
+  endif
+
+! --> NDIREC
+!     Parametre Quadrature Tn
+  if (iirayo.eq.1 .and. i_quadrature.eq.6) then
+    if (ndirec.lt.3) then
+      write(nfecra, 4020) ndirec
+      iok = iok + 1
+    endif
+  endif
+
+! --> IDIVER
+!     Choix entre 0  1 et 2
+  if (idiver.ne.0 .and. idiver.ne.1 .and. idiver.ne.2) then
+    write(nfecra,4030) idiver
+    iok = iok + 1
+  endif
+
+! --> IIMPAR
+!     Choix entre 0  1 et 2
+  if (iimpar.ne.0 .and. iimpar.ne.1 .and. iimpar.ne.2) then
+    write(nfecra,4040) iimpar
+    iok = iok + 1
+  endif
+
+! --> IIMLUM
+!     Choix entre 0  1 et 2
+  if (iimlum.ne.0 .and. iimlum.ne.1 .and. iimlum.ne.2) then
+    write(nfecra,4050) iimlum
+    iok = iok + 1
+  endif
+
+else
+  return
+endif
+
+!--> Stop si erreur.
+
+if(iok.ne.0) then
+  call csexit (1)
+endif
+
+!===============================================================================
+! 4. Quadrature initialization
+!===============================================================================
+
+call raydir
+
+!===============================================================================
+!  5. INITIALISATIONS UTILISATEURS
+!                     ^^^^^^^^^^^^
+!===============================================================================
+
+!   - Code_Saturne GUI
+!     ================
+
+if (iihmpr.eq.1) then
+
+  call uiray4(iirayo)
+  !==========
+
+  call csenso                                                     &
+  !==========
+     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
+       ipstdv, ihisvr, tplfmt, xyzcap )
+
+  ! take into acount user modifications
+  call usipes(nmodpp)
+  !==========
+
+endif
+
+!-------
+! Format
+!-------
 
  1010 format(                                                     &
 '@                                                            ',/,&
@@ -255,7 +353,9 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Arret dans rayopt.                                        ',/,&
-'@  Verifier usray1 ou l''interface graphique.                ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90'                               ,/,&
+'@  ou l''interface graphique.'                                ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -271,7 +371,9 @@ endif
 '@  Le calcul ne peut etre execute.                           ',/,&
 '@                                                            ',/,&
 '@  Arret dans rayopt.                                        ',/,&
-'@  Verifier usray1 ou l''interface graphique.                ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90'                               ,/,&
+'@  ou l''interface graphique.'                                ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -360,123 +462,6 @@ endif
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 
-!===============================================================================
-! 3. VERIFICATIONS (uniquement s'il y a du rayonnement)
-!===============================================================================
-
-iok = 0
-
-if (iirayo.gt.0) then
-
-! Positionnement des pointeurs
-
-  call rayprp
-  !==========
-
-! --> ISUIRD
-
-  if (isuird.ne.0 .and. isuird.ne.1 ) then
-    write(nfecra,4000) isuird
-    iok = iok + 1
-  endif
-
-! --> NFREQR
-
-  if (nfreqr.le.0) then
-    write(nfecra,4010) nfreqr
-    iok = iok + 1
-  endif
-
-! --> i_quadrature
-!     Selection de la quadrature
-  if (iirayo.eq.1) then
-    if (i_quadrature.lt.1 .or. i_quadrature.gt.8) then
-      write(nfecra, 4015) i_quadrature
-      iok = iok + 1
-    endif
-  endif
-
-! --> NDIREC
-!     Parametre Quadrature Tn
-  if (iirayo.eq.1 .and. i_quadrature.eq.6) then
-    if (ndirec.lt.3) then
-      write(nfecra, 4020) ndirec
-      iok = iok + 1
-    endif
-  endif
-
-! --> IDIVER
-!     Choix entre 0  1 et 2
-  if (idiver.ne.0 .and. idiver.ne.1 .and. idiver.ne.2) then
-    write(nfecra,4030) idiver
-    iok = iok + 1
-  endif
-
-! --> IIMPAR
-!     Choix entre 0  1 et 2
-  if (iimpar.ne.0 .and. iimpar.ne.1 .and. iimpar.ne.2) then
-    write(nfecra,4040) iimpar
-    iok = iok + 1
-  endif
-
-! --> IIMLUM
-!     Choix entre 0  1 et 2
-  if (iimlum.ne.0 .and. iimlum.ne.1 .and. iimlum.ne.2) then
-    write(nfecra,4050) iimlum
-    iok = iok + 1
-  endif
-
-else
-  return
-endif
-
-!--> Stop si erreur.
-
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
-
-!===============================================================================
-! 4. Quadrature initialization
-!===============================================================================
-
-call raydir
-!==========
-
-!===============================================================================
-!  5. INITIALISATIONS UTILISATEURS
-!                    ^^^^^^^^^^^^
-!===============================================================================
-
-!   - Code_Saturne GUI
-!     ================
-
-if (iihmpr.eq.1) then
-
-  call uiray4(iirayo)
-  !==========
-
-  call csenso                                                     &
-  !==========
-     ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
-       ipstdv, ihisvr, tplfmt, xyzcap )
-
-  ! take into acount user modifications
-  call usipes(nmodpp)
-  !==========
-
-endif
-
-call usray1
-!==========
-
-!--> Stop si erreur.
-
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
 
  4000 format(                                                     &
 '@                                                            ',/,&
@@ -491,7 +476,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -509,7 +495,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -531,7 +518,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -547,7 +535,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -565,7 +554,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -583,7 +573,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -601,7 +592,8 @@ endif
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
-'@  Verifier usray1.                                          ',/,&
+'@  Verifier cs_user_radiative_transfer_param'                 ,/,&
+'@  dans cs_user_parameters.f90.'                              ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

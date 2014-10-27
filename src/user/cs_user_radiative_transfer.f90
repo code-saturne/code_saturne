@@ -184,20 +184,18 @@ if (ippmod(iphpar).le.1) then
 
     ! Compute characteristic length of calculation domain
 
-    do ifac = 1,nfabor
+    do ifac = 1, nfabor
       sf = sf + sqrt(surfbo(1,ifac)**2 + surfbo(2,ifac)**2 + surfbo(3,ifac)**2)
     enddo
     if (irangp.ge.0) then
       call parsom(sf)
-      !==========
     endif
 
-    do iel = 1,ncel
+    do iel = 1, ncel
       vv = vv + volume(iel)
     enddo
     if (irangp.ge.0) then
       call parsom(vv)
-      !==========
     endif
 
     xlc = 3.6d0 * vv / sf
@@ -348,21 +346,12 @@ double precision tparop(nfabor), hparop(nfabor)
 
 ! Local variables
 
-integer          iel , ifac , iscal
+integer          iel , ifac
 
 double precision, dimension(:), pointer :: cvara_scal
 
 !===============================================================================
-
-!===============================================================================
-! 1 - INITIALISATIONS GENERALES
-!===============================================================================
-
-
-iscal = iscalt
-
-!===============================================================================
-!  2.1 - Tempearature in kelvin for cells
+!  1.1 - Tempearature in Kelvin for cells
 !===============================================================================
 
 !---> enthalpy -> temperature convertion (MODE =  1)
@@ -371,7 +360,7 @@ iscal = iscalt
 
 if (mode.eq.1) then
 
-  call field_get_val_prev_s(ivarfl(isca(iscal)), cvara_scal)
+  call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scal)
 
   do iel = 1,ncel
     call usthht(mode,cvara_scal(iel),tempk(iel))
@@ -381,7 +370,7 @@ endif
 
 
 !===============================================================================
-!  2.2 - Enthalpy for wall boundary faces
+!  1.2 - Enthalpy for wall boundary faces
 !===============================================================================
 
 !---> Temperature -> enthalpy (MODE = -1)
@@ -404,7 +393,7 @@ if (mode.eq.-1) then
 endif
 
 !----
-! END
+! End
 !----
 
 return
@@ -534,7 +523,7 @@ iok = 0
 !      energy. Therefore if a wall heats the fluid by radiative transfer, the
 !      net flux is negative
 
-do ifac = 1,nfabor
+do ifac = 1, nfabor
 
   ! Wall faces
   if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
