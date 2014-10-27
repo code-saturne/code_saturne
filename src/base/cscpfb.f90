@@ -36,8 +36,6 @@
 !> \param[in]     numcpl
 !> \param[in]     nvcpto
 !> \param[in]     locpts
-!> \param[in]     rtp           calculated variables at cell centers
-!>                              (at current and previous time steps)
 !> \param[in]     coopts
 !> \param[in]     djppts
 !> \param[in]     pndpts
@@ -49,7 +47,6 @@ subroutine cscpfb &
  ( nscal  ,                                                       &
    nptdis , numcpl , nvcpto,                                      &
    locpts ,                                                       &
-   rtp    ,                                                       &
    coopts , djppts , pndpts ,                                     &
    rvdis  , dofpts )
 
@@ -83,7 +80,6 @@ integer          nptdis , numcpl , nvcpto
 
 integer          locpts(nptdis)
 
-double precision rtp(ncelet,nflown:nvar)
 double precision coopts(3,nptdis), djppts(3,nptdis)
 double precision pndpts(nptdis), dofpts(3,nptdis)
 double precision rvdis(nptdis,nvcpto)
@@ -110,7 +106,9 @@ double precision, allocatable, dimension(:) :: trav5, trav6, trav7, trav8
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cvar_pr, cvar_k, cvar_ep, cvar_phi, cvar_fb, cvar_omg
+double precision, dimension(:), pointer :: cvar_pr, cvar_k, cvar_ep
+double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg
+double precision, dimension(:), pointer :: cvar_var, cvar_scal
 
 !===============================================================================
 
@@ -634,12 +632,12 @@ elseif (itytur.eq.3) then
 
   do isou = 1, 6
 
-    if (isou.eq.1) ivar = ir11
-    if (isou.eq.2) ivar = ir22
-    if (isou.eq.3) ivar = ir33
-    if (isou.eq.4) ivar = ir12
-    if (isou.eq.5) ivar = ir13
-    if (isou.eq.6) ivar = ir23
+    if (isou.eq.1) call field_get_val_s(ivarfl(ir11), cvar_var)
+    if (isou.eq.2) call field_get_val_s(ivarfl(ir22), cvar_var)
+    if (isou.eq.3) call field_get_val_s(ivarfl(ir33), cvar_var)
+    if (isou.eq.4) call field_get_val_s(ivarfl(ir12), cvar_var)
+    if (isou.eq.5) call field_get_val_s(ivarfl(ir13), cvar_var)
+    if (isou.eq.6) call field_get_val_s(ivarfl(ir23), cvar_var)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,    &
                                iccocg,                              &
@@ -658,22 +656,22 @@ elseif (itytur.eq.3) then
         zjjp = djppts(3,ipt)
 
         if (isou.eq.1) then
-          trav1(ipt) = rtp(iel,ivar) &
+          trav1(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.2) then
-          trav2(ipt) = rtp(iel,ivar) &
+          trav2(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.3) then
-          trav3(ipt) = rtp(iel,ivar) &
+          trav3(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.4) then
-          trav4(ipt) = rtp(iel,ivar) &
+          trav4(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.5) then
-          trav5(ipt) = rtp(iel,ivar) &
+          trav5(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.6) then
-          trav6(ipt) = rtp(iel,ivar) &
+          trav6(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         endif
 
@@ -692,22 +690,22 @@ elseif (itytur.eq.3) then
         zjjp = djppts(3,ipt)
 
         if (isou.eq.1) then
-          trav1(ipt) = rtp(iel,ivar) &
+          trav1(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.2) then
-          trav2(ipt) = rtp(iel,ivar) &
+          trav2(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.3) then
-          trav3(ipt) = rtp(iel,ivar) &
+          trav3(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.4) then
-          trav4(ipt) = rtp(iel,ivar) &
+          trav4(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.5) then
-          trav5(ipt) = rtp(iel,ivar) &
+          trav5(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         else if (isou.eq.6) then
-          trav6(ipt) = rtp(iel,ivar) &
+          trav6(ipt) = cvar_var(iel) &
              + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
         endif
 
@@ -1301,6 +1299,7 @@ if (nscal.gt.0) then
     ipos = ipos + 1
 
     ivar = isca(iscal)
+    call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
 
 ! --- Calcul du gradient du scalaire pour interpolation
 
@@ -1322,7 +1321,7 @@ if (nscal.gt.0) then
 
 ! -- UPWIND
 
-!        rvdis(ipt,ipos) = rtp(iel,ivar)
+!        rvdis(ipt,ipos) = cvar_scal(iel)
 
 ! -- SOLU
 
@@ -1330,7 +1329,7 @@ if (nscal.gt.0) then
 !        yjf = coopts(2,ipt) - xyzcen(2,iel)
 !        zjf = coopts(3,ipt) - xyzcen(3,iel)
 
-!        rvdis(ipt,ipos) = rtp(iel,ivar) &
+!        rvdis(ipt,ipos) = cvar_scal(iel) &
 !          + xjf*grad(1,iel) + yjf*grad(2,iel) + zjf*grad(3,iel)
 
 ! -- CENTRE
@@ -1339,7 +1338,7 @@ if (nscal.gt.0) then
         yjjp = djppts(2,ipt)
         zjjp = djppts(3,ipt)
 
-        rvdis(ipt,ipos) = rtp(iel,ivar) &
+        rvdis(ipt,ipos) = cvar_scal(iel) &
           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
       enddo
@@ -1356,7 +1355,7 @@ if (nscal.gt.0) then
         yjjp = djppts(2,ipt)
         zjjp = djppts(3,ipt)
 
-        rvdis(ipt,ipos) = rtp(iel,ivar)                             &
+        rvdis(ipt,ipos) = cvar_scal(iel)                             &
           + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
 
       enddo

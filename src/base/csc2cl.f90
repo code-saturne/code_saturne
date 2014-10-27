@@ -52,8 +52,6 @@
 !> \param[in]     lfbncp
 !> \param[out]    itypfb        boundary face types
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                              (at current time step)
 !> \param[out]    rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -77,7 +75,7 @@ subroutine csc2cl &
  ( nvcp   , nvcpto , nfbcpl , nfbncp ,                            &
    icodcl , itypfb ,                                              &
    lfbcpl , lfbncp ,                                              &
-   dt     , rtp    ,                                              &
+   dt     ,                                                       &
    rcodcl ,                                                       &
    rvcpfb , pndcpl , dofcpl )
 
@@ -112,7 +110,7 @@ integer          icodcl(nfabor,nvarcl)
 integer          lfbcpl(nfbcpl)  , lfbncp(nfbncp)
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision rvcpfb(nfbcpl,nvcpto), pndcpl(nfbcpl)
 double precision dofcpl(3,nfbcpl)
@@ -136,6 +134,7 @@ double precision, allocatable, dimension(:,:) :: grad
 
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:), pointer :: cvar_var
 
 !===============================================================================
 
@@ -168,6 +167,8 @@ do ivar = 1, nvcp
   iccocg = 1
 
   isou = 0 ! set for iu, iv, iw only
+
+  call field_get_val_s(ivarfl(ivar), cvar_var)
 
   if (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw) then
 
@@ -217,7 +218,7 @@ do ivar = 1, nvcp
         !     the pressure gradient through the coupling and remain consistent
         !     with the resolution of the pressure gradient on an orthogonal mesh.
 
-        xip = rtp(iel,ivar) &
+        xip = cvar_var(iel) &
             + (grad(1,iel)*xiip + grad(2,iel)*yiip + grad(3,iel)*ziip)
 
       else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
@@ -232,11 +233,11 @@ do ivar = 1, nvcp
 
         ! -- UPWIND
 
-        !        xip =  rtp(iel,ivar)
+        !        xip =  cvar_var(iel)
 
         ! -- SOLU
 
-        !        xip =   rtp(iel,ivar)                &
+        !        xip =   cvar_var(iel)                &
         !              + (   gradv(1,isou,iel)*xif    &
         !                 +  gradv(2,isou,iel)*yif    &
         !                 +  gradv(3,isou,iel)*zif)
@@ -252,16 +253,16 @@ do ivar = 1, nvcp
 
         ! -- UPWIND
 
-        !        xip =  rtp(iel,ivar)
+        !        xip =  cvar_var(iel)
 
         ! -- SOLU
 
-        !        xip = rtp(iel,ivar) &
+        !        xip = cvar_var(iel) &
         !            + (grad(1,iel)*xif + grad(2,iel)*yif + grad(3,iel)*zif)
 
         ! -- CENTERED
 
-        xip =  rtp(iel,ivar) &
+        xip =  cvar_var(iel) &
             + (grad(1,iel)*xiip + grad(2,iel)*yiip + grad(3,iel)*ziip)
 
       endif
@@ -367,7 +368,7 @@ do ivar = 1, nvcp
 
       else
 
-        xip =   rtp(iel,ivar)            &
+        xip =   cvar_var(iel)            &
               + grad(1,iel)*(xiip+xopf)  &
               + grad(2,iel)*(yiip+yopf)  &
               + grad(3,iel)*(ziip+zopf)

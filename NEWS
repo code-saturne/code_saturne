@@ -71,16 +71,20 @@ Changes:
 Architectural changes
 ---------------------
 
+- Remove rtp and rtpa arrays. Variables are stored with field
+  structure as owner.
+
 - Rename and merge user subroutines:
    - merge (usebu1, uslwc1, usd3pt1, uscpl1, user_coal_ini1, user_fuel_ini1)
-	   in cs_user_combustion (in cs_user_paramters.f90)
-   - split and rename usray1 in cs_user_radiative_transfer (in cs_user_parameters.f90)
-	   (Note that the declaration of the use of radiative transfer is in
-		 usppmo, as the other specific physics models)
+           in cs_user_combustion (in cs_user_paramters.f90)
+   - split and rename usray1 in cs_user_radiative_transfer
+     (in cs_user_parameters.f90)
+           (Note that the declaration of the use of radiative transfer is in
+                 usppmo, as the other specific physics models)
    - rename usray2 in cs_user_radiative_transfer_bcs
-	 - merge usalin into usipph (in cs_user_parameters.f90)
-	 - rename ustsma into cs_user_mass_source_terms
-	 - rename uskpdc into cs_user_head_losses
+         - merge usalin into usipph (in cs_user_parameters.f90)
+         - rename ustsma into cs_user_mass_source_terms
+         - rename uskpdc into cs_user_head_losses
 
 - Lagrangian particle data is now shared between Fortran and C parts.
   Fortran arrays have been replaced by pointers, which map to the C data.

@@ -24,7 +24,7 @@ subroutine pptssc &
 !================
 
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  , rovsdt , tslagr )
 
 !===============================================================================
@@ -67,8 +67,6 @@ subroutine pptssc &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! iscal            ! i  ! <-- ! scalar number                                  !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
 ! rovsdt(ncelet    ! tr ! --> ! partie diagonale implicite                     !
@@ -111,7 +109,6 @@ implicit none
 
 integer          iscal
 
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 double precision smbrs(ncelet), rovsdt(ncelet)
 double precision tslagr(ncelet,*)

@@ -279,7 +279,7 @@ contains
 
   ! Resize main real array, update pointers and synchronize halo
 
-  subroutine resize_main_real_array ( dt , rtp , rtpa , propce )
+  subroutine resize_main_real_array ( dt , propce )
 
     use dimens, only: nvar, nproce
     use field
@@ -295,38 +295,22 @@ contains
     ! Arguments
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+    double precision, pointer, dimension(:,:) :: propce
 
     ! Local variables
 
-    integer iel, iprop, ivar, f_id
-
-    logical f_is_owner
+    integer iel, iprop
 
     double precision, allocatable, dimension(:) :: dt0
-    double precision, allocatable, dimension(:,:) :: rtp0, rtpa0, proce0
+    double precision, allocatable, dimension(:,:) :: proce0
 
     ! Buffering array
 
-    allocate(dt0(ncelet), rtp0(ncelet,nflown:nvar), rtpa0(ncelet,nflown:nvar))
+    allocate(dt0(ncelet))
     allocate(proce0(ncelet,nproce))
 
     do iel = 1, ncel
       dt0(iel) = dt(iel)
-    enddo
-
-    do ivar = nflown, nvar
-      ! We only resize non-owner fields
-      ! owner fields must be resize in dedicated C subroutine
-      ! (e.g. cs_turbomachinery_resize_cell_fields for iturbo.eq.2).
-      ! This function will disapear when rtp(a) -> fields
-      f_id = ivarfl(ivar)
-      call field_get_ownership(f_id, f_is_owner)
-      if (f_is_owner) cycle
-      do iel = 1, ncel
-        rtp0(iel,ivar) = rtp(iel,ivar)
-        rtpa0(iel,ivar) = rtpa(iel,ivar)
-      enddo
     enddo
 
     do iprop = 1, nproce
@@ -337,25 +321,15 @@ contains
 
     ! Reallocate main arrays
 
-    deallocate(dt, rtp, rtpa, propce)
+    deallocate(dt, propce)
 
-    allocate(dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar))
+    allocate(dt(ncelet))
     allocate(propce(ncelet,nproce))
 
     ! Update new main real array  : "real" cells
 
     do iel = 1, ncel
       dt(iel) = dt0(iel)
-    enddo
-
-    do ivar = nflown, nvar
-      f_id = ivarfl(ivar)
-      call field_get_ownership(f_id, f_is_owner)
-      if (f_is_owner) cycle
-      do iel = 1, ncel
-        rtp(iel,ivar) = rtp0(iel,ivar)
-        rtpa(iel,ivar) = rtpa0(iel,ivar)
-      enddo
     enddo
 
     do iprop = 1, nproce
@@ -372,36 +346,6 @@ contains
 
       call synsca(dt)
 
-      ivar = 1
-      do while (ivar.le.nvar)
-        if (ivar.eq.ipr) then
-          call synsca (rtp (1,ipr))
-          call synsca (rtpa(1,ipr))
-        elseif (ivar.eq.iu) then
-          ! Velocity is a owner field
-          ivar = ivar + 2
-          goto 100
-        elseif (itytur.eq.3.and.ivar.eq.ir11) then
-          call synten &
-          !==========
-        ( rtp(1,ir11), rtp(1,ir12), rtp(1,ir13),  &
-          rtp(1,ir12), rtp(1,ir22), rtp(1,ir23),  &
-          rtp(1,ir13), rtp(1,ir23), rtp(1,ir33) )
-          call synten &
-          !==========
-        ( rtpa(1,ir11), rtpa(1,ir12), rtpa(1,ir13),  &
-          rtpa(1,ir12), rtpa(1,ir22), rtpa(1,ir23),  &
-          rtpa(1,ir13), rtpa(1,ir23), rtpa(1,ir33) )
-          ivar = ivar + 5
-          goto 100
-        else
-          call synsca (rtp (1,ivar))
-          call synsca (rtpa(1,ivar))
-        endif
-100     continue
-        ivar = ivar + 1
-      enddo
-
       do iprop = 1, nproce
         if (iprop.eq.ipproc(irom)) call synsca (propce(1,iprop))
       enddo
@@ -410,7 +354,7 @@ contains
 
     ! Free buffer
 
-    deallocate(dt0, rtp0, rtpa0)
+    deallocate(dt0)
     deallocate(proce0)
 
   return

@@ -37,8 +37,6 @@
 !______________________________________________________________________________!
 !> \param[in]     iflid         index of the current drift scalar field
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (at previous time step)
 !> \param[in,out] imasfl        scalar mass flux at interior face centers
 !> \param[in,out] bmasfl        scalar mass flux at boundary face centers
 !> \param[in,out] rovsdt        unsteady term and mass aggregation term
@@ -47,7 +45,7 @@
 
 subroutine driflu &
 ( iflid  ,                                                       &
-  dt     , rtpa   ,                                              &
+  dt     ,                                                       &
   imasfl , bmasfl ,                                              &
   rovsdt , smbrs  )
 
@@ -80,7 +78,7 @@ implicit none
 
 integer          iflid
 
-double precision dt(ncelet), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision imasfl(nfac), bmasfl(ndimfb)
 double precision rovsdt(ncelet), smbrs(ncelet)
 
@@ -137,6 +135,7 @@ double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: visct, cpro_viscls
+double precision, dimension(:), pointer :: cvara_var
 
 !===============================================================================
 
@@ -150,6 +149,8 @@ call field_get_key_int(iflid, keysca, iscal)
 
 ivar = isca(iscal)
 f_id0 = -1
+
+call field_get_val_prev_s(ivarfl(ivar), cvara_var)
 
 ! Eventual scalar class:
 !   0: scalar belonging to no class
@@ -628,7 +629,7 @@ call divmas(init, flumas, flumab, w1)
 ! --> mass aggregation term
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + iconvp*thetap*w1(iel)
-  smbrs(iel) = smbrs(iel) - iconvp*w1(iel)*rtpa(iel,ivar)
+  smbrs(iel) = smbrs(iel) - iconvp*w1(iel)*cvara_var(iel)
 enddo
 
 ! Free memory

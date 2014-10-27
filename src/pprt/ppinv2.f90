@@ -24,7 +24,7 @@ subroutine ppinv2 &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +58,6 @@ subroutine ppinv2 &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -92,7 +90,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 

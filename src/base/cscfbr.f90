@@ -48,8 +48,6 @@
 !>                                    Neumann for the diffusion operator
 !> \param[in]     itypfb        boundary face types
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                              (at current and previous time steps)
 !> \param[in]     rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -69,7 +67,7 @@
 subroutine cscfbr &
  ( nscal  ,                                                       &
    icodcl , itypfb ,                                              &
-   dt     , rtp    ,                                              &
+   dt     ,                                                       &
    rcodcl )
 
 !===============================================================================
@@ -99,7 +97,7 @@ integer          nscal
 integer          icodcl(nfabor,nvarcl)
 integer          itypfb(nfabor)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
@@ -218,7 +216,6 @@ do numcpl = 1, nbrcpl
   ( nscal  ,                                                      &
     nfbdis , numcpl , nvarto(numcpl) ,                            &
     locpts ,                                                      &
-    rtp    ,                                                      &
     coopts , djppts , pndpts ,                                    &
     rvdis  , dofpts )
 
@@ -269,7 +266,7 @@ do numcpl = 1, nbrcpl
   ( nvarcp(numcpl), nvarto(numcpl) , nfbcpl , nfbncp ,            &
     icodcl , itypfb ,                                             &
     lfbcpl , lfbncp ,                                             &
-    dt     , rtp    ,                                             &
+    dt     ,                                                      &
     rcodcl ,                                                      &
     rvfbr  , pndcpl , dofcpl )
 

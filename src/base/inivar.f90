@@ -35,13 +35,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            value of time step
-!> \param[in,out] rtp           variables at cell centers
 !> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________
 
 subroutine inivar &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , propce )
 
 !===============================================================================
 ! Module files
@@ -73,7 +72,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet), propce(ncelet,*)
 
 ! Local variables
 
@@ -105,6 +104,7 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_tempk, cvar_var
 double precision, dimension(:), pointer :: cpro_prtot, cpro_venerg, cpro_lambda
 
 !===============================================================================
@@ -138,8 +138,10 @@ iusini = 1
 
 if  (ippmod(icompf).ge.0) then
 
+  call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
+
   do iel = 1, ncel
-    rtp(iel,isca(itempk)) = t0
+    cvar_tempk(iel) = t0
   enddo
 
   call cf_thermo_default_init(ncel, ncelet)
@@ -214,7 +216,7 @@ else
 
   iusini = 1
 
-  call ppiniv(nvar, nscal, dt, rtp, propce)
+  call ppiniv(nvar, nscal, dt, propce)
   !==========
 
   if (ippmod(icompf).ge.0) then
@@ -544,11 +546,12 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 
       if (scminp.le.scmaxp) then
         ivar = isca(ii)
-        valmax = rtp(1  ,ivar)
-        valmin = rtp(1  ,ivar)
+        call field_get_val_s(ivarfl(ivar), cvar_var)
+        valmax = cvar_var(1)
+        valmin = cvar_var(1)
         do iel = 1, ncel
-          valmax = max(valmax,rtp(iel,ivar))
-          valmin = min(valmin,rtp(iel,ivar))
+          valmax = max(valmax,cvar_var(iel))
+          valmin = min(valmin,cvar_var(iel))
         enddo
         if (irangp.ge.0) then
           call parmax (valmax)
@@ -587,11 +590,12 @@ if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
 
       if (scminp.le.scmaxp) then
         ivar = isca(ii)
-        valmax = rtp(1  ,ivar)
-        valmin = rtp(1  ,ivar)
+        call field_get_val_s(ivarfl(ivar), cvar_var)
+        valmax = cvar_var(1)
+        valmin = cvar_var(1)
         do iel = 1, ncel
-          valmax = max(valmax,rtp(iel,ivar))
-          valmin = min(valmin,rtp(iel,ivar))
+          valmax = max(valmax,cvar_var(iel))
+          valmin = min(valmin,cvar_var(iel))
         enddo
         if (irangp.ge.0) then
           call parmax (valmax)

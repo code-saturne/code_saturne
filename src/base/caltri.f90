@@ -117,7 +117,6 @@ character        ficsui*32
 integer, allocatable, dimension(:) :: isostd
 
 double precision, pointer, dimension(:)   :: dt => null()
-double precision, pointer, dimension(:,:) :: rtp => null(), rtpa => null()
 double precision, pointer, dimension(:,:) :: propce => null()
 
 double precision, pointer, dimension(:,:) :: frcxt => null()
@@ -133,7 +132,7 @@ interface
   !================
   ( itrale , nvar   , nscal  ,                                     &
     isostd ,                                                       &
-    dt     , rtpa   , rtp    , propce ,                            &
+    dt     , propce ,                                              &
     frcxt  , prhyd  )
 
     use dimens, only: ndimfb
@@ -145,7 +144,7 @@ interface
     integer, dimension(nfabor+1)              :: isostd
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+    double precision, pointer, dimension(:,:) :: propce
     double precision, pointer, dimension(:,:) :: frcxt
     double precision, pointer, dimension(:)   :: prhyd
 
@@ -395,7 +394,6 @@ if (nfpt1t.eq.0) deallocate(izft1d)
 ! Allocate main arrays
 
 allocate(dt(ncelet))
-allocate(rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar))
 allocate(propce(ncelet,nproce))
 
 ! Allocate arrays on boundary faces
@@ -495,7 +493,7 @@ endif
 ! Default initializations
 !===============================================================================
 
-call fldtri(nproce, dt, rtpa, rtp, propce)
+call fldtri(nproce, dt, propce)
 !==========
 
 call field_allocate_or_map_all
@@ -554,13 +552,13 @@ if (isuite.eq.1) then
 
       ! Main and auxiliary arrays
       call resize_aux_arrays
-      call resize_main_real_array ( dt , rtp , rtpa , propce )
+      call resize_main_real_array ( dt , propce )
 
       ! Turbo module
       call turbomachinery_update
 
       ! Fields
-      call fldtri(nproce, dt, rtpa, rtp, propce)
+      call fldtri(nproce, dt, propce)
 
       ! Other arrays, depending on user options
       if (iilagr.gt.0) &
@@ -580,10 +578,10 @@ endif
 
 !===============================================================================
 ! Initializations (user and additional)
-!    rtp dt rom romb viscl visct viscls (tpucou with periodicity)
+!    dt rom romb viscl visct viscls (tpucou with periodicity)
 !===============================================================================
 
-call inivar(nvar, nscal, dt, rtp, propce)
+call inivar(nvar, nscal, dt, propce)
 !==========
 
 !===============================================================================
@@ -918,7 +916,7 @@ call tridim                                                       &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   dt     , rtpa   , rtp    ,                                     &
+   dt     ,                                                       &
    propce ,                                                       &
    frcxt  , prhyd  )
 
@@ -1241,7 +1239,7 @@ if (nfpt1d.gt.0) then
 endif
 
 ! Free main arrays
-deallocate(dt, rtp, rtpa, propce)
+deallocate(dt, propce)
 
 deallocate(isostd)
 if (iphydr.eq.1) then

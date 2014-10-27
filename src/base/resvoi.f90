@@ -45,14 +45,10 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                               (at the current time step)
-!> \param[in]     rtpa          calculated variables at cell centers
-!>                               (at the previous time step)
 !_______________________________________________________________________________
 
 subroutine resvoi &
- ( dt     , rtp    , rtpa   )
+ ( dt     )
 
 !===============================================================================
 
@@ -79,7 +75,6 @@ implicit none
 ! Arguments
 
 double precision dt(ncelet)
-double precision rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
 
 ! Local variables
 
@@ -110,6 +105,8 @@ double precision, allocatable, dimension(:) :: dpvar, divu
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: porosi, c_st_voidf
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
 !===============================================================================
 
@@ -118,6 +115,14 @@ double precision, dimension(:), pointer :: porosi, c_st_voidf
 !===============================================================================
 
 ivar = ivoidf
+
+call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
+call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
+
+if (itscvi.eq.1) then
+  call field_get_val_s(ivarfl(ipr), cvar_pr)
+  call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+endif
 
 ! Allocate temporary arrays
 allocate(viscf(nfac), viscb(nfabor))
@@ -185,7 +190,7 @@ enddo
 
 if (itscvi.eq.1) then
   do iel = 1, ncel
-    gamcav(iel) = gamcav(iel) + dgdpca(iel)*(rtp(iel,ipr)-rtpa(iel,ipr))
+    gamcav(iel) = gamcav(iel) + dgdpca(iel)*(cvar_pr(iel)-cvara_pr(iel))
   enddo
 endif
 
@@ -198,9 +203,9 @@ dtmaxg = 1.d15
 if (icavit.gt.0) then
   do iel = 1, ncel
     if (gamcav(iel).lt.0.d0) then
-      dtmaxl = -rov*rtpa(iel,ivoidf)/gamcav(iel)
+      dtmaxl = -rov*cvara_voidf(iel)/gamcav(iel)
     else
-      dtmaxl = rol*(1.d0-rtpa(iel,ivoidf))/gamcav(iel)
+      dtmaxl = rol*(1.d0-cvara_voidf(iel))/gamcav(iel)
     endif
     dtmaxg = min(dtmaxl,dtmaxg)
   enddo
@@ -240,13 +245,13 @@ if (isno2t.gt.0) then
     tsexp = c_st_voidf(iel)
     c_st_voidf(iel) = smbrs(iel)
     smbrs(iel) = -thets*tsexp + (1.d0+thets)*c_st_voidf(iel) &
-                 + rovsdt(iel)*rtpa(iel,ivoidf)
+                 + rovsdt(iel)*cvara_voidf(iel)
     rovsdt(iel) = -thetv*rovsdt(iel)
   enddo
 ! If source terms are not extrapolated over time
 else
   do iel = 1, ncel
-    smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtpa(iel,ivoidf)
+    smbrs(iel) = smbrs(iel) + rovsdt(iel)*cvara_voidf(iel)
     rovsdt(iel) = -rovsdt(iel)
   enddo
 endif
@@ -308,13 +313,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetap ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_voidf     , cvara_voidf     ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,          &
    rvoid  , rvoid  ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbrs  , cvar_voidf      , dpvar  ,                   &
    rvoid  , rvoid  )
 
 !===============================================================================
@@ -327,11 +332,11 @@ iclmin = 0
 if (dt(1).gt.dtmaxg) then
 
   ! --- Calcul du min et max
-  vmin(1) = rtp(1,ivar)
-  vmax(1) = rtp(1,ivar)
+  vmin(1) = cvar_voidf(1)
+  vmax(1) = cvar_voidf(1)
   do iel = 1, ncel
-    vmin(1) = min(vmin(1),rtp(iel,ivar))
-    vmax(1) = max(vmax(1),rtp(iel,ivar))
+    vmin(1) = min(vmin(1),cvar_voidf(iel))
+    vmax(1) = max(vmax(1),cvar_voidf(iel))
   enddo
 
   ! Get the min and max clipping
@@ -340,13 +345,13 @@ if (dt(1).gt.dtmaxg) then
 
   if(scmaxp.gt.scminp)then
     do iel = 1, ncel
-      if(rtp(iel,ivar).gt.scmaxp)then
+      if(cvar_voidf(iel).gt.scmaxp)then
         iclmax = iclmax + 1
-        rtp(iel,ivar) = scmaxp
+        cvar_voidf(iel) = scmaxp
       endif
-      if(rtp(iel,ivar).lt.scminp)then
+      if(cvar_voidf(iel).lt.scminp)then
         iclmin = iclmin + 1
-        rtp(iel,ivar) = scminp
+        cvar_voidf(iel) = scminp
       endif
     enddo
   endif

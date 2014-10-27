@@ -24,7 +24,7 @@ subroutine cpvosy &
 !================
 
  ( isvtf  ,                                                       &
-   dt     , rtp    )
+   dt     )
 
 !===============================================================================
 ! Purpose:
@@ -40,8 +40,6 @@ subroutine cpvosy &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! isvtf            ! i  ! <-- ! indicateur de scalaire pour la temp. fluide    !
-! rtp              ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current time steps)                       !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -60,6 +58,7 @@ use dimens, only: nvar
 use cstphy
 use mesh
 use optcal
+use field
 
 !===============================================================================
 
@@ -69,15 +68,16 @@ implicit none
 
 integer          isvtf
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, ncecpl, iloc, iel
-integer          mode, isvol, ivart
+integer          mode, isvol
 
 integer, dimension(:), allocatable :: lcecpl
 double precision, dimension(:), allocatable :: tfluid, hvol
+double precision, dimension(:), pointer :: cvar_scalt
 
 !===============================================================================
 
@@ -120,7 +120,7 @@ do inbcou = 1, nbccou
     endif
 
     mode = 1 ! Volume coupling
-    ivart = isca(iscalt)
+    call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
     ! Number of cells per coupling case
 
@@ -151,7 +151,7 @@ do inbcou = 1, nbccou
     do iloc = 1, ncecpl
 
       iel = lcecpl(iloc)
-      tfluid(iloc) = rtp(iel, ivart)
+      tfluid(iloc) = cvar_scalt(iel)
       hvol(iloc) = 0.0d0
 
     enddo

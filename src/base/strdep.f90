@@ -25,7 +25,7 @@ subroutine strdep &
 
  ( itrale , italim , itrfin ,                                     &
    nvar   ,                                                       &
-   dt     , rtp    , rtpa   ,                                     &
+   dt     ,                                                       &
    flmalf , flmalb , cofale , xprale )
 
 !===============================================================================
@@ -45,8 +45,6 @@ subroutine strdep &
 !                  !    !     !                    couplage implicite          !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !
 ! flmalb(nfabor    ! tr ! --> ! sauvegarde du flux de masse faces brd          !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
@@ -89,7 +87,7 @@ implicit none
 integer          itrale , italim , itrfin
 integer          nvar
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,11)
 
@@ -108,6 +106,7 @@ double precision, dimension(:,:), pointer :: forbr
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp
+double precision, dimension(:), pointer :: cvar_var, cvara_var
 
 !===============================================================================
 
@@ -298,17 +297,19 @@ call astcv2(ntcast, icv)
 ! 6.  RETOUR AUX VALEURS ANTERIEURES SI NECESSAIRE
 !===============================================================================
 
-!     Si NTERUP    .GT.1, RTPA a ete touche apres NAVSTO, on doit donc
-!       revenir a une valeur anterieure
+! If NTERUP .GT. 1, values at previous time step have been modified after NAVSTO
+! We must then go back to a previous value
 if (itrfin.ne.-1) then
   do ii = 1, nvar
+    call field_get_val_s(ivarfl(ii), cvar_var)
+    call field_get_val_prev_s(ivarfl(ii), cvara_var)
     if (ii.eq.ipr .and. nterup.gt.1) then
       do iel = 1, ncelet
-        rtpa(iel,ii) = xprale(iel)
+        cvara_var(iel) = xprale(iel)
       enddo
     endif
     do iel = 1, ncelet
-      rtp(iel,ii) = rtpa(iel,ii)
+      cvar_var(iel) = cvara_var(iel)
     enddo
   enddo
   do ifac = 1, nfac

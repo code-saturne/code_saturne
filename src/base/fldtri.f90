@@ -29,7 +29,7 @@ subroutine fldtri &
 !================
 
  ( nproce ,                                                            &
-   dt     , rtpa   , rtp    , propce )
+   dt     , propce )
 
 !===============================================================================
 ! Purpose:
@@ -44,8 +44,6 @@ subroutine fldtri &
 !__________________!____!_____!________________________________________________!
 ! nproce           ! i  ! <-- ! nombre de prop phy aux centres                 !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! rtp, rtpa        ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at current and previous time steps)          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________.____._____.________________________________________________.
 
@@ -87,7 +85,7 @@ implicit none
 ! Arguments
 
 integer          nproce, nscal
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -124,7 +122,6 @@ ipass = ipass + 1
 
 ivar = ipr
 
-call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
 if (ipass .eq. 1) then
   call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
   call field_init_bc_coeffs(ivarfl(ivar))
@@ -150,7 +147,6 @@ endif
 
 if (icavit.ge.0) then
   ivar = ivoidf
-  call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (ipass .eq. 1) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))
@@ -212,7 +208,6 @@ endif
 
 do ii = 1, nfld
   ivar = ifvar(ii)
-  call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (ipass .eq. 1) then
     if (itytur.eq.3 .and. ivar.ge.ir11 .and. ivar.le.ir23) then
       call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
@@ -230,7 +225,6 @@ nfld = 0
 
 if (iale.eq.1) then
   ivar = iuma
-  call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
   if (ipass .eq. 1) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
     call field_init_bc_coeffs(ivarfl(ivar))
@@ -245,7 +239,6 @@ nscal = nscaus + nscapp
 do ii = 1, nscal
   if (isca(ii) .gt. 0) then
     ivar = isca(ii)
-    call field_map_values(ivarfl(ivar), rtp(1,ivar), rtpa(1,ivar))
     if (ipass .eq. 1) then
       if (ippmod(icompf).ge.0 .and. ii.eq.ienerg) then
         call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)

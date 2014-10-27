@@ -43,7 +43,7 @@ module numvar
   !----------------------------------------------------------------------------
 
   !> \defgroup main_variables Main variables
-  !> \brief Main variables stored in rtp, rtpa.
+  !> \brief Main variable field indices (previously stored in rtp, rtpa).
 
   !> \addtogroup main_variables
   !> \{

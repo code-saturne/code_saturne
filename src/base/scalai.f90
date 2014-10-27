@@ -34,16 +34,12 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     rtp           calculated variables at cell centers
-!>                              (at current and previous time steps)
-!> \param[in,out] rtpa          calculated variables at cell centers
-!>                              (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !______________________________________________________________________________
 
 subroutine scalai &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     , propce )
 
 !===============================================================================
 ! Module files
@@ -67,6 +63,7 @@ use elincl
 use mesh
 use atchem
 use siream
+use field
 
 !===============================================================================
 
@@ -76,7 +73,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -87,6 +84,8 @@ integer          ispecf
 
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
+
+double precision, dimension(:), pointer :: cvar_var, cvara_var
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -124,7 +123,7 @@ if (nscapp.gt.0) then
 
   if (ippmod(iphpar).ge.1) then
 
-    call ppinv2(nvar, nscal, dt, rtp)
+    call ppinv2(nvar, nscal, dt)
     !==========
 
     ! TODO: check that the following loop may be removed, as it is
@@ -139,8 +138,10 @@ if (nscapp.gt.0) then
         do ii = 1, nscapp
           iscal = iscapp(ii)
           ivar  = isca(iscal)
+          call field_get_val_s(ivarfl(ivar), cvar_var)
+          call field_get_val_prev_s(ivarfl(ivar), cvara_var)
           do iel = 1, ncelet
-            rtpa (iel,ivar) = rtp(iel,ivar)
+            cvara_var(iel) = cvar_var(iel)
           enddo
         enddo
       endif
@@ -287,7 +288,7 @@ if (nscapp.gt.0) then
    ncepdc , ncetsm , nfbpcd ,                                     &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
-   dtr    , rtp    , rtpa   , propce , tslagr ,                   &
+   dtr    , propce , tslagr ,                                     &
    ckupdc , smacel , spcond ,                                     &
    viscf  , viscb  )
 
@@ -444,7 +445,7 @@ if (nscaus.gt.0) then
    ncepdc , ncetsm , nfbpcd ,                                     &
    iisc   , itspdv ,                                              &
    icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
-   dtr    , rtp    , rtpa   , propce , tslagr ,                   &
+   dtr    , propce , tslagr ,                                     &
    ckupdc , smacel , spcond ,                                     &
    viscf  , viscb  )
 

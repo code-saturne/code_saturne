@@ -24,7 +24,7 @@ subroutine cptssy &
 !================
 
  ( iscal  ,                                                       &
-   rtpa   , crvexp , crvimp )
+   crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -39,8 +39,6 @@ subroutine cptssy &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! iscal            ! i  ! <-- ! index number of the current scalar             !
-! rtpa             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  (at previous time step)                       !
 ! crvexp           ! ra ! --> ! explicit part of the source term               !
 ! crvimp           ! ra ! --> ! implicit part of the source term               !
 !__________________!____!_____!________________________________________________!
@@ -63,6 +61,7 @@ use cstphy
 use cstnum
 use mesh
 use optcal
+use field
 
 !===============================================================================
 
@@ -72,7 +71,6 @@ implicit none
 
 integer          iscal
 
-double precision rtpa(ncelet,nflown:nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
@@ -83,6 +81,7 @@ double precision tsexp, tsimp
 
 integer, dimension(:), allocatable :: lcecpl
 double precision, dimension(:), allocatable :: tfluid, ctbimp, ctbexp
+double precision, dimension(:), pointer :: cvara_vart
 
 !===============================================================================
 
@@ -152,10 +151,12 @@ do inbcou = 1, nbccou
 
     ! Loop on coupled cells to initialize arrays
 
+    call field_get_val_prev_s(ivarfl(ivart), cvara_vart)
+
     do iloc = 1, ncecpl
 
       iel = lcecpl(iloc)
-      tfluid(iloc) = rtpa(iel, ivart)
+      tfluid(iloc) = cvara_vart(iel)
       ctbimp(iloc) = 0.0d0
       ctbexp(iloc) = 0.0d0
 

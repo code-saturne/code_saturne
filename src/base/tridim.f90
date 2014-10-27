@@ -37,10 +37,6 @@
 !> \param[in]     isostd        standard output indicator
 !>                              + reference face number
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtpa          calculated variables at cell centers
-!>                              (at current and previous time steps)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                              (at current and previous time steps)
 !> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     frcxt         external force generating hydrostatic pressure
 !> \param[in]     prhyd         predicted hydrostatic pressure
@@ -50,7 +46,7 @@ subroutine tridim &
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
-   dt     , rtpa   , rtp    , propce ,                            &
+   dt     , propce ,                                              &
    frcxt  , prhyd  )
 
 !===============================================================================
@@ -104,7 +100,7 @@ integer          nvar   , nscal
 integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
-double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+double precision, pointer, dimension(:,:) :: propce
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 
@@ -164,6 +160,7 @@ double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cpro_prtot
+double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 
 ! Darcy
 integer mbrom
@@ -184,7 +181,7 @@ interface
 
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
-    dt     , rtp    , rtpa   , propce ,                            &
+    dt     , propce ,                                              &
     frcxt  , prhyd  ,                                              &
     trava  , ximpa  , uvwk   )
 
@@ -198,7 +195,7 @@ interface
     integer          isostd(nfabor+1)
 
     double precision, pointer, dimension(:)   :: dt
-    double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+    double precision, pointer, dimension(:,:) :: propce
     double precision, pointer, dimension(:,:) :: frcxt
     double precision, pointer, dimension(:) :: prhyd
     double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -564,7 +561,7 @@ if (iwarni(iu).ge.1) then
   write(nfecra,1010)
 endif
 
-call phyvar(nvar, nscal, dt, rtp, propce)
+call phyvar(nvar, nscal, dt, propce)
 !==========
 
 if (itrale.gt.0) then
@@ -968,7 +965,7 @@ do while (iterns.le.nterup)
     !==========
   ( nscal  ,                                                       &
     icodcl , itypfb ,                                              &
-    dt     , rtp    ,                                              &
+    dt     ,                                                       &
     rcodcl )
 
   endif
@@ -1056,7 +1053,7 @@ do while (iterns.le.nterup)
 
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call cpvosy(iscalt, dt, rtp)
+    call cpvosy(iscalt, dt)
     !==========
 
     call coupbi(nfabor, nscal, icodcl, rcodcl)
@@ -1126,7 +1123,9 @@ do while (iterns.le.nterup)
 
   if (ippmod(iatmos).eq.2.and.iatsoil.eq.1.and.nfmodsol.gt.0) then
     call field_get_val_s(icrom, crom)
-    call solvar(rtp(:,isca(iscalt)),rtp(:,isca(itotwt)), &
+    call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+    call field_get_val_s(ivarfl(isca(itotwt)), cvar_totwt)
+    call solvar(cvar_scalt , cvar_totwt ,                &
                 crom   , dt ,                            &
                 rcodcl )
   endif
@@ -1371,7 +1370,7 @@ do while (iterns.le.nterup)
       !==========
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
-        dt     , rtp    , rtpa   , propce ,                            &
+        dt     , propce ,                                              &
         frcxt  , prhyd  ,                                              &
         trava  , ximpav , uvwk   )
 
@@ -1493,7 +1492,7 @@ if (iccvfg.eq.0) then
     !==========
   ( itrale , italim , itrfin ,                                     &
     nvar   ,                                                       &
-    dt     , rtp    , rtpa   ,                                     &
+    dt     ,                                                       &
     flmalf , flmalb , cofale , xprale )
 
     !     On boucle eventuellement sur de deplacement des structures
@@ -1688,12 +1687,12 @@ if (nscal.ge.1) then
   call scalai                                                     &
   !==========
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , rtpa   , propce )
+   dt     , propce )
 
   ! Diffusion terms for weakly compressible algorithm
   if (idilat.ge.4) then
 
-    call diffst(nscal, rtp, propce)
+    call diffst(nscal, propce)
 
   endif
 

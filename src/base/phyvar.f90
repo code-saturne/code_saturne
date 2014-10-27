@@ -42,15 +42,13 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp           calculated variables at cell centers
-!>                               (at current time steps)
 !> \param[in]     propce        physical properties at cell centers
 !_______________________________________________________________________________
 
 
 subroutine phyvar &
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , propce )
 
 !===============================================================================
 
@@ -84,7 +82,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -108,6 +106,8 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
+double precision, dimension(:), pointer :: cvar_voidf
+
 integer          ipass
 data             ipass /0/
 save             ipass
@@ -146,7 +146,7 @@ if (ippmod(iphpar).ge.1) then
   call cs_physical_properties1 &
  ( nvar   , nscal  ,                                              &
    mbrom  ,                                                       &
-   dt     , rtp    , propce )
+   dt     , propce )
 
 endif
 
@@ -470,8 +470,9 @@ if (icavit.ge.0 .and. icvevm.eq.1) then
 
     ipcvst = ipproc(ivisct)
     call field_get_val_s(icrom, crom)
+    call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
 
-    call cavitation_correct_visc_turb (crom, rtp(:,ivoidf), propce(:,ipcvst))
+    call cavitation_correct_visc_turb (crom, cvar_voidf, propce(:,ipcvst))
     !================================
 
   endif

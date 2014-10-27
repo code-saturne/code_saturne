@@ -53,8 +53,6 @@
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     itypcd        type of condensation source term for the variables
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !> \param[in]     ckupdc        work array for the head loss
@@ -72,7 +70,7 @@ subroutine covofi &
  ( nvar   , nscal  , ncepdp , ncesmp , nfbpcd ,                   &
    iscal  , itspdv ,                                              &
    icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
-   dt     , rtp    , rtpa   , propce , tslagr ,                   &
+   dt     , propce , tslagr ,                                     &
    ckupdc , smacel , spcond ,                                     &
    viscf  , viscb  )
 
@@ -121,7 +119,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), rtpa(ncelet,nflown:nvar)
+double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
@@ -185,6 +183,7 @@ double precision, dimension(:), pointer :: cpro_viscls
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
+double precision, dimension(:), pointer :: cvar_var, cvara_var
 
 !===============================================================================
 
@@ -194,6 +193,9 @@ double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 
 ! --- Variable number
 ivar   = isca(iscal)
+
+call field_get_val_s(ivarfl(ivar), cvar_var)
+call field_get_val_prev_s(ivarfl(ivar), cvara_var)
 
 ! Index of the field
 iflid = ivarfl(ivar)
@@ -329,10 +331,10 @@ if (iihmpr.eq.1) then
 
   if (iscal.ne.iscalt) then
     call uitssc &
-    ( iflid  , rtp(1,ivar), smbrs  , rovsdt )
+    ( iflid  , cvar_var , smbrs  , rovsdt )
   else
     call uitsth &
-    ( iflid  , rtp(1,ivar), smbrs  , rovsdt )
+    ( iflid  , cvar_var , smbrs  , rovsdt )
   endif
 endif
 
@@ -372,7 +374,7 @@ if (st_prv_id .ge. 0) then
     ! Terme source du pas de temps precedent et
     ! On suppose -ROVSDT > 0 : on implicite
     !    le terme source utilisateur (le reste)
-    smbrs(iel) = rovsdt(iel)*rtpa(iel,ivar) - thets*smbexp
+    smbrs(iel) = rovsdt(iel)*cvara_var(iel) - thets*smbexp
     ! Diagonale
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
@@ -381,7 +383,7 @@ if (st_prv_id .ge. 0) then
 else
   do iel = 1, ncel
     ! Terme source utilisateur
-    smbrs(iel) = smbrs(iel) + rovsdt(iel)*rtpa(iel,ivar)
+    smbrs(iel) = smbrs(iel) + rovsdt(iel)*cvara_var(iel)
     ! Diagonale
     rovsdt(iel) = max(-rovsdt(iel),zero)
   enddo
@@ -402,7 +404,7 @@ endif
 !     Ordre 2 non pris en compte
 
 if (iscal.eq.iscalt) then
-  call cptssy(iscal, rtpa, smbrs, rovsdt)
+  call cptssy(iscal, smbrs, rovsdt)
   !==========
 endif
 
@@ -413,7 +415,7 @@ if (ippmod(iphpar).ge.1) then
   call pptssc &
   !==========
  ( iscal  ,                                                       &
-   rtpa   , rtp    , propce ,                                     &
+   propce ,                                                       &
    smbrs  , rovsdt , tslagr )
 endif
 
@@ -509,7 +511,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) , thetv  ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , rtpa(1,ivar) , smacel(1,ivar) , srcmas   ,            &
+   volume , cvara_var    , smacel(1,ivar) , srcmas   ,            &
    smbrs  , rovsdt , w1)
 
   deallocate(srcmas)
@@ -548,7 +550,7 @@ if (nfbpcd.gt.0) then
   call condensation_source_terms &
   !=============================
   (ncelet , ncel , nfbpcd , ifbpcd , itypcd(1,ivar) ,     &
-   rtpa(1,ivar)  , spcond(1,ivar)  , srccond ,            &
+   cvara_var     , spcond(1,ivar)  , srccond ,            &
    smbrs         , rovsdt )
 
   deallocate(srccond)
@@ -709,7 +711,7 @@ if (itspdv.eq.1) then
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
       ! SMBRS recoit la dissipation
-      smbrs(iel) = smbrs(iel) - rhovst*rtpa(iel,ivar)
+      smbrs(iel) = smbrs(iel) - rhovst*cvara_var(iel)
     enddo
 
   endif
@@ -907,7 +909,7 @@ if (iscdri.ge.1) then
  call driflu &
  !=========
  ( iflid  ,                                                       &
-   dt     , rtpa   ,                                              &
+   dt     ,                                                       &
    imasfl , bmasfl ,                                              &
    rovsdt , smbrs  )
 endif
@@ -929,8 +931,8 @@ if (idarcy.eq.1) then
   if (darcy_unsteady.eq.1) then
     call divmas(1, imasfl , bmasfl , diverg)
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) - diverg(iel)*rtp(iel,ivar)              &
-        + volume(iel)/dt(iel)*rtp(iel,ivar)                            &
+      smbrs(iel) = smbrs(iel) - diverg(iel)*cvar_var(iel)              &
+        + volume(iel)/dt(iel)*cvar_var(iel)                            &
         *( cproa_delay(iel)*cproa_sat(iel)                             &
          - cpro_delay(iel)*cpro_sat(iel) )
     enddo
@@ -979,13 +981,13 @@ call codits &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   rtpa(1,ivar)    , rtpa(1,ivar)    ,                            &
+   cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscce , viscf  , viscb  , viscce ,          &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbrs  , rtp(1,ivar)     , dpvar  ,                   &
+   rovsdt , smbrs  , cvar_var        , dpvar  ,                   &
    xcpp   , rvoid  )
 
 !===============================================================================
@@ -1011,7 +1013,7 @@ if (idilat.ge.4.and.itspdv.eq.1) then
            *volume(iel)
 
     propce(iel,ipproc(iustdy(iscal))) =                               &
-      propce(iel,ipproc(iustdy(iscal))) - rhovst*rtp(iel,ivar)
+      propce(iel,ipproc(iustdy(iscal))) - rhovst*cvar_var(iel)
 
   enddo
 
@@ -1021,7 +1023,7 @@ endif
 if (idilat.ge.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
   do iel = 1, ncel
     ivar = isca(iscalt)
-    dvar = rtp(iel,ivar)-rtpa(iel,ivar)
+    dvar = cvar_var(iel)-cvara_var(iel)
     propce(iel,ipproc(iustdy(iscalt))) = &
     propce(iel,ipproc(iustdy(iscalt)))   &
     - propce(iel,ipproc(itsri(1)))*dvar*volume(iel)
@@ -1039,8 +1041,8 @@ if (iwarni(ivar).ge.2) then
   endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
-            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)&
-                *(rtp(iel,ivar)-rtpa(iel,ivar))*ibcl
+            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)        &
+                *(cvar_var(iel)-cvara_var(iel))*ibcl
   enddo
   isqrt = 1
   call prodsc(ncel,isqrt,smbrs,smbrs,sclnor)

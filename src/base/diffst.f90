@@ -24,7 +24,7 @@ subroutine diffst &
 !================
 
  ( nscal  ,                                              &
-   rtp    , propce )
+   propce )
 
 !===============================================================================
 ! Function :
@@ -38,8 +38,6 @@ subroutine diffst &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! rtp,             ! ra ! <-- ! calculated variables at cell centers           !
-!  (ncelet, *)     !    !     !  at current time step                          !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -78,7 +76,6 @@ implicit none
 
 integer          nscal
 
-double precision rtp(ncelet,nflown:nvar)
 double precision propce(ncelet,*)
 
 ! Local variables
@@ -105,6 +102,7 @@ double precision, allocatable, dimension(:) :: xcpp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: visct, cpro_cp, cpro_viscls
+double precision, dimension(:), pointer :: cvar_scal
 
 !===============================================================================
 
@@ -119,6 +117,8 @@ do iscal = 1, nscal
 
   ! Index for variable
   ivar = isca(iscal)
+
+  call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
 
   imucpp = 0
   if (iscavr(iscal).gt.0) then
@@ -299,7 +299,7 @@ do iscal = 1, nscal
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
     iwarnp , imucpp , idftnp ,                                     &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-    rtp(1,ivar)     , rtp(1,ivar)     ,                            &
+    cvar_scal       , cvar_scal       ,                            &
     coefap , coefbp , cofafp , cofbfp ,                            &
     imasfl , bmasfl ,                                              &
     viscf  , viscb  , rvoid  , xcpp   ,                            &

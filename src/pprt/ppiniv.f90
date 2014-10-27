@@ -24,7 +24,7 @@ subroutine ppiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
-   dt     , rtp    , propce )
+   dt     , propce )
 
 !===============================================================================
 ! FONCTION :
@@ -58,8 +58,6 @@ subroutine ppiniv &
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-! rtp              ! tr ! <-- ! variables de calcul au centre des              !
-! (ncelet,*)       !    !     !    cellules                                    !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 !__________________!____!_____!________________________________________________!
 
@@ -93,7 +91,7 @@ implicit none
 
 integer          nvar   , nscal
 
-double precision dt(ncelet), rtp(ncelet,nflown:nvar), propce(ncelet,*)
+double precision dt(ncelet), propce(ncelet,*)
 
 ! Local variables
 

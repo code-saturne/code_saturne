@@ -45,8 +45,6 @@
 !> \param[in]     isostd        indicator of standar outlet
 !>                               +index of the reference face
 !> \param[in]     dt            time step (per cell)
-!> \param[in,out] rtp, rtpa     calculated variables at cell centers
-!>                               (at current and previous time steps)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     frcxt         external force generating the hydrostatic
 !>                              pressure
@@ -60,7 +58,7 @@
 subroutine navstv &
  ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
    isostd ,                                                       &
-   dt     , rtp    , rtpa   , propce ,                            &
+   dt     , propce ,                                              &
    frcxt  , prhyd  ,                                              &
    trava  , ximpa  , uvwk   )
 
@@ -104,7 +102,7 @@ integer          nvar   , nscal  , iterns , icvrge , itrale
 integer          isostd(nfabor+1)
 
 double precision, pointer, dimension(:)   :: dt
-double precision, pointer, dimension(:,:) :: rtp, rtpa, propce
+double precision, pointer, dimension(:,:) :: propce
 double precision, pointer, dimension(:,:) :: frcxt
 double precision, pointer, dimension(:) :: prhyd
 double precision, pointer, dimension(:,:) :: trava, uvwk
@@ -169,6 +167,7 @@ double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
+double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
 !===============================================================================
 ! Interfaces
@@ -286,6 +285,11 @@ endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
+
+if (icavit.ge.0) then
+  call field_get_val_s(ivarfl(ivoidf), cvar_voidf)
+  call field_get_val_prev_s(ivarfl(ivoidf), cvara_voidf)
+endif
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -413,7 +417,7 @@ endif
 
 if (icavit.ge.0) then
 
-  call cavitation_compute_source_term (rtpa(:,ipr), rtpa(:,ivoidf))
+  call cavitation_compute_source_term (cvara_pr, cvara_voidf)
   !==================================
 
 endif
@@ -682,7 +686,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     ! Resize main real array
 
-    call resize_main_real_array ( dt , rtp , rtpa , propce )
+    call resize_main_real_array ( dt , propce )
     !==========================
 
     ! Update turbomachinery module
@@ -692,7 +696,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     ! Update field mappings ("owner" fields handled by turbomachinery_update)
 
-    call fldtri(nproce, dt, rtpa, rtp, propce)
+    call fldtri(nproce, dt, propce)
     !==========
 
     ! Resize other arrays related to the velocity-pressure resolution
@@ -1176,12 +1180,12 @@ if (icavit.ge.0) then
 
   ! Void fraction solving
 
-  call resvoi(dt, rtp, rtpa)
+  call resvoi(dt)
   !==========
 
   ! Halo synchronization
 
-  call synsca(rtp(:,ivoidf))
+  call synsca(cvar_voidf)
   !==========
 
   ! Get the void fraction boundary conditions
@@ -1200,7 +1204,7 @@ if (icavit.ge.0) then
 
   call cavitation_update_phys_prop &
   !===============================
- ( rtp(:,ivoidf), coavoi, cobvoi, ivoifl, bvoifl, &
+ ( cvar_voidf, coavoi, cobvoi, ivoifl, bvoifl, &
    crom, brom, propce(:,ipproc(iviscl)), imasfl, bmasfl )
 
   ! Verbosity
@@ -1325,7 +1329,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
       enddo
     enddo
 
-    !   APPEL A PREDVV AVEC RTP ET RTP AU LIEU DE RTP ET RTPA
+    !   APPEL A PREDVV AVEC VALEURS AU PAS DE TEMPS COURANT
     !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
     call predvv &
