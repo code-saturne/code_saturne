@@ -122,15 +122,15 @@ call field_get_val_s(iflmab, bmasfl)
 ! 1. Flow rate computation for the inlet and oulet conditions
 !===============================================================================
 
-!-----------------------------------
-!- Update the thermodynamic pressure
-!  for the previous time step
-!-----------------------------------
+!----------------------------------
+! Update the thermodynamic pressure
+! for the previous time step
+!----------------------------------
 pthera = pther
 
-!----------------
-!- Initialization
-!-----------------
+!---------------
+! Initialization
+!---------------
 
 debin  = 0.d0
 debout = 0.d0
@@ -138,23 +138,17 @@ debtot = 0.d0
 !--------------
 
 ! Computation of mass flux imposed on the boundary faces
-!do ifac = 1, nfabor
-!  if (itypfb(ifac).eq.ientre) then
-!    ! the inlet mass flux integrated in space
-!    debin = debin - bmasfl(ifac)
-!  else if (itypfb(ifac).eq.isolib) then
-!    ! the outlet mass flux integrated in space:
-!    debout = debout - bmasfl(ifac)
-!  endif
-!enddo
+do ifac = 1, nfabor
+  if (itypfb(ifac).eq.ientre) then
+    ! the inlet mass flux integrated in space
+    debin = debin - bmasfl(ifac)
+  else if (itypfb(ifac).eq.isolib) then
+    ! the outlet mass flux integrated in space:
+    debout = debout - bmasfl(ifac)
+  endif
+enddo
 
-!debtot = debin + debout
-
-if (ttcabs.le.200.d0) then
-  debtot = 0.18d-3
-else
-  debtot = 0.d0
-endif
+debtot = debin + debout
 
 ! Computation of the inlet mass flux imposed on the cells volume
 if (ncesmp.gt.0) then
@@ -263,21 +257,19 @@ endif
   !================================================================
   2002 format                                                      &
   (/,                                                              &
-   3X,'** LOW-MACH ALGORITHM: AVERAGED QUANTITIES '            , /,&
-   3X,'   --------------------------------------- '            , /,&
-   '---',                                                          &
-   '-------------------------------------------------------',      &
-   '-------------'                                             , /,&
-   3X,'    Time      pther^(n+1)  pther^n   Dp/Dt   ro0   '    ,   &
-      '   ro^(n-1)   ro^(n)  ro^(n-1)/ro^(n)  dtxdebtot/ro^(n) ',  &
-      '  -debt        deb_inj     drhodt  '                    , /,&
-   '---',                                                          &
-   '-------------------------------------------------------',      &
-   '-------------'                                             , /,&
-   3X, 12g15.7, /,                                                 &
-   '---',                                                          &
-   '-------------------------------------------------------',      &
-   '-------------' )
+   3x,'** LOW-MACH ALGORITHM (SA): AVERAGED QUANTITIES '       , /,&
+   3x,'   -------------------------------------------- '       , /,&
+   /,&
+    6x,'-------------------------------------------------------',  &
+       '-------------------------------------------------------',  &
+       '---------------------------------------------------'    ,/,&
+   16x,'time', 7x,'pther(n+1)',5x,'pther(n)',3x,'Dpther/Dt',       &
+    7x,'ro0',  8x,'rho(n-1)'  ,6x,'rho(n)'  ,3x,'ro(n-1)/ro(n)',   &
+    1x,'dt.deb/ro(n)', 3x, '-debt',8x,'deb_inj', 6x,'drhodt',    /,&
+    6x,'-------------------------------------------------------',  &
+       '-------------------------------------------------------',  &
+       '---------------------------------------------------'    ,/,&
+   1X, '(SA) pther:', 12(e12.5, 1x)   )
   !================================================================
 
 

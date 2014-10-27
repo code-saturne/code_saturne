@@ -21,8 +21,9 @@
 !-------------------------------------------------------------------------------
 
 !> \file cs_mixing_gas_initialization.f90
-!> \brief Initialization of calculation variables for mixing gas modelling
-!> in presence of steam gas as variable deduced and not solved.
+!> \brief Initialization of calculation variables for mixing gases modelling
+!> in presence of steam gas or another gas used as variable deduced
+!> and not solved.
 !>
 !------------------------------------------------------------------------------
 
@@ -108,7 +109,7 @@ endif
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
 
 !Deduced species (h2o_g) with steam gas
-! or Helium or Hydrogen  with no condensable gases
+! or Helium or Hydrogen  with noncondensable gases
 if (ippmod(imixg).eq.0) then
   name_d = "y_he"
 elseif (ippmod(imixg).eq.1) then
@@ -132,7 +133,7 @@ call cs_user_initialization &
 
 !===============================================================================
 ! 3. Deduce the mass fraction (y_d) from the mass fractions (yk) of
-!    the condensable and noncondensable gases transported
+!    the noncondensable gases transported
 !===============================================================================
 
 ! Initialization
@@ -179,15 +180,15 @@ do iel = 1, ncel
   ! Mixing specific heat (Cp_m0)
   cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 
-  !-- enthalpy initialization
+  ! Enthalpy initialization
   cvar_enth(iel) = cpro_cp(iel)*t0
 
   mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
   mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
 
-  !-- steam volume and Total gas volume injected
+  ! Gas deduced and Total gas volumes injected
   vol_d = vol_d + volume(iel)*    &
-          (y_d(iel)/18.d0) * (mix_mol_mas(iel)*1000.d0)
+          (y_d(iel)/s_d%mol_mas)*mix_mol_mas(iel)
   volgas = volgas +volume(iel)
 
 enddo
@@ -213,8 +214,6 @@ if (iok.gt.0) then
   call csexit (1)
 endif
 
-write(nfecra,3000)
-
 !--------
 ! Formats
 !--------
@@ -229,10 +228,8 @@ write(nfecra,3000)
  3x, '   Total   gas Volume:', 3x, g17.9                         ,/,&
  3x, '   Deduced gas Volume:', 3x, g17.9                         ,/,&
  3x,                                                                &
- '========================================================' )
+ 3x,'----------------------------------------------------------' )
 
- 3000 format(/,/,                                                 &
-'-------------------------------------------------------------',/)
  3090 format(                                                     &
 '@',                                                            /,&
 '@',                                                            /,&
