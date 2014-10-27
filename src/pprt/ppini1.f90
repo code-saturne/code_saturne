@@ -156,7 +156,7 @@ if ( ippmod(iaeros).ge.0) then
 endif
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 #if defined(_CS_LANG_FR)

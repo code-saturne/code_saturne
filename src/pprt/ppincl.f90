@@ -789,7 +789,7 @@ module ppincl
   !> \ref usebu1, \ref uslwc1, \ref uscpi1 or
   !> \ref uscpl1). With the electric module, \ref srrom is initialised in to 0
   !> and may be modified by the user in \ref useli1.
-  !> With gas combustion, pulverised coal or electric arcs, \ref ssrom is
+  !> With gas combustion, pulverised coal or electric arcs, \ref srrom is
   !> automatically used after the second time-step. With Joule effect,
   !> the user decides whether or not it will be used in \ref uselph
   !> from the coding law giving the density.
