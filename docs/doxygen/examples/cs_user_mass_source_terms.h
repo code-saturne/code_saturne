@@ -36,15 +36,15 @@ The subroutine \ref cs_user_mass_source_terms is called at three different stage
   - \c iappel = 3: Calculation of the values of the mass source terms. Called at each time step.
 
 
-The equation for mass conservation becomes: \f$ \dfrac{\partial \rho}{\partial t}+\divs{(\rho \vect{u})}=\Gamma \f$
+The equation for mass conservation becomes: \f$ \der{\rho}{t}+\divs{(\rho \vect{u})}=\Gamma \f$
 
-The equation for a variable \f$ f \f$ becomes:\f$ \dfrac{df}{dt} = ... + \Gamma(f_i - f) \f$  discretized as \f$ \rho \dfrac{f^{(n+1)} - f^{(n)}}{dt} = ... + \Gamma(f_i - f^{(n+1)}) \f$
+The equation for a variable \f$ \varia \f$ becomes:\f$ \frac{\Delta(\rho\varia)}{\Delta t} = ... + \Gamma(\varia^{in} - \varia) \f$  discretized as \f$ \rho \dfrac{\varia^{(n+1)} - \varia^{(n)}}{\Delta t} = ... + \Gamma(\varia^{in} - \varia^{(n+1)}) \f$
 
-\f$ f_i \f$ is the value of \f$ f \f$ associated to the injected mass.
+\f$ \varia^{in} \f$ is the value of \f$ \varia \f$ associated to the injected mass.
 
 Two options are available:
-  - the mass flux is injected with the local value of variable \f$ f \f$: \f$ f_i = f^{(n+1)} \f$ (the equation for \f$ f \f$ is therefore not modified)
-  - the mass flux is injected with a specific value for \f$ f \f$: \f$ f_i \f$ is specified by the user
+  - the mass flux is injected with the local value of variable \f$ \varia \f$: \f$ \varia^{in} = \varia^{(n+1)} \f$ (the equation for \f$ \varia \f$ is therefore not modified)
+  - the mass flux is injected with a specific value for \f$ \varia \f$: \f$ \varia^{in} \f$ is specified by the user
 
 
 \section var_user Variables to be specified by the user
@@ -76,14 +76,14 @@ Two options are available:
  - if \c itypsm(ieltsm,ivar)=0, \c smacel(ieltsm,ivar) is not used
 
  - if \c smacel(ieltsm,ipr)<0, mass is removed from the system,
-     therefore \c Code_Saturne automatically considers \f$ f_i=f^{(n+1)}\f$,
+     therefore \c Code_Saturne automatically considers \f$ \varia^{in}=\varia^{(n+1)}\f$,
      whatever the values of \ref itypsm or \ref smacel specified by the user
 
  - if a value \c ivar is not linked for a mass source
      term is imposed, no source term will be taken into account.
 
  - if a scalar doesn't evolve following the standard equation
-     \f$ \dfrac{\partial{(\rho f)}}{\partial{dt}} + \divs{(\rho U f)} = ...\f$
+     \f$ \dfrac{\partial{(\rho \varia)}}{\partial{dt}} + \divs{(\rho \vect{u} \varia)} = ...\f$
      (alternate convective field for instance), the source term
      set by this routine will not be correct (except in case of
      injection at the local value of the variable). The proper source
@@ -163,7 +163,7 @@ Calculation of the inlet conditions for k and epsilon with standard laws in a ci
 \snippet cs_user_mass_source_terms.f90 inlet_cal
 
 \subsection example2_2 Example 2
-Simulation of a suction (by a pump for instance) with a total rate of\f$80 000 \: kg \cdot s^{-1}\f$. The suction rate is supposed to be uniformly distributed on all the cells selected above.
+Simulation of a suction (by a pump for instance) with a total rate of \f$ 80 000 \: kg \cdot s^{-1}\f$. The suction rate is supposed to be uniformly distributed on all the cells selected above.
 
 Calculation of the total volume of the area where the mass source term is imposed (the case of parallel computing is taken into account with the call to \c parsom).
 
