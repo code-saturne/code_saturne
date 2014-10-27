@@ -429,7 +429,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     do iel = 1, ncel
 
-        rhovdt = crom(iel)*volume(iel)/dt(iel)
+      rhovdt = crom(iel)*volume(iel)/dt(iel)
 
       dudt(1,iel) = -rhovdt*(vel(1,iel)-vela(1,iel))
       dudt(2,iel) = -rhovdt*(vel(2,iel)-vela(2,iel))
