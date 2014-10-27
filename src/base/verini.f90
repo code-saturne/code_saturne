@@ -3940,7 +3940,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usalin.',/,&
+'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -3957,7 +3957,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usalin.',/,&
+'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4013,7 +4013,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usalin.',/,&
+'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4030,7 +4030,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes dans usalin.',               /,&
+'@  Verifier les parametres donnes dans usipph.',               /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6441,7 +6441,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify   the parameters given  in   interface or usalin.',  /,&
+'@  Verify   the parameters given  in   interface or usipph.',  /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6497,7 +6497,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify the parameters given in the interface or usalin.',   /,&
+'@  Verify the parameters given in the interface or usipph.',   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6514,7 +6514,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify the parameters given in the interface or usalin.',   /,&
+'@  Verify the parameters given in the interface or usipph.',   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6531,7 +6531,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify   the parameters  given  in usalin.',                /,&
+'@  Verify   the parameters  given  in usipph.',                /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

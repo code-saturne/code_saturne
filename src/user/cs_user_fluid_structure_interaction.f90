@@ -205,7 +205,7 @@ enddo
 !     ALE basing on a first calculation without ALE, an initial iteration 0 is
 !     automatically calculated in order to take initial arrays XSTR0, VSTR0 and
 !     XSTREQ into account. In another case add the following expression 'italin=1'
-!     in subroutine 'usalin', so that the code can deal with arrays
+!     in subroutine 'usipph', so that the code can deal with arrays
 !     XSTR0, VSTR0 or XSTREQ.
 
 ! --- In the following example :

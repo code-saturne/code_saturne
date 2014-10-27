@@ -8232,9 +8232,8 @@ geometrical criterion or reference number then a structure number (negative valu
 %==================================
 \subsubsection{Initialisation of the options}
 %==================================
-\label{prg_usalin}%
 This initialisation can be performed in the Graphical User Interface (GUI)
- or in the subroutines \texttt{usalin} and \texttt{usstr1}. Firstlyl,
+ or in the subroutines \texttt{usipph} and \texttt{usstr1}. Firstlyl,
  when the ``Mobile mesh'' is selected in GUI under the ``Thermophysical models''
  heading, additional options are displayed. The user must choose the type of mesh
  viscosity and describe its spatial distribution, see \figurename~\ref{fig:Ini-ale}.
@@ -8249,12 +8248,12 @@ This initialisation can be performed in the Graphical User Interface (GUI)
 
 The following paragraphs are relevant if the GUI is not used.
 
-\minititre{Subroutine \texttt{usalin}}
+\minititre{Subroutine \texttt{usipph}}
 \noindent
 \textit{Subroutine called at the beginning.}
 This subroutine completes \texttt{cs\_user\_parameters.f90}.
 
-\texttt{usalin} allows setting options for the ALE module, and in
+\texttt{usipph} allows setting options for the ALE module, and in
 particular to activate the ALE module (\texttt{iale=1}).
 
 \minititre{Subroutine \texttt{usstr1}}
@@ -8414,7 +8413,7 @@ When starting a calculation using ALE, or re-starting a calculation with ALE, ba
  on a first calculation without ALE, an initial iteration 0 is automatically performed
  in order to take initial arrays \text{xstr0}, \text{vstr0} and \text{xstreq} into
  account. In any other case, add the following expression '\text{italin=1}' in subroutine
- \text{usalin}, so that the code can deal with the arrays \text{xstr0}, \text{vstr0} and \text{xstreq}.
+ \text{usipph}, so that the code can deal with the arrays \text{xstr0}, \text{vstr0} and \text{xstreq}.
 
 When \texttt{ihistr} is set to 1, the code writes in the output the history of the
  displacement, of the structural velocity, of the structural acceleration and of the

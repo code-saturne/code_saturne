@@ -529,7 +529,7 @@ deallocate(viscf, viscb)
 #endif
 
 !----
-! FIN
+! End
 !----
 return
 

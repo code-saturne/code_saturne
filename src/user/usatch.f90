@@ -63,7 +63,7 @@ integer option_photolysis
 return
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 end subroutine kinetic
@@ -107,7 +107,7 @@ double precision convers_factor(ns)
 return
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 end subroutine fexchem

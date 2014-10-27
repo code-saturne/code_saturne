@@ -142,12 +142,6 @@ if (iihmpr.eq.1) then
 
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
-
-iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp, icavit)
-
 ! ALE parameters
 !---------------
 
@@ -158,8 +152,10 @@ if (iihmpr.eq.1) then
 endif
 
 ! User sub-routines
+! =================
 
-call usalin
+iihmpu = iihmpr
+call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp, icavit)
 
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------

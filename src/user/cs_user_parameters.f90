@@ -469,17 +469,12 @@ subroutine usipph &
 ! icavit           ! i  ! <-> ! cavitation model
 !__________________!____!_____!________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
-! No module should appear here
-
+use albase
 
 !===============================================================================
 
@@ -647,6 +642,54 @@ if (.false.) then
 
   icavit = -1
 
+endif
+
+!==============================================================================
+! --- Options dedicated to the use of ALE (Arbitrary Lagrangian Eulerian)
+!     method :
+!
+!          Here one defines parameters and input data dedicated to the use ALE
+!          method
+!==============================================================================
+
+! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
+
+if (.false.) then
+  iale = 1
+endif
+
+! --- Number of iterations for fluid initialization. Contrary to ntmabs
+!     (for example)
+!     nalinf is not an absolute iteration number, meaning that in case of
+!     restart calculation nalinf corresponds to the number of iterations
+!     for fuid initialization beginning from the first current iteration of
+!     the calculation restart. In general nalinf = 0 in that case.
+
+if (.false.) then
+  nalinf = 75
+endif
+
+! --- Maximum number of iterations in case of implicit Fluid Structure Coupling
+!     with structural calculations (internal and/or external
+!     (i.e. using Code_Aster)).
+!     NALIMX = 1, in case of explicit FSI algorithm.
+
+if (.false.) then
+  nalimx = 15
+endif
+
+! --- Relative precision of sub-cycling Fluid Structure Coupling algorithm.
+
+if (.false.) then
+  epalim = 1.d-5
+endif
+
+! --- Mesh viscosity modeling (cf. usvima)
+!     0 : isotropic
+!     1 : orthotropic
+
+if (.false.) then
+  iortvm = 0
 endif
 
 !----
@@ -1684,116 +1727,6 @@ endif
 
 return
 end subroutine usipes
-
-
-!===============================================================================
-
-
-subroutine usalin
-!================
-
-!===============================================================================
-!  Purpose :
-! --------
-
-! --- User subroutine dedicated to the use of ALE (Arbitrary Lagrangian Eulerian)
-!     method :
-!
-!          Here one defines parameters and input data dedicated to the use ALE
-!          method
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use optcal
-use albase
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-! Local variables
-
-!===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-
-if (1.eq.1) return
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-!
-! Here are some examples that can be adapted and changed by Code Saturne users.
-!
-!
-! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
-
-if (.false.) then
-  iale = 1
-endif
-
-! --- Number of iterations for fluid initialization. Contrary to ntmabs (for example)
-!     nalinf is not an absolute iteration number, meaning that in case of
-!     restart calculation nalinf corresponds to the number of iterations
-!     for fuid initialization beginning from the first current iteration of
-!     the calculation restart. In general nalinf = 0 in that case.
-
-if (.false.) then
-  nalinf = 75
-endif
-
-! --- Maximum number of iterations in case of implicit Fluid Structure Coupling
-!     with structural calculations (internal and/or external
-!     (i.e. using Code_Aster)).
-!     NALIMX = 1, in case of explicit FSI algorithm.
-
-if (.false.) then
-  nalimx = 15
-endif
-
-! --- Relative precision of sub-cycling Fluid Structure Coupling algorithm.
-
-if (.false.) then
-  epalim = 1.d-5
-endif
-
-! --- Mesh viscosity modeling (cf. usvima)
-!     0 : isotropic
-!     1 : orthotropic
-
-if (.false.) then
-  iortvm = 0
-endif
-
-!----
-! Formats
-!----
-
-!----
-! End
-!----
-
-return
-end subroutine usalin
 
 
 !===============================================================================
