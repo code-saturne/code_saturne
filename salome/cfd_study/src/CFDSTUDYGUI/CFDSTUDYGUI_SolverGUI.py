@@ -279,26 +279,22 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
     def onSaturneHelpManual(self):
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayCSManual()
+            self._CurrentWindow.displayCSManual()
 
 
     def onSaturneHelpTutorial(self):
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayCSTutorial()
+            self._CurrentWindow.displayCSTutorial()
 
 
     def onSaturneHelpKernel(self):
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayCSKernel()
+            self._CurrentWindow.displayCSKernel()
 
 
     def onSaturneHelpRefcard(self):
         if self._CurrentWindow != None:
-            if CFD_Code() == CFD_Saturne:
-                self._CurrentWindow.displayCSRefcard()
+            self._CurrentWindow.displayCSRefcard()
 
 
     def setWindowTitle_CFD(self,mw,aCase,baseTitleName):

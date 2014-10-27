@@ -1357,7 +1357,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the tutorial for Code_Saturne
         """
-        self.displayManual('tutorial')
+        msg = "See " + self.package.url + " web site for tutorials."
+        QMessageBox.about(self, self.package.name + ' Interface', msg)
 
 
     @pyqtSignature("")
