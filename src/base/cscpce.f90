@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file cspcev.f90
+!> \file cscpce.f90
 !> \brief Preparation of sending velocity variables for coupling between
 !> two instances of Code_Saturne via boundary faces.
 !> Received indformation will be transformed into boundary condition
@@ -42,7 +42,7 @@
 !> \param[out]    rvdis
 !______________________________________________________________________________
 
-subroutine cspcev &
+subroutine cscpce &
  ( nptdis , ivar   ,                                              &
    locpts ,                                                       &
    vela   ,                                                       &

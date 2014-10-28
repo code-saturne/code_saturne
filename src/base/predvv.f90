@@ -1428,7 +1428,7 @@ if (iterns.eq.1) then
   ! Coupling between two Code_Saturne
   if (nbrcpl.gt.0) then
     !vectorial interleaved exchange
-    call cscelv(iu, vela, coefav, coefbv, tsexp)
+    call csccel(iu, vela, coefav, coefbv, tsexp)
     !==========
   endif
 

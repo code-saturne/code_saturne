@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file cscelv.f90
+!> \file csccel.f90
 !> \brief Exchange of coupling variables between to times of Code_Saturne
 !> thanks to boundary faces.
 !>
@@ -38,7 +38,7 @@
 !> \param[out]    crvexp        working table for explicit part
 !______________________________________________________________________________
 
-subroutine cscelv &
+subroutine csccel &
  ( ivar   ,                                                       &
    vela   ,                                                       &
    coefav , coefbv ,                                              &
@@ -165,7 +165,7 @@ do numcpl = 1, nbrcpl
 
   if (ncedig.gt.0) then
 
-    call cspcev                                                   &
+    call cscpce                                                   &
     !==========
   ( ncedis , ivar   ,                                             &
     locpts ,                                                      &
@@ -204,7 +204,7 @@ do numcpl = 1, nbrcpl
 
   if (ncecpg.gt.0) then
 
-    call cs2tsv(ncecpl, lcecpl, vela, crvexp, rvcel)
+    call csc2ts(ncecpl, lcecpl, vela, crvexp, rvcel)
     !==========
 
   endif

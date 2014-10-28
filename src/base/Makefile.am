@@ -204,13 +204,13 @@ cs_base_fortran.c \
 cs_boundary_conditions.c \
 cs_calcium.c \
 csc2cl.f90 \
-cs2tsv.f90 \
-cscelv.f90 \
+csc2ts.f90 \
+csccel.f90 \
 cscfbr.f90 \
 cscini.f90 \
 csclli.f90 \
 cscloc.f90 \
-cspcev.f90 \
+cscpce.f90 \
 cscpfb.f90 \
 cs_control.c \
 cs_coupling.c \
