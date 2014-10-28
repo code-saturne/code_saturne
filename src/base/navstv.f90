@@ -117,7 +117,7 @@ integer          init
 integer          iflmas, iflmab
 integer          iflmb0
 integer          nswrgp, imligp, iwarnp
-integer          nbrval, iappel, iescop
+integer          nbrval, iappel
 integer          ndircp, icpt
 integer          numcpl
 integer          iflvoi, iflvob
@@ -166,7 +166,7 @@ double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
-double precision, dimension(:), pointer :: cpro_prtot
+double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
 !===============================================================================
@@ -1225,7 +1225,7 @@ endif
 ! 11. Compute error estimators for correction step and the global algo
 !===============================================================================
 
-if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
+if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
   ! Allocate temporary arrays
   allocate(esflum(nfac), esflub(nfabor))
@@ -1286,9 +1286,11 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
   ! ---> CALCUL DE L'ESTIMATEUR CORRECTION : DIVERGENCE DE ROM * U (N + 1)
   !                                          - GAMMA
 
-  if (iescal(iescor).gt.0) then
+  if (iestim(iescor).ge.0) then
     init = 1
     call divmas(init, esflum, esflub, w1)
+
+    call field_get_val_s(iestim(iescor), c_estim)
 
     if (ncetsm.gt.0) then
       !$omp parallel do private(iel) if(ncetsm > thr_n_min)
@@ -1299,24 +1301,21 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     endif
 
     if (iescal(iescor).eq.2) then
-      iescop = ipproc(iestim(iescor))
       !$omp parallel do
       do iel = 1, ncel
-        propce(iel,iescop) =  abs(w1(iel))
+        c_estim(iel) =  abs(w1(iel))
       enddo
     elseif (iescal(iescor).eq.1) then
-      iescop = ipproc(iestim(iescor))
       !$omp parallel do
       do iel = 1, ncel
-        propce(iel,iescop) =  abs(w1(iel)) / volume(iel)
+        c_estim(iel) =  abs(w1(iel)) / volume(iel)
       enddo
     endif
   endif
 
-
   ! ---> CALCUL DE L'ESTIMATEUR TOTAL
 
-  if (iescal(iestot).gt.0) then
+  if (iestim(iestot).ge.0) then
 
     !   INITIALISATION DE TRAV AVEC LE TERME INSTATIONNAIRE
 
@@ -1324,8 +1323,7 @@ if (iescal(iescor).gt.0.or.iescal(iestot).gt.0) then
     do iel = 1, ncel
       rovolsdt = crom(iel)*volume(iel)/dt(iel)
       do isou = 1, 3
-        trav(isou,iel) = rovolsdt *                               &
-                 ( vela(isou,iel)- vel(isou,iel) )
+        trav(isou,iel) = rovolsdt * (vela(isou,iel) - vel(isou,iel))
       enddo
     enddo
 

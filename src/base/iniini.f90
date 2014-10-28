@@ -777,7 +777,7 @@ idries =-1
 
 ! --- Rotation/curvature correction of turbulence models
 !     Unactivated by default
-!     Correction type (itycor) is set in varpos
+!     Correction type (itycor) is set in fldvar
 irccor = 0
 itycor = -999
 
@@ -955,10 +955,10 @@ enddo
 
 !     On evalue l'estimateur IEST selon les valeurs de IESCAL
 
-!        IESCAL(IEST) = 0 : l'estimateur IEST n'est pas calcule
-!        IESCAL(IEST) = 1 : l'estimateur IEST   est     calcule,
+!        iescal(iest) = 0 : l'estimateur IEST n'est pas calcule
+!        iescal(iest) = 1 : l'estimateur IEST   est     calcule,
 !                         sans contribution du volume  (on prend abs(I))
-!        IESCAL(IEST) = 2 : l'estimateur IEST   est     calcule,
+!        iescal(iest) = 2 : l'estimateur IEST   est     calcule,
 !                         avec contribution du volume ("norme L2")
 !                         soit abs(I)*SQRT(Volume_cellule),
 !                         sauf pour IESCOR : on calcule abs(I)*Volume_cellule
