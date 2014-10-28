@@ -78,7 +78,6 @@ use numvar
 use cstphy
 use cstnum
 use optcal
-use dimens, only: nvar
 use entsor
 use lagpar
 use lagran

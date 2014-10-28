@@ -124,9 +124,10 @@ typedef struct {
   int             n_time_vals;                     /* number of time values
                                                       handled */
 
-  size_t          size[CS_LAGR_N_ATTRIBUTES];      /* size (in bytes) of attributes
-                                                      in particle structure for
-                                                      a given time value */
+  size_t          size[CS_LAGR_N_ATTRIBUTES];      /* size (in bytes) of
+                                                      attributes in particle
+                                                      structure for a given
+                                                      time value */
   cs_datatype_t   datatype[CS_LAGR_N_ATTRIBUTES];  /* datatype of associated
                                                       attributes */
   ptrdiff_t      (*displ)[CS_LAGR_N_ATTRIBUTES];   /* displacement (in bytes) of
@@ -214,7 +215,6 @@ extern const cs_lagr_param_t  *cs_glob_lagr_params;
  * and indexes
  *
  * parameters:
- *   n_particles_max <--  local max. number of particles
  *   iphyla          <--  kind of physics used for the lagrangian approach
  *   nvls            <--  number of user-defined variables
  *   nbclst          <--  number of stat. class to study sub-set of particles
@@ -222,8 +222,7 @@ extern const cs_lagr_param_t  *cs_glob_lagr_params;
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
-                          const cs_int_t    *nlayer,
+CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
                           const cs_int_t    *irough,
@@ -1180,9 +1179,50 @@ cs_lagr_particle_set_real_n(void                           *particle,
 }
 
 /*----------------------------------------------------------------------------
+ * Resize particle set buffers if needed.
+ *
+ * parameters:
+ *   n_particles <-- minumum number of particles required
+ *
+ *
+ * returns:
+ *   1 if resizing was required, 0 otherwise
+ *----------------------------------------------------------------------------*/
+
+int
+cs_lagr_resize_particle_set(cs_lnum_t  n_min_particles);
+
+/*----------------------------------------------------------------------------
+ * Set reallocation factor for particle sets.
+ *
+ * This factor determines the multiplier used for reallocations when
+ * the particle set's buffers are too small to handle the new number of
+ * particles.
+ *
+ * parameters:
+ *  f <-- reallocation size multiplier
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_set_reallocation_factor(double f);
+
+/*----------------------------------------------------------------------------
+ * \brief Set global maximum number of particles.
+ *
+ * By default, the number is limited only by local cs_lnum_t and global
+ * cs_gnum_t data representation limits.
+ *
+ * parameters:
+ *   n_g_particles_max <-- global maximum number of particles
+*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max);
+
+/*----------------------------------------------------------------------------
  * Dump a cs_lagr_particle_t structure
  *
- * parameter
+ * parameters:
  *   particles <-- cs_lagr_particle_t structure to dump
  *----------------------------------------------------------------------------*/
 

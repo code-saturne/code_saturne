@@ -94,7 +94,6 @@ use cstnum
 use cstphy
 use parall
 use period
-use lagdim, only: nbpmax
 use lagpar
 use lagran
 use ppppar
@@ -355,10 +354,9 @@ enddo
 do ii = 1,nfrlag
   nb = ilflag(ii)
   do nc = 1,iusncl(nb)
-    if ( iuslag(nc,nb,ijnbp).lt.0 .or.                            &
-         iuslag(nc,nb,ijnbp).gt.nbpmax ) then
+    if (iuslag(nc,nb,ijnbp).lt.0) then
       iok = iok + 1
-      write(nfecra,1020) nc,nb,nbpmax,iuslag(nc,nb,ijnbp)
+      write(nfecra,1020) nc,nb,iuslag(nc,nb,ijnbp)
     endif
   enddo
 enddo
@@ -805,10 +803,10 @@ do ii = 1,nfrtot
   enddo
 enddo
 
-! --> Limite du nombre de particules a NBPMAX
+! --> Limite du nombre de particules
 
-if ( (nbpart+nbpnew).gt.nbpmax ) then
-  write(nfecra,3000) nbpart,nbpnew,nbpmax
+if (lagr_resize_particle_set(nbpart+nbpnew) .lt. 0) then
+  write(nfecra,3000) ntcabs
   nbpnew = 0
 endif
 
@@ -1578,8 +1576,7 @@ endif
 '@                                                            ',/,&
 '@  Le nombre de particules dans la classe         ',I10       ,/,&
 '@                          dans la zone frontiere ',I10       ,/,&
-'@  doit etre un entier strictement positif et                ',/,&
-'@                      inferieur ou egal a NBPMAX = ',I10     ,/,&
+'@  doit etre un entier strictement positif                   ',/,&
 '@                                                            ',/,&
 '@  Ce nombre (IUSLAG(NC,NB,IJNBP)) vaut ici ',I10             ,/,&
 '@                                                            ',/,&
@@ -2397,18 +2394,11 @@ endif
 '@ @@ ATTENTION : MODULE LAGRANGIEN                           ',/,&
 '@    =========   (LAGENT)                                    ',/,&
 '@                                                            ',/,&
-'@    LES CONDITIONS AUX LIMITES SONT ERRONEES                ',/,&
+'@  Le nombre de nouvelles particules injectees conduirait a  ',/,&
+'@    un nombre global de particules superieur a celui        ',/,&
+'@    impose via cs_lagr_set_n_g_particles_max.               ',/,&
 '@                                                            ',/,&
-'@  Le nombre de nouvelles particules injectees conduit a un  ',/,&
-'@    nombre total de particules superieur au maximum prevu : ',/,&
-'@                                                            ',/,&
-'@    Nombre de particules courant   : NBPART = ',I10          ,/,&
-'@    Nombre de nouvelles particules : NBPNEW = ',I10          ,/,&
-'@    Nombre maximal de particules   : NBPMAX = ',I10          ,/,&
-'@                                                            ',/,&
-'@  Le calcul se poursuit, mais on n''injecte aucune particule',/,&
-'@                                                            ',/,&
-'@  Ajuster NBPMAX dans USLAG1 et verifier USLAG2.            ',/,&
+'@  On n''injecte aucune particule au pas de temps ', i10      ,/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

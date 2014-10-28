@@ -45,15 +45,7 @@ module lagdim
   integer, save :: lndnod
 
   !============================================================================
-  ! 2. Classes et particules
-
-  !     NBPMAX : NOMBRE MAXIMAL DE PARTICULES AUTORISE DANS LE DOMAINE
-  !              AU COUR DU CALCUL (UTILE SI INJECTION INSTATIONNAIRE)
-
-  integer, save :: nbpmax
-
-  !=============================================================================
-  ! 3. Dimensions des tableaux particulaires
+  ! 2. Dimensions des tableaux particulaires
 
   !     ntersl       : nombre de termes sources pour couplage retour
   !     nvlsta       : nombre de variables statistiques

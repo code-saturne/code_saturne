@@ -34,6 +34,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <limits.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -358,6 +359,9 @@ static  cs_lagr_bdy_condition_t  *_lagr_bdy_conditions = NULL;
 static cs_lagr_attribute_map_t  *_p_attr_map = NULL;
 
 enum {X, Y, Z};  /* Used for _get_norm() and _get_dot_prod() */
+
+static  double              _reallocation_factor = 2.0;
+static  unsigned long long  _n_g_max_particles = ULLONG_MAX;
 
 /* MPI datatype associated to each particle "structure" */
 
@@ -1074,38 +1078,47 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
   bft_printf("\n");
 }
 
-#if 0 /* TODO will be used later, when C and Fortran versions are mapped */
-
 /*----------------------------------------------------------------------------
  * Resize a cs_lagr_particle_set_t structure.
  *
  * parameters:
- *   particle_set      <-> pointer to a cs_lagr_particle_set_t structure
- *   n_particles_max   <-- local max. number of particles
+ *   particle_set        <-> pointer to a cs_lagr_particle_set_t structure
+ *   n_particles_max_min <-- minimum local max. number of particles
+ *
+ * returns:
+ *   1 if resizing was required, 0 otherwise
  *----------------------------------------------------------------------------*/
 
-static void
+static int
 _resize_particle_set(cs_lagr_particle_set_t   *particle_set,
-                     const cs_lnum_t           n_particles_max)
+                     const cs_lnum_t           n_particles_max_min)
 {
-  assert(n_particles_max >= 0);
+  int retval = 0;
 
-  if (particle_set->n_particles_max < n_particles_max) {
+  assert(n_particles_max_min >= 0);
 
-    particle_set->n_particles_max = n_particles_max;
+  if (particle_set->n_particles_max < n_particles_max_min) {
 
-    BFT_REALLOC(particle_set->particles, n_particles_max, cs_lagr_particle_t);
-    particle_set->p_buffer = (unsigned char* )particle_set->particles;
+    if (particle_set->n_particles_max == 0)
+      particle_set->n_particles_max = 1;
+
+    while (particle_set->n_particles_max < n_particles_max_min)
+      particle_set->n_particles_max *= _reallocation_factor;
+
+    BFT_REALLOC(particle_set->p_buffer,
+                particle_set->n_particles_max * particle_set->p_am->extents,
+                unsigned char);
 
     if (particle_set->time_id == 0)
       BFT_REALLOC(particle_set->used_id,
-                  n_particles_max,
+                  particle_set->n_particles_max,
                   cs_lagr_tracking_list_t);
 
+    retval = 1;
   }
-}
 
-#endif
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Create a cs_lagr_halo_t structure to deal with parallelism and
@@ -4237,15 +4250,8 @@ _lagr_halo_sync(void)
 #endif
 
   if (delta_particles > particles->n_particles_max - particles->n_particles)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Not enough memory to receive particles.\n"
-                " We can still receive %d particles and"
-                " we have to receive %d additional particles.\n"
-                " Check n_particles_max (%d).\n"),
-              particles->n_particles_max - particles->n_particles,
-              delta_particles, particles->n_particles_max);
-
-  /* TODO: Do a resize to fit to the new size of the particle set */
+    _resize_particle_set(particles,
+                         particles->n_particles + delta_particles);
 }
 
 /*----------------------------------------------------------------------------
@@ -4545,7 +4551,6 @@ cs_f_lagr_current_to_previous(cs_lnum_t  pn)
  * and indexes
  *
  * parameters:
- *   n_particles_max <--  local max. number of particles
  *   iphyla          <--  kind of physics used for the lagrangian approach
  *   nvls            <--  number of user-defined variables
  *   nbclst          <--  number of stat. class to study sub-set of particles
@@ -4553,8 +4558,7 @@ cs_f_lagr_current_to_previous(cs_lnum_t  pn)
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
-                          const cs_int_t    *nlayer,
+CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
                           const cs_int_t    *irough,
@@ -4784,7 +4788,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
 
   /* Initialize particle set : prev and current */
 
-  _particle_set = _create_particle_set(0, *n_particles_max, _p_attr_map);
+  _particle_set = _create_particle_set(0, 128, _p_attr_map);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n PARTICLE SET AFTER CREATION\n");
@@ -4813,7 +4817,8 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *n_particles_max,
   /* Initialize builder */
 
   _particle_track_builder
-    = _init_track_builder(*n_particles_max, _particle_set->p_am->extents);
+    = _init_track_builder(_particle_set->n_particles_max,
+                          _particle_set->p_am->extents);
 
   /* Saving of itycel and icocel */
   cs_lagr_track_builder_t  *builder = _particle_track_builder;
@@ -5442,6 +5447,75 @@ cs_lagr_destroy(void)
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)  _delete_particle_datatypes();
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Resize particle set buffers if needed.
+ *
+ * By default, the total number of particles is not limited. A global limit
+ * may be set using \ref cs_lagr_set_n_g_particles_max.
+ *
+ * \param[in]  n_particles  minumum number of particles required
+ *
+ * \return  1 if resizing was required, -1 if the global minimum number
+ *          of particles would exceed the global limit, 0 otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_resize_particle_set(cs_lnum_t  n_min_particles)
+{
+  int retval = 0;
+
+  /* Do we have a limit ? */
+
+  if (_n_g_max_particles < ULLONG_MAX) {
+    cs_gnum_t _n_g_min_particles = n_min_particles;
+    cs_parall_counter(&_n_g_min_particles, 1);
+    if (_n_g_min_particles > _n_g_max_particles)
+      retval = -1;
+  }
+  else
+    retval = _resize_particle_set(_particle_set, n_min_particles);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set reallocation factor for particle sets.
+ *
+ * This factor determines the multiplier used for reallocations when
+ * the particle set's buffers are too small to handle the new number of
+ * particles.
+ *
+ * \param[in]  f  reallocation size multiplier
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_set_reallocation_factor(double  f)
+{
+  if (f > 1)
+    _reallocation_factor = f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set global maximum number of particles.
+ *
+ * By default, the number is limited only by local \ref cs_lnum_t and global
+ * \ref cs_gnum_t data representation limits.
+ *
+ * \param[in]  n_g_particles_max  global maximum number of particles
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max)
+{
+  _n_g_max_particles = n_g_particles_max;
 }
 
 /*----------------------------------------------------------------------------*/

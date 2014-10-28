@@ -216,18 +216,10 @@ if (iphyla.eq.2) then
 endif
 
 !===============================================================================
-! 4. Number of particles allowed simultaneously inside the computational domain
+! 4. Calculation features for the dispersed phases
 !===============================================================================
 
-! * Warning, memory is allocated with NBPMAX
-
-nbpmax = 1000000
-
-!===============================================================================
-! 5. Calculation features for the dispersed phases
-!===============================================================================
-
-! 5.1 Additional variables
+! 4.1 Additional variables
 ! ------------------------
 
 ! * these additional variables are stored in eptp and eptpa arrays
@@ -247,7 +239,7 @@ nbpmax = 1000000
 
 nvls = 0
 
-! 5.2 Stationary or unsteady continuous phase
+! 4.2 Steady or unsteady continuous phase
 
 ! * if steady: isttio = 1
 ! * if unsteady: isttio = 0
@@ -258,7 +250,7 @@ nvls = 0
 
 if (iilagr.ne.3) isttio = 0
 
-! 5.3 Two-way coupling: (iilagr = 2)
+! 4.3 Two-way coupling: (iilagr = 2)
 
 if (iilagr.eq.2) then
 
@@ -292,10 +284,10 @@ if (iilagr.eq.2) then
 
 endif
 
-! 5.4 Volume statistics
+! 4.4 Volume statistics
 ! ---------------------
 
-! 5.4.1 Generic parameters
+! 4.4.1 Generic parameters
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! Calculation of the volume statistics
@@ -339,7 +331,7 @@ if (istala.eq.1) then
 
   nstist = idstnt
 
-  ! 5.4.2 Volume statistical variables
+  ! 4.4.2 Volume statistical variables
   ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   ! Activation of the calculation of the particle volume fraction

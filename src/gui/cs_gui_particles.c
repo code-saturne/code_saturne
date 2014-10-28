@@ -803,7 +803,6 @@ void CS_PROCF(cfname, CFNAME)
  * INTEGER          IILAGR     <--   type of lagrangian model used
  * INTEGER          ISUILA     <--   lagrangian restart
  * INTEGER          ISUIST     <--   lagrangian restart for statistics
- * INTEGER          NBPMAX     <--   maximum number of particles
  * INTEGER          ISTTIO     <--   stationnary calculus
  * INTEGER          INJCON     <--   continuous injection of particles
  * INTEGER          IDEPST     <--   particle deposition submodel
@@ -863,7 +862,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
                                 int *const iilagr,
                                 int *const isuila,
                                 int *const isuist,
-                                int *const nbpmax,
                                 int *const isttio,
                                 int *const injcon,
                                 int *const idepst,
@@ -947,8 +945,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
   _get_status(idepst, 2, "lagrangian", "deposition_submodel");
 
   bft_printf("idepst = %d",*idepst);
-
-  _get_int(nbpmax,    2, "lagrangian", "particles_max_number");
 
   /* Particles model */
 
@@ -1289,7 +1285,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const nlayer,
   bft_printf("--iilagr = %i\n", *iilagr);
   bft_printf("--isuila = %i\n", *isuila);
   bft_printf("--isttio = %i\n", *isttio);
-  bft_printf("--nbpmax = %i\n", *nbpmax);
   bft_printf("--isttio = %i\n", *isttio);
   bft_printf("--injcon = %i\n", *injcon);
   bft_printf("--idepst = %i\n", *idepst);

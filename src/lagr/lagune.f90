@@ -71,7 +71,7 @@ use parall
 use period
 use pointe
 use lagpar
-use lagdim, only: nbpmax, ntersl, nvlsta, nvisbr
+use lagdim, only: ntersl, nvlsta, nvisbr
 use lagran
 use mesh
 use field
@@ -197,7 +197,7 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nbpmax , nlayer , iphyla , idepst , irough , ireent , iclogst, &
+ ( nlayer , iphyla , idepst , irough , ireent , iclogst,          &
    nvls   , nbclst , icocel , itycel ,                            &
    jisor  , jisora , jirka  , jord1  ,                            &
    jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &

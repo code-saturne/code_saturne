@@ -93,8 +93,7 @@ module lagran
   !> \addtogroup particle_counter
   !> \{
 
-  !> number of particles treated during one Lagrangian time step,
-  !> must always be lower than \ref nbpmax.
+  !> number of current local particles
   !> Always useful, but initialised and updated without intervention of the user
   integer(c_int), pointer, save :: nbpart
 
@@ -1356,6 +1355,20 @@ module lagran
 
     !---------------------------------------------------------------------------
 
+    !> \brief Resize particle set buffers if needed.
+
+    !> \param[in, out]  r  pointer to restart structure
+
+    function cs_lagr_resize_particle_set(n_min_particles) result(c) &
+      bind(C, name='cs_lagr_resize_particle_set')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: n_min_particles
+      integer(c_int) :: c
+    end function cs_lagr_resize_particle_set
+
+    !---------------------------------------------------------------------------
+
     !> \brief Read particle data from checkpoint.
 
     !> \param[in, out]  r  pointer to restart structure
@@ -1674,6 +1687,41 @@ contains
     call c_f_pointer(p_dnpenc, dnpenc)
 
   end subroutine lagr_update_pointers
+
+  !=============================================================================
+
+  !> \brief Ensure particle data buffers are large enough.
+
+  !> Reallocate and update pointers if needed.
+
+  !> \param[in]   n_min_particles  local minimum number of particles required
+
+  !> \return  1 if resizing was required, -1 if the global minimum number
+  !>            of particles would exceed the global limit, 0 otherwise.
+
+  function lagr_resize_particle_set(n_min_particles) result(status)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: n_min_particles
+    integer :: status
+
+    ! Local variables
+
+    integer(c_int) :: c_n_min, c_retcode
+
+    c_n_min = n_min_particles
+
+    c_retcode = cs_lagr_resize_particle_set(c_n_min)
+
+    if (c_retcode.gt.0) call lagr_update_pointers
+
+    status = c_retcode
+
+  end function lagr_resize_particle_set
 
   !=============================================================================
 

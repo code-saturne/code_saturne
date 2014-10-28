@@ -48,7 +48,6 @@ subroutine lagbar &
 
 use mesh
 use paramx
-use dimens, only: nvar
 use lagran
 use lagpar
 use ppthch

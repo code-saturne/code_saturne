@@ -2614,7 +2614,7 @@ if (iilagr.ne.0) then
     write(nfecra,8105) idpvar, itpvar, impvar
   endif
 
-  write(nfecra,8106) nbpmax, nvls, isttio, injcon, iroule
+  write(nfecra,8106) nvls, isttio, injcon, iroule
 
   if (iphyla.eq.2) then
     write(nfecra,8111) iencra
@@ -2681,7 +2681,6 @@ endif
 '       IMPVAR   = ',4x,i10,    ' (1 eqn masse Mp,      0 sinon           )'  )
  8106 format(                                                                  &
 ' --- Parametres Globaux :',                                                 /,&
-'       NBPMAX   = ',4x,i10,    ' (nb max de part par iteration           )',/,&
 '       NVLS     = ',4x,i10,    ' (nb var particulaires suppl.            )',/,&
 '       ISTTIO   = ',4x,i10,    ' (1 phase porteuse stationnair           )',/,&
 '       INJCON   = ',4x,i10,    ' (1 injection continue,0 sinon           )',/,&
@@ -2787,7 +2786,6 @@ endif
 '       IMPVAR = ',4x,i10,    ' (1 eqn mass Mp,          or 0)'  )
  8106 format(                                                     &
 ' --- Global parameters:',                                      /,&
-'       NBPMAX = ',4x,i10,    ' (nb max parts per iteration  )',/,&
 '       NVLS   = ',4x,i10,    ' (nb add. suppl. variables    )',/,&
 '       ISTTIO = ',4x,i10,    ' (1 steady carrier phase      )',/,&
 '       INJCON = ',4x,i10,    ' (1 continuous injection, or 0)',/,&

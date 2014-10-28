@@ -63,7 +63,6 @@ use numvar
 use cstnum
 use optcal
 use entsor
-use lagdim, only: nbpmax
 use lagpar
 use lagran
 
@@ -170,8 +169,8 @@ do npt = 1,nbpart
 
       endif
 
-      if ((nbpart+npclon+nclo+1).gt.nbpmax) then
-        write(nfecra,5000) nbpart, npclon+nclo+1, nbpmax
+      if (lagr_resize_particle_set(nbpart+npclon+nclo+1) .lt. 0) then
+        write(nfecra,5000)
         goto 1000
       endif
 
@@ -224,7 +223,7 @@ dnbpar = dnbpar + dnpclo
 ! FORMAT
 !-------
 
- 5000 format(                                                           &
+ 5000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -232,15 +231,11 @@ dnbpar = dnbpar + dnpclo
 '@    =========                                               ',/,&
 '@                CLONAGE / FUSION DES PARTICULES             ',/,&
 '@                                                            ',/,&
-'@  Le nombre de nouvelles particules clonees conduit a un    ',/,&
-'@    nombre total de particules superieur au maximum prevu : ',/,&
-'@    Nombre de particules courant   : NBPART = ',I10          ,/,&
-'@    Nombre de particules clonnees  : NPCLON = ',I10          ,/,&
-'@    Nombre maximal de particules   : NBPMAX = ',I10          ,/,&
+'@  Le nombre global de nouvelles particules clonees          ',/,&
+'@    conduit à un nombre global de particules superieur au   ',/,&
+'@    maximum defini via cs_lagr_set_n_g_particles_max.       ',/,&
 '@                                                            ',/,&
-'@  On ne clone plus de particules por cette iteration.       ',/,&
-'@                                                            ',/,&
-'@  Verifier NBPMAX dans USLAG1.                              ',/,&
+'@  On ne clone plus de particules pour cette iteration.      ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

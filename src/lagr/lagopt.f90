@@ -153,10 +153,6 @@ do icha = 1 , ncharm2
   enc2(icha) = -999.d0
 enddo
 
-!     NOMBRE DE PARTICULES MAXIMAL AUTORISE DANS LE DOMAINE
-
-nbpmax = 1000
-
 !     NOMBRE DE VARIABLES SUPPLEMENTAIRE SUR LES PARTICULES
 
 nvls = 0
@@ -341,7 +337,7 @@ if (iihmpr.eq.1) then
 
   call uilag1                                                      &
   !==========
- ( nlayer,   iilagr,   isuila,   isuist,   nbpmax, isttio, injcon, &
+ ( nlayer,   iilagr,   isuila,   isuist,   isttio, injcon,         &
    idepst,   iphyla,   idpvar,   itpvar,   impvar,                 &
    iencra,   tprenc,   visref,   enc1,   enc2,                     &
    nstits,   ltsdyn,   ltsmas,   ltsthe,                           &
@@ -534,13 +530,6 @@ endif
 
 if (iok.ne.0) call csexit (1)
               !==========
-
-!     NBPMAX
-
-if (nbpmax.lt.0) then
-  write(nfecra,1050) nbpmax
-  iok = iok + 1
-endif
 
 !     NVLS
 
@@ -1231,7 +1220,7 @@ if (nvls.gt.0) nvp = nvp + nvls
 !   JMP, JDP, JXP, JYP, JZP, JUP, JVP, JWP, JUF, JVF, JWF
 !   soient les derniers pointeurs pour les tableaux ETTP et ETTPA
 !   a cause du remplissage et de la dimension du tableau
-!   TSVAR(NBPMAX,NVP1) et de son mode de lecture/ecriture
+!   TSVAR(*,NVP1) et de son mode de lecture/ecriture
 !   (cf. LAGITG).
 
 !    JXP,JYP,JZP  : COORDONNES DE LA POSITION DE LA PARTICULE NPT
@@ -2520,26 +2509,6 @@ call lagpvr(ivisv1, ivisv2,  ivistp, ivisdm, iviste, &
 '@  Le calcul ne sera pas execute.                            ',/,&
 '@                                                            ',/,&
 '@  Verifier la valeur de NLAYER dans la subroutine LAGPAR    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1050 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''EXECUTION DU MODULE LAGRANGIEN   ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR SUR LE NOMBRE DE PARTIUCULES A TRAITER    ',/,&
-'@      PAR LE MODULE LAGRANGIEN A UNE VALEUR                 ',/,&
-'@       NON PERMISE (LAGOPT).                                ',/,&
-'@                                                            ',/,&
-'@    NBPMAX DEVRAIT ETRE UN ENTIER STRICTEMENT POSITIF       ',/,&
-'@       IL VAUT ICI NBPMAX = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de NBPMAX dans la subroutine USLAG1.   ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
