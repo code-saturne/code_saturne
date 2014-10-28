@@ -369,11 +369,11 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
   if (elts_list != NULL) {
     for (i = 0; i < n_elts; i++)
-      cell_id[elts_list[i-1]] = cell_count++;
+      cell_id[elts_list[i]-1] = cell_count++;
   }
   else {
     for (i = 0; i < n_elts; i++)
-      cell_id[elts_list[i-1]] = i;
+      cell_id[elts_list[i]-1] = i;
   }
 
   /* Mark and renumber vertices */
@@ -1083,7 +1083,6 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *coupling,
 
   double  *val_ptr = f->getArray()->getPointer();
   const int dim = coupling->fields[field_id]->dim;
-
 
   /* Assign element values */
   /*-----------------------*/
