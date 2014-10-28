@@ -73,7 +73,7 @@ implicit none
 
 character(len=80) :: f_label, f_name, s_name
 integer           :: ii
-integer           :: iok   , ippok
+integer           :: ippok
 integer           :: iest  , ipropp, idim1, idim6, iflid
 logical           :: has_previous
 
@@ -112,30 +112,8 @@ end interface
 ippok = 0
 
 !===============================================================================
-! 1. VERIFICATIONS ET POSITIONNEMENT DES PROPRIETES PPALES
+! 1. PROPRIETES PRINCIPALES
 !===============================================================================
-
-! ---> 1.1 VERIFICATIONS
-!      -----------------
-
-iok = 0
-
-! ---> VISCOSITE ALE
-if (iale.eq.1) then
-  if (iortvm.ne.0 .and. iortvm.ne.1) then
-    write(nfecra,7070) iortvm
-    iok = iok + 1
-  endif
-endif
-! --- On s'arrete si quelque chose s'est mal passe
-
-if (iok.ne.0) then
-  call csexit (1)
-endif
-
-
-! ---> 1.2 POSITIONNEMENT DES PROPRIETES PRINCIPALES
-!      --------------------------------
 
 ! --- Numerotation des proprietes presentes ici
 !       Ceci depend du type de solveur branche derriere
@@ -187,62 +165,11 @@ if (ippmod(icompf).lt.0) then
   call add_property_field('total_pressure', 'Total Pressure', iprtot)
 endif
 
-! CP when variable
-if (icp.ne.0) then
-  call add_property_field('specific_heat', 'Specific Heat', icp)
-endif
-
-! Density at the second previous time step for cavitation algorithm
-if (icavit.ge.0.or.idilat.gt.1) then
-  call add_property_field('density_old', 'Density Old', iromaa)
-  icroaa = iprpfl(iromaa)
-endif
-
 ! Cs^2 si on est en LES dynamique
 if (iturb.eq.41) then
   call add_property_field('smagorinsky_constant^2', 'Csdyn2', ismago)
 else
   ismago = 0
-endif
-
-! Viscosite de maillage en ALE
-if (iale.eq.1) then
-  call add_property_field('mesh_viscosity_1', 'Mesh ViscX', ivisma(1))
-  ! si la viscosite est isotrope, les trois composantes pointent
-  !  au meme endroit
-  if (iortvm.eq.0) then
-    ivisma(2) = ivisma(1)
-    ivisma(3) = ivisma(1)
-  else
-    call add_property_field('mesh_viscosity_2', 'Mesh ViscY', ivisma(2))
-    call add_property_field('mesh_viscosity_3', 'Mesh ViscZ', ivisma(3))
-  endif
-endif
-
-! Estimateurs d'erreur
-do iest = 1, nestmx
-  iestim(iest) = -1
-enddo
-
-if (iescal(iespre).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_pre_', iescal(iespre)
-  write(f_label, '(a5,i1)') 'EsPre', iescal(iespre)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iespre))
-endif
-if (iescal(iesder).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_der_', iescal(iesder)
-  write(f_label, '(a5,i1)') 'EsDer', iescal(iesder)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iesder))
-endif
-if (iescal(iescor).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_cor_', iescal(iescor)
-  write(f_label, '(a5,i1)') 'EsCor', iescal(iescor)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iescor))
-endif
-if (iescal(iestot).gt.0) then
-  write(f_name,  '(a14,i1)') 'est_error_tot_', iescal(iestot)
-  write(f_label, '(a5,i1)') 'EsTot', iescal(iestot)
-  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iestot))
 endif
 
 !     Numero max des proprietes ; ressert plus bas pour
@@ -315,22 +242,6 @@ return
 
 #if defined(_CS_LANG_FR)
 
- 7070 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    L''INDICATEUR IORTVM NE PEUT PRENDRE QUE LES VALEURS    ',/,&
-'@      0 OU 1.                                               ',/,&
-'@    IL VAUT ICI ',i10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usipph.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -356,22 +267,6 @@ return
 
 #else
 
- 7070 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@    THE INDEX  IORTVM    CANNOT HAVE VALUES OTHER THAN      ',/,&
-'@      0 OR 1.                                               ',/,&
-'@    HERE IT IS  ',i10                                        ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   usipph.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  7200 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

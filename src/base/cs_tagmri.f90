@@ -171,13 +171,13 @@ endif
 '@    =======',/,                                                 &
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
-'@      usipph specifies that the specific heat is uniform',/,    &
+'@      usipsu specifies that the specific heat is uniform',/,    &
 '@        icp = ',i10   ,' while',/,                              &
 '@      usphyv prescribes a variable specific heat.',/,           &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &
-'@    Modify usipph or usphyv.',/,                                &
+'@    Modify usipsu or usphyv.',/,                                &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

@@ -38,7 +38,7 @@
 !> (a specific subroutine is dedicated to that: \ref usvist)
 !>
 !> - icp = 1 must <b> have been specified </b>
-!>    in \ref usipph if we wish to define a variable specific heat
+!>    in \ref usipsu if we wish to define a variable specific heat
 !>    cpro_cp (otherwise: memory overwrite).
 !>
 !> - the kivisl field integer key (scalar_diffusivity_id)
@@ -623,13 +623,13 @@ endif ! --- Test on .false.
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@      usipph indique que la chaleur specifique est uniforme ',/,&
+'@      usipsu indique que la chaleur specifique est uniforme ',/,&
 '@        ICP = ',I10   ,' alors que                          ',/,&
 '@      usphyv impose une chaleur specifique variable.        ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usipph ou usphyv.                              ',/,&
+'@    Modifier usipsu ou usphyv.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -684,13 +684,13 @@ endif ! --- Test on .false.
 '@    =======',/,                                                 &
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
-'@      usipph specifies that the specific heat is uniform',/,    &
+'@      usipsu specifies that the specific heat is uniform',/,    &
 '@        icp = ',i10   ,' while',/,                              &
 '@      usphyv prescribes a variable specific heat.',/,           &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &
-'@    Modify usipph or usphyv.',/,                                &
+'@    Modify usipsu or usphyv.',/,                                &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

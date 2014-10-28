@@ -73,13 +73,13 @@ implicit none
 integer       iscal , id, ityloc, itycat, ifcvsl
 integer       ii
 integer       iok   , ippok
-integer       ivisph
+integer       ivisph, iest
 integer       nprmax
 integer       idttur
 
 double precision gravn2
 
-character(len=80) :: f_name, s_label, s_name
+character(len=80) :: f_name, f_label, s_label, s_name
 
 !===============================================================================
 ! Interfaces
@@ -96,15 +96,63 @@ interface
 end interface
 
 !===============================================================================
-! 0. INITIALISATIONS
+! Verification
+!===============================================================================
+
+! ALE viscosity
+if (iale.eq.1) then
+  if (iortvm.ne.0 .and. iortvm.ne.1) then
+    write(nfecra, 8022) 'iortvm', iortvm
+    call csexit (1)
+  endif
+endif
+
+!===============================================================================
+! Initialization
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
 ippok = 0
 
+! Determine itycor now that irccor is known (iturb/itytur known much earlier)
+! type of rotation/curvature correction for turbulent viscosity models
+if (irccor.eq.1.and.(itytur.eq.2.or.itytur.eq.5)) then
+  itycor = 1
+else if (irccor.eq.1.and.(iturb.eq.60.or.iturb.eq.70)) then
+  itycor = 2
+endif
+
 !===============================================================================
-! 1. POSITIONNEMENT DES PROPRIETES POUR LE SCHEMA EN TEMPS,
-!                                       LES MOMENTS ET FIN
+! Additional physical properties
+!===============================================================================
+
+! CP when variable
+if (icp.ne.0) then
+  call add_property_field('specific_heat', 'Specific Heat', icp)
+endif
+
+! Density at the second previous time step for cavitation algorithm
+if (icavit.ge.0.or.idilat.gt.1) then
+  call add_property_field('density_old', 'Density Old', iromaa)
+  icroaa = iprpfl(iromaa)
+endif
+
+! ALE mesh viscosity
+if (iale.eq.1) then
+  call add_property_field('mesh_viscosity_1', 'Mesh ViscX', ivisma(1))
+  ! si la viscosite est isotrope, les trois composantes pointent
+  !  au meme endroit
+  if (iortvm.eq.0) then
+    ivisma(2) = ivisma(1)
+    ivisma(3) = ivisma(1)
+  else
+    call add_property_field('mesh_viscosity_2', 'Mesh ViscY', ivisma(2))
+    call add_property_field('mesh_viscosity_3', 'Mesh ViscZ', ivisma(3))
+  endif
+endif
+
+!===============================================================================
+! Time-scheme related properties
 !===============================================================================
 
 ! Dans le cas ou on a un schema en temps d'ordre 2, il faut aussi
@@ -483,10 +531,8 @@ if (iporos.ge.1) then
 endif
 
 !===============================================================================
-! 2. POINTEURS POST-PROCESSING / LISTING / HISTORIQUES / CHRONOS
+! Local time step and postprocessing fields
 !===============================================================================
-
-! Les pointeurs ont ete initialises a 1 (poubelle) dans iniini.
 
 ! Local time step
 
@@ -517,14 +563,45 @@ if (ipucou.ne.0 .or. ncpdct.gt.0) then
   ipptz = ippty + 1
 endif
 
+!===============================================================================
+! Error estimators
+!===============================================================================
+
+do iest = 1, nestmx
+  iestim(iest) = -1
+enddo
+
+if (iescal(iespre).gt.0) then
+  write(f_name,  '(a14,i1)') 'est_error_pre_', iescal(iespre)
+  write(f_label, '(a5,i1)') 'EsPre', iescal(iespre)
+  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iespre))
+endif
+if (iescal(iesder).gt.0) then
+  write(f_name,  '(a14,i1)') 'est_error_der_', iescal(iesder)
+  write(f_label, '(a5,i1)') 'EsDer', iescal(iesder)
+  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iesder))
+endif
+if (iescal(iescor).gt.0) then
+  write(f_name,  '(a14,i1)') 'est_error_cor_', iescal(iescor)
+  write(f_label, '(a5,i1)') 'EsCor', iescal(iescor)
+  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iescor))
+endif
+if (iescal(iestot).gt.0) then
+  write(f_name,  '(a14,i1)') 'est_error_tot_', iescal(iestot)
+  write(f_label, '(a5,i1)') 'EsTot', iescal(iestot)
+  call add_property_field_owner(f_name, f_label, 1, .false., iestim(iestot))
+endif
+
+!===============================================================================
 ! Map to field pointers
+!===============================================================================
 
 call cs_field_pointer_map_base()
 
 return
 
 !===============================================================================
-! 4. Formats
+! Formats
 !===============================================================================
 
 #if defined(_CS_LANG_FR)

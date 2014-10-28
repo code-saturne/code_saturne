@@ -319,7 +319,7 @@ if (ieos.eq.1) then
 
    ! --- Calculation options: constant Cp and Cv (perfect gas)
    ! The value for the isobaric specific heat Cp0 must be provided in
-   ! the user subroutine ''usipph''. The value for the isochoric
+   ! the user subroutine 'usipsu'. The value for the isochoric
    ! specific heat Cv0 is calculated in a subsequent section (from Cp0)
 
     icp = 0

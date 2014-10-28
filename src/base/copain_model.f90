@@ -632,13 +632,13 @@ endif
 '@    =========                                               ',/,&
 '@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
 '@                                                            ',/,&
-'@      usipph indique que la chaleur specifique est uniforme ',/,&
+'@      usipsu indique que la chaleur specifique est uniforme ',/,&
 '@        ICP = ',I10   ,' alors que                          ',/,&
 '@      copain model impose une chaleur specifique variable.  ',/,&
 '@                                                            ',/,&
 '@    Le calcul ne sera pas execute.                          ',/,&
 '@                                                            ',/,&
-'@    Modifier usipph ou copain model.                        ',/,&
+'@    Modifier usipsu ou copain model.                        ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
@@ -668,13 +668,13 @@ endif
 '@    =======',/,                                                 &
 '@    Inconsistent calculation data',/,                           &
 '@',/,                                                            &
-'@      usipph specifies that the specific heat is uniform',/,    &
+'@      usipsu specifies that the specific heat is uniform',/,    &
 '@        icp = ',i10   ,' while',/,                              &
 '@      copain model prescribes a variable specific heat.',/,     &
 '@',/,                                                            &
 '@    The calculation will not be run.',/,                        &
 '@',/,                                                            &
-'@    Modify usipph',/,                                           &
+'@    Modify usipsu',/,                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

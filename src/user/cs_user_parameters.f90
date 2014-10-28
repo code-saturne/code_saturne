@@ -456,8 +456,7 @@ end subroutine usppmo
 
 subroutine usipph &
 !================
- ( ixmlpu, nfecra , iturb , irccor , idirsm, itherm, icp, icavit )
-
+ ( ixmlpu, iturb , itherm, iale , icavit )
 
 !===============================================================================
 ! Purpose:
@@ -472,22 +471,21 @@ subroutine usipph &
 !__________________!____!_____!________________________________________________!
 ! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
 !                  !    !     ! used (1: yes, 0: no)                           !
-! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
 ! iturb            ! i  ! <-> ! turbulence model                               !
-! irccor           ! i  ! <-> ! flag for rotation/curvature correction or not  !
-! idirsm           ! i  ! <-> ! turbulent diffusion model for second moment    !
-!                  !    ! <-> !   closure                                      !
 ! itherm           ! i  ! <-> ! thermal model                                  !
-! icp              ! i  ! <-> ! flag for uniform Cp or not                     !
-! icavit           ! i  ! <-> ! cavitation model
+! iale             ! i  ! <-> ! ale module                                     !
+! icavit           ! i  ! <-> ! cavitation model                               !
 !__________________!____!_____!________________________________________________!
-
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
-use albase
+use entsor, only: nfecra ! No other module should appear here
 
 !===============================================================================
 
@@ -495,8 +493,8 @@ implicit none
 
 ! Arguments
 
-integer ixmlpu, nfecra
-integer iturb, irccor, idirsm, itherm, icp, icavit
+integer ixmlpu
+integer iturb, itherm, iale, icavit
 
 ! Local variables
 
@@ -584,26 +582,6 @@ if (ixmlpu.eq.0) then
 
 endif
 
-! --- Rotation/curvature correction for eddy-viscosity turbulence models
-!      0: deactivated
-!      1: activated
-
-if (.false.) then
-
-  irccor = 1
-
-endif
-
-! --- Turbulent diffusion model for second moment closure (iturb = 30, 31, 32)
-!      0: scalar diffusivity (Shir model)
-!      1: tensorial diffusivity (Daly and Harlow model, default model)
-
-if (.false.) then
-
-  idirsm = 1
-
-endif
-
 ! --- Thermal model
 !      0: none
 !      1: temperature
@@ -622,26 +600,6 @@ if (.false.) then
 
 endif
 
-! --- Variable specific heat (ICP=1) or not (ICP=0)
-
-!     Should be set only if specific physics (coal, combustion, electric arcs)
-!       ARE NOT activated.
-
-!     For these specific physics, ICP MUST NOT BE MODIFIED here, and the
-!       following options are forced:
-!          coal and combustion: constant Cp;
-!          electric arcs:       variable Cp.
-
-!     Caution:    complete usphyv with the law defining Cp
-!     =========   if and only if variable Cp has been selected here
-!                 (with icp=1)
-
-if (ixmlpu.eq.0) then
-
-  icp = 0
-
-endif
-
 ! --- Cavitation module
 !    - -1: module not activated
 !    -  0: no vaporization/condensation model
@@ -657,52 +615,12 @@ if (.false.) then
 
 endif
 
-!==============================================================================
-! --- Options dedicated to the use of ALE (Arbitrary Lagrangian Eulerian)
-!     method :
-!
-!          Here one defines parameters and input data dedicated to the use ALE
-!          method
-!==============================================================================
-
 ! --- Activation of ALE (Arbitrary Lagrangian Eulerian) method
 
 if (.false.) then
+
   iale = 1
-endif
 
-! --- Number of iterations for fluid initialization. Contrary to ntmabs
-!     (for example)
-!     nalinf is not an absolute iteration number, meaning that in case of
-!     restart calculation nalinf corresponds to the number of iterations
-!     for fuid initialization beginning from the first current iteration of
-!     the calculation restart. In general nalinf = 0 in that case.
-
-if (.false.) then
-  nalinf = 75
-endif
-
-! --- Maximum number of iterations in case of implicit Fluid Structure Coupling
-!     with structural calculations (internal and/or external
-!     (i.e. using Code_Aster)).
-!     NALIMX = 1, in case of explicit FSI algorithm.
-
-if (.false.) then
-  nalimx = 15
-endif
-
-! --- Relative precision of sub-cycling Fluid Structure Coupling algorithm.
-
-if (.false.) then
-  epalim = 1.d-5
-endif
-
-! --- Mesh viscosity modeling (cf. usvima)
-!     0 : isotropic
-!     1 : orthotropic
-
-if (.false.) then
-  iortvm = 0
 endif
 
 !----
@@ -717,156 +635,10 @@ end subroutine usipph
 !===============================================================================
 
 
-subroutine usipgl &
-!================
-
- ( nesmax,                                                        &
-   iespre, iesder, iescor, iestot,                                &
-   ixmlpu, nfecra,                                                &
-   idtvar, ipucou, idilat, iphydr, igprij, ialgce , iescal )
-
-
-!===============================================================================
-! Purpose:
-! -------
-
-! User subroutine for the setting of global parameters.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nesmax           ! i  ! <-- ! maximum number of error estimators             !
-! iespre           ! i  ! <-- ! number of the prediction error estimator       !
-! iesder           ! i  ! <-- ! number of the derivative error estimator       !
-! iescor           ! i  ! <-- ! number of the correction error estimator       !
-! iestot           ! i  ! <-- ! number of the total error estimator            !
-! ixmlpu           ! i  ! <-- ! indicates if the XML file from the GUI is      !
-!                  !    !     ! used (1: yes, 0: no)                           !
-! nfecra           ! i  ! <-- ! Fortran unit number for standard output        !
-! idtvar           ! i  ! --> ! variable time step flag                        !
-! ipucou           ! i  ! --> ! reinforced u-p coupling flag                   !
-! idilat           ! i  ! --> ! algorithm with density variation in time       !
-! iphydr           ! i  ! --> ! flag for handling of the equilibrium between   !
-!                  !    !     ! the pressure gradient and the gravity and      !
-!                  !    !     ! head-loss terms                                !
-! igprij           ! i  ! --> ! flag for handling of the equilibrium between   !
-!                  !    !     ! the pressure gradient and -div(rho R)          !
-! ialgce           ! i  ! <-- ! option for the method of calculation of        !
-!                  !    !     ! cell centers                                   !
-! iescal(nesmax)   ! ia ! <-- ! flag for activation of error estimators for    !
-!                  !    !     ! Navier-Stokes                                  !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-
-! No module should appear here
-
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-integer nesmax
-integer iespre, iesder, iescor, iestot
-integer ixmlpu, nfecra
-integer idtvar, ipucou, idilat, iphydr, igprij, ialgce
-integer iescal(nesmax)
-
-! Local variables
-
-!===============================================================================
-
-!     In this subroutine, only the parameters which already appear may
-
-!       be set, to the exclusion of any other.
-!               ================
-
-
-!     If we are not using the Code_Saturne GUI:
-
-!       All the parameters which appear in this subroutine must be set.
-!       ===
-
-!===============================================================================
-
-! --- Time step  (0 : uniform and constant
-!                 1 : variable in time, uniform in space
-!                 2 : variable in time and space
-!                -1 : steady algorithm)
-
-if (.false.) then
-  idtvar = 0
-endif
-
-! --- Velocity/pressure coupling (0 : classical algorithm,
-!                                 1 : transient coupling)
-
-if (.false.) then
-  ipucou = 0
-endif
-
-! Algorithm to take into account the density variation in time
-!
-!     idilat = 0 : boussinesq algorithm with constant density (not available)
-!              1 : dilatable steady algorithm (default)
-!              2 : dilatable unsteady algorithm
-!              3 : low-Mach algorithm
-!
-
-if (.false.) then
-  idilat = 1
-endif
-
-! --- Handling of hydrostatic pressure
-!     iphydr = 0 : ignore hydrostatic pressure (by default)
-!              1 : with hydrotatic pressure computation to handle the balance
-!                  between the pressure gradient and source terms (gravity and
-!                  head losses)
-!              2 : with hydrostatic pressure computation to handle the imbalance
-!                  between the pressure gradient and gravity source term
-
-if (.false.) then
-  iphydr = 1
-endif
-
-! --- Estimators for Navier-Stokes (non-frozen velocity field)
-!     We recommend running a calculation restart on a few time steps
-!       with the activation of the most interesting of those.
-!        (=2 to activate, =0 to deactivate).
-
-if (.false.) then
-  iescal(iescor) = 2   ! div(rho u) -Gamma
-  iescal(iestot) = 2   ! resolution precision for the momentum
-endif
-
-!----
-! Formats
-!----
-
-return
-end subroutine usipgl
-
-
-!===============================================================================
-
-
 subroutine usipsu &
 !================
 
  ( nmodpp )
-
 
 !===============================================================================
 ! Purpose:
@@ -901,6 +673,7 @@ use entsor
 use parall
 use period
 use ihmpre
+use albase
 use ppppar
 use ppthch
 use ppincl
@@ -955,6 +728,15 @@ if (.false.) then
   ileaux = 0
 endif
 
+! --- Time stepping  (0 : uniform and constant
+!                     1 : variable in time, uniform in space
+!                     2 : variable in time and space
+!                    -1 : steady algorithm)
+
+if (.false.) then
+  idtvar = 0
+endif
+
 ! --- Duration
 !       ntmabs = absolute number of the last time step required
 !         if we have already run 10 time steps and want to
@@ -983,6 +765,28 @@ endif
 
 !     dtmax = min(Ld/Ud, sqrt(Lt/(g.Delta_rho/rho)))
 
+! --- Handling of hydrostatic pressure
+!     iphydr = 0 : ignore hydrostatic pressure (by default)
+!              1 : with hydrotatic pressure computation to handle the balance
+!                  between the pressure gradient and source terms (gravity and
+!                  head losses)
+!              2 : with hydrostatic pressure computation to handle the imbalance
+!                  between the pressure gradient and gravity source term
+
+if (.false.) then
+  iphydr = 1
+endif
+
+! --- Algorithm to take into account the density variation in time
+!
+!     idilat = 0 : Boussinesq algorithm with constant density (not available)
+!              1 : dilatable steady algorithm (default)
+!              2 : dilatable unsteady algorithm
+!              3 : low-Mach algorithm
+
+if (.false.) then
+  idilat = 1
+endif
 
 ! --- Temperature or enthalpy
 
@@ -1051,6 +855,13 @@ if (.false.) then
 
 endif
 
+! --- Velocity/pressure coupling (0 : classical algorithm,
+!                                 1 : transient coupling)
+
+if (.false.) then
+  ipucou = 0
+endif
+
 ! --- Convective scheme
 
 !     blencv = 0 for upwind (order 1 in space, "stable but diffusive")
@@ -1116,7 +927,15 @@ if (.false.) then
   iswdyn(ipr) = 1
 endif
 
-!=========================================================================
+! --- Rotation/curvature correction for eddy-viscosity turbulence models
+!      0: deactivated
+!      1: activated
+
+if (.false.) then
+
+  irccor = 1
+
+endif
 
 ! --- Stabilization in turbulent regime
 
@@ -1142,6 +961,17 @@ if (.false.) then
 
 endif
 
+! --- Turbulent diffusion model for second moment closure (iturb = 3x)
+!      0: scalar diffusivity (Shir model)
+!      1: tensorial diffusivity (Daly and Harlow model, default model)
+
+if (.false.) then
+
+  if (itytur.eq.3) then
+    idirsm = 1
+  endif
+
+endif
 
 ! Physical constants (cstphy)
 ! ===========================
@@ -1287,6 +1117,32 @@ if (.false.) then
   p0 = 1.01325d5
 endif
 
+! --- irovar, ivivar, icp: constant or variable density,
+!                          viscosity/diffusivity, and specific heat
+
+!     When a specific physics module is active
+!       (coal, combustion, electric arcs, compressible: see usppmo)
+!       we MUST NOT set variables 'irovar', 'ivivar', and 'icp' here, as
+!       they are defined automatically.
+!     Nonetheless, for the compressible case, ivivar may be modified
+!       in the uscfx2 user subroutine.
+
+!     When no specific physics module is active, we may specify if the
+!       density, specific heat, and the molecular viscosity
+!       are constant (irovar=0, ivivar=0, icp=0), which is the default
+!       or variable (irovar=1, ivivar=1, icp=1)
+
+!     For those properties we choose as variable, the corresponding law
+!       must be defined in usphyv
+!       (incs_user_physical_properties.f90);
+!       if they are constant, they take values ro0, viscl0, and cp0.
+
+if (.false.) then
+  irovar = 1
+  ivivar = 1
+  icp = 0
+endif
+
 ! We only specify XYZ0 if we explicitely fix Dirichlet conditions
 ! for the pressure.
 
@@ -1295,31 +1151,6 @@ if (.false.) then
   xyzp0(2) = 0.d0
   xyzp0(3) = 0.d0
 endif
-
-! --- irovar, ivivar: density and viscosity constant or not ?
-
-!     When a specific physics module is active
-!       (coal, combustion, electric arcs, compressible: see usppmo)
-!       we MUST NOT set variables 'irovar' and 'ivivar' here, as
-!       they are defined automatically.
-!     Nonetheless, for the compressible case, ivivar may be modified
-!       in the uscfx2 user subroutine.
-
-!     When no specific physics module is active, we may specify if the
-!         density and the molecular viscosity
-!         are constant (irovar=0, ivivar=0), which is the default
-!          or variable (irovar=1, ivivar=1)
-
-!       if they are variable, the law must be defined in usphyv
-!         (incs_user_physical_properties.f90);
-!       if they are constant, they take values ro0 and viscl0.
-
-if (.false.) then
-  irovar = 1
-  ivivar = 1
-endif
-
-
 
 ! --- Minimum and maximum admissible values for each USER scalar:
 
@@ -1557,6 +1388,53 @@ if (.false.) then
     call field_set_key_int(f_id, keylog, 1)
   endif
 
+endif
+
+! Error estimators for Navier-Stokes (non-frozen velocity field)
+
+! We recommend running a calculation restart on a few time steps
+! with the activation of the most interesting of those.
+! (=2 to activate, =0 to deactivate).
+
+if (.false.) then
+  iescal(iescor) = 2   ! div(rho u) -Gamma
+  iescal(iestot) = 2   ! resolution precision for the momentum
+endif
+
+! ALE (Arbitrary Lagrangian Eulerian) related options
+!====================================================
+
+! Number of iterations for fluid initialization. Contrary to ntmabs,
+! nalinf is not an absolute iteration number, meaning that in case of
+! restart calculation nalinf corresponds to the number of iterations
+! for fuid initialization beginning from the first current iteration of
+! the calculation restart. In general nalinf = 0 in that case.
+
+if (.false.) then
+  nalinf = 75
+endif
+
+! Maximum number of iterations in case of implicit Fluid Structure Coupling
+! with structural calculations (internal and/or external
+! (i.e. using Code_Aster)).
+! nalimx = 1, in case of explicit FSI algorithm.
+
+if (.false.) then
+  nalimx = 15
+endif
+
+! Relative precision of sub-cycling Fluid Structure Coupling algorithm.
+
+if (.false.) then
+  epalim = 1.d-5
+endif
+
+! Mesh viscosity modeling (cf. usvima)
+!   0: isotropic
+!   1: orthotropic
+
+if (.false.) then
+  iortvm = 0
 endif
 
 !----

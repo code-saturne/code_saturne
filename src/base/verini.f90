@@ -3835,10 +3835,10 @@ endif
 '@',                                                            /,&
 '@  Au moins une periodicite de rotation a ete definie.',       /,&
 '@  L''indicateur IPUCOU a ete positionne a', i10,              /,&
-'@    dans l''interface ou usipgl (couplage renforce pour',     /,&
+'@    dans l''interface ou usipsu (couplage renforce pour',     /,&
 '@    IPUCOU=1).',                                              /,&
 '@  L''indicateur IALE a ete positionne a', i10,                /,&
-'@    dans l''interface ou usipgl (methode activee si IALE=1)', /,&
+'@    dans l''interface ou usipsu (methode activee si IALE=1)', /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -3957,7 +3957,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
+'@  Verifier les parametres donnes via l''interface ou usipsu.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4013,7 +4013,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes via l''interface ou usipph.',/,&
+'@  Verifier les parametres donnes via l''interface ou usipsu.',/,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -4030,7 +4030,7 @@ endif
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
-'@  Verifier les parametres donnes dans usipph.',               /,&
+'@  Verifier les parametres donnes dans usipsu.',               /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6497,7 +6497,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify the parameters given in the interface or usipph.',   /,&
+'@  Verify the parameters given in the interface or usipsu.',   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6514,7 +6514,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify the parameters given in the interface or usipph.',   /,&
+'@  Verify the parameters given in the interface or usipsu.',   /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -6531,7 +6531,7 @@ endif
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&
-'@  Verify   the parameters  given  in usipph.',                /,&
+'@  Verify   the parameters  given  in usipsu.',                /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)

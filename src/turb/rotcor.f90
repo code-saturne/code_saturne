@@ -28,7 +28,7 @@
 !>
 !> \brief Computing rotation/curvature correction for eddy-viscosity models.
 !>        The subroutine is called for the linear eddy viscosity RANS models,
-!>        when the option irccor = 1 is verify.
+!>        when the option irccor = 1 is verified.
 !>
 !> Two type of rotation/curvature correction are computed, depending on
 !> the specific eddy-viscosity model:
@@ -37,7 +37,7 @@
 !>                 destruction term of dissipation equation)
 !>               - default correction for \f$ k - \epsilon \f$ type models,
 !>                 including elliptic relaxation/blending models
-!>                (iturb = 20, 21, 50 or 51)
+!>                 (iturb = 20, 21, 50 or 51)
 !>
 !> - itycor = 2: - Spalart-Shur correction (production terms are multiplied
 !>                 by a rotation function)

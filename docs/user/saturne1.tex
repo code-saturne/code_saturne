@@ -433,7 +433,7 @@ compulsory.
         \item {\em compulsory without Graphical User Interface:}
         \begin{list}{-}{}
             \item \texttt{usipph} (in \texttt{cs\_user\_parameters.f90}) to
-              specify the turbulence model (and whether $C_p$ is uniform or not)
+              specify the turbulence and temperature models
 
             \item \texttt{usipsu} (in \texttt{cs\_user\_parameters.f90}) to
               define most user parameters
@@ -446,12 +446,6 @@ compulsory.
             \item \texttt{\texttt{cs\_user\_model.c}}
               (in \texttt{cs\_user\_parameters.c}) to
               define user scalars (species)
-
-            \item \texttt{usipgl} (in \texttt{cs\_user\_parameters.f90}) to
-              define some global parameters (error indicators, \texttt{idilat}
-              (variable density), \texttt{ipucou} (reinforced velocity-pressure
-              coupling), and \texttt{iphydr} (improved pressure interpolation in
-              stratified flow)
 
             \item \texttt{usipes} (in \texttt{cs\_user\_parameters.f90}) to
               define monitoring points and additional parameters for results outputs
@@ -4094,7 +4088,7 @@ It is called only during the calculation initialisation.
 For more details about the different parameters, please refer to the key
 word list (\S\ref{sec:prg_motscles}).
 
-\texttt{cs\_user\_parameters.f90} is in fact constituted of 4 separate subroutines:  \texttt{usipph}, \texttt{usipgl},
+\texttt{cs\_user\_parameters.f90} is in fact constituted of 4 separate subroutines:  \texttt{usipph}, \texttt{usppmo},
 \texttt{usipsu} and \texttt{usipes}. Each one controls various
  specific parameters. The keywords which are not featured in the supplied example
 can be provided by the user in \texttt{SRC/REFERENCE/base}; in this case,
@@ -4104,11 +4098,9 @@ has been well defined. The modifiable parameters in each of the subroutines of
 \texttt{cs\_user\_parameters.f90} are:
 
 \begin{list}{$\bullet$}{}
-\item \texttt{usipph}: \texttt{iturb}, \texttt{icp} and \texttt{irccor} (don't modify these
+\item \texttt{usipph}: \texttt{iturb}, \texttt{itherm} and \texttt{icavit} (don't modify these
       parameters anywhere else)
-\item \texttt{usipgl}: \texttt{idtvar}, \texttt{ipucou}, \texttt{iphydr}, \texttt{idilat} and the
-      parameters related to the error estimators (don't modify these parameters
-      anywhere else).
+\item \texttt{usppmo}: activation of specific physical models.
 \item \texttt{usipsu}: physical parameters of the calculation (thermal scalar, physical
       properties, ...), numerical parameters (time steps, number of iterations, ...),
       definition of the time averages.
@@ -8243,7 +8235,7 @@ geometrical criterion or reference number then a structure number (negative valu
 \subsubsection{Initialisation of the options}
 %==================================
 This initialisation can be performed in the Graphical User Interface (GUI)
- or in the subroutines \texttt{usipph} and \texttt{usstr1}. Firstlyl,
+ or in the subroutines \texttt{usipph} and \texttt{usstr1}. Firstly,
  when the ``Mobile mesh'' is selected in GUI under the ``Thermophysical models''
  heading, additional options are displayed. The user must choose the type of mesh
  viscosity and describe its spatial distribution, see \figurename~\ref{fig:Ini-ale}.
@@ -8423,7 +8415,7 @@ When starting a calculation using ALE, or re-starting a calculation with ALE, ba
  on a first calculation without ALE, an initial iteration 0 is automatically performed
  in order to take initial arrays \text{xstr0}, \text{vstr0} and \text{xstreq} into
  account. In any other case, add the following expression '\text{italin=1}' in subroutine
- \text{usipph}, so that the code can deal with the arrays \text{xstr0}, \text{vstr0} and \text{xstreq}.
+ \text{usipsu}, so that the code can deal with the arrays \text{xstr0}, \text{vstr0} and \text{xstreq}.
 
 When \texttt{ihistr} is set to 1, the code writes in the output the history of the
  displacement, of the structural velocity, of the structural acceleration and of the

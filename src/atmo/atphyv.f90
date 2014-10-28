@@ -41,7 +41,7 @@ subroutine atphyv &
 
 !  Il FAUT AVOIR PRECISE ICP = 1
 !     ==================
-!    dans usipph si on souhaite imposer une chaleur specifique
+!    dans usipsu si on souhaite imposer une chaleur specifique
 !    CP variable (sinon: ecrasement memoire).
 
 

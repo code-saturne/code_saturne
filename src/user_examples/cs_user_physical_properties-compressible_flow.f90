@@ -469,7 +469,7 @@ enddo
 '@    =======',/,                                                 &
 '@     The data is inconsistent',/,                               &
 '@',/,                                                            &
-'@       in the GUI or in the user subroutine ''usipph'', the',/, &
+'@       in the GUI or in the user subroutine ''usipsu'', the',/, &
 '@         isobaric specific heat is declared as a property',/,   &
 '@         uniform in space: icp = ',i10   ,/,                    &
 '@       in the user subroutine ''usphyv'', however, it is',/,    &
@@ -478,7 +478,7 @@ enddo
 '@  The calculation will not be run.',/,                          &
 '@',/,                                                            &
 '@  Ensure consistency by modifying the GUI input data or the',/, &
-'@    user subroutines ''usipph'' or ''usphyv''.',/,              &
+'@    user subroutines ''usipsu'' or ''usphyv''.',/,              &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)

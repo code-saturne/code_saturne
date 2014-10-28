@@ -256,9 +256,9 @@ module ppincl
   !> \addtogroup number_variables
   !> \{
 
-  !> number of variables for specific physic
+  !> number of properties for specific physic
   integer, save :: nsalpp
-  !> total number of variables
+  !> highest specific physic property number
   integer, save :: nsalto
 
 

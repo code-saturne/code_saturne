@@ -86,9 +86,8 @@ implicit none
 ! Local variables
 
 integer          nmodpp, ifcvsl
-integer          nscmax, nesmax, nscusi
-integer          ieepre, ieeder, ieecor, ieetot, iihmpu
-integer          ialgce
+integer          nscmax, nscusi
+integer          iihmpu
 double precision relaxp, extrap
 
 !===============================================================================
@@ -155,7 +154,7 @@ endif
 ! =================
 
 iihmpu = iihmpr
-call usipph(iihmpu , nfecra , iturb , irccor , idirsm , itherm, icp, icavit)
+call usipph(iihmpu, iturb, itherm, iale, icavit)
 
 ! Other model parameters, including user-defined scalars
 !-------------------------------------------------------
@@ -277,42 +276,6 @@ if (iihmpr.eq.1) then
 
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
-
-nesmax = nestmx
-ieepre = iespre
-ieeder = iesder
-ieecor = iescor
-ieetot = iestot
-iihmpu = iihmpr
-!     IALGCE permet de remplir la variable cs_glob_maillage_grd_cdg_cel dans
-!       cs_maillage_grd.c, a travers la routine ALGCEN.
-!     cs_glob_maillage_grd_cdg_cel est initialise a 0 dans cs_maillage_grd.c,
-!       et on ne change sa valeur ici que si elle a vraiment ete touchee par
-!       l'utilisateur (pour garder l'initialisation en un seul endroit).
-!     Le blindage en erreur est dans cs_maillage_grd.c (erreur si IALGCE>1,
-!       cs_glob_maillage_grd_cdg_cel inchange si IALGCE<0)
-ialgce = -999
-
-call usipgl &
-!==========
- ( nesmax ,                                                       &
-   ieepre , ieeder , ieecor , ieetot ,                            &
-   iihmpu , nfecra ,                                              &
-   idtvar , ipucou , idilat , iphydr , igprij , ialgce , iescal )
-
-! If time step is local or variable, pass information to C layer, as it
-! may ne needed for some field (or moment) definitions.
-if (idtvar.ne.0) then
-  call time_step_define_variable(1)
-endif
-if (idtvar.eq.2.or.idtvar.eq.-1) then
-  call time_step_define_local(1)
-endif
-
-if (ialgce.ne.-999) call algcen(ialgce)
-
 ! Define main properties (pointers, checks, ipp)
 
 call fldprp
@@ -393,6 +356,15 @@ endif
 
 call usipsu(nmodpp)
 !==========
+
+! If time step is local or variable, pass information to C layer, as it
+! may be needed for some field (or moment) definitions.
+if (idtvar.ne.0) then
+  call time_step_define_variable(1)
+endif
+if (idtvar.eq.2.or.idtvar.eq.-1) then
+  call time_step_define_local(1)
+endif
 
 call indsui(isuite)
 !==========

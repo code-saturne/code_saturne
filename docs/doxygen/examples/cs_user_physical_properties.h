@@ -38,7 +38,7 @@
   (a specific subroutine is dedicated to that: \ref usvist)
  
   - icp = 1 must <b> have been specified </b>
-     in \ref usipph if we wish to define a variable specific heat
+     in \ref usipsu if we wish to define a variable specific heat
      cpro_cp (otherwise: memory overwrite).
  
   - the kivisl field integer key (scalar_diffusivity_id)
