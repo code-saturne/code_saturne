@@ -359,7 +359,6 @@ nfml   = 0
 nnod   = 0
 lndfac = 0
 lndfbr = 0
-ncelbr = 0
 
 ncelgb = 0
 nfacgb = 0

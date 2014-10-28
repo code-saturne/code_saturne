@@ -1350,7 +1350,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
 
 #   pragma omp parallel for private(cell_id, ll, mm)
     for (ii = 0; ii < m->n_b_cells; ii++) {
-      cell_id = m->b_cells[ii] - 1;
+      cell_id = m->b_cells[ii];
       for (ll = 0; ll < 3; ll++) {
         for (mm = 0; mm < 3; mm++)
           cocg[cell_id][ll][mm] = cocgb[ii][ll][mm];
@@ -1386,7 +1386,7 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
                                     a33, det_inv)
     for (ii = 0; ii < m->n_b_cells; ii++) {
 
-      cell_id = m->b_cells[ii] - 1;
+      cell_id = m->b_cells[ii];
 
       cocg11 = cocg[cell_id][0][0];
       cocg12 = cocg[cell_id][0][1];
@@ -1835,7 +1835,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
 
 #   pragma omp parallel for private(cell_id, ll, mm)
     for (ii = 0; ii < m->n_b_cells; ii++) {
-      cell_id = m->b_cells[ii] - 1;
+      cell_id = m->b_cells[ii];
       for (ll = 0; ll < 3; ll++) {
         for (mm = 0; mm < 3; mm++)
           cocg[cell_id][ll][mm] = cocgb[ii][ll][mm];
@@ -1879,7 +1879,7 @@ _lsq_scalar_gradient_old(const cs_mesh_t             *m,
                                     a23, a33, det_inv)
     for (ii = 0; ii < m->n_b_cells; ii++) {
 
-      cell_id = m->b_cells[ii] - 1;
+      cell_id = m->b_cells[ii];
 
       cocg11 = cocg[cell_id][0][0];
       cocg12 = cocg[cell_id][0][1];

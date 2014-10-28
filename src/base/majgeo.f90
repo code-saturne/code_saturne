@@ -24,10 +24,10 @@ subroutine majgeo &
 !================
 
  ( ncel2  , ncele2 , nfac2  , nfabo2 , nsom2  ,                   &
-   lndfa2 , lndfb2 , ncelb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 , &
+   lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,          &
    nfml2  , nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  , &
    iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
-   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , icelb2 , isymp2 ,          &
+   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 ,                   &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 ,          &
    volum2 , srfan2 , srfbn2 , dist2  , distb2 , pond2  ,          &
@@ -114,7 +114,6 @@ implicit none
 
 integer, intent(in) :: ncel2, ncele2, nfac2, nfabo2, nsom2
 integer, intent(in) :: lndfa2, lndfb2
-integer, intent(in) :: ncelb2
 integer(kind=8), intent(in) :: ncelg2, nfacg2 , nfbrg2, nsomg2
 integer, intent(in) :: nfml2
 integer, intent(in) :: nthdi2, nthdb2
@@ -129,7 +128,6 @@ integer, dimension(nfac2+1), target :: ipnfa2
 integer, dimension(lndfa2), target :: nodfa2
 integer, dimension(nfabo2+1), target :: ipnfb2
 integer, dimension(lndfb2), target :: nodfb2
-integer, dimension(ncelb2), target :: icelb2
 integer, dimension(nfabo2), target :: isymp2
 
 double precision :: volmn2, volmx2, voltt2
@@ -168,8 +166,6 @@ endif
 
 nnod = nsom2
 
-ncelbr = ncelb2
-
 nfml = nfml2
 
 !===============================================================================
@@ -202,8 +198,6 @@ ipnfac_0 => ipnfa2(1:nfac+1)
 nodfac_0 => nodfa2(1:lndfac)
 ipnfbr_0 => ipnfb2(1:nfabor+1)
 nodfbr_0 => nodfb2(1:lndfbr)
-
-icelbr => icelb2(1:ncelbr)
 
 xyzcen => xyzce2(1:3,1:ncelet)
 

@@ -2614,7 +2614,7 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
 
     for (i = 0, n_b_cells = 0; i < mesh->n_cells; i++) {
       if (flag[i] == true)
-        mesh->b_cells[n_b_cells++] = i + 1;
+        mesh->b_cells[n_b_cells++] = i;
     }
 
     BFT_FREE(flag);

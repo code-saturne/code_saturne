@@ -61,10 +61,6 @@ module mesh
   !> number of vertices in the mesh
   integer, save :: nnod
 
-  !> \anchor ncelbr
-  !> number of cells with at least one boundary
-  integer, save :: ncelbr
-
   !> \anchor lndfac
   !> size of the array \c nodfac of internal faces - nodes connectivity
   !> (see \ref note_3)
@@ -104,10 +100,6 @@ module mesh
   !> \anchor ifmcel
   !> family number of the elements. See \ref note_1
   integer, dimension(:), pointer :: ifmcel
-
-  !> \anchor icelbr
-  !> list of cells having at least one boundary face
-  integer, dimension(:), pointer :: icelbr
 
   !> \anchor isympa
   !> integer to mark out the "symmetry" (itypfb=isymet) boundary faces
