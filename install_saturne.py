@@ -601,8 +601,8 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.10",
-                    archive="hdf5-1.8.10.tar.gz",
+                    version="1.8.13",
+                    archive="hdf5-1.8.13.tar.gz",
                     url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10/src/%s")
 
         p = self.packages['hdf5']
@@ -640,8 +640,8 @@ class Setup:
             Package(name="libxml2",
                     description="XML library",
                     package="libxml2",
-                    version="2.7.8",
-                    archive="libxml2-sources-2.7.8.tar.gz",
+                    version="2.9.2",
+                    archive="libxml2-sources-2.9.2.tar.gz",
                     url="ftp://xmlsoft.org/libxml2/%s")
 
         p = self.packages['libxml2']
@@ -663,9 +663,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.0",
-                    archive="scotch_6.0.0.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/31831/%s")
+                    version="6.0.3",
+                    archive="scotch_6.0.3.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/34099/%s")
 
     #---------------------------------------------------------------------------
 
