@@ -167,6 +167,7 @@ typedef struct {
   int                         type_flag;    /* Field type flag */
   char                        type_id;      /* i: int; d: double; s: str;
                                                t: type */
+  char                        log_id;       /* s: setup; n: none */
 
   bool                        is_sub;       /* Indicate if the key is a sub-key
                                                (in which case def_val contains
@@ -2192,6 +2193,7 @@ cs_field_define_key_int(const char  *name,
   kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 'i';
+  kd->log_id = 's';
   kd->is_sub = false;
 
   return key_id;
@@ -2228,6 +2230,7 @@ cs_field_define_key_double(const char  *name,
   kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 'd';
+  kd->log_id = 's';
   kd->is_sub = false;
 
   return key_id;
@@ -2275,6 +2278,7 @@ cs_field_define_key_str(const char  *name,
   kd->type_size = 0;
   kd->type_flag = type_flag;
   kd->type_id = 's';
+  kd->log_id = 's';
   kd->is_sub = false;
 
   return key_id;
@@ -2326,6 +2330,7 @@ cs_field_define_key_struct(const char                 *name,
   kd->type_size = size;
   kd->type_flag = type_flag;
   kd->type_id = 't';
+  kd->log_id = 's';
   kd->is_sub = false;
 
   return key_id;
@@ -2361,6 +2366,7 @@ cs_field_define_sub_key(const char  *name,
   kd->def_val.v_int = parent_id;
   kd->type_flag = pkd->type_flag;
   kd->type_id = pkd->type_id;
+  kd->log_id = pkd->log_id;
   kd->is_sub = true;
 
   return key_id;
@@ -2415,6 +2421,25 @@ cs_field_key_flag(int key_id)
   }
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Disable logging setup values associated with a given key.
+ *
+ * This is useful when a key is used not for setup purposes, but to track
+ * values associated with a field, such as convergence or performance data.
+ *
+ * \param[in]  key_id  id of associated key
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_key_disable_setup_log(int  key_id)
+{
+  assert(key_id >= 0 && key_id < _n_keys);
+  cs_field_key_def_t *kd = _key_defs + key_id;
+  kd->log_id = 'n';
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3193,6 +3218,8 @@ cs_field_log_info(const cs_field_t  *f,
       int key_id = cs_map_name_to_id_try(_key_map,
                                          cs_map_name_to_id_key(_key_map, i));
       cs_field_key_def_t *kd = _key_defs + key_id;
+      if (kd->log_id != 's')
+        continue;
       cs_field_key_val_t *kv = _key_vals + (f->id*_n_keys_max + key_id);
       const char *key = cs_map_name_to_id_key(_key_map, i);
       if (kd->type_flag == 0 || (kd->type_flag & f->type)) {

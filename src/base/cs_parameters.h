@@ -205,6 +205,17 @@ extern const cs_piso_t  *cs_glob_piso;
 void
 cs_parameters_define_field_keys(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define field key for condensation.
+ *
+ * Note: this should be moved in the future to a condensation-specific file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_define_field_key_gas_mix(void);
+
 /*----------------------------------------------------------------------------
  * Read general restart info.
  *

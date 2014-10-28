@@ -389,74 +389,80 @@ do ivar = 1, nvar
 enddo
 
 ! Copy field physical properties of species into the field structure
-do f_id = 1, nfld
 
-  call field_get_name (f_id, name)
+if (ippmod(imixg).ge.0) then
 
-  if (name.eq.'y_o2') then
+  call cs_parameters_define_field_key_gas_mix
 
-    sasp%mol_mas= 0.032d0
-    sasp%cp = 930.d0
-    sasp%vol_dif = 19.70d0
-    sasp%mu_a = 5.086522d-8
-    sasp%mu_b = 5.512391d-6
-    sasp%lambda_a = 6.2d-5
-    sasp%lambda_b = 8.1d-3
+  do f_id = 1, nfld
 
-    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+    call field_get_name (f_id, name)
 
-  else if (name.eq.'y_n2') then
+    if (name.eq.'y_o2') then
 
-    sasp%mol_mas = 0.028d0
-    sasp%cp = 1042.d0
-    sasp%vol_dif = 19.70d0
-    sasp%mu_a = 4.210130d-8
-    sasp%mu_b = 5.494348d-6
-    sasp%lambda_a = 6.784141d-5
-    sasp%lambda_b = 5.564317d-3
+      sasp%mol_mas= 0.032d0
+      sasp%cp = 930.d0
+      sasp%vol_dif = 19.70d0
+      sasp%mu_a = 5.086522d-8
+      sasp%mu_b = 5.512391d-6
+      sasp%lambda_a = 6.2d-5
+      sasp%lambda_b = 8.1d-3
 
-    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
 
-  else if (name.eq.'y_he') then
+    else if (name.eq.'y_n2') then
 
-    sasp%mol_mas = 0.004d0
-    sasp%cp = 5194.d0
-    sasp%vol_dif = 2.67d0
-    sasp%mu_a = 18.5752d-6
-    sasp%mu_b = 0.0d0
-    sasp%lambda_a = 0.144d0
-    sasp%lambda_b = 0.0d0
+      sasp%mol_mas = 0.028d0
+      sasp%cp = 1042.d0
+      sasp%vol_dif = 19.70d0
+      sasp%mu_a = 4.210130d-8
+      sasp%mu_b = 5.494348d-6
+      sasp%lambda_a = 6.784141d-5
+      sasp%lambda_b = 5.564317d-3
 
-    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
 
+    else if (name.eq.'y_he') then
 
-  else if (name.eq.'y_h2') then
+      sasp%mol_mas = 0.004d0
+      sasp%cp = 5194.d0
+      sasp%vol_dif = 2.67d0
+      sasp%mu_a = 18.5752d-6
+      sasp%mu_b = 0.0d0
+      sasp%lambda_a = 0.144d0
+      sasp%lambda_b = 0.0d0
 
-    sasp%mol_mas = 0.002d0
-    sasp%cp = 14560.d0
-    sasp%vol_dif = 6.12d0
-    sasp%mu_a = 1.93d-9
-    sasp%mu_b = 8.40d-6
-    sasp%lambda_a = 4.431d-4
-    sasp%lambda_b = 5.334d-2
+      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
 
-    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+    else if (name.eq.'y_h2') then
 
-  else if (name.eq.'y_h2o_g') then
+      sasp%mol_mas = 0.002d0
+      sasp%cp = 14560.d0
+      sasp%vol_dif = 6.12d0
+      sasp%mu_a = 1.93d-9
+      sasp%mu_b = 8.40d-6
+      sasp%lambda_a = 4.431d-4
+      sasp%lambda_b = 5.334d-2
 
-    sasp%mol_mas = 0.018d0
-    sasp%cp = 2060.d0
-    sasp%vol_dif = 13.10d0
-    sasp%mu_a = 3.8496d-8
-    sasp%mu_b = 8.2997d-6
-    sasp%lambda_a = 7.6209d-5
-    sasp%lambda_b = 0.016949d0
+      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
 
-    call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+    else if (name.eq.'y_h2o_g') then
 
-  endif
+      sasp%mol_mas = 0.018d0
+      sasp%cp = 2060.d0
+      sasp%vol_dif = 13.10d0
+      sasp%mu_a = 3.8496d-8
+      sasp%mu_b = 8.2997d-6
+      sasp%lambda_a = 7.6209d-5
+      sasp%lambda_b = 0.016949d0
 
-enddo
+      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+
+    endif
+
+  enddo
+
+endif
 
 return
 

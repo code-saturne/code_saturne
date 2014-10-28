@@ -214,7 +214,6 @@ static cs_solving_info_t _solving_info =
   0.,    /* l2residual: L2 time residual                     */
 };
 
-
 static cs_severe_acc_species_prop_t _severe_acc_species_prop =
 {
   -1.,   /* molar mass             */
@@ -277,19 +276,6 @@ _log_func_var_opt_cal(const void *t)
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "climgr", _t->climgr);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "extrag", _t->extrag);
   cs_log_printf(CS_LOG_SETUP, _(fmt_r), "relaxv", _t->relaxv);
-}
-
-static void
-_log_func_solving_info(const void *t)
-{
-  const char fmt_i[] = N_("      %-19s  %-4d\n");
-  const char fmt_r[] = N_("      %-19s  %-12.3g\n");
-  const cs_solving_info_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, _(fmt_i), "n_it", _t->n_it);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "rhs_norm", _t->rhs_norm);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "res_norm", _t->res_norm);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "derive", _t->derive);
-  cs_log_printf(CS_LOG_SETUP, _(fmt_r), "l2residual", _t->l2residual);
 }
 
 static void
@@ -383,12 +369,12 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("property_id", -1, 0); /* inverse of iprpfl(iprop) */
-  cs_field_define_key_int("scalar_id", -1, 0); /* inverse of isca(iscal) */
+  cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
   cs_field_define_key_int("post_id", -1, 0);     /* inverse of the ipp array */
 
   cs_field_define_key_int("scalar_diffusivity_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_double("scalar_diffusivity_ref",
-                             -1.e12*10., CS_FIELD_VARIABLE); /* old visls0(iscal) */
+                             -1.e12*10., CS_FIELD_VARIABLE); /* visls0(iscal) */
 
   cs_field_define_key_int("turbulent_flux_model", 0, CS_FIELD_VARIABLE);
   cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);
@@ -399,13 +385,14 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("drift_scalar_model", 0, 0);
 
   cs_field_define_key_int("scalar_class", 0, 0);
-  cs_field_define_key_int("first_moment_id", -1, 0); /* old iscavr(iscal) */
+  cs_field_define_key_int("first_moment_id", -1, 0); /* iscavr(iscal) */
 
   cs_field_define_key_int("source_term_prev_id", -1, CS_FIELD_VARIABLE);
 
+  cs_field_define_key_int("slope_test_upwind_id", -1, CS_FIELD_VARIABLE);
+
   cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
-
 
   /* Structure containing the calculation options of the field variables */
   cs_field_define_key_struct("var_cal_opt",
@@ -414,13 +401,27 @@ cs_parameters_define_field_keys(void)
                              sizeof(cs_var_cal_opt_t),
                              CS_FIELD_VARIABLE);
 
-  /* Structure containing the solving info of the field variables */
+  /* Structure containing the solving info of the field variables
+     (used for listing, not setup, so set NULL setup logging function) */
   cs_field_define_key_struct("solving_info",
                              &_solving_info,
-                             _log_func_solving_info,
+                             NULL,
                              sizeof(cs_solving_info_t),
                              CS_FIELD_VARIABLE);
+  cs_field_key_disable_setup_log(cs_field_key_id("solving_info"));
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define field key for condensation.
+ *
+ * Note: this should be moved in the future to a condensation-specific file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_parameters_define_field_key_gas_mix(void)
+{
   /* Structure containing physical properties relative to
      severe accident scalars */
   cs_field_define_key_struct("severe_acc_species_prop",

@@ -354,6 +354,18 @@ module field
 
     ! Interface to C function obtaining a field key id by its name
 
+    function cs_f_field_key_id(name) result(id) &
+      bind(C, name='cs_field_key_id')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      integer(c_int)                                           :: id
+    end function cs_f_field_key_id
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function obtaining a field key id by its name
+
     function cs_f_field_key_id_try(name) result(id) &
       bind(C, name='cs_field_key_id_try')
       use, intrinsic :: iso_c_binding

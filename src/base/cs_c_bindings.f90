@@ -103,7 +103,6 @@ module cs_c_bindings
     real(c_double) :: lambda_b
   end type severe_acc_species_prop
 
-
   !=============================================================================
 
   interface
@@ -425,6 +424,16 @@ module cs_c_bindings
       integer(c_int), value :: f_id, n_clip_max, n_clip_min
       real(kind=c_double), dimension(*) :: min_pre_clip, max_pre_clip
     end subroutine cs_log_iteration_clipping_field
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function initializing codensation-related field key.
+
+    subroutine cs_parameters_define_field_key_gas_mix()  &
+      bind(C, name='cs_parameters_define_field_key_gas_mix')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_parameters_define_field_key_gas_mix
 
     !---------------------------------------------------------------------------
 
@@ -758,13 +767,17 @@ contains
 
     ! Local variables
 
-    integer(c_int)                 :: c_f_id, c_k_id
+    integer(c_int)                 :: c_f_id
     type(var_cal_opt),pointer      :: p_k_value
     type(c_ptr)                    :: c_k_value
     character(len=11+1, kind=c_char) :: c_name
 
-    c_name = "var_cal_opt"//c_null_char
-    c_k_id = cs_f_field_key_id_try(c_name)
+    integer(c_int), save           :: c_k_id = -1
+
+    if (c_k_id .eq. -1) then
+      c_name = "var_cal_opt"//c_null_char
+      c_k_id = cs_f_field_key_id(c_name)
+    endif
 
     c_f_id = f_id
 
@@ -798,13 +811,17 @@ contains
 
     ! Local variables
 
-    integer(c_int)                   :: c_f_id, c_k_id
+    integer(c_int)                   :: c_f_id
     type(solving_info), pointer      :: p_k_value
     type(c_ptr)                      :: c_k_value
     character(len=12+1, kind=c_char) :: c_name
 
-    c_name = "solving_info"//c_null_char
-    c_k_id = cs_f_field_key_id_try(c_name)
+    integer(c_int), save           :: c_k_id = -1
+
+    if (c_k_id .eq. -1) then
+      c_name = "solving_info"//c_null_char
+      c_k_id = cs_f_field_key_id(c_name)
+    endif
 
     c_f_id = f_id
 
@@ -816,7 +833,6 @@ contains
     return
 
   end subroutine field_set_key_struct_solving_info
-
 
   !=============================================================================
 
@@ -839,13 +855,17 @@ contains
 
     ! Local variables
 
-    integer(c_int)                             :: c_f_id, c_k_id
+    integer(c_int)                             :: c_f_id
     type(severe_acc_species_prop),pointer      :: p_k_value
     type(c_ptr)                                :: c_k_value
     character(len=23+1, kind=c_char)           :: c_name
 
-    c_name = "severe_acc_species_prop"//c_null_char
-    c_k_id = cs_f_field_key_id_try(c_name)
+    integer(c_int), save           :: c_k_id = -1
+
+    if (c_k_id .eq. -1) then
+      c_name = "severe_acc_species_prop"//c_null_char
+      c_k_id = cs_f_field_key_id(c_name)
+    endif
 
     c_f_id = f_id
 
@@ -880,13 +900,17 @@ contains
 
     ! Local variables
 
-    integer(c_int)                 :: c_f_id, c_k_id
+    integer(c_int)                 :: c_f_id
     type(var_cal_opt),pointer      :: p_k_value
     type(c_ptr)                    :: c_k_value
     character(len=11+1, kind=c_char) :: c_name
 
-    c_name = "var_cal_opt"//c_null_char
-    c_k_id = cs_f_field_key_id_try(c_name)
+    integer(c_int), save           :: c_k_id = -1
+
+    if (c_k_id .eq. -1) then
+      c_name = "var_cal_opt"//c_null_char
+      c_k_id = cs_f_field_key_id(c_name)
+    endif
 
     c_f_id = f_id
 
@@ -927,7 +951,7 @@ contains
     character(len=12+1, kind=c_char) :: c_name
 
     c_name = "solving_info"//c_null_char
-    c_k_id = cs_f_field_key_id_try(c_name)
+    c_k_id = cs_f_field_key_id(c_name)
 
     c_f_id = f_id
 
@@ -939,7 +963,6 @@ contains
     return
 
   end subroutine field_get_key_struct_solving_info
-
 
   !=============================================================================
 
@@ -969,7 +992,7 @@ contains
     character(len=23+1, kind=c_char)           :: c_name
 
     c_name = "severe_acc_species_prop"//c_null_char
-    c_k_id = cs_f_field_key_id_try(c_name)
+    c_k_id = cs_f_field_key_id(c_name)
 
     c_f_id = f_id
 

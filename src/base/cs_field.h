@@ -557,6 +557,19 @@ int
 cs_field_key_flag(int key_id);
 
 /*----------------------------------------------------------------------------
+ * Disable logging setup values associated with a given key.
+ *
+ * This is useful when a key is used not for setup purposes, but to track
+ * values associated with a field, such as convergence or performance data.
+ *
+ * parameters:
+ *   key_id <-- id of associated key
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_key_disable_setup_log(int  key_id);
+
+/*----------------------------------------------------------------------------
  * Query if a given key has been set for a field.
  *
  * If the key id is not valid, or the field category is not
