@@ -270,12 +270,12 @@ cs_gui_boundary_zone_localization(const char *label);
  *   faces   -->  number of faces
  *----------------------------------------------------------------------------*/
 
-int*
+cs_lnum_t*
 cs_gui_get_faces_list(int          izone,
                       const char  *label,
-                      int          nfabor,
+                      cs_lnum_t    nfabor,
                       int          nozppm,
-                      int         *faces );
+                      cs_lnum_t   *faces);
 
 /*----------------------------------------------------------------------------
  * Free boundary conditions structures

@@ -1938,6 +1938,7 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
 
     fvm_selector_get_list(select_b_faces,
                           this_join->criteria,
+                          1,
                           &n_b_faces,
                           b_face_list);
 

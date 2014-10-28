@@ -2235,9 +2235,9 @@ cs_join_select_create(const char  *selection_criteria,
 
   BFT_MALLOC(selection->faces, mesh->n_b_faces, cs_lnum_t);
 
-  cs_selector_get_b_face_list(selection_criteria,
-                              &(selection->n_faces),
-                              selection->faces);
+  cs_selector_get_b_face_num_list(selection_criteria,
+                                  &(selection->n_faces),
+                                  selection->faces);
 
   BFT_MALLOC(order, selection->n_faces, cs_lnum_t);
   BFT_MALLOC(ordered_faces, selection->n_faces, cs_lnum_t);

@@ -557,7 +557,7 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
       ecs_warn();
       printf(_("The MED mesh contains %d elements of type %s\n"
                "which are ignored by the Preprocessor.\n\n"),
-             nbr_ele_med, nom_typ_ignore[ityp]);
+             (int)nbr_ele_med, nom_typ_ignore[ityp]);
 
     }
   }

@@ -178,11 +178,6 @@ _b_faces_select_example(void         *input,
 
   cs_selector_get_b_face_list("4", &n_b_faces, b_face_ids);
 
-  /* Convert from 1 to 0 based indexing */
-
-  for (i = 0; i < n_b_faces; i++)
-    b_face_ids[i] -= 1;
-
   /* Adjust array to final size (cleaner, but not required) */
 
   BFT_REALLOC(b_face_ids, n_b_faces, cs_lnum_t);

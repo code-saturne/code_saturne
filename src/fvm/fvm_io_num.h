@@ -97,6 +97,9 @@ extern const char  *fvm_io_num_sfc_type_name[];
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure.
  *
+ * This function is similar to fvm_io_num_create_from_select, albeit
+ * using parent entity numbers (1 to n) instead of ids (0 to n-1).
+ *
  * parameters:
  *   parent_entity_number <-- pointer to list of selected entitie's parent's
  *                            numbers, or NULL if all first nb_ent entities
@@ -116,6 +119,29 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                   const cs_gnum_t   parent_global_number[],
                   const size_t      n_entities,
                   const int         share_parent_global);
+
+/*----------------------------------------------------------------------------
+ * Creation of an I/O numbering structure based on a selection of entities.
+ *
+ * parameters:
+ *   parent_entity_id     <-- pointer to list of selected entitie's parent's
+ *                            ids, or NULL if all first n_ent entities
+ *                            are used
+ *   parent_global_number <-- pointer to list of global (i.e. domain splitting
+ *                            independent) parent entity numbers
+ *   n_entities           <-- number of entities considered
+ *   share_parent_global  <-- if non zero, try to share parent_global_number
+ *                            instead of using a local copy
+ *
+ * returns:
+ *  pointer to I/O numbering structure
+ *----------------------------------------------------------------------------*/
+
+fvm_io_num_t *
+fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
+                              const cs_gnum_t   parent_global_number[],
+                              size_t            n_entities,
+                              int               share_parent_global);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure,
@@ -163,19 +189,18 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
  * The corresponding entities must be locally ordered.
  *
  * parameters:
- *   parent_entity_number <-- pointer to list of selected entitie's parent's
- *                            numbers, or NULL if all first n_ent entities
- *                            are used
- *   adjacency            <-- entity adjacency (1 to n global numbering)
- *   n_entities           <-- number of entities considered
- *   stride               <-- values per entity
+ *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
+ *                        or NULL if all first n_ent entities are used
+ *   adjacency        <-- entity adjacency (1 to n global numbering)
+ *   n_entities       <-- number of entities considered
+ *   stride           <-- values per entity
  *
  * returns:
- *  pointer to I/O numbering structure
+ *   pointer to I/O numbering structure
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
+fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
                              const cs_gnum_t   adjacency[],
                              size_t            n_entities,
                              size_t            stride);
@@ -186,19 +211,18 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
  * The corresponding entities do not need to be locally ordered.
  *
  * parameters:
- *  parent_entity_number <-- pointer to list of selected entitie's parent's
- *                           numbers, or NULL if all first n_ent entities
- *                           are used
- *  index                <-- index on entities for adjacency
- *  adjacency            <-- entity adjacency (1 to n global numbering)
- *  n_entities           <-- number of entities considered
+ *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
+ *                        or NULL if all first n_ent entities are used
+ *   index            <-- index on entities for adjacency
+ *   adjacency        <-- entity adjacency (1 to n global numbering)
+ *   n_entities       <-- number of entities considered
  *
  * returns:
- *  pointer to I/O numbering structure
+ *   pointer to I/O numbering structure
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
+fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
                              const cs_lnum_t   index[],
                              const cs_gnum_t   adjacency[],
                              cs_lnum_t         n_entities);

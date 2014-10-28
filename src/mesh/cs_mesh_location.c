@@ -376,6 +376,7 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
         BFT_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
         int c_id = fvm_selector_get_list(selector,
                                          ml->select_str,
+                                         0,
                                          ml->n_elts,
                                          ml->elt_list);
         if (ml->n_elts[0] == n_elts_max && ml->elt_list != NULL)

@@ -67,20 +67,21 @@ character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 interface
 
-  subroutine cs_selector_get_i_face_list(criteria, n_faces, i_face_list)  &
-    bind(C, name='cs_selector_get_i_face_list')
+  subroutine cs_selector_get_i_face_num_list(criteria,                  &
+                                             n_faces, i_face_num_list)  &
+    bind(C, name='cs_selector_get_i_face_num_list')
     use, intrinsic :: iso_c_binding
     implicit none
     character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
     integer(c_int), intent(out) :: n_faces
-    integer(c_int), dimension(*), intent(out) :: i_face_list
-  end subroutine cs_selector_get_i_face_list
+    integer(c_int), dimension(*), intent(out) :: i_face_num_list
+  end subroutine cs_selector_get_i_face_num_list
 
 end interface
 
 c_crit = trim(fstr)//c_null_char
 
-call cs_selector_get_i_face_list(c_crit, facnb, faces)
+call cs_selector_get_i_face_num_list(c_crit, facnb, faces)
 
 return
 
@@ -133,20 +134,21 @@ character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 interface
 
-  subroutine cs_selector_get_b_face_list(criteria, n_faces, b_face_list)  &
-    bind(C, name='cs_selector_get_b_face_list')
+  subroutine cs_selector_get_b_face_num_list(criteria,                  &
+                                             n_faces, b_face_num_list)  &
+    bind(C, name='cs_selector_get_b_face_num_list')
     use, intrinsic :: iso_c_binding
     implicit none
     character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
     integer(c_int), intent(out) :: n_faces
-    integer(c_int), dimension(*), intent(out) :: b_face_list
-  end subroutine cs_selector_get_b_face_list
+    integer(c_int), dimension(*), intent(out) :: b_face_num_list
+  end subroutine cs_selector_get_b_face_num_list
 
 end interface
 
 c_crit = trim(fstr)//c_null_char
 
-call cs_selector_get_b_face_list(c_crit, facnb, faces)
+call cs_selector_get_b_face_num_list(c_crit, facnb, faces)
 
 return
 
@@ -200,20 +202,20 @@ character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 interface
 
-  subroutine cs_selector_get_cell_list(criteria, n_faces, cell_list)  &
-    bind(C, name='cs_selector_get_cell_list')
+  subroutine cs_selector_get_cell_num_list(criteria, n_faces, cell_num_list)  &
+    bind(C, name='cs_selector_get_cell_num_list')
     use, intrinsic :: iso_c_binding
     implicit none
     character(kind=c_char, len=1), dimension(*), intent(in) :: criteria
     integer(c_int), intent(out) :: n_faces
-    integer(c_int), dimension(*), intent(out) :: cell_list
-  end subroutine cs_selector_get_cell_list
+    integer(c_int), dimension(*), intent(out) :: cell_num_list
+  end subroutine cs_selector_get_cell_num_list
 
 end interface
 
 c_crit = trim(fstr)//c_null_char
 
-call cs_selector_get_cell_list(c_crit, cellnb, cells)
+call cs_selector_get_cell_num_list(c_crit, cellnb, cells)
 
 return
 
@@ -263,6 +265,7 @@ integer       ifaces(*), bfaces(*), ifacnb, bfacnb
 
 ! Local variables
 
+integer :: ii
 character(len=len_trim(fstr)+1, kind=c_char) :: c_crit
 
 !===============================================================================
@@ -284,6 +287,13 @@ end interface
 c_crit = trim(fstr)//c_null_char
 
 call cs_selector_get_cells_boundary(c_crit, ifacnb, bfacnb, ifaces, bfaces)
+
+do ii = 1, ifacnb
+  ifaces(ii) = ifaces(ii) + 1
+enddo
+do ii = 1, bfacnb
+  bfaces(ii) = bfaces(ii) + 1
+enddo
 
 return
 
@@ -393,6 +403,8 @@ integer       face_list(*), perio_num, n_faces
 
 ! Local variables
 
+integer       ii
+
 !===============================================================================
 
 interface
@@ -409,6 +421,10 @@ interface
 end interface
 
 call cs_selector_get_perio_face_list(perio_num, n_faces, face_list)
+
+do ii = 1, n_faces
+  face_list(ii) = face_list(ii) + 1
+enddo
 
 return
 

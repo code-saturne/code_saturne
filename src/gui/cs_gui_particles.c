@@ -1460,12 +1460,11 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 {
   int izone, zones;
   int iclas, ilayer, icoal;
-  int ielt, ifac, nelt = 0;
+  cs_lnum_t ielt, nelt = 0;
   char *interaction = NULL;
   char sclass[10];
   char *path1, *path2;
   char *choice;
-  int *faces_list = NULL;
 
   cs_int_t  i_cz_params[20];  /* size: current ndlaim (=10) + margin */
   cs_real_t r_cz_params[100+4* *nlayer]; /* size: current ndlagm (=50+4*nlayer) + margin */
@@ -1485,14 +1484,16 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
   for (izone=0; izone < zones; izone++) {
 
-    faces_list = cs_gui_get_faces_list(izone,
-                                       boundaries->label[izone],
-                                       *nfabor, *nozppm, &nelt);
+    cs_lnum_t *faces_list = cs_gui_get_faces_list(izone,
+                                                  boundaries->label[izone],
+                                                  *nfabor, *nozppm, &nelt);
 
-    for ( ielt=0; ielt < nelt; ielt++ ) {
-      ifac = faces_list[ielt];
-      ifrlag[ifac-1] = izone+1;
+    for (ielt=0; ielt < nelt; ielt++) {
+      cs_lnum_t ifac = faces_list[ielt];
+      ifrlag[ifac] = izone+1;
     }
+
+    BFT_FREE(faces_list);
 
     path2 = cs_xpath_init_path();
     cs_xpath_add_elements(&path2, 2, "boundary_conditions", boundaries->nature[izone]);
@@ -1744,7 +1745,6 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
 
     BFT_FREE(path1);
     BFT_FREE(path2);
-    BFT_FREE(faces_list);
     BFT_FREE(interaction);
   }
 

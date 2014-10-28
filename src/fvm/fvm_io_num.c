@@ -1886,6 +1886,89 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
   return this_io_num;
 }
 
+/*----------------------------------------------------------------------------
+ * Test if an array of global numbers is lexicographically ordered.
+ *
+ * parameters:
+ *   parent_entity_id <-- optional list (0 to n-1 numbering) of selected
+ *                        entities (or NULL if all n_entities are selected).
+ *                        This list may contain element ids in any order
+ *   number           <-- array of all entity numbers (number of entity i given
+ *                        by number[i] or number[list[i] - 1]) if list exists
+ *                        (if NULL, a default 1 to n numbering is considered)
+ *   stride           <-- stride of number array (number of values to compare)
+ *   n_entities       <-- number of entities considered
+ *
+ * returns:
+ *   1 if ordered, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+static int
+_is_gnum_ordered_s(const cs_lnum_t  parent_entity_id[],
+                   const cs_gnum_t  number[],
+                   size_t           stride,
+                   size_t           n_entities)
+{
+  size_t j;
+  size_t i = 0;
+
+  /* If numbering is explicit */
+
+  if (number != NULL) {
+
+    if (parent_entity_id != NULL) {
+      for (i = 1 ; i < n_entities ; i++) {
+        size_t j_prev, k;
+        bool unordered = false;
+        j_prev = parent_entity_id[i-1];
+        j = parent_entity_id[i];
+        for (k = 0; k < stride; k++) {
+          if (number[j_prev*stride + k] < number[j*stride + k])
+            break;
+          else if (number[j_prev*stride + k] > number[j*stride + k])
+            unordered = true;
+        }
+        if (unordered == true)
+          break;
+      }
+    }
+    else {
+      for (i = 1 ; i < n_entities ; i++) {
+        size_t i_prev, k;
+        bool unordered = false;
+        i_prev = i-1;
+        for (k = 0; k < stride; k++) {
+          if (number[i_prev*stride + k] < number[i*stride + k])
+            break;
+          else if (number[i_prev*stride + k] > number[i*stride + k])
+            unordered = true;
+        }
+        if (unordered == true)
+          break;
+      }
+    }
+
+  /* If numbering is implicit */
+
+  }
+  else {
+
+    if (parent_entity_id != NULL) {
+      for (i = 1 ; i < n_entities ; i++) {
+        if (parent_entity_id[i] < parent_entity_id[i-1])
+          break;
+      }
+    }
+    else
+      i = n_entities;
+  }
+
+  if (i == n_entities || n_entities == 0)
+    return 1;
+  else
+    return 0;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -1894,6 +1977,9 @@ _create_from_coords_hilbert(const cs_coord_t  coords[],
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure.
+ *
+ * This function is similar to fvm_io_num_create_from_select, albeit
+ * using parent entity numbers (1 to n) instead of ids (0 to n-1).
  *
  * parameters:
  *   parent_entity_number <-- pointer to list of selected entitie's parent's
@@ -1944,6 +2030,106 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
       for (i = 0 ; i < n_entities ; i++)
         this_io_num->_global_num[i]
           = parent_global_number[parent_entity_number[i]-1];
+    }
+    else {
+      for (i = 0 ; i < n_entities ; i++)
+        this_io_num->_global_num[i] = parent_global_number[i];
+    }
+
+    if (cs_order_gnum_test(NULL,
+                           this_io_num->_global_num,
+                           n_entities) == false) {
+      cs_gnum_t *tmp_num;
+      order = cs_order_gnum(NULL,
+                            this_io_num->_global_num,
+                            n_entities);
+      BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
+      for (i = 0; i < n_entities; i++)
+        tmp_num[i] = this_io_num->_global_num[order[i]];
+      memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
+      BFT_FREE(tmp_num);
+    }
+  }
+
+  /* Order globally */
+
+  this_io_num->global_count = n_entities;
+
+  _fvm_io_num_copy_on_write(this_io_num);
+  _fvm_io_num_global_order(this_io_num,
+                           NULL,
+                           cs_glob_mpi_comm);
+
+  if (order != NULL) {
+    cs_gnum_t *tmp_num;
+    BFT_MALLOC(tmp_num, n_entities, cs_gnum_t);
+    for (i = 0; i < n_entities; i++)
+      tmp_num[order[i]] = this_io_num->_global_num[i];
+    memcpy(this_io_num->_global_num, tmp_num, n_entities*sizeof(cs_gnum_t));
+    BFT_FREE(tmp_num);
+    BFT_FREE(order);
+  }
+
+  if (share_parent_global != 0)
+    _fvm_io_num_try_to_set_shared(this_io_num,
+                                  parent_global_number);
+
+#endif
+
+  return this_io_num;
+}
+
+/*----------------------------------------------------------------------------
+ * Creation of an I/O numbering structure based on a selection of entities.
+ *
+ * parameters:
+ *   parent_entity_id     <-- pointer to list of selected entitie's parent's
+ *                            ids, or NULL if all first n_ent entities
+ *                            are used
+ *   parent_global_number <-- pointer to list of global (i.e. domain splitting
+ *                            independent) parent entity numbers
+ *   n_entities           <-- number of entities considered
+ *   share_parent_global  <-- if non zero, try to share parent_global_number
+ *                            instead of using a local copy
+ *
+ * returns:
+ *  pointer to I/O numbering structure
+ *----------------------------------------------------------------------------*/
+
+fvm_io_num_t *
+fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
+                              const cs_gnum_t   parent_global_number[],
+                              size_t            n_entities,
+                              int               share_parent_global)
+{
+  size_t  i;
+  cs_lnum_t  *order = NULL;
+
+  fvm_io_num_t  *this_io_num = NULL;
+
+  /* Initial checks */
+
+  if (cs_glob_n_ranks < 2)
+    return NULL;
+
+#if defined(HAVE_MPI)
+
+  /* Create structure */
+
+  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+
+  this_io_num->global_num_size = n_entities;
+
+  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  this_io_num->global_num = this_io_num->_global_num;
+
+  if (n_entities > 0) {
+
+    /* Assign initial global numbers */
+
+    if (parent_entity_id != NULL) {
+      for (i = 0 ; i < n_entities ; i++)
+        this_io_num->_global_num[i] = parent_global_number[parent_entity_id[i]];
     }
     else {
       for (i = 0 ; i < n_entities ; i++)
@@ -2097,19 +2283,18 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
  * The corresponding entities must be locally ordered.
  *
  * parameters:
- *   parent_entity_number <-- pointer to list of selected entitie's parent's
- *                            numbers, or NULL if all first n_ent entities
- *                            are used
- *   adjacency            <-- entity adjacency (1 to n global numbering)
- *   n_entities           <-- number of entities considered
- *   stride               <-- values per entity
+ *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
+ *                        or NULL if all first n_ent entities are used
+ *   index            <-- index on entities for adjacency
+ *   adjacency        <-- entity adjacency (1 to n global numbering)
+ *   n_entities       <-- number of entities considered
  *
  * returns:
- *  pointer to I/O numbering structure
+ *   pointer to I/O numbering structure
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
+fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
                              const cs_gnum_t   adjacency[],
                              size_t            n_entities,
                              size_t            stride)
@@ -2121,10 +2306,10 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
   if (cs_glob_n_ranks < 2)
     return NULL;
 
-  assert(cs_order_gnum_test_s(parent_entity_number,
-                              adjacency,
-                              stride,
-                              n_entities) == true);
+  assert(_is_gnum_ordered_s(parent_entity_id,
+                            adjacency,
+                            stride,
+                            n_entities) == true);
 
 #if defined(HAVE_MPI)
   {
@@ -2147,11 +2332,11 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
 
       BFT_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
 
-      if (parent_entity_number != NULL) {
+      if (parent_entity_id != NULL) {
         for (i = 0 ; i < n_entities ; i++) {
           for (j = 0; j < stride; j++)
             _adjacency[i*stride + j]
-              = adjacency[(parent_entity_number[i]-1)*stride + j];
+              = adjacency[parent_entity_id[i]*stride + j];
         }
       }
       else
@@ -2181,19 +2366,18 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_number[],
  * The corresponding entities do not need to be locally ordered.
  *
  * parameters:
- *  parent_entity_number <-- pointer to list of selected entitie's parent's
- *                           numbers, or NULL if all first n_ent entities
- *                           are used
- *  index                <-- index on entities for adjacency
- *  adjacency            <-- entity adjacency (1 to n global numbering)
- *  n_entities           <-- number of entities considered
+ *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
+ *                        or NULL if all first n_ent entities are used
+ *   index            <-- index on entities for adjacency
+ *   adjacency        <-- entity adjacency (1 to n global numbering)
+ *   n_entities       <-- number of entities considered
  *
  * returns:
- *  pointer to I/O numbering structure
+ *   pointer to I/O numbering structure
  *----------------------------------------------------------------------------*/
 
 fvm_io_num_t *
-fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
+fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_id[],
                              const cs_lnum_t   index[],
                              const cs_gnum_t   adjacency[],
                              cs_lnum_t         n_entities)
@@ -2237,11 +2421,11 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
       BFT_MALLOC(_index, n_entities + 1, cs_lnum_t);
       _index[0] = 0;
 
-      if (parent_entity_number != NULL) {
+      if (parent_entity_id != NULL) {
 
 #if defined(DEBUG) && !defined(NDEBUG)
         for (i = 0 ; i < n_entities ; i++) {
-          ent_id = parent_entity_number[i]-1;
+          ent_id = parent_entity_id[i];
           if ((index[ent_id+1] - index[ent_id]) == 0)
             bft_error(__FILE__, __LINE__, 0, no_adjacent_elt_msg);
         }
@@ -2250,7 +2434,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
         /* Count reduced size */
 
         for (i = 0 ; i < n_entities ; i++) {
-          ent_id = parent_entity_number[i]-1;
+          ent_id = parent_entity_id[i];
           _index[i+1] = index[ent_id+1] - index[ent_id];
         }
 
@@ -2263,7 +2447,7 @@ fvm_io_num_create_from_adj_i(const cs_lnum_t   parent_entity_number[],
 
         for (i = 0 ; i < n_entities ; i++) {
 
-          ent_id = parent_entity_number[i]-1;
+          ent_id = parent_entity_id[i];
           _shift = _index[i];
 
           for (j = index[ent_id], k = 0; j < index[ent_id+1]; j++, k++)

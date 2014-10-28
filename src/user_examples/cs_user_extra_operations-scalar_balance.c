@@ -296,7 +296,7 @@ cs_user_extra_operations(void)
 
   for (int i = 0; i < n_faces; i++) {
 
-    face_id = face_list[i] - 1;
+    face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
@@ -317,7 +317,7 @@ cs_user_extra_operations(void)
 
   for (int i = 0; i < n_faces; i++) {
 
-    face_id = face_list[i] - 1;
+    face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
@@ -337,7 +337,7 @@ cs_user_extra_operations(void)
 
   for (int i = 0; i < n_faces; i++) {
 
-    face_id = face_list[i] - 1;
+    face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
@@ -357,7 +357,7 @@ cs_user_extra_operations(void)
 
   for (int i = 0; i < n_faces; i++) {
 
-    face_id = face_list[i] - 1;
+    face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
@@ -377,7 +377,7 @@ cs_user_extra_operations(void)
 
   for (int i = 0; i < n_faces; i++) {
 
-    face_id = face_list[i] - 1;
+    face_id = face_list[i];
     cell_id = b_face_cells[face_id]; // associated boundary cell
 
     /* Contribution to flux from the current face
@@ -418,19 +418,20 @@ cs_user_extra_operations(void)
   /* 3. Write the balance at time step n
     ==================================== */
 
-  bft_printf(_("\n   ** Enthalpy balance **\n"
-                 "      ----------------\n"
-               "-----------"
-               "----------------------------------------------------------\n"
-               "bt   Iter"
-               "   Volume     Divergence  Adia Wall   Fixed_H Wall  Symmetry"
-               "      Inlet       Outlet  Inj. Mass.  Suc. Mass.  Total\n"
-               "bt %6i %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e "
-               "%12.4e %12.4e %12.4e\n"
-               "-----------"
-               "----------------------------------------------------------\n"),
-             nt_cur, vol_balance, div_balance, a_wall_balance, h_wall_balance,
-             sym_balance, in_balance, out_balance, mass_i_balance, mass_o_balance, tot_balance);
+  bft_printf("\n   ** Enthalpy balance **\n"
+             "      ----------------\n"
+             "-----------"
+             "----------------------------------------------------------\n"
+             "bt   Iter"
+             "   Volume     Divergence  Adia Wall   Fixed_H Wall  Symmetry"
+             "      Inlet       Outlet  Inj. Mass.  Suc. Mass.  Total\n"
+             "bt %6i %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e %12.4e "
+             "%12.4e %12.4e %12.4e\n"
+             "-----------"
+             "----------------------------------------------------------\n",
+    nt_cur, vol_balance, div_balance, a_wall_balance, h_wall_balance,
+    sym_balance, in_balance, out_balance,
+    mass_i_balance, mass_o_balance, tot_balance);
 
 }
 

@@ -352,7 +352,7 @@ ecs_table_post_med__ecr_famille(const char           *nom_maillage,
 
   num_fam_med = 0;
 
-  sprintf(str_num_fam_med, "%d", num_fam_med);
+  sprintf(str_num_fam_med, "%d", (int)num_fam_med);
 
   assert(strlen("FAMILLE_") + strlen(str_num_fam_med) <= MED_NAME_SIZE);
 

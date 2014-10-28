@@ -568,8 +568,8 @@ void CS_PROCF (uiray2, UIRAY2)
   int ith_zone;
   int ifbr;
   int j, n;
-  int *faces_list = NULL;
-  int faces = 0;
+  cs_lnum_t *faces_list = NULL;
+  cs_lnum_t faces = 0;
   int iok = 0;
   double tmp = 0.;
   char *nature = NULL;
@@ -657,7 +657,7 @@ void CS_PROCF (uiray2, UIRAY2)
     {
       for (n = 0; n < faces; n++)
       {
-        ifbr = faces_list[n]-1;
+        ifbr = faces_list[n];
 
         if (itypfb[ifbr] != *iparoi && itypfb[ifbr] != *iparug)
           bft_error(__FILE__, __LINE__, 0,
@@ -698,7 +698,7 @@ void CS_PROCF (uiray2, UIRAY2)
     } else {
       j = output_zone_max++;
       for (n = 0; n < faces; n++) {
-        ifbr = faces_list[n]-1;
+        ifbr = faces_list[n];
         izfrdp[ifbr] = j;
       }
     } /* if nature == "wall" */

@@ -1634,6 +1634,7 @@ _get_cells_list(const char  *zone_id,
 
   c_id = fvm_selector_get_list(cs_glob_mesh->select_cells,
                                description,
+                               0,
                                cells,
                                cells_list);
 
@@ -3339,7 +3340,7 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
         }
 
         for (int icel = 0; icel < cells; icel++) {
-          int iel = cells_list[icel]-1;
+          int iel = cells_list[icel];
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
@@ -3471,7 +3472,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
                     "dSvdu, dSvdv, dSvdw,",
                     "dSwdu, dSwdv or dSwdw");
         for (icel = 0; icel < cells; icel++) {
-          iel = cells_list[icel]-1;
+          iel = cells_list[icel];
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
@@ -3620,7 +3621,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
                     _("Error: can not find the required symbol: %s\n"), "S or dS");
 
         for (icel = 0; icel < cells; icel++) {
-          iel = cells_list[icel]-1;
+          iel = cells_list[icel];
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
@@ -3728,7 +3729,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                     _("Error: can not find the required symbol: %s\n"), "S or dS");
 
         for (icel = 0; icel < cells; icel++) {
-          iel = cells_list[icel]-1;
+          iel = cells_list[icel];
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
@@ -3845,7 +3846,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                       "velocity[0], velocity[1] ou velocity[2]");
 
           for (icel = 0; icel < cells; icel++) {
-            iel = cells_list[icel] - 1;
+            iel = cells_list[icel];
             mei_tree_insert(ev_formula_uvw, "x", xyzcen[3 * iel + 0]);
             mei_tree_insert(ev_formula_uvw, "y", xyzcen[3 * iel + 1]);
             mei_tree_insert(ev_formula_uvw, "z", xyzcen[3 * iel + 2]);
@@ -3866,7 +3867,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         else {
           for (int j=0; j < 3; j++) {
             for (icel = 0; icel < cells; icel++) {
-              iel = cells_list[icel]-1;
+              iel = cells_list[icel];
               if (c_vel->interleaved)
                 c_vel->val[3 * iel + j] = 0.0;
               else
@@ -3927,7 +3928,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel] - 1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
@@ -3953,7 +3954,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               cs_field_t *c_eps = cs_field_by_name("epsilon");
 
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
@@ -3986,7 +3987,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
@@ -4015,7 +4016,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               cs_field_t *c_alp = cs_field_by_name("alpha");
 
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
@@ -4038,7 +4039,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               cs_field_t *c_ome = cs_field_by_name("omega");
 
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
@@ -4058,7 +4059,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               cs_field_t *c_nu = cs_field_by_name("nu_tilda");
 
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
@@ -4131,7 +4132,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
           if (*isuite == 0) {
             for (icel = 0; icel < cells; icel++) {
-              iel = cells_list[icel]-1;
+              iel = cells_list[icel];
               mei_tree_insert(ev_formula_sca, "x", xyzcen[3 * iel + 0]);
               mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
               mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
@@ -4143,7 +4144,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         } else {
           if (*isuite == 0) {
             for (icel = 0; icel < cells; icel++) {
-              iel = cells_list[icel]-1;
+              iel = cells_list[icel];
               c->val[iel] = 0.0;
             }
           }
@@ -4190,7 +4191,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_sca, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
@@ -4202,7 +4203,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
           } else {
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 f->val[iel] = 0.0;
               }
             }
@@ -4271,7 +4272,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula_meteo, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula_meteo, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula_meteo, "z", xyzcen[3 * iel + 2]);
@@ -4284,7 +4285,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
           else {
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 c->val[iel] = 0.0;
               }
             }
@@ -4332,7 +4333,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
             ev_formula = _init_mei_tree(formula, name[j]);
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
-                iel = cells_list[icel]-1;
+                iel = cells_list[icel];
                 mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
                 mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
                 mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
@@ -4431,7 +4432,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
         for (j=0; j < cells; j++)
         {
           if (*iappel == 2)
-            icepdc[ielpdc] = cells_list[j];
+            icepdc[ielpdc] = cells_list[j] + 1;
           ielpdc++;
         }
         BFT_FREE(cells_list);
@@ -4502,7 +4503,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
                                   &c31, &c32, &c33);
 
         for (j = 0; j < cells; j++) {
-          iel = cells_list[j] - 1;
+          iel = cells_list[j];
           if (c_vel->interleaved) {
             vit =   c_vel->val_pre[3 * iel    ] * c_vel->val_pre[3 * iel    ]
                   + c_vel->val_pre[3 * iel + 1] * c_vel->val_pre[3 * iel + 1]

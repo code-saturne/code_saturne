@@ -509,9 +509,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
-    cs_selector_get_cell_list(select_criteria,
-                              &(coupling_ent->n_elts),
-                              elt_list);
+    cs_selector_get_cell_num_list(select_criteria,
+                                  &(coupling_ent->n_elts),
+                                  elt_list);
 
     coupling_ent->elts
       = cs_mesh_connect_cells_to_nodal(cs_glob_mesh,
@@ -543,9 +543,9 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
     BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_list(select_criteria,
-                                &(coupling_ent->n_elts),
-                                elt_list);
+    cs_selector_get_b_face_num_list(select_criteria,
+                                    &(coupling_ent->n_elts),
+                                    elt_list);
 
     coupling_ent->elts
       = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,

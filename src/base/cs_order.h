@@ -75,29 +75,6 @@ cs_order_gnum_test(const cs_lnum_t   list[],
                    size_t            nb_ent);
 
 /*----------------------------------------------------------------------------
- * Test if an array of global numbers is lexicographically ordered.
- *
- * parameters:
- *   list   <-- optional list (1 to n numbering) of selected entities
- *              (or NULL if all nb_ent are selected). This list may
- *              contain element numbers in any order
- *   number <-- array of all entity numbers (number of entity i
- *              given by number[i] or number[list[i] - 1]) if list exists
- *              (if NULL, a default 1 to n numbering is considered)
- *   stride <-- stride of number array (number of values to compare)
- *   nb_ent <-- number of entities considered
- *
- * returns:
- *   1 if ordered, 0 otherwise.
- *----------------------------------------------------------------------------*/
-
-int
-cs_order_gnum_test_s(const cs_lnum_t   list[],
-                     const cs_gnum_t   number[],
-                     size_t            stride,
-                     size_t            nb_ent);
-
-/*----------------------------------------------------------------------------
  * Return an ordering table associated with an array of global numbers.
  *
  * parameters:

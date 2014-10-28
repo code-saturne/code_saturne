@@ -935,8 +935,8 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
-    cs_selector_get_cell_list(coupl->cell_sup_sel,
-                              &(coupl->nbr_cel_sup),
+    cs_selector_get_cell_num_list(coupl->cell_sup_sel,
+                                  &(coupl->nbr_cel_sup),
                               c_elt_list);
 
   }
@@ -945,9 +945,9 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_list(coupl->face_sup_sel,
-                                &(coupl->nbr_fbr_sup),
-                                f_elt_list);
+    cs_selector_get_b_face_num_list(coupl->face_sup_sel,
+                                    &(coupl->nbr_fbr_sup),
+                                    f_elt_list);
 
   }
 
@@ -1024,9 +1024,9 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(c_elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
-    cs_selector_get_cell_list(coupl->cell_cpl_sel,
-                              &nbr_cel_cpl,
-                              c_elt_list);
+    cs_selector_get_cell_num_list(coupl->cell_cpl_sel,
+                                  &nbr_cel_cpl,
+                                  c_elt_list);
 
   }
 
@@ -1048,9 +1048,9 @@ void CS_PROCF (defloc, DEFLOC)
 
     BFT_MALLOC(f_elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
-    cs_selector_get_b_face_list(coupl->face_cpl_sel,
-                                &nbr_fbr_cpl,
-                                f_elt_list);
+    cs_selector_get_b_face_num_list(coupl->face_cpl_sel,
+                                    &nbr_fbr_cpl,
+                                    f_elt_list);
 
   }
 

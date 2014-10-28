@@ -106,6 +106,7 @@ fvm_selector_destroy(fvm_selector_t  *this_selector);
  * parameters:
  *   this_selector       <-> pointer to selector
  *   str                 <-- string defining selection criteria
+ *   elt_id_base         <-- element id base (usually 0 or 1)
  *   n_selected_elements <-- number of elements selected
  *   selected_elements   <-> selected elements list (1 to n numbering)
  *
@@ -116,6 +117,7 @@ fvm_selector_destroy(fvm_selector_t  *this_selector);
 int
 fvm_selector_get_list(fvm_selector_t  *this_selector,
                       const char      *str,
+                      cs_lnum_t        elt_id_base,
                       cs_lnum_t       *n_selected_elements,
                       cs_lnum_t       *selected_elements);
 

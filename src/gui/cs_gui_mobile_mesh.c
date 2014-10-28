@@ -930,7 +930,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
   double t0;
   int  izone = 0;
   cs_lnum_t  ifac  = 0;
-  int  faces = 0;
+  cs_lnum_t  faces = 0;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -938,11 +938,11 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
 
   /* At each time-step, loop on boundary faces: */
   for (izone=0 ; izone < zones ; izone++) {
-    int* faces_list = cs_gui_get_faces_list(izone,
-                                            boundaries->label[izone],
-                                            m->n_b_faces,
-                                            *nozppm,
-                                            &faces);
+    cs_lnum_t* faces_list = cs_gui_get_faces_list(izone,
+                                                  boundaries->label[izone],
+                                                  m->n_b_faces,
+                                                  *nozppm,
+                                                  &faces);
 
     /* get the ale choice */
     const char* label = boundaries->label[izone];
@@ -950,20 +950,20 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
 
     if (nature ==  ale_boundary_nature_fixed_wall) {
       for (ifac = 0; ifac < faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac];
         ialtyb[ifbr]  = *ibfixe;
       }
     }
     else if (nature ==  ale_boundary_nature_sliding_wall) {
       for (ifac = 0; ifac < faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac];
         ialtyb[ifbr]  = *igliss;
       }
     }
     else if (nature == ale_boundary_nature_fixed_displacement) {
       t0 = cs_timer_wtime();
       for (ifac = 0; ifac < faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac];
         _uialcl_fixed_displacement(label,
                                    m->b_face_vtx_idx[ifbr],
                                    m->b_face_vtx_idx[ifbr+1],
@@ -975,7 +975,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
     else if (nature == ale_boundary_nature_fixed_velocity) {
       t0 = cs_timer_wtime();
       for (ifac = 0; ifac < faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac]-1;
+        cs_lnum_t ifbr = faces_list[ifac];
         uialcl_fixed_velocity(label, *iuma, *ivma, *iwma,
                               m->n_b_faces, ifbr, rcodcl,
                               *dtref, *ttcabs, *ntcabs);
@@ -987,7 +987,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
       char *nat = cs_gui_boundary_zone_nature(izone);
       if (cs_gui_strcmp(nat, "free_surface")) {
         for (ifac = 0; ifac < faces; ifac++) {
-          cs_lnum_t ifbr = faces_list[ifac]-1;
+          cs_lnum_t ifbr = faces_list[ifac];
           ialtyb[ifbr]  = *ifresf;
         }
       }
@@ -1027,9 +1027,9 @@ void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
   int  zones;
   int  izone        = 0;
   int  ifac         = 0;
-  int  faces        = 0;
-  int  ifbr         = 0;
-  int  *faces_list  = NULL;
+  cs_lnum_t  faces        = 0;
+  cs_lnum_t  ifbr         = 0;
+  cs_lnum_t  *faces_list  = NULL;
   unsigned int    istruct = 0;
 
   /* Get advanced data */
@@ -1062,7 +1062,7 @@ void CS_PROCF (uistr1, UISTR1) (const cs_lnum_t  *nfabor,
       faces_list = cs_gui_get_faces_list(izone, label, *nfabor, 0, &faces);
       /* Set idfstr to positiv index starting at 1 */
       for (ifac = 0; ifac < faces; ifac++) {
-        ifbr = faces_list[ifac]-1;
+        ifbr = faces_list[ifac];
         idfstr[ifbr] = istruct + 1;
       }
       ++istruct;

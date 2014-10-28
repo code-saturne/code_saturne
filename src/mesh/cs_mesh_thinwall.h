@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *
  * parameters:
  *   mesh           <->  pointer to mesh structure to modify
- *   face_list      <-> list of selected (interior) faces (1 to n)
+ *   face_list      <-> list of selected (interior) faces (0 to n-1)
  *   face_list_size <-> number of selected (interior) faces
  *----------------------------------------------------------------------------*/
 

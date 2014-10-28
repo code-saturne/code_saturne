@@ -694,7 +694,7 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
                             _cell_list);
 
   for (cs_lnum_t i = 0; i < _n_cells; i++)
-    tbm->cell_rotor_num[_cell_list[i] - 1] = 1;
+    tbm->cell_rotor_num[_cell_list[i]] = 1;
 
   BFT_FREE(_cell_list);
 }

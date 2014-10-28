@@ -1572,7 +1572,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
         n_cells = mesh->n_cells;
       else {
         BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-        cs_selector_get_cell_list(criteria, &n_cells, cell_list);
+        cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
       }
     }
     else if (post_mesh->sel_func[0] != NULL) {
@@ -1604,7 +1604,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
         n_b_faces = mesh->n_b_faces;
       else {
         BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
-        cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
+        cs_selector_get_b_face_num_list(criteria, &n_b_faces, b_face_list);
       }
     }
     else if (post_mesh->sel_func[2] != NULL) {
@@ -1647,7 +1647,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
         n_cells = mesh->n_cells;
       else {
         BFT_MALLOC(cell_list, mesh->n_cells, cs_lnum_t);
-        cs_selector_get_cell_list(criteria, &n_cells, cell_list);
+        cs_selector_get_cell_num_list(criteria, &n_cells, cell_list);
       }
       if (n_cells < mesh->n_cells || post_mesh->density < 1.) {
         BFT_MALLOC(particle_list, n_particles, cs_lnum_t);
