@@ -97,6 +97,54 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Return pointer to slope test indicator field values if active.
+ *
+ * parameters:
+ *   f_id        <-- field id (or -1)
+ *   var_cal_opt <-- variable calculation options
+ *
+ * return:
+ *   pointer to local values array, or NULL;
+ *----------------------------------------------------------------------------*/
+
+static cs_real_t  *_get_v_slope_test(int                       f_id,
+                                     const cs_var_cal_opt_t    var_cal_opt)
+{
+  const int iconvp = var_cal_opt.iconv;
+  const int isstpp = var_cal_opt.isstpc;
+  const double blencp = var_cal_opt.blencv;
+
+  cs_real_t  *v_slope_test = NULL;
+
+  if (f_id > -1 && iconvp > 0 && blencp > 0. && isstpp == 0) {
+
+    static int _k_slope_test_f_id = -1;
+
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    int f_track_slope_test_id = -1;
+
+    if (_k_slope_test_f_id < 0)
+      _k_slope_test_f_id = cs_field_key_id_try("slope_test_upwind_id");
+    if (_k_slope_test_f_id > -1 && isstpp == 0)
+      f_track_slope_test_id = cs_field_get_key_int(f, _k_slope_test_f_id);
+
+    if (f_track_slope_test_id > -1)
+    v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
+
+    if (v_slope_test != NULL) {
+      const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+        v_slope_test[cell_id] = 0.;
+    }
+
+  }
+
+  return v_slope_test;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -763,6 +811,8 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_field_t *f;
 
   cs_real_t *gweight = NULL;
+
+  cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
   /* 1. Initialization */
 
@@ -1465,8 +1515,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
               pjfri = pj;
               pjfrj = pjr;
               /* in parallel, face will be counted by one and only one rank */
-              if (ii < n_cells) {
+              if (ii < n_cells)
                 n_upwind++;
+              if (v_slope_test != NULL) {
+                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             } else {
@@ -1623,8 +1676,11 @@ cs_convection_diffusion_scalar(int                       idtvar,
               pif = pi;
               pjf = pj;
               /* in parallel, face will be counted by one and only one rank */
-              if (ii < n_cells) {
+              if (ii < n_cells)
                 n_upwind++;
+              if (v_slope_test != NULL) {
+                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             } else {
@@ -2095,6 +2151,8 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_real_33_t *cofbcv;
 
   cs_field_t *f;
+
+  cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
   /*==========================================================================*/
 
@@ -2852,6 +2910,10 @@ cs_convection_diffusion_vector(int                         idtvar,
                 /* in parallel, face will be counted by one and only one rank */
                 if (ii < n_cells)
                   n_upwind++;
+                if (v_slope_test != NULL) {
+                  v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                  v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
+                }
               }
               else {
 
@@ -3021,9 +3083,13 @@ cs_convection_diffusion_vector(int                         idtvar,
                 pif = pi;
                 pjf = pj;
                 /* in parallel, face will be counted by one and only one rank */
-                if (ii < n_cells) {
+                if (ii < n_cells)
                   n_upwind++;
+                if (v_slope_test != NULL) {
+                  v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                  v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
                 }
+
 
               } else {
 
@@ -3657,7 +3723,10 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_real_3_t *grdpa;
   cs_field_t *f;
 
+  int f_track_slope_test_id = -1;
   cs_real_t *gweight = NULL;
+
+  cs_real_t  *v_slope_test = _get_v_slope_test(f_id,  var_cal_opt);
 
   /*==========================================================================*/
 
@@ -4371,8 +4440,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
               pjfri = pj;
               pjfrj = pjr;
               /* in parallel, face will be counted by one and only one rank */
-              if (ii < n_cells) {
+              if (ii < n_cells)
                 n_upwind = n_upwind+1;
+              if (v_slope_test != NULL) {
+                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             } else {
@@ -4535,8 +4607,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
               pif = pi;
               pjf = pj;
               /* in parallel, face will be counted by one and only one rank */
-              if (ii < n_cells) {
+              if (ii < n_cells)
                 n_upwind = n_upwind+1;
+              if (v_slope_test != NULL) {
+                v_slope_test[ii] += fabs(i_massflux[face_id]) / cell_vol[ii];
+                v_slope_test[jj] += fabs(i_massflux[face_id]) / cell_vol[jj];
               }
 
             } else {

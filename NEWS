@@ -5,6 +5,13 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add a "slope_test_upwind_id" field keyword, allowing postprocessing output
+  of the contribution of slope tests to convected variables.
+
+- Remove the usipgl subroutine from cs_user_parameters.f90.
+  Specific, model oriented options are defined in usipph, general options
+  in usipsu.
+
 - Remove the cs_user_field_parameters subroutine from cs_user_parameters.f90.
   user code in that subroutine may now be placed in usipsu or usipes.
   The usipsc subroutine is also removed, and scalar variable diffusivity
@@ -91,6 +98,7 @@ Architectural changes
   arrays itepa, tepa, ettp, and ettpa are replaced respectively by pointers
   ipepa, pepa, eptp, eptpa, whih use interlaved data; for example, the
   equivalent of itepa(np,jisor) would now be ipepa(jisor,np).
+  Allocation is automatic, and npmabs is no more.
 
 - When building with both lib CCM-IO and CGNS, do not try to use CGNS's ADF
   library for CCM-IO. This used to work in the past, but now leads to failure

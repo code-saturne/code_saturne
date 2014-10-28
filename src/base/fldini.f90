@@ -88,6 +88,7 @@ integer          kdiftn, kturt, kfturt
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
 integer          f_id, kscavr, f_vis, f_log, f_dften
+integer          kislts, ifctsl
 integer          idfm, nfld
 
 character(len=80) :: name, f_name
@@ -352,6 +353,32 @@ if (ipstdv(ipstyp).ne.0) then
 !FIXME adapt the log before
 !  call field_set_key_int(iyplbr, keylog, 1)
 endif
+
+! Postprocessing of slope tests
+
+call field_get_key_id("slope_test_upwind_id", kislts)
+
+itycat = FIELD_POSTPROCESS
+ityloc = 1 ! cells
+ilved = .true.
+
+do ii = 1, nvar
+  f_id = ivarfl(ii)
+  call field_get_key_int(f_id, kislts, ifctsl)
+  if (ifctsl.eq.0) then
+    ! Now create matching field
+    if (iconv(ii).gt.0 .and. blencv(ii).gt.0 .and. isstpc(ii).eq.0) then
+      ! Build name and label
+      call field_get_name(f_id, f_name)
+      name  = trim(f_name) // '_slope_upwind'
+      call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+      call field_set_key_int(ifctsl, keyvis, 1)
+    else
+      ifctsl = -1
+    endif
+    call field_set_key_int(f_id, kislts, ifctsl)
+  endif
+enddo
 
 !===============================================================================
 ! 3. Set some field keys

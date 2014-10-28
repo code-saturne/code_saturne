@@ -4681,7 +4681,7 @@ msgid "property"
 msgstr "propriété"
 
 msgid "postprocess"
-msgstr "post traitment"
+msgstr "post traitement"
 
 msgid "accumulator"
 msgstr "accumulateur"

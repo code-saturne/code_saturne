@@ -113,7 +113,7 @@ integer nmodpp
 ! Local variables
 
 logical       ilved, inoprv
-integer       f_id, idim1, itycat, ityloc, iscdri, iscal
+integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ivar, kislts
 
 !===============================================================================
 
@@ -154,6 +154,14 @@ if (f_id.lt.0) then
   call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
 endif
 !< [usipsu_ex_1]
+
+!< [usipsu_ex_2]
+call field_get_key_id("slope_test_upwind_id", kislts)
+
+do ivar = 1, nvar
+  call field_set_key_int(ivarfl(ivar), kislts, 0)
+enddo
+!< [usipsu_ex_2]
 
 !----
 ! Formats

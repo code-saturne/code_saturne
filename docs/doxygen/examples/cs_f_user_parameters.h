@@ -67,6 +67,15 @@
 
   \snippet cs_user_parameters-output.f90 usipsu_ex_1
 
+  Save contribution of slope test for variables in special fields.
+  These fields are automatically created, with postprocessing output enabled,
+  if the matching variable is convected, does not use a pure upwind scheme,
+  and has a slope test (the slope_test_upwind_id key value for a given
+  variable's field is automatically set to the matching postprocessing field's
+  id, or -1 if not applicable).
+
+  \snippet cs_user_parameters-output.f90 usipsu_ex_2
+
   \section cs_f_user_parameters_h_usipes  Input-output related examples (usipes)
 
   \subsection cs_f_user_parameters_h_example_base Basic options

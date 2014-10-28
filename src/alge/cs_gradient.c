@@ -4659,7 +4659,7 @@ void cs_gradient_scalar(const char                *var_name,
                         const cs_real_t            bc_coeff_a[],
                         const cs_real_t            bc_coeff_b[],
                         cs_real_t        *restrict var,
-                        cs_real_t        *restrict c_weight,
+                        const cs_real_t  *restrict c_weight,
                         cs_real_3_t      *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
