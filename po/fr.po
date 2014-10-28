@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-10-08 14:53+0200\n"
+"POT-Creation-Date: 2014-10-27 01:42+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -873,6 +873,17 @@ msgstr ""
 
 msgid "I-deas universal"
 msgstr "I-deas Universel"
+
+msgid "Error querying working directory.\n"
+msgstr "Erreur à la récupération du répertoire d'exécution du cas.\n"
+
+#, c-format
+msgid "Error loading %s: %s."
+msgstr "Erreur au chargement de %s : %s."
+
+#, c-format
+msgid "Error calling dlsym: %s\n"
+msgstr "Erreur à l'appel de dlsym : %s\n"
 
 #, c-format
 msgid ""
@@ -4085,10 +4096,6 @@ msgstr ""
 " Destruction des structures et clôture du calcul\n"
 
 #, c-format
-msgid "Error calling dlsym: %s\n"
-msgstr "Erreur à l'appel de dlsym : %s\n"
-
-#, c-format
 msgid ""
 "Shared library support not available.\n"
 "Unable to load: %s\n"
@@ -4197,9 +4204,6 @@ msgstr "Signal SIGXCPU (temps CPU limite atteint) intercepté.\n"
 #, c-format
 msgid "Signal %d intercepted!\n"
 msgstr "Signal %d intercepté !\n"
-
-msgid "Error querying working directory.\n"
-msgstr "Erreur à la récupération du répertoire d'exécution du cas.\n"
 
 #, c-format
 msgid ""
@@ -4473,10 +4477,6 @@ msgstr ""
 
 msgid "[ok]\n"
 msgstr "[ok]\n"
-
-#, c-format
-msgid "Error loading %s: %s."
-msgstr "Erreur au chargement de %s : %s."
 
 #, c-format
 msgid "   ignored: \"%s\"\n"
@@ -9195,14 +9195,6 @@ msgid " Cannot find the relative distant rank.\n"
 msgstr ""
 
 msgid " Cannot find the relative distant face num.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Not enough memory to receive particles.\n"
-" We can still receive %d particles and we have to receive %d additional "
-"particles.\n"
-" Check n_particles_max (%d).\n"
 msgstr ""
 
 msgid "Error: _check_symbol\n"
