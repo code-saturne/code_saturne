@@ -60,6 +60,7 @@ typedef struct {
                                  computation */
   int           nt_cur;       /* current absolute time step number */
   int           nt_max;       /* maximum absolute time step number */
+  int           nt_ini;       /* Number of time steps for initialization */
 
   double        t_prev;       /* physical time reached by previous
                                  computation */

@@ -1405,12 +1405,15 @@ enddo
 ! at the first iter only.
 if (iterns.eq.1) then
 
-  if (ibdtso.gt.1.and.ntcabs.gt.2.and.(idtvar.eq.0.or.idtvar.eq.1)) then
+  if (ibdtso(iu).gt.1.and.ntcabs.gt.ntinit &
+      .and.(idtvar.eq.0.or.idtvar.eq.1)) then
     ! TODO: remove test on ntcabs and implemente a "proper" condition for
     ! initialization.
     f_id = ivarfl(iu)
     call cs_backward_differentiation_in_time(f_id, tsexp, tsimp)
   endif
+  ! Skip first time step after restart if previous values have not been read.
+  if (ibdtso(iu).lt.0) ibdtso(iu) = iabs(ibdtso(iu))
 
   if (iihmpr.eq.1) then
     call uitsnv (vel, tsexp, tsimp)

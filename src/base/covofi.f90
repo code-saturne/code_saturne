@@ -104,6 +104,7 @@ use period
 use cs_f_interfaces
 use atchem
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -326,6 +327,16 @@ do iel = 1, ncel
   rovsdt(iel) = 0.d0
   smbrs(iel) = 0.d0
 enddo
+
+if (ibdtso(ivar).gt.ntinit.and.ntcabs.gt.1 &
+    .and.(idtvar.eq.0.or.idtvar.eq.1)) then
+  ! TODO: remove test on ntcabs and implemente a "proper" condition for
+  ! initialization.
+  f_id = ivarfl(ivar)
+  call cs_backward_differentiation_in_time(f_id, smbrs, rovsdt)
+endif
+! Skip first time step after restart if previous values have not been read.
+if (ibdtso(ivar).lt.0) ibdtso(ivar) = iabs(ibdtso(ivar))
 
 if (iihmpr.eq.1) then
 

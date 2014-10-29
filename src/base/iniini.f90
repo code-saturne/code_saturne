@@ -547,7 +547,9 @@ isto2t = -999
 thetst = -999.d0
 
 ! Backward differential time scheme order
-ibdtso = -999
+do ii = 1, nvarmx
+  ibdtso(ii) = 1
+enddo
 
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau
@@ -701,6 +703,7 @@ isuisy = -1
 ntpabs = 0
 ntcabs = ntpabs
 ntmabs = 10
+ntinit = 2
 
 inpdt0 = 0
 

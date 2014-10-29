@@ -169,6 +169,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   1,     /* idften */
   0,     /* iswdyn */
   1,     /* ischcv */
+  1,     /* ibdtso */
   1,     /* isstpc */
   100,   /* nswrgr */
   1,     /* nswrsm */

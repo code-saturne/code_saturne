@@ -129,10 +129,6 @@ endif
 
 ivar = iu
 
-if (ibdtso.gt.1) then
-  call field_set_n_previous(ivarfl(ivar), ibdtso)
-endif
-
 if (ipass.eq.1) then
   if (ippmod(icompf).ge.0) then
     call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .true.)
@@ -290,5 +286,14 @@ enddo
 call field_get_id('dt', iflid)
 call field_map_values(iflid, dt, dt)
 
+! Set previous values for backward n order in time
+do ivar = 1, nvar
+  ! Here there is no problem if there are multiple
+  ! set on non scalar fields.
+  if (ibdtso(ivar).gt.1) then
+    call field_set_n_previous(ivarfl(ivar), ibdtso(ivar))
+  endif
+enddo
+
 return
-end subroutine
+end subroutine fldtri

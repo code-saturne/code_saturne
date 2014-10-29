@@ -50,6 +50,7 @@ subroutine lecamp &
 use, intrinsic :: iso_c_binding
 
 use paramx
+use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -80,9 +81,9 @@ character(len=64) :: rubriq
 character(len=2)  :: cindfp*2
 
 character        ficsui*32
-integer          ivar  , ivers(1)
+integer          ivar  , ivers(1), f_id
 integer          ierror, itysup, nbval
-integer          nberro
+integer          nberro, t_id
 integer          nfmtru
 integer          jale, jcavit
 integer          ival(1)
@@ -281,6 +282,21 @@ write(nfecra,1499)
 !===============================================================================
 
 call restart_read_variables(rp, oflmap, 0)
+
+f_id = -1
+do ivar = 1, nvar
+  if (ibdtso(ivar).gt.1) then
+    if (f_id.ne.ivarfl(ivar)) then
+      ierror = 0
+      f_id = ivarfl(ivar)
+      do t_id = 1, ibdtso(ivar) - 1
+        call restart_read_field_vals(rp, f_id, t_id, ierror)
+        ierror = ierror + 1
+      enddo
+      if (ierror.gt.1) ibdtso(ivar) = -ibdtso(ivar)
+    endif
+  endif
+enddo
 
 !===============================================================================
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES

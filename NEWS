@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Generalize double backward implicit Euler time scheme for all variables.
+  It could be activated with the keyword ibdtso(ivar) = 1.
+
 - Add a "slope_test_upwind_id" field keyword, allowing postprocessing output
   of the contribution of slope tests to convected variables.
 

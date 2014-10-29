@@ -87,8 +87,8 @@ BEGIN_C_DECLS
 
 void
 cs_backward_differentiation_in_time(const int     field_id,
-                                    cs_real_3_t  *exp_part,
-                                    cs_real_33_t *imp_part);
+                                    cs_real_t    *exp_part,
+                                    cs_real_t    *imp_part);
 
 /*============================================================================
  * Private function definitions
@@ -102,8 +102,8 @@ cs_backward_differentiation_in_time(const int     field_id,
 
 void
 cs_backward_differentiation_in_time(const int     field_id,
-                                    cs_real_3_t  *exp_part,
-                                    cs_real_33_t *imp_part)
+                                    cs_real_t    *exp_part,
+                                    cs_real_t    *imp_part)
 {
   cs_lnum_t iel;
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -118,21 +118,28 @@ cs_backward_differentiation_in_time(const int     field_id,
   const int dim = f->dim;
 
   if (dim == 3) {
+    cs_real_3_t * exp_part_3 = (cs_real_3_t *)(exp_part);
+    cs_real_33_t * imp_part_33 = (cs_real_33_t *)(imp_part);
     for (iel = 0; iel < n_cells; iel++) {
       for (int jj = 0; jj < 3; jj++) {
-        exp_part[iel][jj] += rho[iel]*cell_vol[iel]/dt[iel]*(f->vals[1][dim*iel + jj]
-                           - 0.5*f->vals[2][dim*iel + jj]);
-        imp_part[iel][jj][jj] += -0.5*rho[iel]*cell_vol[iel]/dt[iel];
+        exp_part_3[iel][jj] += rho[iel]*cell_vol[iel]/dt[iel]
+                             *(f->vals[1][dim*iel + jj]
+                             - 0.5*f->vals[2][dim*iel + jj]);
+        imp_part_33[iel][jj][jj] += -0.5*rho[iel]
+                                  *cell_vol[iel]/dt[iel];
       }
     }
   }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("Backward differentiation in time for scalar variables"
-                "is not available yet."));
+  else {
+    for (iel = 0; iel < n_cells; iel++) {
+      exp_part[iel] += rho[iel]*cell_vol[iel]/dt[iel]
+                               *(f->vals[1][dim*iel]
+                               - 0.5*f->vals[2][dim*iel]);
+      imp_part[iel] += -0.5*rho[iel]*cell_vol[iel]/dt[iel];
+    }
+  }
 
 }
-
 
 
 /*----------------------------------------------------------------------------*/

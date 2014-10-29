@@ -617,17 +617,6 @@ endif
 nberro = 0
 ilu = 0
 
-if (ibdtso.gt.1) then
-
-  ! Warning: must be adapted if ibdtso.gt.2
-
-  call restart_read_field_vals(rp, ivarfl(iu), 1, ierror)
-  nberro=nberro+ierror
-
-  ilu = ilu + 1
-
-endif
-
 ! ---> Termes sources
 
 ! Do not use iscold for scalars here, as we use field names and not

@@ -64,6 +64,7 @@ module cs_c_bindings
     integer(c_int) :: idften
     integer(c_int) :: iswdyn
     integer(c_int) :: ischcv
+    integer(c_int) :: ibdtso
     integer(c_int) :: isstpc
     integer(c_int) :: nswrgr
     integer(c_int) :: nswrsm

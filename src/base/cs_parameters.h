@@ -58,6 +58,7 @@ typedef struct {
   int     idften;
   int     iswdyn;
   int     ischcv;
+  int     ibdtso;
   int     isstpc;
   int     nswrgr;
   int     nswrsm;

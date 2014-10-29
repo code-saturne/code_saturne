@@ -279,7 +279,7 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 if (idarcy.eq.0) then
 
-! On le fait sur 2 pas de temps, car souvent, le champ de flux de masse
+! On le fait sur ntinit pas de temps, car souvent, le champ de flux de masse
 !   initial n'est pas a divergence nulle (CL incluses) et l'obtention
 !   d'un flux a divergence nulle coherent avec la contrainte stationnaire
 !   peut prendre quelques pas de temps.
@@ -287,7 +287,7 @@ if (idarcy.eq.0) then
 ! On ne le fait pas dans le cas de la prise en compte de la pression
 !   hydrostatique, ni dans le cas du compressible
 
-  if( ntcabs.le.2 .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
+  if( ntcabs.le.ntinit .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
                   .and. ippmod(icompf).lt.0                               &
                   .and. idilat .le.1                 ) then
 

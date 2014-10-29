@@ -386,7 +386,7 @@ do iscal = 1, nscal
   endif
 enddo
 
-if (ischtp.eq.2.and.ibdtso.gt.1) then
+if (ischtp.eq.2.and.ibdtso(iu).gt.1) then
   ! NB: this test does not prevent from incompatible user modifications of
   ! isno2t, thetav, etc.
   write(nfecra,1135)

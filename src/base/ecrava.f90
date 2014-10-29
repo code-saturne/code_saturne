@@ -53,6 +53,7 @@ subroutine ecrava &
 use, intrinsic :: iso_c_binding
 
 use paramx
+use dimens, only: nvar
 use numvar
 use cstphy
 use entsor
@@ -91,7 +92,7 @@ character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfc*2,cindfl*4
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-integer          f_id, t_id
+integer          f_id, t_id, ivar
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers
 integer          itysup, nbval
@@ -257,6 +258,18 @@ write(nfecra,1110) car54
 !============================
 
 call restart_write_variables(rp, 0)
+
+f_id = -1
+do ivar = 1, nvar
+  if (ibdtso(ivar).gt.1) then
+    if (f_id.ne.ivarfl(ivar)) then
+      f_id = ivarfl(ivar)
+      do t_id = 1, ibdtso(ivar) - 1
+        call restart_write_field_vals(rp, f_id, t_id)
+      enddo
+    endif
+  endif
+enddo
 
 !===============================================================================
 ! 4. FERMETURE FICHIER SUITE DE BASE
@@ -448,13 +461,6 @@ if (iecaux.eq.1) then
   ! Boundary condition coefficients
 
   call restart_write_bc_coeffs(rp)
-
-  ! Backward differential scheme in time
-  if (ibdtso.gt.1) then
-    do t_id = 1, ibdtso-1
-      call restart_write_field_vals(rp, ivarfl(iu), t_id)
-    enddo
-  endif
 
 ! ---> Termes sources
 !      Lorsqu'ils sont extrapoles (pour les versions elec, voir plus bas)

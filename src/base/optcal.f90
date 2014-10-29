@@ -156,9 +156,7 @@ module optcal
   integer, save ::          initcp
 
   !> ibdtso : backward differential scheme in time order
-  ! TODO: only for velocity prediction step at the moment, ibdtso should be
-  ! updated to array of size nscamx.
-  integer, save ::          ibdtso
+  integer, save ::          ibdtso(nvarmx)
 
   !> initvs : =1 if scalar diffusivity read from checkpoint file
   integer, save ::          initvs(nscamx)
@@ -401,6 +399,9 @@ module optcal
 
   !> Maximum absolute time step number.
   integer(c_int), pointer, save :: ntmabs
+
+  !> Number of time steps for initalization.
+  integer(c_int), pointer, save :: ntinit
 
   !> Absolute time value for previous calculation.
   real(c_double), pointer, save :: ttpabs
@@ -1020,12 +1021,12 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time step structure
 
-    subroutine cs_f_time_step_get_pointers(nt_prev, nt_cur, nt_max,  &
-                                           t_prev, t_cur, t_max)     &
+    subroutine cs_f_time_step_get_pointers(nt_prev, nt_cur, nt_max, nt_ini,  &
+                                           t_prev, t_cur, t_max)             &
       bind(C, name='cs_f_time_step_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: nt_prev, nt_cur, nt_max
+      type(c_ptr), intent(out) :: nt_prev, nt_cur, nt_max, nt_ini
       type(c_ptr), intent(out) :: t_prev, t_cur, t_max
     end subroutine cs_f_time_step_get_pointers
 
@@ -1182,15 +1183,16 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ntpabs, c_ntcabs, c_ntmabs
+    type(c_ptr) :: c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit
     type(c_ptr) :: c_ttpabs, c_ttcabs, c_ttmabs
 
-    call cs_f_time_step_get_pointers(c_ntpabs, c_ntcabs, c_ntmabs, &
+    call cs_f_time_step_get_pointers(c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit, &
                                      c_ttpabs, c_ttcabs, c_ttmabs)
 
     call c_f_pointer(c_ntpabs, ntpabs)
     call c_f_pointer(c_ntcabs, ntcabs)
     call c_f_pointer(c_ntmabs, ntmabs)
+    call c_f_pointer(c_ntinit, ntinit)
 
     call c_f_pointer(c_ttpabs, ttpabs)
     call c_f_pointer(c_ttcabs, ttcabs)

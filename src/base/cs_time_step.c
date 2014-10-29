@@ -86,6 +86,8 @@ BEGIN_C_DECLS
         current absolute time step number
   \var  cs_time_step_t::nt_max
         maximum absolute time step number
+  \var  cs_time_step_t::nt_ini
+        number of time step for initialization
   \var  cs_time_step_t::t_prev
         physical time reached by previous computation
   \var  cs_time_step_t::t_cur
@@ -110,7 +112,7 @@ BEGIN_C_DECLS
 
 /* main time step structure and associated pointer */
 
-static cs_time_step_t  _time_step = {0, 0, 0, 0, -1, 0., 0., -1.};
+static cs_time_step_t  _time_step = {0, 0, 0, 0, -1, 2, 0., 0., -1.};
 
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
 
@@ -123,6 +125,7 @@ void
 cs_f_time_step_get_pointers(int     **nt_prev,
                             int     **nt_cur,
                             int     **nt_max,
+                            int     **nt_ini,
                             double  **t_prev,
                             double  **t_cur,
                             double  **t_max);
@@ -144,7 +147,8 @@ cs_f_time_step_get_pointers(int     **nt_prev,
  * parameters:
  *   nt_prev --> pointer to cs_glob_time_step->nt_prev
  *   nt_cur  --> pointer to cs_glob_time_step->nt_cur
- *   nt_max  --> pointer to cs_glob_time_step->nt_ax
+ *   nt_max  --> pointer to cs_glob_time_step->nt_max
+ *   nt_ini  --> pointer to cs_glob_time_step->nt_ini
  *   t_prev  --> pointer to cs_glob_time_step->t_prev
  *   t_cur   --> pointer to cs_glob_time_step->t_cur
  *   t_max   --> pointer to cs_glob_time_step->t_ax
@@ -154,6 +158,7 @@ void
 cs_f_time_step_get_pointers(int      **nt_prev,
                             int      **nt_cur,
                             int      **nt_max,
+                            int      **nt_ini,
                             double   **t_prev,
                             double   **t_cur,
                             double   **t_max)
@@ -161,6 +166,7 @@ cs_f_time_step_get_pointers(int      **nt_prev,
   *nt_prev = &(_time_step.nt_prev);
   *nt_cur = &(_time_step.nt_cur);
   *nt_max = &(_time_step.nt_max);
+  *nt_ini = &(_time_step.nt_ini);
   *t_prev = &(_time_step.t_prev);
   *t_cur = &(_time_step.t_cur);
   *t_max = &(_time_step.t_max);
