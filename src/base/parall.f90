@@ -373,8 +373,8 @@ module parall
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute the global sums of an array of real numbers
-    !> in case of parellism.
+    !> \brief Given an (id, rank, value) tuple, return the local id, rank,
+    !>        and value corresponding to the global minimum value.
 
     !> \param[in, out]   elt_id   element id for which the value is the smallest
     !>                            (local in, global out)

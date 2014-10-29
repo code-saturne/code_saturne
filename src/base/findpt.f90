@@ -20,37 +20,42 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file findpt.f90
+!>
+!> \brief This subroutine looks for the nearest element to the position
+!>  (xx, yy, zz) among the element of xyzcen array.
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     ncelet        number of extended (real + ghost) elements
+!> \param[in]     ncel          number of element
+!> \param[in]     xyzcen        interleaved array containing vector positions
+!> \param[in]     xx            X component of the point position to be compared
+!>                              with
+!> \param[in]     yy            Y component of the point position to be compared
+!>                              with
+!> \param[in]     zz            Z component of the point position to be compared
+!>                              with
+!> \param[in]     node          element of xyzcen which is the nearest to
+!>                              (xx,yy,zz)
+!> \param[in]     ndrang        index of the Rank containing the nearest element
+!_______________________________________________________________________________
+
+
 subroutine findpt &
-!================
 
  ( ncelet , ncel   , xyzcen ,                                     &
    xx     , yy     , zz     , node   , ndrang)
 
-!===============================================================================
-
-! FONCTION
-! --------
-!  RECHERCHE DU NOEUD LE PLUS PROCHE DU POINT XX,YY,ZZ
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
-! ncel             ! i  ! <-- ! number of cells                                !
-! xyzcen(ndim      ! tr !  -->! table des coordonnees du                       !
-!        ncelet    !    !     !           centre des volumes                   !
-! xx,yy,zz         ! tr !  -->! coordonnees du noeud cherche                   !
-! node             ! e  ! --> ! noeud cherche (numerotation globale)           !
-!                  !    !     !  zero si plantage                              !
-! ndrang           ! e  ! --> ! rang du processus associe                      !
-!__________________.____._____.________________________________________________.
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -73,7 +78,7 @@ integer          ii
 double precision xx1, yy1, zz1, dis2, dis2mn
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 node = int((ncel+1)/2)
@@ -96,10 +101,9 @@ enddo
 
 if (irangp.ge.0) then
    call parfpt (node, ndrang, dis2mn)
-   !==========
 else
   ndrang = -1
 endif
 
 return
-end subroutine
+end subroutine findpt
