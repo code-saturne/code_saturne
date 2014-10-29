@@ -119,7 +119,7 @@ nfreqr = 1
 
 !-->  NUMERO DE LA QUADRATURE ET PARAMETRE DE LA Tn
 
-i_quadrature = 4
+i_quadrature = 1
 ndirec = 3
 
 !-->  POURCENTAGE DE CELLULES OU L'ON ADMET QUE LA LONGUEUR OPTIQUE DEPASSE
@@ -149,7 +149,6 @@ iimlum = 0
 if (iihmpr.eq.1) then
 
   call uiray1(iirayo, isuird, i_quadrature, ndirec, nfreqr, idiver, iimpar, iimlum)
-!  ==========
 
 endif
 
