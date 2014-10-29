@@ -530,7 +530,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
        iwarnp ,                                                       &
        epsrgp , climgp ,                                              &
        crom   , brom   ,                                              &
-       cpro_drift  ,                                                       &
+       cpro_drift  ,                                                  &
        coefa1 , coefb1 ,                                              &
        flumas , flumab )
 
