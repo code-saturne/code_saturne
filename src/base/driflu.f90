@@ -475,9 +475,12 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
      dudt   )
 
     do iel = 1, ncel
-      cpro_drift(1, iel) = cpro_drift(1, iel) + cpro_taup(iel)*dudt(1, iel)/volume(iel)
-      cpro_drift(2, iel) = cpro_drift(2, iel) + cpro_taup(iel)*dudt(2, iel)/volume(iel)
-      cpro_drift(3, iel) = cpro_drift(3, iel) + cpro_taup(iel)*dudt(3, iel)/volume(iel)
+      cpro_drift(1, iel) = cpro_drift(1, iel)                       &
+                         + cpro_taup(iel)*dudt(1, iel)/volume(iel)
+      cpro_drift(2, iel) = cpro_drift(2, iel)                       &
+                         + cpro_taup(iel)*dudt(2, iel)/volume(iel)
+      cpro_drift(3, iel) = cpro_drift(3, iel)                       &
+                         + cpro_taup(iel)*dudt(3, iel)/volume(iel)
     enddo
 
   endif
