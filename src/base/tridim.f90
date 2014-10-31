@@ -622,21 +622,21 @@ if(nctsmt.gt.0) then
 
 endif
 
-!-----------------------------------------------------------------------
-!-- Fill the condensation array spcond for the sink term of condensation
-!-- and hpcond the thermal exchange coefficient associated to the phase
-!-- change (gas phase to liquid phase)
-!-----------------------------------------------------------------------
+!----------------------------------------------------------
+!-- Fill the condensation arrays (spcond) for the sink term 
+!-- of condensation and source term type (itypcd) of each 
+!-- variable solved associated to the phase change 
+!-- (gas phase to liquid phase)
+!----------------------------------------------------------
 if (nftcdt.gt.0) then
 
   iappel = 3
 
-  !     Mise a zero du tableau de type de TS masse et source
+  ! Condensation source terms arrays initialized
   do ii = 1, nfbpcd
     do ivar = 1, nvar
       itypcd(ii,ivar) = 0
       spcond(ii,ivar) = 0.d0
-      hpcond(ii)      = 0.d0
     enddo
   enddo
 
@@ -645,7 +645,7 @@ if (nftcdt.gt.0) then
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
-  spcond , hpcond , tpar)
+  spcond , tpar)
 
 endif
 
@@ -1101,11 +1101,16 @@ do while (iterns.le.nterup)
 
     if (icond.eq.0) then
 
+      !-- Fill (hpcond) the thermal exchange coefficient
+      !-- associated to the condensation
+      do ii = 1, nfbpcd
+        hpcond(ii)      = 0.d0
+      enddo
+
       ! Empiric laws used by COPAIN condensation model to
       ! the compute of the condensation source term and
       ! exchange coefficient of the heat transfer imposed
       ! as boundary condition
-      !--------------------------------------------------
 
       call condensation_copain_model &
       !=============================

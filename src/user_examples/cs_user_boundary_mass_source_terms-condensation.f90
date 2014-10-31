@@ -28,16 +28,16 @@
 
 !> \file cs_user_boundary_mass_source_terms.f90
 !>
-!> \brief Source terms and thermal exchange coefficient associated at the
-!> cells and boundary faces with condensation.
+!> \brief Source terms associated at the boundary faces and the neighboring 
+!> cells with surface condensation.
 !>
 !> This subroutine fills the condensation source terms for each variable at
 !> the cell center associated to the boundary faces identifed in the mesh.
 !> The fluid exchange coefficient is computed with a empiric law to be
 !> imposed at the boundary face where the condensation phenomenon occurs.
 !>
-!> Some user subroutines are called which allows the setting of
-!> \f$ \gamma_{\mbox{cond}} \f$ and \f$ h_{\mbox{p,cond}} \f$.
+!> This user subroutine is called which allows the setting of
+!> \f$ \gamma_{\mbox{cond}} \f$ the condensation source term.
 !>
 !> This function fills the condensation source term array gamma_cond adding
 !> to the following equations:
@@ -108,10 +108,6 @@
 !>                        cell with a condensation source term except
 !>                        for ivar=ipr.
 !>
-!>  - hpcond(ifac): value associated to the thermal exchange coeff.
-!>                  evaluated with empiric law at the BC face where
-!>                  condensation occurs with phase change.
-!>
 !> \remarks
 !>  - For each face where a condensation source terms is imposed ielscd
 !>    in [1;nfbpcd]), ifbpcd(ielscd) is the global index number of the
@@ -138,16 +134,13 @@
 !> \param[out]    spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{cond}^n \f$)
-!> \param[out]    hpcond        value associated to the thermal exchange coeff.
-!>                              evaluated with empiric law at the BC face where
-!>                              condensation occurs with phase change.
 !_______________________________________________________________________________
 
 subroutine cs_user_boundary_mass_source_terms &
  ( nvar   , nscal  ,                                              &
    nfbpcd , iappel ,                                              &
    ifbpcd , itypcd , izftcd ,                                     &
-   spcond , hpcond , tpar)
+   spcond , tpar)
 
 !===============================================================================
 
@@ -184,7 +177,6 @@ integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
 integer          izftcd(ncel)
 
 double precision spcond(nfbpcd,nvar)
-double precision hpcond(nfabor)
 double precision tpar
 
 ! Local variables
@@ -294,7 +286,7 @@ if (iappel.eq.2) then
 
     icophc = 3
 
-    ! Choice the way to compute the thermal exchange coefficient (hpcond)
+    ! Choice the way to compute the thermal exchange coefficient 
     ! associated to the heat transfer at the cooling wall,
     ! due to the energy loss by condensation phenomenon.
 
@@ -399,11 +391,14 @@ elseif (iappel.eq.3) then
   !---------------------------------------
   do ieltcd = 1, nfbpcd
 
+    ifac = ifbpcd(ieltcd)
+    iel  = ifabor(ifac)
+
     ! Compute the enthalpy value of vapor gas
     if (ntcabs.le.1) then
       tk = t0
     else
-      tk = cvar_h(ieltcd)/cpro_cp(ieltcd)
+      tk = cvar_h(iel)/cpro_cp(iel)
     endif
     hvap = s_h2o_g%cp*tk
 

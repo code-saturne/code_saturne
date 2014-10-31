@@ -304,7 +304,7 @@ call cs_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ivoid  , ivoid  , izftcd ,                                     &
-  rvoid  , rvoid  , rvoid(1)  )
+  rvoid  , rvoid(1)  )
 
 ! Total number of cells with condensation source term
 nftcdt = nfbpcd
@@ -755,7 +755,7 @@ if (nftcdt.gt.0) then
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
-  spcond , hpcond , rvoid(1) )
+  spcond , rvoid(1) )
 
   ! the Condensation model coupled with a 1-D thermal model
   ! requires the 1-D mesh generation and temperature initialization
