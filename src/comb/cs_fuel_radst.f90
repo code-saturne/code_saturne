@@ -64,7 +64,6 @@ subroutine cs_fuel_radst &
 use paramx
 use cstnum
 use cstphy
-use dimens, only: nvar
 use entsor
 use numvar
 use ppppar

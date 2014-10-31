@@ -55,7 +55,6 @@ subroutine cptssy &
 
 use paramx
 use numvar
-use dimens, only: nvar
 use entsor
 use cstphy
 use cstnum

@@ -53,7 +53,6 @@ use paramx
 use pointe
 use numvar
 use entsor
-use dimens, only: nvar
 use optcal
 use cstphy
 use parall

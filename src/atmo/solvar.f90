@@ -65,7 +65,6 @@ use paramx
 use dimens
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor
@@ -92,7 +91,6 @@ parameter ( idim2 = 26 )
 !... declaration des variables externes
 
 
-!double precision rcodcl(nfabor,nvar,3),velipb(nfabor,3)
 double precision rcodcl(nfabor,nvarcl,3)
 
 double precision temp(ncelet)

@@ -62,7 +62,6 @@ subroutine cs_coal_noxst &
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor

@@ -98,7 +98,6 @@ use paramx
 use numvar
 use optcal
 use cstphy
-use dimens, only: nvar
 use cstnum, only: pi
 use entsor
 use parall

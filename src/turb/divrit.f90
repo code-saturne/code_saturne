@@ -52,7 +52,7 @@ subroutine divrit &
 !===============================================================================
 
 use paramx
-use dimens, only: ndimfb, nvar
+use dimens, only: ndimfb
 use numvar
 use entsor
 use optcal

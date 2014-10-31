@@ -63,7 +63,6 @@ subroutine attssc &
 
 use paramx
 use numvar
-use dimens, only: nvar
 use entsor
 use optcal
 use cstphy

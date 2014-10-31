@@ -65,7 +65,6 @@ subroutine pptssc &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! iscal            ! i  ! <-- ! scalar number                                  !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! smbrs(ncelet)    ! tr ! --> ! second membre explicite                        !
@@ -88,7 +87,6 @@ use paramx
 use numvar
 use entsor
 use optcal
-use dimens, only: nvar
 use cstphy
 use cstnum
 use pointe, only: itypfb

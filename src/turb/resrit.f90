@@ -59,7 +59,6 @@ use paramx
 use numvar
 use entsor
 use optcal
-use dimens, only: nvar
 use cstnum
 use cstphy
 use parall

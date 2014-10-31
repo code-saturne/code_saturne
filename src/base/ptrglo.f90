@@ -281,7 +281,7 @@ contains
 
   subroutine resize_main_real_array ( dt , propce )
 
-    use dimens, only: nvar, nproce
+    use dimens, only: nproce
     use field
     use mesh  , only: ncel, ncelet
     use numvar

@@ -54,7 +54,6 @@ subroutine cpvosy &
 use paramx
 use numvar
 use entsor
-use dimens, only: nvar
 use cstphy
 use mesh
 use optcal

@@ -92,7 +92,6 @@ subroutine ctphyv
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use cstnum
 use cstphy
 use entsor

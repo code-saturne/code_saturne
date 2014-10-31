@@ -104,7 +104,6 @@ subroutine cplym1 &
 use paramx
 use numvar
 use optcal
-use dimens, only: nvar
 use cstphy
 use cstnum
 use entsor

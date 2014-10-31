@@ -88,7 +88,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use dimens, only: nvar
 use entsor
 use parall
 use period

@@ -63,7 +63,6 @@ subroutine lagres &
 !===============================================================================
 
 use paramx
-use dimens, only: nvar
 use cstphy
 use cstnum
 use lagpar
