@@ -454,6 +454,15 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     relaxp = relaxv(iu)
     icvflb = 0
 
+    ! Reset viscf and viscb
+    do ifac = 1, nfac
+      viscf(ifac) = 0.d0
+    enddo
+
+    do ifac = 1, nfabor
+      viscb(ifac) = 0.d0
+    enddo
+
     ! Get Boundary conditions of the velocity
     call field_get_coefa_v (ivarfl(iu), coefav)
     call field_get_coefb_v (ivarfl(iu), coefbv)
