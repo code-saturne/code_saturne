@@ -194,6 +194,23 @@ cs_user_linear_solvers(void)
                             500, /* global # of cells under which we merge */
                             1);  /* # of ranks under which we do not merge */
   /*! [sles_mg_parall] */
+
+  /* Set a non-default linear solver for DOM radiation.
+     The solver must be set for each direction; here, we assume
+     a quadrature with 32 directions is used */
+
+  /*! [sles_rad_dom_1] */
+  for (int i = 0; i < 32; i++) {
+    char name[16];
+    sprintf(name, "radiation_%03d", i+1);
+    cs_sles_it_define(-1,
+                      name,
+                      CS_SLES_JACOBI,
+                      0,      /* poly_degree */
+                      1000);  /* n_max_iter */
+
+  }
+  /*! [sles_rad_dom_1] */
 }
 
 /*----------------------------------------------------------------------------*/

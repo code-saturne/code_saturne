@@ -114,6 +114,19 @@
 
   \snippet cs_user_parameters-linear_solvers.c sles_mg_parall
 
+  \subsection cs_user_parameters_h_sles_rad_dom Example: DOM radiation settings
+
+  For DOM radiation models, 1 solver is assigned for each direction
+  this allows using a specific ordering for each direction for the
+  default Block Gauss-Seidel solver.
+
+  The example below shows how to set a non-default linear solver for
+  DOM radiation. Here, we assume a quadrature with 32 directions
+  is used (if more solvers than directions are specified, the extra
+  definitions will be unused, but this causes no further issues).
+
+  \snippet cs_user_parameters-linear_solvers.c sles_rad_dom_1
+
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
   Code_Saturne allows the calculation of temporal means or variances,
