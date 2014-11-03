@@ -167,10 +167,9 @@ do ivar = 1, nvcp
 
   isou = 0 ! set for iu, iv, iw only
 
-  call field_get_val_s(ivarfl(ivar), cvar_var)
-
   if (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw) then
 
+    call field_get_val_s(ivarfl(ivar), cvar_var)
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,   &
                                iccocg,                             &
                                grad)

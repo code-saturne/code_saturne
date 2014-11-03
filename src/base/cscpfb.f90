@@ -632,12 +632,14 @@ elseif (itytur.eq.3) then
 
   do isou = 1, 6
 
-    if (isou.eq.1) call field_get_val_s(ivarfl(ir11), cvar_var)
-    if (isou.eq.2) call field_get_val_s(ivarfl(ir22), cvar_var)
-    if (isou.eq.3) call field_get_val_s(ivarfl(ir33), cvar_var)
-    if (isou.eq.4) call field_get_val_s(ivarfl(ir12), cvar_var)
-    if (isou.eq.5) call field_get_val_s(ivarfl(ir13), cvar_var)
-    if (isou.eq.6) call field_get_val_s(ivarfl(ir23), cvar_var)
+    if (isou.eq.1) ivar = ir11
+    if (isou.eq.2) ivar = ir22
+    if (isou.eq.3) ivar = ir33
+    if (isou.eq.4) ivar = ir12
+    if (isou.eq.5) ivar = ir13
+    if (isou.eq.6) ivar = ir23
+
+    call field_get_val_s(ivarfl(ivar), cvar_var)
 
     call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,    &
                                iccocg,                              &
