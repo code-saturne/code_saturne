@@ -28,7 +28,7 @@
 
 !> \file cs_user_boundary_mass_source_terms.f90
 !>
-!> \brief Source terms associated at the boundary faces and the neighboring 
+!> \brief Source terms associated at the boundary faces and the neighboring
 !> cells with surface condensation.
 !>
 !> This subroutine fills the condensation source terms for each variable at
@@ -286,7 +286,7 @@ if (iappel.eq.2) then
 
     icophc = 3
 
-    ! Choice the way to compute the thermal exchange coefficient 
+    ! Choice the way to compute the thermal exchange coefficient
     ! associated to the heat transfer at the cooling wall,
     ! due to the energy loss by condensation phenomenon.
 

@@ -28,7 +28,7 @@
 
 !> \file cs_user_boundary_mass_source_terms.f90
 !>
-!> \brief Source terms associated at the boundary faces and the neighboring 
+!> \brief Source terms associated at the boundary faces and the neighboring
 !> cells with surface condensation.
 !>
 !> This subroutine fills the condensation source terms for each variable at

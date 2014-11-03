@@ -632,7 +632,7 @@ def get_rcfile(pkg):
     Get path to file rcfile in preferences file if present.
     """
 
-    
+
     config = configparser.ConfigParser()
     config.read(pkg.get_configfiles())
 

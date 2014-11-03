@@ -602,9 +602,9 @@ if(nctsmt.gt.0) then
 endif
 
 !----------------------------------------------------------
-!-- Fill the condensation arrays (spcond) for the sink term 
-!-- of condensation and source term type (itypcd) of each 
-!-- variable solved associated to the phase change 
+!-- Fill the condensation arrays (spcond) for the sink term
+!-- of condensation and source term type (itypcd) of each
+!-- variable solved associated to the phase change
 !-- (gas phase to liquid phase)
 !----------------------------------------------------------
 if (nftcdt.gt.0) then
