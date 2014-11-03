@@ -340,7 +340,8 @@ if (idverl.ge.0) then
 
     call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
-    if (itpscl.eq.1) then
+    ! iscalt is in Celsius
+    if (itpscl.eq.2) then
       do iel = 1, ncel
         tempk(iel,1) = cvara_scalt(iel) + tkelvi
       enddo
