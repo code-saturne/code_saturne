@@ -157,8 +157,8 @@ endif
 if (iihmpr.eq.1) then
   call uiphyv &
   !===========
-( ncel   , ncelet , itherm , icp    , irovar , ivivar ,           &
-  iscalt , iviscv , itempk ,                                      &
+( ncel   , ncelet , icp    , irovar , ivivar ,                    &
+  iviscv , itempk ,                                               &
   p0     , t0     , ro0    , cp0    , viscl0 , visls0 , viscv0 )
 endif
 

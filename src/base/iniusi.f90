@@ -224,7 +224,7 @@ call fldvar(nmodpp)
 !==========
 
 if (iihmpr.eq.1) then
-  call csivis(iscalt, itherm)
+  call csivis
   !==========
 endif
 
@@ -326,15 +326,15 @@ if (iihmpr.eq.1) then
              (nmodpp,                                                 &
               irovar, ivivar, icorio,                                 &
               gx, gy, gz,                                             &
-              ro0, viscl0, viscv0, visls0, cp0, t0,                   &
-              p0, xmasmr, itempk, itherm, itpscl)
+              ro0, viscl0, viscv0, visls0, cp0, t0, p0,               &
+              xmasmr, itempk)
 
 !     Scamin, scamax, turbulent flux model
   call cssca2(itytur, iturt)
   !==========
 
   ! Diffusivites
-  call cssca3(itherm, iscalt, visls0, t0, p0, cp0)
+  call cssca3(visls0, t0, p0, cp0)
   !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)

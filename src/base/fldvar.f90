@@ -279,7 +279,7 @@ if (nmodpp.eq.0) then
   endif
 
   if (itherm.ne.0 .and. iihmpr.eq.1) then
-    call uithsc(iscalt)
+    call uithsc
   endif
 
 endif

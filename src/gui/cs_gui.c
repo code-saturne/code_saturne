@@ -81,6 +81,7 @@
 #include "cs_rotation.h"
 #include "cs_timer.h"
 #include "cs_time_moment.h"
+#include "cs_thermal_model.h"
 #include "cs_physical_properties.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -140,7 +141,7 @@ cs_var_t    *cs_glob_var = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return the label of a scalar field, given by its scalar Id
+ * Return the label of a scalar field, given by its field Id
  *
  * parameters:
  *   id <-- field id
@@ -278,13 +279,12 @@ _thermal_table_needed(const char *name)
 /*-----------------------------------------------------------------------------
  * use MEI for physical property
  *----------------------------------------------------------------------------*/
+
 static void
 _physical_property(const char *param,
                    const char *symbol,
                    const cs_int_t  *ncel,
                    const cs_int_t  *ncelet,
-                   const cs_int_t  *itherm,
-                   const cs_int_t  *iscalt,
                    const cs_int_t  *icp,
                    const cs_real_t *p0,
                    const cs_real_t *ro0,
@@ -310,8 +310,8 @@ _physical_property(const char *param,
   if (cs_gui_strcmp(prop_choice, "variable"))
     user_law = 1;
 
-  if (user_law)
-  {
+  if (user_law) {
+
     /* search the formula for the law */
     path = cs_xpath_short_path();
     cs_xpath_add_element(&path, "property");
@@ -323,7 +323,11 @@ _physical_property(const char *param,
     BFT_FREE(path);
 
     if (law != NULL) {
+
       time0 = cs_timer_wtime();
+
+      const int itherm = cs_glob_thermal_model->itherm;
+      const int iscalt = cs_glob_thermal_model->iscalt;
 
       ev_law = mei_tree_new(law);
 
@@ -349,37 +353,35 @@ _physical_property(const char *param,
       }
       else if (cs_gui_strcmp(param, "thermal_conductivity")) {
         /* for the Temperature, the diffusivity factor is not divided by Cp */
-        if (*itherm != 1)
-          mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]*(*cp0));
+        if (itherm != 1)
+          mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]*(*cp0));
         else
-          mei_tree_insert(ev_law, "lambda0", visls0[*iscalt-1]);
+          mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]);
       }
 
       for (int f_id2 = 0; f_id2 < cs_field_n_fields(); f_id2++) {
         const cs_field_t  *f2 = cs_field_by_id(f_id2);
         if (f2->type & CS_FIELD_USER)
-          mei_tree_insert(ev_law, _scalar_label(f_id2), 0.0);
+          mei_tree_insert(ev_law, f2->name, 0.0);
       }
 
-      char *buff = NULL;
-      int mdl = gui_thermal_model();
+      cs_field_t *fth;
 
-      if (mdl < 20) {
-        BFT_MALLOC(buff, 12, char);
-        strcpy(buff, "temperature");
+      switch (itherm) {
+      case 1:
+        fth = CS_F_(t);
+        break;
+      case 2:
+        fth = CS_F_(h);
+        break;
+      case 3:
+        fth = CS_F_(energy);
+        break;
+      default:
+        fth = NULL;
       }
-      else if (mdl < 30) {
-        BFT_MALLOC(buff, 9, char);
-        strcpy(buff, "enthalpy");
-      }
-      else {
-        BFT_MALLOC(buff, 13, char);
-        strcpy(buff, "total_energy");
-      }
-      cs_field_t *fth = cs_field_by_name_try(buff);
-      int fth_id = fth->id;
-
-      mei_tree_insert(ev_law, _scalar_label(fth_id), 0.0);
+      if (fth != NULL)
+        mei_tree_insert(ev_law, cs_field_get_label(fth), 0.0);
 
       /* try to build the interpreter */
 
@@ -398,22 +400,19 @@ _physical_property(const char *param,
       cs_field_t *c_rho = CS_F_(rho);
       cs_field_t *c_t = CS_F_(t);
 
-      for (iel = 0; iel < *ncel; iel++)
-      {
+      for (iel = 0; iel < *ncel; iel++) {
+
         mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
         mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
         mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
         for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
           cs_field_t  *f = cs_field_by_id(f_id);
           if (f->type & CS_FIELD_USER)
-            mei_tree_insert(ev_law,
-                           _scalar_label(f_id),
-                            f->val[iel]);
+            mei_tree_insert(ev_law, cs_field_get_label(f), f->val[iel]);
         }
 
-        mei_tree_insert(ev_law,
-                       _scalar_label(fth_id),
-                        fth->val[iel]);
+        if (fth != NULL)
+          mei_tree_insert(ev_law, cs_field_get_label(fth), fth->val[iel]);
 
         if (cs_gui_strcmp(param, "molecular_viscosity")) {
           mei_tree_insert(ev_law, "rho", c_rho->val[iel]);
@@ -424,7 +423,8 @@ _physical_property(const char *param,
         mei_evaluate(ev_law);
 
         if (cs_gui_strcmp(param, "thermal_conductivity")) {
-          if (*itherm == 1)
+          const cs_thermal_model_t  *tm = cs_glob_thermal_model;
+          if (tm->itherm == 1)
             values[iel] = mei_tree_lookup(ev_law, symbol);
           else if (*icp > 0)
             values[iel] = mei_tree_lookup(ev_law, symbol) / c_cp->val[iel];
@@ -437,7 +437,6 @@ _physical_property(const char *param,
       }
 
       mei_tree_destroy(ev_law);
-      BFT_FREE(buff);
 
       cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
@@ -566,8 +565,8 @@ _compressible_physical_property(const char *param,
         mei_tree_insert(ev_law, "rho0", *ro0);
       }
       else if (cs_gui_strcmp(param, "volume_viscosity")) {
-        mei_tree_insert(ev_law,"viscv0", *viscv0);
-        mei_tree_insert(ev_law,"T", 0.);
+        mei_tree_insert(ev_law, "viscv0", *viscv0);
+        mei_tree_insert(ev_law, "T", 0.);
       }
 
       if (cs_gui_strcmp(param, "thermal_conductivity")) {
@@ -592,45 +591,33 @@ _compressible_physical_property(const char *param,
          (including the thermal scalar), and evaluate the interpreter */
 
       cs_field_t *c = cs_field_by_id(idx);
-      char *buff = NULL;
-      int mdl = gui_thermal_model();
 
-      if (mdl < 20) {
-        BFT_MALLOC(buff, 12, char);
-        strcpy(buff, "temperature");
-      }
-      else if (mdl < 30) {
-        BFT_MALLOC(buff, 9, char);
-        strcpy(buff, "enthalpy");
-      }
-      else {
-        BFT_MALLOC(buff, 13, char);
-        strcpy(buff, "total_energy");
-      }
+      const int itherm = cs_glob_thermal_model->itherm;
 
-      cs_field_t *f = cs_field_by_name_try(buff);
+      assert(itherm == 3);
+
+      cs_field_t *f = CS_F_(energy);
 
       for (int iel = 0; iel < *ncel; iel++) {
         mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
         mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
         mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
         if (cs_gui_strcmp(param, "thermal_conductivity")) {
-            for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
-              const cs_field_t  *f2 = cs_field_by_id(f_id2);
-              if (f2->type & CS_FIELD_USER)
-                mei_tree_insert(ev_law,
-                                f2->name,
-                                f2->val[iel]);
-            }
+          for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
+            const cs_field_t  *f2 = cs_field_by_id(f_id2);
+            if (f2->type & CS_FIELD_USER)
+              mei_tree_insert(ev_law,
+                              f2->name,
+                              f2->val[iel]);
+          }
         }
 
-        mei_tree_insert(ev_law, buff, f->val[iel]);
+        mei_tree_insert(ev_law, cs_field_get_label(f), f->val[iel]);
 
         mei_evaluate(ev_law);
         c->val[iel] = mei_tree_lookup(ev_law, symbol);
       }
       mei_tree_destroy(ev_law);
-      BFT_FREE(buff);
 
       cs_gui_add_mei_time(cs_timer_wtime() - time0);
     }
@@ -2185,7 +2172,7 @@ void CS_PROCF (uiinit, UIINIT) (void)
 void CS_PROCF (csther, CSTHER) (int  *itherm,
                                 int  *itpscl)
 {
-  switch(gui_thermal_model()) {
+  switch(cs_gui_thermal_model()) {
   case 10:
     *itherm = 1;
     *itpscl = 2;
@@ -2364,11 +2351,9 @@ void CS_PROCF (csvvva, CSVVVA) (int *iviscv)
  *
  * SUBROUTINE UITHSC
  * *****************
- *
- * INTEGER          ISCALT     -->   thermal scalars number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uithsc, UITHSC) (int *iscalt)
+void CS_PROCF (uithsc, UITHSC) (void)
 {
   cs_var_t  *vars = cs_glob_var;
   char *label = NULL;
@@ -2376,13 +2361,14 @@ void CS_PROCF (uithsc, UITHSC) (int *iscalt)
   const int n_fields = cs_field_n_fields();
   const int keysca = cs_field_key_id("scalar_id");
   const int keylbl = cs_field_key_id("label");
+  const int iscalt = cs_glob_thermal_model->iscalt;
 
   label = _thermal_scalar_name_label("label");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int i = cs_field_get_key_int(f, keysca) - 1;
-    if (i == *iscalt - 1) {
+    if (i == iscalt - 1) {
 #if _XML_DEBUG_
       bft_printf("--label of thermal scalar: %s\n", label);
 #endif
@@ -2402,15 +2388,11 @@ void CS_PROCF (uithsc, UITHSC) (int *iscalt)
  *
  * Fortran Interface:
  *
- * subroutine csivis (iscalt, itherm)
+ * subroutine csivis
  * *****************
- *
- * integer          iscalt  <-->  number of the user thermal scalar if any
- * integer          itherm  <-->  type of thermal model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (int *iscalt,
-                                int *itherm)
+void CS_PROCF (csivis, CSIVIS) (void)
 {
   int choice1, choice2;
   int test1, test2;
@@ -2421,8 +2403,10 @@ void CS_PROCF (csivis, CSIVIS) (int *iscalt,
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
   const int n_fields = cs_field_n_fields();
+  const int itherm = cs_glob_thermal_model->itherm;
+  const int iscalt = cs_glob_thermal_model->iscalt;
 
-  if (vars->model != NULL && *itherm) {
+  if (vars->model != NULL && itherm) {
     test1 = cs_gui_properties_choice("thermal_conductivity", &choice1);
     test2 = cs_gui_properties_choice("specific_heat", &choice2);
 
@@ -2431,7 +2415,7 @@ void CS_PROCF (csivis, CSIVIS) (int *iscalt,
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t  *f = cs_field_by_id(f_id);
         if (f->type & CS_FIELD_VARIABLE) {
-          if (cs_field_get_key_int(f, keysca) == *iscalt) {
+          if (cs_field_get_key_int(f, keysca) == iscalt) {
             if (choice1 || choice2)
               cs_field_set_key_int(f, kivisl, 0);
             else
@@ -2451,7 +2435,7 @@ void CS_PROCF (csivis, CSIVIS) (int *iscalt,
       if (i > -1) {
         if (cs_field_get_key_int(f, kscavr) < 0) {
           if (_scalar_properties_choice(i+1, &choice1))
-            if (*iscalt != i+1)
+            if (iscalt != i+1)
               cs_field_set_key_int(f, kivisl, choice1 - 1);
         }
       }
@@ -2839,16 +2823,16 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
                                 double     *t0,
                                 double     *p0,
                                 double     *xmasmr,
-                                int        *itempk,
-                                int        *itherm,
-                                int        *itpscl)
-
+                                int        *itempk)
 {
   int choice;
   char *material = NULL;
   char *phas = NULL;
 
   cs_var_t  *vars = cs_glob_var;
+
+  const int itherm = cs_glob_thermal_model->itherm;
+  /* const int iscalt = cs_glob_thermal_model->iscalt; */
 
   cs_gui_gravity_value("gravity_x", gx);
   cs_gui_gravity_value("gravity_y", gy);
@@ -2900,24 +2884,26 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
         }
 
         cs_phys_prop_thermo_plane_type_t thermal_plane = CS_PHYS_PROP_PLANE_PH;
-        if (*itherm == 1)
+        if (itherm == 1)
           thermal_plane = CS_PHYS_PROP_PLANE_PT;
-        //else if (*itherm == 3)
+        //else if (itherm == 3)
         //  // TODO compressible
         //  thermal_plane = CS_PHYS_PROP_PLANE_PS;
+
+        const int itpscl = cs_glob_thermal_model->itpscl;
 
         cs_thermal_table_set(material,
                              _thermal_table_choice("method"),
                              phas,
                              _thermal_table_choice("reference"),
                              thermal_plane,
-                             *itpscl);
+                             itpscl);
       }
       BFT_FREE(material);
     }
   }
 
-  /* ro0, viscl0, cp0, isls0[*iscalt-1] si tables*/
+  /* ro0, viscl0, cp0, isls0[iscalt-1] si tables */
   if (_thermal_table_needed("density") == 0)
     cs_gui_properties_value("density", ro0);
   else
@@ -3019,25 +3005,16 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
   }
 
   if (cs_gui_strcmp(vars->model, "thermal_scalar")) {
+
     /* thermal model with no specific physics */
-    char *buff = NULL;
-    int mdl = gui_thermal_model();
 
-    if (mdl < 20) {
-      BFT_MALLOC(buff, 12, char);
-      strcpy(buff, "temperature");
-    }
-    else if (mdl < 30) {
-      BFT_MALLOC(buff, 9, char);
-      strcpy(buff, "enthalpy");
-    }
-    else {
-      BFT_MALLOC(buff, 13, char);
-      strcpy(buff, "total_energy");
-    }
+    const int itherm = cs_glob_thermal_model->itherm;
+    assert(itherm > 0);
 
-    cs_field_t *f = cs_field_by_name(buff);
-    BFT_FREE(buff);
+    const char *t_names[] = {"temperature", "enthalpy", "total_energy"};
+
+    cs_field_t *f = cs_field_by_name(t_names[itherm-1]);
+
     double scal_min = cs_field_get_key_double(f, kscmin);
     double scal_max = cs_field_get_key_double(f, kscmax);
     cs_gui_variable_value(f->name, "min_value", &scal_min);
@@ -3056,9 +3033,7 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
  * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
-                                const int  *iscalt,
-                                double     *visls0,
+void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
                                 double     *t0,
                                 double     *p0,
                                 double     *cp0)
@@ -3070,10 +3045,13 @@ void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
 
+  const int itherm = cs_glob_thermal_model->itherm;
+  const int iscalt = cs_glob_thermal_model->iscalt;
+
   if (vars->model != NULL) {
 
-    if (gui_thermal_model()) {
-      int i = *iscalt-1;
+    if (itherm != 0) {
+      int i = iscalt-1;
 
       if (_thermal_table_needed("thermal_conductivity") == 0)
         cs_gui_properties_value("thermal_conductivity", &visls0[i]);
@@ -3082,7 +3060,7 @@ void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
                              1, p0, t0, &visls0[i]);
 
       /* for the Temperature, the diffusivity factor is not divided by Cp */
-      if (*itherm != 1)
+      if (itherm != 1)
         visls0[i] = visls0[i] / *cp0;
     }
   }
@@ -4080,11 +4058,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
       }
 
       /* Thermal scalar initialization */
-      if (gui_thermal_model()) {
+      if (cs_gui_thermal_model()) {
         char *path_sca       = NULL;
         char *formula_sca    = NULL;
         mei_tree_t *ev_formula_sca   = NULL;
-
         path_sca = cs_xpath_init_path();
         cs_xpath_add_elements(&path_sca, 3,
                               "thermophysical_models",
@@ -4096,23 +4073,17 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         formula_sca = cs_gui_get_text_value(path_sca);
         BFT_FREE(path_sca);
 
-        char *buff = NULL;
-        int mdl = gui_thermal_model();
+        const int itherm = cs_glob_thermal_model->itherm;
 
-        if (mdl < 20) {
-          BFT_MALLOC(buff, 12, char);
-          strcpy(buff, "temperature");
-        }
-        else if (mdl < 30) {
-          BFT_MALLOC(buff, 9, char);
-          strcpy(buff, "enthalpy");
-        }
-        else {
-          BFT_MALLOC(buff, 13, char);
-          strcpy(buff, "total_energy");
-        }
+        /* For non-specific physics defined with the GUI,
+           itherm can only be 1 or 2 here (as the thermal model is on) */
+        assert(itherm == 1 || itherm == 2);
 
-        cs_field_t *c = cs_field_by_name(buff);
+        cs_field_t *c = NULL;
+        if (itherm == 1)
+          c = CS_F_(t);
+        else if (itherm == 2)
+          c = CS_F_(h);
 
         if (formula_sca != NULL) {
           ev_formula_sca = mei_tree_new(formula_sca);
@@ -4125,10 +4096,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                       _("Error: can not interpret expression: %s\n %i"),
                       ev_formula_sca->string, mei_tree_builder(ev_formula_sca));
 
-          if (mei_tree_find_symbol(ev_formula_sca, buff))
+          if (mei_tree_find_symbol(ev_formula_sca, c->name))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not find the required symbol: %s\n"),
-                      buff);
+                      c->name);
 
           if (*isuite == 0) {
             for (icel = 0; icel < cells; icel++) {
@@ -4137,7 +4108,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
               mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
               mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
               mei_evaluate(ev_formula_sca);
-              c->val[iel] = mei_tree_lookup(ev_formula_sca, buff);
+              c->val[iel] = mei_tree_lookup(ev_formula_sca, c->name);
             }
           }
           mei_tree_destroy(ev_formula_sca);
@@ -4150,7 +4121,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
           }
         }
         BFT_FREE(formula_sca);
-        BFT_FREE(buff);
       }
 
       /* User Scalars initialization */
@@ -4299,7 +4269,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         char *formula        = NULL;
         char *buff           = NULL;
         mei_tree_t *ev_formula       = NULL;
-        const char *name[] = {"pressure", "temperature", "total_energy", "density"};
+        const char *name[] = {"pressure", "temperature", "total_energy",
+                              "density"};
 
         ccfth = 10000;
         for (int j = 0; j < 4; j++) {
@@ -4549,11 +4520,9 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  *
  * integer          ncel     <--  number of cells whithout halo
  * integer          ncelet   <--  number of cells whith halo
- * integer          irom     <--  pointer for density rho
  * integer          icp      <--  pointer for specific heat Cp
  * integer          irovar   <--  =1 if rho variable, =0 if rho constant
  * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
- * integer          iscalt   <--  pointer for the thermal scalar in ISCA
  * integer          iviscv   <--  pointer for volumic viscosity viscv
  * integer          itempk   <--  pointer for temperature (in K)
  * double precision p0       <--  pressure reference value
@@ -4567,11 +4536,9 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *ncelet,
-                              const cs_int_t  *itherm,
                               const cs_int_t  *icp,
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
-                              const cs_int_t  *iscalt,
                               const cs_int_t  *iviscv,
                               const cs_int_t  *itempk,
                               const cs_real_t *p0,
@@ -4589,6 +4556,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   int i, iel;
 
   cs_var_t  *vars = cs_glob_var;
+  const int iscalt = cs_glob_thermal_model->iscalt;
 
   /* law for density */
   if (!cs_gui_strcmp(vars->model, "compressible_model") ||
@@ -4596,7 +4564,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       if (*irovar == 1) {
           cs_field_t *c_rho = CS_F_(rho);
           _physical_property("density", "density",
-                             ncel, ncelet, itherm, iscalt, icp,
+                             ncel, ncelet, icp,
                              p0, ro0, cp0, viscl0, visls0,
                              c_rho->val);
       }
@@ -4606,7 +4574,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   if (*ivivar == 1) {
     cs_field_t *c_mu = CS_F_(mu);
     _physical_property("molecular_viscosity", "molecular_viscosity",
-                       ncel, ncelet, itherm, iscalt, icp,
+                       ncel, ncelet, icp,
                        p0, ro0, cp0, viscl0, visls0,
                        c_mu->val);
   }
@@ -4615,13 +4583,13 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   if (*icp > 0) {
     cs_field_t *c_cp = CS_F_(cp);
     _physical_property("specific_heat", "specific_heat",
-                       ncel, ncelet, itherm, iscalt, icp,
+                       ncel, ncelet, icp,
                        p0, ro0, cp0, viscl0, visls0,
                        c_cp->val);
   }
 
   /* law for thermal conductivity */
-  if (*iscalt > 0) {
+  if (iscalt > 0) {
 
     cs_field_t  *cond_dif = NULL;
 
@@ -4635,7 +4603,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
             _physical_property("thermal_conductivity", "thermal_conductivity",
-                               ncel, ncelet, itherm, iscalt, icp,
+                               ncel, ncelet, icp,
                                p0, ro0, cp0, viscl0, visls0,
                                cond_dif->val);
           }
@@ -5106,11 +5074,11 @@ void CS_PROCF (memui1, MEMUI1) (const int *ncharb)
  * Get thermal scalar model.
  *
  * return:
- *   value of itherm
+ *   value of itherm*10 + (temperature variant flag)
  *----------------------------------------------------------------------------*/
 
 int
-gui_thermal_model(void)
+cs_gui_thermal_model(void)
 {
   char *model_name = NULL;
   int   test = 0;
@@ -5151,7 +5119,8 @@ cs_gui_user_variables(void)
 {
   int n_user_scalars = cs_gui_get_tag_number("/additional_scalars/variable", 1);
 
-  const int var_start_id = (gui_thermal_model() != 0) ? 0 : 1;
+  const int itherm = cs_glob_thermal_model->itherm;
+  const int var_start_id = (itherm != 0) ? 0 : 1;
   const int var_end_id = n_user_scalars+1;
 
 #if _XML_DEBUG_

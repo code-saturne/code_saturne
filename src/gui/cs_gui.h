@@ -126,26 +126,20 @@ void CS_PROCF (csvvva, CSVVVA) (int *iviscv);
  *
  * SUBROUTINE UITHSC
  * *****************
- *
- * INTEGER          ISCALT     -->   thermal scalars number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uithsc, UITHSC) (int *iscalt);
+void CS_PROCF (uithsc, UITHSC) (void);
 
 /*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
  *
  * Fortran Interface:
  *
- * subroutine csivis (iscalt, itherm)
+ * subroutine csivis
  * *****************
- *
- * integer          iscalt  <-->  number of the user thermal scalar if any
- * integer          itherm  <-->  type of thermal model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csivis, CSIVIS) (int *iscalt,
-                                int *itherm);
+void CS_PROCF (csivis, CSIVIS) (void);
 
 /*----------------------------------------------------------------------------
  * Time passing parameter.
@@ -292,9 +286,7 @@ void CS_PROCF (csphys, CSPHYS) (const    int *nmodpp,
                                       double *t0,
                                       double *p0,
                                       double *xmasmr,
-                                         int *itempk,
-                                         int *itherm,
-                                         int *itpscl);
+                                         int *itempk);
 
 /*----------------------------------------------------------------------------
  * User scalar min and max values for clipping.
@@ -311,9 +303,7 @@ void CS_PROCF (csphys, CSPHYS) (const    int *nmodpp,
 void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
                                 int        *iturt);
 
-void CS_PROCF (cssca3, CSSCA3) (const int  *itherm,
-                                const int  *iscalt,
-                                double     *visls0,
+void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
                                 double     *t0,
                                 double     *p0,
                                 double     *cp0);
@@ -457,11 +447,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
  *
  * integer          ncel     <--  number of cells whithout halo
  * integer          ncelet   <--  number of cells whith halo
- * integer          irom     <--  pointer for density rho
  * integer          icp      <--  pointer for specific heat Cp
  * integer          irovar   <--  =1 if rho variable, =0 if rho constant
  * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
- * integer          iscalt   <--  pointer for the thermal scalar in ISCA
  * integer          iviscv   <--  pointer for volumic viscosity viscv
  * integer          itempk   <--  pointer for temperature (in K)
  * double precision p0       <--  pressure reference value
@@ -475,11 +463,9 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
 void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_int_t  *ncelet,
-                              const cs_int_t  *itherm,
                               const cs_int_t  *icp,
                               const cs_int_t  *irovar,
                               const cs_int_t  *ivivar,
-                              const cs_int_t  *iscalt,
                               const cs_int_t  *iviscv,
                               const cs_int_t  *itempk,
                               const cs_real_t *p0,
@@ -563,7 +549,7 @@ void CS_PROCF (memui1, MEMUI1) (const int *ncharb);
  *----------------------------------------------------------------------------*/
 
 int
-gui_thermal_model(void);
+cs_gui_thermal_model(void);
 
 /*----------------------------------------------------------------------------
  * Define user variables through the GUI.

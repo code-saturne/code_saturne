@@ -59,6 +59,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_prototypes.h"
+#include "cs_thermal_model.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1256,29 +1257,28 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
     /* for each zone */
     if (!cs_gui_strcmp(nature, "symmetry")) {
+
       /* Thermal scalar */
-      char *buff = NULL;
-      int mdl = gui_thermal_model();
 
-      if (mdl > 0) {
-        if (mdl < 20) {
-          BFT_MALLOC(buff, 12, char);
-          strcpy(buff, "temperature");
-        }
-        else if (mdl < 30) {
-          BFT_MALLOC(buff, 9, char);
-          strcpy(buff, "enthalpy");
-        }
-        else {
-          BFT_MALLOC(buff, 13, char);
-          strcpy(buff, "total_energy");
-        }
+      cs_field_t *f;
+      const int itherm = cs_glob_thermal_model->itherm;
 
-        cs_field_t *f = cs_field_by_name_try(buff);
-        _boundary_scalar(nature, izone, f->id);
-
-        BFT_FREE(buff);
+      switch (itherm) {
+      case 1:
+        f = CS_F_(t);
+        break;
+      case 2:
+        f = CS_F_(h);
+        break;
+      case 3:
+        f = CS_F_(energy);
+        break;
+      default:
+        f = NULL;
       }
+
+      if (f != NULL)
+        _boundary_scalar(nature, izone, f->id);
 
       /* Meteo scalars */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
@@ -1339,11 +1339,11 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
       /* User scalars */
       for (int f_id = 0; f_id < n_fields; f_id++) {
-        const cs_field_t  *f = cs_field_by_id(f_id);
+        const cs_field_t  *fu = cs_field_by_id(f_id);
 
-        if (   (f->type & CS_FIELD_VARIABLE)
-            && (f->type & CS_FIELD_USER))
-          _boundary_scalar(nature, izone, f->id);
+        if (   (fu->type & CS_FIELD_VARIABLE)
+            && (fu->type & CS_FIELD_USER))
+          _boundary_scalar(nature, izone, fu->id);
       }
     }
 
