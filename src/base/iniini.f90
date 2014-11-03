@@ -749,7 +749,7 @@ iptlro = 0
 
 ! No thermal scalar by default
 itherm = 0
-itpscl = 1
+itpscl = 0
 iscalt =-1
 
 ! --- Turbulence

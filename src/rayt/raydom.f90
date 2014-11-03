@@ -676,7 +676,6 @@ else if (iirayo.eq.1) then
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   propce(1,ipproc(iabso(1))),propce(1,ipproc(iemi(1))),          &
    propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,     &
    propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
    bqinci , bfnet )

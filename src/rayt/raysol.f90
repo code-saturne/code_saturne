@@ -28,7 +28,6 @@ subroutine raysol &
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   ru     , rua    ,                                              &
    sa     ,                                                       &
    qx     , qy     , qz     ,                                     &
    qincid , snplus )
@@ -85,8 +84,6 @@ subroutine raysol &
 ! viscb(nfabor     ! tr ! --- ! visc*surface/dist aux faces de bord            !
 ! smbrs(ncelet     ! tr ! --- ! tableau de travail pour sec mem                !
 ! rovsdt(ncelet    ! tr ! --- ! tableau de travail pour terme instat           !
-! ru  (ncelet)     ! tr ! --- ! luminance                                      !
-! rua (ncelet)     ! tr ! --- ! luminance pdt precedent (nulle)                !
 ! sa (ncelet)      ! tr ! --> ! part d'absorption du terme source rad          !
 ! qxqyqz(ncelet    ! tr ! --> ! composante du vecteur densite de flux          !
 !                  !    !     ! radiatif explicite                             !
@@ -131,7 +128,6 @@ double precision viscf(nfac), viscb(nfabor)
 double precision smbrs(ncelet)
 double precision rovsdt(ncelet)
 
-double precision ru(ncelet), rua(ncelet)
 double precision sa(ncelet)
 double precision qx(ncelet), qy(ncelet), qz(ncelet)
 double precision qincid(nfabor), snplus(nfabor)
@@ -158,6 +154,7 @@ double precision relaxp, thetap
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: rhs0
+double precision, allocatable, dimension(:) :: ru, rua
 double precision, allocatable, dimension(:) :: dpvar
 
 !===============================================================================
@@ -169,6 +166,7 @@ double precision, allocatable, dimension(:) :: dpvar
 ! Allocate a work array
 allocate(rhs0(ncelet))
 allocate(dpvar(ncelet))
+allocate(ru(ncelet), rua(ncelet))
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -328,8 +326,8 @@ do ii = -1,1,2
         enddo
 
         do iel = 1,ncelet
-          ru(iel)   = zero
-          rua(iel)  = zero
+          ru(iel)   = 0.d0
+          rua(iel)  = 0.d0
         enddo
 
         do ifac = 1,nfac
@@ -379,7 +377,7 @@ do ii = -1,1,2
 ! 5.2 INTEGRATION DES FLUX ET TERME SOURCE
 !===============================================================================
 
-        do iel = 1,ncel
+        do iel = 1, ncel
           aa = ru(iel) * domegat
           sa(iel) = sa(iel) + aa
           qx(iel) = qx(iel) + aa * sxt
@@ -414,6 +412,7 @@ enddo
 ! Free memory
 deallocate(rhs0)
 deallocate(dpvar)
+deallocate(ru, rua)
 
 !--------
 ! Formats

@@ -407,7 +407,7 @@ write(nfecra,9900)
 
 ! --- Thermique
 
-write(nfecra,2500) itherm, iscalt
+write(nfecra,2500) itherm, itpscl, iscalt
 
 #if defined(_CS_LANG_FR)
 
@@ -418,11 +418,13 @@ write(nfecra,2500) itherm, iscalt
 ' --- Phase continue :',                                        /,&
                                                                 /,&
 '   - Communs',                                                 /,&
-'       ITHERM = ',4x,i10,    ' (0:  pas de thermique        )',/,&
-'                               (10: temperature C           )',/,&
-'                               (11: temperature K           )',/,&
-'                               (20: enthalpie               )',/,&
-'                               (30: energie totale          )',/,&
+'       ITHERM = ',4x,i10,    ' (0: pas de thermique         )',/,&
+'                               (1: temperature              )',/,&
+'                               (2: enthalpie                )',/,&
+'                               (3: energie totale           )',/,&
+'       ITPSCL = ',4x,i10,    ' (0: pas de temperature       )',/,&
+'                               (1: temperature en Celsius   )',/,&
+'                               (2: temperature en Kelvin    )',/,&
 '       ISCALT = ',4x,i10,    ' (Numero du scalaire thermique)',/)
 
 #else
@@ -434,11 +436,13 @@ write(nfecra,2500) itherm, iscalt
 ' --- Continuous phase:',                                       /,&
                                                                 /,&
 '   - Commons',                                                 /,&
-'       ITHERM = ',4x,i10,    ' (0:  no thermal model        )',/,&
-'                               (10: temperature C           )',/,&
-'                               (11: temperature K           )',/,&
-'                               (20: enthalpy                )',/,&
-'                               (30: total energy            )',/,&
+'       ITHERM = ',4x,i10,    ' (0: no thermal model         )',/,&
+'                               (1: temperature              )',/,&
+'                               (2: enthalpy                 )',/,&
+'                               (3: total energy             )',/,&
+'       ITPSCL = ',4x,i10,    ' (0: none                     )',/,&
+'                               (1: temperature in Celsius   )',/,&
+'                               (2: temperature in Kelvin    )',/,&
 '       ISCALT = ',4x,i10,    ' (Thermal scalar number       )',/)
 
 #endif
