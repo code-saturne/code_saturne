@@ -38,6 +38,7 @@ BoundaryConditionsElectricalView.py \
 BoundaryConditionsExternalHeadLossesView.py \
 BoundaryConditionsMeteoView.py \
 BoundaryConditionsMobileMeshView.py \
+BoundaryConditionsPressureView.py \
 BoundaryConditionsRoughWallView.py \
 BoundaryConditionsScalarsView.py \
 BoundaryConditionsSlidingWallView.py \
@@ -53,6 +54,10 @@ ConjugateHeatTransferView.py \
 ConjugateHeatTransferModel.py \
 CoriolisSourceTermsModel.py \
 CoriolisSourceTermsView.py \
+DarcyModel.py \
+DarcyView.py \
+DarcyLawModel.py \
+DarcyLawView.py \
 DefineUserScalarsModel.py \
 DefineUserScalarsView.py \
 ElectricalModel.py \
@@ -146,6 +151,7 @@ BoundaryConditionsElectricalForm.ui \
 BoundaryConditionsExternalHeadLossesForm.ui \
 BoundaryConditionsMeteoForm.ui \
 BoundaryConditionsMobileMeshForm.ui \
+BoundaryConditionsPressureForm.ui \
 BoundaryConditionsRoughWallForm.ui \
 BoundaryConditionsScalarsForm.ui \
 BoundaryConditionsSlidingWallForm.ui \
@@ -156,6 +162,8 @@ CoalCombustionForm.ui \
 CompressibleForm.ui \
 ConjugateHeatTransferForm.ui \
 CoriolisSourceTermsForm.ui \
+DarcyForm.ui \
+DarcyLawForm.ui \
 DefineUserScalarsForm.ui \
 ElectricalForm.ui \
 FacesSelectionForm.ui \

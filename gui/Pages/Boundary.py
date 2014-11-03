@@ -285,6 +285,7 @@ class InletBoundary(Boundary):
         dico['status']      = 'off'
         dico['compressible_type']   = 'imposed_inlet'
         dico['fraction'] = 0.0
+        dico['pressure'] = 0.0
         from code_saturne.Pages.GasCombustionModel import GasCombustionModel
         model = GasCombustionModel(self.case).getGasCombustionModel()
         del GasCombustionModel
@@ -994,6 +995,29 @@ omega = 0.;"""
         n.xmlRemoveChild('gas_type')
         n.xmlRemoveChild('fraction')
         n.xmlRemoveChild('temperature')
+
+
+    @Variables.noUndo
+    def getPressureValue(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure']
+            self.setPressureValue(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setPressureValue(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
+        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
 
 #-------------------------------------------------------------------------------
 # Atmospheric flow inlet/outlet boundary.
@@ -1817,6 +1841,7 @@ class OutletBoundary(Boundary) :
         dico['reference_pressure'] = ReferenceValuesModel(self.case).getPressure()
         dico['scalarChoice'] = 'neumann'
         dico['scalar'] = 0.
+        dico['pressure'] = 0.
 
         return dico
 
@@ -1980,6 +2005,29 @@ class OutletBoundary(Boundary) :
             node.xmlRemoveNode()
         else:
             self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+
+
+    @Variables.noUndo
+    def getPressureValue(self):
+        """
+        Return value of the pressure
+        """
+        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
+        if pressure == None:
+            pressure = self.__defaultValues()['pressure']
+            self.setPressureValue(pressure)
+
+        return pressure
+
+
+    @Variables.undoLocal
+    def setPressureValue(self, value):
+        """
+        Set value of the pressure
+        """
+        Model().isFloat(value)
+        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
+        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
 
 
 #-------------------------------------------------------------------------------

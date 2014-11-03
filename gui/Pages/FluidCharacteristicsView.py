@@ -69,6 +69,7 @@ from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.DarcyModel import DarcyModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
 
 #-------------------------------------------------------------------------------
@@ -184,6 +185,10 @@ thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
                         ('molecular_viscosity', 'Mu'),
                         ('specific_heat', 'Cp'),
                         ('dynamic_diffusion', 'Diftl0')]
+        elif DarcyModel(self.case).getDarcyModel() != 'off':
+            self.lst = [('molecular_viscosity', 'Mu'),
+                        ('specific_heat', 'Cp'),
+                        ('thermal_conductivity', 'Al')]
         else:
             self.lst = [('density', 'Rho'),
                         ('molecular_viscosity', 'Mu'),
@@ -407,6 +412,9 @@ thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
 
         if mdl_gas != 'off' or mdl_coal != 'off':
             self.groupBoxDiftl0.show()
+
+        if DarcyModel(self.case).getDarcyModel() != 'off':
+            self.groupBoxRho.hide()
 
         for tag, symbol in self.lst:
             __model  = getattr(self, "model" + symbol)

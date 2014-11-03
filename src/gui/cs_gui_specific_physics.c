@@ -48,6 +48,9 @@
 
 #include "fvm_selector.h"
 
+#include "mei_evaluate.h"
+#include "mei_math_util.h"
+
 #include "cs_base.h"
 #include "cs_gui_util.h"
 #include "cs_gui.h"
@@ -1521,6 +1524,34 @@ _get_joule_model(void)
   return model;
 }
 
+
+/*----------------------------------------------------------------------------
+ * Return the value of the choice attribute for darcy gravity vector
+ *
+ * parameters:
+ *   name        <--  name of the property
+ *----------------------------------------------------------------------------*/
+
+static int
+_darcy_gravity_vector(const char  *name)
+{
+  double value = 0.;
+  char *path   = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "darcy_model",
+                        "gravity");
+  cs_xpath_add_element(&path, "vector");
+  cs_xpath_add_element(&path, name);
+  cs_xpath_add_function_text(&path);
+  cs_gui_get_double(path, &value);
+  BFT_FREE(path);
+
+  return value;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1554,6 +1585,7 @@ _get_joule_model(void)
  *                              tabulation is used. INDJON=1: users tabulation
  * INTEGER          IEOS    --> compressible
  * INTEGER          IEQCO2  --> CO2 massic fraction transport
+ * INTEGER          IDARCY  --> darcy model
  *
  *----------------------------------------------------------------------------*/
 
@@ -1573,7 +1605,8 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
                                int *const iatmos,
                                int *const iaeros,
                                int *const ieos,
-                               int *const ieqco2)
+                               int *const ieqco2,
+                               int *const idarcy)
 {
   int isactiv = 0;
 
@@ -1593,6 +1626,7 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
   ippmod[*icompf - 1] = -1;
   ippmod[*iatmos - 1] = -1;
   ippmod[*iaeros - 1] = -1;
+  ippmod[*idarcy - 1] = -1;
 
   *ieqco2 = 0;
 
@@ -1714,6 +1748,11 @@ void CS_PROCF (uippmo, UIPPMO)(int *const ippmod,
         bft_error(__FILE__, __LINE__, 0,
             _("Invalid compressible model: %s.\n"),
             vars->model_value);
+    }
+    else if  (cs_gui_strcmp(vars->model, "darcy_model"))
+    {
+      if (cs_gui_strcmp(vars->model_value, "darcy"))
+        ippmod[*idarcy - 1] = 1;
     }
   }
 
@@ -2543,6 +2582,137 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
 
 }
 
+
+/*----------------------------------------------------------------------------
+ * darcy model : read parameters
+ *
+ * Fortran Interface:
+ *
+ * subroutine uidai1
+ * *****************
+ * integer         iricha          -->   darcy model
+ * integer         permeability    <--   permeability type
+ * integer         diffusion       <--   diffusion type
+ * integer         unsteady        <--   steady flow
+ * integer         convergence     <--   convergence criterion of Newton scheme
+ * integer         gravity         <--   check if gravity is taken into account
+ * double          gravity_x       <--   x component for gravity vector
+ * double          gravity_y       <--   y component for gravity vector
+ * double          gravity_z       <--   z component for gravity vector
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uidai1, UIDAI1) (const int    *const idarcy,
+                                      int    *const permeability,
+                                      int    *const diffusion,
+                                      int    *const unsteady,
+                                      int    *const convergence,
+                                      int    *const gravity,
+                                      double *gravity_x,
+                                      double *gravity_y,
+                                      double *gravity_z)
+{
+  char *path   = NULL;
+  char *mdl    = NULL;
+  int   result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "darcy_model",
+                                  "criterion");
+
+  cs_xpath_add_attribute(&path, "model");
+  mdl = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  if (cs_gui_strcmp(mdl, "pressure"))
+    *convergence = 0;
+  else
+    *convergence = 1;
+
+  BFT_FREE(mdl);
+  BFT_FREE(path);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "darcy_model",
+                                  "diffusion");
+
+  cs_xpath_add_attribute(&path, "model");
+  mdl = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  if (cs_gui_strcmp(mdl, "anisotropic"))
+    *diffusion = 1;
+  else
+    *diffusion = 0;
+
+  BFT_FREE(mdl);
+  BFT_FREE(path);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "darcy_model",
+                                  "flowType");
+
+  cs_xpath_add_attribute(&path, "model");
+  mdl = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  if (cs_gui_strcmp(mdl, "steady"))
+    *unsteady = 0;
+  else
+    *unsteady = 1;
+
+  BFT_FREE(mdl);
+  BFT_FREE(path);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "darcy_model",
+                                  "permeability");
+
+  cs_xpath_add_attribute(&path, "model");
+  mdl = cs_gui_get_attribute_value(path);
+  BFT_FREE(path);
+  if (cs_gui_strcmp(mdl, "anisotropic"))
+    *permeability = 1;
+  else
+    *permeability = 0;
+
+  BFT_FREE(mdl);
+  BFT_FREE(path);
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3, "thermophysical_models",
+                                  "darcy_model",
+                                  "gravity");
+  cs_xpath_add_attribute(&path, "status");
+
+  if (cs_gui_get_status(path, &result))
+    *gravity = result;
+
+  BFT_FREE(path);
+
+  if (*gravity == 1) {
+    double rotation_axis[3];
+    rotation_axis[0] = _darcy_gravity_vector("axis_x");
+    rotation_axis[1] = _darcy_gravity_vector("axis_y");
+    rotation_axis[2] = _darcy_gravity_vector("axis_z");
+    double len = sqrt(rotation_axis[0]*rotation_axis[0] +
+                      rotation_axis[1]*rotation_axis[1] +
+                      rotation_axis[2]*rotation_axis[2]);
+    *gravity_x = rotation_axis[0] / len;
+    *gravity_y = rotation_axis[1] / len;
+    *gravity_z = rotation_axis[2] / len;
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==>UIDAI1\n");
+  bft_printf("--darcy_anisotropic_permeability  = %i\n", *permeability);
+  bft_printf("--darcy_anisotropic_diffusion     = %f\n", *diffusion);
+  bft_printf("--darcy_unsteady                  = %f\n", *unsteady);
+  bft_printf("--darcy_convergence_criterion     = %f\n", *convergence);
+#endif
+}
+
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -2592,7 +2762,8 @@ cs_gui_get_activ_thermophysical_model(void)
                          "gas_combustion",
                          "joule_effect",
                          "atmospheric_flows",
-                         "compressible_model" };
+                         "compressible_model",
+                         "darcy_model" };
   int name_nbr = sizeof(name) / sizeof(name[0]);
 
   if (vars->model != NULL && vars->model_value != NULL) {

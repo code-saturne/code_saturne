@@ -210,6 +210,13 @@ if (ippmod(imixg).ge.0) then
   endif
 endif
 
+! 8. Darcy modelling
+!--------------------------
+
+if (ippmod(idarcy).ge.0) then
+  iturb = 0
+endif
+
 
 return
 end subroutine

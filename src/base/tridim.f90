@@ -277,7 +277,7 @@ call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 ! 2.  AU DEBUT DU CALCUL ON REINITIALISE LA PRESSION
 !===============================================================================
 
-if (idarcy.eq.0) then
+if (ippmod(idarcy).eq.-1) then
 
 ! On le fait sur ntinit pas de temps, car souvent, le champ de flux de masse
 !   initial n'est pas a divergence nulle (CL incluses) et l'obtention
@@ -628,7 +628,7 @@ if (nftcdt.gt.0) then
 
 endif
 
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
 
   if (nscal.gt.0) then
     allocate(delay_id(nscal))
@@ -687,7 +687,7 @@ endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
 
-if ((idften(ipr).eq.6).and.(idarcy.eq.0)) then
+if ((idften(ipr).eq.6).and.(ippmod(idarcy).eq.-1)) then
 
   call field_get_val_v(idtten, dttens)
 
@@ -844,7 +844,7 @@ iterns = 1
 
 ! Darcy : in case of a steady flow, we resolve Richards only once,
 ! at the first time step.
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
   if ((darcy_unsteady.eq.0).and.(ntcabs.gt.1)) goto 100
 endif
 
@@ -866,7 +866,9 @@ do while (iterns.le.nterup)
 
     call uiclim &
     !==========
-  ( ntcabs, nfabor,                                                &
+  ( ntcabs, nfabor, ippmod(idarcy),                                &
+    darcy_gravity, darcy_gravity_x, darcy_gravity_y,               &
+    darcy_gravity_z,                                               &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
     isopcf, iparoi, iparug, isymet, isolib, ifrent, ifreesf,       &
@@ -1348,7 +1350,7 @@ do while (iterns.le.nterup)
 
     ! Coupled solving of the velocity components
 
-    if (idarcy.eq.0) then
+    if (ippmod(idarcy).eq.-1) then
 
       call navstv &
       !==========
@@ -1361,6 +1363,15 @@ do while (iterns.le.nterup)
     else
 
       call richards (icvrge, dt)
+
+      if (iihmpr.eq.1) then
+        call uidapp                                                    &
+        !==========
+         ( darcy_anisotropic_permeability,                             &
+           darcy_anisotropic_diffusion,                                &
+           darcy_gravity,                                              &
+           darcy_gravity_x, darcy_gravity_y, darcy_gravity_z, ivisls)
+      endif
 
       ! Darcy : update data specific to underground flow
       mbrom = 0
@@ -1437,7 +1448,7 @@ enddo
 ! general case, in order to compute the exact
 ! values of the boundary faces coefficients, we have to
 ! call boundary conditions routine again.
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
 
   if ((darcy_unsteady.eq.1).or.(ntcabs.eq.1)) then
 

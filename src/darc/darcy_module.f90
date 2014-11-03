@@ -39,6 +39,9 @@ module darcy_module
   integer :: darcy_anisotropic_permeability
   integer :: darcy_unsteady, darcy_anisotropic_diffusion
   integer :: darcy_convergence_criterion
-  integer :: idarcy
+  integer :: darcy_gravity
+  double  precision :: darcy_gravity_x
+  double  precision :: darcy_gravity_y
+  double  precision :: darcy_gravity_z
 
 end module darcy_module

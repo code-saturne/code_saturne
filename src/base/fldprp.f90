@@ -196,7 +196,7 @@ endif
 
 ! --- Properties for Darcy module
 
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
 
   has_previous = .true.
   idim1 = 1

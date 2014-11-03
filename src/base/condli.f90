@@ -226,7 +226,7 @@ integer fid
 ! 1. Initializations
 !===============================================================================
 
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
   if (darcy_anisotropic_permeability.eq.0) then
     call field_get_val_s_by_name('permeability', permeability)
   else
@@ -921,7 +921,7 @@ do ifac = 1, nfabor
   if (idften(ipr).eq.1) then
     hint = dt(iel)/distbf
     if (icavit.ge.0)  hint = hint/crom(iel)
-    if (idarcy.eq.1) hint = permeability(iel)/distbf
+    if (ippmod(idarcy).eq.1) hint = permeability(iel)/distbf
   else if (idften(ipr).eq.3) then
     hint = ( dttens(1, iel)*surfbo(1,ifac)**2              &
            + dttens(2, iel)*surfbo(2,ifac)**2              &
@@ -930,7 +930,7 @@ do ifac = 1, nfabor
     if (icavit.ge.0)  hint = hint/crom(iel)
   ! Symmetric tensor diffusivity
   elseif (idften(ipr).eq.6) then
-    if (idarcy.eq.0) then
+    if (ippmod(idarcy).eq.-1) then
       visci(1,1) = dttens(1,iel)
       visci(2,2) = dttens(2,iel)
       visci(3,3) = dttens(3,iel)
@@ -2063,7 +2063,7 @@ if (nscal.ge.1) then
 
       ! Scalar diffusivity
       if (idften(ivar).eq.1) then
-        if (idarcy.eq.0) then !FIXME
+        if (ippmod(idarcy).eq.-1) then !FIXME
           hint = (rkl+idifft(ivar)*cpp*visctc/sigmas(ii))/distbf
         else ! idarcy = 1
           hint = rkl/distbf

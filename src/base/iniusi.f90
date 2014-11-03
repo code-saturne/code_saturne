@@ -182,7 +182,7 @@ if (iihmpr.eq.1) then
  ( ippmod, icod3p, icodeq, icoebu, icobml,                        &
    icolwc, iccoal, icpl3c, icfuel,                                &
    ieljou, ielarc, ielion, icompf, iatmos,                        &
-   iaeros, ieos  , ieqco2)
+   iaeros, ieos  , ieqco2, idarcy)
 
   call cfnmtd(ficfpp, len(ficfpp))
   !==========
@@ -248,6 +248,14 @@ if (ippmod(icompf).ge.0) then
   else
     call field_set_key_int(ivarfl(isca(ienerg)), kivisl, -1)
   endif
+endif
+
+
+! ---> Physique particuliere : darcy
+
+if ( ippmod(idarcy).ge.0) then
+  call daini1
+  !==========
 endif
 
 !===============================================================================

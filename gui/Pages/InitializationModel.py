@@ -402,7 +402,7 @@ omega = k^0.5/almax;"""
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
-        n = node.xmlGetNode('formula', zone_id = zone)
+        n = node.xmlInitChildNode('formula', zone_id = zone)
         n.xmlSetTextNode(formula)
 
 

@@ -52,6 +52,7 @@ from code_saturne.Base.QtPage import DoubleValidator, ComboModel, to_qvariant
 from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
 from code_saturne.Pages.Boundary import Boundary
 from code_saturne.Pages.MobileMeshModel import MobileMeshModel
+from code_saturne.Pages.DarcyModel import DarcyModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -169,7 +170,8 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.meteoWidget.setup(self.__case, self.velocityWidget, self.turbulenceWidget, self.scalarsWidget)
         self.mobileMeshWidget.setup(self.__case)
         self.radiativeWidget.setup(self.__case)
-        self.electricalwidget.setup(self.__case)
+        self.electricalWidget.setup(self.__case)
+        self.pressureWidget.setup(self.__case)
         self.externalHeadLossesWidget.setup(self.__case)
 
         self.__hideAllWidgets()
@@ -205,7 +207,12 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         Shows widgets for inlet.
         """
         if self.coalWidget.getCoalNumber() == 0:
-            self.velocityWidget.showWidget(boundary)
+            if DarcyModel(self.__case).getDarcyModel() == "off":
+                self.velocityWidget.showWidget(boundary)
+                self.pressureWidget.hideWidget()
+            else:
+                self.velocityWidget.hideWidget()
+                self.pressureWidget.showWidget(boundary)
             self.coalWidget.hideWidget()
         else:
             self.velocityWidget.hideWidget()
@@ -215,8 +222,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.meteoWidget.showWidget(boundary)
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
-        self.electricalwidget.showWidget(boundary)
+        self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
+        self.pressureWidget.showWidget(boundary)
 
 
     def __selectWallBoundary(self, boundary):
@@ -228,8 +236,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.showWidget(boundary)
         self.mobileMeshWidget.showWidget(boundary)
         self.radiativeWidget.showWidget(boundary)
-        self.electricalwidget.showWidget(boundary)
+        self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
+        self.pressureWidget.hideWidget()
 
 
     def __selectOutletBoundary(self, boundary):
@@ -243,8 +252,12 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
             self.compressibleOutletWidget.showWidget(boundary)
         else:
             self.compressibleOutletWidget.hideWidget()
-        self.electricalwidget.showWidget(boundary)
+        self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
+        if DarcyModel(self.__case).getDarcyModel() == "off":
+            self.pressureWidget.hideWidget()
+        else:
+            self.pressureWidget.showWidget(boundary)
 
 
     def __selectInletOutletBoundary(self, boundary):
@@ -257,8 +270,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.meteoWidget.hideWidget()
         self.scalarsWidget.hideWidget()
         self.mobileMeshWidget.hideWidget()
-        self.electricalwidget.hideWidget()
+        self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.showWidget(boundary)
+        self.pressureWidget.hideWidget()
 
 
     def __selectSymmetryBoundary(self, boundary):
@@ -282,8 +296,9 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.scalarsWidget.hideWidget()
         self.mobileMeshWidget.hideWidget()
         self.radiativeWidget.hideWidget()
-        self.electricalwidget.hideWidget()
+        self.electricalWidget.hideWidget()
         self.externalHeadLossesWidget.hideWidget()
+        self.pressureWidget.hideWidget()
 
 
     def tr(self, text):

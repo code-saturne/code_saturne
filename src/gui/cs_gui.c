@@ -1561,6 +1561,39 @@ _volumic_zone_localization(const char *zone_id)
   return description;
 }
 
+
+/*-----------------------------------------------------------------------------
+ * Get initial value from property markup.
+ *
+ * parameters:
+ *   zone_id            <--  zone number
+ *   parameter          <--  name of the parameter
+ *   value              -->  new initial value of the property
+ *----------------------------------------------------------------------------*/
+
+void
+_VanGenuchten_parameter_value(const char* zone_id,
+                              const char  *parameter,
+                              double      *value)
+{
+  char   *path = NULL;
+  double  result;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 3,
+                        "thermophysical_models",
+                        "darcy",
+                        "darcy_law");
+  cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+  cs_xpath_add_element(&path, "VanGenuchten_parameters");
+  cs_xpath_add_element(&path, parameter);
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &result))
+    *value = result;
+
+  BFT_FREE(path);
+}
+
 /*-----------------------------------------------------------------------------
  * Return the initial value of variable for the volumic zone named name
  *
@@ -1607,9 +1640,9 @@ _variable_initial_value(const char  *variable_name,
  *----------------------------------------------------------------------------*/
 
 static int*
-_get_cells_list(const char  *zone_id,
-                int          n_cells_with_ghosts,
-                int         *cells )
+get_cells_list(const char  *zone_id,
+               int          n_cells_with_ghosts,
+               int         *cells )
 {
   int  c_id         = 0;
   int  *cells_list  = NULL;
@@ -3258,7 +3291,7 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
 
     if (cs_gui_strcmp(status, "on")) {
       char *zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3405,7 +3438,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 1, "thermophysical_models");
@@ -3568,7 +3601,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3676,7 +3709,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 
     if (cs_gui_strcmp(status, "on")) {
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
+      cells_list = get_cells_list(zone_id, n_cells_ext, &cells);
 
       path = cs_xpath_init_path();
       cs_xpath_add_elements(&path, 3,
@@ -3737,6 +3770,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  *
  * integer          ncelet   <--  number of cells with halo
  * integer          isuite   <--  restart indicator
+ * integer          idarcy   <--  darcy module activate or not
  * integer          iccfth   -->  type of initialisation(compressible model)
  * double precision ro0      <--  value of density if IROVAR=0
  * double precision cp0      <--  value of specific heat if ICP=0
@@ -3748,6 +3782,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 
 void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               const int          *isuite,
+                              const int          *idarcy,
                               int                *iccfth,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
@@ -3791,7 +3826,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
     if (cs_gui_strcmp(status, "on")) {
 
       zone_id = cs_gui_volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, *ncelet, &cells);
+      cells_list = get_cells_list(zone_id, *ncelet, &cells);
 
       if (*isuite == 0) {
         char *path_velocity = cs_xpath_init_path();
@@ -3855,6 +3890,38 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         }
         BFT_FREE(formula_uvw);
         BFT_FREE(path_velocity);
+
+        /* pressure initialization for darcy model */
+        if (*idarcy > 0) {
+          char *formula        = NULL;
+          char *buff           = NULL;
+          mei_tree_t *ev_formula       = NULL;
+          path = cs_xpath_short_path();
+          cs_xpath_add_element(&path, "variable");
+          cs_xpath_add_test_attribute(&path, "name", "pressure");
+          cs_xpath_add_element(&path, "formula");
+          cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+          BFT_MALLOC(path1, strlen(path) +1, char);
+
+          cs_field_t *c = cs_field_by_name_try("pressure");
+
+          cs_xpath_add_function_text(&path);
+          formula = cs_gui_get_text_value(path);
+          if (formula != NULL) {
+            ev_formula = _init_mei_tree(formula, "pressure");
+            for (icel = 0; icel < cells; icel++) {
+              iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
+              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
+              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+              mei_evaluate(ev_formula);
+              c->val[iel] = mei_tree_lookup(ev_formula, "pressure");
+            }
+            mei_tree_destroy(ev_formula);
+          }
+          BFT_FREE(formula);
+          BFT_FREE(path);
+        }
 
         /* Turbulence variables initialization */
         char *choice = cs_gui_turbulence_initialization_choice(zone_id);
@@ -4398,7 +4465,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on"))
       {
         zone_id = cs_gui_volumic_zone_id(i);
-        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = get_cells_list(zone_id, *ncelet, &cells);
 
         for (j=0; j < cells; j++)
         {
@@ -4438,7 +4505,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on")) {
 
         zone_id = cs_gui_volumic_zone_id(i);
-        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = get_cells_list(zone_id, *ncelet, &cells);
 
         k11 = _c_head_losses(zone_id, "kxx");
         k22 = _c_head_losses(zone_id, "kyy");
@@ -4630,6 +4697,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   int n_fields = cs_field_n_fields();
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
+  const int keysca = cs_field_key_id("scalar_diffusivity_id");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
@@ -4648,6 +4716,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       }
 
       if (user_law) {
+          int diff_id = cs_field_get_key_int(f, keysca);
+          cs_field_t *c_prop = NULL;
+          if (diff_id > -1)
+            c_prop = cs_field_by_id(diff_id);
 
         /* search the formula for the law */
         path = cs_xpath_init_path();
@@ -4699,7 +4771,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
               }
 
               mei_evaluate(ev_law);
-              f->val[iel] = mei_tree_lookup(ev_law, "diffusivity") * c_rho->val[iel];
+              c_prop->val[iel] = mei_tree_lookup(ev_law, "diffusivity") * c_rho->val[iel];
             }
           }
           else {
@@ -4713,7 +4785,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
               }
 
               mei_evaluate(ev_law);
-              f->val[iel] = mei_tree_lookup(ev_law, "diffusivity") * (*ro0);
+              c_prop->val[iel] = mei_tree_lookup(ev_law, "diffusivity") * (*ro0);
             }
           }
           mei_tree_destroy(ev_law);
@@ -5045,6 +5117,353 @@ void CS_PROCF (uiprof, UIPROF) (const int    *ncelet,
       if (cs_glob_rank_id <= 0) fclose(file);
 
       BFT_FREE(array);
+    }
+  }
+}
+
+
+/*----------------------------------------------------------------------------
+ * darcy model : read laws for capacity, saturation and permeability
+ *
+ * Fortran Interface:
+ *
+ * subroutine uidapp
+ * *****************
+ * integer         permeability    <--  permeability type
+ * integer         diffusion       <--  diffusion type
+ * integer         gravity         <--  check if gravity is taken into account
+ * double          gravity_x       <--   x component for gravity vector
+ * double          gravity_y       <--   y component for gravity vector
+ * double          gravity_z       <--   z component for gravity vector
+ * integer         ivisls          <--  pointer for Lambda/Cp
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
+                                const cs_int_t  *diffusion,
+                                const cs_int_t  *gravity,
+                                const double    *gravity_x,
+                                const double    *gravity_y,
+                                const double    *gravity_z,
+                                const cs_int_t   ivisls[])
+{
+  char *path = NULL;
+  char *status = NULL;
+  char *law = NULL;
+  double time0;
+  char *formula = NULL;
+  mei_tree_t *ev_law = NULL;
+  int *cells_list = NULL;
+  int cells = 0;
+  mei_tree_t *ev_formula  = NULL;
+
+  const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const int n_cells     = cs_glob_mesh->n_cells;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+
+  cs_field_t *fsaturation   = cs_field_by_name_try("saturation");
+  cs_field_t *fcapacity     = cs_field_by_name_try("capacity");
+  cs_field_t *fpermeability = cs_field_by_name_try("permeability");
+  cs_field_t *fpressure     = CS_F_(p);
+
+  cs_real_t   *saturation_field = fsaturation->val;
+  cs_real_t   *capacity_field   = fcapacity->val;
+  cs_real_t   *pressure_field   = fpressure->val;
+
+  cs_real_t     *permeability_field = NULL;
+  cs_real_6_t   *permeability_field_v = NULL;
+
+  if (*permeability == 0)
+    permeability_field = fpermeability->val;
+  else
+    permeability_field_v = (cs_real_6_t *)fpermeability->val;
+
+  /* number of volumic zone */
+  int zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
+
+  for (int i = 1; i < zones+1; i++) {
+    path = cs_xpath_init_path();
+    cs_xpath_add_elements(&path, 2, "solution_domain", "volumic_conditions");
+    cs_xpath_add_element_num(&path, "zone", i);
+    cs_xpath_add_attribute(&path, "darcy_law");
+    status = cs_gui_get_attribute_value(path);
+    BFT_FREE(path);
+
+    if (cs_gui_strcmp(status, "on")) {
+      char *zone_id = cs_gui_volumic_zone_id(i);
+      cells_list = get_cells_list(zone_id, n_cells_ext, &cells);
+
+      /* check if user law or Van Genuchten */
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 3,
+                            "thermophysical_models",
+                            "darcy",
+                            "darcy_law");
+      cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+      cs_xpath_add_attribute(&path, "model");
+      char *mdl = cs_gui_get_attribute_value(path);
+      BFT_FREE(path);
+
+      if (cs_gui_strcmp(mdl, "VanGenuchten")) {
+        double alpha_param, ks_param, l_param, n_param, thetas_param, thetar_param;
+        double molecular_diffusion;
+        _VanGenuchten_parameter_value(zone_id, "alpha",  &alpha_param);
+        _VanGenuchten_parameter_value(zone_id, "ks",     &ks_param);
+        _VanGenuchten_parameter_value(zone_id, "l",      &l_param);
+        _VanGenuchten_parameter_value(zone_id, "n",      &n_param);
+        _VanGenuchten_parameter_value(zone_id, "thetar", &thetar_param);
+        _VanGenuchten_parameter_value(zone_id, "thetas", &thetas_param);
+        _VanGenuchten_parameter_value(zone_id, "molecularDiff", &molecular_diffusion);
+
+        double m_param = 1 - 1 / n_param;
+
+        for (int icel = 0; icel < cells; icel++) {
+          int iel = cells_list[icel]-1;
+          double pres = pressure_field[iel];
+
+          if (*gravity == 1)
+            pres -= (cell_cen[iel][0] * *gravity_x +
+                     cell_cen[iel][1] * *gravity_y +
+                     cell_cen[iel][2] * *gravity_z );
+
+          if (pres >= 0) {
+            capacity_field[iel] = 0.;
+            saturation_field[iel] = thetas_param;
+
+            if (*permeability == 0)
+              permeability_field[iel] = ks_param;
+            else {
+              permeability_field_v[iel][0] = ks_param;
+              permeability_field_v[iel][1] = ks_param;
+              permeability_field_v[iel][2] = ks_param;
+              permeability_field_v[iel][3] = 0.;
+              permeability_field_v[iel][4] = 0.;
+              permeability_field_v[iel][5] = 0.;
+            }
+          }
+          else {
+
+            double tmp1 = pow(fabs(alpha_param * pres), n_param);
+            double tmp2 = 1 / (1 + tmp1);
+            double se_param = pow(tmp2, m_param);
+            double perm = ks_param * pow(se_param, l_param) *
+                          pow((1. - pow((1. - tmp2), m_param)), 2);
+
+            capacity_field[iel] = -m_param * n_param * tmp1 *
+                                  (thetas_param - thetar_param) *
+                                   se_param * tmp2 / pres;
+            saturation_field[iel] = thetar_param +
+                                    se_param * (thetas_param - thetar_param);
+
+
+            if (*permeability == 0)
+              permeability_field[iel] = perm;
+            else {
+              permeability_field_v[iel][0] = perm;
+              permeability_field_v[iel][1] = perm;
+              permeability_field_v[iel][2] = perm;
+              permeability_field_v[iel][3] = 0.;
+              permeability_field_v[iel][4] = 0.;
+              permeability_field_v[iel][5] = 0.;
+            }
+          }
+        }
+
+        int user_id = -1;
+        int n_fields = cs_field_n_fields();
+        const int keysca = cs_field_key_id("scalar_diffusivity_id");
+
+        for (int f_id = 0; f_id < n_fields; f_id++) {
+          cs_field_t *f = cs_field_by_id(f_id);
+          if (   (f->type & CS_FIELD_VARIABLE)
+              && (f->type & CS_FIELD_USER)) {
+            user_id++;
+            char *delayname = NULL;
+            int len = strlen(f->name) + 7;
+            BFT_MALLOC(delayname, len, char);
+            strcpy(delayname, f->name);
+            strcat(delayname, "_delay");
+            cs_field_t *fdelay = cs_field_by_name_try(delayname);
+            cs_real_t   *delay_val = fdelay->val;
+            BFT_FREE(delayname);
+
+            for (int icel = 0; icel < cells; icel++) {
+              int iel = cells_list[icel]-1;
+              delay_val[iel] = 1. + 0.15 / saturation_field[iel];
+
+              if (delay_val[iel] < 1.) {
+                bft_printf("soil_tracer_law, WARNING : delay must be greater or equal to 1\n");
+                bft_printf("                           current value is %15.8E\n", delay_val[iel]);
+              }
+            }
+            if (ivisls[user_id] > 0) {
+              int diff_id = cs_field_get_key_int(f, keysca);
+              cs_field_t *c_prop = NULL;
+              if (diff_id > -1)
+                c_prop = cs_field_by_id(diff_id);
+
+              for (int icel = 0; icel < cells; icel++) {
+                int iel = cells_list[icel]-1;
+                c_prop->val[iel] = saturation_field[iel] * molecular_diffusion + 1.e-15;
+                if (c_prop->val[iel] < 0.) {
+                  bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be greater or equal to 0\n");
+                  bft_printf("                           current value is %15.8E\n", c_prop->val[iel]);
+                }
+                if (*diffusion == 1 && c_prop->val[iel] <= 0.) {
+                  bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be strictly greater than 0 if no anisotropic part\n");
+                }
+              }
+            }
+          }
+        }
+      }
+      else {  // user law
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "darcy",
+                              "darcy_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "formula");
+        cs_xpath_add_function_text(&path);
+        formula = cs_gui_get_text_value(path);
+        BFT_FREE(path);
+
+        if (formula != NULL) {
+          ev_formula = mei_tree_new(formula);
+          BFT_FREE(formula);
+          mei_tree_insert(ev_formula,"x",0.0);
+          mei_tree_insert(ev_formula,"y",0.0);
+          mei_tree_insert(ev_formula,"z",0.0);
+
+          /* try to build the interpreter */
+          if (mei_tree_builder(ev_formula))
+            bft_error(__FILE__, __LINE__, 0,
+                      _("Error: can not interpret expression: %s\n %i"),
+                      ev_formula->string, mei_tree_builder(ev_formula));
+
+          if (*permeability == 0) {
+            const char *symbols[] = {"capacity",
+                                     "saturation"
+                                     "permeability"};
+            if (mei_tree_find_symbols(ev_formula, 3, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n"),
+                          "capacity, saturation or permeability");
+          }
+          else {
+            const char *symbols[] = {"capacity",
+                                     "saturation",
+                                     "permeability[XX]",
+                                     "permeability[YY]",
+                                     "permeability[ZZ]",
+                                     "permeability[XY]",
+                                     "permeability[XZ]",
+                                     "permeability[YZ]"};
+            if (mei_tree_find_symbols(ev_formula, 8, symbols))
+                bft_error(__FILE__, __LINE__, 0,
+                          _("Error: can not find the required symbol: %s\n %s\n %s\n"),
+                          "capacity, saturation,",
+                          "          permeability[XX], permeability[YY], permeability[ZZ]",
+                          "          permeability[XY], permeability[XZ] or permeability[YZ]");
+          }
+
+          for (int icel = 0; icel < cells; icel++) {
+              int iel = cells_list[icel]-1;
+              mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+              mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+              mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+              mei_evaluate(ev_formula);
+
+              capacity_field[iel] = mei_tree_lookup(ev_formula,"capacity");
+              saturation_field[iel] = mei_tree_lookup(ev_formula,"saturation");
+              if (*permeability == 1) {
+                  permeability_field_v[iel][0] = mei_tree_lookup(ev_formula,"permeability[XX]");
+                  permeability_field_v[iel][1] = mei_tree_lookup(ev_formula,"permeability[YY]");
+                  permeability_field_v[iel][2] = mei_tree_lookup(ev_formula,"permeability[ZZ]");
+                  permeability_field_v[iel][3] = mei_tree_lookup(ev_formula,"permeability[XY]");
+                  permeability_field_v[iel][4] = mei_tree_lookup(ev_formula,"permeability[XZ]");
+                  permeability_field_v[iel][5] = mei_tree_lookup(ev_formula,"permeability[YZ]");
+              }
+              else
+                  permeability_field[iel] = mei_tree_lookup(ev_formula,"permeability");
+
+          }
+          mei_tree_destroy(ev_formula);
+        }
+      }
+
+      if (*diffusion == 1) {
+        cs_field_t *fturbvisco = cs_field_by_name_try("anisotropic_turbulent_viscosity");
+        cs_real_6_t  *visten_v = (cs_real_6_t *)fturbvisco->val;
+        const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(u)->val);
+
+        double laminar_diffus;
+        double turbulent_diffus;
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "darcy",
+                              "darcy_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "diffusion_coefficient");
+        cs_xpath_add_element(&path, "laminar");
+        cs_xpath_add_function_text(&path);
+        cs_gui_get_double(path, &laminar_diffus);
+        BFT_FREE(path);
+
+        path = cs_xpath_init_path();
+        cs_xpath_add_elements(&path, 3,
+                              "thermophysical_models",
+                              "darcy",
+                              "darcy_law");
+        cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+        cs_xpath_add_element(&path, "diffusion_coefficient");
+        cs_xpath_add_element(&path, "turbulent");
+        cs_xpath_add_function_text(&path);
+        cs_gui_get_double(path, &turbulent_diffus);
+        BFT_FREE(path);
+
+        for (int icel = 0; icel < cells; icel++) {
+          int iel = cells_list[icel]-1;
+          double norm = sqrt(vel[iel][0] * vel[iel][0] +
+                             vel[iel][1] * vel[iel][1] +
+                             vel[iel][2] * vel[iel][2]);
+          double tmp = turbulent_diffus * norm;
+          double diff = laminar_diffus - turbulent_diffus;
+          double denom = norm + 1.e-15;
+          visten_v[iel][0] = tmp + diff * vel[iel][0] * vel[iel][0] / denom;
+          visten_v[iel][1] = tmp + diff * vel[iel][1] * vel[iel][1] / denom;
+          visten_v[iel][2] = tmp + diff * vel[iel][2] * vel[iel][2] / denom;
+          visten_v[iel][3] =       diff * vel[iel][1] * vel[iel][0] / denom;
+          visten_v[iel][4] =       diff * vel[iel][1] * vel[iel][2] / denom;
+          visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
+        }
+      }
+      BFT_FREE(cells_list);
+      BFT_FREE(mdl);
+      BFT_FREE(zone_id);
+    }
+    BFT_FREE(status);
+  }
+
+  /* check values */
+  for (int iel = 0; iel < n_cells; iel++) {
+    if (saturation_field[iel] > 1. || saturation_field[iel] < 0.) {
+      bft_printf("soil_tracer_law, WARNING : saturation must between 0. and 1.\n");
+      bft_printf("                           current value is %15.8E\n", saturation_field[iel]);
+    }
+
+    if (capacity_field[iel] < 0.) {
+      bft_printf("soil_tracer_law, WARNING : capacity must be greater or equal to 0\n");
+      bft_printf("                           current value is %15.8E\n", capacity_field[iel]);
+    }
+
+    if (*permeability == 0) {
+      if (permeability_field[iel] < 0.) {
+        bft_printf("soil_tracer_law, WARNING : isotropic permeability must be greater or equal to 0\n");
+        bft_printf("                           current value is %15.8E\n", permeability_field[iel]);
+      }
     }
   }
 }

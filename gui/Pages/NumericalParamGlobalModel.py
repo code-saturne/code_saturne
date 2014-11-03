@@ -76,7 +76,6 @@ class NumericalParamGlobalModel(Model):
         self.default['hydrostatic_pressure'] ='off'
         self.default['hydrostatic_equilibrium'] ='on'
         self.default['wall_pressure_extrapolation'] = 'neumann'
-        self.default['gradient_reconstruction'] = 0
         self.default['time_scheme_order'] = 1
         self.default['velocity_pressure_algo'] ='simplec'
         from code_saturne.Pages.CompressibleModel import CompressibleModel
@@ -85,6 +84,12 @@ class NumericalParamGlobalModel(Model):
         else:
             self.default['piso_sweep_number'] = 2
         del CompressibleModel
+        from code_saturne.Pages.DarcyModel import DarcyModel
+        if DarcyModel(self.case).getDarcyModel() != 'off':
+            self.default['gradient_reconstruction'] = -11
+        else:
+            self.default['gradient_reconstruction'] = 0
+        del DarcyModel
         return self.default
 
 

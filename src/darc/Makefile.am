@@ -52,6 +52,7 @@ pkginclude_HEADERS =
 
 noinst_LTLIBRARIES = libcsdarc.la
 libcsdarc_la_SOURCES = \
+daini1.f90 \
 richards.f90
 libcsdarc_la_LDFLAGS = -no-undefined
 

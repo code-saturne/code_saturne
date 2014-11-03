@@ -1120,7 +1120,7 @@ if (nscal.gt.0) then
 endif
 
 ! Anisotropic diffusion/permeability for Darcy module
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
 
   if (darcy_anisotropic_permeability.eq.1) then
     idften(ipr) = 6

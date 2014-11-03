@@ -420,6 +420,7 @@ Thermophysical models
     Atmospheric flows
     Species transport
     Turbomachinery
+    Darcy
 Physical properties
     Fluid properties
     Reference values
@@ -431,6 +432,7 @@ Volume conditions
     Porosity
     Source terms
     Coriolis Source Terms
+    Darcy laws
 Particles and droplets tracking
     Global settings
     Statistics
@@ -669,6 +671,8 @@ Calculation management
         self.setRowClose(self.tr('Head losses'))
         self.setRowClose(self.tr('Porosity'))
         self.setRowClose(self.tr('Lagrangian solution control'))
+        self.setRowClose(self.tr('Darcy'))
+        self.setRowClose(self.tr('Darcy laws'))
 
         # Steady flow management
 
@@ -733,6 +737,7 @@ Calculation management
         node5 = node0.xmlGetNode('radiative_transfer', 'model')
         node6 = node0.xmlGetNode('atmospheric_flows',  'model')
         node7 = node0.xmlGetNode('compressible_model', 'model')
+        node8 = node0.xmlGetNode('darcy_model',        'model')
 
         if node1['model'] in ('ebu', 'd3p', 'lwp'):
             self.setRowOpen(self.tr('Thermal model'))
@@ -786,12 +791,23 @@ Calculation management
         if node7 and node7['status'] == 'on':
             self.setRowOpen(self.tr('Fluid structure interaction'))
 
+        if node8 and node8['model'] != 'off':
+            self.setRowOpen(self.tr('Darcy'))
+            self.setRowClose(self.tr('Turbulence models'))
+            self.setRowClose(self.tr('Turbomachinery'))
+            self.setRowClose(self.tr('Gravity'))
+        else:
+            self.setRowOpen(self.tr('Turbulence models'))
+            self.setRowOpen(self.tr('Turbomachinery'))
+            self.setRowOpen(self.tr('Gravity'))
+
         # Source terms view
         node_domain = case.xmlGetNode('solution_domain')
         node_vol = node_domain.xmlGetNode('volumic_conditions')
         nb_zone = 0
         nb_zone_losses = 0
         nb_zone_porosity = 0
+        nb_zone_darcy = 0
 
         for node in node_vol.xmlGetChildNodeList('zone'):
             if node['momentum_source_term'] == 'on':
@@ -806,6 +822,8 @@ Calculation management
                 nb_zone_losses = nb_zone_losses + 1
             if node['porosity'] == 'on':
                 nb_zone_porosity = nb_zone_porosity + 1
+            if node['darcy_law'] == 'on':
+                nb_zone_darcy = nb_zone_darcy + 1
 
         if nb_zone > 0:
             self.setRowOpen(self.tr('Source terms'))
@@ -813,6 +831,8 @@ Calculation management
             self.setRowOpen(self.tr('Head losses'))
         if nb_zone_porosity > 0:
             self.setRowOpen(self.tr('Porosity'))
+        if nb_zone_darcy > 0:
+            self.setRowOpen(self.tr('Darcy laws'))
 
         self.__hideRow()
 

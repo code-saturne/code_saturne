@@ -230,7 +230,7 @@ allocate(w1(ncelet))
 allocate(dpvar(ncelet))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
   allocate(diverg(ncelet))
 endif
 
@@ -867,7 +867,7 @@ else
 
 endif
 
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
   call field_get_name(ivarfl(isca(iscal)), fname)
   call field_get_id(trim(fname)//'_delay', delay_id)
   call field_get_val_s(delay_id, cpro_delay)
@@ -877,7 +877,7 @@ if (idarcy.eq.1) then
 endif
 
 ! Without porosity neither Darcy
-if ((iporos.eq.0).and.(idarcy.eq.0)) then
+if ((iporos.eq.0).and.(ippmod(idarcy).eq.-1)) then
 
   ! --> Unsteady term and mass aggregation term
   do iel = 1, ncel
@@ -885,7 +885,7 @@ if ((iporos.eq.0).and.(idarcy.eq.0)) then
                 + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)
   enddo
 ! With porosity but not Darcy
-elseif (idarcy.eq.0) then
+elseif (ippmod(idarcy).eq.-1) then
   call field_get_val_s(ipori, porosi)
 
   do iel = 1, ncel
@@ -938,7 +938,7 @@ endif
 ! the necessary correction to take sorption into account and get the exact
 ! conservation of the mass of tracer.
 
-if (idarcy.eq.1) then
+if (ippmod(idarcy).eq.1) then
   if (darcy_unsteady.eq.1) then
     call divmas(1, imasfl , bmasfl , diverg)
     do iel = 1, ncel

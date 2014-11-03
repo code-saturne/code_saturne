@@ -73,6 +73,7 @@ use ppincl
 use mesh
 use field
 use cavitation
+use darcy_module
 
 !===============================================================================
 
@@ -160,7 +161,17 @@ if (iihmpr.eq.1) then
 ( ncel   , ncelet , icp    , irovar , ivivar ,                    &
   iviscv , itempk ,                                               &
   p0     , t0     , ro0    , cp0    , viscl0 , visls0 , viscv0 )
+
+  if (ippmod(idarcy).ge.0) then
+    call uidapp                                                           &
+    !==========
+    ( darcy_anisotropic_permeability,                                     &
+      darcy_anisotropic_diffusion,                                        &
+      darcy_gravity,                                                      &
+      darcy_gravity_x, darcy_gravity_y, darcy_gravity_z, ivisls)
+  endif
 endif
+
 
 call usphyv &
 !==========

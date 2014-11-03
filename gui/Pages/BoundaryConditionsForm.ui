@@ -116,7 +116,7 @@
        <widget class="BoundaryConditionsWallRadiativeTransferView" name="radiativeWidget" native="true"/>
       </item>
       <item row="11" column="0">
-       <widget class="BoundaryConditionsElectricalView" name="electricalwidget" native="true"/>
+       <widget class="BoundaryConditionsElectricalView" name="electricalWidget" native="true"/>
       </item>
       <item row="12" column="0">
        <widget class="BoundaryConditionsExternalHeadLossesView" name="externalHeadLossesWidget" native="true">
@@ -127,6 +127,9 @@
          </sizepolicy>
         </property>
        </widget>
+      </item>
+      <item row="13" column="0">
+       <widget class="BoundaryConditionsPressureView" name="pressureWidget" native="true"/>
       </item>
      </layout>
     </widget>
@@ -217,6 +220,12 @@
    <class>BoundaryConditionsElectricalView</class>
    <extends>QWidget</extends>
    <header location="global">BoundaryConditionsElectricalView.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>BoundaryConditionsPressureView</class>
+   <extends>QWidget</extends>
+   <header location="global">BoundaryConditionsPressureView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

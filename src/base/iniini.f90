@@ -860,11 +860,6 @@ icavit = -1
 ! --- Radiative Transfert (not activated by default)
 iirayo = 0
 
-! --- Darcy module (not activated by default)
-!        0: module not activated
-!        1: activated
-idarcy = 0
-
 ! --- No Bernoulli free entrance faces
 iifren = 0
 

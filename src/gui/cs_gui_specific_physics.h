@@ -72,6 +72,7 @@ BEGIN_C_DECLS
  *                              tabulation is used. INDJON=1: users tabulation
  * INTEGER          IEOS    --> compressible
  * INTEGER          IEQCO2  --> CO2 massic fraction transport
+ * INTEGER          IDARCY  --> darcy model
  *
  *----------------------------------------------------------------------------*/
 
@@ -91,7 +92,8 @@ void CS_PROCF (uippmo, UIPPMO) (int *const ippmod,
                                 int *const iatmos,
                                 int *const iaeros,
                                 int *const ieos,
-                                int *const ieqco2);
+                                int *const ieqco2,
+                                int *const idarcy);
 
 /*----------------------------------------------------------------------------
  * Density under relaxation
@@ -260,6 +262,36 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
 void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
                                int           *len      /* --> String Length  */
                                CS_ARGF_SUPP_CHAINE);
+
+
+/*----------------------------------------------------------------------------
+ * darcy model : read parameters
+ *
+ * Fortran Interface:
+ *
+ * subroutine uidai1
+ * *****************
+ * integer         iricha          -->   richards model
+ * integer         permeability    <--   permeability type
+ * integer         diffusion       <--   diffusion type
+ * integer         unsteady        <--   steady flow
+ * integer         convergence     <--   convergence criterion of Newton scheme
+ * integer         gravity         <--   check if gravity is taken into account
+ * double          gravity_x       <--   x component for gravity vector
+ * double          gravity_y       <--   y component for gravity vector
+ * double          gravity_z       <--   z component for gravity vector
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uidai1, UIDAI1) (const int    *const idarcy,
+                                      int    *const permeability,
+                                      int    *const diffusion,
+                                      int    *const unsteady,
+                                      int    *const convergence,
+                                      int    *const gravity,
+                                      double *gravity_x,
+                                      double *gravity_y,
+                                      double *gravity_z);
+
 
 /*=============================================================================
  * Public function prototypes

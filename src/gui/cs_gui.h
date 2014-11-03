@@ -418,6 +418,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  *
  * integer          ncelet   <--  number of cells with halo
  * integer          isuite   <--  restart indicator
+ * integer          idarcy   <--  darcy module activate or not
  * integer          iccfth   <--  type of initialisation(compressible model)
  * double precision ro0      <--  value of density if IROVAR=0
  * double precision cp0      <--  value of specific heat if ICP=0
@@ -429,6 +430,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 
 void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
                               const int          *isuite,
+                              const int          *idarcy,
                                     int          *iccfth,
                               const cs_real_t    *ro0,
                               const cs_real_t    *cp0,
@@ -524,6 +526,31 @@ void CS_PROCF (uiprof, UIPROF)(const int    *ncelet,
                                const double *ttpabs,
                                const double *xyzcen);
 
+
+/*----------------------------------------------------------------------------
+ * darcy model : read laws for capacity, saturation and permeability
+ *
+ * Fortran Interface:
+ *
+ * subroutine uidapp
+ * *****************
+ * integer         permeability    <--  permeability type
+ * integer         diffusion       <--  diffusion type
+ * integer         gravity         <--  check if gravity is taken into account
+ * double          gravity_x       <--   x component for gravity vector
+ * double          gravity_y       <--   y component for gravity vector
+ * double          gravity_z       <--   z component for gravity vector
+ * integer         ivisls          <--  pointer for Lambda/Cp
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
+                                const cs_int_t  *diffusion,
+                                const cs_int_t  *gravity,
+                                const double    *gravity_x,
+                                const double    *gravity_y,
+                                const double    *gravity_z,
+                                const cs_int_t   ivisls[]);
+
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.
  *
@@ -581,6 +608,30 @@ cs_gui_properties_value(const char  *property_name,
 void
 cs_gui_reference_initialization(const char  *param,
                                 double      *value);
+
+/*-----------------------------------------------------------------------------
+ * Return the name of the volumic zone
+ *
+ * parameters:
+ *   ith_zone        <--  id of volumic zone
+ *----------------------------------------------------------------------------*/
+
+static char
+*cs_gui_volumic_zone_id(int ith_zone);
+
+/*-----------------------------------------------------------------------------
+ * Return the list of cells describing a given zone.
+ *
+ * parameters:
+ *   zone_id             <--  volume zone id
+ *   n_cells_with_ghosts <--  number of cells with halo
+ *   cells               -->  number of selected cells
+ *----------------------------------------------------------------------------*/
+
+static int*
+get_cells_list(const char  *zone_id,
+               int          n_cells_with_ghosts,
+               int         *cells );
 
 /*-----------------------------------------------------------------------------
  * Selection of linear solvers.

@@ -50,6 +50,7 @@ from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
 from code_saturne.Pages.NumericalParamGlobalModel import NumericalParamGlobalModel
 from code_saturne.Pages.TurbulenceModel import TurbulenceModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.DarcyModel import DarcyModel
 
 #-------------------------------------------------------------------------------
 # NumericalParamEquat model class
@@ -67,13 +68,20 @@ class NumericalParamEquatModel(Model):
         self.node_vitpre  = self.node_models.xmlGetNode('velocity_pressure')
         self.node_varVP   = self.node_vitpre.xmlGetNodeList('variable')
         self.node_np      = self.case.xmlInitNode('numerical_parameters')
-        self.node_anal      = self.case.xmlGetNode('analysis_control')
+        self.node_anal    = self.case.xmlGetNode('analysis_control')
         self.model = XMLmodel(self.case)
+        self.darcy = DarcyModel(self.case).getDarcyModel()
 
        #variables list
         self.var = []
-        for node in self.node_varVP:
-            self.var.append(node['label'])
+        if self.darcy == "off":
+            for node in self.node_varVP:
+                self.var.append(node['label'])
+        else:
+            for node in self.node_varVP:
+                if node['name'] != "velocity":
+                    self.var.append(node['label'])
+
         for node in self._getThermalScalarNode():
             self.var.append(node['label'])
         for node in self._getAdditionalScalarNodes():
@@ -84,9 +92,10 @@ class NumericalParamEquatModel(Model):
             self.thermo.append(node['label'])
 
         self.UVW = []
-        for node in self.node_varVP:
-            if node['name'] == 'velocity':
-                self.UVW.append(node['label'])
+        if self.darcy == "off":
+            for node in self.node_varVP:
+                if node['name'] == 'velocity':
+                    self.UVW.append(node['label'])
 
 
     def _defaultValues(self, label=""):
@@ -348,9 +357,15 @@ class NumericalParamEquatModel(Model):
     def getSchemeList(self):
         """ Return the variables label list for scheme parameters """
         lst = []
-        for node in self._getSchemeNodesList():
-            for n in node:
-                lst.append(n['label'])
+        if self.darcy == "off":
+            for node in self._getSchemeNodesList():
+                for n in node:
+                    lst.append(n['label'])
+        else:
+            for node in self._getSchemeNodesList():
+                for n in node:
+                    if n['name'] != "velocity":
+                        lst.append(n['label'])
         return lst
 
 
@@ -362,13 +377,19 @@ class NumericalParamEquatModel(Model):
         comp_model = CompressibleModel(self.case).getCompressibleModel()
         del CompressibleModel
 
-        for node in self._getSolverNodesList():
-            for n in node:
-                if self._isPressure(n):
-                    if comp_model == 'off':
+        if self.darcy == "off":
+            for node in self._getSolverNodesList():
+                for n in node:
+                    if self._isPressure(n):
+                        if comp_model == 'off':
+                            lst.append(n['label'])
+                    else:
                         lst.append(n['label'])
-                else:
-                    lst.append(n['label'])
+        else:
+            for node in self._getSolverNodesList():
+                for n in node:
+                    if n['name'] != "velocity":
+                        lst.append(n['label'])
 
         return lst
 

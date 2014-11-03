@@ -55,6 +55,7 @@ from code_saturne.Pages.LocalizationModel import VolumicLocalizationModel, Local
 from code_saturne.Pages.InitializationModel import InitializationModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
 from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.DarcyModel import DarcyModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -144,6 +145,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         self.connect(self.pushButtonDensity,    SIGNAL("clicked()"),                   self.slotDensityFormula)
         self.connect(self.pushButtonTemperature,SIGNAL("clicked()"),                   self.slotTemperatureFormula)
         self.connect(self.pushButtonEnergy,     SIGNAL("clicked()"),                   self.slotEnergyFormula)
+        self.connect(self.pushButtonPressure_2, SIGNAL("clicked()"),                   self.slotPressureFormula)
 
         choice = self.init.getInitialTurbulenceChoice(self.zone)
         self.modelTurbulence.setItem(str_model = choice)
@@ -182,6 +184,12 @@ class InitializationView(QWidget, Ui_InitializationForm):
         else:
             for item in self.meteo_group:
                 item.hide()
+
+        if DarcyModel(self.case).getDarcyModel() == "off":
+            self.labelpressure.hide()
+            self.pushButtonPressure_2.hide()
+        else:
+            setGreenColor(self.pushButtonPressure_2, True)
 
         # Initialize widget
         self.initializeVariables(self.zone)
@@ -317,7 +325,6 @@ class InitializationView(QWidget, Ui_InitializationForm):
             log.debug("slotFormulaTurb -> %s" % str(result))
             self.init.setTurbFormula(self.zone, result)
             setGreenColor(self.sender(), False)
-
 
 
     @pyqtSignature("const QString&")
@@ -558,7 +565,7 @@ pressure = p0 + g * ro * z;\n"""
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
             self.init.setPressureFormula(self.zone, result)
-            setGreenColor(self.pushButtonPressure, False)
+            setGreenColor(self.pushButtonPressure_2, False)
 
 
 

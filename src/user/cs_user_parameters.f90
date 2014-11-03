@@ -351,6 +351,16 @@ if (.false.) then
   iirayo = 1
 endif
 
+! --- richards model
+! ==========
+
+!        if = -1   module not activated
+!        if =  1   module activated
+
+if (.false.) then
+  ippmod(idarcy) = -1
+endif
+
 !===============================================================================
 ! 2.  Specific options related to herebefore modules
 !===============================================================================
@@ -2595,3 +2605,112 @@ isuict = isuite
 
 return
 end subroutine uscti1
+
+
+!===============================================================================
+
+subroutine user_darcy_ini1
+!========================
+
+!===============================================================================
+!  Purpose:
+!  --------
+
+!  User routine for definition of computation parameters dealing with darcy module
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use ihmpre, only: iihmpr
+use entsor
+use darcy_module
+
+!===============================================================================
+
+implicit none
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+! 0. This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
+!===============================================================================
+
+if (iihmpr.eq.0) then
+  write(nfecra,9000)
+  call csexit (1)
+endif
+
+ 9000 format(                                                     &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/,                                                            &
+'@ @@ WARNING:    stop in data input',/,                          &
+'@    =======',/,                                                 &
+'@     The user subroutine ''user_darcy_ini1'' ',/,               &
+'@     must be completed',/,                                      &
+'@                                                            ',/,&
+'@',/,                                                            &
+'@  The calculation will not be run.',/,                          &
+'@',/,                                                            &
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',/)
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+if (.false.) then
+  darcy_anisotropic_permeability = 0 ! permeability : 0 isotrop, 1 anisotrop
+endif
+
+if (.false.) then
+  darcy_anisotropic_diffusion = 0 ! diffusion : 0 isotrop, 1 anisotrop
+endif
+
+if (.false.) then
+  darcy_unsteady = 0 ! 0 steady flow, 1 unsteady flow
+endif
+
+if (.false.) then
+  darcy_convergence_criterion = 0 ! convergence criterion of Newton scheme : 0, over pressure, 1, over velocity
+endif
+
+if (.false.) then
+  darcy_gravity = 0 ! gravity is taken into account : 0 no, 1 yes
+endif
+
+! if gravity is taken into account define gravity vector
+if (.false.) then
+  darcy_gravity_x = 0.
+  darcy_gravity_y = 0.
+  darcy_gravity_z = 1.
+endif
+
+!----
+! End
+!----
+
+return
+
+end subroutine user_darcy_ini1
+
+
+!===============================================================================
+
+

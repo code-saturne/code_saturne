@@ -877,6 +877,32 @@ _outlet_compressible(int         izone,
 }
 
 /*-----------------------------------------------------------------------------
+ * Get pressure value for darcy (inlet / outlet).
+ *
+ * parameters:
+ *   izone       -->  number of the current zone
+ *----------------------------------------------------------------------------*/
+
+static void
+_boundary_darcy(int izone)
+{
+  double value;
+  char  *path = NULL;
+
+  path = cs_xpath_init_path();
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "outlet");
+  cs_xpath_add_test_attribute(&path, "label", boundaries->label[izone]);
+
+  cs_xpath_add_element(&path, "dirichlet");
+  cs_xpath_add_test_attribute(&path, "name", "pressure");
+  cs_xpath_add_function_text(&path);
+  if (cs_gui_get_double(path, &value))
+    boundaries->preout[izone] = value;
+
+  BFT_FREE(path);
+}
+
+/*-----------------------------------------------------------------------------
  * Initialize mei tree and check for symbols existence
  *
  * parameters:
@@ -932,6 +958,7 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
  *   iephcf               <-- type of boundary: subsonic inlet at imposed total
  *                            pressure and total enthalpy (compressible)
  *   isopcf               <-- type of boundary: subsonic outlet (compressible)
+ *   idarcy               <-- darcy module activate or not
  *----------------------------------------------------------------------------*/
 
 static void
@@ -943,7 +970,8 @@ _init_boundaries(const cs_lnum_t  *nfabor,
                  const int  *iesicf,
                  const int  *isspcf,
                  const int  *iephcf,
-                 const int  *isopcf)
+                 const int  *isopcf,
+                 const int  *idarcy)
 {
   cs_lnum_t faces = 0;
   cs_lnum_t zones = 0;
@@ -1019,6 +1047,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     BFT_MALLOC(boundaries->rhoin,   zones, double);
     BFT_MALLOC(boundaries->tempin,  zones, double);
     BFT_MALLOC(boundaries->entin,   zones, double);
+    BFT_MALLOC(boundaries->preout,  zones, double);
+  }
+  else if (cs_gui_strcmp(vars->model, "darcy_model")) {
     BFT_MALLOC(boundaries->preout,  zones, double);
   }
   else {
@@ -1100,6 +1131,9 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       boundaries->preout[izone]    = 0;
       boundaries->entin[izone]     = 0;
     }
+   if (cs_gui_strcmp(vars->model, "darcy_model")) {
+      boundaries->preout[izone]    = 0;
+    }
 
     if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
       boundaries->meteo[izone].read_data = 0;
@@ -1147,53 +1181,56 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
     if (cs_gui_strcmp(nature, "inlet"))
     {
-      /* Inlet: VELOCITY */
-      choice_v = _boundary_choice("inlet", label, "velocity_pressure", "choice");
-      choice_d = _boundary_choice("inlet", label, "velocity_pressure", "direction");
-
-      if (cs_gui_strcmp(choice_v, "norm"))
+      if (*idarcy < 0)
       {
-        _inlet_data(label, "norm", &boundaries->norm[izone]);
-      }
-      else if (cs_gui_strcmp(choice_v, "flow1")) {
-        _inlet_data(label, "flow1", &boundaries->qimp[izone]);
-        boundaries->iqimp[izone] = 1;
-      }
-      else if (cs_gui_strcmp(choice_v, "flow2")) {
-        _inlet_data(label, "flow2", &boundaries->qimp[izone]);
-        boundaries->iqimp[izone] = 2;
-      }
-      else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-        const char *sym[] = {"u_norm"};
-        boundaries->velocity[izone] =
-            _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
-      }
-      else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-        const char *sym[] = {"q_m"};
-        boundaries->velocity[izone] =
-            _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
-        boundaries->iqimp[izone] = 1;
-      }
-      else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-        const char *sym[] = {"q_v"};
-        boundaries->velocity[izone] =
-            _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
-        boundaries->iqimp[izone] = 2;
-      }
+        /* Inlet: VELOCITY */
+        choice_v = _boundary_choice("inlet", label, "velocity_pressure", "choice");
+        choice_d = _boundary_choice("inlet", label, "velocity_pressure", "direction");
 
-      if (cs_gui_strcmp(choice_d, "coordinates"))
-      {
-        _inlet_data(label, "direction_x", &boundaries->dirx[izone]);
-        _inlet_data(label, "direction_y", &boundaries->diry[izone]);
-        _inlet_data(label, "direction_z", &boundaries->dirz[izone]);
+        if (cs_gui_strcmp(choice_v, "norm"))
+        {
+          _inlet_data(label, "norm", &boundaries->norm[izone]);
+        }
+        else if (cs_gui_strcmp(choice_v, "flow1")) {
+          _inlet_data(label, "flow1", &boundaries->qimp[izone]);
+          boundaries->iqimp[izone] = 1;
+        }
+        else if (cs_gui_strcmp(choice_v, "flow2")) {
+          _inlet_data(label, "flow2", &boundaries->qimp[izone]);
+          boundaries->iqimp[izone] = 2;
+        }
+        else if (cs_gui_strcmp(choice_v, "norm_formula")) {
+          const char *sym[] = {"u_norm"};
+          boundaries->velocity[izone] =
+              _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+        }
+        else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
+          const char *sym[] = {"q_m"};
+          boundaries->velocity[izone] =
+              _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+          boundaries->iqimp[izone] = 1;
+        }
+        else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
+          const char *sym[] = {"q_v"};
+          boundaries->velocity[izone] =
+              _boundary_init_mei_tree(_inlet_formula(label, choice_v), sym, 1);
+          boundaries->iqimp[izone] = 2;
+        }
+
+        if (cs_gui_strcmp(choice_d, "coordinates"))
+        {
+          _inlet_data(label, "direction_x", &boundaries->dirx[izone]);
+          _inlet_data(label, "direction_y", &boundaries->diry[izone]);
+          _inlet_data(label, "direction_z", &boundaries->dirz[izone]);
+        }
+        else if (cs_gui_strcmp(choice_d, "formula")) {
+          const char *sym[] = {"dir_x", "dir_y", "dir_z"};
+          boundaries->direction[izone] =
+              _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"), sym, 3);
+        }
+        BFT_FREE(choice_v);
+        BFT_FREE(choice_d);
       }
-      else if (cs_gui_strcmp(choice_d, "formula")) {
-        const char *sym[] = {"dir_x", "dir_y", "dir_z"};
-        boundaries->direction[izone] =
-          _boundary_init_mei_tree(_inlet_formula(label, "direction_formula"), sym, 3);
-      }
-      BFT_FREE(choice_v);
-      BFT_FREE(choice_d);
 
       /* Inlet: data for COAL COMBUSTION */
       if (cs_gui_strcmp(vars->model, "solid_fuels"))
@@ -1219,6 +1256,10 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         _boundary_status("inlet", label, "meteo_data", &boundaries->meteo[izone].read_data);
         _boundary_status("inlet", label, "meteo_automatic", &boundaries->meteo[izone].automatic);
       }
+
+      /* Inlet: data for darcy */
+      if (cs_gui_strcmp(vars->model, "darcy_model"))
+        _boundary_darcy(izone);
 
       /* Inlet: TURBULENCE */
       choice = _boundary_choice("inlet", label, "turbulence", "choice");
@@ -1248,6 +1289,10 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       /* Outlet: data for COMPRESSIBLE MODEL */
       if (cs_gui_strcmp(vars->model, "compressible_model"))
         _outlet_compressible(izone, isspcf, isopcf);
+
+      /* Inlet: data for darcy */
+      if (cs_gui_strcmp(vars->model, "darcy_model"))
+        _boundary_darcy(izone);
     }
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
       const char *sym[] = {"K"};
@@ -1415,61 +1460,71 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * subroutine uiclim
  * *****************
  *
- * integer          ntcabs  <-- current iteration number
- * integer          nfabor  <-- number of boundary faces
- * integer          nozppm  <-- max number of boundary conditions zone
- * integer          ncharm  <-- maximal number of coals
- * integer          ncharb  <-- number of simulated coals
- * integer          nclpch  <-- number of simulated class per coals
- * integer          ngasg   <-- number of simulated gas for electrical models
- * integer          iindef  <-- type of boundary: not defined
- * integer          ientre  <-- type of boundary: inlet
- * integer          iesicf  <-- type of boundary: imposed inlet (compressible)
- * integer          isspcf  <-- type of boundary: supersonic outlet (compressible)
- * integer          iephcf  <-- type of boundary: subsonic inlet imposed total
- *                              pressure and total enthalpy (compressible)
- * integer          isopcf  <-- type of boundary: subsonic outlet (compressible)
- * integer          iparoi  <-- type of boundary: smooth wall
- * integer          iparug  <-- type of boundary: rough wall
- * integer          isymet  <-- type of boundary: symetry
- * integer          isolib  <-- type of boundary: outlet
- * integer          ifrent  <-- type of boundary: free inlet outlet
- * integer          ifreesf <-- type of boundary: free surface
- * integer          iqimp   <-- 1 if flow rate is applied
- * integer          icalke  <-- 1 for automatic turbulent boundary conditions
- * integer          ientat  <-- 1 for air temperature boundary conditions (coal)
- * integer          ientcp  <-- 1 for coal temperature boundary conditions (coal)
- * INTEGER          INMOXY  <-- coal: number of oxydant for the current inlet
- * integer          ientox  <-- 1 for an air fow inlet (gas combustion)
- * integer          ientfu  <-- 1 for fuel flow inlet (gas combustion)
- * integer          ientgb  <-- 1 for burned gas inlet (gas combustion)
- * integer          ientgf  <-- 1 for unburned gas inlet (gas combustion)
- * integer          iprofm  <-- atmospheric flows: on/off for profile from data
- * double precision coejou  <-- electric arcs
- * double precision dpot    <-- electric arcs : potential difference
- * integer          itypfb  <-- type of boundary for each face
- * integer          izfppp  <-- zone number for each boundary face
- * integer          icodcl  <-- boundary conditions array type
- * double precision dtref   <-- time step
- * double precision ttcabs  <-- current time
- * double precision surfbo  <-- boundary faces surface
- * double precision cgdfbo  <-- boundary faces center of gravity
- * double precision qimp    <-- inlet flow rate
- * double precision qimpat  <-- inlet air flow rate (coal)
- * double precision qimpcp  <-- inlet coal flow rate (coal)
- * double precision dh      <-- hydraulic diameter
- * double precision xintur  <-- turbulent intensity
- * double precision timpat  <-- air temperature boundary conditions (coal)
- * double precision timpcp  <-- inlet coal temperature (coal)
- * double precision tkent   <-- inlet temperature (gas combustion)
- * double precision fment   <-- Mean Mixture Fraction at Inlet (gas combustion)
- * double precision distch  <-- ratio for each coal
- * integer          nvarcl  <-- dimension for rcodcl
- * double precision rcodcl  <-- boundary conditions array value
+ * integer          ntcabs           <-- current iteration number
+ * integer          nfabor           <-- number of boundary faces
+ * integer          idarcy           <-- darcy module activate or not
+ * integer          darcy_gravity    <-- is gravity taken into account
+ * double precision darcy_gravity_x  <-- X component for gravity vector
+ * double precision darcy_gravity_y  <-- Y component for gravity vector
+ * double precision darcy_gravity_z  <-- Z component for gravity vector
+ * integer          nozppm           <-- max number of boundary conditions zone
+ * integer          ncharm           <-- maximal number of coals
+ * integer          ncharb           <-- number of simulated coals
+ * integer          nclpch           <-- number of simulated class per coals
+ * integer          ngasg            <-- number of simulated gas for electrical models
+ * integer          iindef           <-- type of boundary: not defined
+ * integer          ientre           <-- type of boundary: inlet
+ * integer          iesicf           <-- type of boundary: imposed inlet (compressible)
+ * integer          isspcf           <-- type of boundary: supersonic outlet (compressible)
+ * integer          iephcf           <-- type of boundary: subsonic inlet imposed total
+ *                                       pressure and total enthalpy (compressible)
+ * integer          isopcf           <-- type of boundary: subsonic outlet (compressible)
+ * integer          iparoi           <-- type of boundary: smooth wall
+ * integer          iparug           <-- type of boundary: rough wall
+ * integer          isymet           <-- type of boundary: symetry
+ * integer          isolib           <-- type of boundary: outlet
+ * integer          ifrent           <-- type of boundary: free inlet outlet
+ * integer          ifreesf          <-- type of boundary: free surface
+ * integer          iqimp            <-- 1 if flow rate is applied
+ * integer          icalke           <-- 1 for automatic turbulent boundary conditions
+ * integer          ientat           <-- 1 for air temperature boundary conditions (coal)
+ * integer          ientcp           <-- 1 for coal temperature boundary conditions (coal)
+ * INTEGER          INMOXY           <-- coal: number of oxydant for the current inlet
+ * integer          ientox           <-- 1 for an air fow inlet (gas combustion)
+ * integer          ientfu           <-- 1 for fuel flow inlet (gas combustion)
+ * integer          ientgb           <-- 1 for burned gas inlet (gas combustion)
+ * integer          ientgf           <-- 1 for unburned gas inlet (gas combustion)
+ * integer          iprofm           <-- atmospheric flows: on/off for profile from data
+ * double precision coejou           <-- electric arcs
+ * double precision dpot             <-- electric arcs : potential difference
+ * integer          itypfb           <-- type of boundary for each face
+ * integer          izfppp           <-- zone number for each boundary face
+ * integer          icodcl           <-- boundary conditions array type
+ * double precision dtref            <-- time step
+ * double precision ttcabs           <-- current time
+ * double precision surfbo           <-- boundary faces surface
+ * double precision cgdfbo           <-- boundary faces center of gravity
+ * double precision qimp             <-- inlet flow rate
+ * double precision qimpat           <-- inlet air flow rate (coal)
+ * double precision qimpcp           <-- inlet coal flow rate (coal)
+ * double precision dh               <-- hydraulic diameter
+ * double precision xintur           <-- turbulent intensity
+ * double precision timpat           <-- air temperature boundary conditions (coal)
+ * double precision timpcp           <-- inlet coal temperature (coal)
+ * double precision tkent            <-- inlet temperature (gas combustion)
+ * double precision fment            <-- Mean Mixture Fraction at Inlet (gas combustion)
+ * double precision distch           <-- ratio for each coal
+ * integer          nvarcl           <-- dimension for rcodcl
+ * double precision rcodcl           <-- boundary conditions array value
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *nfabor,
+                               const int  *idarcy,
+                               const int  *darcy_gravity,
+                               double     *darcy_gravity_x,
+                               double     *darcy_gravity_y,
+                               double     *darcy_gravity_z,
                                const int  *nozppm,
                                const int  *ncharm,
                                const int  *ncharb,
@@ -1539,7 +1594,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
   if (boundaries == NULL)
     _init_boundaries(nfabor, nozppm, ncharb, nclpch,
-                     izfppp, iesicf, isspcf, iephcf, isopcf);
+                     izfppp, iesicf, isspcf, iephcf, isopcf, idarcy);
 
   /* At each time-step, loop on boundary faces:
      One sets itypfb, rcodcl and icodcl thanks to the arrays
@@ -1874,13 +1929,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       const cs_field_t  *fv = cs_field_by_name_try("velocity");
       const int var_key_id = cs_field_key_id("variable_id");
       int ivarv = cs_field_get_key_int(fv, var_key_id) -1;
-
       if (cs_gui_strcmp(choice_d, "coordinates")) {
         if (cs_gui_strcmp(choice_v, "norm")) {
           norm = boundaries->norm[izone] /
-            sqrt(  boundaries->dirx[izone] * boundaries->dirx[izone]
-                 + boundaries->diry[izone] * boundaries->diry[izone]
-                 + boundaries->dirz[izone] * boundaries->dirz[izone]);
+              sqrt(  boundaries->dirx[izone] * boundaries->dirx[izone]
+                   + boundaries->diry[izone] * boundaries->diry[izone]
+                   + boundaries->dirz[izone] * boundaries->dirz[izone]);
 
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
@@ -1917,9 +1971,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_evaluate(boundaries->velocity[izone]);
 
             norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-              / sqrt(  boundaries->dirx[izone] * boundaries->dirx[izone]
-                     + boundaries->diry[izone] * boundaries->diry[izone]
-                     + boundaries->dirz[izone] * boundaries->dirz[izone]);
+            / sqrt(  boundaries->dirx[izone] * boundaries->dirx[izone]
+                   + boundaries->diry[izone] * boundaries->diry[izone]
+                   + boundaries->dirz[izone] * boundaries->dirz[izone]);
 
             rcodcl[ ivarv      * (*nfabor) + ifbr] = boundaries->dirx[izone] * norm;
             rcodcl[(ivarv + 1) * (*nfabor) + ifbr] = boundaries->diry[izone] * norm;
@@ -1946,9 +2000,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             ifbr = faces_list[ifac];
 
             norm =   boundaries->norm[izone]
-              / sqrt(  surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
-                     + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
-                     + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2]);
+            / sqrt(  surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
+                   + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
+                   + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2]);
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * (*nfabor) + ifbr] = -surfbo[3 * ifbr + i] * norm;
@@ -1985,9 +2039,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_evaluate(boundaries->velocity[izone]);
 
             norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-              / sqrt(  surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
-                     + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
-                     + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2]);
+            / sqrt(  surfbo[3 * ifbr + 0] * surfbo[3 * ifbr + 0]
+                   + surfbo[3 * ifbr + 1] * surfbo[3 * ifbr + 1]
+                   + surfbo[3 * ifbr + 2] * surfbo[3 * ifbr + 2]);
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * (*nfabor) + ifbr] = -surfbo[3 * ifbr + i] * norm;
@@ -2028,7 +2082,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             X[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
 
             norm =   boundaries->norm[izone]
-              / sqrt(X[0] * X[0] + X[1] * X[1] + X[2] * X[2]);
+                   / sqrt(X[0] * X[0] + X[1] * X[1] + X[2] * X[2]);
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * (*nfabor) + ifbr] = X[i] * norm;
@@ -2079,7 +2133,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             X[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
 
             norm =   mei_tree_lookup(boundaries->velocity[izone], "u_norm")
-              / sqrt( X[0] * X[0] + X[1] * X[1] + X[2] * X[2]);
+             / sqrt( X[0] * X[0] + X[1] * X[1] + X[2] * X[2]);
 
             for (i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * (*nfabor) + ifbr] = X[i] * norm;
@@ -2102,7 +2156,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               X[2] = mei_tree_lookup(boundaries->direction[izone], "dir_z");
 
               for (i = 0; i < 3; i++)
-                rcodcl[(ivarv + i) * (*nfabor) + ifbr] = X[i];
+                  rcodcl[(ivarv + i) * (*nfabor) + ifbr] = X[i];
             }
           }
         }
@@ -2110,9 +2164,35 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         cs_gui_add_mei_time(cs_timer_wtime() - t0);
 
       }
+
+      if (cs_gui_strcmp(vars->model, "darcy_model")) {
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac] -1;
+          for (i = 0; i < 3; i++)
+          {
+            icodcl[(ivarv + i)* (*nfabor) + ifbr] = 3;
+            rcodcl[(ivarv + i)* (*nfabor) + ifbr] = 0.;
+          }
+        }
+      }
       BFT_FREE(choice_v);
       BFT_FREE(choice_d);
 
+      if (cs_gui_strcmp(vars->model, "darcy_model")) {
+        const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+        const int var_key_id = cs_field_key_id("variable_id");
+        int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac] -1;
+          icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+          rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+          if (*darcy_gravity == 1) {
+            rcodcl[ivar1 * (*nfabor) + ifbr] += cdgfbo[3 * ifbr    ] * *darcy_gravity_x +
+                                                cdgfbo[3 * ifbr + 1] * *darcy_gravity_y +
+                                                cdgfbo[3 * ifbr + 2] * *darcy_gravity_z;
+          }
+        }
+      }
       /* turbulent inlet, with formula */
       if (icalke[zone_nbr-1] == 0) {
         t0 = cs_timer_wtime();
@@ -2388,6 +2468,21 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
           for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
             ifbr = faces_list[ifac];
             rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+          }
+        }
+      }
+      else if (cs_gui_strcmp(vars->model, "darcy_model")) {
+        const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
+        const int var_key_id = cs_field_key_id("variable_id");
+        int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
+        for (int ifac = 0; ifac < faces; ifac++) {
+          ifbr = faces_list[ifac] -1;
+          icodcl[ivar1 * (*nfabor) + ifbr] = 1;
+          rcodcl[ivar1 * (*nfabor) + ifbr] = boundaries->preout[izone];
+          if (*darcy_gravity == 1) {
+            rcodcl[ivar1 * (*nfabor) + ifbr] += cdgfbo[3 * ifbr    ] * *darcy_gravity_x +
+                                                cdgfbo[3 * ifbr + 1] * *darcy_gravity_y +
+                                                cdgfbo[3 * ifbr + 2] * *darcy_gravity_z;
           }
         }
       }
@@ -2975,6 +3070,9 @@ cs_gui_boundary_conditions_free_memory(const int  *ncharb)
       BFT_FREE(boundaries->rhoin);
       BFT_FREE(boundaries->tempin);
       BFT_FREE(boundaries->entin);
+      BFT_FREE(boundaries->preout);
+    }
+    if (cs_gui_strcmp(vars->model, "darcy_model")) {
       BFT_FREE(boundaries->preout);
     }
     if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
