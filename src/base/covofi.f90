@@ -576,7 +576,7 @@ if (nfbpcd.gt.0) then
   (ncelet , ncel ,                                       &
    iscal  ,                                              &
    nfbpcd , ifbpcd  , itypcd(1,ivar) ,                   &
-   ivoid  , ivoid   , ivoid          ,                   &
+   0      , ivoid   , ivoid          ,                   &
    spcond(1,ivar)   , srccond        ,                   &
    rvoid  , rvoid   , rvoid          ,                   &
    cvara_var        ,                                    &
@@ -608,7 +608,7 @@ if (icond.eq.1) then
   !=============================
   (ncelet , ncel ,                                       &
    iscal  ,                                              &
-   ivoid  , ivoid   , ivoid          ,                   &
+   0      , ivoid   , ivoid          ,                   &
    ncmast , ltmast  , itypst(1,ivar) ,                   &
    rvoid  , rvoid   ,                                    &
    svcond(1,ivar)   , srcmst         , flxmst  ,         &
