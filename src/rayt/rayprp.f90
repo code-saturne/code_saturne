@@ -160,9 +160,9 @@ if (iirayo.gt.0) then
 
     f_name = 'rad_absorption' // e_name
     f_label = 'Absorp' // e_label
-    call add_property_field(f_name, f_label, iabs(irphas))
-    call hide_property(iabs(irphas))
-    ihisvr(ipppro(iabs(irphas)),1) = -1
+    call add_property_field(f_name, f_label, iabso(irphas))
+    call hide_property(iabso(irphas))
+    ihisvr(ipppro(iabso(irphas)),1) = -1
 
     f_name = 'rad_emission' // e_name
     f_label = 'Emiss' // e_label

@@ -76,7 +76,7 @@ module radiat
   !                       ITSRE --> Terme source explicite
   !                       ITSRI --> Terme source implicite
   !                       IQX,IQY,IQZ --> Composantes du vecteur densite de flux radiatif
-  !                       IABS --> part d'absorption dans le terme source explicite
+  !                       IABSO --> part d'absorption dans le terme source explicite
   !                       IEMI --> part d'emission dans le terme source explicite
   !                       ICAK --> coefficient d'absorption
   !                       ILUMIN --> POINTEUR QUI PERMET DE REPERER L INTEGRALE DE LA
@@ -84,7 +84,7 @@ module radiat
 
   integer, save ::  itsre(1+nclcpm) , itsri(1+nclcpm) ,                      &
                     iqx   ,   iqy   , iqz   ,                                &
-                    iabs(1+nclcpm)  , iemi(1+nclcpm)  , icak(1+nclcpm)  ,    &
+                    iabso(1+nclcpm) , iemi(1+nclcpm)  , icak(1+nclcpm)  ,    &
                     ilumin
 
   !--> field ids for specific  boundary fields

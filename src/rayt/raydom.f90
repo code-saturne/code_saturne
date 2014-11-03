@@ -580,7 +580,7 @@ if (iirayo.eq.2) then
   flurds , flurdb ,                                              &
   viscf  , viscb  ,                                              &
   smbrs  , rovsdt ,                                              &
-  propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))),           &
+  propce(1,ipproc(iabso(1))),propce(1,ipproc(iemi(1))),          &
   propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,          &
   propce(1,ipproc(iqy))   , propce(1,ipproc(iqz))  ,             &
   bqinci, beps , tparo  ,                                        &
@@ -675,7 +675,7 @@ else if (iirayo.eq.1) then
    flurds , flurdb ,                                              &
    viscf  , viscb  ,                                              &
    smbrs  , rovsdt ,                                              &
-   propce(1,ipproc(iabs(1))),propce(1,ipproc(iemi(1))) ,          &
+   propce(1,ipproc(iabso(1))),propce(1,ipproc(iemi(1))),          &
    propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,     &
    propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
    bqinci , bfnet )
@@ -791,8 +791,8 @@ if (idverl.ge.0) then
   do iel = 1, ncel
 
     !--> part d'absorption du terme source explicite
-    propce(iel,ipproc(iabs(1))) = propce(iel,ipproc(icak(1))) &
-                                * propce(iel,ipproc(itsre(1)))
+    propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(icak(1))) &
+                                 * propce(iel,ipproc(itsre(1)))
 
     !--> part d'emission du terme source explicite
     propce(iel,ipproc(iemi(1))) = -4.d0*propce(iel,ipproc(itsri(1)))
@@ -805,8 +805,8 @@ if (idverl.ge.0) then
       ipcla = 1+icla
       do iel = 1, ncel
         ! Fluid
-        propce(iel,ipproc(iabs(1))) = propce(iel,ipproc(iabs(1)))             &
-                                    + propce(iel,ipproc(ix2(icla)))           &
+        propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(iabso(1)))            &
+                                     + propce(iel,ipproc(ix2(icla)))           &
                                       * propce(iel,ipproc(icak(ipcla)))       &
                                       * propce(iel,ipproc(itsre(1)))
 
@@ -814,10 +814,10 @@ if (idverl.ge.0) then
                                     - 4.0d0*propce(iel,ipproc(ix2(icla)))     &
                                       * propce(iel,ipproc(itsri(ipcla)))
         ! Particles
-        propce(iel,ipproc(iabs(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
-                                        * propce(iel,ipproc(itsre(1)))
+        propce(iel,ipproc(iabso(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
+                                         * propce(iel,ipproc(itsre(1)))
         propce(iel,ipproc(iemi(ipcla))) = - 4.0d0*propce(iel,ipproc(itsri(ipcla)))
-        propce(iel,ipproc(itsre(ipcla))) = propce(iel,ipproc(iabs(ipcla)))    &
+        propce(iel,ipproc(itsre(ipcla))) = propce(iel,ipproc(iabso(ipcla)))    &
                                          + propce(iel,ipproc(iemi(ipcla)))
       enddo
     enddo
@@ -829,8 +829,8 @@ if (idverl.ge.0) then
       call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1, ncel
         ! Fluid
-        propce(iel,ipproc(iabs(1))) = propce(iel,ipproc(iabs(1)))             &
-                                    + cvara_yfol(iel)                         &
+        propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(iabso(1)))            &
+                                     + cvara_yfol(iel)                         &
                                       * propce(iel,ipproc(icak(ipcla)))       &
                                       * propce(iel,ipproc(itsre(1)))
 
@@ -838,10 +838,10 @@ if (idverl.ge.0) then
                                     - 4.0d0*cvara_yfol(iel)                   &
                                       * propce(iel,ipproc(itsri(ipcla)))
         ! Particles
-        propce(iel,ipproc(iabs(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
-                                        * propce(iel,ipproc(itsre(1)))
+        propce(iel,ipproc(iabso(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
+                                         * propce(iel,ipproc(itsre(1)))
         propce(iel,ipproc(iemi(ipcla))) = - 4.0d0*propce(iel,ipproc(itsri(ipcla)))
-        propce(iel,ipproc(itsre(ipcla))) = propce(iel,ipproc(iabs(ipcla)))    &
+        propce(iel,ipproc(itsre(ipcla))) = propce(iel,ipproc(iabso(ipcla)))    &
                                          + propce(iel,ipproc(iemi(ipcla)))
       enddo
     enddo
@@ -852,7 +852,7 @@ if (idverl.ge.0) then
   !    il est calcule comme la somme des termes d'absorption et d'emission
   !    (il faudra multiplier ce terme par volume(iel) dans covofi->raysca)
   do iel = 1, ncel
-    propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(iabs(1)))                &
+    propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(iabso(1)))                &
                                  + propce(iel,ipproc(iemi(1)))
   enddo
 
@@ -931,7 +931,7 @@ if (idverl.ge.0) then
 
 else
   do iel = 1, ncel
-    propce(iel,ipproc(iabs(1)))  = zero
+    propce(iel,ipproc(iabso(1)))  = zero
     propce(iel,ipproc(iemi(1)))  = zero
     propce(iel,ipproc(itsre(1))) = zero
     propce(iel,ipproc(itsri(1))) = zero
@@ -1055,7 +1055,7 @@ if (idverl.eq.2) then
   bb = zero
   do iel = 1,ncel
     bb = bb                                                                    &
-       + (propce(iel,ipproc(iabs(1)))+propce(iel,ipproc(iemi(1))))*volume(iel)
+       + (propce(iel,ipproc(iabso(1)))+propce(iel,ipproc(iemi(1))))*volume(iel)
   enddo
 
   if(irangp.ge.0) then
@@ -1067,7 +1067,7 @@ if (idverl.eq.2) then
 
   !---> correction du terme source semi-analytique par le conservatif
   do iel = 1,ncel
-    propce(iel,ipproc(itsre(1))) = ( propce(iel,ipproc(iabs(1)))              &
+    propce(iel,ipproc(itsre(1))) = ( propce(iel,ipproc(iabso(1)))              &
                                    + propce(iel,ipproc(iemi(1))))             &
                                  * aa
   enddo
