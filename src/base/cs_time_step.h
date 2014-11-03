@@ -69,6 +69,59 @@ typedef struct {
 
 } cs_time_step_t;
 
+
+/* Time step options descriptor */
+/*------------------------------*/
+
+typedef struct {
+
+
+  int       inpdt0; /* Indicator "zero time step"
+                       - 0: standard calculation
+                       - 1: to simulate no time step
+                       - for non-restarted computations: only resolution
+                       (Navier-Stokes, turbulence, scalars) is skipped
+                       - for restarted computations: resolution, computation
+                       of physical properties, and definition of boundary
+                       conditions is skipped (values are read from checkpoint
+                       file). */
+
+  int       iptlro; /* Clip the time step with respect to the buoyant effects
+                       - 0: false
+                       - 1: true. */
+
+  int       idtvar; /* Option for a variable time step
+                       - -1: steady algorithm
+                       -  0: constant time step
+                       -  1: time step constant in space but variable in time
+                       -  2: variable time step in space and in time. */
+
+  double    dtref;  /* Reference time step. */
+
+  double    coumax; /* Maximum Courant number (when idtvar is
+                       different from 0). */
+
+  double    cflmmx; /* Maximum Courant number for the continuity equation
+                       in compressible model. */
+
+
+  double    foumax; /* Maximum Fourier number (when idtvar is different from 0). */
+
+  double    varrdt; /* Relative allowed variation of dt (when idtvar is
+                       different from 0). */
+
+  double    dtmin;  /* Minimum value of dt (when idtvar is different from 0).
+                       Take
+                       dtmin = min(ld/ud, sqrt(lt/(gdelta rho/rho)), ...). */
+
+  double    dtmax;  /* Maximum value of dt (when idtvar is different from 0).
+                       Take
+                       dtmax = max(ld/ud, sqrt(lt/(gdelta rho/rho)), ...). */
+
+  double    relxst; /* Relaxation coefficient for the steady algorithm. */
+
+} cs_time_step_options_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -76,6 +129,8 @@ typedef struct {
 /* Pointer to main time step structure */
 
 extern const cs_time_step_t  *cs_glob_time_step;
+
+extern const cs_time_step_options_t  *cs_glob_time_step_options;
 
 /*=============================================================================
  * Public function prototypes

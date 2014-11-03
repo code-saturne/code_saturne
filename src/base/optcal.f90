@@ -422,42 +422,42 @@ module optcal
   !>           resolution, computation of physical properties, and definition
   !>           of boundary conditions is skipped (values are read from
   !>           checkpoint file)
-  integer, save ::          inpdt0
+  integer(c_int), pointer, save :: inpdt0
 
   !> Clip the time step with respect to the buoyant effects
   !>    - 0: false
   !>    - 1: true
-  integer, save ::          iptlro
+  integer(c_int), pointer, save :: iptlro
 
   !> option for a variable time step
   !>    - -1: steady algorithm
   !>    -  0: constant time step
   !>    -  1: time step constant in space but variable in time
   !>    -  2: variable time step in space and in time
-  integer, save ::          idtvar
+  integer(c_int), pointer, save :: idtvar
 
   !> reference time step
-  double precision, save :: dtref
+  real(c_double), pointer, save :: dtref
 
   !> maximum Courant number (when idtvar is different from 0)
-  double precision, save :: coumax
+  real(c_double), pointer, save :: coumax
 
   !> maximum Courant number for the continuity equation in compressible model
-  double precision, save :: cflmmx
+  real(c_double), pointer, save :: cflmmx
 
   !> maximum Fourier number (when idtvar is different from 0)
-  double precision, save :: foumax
+  real(c_double), pointer, save :: foumax
 
   !> relative allowed variation of dt (when idtvar is different from 0)
-  double precision, save :: varrdt
+  real(c_double), pointer, save :: varrdt
 
   !> minimum value of dt (when idtvar is different from 0).
   !> Take dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
-  double precision, save :: dtmin
+  real(c_double), pointer, save :: dtmin
 
   !> maximum value of dt (when idtvar is different from 0).
   !> Take dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...)
-  double precision, save :: dtmax
+  real(c_double), pointer, save :: dtmax
 
   !> multiplicator coefficient for the time step of each variable
   !>    - useless for u,v,w,p
@@ -469,7 +469,7 @@ module optcal
   double precision, save :: relaxv(nvarmx)
 
   !> relaxation coefficient for the steady algorithm
-  double precision, save :: relxst
+  real(c_double), pointer, save :: relxst
 
   !> \}
 
@@ -1039,6 +1039,20 @@ module optcal
     end subroutine cs_f_time_step_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
+    ! global time step options structure
+
+    subroutine cs_f_time_step_options_get_pointers(inpdt0, iptlro, idtvar, &
+                                                   dtref, coumax, cflmmx,  &
+                                                   foumax, varrdt, dtmin,  &
+                                                   dtmax, relxst)          &
+      bind(C, name='cs_f_time_step_options_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: inpdt0, iptlro, idtvar, dtref, coumax, cflmmx
+      type(c_ptr), intent(out) :: foumax, varrdt, dtmin, dtmax, relxst
+    end subroutine cs_f_time_step_options_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
     ! global thermal model structure
 
     subroutine cs_f_thermal_model_get_pointers(itherm, itpscl, iscalt) &
@@ -1207,6 +1221,40 @@ contains
     call c_f_pointer(c_ttmabs, ttmabs)
 
   end subroutine time_step_init
+
+  !> \brief Initialize Fortran time step options API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine time_step_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_inpdt0, c_iptlro, c_idtvar
+    type(c_ptr) :: c_dtref, c_coumax, c_cflmmx
+    type(c_ptr) :: c_foumax, c_varrdt, c_dtmin
+    type(c_ptr) :: c_dtmax, c_relxst
+
+    call cs_f_time_step_options_get_pointers(c_inpdt0, c_iptlro, c_idtvar, &
+                                             c_dtref, c_coumax, c_cflmmx,  &
+                                             c_foumax, c_varrdt, c_dtmin,  &
+                                             c_dtmax, c_relxst)
+
+    call c_f_pointer(c_inpdt0, inpdt0)
+    call c_f_pointer(c_iptlro, iptlro)
+    call c_f_pointer(c_idtvar, idtvar)
+    call c_f_pointer(c_dtref,  dtref)
+    call c_f_pointer(c_coumax, coumax)
+    call c_f_pointer(c_cflmmx, cflmmx)
+    call c_f_pointer(c_foumax, foumax)
+    call c_f_pointer(c_varrdt, varrdt)
+    call c_f_pointer(c_dtmin,  dtmin)
+    call c_f_pointer(c_dtmax,  dtmax)
+    call c_f_pointer(c_relxst, relxst)
+
+  end subroutine time_step_options_init
 
   !> \brief Initialize Fortran thermal model API.
   !> This maps Fortran pointers to global C structure members.

@@ -131,6 +131,7 @@ iporf = -1
 !===============================================================================
 
 call time_step_init
+call time_step_options_init
 call thermal_model_init
 call turb_model_init
 call turb_rans_model_init

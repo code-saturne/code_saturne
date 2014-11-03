@@ -76,7 +76,7 @@ BEGIN_C_DECLS
   syntax, as it is expected to be used in many places.
 
   \var  cs_time_step_t::is_variable
-        0 if time step is fixed in time, 0 otherwise
+        0 if time step is fixed in time, 1 otherwise
   \var  cs_time_step_t::is_local
         0 if time step is uniform in space, 0 if is is local
         (in which case the time value is only a reference)
@@ -94,6 +94,62 @@ BEGIN_C_DECLS
         current absolute time
   \var  cs_time_step_t::t_max
         maximum absolute time
+
+  \struct cs_time_step_options_t
+
+  \brief time step options descriptor
+
+  Members of this time step options descriptor are publicly accessible, to
+  allow for concise syntax.
+
+  \var  cs_time_step_options_t::inpdt0
+        Indicator "zero time step"
+        - 0: standard calculation
+        - 1: to simulate no time step
+        - for non-restarted computations: only resolution (Navier-Stokes,
+          turbulence, scalars) is skipped
+        - for restarted computations: resolution, computation of physical
+          properties, and definition of boundary conditions is skipped
+          (values are read from checkpoint file).
+
+  \var  cs_time_step_options_t::iptlro
+        Clip the time step with respect to the buoyant effects
+        - 0: false
+        - 1: true.
+
+  \var  cs_time_step_options_t::idtvar
+        Option for a variable time step
+        - -1: steady algorithm
+        -  0: constant time step
+        -  1: time step constant in space but variable in time
+        -  2: variable time step in space and in time.
+
+  \var  cs_time_step_options_t::dtref
+        Reference time step.
+
+  \var  cs_time_step_options_t::coumax
+        Maximum Courant number (when idtvar is different from 0).
+
+  \var  cs_time_step_options_t::cflmmx
+        Max. Courant number for the continuity equation in compressible model.
+
+  \var  cs_time_step_options_t::foumax
+        Maximum Fourier number (when idtvar is different from 0).
+
+  \var  cs_time_step_options_t::varrdt
+        Allowed relative variation of dt (when idtvar different from 0).
+
+  \var  cs_time_step_options_t::dtmin
+        Minimum value of dt (when idtvar is different from 0).
+        Take dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
+
+  \var  cs_time_step_options_t::dtmax
+        Maximum value of dt (when idtvar is different from 0).
+        Take dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
+
+  \var  cs_time_step_options_t::relxst
+        Relaxation coefficient for the steady algorithm.
+
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -114,7 +170,24 @@ BEGIN_C_DECLS
 
 static cs_time_step_t  _time_step = {0, 0, 0, 0, -1, 2, 0., 0., -1.};
 
+static cs_time_step_options_t  _time_step_options =
+{
+  0,          /* inpdt0 */
+  0,          /* iptlro */
+  0,          /* idtvar */
+  -1.e12*10., /* dtref  */
+  1.,         /* coumax */
+  0.99,       /* cflmmx */
+  10.,        /* foumax */
+  0.1,        /* varrdt */
+  -1.e12*10., /* dtmin  */
+  -1.e12*10., /* dtmax  */
+  0.7         /* relxst */
+};
+
 const cs_time_step_t  *cs_glob_time_step = &_time_step;
+
+const cs_time_step_options_t  *cs_glob_time_step_options = &_time_step_options;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -129,6 +202,19 @@ cs_f_time_step_get_pointers(int     **nt_prev,
                             double  **t_prev,
                             double  **t_cur,
                             double  **t_max);
+
+void
+cs_f_time_step_options_get_pointers(int    **inpdt0,
+                                    int    **iptlro,
+                                    int    **idtvar,
+                                    double **dtref,
+                                    double **coumax,
+                                    double **cflmmx,
+                                    double **foumax,
+                                    double **varrdt,
+                                    double **dtmin,
+                                    double **dtmax,
+                                    double **relxst);
 
 /*============================================================================
  * Private function definitions
@@ -170,6 +256,52 @@ cs_f_time_step_get_pointers(int      **nt_prev,
   *t_prev = &(_time_step.t_prev);
   *t_cur = &(_time_step.t_cur);
   *t_max = &(_time_step.t_max);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global time step structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   inpdt0 --> pointer to cs_glob_time_step_options->inpdt0
+ *   iptlro --> pointer to cs_glob_time_step_options->iptlro
+ *   idtvar --> pointer to cs_glob_time_step_options->idtvar
+ *   dtref  --> pointer to cs_glob_time_step_options->dtref
+ *   coumax --> pointer to cs_glob_time_step_options->coumax
+ *   cflmmx --> pointer to cs_glob_time_step_options->cflmmx
+ *   foumax --> pointer to cs_glob_time_step_options->foumax
+ *   varrdt --> pointer to cs_glob_time_step_options->varrdt
+ *   dtmin  --> pointer to cs_glob_time_step_options->dtmin
+ *   dtmax  --> pointer to cs_glob_time_step_options->dtmax
+ *   relxst --> pointer to cs_glob_time_step_options->relxst
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_time_step_options_get_pointers(int    **inpdt0,
+                                    int    **iptlro,
+                                    int    **idtvar,
+                                    double **dtref,
+                                    double **coumax,
+                                    double **cflmmx,
+                                    double **foumax,
+                                    double **varrdt,
+                                    double **dtmin,
+                                    double **dtmax,
+                                    double **relxst)
+{
+  *inpdt0 = &(_time_step_options.inpdt0);
+  *iptlro = &(_time_step_options.iptlro);
+  *idtvar = &(_time_step_options.idtvar);
+  *dtref  = &(_time_step_options.dtref );
+  *coumax = &(_time_step_options.coumax);
+  *cflmmx = &(_time_step_options.cflmmx);
+  *foumax = &(_time_step_options.foumax);
+  *varrdt = &(_time_step_options.varrdt);
+  *dtmin  = &(_time_step_options.dtmin );
+  *dtmax  = &(_time_step_options.dtmax );
+  *relxst = &(_time_step_options.relxst);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
