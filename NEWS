@@ -5,6 +5,8 @@ Release 3.2.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix Crank-Nicolson time scheme for velocity.
+
 - Fix minor bugs detected by Address / Undefined Behavior Sanitizer.
 
 - Fix bug when iphydr=1 and (icorio or iturbo=1)
