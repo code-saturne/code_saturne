@@ -104,6 +104,21 @@ A = (Y1 / rho1) + (Y2 /rho2);
 density = 1.0 / A;
 
 """
+    density_h = """# Density
+density = Enthalpy / 1040. * 1.29;
+
+# density for mixtures of gases
+#
+# Y1 -> mass fraction of component 1
+# Y2 -> mass fraction of component 2
+
+rho1 = 1.25051;
+rho2 = 1.7832;
+A = (Y1 / rho1) + (Y2 /rho2);
+density = 1.0 / A;
+
+"""
+
     molecular_viscosity="""# Sutherland's Formula
 # Gas             Cst    T0      mu0
 # air             120    291.15  18.27e-6
@@ -122,6 +137,19 @@ mu_ref = 18.27e-6;
 
 if ( TempK > 0 && TempK < 555) {
 molecular_viscosity = mu_ref * (T0+CST / TempK+CST) * (TempK/T0)^(3./2.);
+} else {
+molecular_viscosity = -999.0;
+}
+
+"""
+    molecular_viscosity_h="""
+CST = 120;
+T0 = 291.15;
+mu_ref = 18.27e-6;
+Temp = Enthalpy / 1040.;
+
+if ( Enthalpy > 0) {
+molecular_viscosity = mu_ref * (T0+CST / Temp+CST) * (Temp/T0)^(3./2.);
 } else {
 molecular_viscosity = -999.0;
 }
@@ -148,6 +176,12 @@ thermal_conductivity = 6.784141e-5 * TempK + 5.564317e-3;
 thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
 
 """
+    thermal_conductivity_h="""
+Temp = Enthalpy / 1040.;
+thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
+"""
+
+
     def __init__(self, parent, case):
         """
         Constructor
@@ -778,6 +812,8 @@ thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
         if s == "TempC":
             TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.density.replace("TempK", TempInContext)
+        elif s == "Enthalpy":
+            exa = FluidCharacteristicsView.density_h
         else:
             exa = FluidCharacteristicsView.density
 
@@ -816,6 +852,8 @@ thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
         if s == "TempC":
             TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.molecular_viscosity.replace("TempK", TempInContext)
+        elif s == "Enthalpy":
+            exa = FluidCharacteristicsView.molecular_viscosity_h
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
 
@@ -920,6 +958,8 @@ thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
         if s == "TempC":
             TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.thermal_conductivity.replace("TempK", TempInContext)
+        elif s == "Enthalpy":
+            exa = FluidCharacteristicsView.thermal_conductivity_h
         else:
             exa = FluidCharacteristicsView.thermal_conductivity
 
