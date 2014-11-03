@@ -325,7 +325,7 @@ if (iihmpr.eq.1) then
   !==========
              (nmodpp,                                                 &
               irovar, ivivar, icorio,                                 &
-              gx, gy, gz, omegax, omegay, omegaz ,                    &
+              gx, gy, gz,                                             &
               ro0, viscl0, viscv0, visls0, cp0, t0,                   &
               p0, xmasmr, itempk, itherm, itpscl)
 

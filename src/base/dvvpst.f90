@@ -80,6 +80,7 @@ use field
 use field_operator
 use post
 use cs_f_interfaces
+use rotation
 use turbomachinery
 
 !===============================================================================
@@ -113,6 +114,7 @@ integer          ifcsii, iflpst, itplus, iprev
 double precision pcentr
 
 double precision rbid(1)
+double precision vr(3)
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: wcell
@@ -187,12 +189,10 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
+      call rotation_velocity(1, xyzcen(:,iel), vr)
 
-      pcentr =   0.5d0*((omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))**2 &
-                      + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))**2 &
-                      + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))**2)
-
-      tracel(iloc) = cvar_pr(iel) + crom(iel)*pcentr
+      tracel(iloc) = cvar_pr(iel) + &
+             0.5d0*crom(iel)*(vr(1)**2 + vr(2)**2 + vr(3)**2)
 
     enddo
 
@@ -206,15 +206,11 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
+      call rotation_velocity(1, xyzcen(:,iel), vr)
 
-      tracel(1 + (iloc-1)*idimt) = vel(1,iel) &
-          + (omegay*xyzcen(3,iel) - omegaz*xyzcen(2,iel))
-
-      tracel(2 + (iloc-1)*idimt) = vel(2,iel) &
-          + (omegaz*xyzcen(1,iel) - omegax*xyzcen(3,iel))
-
-      tracel(3 + (iloc-1)*idimt) = vel(3,iel) &
-          + (omegax*xyzcen(2,iel) - omegay*xyzcen(1,iel))
+      tracel(1 + (iloc-1)*idimt) = vel(1,iel) + vr(1)
+      tracel(2 + (iloc-1)*idimt) = vel(2,iel) + vr(2)
+      tracel(3 + (iloc-1)*idimt) = vel(3,iel) + vr(3)
 
     enddo
 
@@ -236,16 +232,10 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
+      call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
 
-      if (irotce(iel).ne.0) then
-        pcentr =  0.5d0*((rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))**2 &
-                       + (rotax(3)*xyzcen(1,iel) - rotax(1)*xyzcen(3,iel))**2 &
-                       + (rotax(1)*xyzcen(2,iel) - rotax(2)*xyzcen(1,iel))**2)
-      else
-        pcentr = 0.d0
-      endif
-
-      tracel(iloc) = cvar_pr(iel) - crom(iel)*pcentr
+      tracel(iloc) =   cvar_pr(iel) &
+                     - crom(iel)*0.5d0*(vr(1)**2 + vr(2)**2 + vr(3)**2)
 
     enddo
 
@@ -259,23 +249,11 @@ if (numtyp .eq. -1) then
     do iloc = 1, ncelps
 
       iel = lstcel(iloc)
+      call rotation_velocity(irotce(iel), xyzcen(:,iel), vr)
 
-      if (irotce(iel).ne.0) then
-
-        tracel(1 + (iloc-1)*idimt) = vel(1,iel) &
-            - (rotax(2)*xyzcen(3,iel) - rotax(3)*xyzcen(2,iel))
-
-        tracel(2 + (iloc-1)*idimt) = vel(2,iel) &
-            - (rotax(3)*xyzcen(1,iel) - rotax(1)*xyzcen(3,iel))
-
-        tracel(3 + (iloc-1)*idimt) = vel(3,iel) &
-            - (rotax(1)*xyzcen(2,iel) - rotax(2)*xyzcen(1,iel))
-
-      else
-        tracel(1 + (iloc-1)*idimt) = vel(1,iel)
-        tracel(2 + (iloc-1)*idimt) = vel(2,iel)
-        tracel(3 + (iloc-1)*idimt) = vel(3,iel)
-      endif
+      tracel(1 + (iloc-1)*idimt) = vel(1,iel) - vr(1)
+      tracel(2 + (iloc-1)*idimt) = vel(2,iel) - vr(2)
+      tracel(3 + (iloc-1)*idimt) = vel(3,iel) - vr(3)
 
     enddo
 

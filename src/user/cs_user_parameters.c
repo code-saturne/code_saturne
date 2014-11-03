@@ -72,6 +72,7 @@
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
+#include "cs_rotation.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
 #include "cs_time_moment.h"

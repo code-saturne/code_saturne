@@ -211,6 +211,10 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[]);
 /*----------------------------------------------------------------------------
  * Compute velocity relative to fixed coordinates at a given point
  *
+ * Deprecated:
+ * Use cs_rotation_velocity for more consistent naming of this reference
+ * frame velocity.
+ *
  * parameters:
  *   rotor_num <-- associated rotor number (1 to n numbering)
  *   coords    <-- point coordinates

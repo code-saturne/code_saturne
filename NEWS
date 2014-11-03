@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Turbomachinery modeling:
+   * enable multiple rotors for rotor-stator model based on mesh joining.
+
 - Generalize double backward implicit Euler time scheme for all variables.
   It could be activated with the keyword ibdtso(ivar) = 1.
 
@@ -85,13 +88,13 @@ Architectural changes
   structure as owner.
 
 - Rename and merge user subroutines:
-   - merge (usebu1, uslwc1, usd3pt1, uscpl1, user_coal_ini1, user_fuel_ini1)
+   * merge (usebu1, uslwc1, usd3pt1, uscpl1, user_coal_ini1, user_fuel_ini1)
            in cs_user_combustion (in cs_user_paramters.f90)
-   - split and rename usray1 in cs_user_radiative_transfer
+   * split and rename usray1 in cs_user_radiative_transfer
      (in cs_user_parameters.f90)
            (Note that the declaration of the use of radiative transfer is in
                  usppmo, as the other specific physics models)
-   - rename usray2 in cs_user_radiative_transfer_bcs
+   * rename usray2 in cs_user_radiative_transfer_bcs
          - merge usalin into usipph (in cs_user_parameters.f90)
          - rename ustsma into cs_user_mass_source_terms
          - rename uskpdc into cs_user_head_losses

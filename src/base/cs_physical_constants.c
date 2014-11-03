@@ -85,13 +85,8 @@ BEGIN_C_DECLS
         z component of the gravity vector
   \var  cs_physical_constants_t::icorio
         Coriolis source terms
-  \var  cs_physical_constants_t::omegax
-        x component of the rotation vector
-  \var  cs_physical_constants_t::omegay
-        y component of the rotation vector
-  \var  cs_physical_constants_t::omegaz
-        z component of the rotation vector
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_fluid_properties_t
@@ -270,10 +265,7 @@ void
 cs_f_physical_constants_get_pointers(double  **gx,
                                      double  **gy,
                                      double  **gz,
-                                     int     **icorio,
-                                     double  **omegax,
-                                     double  **omegay,
-                                     double  **omegaz);
+                                     int     **icorio);
 
 void
 cs_f_fluid_properties_get_pointers(int     **ixyzp0,
@@ -304,31 +296,22 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   gx --> pointer to cs_glob_physical_constants->gx
- *   gy --> pointer to cs_glob_physical_constants->gy
- *   gz --> pointer to cs_glob_physical_constants->gz
+ *   gx     --> pointer to cs_glob_physical_constants->gx
+ *   gy     --> pointer to cs_glob_physical_constants->gy
+ *   gz     --> pointer to cs_glob_physical_constants->gz
  *   icorio --> pointer to cs_glob_physical_constants->icorio
- *   omegax --> pointer to cs_glob_physical_constants->omegax
- *   omegay --> pointer to cs_glob_physical_constants->omegay
- *   omegaz --> pointer to cs_glob_physical_constants->omegaz
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_physical_constants_get_pointers(double  **gx,
                                      double  **gy,
                                      double  **gz,
-                                     int     **icorio,
-                                     double  **omegax,
-                                     double  **omegay,
-                                     double  **omegaz)
+                                     int     **icorio)
 {
   *gx = &(_physical_constants.gx);
   *gy = &(_physical_constants.gy);
   *gz = &(_physical_constants.gz);
   *icorio = &(_physical_constants.icorio);
-  *omegax = &(_physical_constants.omegax);
-  *omegay = &(_physical_constants.omegay);
-  *omegaz = &(_physical_constants.omegaz);
 }
 
 /*----------------------------------------------------------------------------

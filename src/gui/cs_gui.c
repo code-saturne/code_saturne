@@ -78,6 +78,7 @@
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_prototypes.h"
+#include "cs_rotation.h"
 #include "cs_timer.h"
 #include "cs_time_moment.h"
 #include "cs_physical_properties.h"
@@ -1121,13 +1122,13 @@ cs_gui_gravity_value(const char   *param,
  * Modify coriolis source terms parameters.
  *
  * parameters:
- *   param               <--  coriolis parameter (OMEGAX, OMEGAY, OMEGAZ)
- *   keyword            <<--  new value of the coriolis parameter
+ *   param    <--  coriolis parameter (omegax, omegay, omegaz)
+ *   value    -->  new value of the coriolis parameter
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_coriolis_value(const char   *param,
-                            double *value)
+_coriolis_value(const char   *param,
+                double *value)
 {
   char   *path = NULL;
   double  result;
@@ -2830,9 +2831,6 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
                                 double     *gx,
                                 double     *gy,
                                 double     *gz,
-                                double     *omegax,
-                                double     *omegay,
-                                double     *omegaz,
                                 double     *ro0,
                                 double     *viscl0,
                                 double     *viscv0,
@@ -2856,16 +2854,18 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   cs_gui_gravity_value("gravity_y", gy);
   cs_gui_gravity_value("gravity_z", gz);
 
-  cs_gui_coriolis_value("omega_x", omegax);
-  cs_gui_coriolis_value("omega_y", omegay);
-  cs_gui_coriolis_value("omega_z", omegaz);
+  cs_real_t w_x, w_y, w_z;
 
-  if (   cs_gui_is_equal_real(*omegax, 0.)
-      && cs_gui_is_equal_real(*omegay, 0.)
-      && cs_gui_is_equal_real(*omegaz, 0.))
-    *icorio = 0;
-  else
+  _coriolis_value("omega_x", &w_x);
+  _coriolis_value("omega_y", &w_y);
+  _coriolis_value("omega_z", &w_z);
+
+  if (w_x*w_x + w_y*w_y + w_z*w_z > 0.) {
+    cs_rotation_define(w_x, w_y, w_z, 0, 0, 0);
     *icorio = 1;
+  }
+  else
+    *icorio = 0;
 
   cs_gui_reference_initialization("pressure", p0);
 

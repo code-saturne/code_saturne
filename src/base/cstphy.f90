@@ -64,13 +64,8 @@ module cstphy
   !> Gravity
   real(c_double), pointer, save :: gx, gy, gz
 
+  !> Coriolis effects
   integer(c_int), pointer, save :: icorio
-
-  !> Rotation vector
-  real(c_double), pointer, save :: omegax, omegay, omegaz
-
-  ! TODO
-  double precision, save :: irot(3,3), prot(3,3), qrot(3,3), rrot(3,3)
 
   !> Physical constants of the fluid
   !> filling \ref xyzp0 indicator
@@ -671,12 +666,11 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! global physical constants structure
 
-    subroutine cs_f_physical_constants_get_pointers(gx, gy, gz, icorio,     &
-                                                    omegax, omegay, omegaz) &
+    subroutine cs_f_physical_constants_get_pointers(gx, gy, gz, icorio) &
       bind(C, name='cs_f_physical_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: gx, gy, gz, icorio, omegax, omegay, omegaz
+      type(c_ptr), intent(out) :: gx, gy, gz, icorio
     end subroutine cs_f_physical_constants_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -737,7 +731,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Initialize Fortran time step API.
+  !> \brief Initialize Fortran physical constants API.
   !> This maps Fortran pointers to global C structure members.
 
   subroutine physical_constants_init
@@ -747,22 +741,18 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_gx, c_gy, c_gz, c_icorio, c_omegax, c_omegay, c_omegaz
+    type(c_ptr) :: c_gx, c_gy, c_gz, c_icorio
 
-    call cs_f_physical_constants_get_pointers(c_gx, c_gy, c_gz, c_icorio, &
-                                              c_omegax, c_omegay, c_omegaz)
+    call cs_f_physical_constants_get_pointers(c_gx, c_gy, c_gz, c_icorio)
 
     call c_f_pointer(c_gx, gx)
     call c_f_pointer(c_gy, gy)
     call c_f_pointer(c_gz, gz)
     call c_f_pointer(c_icorio, icorio)
-    call c_f_pointer(c_omegax, omegax)
-    call c_f_pointer(c_omegay, omegay)
-    call c_f_pointer(c_omegaz, omegaz)
 
   end subroutine physical_constants_init
 
-  !> \brief Initialize Fortran time step API.
+  !> \brief Initialize Fortran fluid properties API.
   !> This maps Fortran pointers to global C structure members.
 
   subroutine fluid_properties_init

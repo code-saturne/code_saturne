@@ -52,7 +52,6 @@ typedef struct {
 
   double        gx, gy, gz;                 /* gravity components */
   int           icorio;                     /* Coriolis source terms indicator */
-  double        omegax, omegay, omegaz;     /* rotation vector components */
 
 } cs_physical_constants_t;
 

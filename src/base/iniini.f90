@@ -37,6 +37,7 @@ use dimens
 use numvar
 use optcal
 use cstphy
+use rotation
 use entsor
 use pointe
 use albase
@@ -1038,10 +1039,6 @@ gz = 0.d0
 ! --- Vecteur rotation
 
 icorio = 0
-
-omegax = 0.d0
-omegay = 0.d0
-omegaz = 0.d0
 
 ! --- Constantes physiques de chaque phase
 !       RO0,VISCL0 et CP0 devront etre initialises par l'utilisateur

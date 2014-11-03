@@ -70,6 +70,7 @@
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
+#include "cs_rotation.h"
 #include "cs_time_moment.h"
 #include "cs_time_step.h"
 #include "cs_turbomachinery.h"
@@ -150,21 +151,18 @@ _velocity_moment_data(const void  *input,
   const cs_real_3_t  *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
-  const cs_real_3_t omg = {cs_glob_physical_constants->omegax,
-                           cs_glob_physical_constants->omegay,
-                           cs_glob_physical_constants->omegaz};
+  const cs_rotation_t *rot = cs_glob_rotation;
 
-  double omgnrm = sqrt(cs_math_3_square_norm(omg));
+  double omgnrm = fabs(rot->omega);
 
   /* Axial, tangential and radial unit vectors */
 
-  cs_real_3_t e_ax = {omg[0]/omgnrm, omg[1]/omgnrm, omg[2]/omgnrm};
+  cs_real_3_t e_ax = {rot->axis[0], rot->axis[1], rot->axis[2]};
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-    cs_real_3_t e_th = {omg[1]*cell_cen[i][2] - omg[2]*cell_cen[i][1],
-                        omg[2]*cell_cen[i][0] - omg[0]*cell_cen[i][2],
-                        omg[0]*cell_cen[i][1] - omg[1]*cell_cen[i][0]};
+    cs_real_3_t e_th;
+    cs_rotation_velocity(rot, cell_cen[i], e_th);
 
     double xnrm = sqrt(cs_math_3_square_norm(e_th));
 
@@ -172,9 +170,8 @@ _velocity_moment_data(const void  *input,
     e_th[1] /= xnrm;
     e_th[2] /= xnrm;
 
-    cs_real_3_t e_r = {e_th[1]*omg[2] - e_th[2]*omg[1],
-                       e_th[2]*omg[0] - e_th[0]*omg[2],
-                       e_th[0]*omg[1] - e_th[1]*omg[0]};
+    cs_real_3_t e_r;
+    cs_rotation_coriolis_v(rot, -1., e_th, e_r);
 
     xnrm = sqrt(cs_math_3_square_norm(e_r));
 

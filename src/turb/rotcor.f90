@@ -76,6 +76,7 @@ use pointe, only: straio
 use mesh
 use field
 use field_operator
+use rotation
 
 !===============================================================================
 
@@ -138,6 +139,17 @@ else if (itycor.eq.2) then
   if (iturb.eq.60) call field_get_val_prev_s(ivarfl(iomg), cvara_omg)
 endif
 
+if (icorio.eq.1) then
+  ! In case of rotating frame, all cells belong to the same "rotor"
+  call coriolis_t(1, 1.d0, matrot)
+else
+  do ii = 1, 3
+    do jj = 1, 3
+      matrot(ii,jj) = 0.d0
+    enddo
+  enddo
+endif
+
 !===============================================================================
 ! 1. Preliminary calculations
 !===============================================================================
@@ -157,31 +169,6 @@ iprev = 1
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
                            gradv)
 
-! Compute rotation matrix (dual antisymmetric matrix of the rotation vector)
-!   matrot(i,j) = e_imj.Omega_m
-! with Omega the rotation vector of the reference frame
-
-if (icorio.eq.1) then
-
-  matrot(1,2) = -omegaz
-  matrot(1,3) =  omegay
-  matrot(2,3) = -omegax
-
-  do ii = 1, 3
-    matrot(ii,ii) = 0.d0
-    do jj = ii+1, 3
-      matrot(jj,ii) = -matrot(ii,jj)
-    enddo
-  enddo
-
-else
-  do ii = 1, 3
-    do jj = 1, 3
-      matrot(ii,jj) = 0.d0
-    enddo
-  enddo
-endif
-
 ! Compute the strain rate tensor (symmetric)
 !          S_ij = 0.5(dU_i/dx_j+dU_j/dx_i)
 ! and the absolute vorticity tensor (anti-symmetric)
@@ -190,6 +177,7 @@ endif
 ! Only the non zero components in the upper triangle are stored
 
 do iel = 1, ncel
+
   ! S11
   strain(iel,1) = gradv(1, 1, iel)
   ! S22
@@ -208,6 +196,7 @@ do iel = 1, ncel
   vortab(iel,2) = 0.5d0*(gradv(3, 1, iel) - gradv(1, 3, iel)) + matrot(1,3)
   ! W23
   vortab(iel,3) = 0.5d0*(gradv(3, 2, iel) - gradv(2, 3, iel)) + matrot(2,3)
+
 enddo
 
 ! Free memory (strain and vortab arrays are deallocated later)

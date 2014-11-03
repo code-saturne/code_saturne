@@ -86,6 +86,7 @@ use cplsat
 use mesh
 use lagran, only: iilagr
 use lagdim, only: ntersl
+use rotation
 use turbomachinery
 use ptrglo
 use field
@@ -132,7 +133,8 @@ double precision vitbox, vitboy, vitboz
 double precision t1, t2, t3, t4
 double precision visclc, visctc
 double precision distbf, srfbnf, hint
-double precision rnx, rny, rnz, rcodcx, rcodcy, rcodcz, rcodcn
+double precision rnx, rny, rnz
+double precision vr(3), vr1(3), vr2(3), vrn
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -572,14 +574,15 @@ if (iprco.le.0) then
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
       if (irotce(iel1).ne.0 .or. irotce(iel2).ne.0) then
-        dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+
         rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-        vitbox = rotax(2)*cdgfac(3,ifac) - rotax(3)*cdgfac(2,ifac)
-        vitboy = rotax(3)*cdgfac(1,ifac) - rotax(1)*cdgfac(3,ifac)
-        vitboz = rotax(1)*cdgfac(2,ifac) - rotax(2)*cdgfac(1,ifac)
-        imasfl(ifac) = imasfl(ifac) - rhofac*(  vitbox*surfac(1,ifac)  &
-                                              + vitboy*surfac(2,ifac)  &
-                                              + vitboz*surfac(3,ifac))
+        call rotation_velocity(irotce(iel1), cdgfac(:,ifac), vr1)
+        call rotation_velocity(irotce(iel2), cdgfac(:,ifac), vr2)
+
+        imasfl(ifac) = imasfl(ifac) - 0.5d0 * rhofac*(      &
+                          surfac(1,ifac)*(vr1(1) + vr2(1))  &
+                        + surfac(2,ifac)*(vr1(2) + vr2(2))  &
+                        + surfac(3,ifac)*(vr1(3) + vr2(3)) )
       endif
     enddo
     !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
@@ -587,14 +590,13 @@ if (iprco.le.0) then
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       if (irotce(iel).ne.0) then
-        dtfac  = dt(iel)
+
         rhofac = brom(ifac)
-        vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
-        vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
-        vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
-        bmasfl(ifac) = bmasfl(ifac) - rhofac*(  vitbox*surfbo(1,ifac)  &
-                                              + vitboy*surfbo(2,ifac)  &
-                                              + vitboz*surfbo(3,ifac))
+        call rotation_velocity(irotce(iel), cdgfbo(:,ifac), vr)
+
+        bmasfl(ifac) = bmasfl(ifac) - rhofac*( surfbo(1,ifac)*vr(1) &
+                                             + surfbo(2,ifac)*vr(2) &
+                                             + surfbo(3,ifac)*vr(3) )
       endif
     enddo
   endif
@@ -769,24 +771,22 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
         hint = ( visclc+visctc )/distbf
       endif
 
-      rcodcx = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
-      rcodcy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
-      rcodcz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+      call rotation_velocity(irotce(iel), cdgfbo(:,ifac), vr)
 
       ! Gradient boundary conditions (Dirichlet)
       !-----------------------------
-      rcodcn = rcodcx*rnx+rcodcy*rny+rcodcz*rnz
+      vrn = vr(1)*rnx + vr(2)*rny + vr(3)*rnz
 
-      coefau(1,ifac) = (1.d0-coftur(ifac))*(rcodcx - rcodcn*rnx) + rcodcn*rnx
-      coefau(2,ifac) = (1.d0-coftur(ifac))*(rcodcy - rcodcn*rny) + rcodcn*rny
-      coefau(3,ifac) = (1.d0-coftur(ifac))*(rcodcz - rcodcn*rnz) + rcodcn*rnz
+      coefau(1,ifac) = (1.d0-coftur(ifac))*(vr(1) - vrn*rnx) + vrn*rnx
+      coefau(2,ifac) = (1.d0-coftur(ifac))*(vr(2) - vrn*rny) + vrn*rny
+      coefau(3,ifac) = (1.d0-coftur(ifac))*(vr(3) - vrn*rnz) + vrn*rnz
 
       ! Flux boundary conditions (Dirichlet)
       !-------------------------
 
-      cofafu(1,ifac) = -hfltur(ifac)*(rcodcx - rcodcn*rnx) - hint*rcodcn*rnx
-      cofafu(2,ifac) = -hfltur(ifac)*(rcodcy - rcodcn*rny) - hint*rcodcn*rny
-      cofafu(3,ifac) = -hfltur(ifac)*(rcodcz - rcodcn*rnz) - hint*rcodcn*rnz
+      cofafu(1,ifac) = -hfltur(ifac)*(vr(1) - vrn*rnx) - hint*vrn*rnx
+      cofafu(2,ifac) = -hfltur(ifac)*(vr(2) - vrn*rny) - hint*vrn*rny
+      cofafu(3,ifac) = -hfltur(ifac)*(vr(3) - vrn*rnz) - hint*vrn*rnz
 
     endif
 
@@ -1138,29 +1138,29 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
     if (irotce(iel1).ne.0 .or. irotce(iel2).ne.0) then
-      dtfac  = 0.5d0*(dt(iel1) + dt(iel2))
+
       rhofac = 0.5d0*(crom(iel1) + crom(iel2))
-      vitbox = rotax(2)*cdgfac(3,ifac) - rotax(3)*cdgfac(2,ifac)
-      vitboy = rotax(3)*cdgfac(1,ifac) - rotax(1)*cdgfac(3,ifac)
-      vitboz = rotax(1)*cdgfac(2,ifac) - rotax(2)*cdgfac(1,ifac)
-      imasfl(ifac) = imasfl(ifac) - rhofac*(  vitbox*surfac(1,ifac)  &
-                                            + vitboy*surfac(2,ifac)  &
-                                            + vitboz*surfac(3,ifac))
+      call rotation_velocity(irotce(iel1), cdgfac(:,ifac), vr1)
+      call rotation_velocity(irotce(iel2), cdgfac(:,ifac), vr2)
+
+      imasfl(ifac) = imasfl(ifac) - 0.5d0 *rhofac*(         &
+                          surfac(1,ifac)*(vr1(1) + vr2(1))  &
+                        + surfac(2,ifac)*(vr1(2) + vr2(2))  &
+                        + surfac(3,ifac)*(vr1(3) + vr2(3)) )
     endif
   enddo
   !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
-  !$omp             if(nfabor > thr_n_min)
+  !$omp          if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (irotce(iel).ne.0) then
-      dtfac  = dt(iel)
+
       rhofac = brom(ifac)
-      vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
-      vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
-      vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
-      bmasfl(ifac) = bmasfl(ifac) - rhofac*(  vitbox*surfbo(1,ifac)  &
-                                            + vitboy*surfbo(2,ifac)  &
-                                            + vitboz*surfbo(3,ifac))
+      call rotation_velocity(irotce(iel), cdgfbo(:,ifac), vr)
+
+      bmasfl(ifac) = bmasfl(ifac) - rhofac*( surfbo(1,ifac)*vr(1) &
+                                           + surfbo(2,ifac)*vr(2) &
+                                           + surfbo(3,ifac)*vr(3) )
     endif
   enddo
 

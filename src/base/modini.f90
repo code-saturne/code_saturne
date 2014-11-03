@@ -44,6 +44,7 @@ use alstru
 use cplsat
 use post
 use ppincl
+use rotation
 use cs_c_bindings
 use darcy_module
 
@@ -64,9 +65,7 @@ integer          imrgrp
 
 logical          interleaved, is_set
 
-double precision relxsp
-double precision omgnrm, cosdto, sindto
-double precision ux, uy, uz
+double precision relxsp, omgnrm
 
 !===============================================================================
 
@@ -1144,83 +1143,6 @@ if (idarcy.eq.1) then
 
 endif
 
-! Vecteur rotation et matrice(s) associees
-
-omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
-
-if (omgnrm.ge.epzero) then
-
-  ! Normalized rotation vector
-
-  ux = omegax / omgnrm
-  uy = omegay / omgnrm
-  uz = omegaz / omgnrm
-
-  ! Matrice de projection sur l'axe de rotation
-
-  prot(1,1) = ux**2
-  prot(2,2) = uy**2
-  prot(3,3) = uz**2
-
-  prot(1,2) = ux*uy
-  prot(2,1) = prot(1,2)
-
-  prot(1,3) = ux*uz
-  prot(3,1) = prot(1,3)
-
-  prot(2,3) = uy*uz
-  prot(3,2) = prot(2,3)
-
-  ! Antisymetrc representation of Omega
-
-  qrot(1,1) = 0.d0
-  qrot(2,2) = 0.d0
-  qrot(3,3) = 0.d0
-
-  qrot(1,2) = -uz
-  qrot(2,1) = -qrot(1,2)
-
-  qrot(1,3) =  uy
-  qrot(3,1) = -qrot(1,3)
-
-  qrot(2,3) = -ux
-  qrot(3,2) = -qrot(2,3)
-
-  ! Matrice de rotation
-
-  cosdto = cos(dtref*omgnrm)
-  sindto = sin(dtref*omgnrm)
-
-  do ii = 1, 3
-    do jj = 1, 3
-      irot(ii,jj) = 0.d0
-    enddo
-    irot(ii,ii) = 1.d0
-  enddo
-
-  do ii = 1, 3
-    do jj = 1, 3
-      rrot(ii,jj) = cosdto*irot(ii,jj) + (1.d0 - cosdto)*prot(ii,jj) &
-                                       +         sindto *qrot(ii,jj)
-    enddo
-  enddo
-
-else
-
-  do ii = 1, 3
-    do jj = 1, 3
-      irot(ii,jj) = 0.d0
-      prot(ii,jj) = 0.d0
-      qrot(ii,jj) = 0.d0
-      rrot(ii,jj) = 0.d0
-    enddo
-    irot(ii,ii) = 1.d0
-    rrot(ii,ii) = 1.d0
-  enddo
-
-endif
-
-
 !===============================================================================
 ! 5. ELEMENTS DE albase
 !===============================================================================
@@ -1245,18 +1167,19 @@ if (cfopre.lt.-0.5d0*grand) cfopre = 2.0d0
 ! 7. PARAMETRES DE cplsat
 !===============================================================================
 
-! Get coupling number
+! Get number of couplings
 
 call nbccpl(nbrcpl)
 !==========
 
 if (nbrcpl.ge.1) then
   ! Si on est en couplage rotor/stator avec resolution en repere absolu
-  omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
+  call angular_velocity(1, omgnrm)
+  omgnrm = abs(omgnrm)
   if (omgnrm.ge.epzero) then
     ! Couplage avec interpolation aux faces
     ifaccp = 1
-    ! Maillage mobile
+    ! Mobile mesh
     if (icorio.eq.0) then
       imobil = 1
       call cs_post_set_deformable

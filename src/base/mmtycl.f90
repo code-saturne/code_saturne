@@ -65,6 +65,7 @@ use paramx
 use numvar
 use optcal
 use cstnum
+use rotation
 use turbomachinery
 use entsor
 use parall
@@ -88,7 +89,7 @@ integer          idefau
 
 double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
-double precision vitbox, vitboy, vitboz
+double precision vr(3)
 double precision visclc, visctc, distbf, hint
 
 double precision, dimension(:), pointer :: viscl, visct
@@ -123,14 +124,12 @@ do ifac = 1, nfabor
 
     ! --- En turbomachine on connait la valeur exacte de la vitesse de maillage
 
-    vitbox = rotax(2)*cdgfbo(3,ifac) - rotax(3)*cdgfbo(2,ifac)
-    vitboy = rotax(3)*cdgfbo(1,ifac) - rotax(1)*cdgfbo(3,ifac)
-    vitboz = rotax(1)*cdgfbo(2,ifac) - rotax(2)*cdgfbo(1,ifac)
+    call rotation_velocity(irotce(iel), cdgfbo(:,ifac), vr)
 
     if (itypfb(ifac).eq.isymet) then
-      rcodcl(ifac,iu,1) = vitbox
-      rcodcl(ifac,iv,1) = vitboy
-      rcodcl(ifac,iw,1) = vitboz
+      rcodcl(ifac,iu,1) = vr(1)
+      rcodcl(ifac,iv,1) = vr(2)
+      rcodcl(ifac,iw,1) = vr(3)
     endif
 
     if (itypfb(ifac).eq.iparoi .or.                        &
@@ -141,9 +140,9 @@ do ifac = 1, nfabor
       if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0 .and.              &
           rcodcl(ifac,iv,1).gt.rinfin*0.5d0 .and.              &
           rcodcl(ifac,iw,1).gt.rinfin*0.5d0) then
-        rcodcl(ifac,iu,1) = vitbox
-        rcodcl(ifac,iv,1) = vitboy
-        rcodcl(ifac,iw,1) = vitboz
+        rcodcl(ifac,iu,1) = vr(1)
+        rcodcl(ifac,iv,1) = vr(2)
+        rcodcl(ifac,iw,1) = vr(3)
       else
         ! On met a 0 les composantes de RCODCL non specifiees
         if (rcodcl(ifac,iu,1).gt.rinfin*0.5d0) rcodcl(ifac,iu,1) = 0.d0
@@ -157,9 +156,9 @@ do ifac = 1, nfabor
         rcodcx = rcodcl(ifac,iu,1)
         rcodcy = rcodcl(ifac,iv,1)
         rcodcz = rcodcl(ifac,iw,1)
-        rcodsn = (vitbox - rcodcx)*rnx                            &
-               + (vitboy - rcodcy)*rny                            &
-               + (vitboz - rcodcz)*rnz
+        rcodsn = (vr(1) - rcodcx)*rnx                            &
+               + (vr(2) - rcodcy)*rny                            &
+               + (vr(3) - rcodcz)*rnz
         rcodcl(ifac,iu,1) = rcodcx + rcodsn*rnx
         rcodcl(ifac,iv,1) = rcodcy + rcodsn*rny
         rcodcl(ifac,iw,1) = rcodcz + rcodsn*rnz

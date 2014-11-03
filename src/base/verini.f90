@@ -1681,6 +1681,11 @@ if (iturbo.eq.2.and.iilagr.ne.0) then
     iok = iok + 1
 endif
 
+if (icorio.ne.0 .and. iturbo.ne.0) then
+  write(nfecra,9020) icorio
+  iok = iok + 1
+endif
+
 !===============================================================================
 ! 10. Cavitation modelling: 9100 formats
 !===============================================================================
@@ -4162,6 +4167,22 @@ endif
 '@    =========',                                               /,&
 '@   LE COUPLAGE ROTOR/STATOR INSTATIONNAIRE N''EST PAS',       /,&
 '@     COMPATIBLE AVEC LE MODULE LAGRANGIEN',                   /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9020  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@   LE CALCUL EN REFERENTIEL RELATIF (ICORIO = 1) N''EST PAS', /,&
+'@     COMPATIBLE AVEC LE MODULE TURBOMACHINE (ITURBO > 0)',    /,&
+'@',                                                            /,&
+'@  Si necessaire, utiliser uniquement le module turbomachine', /,&
+'@    en definissant plusieurs rotors',                         /,&
 '@',                                                            /,&
 '@  Le calcul ne sera pas execute.',                            /,&
 '@',                                                            /,&
@@ -6664,6 +6685,23 @@ endif
 '@    =========',                                               /,&
 '@   UNSTEADY ROTOR/STATOR COUPLING IS NOT COMPATIBLE',         /,&
 '@     WITH THE LAGRANGIAN MODULE',                             /,&
+'@',                                                            /,&
+'@  Computation CAN NOT run',                                   /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 9020  format(                                                    &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@   THE COMPUTATION IN A RELATIVE FRAME OF REFERENCE',         /,&
+'@     (ICORIO = 1) IS NOT COMPATIBLE WITH THE TURBOMACHINERY', /,&
+'@     MODULE (ITURBO > 0)',                                    /,&
+'@',                                                            /,&
+'@  If necessary, use only the turbomachinery module defining', /,&
+'@    several rotors',                                          /,&
 '@',                                                            /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&

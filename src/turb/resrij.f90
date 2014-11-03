@@ -97,6 +97,7 @@ use lagran
 use mesh
 use field
 use cs_f_interfaces
+use rotation
 use turbomachinery
 
 !===============================================================================
@@ -131,7 +132,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          st_prv_id
 integer          isoluc
 integer          imucpp, idftnp, iswdyp
-integer          indrey(3,3)
+integer          ivar_r(3,3)
 integer          icvflb
 integer          ivoid(1)
 
@@ -159,7 +160,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvar_var, cvara_var
-double precision, dimension(:), pointer :: cvara_ndreyii, cvara_ndreyjj
+double precision, dimension(:), pointer :: cvara_rik, cvara_rjk
 double precision, dimension(:), pointer :: viscl, c_st_prv
 
 !===============================================================================
@@ -455,56 +456,47 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  ! Rotation matrix: dual antisymmetric matrix of the rotation vector omega
-  matrot(1,2) = -rotax(3)
-  matrot(1,3) =  rotax(2)
-  matrot(2,3) = -rotax(1)
+  ! Index connectivity (i,j) <-> ivar
+  ivar_r(1,1) = ir11
+  ivar_r(2,2) = ir22
+  ivar_r(3,3) = ir33
+  ivar_r(1,2) = ir12
+  ivar_r(1,3) = ir13
+  ivar_r(2,3) = ir23
+  ivar_r(2,1) = ivar_r(1,2)
+  ivar_r(3,1) = ivar_r(1,3)
+  ivar_r(3,2) = ivar_r(2,3)
 
-  do ii = 1, 3
-    matrot(ii,ii) = 0.d0
-    do jj = ii+1, 3
-      matrot(jj,ii) = -matrot(ii,jj)
-    enddo
-  enddo
-
-  ! Index Connectivity
-  indrey(1,1) = ir11
-  indrey(2,2) = ir22
-  indrey(3,3) = ir33
-  indrey(1,2) = ir12
-  indrey(1,3) = ir13
-  indrey(2,3) = ir23
-  indrey(2,1) = indrey(1,2)
-  indrey(3,1) = indrey(1,3)
-  indrey(3,2) = indrey(2,3)
-
-  if (isou.eq.1) then
+  if (ivar.eq.ir11) then
     ii = 1
     jj = 1
-  elseif (isou.eq.2) then
+  else if (ivar.eq.ir22) then
     ii = 2
     jj = 2
-  elseif (isou.eq.3) then
+  else if (ivar.eq.ir33) then
     ii = 3
     jj = 3
-  elseif (isou.eq.4) then
+  else if (ivar.eq.ir12) then
     ii = 1
     jj = 2
-  elseif (isou.eq.5) then
+  else if (ivar.eq.ir13) then
     ii = 1
     jj = 3
-  elseif (isou.eq.6) then
+  else if (ivar.eq.ir23) then
     ii = 2
     jj = 3
-  endif
+  end if
 
   ! Compute Gij: (i,j) component of the Coriolis production
   do kk = 1, 3
-    call field_get_val_prev_s(ivarfl(indrey(ii,kk)), cvara_ndreyii)
-    call field_get_val_prev_s(ivarfl(indrey(jj,kk)), cvara_ndreyjj)
+    call field_get_val_prev_s(ivarfl(ivar_r(ii,kk)), cvara_rik)
+    call field_get_val_prev_s(ivarfl(ivar_r(jj,kk)), cvara_rjk)
+
     do iel = 1, ncel
-      w7(iel) = w7(iel) - ccorio*( matrot(ii,kk)*cvara_ndreyjj(iel) &
-                               + matrot(jj,kk)*cvara_ndreyii(iel) )
+      call coriolis_t(irotce(iel), 1.d0, matrot)
+
+      w7(iel) = w7(iel) - ccorio*(  matrot(ii,kk)*cvara_rjk(iel) &
+                                  + matrot(jj,kk)*cvara_rik(iel) )
     enddo
   enddo
 

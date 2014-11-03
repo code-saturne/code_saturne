@@ -64,6 +64,7 @@ $(top_srcdir)/src/base/parall.f90 \
 $(top_srcdir)/src/base/period.f90 \
 $(top_srcdir)/src/base/pointe.f90 \
 $(top_srcdir)/src/base/post.f90 \
+$(top_srcdir)/src/base/rotation.f90 \
 $(top_srcdir)/src/atmo/atincl.f90 \
 $(top_srcdir)/src/atmo/atsoil.f90 \
 $(top_srcdir)/src/atmo/atchem.f90 \
@@ -107,6 +108,7 @@ $(top_srcdir)/src/base/numvar.f90: paramx.lo
 $(top_srcdir)/src/base/optcal.f90: paramx.lo field.lo numvar.lo
 $(top_srcdir)/src/base/pointe.f90: paramx.lo numvar.lo mesh.lo parall.lo period.lo optcal.lo entsor.lo lagran.lo radiat.lo ppincl.lo ihmpre.lo albase.lo cstnum.lo
 $(top_srcdir)/src/base/ptrglo.f90: paramx.lo dimens.lo mesh.lo numvar.lo optcal.lo parall.lo period.lo
+$(top_srcdir)/src/base/rotation.f90:  paramx.lo
 $(top_srcdir)/src/base/turbomachinery.f90:  mesh.lo cstphy.lo cplsat.lo
 $(top_srcdir)/src/atmo/atincl.f90: ppppar.lo ppincl.lo mesh.lo atsoil.lo
 $(top_srcdir)/src/atmo/atchem.f90: ppppar.lo mesh.lo entsor.lo numvar.lo

@@ -682,6 +682,7 @@ use cpincl
 use elincl
 use field
 use cavitation
+use rotation
 
 !===============================================================================
 
@@ -986,7 +987,7 @@ if (.false.) then
 
 endif
 
-! --- rotation vector of the reference frame (omega in s-1)
+! --- rotation of the reference frame (omega in s-1)
 
 !       If the rotation is not nul, then
 !          icorio = 0: rotation is taken into account by rotating the mesh
@@ -998,9 +999,8 @@ if (.false.) then
 
   icorio = 0
 
-  omegax = 0.d0
-  omegay = 0.d0
-  omegaz = 0.d0
+  call rotation_define(0.d0, 0.d0, 0.d0,  &    ! rotation vector
+                       0.d0, 0.d0, 0.d0)       ! invariant point
 
 endif
 

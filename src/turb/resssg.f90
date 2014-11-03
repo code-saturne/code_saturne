@@ -99,6 +99,7 @@ use mesh
 use field
 use field_operator
 use cs_f_interfaces
+use rotation
 use turbomachinery
 
 !===============================================================================
@@ -133,7 +134,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          imucpp, idftnp, iswdyp
-integer          indrey(3,3)
+integer          ivar_r(3,3)
 integer          icvflb
 integer          ivoid(1)
 
@@ -174,7 +175,7 @@ double precision, dimension(:), pointer :: viscl, c_st_prv
 type pmapper_double_r1
    double precision, dimension(:),  pointer :: p !< rank 1 array pointer
 end type pmapper_double_r1
-type(pmapper_double_r1), allocatable, dimension(:,:) :: cvara_ndrey
+type(pmapper_double_r1), allocatable, dimension(:,:) :: cvara_r
 
 !===============================================================================
 
@@ -252,15 +253,36 @@ do iel = 1, ncel
   rovsdt(iel) = 0.d0
 enddo
 
-! Coefficient of the "Coriolis-type" term
-if (icorio.eq.1) then
-  ! Relative velocity formulation
-  ccorio = 2.d0
-elseif (iturbo.eq.1) then
-  ! Mixed relative/absolute velocity formulation
-  ccorio = 1.d0
-else
-  ccorio = 0.d0
+if (icorio.eq.1 .or. iturbo.eq.1) then
+
+  ! Index connectivity (i,j) -> ivar
+  ivar_r(1,1) = ir11
+  ivar_r(2,2) = ir22
+  ivar_r(3,3) = ir33
+  ivar_r(1,2) = ir12
+  ivar_r(1,3) = ir13
+  ivar_r(2,3) = ir23
+  ivar_r(2,1) = ivar_r(1,2)
+  ivar_r(3,1) = ivar_r(1,3)
+  ivar_r(3,2) = ivar_r(2,3)
+
+  ! Build the interleaved Reynolds tensor
+  allocate(cvara_r(3,3))
+  do ii = 1, 3
+    do kk = 1, 3
+      call field_get_val_prev_s(ivarfl(ivar_r(ii,kk)), cvara_r(ii,kk)%p)
+    enddo
+  enddo
+
+  ! Coefficient of the "Coriolis-type" term
+  if (icorio.eq.1) then
+    ! Relative velocity formulation
+    ccorio = 2.d0
+  elseif (iturbo.eq.1) then
+    ! Mixed relative/absolute velocity formulation
+    ccorio = 1.d0
+  endif
+
 endif
 
 !===============================================================================
@@ -397,48 +419,6 @@ if (iturb.eq.32) then
 
 endif
 
-if (icorio.eq.1 .or. iturbo.eq.1) then
-
-  ! Compute the rotation matrix (dual matrix of the rotation vector)
-  matrot(1,2) = -rotax(3)
-  matrot(1,3) =  rotax(2)
-  matrot(2,3) = -rotax(1)
-
-  do ii = 1, 3
-    matrot(ii,ii) = 0.d0
-    do jj = ii+1, 3
-      matrot(jj,ii) = -matrot(ii,jj)
-    enddo
-  enddo
-
-else
-  do ii = 1, 3
-    do jj = 1, 3
-      matrot(ii,jj) = 0.d0
-    enddo
-  enddo
-endif
-
-! Index of the Reynolds stress variables
-indrey(1,1) = ir11
-indrey(2,2) = ir22
-indrey(3,3) = ir33
-indrey(1,2) = ir12
-indrey(1,3) = ir13
-indrey(2,3) = ir23
-indrey(2,1) = indrey(1,2)
-indrey(3,1) = indrey(1,3)
-indrey(3,2) = indrey(2,3)
-
-! Arrays of pointers containing the fields values for each pair of indices
-! (loop on cells outside loop on indices)
-allocate(cvara_ndrey(3,3))
-do ii = 1, 3
-  do kk = 1, 3
-    call field_get_val_prev_s(ivarfl(indrey(ii,kk)), cvara_ndrey(ii,kk)%p)
-  enddo
-enddo
-
 do iel=1,ncel
 
   ! EBRSM
@@ -490,14 +470,18 @@ do iel=1,ncel
                        cvara_r33(iel)*gradv(3, 3, iel) )
 
   ! Rotating frame of reference => "Coriolis production" term
+
   if (icorio.eq.1 .or. iturbo.eq.1) then
+
+    call coriolis_t(irotce(iel), 1.d0, matrot)
+
     if (irotce(iel).gt.0) then
       do ii = 1, 3
         do jj = ii, 3
           do kk = 1, 3
             xprod(ii,jj) = xprod(ii,jj)                             &
-                 - ccorio*( matrot(ii,kk)*cvara_ndrey(jj,kk)%p(iel) &
-                 + matrot(jj,kk)*cvara_ndrey(ii,kk)%p(iel) )
+                     - ccorio*( matrot(ii,kk)*cvara_r(jj,kk)%p(iel) &
+                     + matrot(jj,kk)*cvara_r(ii,kk)%p(iel) )
           enddo
         enddo
       enddo
@@ -674,7 +658,7 @@ do iel=1,ncel
 
 enddo
 
-deallocate(cvara_ndrey)
+deallocate(cvara_r)
 
 if (iturb.eq.32) then
   deallocate(grad)

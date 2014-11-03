@@ -85,6 +85,7 @@
 #include "cs_join.h"
 #include "cs_lagr_tracking.h"
 #include "cs_log.h"
+#include "cs_log_setup.h"
 #include "cs_log_iteration.h"
 #include "cs_matrix_default.h"
 #include "cs_mesh.h"
@@ -269,17 +270,9 @@ cs_run(void)
   cs_user_postprocess_writers();
   cs_post_init_writers();
 
-  /* Print info on fields and associated keys */
+  /* Print info on fields and associated keys and other setup options */
 
-  cs_field_log_defs();
-  cs_field_log_key_defs();
-  cs_field_log_all_key_vals(true);
-
-  cs_time_moment_log_setup();
-
-  cs_sles_default_setup();
-
-  cs_log_printf_flush(CS_LOG_SETUP);
+  cs_log_setup();
 
   /* Preprocess mesh */
 

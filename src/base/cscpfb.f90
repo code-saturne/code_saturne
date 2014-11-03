@@ -65,6 +65,7 @@ use entsor
 use parall
 use period
 use cplsat
+use rotation
 use mesh
 use field
 use field_operator
@@ -95,7 +96,7 @@ integer          itytu0
 double precision xjjp   , yjjp   , zjjp
 double precision d2s3
 double precision xjpf,yjpf,zjpf,jpf
-double precision xx, yy, zz
+double precision xx, yy, zz, fra(8)
 double precision omegal(3), omegad(3), omegar(3), omgnrl, omgnrd, omgnrr
 double precision vitent, daxis2
 
@@ -166,10 +167,16 @@ call field_get_val_s(icrom, crom)
 
 if (icormx(numcpl).eq.1) then
 
-  ! On récupère dans tous les cas le vecteur rotation de l'autre instance
-  omegal(1) = omegax
-  omegal(2) = omegay
-  omegal(3) = omegaz
+  call rotation_to_array(1, fra)
+
+  ! Get rotation array of all instances in all cases
+  ! TODO check axes are the same
+  ! (any axis being allowed for a domain with no rotation)
+
+  omegal(1) = fra(1)*fra(7)
+  omegal(2) = fra(2)*fra(7)
+  omegal(3) = fra(3)*fra(7)
+
   call tbrcpl(numcpl,3,3,omegal,omegad)
 
   ! Vecteur vitesse relatif d'une instance a l'autre
@@ -251,8 +258,8 @@ if (ifaccp.eq.1) then
       zz = xyzcen(3,iel) + zjjp
 
       daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
-           + (omegar(3)*xx - omegar(1)*zz)**2 &
-           + (omegar(1)*yy - omegar(2)*xx)**2
+               + (omegar(3)*xx - omegar(1)*zz)**2 &
+               + (omegar(1)*yy - omegar(2)*xx)**2
 
       daxis2 = daxis2 / omgnrr**2
 
@@ -349,13 +356,13 @@ do isou = 1, 3
 
         if (isou.eq.1) then
           vitent =   omegar(2)*(xyzcen(3,iel)+zjjp) &
-               - omegar(3)*(xyzcen(2,iel)+yjjp)
+                   - omegar(3)*(xyzcen(2,iel)+yjjp)
         elseif (isou.eq.2) then
           vitent =   omegar(3)*(xyzcen(1,iel)+xjjp) &
-               - omegar(1)*(xyzcen(3,iel)+zjjp)
+                   - omegar(1)*(xyzcen(3,iel)+zjjp)
         elseif (isou.eq.3) then
           vitent =   omegar(1)*(xyzcen(2,iel)+yjjp) &
-               - omegar(2)*(xyzcen(1,iel)+xjjp)
+                   - omegar(2)*(xyzcen(1,iel)+xjjp)
         endif
 
         rvdis(ipt,ipos) = rvdis(ipt,ipos) + vitent

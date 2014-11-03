@@ -95,6 +95,7 @@ cs_interface.h \
 cs_io.h \
 cs_log.h \
 cs_log_iteration.h \
+cs_log_setup.h \
 cs_map.h \
 cs_math.h \
 cs_measures_util.h \
@@ -115,6 +116,7 @@ cs_renumber.h \
 cs_resource.h \
 cs_restart.h \
 cs_restart_default.h \
+cs_rotation.h \
 cs_sat_coupling.h \
 cs_search.h \
 cs_selector.h \
@@ -223,6 +225,7 @@ cs_halo.c \
 cs_halo_perio.c \
 csinit.f90 \
 cs_log_iteration.c \
+cs_log_setup.c \
 cs_numbering.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
@@ -241,6 +244,7 @@ cs_preprocessor_data.c \
 cs_resource.c \
 cs_restart.c \
 cs_restart_default.c \
+cs_rotation.c \
 cs_sat_coupling.c \
 cs_search.c \
 cs_selector.c \

@@ -83,6 +83,7 @@ use ppcpfu
 use elincl
 use mesh
 use field
+use rotation
 use darcy_module
 use cs_f_interfaces
 
@@ -123,7 +124,6 @@ integer          ielpdc
 double precision tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
-double precision cosdto, sindto, omgnrm, rrotgb(3,3)
 double precision hdls(6)
 double precision, save :: tpar
 
@@ -502,30 +502,10 @@ endif
 
 if (imobil.eq.1) then
 
-  ! --- En turbomachine on connait la valeur exacte de la vitesse de maillage
+  ! En turbomachine on connait la valeur exacte de la vitesse de maillage
+  ! on modifie la geometrie en fonction de la geometrie initiale
 
-  omgnrm = sqrt(omegax**2 + omegay**2 + omegaz**2)
-
-  cosdto = cos(ttcmob*omgnrm)
-  sindto = sin(ttcmob*omgnrm)
-
-  do ii = 1, 3
-    do jj = 1, 3
-      rrotgb(ii,jj) = cosdto*irot(ii,jj) + (1.d0 - cosdto)*prot(ii,jj) &
-                                         +         sindto *qrot(ii,jj)
-    enddo
-  enddo
-
-  ! On modifie la geometrie en fonction de la geometrie initiale
-
-  do inod = 1, nnod
-    do ii = 1, 3
-      xyznod(ii,inod) = 0.d0
-      do jj = 1, 3
-        xyznod(ii,inod) = xyznod(ii,inod) + rrotgb(ii,jj)*xyzno0(jj,inod)
-      enddo
-    enddo
-  enddo
+  call rotation_update_coords(nnod, ttcmob, xyznod)
 
   call algrma(volmin, volmax, voltot)
   !==========
@@ -534,7 +514,6 @@ if (imobil.eq.1) then
   if (volmin.le.0.d0) ntmabs = ntcabs
 
 endif
-
 
 !===============================================================================
 ! 6.  MISE A JOUR DE LA LOCALISATION DES INTERFACES DE COUPLAGE CS/CS

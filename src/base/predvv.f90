@@ -127,6 +127,7 @@ use ppincl
 use cplsat
 use ihmpre, only: iihmpr
 use mesh
+use rotation
 use turbomachinery
 use cs_f_interfaces
 use cs_c_bindings
@@ -197,7 +198,6 @@ double precision vit1  , vit2  , vit3, xkb, pip, pfac, pfac1
 double precision cpdc11, cpdc22, cpdc33, cpdc12, cpdc13, cpdc23
 double precision d2s3  , thetap, thetp1, thets , dtsrom
 double precision diipbx, diipby, diipbz
-double precision cx    , cy    , cz
 double precision ccorio
 double precision dvol
 
@@ -980,38 +980,20 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
       call field_get_val_s(icrom, crom)
 
       do iel = 1, ncel
-        if (irotce(iel).ne.0) then
-          cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
-          cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
-          cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-          romvom = -ccorio*crom(iel)*volume(iel)
-
-          ! With porosity
-          if (iporos.ge.1) romvom = romvom*porosi(iel)
-
-          trav(1,iel) = trav(1,iel) + romvom*cx
-          trav(2,iel) = trav(2,iel) + romvom*cy
-          trav(3,iel) = trav(3,iel) + romvom*cz
-        endif
+        romvom = -ccorio*crom(iel)*volume(iel)
+        ! With porosity
+        if (iporos.ge.1) romvom = romvom*porosi(iel)
+        call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trav(:,iel))
       enddo
 
     ! Si on itere sur navsto : TRAVA
     else
 
       do iel = 1, ncel
-        if (irotce(iel).ne.0) then
-          cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
-          cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
-          cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-          romvom = -ccorio*crom(iel)*volume(iel)
-
-          ! With porosity
-          if (iporos.ge.1) romvom = romvom*porosi(iel)
-
-          trava(1,iel) = trava(1,iel) + romvom*cx
-          trava(2,iel) = trava(2,iel) + romvom*cy
-          trava(3,iel) = trava(3,iel) + romvom*cz
-        endif
+        romvom = -ccorio*crom(iel)*volume(iel)
+        ! With porosity
+        if (iporos.ge.1) romvom = romvom*porosi(iel)
+        call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trava(:,iel))
       enddo
 
     endif
@@ -1027,19 +1009,10 @@ if(iappel.eq.1) then
     thetap = thetav(iu)
 
     do iel = 1, ncel
-      if (irotce(iel).ne.0) then
-        romvom = crom(iel)*volume(iel)*thetap
-
-        ! With porosity
-        if (iporos.ge.1) romvom = romvom*porosi(iel)
-
-        fimp(1,2,iel) = fimp(1,2,iel) + ccorio*romvom*rotax(3)
-        fimp(2,1,iel) = fimp(2,1,iel) - ccorio*romvom*rotax(3)
-        fimp(1,3,iel) = fimp(1,3,iel) - ccorio*romvom*rotax(2)
-        fimp(3,1,iel) = fimp(3,1,iel) + ccorio*romvom*rotax(2)
-        fimp(2,3,iel) = fimp(2,3,iel) + ccorio*romvom*rotax(1)
-        fimp(3,2,iel) = fimp(3,2,iel) - ccorio*romvom*rotax(1)
-      endif
+      romvom = -ccorio*crom(iel)*volume(iel)*thetap
+      ! With porosity
+      if (iporos.ge.1) romvom = romvom*porosi(iel)
+      call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
     enddo
 
   endif
@@ -1335,14 +1308,8 @@ if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
   ! Add Coriolis force
   if (icorio.eq.1 .or. iturbo.eq.1) then
     do iel = 1, ncel
-      if (irotce(iel).ne.0) then
-        cx = rotax(2)*vela(3,iel) - rotax(3)*vela(2,iel)
-        cy = rotax(3)*vela(1,iel) - rotax(1)*vela(3,iel)
-        cz = rotax(1)*vela(2,iel) - rotax(2)*vela(1,iel)
-        dfrcxt(1,iel) = dfrcxt(1,iel) - ccorio*crom(iel)*cx
-        dfrcxt(2,iel) = dfrcxt(2,iel) - ccorio*crom(iel)*cy
-        dfrcxt(3,iel) = dfrcxt(3,iel) - ccorio*crom(iel)*cz
-      endif
+      rom = -ccorio*crom(iel)
+      call add_coriolis_v(irotce(iel), rom, vela(:,iel), dfrcxt(:,iel))
     enddo
   endif
 

@@ -318,9 +318,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.modelTurboMachineryType.setItem(str_model = mdl)
 
         if mdl != "off":
-            # TODO delete when multi axe
-            self.pushButtonAdd.setEnabled(False)
-
             if len(self.mdl.getRotorList()) < 2 or self.rotor_id == -1:
                 self.pushButtonDelete.setEnabled(False)
 

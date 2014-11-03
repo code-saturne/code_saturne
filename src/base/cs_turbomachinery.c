@@ -67,6 +67,7 @@
 #include "cs_preprocess.h"
 #include "cs_prototypes.h"
 #include "cs_renumber.h"
+#include "cs_rotation.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
 
@@ -92,8 +93,11 @@ typedef struct {
 
   cs_turbomachinery_model_t  model;             /* Turbomachinery model type */
 
-  char                      *rotor_cells_c;     /* Rotor cells selection
-                                                   criteria */
+  int                        n_rotors;          /* Number of rotors */
+
+  cs_rotation_t             *rotation;          /* rotation structures */
+  char                     **rotor_cells_c;     /* Rotor cells selection
+                                                   criteria ((for each rotor) */
 
   cs_mesh_t                 *reference_mesh;    /* Reference mesh (before
                                                    rotation and joining) */
@@ -101,17 +105,7 @@ typedef struct {
   cs_lnum_t                  n_b_faces_ref;     /* Reference number of
                                                    boundary faces */
 
-  cs_lnum_t                  n_rotor_vtx;       /* Size of rotor_vtx array */
-  cs_lnum_t                 *rotor_vtx;         /* List of vertices related
-                                                   to the rotor in the
-                                                   reference mesh */
-
   int                       *cell_rotor_num;    /* cell rotation axis number */
-
-  double  omega;
-  double  angle;
-  double  rotation_axis[3];
-  double  rotation_invariant[3];
 
   bool active;
 
@@ -129,7 +123,6 @@ cs_turbomachinery_t  *cs_glob_turbomachinery = NULL;
  *============================================================================*/
 
 void cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
-                                    cs_real_t    rotax[],
                                     int        **irotce);
 
 /*============================================================================
@@ -177,97 +170,24 @@ _turbomachinery_create(void)
 
   BFT_MALLOC(tbm, 1, cs_turbomachinery_t);
 
+  tbm->n_rotors = 0;
   tbm->rotor_cells_c = NULL;
+
+  BFT_MALLOC(tbm->rotation, 1, cs_rotation_t); /* Null rotation at id 0 */
+  cs_rotation_t *r = tbm->rotation;
+  r->omega = 0;
+  r->angle = 0;
+  for (int i = 0; i < 3; i++) {
+    r->axis[i] = 0;
+    r->invariant[i] = 0;
+  }
+
   tbm->reference_mesh = cs_mesh_create();
   tbm->n_b_faces_ref = -1;
   tbm->cell_rotor_num = NULL;
-  tbm->rotor_vtx = NULL;
   tbm->model = CS_TURBOMACHINERY_NONE;
 
-  for (int i = 0; i < 3; i++) {
-    tbm->angle = 0;
-    tbm->omega = 0;
-    tbm->rotation_axis[i] = 0.;
-    tbm->rotation_invariant[i] = 0.;
-  }
-
   return tbm;
-}
-
-/*----------------------------------------------------------------------------
- * Compute rotation matrix
- *
- * parameters:
- *   theta           <-- rotation angle, in radians
- *   axis            <-- components of rotation axis direction vector (3)
- *   invariant_point <-- components of invariant point (3)
- *   matrix          <-- resulting rotation matrix
- *---------------------------------------------------------------------------*/
-
-static void
-_rotation_matrix(double        theta,
-                 const double  axis[3],
-                 const double  invariant_point[3],
-                 double        matrix[3][4])
-{
-  int  i, j;
-  double norm;
-  double direction[3];
-  double rot[3][3];
-
-  const double cost = cos(theta);
-  const double sint = sin(theta);
-  const double onemcost = (1.0 - cost);
-
-  /* Compute the rotation matrix, using formula:
-   *  R = (1-cos(theta))axis.transp(axis) + cos(theta)I + sin(theta)V
-   *
-   *           [ 0            -direction(3)  direction(2)]
-   *  with V = [ direction(3)       0       -direction(1)]
-   *           [-direction(2)  direction(1)       0      ]
-   */
-
-  norm = sqrt(axis[0]*axis[0] + axis[1]*axis[1] + axis[2]*axis[2]);
-
-  direction[0] = axis[0] / norm;
-  direction[1] = axis[1] / norm;
-  direction[2] = axis[2] / norm;
-
-  /* first row of rotation maxtrix */
-  rot[0][0] = onemcost*direction[0]*direction[0] + cost;
-  rot[0][1] = onemcost*direction[0]*direction[1] - sint*direction[2];
-  rot[0][2] = onemcost*direction[0]*direction[2] + sint*direction[1];
-
-  /* second row of rotation maxtrix */
-  rot[1][0] = onemcost*direction[1]*direction[0] + sint*direction[2];
-  rot[1][1] = onemcost*direction[1]*direction[1] + cost;
-  rot[1][2] = onemcost*direction[1]*direction[2] - sint*direction[0];
-
-  /* third row of rotation maxtrix */
-  rot[2][0] = onemcost*direction[2]*direction[0] - sint*direction[1];
-  rot[2][1] = onemcost*direction[2]*direction[1] + sint*direction[0];
-  rot[2][2] = onemcost*direction[2]*direction[2] + cost;
-
-  /* Now compute full rotation matrix in homogeneous coordinates,
-   * accounting for invariant point of coordiantes t[], with the formula:
-   *
-   *     [1 0 0 t[0]] [r[0][0] r[0][1] r[0][3] 0] [1 0 0 -t[0]]
-   * M = [0 1 0 t[1]].[r[1][0] r[1][1] r[1][3] 0].[0 1 0 -t[1]]
-   *     [0 0 1 t[2]] [r[2][0] r[2][1] r[2][3] 0] [0 0 1 -t[2]]
-   *     [0 0 0 1   ] [0       0       0       1] [0 0 0  1]
-   */
-
-  for (i = 0; i < 3; i++) {       /* rotation part of matrix */
-    for (j = 0; j < 3; j++) {
-      matrix[i][j] = rot[i][j];
-    }
-  }
-
-  for (i = 0; i < 3; i++) {
-    matrix[i][3] = invariant_point[i];
-    for (j = 0; j < 3; j++)
-      matrix[i][3] -= rot[i][j]*invariant_point[j];
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -571,72 +491,6 @@ _copy_mesh(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Update the list of rotor vertices
- *
- * parameters:
- *   tbm <-> turbomachinery structure
- *----------------------------------------------------------------------------*/
-
-static void
-_update_rotor_vertices(cs_turbomachinery_t *tbm)
-{
-  cs_lnum_t  f_id, v_id;
-
-  cs_lnum_t  n_rotor_vtx = 0;
-  cs_lnum_t  *rotor_vtx = NULL;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const int  *cell_flag = tbm->cell_rotor_num;
-
-  tbm->n_rotor_vtx = 0;
-  BFT_FREE(tbm->rotor_vtx);
-
-  BFT_MALLOC(rotor_vtx, mesh->n_vertices, cs_lnum_t);
-
-  for (v_id = 0; v_id < mesh->n_vertices; v_id++)
-    rotor_vtx[v_id] = -1;
-
-  /* Mark from interior faces */
-
-  for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
-    cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
-    cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
-    if (cell_flag[c_id_0] || cell_flag[c_id_1]) {
-      for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
-           i < mesh->i_face_vtx_idx[f_id+1];
-           i++)
-        rotor_vtx[mesh->i_face_vtx_lst[i]] = 1;
-    }
-  }
-
-  /* Mark from boundary faces */
-
-  for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
-    cs_lnum_t c_id = mesh->b_face_cells[f_id];
-    if (cell_flag[c_id]) {
-      for (cs_lnum_t i = mesh->b_face_vtx_idx[f_id];
-           i < mesh->b_face_vtx_idx[f_id+1];
-           i++)
-        rotor_vtx[mesh->b_face_vtx_lst[i]] = 1;
-    }
-  }
-
-  /* Now transform vertex flag to list */
-
-  n_rotor_vtx = 0;
-  for (v_id = 0; v_id < mesh->n_vertices; v_id++) {
-    if (rotor_vtx[v_id] > -1)
-      rotor_vtx[n_rotor_vtx++] = v_id;
-  }
-  BFT_REALLOC(rotor_vtx, n_rotor_vtx, cs_lnum_t);
-
-  /* Update strcuture */
-
-  tbm->n_rotor_vtx = n_rotor_vtx;
-  tbm->rotor_vtx = rotor_vtx;
-}
-
-/*----------------------------------------------------------------------------
  * Update mesh vertex positions
  *
  * parameters:
@@ -648,21 +502,85 @@ static void
 _update_geometry(cs_mesh_t  *mesh,
                  cs_real_t   t)
 {
-  double   matrix[3][4];
-
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
-  tbm->angle = tbm->omega * t;
+  cs_lnum_t  f_id, v_id;
 
-  _rotation_matrix(tbm->angle,
-                   tbm->rotation_axis,
-                   tbm->rotation_invariant,
-                   matrix);
+  cs_lnum_t  *vtx_rotor_num = NULL;
 
-  for (cs_lnum_t i = 0; i < tbm->n_rotor_vtx; i++) {
-    cs_lnum_t vtx_id = tbm->rotor_vtx[i];
-    _apply_vector_transfo(matrix, &(mesh->vtx_coord[3*vtx_id]));
+  cs_gnum_t n_errors = 0;
+
+  const int  *cell_flag = tbm->cell_rotor_num;
+
+  BFT_MALLOC(vtx_rotor_num, mesh->n_vertices, cs_lnum_t);
+
+  for (v_id = 0; v_id < mesh->n_vertices; v_id++)
+    vtx_rotor_num[v_id] = 0;
+
+  /* Mark from interior faces */
+
+  for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+    cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
+    if (   cell_flag[c_id_0] != 0
+        && (cell_flag[c_id_1] - cell_flag[c_id_0]) != 0)
+      n_errors ++;
+    if (cell_flag[c_id_0] != 0) {
+      for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
+           i < mesh->i_face_vtx_idx[f_id+1];
+           i++)
+        vtx_rotor_num[mesh->i_face_vtx_lst[i]] = cell_flag[c_id_0];
+    }
+    else if (cell_flag[c_id_1] != 0) {
+      for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
+           i < mesh->i_face_vtx_idx[f_id+1];
+           i++)
+        vtx_rotor_num[mesh->i_face_vtx_lst[i]] = cell_flag[c_id_1];
+    }
   }
+
+  /* Mark from boundary faces */
+
+  for (f_id = 0; f_id < mesh->n_b_faces; f_id++) {
+    cs_lnum_t c_id = mesh->b_face_cells[f_id];
+    if (cell_flag[c_id] != 0) {
+      for (cs_lnum_t i = mesh->b_face_vtx_idx[f_id];
+           i < mesh->b_face_vtx_idx[f_id+1];
+           i++)
+        vtx_rotor_num[mesh->b_face_vtx_lst[i]] = cell_flag[c_id];
+    }
+  }
+
+  cs_parall_counter(&n_errors, 1);
+  if (n_errors > 0)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s: some vertices of the initial mesh belong to multiple rotors."),
+       __func__);
+
+  /* Now update coordinates */
+
+  cs_real_34_t  *m;
+
+  BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
+
+  for (int j = 0; j < tbm->n_rotors+1; j++) {
+    cs_rotation_t *r = tbm->rotation + j;
+    r->angle = r->omega * t;
+    cs_rotation_matrix(r->angle,
+                       r->axis,
+                       r->invariant,
+                       m[j]);
+  }
+
+  for (v_id = 0; v_id < mesh->n_vertices; v_id++) {
+    if (vtx_rotor_num[v_id] > 0)
+      _apply_vector_transfo(m[vtx_rotor_num[v_id]],
+                            &(mesh->vtx_coord[3*v_id]));
+  }
+
+  BFT_FREE(m);
+  BFT_FREE(vtx_rotor_num);
 }
 
 /*----------------------------------------------------------------------------
@@ -689,12 +607,13 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
 
   BFT_MALLOC(_cell_list, m->n_cells_with_ghosts, cs_lnum_t);
 
-  cs_selector_get_cell_list(tbm->rotor_cells_c,
-                            &_n_cells,
-                            _cell_list);
-
-  for (cs_lnum_t i = 0; i < _n_cells; i++)
-    tbm->cell_rotor_num[_cell_list[i]] = 1;
+  for (int r_id = 0; r_id < tbm->n_rotors; r_id++) {
+    cs_selector_get_cell_list(tbm->rotor_cells_c[r_id],
+                              &_n_cells,
+                              _cell_list);
+    for (cs_lnum_t i = 0; i < _n_cells; i++)
+      tbm->cell_rotor_num[_cell_list[i]] = r_id + 1;
+  }
 
   BFT_FREE(_cell_list);
 }
@@ -708,22 +627,16 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
  *
  * parameters:
  *   iturbo <-- turbomachinery type flag
- *   rotax  <-- axis of rotation
  *   irotce <-- pointer to cell flag for rotation
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
-                               cs_real_t    rotax[],
                                cs_int_t   **irotce)
 {
   if (cs_glob_turbomachinery != NULL) {
 
     *iturbo = cs_glob_turbomachinery->model;
-
-    for (int i = 0; i < 3; i++)
-      rotax[i] =   cs_glob_turbomachinery->rotation_axis[i]
-                 * cs_glob_turbomachinery->omega;
 
     /* Assign rotor cells flag array to module */
 
@@ -733,9 +646,6 @@ cs_f_map_turbomachinery_module(cs_int_t    *iturbo,
   else {
 
     *iturbo = CS_TURBOMACHINERY_NONE;
-
-    for (int i = 0; i < 3; i++)
-      rotax[i] = 0.;
 
     *irotce = NULL;
 
@@ -801,15 +711,6 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
                             const double   rotation_axis[3],
                             const double   rotation_invariant[3])
 {
-  static int n_calls = 0;
-
-  if (n_calls > 0)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: only one rotor may be defined in the current version.",
-              __func__);
-
-  n_calls += 1;
-
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
   if (tbm == NULL)
     return;
@@ -817,14 +718,21 @@ cs_turbomachinery_add_rotor(const char    *cell_criteria,
   const double *v = rotation_axis;
   double len = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 
-  tbm->omega = rotation_velocity;
+  int r_id = tbm->n_rotors;
+  tbm->n_rotors += 1;
+
+  BFT_REALLOC(tbm->rotation, tbm->n_rotors + 1, cs_rotation_t);
+  cs_rotation_t *r = tbm->rotation + r_id + 1;
+  r->omega = rotation_velocity;
+  r->angle = 0;
   for (int i = 0; i < 3; i++) {
-    tbm->rotation_axis[i] = v[i]/len;
-    tbm->rotation_invariant[i] = rotation_invariant[i];
+    r->axis[i] = v[i]/len;
+    r->invariant[i] = rotation_invariant[i];
   }
 
-  BFT_REALLOC(tbm->rotor_cells_c, strlen(cell_criteria) + 1, char);
-  strcpy(tbm->rotor_cells_c, cell_criteria);
+  BFT_REALLOC(tbm->rotor_cells_c, tbm->n_rotors, char *);
+  BFT_MALLOC(tbm->rotor_cells_c[r_id], strlen(cell_criteria) + 1, char);
+  strcpy(tbm->rotor_cells_c[r_id], cell_criteria);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -885,12 +793,13 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   double  t_start, t_end;
 
   cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
   t_start = cs_timer_wtime();
 
   /* Indicates we are in the framework of turbomachinery */
 
-  cs_glob_turbomachinery->active = true;
+  tbm->active = true;
 
   /* Cell and boundary face numberings can be moved from old mesh
      to new one, as the corresponding parts of the mesh should not change */
@@ -912,13 +821,13 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   cs_mesh_location_initialize();
   cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh->verbosity = 0;
-  _copy_mesh(cs_glob_turbomachinery->reference_mesh, cs_glob_mesh);
+  _copy_mesh(tbm->reference_mesh, cs_glob_mesh);
   cs_glob_mesh_builder = cs_mesh_builder_create();
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
   /* Update geometry, if necessary */
 
-  if (cs_glob_turbomachinery->rotor_vtx != NULL)
+  if (tbm->n_rotors > 0)
     _update_geometry(cs_glob_mesh, t_cur_mob);
 
   /* Reset the interior faces -> cells connectivity */
@@ -944,8 +853,8 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   cs_join_all(false);
 
   cs_lnum_t boundary_changed = 0;
-  if (cs_glob_turbomachinery->n_b_faces_ref > -1) {
-    if (cs_glob_mesh->n_b_faces != cs_glob_turbomachinery->n_b_faces_ref)
+  if (tbm->n_b_faces_ref > -1) {
+    if (cs_glob_mesh->n_b_faces != tbm->n_b_faces_ref)
       boundary_changed = 1;
   }
   cs_parall_counter_max(&boundary_changed, 1);
@@ -958,9 +867,9 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
     const int writer_id = -2;
     const int writer_ids[] = {writer_id};
     const int mesh_id = cs_post_get_free_mesh_id();
-    cs_lnum_t b_face_count[] = {cs_glob_turbomachinery->n_b_faces_ref,
+    cs_lnum_t b_face_count[] = {tbm->n_b_faces_ref,
                                 cs_glob_mesh->n_b_faces};
-    cs_gnum_t n_g_b_faces_ref = cs_glob_turbomachinery->n_b_faces_ref;
+    cs_gnum_t n_g_b_faces_ref = tbm->n_b_faces_ref;
     cs_parall_counter(&n_g_b_faces_ref, 1);
     cs_post_init_error_writer();
     cs_post_define_surface_mesh_by_func(mesh_id,
@@ -986,7 +895,7 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
               (unsigned long long)cs_glob_mesh->n_g_b_faces);
   }
 
-  cs_glob_turbomachinery->n_b_faces_ref = cs_glob_mesh->n_b_faces;
+  tbm->n_b_faces_ref = cs_glob_mesh->n_b_faces;
 
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
@@ -1047,14 +956,14 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
     const cs_mesh_t *m = cs_glob_mesh;
 
-    BFT_REALLOC(cs_glob_turbomachinery->cell_rotor_num,
+    BFT_REALLOC(tbm->cell_rotor_num,
                 m->n_cells_with_ghosts,
                 int);
 
     cs_halo_sync_untyped(m->halo,
                          CS_HALO_EXTENDED,
                          sizeof(int),
-                         cs_glob_turbomachinery->cell_rotor_num);
+                         tbm->cell_rotor_num);
 
   }
 
@@ -1118,15 +1027,13 @@ cs_turbomachinery_initialize(void)
                        CS_HALO_EXTENDED,
                        tbm->cell_rotor_num);
 
-    _update_rotor_vertices(tbm);
-
   }
 
   /* Complete the mesh with rotor-stator joining */
 
   if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    cs_turbomachinery_update_mesh(0.,&t_elapsed);
+    cs_turbomachinery_update_mesh(0., &t_elapsed);
   }
 
   /* Adapt postprocessing options if required;
@@ -1142,6 +1049,9 @@ cs_turbomachinery_initialize(void)
     tbm->reference_mesh = NULL;
   }
 
+  /* Set global rotations pointer */
+
+  cs_glob_rotation = tbm->rotation;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1157,16 +1067,19 @@ cs_turbomachinery_finalize(void)
 
     cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
+    for (int i = tbm->n_rotors -1; i >= 0; i--)
+      BFT_FREE(tbm->rotor_cells_c[i]);
     BFT_FREE(tbm->rotor_cells_c);
 
-    BFT_FREE(tbm->cell_rotor_num);
+    BFT_FREE(tbm->rotation);
 
-    if (tbm->rotor_vtx != NULL)
-      BFT_FREE(tbm->rotor_vtx);
+    BFT_FREE(tbm->cell_rotor_num);
 
     if (tbm->reference_mesh != NULL)
       cs_mesh_destroy(tbm->reference_mesh);
 
+    /* Unset global rotations pointer for safety */
+    cs_glob_rotation = NULL;
   }
 
   BFT_FREE(cs_glob_turbomachinery);
@@ -1269,16 +1182,9 @@ cs_turbomachinery_rotation_matrix(int        rotor_num,
                                   cs_real_t  matrix[3][4])
 {
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  const cs_rotation_t *r = tbm->rotation + rotor_num;
 
-  if (rotor_num != 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: only one rotor may be used in the current version.",
-              __func__);
-
-  _rotation_matrix(theta,
-                   tbm->rotation_axis,
-                   tbm->rotation_invariant,
-                   matrix);
+  cs_rotation_matrix(theta, r->axis, r->invariant, matrix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1310,12 +1216,9 @@ cs_turbomachinery_get_cell_rotor_num(void)
 double
 cs_turbomachinery_get_rotation_velocity(int rotor_num)
 {
-  if (rotor_num != 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: only one rotor may be used in the current version.",
-              __func__);
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
-  return cs_glob_turbomachinery->omega;
+  return (tbm->rotation + rotor_num)->omega;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1328,17 +1231,22 @@ void
 cs_turbomachinery_rotate_fields(const cs_real_t dt[])
 {
   cs_lnum_t i;
-  double matrix[3][4];
+  cs_real_34_t  *m;
 
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
   cs_real_t time_step = dt[0];
 
-  int n_fields = cs_field_n_fields();
+  BFT_MALLOC(m, tbm->n_rotors+1, cs_real_34_t);
 
-  _rotation_matrix(tbm->omega*time_step,
-                   tbm->rotation_axis,
-                   tbm->rotation_invariant,
-                   matrix);
+  for (int j = 0; j < tbm->n_rotors+1; j++) {
+    cs_rotation_t *r = tbm->rotation + j;
+    cs_rotation_matrix(r->omega * time_step,
+                       r->axis,
+                       r->invariant,
+                       m[j]);
+  }
+
+  int n_fields = cs_field_n_fields();
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
@@ -1357,7 +1265,7 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
           v[0] = f->val[i];
           v[1] = f->val[i + _n_elts];
           v[2] = f->val[i + _n_elts*2];
-          _apply_vector_rotation(matrix, v);
+          _apply_vector_rotation(m[tbm->cell_rotor_num[i]], v);
           f->val[i]             = v[0];
           f->val[i + _n_elts]   = v[1];
           f->val[i + _n_elts*2] = v[2];
@@ -1365,14 +1273,14 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
       }
       else {
         for (i = 0; i < _n_elts; i++)
-          _apply_vector_rotation(matrix, f->val + i*3);
+          _apply_vector_rotation(m[tbm->cell_rotor_num[i]], f->val + i*3);
       }
     }
 
     else if (f->dim == 6) {
       assert(f->interleaved);
         for (i = 0; i < _n_elts; i++)
-          _apply_sym_tensor_rotation(matrix, f->val + i*6);
+          _apply_sym_tensor_rotation(m[tbm->cell_rotor_num[i]], f->val + i*6);
     }
 
     assert(f->dim == 3 || f->dim == 6);
@@ -1401,7 +1309,7 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
       t[3] = fr12->val[i];
       t[4] = fr13->val[i];
       t[5] = fr23->val[i];
-      _apply_sym_tensor_rotation(matrix, t);
+      _apply_sym_tensor_rotation(m[tbm->cell_rotor_num[i]], t);
       fr11->val[i] = t[0];
       fr22->val[i] = t[1];
       fr33->val[i] = t[2];
@@ -1411,11 +1319,17 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
     }
 
   }
+
+  BFT_FREE(m);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute velocity relative to fixed coordinates at a given point
+ *
+ * \deprecated
+ * Use \ref cs_rotation_velocity for more consistent naming of this reference
+ * frame velocity.
  *
  * \param[in]   rotor_num  rotor number (1 to n numbering)
  * \param[in]   coords     point coordinates
@@ -1428,16 +1342,12 @@ cs_turbomachinery_relative_velocity(int              rotor_num,
                                     const cs_real_t  coords[3],
                                     cs_real_t        velocity[3])
 {
-  if (rotor_num != 1)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: only one rotor may be used in the current version.",
-              __func__);
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+  const cs_rotation_t *r = tbm->rotation + rotor_num;
 
-  const cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
-
-  _relative_velocity(tbm->omega,
-                     tbm->rotation_axis,
-                     tbm->rotation_invariant,
+  _relative_velocity(r->omega,
+                     r->axis,
+                     r->invariant,
                      coords,
                      velocity);
 }

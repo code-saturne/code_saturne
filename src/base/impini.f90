@@ -245,7 +245,7 @@ write(nfecra,9900)
 
 write(nfecra,2000)
 write(nfecra,2010) gx,gy,gz
-write(nfecra,2011) omegax, omegay, omegaz, icorio
+write(nfecra,2011) icorio
 
 write(nfecra,2020) ro0, viscl0, cp0, icp, p0, pred0, t0,  &
                    irovar,ivivar, (xyzp0(ii),ii=1,3)
@@ -267,9 +267,6 @@ write(nfecra,9900)
 '       GY     = ', e14.5,    ' (Composante y de la gravite  )',/,&
 '       GZ     = ', e14.5,    ' (Composante z de la gravite  )',/)
  2011 format(                                                     &
-'       OMEGAX = ', e14.5,    ' (Composante x du vecteur rot.)',/,&
-'       OMEGAY = ', e14.5,    ' (Composante y du vecteur rot.)',/,&
-'       OMEGAZ = ', e14.5,    ' (Composante z du vecteur rot.)',/,&
 '       ICORIO = ', i10,      ' (Termes source de Coriolis   )',/)
  2020 format(                                                     &
 '  -- Phase continue :',                                        /,&
@@ -301,9 +298,6 @@ write(nfecra,9900)
 '       GY     = ', e14.5,    ' (Gravity y component         )',/,&
 '       GZ     = ', e14.5,    ' (Gravity z component         )',/)
  2011 format(                                                     &
-'       OMEGAX = ', e14.5,    ' (Rotation vector x component )',/,&
-'       OMEGAY = ', e14.5,    ' (Rotation vector y component )',/,&
-'       OMEGAZ = ', e14.5,    ' (Rotation vector z component )',/,&
 '       ICORIO = ', i10,      ' (Coriolis source terms       )',/)
  2020 format(                                                     &
 '  -- Continuous phase:',                                       /,&

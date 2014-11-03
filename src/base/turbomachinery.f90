@@ -31,11 +31,7 @@ module turbomachinery
 
   integer, save :: iturbo
 
-  ! Rotation axis
-
-  double precision, save :: rotax(3)
-
-  ! Flag on cells related to the rotor
+  ! Rotor number of the cells
 
   integer, dimension(:), pointer :: irotce
 
@@ -53,12 +49,11 @@ module turbomachinery
 
     ! Interface to C function mapping some data for turbomachinery
 
-    subroutine map_turbomachinery_module (iturbo2, rotax2, irotce2) &
+    subroutine map_turbomachinery_module (iturbo2, irotce2) &
       bind(C, name='cs_f_map_turbomachinery_module')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(out) :: iturbo2
-      real(c_double), dimension(1:3), intent(out) :: rotax2
       type(c_ptr), intent(out) :: irotce2
     end subroutine map_turbomachinery_module
 
@@ -118,7 +113,7 @@ contains
 
     ! Map turbomachinery module components to global c turbomachinery structure
 
-    call map_turbomachinery_module(iturbo, rotax, c_p)
+    call map_turbomachinery_module(iturbo, c_p)
 
     call c_f_pointer(c_p, irotce, [ncelet])
 
@@ -128,11 +123,6 @@ contains
 
     if (iturbo.eq.0) then
       if (icorio.eq.1.or.imobil.eq.1) then
-
-        rotax(1) = omegax
-        rotax(2) = omegay
-        rotax(3) = omegaz
-
         allocate(irotce(ncelet))
         do iel = 1, ncelet
           irotce(iel) = 1
@@ -168,9 +158,8 @@ contains
 
     type(c_ptr) :: c_p
     integer(c_int) :: iturbo2
-    real(c_double), dimension(1:3) :: rotax2
 
-    call map_turbomachinery_module(iturbo2, rotax2, c_p)
+    call map_turbomachinery_module(iturbo2, c_p)
 
     call turbomachinery_resize_cell_fields
 
