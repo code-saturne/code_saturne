@@ -201,7 +201,6 @@ endif
 if (iihmpr.eq.1) then
 
   call uiray1(iirayo, isuird, i_quadrature, ndirec, nfreqr, idiver, iimpar, iimlum)
-  !==========
 
 endif
 

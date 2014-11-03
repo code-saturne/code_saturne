@@ -44,7 +44,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Code_Saturne key words: IRAYON, IRAYPP</string>
+           <string>Code_Saturne key words: IIRAYO</string>
           </property>
           <property name="statusTip">
            <string>Select the thermic radiation model</string>
@@ -148,7 +148,7 @@
                 <item>
                  <widget class="QComboBox" name="comboBoxQuadrature">
                   <property name="toolTip">
-                   <string>Code_Saturne key words: NDIREC</string>
+                   <string>Code_Saturne key words: i_quadrature</string>
                   </property>
                  </widget>
                 </item>
