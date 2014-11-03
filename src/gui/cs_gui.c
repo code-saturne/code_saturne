@@ -5216,7 +5216,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
         double m_param = 1 - 1 / n_param;
 
         for (int icel = 0; icel < cells; icel++) {
-          int iel = cells_list[icel]-1;
+          int iel = cells_list[icel];
           double pres = pressure_field[iel];
 
           if (*gravity == 1)
@@ -5286,7 +5286,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
             BFT_FREE(delayname);
 
             for (int icel = 0; icel < cells; icel++) {
-              int iel = cells_list[icel]-1;
+              int iel = cells_list[icel];
               delay_val[iel] = 1. + 0.15 / saturation_field[iel];
 
               if (delay_val[iel] < 1.) {
@@ -5301,7 +5301,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                 c_prop = cs_field_by_id(diff_id);
 
               for (int icel = 0; icel < cells; icel++) {
-                int iel = cells_list[icel]-1;
+                int iel = cells_list[icel];
                 c_prop->val[iel] = saturation_field[iel] * molecular_diffusion + 1.e-15;
                 if (c_prop->val[iel] < 0.) {
                   bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be greater or equal to 0\n");
@@ -5367,7 +5367,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
           }
 
           for (int icel = 0; icel < cells; icel++) {
-              int iel = cells_list[icel]-1;
+              int iel = cells_list[icel];
               mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
               mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
               mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
@@ -5423,7 +5423,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
         BFT_FREE(path);
 
         for (int icel = 0; icel < cells; icel++) {
-          int iel = cells_list[icel]-1;
+          int iel = cells_list[icel];
           double norm = sqrt(vel[iel][0] * vel[iel][0] +
                              vel[iel][1] * vel[iel][1] +
                              vel[iel][2] * vel[iel][2]);
