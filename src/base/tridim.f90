@@ -1370,7 +1370,7 @@ do while (iterns.le.nterup)
          ( darcy_anisotropic_permeability,                             &
            darcy_anisotropic_diffusion,                                &
            darcy_gravity,                                              &
-           darcy_gravity_x, darcy_gravity_y, darcy_gravity_z, ivisls)
+           darcy_gravity_x, darcy_gravity_y, darcy_gravity_z)
       endif
 
       ! Darcy : update data specific to underground flow

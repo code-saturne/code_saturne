@@ -5135,7 +5135,6 @@ void CS_PROCF (uiprof, UIPROF) (const int    *ncelet,
  * double          gravity_x       <--   x component for gravity vector
  * double          gravity_y       <--   y component for gravity vector
  * double          gravity_z       <--   z component for gravity vector
- * integer         ivisls          <--  pointer for Lambda/Cp
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
@@ -5143,8 +5142,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                                 const cs_int_t  *gravity,
                                 const double    *gravity_x,
                                 const double    *gravity_y,
-                                const double    *gravity_z,
-                                const cs_int_t   ivisls[])
+                                const double    *gravity_z)
 {
   char *path = NULL;
   char *status = NULL;
@@ -5296,8 +5294,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                 bft_printf("                           current value is %15.8E\n", delay_val[iel]);
               }
             }
-            if (ivisls[user_id] > 0) {
-              int diff_id = cs_field_get_key_int(f, keysca);
+            int diff_id = cs_field_get_key_int(f, keysca);
+            if (diff_id >= 0) {
               cs_field_t *c_prop = NULL;
               if (diff_id > -1)
                 c_prop = cs_field_by_id(diff_id);

@@ -540,7 +540,6 @@ void CS_PROCF (uiprof, UIPROF)(const int    *ncelet,
  * double          gravity_x       <--   x component for gravity vector
  * double          gravity_y       <--   y component for gravity vector
  * double          gravity_z       <--   z component for gravity vector
- * integer         ivisls          <--  pointer for Lambda/Cp
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
@@ -548,8 +547,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                                 const cs_int_t  *gravity,
                                 const double    *gravity_x,
                                 const double    *gravity_y,
-                                const double    *gravity_z,
-                                const cs_int_t   ivisls[]);
+                                const double    *gravity_z);
 
 /*----------------------------------------------------------------------------
  * Free memory: clean global private variables and libxml2 variables.
