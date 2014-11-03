@@ -365,7 +365,7 @@ if (abs(thetex).gt.epzero) then
    ischcp , isstpp , inc    , imrgra , ivisep ,                   &
    iwarnp , idftnp ,                                              &
    blencp , epsrgp , climgp , relaxp , thetex ,                   &
-   pvar   , pvara  ,                                              &
+   pvara  , pvara  ,                                              &
    coefav , coefbv , cofafv , cofbfv ,                            &
    flumas , flumab , viscfs , viscbs , secvif , secvib ,          &
    icvflb , icvfli ,                                              &
