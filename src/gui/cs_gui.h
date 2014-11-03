@@ -608,30 +608,6 @@ cs_gui_reference_initialization(const char  *param,
                                 double      *value);
 
 /*-----------------------------------------------------------------------------
- * Return the name of the volumic zone
- *
- * parameters:
- *   ith_zone        <--  id of volumic zone
- *----------------------------------------------------------------------------*/
-
-static char
-*cs_gui_volumic_zone_id(int ith_zone);
-
-/*-----------------------------------------------------------------------------
- * Return the list of cells describing a given zone.
- *
- * parameters:
- *   zone_id             <--  volume zone id
- *   n_cells_with_ghosts <--  number of cells with halo
- *   cells               -->  number of selected cells
- *----------------------------------------------------------------------------*/
-
-static int*
-get_cells_list(const char  *zone_id,
-               int          n_cells_with_ghosts,
-               int         *cells );
-
-/*-----------------------------------------------------------------------------
  * Selection of linear solvers.
  *----------------------------------------------------------------------------*/
 

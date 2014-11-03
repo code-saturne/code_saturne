@@ -2180,7 +2180,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
       if (cs_gui_strcmp(vars->model, "darcy_model")) {
         const cs_field_t  *fp1 = cs_field_by_name_try("pressure");
-        const int var_key_id = cs_field_key_id("variable_id");
         int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
         for (int ifac = 0; ifac < faces; ifac++) {
           ifbr = faces_list[ifac] -1;
