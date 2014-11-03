@@ -89,6 +89,7 @@ cs_file.h \
 cs_field.h \
 cs_field_pointer.h \
 cs_field_operator.h \
+cs_fp_exception.h \
 cs_halo.h \
 cs_halo_perio.h \
 cs_interface.h \
@@ -158,6 +159,7 @@ cs_block_dist.c \
 cs_block_to_part.c \
 cs_defs.c \
 cs_file.c \
+cs_fp_exception.c \
 cs_interface.c \
 cs_io.c \
 cs_log.c \

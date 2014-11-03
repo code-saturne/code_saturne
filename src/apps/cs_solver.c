@@ -24,23 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-/* On glibc-based systems, define _GNU_SOURCE so as to enable floating-point
-   error exceptions; on Itanium, optimized code may raise such exceptions
-   due to speculative execution, so we only enable raising of such exceptions
-   for code compiled in debug mode, where reduced optimization should not lead
-   to such exceptions, and locating the "true" origin of floating-point
-   exceptions is helpful.
-   _GNU_SOURCE must be defined before including any headers, to ensure
-   the correct feature macros are defined first. */
-
-#if defined(__linux__) || defined(__linux) || defined(linux)
-#if    (!defined(__ia64__) && !defined(__blrts__) && !defined(__bg__)) \
-    || defined(DEBUG)
-#define CS_FPE_TRAP
-#define _GNU_SOURCE
-#endif
-#endif
-
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
@@ -52,10 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#if defined(CS_FPE_TRAP)
-#include <fenv.h>
-#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -76,6 +55,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
+#include "cs_fp_exception.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_gui.h"
@@ -150,11 +130,6 @@ cs_run(void);
  *============================================================================*/
 
 static cs_opts_t  opts;
-
-#if defined(CS_FPE_TRAP)
-static int _fenv_set = 0;    /* Indicates if behavior modified */
-static fenv_t _fenv_old;     /* Old exception mask */
-#endif
 
 /*============================================================================
  * Private function definitions
@@ -492,17 +467,9 @@ main(int    argc,
 
   (void)cs_timer_wtime();
 
-  /* Trap floating-point exceptions */
+  /* Trap floating-point exceptions on most systems */
 
-#if defined(CS_FPE_TRAP)
-  if (_fenv_set == 0) {
-    if (fegetenv(&_fenv_old) == 0) {
-      feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-      _fenv_set = 1;
-      /* To revert to initial behavior: fesetenv(&_fenv_old); */
-    }
-  }
-#endif
+  cs_fp_exception_enable_trap();
 
   /* Initialize memory management and signals */
 
