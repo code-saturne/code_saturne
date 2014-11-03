@@ -109,7 +109,7 @@ class BatchRunningModel(Model):
         Update the run command
         """
 
-        if keyword == 'run_nprocs' or not keyword:
+        if (keyword == 'run_nprocs' or not keyword) and self.case['runcase']:
             self.case['runcase'].set_nprocs(self.dictValues['run_nprocs'])
 
 
