@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-10-27 01:42+0100\n"
+"POT-Creation-Date: 2014-11-03 18:50+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2819,6 +2819,28 @@ msgstr "Impossible de réallouer \"%s\" (%lu octets)"
 
 #, c-format
 msgid ""
+"   ** SCALAR BALANCE BY ZONE at iteration %6i\n"
+"   ---------------------------------------------\n"
+"------------------------------------------------------------\n"
+"   SCALAR: %s\n"
+"   ZONE SELECTION CRITERIA: \"%s\"\n"
+"------------------------------------------------------------\n"
+"   Volume       Divergence   Inj. Mass.   Suc. Mass.\n"
+"  %12.4e %12.4e %12.4e %12.4e\n"
+"------------------------------------------------------------\n"
+"   BI inlet     BI outlet    Inlet        Outlet\n"
+"  %12.4e %12.4e %12.4e %12.4e\n"
+"------------------------------------------------------------\n"
+"   Sym.         Smooth W.    Rough W.     Coupled      Undef. BC\n"
+"  %12.4e %12.4e %12.4e %12.4e %12.4e\n"
+"------------------------------------------------------------\n"
+"   Total\n"
+"  %12.4e\n"
+"------------------------------------------------------------\n"
+msgstr ""
+
+#, c-format
+msgid ""
 "  N ops:       %12ld\n"
 "  Wall clock:  %12.5e\n"
 "  GFLOPS:      %12.5e\n"
@@ -2945,10 +2967,6 @@ msgstr ""
 "\n"
 "Optimisation des matrices symétriques\n"
 "=====================================\n"
-
-msgid ""
-"Backward differentiation in time for scalar variablesis not available yet."
-msgstr ""
 
 #, c-format
 msgid " %s: Convection in centered blending with %f percent of upwind\n"
@@ -5472,6 +5490,25 @@ msgstr "lim. à min."
 msgid "clips to max"
 msgstr "lim. à max."
 
+msgid ""
+"\n"
+"Physical model options\n"
+"----------------------\n"
+msgstr ""
+"\n"
+"\n"
+"Options de modèle physique\n"
+"--------------------------\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Global domain rotation:\n"
+"    axis:             [%g, %g, %g]    invariant point:  [%g, %g, %g]    "
+"angular velocity:  %g radians/s\n"
+msgstr ""
+
 msgid "Defining a interpolation grid requires a name."
 msgstr ""
 
@@ -7534,6 +7571,10 @@ msgstr ""
 "du module thermique 1D en paroi.\n"
 "Vérifier l'existence et le nom du fichier de reprise de calcul: %s \n"
 
+#, c-format
+msgid "%s: some vertices of the initial mesh belong to multiple rotors."
+msgstr ""
+
 msgid "Added boundary faces"
 msgstr "Faces de bord ajoutées"
 
@@ -8869,6 +8910,13 @@ msgstr ""
 
 #, c-format
 msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not find the required symbol: %s\n"
+" %s\n"
+" %s\n"
 msgstr ""
 
 #, c-format
