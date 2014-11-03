@@ -848,6 +848,11 @@ class XMLinit(Variables):
         if nodeV:
             if nodeV['label'] == 'VelocityX':
                 nodeV['label'] = 'Velocity'
+        #update input_thermal_flux
+        nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
+        node = nth.xmlGetNode('property', name="input_thermal_flux")
+        if node:
+            node[name] = "thermal_flux"
 
 
 #-------------------------------------------------------------------------------

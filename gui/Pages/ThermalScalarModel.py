@@ -189,7 +189,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
             ConjugateHeatTransferModel(self.case).deleteConjugateHeatTransfer()
 
         t_outputs = (("tplus", "Tplus", False),
-                     ("input_thermal_flux", "Thermal flux", True),
+                     ("thermal_flux", "Thermal flux", True),
                      ("boundary_temperature", "Boundary temperature", True),
                      ("boundary_layer_nusselt", "Dimensionless Thermal flux", False))
 
