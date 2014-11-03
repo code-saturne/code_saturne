@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- By default, do not force use of an iterative gradient reconstruction method
+  for pressure gradients, or other gradients deriving from a potential.
+  To force it, a negative value of the IMRGRA keyword may be used.
+
 - Coprocessing: if the main (default) writer uses Catalyst output, ignore
   joining output and use EnSight Gold format for joining and error writers
   if no matching Python script is found, to avoid uneeded abort.

@@ -1729,22 +1729,22 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
  *----------------------------------------------------------------------------*/
 
 static void
-_lsq_scalar_gradient_old(const cs_mesh_t             *m,
-                         cs_mesh_quantities_t        *fvq,
-                         cs_halo_type_t               halo_type,
-                         bool                         recompute_cocg,
-                         int                          nswrgp,
-                         int                          idimtr,
-                         int                          hyd_p_flag,
-                         cs_real_t                    inc,
-                         double                       extrap,
-                         const cs_real_3_t            f_ext[],
-                         const cs_real_t              coefap[],
-                         const cs_real_t              coefbp[],
-                         const cs_real_t              pvar[],
-                         const cs_real_t              c_weight[],
-                         cs_real_3_t        *restrict grad,
-                         cs_real_4_t        *restrict rhsv)
+_lsq_scalar_gradient(const cs_mesh_t             *m,
+                     cs_mesh_quantities_t        *fvq,
+                     cs_halo_type_t               halo_type,
+                     bool                         recompute_cocg,
+                     int                          nswrgp,
+                     int                          idimtr,
+                     int                          hyd_p_flag,
+                     cs_real_t                    inc,
+                     double                       extrap,
+                     const cs_real_3_t            f_ext[],
+                     const cs_real_t              coefap[],
+                     const cs_real_t              coefbp[],
+                     const cs_real_t              pvar[],
+                     const cs_real_t              c_weight[],
+                     cs_real_3_t        *restrict grad,
+                     cs_real_4_t        *restrict rhsv)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -4016,386 +4016,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   BFT_FREE(rhs);
 }
 
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient using least-squares reconstruction for non-orthogonal
- * meshes (nswrgp > 1).
- *
- * Optionally, a volume force generating a hydrostatic pressure component
- * may be accounted for.
- *
- * cocg is computed to account for variable B.C.'s (flux).
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   fvq            <-- pointer to associated finite volume quantities
- *   halo_type      <-- halo type (extended or not)
- *   idimtr         <-- 0 if ivar does not match a vector or tensor
- *                        or there is no periodicity of rotation
- *                      1 for velocity, 2 for Reynolds stress
- *   hyd_p_flag     <-- flag for hydrostatic pressure
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   f_ext          <-- components of exterior force generating pressure
- *   coefap         <-- B.C. coefficients for boundary face normals
- *   coefbp         <-- B.C. coefficients for boundary face normals
- *   pvar           <-- variable
- *   c_weight       <-- weighted gradient coefficient variable,
- *                      or NULL
- *   grad           <-> gradient of pvar (halo prepared for periodicity
- *                      of rotation)
- *----------------------------------------------------------------------------*/
-
-static void
-_lsq_scalar_gradient(const cs_mesh_t             *m,
-                     cs_mesh_quantities_t        *fvq,
-                     cs_halo_type_t               halo_type,
-                     int                          idimtr,
-                     int                          hyd_p_flag,
-                     cs_real_t                    inc,
-                     const cs_real_3_t            f_ext[],
-                     const cs_real_t              coefap[],
-                     const cs_real_t              coefbp[],
-                     const cs_real_t              pvar[],
-                     const cs_real_t              c_weight[],
-                     cs_real_3_t        *restrict grad,
-                     cs_real_4_t        *restrict rhsv)
-{
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-  const cs_real_t *restrict weight = fvq->weight;
-
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict)m->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict)m->cell_cells_lst;
-
-  const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_cog
-    = (const cs_real_3_t *restrict)fvq->i_face_cog;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
-
-  cs_real_33_t *restrict cocg = fvq->cocg_lsq;
-
-  cs_lnum_t  cell_id, face_id, ii, jj, ll;
-  int        g_id, t_id;
-  cs_real_t  pfac;
-  cs_real_3_t  dc;
-  cs_real_4_t  fctb;
-
-  /* Reconstruct gradients using least squares for non-orthogonal meshes */
-  /*---------------------------------------------------------------------*/
-
-  /* Compute Right-Hand Side */
-  /*-------------------------*/
-
-# pragma omp parallel for
-  for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    rhsv[cell_id][0] = 0.0;
-    rhsv[cell_id][1] = 0.0;
-    rhsv[cell_id][2] = 0.0;
-    rhsv[cell_id][3] = pvar[cell_id];
-  }
-
-  /* Standard case, without hydrostatic pressure */
-  /*---------------------------------------------*/
-
-  if (hyd_p_flag == 0 || hyd_p_flag == 2) {
-
-    /* Contribution from interior faces */
-
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, jj, ll, pfac, dc, fctb)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
-
-          cs_real_t pond = weight[face_id];
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-
-          pfac =   (rhsv[jj][3] - rhsv[ii][3])
-                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          if (c_weight != NULL) {
-            for (ll = 0; ll < 3; ll++)
-              rhsv[ii][ll] +=  c_weight[jj]
-                             / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
-                             * fctb[ll];
-
-            for (ll = 0; ll < 3; ll++)
-              rhsv[jj][ll] +=  c_weight[ii]
-                             / (pond*c_weight[ii] + (1. - pond)*c_weight[jj])
-                             * fctb[ll];
-          }
-          else {
-            for (ll = 0; ll < 3; ll++)
-              rhsv[ii][ll] += fctb[ll];
-
-            for (ll = 0; ll < 3; ll++)
-              rhsv[jj][ll] += fctb[ll];
-          }
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-    /* Contribution from extended neighborhood */
-
-    if (halo_type == CS_HALO_EXTENDED) {
-
-#     pragma omp parallel for private(jj, ll, dc, fctb, pfac)
-      for (ii = 0; ii < n_cells; ii++) {
-        for (cs_lnum_t cidx = cell_cells_idx[ii];
-             cidx < cell_cells_idx[ii+1];
-             cidx++) {
-
-          jj = cell_cells_lst[cidx];
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-
-          pfac =   (rhsv[jj][3] - rhsv[ii][3])
-                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
-
-        }
-      }
-
-    } /* End for extended neighborhood */
-
-    /* Contribution from boundary faces */
-
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, ll, dc, pfac)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = b_face_cells[face_id];
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = b_face_cog[face_id][ll] - cell_cen[ii][ll];
-
-          pfac =   (coefap[face_id]*inc + (coefbp[face_id] -1.)*rhsv[ii][3])
-                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += dc[ll] * pfac;
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-  }
-
-  /* Case with hydrostatic pressure */
-  /*--------------------------------*/
-
-  else {  /* if hyd_p_flag != 0 */
-
-    /* Contribution from interior faces */
-
-    for (g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, jj, ll, dc, pfac, fctb)
-      for (t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = i_face_cells[face_id][0];
-          jj = i_face_cells[face_id][1];
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-
-          pfac =   (  rhsv[jj][3] - rhsv[ii][3]
-                    + (cell_cen[ii][0] - i_face_cog[face_id][0]) * f_ext[ii][0]
-                    + (cell_cen[ii][1] - i_face_cog[face_id][1]) * f_ext[ii][1]
-                    + (cell_cen[ii][2] - i_face_cog[face_id][2]) * f_ext[ii][2]
-                    - (cell_cen[jj][0] - i_face_cog[face_id][0]) * f_ext[jj][0]
-                    - (cell_cen[jj][1] - i_face_cog[face_id][1]) * f_ext[jj][1]
-                    - (cell_cen[jj][2] - i_face_cog[face_id][2]) * f_ext[jj][2])
-                  / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
-
-          for (ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += fctb[ll];
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-    /* Contribution from extended neighborhood;
-       We assume that the middle of the segment joining cell centers
-       may replace the center of gravity of a fictitious face. */
-
-    if (halo_type == CS_HALO_EXTENDED) {
-
-#     pragma omp parallel for private(jj, ll, dc, fctb, pfac)
-      for (ii = 0; ii < n_cells; ii++) {
-        for (cs_lnum_t cidx = cell_cells_idx[ii];
-             cidx < cell_cells_idx[ii+1];
-             cidx++) {
-
-          jj = cell_cells_lst[cidx];
-
-          /* Note: replaced the expressions:
-           *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
-           *  b)   (cell_cen[ii] - ptmid) * f_ext[ii]
-           *  c) - (cell_cen[jj] - ptmid) * f_ext[jj]
-           * with:
-           *  a) dc = cell_cen[jj] - cell_cen[ii]
-           *  b) - 0.5 * dc * f_ext[ii]
-           *  c) - 0.5 * dc * f_ext[jj]
-           */
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-
-          pfac =   (  rhsv[jj][3] - rhsv[ii][3]
-                    - 0.5 * dc[0] * f_ext[ii][0]
-                    - 0.5 * dc[1] * f_ext[ii][1]
-                    - 0.5 * dc[2] * f_ext[ii][2]
-                    - 0.5 * dc[0] * f_ext[jj][0]
-                    - 0.5 * dc[1] * f_ext[jj][1]
-                    - 0.5 * dc[2] * f_ext[jj][2])
-                  / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
-
-        }
-      }
-
-    } /* End for extended neighborhood */
-
-    /* Contribution from boundary faces */
-
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
-
-#     pragma omp parallel for private(face_id, ii, ll, \
-                                      pfac)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
-
-          ii = b_face_cells[face_id];
-
-          for (ll = 0; ll < 3; ll++)
-            dc[ll] = b_face_cog[face_id][ll] - cell_cen[ii][ll];
-
-          pfac
-            =   (coefap[face_id]*inc
-              + (  (coefbp[face_id] -1.)
-                 * (  rhsv[ii][3]
-                    + (b_face_cog[face_id][0] - cell_cen[ii][0]) * f_ext[ii][0]
-                    + (b_face_cog[face_id][1] - cell_cen[ii][1]) * f_ext[ii][1]
-                    + (b_face_cog[face_id][2] - cell_cen[ii][2]) * f_ext[ii][2])))
-              / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
-
-          for (ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += dc[ll] * pfac;
-
-        } /* loop on faces */
-
-      } /* loop on threads */
-
-    } /* loop on thread groups */
-
-  } /* End of test on hydrostatic pressure */
-
-  /* Compute gradient */
-  /*------------------*/
-
-  if (hyd_p_flag == 1) {
-
-#   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      grad[cell_id][0] =   rhsv[cell_id][0] * cocg[cell_id][0][0]
-                         + rhsv[cell_id][1] * cocg[cell_id][1][0]
-                         + rhsv[cell_id][2] * cocg[cell_id][2][0]
-                         + f_ext[cell_id][0];
-      grad[cell_id][1] =   rhsv[cell_id][0] * cocg[cell_id][0][1]
-                         + rhsv[cell_id][1] * cocg[cell_id][1][1]
-                         + rhsv[cell_id][2] * cocg[cell_id][2][1]
-                         + f_ext[cell_id][1];
-      grad[cell_id][2] =   rhsv[cell_id][0] * cocg[cell_id][0][2]
-                         + rhsv[cell_id][1] * cocg[cell_id][1][2]
-                         + rhsv[cell_id][2] * cocg[cell_id][2][2]
-                         + f_ext[cell_id][2];
-    }
-
-  }
-  else {
-
-#   pragma omp parallel for
-    for (cell_id = 0; cell_id < n_cells; cell_id++) {
-      grad[cell_id][0] =   rhsv[cell_id][0] * cocg[cell_id][0][0]
-                         + rhsv[cell_id][1] * cocg[cell_id][1][0]
-                         + rhsv[cell_id][2] * cocg[cell_id][2][0];
-      grad[cell_id][1] =   rhsv[cell_id][0] * cocg[cell_id][0][1]
-                         + rhsv[cell_id][1] * cocg[cell_id][1][1]
-                         + rhsv[cell_id][2] * cocg[cell_id][2][1];
-      grad[cell_id][2] =   rhsv[cell_id][0] * cocg[cell_id][0][2]
-                         + rhsv[cell_id][1] * cocg[cell_id][1][2]
-                         + rhsv[cell_id][2] * cocg[cell_id][2][2];
-    }
-
-  }
-
-  /* Synchronize halos */
-
-  _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -4642,25 +4262,26 @@ cs_gradient_finalize(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_gradient_scalar(const char                *var_name,
-                        cs_gradient_type_t         gradient_type,
-                        cs_halo_type_t             halo_type,
-                        int                        inc,
-                        bool                       recompute_cocg,
-                        int                        n_r_sweeps,
-                        int                        tr_dim,
-                        int                        hyd_p_flag,
-                        int                        verbosity,
-                        int                        clip_mode,
-                        double                     epsilon,
-                        double                     extrap,
-                        double                     clip_coeff,
-                        cs_real_3_t                f_ext[],
-                        const cs_real_t            bc_coeff_a[],
-                        const cs_real_t            bc_coeff_b[],
-                        cs_real_t        *restrict var,
-                        const cs_real_t  *restrict c_weight,
-                        cs_real_3_t      *restrict grad)
+void
+cs_gradient_scalar(const char                *var_name,
+                   cs_gradient_type_t         gradient_type,
+                   cs_halo_type_t             halo_type,
+                   int                        inc,
+                   bool                       recompute_cocg,
+                   int                        n_r_sweeps,
+                   int                        tr_dim,
+                   int                        hyd_p_flag,
+                   int                        verbosity,
+                   int                        clip_mode,
+                   double                     epsilon,
+                   double                     extrap,
+                   double                     clip_coeff,
+                   cs_real_3_t                f_ext[],
+                   const cs_real_t            bc_coeff_a[],
+                   const cs_real_t            bc_coeff_b[],
+                   cs_real_t        *restrict var,
+                   cs_real_t        *restrict c_weight,
+                   cs_real_3_t      *restrict grad)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
@@ -4756,81 +4377,6 @@ void cs_gradient_scalar(const char                *var_name,
                                var,
                                grad);
 
-  } else if (gradient_type == CS_GRADIENT_LSQ) {
-
-    /* If NO reconstruction are required */
-
-    if (n_r_sweeps <= 1) {
-
-      _initialize_scalar_gradient(mesh,
-                                  fvq,
-                                  tr_dim,
-                                  hyd_p_flag,
-                                  inc,
-                                  (const cs_real_3_t *)f_ext,
-                                  bc_coeff_a,
-                                  bc_coeff_b,
-                                  var,
-                                  c_weight,
-                                  grad);
-
-    /* Reconstruction with Least square method */
-
-    } else {
-
-      _lsq_scalar_gradient(mesh,
-                           fvq,
-                           halo_type,
-                           tr_dim,
-                           hyd_p_flag,
-                           inc,
-                           (const cs_real_3_t *)f_ext,
-                           bc_coeff_a,
-                           bc_coeff_b,
-                           var,
-                           c_weight,
-                           grad,
-                           rhsv);
-    }
-
-  } else if (gradient_type == CS_GRADIENT_LSQ_ITER) {
-
-    const cs_int_t  _imlini = 1;
-    const cs_real_t _climin = 1.5;
-
-    _lsq_scalar_gradient(mesh,
-                         fvq,
-                         halo_type,
-                         tr_dim,
-                         hyd_p_flag,
-                         inc,
-                         (const cs_real_3_t *)f_ext,
-                         bc_coeff_a,
-                         bc_coeff_b,
-                         var,
-                         c_weight,
-                         grad,
-                         rhsv);
-
-    _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
-                              var, grad);
-
-    _iterative_scalar_gradient(mesh,
-                               fvq,
-                               var_name,
-                               n_r_sweeps,
-                               tr_dim,
-                               hyd_p_flag,
-                               verbosity,
-                               inc,
-                               epsilon,
-                               extrap,
-                               (const cs_real_3_t *)f_ext,
-                               bc_coeff_a,
-                               bc_coeff_b,
-                               var,
-                               grad);
-
   } else if (gradient_type == CS_GRADIENT_ITER_OLD) {
 
     _initialize_scalar_gradient_old(mesh,
@@ -4863,46 +4409,46 @@ void cs_gradient_scalar(const char                *var_name,
                                    grad,
                                    rhsv);
 
-  } else if (gradient_type == CS_GRADIENT_LSQ_OLD) {
+  } else if (gradient_type == CS_GRADIENT_LSQ) {
 
-    _lsq_scalar_gradient_old(mesh,
-                             fvq,
-                             halo_type,
-                             recompute_cocg,
-                             n_r_sweeps,
-                             tr_dim,
-                             hyd_p_flag,
-                             inc,
-                             extrap,
-                             (const cs_real_3_t *)f_ext,
-                             bc_coeff_a,
-                             bc_coeff_b,
-                             var,
-                             c_weight,
-                             grad,
-                             rhsv);
+    _lsq_scalar_gradient(mesh,
+                         fvq,
+                         halo_type,
+                         recompute_cocg,
+                         n_r_sweeps,
+                         tr_dim,
+                         hyd_p_flag,
+                         inc,
+                         extrap,
+                         (const cs_real_3_t *)f_ext,
+                         bc_coeff_a,
+                         bc_coeff_b,
+                         var,
+                         c_weight,
+                         grad,
+                         rhsv);
 
   } else if (gradient_type == CS_GRADIENT_LSQ_ITER_OLD) {
 
     const cs_int_t  _imlini = 1;
     const cs_real_t _climin = 1.5;
 
-    _lsq_scalar_gradient_old(mesh,
-                             fvq,
-                             halo_type,
-                             recompute_cocg,
-                             n_r_sweeps,
-                             tr_dim,
-                             hyd_p_flag,
-                             inc,
-                             extrap,
-                             (const cs_real_3_t *)f_ext,
-                             bc_coeff_a,
-                             bc_coeff_b,
-                             var,
-                             c_weight,
-                             grad,
-                             rhsv);
+    _lsq_scalar_gradient(mesh,
+                         fvq,
+                         halo_type,
+                         recompute_cocg,
+                         n_r_sweeps,
+                         tr_dim,
+                         hyd_p_flag,
+                         inc,
+                         extrap,
+                         (const cs_real_3_t *)f_ext,
+                         bc_coeff_a,
+                         bc_coeff_b,
+                         var,
+                         c_weight,
+                         grad,
+                         rhsv);
 
     _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
                               var, grad);
@@ -4959,19 +4505,20 @@ void cs_gradient_scalar(const char                *var_name,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_gradient_vector(const char                *var_name,
-                        cs_gradient_type_t         gradient_type,
-                        cs_halo_type_t             halo_type,
-                        int                        inc,
-                        int                        n_r_sweeps,
-                        int                        verbosity,
-                        int                        clip_mode,
-                        double                     epsilon,
-                        double                     clip_coeff,
-                        const cs_real_3_t          bc_coeff_a[],
-                        const cs_real_33_t         bc_coeff_b[],
-                        cs_real_3_t      *restrict var,
-                        cs_real_33_t     *restrict gradv)
+void
+cs_gradient_vector(const char                *var_name,
+                   cs_gradient_type_t         gradient_type,
+                   cs_halo_type_t             halo_type,
+                   int                        inc,
+                   int                        n_r_sweeps,
+                   int                        verbosity,
+                   int                        clip_mode,
+                   double                     epsilon,
+                   double                     clip_coeff,
+                   const cs_real_3_t          bc_coeff_a[],
+                   const cs_real_33_t         bc_coeff_b[],
+                   cs_real_3_t      *restrict var,
+                   cs_real_33_t     *restrict gradv)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -5016,8 +4563,7 @@ void cs_gradient_vector(const char                *var_name,
                                  (const cs_real_3_t *)var,
                                  gradv);
 
-  } else if (  gradient_type == CS_GRADIENT_LSQ
-            || gradient_type == CS_GRADIENT_LSQ_OLD) {
+  } else if (gradient_type == CS_GRADIENT_LSQ) {
 
     /* If NO reconstruction are required */
 
@@ -5043,8 +4589,7 @@ void cs_gradient_vector(const char                *var_name,
                            (const cs_real_3_t *)var,
                            gradv);
 
-  } else if (  gradient_type == CS_GRADIENT_LSQ_ITER
-            || gradient_type == CS_GRADIENT_LSQ_ITER_OLD) {
+  } else if (gradient_type == CS_GRADIENT_LSQ_ITER_OLD) {
 
     /* Clipping algorithm and clipping factor */
 
@@ -5132,31 +4677,15 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     *halo_type = CS_HALO_EXTENDED;
     break;
   case 4:
-    *gradient_type = CS_GRADIENT_LSQ_ITER;
+    *gradient_type = CS_GRADIENT_LSQ_ITER_OLD;
     break;
   case 5:
   case 6:
-    *gradient_type = CS_GRADIENT_LSQ_ITER;
+    *gradient_type = CS_GRADIENT_LSQ_ITER_OLD;
     *halo_type = CS_HALO_EXTENDED;
     break;
   case 10:
     *gradient_type = CS_GRADIENT_ITER_OLD;
-    break;
-  case 11:
-    *gradient_type = CS_GRADIENT_LSQ_OLD;
-    break;
-  case 12:
-  case 13:
-    *gradient_type = CS_GRADIENT_LSQ_OLD;
-    *halo_type = CS_HALO_EXTENDED;
-    break;
-  case 14:
-    *gradient_type = CS_GRADIENT_LSQ_ITER_OLD;
-    break;
-  case 15:
-  case 16:
-    *gradient_type = CS_GRADIENT_LSQ_ITER_OLD;
-    *halo_type = CS_HALO_EXTENDED;
     break;
   default: break;
   }

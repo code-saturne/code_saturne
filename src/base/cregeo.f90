@@ -67,7 +67,7 @@ implicit none
 
 ! Local variables
 
-integer          nbrsyr , nbzech
+integer          nbrsyr , nbzech, imrgrl
 
 !===============================================================================
 ! 1. Creation of extracted mesh coupled with SYRTHES
@@ -122,7 +122,10 @@ call pstgeo
 ! 4. Filter extended neighborhood for least-squares gradients
 !===============================================================================
 
-if (imrgra.eq.3 .or. imrgra.eq.6 .or. imrgra.eq.-3 .or. imrgra.eq.-6) then
+imrgrl = abs(imrgra)
+imrgrl = modulo(imrgrl,10)
+
+if (imrgrl.eq.3 .or. imrgrl.eq.6) then
   call redvse (anomax)
   !==========
 endif

@@ -128,9 +128,11 @@ double precision rvoid(1)
 
 ! Use iterative gradient
 
-imrgrp = 0
-if (imrgra.lt.0) imrgrp = -imrgra
-if (imrgra.ge.10) imrgrp = 10
+if (imrgra.lt.0) then
+  imrgrp = 0
+else
+  imrgrp = imrgra
+endif
 
 ! The gradient of a potential (pressure, ...) is a vector
 

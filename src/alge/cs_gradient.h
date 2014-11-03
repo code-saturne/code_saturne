@@ -54,10 +54,8 @@ typedef enum {
 
   CS_GRADIENT_ITER,              /* Iterative */
   CS_GRADIENT_LSQ,               /* Least-squares */
-  CS_GRADIENT_LSQ_ITER,          /* LSQ followed with iterative */
-  CS_GRADIENT_ITER_OLD,          /* Iterative (old)*/
-  CS_GRADIENT_LSQ_OLD,           /* Least-squares (old)*/
-  CS_GRADIENT_LSQ_ITER_OLD       /* LSQ followed with iterative (old)*/
+  CS_GRADIENT_LSQ_ITER_OLD,      /* LSQ followed by iterative (old) */
+  CS_GRADIENT_ITER_OLD           /* Iterative (old) */
 
 } cs_gradient_type_t;
 
@@ -173,25 +171,26 @@ cs_gradient_finalize(void);
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_gradient_scalar(const char                *var_name,
-                        cs_gradient_type_t         gradient_type,
-                        cs_halo_type_t             halo_type,
-                        int                        inc,
-                        bool                       recompute_cocg,
-                        int                        n_r_sweeps,
-                        int                        tr_dim,
-                        int                        hyd_p_flag,
-                        int                        verbosity,
-                        int                        clip_mode,
-                        double                     epsilon,
-                        double                     extrap,
-                        double                     clip_coeff,
-                        cs_real_3_t                f_ext[],
-                        const cs_real_t            bc_coeff_a[],
-                        const cs_real_t            bc_coeff_b[],
-                        cs_real_t        *restrict var,
-                        const cs_real_t  *restrict c_weight,
-                        cs_real_3_t      *restrict grad);
+void
+cs_gradient_scalar(const char                *var_name,
+                   cs_gradient_type_t         gradient_type,
+                   cs_halo_type_t             halo_type,
+                   int                        inc,
+                   bool                       recompute_cocg,
+                   int                        n_r_sweeps,
+                   int                        tr_dim,
+                   int                        hyd_p_flag,
+                   int                        verbosity,
+                   int                        clip_mode,
+                   double                     epsilon,
+                   double                     extrap,
+                   double                     clip_coeff,
+                   cs_real_3_t                f_ext[],
+                   const cs_real_t            bc_coeff_a[],
+                   const cs_real_t            bc_coeff_b[],
+                   cs_real_t        *restrict var,
+                   cs_real_t        *restrict c_weight,
+                   cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of a vector field.
@@ -212,19 +211,20 @@ void cs_gradient_scalar(const char                *var_name,
  *   gradv          --> gradient (du_i/dx_j : gradv[][i][j])
  *----------------------------------------------------------------------------*/
 
-void cs_gradient_vector(const char                *var_name,
-                        cs_gradient_type_t         gradient_type,
-                        cs_halo_type_t             halo_type,
-                        int                        inc,
-                        int                        n_r_sweeps,
-                        int                        verbosity,
-                        int                        clip_mode,
-                        double                     epsilon,
-                        double                     clip_coeff,
-                        const cs_real_3_t          bc_coeff_a[],
-                        const cs_real_33_t         bc_coeff_b[],
-                        cs_real_3_t      *restrict var,
-                        cs_real_33_t     *restrict gradv);
+void
+cs_gradient_vector(const char                *var_name,
+                   cs_gradient_type_t         gradient_type,
+                   cs_halo_type_t             halo_type,
+                   int                        inc,
+                   int                        n_r_sweeps,
+                   int                        verbosity,
+                   int                        clip_mode,
+                   double                     epsilon,
+                   double                     clip_coeff,
+                   const cs_real_3_t          bc_coeff_a[],
+                   const cs_real_33_t         bc_coeff_b[],
+                   cs_real_3_t      *restrict var,
+                   cs_real_33_t     *restrict gradv);
 
 /*----------------------------------------------------------------------------
  * Determine gradient type by Fortran "imrgra" value
