@@ -215,7 +215,7 @@ static cs_solving_info_t _solving_info =
   0.,    /* l2residual: L2 time residual                     */
 };
 
-static cs_severe_acc_species_prop_t _severe_acc_species_prop =
+static cs_gas_mix_species_prop_t _gas_mix_species_prop =
 {
   -1.,   /* molar mass             */
   -1.,   /* specific heat          */
@@ -280,10 +280,10 @@ _log_func_var_opt_cal(const void *t)
 }
 
 static void
-_log_func_severe_acc_species_prop(const void *t)
+_log_func_gas_mix_species_prop(const void *t)
 {
   const char fmt[] = N_("      %-23s  %-12.3g\n");
-  const cs_severe_acc_species_prop_t *_t = (const void *)t;
+  const cs_gas_mix_species_prop_t *_t = (const void *)t;
   cs_log_printf(CS_LOG_SETUP, _(fmt), "molar mass            ", _t->mol_mas);
   cs_log_printf(CS_LOG_SETUP, _(fmt), "specific heat         ", _t->cp);
   cs_log_printf(CS_LOG_SETUP, _(fmt), "volume diffusion      ", _t->vol_dif);
@@ -424,11 +424,11 @@ void
 cs_parameters_define_field_key_gas_mix(void)
 {
   /* Structure containing physical properties relative to
-     severe accident scalars */
-  cs_field_define_key_struct("severe_acc_species_prop",
-                             &_severe_acc_species_prop,
-                             _log_func_severe_acc_species_prop,
-                             sizeof(cs_severe_acc_species_prop_t),
+     species scalars used by the gas mixture modelling */
+  cs_field_define_key_struct("gas_mix_species_prop",
+                             &_gas_mix_species_prop,
+                             _log_func_gas_mix_species_prop,
+                             sizeof(cs_gas_mix_species_prop_t),
                              0);
 }
 

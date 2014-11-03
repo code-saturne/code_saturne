@@ -94,7 +94,7 @@ module cs_c_bindings
 
   !---------------------------------------------------------------------------
 
-  type, bind(c)  :: severe_acc_species_prop
+  type, bind(c)  :: gas_mix_species_prop
     real(c_double) :: mol_mas
     real(c_double) :: cp
     real(c_double) :: vol_dif
@@ -102,7 +102,7 @@ module cs_c_bindings
     real(c_double) :: mu_b
     real(c_double) :: lambda_a
     real(c_double) :: lambda_b
-  end type severe_acc_species_prop
+  end type gas_mix_species_prop
 
   !=============================================================================
 
@@ -850,14 +850,14 @@ contains
 
   !=============================================================================
 
-  !> \brief Assign a severe_acc_species_prop for a cs_severe_acc_species_prop_t key to a field.
+  !> \brief Assign a gas_mix_species_prop for a cs_gas_mix_species_prop_t key to a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
 
   !> \param[in]   f_id     field id
   !> \param[in]   k_value  structure associated with key
 
-  subroutine field_set_key_struct_severe_acc_species_prop(f_id, k_value)
+  subroutine field_set_key_struct_gas_mix_species_prop(f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -865,19 +865,19 @@ contains
     ! Arguments
 
     integer, intent(in)                               :: f_id
-    type(severe_acc_species_prop), intent(in), target :: k_value
+    type(gas_mix_species_prop), intent(in), target :: k_value
 
     ! Local variables
 
     integer(c_int)                             :: c_f_id
-    type(severe_acc_species_prop),pointer      :: p_k_value
+    type(gas_mix_species_prop),pointer      :: p_k_value
     type(c_ptr)                                :: c_k_value
     character(len=23+1, kind=c_char)           :: c_name
 
     integer(c_int), save           :: c_k_id = -1
 
     if (c_k_id .eq. -1) then
-      c_name = "severe_acc_species_prop"//c_null_char
+      c_name = "gas_mix_species_prop"//c_null_char
       c_k_id = cs_f_field_key_id(c_name)
     endif
 
@@ -890,7 +890,7 @@ contains
 
     return
 
-  end subroutine field_set_key_struct_severe_acc_species_prop
+  end subroutine field_set_key_struct_gas_mix_species_prop
 
   !=============================================================================
 
@@ -980,15 +980,15 @@ contains
 
   !=============================================================================
 
-  !> \brief Return a pointer to the severe_acc_species_prop structure for
-  !>        cs_severe_acc_species_prop_t key associated with a field.
+  !> \brief Return a pointer to the gas_mix_species_prop structure for
+  !>        cs_gas_mix_species_prop_t key associated with a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
 
   !> \param[in]   f_id     field id
   !> \param[out]  k_value  integer value associated with key id for this field
 
-  subroutine field_get_key_struct_severe_acc_species_prop (f_id, k_value)
+  subroutine field_get_key_struct_gas_mix_species_prop (f_id, k_value)
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -996,16 +996,16 @@ contains
     ! Arguments
 
     integer, intent(in)                                  :: f_id
-    type(severe_acc_species_prop), intent(inout), target :: k_value
+    type(gas_mix_species_prop), intent(inout), target :: k_value
 
     ! Local variables
 
     integer(c_int)                             :: c_f_id, c_k_id
-    type(severe_acc_species_prop),pointer      :: p_k_value
+    type(gas_mix_species_prop),pointer      :: p_k_value
     type(c_ptr)                                :: c_k_value
     character(len=23+1, kind=c_char)           :: c_name
 
-    c_name = "severe_acc_species_prop"//c_null_char
+    c_name = "gas_mix_species_prop"//c_null_char
     c_k_id = cs_f_field_key_id(c_name)
 
     c_f_id = f_id
@@ -1017,7 +1017,7 @@ contains
 
     return
 
-  end subroutine field_get_key_struct_severe_acc_species_prop
+  end subroutine field_get_key_struct_gas_mix_species_prop
 
   !=============================================================================
 

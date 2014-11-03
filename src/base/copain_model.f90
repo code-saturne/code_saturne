@@ -118,7 +118,7 @@ double precision C_k7,C_k8,C_k9,t_wall
 double precision pr_c,t_c,dtheta
 double precision lcond
 
-type(severe_acc_species_prop) s_h2o_g, s_k
+type(gas_mix_species_prop) s_h2o_g, s_k
 
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
 double precision, allocatable, dimension(:) :: x_ncond, x_h2o_g, diff_m
@@ -150,7 +150,7 @@ call field_get_id_try('yplus', yplus_id)
 if (yplus_id.ge.0) call field_get_val_s(yplus_id, yplbr)
 
 call field_get_id("y_h2o_g", f_id)
-call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)
+call field_get_key_struct_gas_mix_species_prop(f_id, s_h2o_g)
 
 !===============================================================================
 ! 1 - Constant physical values of the Copain modelling
@@ -237,7 +237,7 @@ do iesp = 1, nscasp
   !-------------------------------------------------
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
 
-  call field_get_key_struct_severe_acc_species_prop( &
+  call field_get_key_struct_gas_mix_species_prop( &
        ivarfl(isca(iscasp(iesp))), s_k)
 
   do iel = 1, ncel
@@ -255,7 +255,7 @@ enddo
 ! Warning: only on non-condensable gases
 do iesp = 1, nscasp
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
-  call field_get_key_struct_severe_acc_species_prop( &
+  call field_get_key_struct_gas_mix_species_prop( &
        ivarfl(isca(iscasp(iesp))), s_k)
   do iel = 1, ncel
     x_k = cvar_yk(iel)*mix_mol_mas(iel)/s_k%mol_mas
@@ -282,7 +282,7 @@ enddo
 do iesp = 1, nscasp
 
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
-  call field_get_key_struct_severe_acc_species_prop( &
+  call field_get_key_struct_gas_mix_species_prop( &
        ivarfl(isca(iscasp(iesp))), s_k)
 
   do iel = 1, ncel

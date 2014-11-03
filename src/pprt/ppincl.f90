@@ -227,13 +227,13 @@ module ppincl
   ! - ippmod(iaeros) = 2 Merkel's model
   integer ::  iaeros
 
-  !> pointer to specify mixing gases flow module with indicator ippmod(imixg)
+  !> pointer to specify gas mixture module with indicator ippmod(imixg)
   !> - ippmod(imixg) =-1 module not activated
-  !> - ippmod(imixg) = 0  Air/Helium   mixing gases
-  !> - ippmod(imixg) = 1  Air/Hydrogen mixing gases
-  !> - ippmod(imixg) = 2  Air/Steam    mixing gases
-  !> - ippmod(imixg) = 3  Air/Helium/Steam mixing gases
-  !> - ippmod(imixg) = 4  Air/Hydrogen/Steam mixing gases
+  !> - ippmod(imixg) = 0  Air/Helium   gas mixtures
+  !> - ippmod(imixg) = 1  Air/Hydrogen gas mixtures
+  !> - ippmod(imixg) = 2  Air/Steam    gas mixtures
+  !> - ippmod(imixg) = 3  Air/Helium/Steam gas mixtures
+  !> - ippmod(imixg) = 4  Air/Hydrogen/Steam gas mixtures
 
   integer ::  imixg
 
@@ -268,11 +268,11 @@ module ppincl
 
   !> \}
 
-  !--> PARAMETERS ASSOCIATED WITH THE SEVERE ACCIDENTS  SPECIFIC MIXING GAS
+  !--> PARAMETERS ASSOCIATED WITH THE GAS MIXTURE MODELLING
 
-  !> \defgroup severe_accidents parameters chosen by the user
+  !> \defgroup modelling chosen by the user
 
-  !> \addtogroup severe_accidents
+  !> \addtogroup gas_mixture
   !> \{
 
   !> Specific condensation modelling

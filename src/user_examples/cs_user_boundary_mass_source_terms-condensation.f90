@@ -190,7 +190,7 @@ integer          f_id
 
 double precision hvap, tk
 
-type(severe_acc_species_prop) s_h2o_g
+type(gas_mix_species_prop) s_h2o_g
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cpro_cp
@@ -203,7 +203,7 @@ allocate(lstelt(nfabor))
 
 call field_get_id_try("y_h2o_g", f_id)
 if (f_id.ne.-1) &
-  call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)
+  call field_get_key_struct_gas_mix_species_prop(f_id, s_h2o_g)
 
 if (iappel.eq.1.or.iappel.eq.2) then
 

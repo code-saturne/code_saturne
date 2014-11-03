@@ -76,7 +76,7 @@ integer          f_id
 
 double precision hvap, tk
 
-type(severe_acc_species_prop) s_h2o_g
+type(gas_mix_species_prop) s_h2o_g
 
 double precision, dimension(:), pointer :: cpro_cp
 double precision, dimension(:), pointer :: cvar_h
@@ -85,7 +85,7 @@ double precision, dimension(:), pointer :: cvar_h
 
 call field_get_id_try("y_h2o_g", f_id)
 if (f_id.ne.-1) &
-  call field_get_key_struct_severe_acc_species_prop(f_id, s_h2o_g)
+  call field_get_key_struct_gas_mix_species_prop(f_id, s_h2o_g)
 
 !===============================================================================
 ! Select the cells which are associated to the metal structures volume

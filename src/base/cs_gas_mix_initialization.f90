@@ -81,7 +81,7 @@ character(len=80) :: name_d
 
 double precision volgas, vol_d
 
-type(severe_acc_species_prop) s_d, s_k
+type(gas_mix_species_prop) s_d, s_k
 
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_d
@@ -119,7 +119,7 @@ elseif (ippmod(imixg).ge.2) then
 endif
 call field_get_val_s_by_name(name_d, y_d)
 call field_get_id(name_d, f_id)
-call field_get_key_struct_severe_acc_species_prop(f_id, s_d)
+call field_get_key_struct_gas_mix_species_prop(f_id, s_d)
 
 call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
 
@@ -154,7 +154,7 @@ do iesp = 1, nscasp
   ! Mass fraction array of the different species
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
 
-  call field_get_key_struct_severe_acc_species_prop( &
+  call field_get_key_struct_gas_mix_species_prop( &
        ivarfl(isca(iscasp(iesp))), s_k)
 
   do iel = 1, ncel

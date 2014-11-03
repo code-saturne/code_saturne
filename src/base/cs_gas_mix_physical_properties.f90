@@ -86,9 +86,9 @@ character(len=80) :: name_i, name_j, name_d
 double precision xsum_mu, xsum_lambda, phi_mu, phi_lambda, tk, x_k
 double precision mu_i, mu_j, lambda_i, lambda_j
 
-type(severe_acc_species_prop), pointer :: s_j, s_i
-type(severe_acc_species_prop), target :: s_d
-type(severe_acc_species_prop), dimension(:), allocatable, target :: s_k
+type(gas_mix_species_prop), pointer :: s_j, s_i
+type(gas_mix_species_prop), target :: s_d
+type(gas_mix_species_prop), dimension(:), allocatable, target :: s_k
 
 double precision, allocatable, dimension(:) :: lambd_m
 
@@ -150,7 +150,7 @@ endif
 call field_get_val_s_by_name(name_d, y_d)
 call field_get_val_prev_s_by_name(name_d, ya_d)
 call field_get_id(name_d, f_id)
-call field_get_key_struct_severe_acc_species_prop(f_id, s_d)
+call field_get_key_struct_gas_mix_species_prop(f_id, s_d)
 
 allocate(lambd_m(ncelet))
 allocate(s_k(nscasp+1))
@@ -194,7 +194,7 @@ do iesp = 1, nscasp
   ! Mass fraction array of the different species
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
 
-  call field_get_key_struct_severe_acc_species_prop( &
+  call field_get_key_struct_gas_mix_species_prop( &
        ivarfl(isca(iscasp(iesp))), s_k(iesp))
 
   do iel = 1, ncel
@@ -458,7 +458,7 @@ double precision tk, tkelvin
 
 character(len=80) :: name
 
-type(severe_acc_species_prop) spro
+type(gas_mix_species_prop) spro
 
 !===============================================================================
 ! The viscosity law for each species is defined

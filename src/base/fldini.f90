@@ -94,7 +94,7 @@ integer          idfm, nfld
 character(len=80) :: name, f_name
 
 type(var_cal_opt) vcopt
-type(severe_acc_species_prop) sasp
+type(gas_mix_species_prop) sasp
 
 !===============================================================================
 
@@ -436,7 +436,7 @@ if (ippmod(imixg).ge.0) then
       sasp%lambda_a = 6.2d-5
       sasp%lambda_b = 8.1d-3
 
-      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
     else if (name.eq.'y_n2') then
 
@@ -448,7 +448,7 @@ if (ippmod(imixg).ge.0) then
       sasp%lambda_a = 6.784141d-5
       sasp%lambda_b = 5.564317d-3
 
-      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
     else if (name.eq.'y_he') then
 
@@ -460,7 +460,7 @@ if (ippmod(imixg).ge.0) then
       sasp%lambda_a = 0.144d0
       sasp%lambda_b = 0.0d0
 
-      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
     else if (name.eq.'y_h2') then
 
@@ -472,7 +472,7 @@ if (ippmod(imixg).ge.0) then
       sasp%lambda_a = 4.431d-4
       sasp%lambda_b = 5.334d-2
 
-      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
     else if (name.eq.'y_h2o_g') then
 
@@ -484,7 +484,7 @@ if (ippmod(imixg).ge.0) then
       sasp%lambda_a = 7.6209d-5
       sasp%lambda_b = 0.016949d0
 
-      call field_set_key_struct_severe_acc_species_prop(f_id, sasp)
+      call field_set_key_struct_gas_mix_species_prop(f_id, sasp)
 
     endif
 

@@ -102,7 +102,7 @@ typedef struct {
   double  mu_b;
   double  lambda_a;
   double  lambda_b;
-} cs_severe_acc_species_prop_t;
+} cs_gas_mix_species_prop_t;
 
 
 /*----------------------------------------------------------------------------
