@@ -26,7 +26,7 @@
 
 !> \file pthrbm.f90
 !> \brief Update the density \f$ \rho^{n+1}\f$  with the
-!> \f$ \rho^{n-\sfrac{1}{2} \f$ density with the state law and a thermodynamic
+!> \f$ \rho^{n-\frac{1}{2}} \f$ density with the state law and a thermodynamic
 !> pressure \f$ p_{ther}^{n+1} estimated from the integral over the total fluid
 !> domain of the mass conservation equation.\f$
 !>

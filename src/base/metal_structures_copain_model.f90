@@ -46,9 +46,9 @@
 !>                             as constant or variable in time
 !>                             with a 0-D metal thermal model
 !> \param[out]    gam_ms       value associated to each variable in the
-!>                             condensation source terms \f $ \Gamma^v_{cond}\f$
+!>                             condensation source terms \f$ \Gamma^v_{cond}\f$
 !> \param[out]    flux_ms      value associated to the heat transfer estimated
-!>                             for the metal structures \f $\phi^v_{cond}\f$.
+!>                             for the metal structures \f$\phi^v_{cond}\f$.
 !_______________________________________________________________________________
 
 subroutine metal_structures_copain_model &
