@@ -3910,7 +3910,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
           if (formula != NULL) {
             ev_formula = _init_mei_tree(formula, "pressure");
             for (icel = 0; icel < cells; icel++) {
-              iel = cells_list[icel]-1;
+              iel = cells_list[icel];
               mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
               mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
               mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
