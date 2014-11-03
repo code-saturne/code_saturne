@@ -56,6 +56,8 @@ from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
 from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
 from code_saturne.Pages.ElectricalModel import ElectricalModel
 from code_saturne.Pages.GasCombustionModel import GasCombustionModel
+from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.LagrangianModel import LagrangianModel
 from code_saturne.Pages.ThermalRadiationModel import ThermalRadiationModel
 
 #-------------------------------------------------------------------------------
@@ -148,6 +150,8 @@ class XMLinit(Variables):
         GasCombustionModel(self.case).getGasCombustionModel()
         ElectricalModel(self.case).getElectricalModel()
         ThermalRadiationModel(self.case).getRadiativeModel()
+        AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
+        LagrangianModel(self.case).getLagrangianStatus()
 
         return msg
 
