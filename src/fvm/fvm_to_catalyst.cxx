@@ -68,6 +68,7 @@
 #include <vtkIdTypeArray.h>
 #include <vtkImageData.h>
 #include <vtkInformation.h>
+#include <vtkMPI.h>
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
@@ -128,36 +129,36 @@ typedef struct {
 
 typedef struct {
 
-  char                       *name;           /* Writer name */
+  char                       *name;            /* Writer name */
 
-  int                         rank;           /* Rank of current process
-                                                 in communicator */
-  int                         n_ranks;        /* Size of communicator */
+  int                         rank;            /* Rank of current process
+                                                  in communicator */
+  int                         n_ranks;         /* Size of communicator */
 
-  vtkMultiBlockDataSet       *mb;             /* Associated dataset */
+  vtkMultiBlockDataSet       *mb;              /* Associated dataset */
 
   fvm_writer_time_dep_t       time_dependency; /* Mesh time dependency */
 
-  int                         n_fields;       /* Number of fields */
-  fvm_catalyst_field_t      **fields;         /* Array of field helper
-                                                 structures */
+  int                         n_fields;        /* Number of fields */
+  fvm_catalyst_field_t      **fields;          /* Array of field helper
+                                                  structures */
 
-  int                         time_step;      /* Latest time step */
-  double                      time_value;    /* Latest time value */
+  int                         time_step;       /* Latest time step */
+  double                      time_value;      /* Latest time value */
 
 #if defined(HAVE_MPI)
-  MPI_Comm                    comm;           /* Associated MPI communicator */
+  MPI_Comm                    comm;            /* Associated communicator */
 #endif
 
-  vtkCPProcessor             *processor;      /* Co processor */
-  vtkCPDataDescription       *datadesc;       /* Data description */
+  vtkCPProcessor             *processor;       /* Co processor */
+  vtkCPDataDescription       *datadesc;        /* Data description */
 
-  bool                        private_comm;   /* Use private communicator */
-  bool                        ensight_names;  /* Use EnSight rules for
-                                                 field names */
+  bool                        private_comm;    /* Use private communicator */
+  bool                        ensight_names;   /* Use EnSight rules for
+                                                  field names */
 
-  bool                        modified;       /* Has output been added since
-                                                 las coprocessing ? */
+  bool                        modified;        /* Has output been added since
+                                                  last coprocessing ? */
 
 } fvm_to_catalyst_t;
 
@@ -1047,7 +1048,18 @@ fvm_to_catalyst_init_writer(const char             *name,
   /* Catalyst pipeline */
 
   w->processor = vtkCPProcessor::New();
+
+#if defined(HAVE_MPI)
+  if (w->comm != MPI_COMM_NULL) {
+    vtkMPICommunicatorOpaqueComm vtk_comm
+      = vtkMPICommunicatorOpaqueComm(&(w->comm));
+    w->processor->Initialize(vtk_comm);
+  }
+  else
+    w->processor->Initialize();
+#else
   w->processor->Initialize();
+#endif
 
   vtkCPPythonScriptPipeline  *pipeline = vtkCPPythonScriptPipeline::New();
 
