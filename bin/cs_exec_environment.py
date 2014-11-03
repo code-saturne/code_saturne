@@ -627,11 +627,12 @@ def source_shell_script(path):
 
 #-------------------------------------------------------------------------------
 
-def source_rcfile(pkg):
+def get_rcfile(pkg):
     """
-    Source user environement if defined by rcfile in preferences file.
+    Get path to file rcfile in preferences file if present.
     """
 
+    
     config = configparser.ConfigParser()
     config.read(pkg.get_configfiles())
 
@@ -639,6 +640,19 @@ def source_rcfile(pkg):
         rcfile = config.get('install', 'rcfile')
         if not os.path.isabs(rcfile):
             rcfile = '~/.' + rcfile
+        return rcfile
+
+    return ''
+
+#-------------------------------------------------------------------------------
+
+def source_rcfile(pkg):
+    """
+    Source user environement if defined by rcfile in preferences file.
+    """
+
+    rcfile = get_rcfile(pkg)
+    if rcfile:
         source_shell_script(rcfile)
 
 #-------------------------------------------------------------------------------

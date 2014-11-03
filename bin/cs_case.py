@@ -566,7 +566,7 @@ class case:
         s.write('  Machine        : ' + s_uname  + '\n')
         s.write('  N Procs        : ' + str(n_procs)  + '\n')
         if r.manager == None and r.hosts_list != None:
-            s.write('  Processors     :')
+            s.write('  Hosts          :')
             for p in r.hosts_list:
                 s.write(' ' + p)
             s.write('\n')
@@ -575,6 +575,13 @@ class case:
         if len(self.domains) + len(self.syr_domains) > 1:
             s.write('  Exec. dir.     : ' + self.exec_dir + '\n')
             s.write(hline)
+
+        s.write('  Environment variables\n')
+        ek = os.environ.keys()
+        ek.sort()
+        for k in ek:
+            s.write('    ' + k + '=' + os.environ[k] + '\n')
+        s.write(hline)
 
         for d in self.domains:
             d.summary_info(s)
@@ -1150,14 +1157,6 @@ echo "exit \$?" >> $localexec
             for d in self.syr_domains:
                 n_procs += d.n_procs
 
-        # Handle environment modules if used
-
-        if self.package_compute.config.env_modules != "no":
-            s.write('module purge\n')
-            for m in self.package_compute.config.env_modules.strip().split():
-                s.write('module load ' + m + '\n')
-                s.write('\n')
-
         # Set PATH for Windows DLL search PATH
         # It should not harm in other circumstances
 
@@ -1170,7 +1169,7 @@ echo "exit \$?" >> $localexec
 
         # Add MPI directories to PATH if in nonstandard path
 
-        cs_exec_environment.write_script_comment(s,
+        cs_exec_environment.write_script_comment(s, \
             'Export paths here if necessary or recommended.\n')
         mpi_bindir = self.package_compute.config.libs['mpi'].bindir
         if len(mpi_bindir) > 0:
@@ -1181,6 +1180,22 @@ echo "exit \$?" >> $localexec
                                                    'LD_LIBRARY_PATH',
                                                    mpi_libdir)
         s.write('\n')
+
+        # Handle rcfile and environment modules if used
+
+        rcfile = cs_exec_environment.get_rcfile(self.package_compute)
+
+        if rcfile or self.package_compute.config.env_modules != "no":
+            cs_exec_environment.write_script_comment(s, \
+               'Load environment if this script is run directly.\n')
+            s.write('if test "$CS_ENVIRONMENT_SET" != "true" ; then\n')
+            if self.package_compute.config.env_modules != "no":
+                s.write('  module purge\n')
+                for m in self.package_compute.config.env_modules.strip().split():
+                    s.write('  module load ' + m + '\n')
+            if rcfile:
+                s.write('  source ' + rcfile + '\n')
+            s.write('fi\n\n')
 
         # Boot MPI daemons if necessary
 
@@ -1496,6 +1511,14 @@ echo "exit \$?" >> $localexec
         max_time = b.get_remaining_time()
         if max_time != None:
             os.putenv('CS_MAXTIME', max_time)
+
+        # Tell the script it is being called through the main script
+        # (implying environment modules are set and the environment loaded)
+
+        rcfile = cs_exec_environment.get_rcfile(self.package_compute)
+
+        if rcfile or self.package_compute.config.env_modules != "no":
+            os.putenv('CS_ENVIRONMENT_SET', 'true')
 
         # Now run the calculation
 
