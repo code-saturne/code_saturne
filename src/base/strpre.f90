@@ -91,10 +91,9 @@ double precision depale(3,nnod)
 
 ! Local variables
 
-integer          istr, ii, ifac, inod, iel, indast
+integer          istr, ii, ifac, inod, iel
 integer          iflmas, iflmab
 
-integer, allocatable, dimension(:) :: lstfac
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
@@ -103,7 +102,6 @@ double precision, dimension(:), pointer :: coefap, coefbp
 double precision, dimension(:), pointer :: cvara_pr
 
 !===============================================================================
-
 
 !===============================================================================
 ! 1. INITIALISATION
@@ -190,10 +188,8 @@ if (nbstru.gt.0) then
 
 endif
 
-
 ! 2.2 STRUCTURES EXTERNES (COUPLAGE CODE_ASTER) :
 ! -----------------------
-
 
 if (nbaste.gt.0) then
 
@@ -213,25 +209,10 @@ if (nbaste.gt.0) then
 
     ntcast = ntcast + 1
 
-! Reception des deplacements predits et remplissage de depale
+    ! Reception des deplacements predits et remplissage de depale
 
-    ! Allocate a temporary array
-    allocate(lstfac(nbfast))
-
-    indast = 0
-    do ifac = 1, nfabor
-      istr = idfstr(ifac)
-      if (istr.lt.0) then
-        indast = indast + 1
-        lstfac(indast) = ifac
-      endif
-    enddo
-
-    call astcin(ntcast, nbfast, lstfac, depale)
+    call astcin(ntcast, depale)
     !==========
-
-    ! Free memory
-    deallocate(lstfac)
 
   endif
 
