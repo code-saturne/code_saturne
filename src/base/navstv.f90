@@ -455,7 +455,7 @@ call predvv &
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
-  icepdc , icetsm , ifbpcd , ltmast ,                            & 
+  icepdc , icetsm , ifbpcd , ltmast ,                            &
   itypsm , itypcd ,                                              &
   dt     , vel    , vela   ,                                     &
   propce ,                                                       &
