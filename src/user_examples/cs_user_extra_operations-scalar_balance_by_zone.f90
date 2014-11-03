@@ -87,8 +87,6 @@ double precision dt(ncelet)
 
 !< [loc_var_dec]
 
-integer          icvflb
-
 !< [loc_var_dec]
 
 !===============================================================================
@@ -96,8 +94,6 @@ integer          icvflb
 !===============================================================================
 
 !< [init]
-
-icvflb = 0
 
 !< [init]
 
@@ -119,7 +115,6 @@ call cs_balance_by_zone(idtvar, itypfb, &
 
 !< [example_2]
 
-icvflb = 0
 call cs_balance_by_zone(idtvar, itypfb,                        &
                         "x > -0.35 and (x < 0.5 or y < 0.90)", &
                         "scalar1")
