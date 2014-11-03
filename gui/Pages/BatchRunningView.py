@@ -103,17 +103,11 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.setWindowTitle(self.tr("Advanced options"))
         self.parent = parent
 
-        self.lineEdit.setReadOnly(True)
-
         # Combo models
-        self.modelSCRATCHDIR   = ComboModel(self.comboBoxSCRATCHDIR, 2, 1)
         self.modelCSOUT1       = ComboModel(self.comboBox_6, 2, 1)
         self.modelCSOUT2       = ComboModel(self.comboBox_7, 3, 1)
 
         # Combo items
-        self.modelSCRATCHDIR.addItem(self.tr("automatic"), 'automatic')
-        self.modelSCRATCHDIR.addItem(self.tr("prescribed"), 'prescribed')
-
         self.modelCSOUT1.addItem(self.tr("to standard output"), 'stdout')
         self.modelCSOUT1.addItem(self.tr("to listing"), 'listing')
 
@@ -122,49 +116,17 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         self.modelCSOUT2.addItem(self.tr("to listing_n<p>"), 'listing')
 
         # Connections
-        self.connect(self.comboBoxSCRATCHDIR, SIGNAL("activated(const QString&)"), self.slotSCRATCHDIR)
-        self.connect(self.toolButton, SIGNAL("clicked()"), self.slotSearchDirectory)
         self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotSearchFile)
         self.connect(self.lineEdit_3, SIGNAL("textChanged(const QString &)"), self.slotValgrind)
         self.connect(self.comboBox_6, SIGNAL("activated(const QString&)"), self.slotLogType)
         self.connect(self.comboBox_7, SIGNAL("activated(const QString&)"), self.slotLogType)
 
         # Previous values
-        self.scratchdir = self.parent.mdl.getString('scratchdir')
-        self.scratchdir_default = self.scratchdir
-        self.lineEdit.setText(str(self.scratchdir))
-        if self.scratchdir == "":
-            self.lineEdit.setEnabled(False)
-            self.toolButton.setEnabled(False)
-            self.modelSCRATCHDIR.setItem(str_model='automatic')
-        else:
-            self.lineEdit.setEnabled(True)
-            self.toolButton.setEnabled(True)
-            self.modelSCRATCHDIR.setItem(str_model='prescribed')
-
         self.valgrind = self.parent.mdl.getString('valgrind')
         if self.valgrind is not None:
             self.lineEdit_3.setText(str(self.valgrind))
 
         self.setLogType()
-
-
-    @pyqtSignature("const QString &")
-    def slotSCRATCHDIR(self, text):
-        """
-        Select mode for SCRATCHDIR.
-        """
-        if self.modelSCRATCHDIR.dicoV2M[str(text)] == 'prescribed':
-            self.scratchdir = self.scratchdir_default
-            self.lineEdit.setEnabled(True)
-            self.toolButton.setEnabled(True)
-            setGreenColor(self.toolButton, True)
-        else:
-            self.scratchdir = ""
-            self.lineEdit.setEnabled(False)
-            self.toolButton.setEnabled(False)
-            setGreenColor(self.toolButton, False)
-        self.lineEdit.setText(str(self.scratchdir))
 
 
     @pyqtSignature("const QString &")
@@ -191,25 +153,6 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         """
         self.log_type = [self.modelCSOUT1.dicoV2M[str(self.comboBox_6.currentText())],
                          self.modelCSOUT2.dicoV2M[str(self.comboBox_7.currentText())]]
-
-
-    @pyqtSignature("")
-    def slotSearchDirectory(self):
-        """
-        Choice temporary directory for batch
-        """
-        title    = self.tr("Select directory")
-        default  = os.getcwd()
-        options  = QFileDialog.ShowDirsOnly # | QFileDialog.DontResolveSymlinks
-        scratchdir = QFileDialog.getExistingDirectory(self, title, default, options)
-
-        dir = str(scratchdir)
-        if dir:
-            self.scratchdir = dir
-            setGreenColor(self.toolButton, False)
-        self.lineEdit.setText(str(self.scratchdir))
-
-        return self.scratchdir
 
 
     @pyqtSignature("")
@@ -253,7 +196,6 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
         """
 
         self.parent.mdl.setString('valgrind', self.valgrind.strip())
-        self.parent.mdl.setString('scratchdir', self.scratchdir)
 
         self.parent.mdl.setLogType(self.log_type)
 
@@ -389,10 +331,10 @@ class ListingDialogView(CommandMgrDialogView):
 
         # Read directly the run directory from the sdtout of the code.
 
-        if not self.scratch_dir:
-            if "Working directory" in s:
-                self.scratch_dir = "Working directory"
-                return
+        print s
+        if "Working directory" in s:
+            self.scratch_dir = "Working directory"
+            return
         elif self.scratch_dir == "Working directory":
             self.scratch_dir = " ".join(str(s).split())
             title = os.path.basename(self.scratch_dir)
