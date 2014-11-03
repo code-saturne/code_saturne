@@ -123,7 +123,6 @@ type(severe_acc_species_prop) s_h2o_g, s_k
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
 double precision, allocatable, dimension(:) :: x_ncond, x_h2o_g, diff_m
 double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_venth
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: yplbr
@@ -180,10 +179,6 @@ lcond = 2278.0d+3
 
 ! Coefficient exchange of the enthalpy scalar
 ivar = isca(iscalt)
-call field_get_coefa_s(ivarfl(ivar), coefap)
-call field_get_coefb_s(ivarfl(ivar), coefbp)
-call field_get_coefaf_s(ivarfl(ivar), cofafp)
-call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call field_get_val_s(ivarfl(ivar), cvar_enth)
 
@@ -565,13 +560,6 @@ do ii = 1, nfbpcd
     flthr(ii) = flux
    dflthr(ii) = 0.d0
   endif
-  !===================================================
-  !== Rewritting directly the Boundary Conditions   ==
-  !==           of the enthalpy scalar              ==
-  !===================================================
-
-  cofafp(ifac) = -hpcond(ii)*coefap(ifac)
-  cofbfp(ifac) =  hpcond(ii)
 
 enddo !  End of the Loop on the (ii) boundary faces with condensation
 

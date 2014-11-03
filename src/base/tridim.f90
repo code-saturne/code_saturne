@@ -172,6 +172,8 @@ double precision, dimension(:), pointer :: cproa_delay, cproa_capacity
 double precision, dimension(:), pointer :: cproa_sat
 character*80     fname
 
+double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
+
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -603,12 +605,11 @@ if(nctsmt.gt.0) then
 
 endif
 
-!----------------------------------------------------------
-!-- Fill the condensation arrays (spcond) for the sink term
-!-- of condensation and source term type (itypcd) of each
-!-- variable solved associated to the phase change
-!-- (gas phase to liquid phase)
-!----------------------------------------------------------
+!------------------------------------------------------------------------
+!-- Fill the condensation arrays spcond for the sink term of condensation
+!-- and hpcond the thermal exchange coefficient associated to the phase
+!-- change (gas phase to liquid phase)
+!------------------------------------------------------------------------
 if (nftcdt.gt.0) then
 
   iappel = 3
@@ -618,6 +619,7 @@ if (nftcdt.gt.0) then
     do ivar = 1, nvar
       itypcd(ii,ivar) = 0
       spcond(ii,ivar) = 0.d0
+      hpcond(ii)      = 0.d0
     enddo
   enddo
 
@@ -628,13 +630,24 @@ if (nftcdt.gt.0) then
   ifbpcd , itypcd , izftcd ,                                     &
   spcond , hpcond , tpar)
 
+  ! Empiric laws used by COPAIN condensation model to
+  ! the computation of the condensation source term and
+  ! exchange coefficient of the heat transfer imposed
+  ! as boundary condition.
+
+  call condensation_copain_model &
+  !=============================
+( nfbpcd , ifbpcd ,                                              &
+  tpar   ,                                                       &
+  spcond(:, ipr)  , hpcond )
+
 endif
 
 !----------------------------------------------------------
 !-- Fill the condensation arrays (svcond) for the sink term
 !-- of condensation and source term type (itypst) of each
-!-- variable solved associated to the metal mass
-!-- structures condensation modelling.
+!-- variable solved associated to the metal structures
+!-- condensation modelling.
 !----------------------------------------------------------
 if (icond.eq.1) then
 
@@ -643,6 +656,7 @@ if (icond.eq.1) then
     ltmast(iel) = 0
     itypst(iel, ivar) = 0
     svcond(iel, ivar) = 0.d0
+    flxmst(iel) = 0.d0
   enddo
 
   call cs_user_metal_structures_source_terms &
@@ -652,7 +666,18 @@ if (icond.eq.1) then
   itypst , izmast ,                                              &
   svcond , tmet)
 
-  ! array initialization if the metal mass
+  ! Condensation model to compute the sink source term
+  ! (svcond) and the  heat transfer flux (flxmst) imposed
+  ! in the cells associated to the metal  structures
+  ! volume where this phenomenon occurs.
+
+  call metal_structures_copain_model &
+  !=================================
+( ncmast , ltmast ,                                          &
+  tmet   ,                                                   &
+  svcond(:, ipr)  , flxmst )
+
+  ! array initialization if the metal structures
   ! condensation model is coupled with
   ! a 0-D thermal model
   ! FIXME add restart file later
@@ -762,8 +787,9 @@ endif
 if (idilat.eq.3) then
   call pthrbm &
   !==========
- ( nvar , ncetsm  , ncmast,                                       &
-   dt   , smacel  , svcond)
+ ( nvar   , ncetsm , nfbpcd , ncmast,                             &
+   dt     , smacel , spcond , svcond )
+
 endif
 
 !===============================================================================
@@ -1119,47 +1145,27 @@ do while (iterns.le.nterup)
   frcxt  )
 
   if (nftcdt.gt.0) then
+    ! Coefficient exchange of the enthalpy scalar
+    ivar = isca(iscalt)
+    call field_get_coefa_s(ivarfl(ivar) , coefap)
+    call field_get_coefaf_s(ivarfl(ivar), cofafp)
+    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-    if (icond.ge.0) then
+    ! Pass the heat transfer computed by the Empiric laws
+    ! of the COPAIN condensation to impose the heat transfer
+    ! at the wall due to condensation for the enthalpy scalar.
+    do ii = 1, nfbpcd
 
-      !-- Fill (hpcond) the thermal exchange coefficient
-      !-- associated to the condensation
-      do ii = 1, nfbpcd
-        hpcond(ii)      = 0.d0
-      enddo
+      ifac= ifbpcd(ii)
+      iel = ifabor(ifac)
 
-      ! Empiric laws used by COPAIN condensation model to
-      ! the computation of the condensation source term and
-      ! exchange coefficient of the heat transfer imposed
-      ! as boundary condition.
+      ! Enthalpy Boundary condition associated
+      ! to the heat transfer due to condensation.
+      cofafp(ifac) = -hpcond(ii)*coefap(ifac)
+      cofbfp(ifac) =  hpcond(ii)
 
-      call condensation_copain_model &
-      !=============================
-  (   nfbpcd , ifbpcd ,                        &
-      tpar   ,                                 &
-      spcond(:, ipr)  , hpcond )
-
-    endif
-
-  endif
-
-  if (icond.eq.1) then
-
-    !-- Condensation source terms arrays initialized
-    do iel = 1, ncelet
-      flxmst(iel) = 0.d0
     enddo
 
-    ! Condensation model to compute the sink source term
-    ! (svcond) and the  heat transfer flux (flxmst) imposed
-    ! in the cells associated to the metal mass structures
-    ! volume where this phenomenon occurs.
-
-    call metal_structures_copain_model &
-    !=================================
-  (   ncmast , ltmast ,                       &
-      tmet   ,                                &
-      svcond(:, ipr)   , flxmst )
   endif
 
 !     ==============================================
@@ -1248,7 +1254,7 @@ do while (iterns.le.nterup)
     endif
 
      ! 0-D thermal model coupling with condensation
-     ! on a volume region associated to metal mass structures
+     ! on a volume region associated to metal structures
     if (icond.eq.1.and.itagms.eq.1) then
       call cs_metal_structures_tag &
       !===========================

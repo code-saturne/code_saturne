@@ -39,19 +39,23 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ncmast        number of cells with condensation source terms
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
+!> \param[in]     spcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, spcond is the flow rate
+!>                              \f$ \Gamma_{s, cond}^n \f$)
 !> \param[in]     svcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, svcond is the flow rate
 !>                              \f$ \Gamma_{v, cond}^n \f$)
 !_______________________________________________________________________________
 
 subroutine pthrbm &
- ( nvar   , ncesmp , ncmast,                                      &
-   dt     , smacel , svcond)
+ ( nvar   , ncesmp , nfbpcd, ncmast,                                    &
+   dt     , smacel , spcond, svcond)
 
 !===============================================================================
 
@@ -64,7 +68,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use pointe, only:itypfb, icetsm, ltmast
+use pointe, only:itypfb, icetsm, ifbpcd, ltmast
 use entsor
 use parall
 use period
@@ -79,17 +83,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar , ncesmp , ncmast
+integer          nvar , ncesmp , nfbpcd , ncmast
 
 double precision dt(ncelet)
 double precision smacel(ncesmp,nvar)
-double precision svcond(ncelet,nvar)
+double precision spcond(nfbpcd,nvar), svcond(ncelet,nvar)
 
 ! Local variables
 
 logical          lromo
 
-integer          iel , ifac, ieltsm, icmet
+integer          iel , ifac, ieltsm, ipcd,icmet
 
 integer          iflmab
 
@@ -166,9 +170,21 @@ if (ncesmp.gt.0) then
 endif
 
 !===============================================================================
-! 3. Flow rate computation associated to the condensation phenomenon
+! 3. Flow rate computation associated to the condensation phenomena
 !===============================================================================
 
+! Sink source term associated to
+! the surface condensation modelling
+if (nfbpcd.gt.0) then
+  do ipcd = 1, nfbpcd
+    ifac= ifbpcd(ipcd)
+    iel = ifabor(ifac)
+    debtot = debtot + surfbn(ifac) * spcond(ipcd,ipr)
+  enddo
+endif
+
+! Sink source term associated to
+! the metal structures condensation modelling
 if (icond.eq.1) then
   allocate(surfbm(ncelet))
   surfbm(:) = 0.d0
