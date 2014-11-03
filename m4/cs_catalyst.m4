@@ -107,6 +107,8 @@ if test "x$with_catalyst" != "xno" ; then
 
   cd "$cs_prv_dir"
   rm -rf "$cs_prv_dir"/catalyst_test
+  rm -rf "$cs_prv_dir"/CMakeFiles
+  rm -rf "$cs_prv_dir"/CMakeCache.txt
 
   # Report Catalyst support
   #------------------------
