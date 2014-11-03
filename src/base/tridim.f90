@@ -628,7 +628,7 @@ if (nftcdt.gt.0) then
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
-  spcond , hpcond , tpar)
+  spcond , tpar)
 
   ! Empiric laws used by COPAIN condensation model to
   ! the computation of the condensation source term and

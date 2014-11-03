@@ -49,6 +49,7 @@ use cs_c_bindings
 use cs_f_interfaces
 
 use cs_tagms
+
 !===============================================================================
 
 implicit none
@@ -62,7 +63,7 @@ integer          izmet, met_znb
 integer          ltmast(ncelet)
 integer          izmast(ncelet)
 
-double precision itypst(ncelet,nvar)
+integer          itypst(ncelet,nvar)
 double precision svcond(ncelet,nvar)
 double precision tmet
 
