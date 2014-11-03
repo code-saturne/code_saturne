@@ -24,10 +24,10 @@
 ! Function:
 ! ---------
 
-!> \file cs_mixing_gas_physical_properties.f90
+!> \file cs_gas_mix_physical_properties.f90
 !>
 !> \brief This subroutine fills physical properties which are variable in time
-!>        for the mixing gas modelling with or without steam inside the fluid
+!>        for the gas mixtures modelling with or without steam inside the fluid
 !>        domain. In presence of steam, this one is deduced from the
 !>        noncondensable gases transported as scalars
 !>        (by means of the mass fraction of each species).
@@ -42,7 +42,7 @@
 !_______________________________________________________________________________
 
 
-subroutine cs_mixing_gas_physical_properties
+subroutine cs_gas_mix_physical_properties
 
 !===============================================================================
 
@@ -121,7 +121,7 @@ call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
 call field_get_val_s(icrom, cpro_rho)
 ! Molecular dynamic viscosity value
 call field_get_val_s(iprpfl(iviscl), cpro_viscl)
-! Specific heat
+! Specific heat value
 if (icp.gt.0) then
   call field_get_val_s(iprpfl(icp), cpro_cp)
 
@@ -131,8 +131,7 @@ else
   call csexit (1)
 endif
 
-! Lambda/CP
-
+! Lambda/Cp value
 call field_get_key_int (ivarfl(isca(iscalt)), kivisl, ifcvsl)
 call field_get_val_s(ifcvsl, cpro_venth)
 
@@ -157,11 +156,11 @@ allocate(lambd_m(ncelet))
 allocate(s_k(nscasp+1))
 
 !===============================================================================
-!2. Define the physical properties for the mixing flow with:
-!   - the density (rho_m) and specific heat (cp_m) of the mixing gas function
-!     temperature and species scalars (yk),
-!   - the dynamic viscosity (mu_m) and conductivity (lbd_m) coefficient of
-!     the mixing gas function ot the enthalpy and species scalars,
+!2. Define the physical properties for the gas mixture with:
+!   - the density (rho_m) and specific heat (cp_m) of the gas mixture function
+!     temperature and species scalar (yk),
+!   - the dynamic viscosity (mu_m) and conductivity coefficient (lbd_m) of
+!     the gas mixture function ot the enthalpy and species scalars,
 !   - the diffusivity coefficients of the scalars (Dk, D_enh).
 !===============================================================================
 
@@ -179,13 +178,13 @@ enddo
 do iel = 1, ncel
   y_d(iel) = 1.d0
 
-  ! Mixing Specific heat function
+  ! Mixture specific heat
   cpro_cp(iel) = 0.d0
 
-  ! Mixing molar mass
+  ! Mixture molar mass
   mix_mol_mas(iel) = 0.d0
 
-  ! Mixing molecular diffusivity
+  ! Mixture molecular diffusivity
   cpro_viscl(iel) = 0.d0
 
   lambd_m(iel) = 0.d0
@@ -209,15 +208,15 @@ do iel = 1, ncel
   y_d(iel) = max(y_d(iel), 0.d0)
 enddo
 
-!Finalize the computation of the Mixing molar mass
+!Finalize the computation of the Mixture molar mass
 s_k(nscasp+1) = s_d
 do iel = 1, ncel
   mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
   mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
 enddo
 
-!=========================================================
-! Mixing specific heat function of gas specific heat (cpk)
+!==============================================================
+! Mixture specific heat function of species specific heat (cpk)
 ! and mass fraction of each gas species (yk), as below:
 !             -----------------------------
 ! - noncondensable gases and the mass fraction deduced:
@@ -229,7 +228,7 @@ enddo
 !         with:
 !             - imixg = 0 or 1, a noncondensable gas
 !             - imixg > 2     , a condensable gas (steam)
-!=========================================================
+!==============================================================
 do iesp = 1, nscasp
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
 
@@ -243,8 +242,8 @@ do iel = 1, ncel
   cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 enddo
 
-!=====================================================
-! Mixing density function of the temperature, pressure
+!===========================================================
+! gas mixture density function of the temperature, pressure
 ! and the species scalars with taking into account the
 ! dilatable effects, as below:
 !             ----------------------
@@ -260,7 +259,7 @@ enddo
 !         p0   : atmos. pressure (Pa)
 !         pther: pressure (Pa) integrated on the
 !                fluid domain
-!=====================================================
+!===========================================================
 
 do iel = 1, ncel
   ! Evaluate the temperature thanks to the enthalpy
@@ -344,8 +343,8 @@ do iesp = 1, nscasp+1
 
     enddo
 
-    ! Mixing viscosity defined as function of the scalars
-    !----------------------------------------------------
+    ! Mixture viscosity defined as function of the scalars
+    !-----------------------------------------------------
     x_k = cvar_yi(iel)*mix_mol_mas(iel)/s_i%mol_mas
     cpro_viscl(iel) = cpro_viscl(iel) + x_k * mu_i / xsum_mu
 
@@ -357,7 +356,7 @@ enddo
 
 !=====================================================
 ! Dynamic viscosity and conductivity coefficient
-! the physical properties
+! the physical properties filled for the gas mixture
 !=====================================================
 ! Same diffusivity for all the scalars except the enthalpy
 do ii = 1, nscapp
@@ -417,7 +416,7 @@ deallocate(s_k)
 !----
 
 return
-end subroutine cs_mixing_gas_physical_properties
+end subroutine cs_gas_mix_physical_properties
 
 !===============================================================================
 ! Purpose:
@@ -425,7 +424,7 @@ end subroutine cs_mixing_gas_physical_properties
 
 !> \file cs_local_physical_properties
 !>
-!> \brief This user subroutine is used to compute  the dynamic viscoity and
+!> \brief This user subroutine is used to compute the dynamic viscosity and
 !> conductivity coefficient associated to each gas species.
 !-------------------------------------------------------------------------------
 
@@ -464,17 +463,27 @@ type(severe_acc_species_prop) spro
 !===============================================================================
 ! The viscosity law for each species is defined
 ! as below:
-! 1/. for o2 and n2 species:
-!      mu = mu_a .tk + mu_b, with a law in (°K) unit
-! 2/. for h2o_g species:
+!              ----------------------------------
+! 1/. for Steam species:
 !      mu = mu_a.(tk - tkelvi), with a law in (°C) unit
-!              ------------------------
+! 2/. for Helium species:
+!      mu = mu_a .(tk/tkelvi)**c + mu_b, with nodim. law
+! 3/. for Hydrogen species:
+!      mu = mu_a .(tk-tkelvi) + mu_b, with t (°C)
+! 4/. for Oxygen and Nitrogen species:
+!      mu = mu_a .(tk) + mu_b, with t in (°K)
+!
 ! The conductivity expression for each species is
 ! defined as:
-! 1/. for O2 and N2 species :
-!      lambda = lambda_a .tk + lambda_b, with a law in (°K) unit
-! 2/. for H20g species:
+!              ----------------------------------
+! 1/. for Steam species:
 !      lambda = lambda_a .(tk-tkelvi) + lambda_b, with a law in (°C) unit
+! 2/. for Helium species:
+!     lambda = lambda_a .(tk/tkelvi)**c + lambda_b, with nodim. law
+! 3/. for Hydrogen species:
+!      lambda = lambda_a .tk + lambda_b, with tk (°K)
+! 4/. for Oxygen and Nitrogen species :
+!      lambda = lambda_a .(tk) + lambda_b, with t (°K)
 !===============================================================================
 
 if (name.eq.'y_h2o_g') then

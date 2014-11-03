@@ -260,11 +260,11 @@ if (ippmod(icompf).ge.0) then
 
 endif
 
-! Mixing gases modelling in presence of noncondensable gases or/and
+! Gas mixture modelling in presence of noncondensable gases or/and
 ! condensable gas as stream.
 if (ippmod(imixg).ge.0) then
 
-  call cs_mixing_gas_physical_properties
+  call cs_gas_mix_physical_properties
 
 endif
 

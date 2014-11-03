@@ -232,8 +232,8 @@ cs_numbering.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
 cs_metal_structures_tag.f90 \
-cs_mixing_gas_initialization.f90 \
-cs_mixing_gas_physical_properties.f90 \
+cs_gas_mix_initialization.f90 \
+cs_gas_mix_physical_properties.f90 \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \

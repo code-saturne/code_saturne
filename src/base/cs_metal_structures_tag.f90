@@ -86,7 +86,7 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          icmst
-integer          iel  , ifac
+integer          iel
 
 double precision xlcond   , flux    , vol_metal
 double precision tw_metal , t_sym   , unstom

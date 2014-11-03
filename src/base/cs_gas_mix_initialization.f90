@@ -20,9 +20,9 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file cs_mixing_gas_initialization.f90
-!> \brief Initialization of calculation variables for mixing gases modelling
-!> in presence of steam gas or another gas used as variable deduced
+!> \file cs_gas_mix_initialization.f90
+!> \brief Initialization of calculation variables for gas mixture modelling
+!> in presence of the steam gas or another gas used as variable deduced
 !> and not solved.
 !>
 !------------------------------------------------------------------------------
@@ -37,7 +37,7 @@
 !> \param[in]     dt            time step
 !______________________________________________________________________________
 
-subroutine cs_mixing_gas_initialization &
+subroutine cs_gas_mix_initialization &
  ( nvar   , nscal  , dt )
 
 !===============================================================================
@@ -143,10 +143,10 @@ vol_d  = 0.d0
 do iel = 1, ncel
   y_d(iel) = 1.d0
 
-  ! Specific Heat of the mix
+  ! Specific Heat of the gas mixture
   cpro_cp(iel) = 0.d0
 
-  ! Mixing molar mass
+  ! Molar mass of the gas mixture
   mix_mol_mas(iel) = 0.d0
 enddo
 
@@ -177,7 +177,7 @@ do iel = 1, ncel
   endif
   y_d(iel) = min(max(y_d(iel), 0.d0), 1.d0)
 
-  ! Mixing specific heat (Cp_m0)
+  ! specific heat (Cp_m0) of the gas mixture
   cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 
   ! Enthalpy initialization
@@ -221,7 +221,7 @@ endif
  200 format                                                         &
  (/,                                                                &
  5x,'----------------------------------------------------------' ,/,&
- 5x,'**      Mixing gas : Check variables initialization     **' ,/,&
+ 5x,'**     Gas mixture : Check variables initialization     **' ,/,&
  5x,'----------------------------------------------------------' ,/)
 
  203 format( &
@@ -264,4 +264,4 @@ endif
 !----
 
 return
-end subroutine cs_mixing_gas_initialization
+end subroutine cs_gas_mix_initialization
