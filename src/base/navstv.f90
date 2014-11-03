@@ -178,12 +178,12 @@ double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 interface
 
   subroutine resopv &
-   ( nvar   , ncesmp , nfbpcd ,                                   &
-     icetsm , ifbpcd , isostd ,                                   &
+   ( nvar   , ncesmp , nfbpcd , ncmast ,                          &
+     icetsm , ifbpcd , ltmast , isostd ,                          &
      dt     , vel    ,                                            &
      propce ,                                                     &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
-     smacel , spcond ,                                            &
+     smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou , trav   ,                          &
      viscf  , viscb  ,                                            &
      dpvar  , tslagr ,                                            &
@@ -197,14 +197,16 @@ interface
     ! Arguments
 
     integer          nvar
-    integer          ncesmp, nfbpcd
+    integer          ncesmp, nfbpcd, ncmast
 
     integer          icetsm(ncesmp), ifbpcd(nfbpcd)
+    integer          ltmast(ncelet)
     integer          isostd(nfabor+1)
 
     double precision, dimension (1:ncelet), target :: dt
     double precision propce(ncelet,*)
     double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
+    double precision svcond(ncelet,nvar)
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision trav(3,ncelet)
@@ -452,13 +454,14 @@ call predvv &
 !==========
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
-  ncepdc , ncetsm , nfbpcd ,                                     &
-  icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
+  ncepdc , ncetsm , nfbpcd , ncmast ,                            &
+  icepdc , icetsm , ifbpcd , ltmast ,                            & 
+  itypsm , itypcd ,                                              &
   dt     , vel    , vela   ,                                     &
   propce ,                                                       &
   imasfl , bmasfl ,                                              &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-  ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
+  ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
   trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
   w1     , w7     , w8     , w9     , w10    )
@@ -814,12 +817,12 @@ if (ippmod(icompf).lt.0) then
 
   call resopv &
   !==========
-( nvar   , ncetsm , nfbpcd ,                                     &
-  icetsm , ifbpcd , isostd ,                                     &
+( nvar   , ncetsm , nfbpcd , ncmast ,                            &
+  icetsm , ifbpcd , ltmast , isostd ,                            &
   dt     , vel    ,                                              &
   propce ,                                                       &
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
-  smacel , spcond ,                                              &
+  smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens , trav   ,                            &
   viscf  , viscb  ,                                              &
   dpvar  , tslagr ,                                              &
@@ -1334,13 +1337,14 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     !==========
  ( iappel ,                                                       &
    nvar   , nscal  , iterns ,                                     &
-   ncepdc , ncetsm , nfbpcd ,                                     &
-   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
+   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
+   icepdc , icetsm , ifbpcd , ltmast ,                            &
+   itypsm , itypcd ,                                              &
    dt     , vel    , vel    ,                                     &
    propce ,                                                       &
    esflum , esflub ,                                              &
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
-   ckupdc , smacel , spcond , frcxt  , grdphd ,                   &
+   ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
    trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     , w7     , w8     , w9     , w10    )

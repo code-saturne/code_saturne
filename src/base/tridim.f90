@@ -86,6 +86,7 @@ use field
 use rotation
 use darcy_module
 use cs_f_interfaces
+use cs_tagms, only: t_metal, tmet0
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -113,6 +114,7 @@ integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
+integer          icmst
 
 integer          isvhb
 integer          ii    , jj    , ientha, ippcv
@@ -125,7 +127,7 @@ double precision tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
-double precision, save :: tpar
+double precision, save :: tpar, tmet
 
 integer          ipass
 data             ipass /0/
@@ -624,7 +626,43 @@ if (nftcdt.gt.0) then
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
-  spcond , tpar)
+  spcond , hpcond , tpar)
+
+endif
+
+!----------------------------------------------------------
+!-- Fill the condensation arrays (svcond) for the sink term
+!-- of condensation and source term type (itypst) of each
+!-- variable solved associated to the metal mass
+!-- structures condensation modelling.
+!----------------------------------------------------------
+if (icond.eq.1) then
+
+  !-- Condensation source terms arrays initialized
+  do iel = 1, ncelet
+    ltmast(iel) = 0
+    itypst(iel, ivar) = 0
+    svcond(iel, ivar) = 0.d0
+  enddo
+
+  call cs_user_metal_structures_source_terms &
+  !=========================================
+( nvar   , nscal  ,                                              &
+  ncmast , ltmast,                                               &
+  itypst , izmast ,                                              &
+  svcond , tmet)
+
+  ! array initialization if the metal mass
+  ! condensation model is coupled with
+  ! a 0-D thermal model
+  ! FIXME add restart file later
+  if (itagms.eq.1) then
+    do icmst = 1, ncmast
+      iel = ltmast(icmst)
+      t_metal(iel,1) = tmet0
+      t_metal(iel,2) = tmet0
+    enddo
+  endif
 
 endif
 
@@ -717,13 +755,15 @@ if ((idften(ipr).eq.6).and.(ippmod(idarcy).eq.-1)) then
 endif
 
 !===============================================================================
-!   RECALAGE DE LA PRESSION Pth ET MASSE VOLUMIQUE rho
-!     POUR L'AGORITHME A MASSE VOLUMIQUE VARIABLE.
+!     RECALAGE DE LA PRESSION Pth ET MASSE VOLUMIQUE rho
+!     POUR L'ALGORITHME A MASSE VOLUMIQUE VARIABLE.
 !===============================================================================
 
 if (idilat.eq.3) then
-  call pthrbm(nvar, ncetsm, dt, smacel)
+  call pthrbm &
   !==========
+ ( nvar , ncetsm  , ncmast,                                       &
+   dt   , smacel  , svcond)
 endif
 
 !===============================================================================
@@ -1080,7 +1120,7 @@ do while (iterns.le.nterup)
 
   if (nftcdt.gt.0) then
 
-    if (icond.eq.0) then
+    if (icond.ge.0) then
 
       !-- Fill (hpcond) the thermal exchange coefficient
       !-- associated to the condensation
@@ -1089,9 +1129,9 @@ do while (iterns.le.nterup)
       enddo
 
       ! Empiric laws used by COPAIN condensation model to
-      ! the compute of the condensation source term and
+      ! the computation of the condensation source term and
       ! exchange coefficient of the heat transfer imposed
-      ! as boundary condition
+      ! as boundary condition.
 
       call condensation_copain_model &
       !=============================
@@ -1101,6 +1141,25 @@ do while (iterns.le.nterup)
 
     endif
 
+  endif
+
+  if (icond.eq.1) then
+
+    !-- Condensation source terms arrays initialized
+    do iel = 1, ncelet
+      flxmst(iel) = 0.d0
+    enddo
+
+    ! Condensation model to compute the sink source term
+    ! (svcond) and the  heat transfer flux (flxmst) imposed
+    ! in the cells associated to the metal mass structures
+    ! volume where this phenomenon occurs.
+
+    call metal_structures_copain_model &
+    !=================================
+  (   ncmast , ltmast ,                       &
+      tmet   ,                                &
+      svcond(:, ipr)   , flxmst )
   endif
 
 !     ==============================================
@@ -1179,11 +1238,21 @@ do while (iterns.le.nterup)
       hbord  , theipb )
     endif
 
-    ! 1-D thermal model of severe accidents coupling with condensation
+    ! 1-D thermal model coupling with condensation
+    ! on a surface region
     if (nftcdt.gt.0.and.itag1d.eq.1) then
       call cs_tagmro &
       !=============
      ( nfbpcd , ifbpcd ,                          &
+       dt     )
+    endif
+
+     ! 0-D thermal model coupling with condensation
+     ! on a volume region associated to metal mass structures
+    if (icond.eq.1.and.itagms.eq.1) then
+      call cs_metal_structures_tag &
+      !===========================
+     ( ncmast , ltmast ,                          &
        dt     )
     endif
 

@@ -881,6 +881,14 @@ icophg = 0
 
 itag1d = 0
 
+! ---  Choice the way to compute to compute the wall temperature at
+!      the solid/fluid interface coupled with condensation to the
+!      metalli mass strucutres wall
+!      ( not activated by default itagms =0)
+
+itagms = 0
+
+
 ! --- Champ de vitesse fige (non fige par defaut)
 
 iccvfg = 0

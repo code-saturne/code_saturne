@@ -303,11 +303,11 @@ module pointe
   !> and its derivative with respect to pressure
   double precision, allocatable, dimension(:) :: gamcav, dgdpca
 
-  !> number of the \c nfbpcd faces in which a condensation source terms is imposed.
+  !> number of the nfbpcd faces in which a condensation source terms is imposed.
   !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
   integer, save :: nfbpcd
 
-  !> number of the \c ifbpcd faces in which a condensation source terms is imposed.
+  !> list on the nfbpcd faces in which a condensation source terms is imposed.
   !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
   integer, allocatable, dimension(:) :: ifbpcd
 
@@ -342,6 +342,35 @@ module pointe
   !> dflthr    ! external heat flux derivative used as flux conditions
   !>           ! of the 1d thermal model (in unit \f$W.m^{-3}\f$).
   double precision, allocatable, dimension(:) :: dflthr
+
+  !> number of the ncmast cells in which a condensation source terms is imposed.
+  !> See \c lstmast list and the subroutine \ref cs_user_metal_structures_source_terms
+  integer, save :: ncmast
+
+  !> list on the ncmast cells in which a condensation source terms is imposed.
+  !> See  the user subroutine \ref cs_user_metal_structures_source_terms.
+  integer, allocatable, dimension(:) :: ltmast
+
+  !> zone type where a condensation source terms is imposed to model
+  !> the metal structures condensation on a volumic zone.
+  integer, allocatable, dimension(:) :: izmast
+
+  !> type of condensation source terms for each variable
+  !> - 0 for an variable at ambient value,
+  !> - 1 for an variable at imposed value.
+  !> See the user subroutine \ref  cs_user_metal_structures_source_terms.
+  integer, allocatable, dimension(:,:) :: itypst
+
+  !> value of the condensation source terms for pressure
+  !> associated to the metal structures modelling.
+  !> For the other variables, eventual imposed specific value.
+  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
+  double precision, allocatable, dimension(:,:) :: svcond
+
+  !> value of the thermal flux for the condensation model
+  !> associated to the metal structures modelling.
+  !> See the user subroutine \ref cs_user_metal_structures_source_terms.
+  double precision, allocatable, dimension(:) :: flxmst
 
 
   !> \}
@@ -700,6 +729,32 @@ contains
     deallocate(flthr, dflthr)
 
   end subroutine finalize_pcond
+  !=============================================================================
+
+  subroutine init_vcond ( nvar , ncelet)
+
+    implicit none
+
+    integer :: nvar, ncelet
+
+    allocate(ltmast(ncelet))
+    allocate(izmast(ncelet))
+    allocate(itypst(ncelet, nvar))
+    allocate(svcond(ncelet, nvar))
+    allocate(flxmst(ncelet))
+
+  end subroutine init_vcond
+
+  !=============================================================================
+
+  subroutine finalize_vcond
+    deallocate(ltmast)
+    deallocate(itypst)
+    deallocate(izmast)
+    deallocate(svcond)
+    deallocate(flxmst)
+
+  end subroutine finalize_vcond
 
   !=============================================================================
 

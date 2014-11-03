@@ -58,8 +58,10 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     nfbpcd        number of faces with condensation source term
+!> \param[in]     ncmast        number of cells with condensation source terms
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     ifbpcd        index of faces with condensation source term
+!> \param[in]     ltmast        index of cells with condensation source terms
 !> \param[in]     isostd        indicator of standard outlet and index
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
@@ -71,7 +73,10 @@
 !>                               \f$ \Gamma^n \f$)
 !> \param[in]     spcond        variable value associated to the condensation
 !>                               source term (for ivar=ipr, spcond is the flow rate
-!>                               \f$ \Gamma_{cond}^n \f$)
+!>                               \f$ \Gamma_{s,cond}^n \f$)
+!> \param[in]     svcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, svcond is the flow rate
+!>                              \f$ \Gamma_{v, cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     dfrcxt        variation of the external forces
 !>                              composing the hydrostatic pressure
@@ -87,12 +92,12 @@
 !_______________________________________________________________________________
 
 subroutine resopv &
- ( nvar   , ncesmp , nfbpcd ,                                     &
-   icetsm , ifbpcd , isostd ,                                     &
+ ( nvar   , ncesmp , nfbpcd , ncmast ,                            &
+   icetsm , ifbpcd , ltmast , isostd ,                            &
    dt     , vel    ,                                              &
    propce ,                                                       &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
-   smacel , spcond ,                                              &
+   smacel , spcond , svcond ,                                     &
    frcxt  , dfrcxt , tpucou , trav   ,                            &
    viscf  , viscb  ,                                              &
    dpvar  , tslagr ,                                              &
@@ -115,6 +120,7 @@ use pointe, only: itypfb, b_head_loss, gamcav, dgdpca
 use albase
 use parall
 use period
+use ppincl, only: icond
 use lagpar
 use lagran
 use cplsat
@@ -124,7 +130,7 @@ use field_operator
 use cavitation
 use cs_f_interfaces
 use cs_c_bindings
-
+use cs_tagms, only:s_metal
 !===============================================================================
 
 implicit none
@@ -132,14 +138,16 @@ implicit none
 ! Arguments
 
 integer          nvar
-integer          ncesmp, nfbpcd
+integer          ncesmp, nfbpcd, ncmast
 
 integer          icetsm(ncesmp), ifbpcd(nfbpcd)
+integer          ltmast(ncelet)
 integer          isostd(nfabor+1)
 
 double precision, dimension (1:ncelet), target :: dt
 double precision propce(ncelet,*)
 double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
+double precision svcond(ncelet,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision, dimension (1:6,1:ncelet), target :: tpucou
 double precision trav(3,ncelet)
@@ -227,6 +235,7 @@ double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
 
+double precision, allocatable, dimension(:) :: surfbm
 !===============================================================================
 
 !===============================================================================
@@ -442,7 +451,7 @@ if (irnpnw.ne.1) then
     enddo
   endif
 
-  ! --- Surface Gamma source term adding for condensation modelling
+  ! --- Surface Gamma source term adding for surface condensation modelling
   if (nfbpcd.gt.0) then
     do ii = 1, nfbpcd
       ifac= ifbpcd(ii)
@@ -450,6 +459,21 @@ if (irnpnw.ne.1) then
       res(iel) = res(iel) - surfbn(ifac)*spcond(ii,ipr)
     enddo
   endif
+
+  ! --- volume Gamma source term adding for volume condensation modelling
+  if (icond.eq.1) then
+    allocate(surfbm(ncelet))
+    surfbm(:) = 0.d0
+
+    do ii = 1, ncmast
+      iel= ltmast(ii)
+      surfbm(iel) = s_metal*volume(iel)/voltot
+      res(iel) = res(iel) - surfbm(iel)*svcond(iel,ipr)
+    enddo
+
+    deallocate(surfbm)
+  endif
+
 
   ! Cavitation source term
   if (icavit.gt.0) then
@@ -1408,6 +1432,21 @@ if (nfbpcd.gt.0) then
     iel = ifabor(ifac)
     divu(iel) = divu(iel) - surfbn(ifac)*spcond(ii,ipr)
   enddo
+endif
+
+! --- volume Gamma source for metal mass structures
+!     condensation modelling
+if (icond.eq.1) then
+  allocate(surfbm(ncelet))
+  surfbm(:) = 0.d0
+
+  do ii = 1, ncmast
+    iel= ltmast(ii)
+    surfbm(iel) = s_metal*volume(iel)/voltot
+    res(iel) = res(iel) - surfbm(iel)*svcond(iel,ipr)
+  enddo
+
+  deallocate(surfbm)
 endif
 
 

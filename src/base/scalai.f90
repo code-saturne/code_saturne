@@ -285,11 +285,12 @@ if (nscapp.gt.0) then
       call covofi                                                 &
       !==========
  ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm , nfbpcd ,                                     &
+   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
    iisc   , itspdv ,                                              &
-   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
+   icepdc , icetsm , ifbpcd , ltmast ,                            &
+   itypsm , itypcd , itypst ,                                     &
    dtr    , propce , tslagr ,                                     &
-   ckupdc , smacel , spcond ,                                     &
+   ckupdc , smacel , spcond , svcond , flxmst ,                   &
    viscf  , viscb  )
 
 

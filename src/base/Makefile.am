@@ -231,6 +231,7 @@ cs_log_setup.c \
 cs_numbering.c \
 cs_measures_util.c \
 cs_mesh_tagmr.f90 \
+cs_metal_structures_tag.f90 \
 cs_mixing_gas_initialization.f90 \
 cs_mixing_gas_physical_properties.f90 \
 csopli.f90 \
@@ -294,6 +295,7 @@ lecamp.f90 \
 lecamx.f90 \
 majgeo.f90 \
 memfin.f90 \
+metal_structures_copain_model.f90 \
 modini.f90 \
 mmtycl.f90 \
 navstv.f90 \

@@ -84,6 +84,7 @@ use cs_f_interfaces
 use, intrinsic :: iso_c_binding
 
 use cs_tagmr
+use cs_tagms
 
 !===============================================================================
 
@@ -466,6 +467,11 @@ if (nftcdt.gt.0) then
   !=============
 endif
 
+if (icond.eq.1) then
+  call init_vcond ( nvar, ncelet )
+  !=============
+endif
+
 
 if (nfpt1t.gt.0) then
   call init_pt1d
@@ -773,6 +779,14 @@ if (nftcdt.gt.0) then
     ( nfbpcd , ifbpcd )
     !endif
 
+  endif
+
+  ! the Condensation model coupled with a 0-D thermal model
+  ! to take into account the metal mass structures effects.
+  if(itagms.eq.1) then
+
+    call init_tagms
+    !==============
   endif
 
 endif
@@ -1314,6 +1328,14 @@ if(nftcdt.gt.0) then
   call finalize_pcond
   if(itag1d.eq.1) then
     call finalize_tagmr
+    !==================
+  endif
+endif
+
+if (icond.eq.1) then
+  call finalize_vcond
+  if (itagms.eq.1) then
+    call finalize_tagms
     !==================
   endif
 endif

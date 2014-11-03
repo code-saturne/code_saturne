@@ -42,6 +42,7 @@
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     nfbpcd        number of faces with condensation source terms
+!> \param[in]     ncmast        number of cells with condensation source terms
 !> \param[in]     iscal         scalar number
 !> \param[in]     itspdv        indicator to compute production/dissipation
 !>                              terms for a variance:
@@ -50,8 +51,10 @@
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     ifbpcd        index of faces with condensation source terms
+!> \param[in]     ltmast        index of cells with condensation source terms
 !> \param[in]     itypsm        type of mass source term for the variables
-!> \param[in]     itypcd        type of condensation source term for the variables
+!> \param[in]     itypcd        type of surface condensation source term 
+!> \param[in]     itypst        type of volume  condensation source term
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     tslagr        coupling term for the Lagrangian module
@@ -61,17 +64,23 @@
 !>                               \f$ \Gamma^n \f$)
 !> \param[in]     spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
-!>                              \f$ \Gamma_{cond}^n \f$)
+!>                              \f$ \Gamma_{s, cond}^n \f$)
+!> \param[in]     svcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, svcond is the flow rate
+!>                              \f$ \Gamma_{v, cond}^n \f$)
+!> \param[in]     flxmst        variable value associated to heat transfert flux 
+!>                              associated to the metal mass condensation
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at boundary faces
 !_______________________________________________________________________________
 
 subroutine covofi &
- ( nvar   , nscal  , ncepdp , ncesmp , nfbpcd ,                   &
+ ( nvar   , nscal  , ncepdp , ncesmp , nfbpcd , ncmast ,          &
    iscal  , itspdv ,                                              &
-   icepdc , icetsm , ifbpcd , itypsm , itypcd ,                   &
+   icepdc , icetsm , ifbpcd , ltmast ,                            &
+   itypsm , itypcd , itypst ,                                     &
    dt     , propce , tslagr ,                                     &
-   ckupdc , smacel , spcond ,                                     &
+   ckupdc , smacel , spcond , svcond , flxmst ,                   &
    viscf  , viscb  )
 
 !===============================================================================
@@ -113,18 +122,20 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ncepdp , ncesmp , nfbpcd
+integer          ncepdp , ncesmp , nfbpcd ,  ncmast
 integer          iscal  , itspdv
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
+integer          ltmast(ncelet), itypst(ncelet,nvar)
 
 double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision tslagr(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision spcond(nfbpcd,nvar)
+double precision svcond(ncelet,nvar), flxmst(ncelet)
 double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
@@ -168,6 +179,7 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
 double precision, allocatable, dimension(:) :: srccond
+double precision, allocatable, dimension(:) :: srcmst
 
 double precision, dimension(:,:), pointer :: xut, visten
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
@@ -542,6 +554,7 @@ if (ncesmp.gt.0) then
 endif
 
 ! Condensation source terms for the scalars
+! associated to a surface zone (icond=0)
 if (nfbpcd.gt.0) then
 
   allocate(srccond(nfbpcd))
@@ -560,11 +573,49 @@ if (nfbpcd.gt.0) then
 
   call condensation_source_terms &
   !=============================
-  (ncelet , ncel , nfbpcd , ifbpcd , itypcd(1,ivar) ,     &
-   cvara_var     , spcond(1,ivar)  , srccond ,            &
-   smbrs         , rovsdt )
+  (ncelet , ncel ,                                       &
+   iscal  ,                                              &
+   nfbpcd , ifbpcd  , itypcd(1,ivar) ,                   &   
+   ivoid  , ivoid   , ivoid          ,                   &
+   spcond(1,ivar)   , srccond        ,                   &
+   rvoid  , rvoid   , rvoid          ,                   &
+   cvara_var        ,                                    &
+   smbrs            , rovsdt )
 
   deallocate(srccond)
+
+endif
+
+! Condensation source terms for the scalars
+! associated to a volumic zone (icond=1)
+! taking into account the metal mass 
+! structures condensation modelling
+if (icond.eq.1) then
+  allocate(srcmst(ncelet))
+
+  ! When treating the Temperature, the equation is multiplied by Cp
+  do ii = 1, ncmast
+    iel = ltmast(ii)
+
+    if (svcond(iel,ipr).lt.0.d0 .and.itypst(ii,ivar).eq.1) then
+      srcmst(iel) = svcond(iel,ipr)*xcpp(iel)
+    else
+      srcmst(iel) = 0.d0
+    endif
+  enddo
+
+  call condensation_source_terms &
+  !=============================
+  (ncelet , ncel ,                                       &
+   iscal  ,                                              &     
+   ivoid  , ivoid   , ivoid          ,                   &
+   ncmast , ltmast  , itypst(1,ivar) ,                   &
+   rvoid  , rvoid   ,                                    &
+   svcond(1,ivar)   , srcmst         , flxmst  ,         &
+   cvara_var        ,                                    &
+   smbrs            , rovsdt )
+
+  deallocate(srcmst)
 
 endif
 

@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2011 EDF S.A.
+! Copyright (C) 1998-2014 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -20,35 +20,39 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine pthrbm &
-!================
-
- ( nvar   , ncesmp ,                                              &
-   dt     , smacel )
-
 !===============================================================================
-! FONCTION :
-! ----------
+! Function:
+! ---------
 
-! Update the density rho^(n+1) with the rho^(n-1/2) density from the state law
-! and the thermodynamic pressure pther^(n+1)
-!
+!> \file pthrbm.f90
+!> \brief Update the density \f$ \rho^{n+1}\f$  with the
+!> \f$ \rho^{n-\sfrac{1}{2} \f$ density with the state law and a thermodynamic
+!> pressure \f$ p_{ther}^{n+1} estimated from the integral over the total fluid
+!> domain of the mass conservation equation.\f$
+!>
+!------------------------------------------------------------------------------
+
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-!    nom           !type!mode !                   role                         !
-!__________________!____!_____!________________________________________________!
-! nvar             ! e  ! <-- ! nombre total de variables                      !
-! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
-! dt(ncelet)       ! tr ! <-- ! pas de temps                                   !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate                     !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     ncesmp        number of cells with mass source term
+!> \param[in]     ncmast        number of cells with condensation source terms
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     smacel        variable value associated to the mass source
+!>                               term (for ivar=ipr, smacel is the mass flux
+!>                               \f$ \Gamma^n \f$)
+!> \param[in]     svcond        variable value associated to the condensation
+!>                              source term (for ivar=ipr, svcond is the flow rate
+!>                              \f$ \Gamma_{v, cond}^n \f$)
+!_______________________________________________________________________________
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
+subroutine pthrbm &
+ ( nvar   , ncesmp , ncmast,                                      &
+   dt     , smacel , svcond)
+
 !===============================================================================
 
 !===============================================================================
@@ -60,12 +64,14 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use pointe, only: itypfb, icetsm
+use pointe, only:itypfb, icetsm, ltmast
 use entsor
 use parall
 use period
+use ppincl, only:icond
 use mesh
 use field
+use cs_tagms, only:s_metal
 
 !===============================================================================
 
@@ -73,16 +79,17 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , ncesmp
+integer          nvar , ncesmp , ncmast
 
 double precision dt(ncelet)
 double precision smacel(ncesmp,nvar)
+double precision svcond(ncelet,nvar)
 
-! VARIABLES LOCALES
+! Local variables
 
 logical          lromo
 
-integer          iel , ifac, ieltsm
+integer          iel , ifac, ieltsm, icmet
 
 integer          iflmab
 
@@ -94,12 +101,12 @@ double precision debin, debout, debtot
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
 
-!===============================================================================
-
-
+double precision, allocatable, dimension(:) :: surfbm
 
 !===============================================================================
-! 0. Initialization
+
+!===============================================================================
+! 1. Initialization
 !===============================================================================
 
 !   pointers for the different variables
@@ -119,7 +126,7 @@ call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
 !===============================================================================
-! 1. Flow rate computation for the inlet and oulet conditions
+! 2. Flow rate computation for the inlet and oulet conditions
 !===============================================================================
 
 !----------------------------------
@@ -158,12 +165,32 @@ if (ncesmp.gt.0) then
   enddo
 endif
 
+!===============================================================================
+! 3. Flow rate computation associated to the condensation phenomenon
+!===============================================================================
+
+if (icond.eq.1) then
+  allocate(surfbm(ncelet))
+  surfbm(:) = 0.d0
+
+  do icmet = 1, ncmast
+    iel= ltmast(icmet)
+    surfbm(iel) = s_metal*volume(iel)/voltot
+    debtot = debtot  + surfbm(iel)*svcond(iel,ipr)
+  enddo
+
+  deallocate(surfbm)
+endif
+
+!===============================================================================
+! 4. Parallelism processing
+!===============================================================================
 if (irangp.ge.0) then
   call parsom (debtot)
 endif
 
 !===============================================================================
-! 2. Thermodynamic pressure and density computation
+! 5. Thermodynamic pressure and density computation
 !===============================================================================
 
 ! for the first time step : rho^(n-1) = rho^(n)
@@ -212,7 +239,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 3. Change the reference variable rho0
+! 6. Change the reference variable rho0
 !===============================================================================
 
 !initialization
@@ -229,7 +256,7 @@ endif
 ro0 = ro0moy/voltot
 
 !===============================================================================
-! 4.Printing
+! 7. Printing
 !===============================================================================
 
 if (mod(ntcabs,ntlist).eq.0 .or. ntcabs.eq.1) then
@@ -250,9 +277,9 @@ if (mod(ntcabs,ntlist).eq.0 .or. ntcabs.eq.1) then
 
 endif
 
-!===============================================================================
-! FORMATS
-!----
+!--------
+! Formats
+!--------
 
   !================================================================
   2002 format                                                      &
@@ -272,9 +299,8 @@ endif
    1X, '(SA) pther:', 12(e12.5, 1x)   )
   !================================================================
 
-
 !----
-! FIN
+! End
 !----
 
 return
