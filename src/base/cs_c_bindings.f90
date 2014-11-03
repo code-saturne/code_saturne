@@ -708,11 +708,10 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
     ! Interface to C function for balance computation
 
-    subroutine cs_balance_by_zone(idtvar, itypfb, selection_crit, scalar_name)  &
+    subroutine cs_balance_by_zone(itypfb, selection_crit, scalar_name)  &
       bind(C, name='cs_balance_by_zone')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in), value :: idtvar
       integer(kind=c_int), dimension(*), intent(in) :: itypfb
       character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
       character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name

@@ -107,7 +107,7 @@ double precision dt(ncelet)
 
 !< [example_1]
 
-call cs_balance_by_zone(idtvar, itypfb, &
+call cs_balance_by_zone(itypfb,         &
                         "all[]",        &
                         "temperature")
 
@@ -115,7 +115,7 @@ call cs_balance_by_zone(idtvar, itypfb, &
 
 !< [example_2]
 
-call cs_balance_by_zone(idtvar, itypfb,                        &
+call cs_balance_by_zone(itypfb,                                &
                         "x > -0.35 and (x < 0.5 or y < 0.90)", &
                         "scalar1")
 

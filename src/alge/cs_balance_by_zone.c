@@ -105,7 +105,6 @@ BEGIN_C_DECLS
  * argument. The different contributions to the balance are printed in the
  * listing.
  *
- * \param[in]     idtvar              indicator of the temporal scheme
  * \param[in]     bc_type             boundary condition type
  * \param[in]     selection_crit      zone selection criterium
  * \param[in]     scalar_name         scalar name
@@ -113,12 +112,12 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_balance_by_zone(const int  idtvar,
-                   const int  bc_type[],
+cs_balance_by_zone(const int  bc_type[],
                    const char *selection_crit,
                    const char *scalar_name)
 {
   int nt_cur = cs_glob_time_step->nt_cur;
+  int idtvar = cs_glob_time_step_options->idtvar;
 
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
