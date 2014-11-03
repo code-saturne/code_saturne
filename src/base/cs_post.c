@@ -5704,11 +5704,25 @@ cs_post_init_error_writer(void)
 
   /* Create default writer */
 
+  int default_format_id = _cs_post_default_format_id;
+  const char *default_format_options = _cs_post_default_format_options;
+  const char null_str[] = "";
+
+  /* Special case for Catalyst: if matching co-processing script is
+     not available, revert to EnSight Gold format */
+
+  if (default_format_id == fvm_writer_get_format_id("Catalyst")) {
+    if (! cs_file_isreg("error.py")) {
+      int default_format_id = fvm_writer_get_format_id("EnSight Gold");
+      default_format_options = null_str;
+    }
+  }
+
   cs_post_define_writer(writer_id,
                         "error",
                         _cs_post_dirname,
-                        fvm_writer_format_name(_cs_post_default_format_id),
-                        _cs_post_default_format_options,
+                        default_format_id,
+                        default_format_options,
                         FVM_WRITER_FIXED_MESH, /* No time dependency here */
                         true,
                         -1,

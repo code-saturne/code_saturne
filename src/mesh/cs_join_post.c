@@ -1,5 +1,5 @@
 /*============================================================================
- * Management of post-treatment for joining operation
+ * Management of post-processing for joining operation
  *===========================================================================*/
 
 /*
@@ -44,7 +44,9 @@
 #include "fvm_nodal.h"
 #include "fvm_nodal_order.h"
 #include "fvm_nodal_from_desc.h"
+#include "fvm_writer.h"
 
+#include "cs_file.h"
 #include "cs_mesh_connect.h"
 #include "cs_post.h"
 
@@ -96,7 +98,7 @@ static  bool            _cs_join_post_initialized = false;
  * post elements implied in the joining operations.
  *
  * returns:
- *   id of associated writer
+ *   id of associated writer (< 0, or 0 in case of failure)
  *----------------------------------------------------------------------------*/
 
 static int
@@ -104,10 +106,21 @@ _init_join_writer(void)
 {
   int  writer_id = cs_post_get_free_writer_id();
 
+  /* Special case for Catalyst: if matching co-processing script is
+     not available, revert to EnSight Gold format */
+
+  int default_format_id
+    = fvm_writer_get_format_id(cs_post_get_default_format());
+
+  if (default_format_id == fvm_writer_get_format_id("Catalyst")) {
+    if (! cs_file_isreg("error.py"))
+      return 0;
+  }
+
   cs_post_define_writer(writer_id,
                         "joining",
                         "postprocessing",
-                        cs_post_get_default_format(),
+                        fvm_writer_format_name(default_format_id),
                         cs_post_get_default_format_options(),
                         FVM_WRITER_FIXED_MESH,
                         false,
@@ -228,20 +241,23 @@ _post_elt_ifield(fvm_nodal_t  *mesh,
 void
 cs_join_post_init(void)
 {
-  int  writer_num;
-
   if (_cs_join_post_initialized == true)
     return;
 
-  _cs_join_post_initialized = true;
+  int  writer_num;
 
   writer_num = _init_join_writer();
 
-  cs_post_activate_writer(writer_num, 1);
+  if (writer_num != 0) {
 
-  _cs_join_post_param.writer = cs_post_get_writer(writer_num);
+    _cs_join_post_initialized = true;
 
-  _cs_join_post_param.writer_num = writer_num;
+    cs_post_activate_writer(writer_num, 1);
+
+    _cs_join_post_param.writer = cs_post_get_writer(writer_num);
+    _cs_join_post_param.writer_num = writer_num;
+
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -256,6 +272,9 @@ void
 cs_join_post_mesh(const char            *mesh_name,
                   const cs_join_mesh_t  *join_mesh)
 {
+  if (_cs_join_post_initialized == true)
+    return;
+
   int  i, j;
   cs_lnum_t  n_vertices;
 
@@ -379,6 +398,9 @@ cs_join_post_faces_subset(const char            *mesh_name,
                           cs_lnum_t              n_select_faces,
                           const cs_lnum_t        selected_faces[])
 {
+  if (_cs_join_post_initialized == true)
+    return;
+
   cs_join_mesh_t  *subset_mesh = NULL;
 
   assert(parent_mesh != NULL);
@@ -405,14 +427,14 @@ void
 cs_join_post_after_merge(cs_join_param_t          join_param,
                          const cs_join_select_t  *join_select)
 {
+  if (_cs_join_post_initialized == true)
+    return;
+
   int  adj_mesh_id, sel_mesh_id;
 
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   char  *mesh_name = NULL;
   fvm_nodal_t *adj_mesh = NULL, *sel_mesh = NULL;
-
-  if (_cs_join_post_initialized == false)
-    return;
 
   adj_mesh_id = cs_post_get_free_mesh_id();
 
@@ -487,6 +509,9 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
                          const cs_mesh_t  *mesh,
                          cs_join_param_t   join_param)
 {
+  if (join_param.visualization < 1 || _cs_join_post_initialized == false)
+    return;
+
   cs_lnum_t  i, j;
 
   int  writer_ids[] = {_cs_join_post_param.writer_num};
@@ -498,12 +523,6 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
 
   const int  n_new_i_faces = mesh->n_i_faces - n_old_i_faces;
   const int  n_new_b_faces = mesh->n_b_faces - n_old_b_faces + n_select_faces;
-
-  if (join_param.visualization < 1)
-    return;
-
-  if (_cs_join_post_initialized == false)
-    return;
 
   /* Define list of faces to post-treat */
 
@@ -593,13 +612,13 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
                            cs_lnum_t        b_clean_faces[],
                            cs_join_param_t  param)
 {
+  if (_cs_join_post_initialized == false)
+    return;
+
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   int  post_mesh_id = cs_post_get_free_mesh_id();
   char  *name = NULL;
   fvm_nodal_t *export_mesh = NULL;
-
-  if (_cs_join_post_initialized == false)
-    return;
 
   BFT_MALLOC(name, strlen("CleanFaces_j") + 2 + 1, char);
   sprintf(name,"%s%02d", "CleanFaces_j", param.num);

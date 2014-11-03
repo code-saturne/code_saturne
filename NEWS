@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Coprocessing: if the main (default) writer uses Catalyst output, ignore
+  joining output and use EnSight Gold format for joining and error writers
+  if no matching Python script is found, to avoid uneeded abort.
+
 - Turbomachinery modeling:
    * enable multiple rotors for rotor-stator model based on mesh joining.
 
