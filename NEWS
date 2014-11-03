@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix Crank-Nicolson time scheme for velocity.
+
 - Fix minor bugs detected by Address / Undefined Behavior Sanitizer.
 
 - Fix quadrature weights in DCT020-2468 48-direction DOM radiation model (bug #95).
