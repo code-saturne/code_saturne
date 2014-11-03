@@ -186,7 +186,6 @@ enddo
 if (ippmod(iphpar).ge.2) then
 
   call ppcabs(propce)
-  !==========
 
   !---> ckmel is the absorbption coefficient
   !     of gas-particle mixing
@@ -769,11 +768,11 @@ write(nfecra,5000)
 
 !--> Integration de la densite de flux net aux frontieres
 
-aa = zero
-do ifac = 1,nfabor
+aa = 0.d0
+do ifac = 1, nfabor
   aa =  aa + bfnet(ifac) * surfbn(ifac)
 enddo
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parsom(aa)
 endif
 write(nfecra,5030) aa

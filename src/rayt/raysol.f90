@@ -416,11 +416,11 @@ deallocate(rhs0)
 deallocate(dpvar)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

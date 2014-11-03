@@ -1975,7 +1975,7 @@ endif
 !-->  Quadrature Tn (8n^2 directions)
 !
 ! 4: T2 (32 directions)
-! 5: T2 (128 directions)
+! 5: T4 (128 directions)
 ! 6: Tn (8*ndirec^2 directions)
 
 if (.false.) then

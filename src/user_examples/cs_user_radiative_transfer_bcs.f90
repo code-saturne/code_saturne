@@ -82,7 +82,8 @@ subroutine cs_user_radiative_transfer_bcs &
    tmin   , tmax   , tx     ,                                     &
    dt     , rcodcl ,                                              &
    thwall , qincid , hfcnvp , flcnvp ,                            &
-   xlamp  , epap   , epsp   , textp  , tintp  )
+   xlamp  , epap   , epsp   ,                                     &
+   textp  , tintp  )
 
 !===============================================================================
 ! Module files
