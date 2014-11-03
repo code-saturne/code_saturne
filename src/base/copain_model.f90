@@ -220,13 +220,13 @@ endif
 ! Initialization
 do iel = 1, ncel
   y_h2o_g(iel) = 1.d0
-  ! Mixing molar mass
+  ! Mixture molar mass
   mix_mol_mas(iel) = 0.d0
   ! Molar mass location of noncondensable gas
   mol_mas_ncond(iel) = 0.d0
   ! Molar mass fraction of noncondensable gas
   x_ncond(iel) = 0.d0
-  ! Mixing molecular diffusivity
+  ! Mixture molecular diffusivity
   ! between the vapor and the noncondensable gases
   diff_m(iel) = 0.d0
 enddo
@@ -246,7 +246,7 @@ do iesp = 1, nscasp
   enddo
 enddo
 
-!Finalize the computation of the Mixing molar mass
+!Finalize the computation of the Mixture molar mass
 do iel = 1, ncel
   mix_mol_mas(iel) = mix_mol_mas(iel) + y_h2o_g(iel)/s_h2o_g%mol_mas
   mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
@@ -386,7 +386,7 @@ do ii = 1, nfbpcd
     ! noncondensable Molar fraction at the interface
     x_ncond_int = 1.d0 - x_vapint
 
-    ! Mixing Molar mass at the interface -----------
+    ! Mixture molar mass at the interface -----------
     xkloc = x_vapint*s_h2o_g%mol_mas + x_ncond_int*mol_mas_ncond(iel)
 
     ! Noncondensable mass fraction

@@ -127,28 +127,28 @@ if (ippmod(iatmos).ge.1) then
   !==========
 endif
 
-! Add the molar mass fraction field of the mixing gases
-if (ippmod(imixg).ge.0) then
+! Add the mixture molar mass fraction field
+if (ippmod(igmix).ge.0) then
   call add_property_field('mix_mol_mas', 'Mix_mol_mass', f_id)
 endif
 
-! Mixing gases with Air/Helium and the Helium gas deduced
-if (ippmod(imixg).eq.0) then
+! Gas mixtures with Air/Helium and the Helium gas deduced
+if (ippmod(igmix).eq.0) then
   idim1 =  1
   has_previous = .true.
   call add_property_field_owner('y_he', 'Y_He', idim1, has_previous, f_id)
 endif
 
-! Mixing gases with Air/Hydrogen and the Hydrogen gas deduced
-if (ippmod(imixg).eq.1) then
+! Gas mixtures with Air/Hydrogen and the Hydrogen gas deduced
+if (ippmod(igmix).eq.1) then
   idim1 =  1
   has_previous = .true.
   call add_property_field_owner('y_h2', 'Y_H2', idim1, has_previous, f_id)
 endif
 
-! Mixing gases with steam with/without condensation modelling
+! Gas mixtures with steam with/without condensation modelling
 ! the steam gas will be deduced from the gas species transported
-if (ippmod(imixg).ge.2) then
+if (ippmod(igmix).ge.2) then
   idim1 =  1
   has_previous = .true.
   call add_property_field_owner('y_h2o_g', 'Y_H2O_g', idim1, has_previous, f_id)

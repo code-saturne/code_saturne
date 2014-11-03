@@ -418,7 +418,7 @@ enddo
 
 ! Copy field physical properties of species into the field structure
 
-if (ippmod(imixg).ge.0) then
+if (ippmod(igmix).ge.0) then
 
   call cs_parameters_define_field_key_gas_mix
 

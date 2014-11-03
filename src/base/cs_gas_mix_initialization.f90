@@ -110,11 +110,11 @@ call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
 
 !Deduced species (h2o_g) with steam gas
 ! or Helium or Hydrogen  with noncondensable gases
-if (ippmod(imixg).eq.0) then
+if (ippmod(igmix).eq.0) then
   name_d = "y_he"
-elseif (ippmod(imixg).eq.1) then
+elseif (ippmod(igmix).eq.1) then
   name_d = "y_h2"
-elseif (ippmod(imixg).ge.2) then
+elseif (ippmod(igmix).ge.2) then
   name_d = "y_h2o_g"
 endif
 call field_get_val_s_by_name(name_d, y_d)
@@ -143,10 +143,10 @@ vol_d  = 0.d0
 do iel = 1, ncel
   y_d(iel) = 1.d0
 
-  ! Specific Heat of the gas mixture
+  ! Mixture specific Heat
   cpro_cp(iel) = 0.d0
 
-  ! Molar mass of the gas mixture
+  ! Mixture molar mass
   mix_mol_mas(iel) = 0.d0
 enddo
 
@@ -163,7 +163,7 @@ do iesp = 1, nscasp
     endif
     y_d(iel) = y_d(iel)-cvar_yk(iel)
 
-    ! Mixing specific heat (Cp_m0)
+    ! Mixture specific heat (Cp_m0)
     cpro_cp(iel) = cpro_cp(iel) + cvar_yk(iel)*s_k%cp
 
     mix_mol_mas(iel) = mix_mol_mas(iel) + cvar_yk(iel)/s_k%mol_mas

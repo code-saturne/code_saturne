@@ -262,7 +262,7 @@ endif
 
 ! Gas mixture modelling in presence of noncondensable gases or/and
 ! condensable gas as stream.
-if (ippmod(imixg).ge.0) then
+if (ippmod(igmix).ge.0) then
 
   call cs_gas_mix_physical_properties
 

@@ -199,7 +199,7 @@ endif
 
 ! Gas mixture modelling in presence of noncondensable gases and
 ! condensable gas as stream.
-if (ippmod(imixg).ge.0) then
+if (ippmod(igmix).ge.0) then
 
   call cs_gas_mix_initialization &
   ( nvar   , nscal  ,                                            &

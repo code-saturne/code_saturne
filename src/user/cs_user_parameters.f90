@@ -326,18 +326,18 @@ if (ixmlpu.eq.0) then
 
 endif
 
-! --- imixg: Mixing gases flow
+! --- igmix: Gas mixtures modelling
 ! ==========
 !        if =-1 module not activated
-!        if = 0  Air/Helium   mixing gases
-!        if = 1  Air/Hydrogen mixing gases
-!        if = 2  Air/Steam    mixing gases
-!        if = 3  Air/Helium/Steam mixing gases
-!        if = 4  Air/Hydrogen/Steam mixing gases
+!        if = 0  Air/Helium   gas mixtures
+!        if = 1  Air/Hydrogen gas mixtures
+!        if = 2  Air/Steam    gas mixtures
+!        if = 3  Air/Helium/Steam gas mixtures
+!        if = 4  Air/Hydrogen/Steam gas mixtures
 
 
 if (.false.) then
-  ippmod(imixg) = 0
+  ippmod(igmix) = 0
 endif
 
 
@@ -441,7 +441,7 @@ if (ixmlpu.eq.0) then
     ficmet = 'meteo'
   endif
 
- if ( ippmod(imixg).ge.0 ) then
+ if ( ippmod(igmix).ge.0 ) then
    !> Specific condensation modelling
    !>      if = -1 module not activated
    !>      if =  0 condensation source terms activated

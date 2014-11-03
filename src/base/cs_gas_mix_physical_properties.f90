@@ -140,11 +140,11 @@ call field_get_val_s_by_name("mix_mol_mas", mix_mol_mas)
 ! Deduce mass fraction (y_d) which is
 ! y_h2o_g in presence of steam or
 ! y_he/y_h2 with noncondensable gases
-if (ippmod(imixg).eq.0) then
+if (ippmod(igmix).eq.0) then
   name_d = "y_he"
-elseif (ippmod(imixg).eq.1) then
+elseif (ippmod(igmix).eq.1) then
   name_d = "y_h2"
-elseif (ippmod(imixg).ge.2) then
+elseif (ippmod(igmix).ge.2) then
   name_d = "y_h2o_g"
 endif
 call field_get_val_s_by_name(name_d, y_d)
@@ -226,8 +226,8 @@ enddo
 ! remark: the mass fraction deduced depending of the
 !         modelling chosen by the user.
 !         with:
-!             - imixg = 0 or 1, a noncondensable gas
-!             - imixg > 2     , a condensable gas (steam)
+!             - igmix = 0 or 1, a noncondensable gas
+!             - igmix > 2     , a condensable gas (steam)
 !==============================================================
 do iesp = 1, nscasp
   call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)

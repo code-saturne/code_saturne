@@ -227,15 +227,15 @@ module ppincl
   ! - ippmod(iaeros) = 2 Merkel's model
   integer ::  iaeros
 
-  !> pointer to specify gas mixture module with indicator ippmod(imixg)
-  !> - ippmod(imixg) =-1 module not activated
-  !> - ippmod(imixg) = 0  Air/Helium   gas mixtures
-  !> - ippmod(imixg) = 1  Air/Hydrogen gas mixtures
-  !> - ippmod(imixg) = 2  Air/Steam    gas mixtures
-  !> - ippmod(imixg) = 3  Air/Helium/Steam gas mixtures
-  !> - ippmod(imixg) = 4  Air/Hydrogen/Steam gas mixtures
+  !> pointer to specify gas mixture module with indicator ippmod(igmix)
+  !> - ippmod(igmix) =-1 module not activated
+  !> - ippmod(igmix) = 0  Air/Helium   gas mixtures
+  !> - ippmod(igmix) = 1  Air/Hydrogen gas mixtures
+  !> - ippmod(igmix) = 2  Air/Steam    gas mixtures
+  !> - ippmod(igmix) = 3  Air/Helium/Steam gas mixtures
+  !> - ippmod(igmix) = 4  Air/Hydrogen/Steam gas mixtures
 
-  integer ::  imixg
+  integer ::  igmix
 
   !> pointer to specify richards model
   !> - ippmod(iricha) =-1 module not activated
@@ -247,7 +247,7 @@ module ppincl
                    icpl3c = 7 , icfuel = 8 , ieljou = 9 ,           &
                    ielarc = 10, ielion = 11, icompf = 12,           &
                    iatmos = 13, iaeros = 14, iccoal = 15,           &
-                   imixg  = 16, idarcy = 17)
+                   igmix  = 16, idarcy = 17)
 
   !> \}
 

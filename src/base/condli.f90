@@ -311,7 +311,7 @@ call field_get_coefbf_v(ivarfl(iu), cofbfu)
 ! 2. Treatment of types of BCs given by itypfb
 !===============================================================================
 
-if (ippmod(iphpar).ge.1.and.ippmod(imixg).eq.-1) then
+if (ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1) then
   call pptycl &
   !==========
  ( nvar   ,                                                       &
