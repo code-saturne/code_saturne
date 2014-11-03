@@ -706,6 +706,19 @@ module cs_c_bindings
     end subroutine cs_backward_differentiation_in_time
 
     !---------------------------------------------------------------------------
+    ! Interface to C function for balance computation
+
+    subroutine cs_balance_by_zone(idtvar, itypfb, selection_crit, scalar_name)  &
+      bind(C, name='cs_balance_by_zone')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: idtvar
+      integer(kind=c_int), dimension(*), intent(in) :: itypfb
+      character(kind=c_char, len=1), dimension(*), intent(in) :: selection_crit
+      character(kind=c_char, len=1), dimension(*), intent(in) :: scalar_name
+    end subroutine cs_balance_by_zone
+
+    !---------------------------------------------------------------------------
 
     ! Interface to C user function for extra operations
 

@@ -57,6 +57,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_benchmark.h \
 cs_blas.h \
+cs_balance_by_zone.h \
 cs_convection_diffusion.h \
 cs_face_viscosity.h \
 cs_divergence.h \
@@ -86,6 +87,7 @@ libcsalge_la_SOURCES = \
 cs_benchmark.c \
 cs_blas.c \
 cs_bw_time_diff.c \
+cs_balance_by_zone.c \
 cs_convection_diffusion.c \
 cs_face_viscosity.c \
 cs_divergence.c \

@@ -253,7 +253,7 @@ cs_user_coupling(void);
 /*----------------------------------------------------------------------------
  * This function is called at the end of each time step.
  *
- * It and has a very general purpose, although it is recommended to handle
+ * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
  *----------------------------------------------------------------------------*/
 

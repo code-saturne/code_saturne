@@ -56,37 +56,38 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Compute slope test criteria at internal face between cell i and j.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute slope test criteria at internal face between cell i and j.
  *
- * parameters:
- *   pi            --> value at cell i
- *   pj            --> value at cell j
- *   distf         --> distance IJ.Nij
- *   srfan         --> face surface
- *   i_face_normal --> face normal
- *   gradi         --> gradient at cell i
- *   gradj         --> gradient at cell j
- *   grdpai        --> upwind gradient at cell i
- *   grdpaj        --> upwind gradient at cell j
- *   i_massflux    --> mass flux at face (from i to j)
- *   testij        <-- value of slope test first criterium
- *   tesqck        <-- value of slope test second criterium
- *----------------------------------------------------------------------------*/
+ * \param[in]     pi              value at cell i
+ * \param[in]     pj              value at cell j
+ * \param[in]     distf           distance IJ.Nij
+ * \param[in]     srfan           face surface
+ * \param[in]     i_face_normal   face normal
+ * \param[in]     gradi           gradient at cell i
+ * \param[in]     gradj           gradient at cell j
+ * \param[in]     grdpai          upwind gradient at cell i
+ * \param[in]     grdpaj          upwind gradient at cell j
+ * \param[in]     i_massflux      mass flux at face (from i to j)
+ * \param[out]    testij          value of slope test first criterium
+ * \param[out]    tesqck          value of slope test second criterium
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_slope_test(const cs_real_t     pi,
-            const cs_real_t     pj,
-            const cs_real_t     distf,
-            const cs_real_t     srfan,
-            const cs_real_3_t   i_face_normal,
-            const cs_real_3_t   gradi,
-            const cs_real_3_t   gradj,
-            const cs_real_3_t   grdpai,
-            const cs_real_3_t   grdpaj,
-            const cs_real_t     i_massflux,
-            double             *testij,
-            double             *tesqck)
+cs_slope_test(const cs_real_t     pi,
+              const cs_real_t     pj,
+              const cs_real_t     distf,
+              const cs_real_t     srfan,
+              const cs_real_3_t   i_face_normal,
+              const cs_real_3_t   gradi,
+              const cs_real_3_t   gradj,
+              const cs_real_3_t   grdpai,
+              const cs_real_3_t   grdpaj,
+              const cs_real_t     i_massflux,
+              double             *testij,
+              double             *tesqck)
 {
   double testi, testj;
   double dcc, ddi, ddj;
@@ -120,41 +121,42 @@ _slope_test(const cs_real_t     pi,
   *tesqck = pow(dcc, 2.) - pow(ddi-ddj, 2.);
 }
 
-/*----------------------------------------------------------------------------
- * Reconstruct values in I' and J'.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct values in I' and J'.
  *
- * parameters:
- *   ircflp     --> recontruction flag
- *   pnd        --> geometrical weight
- *   cell_ceni  --> center of gravity coordinates of cell i
- *   cell_cenj  --> center of gravity coordinates of cell i
- *   i_face_cog --> center of gravity coordinates of face ij
- *   dijpf      --> distance I'J'
- *   gradi      --> gradient at cell i
- *   gradj      --> gradient at cell j
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   recoi      <-- reconstruction at cell i
- *   recoj      <-- reconstruction at cell j
- *   pip        <-- reconstructed value at cell i
- *   pjp        <-- reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp       recontruction flag
+ * \param[in]     pnd          geometrical weight
+ * \param[in]     cell_ceni    center of gravity coordinates of cell i
+ * \param[in]     cell_cenj    center of gravity coordinates of cell i
+ * \param[in]     i_face_cog   center of gravity coordinates of face ij
+ * \param[in]     dijpf        distance I'J'
+ * \param[in]     gradi        gradient at cell i
+ * \param[in]     gradj        gradient at cell j
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[out]    recoi        reconstruction at cell i
+ * \param[out]    recoj        reconstruction at cell j
+ * \param[out]    pip          reconstructed value at cell i
+ * \param[out]    pjp          reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_compute_quantities(const int          ircflp,
-                      const double       pnd,
-                      const cs_real_3_t  cell_ceni,
-                      const cs_real_3_t  cell_cenj,
-                      const cs_real_3_t  i_face_cog,
-                      const cs_real_3_t  dijpf,
-                      const cs_real_3_t  gradi,
-                      const cs_real_3_t  gradj,
-                      const cs_real_t    pi,
-                      const cs_real_t    pj,
-                      cs_real_t         *recoi,
-                      cs_real_t         *recoj,
-                      cs_real_t         *pip,
-                      cs_real_t         *pjp)
+cs_i_compute_quantities(const int          ircflp,
+                        const double       pnd,
+                        const cs_real_3_t  cell_ceni,
+                        const cs_real_3_t  cell_cenj,
+                        const cs_real_3_t  i_face_cog,
+                        const cs_real_3_t  dijpf,
+                        const cs_real_3_t  gradi,
+                        const cs_real_3_t  gradj,
+                        const cs_real_t    pi,
+                        const cs_real_t    pj,
+                        cs_real_t         *recoi,
+                        cs_real_t         *recoj,
+                        cs_real_t         *pip,
+                        cs_real_t         *pjp)
 {
   cs_real_t diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz;
   cs_real_t dpxf, dpyf, dpzf;
@@ -180,35 +182,36 @@ _i_compute_quantities(const int          ircflp,
   *pjp = pj + *recoj;
 }
 
-/*----------------------------------------------------------------------------
- * Compute relaxed values at cell i and j.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute relaxed values at cell i and j.
  *
- * parameters:
- *   relaxp --> relaxation coefficient
- *   pia    --> old value at cell i
- *   pja    --> old value at cell j
- *   recoi  --> reconstruction at cell i
- *   recoj  --> reconstruction at cell j
- *   pi     --> value at cell i
- *   pj     --> value at cell j
- *   pir    <-- relaxed value at cell i
- *   pjr    <-- relaxed value at cell j
- *   pipr   <-- relaxed reconstructed value at cell i
- *   pjpr   <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     relaxp   relaxation coefficient
+ * \param[in]     pia      old value at cell i
+ * \param[in]     pja      old value at cell j
+ * \param[in]     recoi    reconstruction at cell i
+ * \param[in]     recoj    reconstruction at cell j
+ * \param[in]     pi       value at cell i
+ * \param[in]     pj       value at cell j
+ * \param[out]    pir      relaxed value at cell i
+ * \param[out]    pjr      relaxed value at cell j
+ * \param[out]    pipr     relaxed reconstructed value at cell i
+ * \param[out]    pjpr     relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_relax_c_val(const double     relaxp,
-               const cs_real_t  pia,
-               const cs_real_t  pja,
-               const cs_real_t  recoi,
-               const cs_real_t  recoj,
-               const cs_real_t  pi,
-               const cs_real_t  pj,
-               cs_real_t       *pir,
-               cs_real_t       *pjr,
-               cs_real_t       *pipr,
-               cs_real_t       *pjpr)
+cs_i_relax_c_val(const double     relaxp,
+                 const cs_real_t  pia,
+                 const cs_real_t  pja,
+                 const cs_real_t  recoi,
+                 const cs_real_t  recoj,
+                 const cs_real_t  pi,
+                 const cs_real_t  pj,
+                 cs_real_t       *pir,
+                 cs_real_t       *pjr,
+                 cs_real_t       *pipr,
+                 cs_real_t       *pjpr)
 {
   *pir = pi/relaxp - (1.-relaxp)/relaxp * pia;
   *pjr = pj/relaxp - (1.-relaxp)/relaxp * pja;
@@ -217,29 +220,31 @@ _i_relax_c_val(const double     relaxp,
   *pjpr = *pjr + recoj;
 }
 
-/*----------------------------------------------------------------------------
- * Copy reconstructed or not cell values for consistency with relaxation case.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy reconstructed or not cell values for consistency with relaxation
+ * case.
  *
- * parameters:
- *   pi   --> value at cell i
- *   pj   --> value at cell j
- *   pip  --> reconstructed value at cell i
- *   pjp  --> reconstructed value at cell j
- *   pir  <-- value at cell i
- *   pjr  <-- value at cell j
- *   pipr <-- reconstructed value at cell i
- *   pjpr <-- reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     pi     value at cell i
+ * \param[in]     pj     value at cell j
+ * \param[in]     pip    reconstructed value at cell i
+ * \param[in]     pjp    reconstructed value at cell j
+ * \param[out]    pir    value at cell i
+ * \param[out]    pjr    value at cell j
+ * \param[out]    pipr   reconstructed value at cell i
+ * \param[out]    pjpr   reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_no_relax_c_val(const cs_real_t   pi,
-                  const cs_real_t   pj,
-                  const cs_real_t   pip,
-                  const cs_real_t   pjp,
-                  cs_real_t        *pir,
-                  cs_real_t        *pjr,
-                  cs_real_t        *pipr,
-                  cs_real_t        *pjpr)
+cs_i_no_relax_c_val(const cs_real_t   pi,
+                    const cs_real_t   pj,
+                    const cs_real_t   pip,
+                    const cs_real_t   pjp,
+                    cs_real_t        *pir,
+                    cs_real_t        *pjr,
+                    cs_real_t        *pipr,
+                    cs_real_t        *pjpr)
 {
   *pir = pi;
   *pjr = pj;
@@ -248,29 +253,30 @@ _i_no_relax_c_val(const cs_real_t   pi,
   *pjpr = pjp;
 }
 
-/*----------------------------------------------------------------------------
- * Prepare value at face ij by using an upwind scheme.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prepare value at face ij by using an upwind scheme.
  *
- * parameters:
- *   pi    --> value at cell i
- *   pj    --> value at cell j
- *   pir   --> relaxed value at cell i
- *   pjr   --> relaxed value at cell j
- *   pifri <-- contribution of i to flux from i to j
- *   pjfrj <-- contribution of j to flux from i to j
- *   pjfri <-- contribution of i to flux from j to i
- *   pjfrj <-- contribution of j to flux from j to i
- *----------------------------------------------------------------------------*/
+ * \param[in]     pi      value at cell i
+ * \param[in]     pj      value at cell j
+ * \param[in]     pir     relaxed value at cell i
+ * \param[in]     pjr     relaxed value at cell j
+ * \param[out]    pifri   contribution of i to flux from i to j
+ * \param[out]    pjfrj   contribution of j to flux from i to j
+ * \param[out]    pjfri   contribution of i to flux from j to i
+ * \param[out]    pjfrj   contribution of j to flux from j to i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_upwind_f_val(const cs_real_t  pi,
-              const cs_real_t  pj,
-              const cs_real_t  pir,
-              const cs_real_t  pjr,
-              cs_real_t       *pifri,
-              cs_real_t       *pifrj,
-              cs_real_t       *pjfri,
-              cs_real_t       *pjfrj)
+cs_upwind_f_val(const cs_real_t  pi,
+                const cs_real_t  pj,
+                const cs_real_t  pir,
+                const cs_real_t  pjr,
+                cs_real_t       *pifri,
+                cs_real_t       *pifrj,
+                cs_real_t       *pjfri,
+                cs_real_t       *pjfrj)
 {
   *pifri = pir;
   *pifrj = pi;
@@ -278,31 +284,32 @@ _upwind_f_val(const cs_real_t  pi,
   *pjfrj = pjr;
 }
 
-/*----------------------------------------------------------------------------
- * Prepare value at face ij by using a centered scheme.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prepare value at face ij by using a centered scheme.
  *
- * parameters:
- *   weight --> geometrical weight
- *   pip    --> reconstructed value at cell i
- *   pjp    --> reconstructed value at cell j
- *   pipr   --> relaxed reconstructed value at cell i
- *   pjpr   --> relaxed reconstructed value at cell j
- *   pifri  <-- contribution of i to flux from i to j
- *   pjfrj  <-- contribution of j to flux from i to j
- *   pjfri  <-- contribution of i to flux from j to i
- *   pjfrj  <-- contribution of j to flux from j to i
- *----------------------------------------------------------------------------*/
+ * \param[in]     weight   geometrical weight
+ * \param[in]     pip      reconstructed value at cell i
+ * \param[in]     pjp      reconstructed value at cell j
+ * \param[in]     pipr     relaxed reconstructed value at cell i
+ * \param[in]     pjpr     relaxed reconstructed value at cell j
+ * \param[out]    pifri    contribution of i to flux from i to j
+ * \param[out]    pjfrj    contribution of j to flux from i to j
+ * \param[out]    pjfri    contribution of i to flux from j to i
+ * \param[out]    pjfrj    contribution of j to flux from j to i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_centered_f_val(const double     pnd,
-                const cs_real_t  pip,
-                const cs_real_t  pjp,
-                const cs_real_t  pipr,
-                const cs_real_t  pjpr,
-                cs_real_t       *pifri,
-                cs_real_t       *pifrj,
-                cs_real_t       *pjfri,
-                cs_real_t       *pjfrj)
+cs_centered_f_val(const double     pnd,
+                  const cs_real_t  pip,
+                  const cs_real_t  pjp,
+                  const cs_real_t  pipr,
+                  const cs_real_t  pjpr,
+                  cs_real_t       *pifri,
+                  cs_real_t       *pifrj,
+                  cs_real_t       *pjfri,
+                  cs_real_t       *pjfrj)
 {
   *pifri = pnd*pipr + (1.-pnd)*pjp;
   *pjfri = *pifri;
@@ -310,39 +317,40 @@ _centered_f_val(const double     pnd,
   *pjfrj = *pifrj;
 }
 
-/*----------------------------------------------------------------------------
- * Prepare value at face ij by using a Second Order Linear Upwind scheme.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prepare value at face ij by using a Second Order Linear Upwind scheme.
  *
- * parameters:
- *   cell_ceni  --> center of gravity coordinates of cell i
- *   cell_cenj  --> center of gravity coordinates of cell i
- *   i_face_cog --> center of gravity coordinates of face ij
- *   gradi      --> gradient at cell i
- *   gradj      --> gradient at cell j
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   pir        --> relaxed value at cell i
- *   pjr        --> relaxed value at cell j
- *   pifri      <-- contribution of i to flux from i to j
- *   pjfrj      <-- contribution of j to flux from i to j
- *   pjfri      <-- contribution of i to flux from j to i
- *   pjfrj      <-- contribution of j to flux from j to i
- *----------------------------------------------------------------------------*/
+ * \param[in]     cell_ceni    center of gravity coordinates of cell i
+ * \param[in]     cell_cenj    center of gravity coordinates of cell i
+ * \param[in]     i_face_cog   center of gravity coordinates of face ij
+ * \param[in]     gradi        gradient at cell i
+ * \param[in]     gradj        gradient at cell j
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[in]     pir          relaxed value at cell i
+ * \param[in]     pjr          relaxed value at cell j
+ * \param[out]    pifri        contribution of i to flux from i to j
+ * \param[out]    pjfrj        contribution of j to flux from i to j
+ * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pjfrj        contribution of j to flux from j to i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_solu_f_val(const cs_real_3_t  cell_ceni,
-            const cs_real_3_t  cell_cenj,
-            const cs_real_3_t  i_face_cog,
-            const cs_real_3_t  gradi,
-            const cs_real_3_t  gradj,
-            const cs_real_t    pi,
-            const cs_real_t    pj,
-            const cs_real_t    pir,
-            const cs_real_t    pjr,
-            cs_real_t         *pifri,
-            cs_real_t         *pifrj,
-            cs_real_t         *pjfri,
-            cs_real_t         *pjfrj)
+cs_solu_f_val(const cs_real_3_t  cell_ceni,
+              const cs_real_3_t  cell_cenj,
+              const cs_real_3_t  i_face_cog,
+              const cs_real_3_t  gradi,
+              const cs_real_3_t  gradj,
+              const cs_real_t    pi,
+              const cs_real_t    pj,
+              const cs_real_t    pir,
+              const cs_real_t    pjr,
+              cs_real_t         *pifri,
+              cs_real_t         *pifrj,
+              cs_real_t         *pjfri,
+              cs_real_t         *pjfrj)
 {
   cs_real_t difx, dify, difz, djfx, djfy, djfz;
 
@@ -361,33 +369,34 @@ _solu_f_val(const cs_real_3_t  cell_ceni,
   *pjfri = pj  + djfx*gradj[0]+djfy*gradj[1]+djfz*gradj[2];
 }
 
-/*----------------------------------------------------------------------------
- * Blend face values for a centered or SOLU scheme with face values for an
- * upwind scheme.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Blend face values for a centered or SOLU scheme with face values for
+ * an upwind scheme.
  *
- * parameters:
- *   blencp --> proportion of centered or SOLU scheme, (1-blencp) is the
- *              proportion of upwind.
- *   pi     --> value at cell i
- *   pj     --> value at cell j
- *   pir    --> relaxed value at cell i
- *   pjr    --> relaxed value at cell j
- *   pifri  <-- contribution of i to flux from i to j
- *   pjfrj  <-- contribution of j to flux from i to j
- *   pjfri  <-- contribution of i to flux from j to i
- *   pjfrj  <-- contribution of j to flux from j to i
- *----------------------------------------------------------------------------*/
+ * \param[in]     blencp   proportion of centered or SOLU scheme,
+ *                         (1-blencp) is the proportion of upwind.
+ * \param[in]     pi       value at cell i
+ * \param[in]     pj       value at cell j
+ * \param[in]     pir      relaxed value at cell i
+ * \param[in]     pjr      relaxed value at cell j
+ * \param[out]    pifri    contribution of i to flux from i to j
+ * \param[out]    pjfrj    contribution of j to flux from i to j
+ * \param[out]    pjfri    contribution of i to flux from j to i
+ * \param[out]    pjfrj    contribution of j to flux from j to i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_blend_f_val(const double     blencp,
-             const cs_real_t  pi,
-             const cs_real_t  pj,
-             const cs_real_t  pir,
-             const cs_real_t  pjr,
-             cs_real_t       *pifri,
-             cs_real_t       *pifrj,
-             cs_real_t       *pjfri,
-             cs_real_t       *pjfrj)
+cs_blend_f_val(const double     blencp,
+               const cs_real_t  pi,
+               const cs_real_t  pj,
+               const cs_real_t  pir,
+               const cs_real_t  pjr,
+               cs_real_t       *pifri,
+               cs_real_t       *pifrj,
+               cs_real_t       *pjfri,
+               cs_real_t       *pjfrj)
 {
   *pifri = blencp*(*pifri)+(1.-blencp)*pir;
   *pifrj = blencp*(*pifrj)+(1.-blencp)*pi;
@@ -395,32 +404,33 @@ _blend_f_val(const double     blencp,
   *pjfrj = blencp*(*pjfrj)+(1.-blencp)*pjr;
 }
 
-/*----------------------------------------------------------------------------
- * Add convective fluxes (substracting the mass accumulation from them) to
- * fluxes at face ij.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective fluxes (substracting the mass accumulation from them)
+ * to fluxes at face ij.
  *
- * parameters:
- *   iconvp     --> convection flag
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   pifri      --> contribution of i to flux from i to j
- *   pjfrj      --> contribution of j to flux from i to j
- *   pjfri      --> contribution of i to flux from j to i
- *   pjfrj      --> contribution of j to flux from j to i
- *   i_massflux --> mass flux at face ij
- *   fluxij     <-- fluxes at face ij
- *----------------------------------------------------------------------------*/
+ * \param[in]     iconvp       convection flag
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[in]     pifri        contribution of i to flux from i to j
+ * \param[in]     pjfrj        contribution of j to flux from i to j
+ * \param[in]     pjfri        contribution of i to flux from j to i
+ * \param[in]     pjfrj        contribution of j to flux from j to i
+ * \param[in]     i_massflux   mass flux at face ij
+ * \param[in,out] fluxij       fluxes at face ij
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_conv_flux(const int       iconvp,
-             const cs_real_t pi,
-             const cs_real_t pj,
-             const cs_real_t pifri,
-             const cs_real_t pifrj,
-             const cs_real_t pjfri,
-             const cs_real_t pjfrj,
-             const cs_real_t i_massflux,
-             cs_real_2_t     fluxij)
+cs_i_conv_flux(const int       iconvp,
+               const cs_real_t pi,
+               const cs_real_t pj,
+               const cs_real_t pifri,
+               const cs_real_t pifrj,
+               const cs_real_t pjfri,
+               const cs_real_t pjfrj,
+               const cs_real_t i_massflux,
+               cs_real_2_t     fluxij)
 {
   cs_real_t flui, fluj;
 
@@ -431,52 +441,60 @@ _i_conv_flux(const int       iconvp,
   fluxij[1] +=  iconvp*(flui*pifrj + fluj*pjfrj - i_massflux*pj);
 }
 
-/*----------------------------------------------------------------------------
- * Add convective fluxes (cons. formulation) to fluxes at face ij.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective fluxes (cons. formulation) to fluxes at face ij.
  *
- * parameters:
- *   iconvp     --> convection flag
- *   pifri      --> contribution of i to flux from i to j
- *   pjfrj      --> contribution of j to flux from i to j
- *   pjfri      --> contribution of i to flux from j to i
- *   pjfrj      --> contribution of j to flux from j to i
- *   i_massflux --> mass flux at face ij
- *   fluxij     <-- fluxes at face ij
- *----------------------------------------------------------------------------*/
+ * \param[in]     iconvp       convection flag
+ * \param[in]     pifri        contribution of i to flux from i to j
+ * \param[in]     pjfrj        contribution of j to flux from i to j
+ * \param[in]     pjfri        contribution of i to flux from j to i
+ * \param[in]     pjfrj        contribution of j to flux from j to i
+ * \param[in]     i_massflux   mass flux at face ij
+ * \param[in]     xcppi        specific heat value if the scalar is the temperature,
+ *                             1 otherwise at cell i
+ * \param[in]     xcppj        specific heat value if the scalar is the temperature,
+ *                             1 otherwise at cell j
+ * \param[in,out] fluxij       fluxes at face ij
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_conv_flux_cons(const int       iconvp,
-                  const cs_real_t pifri,
-                  const cs_real_t pifrj,
-                  const cs_real_t pjfri,
-                  const cs_real_t pjfrj,
-                  const cs_real_t i_massflux,
-                  cs_real_2_t     fluxij)
+cs_i_conv_flux_cons(const int       iconvp,
+                    const cs_real_t pifri,
+                    const cs_real_t pifrj,
+                    const cs_real_t pjfri,
+                    const cs_real_t pjfrj,
+                    const cs_real_t i_massflux,
+                    const cs_real_t  xcppi,
+                    const cs_real_t  xcppj,
+                    cs_real_2_t     fluxij)
 {
   cs_real_t flui, fluj;
 
   flui = 0.5*(i_massflux +fabs(i_massflux));
   fluj = 0.5*(i_massflux -fabs(i_massflux));
 
-  fluxij[0] +=  iconvp*(flui*pifri + fluj*pjfri);
-  fluxij[1] +=  iconvp*(flui*pifrj + fluj*pjfrj);
+  fluxij[0] +=  iconvp*xcppi*(flui*pifri + fluj*pjfri);
+  fluxij[1] +=  iconvp*xcppj*(flui*pifrj + fluj*pjfrj);
 }
 
-/*----------------------------------------------------------------------------
- * Add diffusive fluxes to fluxes at face ij.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add diffusive fluxes to fluxes at face ij.
  *
- * parameters:
- *   idiffp --> diffusion flag
- *   pip    --> reconstructed value at cell i
- *   pjp    --> reconstructed value at cell j
- *   pipr   --> relaxed reconstructed value at cell i
- *   pjpr   --> relaxed reconstructed value at cell j
- *   i_visc --> diffusion coefficient (divided by IJ) at face ij
- *   fluxij <-- fluxes at face ij
- *----------------------------------------------------------------------------*/
+ * \param[in]     idiffp   diffusion flag
+ * \param[in]     pip      reconstructed value at cell i
+ * \param[in]     pjp      reconstructed value at cell j
+ * \param[in]     pipr     relaxed reconstructed value at cell i
+ * \param[in]     pjpr     relaxed reconstructed value at cell j
+ * \param[in]     i_visc   diffusion coefficient (divided by IJ) at face ij
+ * \param[in,out] fluxij   fluxes at face ij
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_diff_flux(const int       idiffp,
+cs_i_diff_flux(const int       idiffp,
              const cs_real_t pip,
              const cs_real_t pjp,
              const cs_real_t pipr,
@@ -488,124 +506,38 @@ _i_diff_flux(const int       idiffp,
   fluxij[1] += idiffp*i_visc*(pip -pjpr);
 }
 
-/*----------------------------------------------------------------------------
- * Handle preparation of internal face values for the fluxes computation in
- * case of a steady algorithm and a pure upwind flux.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a steady algorithm and a pure upwind flux.
  *
- * parameters:
- *   ircflp     --> recontruction flag
- *   relaxp     --> relaxation coefficient
- *   weight     --> geometrical weight
- *   cell_ceni  --> center of gravity coordinates of cell i
- *   cell_cenj  --> center of gravity coordinates of cell i
- *   i_face_cog --> center of gravity coordinates of face ij
- *   dijpf      --> distance I'J'
- *   gradi      --> gradient at cell i
- *   gradj      --> gradient at cell j
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   pia        --> old value at cell i
- *   pja        --> old value at cell j
- *   pifri      <-- contribution of i to flux from i to j
- *   pjfrj      <-- contribution of j to flux from i to j
- *   pjfri      <-- contribution of i to flux from j to i
- *   pjfrj      <-- contribution of j to flux from j to i
- *   pip        <-- reconstructed value at cell i
- *   pjp        <-- reconstructed value at cell j
- *   pipr       <-- relaxed reconstructed value at cell i
- *   pjpr       <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp       recontruction flag
+ * \param[in]     relaxp       relaxation coefficient
+ * \param[in]     weight       geometrical weight
+ * \param[in]     cell_ceni    center of gravity coordinates of cell i
+ * \param[in]     cell_cenj    center of gravity coordinates of cell i
+ * \param[in]     i_face_cog   center of gravity coordinates of face ij
+ * \param[in]     dijpf        distance I'J'
+ * \param[in]     gradi        gradient at cell i
+ * \param[in]     gradj        gradient at cell j
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[in]     pia          old value at cell i
+ * \param[in]     pja          old value at cell j
+ * \param[out]    pifri        contribution of i to flux from i to j
+ * \param[out]    pjfrj        contribution of j to flux from i to j
+ * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pip          reconstructed value at cell i
+ * \param[out]    pjp          reconstructed value at cell j
+ * \param[out]    pipr         relaxed reconstructed value at cell i
+ * \param[out]    pjpr         relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_cd_steady_upwind(const int          ircflp,
-                    const cs_real_t    relaxp,
-                    const cs_real_t    weight,
-                    const cs_real_3_t  cell_ceni,
-                    const cs_real_3_t  cell_cenj,
-                    const cs_real_3_t  i_face_cog,
-                    const cs_real_3_t  dijpf,
-                    const cs_real_3_t  gradi,
-                    const cs_real_3_t  gradj,
-                    const cs_real_t    pi,
-                    const cs_real_t    pj,
-                    const cs_real_t    pia,
-                    const cs_real_t    pja,
-                    cs_real_t         *pifri,
-                    cs_real_t         *pifrj,
-                    cs_real_t         *pjfri,
-                    cs_real_t         *pjfrj,
-                    cs_real_t         *pip,
-                    cs_real_t         *pjp,
-                    cs_real_t         *pipr,
-                    cs_real_t         *pjpr)
-{
-  cs_real_t pir, pjr;
-  cs_real_t recoi, recoj;
-
-  _i_compute_quantities(ircflp,
-                        weight,
-                        cell_ceni,
-                        cell_cenj,
-                        i_face_cog,
-                        dijpf,
-                        gradi,
-                        gradj,
-                        pi,
-                        pj,
-                        &recoi,
-                        &recoj,
-                        pip,
-                        pjp);
-
-  _i_relax_c_val(relaxp,
-                 pia,
-                 pja,
-                 recoi,
-                 recoj,
-                 pi,
-                 pj,
-                 &pir,
-                 &pjr,
-                 pipr,
-                 pjpr);
-
-  _upwind_f_val(pi,
-                pj,
-                pir,
-                pjr,
-                pifri,
-                pifrj,
-                pjfri,
-                pjfrj);
-}
-
-/*----------------------------------------------------------------------------
- * Handle preparation of internal face values for the fluxes computation in
- * case of an unsteady algorithm and a pure upwind flux.
- *
- * parameters:
- *   ircflp     --> recontruction flag
- *   weight     --> geometrical weight
- *   cell_ceni  --> center of gravity coordinates of cell i
- *   cell_cenj  --> center of gravity coordinates of cell i
- *   i_face_cog --> center of gravity coordinates of face ij
- *   dijpf      --> distance I'J'
- *   gradi      --> gradient at cell i
- *   gradj      --> gradient at cell j
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   pifri      <-- contribution of i to flux from i to j
- *   pjfrj      <-- contribution of j to flux from i to j
- *   pjfri      <-- contribution of i to flux from j to i
- *   pjfrj      <-- contribution of j to flux from j to i
- *   pip        <-- reconstructed value at cell i
- *   pjp        <-- reconstructed value at cell j
- *   pipr       <-- relaxed reconstructed value at cell i
- *   pjpr       <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
-
-inline static void
-_i_cd_unsteady_upwind(const int          ircflp,
+cs_i_cd_steady_upwind(const int          ircflp,
+                      const cs_real_t    relaxp,
                       const cs_real_t    weight,
                       const cs_real_3_t  cell_ceni,
                       const cs_real_3_t  cell_cenj,
@@ -615,6 +547,8 @@ _i_cd_unsteady_upwind(const int          ircflp,
                       const cs_real_3_t  gradj,
                       const cs_real_t    pi,
                       const cs_real_t    pj,
+                      const cs_real_t    pia,
+                      const cs_real_t    pja,
                       cs_real_t         *pifri,
                       cs_real_t         *pifrj,
                       cs_real_t         *pjfri,
@@ -627,208 +561,162 @@ _i_cd_unsteady_upwind(const int          ircflp,
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
 
-  _i_compute_quantities(ircflp,
-                        weight,
-                        cell_ceni,
-                        cell_cenj,
-                        i_face_cog,
-                        dijpf,
-                        gradi,
-                        gradj,
-                        pi,
-                        pj,
-                        &recoi,
-                        &recoj,
-                        pip,
-                        pjp);
+  cs_i_compute_quantities(ircflp,
+                          weight,
+                          cell_ceni,
+                          cell_cenj,
+                          i_face_cog,
+                          dijpf,
+                          gradi,
+                          gradj,
+                          pi,
+                          pj,
+                          &recoi,
+                          &recoj,
+                          pip,
+                          pjp);
 
-  _i_no_relax_c_val(pi,
-                    pj,
-                    *pip,
-                    *pjp,
-                    &pir,
-                    &pjr,
-                    pipr,
-                    pjpr);
+  cs_i_relax_c_val(relaxp,
+                   pia,
+                   pja,
+                   recoi,
+                   recoj,
+                   pi,
+                   pj,
+                   &pir,
+                   &pjr,
+                   pipr,
+                   pjpr);
 
-  _upwind_f_val(pi,
-                pj,
-                pir,
-                pjr,
-                pifri,
-                pifrj,
-                pjfri,
-                pjfrj);
+  cs_upwind_f_val(pi,
+                  pj,
+                  pir,
+                  pjr,
+                  pifri,
+                  pifrj,
+                  pjfri,
+                  pjfrj);
 }
 
-/*----------------------------------------------------------------------------
- * Handle preparation of internal face values for the fluxes computation in
- * case of a steady algorithm and without enabling slope tests.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of an unsteady algorithm and a pure upwind flux.
  *
- * parameters:
- *   ircflp     --> recontruction flag
- *   ischcp     --> second order convection scheme flag
- *   relaxp     --> relaxation coefficient
- *   blencp     --> proportion of centered or SOLU scheme, (1-blencp) is the
- *                  proportion of upwind.
- *   weight     --> geometrical weight
- *   cell_ceni  --> center of gravity coordinates of cell i
- *   cell_cenj  --> center of gravity coordinates of cell i
- *   i_face_cog --> center of gravity coordinates of face ij
- *   dijpf      --> distance I'J'
- *   gradi      --> gradient at cell i
- *   gradj      --> gradient at cell j
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   pia        --> old value at cell i
- *   pja        --> old value at cell j
- *   pifri      <-- contribution of i to flux from i to j
- *   pjfrj      <-- contribution of j to flux from i to j
- *   pjfri      <-- contribution of i to flux from j to i
- *   pjfrj      <-- contribution of j to flux from j to i
- *   pip        <-- reconstructed value at cell i
- *   pjp        <-- reconstructed value at cell j
- *   pipr       <-- relaxed reconstructed value at cell i
- *   pjpr       <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp       recontruction flag
+ * \param[in]     weight       geometrical weight
+ * \param[in]     cell_ceni    center of gravity coordinates of cell i
+ * \param[in]     cell_cenj    center of gravity coordinates of cell i
+ * \param[in]     i_face_cog   center of gravity coordinates of face ij
+ * \param[in]     dijpf        distance I'J'
+ * \param[in]     gradi        gradient at cell i
+ * \param[in]     gradj        gradient at cell j
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[out]    pifri        contribution of i to flux from i to j
+ * \param[out]    pjfrj        contribution of j to flux from i to j
+ * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pip          reconstructed value at cell i
+ * \param[out]    pjp          reconstructed value at cell j
+ * \param[out]    pipr         relaxed reconstructed value at cell i
+ * \param[out]    pjpr         relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_cd_steady(const int          ircflp,
-             const int          ischcp,
-             const double       relaxp,
-             const double       blencp,
-             const cs_real_t    weight,
-             const cs_real_3_t  cell_ceni,
-             const cs_real_3_t  cell_cenj,
-             const cs_real_3_t  i_face_cog,
-             const cs_real_3_t  dijpf,
-             const cs_real_3_t  gradi,
-             const cs_real_3_t  gradj,
-             const cs_real_t    pi,
-             const cs_real_t    pj,
-             const cs_real_t    pia,
-             const cs_real_t    pja,
-             cs_real_t         *pifri,
-             cs_real_t         *pifrj,
-             cs_real_t         *pjfri,
-             cs_real_t         *pjfrj,
-             cs_real_t         *pip,
-             cs_real_t         *pjp,
-             cs_real_t         *pipr,
-             cs_real_t         *pjpr)
+cs_i_cd_unsteady_upwind(const int          ircflp,
+                        const cs_real_t    weight,
+                        const cs_real_3_t  cell_ceni,
+                        const cs_real_3_t  cell_cenj,
+                        const cs_real_3_t  i_face_cog,
+                        const cs_real_3_t  dijpf,
+                        const cs_real_3_t  gradi,
+                        const cs_real_3_t  gradj,
+                        const cs_real_t    pi,
+                        const cs_real_t    pj,
+                        cs_real_t         *pifri,
+                        cs_real_t         *pifrj,
+                        cs_real_t         *pjfri,
+                        cs_real_t         *pjfrj,
+                        cs_real_t         *pip,
+                        cs_real_t         *pjp,
+                        cs_real_t         *pipr,
+                        cs_real_t         *pjpr)
 {
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
 
-  _i_compute_quantities(ircflp,
-                        weight,
-                        cell_ceni,
-                        cell_cenj,
-                        i_face_cog,
-                        dijpf,
-                        gradi,
-                        gradj,
-                        pi,
-                        pj,
-                        &recoi,
-                        &recoj,
-                        pip,
-                        pjp);
+  cs_i_compute_quantities(ircflp,
+                          weight,
+                          cell_ceni,
+                          cell_cenj,
+                          i_face_cog,
+                          dijpf,
+                          gradi,
+                          gradj,
+                          pi,
+                          pj,
+                          &recoi,
+                          &recoj,
+                          pip,
+                          pjp);
 
-  _i_relax_c_val(relaxp,
-                 pia,
-                 pja,
-                 recoi,
-                 recoj,
-                 pi,
-                 pj,
-                 &pir,
-                 &pjr,
-                 pipr,
-                 pjpr);
+  cs_i_no_relax_c_val(pi,
+                      pj,
+                      *pip,
+                      *pjp,
+                      &pir,
+                      &pjr,
+                      pipr,
+                      pjpr);
 
-  if (ischcp == 1) {
-
-    /* Centered
-       --------*/
-
-    _centered_f_val(weight,
-                    *pip,
-                    *pjp,
-                    *pipr,
-                    *pjpr,
-                    pifri,
-                    pifrj,
-                    pjfri,
-                    pjfrj);
-
-  }
-  else {
-
-    /* Second order
-       ------------*/
-
-    _solu_f_val(cell_ceni,
-                cell_cenj,
-                i_face_cog,
-                gradi,
-                gradj,
-                pi,
-                pj,
-                pir,
-                pjr,
-                pifri,
-                pifrj,
-                pjfri,
-                pjfrj);
-
-  }
-
-  /* Blending
-     --------*/
-
-  _blend_f_val(blencp,
-               pi,
-               pj,
-               pir,
-               pjr,
-               pifri,
-               pifrj,
-               pjfri,
-               pjfrj);
+  cs_upwind_f_val(pi,
+                  pj,
+                  pir,
+                  pjr,
+                  pifri,
+                  pifrj,
+                  pjfri,
+                  pjfrj);
 }
 
-/*----------------------------------------------------------------------------
- * Handle preparation of internal face values for the fluxes computation in
- * case of a unsteady algorithm and without enabling slope tests.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a steady algorithm and without enabling slope tests.
  *
- * parameters:
- *   ircflp     --> recontruction flag
- *   ischcp     --> second order convection scheme flag
- *   blencp     --> proportion of centered or SOLU scheme, (1-blencp) is the
- *                  proportion of upwind.
- *   weight     --> geometrical weight
- *   cell_ceni  --> center of gravity coordinates of cell i
- *   cell_cenj  --> center of gravity coordinates of cell i
- *   i_face_cog --> center of gravity coordinates of face ij
- *   dijpf      --> distance I'J'
- *   gradi      --> gradient at cell i
- *   gradj      --> gradient at cell j
- *   pi         --> value at cell i
- *   pj         --> value at cell j
- *   pifri      <-- contribution of i to flux from i to j
- *   pjfrj      <-- contribution of j to flux from i to j
- *   pjfri      <-- contribution of i to flux from j to i
- *   pjfrj      <-- contribution of j to flux from j to i
- *   pip        <-- reconstructed value at cell i
- *   pjp        <-- reconstructed value at cell j
- *   pipr       <-- relaxed reconstructed value at cell i
- *   pjpr       <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp       recontruction flag
+ * \param[in]     ischcp       second order convection scheme flag
+ * \param[in]     relaxp       relaxation coefficient
+ * \param[in]     blencp       proportion of centered or SOLU scheme,
+ *                             (1-blencp) is the proportion of upwind.
+ * \param[in]     weight       geometrical weight
+ * \param[in]     cell_ceni    center of gravity coordinates of cell i
+ * \param[in]     cell_cenj    center of gravity coordinates of cell i
+ * \param[in]     i_face_cog   center of gravity coordinates of face ij
+ * \param[in]     dijpf        distance I'J'
+ * \param[in]     gradi        gradient at cell i
+ * \param[in]     gradj        gradient at cell j
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[in]     pia          old value at cell i
+ * \param[in]     pja          old value at cell j
+ * \param[out]    pifri        contribution of i to flux from i to j
+ * \param[out]    pjfrj        contribution of j to flux from i to j
+ * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pip          reconstructed value at cell i
+ * \param[out]    pjp          reconstructed value at cell j
+ * \param[out]    pipr         relaxed reconstructed value at cell i
+ * \param[out]    pjpr         relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_cd_unsteady(const int          ircflp,
+cs_i_cd_steady(const int          ircflp,
                const int          ischcp,
+               const double       relaxp,
                const double       blencp,
                const cs_real_t    weight,
                const cs_real_3_t  cell_ceni,
@@ -839,6 +727,8 @@ _i_cd_unsteady(const int          ircflp,
                const cs_real_3_t  gradj,
                const cs_real_t    pi,
                const cs_real_t    pj,
+               const cs_real_t    pia,
+               const cs_real_t    pja,
                cs_real_t         *pifri,
                cs_real_t         *pifrj,
                cs_real_t         *pjfri,
@@ -851,223 +741,39 @@ _i_cd_unsteady(const int          ircflp,
   cs_real_t pir, pjr;
   cs_real_t recoi, recoj;
 
-  _i_compute_quantities(ircflp,
-                        weight,
-                        cell_ceni,
-                        cell_cenj,
-                        i_face_cog,
-                        dijpf,
-                        gradi,
-                        gradj,
-                        pi,
-                        pj,
-                        &recoi,
-                        &recoj,
-                        pip,
-                        pjp);
+  cs_i_compute_quantities(ircflp,
+                          weight,
+                          cell_ceni,
+                          cell_cenj,
+                          i_face_cog,
+                          dijpf,
+                          gradi,
+                          gradj,
+                          pi,
+                          pj,
+                          &recoi,
+                          &recoj,
+                          pip,
+                          pjp);
 
-  _i_no_relax_c_val(pi,
-                    pj,
-                    *pip,
-                    *pjp,
-                    &pir,
-                    &pjr,
-                    pipr,
-                    pjpr);
+  cs_i_relax_c_val(relaxp,
+                   pia,
+                   pja,
+                   recoi,
+                   recoj,
+                   pi,
+                   pj,
+                   &pir,
+                   &pjr,
+                   pipr,
+                   pjpr);
 
   if (ischcp == 1) {
 
     /* Centered
        --------*/
 
-    _centered_f_val(weight,
-                    *pip,
-                    *pjp,
-                    *pipr,
-                    *pjpr,
-                    pifri,
-                    pifrj,
-                    pjfri,
-                    pjfrj);
-
-  } else {
-
-    /* Second order
-       ------------*/
-
-    _solu_f_val(cell_ceni,
-                cell_cenj,
-                i_face_cog,
-                gradi,
-                gradj,
-                pi,
-                pj,
-                pir,
-                pjr,
-                pifri,
-                pifrj,
-                pjfri,
-                pjfrj);
-
-  }
-
-  /* Blending
-     --------*/
-
-  _blend_f_val(blencp,
-               pi,
-               pj,
-               pir,
-               pjr,
-               pifri,
-               pifrj,
-               pjfri,
-               pjfrj);
-}
-
-/*----------------------------------------------------------------------------
- * Handle preparation of internal face values for the fluxes computation in
- * case of a steady algorithm and using slope tests.
- *
- * parameters:
- *   upwind_switch <-- slope test result
- *   ircflp        --> recontruction flag
- *   ischcp        --> second order convection scheme flag
- *   relaxp        --> relaxation coefficient
- *   blencp        --> proportion of centered or SOLU scheme, (1-blencp) is the
- *                     proportion of upwind.
- *   weight        --> geometrical weight
- *   i_dist        --> distance IJ.Nij
- *   i_face_surf   --> face surface
- *   cell_ceni     --> center of gravity coordinates of cell i
- *   cell_cenj     --> center of gravity coordinates of cell i
- *   i_face_normal --> face normal
- *   i_face_cog    --> center of gravity coordinates of face ij
- *   dijpf         --> distance I'J'
- *   i_massflux    --> mass flux at face ij
- *   gradi         --> gradient at cell i
- *   gradj         --> gradient at cell j
- *   grdpai        --> upwind gradient at cell i
- *   grdpaj        --> upwind gradient at cell j
- *   pi            --> value at cell i
- *   pj            --> value at cell j
- *   pia           --> old value at cell i
- *   pja           --> old value at cell j
- *   pifri         <-- contribution of i to flux from i to j
- *   pjfrj         <-- contribution of j to flux from i to j
- *   pjfri         <-- contribution of i to flux from j to i
- *   pjfrj         <-- contribution of j to flux from j to i
- *   pip           <-- reconstructed value at cell i
- *   pjp           <-- reconstructed value at cell j
- *   pipr          <-- relaxed reconstructed value at cell i
- *   pjpr          <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
-
-inline static void
-_i_cd_steady_slope_test(bool              *upwind_switch,
-                        const int          ircflp,
-                        const int          ischcp,
-                        const double       relaxp,
-                        const double       blencp,
-                        const cs_real_t    weight,
-                        const cs_real_t    i_dist,
-                        const cs_real_t    i_face_surf,
-                        const cs_real_3_t  cell_ceni,
-                        const cs_real_3_t  cell_cenj,
-                        const cs_real_3_t  i_face_normal,
-                        const cs_real_3_t  i_face_cog,
-                        const cs_real_3_t  dijpf,
-                        const cs_real_t    i_massflux,
-                        const cs_real_3_t  gradi,
-                        const cs_real_3_t  gradj,
-                        const cs_real_3_t  grdpai,
-                        const cs_real_3_t  grdpaj,
-                        const cs_real_t    pi,
-                        const cs_real_t    pj,
-                        const cs_real_t    pia,
-                        const cs_real_t    pja,
-                        cs_real_t         *pifri,
-                        cs_real_t         *pifrj,
-                        cs_real_t         *pjfri,
-                        cs_real_t         *pjfrj,
-                        cs_real_t         *pip,
-                        cs_real_t         *pjp,
-                        cs_real_t         *pipr,
-                        cs_real_t         *pjpr)
-{
-  cs_real_t pir, pjr;
-  cs_real_t recoi, recoj;
-  cs_real_t distf, srfan, testij, tesqck;
-
-  distf = i_dist;
-  srfan = i_face_surf;
-
-  *upwind_switch = false;
-
-  _i_compute_quantities(ircflp,
-                        weight,
-                        cell_ceni,
-                        cell_cenj,
-                        i_face_cog,
-                        dijpf,
-                        gradi,
-                        gradj,
-                        pi,
-                        pj,
-                        &recoi,
-                        &recoj,
-                        pip,
-                        pjp);
-
-  _i_relax_c_val(relaxp,
-                 pia,
-                 pja,
-                 recoi,
-                 recoj,
-                 pi,
-                 pj,
-                 &pir,
-                 &pjr,
-                 pipr,
-                 pjpr);
-
-  _slope_test(pi,
-              pj,
-              distf,
-              srfan,
-              i_face_normal,
-              gradi,
-              gradj,
-              grdpai,
-              grdpaj,
-              i_massflux,
-              &testij,
-              &tesqck);
-
-  if (tesqck<=0. || testij<=0.) {
-
-    /* Upwind
-       --------*/
-
-    _upwind_f_val(pi,
-                  pj,
-                  pir,
-                  pjr,
-                  pifri,
-                  pifrj,
-                  pjfri,
-                  pjfrj);
-
-    *upwind_switch = true;
-
-  } else {
-
-    if (ischcp==1) {
-
-      /* Centered
-         --------*/
-
-      _centered_f_val(weight,
+    cs_centered_f_val(weight,
                       *pip,
                       *pjp,
                       *pipr,
@@ -1077,13 +783,12 @@ _i_cd_steady_slope_test(bool              *upwind_switch,
                       pjfri,
                       pjfrj);
 
-    }
-    else {
+  } else {
 
-      /* Second order
-         ------------*/
+    /* Second order
+       ------------*/
 
-      _solu_f_val(cell_ceni,
+    cs_solu_f_val(cell_ceni,
                   cell_cenj,
                   i_face_cog,
                   gradi,
@@ -1097,62 +802,194 @@ _i_cd_steady_slope_test(bool              *upwind_switch,
                   pjfri,
                   pjfrj);
 
-    }
   }
 
   /* Blending
      --------*/
 
-  _blend_f_val(blencp,
-               pi,
-               pj,
-               pir,
-               pjr,
-               pifri,
-               pifrj,
-               pjfri,
-               pjfrj);
+  cs_blend_f_val(blencp,
+                 pi,
+                 pj,
+                 pir,
+                 pjr,
+                 pifri,
+                 pifrj,
+                 pjfri,
+                 pjfrj);
 }
 
-/*----------------------------------------------------------------------------
- * Handle preparation of internal face values for the fluxes computation in
- * case of a unsteady algorithm and using slope tests.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a unsteady algorithm and without enabling slope tests.
  *
- * parameters:
- *   upwind_switch <-- slope test result
- *   ircflp        --> recontruction flag
- *   ischcp        --> second order convection scheme flag
- *   blencp        --> proportion of centered or SOLU scheme, (1-blencp) is the
- *                     proportion of upwind.
- *   weight        --> geometrical weight
- *   i_dist        --> distance IJ.Nij
- *   i_face_surf   --> face surface
- *   cell_ceni     --> center of gravity coordinates of cell i
- *   cell_cenj     --> center of gravity coordinates of cell i
- *   i_face_normal --> face normal
- *   i_face_cog    --> center of gravity coordinates of face ij
- *   dijpf         --> distance I'J'
- *   i_massflux    --> mass flux at face ij
- *   gradi         --> gradient at cell i
- *   gradj         --> gradient at cell j
- *   grdpai        --> upwind gradient at cell i
- *   grdpaj        --> upwind gradient at cell j
- *   pi            --> value at cell i
- *   pj            --> value at cell j
- *   pifri         <-- contribution of i to flux from i to j
- *   pjfrj         <-- contribution of j to flux from i to j
- *   pjfri         <-- contribution of i to flux from j to i
- *   pjfrj         <-- contribution of j to flux from j to i
- *   pip           <-- reconstructed value at cell i
- *   pjp           <-- reconstructed value at cell j
- *   pipr          <-- relaxed reconstructed value at cell i
- *   pjpr          <-- relaxed reconstructed value at cell j
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp       recontruction flag
+ * \param[in]     ischcp       second order convection scheme flag
+ * \param[in]     blencp       proportion of centered or SOLU scheme,
+ *                             (1-blencp) is the proportion of upwind.
+ * \param[in]     weight       geometrical weight
+ * \param[in]     cell_ceni    center of gravity coordinates of cell i
+ * \param[in]     cell_cenj    center of gravity coordinates of cell i
+ * \param[in]     i_face_cog   center of gravity coordinates of face ij
+ * \param[in]     dijpf        distance I'J'
+ * \param[in]     gradi        gradient at cell i
+ * \param[in]     gradj        gradient at cell j
+ * \param[in]     pi           value at cell i
+ * \param[in]     pj           value at cell j
+ * \param[out]    pifri        contribution of i to flux from i to j
+ * \param[out]    pjfrj        contribution of j to flux from i to j
+ * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pjfrj        contribution of j to flux from j to i
+ * \param[out]    pip          reconstructed value at cell i
+ * \param[out]    pjp          reconstructed value at cell j
+ * \param[out]    pipr         relaxed reconstructed value at cell i
+ * \param[out]    pjpr         relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_i_cd_unsteady_slope_test(bool              *upwind_switch,
+cs_i_cd_unsteady(const int          ircflp,
+                 const int          ischcp,
+                 const double       blencp,
+                 const cs_real_t    weight,
+                 const cs_real_3_t  cell_ceni,
+                 const cs_real_3_t  cell_cenj,
+                 const cs_real_3_t  i_face_cog,
+                 const cs_real_3_t  dijpf,
+                 const cs_real_3_t  gradi,
+                 const cs_real_3_t  gradj,
+                 const cs_real_t    pi,
+                 const cs_real_t    pj,
+                 cs_real_t         *pifri,
+                 cs_real_t         *pifrj,
+                 cs_real_t         *pjfri,
+                 cs_real_t         *pjfrj,
+                 cs_real_t         *pip,
+                 cs_real_t         *pjp,
+                 cs_real_t         *pipr,
+                 cs_real_t         *pjpr)
+{
+  cs_real_t pir, pjr;
+  cs_real_t recoi, recoj;
+
+  cs_i_compute_quantities(ircflp,
+                          weight,
+                          cell_ceni,
+                          cell_cenj,
+                          i_face_cog,
+                          dijpf,
+                          gradi,
+                          gradj,
+                          pi,
+                          pj,
+                          &recoi,
+                          &recoj,
+                          pip,
+                          pjp);
+
+  cs_i_no_relax_c_val(pi,
+                      pj,
+                      *pip,
+                      *pjp,
+                      &pir,
+                      &pjr,
+                      pipr,
+                      pjpr);
+
+  if (ischcp == 1) {
+
+    /* Centered
+       --------*/
+
+    cs_centered_f_val(weight,
+                      *pip,
+                      *pjp,
+                      *pipr,
+                      *pjpr,
+                      pifri,
+                      pifrj,
+                      pjfri,
+                      pjfrj);
+
+  } else {
+
+    /* Second order
+       ------------*/
+
+    cs_solu_f_val(cell_ceni,
+                  cell_cenj,
+                  i_face_cog,
+                  gradi,
+                  gradj,
+                  pi,
+                  pj,
+                  pir,
+                  pjr,
+                  pifri,
+                  pifrj,
+                  pjfri,
+                  pjfrj);
+
+  }
+
+  /* Blending
+     --------*/
+
+  cs_blend_f_val(blencp,
+                 pi,
+                 pj,
+                 pir,
+                 pjr,
+                 pifri,
+                 pifrj,
+                 pjfri,
+                 pjfrj);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a steady algorithm and using slope tests.
+ *
+ * \param[out]    upwind_switch   slope test result
+ * \param[in]     ircflp          recontruction flag
+ * \param[in]     ischcp          second order convection scheme flag
+ * \param[in]     relaxp          relaxation coefficient
+ * \param[in]     blencp          proportion of centered or SOLU scheme,
+ *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     weight          geometrical weight
+ * \param[in]     i_dist          distance IJ.Nij
+ * \param[in]     i_face_surf     face surface
+ * \param[in]     cell_ceni       center of gravity coordinates of cell i
+ * \param[in]     cell_cenj       center of gravity coordinates of cell i
+ * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_cog      center of gravity coordinates of face ij
+ * \param[in]     dijpf           distance I'J'
+ * \param[in]     i_massflux      mass flux at face ij
+ * \param[in]     gradi           gradient at cell i
+ * \param[in]     gradj           gradient at cell j
+ * \param[in]     grdpai          upwind gradient at cell i
+ * \param[in]     grdpaj          upwind gradient at cell j
+ * \param[in]     pi              value at cell i
+ * \param[in]     pj              value at cell j
+ * \param[in]     pia             old value at cell i
+ * \param[in]     pja             old value at cell j
+ * \param[out]    pifri           contribution of i to flux from i to j
+ * \param[out]    pjfrj           contribution of j to flux from i to j
+ * \param[out]    pjfri           contribution of i to flux from j to i
+ * \param[out]    pjfrj           contribution of j to flux from j to i
+ * \param[out]    pip             reconstructed value at cell i
+ * \param[out]    pjp             reconstructed value at cell j
+ * \param[out]    pipr            relaxed reconstructed value at cell i
+ * \param[out]    pjpr            relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_i_cd_steady_slope_test(bool              *upwind_switch,
                           const int          ircflp,
                           const int          ischcp,
+                          const double       relaxp,
                           const double       blencp,
                           const cs_real_t    weight,
                           const cs_real_t    i_dist,
@@ -1169,6 +1006,8 @@ _i_cd_unsteady_slope_test(bool              *upwind_switch,
                           const cs_real_3_t  grdpaj,
                           const cs_real_t    pi,
                           const cs_real_t    pj,
+                          const cs_real_t    pia,
+                          const cs_real_t    pja,
                           cs_real_t         *pifri,
                           cs_real_t         *pifrj,
                           cs_real_t         *pjfri,
@@ -1187,56 +1026,59 @@ _i_cd_unsteady_slope_test(bool              *upwind_switch,
 
   *upwind_switch = false;
 
-  _i_compute_quantities(ircflp,
-                        weight,
-                        cell_ceni,
-                        cell_cenj,
-                        i_face_cog,
-                        dijpf,
-                        gradi,
-                        gradj,
-                        pi,
-                        pj,
-                        &recoi,
-                        &recoj,
-                        pip,
-                        pjp);
+  cs_i_compute_quantities(ircflp,
+                          weight,
+                          cell_ceni,
+                          cell_cenj,
+                          i_face_cog,
+                          dijpf,
+                          gradi,
+                          gradj,
+                          pi,
+                          pj,
+                          &recoi,
+                          &recoj,
+                          pip,
+                          pjp);
 
-  _i_no_relax_c_val(pi,
-                    pj,
-                    *pip,
-                    *pjp,
-                    &pir,
-                    &pjr,
-                    pipr,
-                    pjpr);
+  cs_i_relax_c_val(relaxp,
+                   pia,
+                   pja,
+                   recoi,
+                   recoj,
+                   pi,
+                   pj,
+                   &pir,
+                   &pjr,
+                   pipr,
+                   pjpr);
 
-  _slope_test(pi,
-              pj,
-              distf,
-              srfan,
-              i_face_normal,
-              gradi,
-              gradj,
-              grdpai,
-              grdpaj,
-              i_massflux,
-              &testij,
-              &tesqck);
+  cs_slope_test(pi,
+                pj,
+                distf,
+                srfan,
+                i_face_normal,
+                gradi,
+                gradj,
+                grdpai,
+                grdpaj,
+                i_massflux,
+                &testij,
+                &tesqck);
 
   if (tesqck<=0. || testij<=0.) {
 
     /* Upwind
        --------*/
 
-    _upwind_f_val(pi,
-                  pj,
-                  pir,
-                  pjr,
-                  pifri,
-                  pifrj,
-                  pjfri,
-                  pjfrj);
+    cs_upwind_f_val(pi,
+                    pj,
+                    pir,
+                    pjr,
+                    pifri,
+                    pifrj,
+                    pjfri,
+                    pjfrj);
 
     *upwind_switch = true;
 
@@ -1247,35 +1089,34 @@ _i_cd_unsteady_slope_test(bool              *upwind_switch,
       /* Centered
          --------*/
 
-      _centered_f_val(weight,
-                      *pip,
-                      *pjp,
-                      *pipr,
-                      *pjpr,
-                      pifri,
-                      pifrj,
-                      pjfri,
-                      pjfrj);
+      cs_centered_f_val(weight,
+                        *pip,
+                        *pjp,
+                        *pipr,
+                        *pjpr,
+                        pifri,
+                        pifrj,
+                        pjfri,
+                        pjfrj);
 
-    }
-    else {
+    } else {
 
       /* Second order
          ------------*/
 
-      _solu_f_val(cell_ceni,
-                  cell_cenj,
-                  i_face_cog,
-                  gradi,
-                  gradj,
-                  pi,
-                  pj,
-                  pir,
-                  pjr,
-                  pifri,
-                  pifrj,
-                  pjfri,
-                  pjfrj);
+      cs_solu_f_val(cell_ceni,
+                    cell_cenj,
+                    i_face_cog,
+                    gradi,
+                    gradj,
+                    pi,
+                    pj,
+                    pir,
+                    pjr,
+                    pifri,
+                    pifrj,
+                    pjfri,
+                    pjfrj);
 
     }
   }
@@ -1283,119 +1124,305 @@ _i_cd_unsteady_slope_test(bool              *upwind_switch,
   /* Blending
      --------*/
 
-  _blend_f_val(blencp,
-               pi,
-               pj,
-               pir,
-               pjr,
-               pifri,
-               pifrj,
-               pjfri,
-               pjfrj);
+  cs_blend_f_val(blencp,
+                 pi,
+                 pj,
+                 pir,
+                 pjr,
+                 pifri,
+                 pifrj,
+                 pjfri,
+                 pjfrj);
 }
 
-/*----------------------------------------------------------------------------
- * Reconstruct values in I' at boundary cell i.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of internal face values for the fluxes computation
+ * in case of a unsteady algorithm and using slope tests.
  *
- * parameters:
- *   diipb  --> distance I'I'
- *   gradi  --> gradient at cell i
- *   ircflp --> recontruction flag
- *   recoi  <-- reconstruction at cell i
- *----------------------------------------------------------------------------*/
+ * \param[out]    upwind_switch   slope test result
+ * \param[in]     ircflp          recontruction flag
+ * \param[in]     ischcp          second order convection scheme flag
+ * \param[in]     blencp          proportion of centered or SOLU scheme,
+ *                                (1-blencp) is the proportion of upwind.
+ * \param[in]     weight          geometrical weight
+ * \param[in]     i_dist          distance IJ.Nij
+ * \param[in]     i_face_surf     face surface
+ * \param[in]     cell_ceni       center of gravity coordinates of cell i
+ * \param[in]     cell_cenj       center of gravity coordinates of cell i
+ * \param[in]     i_face_normal   face normal
+ * \param[in]     i_face_cog      center of gravity coordinates of face ij
+ * \param[in]     dijpf           distance I'J'
+ * \param[in]     i_massflux      mass flux at face ij
+ * \param[in]     gradi           gradient at cell i
+ * \param[in]     gradj           gradient at cell j
+ * \param[in]     grdpai          upwind gradient at cell i
+ * \param[in]     grdpaj          upwind gradient at cell j
+ * \param[in]     pi              value at cell i
+ * \param[in]     pj              value at cell j
+ * \param[out]    pifri           contribution of i to flux from i to j
+ * \param[out]    pjfrj           contribution of j to flux from i to j
+ * \param[out]    pjfri           contribution of i to flux from j to i
+ * \param[out]    pjfrj           contribution of j to flux from j to i
+ * \param[out]    pip             reconstructed value at cell i
+ * \param[out]    pjp             reconstructed value at cell j
+ * \param[out]    pipr            relaxed reconstructed value at cell i
+ * \param[out]    pjpr            relaxed reconstructed value at cell j
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_compute_quantities(const cs_real_3_t  diipb,
-                      const cs_real_3_t  gradi,
-                      const int          ircflp,
-                      cs_real_t         *recoi)
+cs_i_cd_unsteady_slope_test(bool              *upwind_switch,
+                            const int          ircflp,
+                            const int          ischcp,
+                            const double       blencp,
+                            const cs_real_t    weight,
+                            const cs_real_t    i_dist,
+                            const cs_real_t    i_face_surf,
+                            const cs_real_3_t  cell_ceni,
+                            const cs_real_3_t  cell_cenj,
+                            const cs_real_3_t  i_face_normal,
+                            const cs_real_3_t  i_face_cog,
+                            const cs_real_3_t  dijpf,
+                            const cs_real_t    i_massflux,
+                            const cs_real_3_t  gradi,
+                            const cs_real_3_t  gradj,
+                            const cs_real_3_t  grdpai,
+                            const cs_real_3_t  grdpaj,
+                            const cs_real_t    pi,
+                            const cs_real_t    pj,
+                            cs_real_t         *pifri,
+                            cs_real_t         *pifrj,
+                            cs_real_t         *pjfri,
+                            cs_real_t         *pjfrj,
+                            cs_real_t         *pip,
+                            cs_real_t         *pjp,
+                            cs_real_t         *pipr,
+                            cs_real_t         *pjpr)
+{
+  cs_real_t pir, pjr;
+  cs_real_t recoi, recoj;
+  cs_real_t distf, srfan, testij, tesqck;
+
+  distf = i_dist;
+  srfan = i_face_surf;
+
+  *upwind_switch = false;
+
+  cs_i_compute_quantities(ircflp,
+                          weight,
+                          cell_ceni,
+                          cell_cenj,
+                          i_face_cog,
+                          dijpf,
+                          gradi,
+                          gradj,
+                          pi,
+                          pj,
+                          &recoi,
+                          &recoj,
+                          pip,
+                          pjp);
+
+  cs_i_no_relax_c_val(pi,
+                      pj,
+                      *pip,
+                      *pjp,
+                      &pir,
+                      &pjr,
+                      pipr,
+                      pjpr);
+
+  cs_slope_test(pi,
+                pj,
+                distf,
+                srfan,
+                i_face_normal,
+                gradi,
+                gradj,
+                grdpai,
+                grdpaj,
+                i_massflux,
+                &testij,
+                &tesqck);
+
+  if (tesqck<=0. || testij<=0.) {
+
+    /* Upwind
+       --------*/
+
+    cs_upwind_f_val(pi,
+                    pj,
+                    pir,
+                    pjr,
+                    pifri,
+                    pifrj,
+                    pjfri,
+                    pjfrj);
+
+    *upwind_switch = true;
+
+  } else {
+
+    if (ischcp==1) {
+
+      /* Centered
+         --------*/
+
+      cs_centered_f_val(weight,
+                        *pip,
+                        *pjp,
+                        *pipr,
+                        *pjpr,
+                        pifri,
+                        pifrj,
+                        pjfri,
+                        pjfrj);
+
+    } else {
+
+      /* Second order
+         ------------*/
+
+      cs_solu_f_val(cell_ceni,
+                    cell_cenj,
+                    i_face_cog,
+                    gradi,
+                    gradj,
+                    pi,
+                    pj,
+                    pir,
+                    pjr,
+                    pifri,
+                    pifrj,
+                    pjfri,
+                    pjfrj);
+
+    }
+  }
+
+  /* Blending
+     --------*/
+
+  cs_blend_f_val(blencp,
+                 pi,
+                 pj,
+                 pir,
+                 pjr,
+                 pifri,
+                 pifrj,
+                 pjfri,
+                 pjfrj);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct values in I' at boundary cell i.
+ *
+ * \param[in]     diipb    distance I'I'
+ * \param[in]     gradi    gradient at cell i
+ * \param[in]     ircflp   recontruction flag
+ * \param[out]    recoi    reconstruction at cell i
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_b_compute_quantities(const cs_real_3_t  diipb,
+                        const cs_real_3_t  gradi,
+                        const int          ircflp,
+                        cs_real_t         *recoi)
 {
   *recoi = ircflp * (  gradi[0]*diipb[0]
                      + gradi[1]*diipb[1]
                      + gradi[2]*diipb[2]);
 }
 
-/*----------------------------------------------------------------------------
- * Compute relaxed values at boundary cell i.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute relaxed values at boundary cell i.
  *
- * parameters:
- *   relaxp --> relaxation coefficient
- *   pi     --> value at cell i
- *   pia    --> old value at cell i
- *   recoi  --> reconstruction at cell i
- *   pir    <-- relaxed value at cell i
- *   pipr   <-- relaxed reconstructed value at cell i
- *----------------------------------------------------------------------------*/
+ * \param[in]     relaxp   relaxation coefficient
+ * \param[in]     pi       value at cell i
+ * \param[in]     pia      old value at cell i
+ * \param[in]     recoi    reconstruction at cell i
+ * \param[out]    pir      relaxed value at cell i
+ * \param[out]    pipr     relaxed reconstructed value at cell i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_relax_c_val(const double     relaxp,
-               const cs_real_t  pi,
-               const cs_real_t  pia,
-               const cs_real_t  recoi,
-               cs_real_t       *pir,
-               cs_real_t       *pipr)
+cs_b_relax_c_val(const double     relaxp,
+                 const cs_real_t  pi,
+                 const cs_real_t  pia,
+                 const cs_real_t  recoi,
+                 cs_real_t       *pir,
+                 cs_real_t       *pipr)
 {
   *pir  = pi/relaxp - (1.-relaxp)/relaxp*pia;
   *pipr = *pir + recoi;
 }
 
-/*----------------------------------------------------------------------------
- * Copy values at bounadry cell i for consistency with relaxation case.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy values at bounadry cell i for consistency with relaxation case.
  *
- * parameters:
- *   pi     --> value at cell i
- *   recoi  --> reconstruction at cell i
- *   pir    <-- value at cell i
- *   pipr   <-- reconstructed value at cell i
- *----------------------------------------------------------------------------*/
+ * \param[in]     pi       value at cell i
+ * \param[in]     recoi    reconstruction at cell i
+ * \param[out]    pir      value at cell i
+ * \param[out]    pipr     reconstructed value at cell i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_no_relax_c_val(const cs_real_t  pi,
-                  const cs_real_t  recoi,
-                  cs_real_t       *pir,
-                  cs_real_t       *pipr)
+cs_b_no_relax_c_val(const cs_real_t  pi,
+                    const cs_real_t  recoi,
+                    cs_real_t       *pir,
+                    cs_real_t       *pipr)
 {
   *pir  = pi;
   *pipr = pi + recoi;
 }
 
-/*----------------------------------------------------------------------------
- * Add convective flux (substracting the mass accumulation from it) to flux at
- * boundary face. The convective flux can be either an upwind flux or an
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective flux (substracting the mass accumulation from it) to
+ * flux at boundary face. The convective flux can be either an upwind flux or an
  * imposed value.
  *
- * parameters:
- *   iconvp     --> convection flag
- *   inc        --> Not an increment flag
- *   ifaccp     --> coupled face flag
- *   bc_type    --> type of boundary face
- *   icvfli     --> imposed convective flux flag
- *   pi         --> value at cell i
- *   pir        --> relaxed value at cell i
- *   pipr       --> relaxed reconstructed value at cell i
- *   coefap     --> explicit boundary coefficient for convection operator
- *   coefbp     --> implicit boundary coefficient for convection operator
- *   coface     --> explicit imposed convective flux value (0 otherwise).
- *   cofbce     --> implicit part of imp. conv. flux value
- *   b_massflux --> mass flux at boundary face
- *   flux       <-- flux at boundary face
- *----------------------------------------------------------------------------*/
+ * \param[in]     iconvp       convection flag
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     ifaccp       indicator
+ *                               - 1 coupling activated
+ *                               - 0 coupling not activated
+ * \param[in]     bc_type      type of boundary face
+ * \param[in]     icvfli       imposed convective flux flag
+ * \param[in]     pi           value at cell i
+ * \param[in]     pir          relaxed value at cell i
+ * \param[in]     pipr         relaxed reconstructed value at cell i
+ * \param[in]     coefap       explicit boundary coefficient for convection operator
+ * \param[in]     coefbp       implicit boundary coefficient for convection operator
+ * \param[in]     coface       explicit imposed convective flux value (0 otherwise).
+ * \param[in]     cofbce       implicit part of imp. conv. flux value
+ * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in,out] flux         flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_imposed_conv_flux(const int        iconvp,
-                     const int        inc,
-                     const int        ifaccp,
-                     const cs_int_t   bc_type,
-                     const int        icvfli,
-                     const cs_real_t  pi,
-                     const cs_real_t  pir,
-                     const cs_real_t  pipr,
-                     const cs_real_t  coefap,
-                     const cs_real_t  coefbp,
-                     const cs_real_t  coface,
-                     const cs_real_t  cofbce,
-                     const cs_real_t  b_massflux,
-                     cs_real_t       *flux)
+cs_b_imposed_conv_flux(const int        iconvp,
+                       const int        inc,
+                       const int        ifaccp,
+                       const cs_int_t   bc_type,
+                       const int        icvfli,
+                       const cs_real_t  pi,
+                       const cs_real_t  pir,
+                       const cs_real_t  pipr,
+                       const cs_real_t  coefap,
+                       const cs_real_t  coefbp,
+                       const cs_real_t  coface,
+                       const cs_real_t  cofbce,
+                       const cs_real_t  b_massflux,
+                       cs_real_t       *flux)
 {
   cs_real_t flui, fluj, pfac;
 
@@ -1425,41 +1452,46 @@ _b_imposed_conv_flux(const int        iconvp,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Add convective flux (conservative formulation) to flux at
- * boundary face. The convective flux can be either an upwind flux or an
- * imposed value.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective flux (conservative formulation) to flux at boundary
+ * face. The convective flux can be either an upwind flux or an imposed value.
  *
- * parameters:
- *   iconvp     --> convection flag
- *   inc        --> Not an increment flag
- *   ifaccp     --> coupled face flag
- *   bc_type    --> type of boundary face
- *   icvfli     --> imposed convective flux flag
- *   pir        --> relaxed value at cell i
- *   pipr       --> relaxed reconstructed value at cell i
- *   coefap     --> explicit boundary coefficient for convection operator
- *   coefbp     --> implicit boundary coefficient for convection operator
- *   coface     --> explicit imposed convective flux value (0 otherwise).
- *   cofbce     --> implicit part of imp. conv. flux value
- *   b_massflux --> mass flux at boundary face
- *   flux       <-- flux at boundary face
- *----------------------------------------------------------------------------*/
+ * \param[in]     iconvp       convection flag
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     ifaccp       indicator
+ *                               - 1 coupling activated
+ *                               - 0 coupling not activated
+ * \param[in]     bc_type      type of boundary face
+ * \param[in]     icvfli       imposed convective flux flag
+ * \param[in]     pir          relaxed value at cell i
+ * \param[in]     pipr         relaxed reconstructed value at cell i
+ * \param[in]     coefap       explicit boundary coefficient for convection operator
+ * \param[in]     coefbp       implicit boundary coefficient for convection operator
+ * \param[in]     coface       explicit imposed convective flux value (0 otherwise).
+ * \param[in]     cofbce       implicit part of imp. conv. flux value
+ * \param[in]     xcpp         specific heat value if the scalar is the temperature,
+ *                             1 otherwise
+ * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in,out] flux         flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_imposed_conv_flux_cons(const int        iconvp,
-                          const int        inc,
-                          const int        ifaccp,
-                          const cs_int_t   bc_type,
-                          const int        icvfli,
-                          const cs_real_t  pir,
-                          const cs_real_t  pipr,
-                          const cs_real_t  coefap,
-                          const cs_real_t  coefbp,
-                          const cs_real_t  coface,
-                          const cs_real_t  cofbce,
-                          const cs_real_t  b_massflux,
-                          cs_real_t       *flux)
+cs_b_imposed_conv_flux_cons(const int        iconvp,
+                            const int        inc,
+                            const int        ifaccp,
+                            const cs_int_t   bc_type,
+                            const int        icvfli,
+                            const cs_real_t  pir,
+                            const cs_real_t  pipr,
+                            const cs_real_t  coefap,
+                            const cs_real_t  coefbp,
+                            const cs_real_t  coface,
+                            const cs_real_t  cofbce,
+                            const cs_real_t  xcpp,
+                            const cs_real_t  b_massflux,
+                            cs_real_t       *flux)
 {
   cs_real_t flui, fluj, pfac;
 
@@ -1477,7 +1509,7 @@ _b_imposed_conv_flux_cons(const int        iconvp,
     }
 
     pfac  = inc*coefap + coefbp*pipr;
-    *flux += iconvp*(flui*pir + fluj*pfac);
+    *flux += iconvp*xcpp*(flui*pir + fluj*pfac);
 
   /* Imposed convective flux */
 
@@ -1489,36 +1521,39 @@ _b_imposed_conv_flux_cons(const int        iconvp,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Add convective flux (substracting the mass accumulation from it) to flux at
- * boundary face. The convective flux is a pure upwind flux.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective flux (substracting the mass accumulation from it) to
+ * flux at boundary face. The convective flux is a pure upwind flux.
  *
- * parameters:
- *   iconvp     --> convection flag
- *   inc        --> Not an increment flag
- *   ifaccp     --> coupled face flag
- *   bc_type    --> type of boundary face
- *   pi         --> value at cell i
- *   pir        --> relaxed value at cell i
- *   pipr       --> relaxed reconstructed value at cell i
- *   coefap     --> explicit boundary coefficient for convection operator
- *   coefbp     --> implicit boundary coefficient for convection operator
- *   b_massflux --> mass flux at boundary face
- *   flux       <-- flux at boundary face
- *----------------------------------------------------------------------------*/
+ * \param[in]     iconvp       convection flag
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     ifaccp       indicator
+ *                               - 1 coupling activated
+ *                               - 0 coupling not activated
+ * \param[in]     bc_type      type of boundary face
+ * \param[in]     pi           value at cell i
+ * \param[in]     pir          relaxed value at cell i
+ * \param[in]     pipr         relaxed reconstructed value at cell i
+ * \param[in]     coefap       explicit boundary coefficient for convection operator
+ * \param[in]     coefbp       implicit boundary coefficient for convection operator
+ * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in,out] flux         flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_upwind_flux(const int        iconvp,
-               const int        inc,
-               const int        ifaccp,
-               const int        bc_type,
-               const cs_real_t  pi,
-               const cs_real_t  pir,
-               const cs_real_t  pipr,
-               const cs_real_t  coefap,
-               const cs_real_t  coefbp,
-               const cs_real_t  b_massflux,
-               cs_real_t       *flux)
+cs_b_upwind_flux(const int        iconvp,
+                 const int        inc,
+                 const int        ifaccp,
+                 const int        bc_type,
+                 const cs_real_t  pi,
+                 const cs_real_t  pir,
+                 const cs_real_t  pipr,
+                 const cs_real_t  coefap,
+                 const cs_real_t  coefbp,
+                 const cs_real_t  b_massflux,
+                 cs_real_t       *flux)
 {
   cs_real_t flui, fluj, pfac;
 
@@ -1535,34 +1570,42 @@ _b_upwind_flux(const int        iconvp,
   *flux += iconvp*(flui*pir + fluj*pfac - b_massflux*pi);
 }
 
-/*----------------------------------------------------------------------------
- * Add convective flux (conservative formulation) to flux at
- * boundary face. The convective flux is a pure upwind flux.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add convective flux (conservative formulation) to flux at boundary
+ * face. The convective flux is a pure upwind flux.
  *
- * parameters:
- *   iconvp     --> convection flag
- *   inc        --> Not an increment flag
- *   ifaccp     --> coupled face flag
- *   bc_type    --> type of boundary face
- *   pir        --> relaxed value at cell i
- *   pipr       --> relaxed reconstructed value at cell i
- *   coefap     --> explicit boundary coefficient for convection operator
- *   coefbp     --> implicit boundary coefficient for convection operator
- *   b_massflux --> mass flux at boundary face
- *   flux       <-- flux at boundary face
- *----------------------------------------------------------------------------*/
+ * \param[in]     iconvp       convection flag
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     ifaccp       indicator
+ *                               - 1 coupling activated
+ *                               - 0 coupling not activated
+ * \param[in]     bc_type      type of boundary face
+ * \param[in]     pir          relaxed value at cell i
+ * \param[in]     pipr         relaxed reconstructed value at cell i
+ * \param[in]     coefap       explicit boundary coefficient for convection
+ *                             operator
+ * \param[in]     coefbp       implicit boundary coefficient for convection
+ *                             operator
+ * \param[in]     b_massflux   mass flux at boundary face
+ * \param[in]     xcpp         specific heat value if the scalar is the
+ *                             temperature, 1 otherwise
+ * \param[in,out] flux         flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_upwind_flux_cons(const int        iconvp,
-                    const int        inc,
-                    const int        ifaccp,
-                    const cs_int_t   bc_type,
-                    const cs_real_t  pir,
-                    const cs_real_t  pipr,
-                    const cs_real_t  coefap,
-                    const cs_real_t  coefbp,
-                    const cs_real_t  b_massflux,
-                    cs_real_t       *flux)
+cs_b_upwind_flux_cons(const int        iconvp,
+                      const int        inc,
+                      const int        ifaccp,
+                      const cs_int_t   bc_type,
+                      const cs_real_t  pir,
+                      const cs_real_t  pipr,
+                      const cs_real_t  coefap,
+                      const cs_real_t  coefbp,
+                      const cs_real_t  b_massflux,
+                      const cs_real_t  xcpp,
+                      cs_real_t       *flux)
 {
   cs_real_t flui, fluj, pfac;
 
@@ -1576,136 +1619,140 @@ _b_upwind_flux_cons(const int        iconvp,
   }
 
   pfac  = inc*coefap + coefbp*pipr;
-  *flux += iconvp*(flui*pir + fluj*pfac);
+  *flux += iconvp*xcpp*(flui*pir + fluj*pfac);
 }
 
-/*----------------------------------------------------------------------------
- * Add diffusive flux to flux at boundary face.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add diffusive flux to flux at boundary face.
  *
- * parameters:
- *   idiffp --> diffusion flag
- *   inc    --> Not an increment flag
- *   pipr   --> relaxed reconstructed value at cell i
- *   cofafp --> explicit boundary coefficient for diffusion operator
- *   cofbfp --> implicit boundary coefficient for diffusion operator
- *   b_visc --> mass flux at boundary face
- *   flux   <-- flux at boundary face
- *----------------------------------------------------------------------------*/
+ * \param[in]     idiffp   diffusion flag
+ * \param[in]     inc      Not an increment flag
+ * \param[in]     pipr     relaxed reconstructed value at cell i
+ * \param[in]     cofafp   explicit boundary coefficient for diffusion operator
+ * \param[in]     cofbfp   implicit boundary coefficient for diffusion operator
+ * \param[in]     b_visc   mass flux at boundary face
+ * \param[in,out] flux     flux at boundary face
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_diff_flux(const int        idiffp,
-             const int        inc,
-             const cs_real_t  pipr,
-             const cs_real_t  cofafp,
-             const cs_real_t  cofbfp,
-             const cs_real_t  b_visc,
-             cs_real_t       *flux)
+cs_b_diff_flux(const int        idiffp,
+               const int        inc,
+               const cs_real_t  pipr,
+               const cs_real_t  cofafp,
+               const cs_real_t  cofbfp,
+               const cs_real_t  b_visc,
+               cs_real_t       *flux)
 {
   cs_real_t pfacd = inc*cofafp + cofbfp*pipr;
   *flux += idiffp*b_visc*pfacd;
 }
 
-/*----------------------------------------------------------------------------
- * Handle preparation of boundary face values for the flux computation in
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of boundary face values for the flux computation in
  * case of a steady algorithm.
  *
- * parameters:
- *   ircflp --> recontruction flag
- *   relaxp --> relaxation coefficient
- *   diipb  --> distance I'I'
- *   gradi  --> gradient at cell i
- *   pi     --> value at cell i
- *   pia    --> old value at cell i
- *   pir    <-- relaxed value at cell i
- *   pipr   <-- relaxed reconstructed value at cell i
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp   recontruction flag
+ * \param[in]     relaxp   relaxation coefficient
+ * \param[in]     diipb    distance I'I'
+ * \param[in]     gradi    gradient at cell i
+ * \param[in]     pi       value at cell i
+ * \param[in]     pia      old value at cell i
+ * \param[out]    pir      relaxed value at cell i
+ * \param[out]    pipr     relaxed reconstructed value at cell i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_b_cd_steady(const int          ircflp,
-             const double       relaxp,
-             const cs_real_3_t  diipb,
-             const cs_real_3_t  gradi,
-             const cs_real_t    pi,
-             const cs_real_t    pia,
-             cs_real_t         *pir,
-             cs_real_t         *pipr)
-{
-  cs_real_t recoi;
-
-  _b_compute_quantities(diipb,
-                        gradi,
-                        ircflp,
-                        &recoi);
-
-  _b_relax_c_val(relaxp,
-                 pi,
-                 pia,
-                 recoi,
-                 pir,
-                 pipr);
-}
-
-/*----------------------------------------------------------------------------
- * Handle preparation of boundary face values for the flux computation in
- * case of a unsteady algorithm.
- *
- * parameters:
- *   ircflp --> recontruction flag
- *   diipb  --> distance I'I'
- *   gradi  --> gradient at cell i
- *   pi     --> value at cell i
- *   pir    --> value at cell i (for consistancy)
- *   pipr   <-- reconstructed value at cell i
- *----------------------------------------------------------------------------*/
-
-inline static void
-_b_cd_unsteady(const int          ircflp,
+cs_b_cd_steady(const int          ircflp,
+               const double       relaxp,
                const cs_real_3_t  diipb,
                const cs_real_3_t  gradi,
                const cs_real_t    pi,
+               const cs_real_t    pia,
                cs_real_t         *pir,
                cs_real_t         *pipr)
 {
   cs_real_t recoi;
 
-  _b_compute_quantities(diipb,
-                        gradi,
-                        ircflp,
-                        &recoi);
+  cs_b_compute_quantities(diipb,
+                          gradi,
+                          ircflp,
+                          &recoi);
 
-  _b_no_relax_c_val(pi,
-                    recoi,
-                    pir,
-                    pipr);
+  cs_b_relax_c_val(relaxp,
+                   pi,
+                   pia,
+                   recoi,
+                   pir,
+                   pipr);
 }
 
-/*----------------------------------------------------------------------------
- * Compute the upwind gradient used in the slope tests.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle preparation of boundary face values for the flux computation in
+ * case of an unsteady algorithm.
  *
- * parameters:
- *   f_id       --> field index
- *   inc        --> Not an increment flag
- *   halo_type  --> halo type
- *   grad       --> standard gradient
- *   grdpa      --> upwind gradient
- *   pvar       --> values
- *   coefap     --> boundary condition array for the variable
- *                  (Explicit part)
- *   coefbp     --> boundary condition array for the variable
- *                  (Implicit part)
- *   i_massflux --> mass flux at interior faces
- *----------------------------------------------------------------------------*/
+ * \param[in]     ircflp   recontruction flag
+ * \param[in]     diipb    distance I'I'
+ * \param[in]     gradi    gradient at cell i
+ * \param[in]     pi       value at cell i
+ * \param[in]     pir      value at cell i (for consistancy)
+ * \param[out]    pipr     reconstructed value at cell i
+ */
+/*----------------------------------------------------------------------------*/
 
 inline static void
-_slope_test_gradient(const int                     f_id,
-                     const int                     inc,
-                     const cs_halo_type_t          halo_type,
-                     cs_real_3_t                  *grad,
-                     cs_real_3_t                  *grdpa,
-                     cs_real_t                    *pvar,
-                     const cs_real_t              *coefap,
-                     const cs_real_t              *coefbp,
-                     const cs_real_t              *i_massflux)
+cs_b_cd_unsteady(const int          ircflp,
+                 const cs_real_3_t  diipb,
+                 const cs_real_3_t  gradi,
+                 const cs_real_t    pi,
+                 cs_real_t         *pir,
+                 cs_real_t         *pipr)
+{
+  cs_real_t recoi;
+
+  cs_b_compute_quantities(diipb,
+                          gradi,
+                          ircflp,
+                          &recoi);
+
+  cs_b_no_relax_c_val(pi,
+                      recoi,
+                      pir,
+                      pipr);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the upwind gradient used in the slope tests.
+ *
+ * \param[in]     f_id         field index
+ * \param[in]     inc          Not an increment flag
+ * \param[in]     halo_type    halo type
+ * \param[in]     grad         standard gradient
+ * \param[out]    grdpa        upwind gradient
+ * \param[in]     pvar         values
+ * \param[in]     coefap       boundary condition array for the variable
+ * \param[in]                  (Explicit part)
+ * \param[in]     coefbp       boundary condition array for the variable
+ * \param[in]                  (Implicit part)
+ * \param[in]     i_massflux   mass flux at interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_slope_test_gradient(const int                     f_id,
+                       const int                     inc,
+                       const cs_halo_type_t          halo_type,
+                       cs_real_3_t                  *grad,
+                       cs_real_3_t                  *grdpa,
+                       cs_real_t                    *pvar,
+                       const cs_real_t              *coefap,
+                       const cs_real_t              *coefbp,
+                       const cs_real_t              *i_massflux)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_halo_t  *halo = m->halo;
