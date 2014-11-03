@@ -53,7 +53,7 @@
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     ltmast        index of cells with condensation source terms
 !> \param[in]     itypsm        type of mass source term for the variables
-!> \param[in]     itypcd        type of surface condensation source term 
+!> \param[in]     itypcd        type of surface condensation source term
 !> \param[in]     itypst        type of volume  condensation source term
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     propce        physical properties at cell centers
@@ -68,7 +68,7 @@
 !> \param[in]     svcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, svcond is the flow rate
 !>                              \f$ \Gamma_{v, cond}^n \f$)
-!> \param[in]     flxmst        variable value associated to heat transfert flux 
+!> \param[in]     flxmst        variable value associated to heat transfer flux
 !>                              associated to the metal mass condensation
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at boundary faces
@@ -575,7 +575,7 @@ if (nfbpcd.gt.0) then
   !=============================
   (ncelet , ncel ,                                       &
    iscal  ,                                              &
-   nfbpcd , ifbpcd  , itypcd(1,ivar) ,                   &   
+   nfbpcd , ifbpcd  , itypcd(1,ivar) ,                   &
    ivoid  , ivoid   , ivoid          ,                   &
    spcond(1,ivar)   , srccond        ,                   &
    rvoid  , rvoid   , rvoid          ,                   &
@@ -588,7 +588,7 @@ endif
 
 ! Condensation source terms for the scalars
 ! associated to a volumic zone (icond=1)
-! taking into account the metal mass 
+! taking into account the metal mass
 ! structures condensation modelling
 if (icond.eq.1) then
   allocate(srcmst(ncelet))
@@ -607,7 +607,7 @@ if (icond.eq.1) then
   call condensation_source_terms &
   !=============================
   (ncelet , ncel ,                                       &
-   iscal  ,                                              &     
+   iscal  ,                                              &
    ivoid  , ivoid   , ivoid          ,                   &
    ncmast , ltmast  , itypst(1,ivar) ,                   &
    rvoid  , rvoid   ,                                    &
