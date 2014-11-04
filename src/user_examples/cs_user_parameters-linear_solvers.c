@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
