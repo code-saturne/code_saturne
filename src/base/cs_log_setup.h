@@ -1,5 +1,5 @@
-#ifndef __CS_LOG_ITERATION_H__
-#define __CS_LOG_ITERATION_H__
+#ifndef __CS_LOG_SETUP_H__
+#define __CS_LOG_SETUP_H__
 
 /*============================================================================
  * Log field and other array statistics at relevant time steps.
@@ -68,4 +68,4 @@ cs_log_setup(void);
 
 END_C_DECLS
 
-#endif /* __CS_LOG_ITERATION_H__ */
+#endif /* __CS_LOG_SETUP_H__ */
