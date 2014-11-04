@@ -331,7 +331,6 @@ class ListingDialogView(CommandMgrDialogView):
 
         # Read directly the run directory from the sdtout of the code.
 
-        print s
         if "Working directory" in s:
             self.scratch_dir = "Working directory"
             return
