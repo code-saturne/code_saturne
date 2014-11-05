@@ -60,7 +60,8 @@
 !>                              (without rho volume) only for iturb=30
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                               source terms or mass rate
+!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
 !> \param[in]     tslage        explicit source terms for the Lagrangian module
@@ -658,7 +659,9 @@ do iel=1,ncel
 
 enddo
 
-deallocate(cvara_r)
+if (icorio.eq.1 .or. iturbo.eq.1) then
+  deallocate(cvara_r)
+endif
 
 if (iturb.eq.32) then
   deallocate(grad)
