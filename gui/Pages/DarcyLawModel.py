@@ -193,7 +193,7 @@ class DarcyLawModel(Variables, Model):
         """
         self.isInt(int(zoneid))
         self.isFloat(value)
-        self.isInList(variable, ['laminar', 'turbulent'])
+        self.isInList(variable, ['longitudinal', 'transverse'])
 
         nodeZone = self.node_darcy.xmlGetNode('darcy_law', zone_id=zoneid)
         node = nodeZone.xmlInitChildNode('diffusion_coefficient')
@@ -207,7 +207,7 @@ class DarcyLawModel(Variables, Model):
         Return value for variable
         """
         self.isInt(int(zoneid))
-        self.isInList(variable, ['laminar', 'turbulent'])
+        self.isInList(variable, ['longitudinal', 'transverse'])
 
         nodeZone = self.node_darcy.xmlGetNode('darcy_law', zone_id=zoneid)
         node = nodeZone.xmlInitChildNode('diffusion_coefficient')

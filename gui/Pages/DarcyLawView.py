@@ -152,23 +152,23 @@ class DarcyLawView(QWidget, Ui_DarcyLawForm):
         self.lineEditL.setValidator(DoubleValidator(self.lineEditL))
         self.lineEditAlpha.setValidator(DoubleValidator(self.lineEditAlpha))
         self.lineEditMolDiff.setValidator(DoubleValidator(self.lineEditMolDiff))
-        self.lineEditLaminar.setValidator(DoubleValidator(self.lineEditLaminar))
-        self.lineEditTurbulent.setValidator(DoubleValidator(self.lineEditTurbulent))
+        self.lineEditLongitudinal.setValidator(DoubleValidator(self.lineEditLongitudinal))
+        self.lineEditTransverse.setValidator(DoubleValidator(self.lineEditTransverse))
 
 
         # Connections
-        self.connect(self.treeView,           SIGNAL("clicked(const QModelIndex &)"), self.slotSelectDarcyLawZones)
-        self.connect(self.comboBoxType,       SIGNAL("activated(const QString&)"), self.slotDarcyLaw)
-        self.connect(self.lineEditKs,         SIGNAL("textChanged(const QString &)"), self.slotKs)
-        self.connect(self.lineEditThetas,     SIGNAL("textChanged(const QString &)"), self.slotThetas)
-        self.connect(self.lineEditThetar,     SIGNAL("textChanged(const QString &)"), self.slotThetar)
-        self.connect(self.lineEditN,          SIGNAL("textChanged(const QString &)"), self.slotN)
-        self.connect(self.lineEditL,          SIGNAL("textChanged(const QString &)"), self.slotL)
-        self.connect(self.lineEditAlpha,      SIGNAL("textChanged(const QString &)"), self.slotAlpha)
-        self.connect(self.lineEditMolDiff,    SIGNAL("textChanged(const QString &)"), self.slotMolecularDiffusion)
-        self.connect(self.lineEditLaminar,    SIGNAL("textChanged(const QString &)"), self.slotLaminarCoef)
-        self.connect(self.lineEditTurbulent,  SIGNAL("textChanged(const QString &)"), self.slotTurbulentCoef)
-        self.connect(self.pushButtonUserLaw,  SIGNAL("clicked()"), self.slotFormula)
+        self.connect(self.treeView,             SIGNAL("clicked(const QModelIndex &)"), self.slotSelectDarcyLawZones)
+        self.connect(self.comboBoxType,         SIGNAL("activated(const QString&)"), self.slotDarcyLaw)
+        self.connect(self.lineEditKs,           SIGNAL("textChanged(const QString &)"), self.slotKs)
+        self.connect(self.lineEditThetas,       SIGNAL("textChanged(const QString &)"), self.slotThetas)
+        self.connect(self.lineEditThetar,       SIGNAL("textChanged(const QString &)"), self.slotThetar)
+        self.connect(self.lineEditN,            SIGNAL("textChanged(const QString &)"), self.slotN)
+        self.connect(self.lineEditL,            SIGNAL("textChanged(const QString &)"), self.slotL)
+        self.connect(self.lineEditAlpha,        SIGNAL("textChanged(const QString &)"), self.slotAlpha)
+        self.connect(self.lineEditMolDiff,      SIGNAL("textChanged(const QString &)"), self.slotMolecularDiffusion)
+        self.connect(self.lineEditLongitudinal, SIGNAL("textChanged(const QString &)"), self.slotLongitudinal)
+        self.connect(self.lineEditTransverse,   SIGNAL("textChanged(const QString &)"), self.slotTransverse)
+        self.connect(self.pushButtonUserLaw,    SIGNAL("clicked()"), self.slotFormula)
 
         # Initialize Widgets
 
@@ -208,10 +208,10 @@ class DarcyLawView(QWidget, Ui_DarcyLawForm):
 
         if DarcyModel(self.case).getDiffusionType() == 'anisotropic':
             self.groupBoxAnisotropicDiffusion.show()
-            value = self.mdl.getDiffusionCoefficient(name, "laminar")
-            self.lineEditLaminar.setText(str(value))
-            value = self.mdl.getDiffusionCoefficient(name, "turbulent")
-            self.lineEditTurbulent.setText(str(value))
+            value = self.mdl.getDiffusionCoefficient(name, "longitudinal")
+            self.lineEditLongitudinal.setText(str(value))
+            value = self.mdl.getDiffusionCoefficient(name, "transverse")
+            self.lineEditTransverse.setText(str(value))
 
         self.entriesNumber = index.row()
 
@@ -337,23 +337,23 @@ class DarcyLawView(QWidget, Ui_DarcyLawForm):
 
 
     @pyqtSignature("const QString&")
-    def slotLaminarCoef(self, text):
+    def slotLongitudinal(self, text):
         """
         """
         label, name, local = self.modelDarcyLaw.getItem(self.entriesNumber)
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setDiffusionCoefficient(name, "laminar", val)
+            self.mdl.setDiffusionCoefficient(name, "longitudinal", val)
 
 
     @pyqtSignature("const QString&")
-    def slotTurbulentCoef(self, text):
+    def slotTransverse(self, text):
         """
         """
         label, name, local = self.modelDarcyLaw.getItem(self.entriesNumber)
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setDiffusionCoefficient(name, "turbulent", val)
+            self.mdl.setDiffusionCoefficient(name, "transverse", val)
 
 
     @pyqtSignature("")

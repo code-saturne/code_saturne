@@ -5414,7 +5414,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                               "darcy_law");
         cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
         cs_xpath_add_element(&path, "diffusion_coefficient");
-        cs_xpath_add_element(&path, "laminar");
+        cs_xpath_add_element(&path, "longitudinal");
         cs_xpath_add_function_text(&path);
         cs_gui_get_double(path, &laminar_diffus);
         BFT_FREE(path);
@@ -5426,7 +5426,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
                               "darcy_law");
         cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
         cs_xpath_add_element(&path, "diffusion_coefficient");
-        cs_xpath_add_element(&path, "turbulent");
+        cs_xpath_add_element(&path, "transverse");
         cs_xpath_add_function_text(&path);
         cs_gui_get_double(path, &turbulent_diffus);
         BFT_FREE(path);

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>353</width>
-    <height>602</height>
+    <height>608</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -365,9 +365,9 @@
        </spacer>
       </item>
       <item row="0" column="1">
-       <widget class="QLabel" name="labelLaminar">
+       <widget class="QLabel" name="labelLongitudinal">
         <property name="text">
-         <string>laminar</string>
+         <string>longitudinal</string>
         </property>
        </widget>
       </item>
@@ -385,7 +385,7 @@
        </spacer>
       </item>
       <item row="0" column="3">
-       <widget class="QLineEdit" name="lineEditLaminar"/>
+       <widget class="QLineEdit" name="lineEditLongitudinal"/>
       </item>
       <item row="0" column="4" rowspan="2">
        <spacer name="horizontalSpacer_16">
@@ -401,9 +401,9 @@
        </spacer>
       </item>
       <item row="1" column="1">
-       <widget class="QLabel" name="labelTurbulent">
+       <widget class="QLabel" name="labelTransverse">
         <property name="text">
-         <string>turbulent</string>
+         <string>transverse</string>
         </property>
        </widget>
       </item>
@@ -421,7 +421,7 @@
        </spacer>
       </item>
       <item row="1" column="3">
-       <widget class="QLineEdit" name="lineEditTurbulent"/>
+       <widget class="QLineEdit" name="lineEditTransverse"/>
       </item>
      </layout>
     </widget>
