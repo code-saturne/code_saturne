@@ -24,12 +24,12 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
+
 
 /*!
 
   \page cs_head_losses Examples of data settings for head losses (cs_user_head_losses.f90)
-  
+
   \brief User \ref uskpdc subroutine which is called at three different stages in the code <tt>(iappel=1, 2 or 3)</tt>.
 
    -  \c iappel = 1:
@@ -66,12 +66,12 @@
  For a singular head loss, let \f$\tens{\xi_l} = \dfrac{\tens{dh_s}}{(0.5\rho\vect{u}^2)}\f$ given by the litterature
     (\f$\tens{dh_s} \f$ is the singular head loss)
 
-    the source term \c tspdc is equal to \f[\frac{\tens{dh_s}}{l} = - \frac{\tens{\xi_l}}{l} (0.5 \rho\vect{u}^2)\f]. We have \f[\tens{ckupdc} = 0.5\frac{\tens{\xi_s}}{l}|\vect{u}|\f] 
+    the source term \c tspdc is equal to \f[\frac{\tens{dh_s}}{l} = - \frac{\tens{\xi_l}}{l} (0.5 \rho\vect{u}^2)\f]. We have \f[\tens{ckupdc} = 0.5\frac{\tens{\xi_s}}{l}|\vect{u}|\f]
 
     where \f$ l \f$ is the length over which we have chosen to represent the
     singular head loss.
 
- 
+
   \section cs_user_head_losses_examples Head loss setting examples
 
   Here is the list of examples:
@@ -79,12 +79,12 @@
   - \subpage base_head_losses_examples
 
 */
-// __________________________________________________________________________________
+// _____________________________________________________________________________
 /*!
 
-  
-  \page base_head_losses_examples Basic examples  
-  
+
+  \page base_head_losses_examples Basic examples
+
   \section base_loc_var Local variables to be added
 
   The following local variables need to be defined for the examples
@@ -94,46 +94,44 @@
 
   \section init_and_final Initialization and finalization
 
-   The following initialization block needs to be added for the following examples:
+  The following initialization block needs to be added for the following examples:
 
   \snippet cs_user_head_losses.f90 allocate
 
   At the end of the subroutine, it is recommended to deallocate the work array:
 
   \snippet cs_user_head_losses.f90 deallocate
- 
-  In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic for C and Fortran.
+
+  In theory Fortran 95 deallocates locally-allocated arrays automatically, but
+	deallocating arrays in a symetric manner to their allocation is good pratice,
+	and avoids using a different logic for C and Fortran.
 
 
   Map field array
 
-  \snippet cs_user_head_losses.f90 map_field_array 
-
+  \snippet cs_user_head_losses.f90 map_field_array
 
 
   \section body Body
 
   \subsection beginning Calculation and identification of the number of cells with imposed head loss term
 
-  \snippet cs_user_head_losses.f90 start_1 
-  
-  2 calls: 
+  \snippet cs_user_head_losses.f90 start_1
+
+  2 calls:
   - \c iappel = 1: Calculation of the number of cells where a head loss term is imposed: \c ncepdp. Called once at the beginning of the calculation.
 
   - \c iappel = 2: Identification of the cells where a head loss term is imposed: array \c icepdc(ncepdc). Called once at the beginning of the calculation.
 
-\note 
+\note
   - Do not use ckupdc in this section (it is defined with <tt> iappel = 3) </tt>
   - Use icepdc in this section only with <tt> (iappel = 2) </tt>
 
 To be completed by the user: cell selection
-    
 
 
   \subsection head_loss_examples Head loss examples
   \subsubsection example_1 Example 1: No head loss (default)
-
-  
 
   \snippet cs_user_head_losses.f90 example_1
 
@@ -143,16 +141,14 @@ To be completed by the user: cell selection
   (4 <= x; 2 <= y <= 8) \n No head losses else.
 
   \snippet cs_user_head_losses.f90 example_2
- 
 
 
-  \subsection generic Generic subsection 
+  \subsection generic Generic subsection
 
-  For <tt> iappel = 1 </tt>, define \c ncepdp, the number of cells with head losses. This is valid for both examples above.
- 
-   \snippet cs_user_head_losses.f90 start_2
+  For <tt> iappel = 1 </tt>, define \c ncepdp, the number of cells with head
+	losses. This is valid for both examples above.
 
- 
+  \snippet cs_user_head_losses.f90 start_2
 
   Defining the number of cells with head losses
 
@@ -170,25 +166,25 @@ To be completed by the user: cell selection
               organized in order <tt> k11, k22, k33, k12, k13, k23 </tt>
 
   Note:
-  
+
    - make sure diagonal coefficients are positive. The calculation
         may crash if this is not the case, and no further check will
         be done
 
-  
+
    To be completed by the user: coefficient values:
-   
+
   \warning   It is important that all \c ckupdc values are defined (by zero values if
      necessary), as they will be used to compute a source term in cells
      identified previously. They are initialized by zero values,
      and the user must keep this initialization.
-                       
-    
+
+
    \subsection diagonal_tensor Example 1: head losses in direction x
 
- Diagonal tensor : Example of head losses in direction \c x 
+ Diagonal tensor : Example of head losses in direction \c x
 
-  \snippet cs_user_head_losses.f90 example_3 
+  \snippet cs_user_head_losses.f90 example_3
 
 
 
@@ -207,6 +203,6 @@ in coordinate system \c x, \c y
   \subsection end Filling the cells of the head loss matrix
 
   \snippet cs_user_head_losses.f90 filling
-  
+
 */
-// __________________________________________________________________________________
+// _____________________________________________________________________________
