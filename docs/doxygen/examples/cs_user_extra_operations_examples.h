@@ -32,18 +32,18 @@
 
   This page provides several examples of code blocks that may be used
   to perform energy balance, 1D profiles, etc.
-  in \ref cs_user_boundary_conditions.
+  in \ref cs_user_extra_operations.
 
 
   \section cs_user_extra_operations_examples_cs_user_extra_op_examples Extra operations examples
   Here is the list of examples dedicated to different physics:
 
-  - \subpage energy_balance
-  - \subpage oned_profile 
-  - \subpage force_temperature
-  - \subpage global_efforts 
-  - \subpage parallel_oper 
-  - \subpage print_moment
+  - \subpage cs_user_extra_operations_examples_energy_balance
+  - \subpage cs_user_extra_operations_examples_oned_profile 
+  - \subpage cs_user_extra_operations_examples_force_temperature
+  - \subpage cs_user_extra_operations_examples_global_efforts 
+  - \subpage cs_user_extra_operations_examples_parallel_oper 
+  - \subpage cs_user_extra_operations_examples_print_moment
 
 */
 // __________________________________________________________________________________
