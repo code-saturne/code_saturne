@@ -1988,12 +1988,6 @@ if (ltsthe.eq.1) then
 
 endif
 
-! Postprocessing options
-
-call lagpvr(ivisv1, ivisv2,  ivistp, ivisdm, iviste, &
-!==========
-            ivismp, ivisdk, iviswat, ivisch, ivisck)
-
 !===============================================================================
 
 !--------

@@ -211,6 +211,12 @@ if (iplar.eq.1) then
 
   call lagr_update_pointers
 
+  ! Postprocessing options
+
+  call lagpvr(ivisv1, ivisv2,  ivistp, ivisdm, iviste, &
+  !==========
+              ivismp, ivisdk, iviswat, ivisch, ivisck)
+
   ! first initializations
 
   nbpart = 0;
