@@ -149,15 +149,15 @@ do icla = 1, nclacp
     call field_get_val_s(ivarfl(isca(ixwt(icla))), cvar_xwtcl)
   endif
 
-  do iel = 1, ncel
+  ipcx2c = ipproc(ix2(icla))
+  ipcro2 = ipproc(irom2(icla))
+  ipcdi2 = ipproc(idiam2(icla))
+  xashcl = xashch(ichcor(icla))
 
-    ipcx2c = ipproc(ix2(icla))
-    ipcro2 = ipproc(irom2(icla))
-    ipcdi2 = ipproc(idiam2(icla))
+  do iel = 1, ncel
     xck    = cvar_xckcl(iel)
     xch    = cvar_xchcl(iel)
     xnp    = cvar_xnpcl(iel)
-    xashcl = xashch(ichcor(icla))
     xuash  = xnp*xmp0(icla)*(1.d0-xashcl)
     ! --- Calculation of the solid mass fraction
     propce(iel,ipcx2c) = xch + xck + xnp*xmash(icla)
@@ -300,6 +300,9 @@ do icla = 1, nclacp
     !==========
     call parmin (romin )
     !==========
+
+    call synsca(propce(:,ipcx2c))
+
   endif
 
   if ( n1 .gt. 0 ) then

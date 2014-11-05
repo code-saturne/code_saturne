@@ -122,6 +122,7 @@ integer          keyccl, f_id
 
 double precision xnuss
 double precision aux
+double precision TauThp
 double precision coefe(ngazem)
 double precision t1, t2, hh2ov
 double precision f1mc(ncharm), f2mc(ncharm)
@@ -145,8 +146,8 @@ double precision gmdev1(ncharm),gmdev2(ncharm),gmhet(ncharm)
 double precision aux1 , aux2 , aux3
 double precision xch,xck,xash,xmx2
 double precision tfuelmin,tfuelmax
-double precision smbrs1
-double precision, dimension (:), allocatable :: w1,w2,w3,w4,w5
+double precision smbrs1, diam2
+double precision, dimension (:), allocatable :: w1,w3,w4,w5
 double precision, dimension (:), allocatable :: tfuel
 double precision, dimension(:), pointer :: vp_x, vp_y, vp_z
 double precision, dimension(:,:), pointer :: vdc
@@ -196,6 +197,7 @@ double precision ychx
 ! reaction rate of the heterogeneous combustion of char 2)
 double precision mckcl1, mckcl2
 !
+double precision, dimension(:), pointer :: dt
 !===============================================================================
 !
 !===============================================================================
@@ -233,7 +235,7 @@ endif
 !===============================================================================
 ! Deallocation dynamic arrays
 !----
-allocate(w1(1:ncel),w2(1:ncel),w3(1:ncel),w4(1:ncel),w5(1:ncel),stat=iok1)
+allocate(w1(1:ncel),w3(1:ncel),w4(1:ncel),w5(1:ncel),stat=iok1)
 if (iok1 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_scast               '
@@ -245,7 +247,8 @@ if (iok1 > 0) then
   write(nfecra,*) '     cs_coal_scast               '
   call csexit(1)
 endif
-!===============================================================================
+
+call field_get_val_s_by_name('dt', dt)
 
 !===============================================================================
 ! 2. Consideration of the source terms for relative variables
@@ -619,30 +622,28 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
     endif
   enddo
 
-  ! ------ Calculation of diameter of the particles in W2
-  !        d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
-  do iel = 1, ncel
-    w2(iel) = ( xashch(numcha)*diam20(numcla)**2 +                &
-                (1.d0-xashch(numcha))*propce(iel,ipcdia)**2       &
-              )**0.5
-  enddo
-
   ! ------ Contribution to the explicit and implicit balance
   !        exchanges by molecular distribution
   !      Remark: We use propce(iel,IPCX2C) because we want X2 at the iteration n
-
   do iel = 1, ncel
-    !FIXME useless clipping
-    if (propce(iel,ipcx2c) .gt. epsicp) then
-      aux = 6.d0 * w1(iel) * xnuss / w2(iel)**2           &
-          / propce(iel,ipcro2) * crom(iel)       &
-          * propce(iel,ipcx2c) * volume(iel)
+    ! ------ Calculation of diameter of the particles
+    !        d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
+    diam2 =  xashch(numcha)*diam20(numcla)**2 +                &
+             (1.d0-xashch(numcha))*propce(iel,ipcdia)**2
 
-      smbrs(iel)  = smbrs(iel)-aux*(propce(iel,ipcte2)-propce(iel,ipcte1))
-      smbrsh1(iel) = smbrsh1(iel)+aux*(propce(iel,ipcte2)-propce(iel,ipcte1))
-      rovsdt(iel) = rovsdt(iel) + aux / cp2ch(numcha) /propce(iel,ipcx2c)
-
-    endif
+    ! IMPORTANT remark about the time stepping to ensure the maximum principle:
+    ! d(x2h2)/dt = Cp2/TauThp * x2 * (T1-T2)
+    !  We do a "pseudo" implicitation, which is conservative (in term of x1h1 and x2h2)
+    ! x2h2(t(n+1)) = x2h2(t(n)) + (x2h2(T1(t(n))-x2h2(T2(n))) * (1 - exp(dt/Tauthp))
+    ! x2h2(t(n+1)) =//= x2h2(t(n)) + Cp2 * x2 * (T1(t(n)) - T2(t(n))*dt/(Tauthp+dt)
+    ! Smbr(x2h2) = Cp2 * x2 *(T1(t(n))-T2(t(n)))/(Tauthp+dt)
+    TauThp = diam2*propce(iel,ipcro2)*cp2ch(numcha)/(6.d0*w1(iel)*xnuss)
+    smbrs(iel) =  smbrs(iel)  + crom(iel)*volume(iel) * propce(iel,ipcx2c) * &
+                 cp2ch(numcha)*(propce(iel,ipcte1)-propce(iel,ipcte2))/      &
+                 (TauThp+dt(iel))
+    smbrsh1(iel) = smbrsh1(iel) + crom(iel)*volume(iel) * propce(iel,ipcx2c) * &
+                 cp2ch(numcha)*(propce(iel,ipcte2)-propce(iel,ipcte1))/        &
+                 (TauThp+dt(iel))
   enddo
 
 
@@ -2678,7 +2679,7 @@ endif
 
 
 ! Deallocation dynamic arrays
-deallocate(w1,w2,w3,w4,w5,stat=iok1)
+deallocate(w1,w3,w4,w5,stat=iok1)
 
 if (iok1 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '

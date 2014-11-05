@@ -291,7 +291,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     enddo
 
-  else
+  else if (icla.ge.0) then
 
     do iel = 1, ncel
 

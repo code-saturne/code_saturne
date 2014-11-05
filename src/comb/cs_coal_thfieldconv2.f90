@@ -134,7 +134,7 @@ if ( ihflt2.eq.0 ) then
     icha = ichcor(icla)
     do iel = 1, ncel
       propce(iel,ipcte2) =                                       &
-            (cvar_h2cl(iel)-h02ch(icha))                         &
+            (cvar_h2cl(iel)-h02ch(icha))                         &!FIXME divide by x2
             / cp2ch(icha) + trefth
     enddo
   enddo
@@ -168,21 +168,19 @@ else
 
       x2   = xch + xck + xash + xwat
 
-      if ( x2 .gt. epsicp*100.d0 ) then
+      xtes = xmp0(icla)*xnp
+
+      if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
 
         h2   = cvar_h2cl(iel)/x2
 
-        xtes = xmp0(icla)*xnp
+        eh1(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)    &
+                  + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1)    &
+                  + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)    &
+                  + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
+        if ( h2.ge.eh1(iel) ) then
+          propce(iel,ipcte2) = thc(i+1)
 
-        if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
-          eh1(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)    &
-                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1)   &
-                    + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)   &
-                    + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
-          if ( h2.ge.eh1(iel) ) then
-            propce(iel,ipcte2) = thc(i+1)
-
-          endif
         endif
 
       endif
@@ -202,21 +200,19 @@ else
       endif
 
       x2   = xch + xck + xash + xwat
+      xtes = xmp0(icla)*xnp
 
-      if ( x2 .gt. epsicp*100.d0 ) then
+      if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
 
         h2   = cvar_h2cl(iel)/x2
 
-        xtes = xmp0(icla)*xnp
 
-        if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
-          eh0(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i)      &
-                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i)     &
-                    + xash/x2 * ehsoli(iash(ichcor(icla)),i)     &
-                    + xwat/x2 * ehsoli(iwat(ichcor(icla)),i)
-          if ( h2.le.eh0(iel) ) then
-            propce(iel,ipcte2) = thc(i)
-          endif
+        eh0(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i)      &
+                  + xck /x2 * ehsoli(ick(ichcor(icla) ),i)      &
+                  + xash/x2 * ehsoli(iash(ichcor(icla)),i)      &
+                  + xwat/x2 * ehsoli(iwat(ichcor(icla)),i)
+        if ( h2.le.eh0(iel) ) then
+          propce(iel,ipcte2) = thc(i)
         endif
 
       endif
@@ -236,28 +232,25 @@ else
         endif
 
         x2   = xch + xck + xash + xwat
+        xtes = xmp0(icla)*xnp
 
-        if ( x2 .gt. epsicp*100.d0 ) then
+        if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
 
           h2   = cvar_h2cl(iel)/x2
 
-          xtes = xmp0(icla)*xnp
+          eh0(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i  )  &
+                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i  )  &
+                    + xash/x2 * ehsoli(iash(ichcor(icla)),i  )  &
+                    + xwat/x2 * ehsoli(iwat(ichcor(icla)),i  )
 
-          if ( xtes.gt.epsicp .and. x2.gt.epsicp*100.d0 ) then
-            eh0(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i  )  &
-                      + xck /x2 * ehsoli(ick(ichcor(icla) ),i  ) &
-                      + xash/x2 * ehsoli(iash(ichcor(icla)),i  ) &
-                      + xwat/x2 * ehsoli(iwat(ichcor(icla)),i  )
+          eh1(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)  &
+                    + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1)  &
+                    + xash/x2 * ehsoli(iash(ichcor(icla)),i+1)  &
+                    + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
 
-            eh1(iel) = xch /x2 * ehsoli(ich(ichcor(icla) ),i+1)  &
-                      + xck /x2 * ehsoli(ick(ichcor(icla) ),i+1) &
-                      + xash/x2 * ehsoli(iash(ichcor(icla)),i+1) &
-                      + xwat/x2 * ehsoli(iwat(ichcor(icla)),i+1)
-
-            if ( h2.ge.eh0(iel) .and. h2.le.eh1(iel) ) then
-              propce(iel,ipcte2) = thc(i) + (h2-eh0(iel)) *     &
-                    (thc(i+1)-thc(i))/(eh1(iel)-eh0(iel))
-            endif
+          if ( h2.ge.eh0(iel) .and. h2.le.eh1(iel) ) then
+            propce(iel,ipcte2) = thc(i) + (h2-eh0(iel)) *     &
+                  (thc(i+1)-thc(i))/(eh1(iel)-eh0(iel))
           endif
 
         endif

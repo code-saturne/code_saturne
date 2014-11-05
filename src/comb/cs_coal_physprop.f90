@@ -55,6 +55,7 @@ use cstphy
 use cstnum
 use entsor
 use parall
+use period
 use ppppar
 use ppthch
 use coincl
@@ -232,6 +233,12 @@ do iel = 1, ncel
     cpro_x1(iel) = cpro_x1(iel) - propce(iel,ipproc(ix2(icla)))
   enddo
 enddo
+
+! ---> Handle parallelism and periodicity
+!      (periodicity of rotation is not ensured here)
+if (irangp.ge.0 .or. iperio.eq.1) then
+  call synsca(cpro_x1)
+endif
 
 do icha = 1, ncharb
   call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
