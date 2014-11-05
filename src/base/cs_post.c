@@ -5721,7 +5721,7 @@ cs_post_init_error_writer(void)
   cs_post_define_writer(writer_id,
                         "error",
                         _cs_post_dirname,
-                        default_format_id,
+                        fvm_writer_format_name(default_format_id),
                         default_format_options,
                         FVM_WRITER_FIXED_MESH, /* No time dependency here */
                         true,
