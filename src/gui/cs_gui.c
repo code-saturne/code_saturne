@@ -4144,13 +4144,22 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
 
         /* For non-specific physics defined with the GUI,
            itherm can only be 1 or 2 here (as the thermal model is on) */
-        assert(itherm == 1 || itherm == 2);
 
-        cs_field_t *c = NULL;
-        if (itherm == 1)
+        cs_field_t *c;
+        switch (itherm) {
+        case 1:
           c = CS_F_(t);
-        else if (itherm == 2)
+          break;
+        case 2:
           c = CS_F_(h);
+        break;
+        case 3:
+          c = CS_F_(energy);
+          break;
+        default:
+          assert(0);
+          c = NULL;
+        }
 
         if (formula_sca != NULL) {
           ev_formula_sca = mei_tree_new(formula_sca);
