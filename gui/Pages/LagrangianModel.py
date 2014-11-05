@@ -83,7 +83,6 @@ class LagrangianModel(Model):
         default['coupling_mode']                       = "one_way"
         default['restart']                             = "off"
         default['carrier_field_stationary']            = "off"
-        default['particles_max_number']                = 1000000
         default['continuous_injection']                = "off"
         default['deposition_submodel']                 = "off"
         default['particles_models']                    = "off"
@@ -257,30 +256,6 @@ class LagrangianModel(Model):
             status = self.defaultParticlesValues()['carrier_field_stationary']
             self.setCarrierFlowStationary(status)
         return status
-
-
-    @Variables.undoLocal
-    def setMaxNumber(self, value):
-        """
-        Update value for maximum number of particles allowed
-        simultaneously in the calculation domain.
-        """
-        self.isInt(value)
-        self.isGreater(value, 0)
-        self.node_lagr.xmlSetData('particles_max_number', value)
-
-
-    @Variables.noUndo
-    def getMaxNumber(self):
-        """
-        Return the value for maximum number of particles allowed
-        simultaneously in the calculation domain.
-        """
-        nbpmax = self.node_lagr.xmlGetInt('particles_max_number')
-        if nbpmax == None:
-            nbpmax = self.defaultParticlesValues()['particles_max_number']
-            self.setMaxNumber(nbpmax)
-        return nbpmax
 
 
     @Variables.undoLocal
@@ -881,23 +856,6 @@ class LagrangianTestCase(ModelTest):
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
             'Could not set default values for stationary \
             behavior of the carrier flow status'
-
-
-    def checkMaxNumber(self):
-        """Check whether the max number of particles method could be set and get."""
-        mdl = LagrangianModel(self.case)
-        n = mdl.getMaxNumber()
-
-        assert n == mdl.defaultParticlesValues()['particles_max_number'], \
-            'Could not set default values for max number of particles'
-
-        mdl.setMaxNumber(123456)
-        doc = """<lagrangian model="off">
-                      <particles_max_number>123456</particles_max_number>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-             'Could not get default values for max number of particles'
 
 
     def checkContinuousInjection(self):

@@ -415,7 +415,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.connect(self.comboBoxIILAGR, SIGNAL("activated(const QString&)"), self.slotIILAGR)
         self.connect(self.checkBoxISUILA, SIGNAL("clicked()"), self.slotISUILA)
         self.connect(self.checkBoxISTTIO, SIGNAL("clicked()"), self.slotISTTIO)
-        self.connect(self.lineEditNBPMAX, SIGNAL("textChanged(const QString &)"), self.slotNBPMAX)
         self.connect(self.checkBoxINJCON, SIGNAL("clicked()"), self.slotINJCON)
         self.connect(self.checkBoxIDEPST, SIGNAL("clicked()"), self.slotIDEPST)
         self.connect(self.comboBoxIPHYLA, SIGNAL("activated(const QString&)"), self.slotIPHYLA)
@@ -430,10 +429,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.connect(self.toolButtonAdvanced, SIGNAL("clicked()"), self.slotAdvancedOptions)
 
         # Validators
-        validatorNBPMAX = IntValidator(self.lineEditNBPMAX, min=0)
         validatorNSTITS = IntValidator(self.lineEditNSTITS)
 
-        self.lineEditNBPMAX.setValidator(validatorNBPMAX)
         self.lineEditNSTITS.setValidator(validatorNSTITS)
 
         # initialize Widgets
@@ -482,9 +479,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.labelISTTIO.setDisabled(True)
             self.checkBoxISTTIO.setChecked(True)
             self.checkBoxISTTIO.setDisabled(True)
-
-        nmax = self.model.getMaxNumber()
-        self.lineEditNBPMAX.setText(str(nmax))
 
         status = self.model.getContinuousInjection()
         if status == "on":
@@ -586,16 +580,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setDepositionSubmodel("on")
         else:
             self.model.setDepositionSubmodel("off")
-
-
-    @pyqtSignature("const QString&")
-    def slotNBPMAX(self, text):
-        """
-        Input NBPMAX.
-        """
-        if self.sender().validator().state == QValidator.Acceptable:
-            value = from_qvariant(text, int)
-            self.model.setMaxNumber(value)
 
 
     @pyqtSignature("const QString&")
