@@ -234,6 +234,19 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         return label
 
 
+    @Variables.noUndo
+    def getThermalScalarName(self):
+        """
+        Get name for thermal scalar
+        """
+        label = ""
+        node = self.node_therm.xmlGetNode('variable', type='thermal')
+        if node:
+            label = node['name']
+
+        return label
+
+
 #-------------------------------------------------------------------------------
 # ThermalScalar Model test case
 #-------------------------------------------------------------------------------

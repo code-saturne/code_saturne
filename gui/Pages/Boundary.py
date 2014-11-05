@@ -740,7 +740,7 @@ omega = 0.;"""
 
 
     @Variables.noUndo
-    def getScalarFormula(self, scalarLabel, choice):
+    def getScalarFormula(self, scalarLabel, choice, name = None):
         """
         Public method.
         Return the formula for a turbulent variable.
@@ -751,6 +751,8 @@ omega = 0.;"""
         formula = scalarNode.xmlGetChildString(choice)
 
         if not formula:
+            if name != None:
+                scalarLabel = name
             formula = self.getDefaultScalarFormula(scalarLabel, choice)
 
         return formula

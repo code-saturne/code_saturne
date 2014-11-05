@@ -432,14 +432,15 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotThermalFormula(self):
         """
         """
-        exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type)
+        name = self.therm.getThermalScalarName()
+        exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type, name = name)
         exa = """#example: """
         if self.thermal_type == 'dirichlet_formula':
-            req = [(self.thermal, str(self.thermal))]
+            req = [(name, str(name))]
         elif self.thermal_type == 'neumann_formula':
             req = [("flux", "flux")]
         elif self.thermal_type == 'exchange_coefficient_formula':
-            req = [(self.thermal, str(self.thermal)),("hc", "heat coefficient")]
+            req = [(name, str(nameal)),("hc", "heat coefficient")]
 
         sym = [('x', "X face's gravity center"),
                ('y', "Y face's gravity center"),
