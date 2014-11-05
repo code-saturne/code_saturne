@@ -1821,7 +1821,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
 
     BFT_MALLOC(block_n_sub, block_size, int);
     cs_part_to_block_copy_array(d,
-                                sizeof(int),
+                                CS_INT_TYPE,
                                 1,
                                 part_n_sub,
                                 block_n_sub);
@@ -1903,7 +1903,7 @@ _export_families_g(const fvm_writer_section_t  *export_section,
   /* Distribute part values */
 
   cs_part_to_block_copy_array(d,
-                              sizeof(med_int),
+                              med_family_type,
                               1,
                               part_values,
                               block_values);
