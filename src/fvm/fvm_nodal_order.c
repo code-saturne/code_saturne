@@ -224,6 +224,38 @@ _fvm_nodal_order_indexed_connect(cs_lnum_t           connect_idx[],
 
 }
 
+/*----------------------------------------------------------------------------
+ * Reorder group class id.
+ *
+ * parameters:
+ *   gc_id  <-> group class id
+ *   order  <-- ordering of entities (0 to n-1).
+ *   nb_ent <-- number of entities considered.
+ *----------------------------------------------------------------------------*/
+
+static void
+_fvm_nodal_order_gc_id(int              gc_id[],
+                       const cs_lnum_t  order[],
+                       const size_t     nb_ent)
+{
+  size_t  i;
+
+  int  *tmp_gc_id = NULL;
+
+  BFT_MALLOC(tmp_gc_id, nb_ent, int);
+
+  /* Temporary ordered copy */
+
+  for (i = 0 ; i < nb_ent ; i++)
+    tmp_gc_id[i] = gc_id[order[i]];
+
+  /* Now put back in initial location */
+
+  memcpy(gc_id, tmp_gc_id, nb_ent * sizeof(int));
+
+  BFT_FREE(tmp_gc_id);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -287,6 +319,10 @@ fvm_nodal_order_cells(fvm_nodal_t       *this_nodal,
                                            order,
                                            section->n_elements);
         }
+        if (section->gc_id != NULL)
+          _fvm_nodal_order_gc_id(section->gc_id,
+                                 order,
+                                 section->n_elements);
 
         BFT_FREE(order);
 
@@ -355,6 +391,10 @@ fvm_nodal_order_faces(fvm_nodal_t       *this_nodal,
                                            order,
                                            section->n_elements);
         }
+        if (section->gc_id != NULL)
+          _fvm_nodal_order_gc_id(section->gc_id,
+                                 order,
+                                 section->n_elements);
 
         BFT_FREE(order);
 
