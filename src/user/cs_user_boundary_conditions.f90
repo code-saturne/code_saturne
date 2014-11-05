@@ -38,7 +38,7 @@
 !>
 !> Boundary faces may be selected using the \ref getfbr subroutine.
 !>
-!> \code getfbr(string, nelts, eltlst) \endcode
+!> \code getfbr(string, nelts, lstelt) \endcode
 !>  - string is a user-supplied character string containing selection criteria;
 !>  - nelts is set by the subroutine. It is an integer value corresponding to
 !>    the number of boundary faces verifying the selection criteria;
