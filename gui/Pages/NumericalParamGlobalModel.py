@@ -86,7 +86,7 @@ class NumericalParamGlobalModel(Model):
         del CompressibleModel
         from code_saturne.Pages.DarcyModel import DarcyModel
         if DarcyModel(self.case).getDarcyModel() != 'off':
-            self.default['gradient_reconstruction'] = -11
+            self.default['gradient_reconstruction'] = 1
         else:
             self.default['gradient_reconstruction'] = 0
         del DarcyModel
