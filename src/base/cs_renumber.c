@@ -5363,7 +5363,7 @@ _renumber_mesh(cs_mesh_t  *mesh)
   /* Initialization */
 
   if (_cs_renumber_n_threads < 1)
-    _cs_renumber_n_threads = cs_glob_n_threads;
+    cs_renumber_set_n_threads(cs_glob_n_threads);
 
   p = getenv("CS_RENUMBER");
 
@@ -5483,6 +5483,17 @@ _renumber_mesh(cs_mesh_t  *mesh)
 void
 cs_renumber_set_n_threads(int  n_threads)
 {
+  if (_cs_renumber_n_threads < 1) {
+    if (n_threads == 1) {
+      _i_faces_algorithm = CS_RENUMBER_I_FACES_NONE;
+      _b_faces_algorithm = CS_RENUMBER_B_FACES_NONE;
+    }
+    else {
+      _i_faces_algorithm = CS_RENUMBER_I_FACES_MULTIPASS;
+      _b_faces_algorithm = CS_RENUMBER_B_FACES_NONE;
+    }
+  }
+
   _cs_renumber_n_threads = n_threads;
 }
 
@@ -5497,6 +5508,9 @@ cs_renumber_set_n_threads(int  n_threads)
 int
 cs_renumber_get_n_threads(void)
 {
+  if (_cs_renumber_n_threads < 1)
+    cs_renumber_set_n_threads(cs_glob_n_threads);
+
   return _cs_renumber_n_threads;
 }
 
@@ -5687,7 +5701,7 @@ cs_renumber_i_faces(cs_mesh_t  *mesh)
   /* Initialization */
 
   if (_cs_renumber_n_threads < 1)
-    _cs_renumber_n_threads = cs_glob_n_threads;
+    cs_renumber_set_n_threads(cs_glob_n_threads);
 
   p = getenv("CS_RENUMBER");
 
@@ -5736,7 +5750,7 @@ cs_renumber_b_faces(cs_mesh_t  *mesh)
   /* Initialization */
 
   if (_cs_renumber_n_threads < 1)
-    _cs_renumber_n_threads = cs_glob_n_threads;
+    cs_renumber_set_n_threads(cs_glob_n_threads);
 
   p = getenv("CS_RENUMBER");
 
