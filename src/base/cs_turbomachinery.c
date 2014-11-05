@@ -616,6 +616,12 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
   }
 
   BFT_FREE(_cell_list);
+
+  if (m->halo != NULL)
+    cs_halo_sync_untyped(m->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(int),
+                         tbm->cell_rotor_num);
 }
 
 /*============================================================================
@@ -1023,9 +1029,10 @@ cs_turbomachinery_initialize(void)
   if (tbm->model == CS_TURBOMACHINERY_TRANSIENT) {
 
     if (cs_glob_mesh->halo != NULL)
-      cs_halo_sync_num(cs_glob_mesh->halo,
-                       CS_HALO_EXTENDED,
-                       tbm->cell_rotor_num);
+      cs_halo_sync_untyped(cs_glob_mesh->halo,
+                           CS_HALO_EXTENDED,
+                           sizeof(int),
+                           tbm->cell_rotor_num);
 
   }
 
