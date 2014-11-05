@@ -384,9 +384,13 @@ _inlet_turbulence(const char  *choice,
  *----------------------------------------------------------------------------*/
 
 static mei_tree_t *
-_boundary_scalar_init_mei_tree(const char  *formula,
-                               const char  *symbols[],
-                               int          symbol_size)
+_boundary_scalar_init_mei_tree(const char   *formula,
+                               const char   *symbols[],
+                               const double  dtref,
+                               const double  ttcabs,
+                               const int     ntcabs,
+                               int           symbol_size)
+
 {
   int i = 0;
 
@@ -397,11 +401,14 @@ _boundary_scalar_init_mei_tree(const char  *formula,
   mei_tree_insert(tree, "x", 0.0);
   mei_tree_insert(tree, "y", 0.0);
   mei_tree_insert(tree, "z", 0.0);
+  mei_tree_insert(tree, "t", ttcabs);
+  mei_tree_insert(tree, "dt", dtref);
+  mei_tree_insert(tree, "iter", ntcabs);
 
   /* try to build the interpreter */
   if (mei_tree_builder(tree))
     bft_error(__FILE__, __LINE__, 0,
-        _("Error: can not interpret expression: %s\n"), tree->string);
+              _("Error: can not interpret expression: %s\n"), tree->string);
 
   /* check for symbols */
   for (i = 0; i < symbol_size; ++i)
@@ -422,9 +429,12 @@ _boundary_scalar_init_mei_tree(const char  *formula,
  *----------------------------------------------------------------------------*/
 
 static void
-_boundary_scalar(const char  *nature,
-                 int          izone,
-                 int          f_id)
+_boundary_scalar(const char   *nature,
+                 const double  dtref,
+                 const double  ttcabs,
+                 const int     ntcabs,
+                 int           izone,
+                 int           f_id)
 {
   char *path = NULL;
   char *path_commun = NULL;
@@ -485,7 +495,12 @@ _boundary_scalar(const char  *nature,
           const char *sym[] = {f->name};
           boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
           boundaries->scalar[f_id][izone * dim + i] =
-            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
+            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path),
+                                           sym,
+                                           dtref,
+                                           ttcabs,
+                                           ntcabs,
+                                           1);
         }
       } else if (cs_gui_strcmp(choice, "neumann_formula")) {
         cs_xpath_add_element(&path, "neumann_formula");
@@ -494,7 +509,12 @@ _boundary_scalar(const char  *nature,
           const char *sym[] = {"flux"};
           boundaries->type_code[f_id][izone] = NEUMANN_FORMULA;
           boundaries->scalar[f_id][izone * dim + i] =
-            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 1);
+            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path),
+                                           sym,
+                                           dtref,
+                                           ttcabs,
+                                           ntcabs,
+                                           1);
         }
       } else if (cs_gui_strcmp(choice, "exchange_coefficient_formula")){
         cs_xpath_add_element (&path, "exchange_coefficient_formula");
@@ -503,7 +523,12 @@ _boundary_scalar(const char  *nature,
           const char *sym[] = {f->name,"hc"};
           boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
           boundaries->scalar[f_id][izone * dim + i] =
-            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path), sym, 2);
+            _boundary_scalar_init_mei_tree(cs_gui_get_text_value(path),
+                                           sym,
+                                           dtref,
+                                           ttcabs,
+                                           ntcabs,
+                                           2);
         }
       }
 
@@ -963,15 +988,18 @@ static mei_tree_t *_boundary_init_mei_tree(const char *formula,
 
 static void
 _init_boundaries(const cs_lnum_t  *nfabor,
-                 const int  *nozppm,
-                 const int  *ncharb,
-                 const int  *nclpch,
-                       int  *izfppp,
-                 const int  *iesicf,
-                 const int  *isspcf,
-                 const int  *iephcf,
-                 const int  *isopcf,
-                 const int  *idarcy)
+                 const int        *nozppm,
+                 const int        *ncharb,
+                 const int        *nclpch,
+                       int        *izfppp,
+                 const int        *iesicf,
+                 const int        *isspcf,
+                 const int        *iephcf,
+                 const int        *isopcf,
+                 const int        *idarcy,
+                 const double      dtref,
+                 const double      ttcabs,
+                 const int         ntcabs)
 {
   cs_lnum_t faces = 0;
   cs_lnum_t zones = 0;
@@ -1323,7 +1351,12 @@ _init_boundaries(const cs_lnum_t  *nfabor,
       }
 
       if (f != NULL)
-        _boundary_scalar(nature, izone, f->id);
+        _boundary_scalar(nature,
+                         dtref,
+                         ttcabs,
+                         ntcabs,
+                         izone,
+                         f->id);
 
       /* Meteo scalars */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
@@ -1351,7 +1384,12 @@ _init_boundaries(const cs_lnum_t  *nfabor,
           cs_field_t *c = cs_field_by_name_try(name);
           BFT_FREE(path_meteo);
 
-          _boundary_scalar(nature, izone, c->id);
+          _boundary_scalar(nature,
+                           dtref,
+                           ttcabs,
+                           ntcabs,
+                           izone,
+                           c->id);
         }
       }
       /* Electric arc scalars */
@@ -1378,7 +1416,12 @@ _init_boundaries(const cs_lnum_t  *nfabor,
           cs_field_t *c = cs_field_by_name_try(name);
 
           BFT_FREE(path_elec);
-          _boundary_scalar(nature, izone, c->id);
+          _boundary_scalar(nature,
+                           dtref,
+                           ttcabs,
+                           ntcabs,
+                           izone,
+                           c->id);
         }
       }
 
@@ -1388,7 +1431,12 @@ _init_boundaries(const cs_lnum_t  *nfabor,
 
         if (   (fu->type & CS_FIELD_VARIABLE)
             && (fu->type & CS_FIELD_USER))
-          _boundary_scalar(nature, izone, fu->id);
+          _boundary_scalar(nature,
+                           dtref,
+                           ttcabs,
+                           ntcabs,
+                           izone,
+                           fu->id);
       }
     }
 
@@ -1594,7 +1642,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
 
   if (boundaries == NULL)
     _init_boundaries(nfabor, nozppm, ncharb, nclpch,
-                     izfppp, iesicf, isspcf, iephcf, isopcf, idarcy);
+                     izfppp, iesicf, isspcf, iephcf, isopcf, idarcy,
+                     *ttcabs, *dtref, *ntcabs);
 
   /* At each time-step, loop on boundary faces:
      One sets itypfb, rcodcl and icodcl thanks to the arrays
