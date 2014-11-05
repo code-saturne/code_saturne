@@ -417,8 +417,8 @@ write(nfecra,2500) itherm, itpscl, iscalt
 '                               (2: enthalpie                )',/,&
 '                               (3: energie totale           )',/,&
 '       ITPSCL = ',4x,i10,    ' (0: pas de temperature       )',/,&
-'                               (1: temperature en Celsius   )',/,&
-'                               (2: temperature en Kelvin    )',/,&
+'                               (1: temperature en Kelvin    )',/,&
+'                               (2: temperature en Celsius   )',/,&
 '       ISCALT = ',4x,i10,    ' (Numero du scalaire thermique)',/)
 
 #else
@@ -435,8 +435,8 @@ write(nfecra,2500) itherm, itpscl, iscalt
 '                               (2: enthalpy                 )',/,&
 '                               (3: total energy             )',/,&
 '       ITPSCL = ',4x,i10,    ' (0: none                     )',/,&
-'                               (1: temperature in Celsius   )',/,&
-'                               (2: temperature in Kelvin    )',/,&
+'                               (1: temperature in Kelvin    )',/,&
+'                               (2: temperature in Celsius   )',/,&
 '       ISCALT = ',4x,i10,    ' (Thermal scalar number       )',/)
 
 #endif
