@@ -2872,6 +2872,9 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   cs_gui_gravity_value("gravity_z", gz);
 
   cs_real_t w_x, w_y, w_z;
+  w_x = 0.;
+  w_y = 0.;
+  w_z = 0.;
 
   _coriolis_value("omega_x", &w_x);
   _coriolis_value("omega_y", &w_y);
