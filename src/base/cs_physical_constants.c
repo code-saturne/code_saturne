@@ -230,8 +230,7 @@ BEGIN_C_DECLS
 
 /* main physical constants structure and associated pointer */
 
-static cs_physical_constants_t  _physical_constants = {0., 0., 0., 0, 0., 0.,
-                                                       0.};
+static cs_physical_constants_t  _physical_constants = {0., 0., 0., 0};
 
 const
 cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
