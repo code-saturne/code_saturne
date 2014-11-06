@@ -319,7 +319,7 @@ _count_b_faces_to_add(const cs_lnum_2_t  *i_face_cells,
       n_bf_lst +=   i_face_vtx_idx[list[ii] + 1]
                   - i_face_vtx_idx[list[ii]];
     }
-    if (i_face_cells[list[ii] - 1][0] > -1) {
+    if (i_face_cells[list[ii]][0] > -1) {
       n_bf++;
       n_bf_lst +=   i_face_vtx_idx[list[ii] + 1]
                   - i_face_vtx_idx[list[ii]];
@@ -447,7 +447,6 @@ _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
       inc++;
     }
   }
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -593,7 +592,6 @@ cs_create_thinwall(cs_mesh_t  *mesh,
                   face_list,
                   face_list_size);
 
-
   mesh->n_i_faces = n_i_faces - face_list_size;
   mesh->i_face_vtx_connect_size = i_face_vtx_connect_size - i_face_vtx_cleaned;
 
@@ -603,7 +601,7 @@ cs_create_thinwall(cs_mesh_t  *mesh,
   if (cs_glob_n_ranks > 1) {
     cs_lnum_t n_bf = 0;
     for (ii = 0; ii < mesh->n_i_faces; ii++) {
-      if (mesh->i_face_cells[ii][1] > 0)
+      if (mesh->i_face_cells[ii][1] > -1)
         n_bf++;
     }
     MPI_Allreduce(&n_bf, &_n_g_i_faces, 1, CS_MPI_LNUM, MPI_SUM,

@@ -515,7 +515,7 @@ cs_user_mesh_thinwall(cs_mesh_t  *mesh)
                                                        mesh->n_i_faces,
                                                        mesh->class_defs,
                                                        mesh->i_face_family,
-                                                       1,
+                                                       0,
                                                        i_face_cog,
                                                        i_face_normal);
 
