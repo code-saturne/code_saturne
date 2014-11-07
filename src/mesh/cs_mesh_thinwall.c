@@ -314,12 +314,12 @@ _count_b_faces_to_add(const cs_lnum_2_t  *i_face_cells,
   cs_lnum_t n_bf_lst = 0;
 
   for (ii = 0; ii < list_size; ii++) {
-    if (i_face_cells[list[ii]][1] > -1) {
+    if (i_face_cells[list[ii]][0] > -1) {
       n_bf++;
       n_bf_lst +=   i_face_vtx_idx[list[ii] + 1]
                   - i_face_vtx_idx[list[ii]];
     }
-    if (i_face_cells[list[ii]][0] > -1) {
+    if (i_face_cells[list[ii]][1] > -1) {
       n_bf++;
       n_bf_lst +=   i_face_vtx_idx[list[ii] + 1]
                   - i_face_vtx_idx[list[ii]];
@@ -436,17 +436,41 @@ _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
   cs_lnum_t inc = 0;
 
   for (ii = 0; ii < list_size; ii++) {
-    if (i_face_cells[list[ii]][1] >= 0) {
+    if (i_face_cells[list[ii]][0] > -1) {
       b_faces_glob_num[n_b_faces + inc]
         = n_g_faces + 2*(list_glob_num[ii] - 1) + 1;
       inc++;
     }
-    if (i_face_cells[list[ii]][0] >= 0) {
+    if (i_face_cells[list[ii]][1] > -1) {
       b_faces_glob_num[n_b_faces + inc]
         = n_g_faces + 2*(list_glob_num[ii] - 1) + 2;
       inc++;
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Print information on a mesh structure.
+ *
+ * parameters:
+ *   mesh  <--  pointer to mesh structure.
+ *   name  <--  associated name.
+ *----------------------------------------------------------------------------*/
+
+static void
+_print_mesh_info(const cs_mesh_t  *mesh,
+                 const char       *name)
+{
+  bft_printf(_(" %s\n"
+               "     Number of cells:          %llu\n"
+               "     Number of interior faces: %llu\n"
+               "     Number of boundary faces: %llu\n"
+               "     Number of vertices:       %llu\n"),
+             name,
+             (unsigned long long)(mesh->n_g_cells),
+             (unsigned long long)(mesh->n_g_i_faces),
+             (unsigned long long)(mesh->n_g_b_faces),
+             (unsigned long long)(mesh->n_g_vertices));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -512,10 +536,11 @@ cs_create_thinwall(cs_mesh_t  *mesh,
 
     global_order_i_faces = fvm_io_num_get_global_num(global_number_i_faces);
 
-    global_number_b_faces = fvm_io_num_create(face_list,
-                                              mesh->global_i_face_num,
-                                              face_list_size,
-                                              0);
+    global_number_b_faces
+      = fvm_io_num_create_from_select(face_list,
+                                      mesh->global_i_face_num,
+                                      face_list_size,
+                                      0);
     global_order_b_faces = fvm_io_num_get_global_num(global_number_b_faces);
 
     BFT_REALLOC(mesh->global_i_face_num, new_n_i_faces, cs_gnum_t);
@@ -559,7 +584,8 @@ cs_create_thinwall(cs_mesh_t  *mesh,
 
   if (cs_glob_n_ranks > 1) {
 
-    MPI_Allreduce(&(mesh->n_b_faces), &_n_g_b_faces, 1, CS_MPI_LNUM, MPI_SUM,
+    cs_gnum_t _n_l_b_faces = mesh->n_b_faces;
+    MPI_Allreduce(&_n_l_b_faces, &_n_g_b_faces, 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
 
     BFT_REALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
@@ -599,12 +625,12 @@ cs_create_thinwall(cs_mesh_t  *mesh,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_lnum_t n_bf = 0;
+    cs_gnum_t n_bf = 0;
     for (ii = 0; ii < mesh->n_i_faces; ii++) {
       if (mesh->i_face_cells[ii][1] > -1)
         n_bf++;
     }
-    MPI_Allreduce(&n_bf, &_n_g_i_faces, 1, CS_MPI_LNUM, MPI_SUM,
+    MPI_Allreduce(&n_bf, &_n_g_i_faces, 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
 #endif
@@ -616,6 +642,8 @@ cs_create_thinwall(cs_mesh_t  *mesh,
 
   mesh->n_g_b_faces = _n_g_b_faces;
   mesh->n_g_i_faces = _n_g_i_faces;
+
+  _print_mesh_info(mesh, " After addition of user-defined thin walls");
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
