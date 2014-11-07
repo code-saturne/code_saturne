@@ -475,9 +475,9 @@ _copy_mesh(const cs_mesh_t  *mesh,
     memcpy(mesh_copy->family_item, mesh->family_item, n_elts*sizeof(cs_lnum_t));
   }
 
-  BFT_MALLOC(mesh_copy->cell_family, mesh->n_cells, cs_lnum_t);
+  BFT_MALLOC(mesh_copy->cell_family, mesh->n_cells_with_ghosts, cs_lnum_t);
   memcpy(mesh_copy->cell_family, mesh->cell_family,
-         mesh->n_cells*sizeof(cs_lnum_t));
+         mesh->n_cells_with_ghosts*sizeof(cs_lnum_t));
 
   BFT_MALLOC(mesh_copy->i_face_family, mesh->n_i_faces, cs_lnum_t);
   memcpy(mesh_copy->i_face_family, mesh->i_face_family,
@@ -508,8 +508,6 @@ _update_geometry(cs_mesh_t  *mesh,
 
   cs_lnum_t  *vtx_rotor_num = NULL;
 
-  cs_gnum_t n_errors = 0;
-
   const int  *cell_flag = tbm->cell_rotor_num;
 
   BFT_MALLOC(vtx_rotor_num, mesh->n_vertices, cs_lnum_t);
@@ -522,16 +520,13 @@ _update_geometry(cs_mesh_t  *mesh,
   for (f_id = 0; f_id < mesh->n_i_faces; f_id++) {
     cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
     cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
-    if (   cell_flag[c_id_0] != 0
-        && (cell_flag[c_id_1] - cell_flag[c_id_0]) != 0)
-      n_errors ++;
-    if (cell_flag[c_id_0] != 0) {
+    if (c_id_0 < mesh->n_cells && cell_flag[c_id_0] != 0) {
       for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
            i < mesh->i_face_vtx_idx[f_id+1];
            i++)
         vtx_rotor_num[mesh->i_face_vtx_lst[i]] = cell_flag[c_id_0];
     }
-    else if (cell_flag[c_id_1] != 0) {
+    else if (c_id_1 < mesh->n_cells && cell_flag[c_id_1] != 0) {
       for (cs_lnum_t i = mesh->i_face_vtx_idx[f_id];
            i < mesh->i_face_vtx_idx[f_id+1];
            i++)
@@ -550,13 +545,6 @@ _update_geometry(cs_mesh_t  *mesh,
         vtx_rotor_num[mesh->b_face_vtx_lst[i]] = cell_flag[c_id];
     }
   }
-
-  cs_parall_counter(&n_errors, 1);
-  if (n_errors > 0)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("%s: some vertices of the initial mesh belong to multiple rotors."),
-       __func__);
 
   /* Now update coordinates */
 
@@ -581,6 +569,44 @@ _update_geometry(cs_mesh_t  *mesh,
 
   BFT_FREE(m);
   BFT_FREE(vtx_rotor_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Check that rotors and stators are originally disjoint
+ *
+ * parameters:
+ *   mesh <-- mesh to check
+ *----------------------------------------------------------------------------*/
+
+static void
+_check_geometry(cs_mesh_t  *mesh)
+{
+  cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
+
+  cs_lnum_t  f_id;
+
+  cs_gnum_t n_errors = 0;
+
+  const int  *cell_flag = tbm->cell_rotor_num;
+
+  /* Mark from interior faces */
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    cs_lnum_t c_id_0 = mesh->i_face_cells[f_id][0];
+    cs_lnum_t c_id_1 = mesh->i_face_cells[f_id][1];
+    if (cell_flag[c_id_1] - cell_flag[c_id_0] != 0)
+      n_errors ++;
+  }
+
+  cs_parall_counter(&n_errors, 1);
+  if (n_errors > 0)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s: some faces of the initial mesh belong to different\n"
+         "rotor/stator sections.\n"
+         "These sections must be initially disjoint to rotate freely."),
+       __func__);
+
 }
 
 /*----------------------------------------------------------------------------
@@ -622,6 +648,9 @@ _select_rotor_cells(cs_turbomachinery_t  *tbm)
                          CS_HALO_EXTENDED,
                          sizeof(int),
                          tbm->cell_rotor_num);
+
+  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT)
+    _check_geometry(m);
 }
 
 /*============================================================================
@@ -1023,18 +1052,6 @@ cs_turbomachinery_initialize(void)
     cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
 
   _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
-
-  /* Build the rotor vertices list, if required */
-
-  if (tbm->model == CS_TURBOMACHINERY_TRANSIENT) {
-
-    if (cs_glob_mesh->halo != NULL)
-      cs_halo_sync_untyped(cs_glob_mesh->halo,
-                           CS_HALO_EXTENDED,
-                           sizeof(int),
-                           tbm->cell_rotor_num);
-
-  }
 
   /* Complete the mesh with rotor-stator joining */
 
