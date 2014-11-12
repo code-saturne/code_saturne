@@ -1141,6 +1141,17 @@ if (ippmod(idarcy).eq.1) then
   ! harmonic face viscosity interpolation
   imvisf = 1
 
+  ! reference values for pressure and density
+  p0 = 0.d0
+  ro0 = 1.d0
+
+  ! be careful: if iturb was not initialized iturb is set to 0 to pass verini
+  if (iturb.eq.-999) iturb = 0
+  if (iturb.gt.0) then
+    write(nfecra,4001)
+    call csexit (1)
+  endif
+
 endif
 
 !===============================================================================
@@ -1385,6 +1396,20 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 4001 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION :       A L''ENTREE DES DONNEES',               /,&
+'@    =========,'                                               /,&
+'@',                                                            /,&
+'@  Il est impossible d''utiliser un model de turbulence avec', /,&
+'@  la modelisation des ecoulements souterrains.',              /,&
+'@',                                                            /,&
+'@  Le calcul ne sera pas execute.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 
 #else
 
@@ -1573,6 +1598,20 @@ endif
 '@  The upwind scheme for the void fraction is forced.',        /,&
 '@',                                                            /,&
 '@  The calculation will be run.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+ 4001 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@  A turbulence model can not be used with the'                /,&
+'@    gound water flows modeling.',                             /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
