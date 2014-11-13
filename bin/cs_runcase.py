@@ -84,7 +84,7 @@ class runcase(object):
         for line in self.lines:
             if line.startswith('export PATH='):
                 if self.package != None:
-                    line = "export PATH=" + self.package.get_dir("bindir")  + ":$PATH\n"
+                    line = "export PATH=" + self.package.get_dir("bindir")  + ":$PATH"
             f.write(line + '\n')
         f.close()
 
