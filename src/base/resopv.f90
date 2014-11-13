@@ -226,7 +226,10 @@ double precision, allocatable, dimension(:) :: iflux, bflux
 double precision, allocatable, dimension(:) :: xunsro
 double precision, allocatable, dimension(:), target :: xdtsro
 double precision, allocatable, dimension(:,:), target :: tpusro
+double precision, allocatable, dimension(:), target :: xvolf
 double precision, dimension(:), pointer :: viscap
+double precision, dimension(:), pointer :: volf
+double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: vitenp
 double precision, allocatable, dimension(:,:) :: gradni
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -263,6 +266,30 @@ allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
 ! Associate pointers to pressure diffusion coefficient
 viscap => dt(:)
 if (idften(ipr).eq.6)  vitenp => tpucou(:,:)
+
+
+! Compute the Volume of fluid (in case of porosity)
+if (iporos.eq.0)  then
+  volf => volume(:)
+
+! With porosity
+else
+
+  call field_get_val_s(ipori, porosi)
+
+  allocate(xvolf(ncelet))
+
+  do iel = 1, ncel
+    xvolf(iel) = volume(iel) * porosi(iel)
+  enddo
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(xvolf)
+  endif
+
+  volf => xvolf(:)
+
+endif
 
 ! Index of the field
 iflid = ivarfl(ipr)
@@ -447,7 +474,7 @@ if (irnpnw.ne.1) then
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      res(iel) = res(iel) - volume(iel)*smacel(ii,ipr)
+      res(iel) = res(iel) - volf(iel)*smacel(ii,ipr)
     enddo
   endif
 
@@ -478,7 +505,7 @@ if (irnpnw.ne.1) then
   ! Cavitation source term
   if (icavit.gt.0) then
     do iel = 1, ncel
-      res(iel) = res(iel) -volume(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+      res(iel) = res(iel) -volf(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -800,13 +827,13 @@ enddo
 ! Implicit part of the cavitation source
 if (icavit.gt.0.and.itscvi.eq.1) then
   do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel) - volume(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
+    rovsdt(iel) = rovsdt(iel) - volf(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
   enddo
 endif
 ! Strengthen the diagonal for Low Mach Algorithme
 if (idilat.eq.3) then
   do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel) + epsdp*volume(iel)/dt(iel)
+    rovsdt(iel) = rovsdt(iel) + epsdp*volf(iel)/dt(iel)
   enddo
 endif
 
@@ -1421,7 +1448,7 @@ endif
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    divu(iel) = divu(iel) -volume(iel)*smacel(ii,ipr)
+    divu(iel) = divu(iel) -volf(iel)*smacel(ii,ipr)
   enddo
 endif
 
@@ -1454,7 +1481,7 @@ endif
 if (idilat.eq.2.or.idilat.eq.3) then
   do iel = 1, ncel
     drom = crom(iel) - croma(iel)
-    divu(iel) = divu(iel) + drom*volume(iel)/dt(iel)
+    divu(iel) = divu(iel) + drom*volf(iel)/dt(iel)
   enddo
 endif
 
@@ -1468,7 +1495,7 @@ endif
 ! --- Cavitation source term
 if (icavit.gt.0) then
   do iel = 1, ncel
-    divu(iel) = divu(iel) - volume(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+    divu(iel) = divu(iel) - volf(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
   enddo
 endif
 
@@ -2148,7 +2175,7 @@ if (idilat.eq.5) then
 
   ! --- Initialization of the variable to solve
   do iel = 1, ncel
-    rovsdt(iel) = 340.d0/dt(iel) * volume(iel)
+    rovsdt(iel) = 340.d0/dt(iel) * volf(iel)
     dpvar(iel)   = 0.d0
     ddpvar(iel)  = 0.d0
     rhs(iel)    = - rhs(iel)
@@ -2344,6 +2371,7 @@ if (icavit.ge.0.or.idilat.eq.4) then
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)
 endif
+if (allocated(xvolf)) deallocate(xvolf)
 
 !--------
 ! Formats
