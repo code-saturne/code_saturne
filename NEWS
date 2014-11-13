@@ -22,15 +22,6 @@ Changes:
 - Add a "slope_test_upwind_id" field keyword, allowing postprocessing output
   of the contribution of slope tests to convected variables.
 
-- Remove the usipgl subroutine from cs_user_parameters.f90.
-  Specific, model oriented options are defined in usipph, general options
-  in usipsu.
-
-- Remove the cs_user_field_parameters subroutine from cs_user_parameters.f90.
-  user code in that subroutine may now be placed in usipsu or usipes.
-  The usipsc subroutine is also removed, and scalar variable diffusivity
-  behavior may be activated through usipsu.
-
 - Add a new dilatable (non conservative) algorithm for fire modelling.
   Activate it with idilat=4 (the formulation is in div(u) instead of
   div(rho u)). You can access to the previous dedicated algorithm by
@@ -38,56 +29,47 @@ Changes:
 
 - Add L2 time normalized residual to the log.
 
-- Add Block Gauss-Seidel linear solver, wich may be accelerated for "upwind"
-  type systems by a matrix line ordering. This is used (by default) for the
-  DOM radiation module, using the ordering defined by the radiation direction,
-  and leads to a factor of 2 to 4 improvement over the Jacobi solver for this
-  case (tested on a small number of MPI ranks).
-
-- Single-reduction conjugate gradient is now an option rather than a separate
-  solver. This allows switching automatically from one to the other based on
-  computation vs. communication cost.
-
-- Add BiCGstab2 linear solver.
-
-- Change default solver for pure diffusion problems (from Conjugate gradient to
-  multigrid solver).
-
-- Unify handling of linear solvers, so as to allow finer user control, and
-  enable future additions of solver options and user-defined or external
-  solvers.
+- Major changes for solvers:
+  * Unify handling of linear solvers, so as to allow finer user control, and
+    enable future additions of solver options and user-defined or external
+    solvers.
+  * Add Block Gauss-Seidel linear solver, wich may be accelerated for "upwind"
+    type systems by a matrix line ordering. This is used (by default) for the
+    DOM radiation module, using the ordering defined by the radiation direction,
+    and leads to a factor of 2 to 4 improvement over the Jacobi solver for this
+    case (tested on a small number of MPI ranks).
+  * Single-reduction conjugate gradient is now an option rather than a separate
+    solver. This allows switching automatically from one to the other based on
+    computation vs. communication cost.
+  * Add BiCGstab2 linear solver.
+  * Change default solver for pure diffusion problems (from Conjugate gradient to
+    multigrid solver).
 
 - Add a new experimental module for Darcy flows. It could be
-  activated with the keyword idarcy = 1.
-  This path includes new developments to improve gradient calculation with
-  heterogeneous diffusion coefficients. This feature is only available
-  for standard LSQ gradients and could be activated with
+  activated with the keyword usppmo(idarcy) = 1.
+  This path includes new developments to improve reconstruction gradient
+	calculation with heterogeneous diffusion coefficients. This feature is only
+	available for standard LSQ gradients and could be activated with
   the keyword iwgrec(ivar) = 1.
 
 - Add drift modelling for coal combustion, and clean up the module:
-
-  - Now, the enthalpy of the continuous phase (gas phase, h1) is transported
+  * Now, the enthalpy of the continuous phase (gas phase, h1) is transported
     rather than deduced (to be precises, X1.h1 is transported)
-  - The convective flux for the gas phase is deduced from the convective fluxes
+  * The convective flux for the gas phase is deduced from the convective fluxes
     of the particle classes and the convective flux of the bulk: therefore, the
     algorithm is fully conservative over time and space.
     (Note that the conservatism is obtained mainly due to having upwind schemes;
      transport equation on X1 with convective field V1 and
      transport equation on h1 with convective field X1.V1
      is equivalent to transport equation of X1.h1 with convective field V1...)
-  - Some coal combustion fields are renamed
-  - A model with a transported particle velocity per class is added (in fact,
+  * Some coal combustion fields are renamed
+  * A model with a transported particle velocity per class is added (in fact,
     this velocity is handled as 3 scalars).
-  - Correct cs_user_initialization-unified_combustion_coal.f90 user example.
+  * Correct cs_user_initialization-unified_combustion_coal.f90 user example.
 
 - Add a condensation wall model.
 
 - Added cell and face renumbering options to try to improve performance.
-
-- User scalars are not declared in usinsc (in cs_user_parameters.f90) anymore,
-  but in cs_user_model (in cs_user_parameters.c). They are not named based
-  on their number, but both their name and label is determined by the user.
-  This should make it easier to combine data setups.
 
 Architectural changes
 ---------------------
@@ -96,16 +78,27 @@ Architectural changes
   structure as owner.
 
 - Rename and merge user subroutines:
-   * merge (usebu1, uslwc1, usd3pt1, uscpl1, user_coal_ini1, user_fuel_ini1)
-           in cs_user_combustion (in cs_user_paramters.f90)
-   * split and rename usray1 in cs_user_radiative_transfer
-     (in cs_user_parameters.f90)
-           (Note that the declaration of the use of radiative transfer is in
-                 usppmo, as the other specific physics models)
-   * rename usray2 in cs_user_radiative_transfer_bcs
-         - merge usalin into usipph (in cs_user_parameters.f90)
-         - rename ustsma into cs_user_mass_source_terms
-         - rename uskpdc into cs_user_head_losses
+  * User scalars are not declared in usinsc (in cs_user_parameters.f90) anymore,
+    but in cs_user_model (in cs_user_parameters.c). They are not named based
+    on their number, but both their name and label is determined by the user.
+    This should make it easier to combine data setups.
+  * Remove the cs_user_field_parameters subroutine from cs_user_parameters.f90.
+    user code in that subroutine may now be placed in usipsu or usipes.
+    The usipsc subroutine is also removed, and scalar variable diffusivity
+    behavior may be activated through usipsu.
+  * merge (usebu1, uslwc1, usd3pt1, uscpl1, user_coal_ini1, user_fuel_ini1)
+          in cs_user_combustion (in cs_user_paramters.f90)
+  * split and rename usray1 in cs_user_radiative_transfer
+    (in cs_user_parameters.f90)
+          (Note that the declaration of the use of radiative transfer is in
+                usppmo, as the other specific physics models)
+  * rename usray2 in cs_user_radiative_transfer_bcs
+  * merge usalin into usipph (in cs_user_parameters.f90)
+  * rename ustsma into cs_user_mass_source_terms
+  * rename uskpdc into cs_user_head_losses
+  * remove the usipgl subroutine from cs_user_parameters.f90.
+    Specific, model oriented options are defined in usipph, general options
+    in usipsu.
 
 - Lagrangian particle data is now shared between Fortran and C parts.
   Fortran arrays have been replaced by pointers, which map to the C data.
