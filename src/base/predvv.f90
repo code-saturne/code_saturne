@@ -227,6 +227,8 @@ double precision, dimension(:), pointer :: brom, crom, croma, pcrom
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: porosi
+double precision, dimension(:), pointer :: volf
+double precision, allocatable, dimension(:), target :: xvolf
 double precision, dimension(:,:), allocatable :: rij
 double precision, dimension(:), pointer :: coef1, coef2, coef3, coef4, coef5, coef6
 double precision, dimension(:,:), allocatable :: coefat
@@ -302,9 +304,27 @@ else
   endif
 endif
 
+! Compute the Volume of fluid (in case of porosity)
+if (iporos.eq.0)  then
+  volf => volume(:)
+
 ! With porosity
-if (iporos.ge.1) then
+else
+
   call field_get_val_s(ipori, porosi)
+
+  allocate(xvolf(ncelet))
+
+  do iel = 1, ncel
+    xvolf(iel) = volume(iel) * porosi(iel)
+  enddo
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(xvolf)
+  endif
+
+  volf => xvolf(:)
+
 endif
 
 if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
@@ -561,124 +581,57 @@ endif
 !         chaque fois (ie on pourrait le passer dans trava) mais ce n'est
 !         pas cher.
 if (iappel.eq.1) then
-  ! Without porosity
-  if (iporos.eq.0) then
-    if (iphydr.eq.1) then
-      do iel = 1, ncel
-        trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * volume(iel)
-        trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * volume(iel)
-        trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * volume(iel)
-      enddo
+  if (iphydr.eq.1) then
+    do iel = 1, ncel
+      trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * volf(iel)
+      trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * volf(iel)
+      trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * volf(iel)
+    enddo
     elseif (iphydr.eq.2) then
-      do iel = 1, ncel
-        rom = crom(iel)
-        trav(1,iel) = (rom*gx - grdphd(iel,1) - grad(1,iel)) * volume(iel)
-        trav(2,iel) = (rom*gy - grdphd(iel,2) - grad(2,iel)) * volume(iel)
-        trav(3,iel) = (rom*gz - grdphd(iel,3) - grad(3,iel)) * volume(iel)
-      enddo
+    do iel = 1, ncel
+      rom = crom(iel)
+      trav(1,iel) = (rom*gx - grdphd(iel,1) - grad(1,iel)) * volf(iel)
+      trav(2,iel) = (rom*gy - grdphd(iel,2) - grad(2,iel)) * volf(iel)
+      trav(3,iel) = (rom*gz - grdphd(iel,3) - grad(3,iel)) * volf(iel)
+    enddo
     elseif (ippmod(icompf).ge.0) then
-      do iel = 1, ncel
-        rom = crom(iel)
-        trav(1,iel) = (rom*gx - grad(1,iel)) * volume(iel)
-        trav(2,iel) = (rom*gy - grad(2,iel)) * volume(iel)
-        trav(3,iel) = (rom*gz - grad(3,iel)) * volume(iel)
-      enddo
-    else
-      do iel = 1, ncel
-        drom = (crom(iel)-ro0)
-        trav(1,iel) = (drom*gx - grad(1,iel)) * volume(iel)
-        trav(2,iel) = (drom*gy - grad(2,iel)) * volume(iel)
-        trav(3,iel) = (drom*gz - grad(3,iel)) * volume(iel)
-      enddo
-    endif
-  ! With porosity
+    do iel = 1, ncel
+      rom = crom(iel)
+      trav(1,iel) = (rom*gx - grad(1,iel)) * volf(iel)
+      trav(2,iel) = (rom*gy - grad(2,iel)) * volf(iel)
+      trav(3,iel) = (rom*gz - grad(3,iel)) * volf(iel)
+    enddo
   else
-    if (iphydr.eq.1) then
-      do iel = 1, ncel
-        trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * volume(iel) * porosi(iel)
-        trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * volume(iel) * porosi(iel)
-        trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * volume(iel) * porosi(iel)
-      enddo
-    elseif (iphydr.eq.2) then
-      do iel = 1, ncel
-        rom = crom(iel)
-        trav(1,iel) = (rom*gx - grdphd(iel,1) - grad(1,iel)) * volume(iel) * porosi(iel)
-        trav(2,iel) = (rom*gy - grdphd(iel,2) - grad(2,iel)) * volume(iel) * porosi(iel)
-        trav(3,iel) = (rom*gz - grdphd(iel,3) - grad(3,iel)) * volume(iel) * porosi(iel)
-      enddo
-    elseif (ippmod(icompf).ge.0) then
-      do iel = 1, ncel
-        rom = crom(iel)
-        trav(1,iel) = (rom*gx - grad(1,iel)) * volume(iel) * porosi(iel)
-        trav(2,iel) = (rom*gy - grad(2,iel)) * volume(iel) * porosi(iel)
-        trav(3,iel) = (rom*gz - grad(3,iel)) * volume(iel) * porosi(iel)
-      enddo
-    else
-      do iel = 1, ncel
-        drom = (crom(iel)-ro0)
-        trav(1,iel) = (drom*gx - grad(1,iel) ) * volume(iel) * porosi(iel)
-        trav(2,iel) = (drom*gy - grad(2,iel) ) * volume(iel) * porosi(iel)
-        trav(3,iel) = (drom*gz - grad(3,iel) ) * volume(iel) * porosi(iel)
-      enddo
-    endif
-
+    do iel = 1, ncel
+      drom = (crom(iel)-ro0)
+      trav(1,iel) = (drom*gx - grad(1,iel) ) * volf(iel)
+      trav(2,iel) = (drom*gy - grad(2,iel) ) * volf(iel)
+      trav(3,iel) = (drom*gz - grad(3,iel) ) * volf(iel)
+    enddo
   endif
 
-elseif(iappel.eq.2) then
+else if(iappel.eq.2) then
 
-  ! Without porosity
-  if (iporos.eq.0) then
-    if (iphydr.eq.1) then
-      do iel = 1, ncel
-        trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(1,iel))*volume(iel)
-        trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*volume(iel)
-        trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*volume(iel)
-      enddo
+  if (iphydr.eq.1) then
+    do iel = 1, ncel
+      trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(1,iel))*volf(iel)
+      trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*volf(iel)
+      trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*volf(iel)
+    enddo
     elseif (iphydr.eq.2) then
-      do iel = 1, ncel
-        rom = crom(iel)
-        trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1) - grad(1,iel))*volume(iel)
-        trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2) - grad(2,iel))*volume(iel)
-        trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3) - grad(3,iel))*volume(iel)
-      enddo
-    else
-      do iel = 1, ncel
-        drom = (crom(iel)-ro0)
-        trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*volume(iel)
-        trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*volume(iel)
-        trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*volume(iel)
-      enddo
-    endif
-
-  ! With porosity
+    do iel = 1, ncel
+      rom = crom(iel)
+      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1) - grad(1,iel))*volf(iel)
+      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2) - grad(2,iel))*volf(iel)
+      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3) - grad(3,iel))*volf(iel)
+    enddo
   else
-    if (iphydr.eq.1) then
-      do iel = 1, ncel
-        trav(1,iel) = trav(1,iel)                                           &
-                    + (frcxt(1 ,iel) - grad(1,iel))*volume(iel)*porosi(iel)
-        trav(2,iel) = trav(2,iel)                                           &
-                    + (frcxt(2 ,iel) - grad(2,iel))*volume(iel)*porosi(iel)
-        trav(3,iel) = trav(3,iel)                                           &
-                    + (frcxt(3 ,iel) - grad(3,iel))*volume(iel)*porosi(iel)
-      enddo
-    elseif (iphydr.eq.2) then
-      do iel = 1, ncel
-        rom = crom(iel)
-        trav(1,iel) = trav(1,iel)                                       &
-                    + (rom*gx - grdphd(iel,1) - grad(1,iel))*volume(iel)*porosi(iel)
-        trav(2,iel) = trav(2,iel)                                       &
-                    + (rom*gy - grdphd(iel,2) - grad(2,iel))*volume(iel)*porosi(iel)
-        trav(3,iel) = trav(3,iel)                                       &
-                    + (rom*gz - grdphd(iel,3) - grad(3,iel))*volume(iel)*porosi(iel)
-      enddo
-    else
-      do iel = 1, ncel
-        drom = (crom(iel)-ro0)
-        trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*volume(iel)*porosi(iel)
-        trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*volume(iel)*porosi(iel)
-        trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*volume(iel)*porosi(iel)
-      enddo
-    endif
+    do iel = 1, ncel
+      drom = (crom(iel)-ro0)
+      trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*volf(iel)
+      trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*volf(iel)
+      trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*volf(iel)
+    enddo
   endif
 
 endif
@@ -962,10 +915,7 @@ if (iappel.eq.1) then
     thetap = thetav(iu)
     do ielpdc = 1, ncepdp
       iel = icepdc(ielpdc)
-      romvom = crom(iel)*volume(iel)*thetap
-
-      ! With porosity
-      if (iporos.ge.1) romvom = romvom*porosi(iel)
+      romvom = crom(iel)*volf(iel)*thetap
 
       ! Diagonal part
       do isou = 1, 3
@@ -1005,9 +955,7 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
       call field_get_val_s(icrom, crom)
 
       do iel = 1, ncel
-        romvom = -ccorio*crom(iel)*volume(iel)
-        ! With porosity
-        if (iporos.ge.1) romvom = romvom*porosi(iel)
+        romvom = -ccorio*crom(iel)*volf(iel)
         call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trav(:,iel))
       enddo
 
@@ -1015,9 +963,7 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
     else
 
       do iel = 1, ncel
-        romvom = -ccorio*crom(iel)*volume(iel)
-        ! With porosity
-        if (iporos.ge.1) romvom = romvom*porosi(iel)
+        romvom = -ccorio*crom(iel)*volf(iel)
         call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trava(:,iel))
       enddo
 
@@ -1034,9 +980,7 @@ if(iappel.eq.1) then
     thetap = thetav(iu)
 
     do iel = 1, ncel
-      romvom = -ccorio*crom(iel)*volume(iel)*thetap
-      ! With porosity
-      if (iporos.ge.1) romvom = romvom*porosi(iel)
+      romvom = -ccorio*crom(iel)*volf(iel)*thetap
       call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
     enddo
 
@@ -2018,6 +1962,7 @@ deallocate(tsexp)
 deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(divt)) deallocate(divt)
+if (allocated(xvolf)) deallocate(xvolf)
 
 !--------
 ! Formats
