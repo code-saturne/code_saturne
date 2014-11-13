@@ -516,7 +516,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      xnormp(iel) = xnormp(iel) - volume(iel)*smacel(ii,ipr)
+      xnormp(iel) = xnormp(iel) - volf(iel)*smacel(ii,ipr)
     enddo
   endif
 
@@ -559,7 +559,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   ! Cavitation source term
   if (icavit.gt.0) then
     do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) -volume(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+      xnormp(iel) = xnormp(iel) -volf(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -726,7 +726,7 @@ if (iappel.eq.1) then
 
   do iel = 1, ncel
     do isou = 1, 3
-      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*volume(iel)
+      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*volf(iel)
       do jsou = 1, 3
         if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
       enddo
@@ -773,15 +773,6 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
 
   d2s3 = 2.d0/3.d0
 
-  ! With porosity
-  if (iporos.ge.1) then
-    do iel = 1, ncel
-      grad(1,iel) = grad(1,iel)*porosi(iel)
-      grad(2,iel) = grad(2,iel)*porosi(iel)
-      grad(3,iel) = grad(3,iel)*porosi(iel)
-    enddo
-  endif
-
   ! Si on extrapole les termes source en temps : PROPCE
   if (isno2t.gt.0) then
     ! Calcul de rho^n grad k^n      si rho non extrapole
@@ -790,7 +781,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
     call field_get_val_s(icrom, crom)
     call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncel
-      romvom = -croma(iel)*volume(iel)*d2s3
+      romvom = -croma(iel)*volf(iel)*d2s3
       do isou = 1, 3
         c_st_vel(isou,iel) = c_st_vel(isou,iel)+grad(isou,iel)*romvom
       enddo
@@ -799,14 +790,14 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   else
     if(nterup.eq.1) then
       do iel = 1, ncel
-        romvom = -crom(iel)*volume(iel)*d2s3
+        romvom = -crom(iel)*volf(iel)*d2s3
         do isou = 1, 3
           trav(isou,iel) = trav(isou,iel) + grad(isou,iel) * romvom
         enddo
       enddo
     else
       do iel = 1, ncel
-        romvom = -crom(iel)*volume(iel)*d2s3
+        romvom = -crom(iel)*volf(iel)*d2s3
         do isou = 1, 3
           trava(isou,iel) = trava(isou,iel) + grad(isou,iel) * romvom
         enddo
@@ -1374,6 +1365,7 @@ if (iterns.eq.1) then
   if (iphydr.eq.1.and.iterns.eq.1) then
 
     do iel = 1, ncel
+      !FIXME when using porosity
       dvol = 1.d0/volume(iel)
       do isou = 1, 3
         dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
@@ -1667,18 +1659,7 @@ if (ippmod(ielarc).ge.1) then
   do iel = 1, ncel
     do isou = 1, 3
       smbr(isou,iel) = smbr(isou,iel)                               &
-                     + volume(iel)*propce(iel,ipproc(ilapla(isou)))
-    enddo
-  enddo
-endif
-
-! With porosity: has to be done just before calling coditv
-if (iporos.ge.1) then
-  do iel = 1, ncel
-    do isou = 1, 3
-      do jsou = 1, 3
-        fimp(isou,jsou,iel) = fimp(isou,jsou,iel)*porosi(iel)
-      enddo
+                     + volf(iel)*propce(iel,ipproc(ilapla(isou)))
     enddo
   enddo
 endif
@@ -1774,7 +1755,7 @@ if (iappel.eq.1) then
     nswrsp = -1
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) = volume(iel)
+        smbr(isou,iel) = volf(iel)
       enddo
     enddo
     do iel = 1, ncelet
