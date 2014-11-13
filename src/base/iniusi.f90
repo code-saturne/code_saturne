@@ -253,7 +253,7 @@ endif
 
 ! ---> Physique particuliere : darcy
 
-if ( ippmod(idarcy).ge.0) then
+if (ippmod(idarcy).ge.0) then
   call daini1
   !==========
 endif

@@ -181,7 +181,7 @@ endif
 ! - Interface Code_Saturne
 !   ======================
 
-if (iihmpr.eq.1 .or. ippmod(idarcy).eq.1) then
+if (iihmpr.eq.1) then
 
   call uiiniv (ncelet, isuite, ippmod(idarcy),     &
                ithvar,                             &
@@ -193,7 +193,7 @@ endif
 !   - Sous-programme utilisateur
 !     ==========================
 
-if (ippmod(iphpar).eq.0 .or. ippmod(idarcy).eq.1) then
+if (ippmod(iphpar).eq.0) then
 
   call cs_user_initialization &
   !==========================

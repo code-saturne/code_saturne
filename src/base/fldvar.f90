@@ -155,6 +155,8 @@ if (nmodpp.gt.0) then
   if (ippmod(icompf).eq.-1 .and. ippmod(iatmos).eq.-1           &
                            .and. ippmod(iaeros).eq.-1)          &
     ippmod(iphpar) = 2
+  ! Ground water flows model is not considered as a specific physic.
+  if (ippmod(idarcy).gt.-1) ippmod(iphpar) = 0
 endif
 
 ! Define main variables
