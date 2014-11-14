@@ -1856,4 +1856,35 @@ contains
 
   !=============================================================================
 
+  !> \brief Compute balance on a given zone for a given scalar
+
+  !> param[in]       itypfb     array of boundary faces type
+  !> param[in]       sel_crit   selection criterium of a volumic zone
+  !> param[in]       name       scalar name
+
+  subroutine balance_by_zone(itypfb, sel_crit, name)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(kind=c_int), dimension(*), intent(in) :: itypfb
+    character(len=*), intent(in)             :: sel_crit, name
+
+    ! Local variables
+
+    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_sel_crit = trim(sel_crit)//c_null_char
+    c_name = trim(name)//c_null_char
+
+    call cs_balance_by_zone(itypfb, c_sel_crit, c_name)
+
+    return
+
+  end subroutine balance_by_zone
+
+  !=============================================================================
+
   end module cs_c_bindings

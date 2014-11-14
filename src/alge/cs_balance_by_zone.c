@@ -1381,7 +1381,7 @@ cs_balance_by_zone(const int  bc_type[],
                "------------------------------------------------------------\n"
                "   Total\n"
                "  %12.4e\n"
-               "------------------------------------------------------------\n"),
+               "------------------------------------------------------------\n\n"),
              nt_cur, scalar_name, selection_crit,
              vol_balance, div_balance, mass_i_balance, mass_o_balance,
              bi_i_balance, bi_o_balance, in_balance, out_balance, sym_balance,
