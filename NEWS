@@ -33,7 +33,7 @@ Changes:
   * Unify handling of linear solvers, so as to allow finer user control, and
     enable future additions of solver options and user-defined or external
     solvers.
-  * Add Block Gauss-Seidel linear solver, wich may be accelerated for "upwind"
+  * Add Block Gauss-Seidel linear solver, which may be accelerated for "upwind"
     type systems by a matrix line ordering. This is used (by default) for the
     DOM radiation module, using the ordering defined by the radiation direction,
     and leads to a factor of 2 to 4 improvement over the Jacobi solver for this
@@ -103,7 +103,7 @@ Architectural changes
 - Lagrangian particle data is now shared between Fortran and C parts.
   Fortran arrays have been replaced by pointers, which map to the C data.
   arrays itepa, tepa, ettp, and ettpa are replaced respectively by pointers
-  ipepa, pepa, eptp, eptpa, whih use interlaved data; for example, the
+  ipepa, pepa, eptp, eptpa, which use interleaved data; for example, the
   equivalent of itepa(np,jisor) would now be ipepa(jisor,np).
   Allocation is automatic, and npmabs is no more.
 
@@ -158,7 +158,7 @@ Changes:
 - Add 2 order backward Euler scheme in time for velocity prediction.
   Set ibdtso = 2 in usipsu to activate it.
 
-- Add cavitation models. See the documention (theory, user, Doxygen) for more details.
+- Add cavitation models. See the documentation (theory, user, Doxygen) for more details.
   You can activate it in cs_user_parameters.f90 with icavit=1.
 
 - Add the Shir model for the turbulent diffusion of the second moment turbulence models
@@ -270,7 +270,7 @@ Changes:
      scalars remain separate. It also allows querying the thermal model with one
      less indirection.
 - Atmospheric module:
-   * add gazeous chemistry models.
+   * add gaseous chemistry models.
    * plug the SIze REsolved Aerosol Model (SIREAM).
 
 - Turbomachinery modeling:
