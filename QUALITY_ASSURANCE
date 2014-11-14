@@ -1,4 +1,6 @@
 QUALITY ASSURANCE
 =================
-This version of Code_Saturne is a development version that
-has not been validated under EDF quality assurance.
+This version of Code_Saturne has been developed
+under EDF quality assurance.
+
+The "beta" status will be removed at the end of the validation stage.
