@@ -68,7 +68,7 @@
   \ref nfac          | cs_glob_mesh->n_i_faces               | Number of interior faces
   \ref nfabor        | cs_glob_mesh->n_b_faces               | Number of boundary faces
   \ref nnod          | cs_glob_mesh->n_vertices              | Number of vertices
-  \ref ncelbr        | cs_glob_mesh->n_b_cells               | Number of boundary cells
+                     | cs_glob_mesh->n_b_cells               | Number of boundary cells
   \ref lndfac        | cs_glob_mesh->i_face_vtx_connect_size | Size of the connectivity \n interior faces -> vertices
   \ref lndfbr        | cs_glob_mesh->b_face_vtx_connect_size | Size of the connectivity \n boundary faces -> vertices
   \ref nfml          | cs_glob_mesh->n_families              | Number of families
@@ -80,7 +80,7 @@
   \ref nodfbr        | cs_glob_mesh->b_face_vtx_lst          | Boundary faces -> vertices connectivity
   \ref ifmfbr        | cs_glob_mesh->b_face_family           | Boundary face family
   \ref ifmcel        | cs_glob_mesh->cell_family             | Cell family
-  \ref icelbr        | cs_glob_mesh->b_cells                 | Boundary cell list
+                     | cs_glob_mesh->b_cells                 | Boundary cell list
   \ref xyznod        | cs_glob_mesh->vtx_coord               | Vertex coordinates </tt>
 
   \section mesh_q_vars Mesh quantities variables
