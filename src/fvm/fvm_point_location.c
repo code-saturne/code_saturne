@@ -37,7 +37,7 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_error.h"
@@ -281,7 +281,7 @@ _update_elt_extents(int                dim,
  *   dim         <-- spatial (coordinates) dimension
  *   elt_dim     <-- element dimension
  *   tolerance   <-- addition to local extents of each element:
- *                   extent = base_extent * (1 + tolerance)
+ *                   extent = base_extent * (1 + tolerance[1]) + tolerance[0]
  *   elt_extents <-> extents associated with element:
  *                   x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
  *----------------------------------------------------------------------------*/
@@ -289,14 +289,14 @@ _update_elt_extents(int                dim,
 inline static void
 _elt_extents_finalize(int               dim,
                       int               elt_dim,
-                      double            tolerance,
+                      const double      tolerance[2],
                       double  *restrict elt_extents)
 {
   int i;
   double delta[3];
 
   for (i = 0; i < dim; i++)
-    delta[i] = (elt_extents[i+dim] - elt_extents[i]) * tolerance;
+    delta[i] = (elt_extents[i+dim] - elt_extents[i]) * tolerance[1];
 
   if (elt_dim < dim) {
     double delta_max = delta[0];  /* for 1d or 2d elements, ensure */
@@ -309,8 +309,8 @@ _elt_extents_finalize(int               dim,
   }
 
   for (i = 0; i < dim; i++) {
-    elt_extents[i]     = elt_extents[i]     - delta[i];
-    elt_extents[i+dim] = elt_extents[i+dim] + delta[i];
+    elt_extents[i]     = elt_extents[i]     - delta[i] - tolerance[0];
+    elt_extents[i+dim] = elt_extents[i+dim] + delta[i] + tolerance[0];
   }
 
 }
@@ -2121,7 +2121,7 @@ _compute_uvw(fvm_element_t      elt_type,
 
 /*----------------------------------------------------------------------------
  * Locate points in a given 3d cell (other than tetrahedra or polyhedra,
- * handlesd elsewhere), updating the location[] and distance[] arrays
+ * handled elsewhere), updating the location[] and distance[] arrays
  * associated with a set of points.
  *
  * parameters:
@@ -2264,7 +2264,9 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
  *   this_section      <-- pointer to mesh section representation structure
  *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
  *   vertex_coords     <-- pointer to vertex coordinates
- *   tolerance         <-- associated tolerance
+ *   tolerance         <-- addition to local extents of each element:
+ *                         extent =   base_extent * (1 + tolerance[1])
+ *                                  + tolerance[0]
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
@@ -2283,7 +2285,7 @@ static void
 _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
                           const cs_lnum_t            *parent_vertex_num,
                           const cs_coord_t            vertex_coords[],
-                          double                      tolerance,
+                          const double                tolerance[2],
                           cs_lnum_t                   base_element_num,
                           const cs_coord_t            point_coords[],
                           _octree_t                  *octree,
@@ -2295,9 +2297,9 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
   cs_coord_t  center[3];
   double elt_extents[6];
 
-  double _tolerance = tolerance * 2; /* double tolerance, as polyhedra is
-                                        split into tetrahedra, whose extents
-                                        are 1/2 the polyhedron extents */
+  /* double tolerance, as polyhedra is split into tetrahedra,
+     whose extents are approximately 1/2 the polyhedron extents */
+  double _tolerance[2] = {tolerance[0], tolerance[1] * 2};
 
   cs_lnum_t n_vertices_max = 0;
   cs_lnum_t n_points_in_extents = 0;
@@ -2456,7 +2458,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
                          point_coords,
                          n_points_in_extents,
                          points_in_extents,
-                         _tolerance,
+                         _tolerance[1],
                          location,
                          distance);
 
@@ -2489,7 +2491,9 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
  *   this_section      <-- pointer to mesh section representation structure
  *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
  *   vertex_coords     <-- pointer to vertex coordinates
- *   tolerance         <-- associated tolerance
+ *   tolerance         <-- addition to local extents of each element:
+ *                         extent =   base_extent * (1 + tolerance[1])
+ *                                  + tolerance[0]
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
@@ -2509,7 +2513,7 @@ static void
 _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
                             const cs_lnum_t             *parent_vertex_num,
                             const cs_coord_t             vertex_coords[],
-                            const double                 tolerance,
+                            const double                 tolerance[2],
                             cs_lnum_t                    base_element_num,
                             const cs_coord_t             point_coords[],
                             _octree_t                   *octree,
@@ -2614,122 +2618,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
                             point_coords,
                             n_points_in_extents,
                             points_in_extents,
-                            tolerance,
-                            location,
-                            distance);
-
-  } /* End of loop on elements */
-
-  BFT_FREE(triangle_vertices);
-  state = fvm_triangulate_state_destroy(state);
-}
-
-/*----------------------------------------------------------------------------
- * Find elements in a given polygonal section closest to 3d points: updates
- * the location[] and distance[] arrays associated with a set of points
- * for points that are in an element of this section, or closer to one
- * than to previously encountered elements.
- *
- * parameters:
- *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords     <-- pointer to vertex coordinates
- *   base_element_num  <-- < 0 for location relative to parent element numbers,
- *                         number of elements in preceding sections of same
- *                         element dimension + 1 otherwise
- *   point_coords      <-- point coordinates
- *   n_point_ids       <-- number of points to locate
- *   point_id          <-- ids of points to locate (size: n_points)
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, absolute distance
- *                         to element if located (size: n_points)
- *----------------------------------------------------------------------------*/
-
-static void
-_polygons_section_closest_3d(const fvm_nodal_section_t   *this_section,
-                             const cs_lnum_t             *parent_vertex_num,
-                             const cs_coord_t             vertex_coords[],
-                             cs_lnum_t                    base_element_num,
-                             const cs_coord_t             point_coords[],
-                             cs_lnum_t                    n_point_ids,
-                             const cs_lnum_t              point_id[],
-                             cs_lnum_t                    location[],
-                             float                        distance[])
-{
-  cs_lnum_t   i, n_vertices, vertex_id, elt_num;
-  int n_triangles;
-
-  int n_vertices_max = 0;
-
-  cs_lnum_t *triangle_vertices = NULL;
-  fvm_triangulate_state_t *state = NULL;
-
-  /* Return immediately if nothing to do for this rank */
-
-  if (this_section->n_elements == 0)
-    return;
-
-  /* Counting loop on elements */
-
-  for (i = 0; i < this_section->n_elements; i++) {
-
-    n_vertices = (  this_section->vertex_index[i + 1]
-                  - this_section->vertex_index[i]);
-
-    if (n_vertices > n_vertices_max)
-      n_vertices_max = n_vertices;
-
-  }
-
-  if (n_vertices_max < 3)
-    return;
-
-  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, int);
-  state = fvm_triangulate_state_create(n_vertices_max);
-
-  /* Main loop on elements */
-
-  for (i = 0; i < this_section->n_elements; i++) {
-
-    if (base_element_num < 0) {
-      if (this_section->parent_element_num != NULL)
-        elt_num = this_section->parent_element_num[i];
-      else
-        elt_num = i + 1;
-    }
-    else
-      elt_num = base_element_num + i;
-
-    /* Triangulate polygon */
-
-    n_vertices = (  this_section->vertex_index[i + 1]
-                  - this_section->vertex_index[i]);
-    vertex_id = this_section->vertex_index[i];
-
-    n_triangles = fvm_triangulate_polygon(3,
-                                          1,
-                                          n_vertices,
-                                          vertex_coords,
-                                          parent_vertex_num,
-                                          (  this_section->vertex_num
-                                           + vertex_id),
-                                          FVM_TRIANGULATE_MESH_DEF,
-                                          triangle_vertices,
-                                          state);
-
-    /* Locate on triangulated polygon */
-
-    _locate_on_triangles_3d(elt_num,
-                            n_triangles,
-                            triangle_vertices,
-                            parent_vertex_num,
-                            vertex_coords,
-                            point_coords,
-                            n_point_ids,
-                            point_id,
-                            -1.,
+                            tolerance[1],
                             location,
                             distance);
 
@@ -2749,7 +2638,9 @@ _polygons_section_closest_3d(const fvm_nodal_section_t   *this_section,
  *   this_section      <-- pointer to mesh section representation structure
  *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
  *   vertex_coords     <-- pointer to vertex coordinates
- *   tolerance         <-- associated tolerance
+ *   tolerance         <-- addition to local extents of each element:
+ *                         extent =   base_extent * (1 + tolerance[1])
+ *                                  + tolerance[0]
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
@@ -2769,7 +2660,7 @@ static void
 _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                          const cs_lnum_t            *parent_vertex_num,
                          const cs_coord_t            vertex_coords[],
-                         double                      tolerance,
+                         const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
                          const cs_coord_t            point_coords[],
                          _octree_t                  *octree,
@@ -2864,7 +2755,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                            point_coords,
                            n_points_in_extents,
                            points_in_extents,
-                           tolerance,
+                           tolerance[1],
                            location,
                            distance);
 
@@ -2900,7 +2791,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                                 point_coords,
                                 n_points_in_extents,
                                 points_in_extents,
-                                tolerance,
+                                tolerance[1],
                                 location,
                                 distance);
       }
@@ -2916,133 +2807,10 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                            point_coords,
                            n_points_in_extents,
                            points_in_extents,
-                           tolerance,
+                           tolerance[1],
                            location,
                            distance);
 
-      }
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Find elements in a given section closest to 3d points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are in an element of this section, or closer to one
- * than to previously encountered elements.
- *
- * parameters:
- *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords     <-- pointer to vertex coordinates
- *   base_element_num  <-- < 0 for location relative to parent element numbers,
- *                         number of elements in preceding sections of same
- *                         element dimension + 1 otherwise
- *   point_coords      <-- point coordinates
- *   n_point_ids       <-- number of points to locate
- *   point_id          <-- ids of points to locate
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-static void
-_nodal_section_closest_3d(const fvm_nodal_section_t  *this_section,
-                          const cs_lnum_t            *parent_vertex_num,
-                          const cs_coord_t            vertex_coords[],
-                          cs_lnum_t                   base_element_num,
-                          const cs_coord_t            point_coords[],
-                          cs_lnum_t                   n_point_ids,
-                          const cs_lnum_t             point_ids[],
-                          cs_lnum_t                   location[],
-                          float                       distance[])
-{
-  cs_lnum_t   i, j, elt_num, triangle_vertices[6];
-  int n_triangles;
-
-  /* If section contains polygons */
-
-  if (this_section->type == FVM_FACE_POLY)
-
-    _polygons_section_closest_3d(this_section,
-                                 parent_vertex_num,
-                                 vertex_coords,
-                                 base_element_num,
-                                 point_coords,
-                                 n_point_ids,
-                                 point_ids,
-                                 location,
-                                 distance);
-
-  /* If section contains regular elements */
-
-  else {
-
-    for (i = 0; i < this_section->n_elements; i++) {
-
-      if (base_element_num < 0) {
-        if (this_section->parent_element_num != NULL)
-          elt_num = this_section->parent_element_num[i];
-        else
-          elt_num = i + 1;
-      }
-      else
-        elt_num = base_element_num + i;
-
-      if (this_section->entity_dim == 2) {
-
-        if (this_section->type == FVM_FACE_QUAD)
-
-          n_triangles = fvm_triangulate_quadrangle(3,
-                                                   1,
-                                                   vertex_coords,
-                                                   parent_vertex_num,
-                                                   (  this_section->vertex_num
-                                                    + i*this_section->stride),
-                                                   triangle_vertices);
-
-        else {
-
-          assert(this_section->type == FVM_FACE_TRIA);
-
-          n_triangles = 1;
-          for (j = 0; j < 3; j++)
-            triangle_vertices[j]
-              = this_section->vertex_num[i*this_section->stride + j];
-
-
-        }
-
-        _locate_on_triangles_3d(elt_num,
-                                n_triangles,
-                                triangle_vertices,
-                                parent_vertex_num,
-                                vertex_coords,
-                                point_coords,
-                                n_point_ids,
-                                point_ids,
-                                (HUGE_VAL / 4.),
-                                location,
-                                distance);
-      }
-
-      else if (this_section->entity_dim == 1) {
-
-        assert(this_section->type == FVM_EDGE);
-
-        _locate_on_edge_3d(elt_num,
-                           this_section->vertex_num + i*this_section->stride,
-                           parent_vertex_num,
-                           vertex_coords,
-                           point_coords,
-                           n_point_ids,
-                           point_ids,
-                           -1.,
-                           location,
-                           distance);
       }
     }
 
@@ -3059,7 +2827,9 @@ _nodal_section_closest_3d(const fvm_nodal_section_t  *this_section,
  *   this_section      <-- pointer to mesh section representation structure
  *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
  *   vertex_coords     <-- pointer to vertex coordinates
- *   tolerance         <-- associated tolerance
+ *   tolerance         <-- addition to local extents of each element:
+ *                         extent =   base_extent * (1 + tolerance[1])
+ *                                  + tolerance[0]
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
@@ -3078,7 +2848,7 @@ static void
 _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                          const cs_lnum_t            *parent_vertex_num,
                          const cs_coord_t            vertex_coords[],
-                         double                      tolerance,
+                         const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
                          const cs_coord_t            point_coords[],
                          _quadtree_t                *quadtree,
@@ -3249,7 +3019,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                               point_coords,
                               n_points_in_extents,
                               points_in_extents,
-                              tolerance,
+                              tolerance[1],
                               location,
                               distance);
 
@@ -3264,7 +3034,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                          point_coords,
                          n_points_in_extents,
                          points_in_extents,
-                         tolerance,
+                         tolerance[1],
                          location,
                          distance);
 
@@ -3282,79 +3052,6 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
 }
 
 /*----------------------------------------------------------------------------
- * Find elements in a given section closest to 3d points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are in an element of this section, or closer to one
- * than to previously encountered elements.
- *
- * parameters:
- *   this_section      <-- pointer to mesh section representation structure
- *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
- *   vertex_coords     <-- pointer to vertex coordinates
- *   base_element_num  <-- < 0 for location relative to parent element numbers,
- *                         number of elements in preceding sections of same
- *                         element dimension + 1 otherwise
- *   point_coords      <-- point coordinates
- *   n_point_ids       <-- number of points to locate
- *   point_id          <-- ids of points to locate
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a line element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-static void
-_nodal_section_closest_2d(const fvm_nodal_section_t  *this_section,
-                          const cs_lnum_t            *parent_vertex_num,
-                          const cs_coord_t            vertex_coords[],
-                          cs_lnum_t                   base_element_num,
-                          const cs_coord_t            point_coords[],
-                          cs_lnum_t                   n_point_ids,
-                          const cs_lnum_t             point_id[],
-                          cs_lnum_t                   location[],
-                          float                       distance[])
-{
-  cs_lnum_t   i, elt_num;
-
-  /* Return immediately if nothing to do for this rank */
-
-  if (   this_section->n_elements == 0
-      || this_section->entity_dim != 1)
-    return;
-
-  assert(this_section->type == FVM_EDGE);
-
-  /* Main loop on elements */
-
-  for (i = 0; i < this_section->n_elements; i++) {
-
-    if (base_element_num < 0) {
-      if (this_section->parent_element_num != NULL)
-        elt_num = this_section->parent_element_num[i];
-      else
-        elt_num = i + 1;
-    }
-    else
-      elt_num = base_element_num + i;
-
-    /* Locate on edge */
-
-    _locate_on_edge_2d(elt_num,
-                       this_section->vertex_num + i*this_section->stride,
-                       parent_vertex_num,
-                       vertex_coords,
-                       point_coords,
-                       n_point_ids,
-                       point_id,
-                       -1.0,
-                       location,
-                       distance);
-
-  } /* End of loop on elements */
-}
-
-/*----------------------------------------------------------------------------
  * Find elements in a given section containing 1d points: updates the
  * location[] and distance[] arrays associated with a set of points
  * for points that are in an element of this section, or closer to one
@@ -3364,7 +3061,9 @@ _nodal_section_closest_2d(const fvm_nodal_section_t  *this_section,
  *   this_section      <-- pointer to mesh section representation structure
  *   parent_vertex_num <-- pointer to parent vertex numbers (or NULL)
  *   vertex_coords     <-- pointer to vertex coordinates
- *   tolerance         <-- associated tolerance
+ *   tolerance         <-- addition to local extents of each element:
+ *                         extent =   base_extent * (1 + tolerance[1])
+ *                                  + tolerance[0]
  *   base_element_num  <-- < 0 for location relative to parent element numbers,
  *                         number of elements in preceding sections of same
  *                         element dimension + 1 otherwise
@@ -3383,7 +3082,7 @@ static void
 _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
                          const cs_lnum_t            *parent_vertex_num,
                          const cs_coord_t            vertex_coords[],
-                         double                      tolerance,
+                         const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
                          cs_lnum_t                   n_points,
                          const cs_coord_t            point_coords[],
@@ -3425,7 +3124,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
       elt_extents[1] = edge_coords[0];
     }
 
-    delta = (elt_extents[1] - elt_extents[0]) * tolerance;
+    delta = (elt_extents[1] - elt_extents[0]) * tolerance[1];
 
     elt_extents[0] -= delta;
     elt_extents[1] += delta;
@@ -3454,24 +3153,28 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
  * than to previously encountered elements.
  *
  * parameters:
- *   this_nodal        <-- pointer to nodal mesh representation structure
- *   tolerance         <-- associated tolerance
- *   locate_on_parents <-- location relative to parent element numbers if 1,
- *                         id of element + 1 in concatenated sections of
- *                         same element dimension if 0
- *   n_points          <-- number of points to locate
- *   point_coords      <-- point coordinates
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated; 0 - 1 if inside,
- *                         and > 1 if outside a volume element, or absolute
- *                         distance to a surface element (size: n_points)
+ *   this_nodal           <-- pointer to nodal mesh representation structure
+ *   tolerance_base       <-- associated base tolerance (used for bounding
+ *                            box check only, not for location test)
+ *   tolerance_multiplier <-- associated fraction of element bounding boxes
+ *                            added to tolerance
+ *   locate_on_parents    <-- location relative to parent element numbers if 1,
+ *                            id of element + 1 in concatenated sections of
+ *                            same element dimension if 0
+ *   n_points             <-- number of points to locate
+ *   point_coords         <-- point coordinates
+ *   location             <-> number of element containing or closest to each
+ *                            point (size: n_points)
+ *   distance             <-> distance from point to element indicated by
+ *                            location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                            and > 1 if outside a volume element, or absolute
+ *                            distance to a surface element (size: n_points)
  *----------------------------------------------------------------------------*/
 
 void
 fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
-                         double              tolerance,
+                         float               tolerance_base,
+                         float               tolerance_fraction,
                          int                 locate_on_parents,
                          cs_lnum_t           n_points,
                          const cs_coord_t    point_coords[],
@@ -3482,6 +3185,8 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
   int max_entity_dim;
   cs_lnum_t    base_element_num;
   cs_lnum_t   *points_in_extents = NULL;
+
+  double tolerance[2] = {tolerance_base, tolerance_fraction};
 
   if (this_nodal == NULL)
     return;
@@ -3599,128 +3304,6 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
 
   BFT_FREE(points_in_extents);
 
-}
-
-/*----------------------------------------------------------------------------
- * Find elements in a given nodal mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * This function currently only handles elements of lower dimension than
- * the spatial dimension.
- *
- * parameters:
- *   this_nodal        <-- pointer to nodal mesh representation structure
- *   locate_on_parents <-- location relative to parent element numbers if 1,
- *                         id of element + 1 in concatenated sections of
- *                         same element dimension if 0
- *   n_points          <-- number of points to locate
- *   point_coords      <-- point coordinates
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-void
-fvm_point_location_closest_nodal(const fvm_nodal_t  *this_nodal,
-                                 int                 locate_on_parents,
-                                 cs_lnum_t           n_points,
-                                 const cs_coord_t    point_coords[],
-                                 cs_lnum_t           location[],
-                                 float               distance[])
-{
-  int i;
-  int  max_entity_dim;
-  cs_lnum_t   base_element_num;
-  cs_lnum_t   *point_ids = NULL;
-
-  if (this_nodal == NULL)
-    return;
-
-  if (locate_on_parents == 1)
-    base_element_num = -1;
-  else
-    base_element_num = 1;
-
-  max_entity_dim = fvm_nodal_get_max_entity_dim(this_nodal);
-
-  if (max_entity_dim == this_nodal->dim)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Locating volume elements closest to points not handled yet"));
-
-  if (this_nodal->dim > 1) {
-    cs_lnum_t j;
-    BFT_MALLOC(point_ids, n_points, cs_lnum_t);
-    for (j = 0; j < n_points; j++)
-      point_ids[j] = j;
-  }
-
-  /* Use brute force for closest 3d point location */
-
-  if (this_nodal->dim == 3) {
-
-    /* Locate for all sections */
-
-    for (i = 0; i < this_nodal->n_sections; i++) {
-
-      const fvm_nodal_section_t  *this_section = this_nodal->sections[i];
-
-      if (this_section->entity_dim == max_entity_dim) {
-
-        _nodal_section_closest_3d(this_section,
-                                  this_nodal->parent_vertex_num,
-                                  this_nodal->vertex_coords,
-                                  base_element_num,
-                                  point_coords,
-                                  n_points,
-                                  point_ids,
-                                  location,
-                                  distance);
-
-        if (base_element_num > -1)
-          base_element_num += this_section->n_elements;
-
-      }
-
-    }
-  }
-
-  /* Use brute force for closest 2d point location */
-
-  else if (this_nodal->dim == 2) {
-
-    /* Locate for all sections */
-
-    for (i = 0; i < this_nodal->n_sections; i++) {
-
-      const fvm_nodal_section_t  *this_section = this_nodal->sections[i];
-
-      if (this_section->entity_dim == max_entity_dim) {
-
-        _nodal_section_closest_2d(this_section,
-                                  this_nodal->parent_vertex_num,
-                                  this_nodal->vertex_coords,
-                                  base_element_num,
-                                  point_coords,
-                                  n_points,
-                                  point_ids,
-                                  location,
-                                  distance);
-
-        if (base_element_num > -1)
-          base_element_num += this_section->n_elements;
-
-      }
-
-    }
-
-  }
-
-  if (point_ids != NULL)
-    BFT_FREE(point_ids);
 }
 
 /*----------------------------------------------------------------------------*/

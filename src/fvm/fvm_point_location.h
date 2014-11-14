@@ -63,60 +63,33 @@ BEGIN_C_DECLS
  * than to previously encountered elements.
  *
  * parameters:
- *   this_nodal        <-- pointer to nodal mesh representation structure
- *   tolerance         <-- associated tolerance
- *   locate_on_parents <-- location relative to parent element numbers if 1,
- *                         id of element + 1 in concatenated sections of
- *                         same element dimension if 0
- *   n_points          <-- number of points to locate
- *   point_coords      <-- point coordinates
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, 0 - 1 if inside,
- *                         and > 1 if outside a volume element, or absolute
- *                         distance to a surface element (size: n_points)
+ *   this_nodal           <-- pointer to nodal mesh representation structure
+ *   tolerance_base       <-- associated base tolerance (used for bounding
+ *                            box check only, not for location test)
+ *   tolerance_multiplier <-- associated fraction of element bounding boxes
+ *                            added to tolerance
+ *   locate_on_parents    <-- location relative to parent element numbers if 1,
+ *                            id of element + 1 in concatenated sections of
+ *                            same element dimension if 0
+ *   n_points             <-- number of points to locate
+ *   point_coords         <-- point coordinates
+ *   location             <-> number of element containing or closest to each
+ *                            point (size: n_points)
+ *   distance             <-> distance from point to element indicated by
+ *                            location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                            and > 1 if outside a volume element, or absolute
+ *                            distance to a surface element (size: n_points)
  *----------------------------------------------------------------------------*/
 
 void
 fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
-                         double              tolerance,
+                         float               tolerance_base,
+                         float               tolerance_fraction,
                          int                 locate_on_parents,
                          cs_lnum_t           n_points,
                          const cs_coord_t    point_coords[],
                          cs_lnum_t           location[],
                          float               distance[]);
-
-/*----------------------------------------------------------------------------
- * Find elements in a given nodal mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * This function currently only handles elements of lower dimension than
- * the spatial dimension.
- *
- * parameters:
- *   this_nodal        <-- pointer to nodal mesh representation structure
- *   locate_on_parents <-- location relative to parent element numbers if 1,
- *                         id of element + 1 in concatenated sections of
- *                         same element dimension if 0
- *   n_points          <-- number of points to locate
- *   point_coords      <-- point coordinates
- *   location          <-> number of element containing or closest to each
- *                         point (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, or absolute
- *                         distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-void
-fvm_point_location_closest_nodal(const fvm_nodal_t  *this_nodal,
-                                 int                 locate_on_parents,
-                                 cs_lnum_t           n_points,
-                                 const cs_coord_t    point_coords[],
-                                 cs_lnum_t           location[],
-                                 float               distance[]);
 
 /*----------------------------------------------------------------------------*/
 

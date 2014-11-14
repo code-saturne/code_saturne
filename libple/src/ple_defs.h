@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2010  EDF
+  Copyright (C) 2005-2013  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -44,25 +44,6 @@ extern "C" {
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
-
-/* System name */
-
-#if defined(__sgi__) || defined(__sgi) || defined(sgi)
-#define _PLE_ARCH_IRIX_64
-
-#elif defined(__hpux__) || defined(__hpux) || defined(hpux)
-#define _PLE_ARCH_HP_UX
-
-#elif defined(__linux__) || defined(__linux) || defined(linux)
-#define _PLE_ARCH_Linux
-
-#elif defined(__sun__) || defined(__sun) || defined(sun)
-#define _PLE_ARCH_SunOS
-
-#elif defined(__uxpv__) || defined(__uxpv) || defined(uxpv)
-#define _PLE_ARCH_UNIX_System_V
-
-#endif
 
 /* Absolute, minimum, and maximum values */
 
@@ -470,18 +451,6 @@ ple_timer_wtime(void);
 
 double
 ple_timer_cpu_time(void);
-
-/*
- * Return separate user and system CPU times.
- *
- * parameters:
- *   user_time   --> current user CPU usage.
- *   system_time --> current system CPU usage.
- */
-
-void
-ple_timer_cpu_times(double *user_time,
-                    double *system_time);
 
 /*----------------------------------------------------------------------------*/
 

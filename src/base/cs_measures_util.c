@@ -147,6 +147,7 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
   }
 
   fvm_point_location_nodal(nodal_mesh,
+                           0,
                            0.1,
                            0,
                            nb_points,

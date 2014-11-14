@@ -717,57 +717,6 @@ ple_timer_cpu_time(void)
   return cpu_time;
 }
 
-/*!
- * \brief Return separate user and system CPU times.
- *
- * Note that in the rare case that only the minimal C library clock()
- * method is available, this function will return -1 values.
- *
- * \param [out] user_time current user CPU usage.
- * \param [out] system_time current system CPU usage.
- */
-
-void
-ple_timer_cpu_times(double *user_time,
-                    double *system_time)
-
-{
-  /* Ensure initialization */
-
-  if (_ple_timer_initialized == 0)
-     _ple_timer_initialize();
-
-  *user_time   = -1.;
-  *system_time = -1.;
-
-  /* Compute CPU time */
-
-#if defined (HAVE_GETRUSAGE)
-
-  {
-    struct rusage  usage;
-
-    if (getrusage(RUSAGE_SELF, &usage) == 0) {
-      *user_time    = usage.ru_utime.tv_sec + usage.ru_utime.tv_usec * 1.e-6;
-      *system_time  = usage.ru_stime.tv_sec + usage.ru_stime.tv_usec * 1.e-6;
-    }
-  }
-
-#elif defined(_POSIX_SOURCE)
-
-  {
-    static struct tms  ptimer;
-
-    if (_ple_timer_unit != -1 && times(&ptimer) != -1) {
-      *user_time    = ((double)ptimer.tms_utime)  / _ple_timer_unit;
-      *system_time  = ((double)ptimer.tms_stime)  / _ple_timer_unit;
-    }
-
-  }
-
-#endif
-}
-
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus

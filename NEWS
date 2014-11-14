@@ -14,7 +14,7 @@ Changes:
   if no matching Python script is found, to avoid uneeded abort.
 
 - Turbomachinery modeling:
-   * enable multiple rotors for rotor-stator model based on mesh joining.
+  * enable multiple rotors for rotor-stator model based on mesh joining.
 
 - Generalize double backward implicit Euler time scheme for all variables.
   It could be activated with the keyword ibdtso(ivar) = 1.
@@ -48,8 +48,8 @@ Changes:
 - Add a new experimental module for Darcy flows. It could be
   activated with the keyword usppmo(idarcy) = 1.
   This path includes new developments to improve reconstruction gradient
-	calculation with heterogeneous diffusion coefficients. This feature is only
-	available for standard LSQ gradients and could be activated with
+  calculation with heterogeneous diffusion coefficients. This feature is only
+  available for standard LSQ gradients and could be activated with
   the keyword iwgrec(ivar) = 1.
 
 - Add drift modelling for coal combustion, and clean up the module:
@@ -74,8 +74,12 @@ Changes:
 Architectural changes
 ---------------------
 
+- New PLE (parallel location and exchange) library API, allowing new locator
+  features and algorithm versioning. This requires an update on the Syrthes
+  side for conjugate heat transfer.
+
 - Remove rtp and rtpa arrays. Variables are stored with field
-  structure as owner.
+  structure owning its value arrays.
 
 - Rename and merge user subroutines:
   * User scalars are not declared in usinsc (in cs_user_parameters.f90) anymore,

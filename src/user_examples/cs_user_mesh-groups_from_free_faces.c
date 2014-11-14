@@ -146,10 +146,10 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   for (i = 0; i < mesh->n_b_faces; i++) {
 
     if (mesh->b_face_cells[i] < 0)
-      free_faces_list[n_free_faces++] = i+1;
+      free_faces_list[n_free_faces++] = i+1;    /* 1-based */
 
     else if (family_flag[mesh->b_face_family[i] - 1] == 1)
-      no_group_list[n_no_group++] = i+1;
+      no_group_list[n_no_group++] = i;          /* 0-based */
 
   }
 
@@ -168,12 +168,11 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
   /* Associated PLE locator */
 
 #if defined(PLE_HAVE_MPI)
-  ple_locator_t *locator = ple_locator_create(1.0,
-                                              cs_glob_mpi_comm,
+  ple_locator_t *locator = ple_locator_create(cs_glob_mpi_comm,
                                               cs_glob_n_ranks,
                                               0);
 #else
-  ple_locator_t *locator = ple_locator_create(0.1);
+  ple_locator_t *locator = ple_locator_create();
 #endif
 
   cs_real_t *b_face_cog = NULL, * b_face_normal = NULL;
@@ -184,14 +183,17 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
   ple_locator_set_mesh(locator,
                        free_faces,
+                       NULL,      /* options */
+                       0.,        /* absolute tolerance */
+                       tolerance, /* relative tolerance */
                        3,
                        n_no_group,
                        no_group_list,
+                       NULL,
                        b_face_cog,
                        NULL,
                        cs_coupling_mesh_extents,
-                       cs_coupling_point_in_mesh_p,
-                       NULL);
+                       cs_coupling_point_in_mesh_p);
 
   BFT_FREE(b_face_cog);
 

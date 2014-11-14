@@ -585,9 +585,8 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   const cs_lnum_t   *element       = NULL;
   const cs_coord_t  *distant_coord = NULL;
 
-  cs_mesh_t  *mesh = cs_glob_mesh;
-  cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
-
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
 
   /* Removing the connectivity and localization informations in case of
      coupling update */
@@ -912,6 +911,9 @@ void CS_PROCF (defloc, DEFLOC)
   fvm_nodal_t  *support_fbr = NULL;
   cs_mesh_quantities_t  *mesh_quantities = cs_glob_mesh_quantities;
 
+  int locator_options[PLE_LOCATOR_N_OPTIONS];
+  locator_options[PLE_LOCATOR_NUMBERING] = 1;
+
   const double tolerance = 0.1;
 
   /* Initializations and verifications */
@@ -937,7 +939,7 @@ void CS_PROCF (defloc, DEFLOC)
 
     cs_selector_get_cell_num_list(coupl->cell_sup_sel,
                                   &(coupl->nbr_cel_sup),
-                              c_elt_list);
+                                  c_elt_list);
 
   }
 
@@ -997,24 +999,22 @@ void CS_PROCF (defloc, DEFLOC)
 #if defined(PLE_HAVE_MPI)
 
   if (coupl->localis_cel == NULL)
-    coupl->localis_cel = ple_locator_create(tolerance,
-                                            coupl->comm,
+    coupl->localis_cel = ple_locator_create(coupl->comm,
                                             coupl->n_sat_ranks,
                                             coupl->sat_root_rank);
 
   if (coupl->localis_fbr == NULL)
-    coupl->localis_fbr = ple_locator_create(tolerance,
-                                            coupl->comm,
+    coupl->localis_fbr = ple_locator_create(coupl->comm,
                                             coupl->n_sat_ranks,
                                             coupl->sat_root_rank);
 
 #else
 
   if (coupl->localis_cel == NULL)
-    coupl->localis_cel = ple_locator_create(tolerance);
+    coupl->localis_cel = ple_locator_create();
 
   if (coupl->localis_fbr == NULL)
-    coupl->localis_fbr = ple_locator_create(tolerance);
+    coupl->localis_fbr = ple_locator_create();
 
 #endif
 
@@ -1032,14 +1032,17 @@ void CS_PROCF (defloc, DEFLOC)
 
   ple_locator_set_mesh(coupl->localis_cel,
                        coupl->cells_sup,
+                       locator_options,
+                       0.,
+                       tolerance,
                        3,
                        nbr_cel_cpl,
                        c_elt_list,
+                       NULL,
                        mesh_quantities->cell_cen,
                        NULL,
                        cs_coupling_mesh_extents,
-                       cs_coupling_point_in_mesh_p,
-                       NULL);
+                       cs_coupling_point_in_mesh_p);
 
   if (coupl->cell_cpl_sel != NULL) BFT_FREE(c_elt_list);
 
@@ -1061,14 +1064,17 @@ void CS_PROCF (defloc, DEFLOC)
 
   ple_locator_set_mesh(coupl->localis_fbr,
                        support_fbr,
+                       locator_options,
+                       0.,
+                       tolerance,
                        3,
                        nbr_fbr_cpl,
                        f_elt_list,
+                       NULL,
                        mesh_quantities->b_face_cog,
                        NULL,
                        cs_coupling_mesh_extents,
-                       cs_coupling_point_in_mesh_p,
-                       NULL);
+                       cs_coupling_point_in_mesh_p);
 
   if (coupl->face_cpl_sel != NULL) BFT_FREE(f_elt_list);
 

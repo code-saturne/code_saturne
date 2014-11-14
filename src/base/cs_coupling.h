@@ -285,23 +285,29 @@ cs_coupling_mesh_extents(const void  *mesh,
  * concatenated sections of same element dimension.
  *
  * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   tolerance    <-- associated tolerance
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, 0 - 1 if inside,
- *                    and > 1 if outside a volume element, or absolute
- *                    distance to a surface element (size: n_points)
+ *   mesh               <-- pointer to mesh representation structure
+ *   tolerance_base     <-- associated base tolerance (used for bounding
+ *                          box check only, not for location test)
+ *   tolerance_fraction <-- associated fraction of element bounding boxes
+ *                          added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_coords       <-- point coordinates
+ *   point_tag          <-- optional point tag (size: n_points)
+ *   location           <-> number of element containing or closest to each
+ *                          point (size: n_points)
+ *   distance           <-> distance from point to element indicated by
+ *                          location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                          and > 1 if outside a volume element, or absolute
+ *                          distance to a surface element (size: n_points)
  *----------------------------------------------------------------------------*/
 
 void
 cs_coupling_point_in_mesh(const void         *mesh,
-                          double              tolerance,
+                          float               tolerance_base,
+                          float               tolerance_fraction,
                           ple_lnum_t          n_points,
                           const ple_coord_t   point_coords[],
+                          const int           point_tag[],
                           ple_lnum_t          location[],
                           float               distance[]);
 
@@ -314,84 +320,31 @@ cs_coupling_point_in_mesh(const void         *mesh,
  * Location is relative to parent element numbers.
  *
  * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   tolerance    <-- associated tolerance
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, 0 - 1 if inside,
- *                    and > 1 if outside a volume element, or absolute
- *                    distance to a surface element (size: n_points)
+ *   mesh               <-- pointer to mesh representation structure
+ *   tolerance_base     <-- associated base tolerance (used for bounding
+ *                          box check only, not for location test)
+ *   tolerance_fraction <-- associated fraction of element bounding boxes
+ *                          added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_coords       <-- point coordinates
+ *   point_tag          <-- optional point tag (size: n_points)
+ *   location           <-> number of element containing or closest to each
+ *                          point (size: n_points)
+ *   distance           <-> distance from point to element indicated by
+ *                          location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                          and > 1 if outside a volume element, or absolute
+ *                          distance to a surface element (size: n_points)
  *----------------------------------------------------------------------------*/
 
 void
 cs_coupling_point_in_mesh_p(const void         *mesh,
-                            double              tolerance,
+                            float               tolerance_base,
+                            float               tolerance_fraction,
                             ple_lnum_t          n_points,
                             const ple_coord_t   point_coords[],
+                            const int           point_tag[],
                             ple_lnum_t          location[],
                             float               distance[]);
-
-/*----------------------------------------------------------------------------
- * Find elements in a given mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * This function currently only handles elements of lower dimension than
- * the spatial dimension.
- *
- * Location is relative to the id of a given element + 1 in
- * concatenated sections of same element dimension.
- *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, or absolute
- *                    distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-void
-cs_coupling_point_closest_mesh(const void         *mesh,
-                               ple_lnum_t          n_points,
-                               const ple_coord_t   point_coords[],
-                               ple_lnum_t          location[],
-                               float               distance[]);
-
-/*----------------------------------------------------------------------------
- * Find elements in a given mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points
- * for points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * This function currently only handles elements of lower dimension than
- * the spatial dimension.
- *
- * Location is relative to parent element numbers.
- *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each
- *                    point (size: n_points)
- *   distance     <-> distance from point to element indicated by
- *                    location[]: < 0 if unlocated, or absolute
- *                    distance to a surface element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-void
-cs_coupling_point_closest_mesh_p(const void         *mesh,
-                                 ple_lnum_t          n_points,
-                                 const ple_coord_t   point_coords[],
-                                 ple_lnum_t          location[],
-                                 float               distance[]);
 
 /*----------------------------------------------------------------------------*/
 

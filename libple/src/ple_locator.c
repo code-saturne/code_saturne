@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2011  EDF
+  Copyright (C) 2005-2014  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -86,9 +86,30 @@ extern "C" {
 #define _MODULE(vect) \
   sqrt(vect[0] * vect[0] + vect[1] * vect[1] + vect[2] * vect[2])
 
+/*
+ * Algorithm ID's
+ */
+
+#define _LOCATE_BB_SENDRECV      100  /* bounding boxes + send-receive */
+
+#define _EXCHANGE_SENDRECV       100  /* Sendrecv */
+#define _EXCHANGE_ISEND_IRECV    200  /* Isend/Irecv/Waitall */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+#if defined(PLE_HAVE_MPI)
+
+typedef struct {
+
+  int       n;       /* Number of intersecting distant ranks */
+  int      *rank;    /* List of intersecting distant ranks */
+  double   *extents; /* List of intersecting distant extents */
+
+} _rank_intersects_t;
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Structure defining a locator
@@ -99,29 +120,23 @@ struct _ple_locator_t {
   /* Basic information */
   /*-------------------*/
 
-  double    tolerance;         /* Associated tolerance */
+  int       dim;                 /* Spatial dimension */
+  int       have_tags;           /* Do we use tags */
 
-  int       dim;               /* Spatial dimension */
-
-  int       locate_closest;    /* 0: no special handling of unlocated points
-                                  1: local (but not distant) points not located
-                                     within the tolerance will be located on
-                                     the closest element
-                                  2: distant (and possibly local) points not
-                                     located within the tolerance will be
-                                     located on the closest element */
+  int       locate_algorithm;    /* Location algorithm id */
+  int       exchange_algorithm;  /* Exchange algorithm id */
 
 #if defined(PLE_HAVE_MPI)
-  int       async_exchange;    /* flag for asynchronous variables exchange */
-  MPI_Comm  comm;              /* Associated MPI communicator */
+  MPI_Comm  comm;                /* Associated MPI communicator */
 #endif
 
-  int       n_ranks;           /* Number of MPI ranks of distant location */
-  int       start_rank;        /* First MPI rank of distant location */
+  int       n_ranks;             /* Number of MPI ranks of distant location */
+  int       start_rank;          /* First MPI rank of distant location */
 
-  int       n_intersects;      /* Number of intersecting distant ranks */
-  int      *intersect_rank;    /* List of intersecting distant ranks */
-  double   *intersect_extents; /* List of intersecting distant extents */
+  int       n_intersects;        /* Number of intersecting distant ranks */
+  int      *intersect_rank;      /* List of intersecting distant ranks */
+
+  ple_lnum_t    point_id_base;   /* base numbering for (external) point ids */
 
   ple_lnum_t   *local_points_idx;   /* Start index of local points per rank
                                        (size: n_intersects + 1)*/
@@ -141,17 +156,14 @@ struct _ple_locator_t {
                                            distant_points_idx[]*dim indexes) */
 
   ple_lnum_t    n_interior;         /* Number of local points located */
-  ple_lnum_t   *interior_list;      /* List (1 to n numbering) of points
-                                       located */
+  ple_lnum_t   *interior_list;      /* List of points located */
   ple_lnum_t    n_exterior;         /* Number of local points not located */
-  ple_lnum_t   *exterior_list;      /* List (1 to n numbering) of points
-                                       not located */
+  ple_lnum_t   *exterior_list;      /* List of points not located */
 
-  /* Timing information (2 or 4 fields/time; 0: total; 1: communication;
-     2/3: closest point location total/communication) */
+  /* Timing information (2 fields/time; 0: total; 1: communication) */
 
-  double  location_wtime[4];       /* Location Wall-clock time */
-  double  location_cpu_time[4];    /* Location CPU time */
+  double  location_wtime[2];       /* Location Wall-clock time */
+  double  location_cpu_time[2];    /* Location CPU time */
   double  exchange_wtime[2];       /* Variable exchange Wall-clock time */
   double  exchange_cpu_time[2];    /* Variable exchange CPU time */
 };
@@ -210,50 +222,30 @@ typedef ple_lnum_t
  * for points that are in an element of this mesh, or closer to one
  * than to previously encountered elements.
  *
- * param[in]      this_nodal   pointer to nodal mesh representation structure
- * param[in]      tolerance    associated tolerance
- * param[in]      n_points     number of points to locate
- * param[in]      point_coords point coordinates
- * param[in, out] location     number of element containing or closest to each
- *                             point (size: n_points)
- * param[in, out] distance     distance from point to element indicated by
- *                             location[]: < 0 if unlocated, 0 - 1 if inside,
- *                             and > 1 if outside a volume element, or
- *                             absolute distance to a surface element
- *                             (size: n_points)
+ * \param[in]      this_nodal          pointer to nodal mesh representation
+ *                                     structure
+ * \param[in]      tolerance_base      associated fixed tolerance
+ * \param[in]      tolerance_fraction  associated fraction of element bounding
+ *                                     boxes added to tolerance
+ * \param[in]      n_points            number of points to locate
+ * \param[in]      point_coords        point coordinates
+ * \param[in, out] location            number of element containing or closest
+ *                                     to each point (size: n_points)
+ * \param[in, out] distance            distance from point to element indicated
+ *                                     by location[]: < 0 if unlocated, >= 0
+ *                                     if inside; the choice of distance metric
+ *                                     is left to the calling code
+ *                                     (size: n_points)
  */
 
 typedef void
-(ple_mesh_elements_contain_t) (const void         *mesh,
-                               double              tolerance,
-                               ple_lnum_t          n_points,
-                               const ple_coord_t   point_coords[],
-                               ple_lnum_t          location[],
-                               float               distance[]);
-
-/*!
- * \brief Find elements in a given local mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points for
- * points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each point
- *                    (size: n_points)
- *   distance     <-> distance from point to element indicated by location[]:
- *                    < 0 if unlocated, or absolute distance to a surface
- *                    element (size: n_points)
- */
-
-typedef void
-(ple_mesh_elements_closest_t) (const void         *mesh,
-                               ple_lnum_t          n_points,
-                               const ple_coord_t   point_coords[],
-                               ple_lnum_t          location[],
-                               float               distance[]);
+(ple_mesh_elements_locate_t) (const void         *mesh,
+                              float               tolerance_base,
+                              float               tolerance_fraction,
+                              ple_lnum_t          n_points,
+                              const ple_coord_t   point_coords[],
+                              ple_lnum_t          location[],
+                              float               distance[]);
 
 /*!
  * \brief Function pointer type for user definable logging/profiling
@@ -488,21 +480,24 @@ _extents_max_distance(int           dim,
  * Compute extents of a point set
  *
  * parameters:
- *   dim          <-- space dimension of points to locate
- *   n_points     <-- number of points to locate
- *   point_list   <-- optional indirection array to point_coords
- *                    (1 to n_points numbering)
- *   point_coords <-- coordinates of points to locate
- *                    (dimension: dim * n_points)
- *   extents      --> extents associated with mesh:
- *                    x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
+ *   dim             <-- space dimension of points to locate
+ *   point_list_base <-- base numbering for point list
+ *   n_points        <-- number of points to locate
+ *   point_list      <-- optional indirection array to point_coords
+ *   point_coords    <-- coordinates of points to locate
+ *                       (dimension: dim * n_points)
+ *   location        <-- existing location_information, or NULL
+ *   extents         --> extents associated with mesh:
+ *                       x_min, y_min, ..., x_max, y_max, ... (size: 2*dim)
  *----------------------------------------------------------------------------*/
 
 static void
 _point_extents(int                  dim,
+               ple_lnum_t           point_list_base,
                ple_lnum_t           n_points,
                const ple_lnum_t     point_list[],
                const ple_coord_t    point_coords[],
+               const ple_lnum_t     location[],
                double               extents[])
 {
   int i;
@@ -516,51 +511,111 @@ _point_extents(int                  dim,
 
   /* Compute extents */
 
-  if (point_list != NULL) {
+  if (location != NULL) {
 
-    for (j = 0; j < n_points; j++) {
-      coord_idx = point_list[j] - 1;
-      for (i = 0; i < dim; i++) {
-        if (extents[i]       > point_coords[(coord_idx * dim) + i])
-          extents[i]       = point_coords[(coord_idx * dim) + i];
-        if (extents[i + dim] < point_coords[(coord_idx * dim) + i])
-          extents[i + dim] = point_coords[(coord_idx * dim) + i];
+    if (point_list != NULL) {
+
+      for (j = 0; j < n_points; j++) {
+        coord_idx = point_list[j] - point_list_base;
+        for (i = 0; i < dim; i++) {
+          if (extents[i]       > point_coords[(coord_idx * dim) + i])
+            extents[i]       = point_coords[(coord_idx * dim) + i];
+          if (extents[i + dim] < point_coords[(coord_idx * dim) + i])
+            extents[i + dim] = point_coords[(coord_idx * dim) + i];
+        }
       }
     }
-  }
 
+    else {
+
+      for (coord_idx = 0; coord_idx < n_points; coord_idx++) {
+        for (i = 0; i < dim; i++) {
+          if (extents[i]       > point_coords[(coord_idx * dim) + i])
+            extents[i]       = point_coords[(coord_idx * dim) + i];
+          if (extents[i + dim] < point_coords[(coord_idx * dim) + i])
+            extents[i + dim] = point_coords[(coord_idx * dim) + i];
+        }
+      }
+    }
+
+  }
   else {
 
-    for (coord_idx = 0; coord_idx < n_points; coord_idx++) {
-      for (i = 0; i < dim; i++) {
-        if (extents[i]       > point_coords[(coord_idx * dim) + i])
-          extents[i]       = point_coords[(coord_idx * dim) + i];
-        if (extents[i + dim] < point_coords[(coord_idx * dim) + i])
-          extents[i + dim] = point_coords[(coord_idx * dim) + i];
+    if (point_list != NULL) {
+
+      for (j = 0; j < n_points; j++) {
+        if (location[j] >= 0)
+          continue;
+        coord_idx = point_list[j] - point_list_base;
+        for (i = 0; i < dim; i++) {
+          if (extents[i]       > point_coords[(coord_idx * dim) + i])
+            extents[i]       = point_coords[(coord_idx * dim) + i];
+          if (extents[i + dim] < point_coords[(coord_idx * dim) + i])
+            extents[i + dim] = point_coords[(coord_idx * dim) + i];
+        }
       }
     }
+
+    else {
+
+      for (j = 0; j < n_points; j++) {
+        if (location[j] >= 0)
+          continue;
+        for (i = 0; i < dim; i++) {
+          if (extents[i]       > point_coords[(j * dim) + i])
+            extents[i]       = point_coords[(j * dim) + i];
+          if (extents[i + dim] < point_coords[(j * dim) + i])
+            extents[i + dim] = point_coords[(j * dim) + i];
+        }
+      }
+    }
+
   }
 
+}
+
+/*----------------------------------------------------------------------------
+ * Clear previous location information.
+ *
+ * parameters:
+ *   this_locator      <-> pointer to locator structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_clear_location_info(ple_locator_t  *this_locator)
+{
+  this_locator->n_intersects = 0;
+
+  PLE_FREE(this_locator->intersect_rank);
+
+  PLE_FREE(this_locator->local_points_idx);
+  PLE_FREE(this_locator->distant_points_idx);
+
+  PLE_FREE(this_locator->local_point_ids);
+
+  PLE_FREE(this_locator->distant_point_location);
+  PLE_FREE(this_locator->distant_point_coords);
+
+  PLE_FREE(this_locator->interior_list);
+  PLE_FREE(this_locator->exterior_list);
 }
 
 #if defined(PLE_HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Update intersection rank information once location is done
- * point set.
+ * Update intersection rank information once location is done.
  *
  * parameters:
  *   this_locator      <-> pointer to locator structure
  *   n_points          <-- number of points to locate
  *   location_rank_id  <-> rank on which a point is located in, id
  *                         in updated locator intersection rank info out
- *                         (1 to n_points numbering)
  *----------------------------------------------------------------------------*/
 
 static void
-_update_location_ranks(ple_locator_t  *this_locator,
-                       ple_lnum_t      n_points,
-                       ple_lnum_t      location_rank_id[])
+_location_ranks(ple_locator_t  *this_locator,
+                ple_lnum_t      n_points,
+                ple_lnum_t      location_rank_id[])
 {
   int i, k;
   ple_lnum_t j;
@@ -648,428 +703,380 @@ _update_location_ranks(ple_locator_t  *this_locator,
                 this_locator->comm);
 
   if (max_vals[0] <= max_vals[1])
-    this_locator->async_exchange = 1;
+    this_locator->exchange_algorithm = _EXCHANGE_ISEND_IRECV;
   else
-    this_locator->async_exchange = 0;
+    this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
 
   _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
 
   this_locator->location_wtime[1] += comm_timing[0];
   this_locator->location_cpu_time[1] += comm_timing[1];
+}
+
+/*----------------------------------------------------------------------------
+ * Determine or update possibly intersecting ranks for unlocated elements,
+ * in parallel.
+ *
+ * parameters:
+ *   this_locator       <-- pointer to locator structure
+ *   mesh               <-- pointer to mesh representation structure
+ *   tolerance_base     <-- associated fixed tolerance
+ *   tolerance_fraction <-- associated fraction of element bounding
+ *                          boxes added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_list         <-- optional indirection array to point_coords
+ *   point_coords       <-- coordinates of points to locate
+ *                          (dimension: dim * n_points)
+ *   location           <-> number of distant element containing or closest
+ *                          to each point, or -1 (size: n_points)
+ *   mesh_extents_f     <-- pointer to function computing mesh or mesh
+ *                          subset or element extents
+ *
+ * returns:
+ *   local rank intersection info
+ *----------------------------------------------------------------------------*/
+
+static _rank_intersects_t
+_intersects_distant(ple_locator_t       *this_locator,
+                    const void          *mesh,
+                    float                tolerance_base,
+                    float                tolerance_fraction,
+                    ple_lnum_t           n_points,
+                    const ple_lnum_t     point_list[],
+                    const ple_coord_t    point_coords[],
+                    const ple_lnum_t     location[],
+                    ple_mesh_extents_t  *mesh_extents_f)
+{
+  int i;
+  int stride2;
+  double extents[12];
+
+  int j;
+  int stride4;
+  int comm_rank, comm_size;
+  int n_intersects;
+  int  *intersect_rank;
+  double *recvbuf;
+
+  double comm_timing[4] = {0., 0., 0., 0.};
+  const int dim = this_locator->dim;
+
+  _rank_intersects_t intersects;
+
+  /* Update intersects */
+
+  intersects.n = 0;
+
+  mesh_extents_f(mesh,
+                 1,
+                 tolerance_fraction,
+                 extents);
+
+  _point_extents(dim,
+                 this_locator->point_id_base,
+                 n_points,
+                 point_list,
+                 point_coords,
+                 location,
+                 extents + 2*dim);
+
+  for (i = 0; i < dim; i++) {
+
+    if (extents[i] > -HUGE_VAL + tolerance_base)
+      extents[i]         -= tolerance_base;
+    else
+      extents[i] = -HUGE_VAL;
+    if (extents[i] < HUGE_VAL - tolerance_base)
+      extents[i +   dim] += tolerance_base;
+    else
+      extents[i +   dim] = HUGE_VAL;
+
+    if (extents[i + 2*dim] > -HUGE_VAL + tolerance_base)
+      extents[i + 2*dim] -= tolerance_base;
+    else
+      extents[i + 2*dim] = -HUGE_VAL;
+    if (extents[i + 3*dim] < HUGE_VAL - tolerance_base)
+      extents[i + 3*dim] += tolerance_base;
+    else
+      extents[i + 3*dim] = HUGE_VAL;
+
+  }
+
+  /* Exchange extent information */
+
+  MPI_Comm_rank(this_locator->comm, &comm_rank);
+  MPI_Comm_size(this_locator->comm, &comm_size);
+
+  stride2 = dim * 2; /* Stride for one type of extent */
+  stride4 = dim * 4; /* Stride for element and vertex
+                        extents, end-to-end */
+
+  PLE_MALLOC(recvbuf, stride4*comm_size, double);
+
+  _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
+
+  MPI_Allgather(extents, stride4, MPI_DOUBLE, recvbuf, stride4, MPI_DOUBLE,
+                this_locator->comm);
+
+  _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
+
+  /* Count and mark possible overlaps */
+
+  n_intersects = 0;
+  PLE_MALLOC(intersect_rank, this_locator->n_ranks, int);
+
+  for (i = 0; i < this_locator->n_ranks; i++) {
+    j = this_locator->start_rank + i;
+    if (  (_intersect_extents(dim,
+                              extents + (2*dim),
+                              recvbuf + (j*stride4)) == true)
+        || (_intersect_extents(dim,
+                               extents,
+                               recvbuf + (j*stride4) + (2*dim)) == true)) {
+      intersect_rank[n_intersects] = j;
+      n_intersects += 1;
+    }
+
+  }
+
+  intersects.n = n_intersects;
+  PLE_MALLOC(intersects.rank, intersects.n, int);
+  PLE_MALLOC(intersects.extents, intersects.n * stride2, double);
+
+  for (i = 0; i < intersects.n; i++) {
+
+    intersects.rank[i] = intersect_rank[i];
+
+    /* Copy only distant element (and not point) extents */
+
+    for (j = 0; j < stride2; j++)
+      intersects.extents[i*stride2 + j]
+        = recvbuf[intersect_rank[i]*stride4 + j];
+
+  }
+
+  /* Free temporary memory */
+
+  PLE_FREE(intersect_rank);
+  PLE_FREE(recvbuf);
+
+  /* Finalize timing */
+
+  this_locator->location_wtime[1] += comm_timing[0];
+  this_locator->location_cpu_time[1] += comm_timing[1];
+
+  return intersects;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize location information from previous locator info,
+ * in parallel mode.
+ *
+ * parameters:
+ *   this_locator     <-> pointer to locator structure
+ *   n_points         <-- number of points to locate
+ *   location         --> number of distant element containing or closest
+ *                        to each point, or -1 (size: n_points)
+ *   location_rank_id --> rank id for distant element containing or closest
+ *                        to each point, or -1
+ *----------------------------------------------------------------------------*/
+
+static void
+_transfer_location_distant(ple_locator_t  *this_locator,
+                           ple_lnum_t      n_points,
+                           ple_lnum_t      location[],
+                           ple_lnum_t      location_rank_id[])
+{
+  int i, k, dist_rank;
+  ple_lnum_t j, dist_index, n_points_loc, n_points_dist, dist_v_idx;
+
+  double comm_timing[4] = {0., 0., 0., 0.};
+
+  /* Initialize locations */
+
+  for (j = 0; j < n_points; j++) {
+    location[j] = -1;
+    location_rank_id[j] = -1;
+  }
+
+  /* Update with existing location info *
+     exact location info is not necessary, so not determined;
+     all that is necessary is to mark located points as such */
+
+  for (i = 0; i < this_locator->n_intersects; i++) {
+
+    MPI_Status status;
+    ple_lnum_t *loc_v_buf, *dist_v_ptr;
+    const ple_lnum_t *_local_point_ids
+      = this_locator->local_point_ids + this_locator->local_points_idx[i];
+
+    dist_index = i; /* Ordering (communication schema) not yet optimized */
+    dist_rank = this_locator->intersect_rank[dist_index];
+
+    n_points_loc =    this_locator->local_points_idx[i+1]
+                    - this_locator->local_points_idx[i];
+
+    n_points_dist =   this_locator->distant_points_idx[i+1]
+                    - this_locator->distant_points_idx[i];
+
+    dist_v_idx = this_locator->distant_points_idx[i];
+
+    PLE_MALLOC(loc_v_buf, n_points_loc, ple_lnum_t);
+
+    /* Exchange information */
+
+    dist_v_ptr = this_locator->distant_point_location + dist_v_idx;
+
+    _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
+
+    MPI_Sendrecv(dist_v_ptr, n_points_dist, PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
+                 loc_v_buf, n_points_loc, PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
+                 this_locator->comm, &status);
+
+    _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
+
+    for (k = 0; k < n_points_loc; k++) {
+      ple_lnum_t pt_id = _local_point_ids[k];
+      location[pt_id] = loc_v_buf[k];
+      location_rank_id[pt_id] = dist_rank;
+    }
+
+    PLE_FREE(loc_v_buf);
+  } /* End of loop on MPI ranks */
+
+  this_locator->n_intersects = 0;
+  PLE_FREE(this_locator->intersect_rank);
+  PLE_FREE(this_locator->local_points_idx);
+  PLE_FREE(this_locator->distant_points_idx);
+  PLE_FREE(this_locator->local_point_ids);
+  PLE_FREE(this_locator->distant_point_location);
+  PLE_FREE(this_locator->distant_point_coords);
+
+  this_locator->n_interior = 0;
+  this_locator->n_exterior = 0;
+  PLE_FREE(this_locator->interior_list);
+  PLE_FREE(this_locator->exterior_list);
 }
 
 /*----------------------------------------------------------------------------
  * Location of points not yet located on the closest elements.
  *
  * parameters:
- *   this_locator      <-> pointer to locator structure
- *   mesh              <-- pointer to mesh representation structure
- *   dim               <-- spatial dimension
- *   n_points          <-- number of points to locate
- *   point_list        <-- optional indirection array to point_coords
- *                         (1 to n_points numbering)
- *   point_coords      <-- coordinates of points to locate
- *                         (dimension: dim * n_points)
- *   location          <-> number of distant element containing or closest
- *                         to each point, or -1 (size: n_points)
- *   location_rank_id  <-> rank id for distant element containing or closest
- *                         to each point, or -1
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, 0 - 1 if inside,
- *                         > 1 if outside (size: n_points)
- *   mesh_extents_f    <-- function computing mesh or mesh subset extents
- *   locate_closest_f  <-- function locating the closest local elements
+ *   this_locator       <-> pointer to locator structure
+ *   mesh               <-- pointer to mesh representation structure
+ *   tolerance_base     <-- associated fixed tolerance
+ *   tolerance_fraction <-- associated fraction of element bounding
+ *                          boxes added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_list         <-- optional indirection array to point_coords
+ *   point_coords       <-- coordinates of points to locate
+ *                          (dimension: dim * n_points)
+ *   location           <-> number of distant element containing or closest
+ *                          to each point, or -1 (size: n_points)
+ *   location_rank_id   <-> rank id for distant element containing or closest
+ *                          to each point, or -1
+ *   distance           <-> distance from point to element indicated by
+ *                          location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                          > 1 if outside (size: n_points)
+ *   mesh_extents_f     <-- function computing mesh or mesh subset extents
+ *   mesh_locate_f      <-- function locating the points on local elements
  *----------------------------------------------------------------------------*/
 
 static void
-_locate_closest_distant(ple_locator_t                *this_locator,
-                        const void                   *mesh,
-                        int                           dim,
-                        ple_lnum_t                    n_points,
-                        const ple_lnum_t              point_list[],
-                        const ple_coord_t             point_coords[],
-                        ple_lnum_t                    location[],
-                        ple_lnum_t                    location_rank_id[],
-                        float                         distance[],
-                        ple_mesh_extents_t           *mesh_extents_f,
-                        ple_mesh_elements_closest_t  *locate_closest_f)
+_locate_distant(ple_locator_t               *this_locator,
+                const void                  *mesh,
+                float                        tolerance_base,
+                float                        tolerance_fraction,
+                ple_lnum_t                   n_points,
+                const ple_lnum_t             point_list[],
+                const ple_coord_t            point_coords[],
+                ple_lnum_t                   location[],
+                ple_lnum_t                   location_rank_id[],
+                float                        distance[],
+                ple_mesh_extents_t          *mesh_extents_f,
+                ple_mesh_elements_locate_t  *mesh_locate_f)
 {
-  int i, k, stride2;
+  int i, k;
   int dist_rank, dist_index;
   ple_lnum_t j;
   ple_lnum_t n_coords_loc, n_coords_dist;
   ple_lnum_t *location_loc, *location_dist;
-  ple_lnum_t *send_index;
   ple_coord_t *coords_dist, *send_coords;
-  float *min_dist = NULL;
   float *distance_dist, *distance_loc;
-  double w_start, w_end, cpu_start, cpu_end;
-  double e_extents[6] = {1., 0., 0., 0., 0., 0.}; /* initially "impossible" */
-  double p_extents[6];
 
+  _rank_intersects_t intersects;
   MPI_Status status;
 
-  int comm_size = 0;
-  ple_lnum_t _n_points = 0, n_exchanges = 0;
-  double min_max_dist = HUGE_VAL;
+  ple_lnum_t _n_points = 0;
+  double extents[6];
+
   double comm_timing[4] = {0., 0., 0., 0.};
 
-  int *send_flag = NULL, *recv_flag = NULL;
-  ple_lnum_t *_point_ids = NULL, *_point_list = NULL, *exchange_rank = NULL;
-  double *recvbuf = NULL;
+  ple_lnum_t *_point_list = NULL, *_point_id = NULL, *send_id = NULL;
+  const ple_lnum_t *_point_list_p = NULL;
 
-  /* Initialize timing */
+  const int dim = this_locator->dim;
+  const int stride = dim * 2;
+  const ple_lnum_t idb = this_locator->point_id_base;
 
-  w_start = ple_timer_wtime();
-  cpu_start = ple_timer_cpu_time();
+  /* Filter non-located points */
 
-  /* Count points not yet located */
+  _n_points = 0;
+  _point_list_p = point_list;
 
-  if (this_locator->locate_closest > 0) {
+  for (j = 0; j < n_points; j++) {
+    if (location[j] < 0)
+      _n_points++;
+  }
 
-    for (j = 0; j < n_points; j++) {
-      if (location[j] == -1)
-        _n_points += 1;
-    }
-
-    PLE_MALLOC(_point_ids, _n_points, ple_lnum_t);
+  if (_n_points < n_points) {
     PLE_MALLOC(_point_list, _n_points, ple_lnum_t);
+    _point_list_p = point_list;
 
+    _n_points = 0;
     if (point_list == NULL) {
-      for (j = 0, _n_points = 0; j < n_points; j++) {
-        if (location[j] == -1) {
-          _point_ids[_n_points] = j;
-          _point_list[_n_points] = j+1;
-          _n_points++;
-        }
+      _point_id = _point_list;
+      for (j = 0; j < n_points; j++) {
+        if (location[j] < 0)
+          _point_list[_n_points++] = j + idb;
       }
     }
     else {
-      for (j = 0, _n_points = 0; j < n_points; j++) {
-        if (location[j] == -1) {
-          _point_ids[_n_points] = j;
+      PLE_MALLOC(_point_id, _n_points, ple_lnum_t);
+      for (j = 0; j < n_points; j++) {
+        if (location[j] < 0) {
           _point_list[_n_points] = point_list[j];
+          _point_id[_n_points] = j + idb;
           _n_points++;
         }
       }
     }
-
   }
 
-  /* Recompute mesh extents only if local location function is available */
+  /* Update intersect for current point list */
 
-  if (locate_closest_f != NULL)
-    mesh_extents_f(mesh, 1, 0.1, e_extents);
+  intersects = _intersects_distant(this_locator,
+                                   mesh,
+                                   tolerance_base,
+                                   tolerance_fraction,
+                                   _n_points,
+                                   _point_list_p,
+                                   point_coords,
+                                   location,
+                                   mesh_extents_f);
 
-  /* Recompute point extents using only points not yet located */
-
-  _point_extents(dim,
-                 _n_points,
-                 _point_ids,
-                 point_coords,
-                 p_extents);
-
-  /* Exchange extent information */
-
-  MPI_Comm_size(this_locator->comm, &comm_size);
-
-  stride2 = dim * 2; /* Stride for one type of extent */
-
-  PLE_MALLOC(min_dist, this_locator->n_ranks, float);
-
-  PLE_MALLOC(recvbuf, stride2*comm_size, double);
-
-  _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
-
-  MPI_Allgather(e_extents, stride2, MPI_DOUBLE, recvbuf, stride2, MPI_DOUBLE,
-                this_locator->comm);
-
-  _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
-
-  /* Count and mark possible exchanges */
-
-  n_exchanges = 0;
-
-  PLE_MALLOC(exchange_rank, this_locator->n_ranks, int);
-
-  PLE_MALLOC(send_flag, comm_size, int);
-  PLE_MALLOC(recv_flag, comm_size, int);
-
-  for (i = 0; i < comm_size; i++)
-    send_flag[i] = 0;
-
-  if (this_locator->locate_closest > 0) {
-
-    for (i = 0; i < this_locator->n_ranks; i++) {
-      j = this_locator->start_rank + i;
-      double _max_dist = _extents_max_distance(dim,
-                                               p_extents,
-                                               recvbuf + (j*stride2));
-      if (_max_dist < min_max_dist)
-        min_max_dist = _max_dist;
-    }
-
-    for (i = 0; i < this_locator->n_ranks; i++) {
-      j = this_locator->start_rank + i;
-      double _min_dist = _extents_min_distance(dim,
-                                               p_extents,
-                                               recvbuf + (j*stride2));
-      if (_min_dist > min_max_dist)
-        send_flag[j] = 0;
-      else if (_min_dist <= min_max_dist)
-        send_flag[j] = 1;
-      min_dist[i] = _min_dist;
-    }
-
-  }
-
-  PLE_FREE(recvbuf);
-
-  /* As exchange detection is asymetric, synchronize it */
-
-  _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
-
-  MPI_Alltoall(send_flag, 1, MPI_INT, recv_flag, 1, MPI_INT,
-               this_locator->comm);
-
-  _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
-
-  for (i = 0; i < this_locator->n_ranks; i++) {
-    j = i + this_locator->start_rank;
-    if (send_flag[j] == 1 || recv_flag[j] == 1)
-      exchange_rank[n_exchanges++] = j;
-  }
-
-  PLE_FREE(send_flag);
-  PLE_FREE(recv_flag);
-
-  /* Prepare communication */
+  /* Allocate buffers */
 
   PLE_MALLOC(send_coords, _n_points * dim, ple_coord_t);
-  PLE_MALLOC(send_index, _n_points, ple_lnum_t);
-
-  /* First loop on distant ranks */
-  /*-----------------------------*/
-
-  for (i = 0; i < n_exchanges; i++) {
-
-    double _min_dist;
-
-    dist_index = i; /* Ordering (communication schema) not yet optimized */
-    dist_rank  = exchange_rank[dist_index];
-
-    /* Prepare and send coords that should fit in each send buffer */
-    /* Reset buffers for current exchange rank */
-
-    n_coords_loc = 0;
-    _min_dist = min_dist[dist_rank - this_locator->start_rank];
-
-    /* Build partial buffer */
-
-    for (j = 0; j < _n_points; j++) {
-
-      ple_lnum_t _point_id = _point_ids[j];
-      ple_lnum_t coord_idx = _point_list[j] - 1;
-
-      if (distance[_point_id] < -0.1 || distance[_point_id] > _min_dist) {
-
-        send_index[n_coords_loc] = _point_id;
-        for (k = 0; k < dim; k++)
-          send_coords[n_coords_loc*dim + k]
-            = point_coords[dim*coord_idx + k];
-
-        n_coords_loc += 1;
-      }
-
-    }
-
-    /* Send then receive partial buffer */
-
-    _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
-
-    MPI_Sendrecv(&n_coords_loc, 1, PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
-                 &n_coords_dist, 1, PLE_MPI_LNUM, dist_rank,
-                 PLE_MPI_TAG, this_locator->comm, &status);
-
-    _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
-
-    PLE_MALLOC(coords_dist, n_coords_dist*dim, ple_coord_t);
-
-    _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
-
-    MPI_Sendrecv(send_coords, (int)(n_coords_loc*dim),
-                 PLE_MPI_COORD, dist_rank, PLE_MPI_TAG,
-                 coords_dist, (int)(n_coords_dist*dim),
-                 PLE_MPI_COORD, dist_rank, PLE_MPI_TAG,
-                 this_locator->comm, &status);
-
-    _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
-
-    /* Now locate received coords on local rank */
-
-    PLE_MALLOC(location_dist, n_coords_dist, ple_lnum_t);
-    PLE_MALLOC(distance_dist, n_coords_dist, float);
-
-    for (j = 0; j < n_coords_dist; j++) {
-      location_dist[j] = -1;
-      distance_dist[j] = -1.0;
-    }
-
-    if (locate_closest_f != NULL)
-      locate_closest_f(mesh,
-                       n_coords_dist,
-                       coords_dist,
-                       location_dist,
-                       distance_dist);
-
-    PLE_FREE(coords_dist);
-
-    /* Exchange location return information with distant rank */
-
-    PLE_MALLOC(location_loc, n_coords_loc, ple_lnum_t);
-    PLE_MALLOC(distance_loc, n_coords_loc, float);
-
-    _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
-
-    MPI_Sendrecv(location_dist, (int)n_coords_dist,
-                 PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
-                 location_loc, (int)n_coords_loc,
-                 PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
-                 this_locator->comm, &status);
-
-    MPI_Sendrecv(distance_dist, (int)n_coords_dist,
-                 MPI_FLOAT, dist_rank, PLE_MPI_TAG,
-                 distance_loc, (int)n_coords_loc,
-                 MPI_FLOAT, dist_rank, PLE_MPI_TAG,
-                 this_locator->comm, &status);
-
-    _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
-
-    PLE_FREE(location_dist);
-    PLE_FREE(distance_dist);
-
-    /* Now update location information */
-
-    for (j = 0; j < n_coords_loc; j++) {
-
-      ple_lnum_t l = send_index[j];
-
-      if (   (distance_loc[j] > -0.1)
-          && (distance_loc[j] < distance[l] || distance[l] < -0.1)) {
-        location_rank_id[l] = dist_rank;
-        location[l] = location_loc[j];
-        distance[l] = distance_loc[j];
-      }
-
-    }
-
-    PLE_FREE(location_loc);
-    PLE_FREE(distance_loc);
-  }
-
-  /* Free temporary arrays */
-
-  PLE_FREE(send_coords);
-  PLE_FREE(send_index);
-
-  PLE_FREE(min_dist);
-  PLE_FREE(exchange_rank);
-
-  PLE_FREE(_point_ids);
-  PLE_FREE(_point_list);
-
-  /* Finalize timing */
-
-  w_end = ple_timer_wtime();
-  cpu_end = ple_timer_cpu_time();
-
-  this_locator->location_wtime[2] += (w_end - w_start);
-  this_locator->location_cpu_time[2] += (cpu_end - cpu_start);
-
-  this_locator->location_wtime[1] += comm_timing[0];
-  this_locator->location_cpu_time[1] += comm_timing[1];
-  this_locator->location_wtime[3] += comm_timing[0];
-  this_locator->location_cpu_time[3] += comm_timing[1];
-}
-
-/*----------------------------------------------------------------------------
- * Prepare locator for use with a given mesh representation and point set.
- *
- * parameters:
- *   this_locator      <-> pointer to locator structure
- *   mesh              <-- pointer to mesh representation structure
- *   dim               <-- spatial dimension
- *   n_points          <-- number of points to locate
- *   point_list        <-- optional indirection array to point_coords
- *                         (1 to n_points numbering)
- *   point_coords      <-- coordinates of points to locate
- *                         (dimension: dim * n_points)
- *   distance          --> optional distance from point to matching element:
- *                         < 0 if unlocated; 0 - 1 if inside and > 1 if
- *                         outside a volume element, or absolute distance
- *                         to a surface element (size: n_points)
- *   mesh_extents_f    <-- pointer to function computing mesh or mesh
- *                         subset or element extents
- *   locate_inside_f   <-- function locating points in or on elements
- *   locate_closest_f  <-- function locating the closest local elements
- *----------------------------------------------------------------------------*/
-
-static void
-_locate_all_distant(ple_locator_t                *this_locator,
-                    const void                   *mesh,
-                    int                           dim,
-                    ple_lnum_t                    n_points,
-                    const ple_lnum_t              point_list[],
-                    const ple_coord_t             point_coords[],
-                    float                         distance[],
-                    ple_mesh_extents_t           *mesh_extents_f,
-                    ple_mesh_elements_contain_t  *locate_inside_f,
-                    ple_mesh_elements_closest_t  *locate_closest_f)
-{
-  int i, k, stride;
-  int dist_rank, dist_index;
-  ple_lnum_t j;
-  ple_lnum_t n_coords_loc, n_coords_dist, n_interior, n_exterior;
-  ple_lnum_t coord_idx, start_idx;
-  ple_lnum_t *location_loc, *location_dist;
-  ple_lnum_t *location, *location_rank_id;
-  ple_lnum_t *send_id, *send_location;
-  ple_lnum_t *location_count, *location_shift;
-  ple_coord_t *coords_dist, *send_coords;
-  float *_distance = distance;
-  float *distance_dist, *distance_loc;
-  double extents[6];
-
-  MPI_Status status;
-
-  double comm_timing[4] = {0., 0., 0., 0.};
-
-  /* Initialization */
-
-  stride = dim * 2;
-
-  PLE_MALLOC(send_coords, n_points * dim, ple_coord_t);
-  PLE_MALLOC(send_id, n_points, ple_lnum_t);
-
-  PLE_MALLOC(location, n_points, ple_lnum_t);
-  PLE_MALLOC(location_rank_id, n_points, ple_lnum_t);
-
-  if (distance == NULL)
-    PLE_MALLOC(_distance, n_points, float);
-
-  for (j = 0; j < n_points; j++) {
-    location[j] = -1;
-    location_rank_id[j] = -1;
-    _distance[j] = -1.0;
-  }
+  PLE_MALLOC(send_id, _n_points, ple_lnum_t);
 
   /* First loop on possibly intersecting distant ranks */
   /*---------------------------------------------------*/
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (i = 0; i < intersects.n; i++) {
 
     dist_index = i; /* Ordering (communication schema) not yet optimized */
-    dist_rank  = this_locator->intersect_rank[dist_index];
+    dist_rank  = intersects.rank[dist_index];
 
     /* Prepare and send coords that should fit in each send buffer */
     /* Reset buffers for current intersect rank */
@@ -1077,14 +1084,16 @@ _locate_all_distant(ple_locator_t                *this_locator,
     n_coords_loc = 0;
 
     for (k = 0; k < stride; k++)
-      extents[k] = this_locator->intersect_extents[dist_index*stride + k];
+      extents[k] = intersects.extents[dist_index*stride + k];
 
     /* Build partial buffer */
 
-    for (j = 0; j < n_points; j++) {
+    for (j = 0; j < _n_points; j++) {
 
-      if (point_list != NULL)
-        coord_idx = point_list[j] - 1;
+      ple_lnum_t coord_idx;
+
+      if (_point_list_p != NULL)
+        coord_idx = _point_list_p[j] - idb;
       else
         coord_idx = j;
 
@@ -1092,10 +1101,13 @@ _locate_all_distant(ple_locator_t                *this_locator,
                           &(point_coords[dim*coord_idx]),
                           extents) == true) {
 
-        send_id[n_coords_loc] = j;
+        if (_point_id != NULL)
+          send_id[n_coords_loc] = _point_id[j] -idb;
+        else
+          send_id[n_coords_loc] = j;
+
         for (k = 0; k < dim; k++)
-          send_coords[n_coords_loc*dim + k]
-            = point_coords[dim*coord_idx + k];
+          send_coords[n_coords_loc*dim + k] = point_coords[dim*coord_idx + k];
 
         n_coords_loc += 1;
       }
@@ -1104,7 +1116,7 @@ _locate_all_distant(ple_locator_t                *this_locator,
 
     /* Send then receive partial buffer */
 
-    dist_rank = this_locator->intersect_rank[dist_index];
+    dist_rank = intersects.rank[dist_index];
 
     _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
 
@@ -1136,12 +1148,14 @@ _locate_all_distant(ple_locator_t                *this_locator,
       distance_dist[j] = -1.0;
     }
 
-    locate_inside_f(mesh,
-                    this_locator->tolerance,
-                    n_coords_dist,
-                    coords_dist,
-                    location_dist,
-                    distance_dist);
+    mesh_locate_f(mesh,
+                  tolerance_base,
+                  tolerance_fraction,
+                  n_coords_dist,
+                  coords_dist,
+                  NULL, /* tags_dist */
+                  location_dist,
+                  distance_dist);
 
     PLE_FREE(coords_dist);
 
@@ -1176,10 +1190,10 @@ _locate_all_distant(ple_locator_t                *this_locator,
       ple_lnum_t l = send_id[j];
 
       if (   (distance_loc[j] > -0.1)
-          && (distance_loc[j] < _distance[l] || _distance[l] < -0.1)) {
+          && (distance_loc[j] < distance[l] || location[l] < 0)) {
         location_rank_id[l] = dist_rank;
         location[l] = location_loc[j];
-        _distance[l] = distance_loc[j];
+        distance[l] = distance_loc[j];
       }
 
     }
@@ -1189,28 +1203,102 @@ _locate_all_distant(ple_locator_t                *this_locator,
 
   }
 
-  /* If option activated, second search to associate points not yet
-     located to the closest elements */
+  /* Free temporary arrays */
 
-  if (this_locator->locate_closest > 0)
-    _locate_closest_distant(this_locator,
-                            mesh,
-                            dim,
-                            n_points,
-                            point_list,
-                            point_coords,
-                            location,
-                            location_rank_id,
-                            _distance,
-                            mesh_extents_f,
-                            locate_closest_f);
+  PLE_FREE(send_id);
+  PLE_FREE(send_coords);
+
+  if (_point_list != point_list) {
+    if (_point_id != _point_list)
+      PLE_FREE(_point_id);
+    PLE_FREE(_point_list);
+  }
+
+  PLE_FREE(intersects.rank);
+  PLE_FREE(intersects.extents);
+
+  /* Finalize timing */
+
+  this_locator->location_wtime[1] += comm_timing[0];
+  this_locator->location_cpu_time[1] += comm_timing[1];
+  this_locator->location_wtime[3] += comm_timing[0];
+  this_locator->location_cpu_time[3] += comm_timing[1];
+}
+
+/*----------------------------------------------------------------------------
+ * Prepare locator for use with a given mesh representation and point set.
+ *
+ * parameters:
+ *   this_locator      <-> pointer to locator structure
+ *   mesh              <-- pointer to mesh representation structure
+ *   dim               <-- spatial dimension
+ *   n_points          <-- number of points to locate
+ *   point_list        <-- optional indirection array to point_coords
+ *   point_coords      <-- coordinates of points to locate
+ *                         (dimension: dim * n_points)
+ *   location          <-> number of distant element containing or closest
+ *                          to each point, or -1 (size: n_points)
+ *   location_rank_id  <-> rank id for distant element containing or closest
+ *                          to each point, or -1
+ *   distance          --> optional distance from point to matching element:
+ *                         < 0 if unlocated; 0 - 1 if inside and > 1 if
+ *                         outside a volume element, or absolute distance
+ *                         to a surface element (size: n_points)
+ *   mesh_extents_f    <-- pointer to function computing mesh or mesh
+ *                         subset or element extents
+ *   mesh_locate_f     <-- function locating points in or on elements
+ *----------------------------------------------------------------------------*/
+
+static void
+_locate_all_distant(ple_locator_t               *this_locator,
+                    const void                  *mesh,
+                    float                        tolerance_base,
+                    float                        tolerance_fraction,
+                    ple_lnum_t                   n_points,
+                    const ple_lnum_t             point_list[],
+                    const ple_coord_t            point_coords[],
+                    ple_lnum_t                   location[],
+                    ple_lnum_t                   location_rank_id[],
+                    float                        distance[],
+                    ple_mesh_extents_t          *mesh_extents_f,
+                    ple_mesh_elements_locate_t  *mesh_locate_f)
+{
+  int i, k;
+  int dist_rank, dist_index;
+  ple_lnum_t j;
+  ple_lnum_t n_coords_loc, n_coords_dist, n_interior, n_exterior;
+  ple_lnum_t coord_idx, start_idx;
+  ple_lnum_t *send_id, *send_location;
+  ple_lnum_t *location_count, *location_shift;
+  float *_distance = distance;
+
+  MPI_Status status;
+
+  double comm_timing[4] = {0., 0., 0., 0.};
+  const int dim = this_locator->dim;
+  const ple_lnum_t idb = this_locator->point_id_base;
+
+  /* Now update locations */
+
+  _locate_distant(this_locator,
+                  mesh,
+                  tolerance_base,
+                  tolerance_fraction,
+                  n_points,
+                  point_list,
+                  point_coords,
+                  location,
+                  location_rank_id,
+                  distance,
+                  mesh_extents_f,
+                  mesh_locate_f);
 
   /* Update info on communicating ranks and matching ids */
   /*----------------------------------------------------*/
 
-  _update_location_ranks(this_locator,
-                         n_points,
-                         location_rank_id);
+  _location_ranks(this_locator,
+                  n_points,
+                  location_rank_id);
 
   /* Reorganize location information */
   /*---------------------------------*/
@@ -1251,11 +1339,12 @@ _locate_all_distant(ple_locator_t                *this_locator,
   for (i = 0; i < this_locator->n_intersects; i++)
     location_count[i] = 0;
 
+  PLE_MALLOC(send_id, n_points, ple_lnum_t);
+  PLE_MALLOC(send_location, n_points, ple_lnum_t);
+
   /* send_id[] will now contain information for all blocks */
   for (j = 0; j < n_points; j++)
     send_id[j] = -1;
-
-  PLE_MALLOC(send_location, n_points, ple_lnum_t);
 
   n_interior = 0;
   n_exterior = 0;
@@ -1264,11 +1353,11 @@ _locate_all_distant(ple_locator_t                *this_locator,
     if (l_rank > -1) {
       send_id[location_shift[l_rank] + location_count[l_rank]] = j;
       location_count[l_rank] += 1;
-      this_locator->interior_list[n_interior] = j + 1;
+      this_locator->interior_list[n_interior] = j + idb;
       n_interior += 1;
     }
     else {
-      this_locator->exterior_list[n_exterior] = j + 1;
+      this_locator->exterior_list[n_exterior] = j + idb;
       n_exterior += 1;
     }
   }
@@ -1278,13 +1367,13 @@ _locate_all_distant(ple_locator_t                *this_locator,
 
   /* Count and organize total number of local and distant points */
 
-  PLE_MALLOC(this_locator->local_points_idx,
-             this_locator->n_intersects + 1,
-             ple_lnum_t);
+  PLE_REALLOC(this_locator->local_points_idx,
+              this_locator->n_intersects + 1,
+              ple_lnum_t);
 
-  PLE_MALLOC(this_locator->distant_points_idx,
-             this_locator->n_intersects + 1,
-             ple_lnum_t);
+  PLE_REALLOC(this_locator->distant_points_idx,
+              this_locator->n_intersects + 1,
+              ple_lnum_t);
 
   this_locator->local_points_idx[0] = 0;
   this_locator->distant_points_idx[0] = 0;
@@ -1315,19 +1404,21 @@ _locate_all_distant(ple_locator_t                *this_locator,
   /* Third loop on possibly intersecting distant ranks */
   /*----------------------------------------------------*/
 
-  PLE_MALLOC(this_locator->local_point_ids,
-             this_locator->local_points_idx[this_locator->n_intersects],
-             ple_lnum_t);
+  PLE_REALLOC(this_locator->local_point_ids,
+              this_locator->local_points_idx[this_locator->n_intersects],
+              ple_lnum_t);
 
-  PLE_MALLOC(this_locator->distant_point_location,
-             this_locator->distant_points_idx[this_locator->n_intersects],
-             ple_lnum_t);
+  PLE_REALLOC(this_locator->distant_point_location,
+              this_locator->distant_points_idx[this_locator->n_intersects],
+              ple_lnum_t);
 
-  PLE_MALLOC(this_locator->distant_point_coords,
-             this_locator->distant_points_idx[this_locator->n_intersects] * dim,
-             ple_coord_t);
+  PLE_REALLOC(this_locator->distant_point_coords,
+              this_locator->distant_points_idx[this_locator->n_intersects] * dim,
+              ple_coord_t);
 
   for (i = 0; i < this_locator->n_intersects; i++) {
+
+    ple_coord_t *send_coords;
 
     dist_index = i; /* Ordering (communication schema) not yet optimized */
     dist_rank = this_locator->intersect_rank[dist_index];
@@ -1340,15 +1431,18 @@ _locate_all_distant(ple_locator_t                *this_locator,
 
     start_idx = this_locator->local_points_idx[i];
 
+    PLE_MALLOC(send_coords, n_coords_loc * dim, ple_coord_t);
+
     for (j = 0; j < n_coords_loc; j++) {
 
       coord_idx = send_id[location_shift[i] + j];
+      assert(coord_idx > -1);
       this_locator->local_point_ids[start_idx + j] = coord_idx;
       send_location[j] = location[coord_idx];
       if (point_list != NULL) {
         for (k = 0; k < dim; k++)
           send_coords[j*dim + k]
-            = point_coords[dim*(point_list[coord_idx] - 1) + k];
+            = point_coords[dim*(point_list[coord_idx] - idb) + k];
       }
       else {
         for (k = 0; k < dim; k++)
@@ -1376,16 +1470,15 @@ _locate_all_distant(ple_locator_t                *this_locator,
 
     _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
 
+    PLE_FREE(send_coords);
+
   }
 
   PLE_FREE(location_count);
   PLE_FREE(location_shift);
 
-  PLE_FREE(send_id);
   PLE_FREE(send_location);
-  PLE_FREE(send_coords);
-
-  PLE_FREE(location_rank_id);
+  PLE_FREE(send_id);
 
   PLE_FREE(location);
 
@@ -1396,221 +1489,292 @@ _locate_all_distant(ple_locator_t                *this_locator,
 #endif /* defined(PLE_HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
- * Location of points not yet located on the closest elements.
+ * Initialize location information from previous locator info,
+ * in serial mode.
  *
  * parameters:
  *   this_locator      <-> pointer to locator structure
- *   mesh              <-- pointer to mesh representation structure
- *   dim               <-- spatial dimension
  *   n_points          <-- number of points to locate
- *   point_list        <-- optional indirection array to point_coords
- *                         (1 to n_points numbering)
- *   point_coords      <-- coordinates of points to locate
- *                         (dimension: dim * n_points)
- *   location          <-> number of distant element containing or closest
+ *   location          --> number of distant element containing or closest
  *                         to each point, or -1 (size: n_points)
- *   distance          <-> distance from point to element indicated by
- *                         location[]: < 0 if unlocated, 0 - 1 if inside,
- *                         > 1 if outside (size: n_points)
- *   locate_inside_f   <-- function locating points in or on elements
- *   locate_closest_f  <-- function locating the closest local elements
  *----------------------------------------------------------------------------*/
 
 static void
-_locate_closest_local(ple_locator_t                *this_locator,
-                      const void                   *mesh,
-                      int                           dim,
-                      ple_lnum_t                    n_points,
-                      const ple_lnum_t              point_list[],
-                      const ple_coord_t             point_coords[],
-                      ple_lnum_t                    location[],
-                      float                         distance[],
-                      ple_mesh_elements_closest_t  *locate_closest_f)
+_transfer_location_local(ple_locator_t  *this_locator,
+                         ple_lnum_t      n_points,
+                         ple_lnum_t      location[])
 {
-  ple_lnum_t i, j;
-  double w_start, w_end, cpu_start, cpu_end;
+  ple_lnum_t j;
 
-  ple_lnum_t _n_points = 0;
-  ple_lnum_t  *_location = NULL;
-  ple_coord_t *_point_coords = NULL;
-  float       *_distance = NULL;
+  /* Initialize locations */
 
-  /* Initialize timing */
+  for (j = 0; j < n_points; j++)
+    location[j] = -1;
 
-  w_start = ple_timer_wtime();
-  cpu_start = ple_timer_cpu_time();
+  /* Update with existing location info *
+     exact location info is not necessary, so not determined;
+     all that is necessary is to mark located points as such */
 
-  /* Count points not yet located */
+  if (this_locator->n_intersects == 1) {
 
-  for (i = 0; i < n_points; i++) {
-    if (location[i] == -1)
-      _n_points += 1;
-  }
+    const ple_lnum_t _n_points =    this_locator->local_points_idx[1]
+                                  - this_locator->local_points_idx[0];
 
-  PLE_MALLOC(_location, _n_points, ple_lnum_t);
-  PLE_MALLOC(_distance, _n_points, float);
-  PLE_MALLOC(_point_coords, _n_points*dim, ple_coord_t);
+    const ple_lnum_t *_local_point_ids = this_locator->local_point_ids;
+    const ple_lnum_t *dist_v_ptr = this_locator->distant_point_location;
 
-  for (i = 0; i < n_points; i++) {
-    _location[i] = -1;
-    _distance[i] = -1;
-  }
-
-  if (point_list == NULL) {
-    for (i = 0, _n_points = 0; i < n_points; i++) {
-      if (location[i] == -1) {
-        for (j = 0; j < dim; j++)
-          _point_coords[_n_points*dim + j] = point_coords[i*dim + j];
-        _n_points++;
-      }
+    for (j = 0; j < _n_points; j++) {
+      ple_lnum_t k = _local_point_ids[j];
+      location[k] = dist_v_ptr[j];
     }
-  }
-  else {
-    for (j = 0, _n_points = 0; j < n_points; j++) {
-      if (location[i] == -1) {
-        ple_lnum_t k = point_list[j] - 1;
-        for (j = 0; j < dim; j++)
-          _point_coords[_n_points*dim + j] = point_coords[k*dim + j];
-        _n_points++;
-      }
-    }
+
   }
 
-  locate_closest_f(mesh,
-                   _n_points,
-                   _point_coords,
-                   _location,
-                   _distance);
+  this_locator->n_intersects = 0;
+  PLE_FREE(this_locator->intersect_rank);
+  PLE_FREE(this_locator->local_points_idx);
+  PLE_FREE(this_locator->distant_points_idx);
+  PLE_FREE(this_locator->local_point_ids);
+  PLE_FREE(this_locator->distant_point_location);
+  PLE_FREE(this_locator->distant_point_coords);
 
-  /* Copy location information to input/output arrays */
+  this_locator->n_interior = 0;
+  this_locator->n_exterior = 0;
+  PLE_FREE(this_locator->interior_list);
+  PLE_FREE(this_locator->exterior_list);
+}
 
-  for (i = 0, _n_points = 0; i < n_points; i++) {
-    if (location[i] == -1) {
-      location[i] = _location[_n_points];
-      distance[i] = _distance[_n_points];
-      _n_points++;
-    }
+/*----------------------------------------------------------------------------
+ * Determine or update possibly intersecting ranks for unlocated elements,
+ * in parallel.
+ *
+ * parameters:
+ *   this_locator       <-- pointer to locator structure
+ *   mesh               <-- pointer to mesh representation structure
+ *   tolerance_base     <-- associated fixed tolerance
+ *   tolerance_fraction <-- associated fraction of element bounding
+ *                          boxes added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_list         <-- optional indirection array to point_coords
+ *   point_coords       <-- coordinates of points to locate
+ *                          (dimension: dim * n_points)
+ *   location           <-> number of distant element containing or closest
+ *                          to each point, or -1 (size: n_points)
+ *   mesh_extents_f     <-- pointer to function computing mesh or mesh
+ *                          subset or element extents
+ *
+ * returns:
+ *   local rank intersection info
+ *----------------------------------------------------------------------------*/
+
+static _rank_intersects_t
+_intersects_local(ple_locator_t       *this_locator,
+                  const void          *mesh,
+                  float                tolerance_base,
+                  float                tolerance_fraction,
+                  ple_lnum_t           n_points,
+                  const ple_lnum_t     point_list[],
+                  const ple_coord_t    point_coords[],
+                  const ple_lnum_t     location[],
+                  ple_mesh_extents_t  *mesh_extents_f)
+{
+  int i;
+  int stride2;
+  double extents[12];
+
+  int j;
+  int n_intersects;
+
+  const int dim = this_locator->dim;
+
+  _rank_intersects_t intersects;
+
+  /* Update intersects */
+
+  intersects.n = 0;
+
+  mesh_extents_f(mesh,
+                 1,
+                 tolerance_fraction,
+                 extents);
+
+  _point_extents(dim,
+                 this_locator->point_id_base,
+                 n_points,
+                 point_list,
+                 point_coords,
+                 location,
+                 extents + 2*dim);
+
+  for (i = 0; i < dim; i++) {
+
+    if (extents[i] > -HUGE_VAL + tolerance_base)
+      extents[i]         -= tolerance_base;
+    else
+      extents[i] = -HUGE_VAL;
+    if (extents[i] < HUGE_VAL - tolerance_base)
+      extents[i +   dim] += tolerance_base;
+    else
+      extents[i +   dim] = HUGE_VAL;
+
+    if (extents[i + 2*dim] > -HUGE_VAL + tolerance_base)
+      extents[i + 2*dim] -= tolerance_base;
+    else
+      extents[i + 2*dim] = -HUGE_VAL;
+    if (extents[i + 3*dim] < HUGE_VAL - tolerance_base)
+      extents[i + 3*dim] += tolerance_base;
+    else
+      extents[i + 3*dim] = HUGE_VAL;
+
   }
 
-  PLE_FREE(_location);
-  PLE_FREE(_distance);
-  PLE_FREE(_point_coords);
+  /* Determine possible overlap */
 
-  /* Finalize timing */
+  stride2 = dim * 2; /* Stride for one type of extent */
 
-  w_end = ple_timer_wtime();
-  cpu_end = ple_timer_cpu_time();
+  n_intersects = 0;
 
-  this_locator->location_wtime[2] += (w_end - w_start);
-  this_locator->location_cpu_time[2] += (cpu_end - cpu_start);
+  if (_intersect_extents(dim, extents, extents + (2*dim)) == true)
+    n_intersects += 1;
+
+  intersects.n = n_intersects;
+  PLE_MALLOC(intersects.extents, intersects.n * stride2, double);
+
+  /* Copy only element (and not point) extents */
+
+  for (j = 0; j < stride2; j++)
+    intersects.extents[stride2 + j] = extents[j];
+
+  return intersects;
 }
 
 /*----------------------------------------------------------------------------
  * Prepare locator for use with a given mesh representation and point set.
  *
  * parameters:
- *   this_locator      <-> pointer to locator structure
- *   mesh              <-- pointer to mesh representation structure
- *   dim               <-- spatial dimension
- *   n_points          <-- number of points to locate
- *   point_list        <-- optional indirection array to point_coords
- *                         (1 to n_points numbering)
- *   point_coords      <-- coordinates of points to locate
- *                         (dimension: dim * n_points)
- *   distance          --> optional distance from point to matching element:
- *                         < 0 if unlocated; 0 - 1 if inside and > 1 if
- *                         outside a volume element, or absolute distance
- *                         to a surface element (size: n_points)
- *   locate_closest_f  <-- function locating the closest local elements
+ *   this_locator       <-> pointer to locator structure
+ *   mesh               <-- pointer to mesh representation structure
+ *   tolerance_base     <-- associated fixed tolerance
+ *   tolerance_fraction <-- associated fraction of element bounding
+ *                          boxes added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_list         <-- optional indirection array to point_coords
+ *   point_coords       <-- coordinates of points to locate
+ *                          (dimension: dim * n_points)
+ *   distance           --> optional distance from point to matching element:
+ *                          < 0 if unlocated; 0 - 1 if inside and > 1 if
+ *                          outside a volume element, or absolute distance
+ *                          to a surface element (size: n_points)
+ *   mesh_extents_f     <-- function computing mesh or mesh subset extents
+ *   mesh_locate_f      <-- function locating the closest local elements
  *----------------------------------------------------------------------------*/
 
 static void
-_locate_all_local(ple_locator_t                *this_locator,
-                  const void                   *mesh,
-                  int                           dim,
-                  ple_lnum_t                    n_points,
-                  const ple_lnum_t              point_list[],
-                  const ple_coord_t             point_coords[],
-                  float                         distance[],
-                  ple_mesh_elements_contain_t  *locate_inside_f,
-                  ple_mesh_elements_closest_t  *locate_closest_f)
+_locate_all_local(ple_locator_t               *this_locator,
+                  const void                  *mesh,
+                  float                        tolerance_base,
+                  float                        tolerance_fraction,
+                  ple_lnum_t                   n_points,
+                  const ple_lnum_t             point_list[],
+                  const ple_coord_t            point_coords[],
+                  ple_lnum_t                   location[],
+                  float                        distance[],
+                  ple_mesh_extents_t          *mesh_extents_f,
+                  ple_mesh_elements_locate_t  *mesh_locate_f)
 {
-  int l, stride;
+  int l;
   ple_lnum_t j, k;
   ple_lnum_t n_coords, n_interior, n_exterior, coord_idx;
-  ple_lnum_t *location;
-  ple_lnum_t location_count;
+  double extents[12];
+  ple_lnum_t *_location;
   ple_coord_t *coords;
+  _rank_intersects_t intersects;
   float *_distance = distance;
-  double extents[6];
+
+  const int dim = this_locator->dim;
+  const ple_lnum_t idb = this_locator->point_id_base;
 
   /* Initialization */
 
-  stride = dim * 2;
-
   PLE_MALLOC(coords, n_points * dim, ple_coord_t);
 
-  /* Initialize location information */
-  /*---------------------------------*/
+  /* Update intersect for current point list */
+
+  intersects = _intersects_local(this_locator,
+                                 mesh,
+                                 tolerance_base,
+                                 tolerance_fraction,
+                                 n_points,
+                                 point_list,
+                                 point_coords,
+                                 location,
+                                 mesh_extents_f);
 
   n_coords = 0;
 
-  for (k = 0; k < stride; k++)
-    extents[k] = this_locator->intersect_extents[k];
-
   /* Build partial buffer */
 
-  for (j = 0; j < n_points; j++) {
+  if (intersects.n > 0) {
 
-    if (point_list != NULL)
-      coord_idx = point_list[j] - 1;
-    else
-      coord_idx = j;
+    for (j = 0; j < n_points; j++) {
 
-    if (_within_extents(dim,
-                        &(point_coords[dim*coord_idx]),
-                        extents) == true) {
+      if (location[j] > -1)
+        continue;
 
-      for (k = 0; k < dim; k++)
-        coords[n_coords*dim + k]
-          = point_coords[dim*coord_idx + k];
+      if (point_list != NULL)
+        coord_idx = point_list[j] - idb;
+      else
+        coord_idx = j;
 
-      n_coords += 1;
+      if (_within_extents(dim,
+                          &(point_coords[dim*coord_idx]),
+                          extents) == true) {
+
+        for (k = 0; k < dim; k++)
+          coords[n_coords*dim + k]
+            = point_coords[dim*coord_idx + k];
+
+        n_coords += 1;
+      }
+
+    }
+
+    PLE_REALLOC(coords, n_coords * dim, ple_coord_t);
+
+    if (n_coords < n_points)
+      PLE_MALLOC(_location, n_coords, ple_lnum_t);
+    if (distance == NULL || n_coords < n_points)
+      PLE_MALLOC(_distance, n_coords, float);
+
+    for (j = 0; j < n_coords; j++) {
+      _location[j] = -1;
+      _distance[j] = -1.0;
+    }
+
+    mesh_locate_f(mesh,
+                  tolerance_base,
+                  tolerance_fraction,
+                  n_coords,
+                  coords,
+                  NULL, /* tags_dist */
+                  _location,
+                  _distance);
+
+    PLE_FREE(coords);
+
+    if (n_coords < n_points) {
+      n_coords = 0;
+      for (j = 0; j < n_points; j++) {
+        if (location[j] < 0) {
+          location[j] = _location[n_coords];
+          n_coords++;
+          if (distance != NULL)
+            distance[j] = _distance[n_coords];
+        }
+      }
     }
 
   }
-
-  PLE_REALLOC(coords, n_coords * dim, ple_coord_t);
-
- /*  Now locate coords */
-
-  PLE_MALLOC(location, n_coords, ple_lnum_t);
-
-  if (distance == NULL)
-    PLE_MALLOC(_distance, n_coords, float);
-
-  for (j = 0; j < n_coords; j++) {
-    location[j] = -1;
-    _distance[j] = -1.0;
-  }
-
-  locate_inside_f(mesh,
-                  this_locator->tolerance,
-                  n_coords,
-                  coords,
-                  location,
-                  _distance);
-
-  if (this_locator->locate_closest > 0)
-    _locate_closest_local(this_locator,
-                          mesh,
-                          dim,
-                          n_points,
-                          point_list,
-                          point_coords,
-                          location,
-                          _distance,
-                          locate_closest_f);
 
   /* Reorganize location information */
   /*---------------------------------*/
@@ -1620,84 +1784,70 @@ _locate_all_local(ple_locator_t                *this_locator,
      the distance[] array is not needed anymore now that all comparisons have
      been done */
 
+  if (_location != location)
+    PLE_FREE(_location);
+
   if (_distance != distance)
     PLE_FREE(_distance);
 
-  location_count = 0;
-
-  n_exterior = 0;
-  for (j = 0; j < n_coords; j++) {
+  this_locator->n_interior = 0;
+  this_locator->n_exterior = 0;
+  for (j = 0; j < n_points; j++) {
     if (location[j] > -1)
-      location_count += 1;
+      this_locator->n_interior += 1;
     else
-      n_exterior += 1;
+      this_locator->n_exterior += 1;
   }
 
-  this_locator->n_interior = n_coords - n_exterior;
   PLE_MALLOC(this_locator->interior_list, this_locator->n_interior, ple_lnum_t);
-
-  this_locator->n_exterior = (n_points - n_coords) + n_exterior;
   PLE_MALLOC(this_locator->exterior_list, this_locator->n_exterior, ple_lnum_t);
 
   /* Organize total number of "local" and "distant" points */
 
-  PLE_MALLOC(this_locator->local_points_idx, 2, ple_lnum_t);
-  PLE_MALLOC(this_locator->distant_points_idx, 2, ple_lnum_t);
+  PLE_REALLOC(this_locator->local_points_idx, 2, ple_lnum_t);
+  PLE_REALLOC(this_locator->distant_points_idx, 2, ple_lnum_t);
 
   this_locator->local_points_idx[0] = 0;
-  this_locator->local_points_idx[1] = location_count;
+  this_locator->local_points_idx[1] = this_locator->n_interior;
 
   this_locator->distant_points_idx[0] = 0;
-  this_locator->distant_points_idx[1] = location_count;
+  this_locator->distant_points_idx[1] = this_locator->n_interior;
 
   this_locator->local_point_ids = NULL; /* Not needed for single-process */
 
-  PLE_MALLOC(this_locator->distant_point_location, location_count, ple_lnum_t);
-  PLE_MALLOC(this_locator->distant_point_coords, n_coords * dim, ple_coord_t);
+  PLE_REALLOC(this_locator->distant_point_location,
+              this_locator->n_interior,
+              ple_lnum_t);
+  PLE_REALLOC(this_locator->distant_point_coords,
+              this_locator->n_interior * dim,
+              ple_coord_t);
 
-  location_count = 0;
   n_interior = 0;
   n_exterior = 0;
 
-  for (j = 0, k = 0; j < n_points; j++) {
+  for (j = 0; j < n_points; j++) {
 
     if (point_list != NULL)
-      coord_idx = point_list[j] - 1;
+      coord_idx = point_list[j] - idb;
     else
       coord_idx = j;
 
-    if (_within_extents(dim,
-                        &(point_coords[dim*coord_idx]),
-                        extents) == true) {
-
-      if (location[k] > -1) {
-        this_locator->distant_point_location[location_count] = location[k];
-        for (l = 0; l < dim; l++) {
-          this_locator->distant_point_coords[location_count*dim + l]
-            = point_coords[coord_idx*dim + l];
-        }
-        location_count += 1;
-        this_locator->interior_list[n_interior] = j + 1;
-        n_interior += 1;
-
+    if (location[j] > -1) {
+      this_locator->distant_point_location[n_interior] = location[j];
+      for (l = 0; l < dim; l++) {
+        this_locator->distant_point_coords[n_interior*dim + l]
+          = point_coords[coord_idx*dim + l];
       }
-      else {
-        this_locator->exterior_list[n_exterior] = j + 1;
-        n_exterior += 1;
-      }
-
-      k += 1;
-
+      this_locator->interior_list[n_interior] = j + idb;
+      n_interior += 1;
     }
     else {
-      this_locator->exterior_list[n_exterior] = j + 1;
+      this_locator->exterior_list[n_exterior] = j + idb;
       n_exterior += 1;
     }
 
   }
 
-  PLE_FREE(location);
-  PLE_FREE(coords);
 }
 
 #if defined(PLE_HAVE_MPI)
@@ -1713,7 +1863,7 @@ _locate_all_local(ple_locator_t                *this_locator,
  *   this_locator  <-- pointer to locator structure
  *   distant_var   <-> variable defined on distant points (ready to send)
  *   local_var     <-> variable defined on local points (received)
- *   local_list    <-- optional indirection list (1 to n) for local_var
+ *   local_list    <-- optional indirection list for local_var
  *   datatype      <-- variable type
  *   stride        <-- dimension (1 for scalar, 3 for interlaced vector)
  *   reverse       <-- if true, exchange is reversed
@@ -1849,9 +1999,10 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
           int k;
           size_t l;
           const size_t nbytes = stride*size;
+          const ple_lnum_t idb = this_locator->point_id_base;
           for (k = 0; k < n_points_loc; k++) {
             char *local_v_p =   (char *)local_var
-                              + (local_list[_local_point_ids[k]] - 1)*nbytes;
+                              + (local_list[_local_point_ids[k]] - idb)*nbytes;
             const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
             for (l = 0; l < nbytes; l++)
               local_v_p[l] = loc_v_buf_p[l];
@@ -1879,10 +2030,11 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
           int k;
           size_t l;
           const size_t nbytes = stride*size;
+          const ple_lnum_t idb = this_locator->point_id_base;
           for (k = 0; k < n_points_loc; k++) {
             const char *local_v_p
               = (const char *)local_var
-                + (local_list[_local_point_ids[k]] - 1)*nbytes;
+                + (local_list[_local_point_ids[k]] - idb)*nbytes;
             char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
             for (l = 0; l < nbytes; l++)
               loc_v_buf_p[l] = local_v_p[l];
@@ -1921,7 +2073,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
  *   this_locator  <-- pointer to locator structure
  *   distant_var   <-> variable defined on distant points (ready to send)
  *   local_var     <-> variable defined on local points (received)
- *   local_list    <-- optional indirection list (1 to n) for local_var
+ *   local_list    <-- optional indirection list for local_var
  *   datatype      <-- variable type
  *   stride        <-- dimension (1 for scalar, 3 for interlaced vector)
  *   reverse       <-- if true, exchange is reversed
@@ -2139,9 +2291,10 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
           int k;
           size_t l;
           const size_t nbytes = stride*size;
+          const ple_lnum_t idb = this_locator->point_id_base;
           for (k = 0; k < n_points_loc; k++) {
             char *local_v_p =   (char *)local_var
-                              + (local_list[_local_point_ids[k]] - 1)*nbytes;
+                              + (local_list[_local_point_ids[k]] - idb)*nbytes;
             const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
             for (l = 0; l < nbytes; l++)
               local_v_p[l] = loc_v_buf_p[l];
@@ -2169,10 +2322,11 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
           int k;
           size_t l;
           const size_t nbytes = stride*size;
+          const ple_lnum_t idb = this_locator->point_id_base;
           for (k = 0; k < n_points_loc; k++) {
             const char *local_v_p
               = (const char *)local_var
-                + (local_list[_local_point_ids[k]] - 1)*nbytes;
+                + (local_list[_local_point_ids[k]] - idb)*nbytes;
             char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
             for (l = 0; l < nbytes; l++)
               loc_v_buf_p[l] = local_v_p[l];
@@ -2263,7 +2417,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
  *   this_locator  <-- pointer to locator structure
  *   distant_var   <-> variable defined on distant points (ready to send)
  *   local_var     <-> variable defined on local points (received)
- *   local_list    <-- optional indirection list (1 to n) for local_var
+ *   local_list    <-- optional indirection list for local_var
  *   type_size     <-- sizeof (float or double) variable type
  *   stride        <-- dimension (1 for scalar, 3 for interlaced vector)
  *   reverse       <-- if true, exchange is reversed
@@ -2305,8 +2459,9 @@ _exchange_point_var_local(ple_locator_t     *this_locator,
       memcpy(local_var, distant_var, n_points_loc*nbytes);
 
     else {
+      const ple_lnum_t idb = this_locator->point_id_base;
       for (i = 0; i < n_points_loc; i++) {
-        char *local_var_p = (char *)local_var + (local_list[i] - 1)*nbytes;
+        char *local_var_p = (char *)local_var + (local_list[i] - idb)*nbytes;
         const char *distant_var_p = (const char *)distant_var + i*nbytes;
         for (j = 0; j < nbytes; j++)
           local_var_p[j] = distant_var_p[j];
@@ -2320,9 +2475,10 @@ _exchange_point_var_local(ple_locator_t     *this_locator,
       memcpy(distant_var, local_var, n_points_loc*nbytes);
 
     else {
+      const ple_lnum_t idb = this_locator->point_id_base;
       for (i = 0; i < n_points_loc; i++) {
         const char *local_var_p
-          = (const char *)local_var + (local_list[i] - 1)*nbytes;
+          = (const char *)local_var + (local_list[i] - idb)*nbytes;
         char *distant_var_p = (char *)distant_var + i*nbytes;
         for (j = 0; j < nbytes; j++)
           distant_var_p[j] = local_var_p[j];
@@ -2404,8 +2560,6 @@ _get_times(const ple_locator_t  *this_locator,
  * start_rank is equal to the current rank in the communicator, the locator
  * will work only locally.
  *
- * \param[in] tolerance  addition to local extents of each element:
- *                       extent = base_extent * (1 + tolerance)
  * \param[in] comm       associated MPI communicator
  * \param[in] n_ranks    number of MPI ranks associated with distant location
  * \param[in] start_rank first MPI rank associated with distant location
@@ -2416,13 +2570,12 @@ _get_times(const ple_locator_t  *this_locator,
 
 #if defined(PLE_HAVE_MPI)
 ple_locator_t *
-ple_locator_create(double    tolerance,
-                   MPI_Comm  comm,
+ple_locator_create(MPI_Comm  comm,
                    int       n_ranks,
                    int       start_rank)
 #else
 ple_locator_t *
-ple_locator_create(double  tolerance)
+ple_locator_create(void)
 #endif
 {
   int  i;
@@ -2430,10 +2583,11 @@ ple_locator_create(double  tolerance)
 
   PLE_MALLOC(this_locator, 1, ple_locator_t);
 
-  this_locator->tolerance = tolerance;
   this_locator->dim = 0;
+  this_locator->have_tags = 0;
 
-  this_locator->locate_closest = 0;
+  this_locator->locate_algorithm = _LOCATE_BB_SENDRECV;
+  this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
 
 #if defined(PLE_HAVE_MPI)
   this_locator->comm = comm;
@@ -2444,9 +2598,10 @@ ple_locator_create(double  tolerance)
   this_locator->start_rank = 0;
 #endif
 
+  this_locator->point_id_base = 0;
+
   this_locator->n_intersects = 0;
   this_locator->intersect_rank = NULL;
-  this_locator->intersect_extents = NULL;
 
   this_locator->local_points_idx = NULL;
   this_locator->distant_points_idx = NULL;
@@ -2500,7 +2655,6 @@ ple_locator_destroy(ple_locator_t  *this_locator)
     PLE_FREE(this_locator->distant_point_coords);
 
     PLE_FREE(this_locator->intersect_rank);
-    PLE_FREE(this_locator->intersect_extents);
 
     PLE_FREE(this_locator->interior_list);
     PLE_FREE(this_locator->exterior_list);
@@ -2515,64 +2669,52 @@ ple_locator_destroy(ple_locator_t  *this_locator)
 /*!
  * \brief Prepare locator for use with a given mesh representation.
  *
- * \param[in, out] this_locator     pointer to locator structure
- * \param[in]      mesh             pointer to mesh representation structure
- * \param[in]      dim              spatial dimension of mesh and points to
- *                                  locate
- * \param[in]      n_points         number of points to locate
- * \param[in]      point_list       optional indirection array to point_coords
- *                                  (1 to n_points numbering)
- * \param[in]      point_coords     coordinates of points to locate
- *                                  (dimension: dim * n_points)
- * \param[out]     distance         optional distance from point to matching
- *                                  element: < 0 if unlocated; 0 - 1 if inside
- *                                  and > 1 if outside a volume element, or
- *                                  absolute distance to a surface element
- *                                  (size: n_points)
- * \param[in]      mesh_extents_f   pointer to function computing mesh or mesh
- *                                  subset or element extents
- * \param[in]      locate_inside_f  pointer to function wich updates the
- *                                  location[] and distance[] arrays associated
- *                                  with a set of points for points that are in
- *                                  an element of this mesh, or closer to one
- *                                  than to previously encountered elements.
- * \param[in]      locate_closest_f pointer to function locating the closest
- *                                  local elements if points not located on an
- *                                  element within the tolerance should be
- *                                  located on the closest element,
- *                                  NULL otherwise
+ * \param[in, out] this_locator        pointer to locator structure
+ * \param[in]      mesh                pointer to mesh representation structure
+ * \param[in]      options             options array (size
+ *                                     PLE_LOCATOR_N_OPTIONS), or NULL
+ * \param[in]      tolerance_base      associated fixed tolerance
+ * \param[in]      tolerance_fraction  associated fraction of element bounding
+ *                                     boxes added to tolerance
+ * \param[in]      dim                 spatial dimension of mesh and points to
+ *                                     locate
+ * \param[in]      n_points            number of points to locate
+ * \param[in]      point_list          optional indirection array to point_coords
+ * \param[in]      point_tag           optional point tag
+ * \param[in]      point_coords        coordinates of points to locate
+ *                                     (dimension: dim * n_points)
+ * \param[out]     distance            optional distance from point to matching
+ *                                     element: < 0 if unlocated; 0 - 1 if inside
+ *                                     and > 1 if outside a volume element, or
+ *                                     absolute distance to a surface element
+ *                                     (size: n_points)
+ * \param[in]      mesh_extents_f      pointer to function computing mesh or mesh
+ *                                     subset or element extents
+ * \param[in]      mesh_locate_f       pointer to function wich updates the
+ *                                     location[] and distance[] arrays
+ *                                     associated with a set of points for
+ *                                     points that are in an element of this
+ *                                     mesh, or closer to one than to previously
+ *                                     encountered elements.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-ple_locator_set_mesh(ple_locator_t                *this_locator,
-                     const void                   *mesh,
-                     int                           dim,
-                     ple_lnum_t                    n_points,
-                     const ple_lnum_t              point_list[],
-                     const ple_coord_t             point_coords[],
-                     float                         distance[],
-                     ple_mesh_extents_t           *mesh_extents_f,
-                     ple_mesh_elements_contain_t  *locate_inside_f,
-                     ple_mesh_elements_closest_t  *locate_closest_f)
+ple_locator_set_mesh(ple_locator_t               *this_locator,
+                     const void                  *mesh,
+                     const int                   *options,
+                     float                        tolerance_base,
+                     float                        tolerance_fraction,
+                     int                          dim,
+                     ple_lnum_t                   n_points,
+                     const ple_lnum_t             point_list[],
+                     const ple_lnum_t             point_tag[],
+                     const ple_coord_t            point_coords[],
+                     float                        distance[],
+                     ple_mesh_extents_t          *mesh_extents_f,
+                     ple_mesh_elements_locate_t  *mesh_locate_f)
 {
-  int i;
-  int stride2;
-  double tolerance;
   double w_start, w_end, cpu_start, cpu_end;
-  double extents[12];
-
-#if defined(PLE_HAVE_MPI)
-  int j;
-  int stride4;
-  int comm_rank, comm_size;
-  int n_intersects;
-  int  *intersect_rank;
-  double *recvbuf;
-#endif
-
-  double comm_timing[4] = {0., 0., 0., 0.};
-  int mpi_flag = 0;
 
   /* Initialize timing */
 
@@ -2581,58 +2723,114 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
 
   /* Other initializations */
 
-  this_locator->locate_closest = 0;
-  if (locate_closest_f != NULL)
-    this_locator->locate_closest = 2;
-
   this_locator->dim = dim;
 
-  this_locator->n_intersects = 0;
-
-  tolerance = PLE_MAX(this_locator->tolerance, 1.e-3);
-
-  mesh_extents_f(mesh,
-                 1,
-                 tolerance,
-                 extents);
-
-  _point_extents(dim,
-                 n_points,
-                 point_list,
-                 point_coords,
-                 extents + 2*dim);
+  if (distance != NULL) {
+    for (ple_lnum_t i = 0; i < n_points; i++)
+      distance[i] = -1;
+  }
 
   /* Release information if previously present */
 
-  if (this_locator->intersect_rank != NULL)
-    PLE_FREE(this_locator->intersect_rank);
-  if (this_locator->intersect_extents != NULL)
-    PLE_FREE(this_locator->intersect_extents);
+  _clear_location_info(this_locator);
 
-  if (this_locator->local_points_idx != NULL)
-    PLE_FREE(this_locator->local_points_idx);
-  if (this_locator->distant_points_idx != NULL)
-    PLE_FREE(this_locator->distant_points_idx);
+  ple_locator_extend_search(this_locator,
+                            mesh,
+                            options,
+                            tolerance_base,
+                            tolerance_fraction,
+                            n_points,
+                            point_list,
+                            point_tag,
+                            point_coords,
+                            distance,
+                            mesh_extents_f,
+                            mesh_locate_f);
 
-  if (this_locator->local_point_ids != NULL)
-    PLE_FREE(this_locator->local_point_ids);
+  /* Finalize timing */
 
-  if (this_locator->distant_point_location != NULL)
-    PLE_FREE(this_locator->distant_point_location);
-  if (this_locator->distant_point_coords != NULL)
-    PLE_FREE(this_locator->distant_point_coords);
+  w_end = ple_timer_wtime();
+  cpu_end = ple_timer_cpu_time();
 
-  if (this_locator->interior_list != NULL)
-    PLE_FREE(this_locator->interior_list);
-  if (this_locator->exterior_list != NULL)
-    PLE_FREE(this_locator->exterior_list);
+  this_locator->location_wtime[0] += (w_end - w_start);
+  this_locator->location_cpu_time[0] += (cpu_end - cpu_start);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Extend search for a locator for which set_mesh has already been
+ *        called.
+ *
+ * \param[in, out] this_locator        pointer to locator structure
+ * \param[in]      mesh                pointer to mesh representation structure
+ * \param[in]      options             options array (size
+ *                                     PLE_LOCATOR_N_OPTIONS), or NULL
+ * \param[in]      tolerance_base      associated fixed tolerance
+ * \param[in]      tolerance_fraction  associated fraction of element bounding
+ *                                     boxes added to tolerance
+ * \param[in]      n_points            number of points to locate
+ * \param[in]      point_list          optional indirection array to point_coords
+ * \param[in]      point_tag           optional point tag
+ * \param[in]      point_coords        coordinates of points to locate
+ *                                     (dimension: dim * n_points)
+ * \param[out]     distance            optional distance from point to matching
+ *                                     element: < 0 if unlocated; 0 - 1 if inside
+ *                                     and > 1 if outside a volume element, or
+ *                                     absolute distance to a surface element
+ *                                     (size: n_points)
+ * \param[in]      mesh_extents_f      pointer to function computing mesh or mesh
+ *                                     subset or element extents
+ * \param[in]      mesh_locate_f       pointer to function wich updates the
+ *                                     location[] and distance[] arrays
+ *                                     associated with a set of points for
+ *                                     points that are in an element of this
+ *                                     mesh, or closer to one than to previously
+ *                                     encountered elements.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_extend_search(ple_locator_t               *this_locator,
+                          const void                  *mesh,
+                          const int                   *options,
+                          float                        tolerance_base,
+                          float                        tolerance_fraction,
+                          ple_lnum_t                   n_points,
+                          const ple_lnum_t             point_list[],
+                          const ple_lnum_t             point_tag[],
+                          const ple_coord_t            point_coords[],
+                          float                        distance[],
+                          ple_mesh_extents_t          *mesh_extents_f,
+                          ple_mesh_elements_locate_t  *mesh_locate_f)
+{
+  int i;
+  double w_start, w_end, cpu_start, cpu_end;
+  ple_lnum_t  *location;
+
+#if defined(PLE_HAVE_MPI)
+#endif
+
+  double comm_timing[4] = {0., 0., 0., 0.};
+  int mpi_flag = 0;
+
+  const int dim = this_locator->dim;
+
+  /* Initialize timing */
+
+  w_start = ple_timer_wtime();
+  cpu_start = ple_timer_cpu_time();
+
+  if (options != NULL)
+    this_locator->point_id_base = options[PLE_LOCATOR_NUMBERING];
+  else
+    this_locator->point_id_base = 0;
+
+  const int idb = this_locator->point_id_base;
 
   /* Prepare locator (MPI version) */
   /*-------------------------------*/
 
 #if defined(PLE_HAVE_MPI)
-
-  this_locator->async_exchange = 0;
 
   MPI_Initialized(&mpi_flag);
 
@@ -2641,8 +2839,15 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
 
   if (mpi_flag) {
 
-    int globflag[3];
-    int locflag[3] = {-1, -1, -1};
+    /* Flag values
+       0: mesh dimension; 1: space dimension;
+       2: minimum algorithm version; 3: maximum algorithm version,
+       4: preferred algorithm version,
+       5: have point tags */
+
+    int globflag[6];
+    int locflag[6] = {-1, -1, 1, -1, -1, 0};
+    ple_lnum_t  *location_rank_id;
 
     /* Check that at least one of the local or distant nodal meshes
        is non-NULL, and at least one of the local or distant
@@ -2651,16 +2856,15 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
     if (mesh != NULL)
       locflag[0] = dim;
 
-    if (n_points > 0) {
+    if (n_points > 0)
       locflag[1] = dim;
-    }
 
-    if (locate_closest_f != NULL)
-      locflag[2] = 1;
+    if (n_points > 0 && point_tag != NULL)
+      locflag[5] = 1;
 
     _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
 
-    MPI_Allreduce(locflag, globflag, 3, MPI_INT, MPI_MAX,
+    MPI_Allreduce(locflag, globflag, 6, MPI_INT, MPI_MAX,
                   this_locator->comm);
 
     _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
@@ -2678,82 +2882,46 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
                   "with distant space dimension %d\n"),
                 dim, globflag[0]);
 
-    if (this_locator->locate_closest == 0 && globflag[2] == 1)
-      this_locator->locate_closest = 1;
+    /* Check algorithm versions and supported features */
 
-    /* Exchange extent information */
+    globflag[3] = -globflag[3];
 
-    MPI_Comm_rank(this_locator->comm, &comm_rank);
-    MPI_Comm_size(this_locator->comm, &comm_size);
-
-    stride2 = dim * 2; /* Stride for one type of extent */
-    stride4 = dim * 4; /* Stride for element and vertex
-                          extents, end-to-end */
-
-    PLE_MALLOC(recvbuf, stride4*comm_size, double);
-
-    _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
-
-    MPI_Allgather(extents, stride4, MPI_DOUBLE, recvbuf, stride4, MPI_DOUBLE,
-                  this_locator->comm);
-
-    _locator_trace_end_comm(_ple_locator_log_end_g_comm, comm_timing);
-
-    /* Count and mark possible overlaps */
-
-    n_intersects = 0;
-    PLE_MALLOC(intersect_rank, this_locator->n_ranks, int);
-
-    for (i = 0; i < this_locator->n_ranks; i++) {
-      j = this_locator->start_rank + i;
-      if (  (_intersect_extents(dim,
-                                extents + (2*dim),
-                                recvbuf + (j*stride4)) == true)
-          || (_intersect_extents(dim,
-                                 extents,
-                                 recvbuf + (j*stride4) + (2*dim)) == true)) {
-        intersect_rank[n_intersects] = j;
-        n_intersects += 1;
-      }
-
-    }
-
-    this_locator->n_intersects = n_intersects;
-    PLE_MALLOC(this_locator->intersect_rank,
-               this_locator->n_intersects,
-               int);
-    PLE_MALLOC(this_locator->intersect_extents,
-               this_locator->n_intersects * stride2,
-               double);
-
-    for (i = 0; i < this_locator->n_intersects; i++) {
-
-      this_locator->intersect_rank[i] = intersect_rank[i];
-
-      /* Copy only distant element (and not point) extents */
-
-      for (j = 0; j < stride2; j++)
-        this_locator->intersect_extents[i*stride2 + j]
-          = recvbuf[intersect_rank[i]*stride4 + j];
-
-    }
+    if (globflag[2] > globflag[3])
+      ple_error(__FILE__, __LINE__, 0,
+                _("Incompatible locator algorithm ranges:\n"
+                  "  global minimum algorithm id %d\n"
+                  "  global maximum algorithm id %d\n"
+                  "PLE library versions or builds are incompatible."),
+                globflag[2], globflag[3]);
+    else if (globflag[5] > 0)
+      ple_error(__FILE__, __LINE__, 0,
+                _("Usage of point tags in locator is not implemented yet."),
+                globflag[5]);
 
     /* Free temporary memory */
 
-    PLE_FREE(intersect_rank);
-    PLE_FREE(recvbuf);
+    PLE_MALLOC(location, n_points, ple_lnum_t);
+    PLE_MALLOC(location_rank_id, n_points, ple_lnum_t);
+
+    _transfer_location_distant(this_locator,
+                               n_points,
+                               location,
+                               location_rank_id);
 
     _locate_all_distant(this_locator,
                         mesh,
-                        dim,
+                        tolerance_base,
+                        tolerance_fraction,
                         n_points,
                         point_list,
                         point_coords,
+                        location,
+                        location_rank_id,
                         distance,
                         mesh_extents_f,
-                        locate_inside_f,
-                        locate_closest_f);
+                        mesh_locate_f);
 
+    PLE_FREE(location_rank_id);
   }
 
 #endif
@@ -2766,46 +2934,23 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
     if (mesh == NULL || n_points == 0)
       return;
 
-    stride2 = dim * 2;
+    PLE_MALLOC(location, n_points, ple_lnum_t);
 
-    /* Count and mark possible overlaps */
+    _transfer_location_local(this_locator,
+                             n_points,
+                             location);
 
-    if (_intersect_extents(dim,
-                           extents,
-                           extents + (2*dim)) == true) {
-
-      this_locator->n_intersects = 1;
-
-      PLE_MALLOC(this_locator->intersect_rank, 1, int);
-      PLE_MALLOC(this_locator->intersect_extents, stride2, double);
-
-      this_locator->intersect_rank[0] = 0;
-
-      for (i = 0; i < stride2; i++)
-        this_locator->intersect_extents[i] = extents[i];
-
-      _locate_all_local(this_locator,
-                        mesh,
-                        dim,
-                        n_points,
-                        point_list,
-                        point_coords,
-                        distance,
-                        locate_inside_f,
-                        locate_closest_f);
-    }
-
-    else {
-
-      this_locator->n_exterior = n_points;
-      PLE_MALLOC(this_locator->exterior_list,
-                 this_locator->n_exterior,
-                 ple_lnum_t);
-      for (i = 0; i < this_locator->n_exterior; i++)
-        this_locator->exterior_list[i] = i + 1;
-
-    }
-
+    _locate_all_local(this_locator,
+                      mesh,
+                      tolerance_base,
+                      tolerance_fraction,
+                      n_points,
+                      point_list,
+                      point_coords,
+                      location,
+                      distance,
+                      mesh_extents_f,
+                      mesh_locate_f);
   }
 
   /* Update local_point_ids values */
@@ -2825,7 +2970,7 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
            == this_locator->n_interior);
 
     for (i = 0; i < this_locator->n_interior; i++)
-      reduced_index[this_locator->interior_list[i] - 1] = i;
+      reduced_index[this_locator->interior_list[i] - idb] = i;
 
     /* Update this_locator->local_point_ids[] so that it refers
        to an index in a dense [0, this_locator->n_interior] subset
@@ -2834,6 +2979,9 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
     for (i = 0; i < this_locator->n_interior; i++)
       this_locator->local_point_ids[i]
         = reduced_index[this_locator->local_point_ids[i]];
+
+    for (i = 0; i < this_locator->n_interior; i++)
+      assert(this_locator->local_point_ids[i] > -1);
 
     PLE_FREE(reduced_index);
 
@@ -2848,11 +2996,11 @@ ple_locator_set_mesh(ple_locator_t                *this_locator,
 
     for (i = 0; i < this_locator->n_interior; i++)
       this_locator->interior_list[i]
-        = point_list[this_locator->interior_list[i] - 1];
+        = point_list[this_locator->interior_list[i] - idb];
 
     for (i = 0; i < this_locator->n_exterior; i++)
       this_locator->exterior_list[i]
-        = point_list[this_locator->exterior_list[i] - 1];
+        = point_list[this_locator->exterior_list[i] - idb];
 
   }
 
@@ -2898,8 +3046,7 @@ ple_locator_get_n_dist_points(const ple_locator_t  *this_locator)
  *
  * \param[in] this_locator pointer to locator structure
  *
- * \return local element numbers associated with distant points
- *        (1 to n numbering).
+ * \return local element numbers associated with distant points.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2968,7 +3115,7 @@ ple_locator_get_n_interior(const ple_locator_t  *this_locator)
  *
  * \param[in] this_locator pointer to locator structure
  *
- * \return list of points located (1 to n numbering).
+ * \return list of points located.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3001,7 +3148,7 @@ ple_locator_get_n_exterior(const ple_locator_t  *this_locator)
  *
  * \param[in] this_locator pointer to locator structure
  *
- * \return list of points not located (1 to n numbering).
+ * \return list of points not located.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3043,12 +3190,16 @@ ple_locator_discard_exterior(ple_locator_t  *this_locator)
  * The local_var[] is defined at the located points (those whose
  * numbers are returned by ple_locator_get_interior_list().
  *
+ * If the optional local_list indirection is used, it is assumed to use
+ * the same base numbering as that defined by the options for the previous
+ * call to ple_locator_set_mesh() or ple_locator_extend_search().
+ *
  * \param[in]      this_locator pointer to locator structure
  * \param[in, out] distant_var  variable defined on distant points
  *                              (ready to send); size: n_dist_points*stride
  * \param[in, out] local_var    variable defined on located local points
  *                              (received); size: n_interior*stride
- * \param[in]      local_list   optional indirection list (1 to n) for local_var
+ * \param[in]      local_list   optional indirection list for local_var
  * \param[in]      type_size    sizeof (float or double) variable type
  * \param[in]      stride       dimension (1 for scalar,
  *                              3 for interleaved vector)
@@ -3099,7 +3250,7 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
 
     assert (datatype != MPI_DATATYPE_NULL);
 
-    if (this_locator->async_exchange == 0)
+    if (this_locator->exchange_algorithm == _EXCHANGE_SENDRECV)
       _exchange_point_var_distant(this_locator,
                                   distant_var,
                                   local_var,
@@ -3108,7 +3259,7 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
                                   stride,
                                   _reverse);
 
-    else
+    else if (this_locator->exchange_algorithm == _EXCHANGE_ISEND_IRECV)
       _exchange_point_var_distant_asyn(this_locator,
                                        distant_var,
                                        local_var,
@@ -3216,7 +3367,7 @@ void
 ple_locator_dump(const ple_locator_t  *this_locator)
 {
   int  i;
-  ple_lnum_t  j, k;
+  ple_lnum_t  j;
   const ple_lnum_t  *idx, *index, *loc;
   const ple_coord_t  *coords;
 
@@ -3230,44 +3381,30 @@ ple_locator_dump(const ple_locator_t  *this_locator)
 
   ple_printf("\n"
              "Locator:\n\n"
-             "Tolerance:                             %f\n"
              "Spatial dimension:                     %d\n"
-             "Locate on closest:                     %d\n"
+             "Exchange algorithm:                    %d\n"
              "Number of ranks of distant location:   %d\n"
              "First rank of distant location:        %d\n"
              "Number of intersecting distant ranks:  %d\n",
-             _locator->tolerance, _locator->dim,
-             (int)_locator->locate_closest,
+             _locator->dim,
+             _locator->exchange_algorithm,
              _locator->n_ranks, _locator->start_rank,
              _locator->n_intersects);
 
 #if defined(PLE_HAVE_MPI)
   if (_locator->comm != MPI_COMM_NULL)
-    ple_printf("Asynchronous exchange:                 %d\n"
-               "\n"
+    ple_printf("\n"
                "Associated MPI communicator:           %ld\n",
-               _locator->async_exchange,
                (long)(_locator->comm));
 #endif
 
   /* Arrays indexed by rank */
   /*------------------------*/
 
-  for (i = 0; i < _locator->n_intersects; i++) {
-
+  for (i = 0; i < _locator->n_intersects; i++)
     ple_printf("\n"
                "  Intersection %d with distant rank %d\n\n",
                i+1, _locator->intersect_rank[i]);
-
-    ple_printf("    Distant rank extents:\n");
-
-    k = i * (_locator->dim) * 2;
-    for (j = 0; j < _locator->dim; j++)
-      ple_printf("    [%12.5e, %12.5e]\n",
-                 _locator->intersect_extents[k + j],
-                 _locator->intersect_extents[k + _locator->dim + j]);
-
-  }
 
   if (_locator->n_interior > 0) {
 
@@ -3284,7 +3421,7 @@ ple_locator_dump(const ple_locator_t  *this_locator)
             ple_printf("                          %10d\n", index[j]);
         }
         else {
-          ple_printf("%6d (idx = %10d)\n", i + 1, idx[i]);
+          ple_printf("%6d (idx = %10d)\n", i, idx[i]);
         }
         ple_printf("   end (idx = %10d)\n", idx[_locator->n_intersects]);
       }
@@ -3308,7 +3445,7 @@ ple_locator_dump(const ple_locator_t  *this_locator)
 
         if (_locator->dim == 1) {
           ple_printf("%6d (idx = %10d) %10d [%12.5e]\n",
-                     i + 1, _locator->intersect_rank[i], idx[i],
+                     i, _locator->intersect_rank[i], idx[i],
                      loc[idx[i]], coords[idx[i]]);
           for (j = idx[i] + 1; j < idx[i + 1]; j++)
             ple_printf("                          %10d [%12.5e]\n",
@@ -3316,7 +3453,7 @@ ple_locator_dump(const ple_locator_t  *this_locator)
         }
         else if (_locator->dim == 2) {
           ple_printf("%6d (idx = %10d) %10d [%12.5e, %12.5e]\n",
-                     i + 1, idx[i], loc[idx[i]],
+                     i, idx[i], loc[idx[i]],
                      coords[2*idx[i]], coords[2*idx[i]+1]);
           for (j = idx[i] + 1; j < idx[i + 1]; j++)
             ple_printf("                          %10d [%12.5e, %12.5e]\n",
@@ -3324,7 +3461,7 @@ ple_locator_dump(const ple_locator_t  *this_locator)
         }
         else if (_locator->dim == 3) {
           ple_printf("%6d (idx = %10d) %10d [%12.5e, %12.5e, %12.5e]\n",
-                     i + 1, idx[i], loc[idx[i]],
+                     i, idx[i], loc[idx[i]],
                      coords[3*idx[i]], coords[3*idx[i]+1], coords[3*idx[i]+2]);
           for (j = idx[i] + 1; j < idx[i + 1]; j++)
             ple_printf("                          "

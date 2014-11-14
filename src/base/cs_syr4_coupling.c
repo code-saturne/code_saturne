@@ -45,6 +45,7 @@
  * PLE library headers
  *----------------------------------------------------------------------------*/
 
+#include <ple_defs.h>
 #include <ple_coupling.h>
 #include <ple_locator.h>
 
@@ -446,6 +447,55 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
 }
 
 /*----------------------------------------------------------------------------
+ * Check if coupling location is complete
+ *
+ * parameters:
+ *   syr_coupling <-- partially initialized SYRTHES coupling structure
+ *   coupling_ent <-- coupling entity
+ *   n_ext        --> number of unlocated points
+ *   ext_syr      --> 1 if SYRTHES has some unlocted elements, 0 otherwise
+ *
+ * returns:
+ *   true if location is complete, false otherwise
+ *----------------------------------------------------------------------------*/
+
+static bool
+_is_location_complete(cs_syr4_coupling_t      *syr_coupling,
+                      cs_syr4_coupling_ent_t  *coupling_ent,
+                      cs_gnum_t               *n_ext,
+                      bool                    *ext_syr)
+{
+  bool location_complete = true;
+
+  /* Check that all points are effectively located */
+
+  ple_lnum_t n_exterior = ple_locator_get_n_exterior(coupling_ent->locator);
+  *n_ext = n_exterior;
+
+  char  op_name_send[32 + 1];
+  char  op_name_recv[32 + 1];
+
+  cs_parall_counter(n_ext, 1);
+
+  if (*n_ext > 0) {
+    strcpy(op_name_send, "coupling:location:incomplete");
+    location_complete = false;
+  }
+  else
+    strcpy(op_name_send, "coupling:location:ok");
+
+  _exchange_sync(syr_coupling, op_name_send, op_name_recv);
+  if (!strcmp(op_name_recv, "coupling:location:incomplete")) {
+    location_complete = false;
+    *ext_syr = true;
+  }
+  else
+    *ext_syr = false;
+
+  return location_complete;
+}
+
+/*----------------------------------------------------------------------------
  * Define nodal mesh for Syrthes coupling from selection criteria.
  *
  * parameters:
@@ -463,16 +513,20 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                     int                  elt_dim)
 {
   char *coupled_mesh_name = NULL;
-  cs_gnum_t n_exterior = 0, n_dist_elts = 0;
+  bool      ext_syr = false;
+  cs_lnum_t n_exterior = 0;
   cs_gnum_t n_ext = 0;
   cs_lnum_t *elt_list = NULL;
   cs_coord_t *elt_centers = NULL;
   fvm_nodal_t *location_elts = NULL;
-  ple_mesh_elements_closest_t *locate_on_closest = NULL;
   float *cs_to_syr_dist = NULL;
   float *syr_to_cs_dist = NULL;
 
+  bool location_complete = false;
   cs_syr4_coupling_ent_t *coupling_ent = NULL;
+
+  int locator_options[PLE_LOCATOR_N_OPTIONS];
+  locator_options[PLE_LOCATOR_NUMBERING] = 1;
 
   assert(syr_coupling != NULL);
 
@@ -532,9 +586,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   /* Creation of a new nodal mesh from selected border faces */
 
   else if (elt_dim == syr_coupling->dim - 1) {
-
-    if (syr_coupling->allow_nearest)
-      locate_on_closest = cs_coupling_point_closest_mesh;
 
     BFT_MALLOC(coupled_mesh_name,
                strlen("SYRTHES  faces") + strlen(syr_coupling->syr_name) + 1,
@@ -636,15 +687,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     bft_printf_flush();
   }
 
-#if defined(PLE_HAVE_MPI)
-  coupling_ent->locator = ple_locator_create(syr_coupling->tolerance,
-                                             syr_coupling->comm,
-                                             syr_coupling->n_syr_ranks,
-                                             syr_coupling->syr_root_rank);
-#else
-  coupling_ent->locator = ple_locator_create(syr_coupling->tolerance);
-#endif
-
   /* Retrieve coordinates using FVM functions rather than previous list and
      coordinates, in case the extracted nodal mesh contains elements in a
      different order (multiple element types) or coordinates are projected
@@ -666,16 +708,76 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   /* Locate entities */
 
+#if defined(PLE_HAVE_MPI)
+  coupling_ent->locator = ple_locator_create(syr_coupling->comm,
+                                             syr_coupling->n_syr_ranks,
+                                             syr_coupling->syr_root_rank);
+#else
+  coupling_ent->locator = ple_locator_create(syr_coupling->tolerance);
+#endif
+
   ple_locator_set_mesh(coupling_ent->locator,
                        location_elts,
+                       locator_options,
+                       0.,
+                       syr_coupling->tolerance,
                        syr_coupling->dim,
                        coupling_ent->n_elts,
+                       NULL,
                        NULL,
                        elt_centers,
                        cs_to_syr_dist,
                        cs_coupling_mesh_extents,
-                       cs_coupling_point_in_mesh,
-                       locate_on_closest);
+                       cs_coupling_point_in_mesh);
+
+  /* Check that all points are effectively located */
+
+  location_complete = _is_location_complete(syr_coupling,
+                                            coupling_ent,
+                                            &n_ext,
+                                            &ext_syr);
+
+  if (syr_coupling->allow_nearest) {
+
+    float tolerance = syr_coupling->tolerance;
+
+    while (location_complete == false) {
+
+      tolerance *= 4;
+
+      if (syr_coupling->verbosity > 0) {
+        bft_printf(_(" [failed]\n"));
+        if (n_ext > 0)
+          bft_printf(_(" %llu fluid mesh elements not located on solid mesh\n"),
+                     (unsigned long long) n_ext);
+        if (ext_syr)
+          bft_printf(_(" Some solid mesh elements not located on fluid mesh\n"));
+        bft_printf(_("   Extending search with tolerance factor %f..."),
+                   tolerance);
+        bft_printf_flush();
+      }
+
+      ple_locator_extend_search(coupling_ent->locator,
+                                location_elts,
+                                locator_options,
+                                0.,
+                                tolerance,
+                                coupling_ent->n_elts,
+                                NULL,
+                                NULL,
+                                elt_centers,
+                                cs_to_syr_dist,
+                                cs_coupling_mesh_extents,
+                                cs_coupling_point_in_mesh);
+
+      location_complete = _is_location_complete(syr_coupling,
+                                                coupling_ent,
+                                                &n_ext,
+                                                &ext_syr);
+
+    }
+
+  }
 
   if (syr_coupling->verbosity > 0) {
     bft_printf(_(" [ok]\n"));
@@ -712,7 +814,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
 
   if (elt_dim == syr_coupling->dim - 1) {
 
-    n_dist_elts = ple_locator_get_n_dist_points(coupling_ent->locator);
+    cs_lnum_t n_dist_elts = ple_locator_get_n_dist_points(coupling_ent->locator);
+
     BFT_MALLOC(syr_to_cs_dist, n_dist_elts, float);
 
     ple_locator_exchange_point_var(coupling_ent->locator,
@@ -723,7 +826,8 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                    1,
                                    1);
 
-    if (syr_coupling->visualization != 0 && locate_on_closest != NULL) {
+    if (   syr_coupling->visualization != 0
+        && syr_coupling->allow_nearest == false) {
 
       cs_lnum_t i;
       int writer_ids[] = {-1};
@@ -783,13 +887,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
     BFT_FREE(syr_to_cs_dist);
 
   }
-
-  /* Check that all points are effectively located */
-
-  n_exterior = ple_locator_get_n_exterior(coupling_ent->locator);
-  n_ext = n_exterior;
-
-  cs_parall_counter(&n_ext, 1);
 
   if (n_ext) {
 
@@ -865,11 +962,12 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                (unsigned long long)n_ext,
                fvm_nodal_get_name(coupling_ent->elts));
 
-    /* Ensure clean stop */
-
-    cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
-
   }
+
+  /* Ensure clean stop */
+
+  if (location_complete == false)
+    cs_coupling_set_sync_flag(PLE_COUPLING_STOP);
 
   return coupling_ent;
 }
@@ -1345,6 +1443,7 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
   char  volume_flag = ' ';
   char  boundary_flag = ' ';
   char  conservativity_flag = '1';
+  char  allow_nearest_flag = '1';
   char  op_name_send[32 + 1];
   char  op_name_recv[32 + 1];
 
@@ -1361,17 +1460,16 @@ cs_syr4_coupling_init_comm(cs_syr4_coupling_t *syr_coupling,
     volume_flag = 'v';
   if (cs_syr4_coupling_conservativity == 0)
     conservativity_flag = '0';
+  if (syr_coupling->allow_nearest == false)
+    allow_nearest_flag = '0';
 
-  sprintf(op_name_send, "coupling:type:%c%c%c",
-          boundary_flag, volume_flag, conservativity_flag);
+  snprintf(op_name_send, 32, "coupling:type:%c%c%c \2\2%c(%6.2g)",
+           boundary_flag, volume_flag, conservativity_flag,
+           allow_nearest_flag, (double)syr_coupling->tolerance);
 
   _exchange_sync(syr_coupling, op_name_send, op_name_recv);
 
-  /* Only Code_Saturne set its conservativity flag.
-     To avoid an error, set the conservativity flag in op_name_recv */
-  op_name_recv[16] = op_name_send[16];
-
-  if (strcmp(op_name_recv, op_name_send))
+  if (strncmp(op_name_recv, op_name_send, 16))
     bft_error
       (__FILE__, __LINE__, 0,
        _("========================================================\n"

@@ -460,8 +460,6 @@ _search_height(cs_ctwr_zone_t   *ct,
   fvm_nodal_t *fs_tmp_mesh = NULL;
   fvm_nodal_t *fi_tmp_mesh = NULL;
 
-
-
   double coeff[3], v_aux[3], vertex_coords[2];
   double  v_x, v_y;
   double  v_f_x = 0., v_f_y = 0., v_f_z = 0.;
@@ -476,6 +474,9 @@ _search_height(cs_ctwr_zone_t   *ct,
   double matrice[6] = {0., 0., 0., 0., 0., 0. };
 
   ple_locator_t   *locator = NULL;
+
+  int locator_options[PLE_LOCATOR_N_OPTIONS];
+  locator_options[PLE_LOCATOR_NUMBERING] = 1;
 
   nb = (cs_lnum_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
   BFT_MALLOC(lst_xyz_sup, nb*3, cs_coord_t);
@@ -512,7 +513,6 @@ _search_height(cs_ctwr_zone_t   *ct,
       matrice[4] = 1;
   }
 
-
   fvm_nodal_project_coords(fs_tmp_mesh, matrice);
   fvm_nodal_project_coords(fi_tmp_mesh, matrice);
 
@@ -532,27 +532,28 @@ _search_height(cs_ctwr_zone_t   *ct,
   /* Create locator on the proj surf  */
 
 #if defined(PLE_HAVE_MPI)
-  locator = ple_locator_create(tolerance,
-                               cs_glob_mpi_comm,
+  locator = ple_locator_create(cs_glob_mpi_comm,
                                cs_glob_n_ranks,
                                0);
 #else
-  locator = ple_locator_create(tolerance);
+  locator = ple_locator_create();
 #endif
 
   nb = (cs_lnum_t) fvm_nodal_get_n_entities(fs_tmp_mesh, 0);
 
-
   ple_locator_set_mesh(locator,
                        fi_tmp_mesh,
+                       locator_options,
+                       0,
+                       tolerance,
                        2,
                        nb,
+                       NULL,
                        NULL,
                        lst_xyz_fs,
                        NULL,
                        cs_coupling_mesh_extents,
-                       cs_coupling_point_in_mesh,
-                       NULL);
+                       cs_coupling_point_in_mesh);
 
   nb_dist = ple_locator_get_n_dist_points(locator);
 
@@ -723,7 +724,7 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
   cs_lnum_t   *face_ct;       /* liste des faces interne de la ct
                                  de taille  (nbfac_ct) */
 
-  const cs_lnum_2_t  *i_face_cells  = mesh->i_face_cells;
+  const cs_lnum_2_t  *i_face_cells  = (const cs_lnum_2_t *)(mesh->i_face_cells);
   const cs_lnum_t *b_face_cells  = mesh->b_face_cells;
   const cs_real_t *i_face_normal = mesh_quantities->i_face_normal;
   const cs_real_t *b_face_normal = mesh_quantities->b_face_normal;
@@ -732,6 +733,9 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
   cs_ctwr_zone_t  *ct;
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
 
+  int locator_options[PLE_LOCATOR_N_OPTIONS];
+  locator_options[PLE_LOCATOR_NUMBERING] = 1;
+
   iaux = 0;
   alpha = 0.875;
 
@@ -739,7 +743,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
   gravite[0] = ct_prop->gravx;
   gravite[1] = ct_prop->gravy;
   gravite[2] = ct_prop->gravz;
-
 
   /*--------------------------------------------*/
   /* List of air nodes for each Exchange Area   */
@@ -912,8 +915,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     icpti  = 0; /*indice tableau des faces  inf */
     icptla = 0; /*indice tableau des faces  laterales */
 
-
-
     for (ifac = 0; ifac < mesh->n_b_faces; ifac++) {
 
       icel_1 = b_face_cells[ifac];/* indice de la cellule  */
@@ -1006,7 +1007,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     BFT_MALLOC(mesh_name, length, char);
     sprintf(mesh_name, "water_mesh_%d", ict);
 
-
     ct->water_mesh = cs_mesh_connect_faces_to_nodal(mesh,
                                                     mesh_name,
                                                     false,
@@ -1014,7 +1014,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
                                                     ct->nbfbr_sct,
                                                     face_sup,
                                                     fbr_sup);
-
 
     /*--------------------------------------------------------------*
     *  Fin creation des maillages surfacique en connectivite nodale*
@@ -1057,7 +1056,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     /* loop on the superior faces for hmax */
     nb = (cs_lnum_t) fvm_nodal_get_n_entities(ct->face_sup_mesh, 0);
-
 
     BFT_MALLOC(hmax_vect, nb, cs_coord_t);
     BFT_MALLOC(hmin_vect, nb, cs_coord_t);
@@ -1149,13 +1147,9 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     * End of Reseach  hmin et hmax                                  *
     *---------------------------------------------------------------*/
 
-
     nb = fvm_nodal_get_n_entities(ct->water_mesh, 0);
 
-
-
     BFT_MALLOC(extrusion_vectors, (nb*3), cs_coord_t);
-
 
     for (i=0; i < nb; i++) {
 
@@ -1165,8 +1159,6 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
       extrusion_vectors[i*3 + 1] =  gravite[1] * aux;
       extrusion_vectors[i*3 + 2] =  gravite[2] * aux;
     }
-
-
 
     fvm_nodal_extrude(ct->water_mesh,
                       ct->nelect,
@@ -1208,12 +1200,11 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
     /* Create locator for interpolate */
 
 #if defined(PLE_HAVE_MPI)
-    ct->locat_water_air = ple_locator_create(tolerance,
-                                             cs_glob_mpi_comm,
+    ct->locat_water_air = ple_locator_create(cs_glob_mpi_comm,
                                              cs_glob_n_ranks,
                                              0);
 #else
-    ct->locat_water_air = ple_locator_create(tolerance);
+    ct->locat_water_air = ple_locator_create();
 #endif
 
     BFT_MALLOC(lst_xyz_cel, ct->nbevct*3, cs_coord_t);
@@ -1222,23 +1213,25 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     ple_locator_set_mesh(ct->locat_water_air,
                          ct->water_mesh,
+                         locator_options,
+                         0,
+                         tolerance,
                          3,
                          ct->nbevct,
+                         NULL,
                          NULL,
                          lst_xyz_cel,
                          NULL,
                          cs_coupling_mesh_extents,
-                         cs_coupling_point_in_mesh,
-                         NULL);
+                         cs_coupling_point_in_mesh);
 
 
 #if defined(PLE_HAVE_MPI)
-    ct->locat_air_water = ple_locator_create(tolerance,
-                                             cs_glob_mpi_comm,
+    ct->locat_air_water = ple_locator_create(cs_glob_mpi_comm,
                                              cs_glob_n_ranks,
                                              0);
 #else
-    ct->locat_air_water = ple_locator_create(tolerance);
+    ct->locat_air_water = ple_locator_create();
 #endif
 
     BFT_MALLOC(lst_xyz, ct->nnpsct*ct->nelect*3, cs_coord_t);
@@ -1247,14 +1240,17 @@ void cs_ctwr_maille(const cs_mesh_t             *mesh,
 
     ple_locator_set_mesh(ct->locat_air_water,
                          ct->cell_mesh,
+                         locator_options,
                          3,
+                         0,
+                         tolerance,
                          ct->nnpsct*ct->nelect,
+                         NULL,
                          NULL,
                          lst_xyz,
                          NULL,
                          cs_coupling_mesh_extents,
-                         cs_coupling_point_in_mesh_p,
-                         NULL);
+                         cs_coupling_point_in_mesh_p);
 
     BFT_FREE(mesh_name);
     BFT_FREE(export_name);
@@ -1369,12 +1365,7 @@ void cs_ctwr_adeau
 {
   /* Coordonnees des centres des cellules  */
   const cs_real_t *coo_cel        = mesh_quantities->cell_cen;
-  const cs_lnum_2_t  *i_face_cells   = mesh->i_face_cells;
-#if 0 /* Is it no more needed? */
-  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
-  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
-  const cs_lnum_t  *cell_family    = mesh->cell_family;
-#endif
+  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t  *)(mesh->i_face_cells);
 
   cs_lnum_t   ict, iwat,nb_node_water, ii, jj, iair, nbvois,
              nbn, ifac, icel_1, icel_2, lf, indice, dim;
@@ -2093,6 +2084,9 @@ cs_ctwr_stacking(void)
   cs_ctwr_fluid_props_t  *ct_prop = cs_glob_ctwr_props;
   const double tolerance = 0.1;
 
+  int locator_options[PLE_LOCATOR_N_OPTIONS];
+  locator_options[PLE_LOCATOR_NUMBERING] = 1;
+
   nb = cs_glob_ct_nbr  * cs_glob_ct_nbr;
 
   BFT_MALLOC(cs_stack_ct, nb, cs_lnum_t);
@@ -2180,24 +2174,26 @@ cs_ctwr_stacking(void)
 
 #if defined(PLE_HAVE_MPI)
         ct->locat_cell_ct_upwind[nb_ct-1] =
-          ple_locator_create(tolerance,
-                             cs_glob_mpi_comm,
+          ple_locator_create(cs_glob_mpi_comm,
                              cs_glob_n_ranks,
                              0);
 #else
-        ct->locat_cell_ct_upwind[nb_ct-1] = ple_locator_create(tolerance);
+        ct->locat_cell_ct_upwind[nb_ct-1] = ple_locator_create();
 #endif
 
         ple_locator_set_mesh(ct->locat_cell_ct_upwind[nb_ct-1],
                              ct_upw->water_mesh,
+                             locator_options,
+                             0,
+                             tolerance,
                              3,
                              ct_upw->nbfac_ict+ct_upw->nbfbr_ict,
+                             NULL,
                              NULL,
                              lst_xyz,
                              NULL,
                              cs_coupling_mesh_extents,
-                             cs_coupling_point_in_mesh,
-                             NULL);
+                             cs_coupling_point_in_mesh);
         BFT_FREE(lst_xyz);
 
       }

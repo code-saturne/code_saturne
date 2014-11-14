@@ -57,6 +57,19 @@ extern "C" {
  * Type definitions
  *============================================================================*/
 
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+/* PLE option types */
+
+typedef enum {
+
+  PLE_LOCATOR_NUMBERING,
+  PLE_LOCATOR_N_OPTIONS
+
+} ple_locator_option_t;
+
 /*----------------------------------------------------------------------------
  * Query number of extents and compute extents of a mesh representation.
  *
@@ -106,49 +119,31 @@ typedef ple_lnum_t
  * than to previously encountered elements.
  *
  * parameters:
- *   this_nodal   <-- pointer to nodal mesh representation structure
- *   tolerance    <-- associated tolerance
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each point
- *                    (size: n_points)
- *   distance     <-> distance from point to element indicated by location[]:
- *                    < 0 if unlocated, 0 - 1 if inside, and > 1 if outside
- *                    a volume element, or absolute distance to a surface
- *                    element (size: n_points)
+ *   this_nodal         <-- pointer to nodal mesh representation structure
+ *   tolerance_base     <-- associated base tolerance (used for bounding
+ *                          box check only, not for location test)
+ *   tolerance_fraction <-- associated fraction of element bounding boxes
+ *                          added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_coords       <-- point coordinates (interleaved)
+ *   point_tag          <-- optional point tag (size: n_points)
+ *   location           <-> number of element containing or closest to each
+ *                          point (size: n_points)
+ *   distance           <-> distance from point to element indicated by
+ *                          location[]: < 0 if unlocated, 0 - 1 if inside,
+ *                          and > 1 if outside a volume element, or absolute
+ *                          distance to a surface element (size: n_points)
  *----------------------------------------------------------------------------*/
 
 typedef void
-(ple_mesh_elements_contain_t) (const void         *mesh,
-                               double              tolerance,
-                               ple_lnum_t          n_points,
-                               const ple_coord_t   point_coords[],
-                               ple_lnum_t          location[],
-                               float               distance[]);
-
-/*----------------------------------------------------------------------------
- * Find elements in a given local mesh closest to points: updates the
- * location[] and distance[] arrays associated with a set of points for
- * points that are closer to an element of this mesh than to previously
- * encountered elements.
- *
- * parameters:
- *   mesh         <-- pointer to mesh representation structure
- *   n_points     <-- number of points to locate
- *   point_coords <-- point coordinates
- *   location     <-> number of element containing or closest to each point
- *                    (size: n_points)
- *   distance     <-> distance from point to element indicated by location[]:
- *                    < 0 if unlocated, or absolute distance to a surface
- *                    element (size: n_points)
- *----------------------------------------------------------------------------*/
-
-typedef void
-(ple_mesh_elements_closest_t) (const void         *mesh,
-                               ple_lnum_t          n_points,
-                               const ple_coord_t   point_coords[],
-                               ple_lnum_t          location[],
-                               float               distance[]);
+(ple_mesh_elements_locate_t) (const void         *mesh,
+                              float               tolerance_base,
+                              float               tolerance_fraction,
+                              ple_lnum_t          n_points,
+                              const ple_coord_t   point_coords[],
+                              const int           point_tag[],
+                              ple_lnum_t          location[],
+                              float               distance[]);
 
 /*----------------------------------------------------------------------------
  * Function pointer type for user definable logging/profiling type functions
@@ -182,8 +177,6 @@ typedef struct _ple_locator_t ple_locator_t;
  * will work only locally.
  *
  * parameters:
- *   tolerance  <-- addition to local extents of each element:
- *                  extent = base_extent * (1 + tolerance)
  *   comm       <-- associated MPI communicator
  *   n_ranks    <-- number of MPI ranks associated with distant location
  *   start_rank <-- first MPI rank associated with distant location
@@ -195,15 +188,14 @@ typedef struct _ple_locator_t ple_locator_t;
 #if defined(PLE_HAVE_MPI)
 
 ple_locator_t *
-ple_locator_create(double    tolerance,
-                   MPI_Comm  comm,
+ple_locator_create(MPI_Comm  comm,
                    int       n_ranks,
                    int       start_rank);
 
 #else
 
 ple_locator_t *
-ple_locator_create(double    tolerance);
+ple_locator_create(void);
 
 #endif
 
@@ -224,41 +216,90 @@ ple_locator_destroy(ple_locator_t  * this_locator);
  * Prepare locator for use with a given mesh representation.
  *
  * parameters:
- *   this_locator      <-> pointer to locator structure
- *   mesh              <-- pointer to mesh representation structure
- *   dim               <-- spatial dimension of mesh and points to locate
- *   n_points          <-- number of points to locate
- *   point_list        <-- optional indirection array to point_coords
- *                         (1 to n_points numbering)
- *   point_coords      <-- coordinates of points to locate
- *                         (dimension: dim * n_points)
- *   distance          --> optional distance from point to matching element:
- *                         < 0 if unlocated; 0 - 1 if inside and > 1 if
- *                         outside a volume element, or absolute distance
- *                         to a surface element (size: n_points)
- *   mesh_extents_f    <-- pointer to function computing mesh extents
- *   locate_inside_f   <-- pointer to function wich updates the location[]
- *                         and distance[] arrays associated with a set of
- *                         points for points that are in an element of this
- *                         mesh, or closer to one than to previously
- *                         encountered elements.
- *   locate_closest_f  <-- pointer to function locating the closest local
- *                         elements if points not located on an element within
- *                         the tolerance should be located on the closest
- *                         element, NULL otherwise
+ *   this_locator       <-> pointer to locator structure
+ *   mesh               <-- pointer to mesh representation structure
+ *   options            <-- options array (size PLE_LOCATOR_N_OPTIONS),
+ *                          or NULL
+ *   tolerance_base     <-- associated base tolerance (used for bounding
+ *                          box check only, not for location test)
+ *   tolerance_fraction <-- associated fraction of element bounding boxes
+ *                          added to tolerance
+ *   dim                <-- spatial dimension of mesh and points to locate
+ *   n_points           <-- number of points to locate
+ *   point_list         <-- optional indirection array to point_coords
+ *   point_tag          <-- optional point tag (size: n_points)
+ *   point_coords       <-- coordinates of points to locate
+ *                          (dimension: dim * n_points)
+ *   distance           --> optional distance from point to matching element:
+ *                          < 0 if unlocated; 0 - 1 if inside and > 1 if
+ *                          outside a volume element, or absolute distance
+ *                          to a surface element (size: n_points)
+ *   mesh_extents_f     <-- pointer to function computing mesh extents
+ *   locate_f           <-- pointer to function wich updates the location[]
+ *                          and distance[] arrays associated with a set of
+ *                          points for points that are in an element of this
+ *                          mesh, or closer to one than to previously
+ *                          encountered elements.
  *----------------------------------------------------------------------------*/
 
 void
-ple_locator_set_mesh(ple_locator_t                *this_locator,
-                     const void                   *mesh,
-                     int                           dim,
-                     ple_lnum_t                    n_points,
-                     const ple_lnum_t              point_list[],
-                     const ple_coord_t             point_coords[],
-                     float                         distance[],
-                     ple_mesh_extents_t           *mesh_extents_f,
-                     ple_mesh_elements_contain_t  *locate_inside_f,
-                     ple_mesh_elements_closest_t  *locate_closest_f);
+ple_locator_set_mesh(ple_locator_t               *this_locator,
+                     const void                  *mesh,
+                     const int                   *options,
+                     float                        tolerance_base,
+                     float                        tolerance_fraction,
+                     int                          dim,
+                     ple_lnum_t                   n_points,
+                     const ple_lnum_t             point_list[],
+                     const int                    point_tag[],
+                     const ple_coord_t            point_coords[],
+                     float                        distance[],
+                     ple_mesh_extents_t          *mesh_extents_f,
+                     ple_mesh_elements_locate_t  *mesh_elements_locate_f);
+
+/*----------------------------------------------------------------------------
+ * Extend search for a locator for which set_mesh has already been called.
+ *
+ * parameters:
+ *   this_locator       <-> pointer to locator structure
+ *   mesh               <-- pointer to mesh representation structure
+ *   options            <-- options array (size PLE_LOCATOR_N_OPTIONS),
+ *                          or NULL
+ *   tolerance_base     <-- associated base tolerance (used for bounding
+ *                          box check only, not for location test)
+ *   tolerance_fraction <-- associated fraction of element bounding boxes
+ *                          added to tolerance
+ *   n_points           <-- number of points to locate
+ *   point_list         <-- optional indirection array to point_coords
+ *   point_tag          <-- optional point tag (size: n_points)
+ *   point_coords       <-- coordinates of points to locate
+ *                          (dimension: dim * n_points)
+ *   distance           --> optional distance from point to matching element:
+ *                          < 0 if unlocated; 0 - 1 if inside and > 1 if
+ *                          outside a volume element, or absolute distance
+ *                          to a surface element (size: n_points)
+ *   mesh_extents_f     <-- pointer to function computing mesh extents
+ *   locate_f           <-- pointer to function wich updates the location[]
+ *                          and distance[] arrays associated with a set of
+ *                          points for points that are in an element of this
+ *                          mesh, or closer to one than to previously
+ *                          encountered elements.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_extend_search(ple_locator_t               *this_locator,
+                          const void                  *mesh,
+                          const int                   *options,
+                          float                        tolerance_base,
+                          float                        tolerance_fraction,
+                          ple_lnum_t                   n_points,
+                          const ple_lnum_t             point_list[],
+                          const ple_lnum_t             point_tag[],
+                          const ple_coord_t            point_coords[],
+                          float                        distance[],
+                          ple_mesh_extents_t          *mesh_extents_f,
+                          ple_mesh_elements_locate_t  *mesh_locate_f);
 
 /*----------------------------------------------------------------------------
  * Return number of distant points after locator initialization.
@@ -281,7 +322,7 @@ ple_locator_get_n_dist_points(const ple_locator_t  *this_locator);
  *   this_locator <-- pointer to locator structure
  *
  * returns:
- *   local element numbers associated with distant points (1 to n numbering).
+ *   local element numbers associated with distant points.
  *----------------------------------------------------------------------------*/
 
 const ple_lnum_t *
@@ -322,7 +363,7 @@ ple_locator_get_n_interior(const ple_locator_t  *this_locator);
  *   this_locator <-- pointer to locator structure
  *
  * returns:
- *   list of points located (1 to n numbering).
+ *   list of points located.
  *----------------------------------------------------------------------------*/
 
 const ple_lnum_t *
@@ -349,7 +390,7 @@ ple_locator_get_n_exterior(const ple_locator_t  *this_locator);
  *   this_locator <-- pointer to locator structure
  *
  * returns:
- *   list of points not located (1 to n numbering).
+ *   list of points not located.
  *----------------------------------------------------------------------------*/
 
 const ple_lnum_t *
@@ -381,13 +422,17 @@ ple_locator_discard_exterior(ple_locator_t  *this_locator);
  * The local_var[] is defined at the located points (those whose
  * numbers are returned by ple_locator_get_interior_list().
  *
+ * If the optional local_list indirection is used, it is assumed to use
+ * the same base numbering as that defined by the options for the previous
+ * call to ple_locator_set_mesh() or ple_locator_extend_search().
+ *
  * parameters:
  *   this_locator  <-- pointer to locator structure
  *   distant_var   <-> variable defined on distant points (ready to send)
  *                     size: n_dist_points*stride
  *   local_var     <-> variable defined on located local points (received)
  *                     size: n_interior*stride
- *   local_list    <-- optional indirection list (1 to n) for local_var
+ *   local_list    <-- optional indirection list for local_var
  *   type_size     <-- sizeof (float or double) variable type
  *   stride        <-- dimension (1 for scalar, 3 for interlaced vector)
  *   reverse       <-- if nonzero, exchange is reversed
