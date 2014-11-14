@@ -713,7 +713,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                                              syr_coupling->n_syr_ranks,
                                              syr_coupling->syr_root_rank);
 #else
-  coupling_ent->locator = ple_locator_create(syr_coupling->tolerance);
+  coupling_ent->locator = ple_locator_create();
 #endif
 
   ple_locator_set_mesh(coupling_ent->locator,

@@ -99,8 +99,6 @@ extern "C" {
  * Type definitions
  *============================================================================*/
 
-#if defined(PLE_HAVE_MPI)
-
 typedef struct {
 
   int       n;       /* Number of intersecting distant ranks */
@@ -108,8 +106,6 @@ typedef struct {
   double   *extents; /* List of intersecting distant extents */
 
 } _rank_intersects_t;
-
-#endif
 
 /*----------------------------------------------------------------------------
  * Structure defining a locator
