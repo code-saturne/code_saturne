@@ -17,7 +17,7 @@ Changes:
   * enable multiple rotors for rotor-stator model based on mesh joining.
 
 - Generalize double backward implicit Euler time scheme for all variables.
-  It could be activated with the keyword ibdtso(ivar) = 1.
+  It can be activated with the keyword ibdtso(ivar) = 1.
 
 - Add a "slope_test_upwind_id" field keyword, allowing postprocessing output
   of the contribution of slope tests to convected variables.
@@ -45,11 +45,11 @@ Changes:
   * Change default solver for pure diffusion problems (from Conjugate gradient to
     multigrid solver).
 
-- Add a new experimental module for Darcy flows. It could be
+- Add a new experimental module for Darcy flows. It can be
   activated with the keyword usppmo(idarcy) = 1.
   This path includes new developments to improve reconstruction gradient
   calculation with heterogeneous diffusion coefficients. This feature is only
-  available for standard LSQ gradients and could be activated with
+  available for standard LSQ gradients and can be activated with
   the keyword iwgrec(ivar) = 1.
 
 - Add drift modelling for coal combustion, and clean up the module:
@@ -829,7 +829,7 @@ Changes:
 - Adapt the Multigrid algorithm to vectorial Poisson equation
   (such as mesh velocity for ALE).
   - The aggregation criterium is based on the trace of the diagonal block
-    DA (3x3), but could be a changed (We could test n.DA.n),
+    DA (3x3), but can be a changed (We could test n.DA.n),
   - The multigrid algorithm for scalars (such as the pressure field) is
     rigourously unchanged.
 
@@ -1217,7 +1217,8 @@ Architectural changes
 
 - Merge system info from bft_sys_info.* and cs_base.* to cs_sytem_info.*.
 
-- Rename cs_perio_* to cs_halo_perio_* (prepares move of fvm_perio_* to cs_perio_*).
+- Rename cs_perio_* to cs_halo_perio_* (prepares move of fvm_perio_*
+  to cs_perio_*).
 
 - Migrate some fvm_ functions and types to the cs_ name prefix.
   fvm_order_* is also moved to cs_order_*.
