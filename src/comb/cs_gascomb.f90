@@ -155,7 +155,9 @@ double precision, dimension(:), pointer :: cvar_yco2
 ! 1. CALCULS PRELIMINAIRES
 !===============================================================================
 
-call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+if (ieqco2.eq.1) then
+  call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
+endif
 
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)
