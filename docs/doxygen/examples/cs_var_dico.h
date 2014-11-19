@@ -131,7 +131,7 @@
       <tt>call field_get_val_s(ivarfl(ipr), cvar_pr) \n cvar_pr(iel)</tt>, \n\n
       <tt>call field_get_val_v(ivarfl(iu), cvar_vel) \n cvar_vel(isou,iel)</tt>, \n\n
       <tt>call field_get_val_s(iprpfl(icp), cpro_cp) \n cpro_cp(iel)</tt>, \n\n
-      where \c ipr, \c iu are variable indexes and \c icp is a property index.
+      where \ref ipr, \ref iu are variable indexes and \ref icp is a property index.
   - In C:
     - Both variables and properties are accessed as: \n
       <tt>CS_F_(name)->val[cell_id]</tt>, \n
