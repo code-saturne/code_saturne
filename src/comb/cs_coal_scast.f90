@@ -392,13 +392,13 @@ if (i_coal_drift.ge.1) then
 
   call field_get_name(ivarfl(ivar), fname)
 
-  ! index of the coal particle class
-  call field_get_key_int(ivarfl(ivar), keyccl, icla)
-
-  call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
-
   ! Particle age source term
   if (fname(1:7).eq.'n_p_age') then
+
+    ! index of the coal particle class
+    call field_get_key_int(ivarfl(ivar), keyccl, icla)
+
+    call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
 
     do iel = 1, ncel
       smbrs(iel) = smbrs(iel) + crom(iel) * volume(iel)*cvar_xnpcl(iel)
