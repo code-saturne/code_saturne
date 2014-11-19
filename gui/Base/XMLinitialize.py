@@ -852,7 +852,7 @@ class XMLinit(Variables):
         nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
         node = nth.xmlGetNode('property', name="input_thermal_flux")
         if node:
-            node[name] = "thermal_flux"
+            node['name'] = "thermal_flux"
 
 
 #-------------------------------------------------------------------------------
