@@ -543,7 +543,7 @@ do iel = 1, ncel
 
 ! ---> Calcul de la masse volumique
 
-  if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
+  if (ipass.ge.1.or.(isuite.eq.1.and.initro.eq.1)) then
     cpro_rho(iel) = srrom*cpro_rho(iel)               &
                   + (1.d0-srrom)*                         &
                   ( p0/(rr*temsmm) )
