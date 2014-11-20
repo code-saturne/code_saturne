@@ -118,6 +118,7 @@ if (ippmod(icod3p).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1020) ippmod(icod3p)
   write(nfecra,1060) indjon
+  write(nfecra,1070) namgas, pcigas
 else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1030) ippmod(icoebu), cebu
@@ -160,6 +161,10 @@ endif
  1060 format(                                                     &
 ' --- Janaf ou non (dans ce cas tabulation utilisateur)',       /,&
 '       INDJON = ',4x,i10,    ' (1: Janaf, 0: utilisateur)',    /)
+ 1070 format(                                                     &
+' --- Caracteristiques du combustible',                         /,&
+'       Combustible : ',4x,a,                                   /,&
+'       PCI = ',4x,e14.5,  ' J/kg',                             /)
 
 #else
 
@@ -192,6 +197,10 @@ endif
  1060 format(                                                     &
 ' --- Janaf or not (user tabulation required in this case)',    /,&
 '       INDJON = ',4x,i10,    ' (1: Janaf, 0: user)',           /)
+ 1070 format(                                                     &
+' --- Combustible characteristics',                             /,&
+'       Combustible : ',4x,a,                                   /,&
+'       PCI = ',4x,e14.5,  ' J/kg',                             /)
 
 #endif
 

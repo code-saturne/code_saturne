@@ -52,6 +52,7 @@ use pointe
 use entsor
 use cstnum
 use cstphy
+use parall
 use ppppar
 use ppthch
 use coincl
@@ -79,12 +80,14 @@ integer          atgaze(ngazem,natom)
 integer          igoxy(nrgazm), igfuel(nrgazm)
 integer          ncoel
 integer          iico2 , iih2o
+integer          mode
 
 double precision tmin , tmax
 double precision kabse(ngazem)
 double precision compog(ngazem,ngazgm)
 double precision ehcoel (ngazem,npot) , wmolce (ngazem)
 double precision cpcoel(ngazem)
+double precision coefg(ngazgm), tgaz, efgaz(ngazgm)
 double precision mfuel, mreac, epsi, nmolg, bilan
 double precision moxyd
 
@@ -403,6 +406,40 @@ if (indjon.eq.1) then
 
   coeff2 = coeff3*coeff1
 
+  ! --- PCI calculation
+
+  ! gas name storage
+  namgas = nomcoe(1)
+
+  pcigas = 0.d0
+
+  do ir = 1, nrgaz
+
+    do igg = 1, ngazg
+
+      ! enthalpies of formation
+      coefg(1)  = 0.d0
+      coefg(2)  = 0.d0
+      coefg(3)  = 0.d0
+      coefg(igg) = 1.d0
+      tgaz      = 300.d0
+
+      mode = -1
+      call cothht                                                   &
+      !==========
+        ( mode   , ngazg , ngazgm  , coefg  ,                     &
+          npo    , npot   , th     , ehgazg ,                     &
+          efgaz(igg)      , tgaz   )
+
+      pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
+
+    enddo
+
+    ! PCI dimension is J/kg of combustible
+    pcigas = pcigas / (stoeg(1,ir)*wmolg(1))
+
+  enddo
+
 !===============================================================================
 ! -2. UTILISATION D'UNE TABULATION ENTHALPIE-TEMPERATURE
 !===============================================================================
@@ -480,6 +517,40 @@ else
   coeff3 = (1-fs(1))/fs(1)
 
   coeff2 = coeff3*coeff1
+
+  ! --- PCI calculation
+
+  ! gas name storage
+  namgas = nomcoe(1)
+
+  pcigas = 0.d0
+
+  do ir = 1, nrgaz
+
+    do igg = 1, ngazg
+
+      ! enthalpies of formation
+      coefg(1)  = 0.d0
+      coefg(2)  = 0.d0
+      coefg(3)  = 0.d0
+      coefg(igg) = 1.d0
+      tgaz      = 300.d0
+
+      mode = -1
+      call cothht                                                   &
+      !==========
+        ( mode   , ngazg , ngazgm  , coefg  ,                     &
+          npo    , npot   , th     , ehgazg ,                     &
+          efgaz(igg)      , tgaz   )
+
+      pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
+
+    enddo
+
+    ! dimension is J/kg of combustible
+    pcigas = pcigas / (stoeg(1,ir)*wmolg(1))
+
+  enddo
 
 endif
 
