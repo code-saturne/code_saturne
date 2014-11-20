@@ -88,7 +88,6 @@ integer          ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp
 double precision epsrgp, climgp, extrap
 double precision blencp, relaxp, thetex
-double precision qimp , hint
 
 integer          icvflb
 integer          ivoid(1)
@@ -96,7 +95,6 @@ integer          ivoid(1)
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: vistot, viscf, viscb
-double precision, allocatable, dimension(:) :: whsad
 double precision, allocatable, dimension(:) :: xcpp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
@@ -225,75 +223,14 @@ do iscal = 1, nscal
 
   endif
 
-  ! If the combustion model is used, gap between enthalpy and
-  ! adiabatic enthalpy has to be used. The last one is already considered
-  ! through the mixture fraction contribution.
+  ! Diffusion term calculation
+  call field_get_coefa_s(ivarfl(ivar), coefap)
+  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefaf_s(ivarfl(ivar), cofafp)
+  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
-  if (ippmod(icod3p).eq.1.and.iscal.eq.iscalt) then
-
-    ! Memory allocation
-    allocate(coefap(nfabor), coefbp(nfabor))
-    allocate(cofafp(nfabor), cofbfp(nfabor))
-    allocate(whsad(ncelet))
-
-    ! Hs is store in a local array and the source term is initialized
-    do iel = 1, ncel
-      whsad(iel) = propce(iel,ipproc(iustdy(iscalt)))
-      propce(iel,ipproc(iustdy(iscalt))) = 0.d0
-    enddo
-
-    ! Parallel and periodic exchanges
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(whsad)
-    endif
-
-    ! Boundary condition on Hsad: Homogenous Neumann
-    do ifac = 1, nfabor
-      iel = ifabor(ifac)
-
-      hint = vistot(iel)/distb(ifac)
-      qimp = 0.d0
-
-      call set_neumann_scalar &
-           !=================
-         ( coefap(ifac), cofafp(ifac),             &
-           coefbp(ifac), cofbfp(ifac),             &
-           qimp        , hint )
-
-    enddo
-
-    ! Diffusion term calculation
-    call bilsca &
-   !==========
-  ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
-    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
-    iwarnp , imucpp , idftnp ,                                     &
-    blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
-    whsad  , whsad  ,                                              &
-    coefap , coefbp ,                                              &
-    cofafp , cofbfp ,                                              &
-    imasfl , bmasfl ,                                              &
-    viscf  , viscb  , rvoid  , rvoid  ,                            &
-    rvoid  , rvoid  ,                                              &
-    icvflb , ivoid  ,                                              &
-    propce(1,ipproc(iustdy(iscal))) )
-
-    ! Free memory
-    deallocate(coefap, coefbp)
-    deallocate(cofafp, cofbfp)
-    deallocate(whsad)
-
-  else
-
-    ! Diffusion term calculation
-
-    call field_get_coefa_s(ivarfl(ivar), coefap)
-    call field_get_coefb_s(ivarfl(ivar), coefbp)
-    call field_get_coefaf_s(ivarfl(ivar), cofafp)
-    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
-
-    call bilsca &
-    !==========
+  call bilsca &
+  !==========
   ( idtvar , ivar0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp , isstpp , inc    , imrgra , iccocg ,                   &
     iwarnp , imucpp , idftnp ,                                     &
@@ -305,8 +242,6 @@ do iscal = 1, nscal
     rvoid  , rvoid  ,                                              &
     icvflb , ivoid  ,                                              &
     propce(1,ipproc(iustdy(iscal))) )
-
-  endif
 
 enddo
 
