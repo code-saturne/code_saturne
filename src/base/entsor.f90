@@ -303,7 +303,7 @@ module entsor
 
   !> maximal number of user files
   integer    nusrmx
-  parameter(nusrmx=10)
+  parameter(nusrmx=20)
 
   !> unit numbers for potential user specified files.
   !> Useful if and only if the user needs files
