@@ -28,6 +28,7 @@ module coincl
   !=============================================================================
 
   use ppppar
+  use ppincl
 
   implicit none
 
@@ -42,6 +43,9 @@ module coincl
 
   ! combustible reaction enthalpy (Pouvoir Calorifique Inferieur)
   double precision, save :: pcigas
+
+  ! conversion coefficients from global species to elementary species
+  double precision coefeg(ngazem,ngazgm)
 
   !--> MODELE FLAMME DE DIFFUSION (CHIMIE 3 POINTS)
 

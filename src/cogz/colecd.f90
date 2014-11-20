@@ -406,6 +406,14 @@ if (indjon.eq.1) then
 
   coeff2 = coeff3*coeff1
 
+  ! --- Conversion coefficients from global species to elementary species
+
+  do igg = 1, ngazg
+    do ige = 1, ngaze
+     coefeg(ige,igg) = compog(ige,igg)*wmole(ige)/wmolg(igg)
+    enddo
+  enddo
+
   ! --- PCI calculation
 
   ! gas name storage
@@ -517,6 +525,14 @@ else
   coeff3 = (1-fs(1))/fs(1)
 
   coeff2 = coeff3*coeff1
+
+  ! --- Conversion coefficients from global species to elementary species
+
+  do igg = 1, ngazg
+    do ige = 1, ngaze
+     coefeg(ige,igg) = compog(ige,igg)*wmole(ige)/wmolg(igg)
+    enddo
+  enddo
 
   ! --- PCI calculation
 
