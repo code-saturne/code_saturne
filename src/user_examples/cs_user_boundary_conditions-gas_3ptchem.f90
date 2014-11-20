@@ -171,6 +171,9 @@ do ilelt = 1, nlelt
 !   Indicating the inlet as a fuel flow inlet
   ientfu(izone) = 1
 
+!   Inlet Temperature in K
+  tinfue = 436.d0
+
 !   The incoming fuel flow refers to:
 !   a) a massflow rate   -> iqimp()  = 1
   iqimp(izone)  = 1
@@ -273,6 +276,10 @@ do ilelt = 1, nlelt
 
 !   Indicating the inlet as a air flow inlet
   ientox(izone) = 1
+
+!   Inlet Temperature in K
+  tinoxy = 353.d0
+
 !   The inflowing fuel flow refers to:
 !   a) a massflow rate   -> iqimp()  = 1
   iqimp(izone)  = 1
