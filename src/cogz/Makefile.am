@@ -77,7 +77,8 @@ lwcver.f90 \
 pdflwc.f90 \
 pdfpp3.f90 \
 pdfpp4.f90 \
-sootsc.f90
+sootsc.f90 \
+yg2xye.f90
 libcscogz_la_LDFLAGS = -no-undefined
 
 clean-local:
