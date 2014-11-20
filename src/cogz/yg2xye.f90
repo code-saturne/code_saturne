@@ -26,7 +26,7 @@
 
 !> \file yg2xye.f90
 !>
-!> \brief Compute molar and mass fractions of elementary species Ye, Xe 
+!> \brief Compute molar and mass fractions of elementary species Ye, Xe
 !>   (fuel, O2, CO2, H2O, N2) from global species Yg (fuel, oxidant, products)
 !>
 !-------------------------------------------------------------------------------
