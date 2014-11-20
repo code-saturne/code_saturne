@@ -142,6 +142,9 @@ Architectural changes
 Bug fixes:
 ----------
 
+- Various fixes for fire modelling.
+  Especially, the initialization of the scalars and boundary value for the density.
+
 - Fix bug introduced in rev. 4491 (before release of 3.0.0):
 
   - in rev 4491, the call to specific physics laws was moved from BEFORE
