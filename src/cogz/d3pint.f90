@@ -265,7 +265,7 @@ if ( iirayo.gt.0 ) then
 endif
 
 call field_get_val_s(icrom, cpro_rho)
-if (idilat.eq.4) then
+if (idilat.ge.4) then
   iptsro = ipproc(iustdy(itsrho))
   call field_get_val_s(icroaa, cproaa_rho)
 endif
@@ -292,7 +292,7 @@ do iel = 1, ncel
            + dirmax(iel)/wmolg(1)*tinfue
 
     ! Weakly compressible algorithm: d T/M /d D1, d T/M /d D2
-    if (idilat.eq.4) then
+    if (idilat.ge.4) then
       dtsmdd1 = tinoxy/wmolg(2)
       dtsmdd2 = tinfue/wmolg(1)
     endif
@@ -316,7 +316,7 @@ do iel = 1, ncel
     f1 = fdeb(iel)
 
     ! Weakly compressible algorithm: initialisation of d T/M /d Hrec d T/M /d Hs
-    if (idilat.eq.4) then
+    if (idilat.ge.4) then
       dtsmdhrec = 0.d0
       dtsmdhs   = 0.d0
     endif
@@ -412,7 +412,7 @@ do iel = 1, ncel
         ! Weakly compressible algorithm:
         ! d T/M /d f0 ; d T/M /d Hrec ; d T/M /d Hs ;
         ! d T/M /d f1 est calcule apres la boucle pour etre sur d'avoir f1 = ffin
-        if (idilat.eq.4) then
+        if (idilat.ge.4) then
 
           if (ippmod(icod3p).eq.1) then
 
@@ -441,7 +441,7 @@ do iel = 1, ncel
       f1 = f2
     enddo
 
-    if (idilat.eq.4) then
+    if (idilat.ge.4) then
 
       ! Weakly compressible algorithm: d T/M /d f1
       dtsmdf2 = hrec(iel) * ( a*c +(c*b+a*d)*ffin(iel) + b*d*ffin(iel)**2 )
@@ -522,7 +522,7 @@ do iel = 1, ncel
     temsmm = a*c +(c*b+a*d)*fm + b*d*fm**2
 
     ! Weakly compressible algorithm: derivative
-    if (idilat.eq.4) then
+    if (idilat.ge.4) then
       dtsmdf   = (c*b+a*d) + 2.d0*b*d*fm
       dtsmdfp2 = 0.d0
 
@@ -550,7 +550,7 @@ do iel = 1, ncel
   endif
 
   ! Weakly compressible algorithm: Derivative calculation of pdf parameters
-  if (idilat.eq.4) then
+  if (idilat.ge.4) then
 
     ! dD0df, dD0df"2,
     ! dD1df, dD1df"2,
