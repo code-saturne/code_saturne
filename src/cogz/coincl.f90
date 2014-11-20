@@ -33,6 +33,16 @@ module coincl
 
   !=============================================================================
 
+  !--> MODELES DE COMBUSTION
+
+  ! ---- Grandeurs communes
+
+  ! combustible name
+  character(len=12) :: namgas
+
+  ! combustible reaction enthalpy (Pouvoir Calorifique Inferieur)
+  double precision, save :: pcigas
+
   !--> MODELE FLAMME DE DIFFUSION (CHIMIE 3 POINTS)
 
   ! ---- Grandeurs fournies par l'utilisateur dans usd3pc.f90
