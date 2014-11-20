@@ -73,7 +73,6 @@ $(top_srcdir)/src/atmo/atimbr.f90 \
 $(top_srcdir)/src/atmo/siream.f90 \
 $(top_srcdir)/src/atmo/spefun.f90 \
 $(top_srcdir)/src/cfbl/cfpoin.f90 \
-$(top_srcdir)/src/cogz/coincl.f90 \
 $(top_srcdir)/src/comb/cs_coal_incl.f90 \
 $(top_srcdir)/src/comb/cs_fuel_incl.f90 \
 $(top_srcdir)/src/comb/cpincl.f90 \
@@ -86,6 +85,7 @@ $(top_srcdir)/src/pprt/ppcpfu.f90 \
 $(top_srcdir)/src/pprt/ppincl.f90 \
 $(top_srcdir)/src/pprt/ppppar.f90 \
 $(top_srcdir)/src/pprt/ppthch.f90 \
+$(top_srcdir)/src/cogz/coincl.f90 \
 $(top_srcdir)/src/rayt/radiat.f90 \
 $(top_srcdir)/src/turb/vorinc.f90 \
 $(top_srcdir)/src/base/ptrglo.f90 \
@@ -117,7 +117,7 @@ $(top_srcdir)/src/atmo/atchem.f90: ppppar.lo mesh.lo entsor.lo numvar.lo
 $(top_srcdir)/src/atmo/atimbr.f90: cstphy.lo entsor.lo atincl.lo
 $(top_srcdir)/src/atmo/siream.f90: ppppar.lo
 $(top_srcdir)/src/atmo/spefun.f90: entsor.lo
-$(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo
+$(top_srcdir)/src/cogz/coincl.f90: paramx.lo ppppar.lo ppincl.lo
 $(top_srcdir)/src/comb/cpincl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_coal_incl.f90: ppppar.lo ppthch.lo
 $(top_srcdir)/src/comb/cs_fuel_incl.f90: ppppar.lo ppthch.lo
