@@ -108,8 +108,7 @@ double precision, dimension(:), pointer ::  brom
 double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
-!===============================================================================
-! 1.  INITIALISATIONS
+! 0.  INITIALISATIONS
 !===============================================================================
 
 
@@ -153,16 +152,125 @@ if(irangp.ge.0) then
   !==========
 endif
 
+!===============================================================================
+! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES POUR LES SCALAIRES
+!
+!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+!                     =========================
+
+!       ON DETERMINE LA FAMILLE ET SES PROPRIETES
+!       ON IMPOSE LES CONDITIONS AUX LIMITES
+!===============================================================================
+
+! Fuel and Oxidant inlet are checked
+ifue = 0
+ioxy = 0
+do ii = 1, nzfppp
+  izone = ilzppp(ii)
+  if (ientfu(izone).eq.1) then
+    ifue = 1
+  elseif(ientox(izone).eq.1) then
+    ioxy = 1
+  endif
+enddo
+if(irangp.ge.0) then
+  call parcmx(ifue)
+  call parcmx(ioxy)
+endif
+
+! Fuel inlet at TINFUE: HINFUE calculation
+if (ifue.eq.1) then
+  coefg(1) = 1.d0
+  coefg(2) = zero
+  coefg(3) = zero
+  mode    = -1
+  call cothht                                                   &
+  !==========
+      ( mode   , ngazg , ngazgm  , coefg  ,                     &
+        npo    , npot   , th     , ehgazg ,                     &
+        hinfue , tinfue )
+endif
+
+! Oxidant inlet at TINOXY: HINOXY calculation
+if (ioxy.eq.1) then
+  coefg(1) = zero
+  coefg(2) = 1.d0
+  coefg(3) = zero
+  mode    = -1
+  call cothht                                                   &
+  !==========
+      ( mode   , ngazg , ngazgm  , coefg  ,                     &
+        npo    , npot   , th     , ehgazg ,                     &
+        hinoxy , tinoxy  )
+endif
+
+
+do ifac = 1, nfabor
+
+  izone = izfppp(ifac)
+
+  if ( itypfb(ifac).eq.ientre ) then
+
+    ! Fuel inlet at TINFUE
+    if ( ientfu(izone).eq.1 ) then
+
+      ! Mean mixture fraction
+      rcodcl(ifac,isca(ifm),1)   = 1.d0
+
+      ! Mixture fraction variance
+      rcodcl(ifac,isca(ifp2m),1) = 0.d0
+
+      ! Mixture enthalpy
+      if (ippmod(icod3p).eq.1) then
+        rcodcl(ifac,isca(iscalt),1) = hinfue
+      endif
+
+      ! Soot model
+      if (isoot.ge.1) then
+        rcodcl(ifac,isca(ifsm),1) = 0.d0
+        rcodcl(ifac,isca(inpm),1) = 0.d0
+      endif
+
+      ! Density
+      brom(ifac) = p0/(rr*tinfue/wmolg(1))
+
+    ! Oxydant inlet at TINOXY
+    elseif( ientox(izone).eq.1 ) then
+
+      ! Mean mixture fraction
+      rcodcl(ifac,isca(ifm),1)   = 0.d0
+
+      ! Mixture fraction variance
+      rcodcl(ifac,isca(ifp2m),1) = 0.d0
+
+      ! Mixture enthalpy
+      if ( ippmod(icod3p).eq.1 ) then
+        rcodcl(ifac,isca(iscalt),1) = hinoxy
+      endif
+
+      ! Soot model
+      if (isoot.ge.1) then
+        rcodcl(ifac,isca(ifsm),1) = 0.d0
+        rcodcl(ifac,isca(inpm),1) = 0.d0
+      endif
+
+      ! Density
+      brom(ifac) = p0/(rr*tinoxy/wmolg(2))
+
+    endif
+
+  endif
+
+enddo
 
 !===============================================================================
-! 2.  SI IQIMP = 1 : CORRECTION DES VITESSES (EN NORME) POUR CONTROLER
+! 3.  SI IQIMP = 1 : CORRECTION DES VITESSES (EN NORME) POUR CONTROLER
 !                    LES DEBITS IMPOSES
 !     SI IQIMP = 0 : CALCUL DE QIMP
 
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
+!     ON BOUCLE SUR TOUTES LES FACES D'ENTREE
+!                   =========================
 !===============================================================================
-
 
 ! --- Debit calcule
 
@@ -244,34 +352,28 @@ enddo
 '@                                                            ',/)
 
 !===============================================================================
-! 3.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
+! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES POUR LA TURBULENCE
 !       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
 !                     =========================
 !         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LA TURBULENCE
-!    (pour n'importe quel modele)
+!         ON IMPOSE LES CONDITIONS AUX LIMITES POUR LA TURBULENCE
+!         (pour n'importe quel modele)
 !===============================================================================
-
 
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
   if ( itypfb(ifac).eq.ientre ) then
 
-! ----  Traitement automatique de la turbulence
+    ! La turbulence est calculee par defaut si ICALKE different de 0
+    !    - soit a partir du diametre hydraulique, d'une vitesse
+    !      de reference adaptes a l'entree courante si ICALKE = 1
+    !    - soit a partir du diametre hydraulique, d'une vitesse
+    !      de reference et de l'intensite turvulente
+    !      adaptes a l'entree courante si ICALKE = 2
 
     if ( icalke(izone).ne.0 ) then
-
-!       La turbulence est calculee par defaut si ICALKE different de 0
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference adaptes a l'entree courante si ICALKE = 1
-!          - soit a partir du diametre hydraulique, d'une vitesse
-!            de reference et de l'intensite turvulente
-!            adaptes a l'entree courante si ICALKE = 2
 
       uref2 = rcodcl(ifac,iu,1)**2                         &
             + rcodcl(ifac,iv,1)**2                         &
@@ -287,14 +389,10 @@ do ifac = 1, nfabor
       xkent = epzero
       xeent = epzero
       if (icke.eq.1) then
-        call keendb                                               &
-        !==========
-        ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
+        call keendb ( uref2, dhy, rhomoy, viscla, cmu, xkappa, &
           ustar2, xkent, xeent )
       else if (icke.eq.2) then
-        call keenin                                               &
-        !==========
-        ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
+        call keenin ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
       endif
 
       if (itytur.eq.2) then
@@ -335,120 +433,6 @@ do ifac = 1, nfabor
   endif
 
 enddo
-
-!===============================================================================
-! 2.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
-!       ON BOUCLE SUR TOUTES LES FACES DE BORD
-!                     ======
-!         ON DETERMINE LA FAMILLE ET SES PROPRIETES
-!           ON IMPOSE LES CONDITIONS AUX LIMITES
-!           POUR LES SCALAIRES
-!===============================================================================
-
-
-! On regarde s'il y a une entree carburant au moins et
-!                     une entree oxydant   au moins
-ifue = 0
-ioxy = 0
-do ii = 1, nzfppp
-  izone = ilzppp(ii)
-  if (ientfu(izone).eq.1) then
-    ifue = 1
-  elseif(ientox(izone).eq.1) then
-    ioxy = 1
-  endif
-enddo
-if(irangp.ge.0) then
-  call parcmx(ifue)
-  call parcmx(ioxy)
-endif
-
-! Entree carburant a TINFUE : calcul de HINFUE
-if (ifue.eq.1) then
-  coefg(1) = 1.d0
-  coefg(2) = zero
-  coefg(3) = zero
-  mode    = -1
-  call cothht                                                   &
-  !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                     &
-        npo    , npot   , th     , ehgazg ,                     &
-        hinfue , tinfue )
-endif
-
-! Entree oxydant a TINOXY : calcul de HINOXY
-if (ioxy.eq.1) then
-  coefg(1) = zero
-  coefg(2) = 1.d0
-  coefg(3) = zero
-  mode    = -1
-  call cothht                                                   &
-  !==========
-      ( mode   , ngazg , ngazgm  , coefg  ,                     &
-        npo    , npot   , th     , ehgazg ,                     &
-        hinoxy , tinoxy  )
-endif
-
-
-do ifac = 1, nfabor
-
-  izone = izfppp(ifac)
-
-
-!      ELEMENT ADJACENT A LA FACE DE BORD
-
-  if ( itypfb(ifac).eq.ientre ) then
-
-! ----  Traitement automatique des scalaires physiques particulieres
-
-!       Entree carburant a TINFUE
-
-    if ( ientfu(izone).eq.1 ) then
-
-!         - Moyenne du taux de melange
-       rcodcl(ifac,isca(ifm),1)   = 1.d0
-
-!         - Variance du taux d emelange
-       rcodcl(ifac,isca(ifp2m),1) = 0.d0
-
-!          - Enthalpie du melange gazeux
-      if (ippmod(icod3p).eq.1) then
-        rcodcl(ifac,isca(iscalt),1) = hinfue
-      endif
-
-      ! Soot model
-      if (isoot.ge.1) then
-        rcodcl(ifac,isca(ifsm),1) = 0.d0
-        rcodcl(ifac,isca(inpm),1) = 0.d0
-      endif
-
-    elseif( ientox(izone).eq.1 ) then
-
-!       Entree oxydant a TINOXY
-
-!         - Moyenne du taux de melange
-       rcodcl(ifac,isca(ifm),1)   = 0.d0
-
-!         - Variance du taux d emelange
-       rcodcl(ifac,isca(ifp2m),1) = 0.d0
-
-!          - Enthalpie du melange gazeux
-      if ( ippmod(icod3p).eq.1 ) then
-        rcodcl(ifac,isca(iscalt),1) = hinoxy
-      endif
-
-      ! Soot model
-      if (isoot.ge.1) then
-        rcodcl(ifac,isca(ifsm),1) = 0.d0
-        rcodcl(ifac,isca(inpm),1) = 0.d0
-      endif
-
-    endif
-
-  endif
-
-enddo
-
 
 !----
 ! FORMATS

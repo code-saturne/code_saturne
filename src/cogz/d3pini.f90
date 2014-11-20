@@ -109,22 +109,13 @@ double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 double precision, dimension(:), pointer :: cvar_npm, cvar_fsm
 double precision, dimension(:), pointer :: cvar_scal
 
-! NOMBRE DE PASSAGES DANS LA ROUTINE
-
-integer          ipass
-data             ipass /0/
-save             ipass
-
-!===============================================================================
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
 
-ipass = ipass + 1
-
-if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
 call field_get_val_s(ivarfl(isca(ifp2m)), cvar_fp2m)
+if (ippmod(icod3p).eq.1) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 if (isoot.eq.1) then
   call field_get_val_s(ivarfl(isca(inpm)), cvar_npm)
   call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
@@ -141,125 +132,79 @@ enddo
 
 if ( isuite.eq.0 ) then
 
-! ---> Initialisation au 1er passage avec de l'air a TINITK
-!                                    ======================
+  ! ---> Initialization a with air at T0
 
-  if ( ipass.eq.1 ) then
-
-! ----- Calcul de l'enthalpie de l'air HAIR a TINITK
-
-    tinitk   = t0
-    coefg(1) = zero
-    coefg(2) = 1.d0
-    coefg(3) = zero
-    mode     = -1
-    call cothht                                                   &
-    !==========
+  ! Air enthalpy HAIR at TINIK
+  tinitk   = t0
+  coefg(1) = zero
+  coefg(2) = 1.d0
+  coefg(3) = zero
+  mode     = -1
+  call cothht                                                   &
+  !==========
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hair   , tinitk )
 
+  do iel = 1, ncel
 
-    do iel = 1, ncel
+    ! Mean mixture fraction and its variance
+    cvar_fm(iel)   = zero
+    cvar_fp2m(iel) = zero
 
-! ----- Moyenne et variance du taux de melange
+    ! Enthalpy
+    if ( ippmod(icod3p).eq.1 ) then
+      cvar_scalt(iel) = hair
+    endif
 
-      cvar_fm(iel)   = zero
-      cvar_fp2m(iel) = zero
+    ! Soot
+    if (isoot.eq.1) then
+      cvar_npm(iel) = 0.d0
+      cvar_fsm(iel) = 0.d0
+    endif
 
-! ----- Enthalpie
+  enddo
 
-      if ( ippmod(icod3p).eq.1 ) then
-        cvar_scalt(iel) = hair
-      endif
+  ! ---> User initialization, HINFUE and HINOXY are needed
 
-! ---- Soot
-      if (isoot.eq.1) then
-        cvar_npm(iel) = 0.d0
-        cvar_fsm(iel) = 0.d0
-      endif
-    enddo
+  ! Oxidant enthalpy HINOXY at TINOXY
+  coefg(1) = zero
+  coefg(2) = 1.d0
+  coefg(3) = zero
+  mode     = -1
+  call cothht                                                   &
+  !==========
+  ( mode   , ngazg , ngazgm  , coefg  ,                           &
+    npo    , npot   , th     , ehgazg ,                           &
+    hinoxy , tinoxy )
 
-! ---> Initialisation au 2eme passage
+  ! Fuel enthalpy HINFUE at TINFUE
+  coefg(1) = 1.d0
+  coefg(2) = zero
+  coefg(3) = zero
+  mode     = -1
+  call cothht                                                   &
+  !==========
+  ( mode   , ngazg , ngazgm  , coefg  ,                           &
+    npo    , npot   , th     , ehgazg ,                           &
+    hinfue , tinfue )
 
-  else if ( ipass.eq.2 ) then
-
-    do iel = 1, ncel
-
-! ----- Moyenne et variance du taux de melange
-
-      cvar_fm(iel)   = fs(1)
-      cvar_fp2m(iel) = zero
-
-! ----- Enthalpie
-
-      if ( ippmod(icod3p).eq.1 ) then
-        cvar_scalt(iel) = hinfue*fs(1)+hinoxy*(1.d0-fs(1))
-      endif
-
-! ---- Soot
-      if (isoot.eq.1) then
-        cvar_npm(iel) = 0.d0
-        cvar_fsm(iel) = 0.d0
-      endif
-
-
-    enddo
-
-! ----- On donne la main a l'utilisateur
-
-    call cs_user_initialization &
-    !==========================
+  ! User initilization
+  call cs_user_initialization &
   ( nvar   , nscal  ,                                            &
     dt     )
 
-! ----- En periodique et en parallele,
-!       il faut echanger ces initialisations
-
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(cvar_fm)
-      !==========
-      call synsca(cvar_fp2m)
-      !==========
-      if ( ippmod(icod3p).eq.1 ) then
-        call synsca(cvar_scalt)
-        !==========
-      endif
+  ! ---> Parallelism and periodic exchange
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(cvar_fm)
+    call synsca(cvar_fp2m)
+    if ( ippmod(icod3p).eq.1 ) then
+      call synsca(cvar_scalt)
     endif
-
-      ! ---- Soot
-      if (isoot.eq.1) then
-        call synsca(cvar_npm)
-        call synsca(cvar_fsm)
-      endif
-
-
-!      Impressions de controle
-
-    write(nfecra,2000)
-
-    do ii  = 1, nscapp
-      iscal = iscapp(ii)
-      ivar  = isca(iscal)
-      call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
-      valmax = -grand
-      valmin =  grand
-      do iel = 1, ncel
-        valmax = max(valmax,cvar_scal(iel))
-        valmin = min(valmin,cvar_scal(iel))
-      enddo
-      call field_get_label(ivarfl(ivar), chaine)
-      if (irangp.ge.0) then
-        call parmin(valmin)
-        !==========
-        call parmax(valmax)
-        !==========
-      endif
-      write(nfecra,2010)chaine(1:8),valmin,valmax
-    enddo
-
-    write(nfecra,2020)
-
+    if (isoot.eq.1) then
+      call synsca(cvar_npm)
+      call synsca(cvar_fsm)
+    endif
   endif
 
 endif
@@ -268,25 +213,6 @@ endif
 !----
 ! FORMATS
 !----
-
- 2000 format(                                                           &
-'                                                             ',/,&
-' ----------------------------------------------------------- ',/,&
-'                                                             ',/,&
-'                                                             ',/,&
-' ** INITIALISATION DES VARIABLES PROPRES AU GAZ (FL DIF 3PT) ',/,&
-'    -------------------------------------------------------- ',/,&
-'           2eme PASSAGE                                      ',/,&
-' ---------------------------------                           ',/,&
-'  Variable  Valeur min  Valeur max                           ',/,&
-' ---------------------------------                           '  )
-
- 2010 format(                                                           &
- 2x,     a8,      e12.4,      e12.4                              )
-
- 2020 format(                                                           &
-' ---------------------------------                           ',/)
-
 
 !----
 ! Fin

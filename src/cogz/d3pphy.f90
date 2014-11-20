@@ -79,11 +79,10 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          if, ih, iel, icg
-integer          ifac, mode, izone
+integer          ifac, mode
 integer          ipcycg
 
 double precision coefg(ngazgm), fsir, hhloc, tstoea, tin
-double precision temsmm
 
 integer, allocatable, dimension(:) :: indpdf
 
@@ -91,7 +90,6 @@ double precision, allocatable, dimension(:) :: dirmin, dirmax
 double precision, allocatable, dimension(:) :: fdeb, ffin
 double precision, allocatable, dimension(:) :: hrec, tpdf
 double precision, allocatable, dimension(:) :: w1, w2
-double precision, dimension(:), pointer :: brom,  crom
 double precision, dimension(:), pointer :: bsval
 double precision, dimension(:), pointer :: cvar_fm, cvar_fp2m
 
@@ -276,49 +274,6 @@ deallocate(indpdf)
 !===============================================================================
 
 ! --> Masse volumique au bord
-
-mbrom = 1
-call field_get_val_s(ibrom, brom)
-call field_get_val_s(icrom, crom)
-
-! ---- Masse volumique au bord pour toutes les facettes
-!      Les facettes d'entree seront recalculees apres
-!      a partir des CL (si IPASS > 1). .
-
-
-! ---- Au premier passage sans suite ou si on n'a pas relu la
-!      masse volumique dans le fichier suite, on n'a pas recalcule la
-!      masse volumique dans d3pint, pas la peine de la reprojeter aux
-!      faces.
-
-if ( ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
-
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    brom(ifac) = crom(iel)
-  enddo
-
-endif
-
-! ---- Masse volumique au bord pour les facettes d'entree UNIQUEMENT
-!      Le test sur IZONE sert pour les reprises de calcul
-!      On suppose implicitement que les elements ci-dessus ont ete relus
-!      dans le fichier suite (i.e. pas de suite en combustion d'un calcul
-!      a froid) -> sera pris en compte eventuellement dans les versions
-!      suivantes
-
-if(ipass.gt.1 .or. isuite.eq.1 ) then
-  do ifac = 1, nfabor
-    izone = izfppp(ifac)
-    if(izone.gt.0) then
-      if ( ientfu(izone).eq.1 .or. ientox(izone).eq.1 ) then
-        temsmm = tinfue/wmolg(1)
-        if ( ientox(izone).eq.1 ) temsmm = tinoxy/wmolg(2)
-        brom(ifac) = p0/(rr*temsmm)
-      endif
-    endif
-  enddo
-endif
 
 ! --> Fractions massiques des especes globales au bord
 !     Uniquement si rayonnement

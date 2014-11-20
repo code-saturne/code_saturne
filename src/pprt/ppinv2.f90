@@ -106,17 +106,6 @@ double precision dt(ncelet)
 ! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
 !===============================================================================
 
-
-! ---> Combustion gaz
-!      Flamme de diffusion : chimie 3 points
-
- if ( ippmod(icod3p).ge.0 ) then
-  call d3pini                                                     &
-  !==========
- ( nvar   , nscal  ,                                              &
-   dt     )
-  endif
-
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 
