@@ -114,7 +114,6 @@ use cs_f_interfaces
 use atchem
 use darcy_module
 use cs_c_bindings
-use pointe, only: itypfb
 
 !===============================================================================
 
@@ -175,7 +174,7 @@ double precision, allocatable, dimension(:) :: w1, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
-double precision, allocatable, dimension(:,:) :: grad, grdni
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
@@ -197,7 +196,7 @@ double precision, dimension(:), pointer :: cpro_viscls
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
-double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
+double precision, dimension(:), pointer :: cvar_var, cvara_var
 
 !===============================================================================
 
@@ -473,7 +472,7 @@ if (iirayo.ge.1) then
 
       call cs_coal_radst &
       !=================
-      ( ivar   , ncelet , ncel  ,                &
+      ( ivar   , ncelet , ncel  ,               &
         volume , propce , smbrs , rovsdt )
 
     endif
@@ -489,7 +488,7 @@ if (iirayo.ge.1) then
 
       call cs_fuel_radst &
      !==================
-    ( ivar  ,ncelet, ncel  ,                      &
+     ( ivar   , ncelet , ncel  ,                &
        volume , propce , smbrs , rovsdt)
 
     endif
@@ -581,7 +580,7 @@ if (nfbpcd.gt.0) then
    spcond(1,ivar)   , srccond        ,                   &
    rvoid  , rvoid   , rvoid          ,                   &
    cvara_var        ,                                    &
-   smbrs         , rovsdt )
+   smbrs            , rovsdt )
 
   deallocate(srccond)
 
@@ -628,7 +627,7 @@ if (itspdv.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.3 .or. itytur.eq.5 .or. iturb.eq.60) then
 
     ! Allocate a temporary array for the gradient reconstruction
-    allocate(grad(3,ncelet),grdni(ncelet,3))
+    allocate(grad(3,ncelet))
 
     ! Remarque : on a prevu la possibilite de scalaire associe non
     !  variable de calcul, mais des adaptations sont requises
@@ -644,45 +643,9 @@ if (itspdv.eq.1) then
     inc = 1
     iccocg = 1
 
-    ! BS TODO Neumann homogene en entree sur le terme de production de variance
     call field_gradient_scalar(ivarfl(iii), iprev, imrgra, inc,   &
                                iccocg,                            &
                                grad)
-
-    call field_get_val_prev_s(ivarfl(iii), cvara_varsca)
-    call field_get_coefa_s (ivarfl(iii), coefap)
-    call field_get_coefb_s (ivarfl(iii), coefbp)
-
-    ! pas de diffusion en entree
-    do ifac = 1, nfabor
-      ! FIXME create a new BC and loacl coefap
-      if (itypfb(ifac).eq.ientre) then
-        coefap(ifac) = 0.d0
-        coefbp(ifac) = 1.d0
-      endif
-    enddo
-
-    nswrgp = nswrgr(iii)
-    imligp = imligr(iii)
-    iwarnp = iwarni(iii)
-    epsrgp = epsrgr(iii)
-    climgp = climgr(iii)
-    extrap = extrag(iii)
-
-    call grdcel &
-    !==========
-     ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-       iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-       cvara_varsca    , coefap , coefbp ,                            &
-       grdni   )
-
-    do iel = 1, ncel
-      grad(1,iel) = grdni(iel,1)
-      grad(2,iel) = grdni(iel,2)
-      grad(3,iel) = grdni(iel,3)
-    enddo
-
-    deallocate (grdni)
 
     ! Traitement de la production
     ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
@@ -1140,7 +1103,7 @@ if (iwarni(ivar).ge.2) then
   endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
-            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)&
+            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)        &
                 *(cvar_var(iel)-cvara_var(iel))*ibcl
   enddo
   isqrt = 1
