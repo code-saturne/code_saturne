@@ -367,6 +367,7 @@ dist-hook: changelog
 	-rm -rf `find $(distdir)/gui  -name .svn`
 	-rm -rf `find $(distdir)/patches -name .svn`
 	-rm -rf `find $(distdir)/salome -name .svn`
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --full > $(distdir)/build-aux/version
 
 all-local: bin/cs_package.py
 
