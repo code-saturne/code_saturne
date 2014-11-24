@@ -423,7 +423,8 @@ Detailed build instructions, including troubleshooting instructions,
 are given in the source tree's \texttt{INSTALL.txt} file.
 In case of trouble, note especially the explanation relative to the
 \texttt{dummysizes} executable, which is run to determine the
-sizes of structures. On BlueGene/P type machines, it may be necessary
+sizes of structures. On machines with different front-end and
+compute node architectures, it may be necessary
 to start the build process, let it fail, run this executable
 manually using \texttt{mpirun}, then pursue the build process.
 
@@ -1094,69 +1095,6 @@ should supercede serial partitioning, as it allows for a simpler
 toolchain even for large meshes.
 Similarly, \metis could be used on the front-end node, and \parmetis
 on the compute nodes.
-
-\subsubsection{Cross-compiling configuration for Blue Gene/P}
-
-For an example, let us start with the front-end build:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/frontend \textbackslash \\
-\textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/frontend/bin/python \textbackslash \\
-\textcolor{red}{CFLAGS}="-m64" \textcolor{red}{FCFLAGS}="-m64" \textcolor{red}{CXXFLAGS}="-m64"
-}\end{minipage}}
-
-In this example, the front-end node is based on an IBM Power architecture,
-on which the GCC compiler is available, but produces 32-bit code by default.
-Adding the \texttt{"-m64"} flags force the compiler into 64-bit mode, allowing
-the Preprocessor to import meshes up into the 100-million cell range.
-
-For the compute node, we use the same version of Python (which
-is used only for the GUI and scripts, which only run on the front-end
-or service nodes), but the compilers are cross-compilers for the
-compute nodes:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgp
-\textbackslash \\
-\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.3.32/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/bgp
-\textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/bgp
-\textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/bgp \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgp \textbackslash \\
-\textcolor{Violet}{
---disable-sockets --disable-dlloader -disable-nls \textbackslash \\
---disable-frontend --enable-long-gnum \textbackslash
-} \\
-\textcolor{Magenta}{--build}=ppc64
-\textcolor{Magenta}{--host}=bluegenep \textbackslash \\
-\textcolor{red}{CC}=mpixlc\_r \textcolor{red}{FC}=bgxlf90\_r
-\textcolor{red}{CXX}=mpixlcxx\_r \textbackslash \\
-\textcolor{red}{PYTHON}=\textcolor{OliveGreen}{\$CS\_OPT}/python/arch/bgp/bin/python
-}\end{minipage}}
-
-Here, the \texttt{--build=ppc64 --host=bluegenep} options ensure the
-\texttt{configure} script into cross-compilation mode.
-With a front-end base on an Intel or AMD architecture,
-\texttt{--build=x86\_64} or \texttt{--build=amd64} should be used
-instead of \texttt{--build=ppc64}. For the host (target) architecture,
-\texttt{--host=bluegenep} is recognized by current GNU Autoconf versions,
-so it is preferred, but \texttt{--host=ppc} also works well. Actually,
-any choice of build and host architectures recognized by Autoconf would
-probably work, as long as build and host are different.
-
-The C++ compiler is also specified, as it will be needed for
-the link stage due to C++ dependencies in the MED library,
-which is a static library in this example (see \S\ref{sec:ext:med}).
 
 \subsection{Troubleshooting\label{sec:config:troubleshoot}}
 
