@@ -80,7 +80,7 @@ if test "x$with_blas" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  # Add known paths and libraries for Blue Gene/L or P if not given
+  # Add known paths and libraries for Blue Gene/Q if not given
 
   # Test for IBM ESSL BLAS
 
@@ -107,9 +107,7 @@ if test "x$with_blas" != "xno" ; then
     
       if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
-        if test "x$cs_ibm_bg_type" = "xP" ; then
-          BLAS_LIBS="-lesslsmpbg -lesslbg"
-        elif test "x$cs_ibm_bg_type" = "xQ"; then
+        if test "x$cs_ibm_bg_type" = "xQ"; then
           BLAS_LIBS="-lesslbg"
           BLAS_LDFLAGS="-L$with_blas/lib64"
           BLASRUNPATH="-R$with_blas/lib64"
@@ -132,7 +130,7 @@ if test "x$with_blas" != "xno" ; then
       if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
                                             # or explicitely specified libs
 
-        if test "x$cs_ibm_bg_type" != "x" ; then
+        if test "x$cs_ibm_bg_type" = "xQ" ; then
           BLAS_LIBS="-lesslbg"
         elif test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
           BLAS_LIBS="$with_blas_libs"

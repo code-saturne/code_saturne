@@ -1174,7 +1174,6 @@ class mpi_environment:
                                'MSMPI':self.__init_msmpi__,
                                'OpenMPI':self.__init_openmpi__,
                                'BullxMPI':self.__init_openmpi__,
-                               'BGP_MPI':self.__init_bgp__,
                                'BGQ_MPI':self.__init_bgq__,
                                'Platform_MPI':self.__init_platform_mpi__,
                                'MPIBULL2':self.__init_mpibull2__}
@@ -1598,27 +1597,6 @@ class mpi_environment:
         # Info commands
 
         self.info_cmds = ['ompi_info -a']
-
-    #---------------------------------------------------------------------------
-
-    def __init_bgp__(self, p, resource_info=None, wdir = None):
-
-        """
-        Initialize for Blue Gene/P environment.
-        """
-
-        # Set base executable path
-
-        self.mpiexec = 'mpiexec'
-
-        # Determine processor count and MPMD handling
-
-        self.mpiexec_n = None
-        self.mpmd = MPI_MPMD_configfile
-
-        # Other options to add
-
-        # Info commands
 
     #---------------------------------------------------------------------------
 

@@ -53,12 +53,6 @@
 #include <pwd.h>
 #endif
 
-#if defined(__bgp__)
-#include <spi/kernel_interface.h>
-#include <common/bgp_personality.h>
-#include <common/bgp_personality_inlines.h>
-#endif
-
 #if defined(__bgq__) && defined(__xlc__)
 #include <spi/include/kernel/location.h>
 #endif
@@ -198,10 +192,7 @@ cs_system_info(void)
   int mpi_flag = 0;
 #endif
 
-#if defined(__bgp__)
-  _BGP_Personality_t personality;
-  Kernel_GetPersonality(&personality, sizeof(personality));
-#elif defined(__bgq__) && defined(__xlc__)
+#if defined(__bgq__) && defined(__xlc__)
   Personality_t personality;
   Kernel_GetPersonality(&personality, sizeof(personality));
 #endif
@@ -243,9 +234,7 @@ cs_system_info(void)
 
   /* Available memory */
 
-#if defined(__bgp__)
-  ram = personality.DDR_Config.DDRSizeMB;
-#elif defined(__bgq__) && defined(__xlc__)
+#if defined(__bgq__) && defined(__xlc__)
   ram = personality.DDR_Config.DDRSizeMB;
 #elif defined(__linux__) \
    && defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
@@ -313,37 +302,7 @@ cs_system_info(void)
     MPI_Comm_size(comm, &n_ranks);
     MPI_Comm_size(MPI_COMM_WORLD, &n_world_ranks);
 
-#   if defined(__bgp__)
-
-    {
-      int node_config = personality.Kernel_Config.ProcessConfig;
-      const char *_mode_names[] = {N_("SMP mode"),
-                                   N_("Virtual-node mode"),
-                                   N_("Dual mode"),
-                                   N_("Unknown mode")};
-      const char *mode_name = _mode_names[3];
-
-      if (node_config == _BGP_PERS_PROCESSCONFIG_SMP)
-        mode_name = _mode_names[0];
-      else if (node_config == _BGP_PERS_PROCESSCONFIG_VNM)
-        mode_name = _mode_names[1];
-      else if (node_config == _BGP_PERS_PROCESSCONFIG_2x2)
-        mode_name = _mode_names[2];
-
-      bft_printf("  %s%d (%s)\n", _("MPI ranks:           "),
-                 n_ranks, _(mode_name));
-      if (n_world_ranks > n_ranks)
-        bft_printf("  %s%d\n", _("MPI_COMM_WORLD size: "),
-                   n_world_ranks);
-      bft_printf("  %s%d\n", _("pset size:         "),
-                 personality.Network_Config.PSetSize);
-      bft_printf("  %s<%d,%d,%d>\n", _("Torus dimensions:    "),
-                 personality.Network_Config.Xnodes,
-                 personality.Network_Config.Ynodes,
-                 personality.Network_Config.Znodes);
-    }
-
-#   elif defined(__bgq__) && defined(__xlc__)
+#   if defined(__bgq__) && defined(__xlc__)
 
     {
       int a_torus, b_torus, c_torus, d_torus, e_torus;

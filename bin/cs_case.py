@@ -839,9 +839,6 @@ export SALOME_INSTANCE=$3
         e_path = os.path.join(self.exec_dir, 'mpmd_configfile')
         e = open(e_path, 'w')
 
-        if mpi_env.type != 'BGP_MPI': # Comment lines not accepted on BG/P
-            e.write('# MPMD configuration file for mpiexec\n')
-
         app_id = 0
 
         for d in self.syr_domains:

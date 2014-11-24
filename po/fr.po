@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-11-16 23:50+0100\n"
+"POT-Creation-Date: 2014-11-20 00:37+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7025,29 +7025,11 @@ msgstr "Utilisateur :        "
 msgid "Directory:           "
 msgstr "Répertoire :         "
 
-msgid "SMP mode"
-msgstr ""
-
-msgid "Virtual-node mode"
-msgstr ""
-
-msgid "Dual mode"
-msgstr ""
-
-msgid "Unknown mode"
-msgstr ""
-
 msgid "MPI ranks:           "
 msgstr "Rangs MPI :          "
 
 msgid "MPI_COMM_WORLD size: "
 msgstr ""
-
-msgid "pset size:         "
-msgstr ""
-
-msgid "Torus dimensions:    "
-msgstr "Dimensions du tore : "
 
 msgid "Hardware threads:    "
 msgstr "Threads matériels :  "
@@ -11238,3 +11220,6 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid "Torus dimensions:    "
+#~ msgstr "Dimensions du tore : "

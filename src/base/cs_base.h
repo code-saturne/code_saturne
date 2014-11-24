@@ -42,7 +42,7 @@
 
 /* System type name */
 
-#if defined(__blrts__) || defined(__bg__)
+#if defined(__bg__)
 #define _CS_ARCH_Blue_Gene
 
 #elif defined(__linux__) || defined(__linux) || defined(linux)
@@ -57,9 +57,7 @@
  * be better optimized on memory-aligned data (if 0 here, no alignment
  * is leveraged). This alignment is not exploited yet in Code_Saturne. */
 
-#if defined(__blrts__) || defined(__bgp__)
-#define CS_MEM_ALIGN 16
-#elif defined(__bgq__)
+#if defined(__bgq__)
 #define CS_MEM_ALIGN 32
 #else
 #define CS_MEM_ALIGN 0
