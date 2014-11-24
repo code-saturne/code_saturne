@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2014 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -410,22 +410,23 @@ def git_version(srcdir, defaults):
     if p.returncode != 0:
         return major, minor, release, extra
     else:
-        svn_id = output[0].find('git-svn-id:')
+        o0 = str(output[0])
+        svn_id = o0.find('git-svn-id:')
         if svn_id > 1:
-            svn_rev = output[0][svn_id:].split(' ', 2)[1]
+            svn_rev = o0[svn_id:].split(' ', 2)[1]
             svn_url, svn_revision = svn_rev.split('@')
             major, minor, release, extra, revision \
                 = git_svn_version(srcdir, svn_url, svn_revision, defaults)
             # Try to count commits before the one with svn
-            svn_log = output[0][:svn_id].split()
+            svn_log = o0[:svn_id].split()
             c1 = svn_log.count('commit')
             c2 = svn_log.count('Author:')
             if c1 == 1 and c2 == 1:
                 head_is_svn = True
 
     if not head_is_svn:
-        commit_id = output[0].find('commit')
-        commit_rev = output[0][commit_id:].split(' ', 2)[1].split('\n')[0]
+        commit_id = o0.find('commit')
+        commit_rev = o0[commit_id:].split(' ', 2)[1].split('\n')[0]
         revision += '-git' + commit_rev
 
     return major, minor, release, extra, revision
@@ -446,8 +447,9 @@ def git_version_is_modified(srcdir):
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE)
     output = p.communicate()
+    o0 = str(output[0])
     if p.returncode == 0:
-        if len(output[0].split('\n')) > 1:
+        if len(o0.split('\n')) > 1:
             return True
 
     return False
@@ -494,6 +496,7 @@ if __name__ == '__main__':
     elif sys.argv[1] in ['--full', '--revision-only', '--verbose']:
 
         defaults = version_from_news(srcdir)
+        release = ''
         modified = ''
         revision = ''
 
@@ -505,6 +508,30 @@ if __name__ == '__main__':
             major, minor, release, extra, revision \
                 = git_version(srcdir, defaults)
             modified = git_version_is_modified(srcdir)
+        elif os.path.isfile(os.path.join(srcdir, "build-aux", "version")):
+            f = open(os.path.join(srcdir, "build-aux", "version"))
+            lines = f.readlines()
+            f.close()
+            v = lines[0].strip()
+            for e in ['-alpha', '-beta', '-rc']:
+                i = v.find(e)
+                if i > -1:
+                    j = v[i+1:].find('-')
+                    if j > -1:
+                        extra = v[i:i+j+1]
+                    else:
+                        extra = e
+                    v = v.replace(extra, '')
+            vl = v.split(".")
+            l = len(vl)
+            vt = vl.pop(l-1)
+            vl += vt.split("-", 1)
+            major = vl[0]
+            minor = vl[1]
+            if l > 2:
+                release = vl[2]
+            if len(vl) > l:
+                revision = '-' + vl[l]
         else:
             major, minor, release, extra = version_from_news(srcdir)
 
