@@ -99,7 +99,6 @@ build-aux/ylwrap
 EXTRA_DIST = \
 $(AUX_DIST) \
 install_saturne.py \
-COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
 po/Rules-install \
