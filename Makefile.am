@@ -98,14 +98,6 @@ build-aux/ylwrap
 
 EXTRA_DIST = \
 $(AUX_DIST) \
-ChangeLog.old \
-ChangeLog.2007 \
-ChangeLog.2008 \
-ChangeLog.2009 \
-ChangeLog.2010 \
-ChangeLog.2011 \
-ChangeLog.2012 \
-ChangeLog.2013 \
 install_saturne.py \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
@@ -355,7 +347,8 @@ changelog:
 	    --format="%n%cd %aN <%ce> %n%n%x09* [%H]%n%w(82,8,8)%s" --name-status > ${top_srcdir}/ChangeLog ; \
 	else \
 	  echo "ChangeLog must be generated from a Subversion or git working copy."  > ${top_srcdir}/ChangeLog ; \
-	fi
+	fi; \
+	cat ${top_srcdir}/extras/changelog/ChangeLog.base >> ${top_srcdir}/ChangeLog;
 
 # Update Copyright
 
