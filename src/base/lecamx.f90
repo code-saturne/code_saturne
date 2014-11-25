@@ -62,6 +62,7 @@ subroutine lecamx &
 use, intrinsic :: iso_c_binding
 
 use paramx
+use dimens, only: nscal
 use cstphy
 use cstnum
 use entsor
@@ -104,7 +105,7 @@ character        cindfc*2,cindfl*4
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 logical          lprev
-integer          iel   , ifac, ii, istr, nlfld
+integer          iel   , ifac, ii, istr, nlfld, iscal
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
 integer          jortvm
@@ -298,6 +299,7 @@ endif
 !       afin de ne pas ecraser la valeur RO0 fixee par l'utilisateur
 !       et eventuellement modifiee.
 !     La masse volumique est egalement lue pour le modele de cavitation
+!     et les modeles dilatables (idilat = 4, 5)
 
 inierr = 0
 
@@ -309,7 +311,7 @@ if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
   inierr = inierr+ierror
 
   ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
-  if (icavit.ge.0.and.jcavit.ge.0) then
+  if (icavit.ge.0.and.jcavit.ge.0.or.idilat.ge.4) then
     call restart_read_field_vals(rp, icrom, 1, ierror)
     nberro = nberro+ierror
     inierr = inierr+ierror
@@ -326,6 +328,14 @@ if (irovar.eq.1.or.(icavit.ge.0.and.jcavit.ge.0)) then
   !       aux faces de bord, on l'indique (pour schtmp)
   if (nfabok.eqv..true..and.inierr.eq.0) then
     initro = 1
+  endif
+
+  ! Scalar source terms for dilatable model  (idilat = 4, 5)
+  if (idilat.ge.4) then
+    do iscal = 1, nscal
+      f_id = iprpfl(iustdy(iscal))
+      call restart_read_field_vals(rp, f_id, 0, ierror)
+    enddo
   endif
 
 else

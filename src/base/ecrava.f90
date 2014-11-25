@@ -53,7 +53,7 @@ subroutine ecrava &
 use, intrinsic :: iso_c_binding
 
 use paramx
-use dimens, only: nvar
+use dimens, only: nvar, nscal
 use numvar
 use cstphy
 use entsor
@@ -92,7 +92,7 @@ character        rubriq*64,car2*2,car4*4,car54*54
 character        cindfc*2,cindfl*4
 character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
-integer          f_id, t_id, ivar
+integer          f_id, t_id, ivar, iscal
 integer          idecal, iclapc, icha  , icla
 integer          ii    , ivers
 integer          itysup, nbval
@@ -378,13 +378,23 @@ if (iecaux.eq.1) then
     ! Masse volumique - cellules
     call restart_write_field_vals(rp, icrom, 0)
 
-    ! Masse volumique du pdt precedent - cellules (uniquement pour cavitation)
-    if (icavit.ge.0) then
+    ! Masse volumique du pdt precedent - cellules
+    ! only for cavitation and dilatable models (idilat = 4, 5)
+    if (icavit.ge.0.or.idilat.ge.4) then
       call restart_write_field_vals(rp, icrom, 1)
     endif
 
     ! Masse volumique - faces de bord
     call restart_write_field_vals(rp, ibrom, 0)
+
+    ! Scalar source terms for dilatable model (idilat = 4, 5)
+    if (idilat.ge.4) then
+      do iscal = 1, nscal
+        f_id = iprpfl(iustdy(iscal))
+        call restart_write_field_vals(rp, f_id, 0)
+      enddo
+    endif
+
   endif
 
   !     On n'ecrit les proprietes physiques que si on les extrapole ou
