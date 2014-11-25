@@ -143,7 +143,6 @@ double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: w7, w8, w9
-double precision, allocatable, dimension(:) :: w10
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
@@ -298,7 +297,6 @@ endif
 ! Allocate work arrays
 allocate(w1(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-if (irnpnw.eq.1) allocate(w10(ncelet))
 
 if (iwarni(iu).ge.1) then
   write(nfecra,1000)
@@ -464,7 +462,7 @@ call predvv &
   ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
   trava  , ximpa  , uvwk   , dfrcxt , dttens ,  trav  ,          &
   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-  w1     , w7     , w8     , w9     , w10    )
+  w1     , w7     , w8     , w9     )
 
 ! --- Sortie si pas de pression continuite
 !       on met a jour les flux de masse, et on sort
@@ -679,10 +677,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
 
     deallocate(w1, w7, w8, w9)
     allocate(w1(ncelet), w7(ncelet), w8(ncelet), w9(ncelet))
-    if (allocated(w10)) then
-      deallocate(w10)
-      allocate(w10(ncelet))
-    endif
 
     ! Resize auxiliary arrays (pointe module)
 
@@ -1347,7 +1341,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
    trava  , ximpa  , uvwk   , dfrcxt , dttens , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     , w7     , w8     , w9     , w10    )
+   w1     , w7     , w8     , w9     )
 
   endif
 
@@ -1562,7 +1556,6 @@ deallocate(trav)
 deallocate(dfrcxt)
 deallocate(w1)
 deallocate(w7, w8, w9)
-if (allocated(w10)) deallocate(w10)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(secvif)) deallocate(secvif, secvib)
 if (iphydr.eq.2) deallocate(grdphd)

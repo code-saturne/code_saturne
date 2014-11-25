@@ -93,7 +93,6 @@
 !> \param[in]     w7            working array
 !> \param[in]     w8            working array
 !> \param[in]     w9            working array
-!> \param[in]     xnormp        workig array for the norm of the pressure
 !_______________________________________________________________________________
 
 subroutine predvv &
@@ -109,7 +108,7 @@ subroutine predvv &
    ckupdc , smacel , spcond , svcond , frcxt  , grdphd ,          &
    trava  , ximpa  , uvwk   , dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     , w7     , w8     , w9     , xnormp )
+   w1     , w7     , w8     , w9     )
 
 !===============================================================================
 
@@ -177,7 +176,6 @@ double precision viscfi(*), viscbi(nfabor)
 double precision secvif(nfac), secvib(nfabor)
 double precision w1(ncelet)
 double precision w7(ncelet), w8(ncelet), w9(ncelet)
-double precision xnormp(ncelet)
 double precision coefav(3  ,ndimfb)
 double precision cofafv(3  ,ndimfb)
 double precision coefbv(3,3,ndimfb)
@@ -235,6 +233,7 @@ double precision, dimension(:,:), allocatable :: coefat
 double precision, dimension(:,:,:), allocatable :: coefbt
 double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, dimension(:,:), allocatable :: divt
+double precision, dimension(:), allocatable ::xnormp
 double precision, dimension(:,:), pointer :: forbr, c_st_vel
 double precision, dimension(:), pointer :: cvara_pr, cvara_k
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
@@ -508,7 +507,9 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
    coefav , coefbv ,                                              &
    viscf  , viscb  )
 
-!     Calcul de div(rho dt/rho*grad P)
+  ! Compute div(rho dt/rho*grad P)
+  allocate(xnormp(ncelet))
+
   init = 1
   call divmas(init,viscf,viscb,xnormp)
 
@@ -1886,6 +1887,8 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   isqrt = 1
   call prodsc(ncel,isqrt,xnormp,xnormp,rnormp)
 
+  ! Free memory
+  deallocate(xnormp)
 endif
 
 ! ---> Finilaze estimators + Printings
