@@ -24,27 +24,27 @@
 %
 \vspace{1cm}
 %-------------------------------------------------------------------------------
-\section*{Fonction}
+\section*{Function}
 %-------------------------------------------------------------------------------
-Dans ce sous-programme, on effectue l'\'etape de pr\'ediction de la vitesse
-$\vect{u}$. Ceci consiste \`{a} r\'esoudre l'\'{e}quation de quantit\'e de
-mouvement (Q.D.M.) en traitant la pression $p$ de mani\`{e}re explicite. La solution en vitesse-pression est obtenue apr\`{e}s une \'{e}tape de correction sur la pression
-effectu\'{e}e dans le sous-programme \fort{resopv}, en utilisant la loi de conservation de la masse :
+This subroutine implements the prediction step for the velocity field $\vect{u}$.
+This consists of solving the momentum equation by treating the pressure explicitly.
+Once the pressure correction step has been performed in the subroutine \fort{resopv},
+the velocity-pressure solution is obtained using the mass conservation law:
 \begin{equation}
 \frac{\partial \rho } {\partial t}+ \dive(\rho \underline{u}) = \Gamma,
 \end{equation}
-o\`u $\Gamma$ est le terme source de masse\footnote{ en $kg.m^{-3}.s^{-1}$ }.\\
-L'\'{e}quation de conservation de la quantit\'{e} de mouvement moyenne obtenue par application
-du th\'{e}or\`{e}me fondamental de la dynamique est :
+where $\Gamma$ is the mass source term\footnote{In $kg.m^{-3}.s^{-1}$ }.\\
+The Reynolds-averaged momentum conservation equation obtained by applying
+the fundamental theorem of dynamics is:
 \begin{equation}
 \frac {\partial (\rho \underline {u})} {\partial t }+
 \dive(\rho \underline{u} \otimes \underline{u}) =
 \dive(\underline{\underline{\sigma}}) + \underline{S} - \dive{(\rho\,\tens{R})}\end{equation}
-o\`{u} :
+where:
 \begin{equation}
 \underline{\underline{\sigma}} = - p \underline{\underline{Id}} + \underline{\underline{\tau }}
 \end{equation}
-avec pour les \'{e}coulements newtoniens, la relation lin\'{e}aire suivante :
+with the following linear relationship for the Newtonian flows:
 \begin{equation}
 \begin{array}{lcl}
 &\displaystyle \underline{\underline{\tau}} = 2\ \mu\ \underline{\underline{D}}
@@ -56,26 +56,24 @@ avec pour les \'{e}coulements newtoniens, la relation lin\'{e}aire suivante :
 \end{equation}
 
 
-$\tens{\sigma}$ repr\'esente le tenseur de contraintes, $\tens{\tau}$ le tenseur
-des contraintes visqueuses, $\mu$ la viscosit\'e dynamique (mol\'eculaire et
-\'eventuellement turbulente), $\tens{D}$
- le tenseur taux de d\'eformation\footnote{\`A ne pas confondre, malgr\'e la m\^eme notation $D$, avec les flux
-diffusifs d\'ecrits dans le sous-programme \fort{navstv}},
-$\tens{R}$ le tenseur de Reynolds qui appara\^\i t lors de l'application de
-l'op\'erateur moyenne \`a l'\'equation instantan\'ee, $\underline{S}$ les termes
-sources.\\
-$\lambda$ est le second coefficient de viscosit\'{e}. Il est reli\'{e} \`{a} la viscosit\'{e} de
-volume $\kappa$ par la relation
+$\tens{\sigma}$ represents the stress tensor, $\tens{\tau}$ the viscous stress tensor,
+$\mu$ the dynamic viscosity (molecular and potentially turbulent),$\tens{D}$
+the rate of deformation tensor\footnote{Not to be confused, despite the same
+notation $D$, with the diffusive fluxes described in the subroutine
+\fort{navstv}}, $\tens{R}$ the Reynolds which appears when applying the
+average operator to the simultaneous equation, $\underline{S}$ the source
+terms.\\
+$\lambda$ is the second coefficient of viscosity. It is related to the volume viscosity
+ $\kappa$ via the expression
 \begin{equation}
 \lambda=\kappa-\frac{2}{3}\mu
 \end{equation}
-Quand l'hypoth\`{e}se de Stokes est v\'{e}rifi\'{e}e, la viscosit\'{e} de volume $\kappa$ est
-nulle, soit $3\lambda+2\mu=0$. Cette hypoth\`{e}se est implicite dans le code et
-dans le reste du doument, sauf en compressible.\\
+When the Stokes hypothesis holds, the volume viscosity $\kappa$ is
+zero, in other words $3\lambda+2\mu=0$. This hypothesis is implicit in the code
+and in the rest of this, except in the compressible module.\\
 
 
-L'\'equation de conservation de la quantit\'{e} de mouvement s'\'ecrit finalement
- :
+The equation for the conservation of momentum is finally written as:
 \begin{equation}
 \begin{array}{lcl}
 &\displaystyle \rho\,
@@ -84,124 +82,120 @@ L'\'equation de conservation de la quantit\'{e} de mouvement s'\'ecrit finalemen
 convection}} +\ \underbrace {\dive (\mu\ \ggrad \underline {u})}_{\text{
 diffusion}} &\\
 &\displaystyle \underbrace { +\ \dive (\mu \,^t\ggrad \underline {u}) }_{\text{
-terme en gradient transpos\'e}}
+transpose of the velocity gradient term}}
 \underbrace { - \ \frac {2} {3}\ \grad (\mu\ \dive \underline {u})}_{\text{
-viscosit\'{e} secondaire}}\ \ - \dive{(\rho \tens{R})}
+secondary viscosity}}\ \ - \dive{(\rho \tens{R})}
  -\ \grad(p) + (\rho -\rho_0)\,\underline {g} +
 \underline{u}\,\dive (\rho\,\underline {u})&\\
 &\displaystyle +\underbrace {\Gamma
-(\underline{u}_{\,i}-\underline{u})}_{\text{terme source de Q.D.M. dû \`{a} la source
-de masse}}- \underbrace {\rho\
-\tens{K}_{\,pdc} \underline {u}}_{\text{perte
-de charge}} + \underbrace { \underline{T}_{\,s}^{\,exp}+
-T_{s}^{\,imp}\ \underline{u}}_{\text{autres termes sources de
-Q.D.M.}}
+(\underline{u}_{\,i}-\underline{u})}_{\text{mass source term}}-
+\underbrace {\rho\
+\tens{K}_{\,pdc} \underline {u}}_{\text{head loss}} +
+\underbrace { \underline{T}_{\,s}^{\,exp}+
+T_{s}^{\,imp}\ \underline{u}}_{\text{other source terms}}
 \label{Base_Predvv_eqqdm}
 
 \end{array}
 \end{equation}
-avec $p$ d\'{e}finissant l'\'{e}cart \`{a} la pression hydrostatique de r\'ef\'erence (la
-pression hydrostatique r\'eelle \'etant calcul\'ee avec la masse volumique $\rho$
-et non $\rho_{\,0}$) :
+with $p$ denoting the difference in pressure relative to the reference hydrostatic
+pressure (the real hydrostatic pressure being calculated with the density
+$\rho$ and not with $\rho_{\,0}$):
 \begin{equation}
 p=p^*-\rho_{\,0}\ \underline{g}\,.\,\underline{X}
 \end{equation}
-(\underline{X} \'etant le vecteur de composantes $x$, $y$ et $z$).\\
-$\mu_t$, $\tens{K}_{\,pdc}$, $\underline{u}_{\,i}$ repr\'esentent respectivement
-la viscosit\'{e} dynamique turbulente, le tenseur des pertes de charge et la valeur de la variable associ\'{e}e \`{a} la source de
-masse.\\
-La divergence du tenseur des contraintes de Reynolds s'\'ecrit :
+(\underline{X} being the vector of components $x$, $y$ and $z$).\\
+$\mu_t$, $\tens{K}_{\,pdc}$, $\underline{u}_{\,i}$ represent respectively
+the turbulent dynamic viscosity, the tensor related to head losses and the value of the
+variable associated with the mass source.\\
+The divergence of the Reynolds stress tensor is expressed by:
 \begin{equation}
 -\dive{(\rho\,\tens{R})}=
 \begin{cases}
-\vect{0} & \text{en laminaire}, \\
- -\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u}))-\frac {2}{3}\,\grad (\rho\, k) & \text{pour les mod\`{e}les}\\
- & \text{\`{a} viscosit\'{e} turbulente}, \\
- -\dive(\rho\,\tens{R})& \text{pour les mod\`{e}les}\\
- & \text{au second ordre},\\
--\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u})) & \text{en  LES}\\
+\vect{0} & \text{in laminar}, \\
+ -\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u}))-\frac {2}{3}\,\grad (\rho\, k) & \text{for turbulent}\\
+ & \text{viscosity}, \\
+ -\dive(\rho\,\tens{R})& \text{for second-order}\\
+ & \text{models},\\
+-\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u})) & \text{in  LES}\\
 \end{cases}
 \end{equation}
-Le terme source de masse fait intervenir la vitesse locale $\underline {u}$ et
-aussi une vitesse $\underline {u}_{\,i}$ associ\'ee \`a la masse inject\'ee (ou retir\'ee).
-Lorsque $\Gamma<0$, on \^ote de la masse au syst\`eme et on a donc
-$\underline{u}_{\,i} = \underline{u}$. Le terme est nul (\emph{i.e.} $\Gamma
-(\underline{u}_{\,i}-\underline{u})= \underline{0} $). Quand $\Gamma>0$, on a un
-terme non nul si $\underline{u}_{\,i} \ne \underline{u}$.
-Dans ce sous-programme, tous les termes intervenant dans
-l'\'{e}quation de conservation de la
-quantit\'{e} de mouvement, except\'{e} les termes de convection et diffusion, sont
-calcul\'{e}s et transmis au sous-programme \fort{codits} qui r\'{e}sout l'\'{e}quation compl\`{e}te
-(convection-diffusion avec termes sources).
+The mass source term involves terms corresponding to the local velocity field
+$\underline {u}$ as well as a velocity field $\underline {u}_{\,i}$
+associated with the mass injected (or extracted). When $\Gamma<0$, we remove mass from the system thereby
+obtaining $\underline{u}_{\,i} = \underline{u}$. The mass term is zero (\emph{i.e.} $\Gamma
+(\underline{u}_{\,i}-\underline{u})= \underline{0} $). When $\Gamma>0$, a non-zero
+mass term if $\underline{u}_{\,i} \ne \underline{u}$.
+All terms appearing in the conservation of momentum equation, apart from
+the convection and diffusion terms, are computed in this subroutine and
+transmitted to the
+subroutine \fort{codits} which solves the full equation (convection-diffusion with source terms).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Le terme convectif en $\dive(\underline{u} \otimes \rho\,\underline{u})$
-introduit une non lin\'earit\'e et un couplage des composantes de la vitesse
-$\vect{u}$ dans l'\'{e}quation (\ref{Base_Predvv_eqqdm}). Une lin\'earisation et un d\'ecouplage
-des trois composantes de la
-vitesse sont r\'ealis\'es lors de la discr\'etisation de cette \'etape de
-pr\'ediction.\\
-En effet, soit :
+The convective term in $\dive(\underline{u} \otimes \rho\,\underline{u})$
+introduces a nonlinearity and coupling of the components of the velocity
+$\vect{u}$ in the equation (\ref{Base_Predvv_eqqdm}). The three velocity
+components are linearized and decoupled during discretization of the momentum
+equation in this prediction step.\\
+For instance, taking:
 \begin{equation}
 \vect{\widetilde{u}}= \vect{u}^n + \delta \vect{u}
 \end{equation}
-La contribution exacte du terme convectif \`a prendre en compte dans cette
-\'etape de pr\'ediction serait :\\
+The exact contribution of the convective term to take into account in the prediction step would be:
 \begin{equation}\label{Base_Predvv_Conv_exact}
 \begin{array}{ll}
 \dive(\vect{\widetilde{u}} \otimes \rho\,\vect{\widetilde{u}}) =
 \dive(\vect{u}^{n} \otimes \rho\,\vect{u}^{n}) + \dive(\delta \vect{u} \otimes
 \rho\,\vect{u}^{n}) +  \underbrace { \dive(\vect{u}^{n} \otimes
-\rho\,\delta \vect{u})}_{\text {terme couplant lin\'eaire}} +  \underbrace { \dive(\delta \vect{u} \otimes
-\rho\,\delta \vect{u})}_{\text {terme couplant et non lin\'eaire}}\\
+\rho\,\delta \vect{u})}_{\text {linear coupling term}} +  \underbrace { \dive(\delta \vect{u} \otimes
+\rho\,\delta \vect{u})}_{\text {nonlinear coupling term}}\\
 \end{array}
 \end{equation}
-Les deux derniers termes de l'expression (\ref{Base_Predvv_Conv_exact}) sont {\em a priori} n\'{e}glig\'{e}s
-de mani\`{e}re \`{a} obtenir un syst\`eme en vitesse qui soit d\'ecoupl\'e et donc,
-\'{e}viter l'inversion d'une matrice pouvant \^etre de tr\`es grande taille. Ces
-deux termes peuvent n\'{e}anmoins être pris en compte de mani\`{e}re plus ou moins
-approch\'{e}e par extrapolation explicite du flux de masse en $n+\theta_F$ (pour le
-terme couplant lin\'{e}aire provenant de la convection de $\vect{u}^{n}$ par $\delta
-\vect{u}$) et utilisation d'un point-fixe par sous it\'{e}ration sur le sous
-programme \fort{navstv} (pour le terme non-lin\'{e}aire, en sp\'{e}cifiant $\var{NTERUP}>1$).
+The last two terms of the expression (\ref{Base_Predvv_Conv_exact}) are {\em a priori} neglected
+so as to obtain a velocity system that is decoupled and thereby avoid the
+inversion of a potentially very large matrix. These two terms can
+nevertheless be taken into account in an approximate manner by explicit
+extrapolation of the mass flux in $n+\theta_F$ (for the linear coupling term
+arising from the convection of $\vect{u}^{n}$ by $\delta \vect{u}$) and by
+applying a fixed-point subiteration over the subroutine \fort{navstv} (for
+the nonlinear term) implemented by specifying  $\var{NTERUP}>1$.
 
-L'\'{e}quation (\ref{Base_Predvv_eqqdm}) est discr\'{e}tis\'{e}e au temps $n+\theta$ \`{a} l'aide d'un
-$\theta$-sch\'{e}ma, et le tenseur des pertes de charges d\'{e}compos\'{e} en une partie
-diagonale $\tens{K}_{d}$ et une extradiagonale $\tens{K}_{e}$ (soit
+The equation (\ref{Base_Predvv_eqqdm}) is discretized at the time level
+$n+\theta$ using a $\theta$-scheme and the tensor of velocity head losses
+decomposed into the sum of its diagonal $\tens{K}_{d}$ and extra diagonal $\tens{K}_{e}$ terms (such that
  $\tens{K}_{pdc}=\tens{K}_{d}+\tens{K}_{e}$).\\
-$\bullet$ La pression est suppos\'{e}e connue en $n-1+\theta$ (d\'{e}calage temporel
-pression-vitesse) et le gradient naturellement calcul\'{e} \`{a} cet instant.\\
-$\bullet$ Les termes sources de viscosit\'{e} secondaire, de gradient transpos\'e,
-ceux provenant du mod\`{e}le de turbulence\footnote{except\'{e} $\dive (\mu_t\ (\ggrad
+$\bullet$ The pressure is assumed to be known at the point in time $n-1+\theta$
+(pressure/velocity time lag) and the gradient evidently calculated at this instant.\\
+$\bullet$ The secondary viscosity and the gradient transpose source terms,
+those coming from the turbulence model\footnote{with the exception of $\dive (\mu_t\ (\ggrad
 \underline {u}))$}, $\rho\,\tens{K}_{\,e}\ \underline{u}$, $(\rho -\rho_0)
-\underline {g}$ ainsi que $\underline{T}_{s}^{\,exp}$ et
-$\Gamma\,\underline{u}_{\,i}$ sont pris de mani\`{e}re explicite au temps $n$, ou
-extrapol\'{e}s suivant le sch\'{e}ma en temps choisi pour les propri\'{e}t\'{e}s physique et les
-termes sources.\\
-$\bullet$ Les termes sources $\underline{u}\,\,\dive (\rho\,\underline {u})$,
-$\Gamma\,\,\underline{u}$, $T_{s}^{\,imp}\,\,\underline{u}$ et
-$-\rho\,\tens{K}_{\,d}\,\,\underline{u}$ sont implicit\'{e}s est calcul\'{e}s \`{a}
-l'instant $n+\theta$.\\
-$\bullet$ Le terme de diffusion $\dive (\mu_{\,tot}\,\ggrad \underline{u})$ est
-implicit\'{e} : la vitesse est prise \`{a} l'instant $n+\theta$ et la viscosit\'{e}
-explicit\'{e}e ou extrapol\'{e}e.\\
-$\bullet$ Enfin, le terme de convection en $\dive(\,\underline{u} \otimes
-(\rho\underline{u})\,)$ est implicit\'{e} : la composante r\'{e}solue de la vitesse est
-prise en $n+\theta$, et le flux de masse, explicit\'{e}, ou extrapol\'{e} en
+\underline {g}$ as well as $\underline{T}_{s}^{\,exp}$ and
+$\Gamma\,\underline{u}_{\,i}$ are evaluated explicitly at time $n$ or else
+extrapolated according to the time scheme selected for the physical properties and the
+source terms.\\
+$\bullet$ The source terms $\underline{u}\,\,\dive (\rho\,\underline {u})$,
+$\Gamma\,\,\underline{u}$, $T_{s}^{\,imp}\,\,\underline{u}$ and
+$-\rho\,\tens{K}_{\,d}\,\,\underline{u}$ are implicit and calculated at
+instant $n+\theta$.\\
+$\bullet$ The diffusion term  $\dive (\mu_{\,tot}\,\ggrad \underline{u})$ is implicitized: the velocity is taken at the instant $n+\theta$ and the viscosity either explicitized or extrapolated.\\
+$\bullet$ Lastly, the convection term in $\dive(\,\underline{u} \otimes
+(\rho\underline{u})\,)$ is treated implicitly: the resolved velocity
+component is
+taken at $n+\theta$ and the mass flux determined explicitly or extrapolated
+at
 $n+\theta_F$.
 
-Par souci de clart\'{e}, on suppose, en l'absence d'indication, que les propri\'{e}tes
-physiques $\Phi$ ($\rho,\,\mu_{tot},\,...$) et le flux de masse
-$(\rho\underline{u})$ sont pris respectivement aux instants $n+\theta_\Phi$ et
-$n+\theta_F$, o\`{u} $\theta_\Phi$ et $\theta_F$ d\'{e}pendent des sch\'{e}mas en temps
-sp\'{e}cifiquement utilis\'{e}s pour ces grandeurs\footnote{cf. \fort{introd}}.
+For clarification, unless explicitly stated otherwise the physical properties
+$\Phi$ ($\rho,\,\mu_{tot},\,...$) and the mass flux $(\rho\underline{u})$
+are  to be evaluated respectively at time steps $n+\theta_\Phi$ and
+$n+\theta_F$, with $\theta_\Phi$ and $\theta_F$ dependent upon the specific
+time schemes selected for these quantities\footnote{cf. \fort{introd}}.
 
-La discr\'{e}tisation temporelle de l'\'{e}quation (\ref{Base_Predvv_eqqdm}) s'\'{e}crit alors comme suit :
+The time-discrete form of the momentum equation (\ref{Base_Predvv_eqqdm}) then reads:
 
 \begin{equation}\label{Base_Predvv_eq_di1}
  \begin{array}{c}
@@ -222,44 +216,43 @@ La discr\'{e}tisation temporelle de l'\'{e}quation (\ref{Base_Predvv_eqqdm}) s'\
 \end{array}
 \end{array}
 \end{equation}
-o\`u, par souci de simplification, on a pos\'e :
+where, for simplification, the following definitions have been set:
 \begin{equation}
 \mu_{\,tot}=
 \begin{cases}
-\mu+\mu_t & \text{pour les mod\`{e}les \`{a} viscosit\'{e} turbulente ou en LES}, \\
-\mu & \text{pour les mod\`{e}les au second ordre ou en laminaire}
+\mu+\mu_t & \text{for turbulent viscosity or LES models}, \\
+\mu & \text{for second order models or in laminar regimes}
 \end{cases} \
 \end{equation}
 \\
-et :
+and:
 \begin{equation}
 \underline{turb}^{n}=
 \begin{cases}
-\displaystyle\frac {2}{3}\grad (\rho^{n}\,k^{n}) & \text{pour les mod\`{e}les \`{a} viscosit\'{e} turbulente}, \\
-\dive(\rho^{n}\,\tens{R}^n) & \text{pour les mod\`{e}les au second ordre},\\
-0 & \text{en laminaire ou en LES}\\
+\displaystyle\frac {2}{3}\grad (\rho^{n}\,k^{n}) & \text{for turbulent viscosity models}, \\
+\dive(\rho^{n}\,\tens{R}^n) & \text{for second order models},\\
+0 & \text{in laminar or LES}\\
 \end{cases}
 \end{equation}
-Par analogie avec l'\'{e}criture du $\theta$-sch\'{e}ma pour une variable scalaire, $\,
-\underline {\widetilde{u}}^{n+\theta}$ est interpol\'{e}e \`{a} partir de la vitesse
-pr\'{e}dite $\underline {\widetilde{u}}^{n+1}$ de la mani\`ere suivante\footnote{si
-$\theta=1/2$, ou qu'une extrapolation est utilis\'{e}e, l'ordre 2 n'est obtenu que si
-le pas de temps $\Delta t$ est uniforme en temps et en espace.}~:
+By analogy with the $\theta$-scheme equation for a scalar variable, $\,
+\underline {\widetilde{u}}^{n+\theta}$ is interpolated from the predicted velocity
+$\underline {\widetilde{u}}^{n+1}$ in the following manner\footnote{if
+$\theta=1/2$, or a time extrapolation is used, second-order is only obtained provided the time step $\Delta t$ is constant and spatially uniform.}~:
 \begin{equation}
 \underline {\widetilde{u}}^{n+\theta}=\theta\, \underline
 {\widetilde{u}}^{n+1}+(1-\theta)\, \underline {u}^{n}\\
 \end{equation}
-Avec :
+With:
 \begin{equation}
 \left\{
 \begin{array}{ll}
-\theta = 1   & \text{Pour un sch\'ema de type Euler implicite d'ordre 1.}\\
-\theta = 1/2 & \text{Pour un sch\'ema de type Cranck-Nicolson d'ordre 2.}\\
+\theta = 1   & \text{For a first-order implicit Euler scheme.}\\
+\theta = 1/2 & \text{For a second-order Crank-Nicolson scheme.}\\
 \end{array}
 \right.
 \end{equation}
 
-L'\'{e}quation (\ref{Base_Predvv_eq_di1}) est alors r\'{e}\'{e}crite sous la forme :
+Using the above interpolation function, (\ref{Base_Predvv_eq_di1}) is then rewritten in the following form:
 
 \begin{equation}\label{Base_Predvv_eq_di2}
 \begin{array}{c}
@@ -285,7 +278,7 @@ f_s^{exp}\left\{
 \end{array}
 \end{equation}
 
-d'o\`{u} l'\'{e}quation r\'{e}solue par le sous-programme \fort{codits} :
+from which the equation solved by the subroutine \fort{codits} is obtained:
 \begin{equation}\begin{array}{c}
 \displaystyle
 f_s^{\,imp}(\underline {\widetilde{u}}^{n+1}-\underline {u}^{n}) + \theta\, \dive(\underline{\widetilde{u}}^{n+1} \otimes (\rho
@@ -296,357 +289,238 @@ f_s^{\,imp}(\underline {\widetilde{u}}^{n+1}-\underline {u}^{n}) + \theta\, \div
 + \underline{f}_{\,s}^{\,exp}
 \end{array}
 \end{equation}
-La m\'ethode de discr\'etisation spatiale est d\'evelopp\'ee dans le sous-programme \fort{codits}.\\
+The spatial discretization scheme is elaborated further in the section relating to the subroutine \fort{codits}.\\
 
 
 
-\minititre{Remarques :}
-{\tiny$\blacksquare$} Dans le cas standard sans extrapolation, le terme
-$-\,T_s^{\,imp}$ n'est ajout\'{e} \`{a} $f_s^{\,imp}$ que s'il est positif afin de ne
-pas affaiblir la dominance de la diagonale de la matrice \`{a} inverser.\\
-{\tiny$\blacksquare$} Si une extrapolation est utilis\'{e}e, par contre,
-$\,T_s^{\,imp}$ est ajout\'{e} \`{a} $f_s^{\,imp}$ quel que soit son signe. En effet, l'id\'{e}e intuitive qui
-consiste \`{a} prendre~:
+\minititre{Remarks:}
+{\tiny$\blacksquare$} In the standard case without extrapolation, the term
+$-\,T_s^{\,imp}$ is only added to the coefficient $f_s^{\,imp}$ if it is positive so as not to weaken
+the diagonal dominance of the matrix to invert.\\
+{\tiny$\blacksquare$} If, on the other hand, an extrapolation is used,
+$\,T_s^{\,imp}$ is added to $f_s^{\,imp}$ whatever its sign. In effect, the intuitive idea which consists of taking:
 \begin{equation}
 \begin{cases}
 \displaystyle
 (\underline{T}_{s}^{\,exp} + T_{s}^{\,imp}\,\underline {u})^{\,n+\theta_S} &
-\text{si } T_{s}^{\,imp} > 0\\
+\text{if } T_{s}^{\,imp} > 0\\
 \displaystyle
-(\underline{T}_{s}^{\,exp})^{\,n+\theta_S} + T_{s}^{\,imp}\,\underline{u}^{n+\theta} &\text{sinon}\\
+(\underline{T}_{s}^{\,exp})^{\,n+\theta_S} + T_{s}^{\,imp}\,\underline{u}^{n+\theta} &\text{if not}\\
 \end{cases}
 \end{equation}
-aboutit \`{a} une incoh\'{e}rence dans le traitement si $T_s^{imp}$ change de signe
-entre deux pas de temps.\\
-{\tiny$\blacksquare$} la partie diagonale $\tens{K}_{\,d}$ du terme
-de perte de charge est utilis\'{e}e dans $f_s^{\,imp}$. En fait, pour \^etre rigoureux,
-il faudrait ne retenir que les contributions positives (point signal\'e dans le
-sous-programme utilisateur associ\'e \fort{cs\_user\_head\_losses.f90}). Cette prise en compte sera \`a am\'eliorer.\\
-{\tiny$\blacksquare$} Le terme $\theta\,\Gamma^{n}-\theta\,\dive
-(\rho\,\underline {u})$ ne pose pas de probl\`{e}me pour la
-dominance de la diagonale de la matrice car il est exactement compens\'{e} par le
-terme de convection (cf. \fort{covofi}).
+leads to inconsistency (loss of coherence) in the numerical treatment of the problem should $T_s^{imp}$ changes sign between two time steps.\\
+{\tiny$\blacksquare$} The diagonal part $\tens{K}_{\,d}$ of the head loss tensor term is used in $f_s^{\,imp}$. Strictly speaking, only the positive contributions should in fact be retained (as pointed out in the associated user subroutine \fort{uskpdc}). The  approach currently in use requires improvement.\\
+{\tiny$\blacksquare$} The term $\theta\,\Gamma^{n}-\theta\,\dive
+(\rho\,\underline {u})$ is not problematic for the diagonal dominance of the matrix as it is exactly counterbalanced by the convection term (cf. \fort{covofi}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Mise en \oe uvre}
+\section*{Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-L'\'{e}quation de conservation de la quantit\'{e} de mouvement est donc r\'{e}solue de façon
-d\'{e}coupl\'{e}e. Ainsi, l'int\'{e}gration des diff\'{e}rents termes a \'{e}t\'{e} effectu\'{e}e afin de
-traiter s\'{e}par\'{e}ment l'\'{e}quation obtenue pour chaque composante de la vitesse.\\
-Dans le sous-programme \fort{predvv}, on calcule pour chaque
-composante le second membre $f_s^{exp}$ du syst\`{e}me  (\ref{Base_Predvv_eq_di2}), les termes implicites du syst\`{e}me (\`{a} l'exception des termes de convection-diffusion), et le terme de viscosit\'{e} totale aux faces internes\footnote{valeur n\'{e}cessaire pour l'int\'{e}gration du terme de diffusion dans \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} et de
-bord. Ces termes sont alors transmis au sous-programme \fort{codits} qui construit et
-r\'{e}sout le syst\`{e}me complet obtenu pour chaque composante de la vitesse avec les termes de convection-diffusion.
+The conservation of momentum equation is solved in a decoupled manner. The integration of the different terms has therefore been carried out in order to treat separately the equations obtained for each component of the velocity.\\
+For each of these components, the second member $f_s^{exp}$ of the system  (\ref{Base_Predvv_eq_di2}), the implicit terms of the system (with the exception of the convection-diffusion terms) and the term representing the total viscosity at the  internal\footnote{value required for the integration of the diffusion term in \fort{codits}, $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$} and boundary faces is calculated in the subroutine \fort{predvv}. These terms are then transmitted to the subroutine \fort{codits} which constructs and then solves the resulting complete system of equations, with the convection-diffusion terms, for each component of the velocity.
 \\\\
-Le r\'esidu de normalisation pour la r\'esolution du syst\`eme en pression (\fort{resopv}) est calcul\'e dans
-\fort{predvv}. Il est d\'efini par la norme de la
-grandeur  $$\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta t \grad{P^{n-1+\theta}})-\Gamma$$
-int\'egr\'ee sur chaque cellule \var{IEL} du maillage ($\Omega_{iel}$) soit, symboliquement, par la racine carr\'ee de la
-somme sur les cellules du maillage de la quantit\'e
+The normalized residual for convergence of the solution of the system for the pressure correction (\fort{resopv}) is calculated in
+\fort{predvv}. It is defined as the norm of magnitude
+  $$\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta t \grad{P^{n-1+\theta}})-\Gamma$$
+integrated over each cell \var{IEL} of the mesh ($\Omega_{iel}$) or, symbolically, as the square root of the sum over the mesh cells of the quantity
 \begin{center}
 \var{XNORMP(IEL)}=
 $\int\limits_{\Omega_{iel}}[{\dive(\rho\,\widetilde{\vect{u}}^{n+1}+\Delta\,t\,\grad{P^{n-1+\theta}})
 -\Gamma\,]\,d\Omega}$.
 \end{center}
 
-Il repr\'esente le second membre du syst\`eme qui porterait sur la pression si
-le gradient de pression n'\'etait pas pris en compte lors de l'\'etape de pr\'ediction des vitesses. On note que si l'on utilisait directement le second membre de
-l'\'equation portant sur l'incr\'ement de pression, on obtiendrait, pour un calcul
-stationnaire men\'e \`a convergence, un r\'esidu de normalisation tendant vers z\'ero, ce qui serait p\'enalisant et
-peu utile.
+It represents the second member of the equation system that would be solved for the pressure if the pressure gradient were not taken into account in the velocity prediction step. Note that, if the second member of the pressure increment equation were to be used directly, a normalized residual tending to zero would be obtained for a stationary calculation that had been run to convergence. This result would be penalizing and of little use for the computations.
 
-Au d\'ebut de \fort{predvv}, on ne dispose pas encore de $\widetilde{\vect{u}}^{n+1}$
-et il n'est donc pas possible de calculer le r\'esidu de normalisation en
-totalit\'e. Cependant, le calcul du r\'esidu complet \`a la fin de \fort{predvv}
-n'est pas souhaitable non plus, car on devrait alors  monopoliser un tableau de
-travail pour conserver le gradient de pression tout au long de \fort{predvv}.
-Le calcul du r\'esidu de normalisation est donc r\'ealis\'e en deux fois.
+At the start of \fort{predvv}, $\widetilde{\vect{u}}^{n+1}$ is not yet available and it is not possible therefore to calculate the total normalized residual. On the other hand, calculating the total residual at the end of \fort{predvv} is undesirable as this would require monopolising a working array to store the pressure gradient for the duration of the subroutine \fort{predvv}.
+The calculation of the normalized residual is therefore carried out in two stages.
 
-La quantit\'e $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ est calcul\'ee au d\'ebut de \fort{predvv} et on y ajoute le compl\'ement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ \`a la fin de \fort{predvv}.
+The quantity $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ is calculated at the beginning of \fort{predvv} and the complement $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ added at the end of \fort{predvv}.
 
-On calcule donc tout d'abord le gradient de pression aux cellules \`a l'instant
-$n-1+\theta$ par un appel \`a \fort{grdcel}. On utilise alors \fort{inimas} pour
-\'evaluer $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ aux faces (de surface $S$ et de normale $\vect{n}$). Pour cela, en entr\'ee de \fort{inimas} , le tableau de travail \var{TRAV} contient $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$~; en sortie, les tableaux \var{VISCF} et \var{VISCB} contiennent la valeur de $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ aux faces internes et de bord respectivement.
+The pressure gradient at the cells is thus first computed at instant $n-1+\theta$ by a call to \fort{grdcel}. The subroutine \fort{inimas} is then used to evaluate $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the faces (of surface $S$ and normal $\vect{n}$). On entry into \fort{inimas}, the working array \var{TRAV} contains $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$; when exiting this subroutine, the \var{VISCF} and \var{VISCB} arrays contain the value of $\Delta\,t\,S\,\grad{P^{n-1+\theta}}\cdot\vect{n}$ at the internal and boundary faces respectively.
 
-On utilise ensuite \fort{divmas} qui place alors dans \var{XNORMP} la valeur de $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$ aux cellules
-\`a partir des tableaux \var{VISCF} et \var{VISCB}.
+We then use \fort{divmas} takes the value of $\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$ at the cells from the contents of \var{VISCF} and \var{VISCB} and places it into the array \var{XNORMP}.
 
-On ajoute enfin \`a \var{XNORMP} la contribution $\int\limits_{\Omega_{iel}}{ -\Gamma^{n} d\Omega}$ du terme source de masse.
+Lastly, the contribution $\int\limits_{\Omega_{iel}}{ -\Gamma^{n} d\Omega}$ of the mass source term is added to \var{XNORMP}.
 
-On applique pour $\rho\,\widetilde{\vect{u}} + \Delta t \grad{P}$ les conditions
-aux limites de la vitesse. Les conditions aux limites utilis\'{e}es pour le gradient
-de pression (ou
-plut\^ot pour $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) pour le calcul de
-$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$
-sont donc les conditions aux limites de la vitesse homog\'en\'eis\'ees~: ainsi,
-on suppose
-que dans la direction normale aux entr\'ees et aux parois, le gradient de
-pression (ou plut\^ot $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) est nul
-et que dans la direction normale aux sym\'etries et aux sorties, il reste
-inchang\'e.
+For $\rho\,\widetilde{\vect{u}} + \Delta t \grad{P}$, we apply the velocity boundary conditions. For the computation of
+$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$, the boundary conditions for the pressure gradient (or more precisely for $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) are therefore the homogenized boundary conditions of the velocity. The pressure gradient (or rather $\frac{\Delta\,t}{\rho}\,\grad{P^{n-1+\theta}}$) is consequently assumed to be zero normal to the walls and the inlets and to remain constant in the direction normal to symmetries and to the outlets.
 
-De plus, pour gagner du temps calcul lors du passage par \fort{inimas},
-on se contente, sur les maillages non orthogonaux,
-d'une \'evaluation des valeurs aux faces \`a l'ordre 1 en espace (pas de
-reconstruction~: \var{NSWRP=1}). En effet, on cherche \`a \'evaluer un simple
-r\'esidu de normalisation global~: la pr\'ecision locale n'a donc pas
-d'int\'er\^et.
+In addition, to save computation time when passing through \fort{inimas}, the face values on non-orthogonal meshes are evaluated merely to first-order accuracy in space (no reconstruction: \var{NSWRP=1}). Local accuracy is moreover of no particular interest as the aim here is simply to determine a normalized global residual.
 
-Le calcul du r\'esidu sera compl\'et\'e \`a la fin de \fort{predvv}.
+The computation of the residual will be completed at the end of \fort{predvv}.
 
 
-\etape{Calcul en partie du r\'esidu de normalisation pour l'\'etape de pression}
+\etape{Partial calculation of the normalized residual for the pressure step}
 
-Dans cette premi\`{e}re \'{e}tape on calcule dans le tableau \var{XNORMP(NCELET)} la
-grandeur $$\dive(\Delta t \,\grad{P^{n-1+\theta}})-\Gamma$$ int\'egr\'ee sur chaque cellule \var{IEL} du maillage ($\Omega_{iel}$)
-soit, symboliquement,
+During this first step, we use the array \var{XNORMP(NCELET)} to compute the quantity $$\dive(\Delta t \,\grad{P^{n-1+\theta}})-\Gamma$$ integrated over each cell \var{IEL} of the mesh ($\Omega_{iel}$), which is expressed as:
 $$\var{XNORMP(IEL)}=\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}})-\Gamma
 d\Omega}$$
-On r\'ealise cette op\'eration en utilisant successivement \fort{inimas}
-(calcul aux faces dans \var{VISCF} et \var{VISCB} de $\Delta t\,\grad{P^{n-1+\theta}}$ \`a
-partir du tableau de travail \var{TRAV}=$\frac{\Delta t}{\rho}
-\grad{P^{n-1+\theta}}$, assorti des conditions  aux limites de vitesse
-homog\`enes et sans reconstruction) et \fort{divmas} (calcul dans \var{XNORMP}
-de l'int\'egrale sur les cellules).  Par une simple boucle, on
-ajoute ensuite la contribution du terme source de masse $\Gamma$.
-Ce calcul est compl\'{e}t\'{e} \`a la fin de \fort{predvv}.\\
+This operation is carried out by successively implementing \fort{inimas}
+(calculation at the faces in \var{VISCF} and \var{VISCB} of $\Delta t\,\grad{P^{n-1+\theta}}$ using the contents of the working array \var{TRAV}=$\frac{\Delta t}{\rho} \grad{P^{n-1+\theta}}$ together with homogeneous velocity boundary conditions and without reconstruction) followed by \fort{divmas} (computation in \var{XNORMP} of the integral over the cells).  With a simple loop, we then add the mass source term contribution $\Gamma$.
+This calculation is completed at the end of \fort{predvv}.\\
 
-\etape{Calcul en partie du terme $\underline{f}_s^{\,exp}$}
+\etape{Partial calculation of the term $\underline{f}_s^{\,exp}$}
 
-Pour repr\'{e}senter le second membre correspondant \`{a} chaque composante de la
-vitesse, on utilise les tableaux \var{TRAV}(\var{IEL},\var{DIR}),
-\var{TRAVA}(\var{IEL},\var{DIR}) et \var{PROPCE},
-o\`{u} \var{IEL} est le num\'{e}ro de la cellule et \var{DIR} la direction (x, y,
-z). Quatre cas sont \`{a} consid\'{e}rer suivant que les termes sources sont extrapol\'{e}s
-en $n+\theta_S$, ou que l'on it\`{e}re par un point fixe sur le syst\`{e}me en
-vitesse-pression (\var{NTERUP}$>1$).
+To represent the second member corresponding to each component of the velocity, we use the arrays \var{TRAV}(\var{IEL},\var{DIR}), \var{TRAVA}(\var{IEL},\var{DIR}) and \var{PROPCE}, with \var{IEL} being the number of the cell and \var{DIR} the direction (x, y, z). Four cases need to be considered depending on whether or not the source terms are extrapolated at $n+\theta_S$ and whether or not a fixed-point iteration is implemented on the velocity-pressure system (\var{NTERUP}$>1$).
 \\
-$\bullet$ Si on extrapole les termes sources et que l'on it\`{e}re sur \fort{navstv}\\
+$\bullet$ If the source terms are extrapolated and we iterate over \fort{navstv}\\
 \begin{itemize}
-\item [-]\var{TRAV} reçoit les termes sources qui sont recalcul\'{e}s au cours de
-toutes les it\'{e}rations sur \fort{navstv} et qui ne sont pas extrapol\'{e}s
-($\grad{P^{n-1+\theta}}$ et $(\rho -\rho_0) \underline {g}$\footnote{en r\'{e}alit\'{e}
-$(\rho -\rho_0) \underline {g}$ ne change pas, mais il est rapide \`{a} calculer ce
-qui \'{e}vite d'avoir un traitement suppl\'{e}mentaire pour ce terme.}).\\
-\item [-]\var{TRAVA} reçoit les termes sources qui ne changent pas au cours des
-it\'{e}rations sur \fort{navstv} et qui ne sont pas extrapol\'{e}s
+\item [-]\var{TRAV} receives the source terms which are recomputed during each iteration over \fort{navstv} but are not extrapolated
+($\grad{P^{n-1+\theta}}$ and $(\rho -\rho_0) \underline {g}$\footnote{In reality, the value of
+$(\rho -\rho_0) \underline {g}$ doesn't change, however this is a computation and it avoids the need for additional treatment of this term.}).\\
+\item [-]\var{TRAVA} receives the source terms whose values do not change during the course of the iterations over \fort{navstv} nor are they extrapolated
 ($T_s^{imp}\,u^n\,,-\rho\,\tens{K}_{d}\,u^n\,,\,-\Gamma^n\,u^n,...$).\\
-\item [-]\var{PROPCE} reçoit les termes sources devant \^etre extrapol\'{e}s.\\
+\item [-]\var{PROPCE} receives the source terms that have to be extrapolated.\\
 \\
 \end{itemize}
-$\bullet$ Sans it\'{e}ration sur \fort{navstv}, \var{TRAVA} est inutile et son contenu est directement stock\'{e} dans \var{TRAV}.\\
+$\bullet$ When there is no iteration over \fort{navstv}, \var{TRAVA} has no use and its contents are directly stored in \var{TRAV}.\\
 \\
-$\bullet$ Sans extrapolation des termes sources, \var{PROPCE} est inutile et son contenu est directement stock\'{e} dans \var{TRAVA} (ou dans \var{TRAV} si \var{TRAVA} est inutile).\\
-Ainsi, sans extrapolation des termes sources, et sans it\'{e}ration sur \fort{navstv}, tout les termes sources vont directement dans \var{TRAV}.\\
+$\bullet$ If there is no source term extrapolation, \var{PROPCE} serves no purpose and its contents are directly stored in \var{TRAVA} (or in \var{TRAV} if \var{TRAVA} is also of no use).\\
+Therefore, when there is neither source term extrapolation nor iteration over \fort{navstv}, all the source terms go directly into \var{TRAV}.\\
 \\
 \begin{itemize}
-\item On dispose d\'ej\`a du gradient de pression sur les cellules \`a l'instant $n-1+\theta$. Le terme de gravit\'e est alors ajout\'{e} au vecteur \var{TRAV} qui contient d\'{e}j\`{a} le gradient de pression. Ainsi, on a par exemple pour la direction x :
+\item We already have a pressure gradient on the cells at the instant in time $n-1+\theta$. The gravity term is then added to the vector \var{TRAV} which already contains pressure gradient. This means we have, for example, for the direction x:
 \begin{equation}
 \var{TRAV}(\var{IEL},1) = |\Omega_{IEL}| (-\displaystyle (\frac {\partial p}
 {\partial x})_{\var{IEL}}+(\rho(\var{IEL})-\rho_0)g_x)
 \end{equation}
 
-\item Si une extrapolation des termes sources est utilis\'{e}e, le vecteur
-\var{TRAV} (ou \var{TRAVA}) reçoit \`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv},
-$-\theta_S$ fois la contribution au temps $n-1$ des termes sources devant \^etre
-extrapol\'{e}s\footnote{car
+\item If source term extrapolation is used, at the first iteration over \fort{navstv}, the vector \var{TRAV} (or \var{TRAVA}) receives $-\theta_S$ times the contribution at time $n-1$ of the source terms to be extrapolated\footnote{Because
 $(\underline{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\underline{T}_s^{exp})^n
--\,\theta_S\, (\underline{T}_s^{exp})^{n-1}$} (stock\'{e}e dans
-\var{PROPCE}). \var{PROPCE} est ensuite r\'{e}initialis\'{e} \`{a} z\'{e}ro de façon \`{a} pouvoir
-recevoir plus tard la contribution au pas de temps courant des termes sources qui
-sont extrapol\'{e}s.
+-\,\theta_S\, (\underline{T}_s^{exp})^{n-1}$} (stored in \var{PROPCE}). \var{PROPCE} is then reinitialised to zero so as to be able to receive afterwards the contribution at the current time step of the extrapolated source terms.
 
-\item Le terme correspondant au mod\`{e}le de turbulence n'est calcul\'{e} que lors de la premiere it\'{e}ration sur \fort{navstv} puis ajout\'{e} \`{a} \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapol\'{e}s, ou que l'on it\`{e}re sur \fort{navstv}.\\
+\item The value of the term corresponding to the turbulence model is only calculated during the first iteration over \fort{navstv} then added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated, and/or whether we iterate over \fort{navstv}.\\
 
-{\tiny$\blacksquare$} Mod\`{e}les \`{a} viscosit\'{e} turbulente :\\
-Si $\var{IGRHOK}=1$, alors on calcule $-\displaystyle \frac{2}{3}\ \rho\ \grad k$ (et non, comme on devrait,
-$-\displaystyle \frac{2}{3}\grad (\rho k)$) par  simplification
-(cf. paragraphe~\ref{Base_Predvv_section4}). Le gradient de $k$ est calcul\'{e} sur la cellule
-par le
-sous-programme \fort{grdcel}. \\
-Si $\var{IGRHOK}=0$, ce terme est suppos\'e \^etre implicitement pris en compte
-dans la pression.\\
-{\tiny$\blacksquare$} Mod\`{e}les  au second ordre :\\
-Le calcul du terme $-\dive(\rho \tens{R})$ s'effectue en deux temps. Tout
-d'abord, on appelle le sous-programme \fort{divrij} qui projette le vecteur
-$\tens{R}.\underline{e}_{\var{DIR}}$ aux faces, pour la direction \var{DIR}. Puis, on
-appelle le sous-programme \fort{divmas} qui en calcule la divergence.\\
+{\tiny$\blacksquare$} Turbulent viscosity models:\\
+If $\var{IGRHOK}=1$, then we calculate $-\displaystyle \frac{2}{3}\ \rho\ \grad k$ (and not, as should be the case,
+$-\displaystyle \frac{2}{3}\grad (\rho k)$) by way of simplification
+(cf. paragraph~\ref{Base_Predvv_section4}). The gradient of the turbulent kinetic energy $k$ is computed on the cell by the subroutine \fort{grdcel}. \\
+If $\var{IGRHOK}=0$, this term is expected to be implicitly taken into account in the pressure.\\
+{\tiny$\blacksquare$} Second order models:\\
+Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A call is first made to the subroutine \fort{divrij}, which projects the vector $\tens{R}.\underline{e}_{\var{DIR}}$ onto the cell faces along the direction \var{DIR}, following which we then call the subroutine \fort{divmas} to compute the divergence.\\
 \linebreak
-\item Les termes de viscosit\'{e} secondaire $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \underline\,{u})$ et de gradient
-transpos\'{e} $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ sont calcul\'{e}s (s'ils sont pris en compte \emph{i.e.} \var{IVISSE} = 1. Il ne sont calcul\'{e}s qu'\`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}. Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de travail lors de l'appel au sous-programme \fort{visecv}. Il retrouve sa valeur \`{a} la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs \var{W7} \`{a} \var{W9}.
+\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \underline\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{navstv}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
 \\
-\item Les termes correspondant aux pertes de charges ($\rho \tens{K}_{\,pdc}
-{u}$), s'ils existent (\ $\var{NCEPDP}> 0$\ ), sont calcul\'{e}s par le
-sous-programme \fort{tspdcv} \`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}. Ils sont
-d\'{e}compos\'{e}s en deux parties :\\
-{\tiny$\blacksquare$} Une premi\`{e}re, correspondant \`{a} la contribution des termes
-diagonaux ($-\rho\,\tens{K}_{\,d}\underline{u}$) qui n'est pas extrapol\'{e}e.\\
-{\tiny$\blacksquare$} Une seconde, correspondant aux  termes extradiagonaux
-($-\rho\,\tens{K}_{\,e}\underline{u}$) qui peut l'\^etre ou non.\\
-Au cours de cette \'{e}tape, le tableau \var{TRAV} est utilis\'{e} comme tableau de
-travail lors de l'appel au sous-programme \fort{tspdcv}. Il retrouve sa valeur \`{a}
-la fin de cet appel, son contenu \'{e}tant temporairement stock\'{e} dans les vecteurs
-\var{W7} \`{a} \var{W9}.
+\item The terms corresponding to the velocity head losses ($\rho \tens{K}_{\,pdc}
+{u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{tspdcv} at the first iteration over \fort{navstv}. They are decomposed into two parts:\\
+{\tiny$\blacksquare$} The first part, corresponding to the contribution of the diagonal terms ($-\rho\,\tens{K}_{\,d}\underline{u}$), is not extrapolated.\\
+{\tiny$\blacksquare$} The second, which corresponds to the extra diagonal terms
+($-\rho\,\tens{K}_{\,e}\underline{u}$), may or may not be extrapolated.\\
+During this step, the array \var{TRAV} is used as a working array while the call is being made to the subroutine \fort{tspdcv}. It reverts to its normal value at the end of this call, its contents having been meanwhile stored in the vectors \var{W7} to \var{W9}.
 
 \end{itemize}
 
-\etape{Calcul du terme de viscosit\'{e} aux faces
+\etape{Calculation of the viscosity term at the faces
 $\displaystyle(\mu_{\,tot})_{ij}\frac{\var{SURFN}}{\var{DIST}}$}
-Le calcul du terme de viscosit\'{e} totale aux faces est effectu\'{e} par le
-sous-programme \fort{viscfa} et stock\'{e} dans les tableaux \var{VISCF} et
-\var{VISCB} pour les faces internes et faces de bord respectivement.\\
-Lors de l'int\'{e}gration des termes de convection-diffusion dans le sous-programme
-\fort{codits}, on distingue les termes non reconstruits, int\'egr\'es dans la
-matrice $\tens{EM}$ , de l'ensemble des termes (non reconstruits +
-gradients de reconstruction) associ\'es \`a l'op\'erateur $\mathcal{E}$ (non
-lin\'eaire)\footnote{ par coh\'erence avec les op\'erateurs $\mathcal{EM}$ et $\mathcal{E}$ d\'efinis dans \fort{navstv} }.
-De la même mani\`{e}re, on distingue la viscosit\'{e} totale aux faces utilis\'{e}e dans
-$\mathcal{E}$, tableaux \var{VISCF} et \var{VISCB}, de la viscosit\'{e} totale aux
-faces utilis\'{e}e dans $\tens{EM}$, tableaux \var{VISCFI} et
-\var{VISCBI}.\\
-Pour les mod\`{e}les \`{a} viscosit\'{e} turbulente et en LES, ces deux tableaux sont identiques et contiennent $\mu_t+\mu$.
-Pour les mod\`{e}les au second ordre, ils contiennent normalement $\mu$, mais pour des simples raisons de stabilit\'{e}
-num\'{e}rique, on peut choisir de mettre $\mu_t+\mu$ dans la matrice (\textit{i.e.} dans $\tens{EM}$) en
-conservant $\mu$ au second menbre (\textit{i.e.} dans $\mathcal{E}$). De par la r\'{e}solution par incr\'{e}ments, cette
- manipulation ne change pas le r\'{e}sultat. Cette option est activ\'{e}e par l'indicateur $\var{IRIJNU}\ =\ 1$\\
-Si la vitesse n'est pas diffus\'{e}e (\ \var{IDIFF}(\var{IUIPH})\ $<$\ 1), alors les termes \var{VISCF} et \var{VISCB} sont mis \`{a} z\'{e}ro.
+The calculation of the total viscosity term at the faces is performed by the subroutine \fort{viscfa} and the solutions stored in the arrays \var{VISCF} and \var{VISCB} for the internal and boundary faces respectively.\\
+During integration of the convection-diffusion terms in the subroutine \fort{codits}, the non-reconstructed terms, integrated in the matrix $\tens{EM}$, are singled out from the full set of terms (unreconstructed +
+reconstruction gradients) associated to the operator $\mathcal{E}$ (nonlinear)\footnote{ Ensuring coherence with the definition of the operators $\mathcal{EM}$ and $\mathcal{E}$ employed in \fort{navstv} }.
+Likewise, we differentiate between the total viscosity at the faces used in $\mathcal{E}$, arrays \var{VISCF} and \var{VISCB}, and the total viscosity at the faces employed in $\tens{EM}$, arrays \var{VISCFI} and \var{VISCBI}.\\
+For turbulent viscosity models and in LES, these two arrays are identical and contain $\mu_t+\mu$.
+For second order models, they normally contain $\mu$ however, for the simple reason of numerical stability, we can choose to put $\mu_t+\mu$ in the matrix (\textit{i.e.} in $\tens{EM}$) while keeping $\mu$ in the second member (\textit{i.e.} in $\mathcal{E}$). Because the solution is obtained by increments, this manipulation doesn't change the result. This option is activated by the indicator $\var{IRIJNU}\ =\ 1$\\
+When there is no diffusion of the velocity (\ \var{IDIFF}(\var{IUIPH})\ $<$\ 1), the terms \var{VISCF} and \var{VISCB} are set to zero.
 \linebreak
 
-\etape{Calcul du second membre complet, de $f_s^{\,imp}$ et r\'{e}solution de l'\'{e}quation}
-Les \'{e}quations d'\'{e}volution des composantes de la quantit\'{e} de mouvement sont
-r\'{e}solues de façon d\'{e}coupl\'{e}e. On utilise, par cons\'{e}quent, un seul tableau
-\var{ROVSDT} pour repr\'{e}senter la partie diagonale de la matrice obtenue pour chaque composante de la vitesse.\\
-Pour chaque composante de la vitesse :\\
+\etape{Calculation of the whole second member, of $f_s^{\,imp}$ and solving of the equation}
+The evolution equations for the components of the momentum are solved in a coupled manner. Consequently, we use a single array, \var{ROVSDT}, to represent the diagonal of the matrix obtained for each of the velocity components.\\
+For each of these components:\\
 
 \begin{itemize}
-\item Lors de la premi\`{e}re it\'{e}ration sur le sous-programme \fort{navstv}, les parties implicites et explicites des termes sources utilisateurs sont calcul\'{e}es par appel au sous-programme \fort{ustsns}.\\
-{\tiny$\blacksquare$} La partie implicite ($T_s^{imp}$) est conserv\'{e}e dans le vecteur \var{XIMPA} pour les it\'{e}rations suivantes en cas d'utilisation du point-fixe sur le syst\`{e}me en vitesse-pression, et la contribution issue des m\^emes termes implicites ($T_s^{imp}\,\underline{u}^n$) ajout\'{e}e \`{a} \var{TRAVA} ou \`{a} \var{TRAV}.\\
-{\tiny$\blacksquare$} La partie explicite ($T_s^{exp}$) est ajout\'{e}e \`{a} \var{TRAVA}, \var{TRAV} ou \var{PROPCE} suivant que les termes sources sont extrapol\'{e}s, ou que l'on it\`{e}re sur \fort{navstv}.\\
+\item During the first iteration over the subroutine \fort{navstv}, the implicit and explicit parts of the user-prescribed source terms are computed by a call to the subroutine \fort{ustsns}.\\
+{\tiny$\blacksquare$} The implicit part ($T_s^{imp}$) is saved in the vector \var{XIMPA} for subsequent iterations if the fixed-point method is used on the velocity-pressure system, with the contribution resulting from the same implicit terms ($T_s^{imp}\,\underline{u}^n$) being added either to \var{TRAVA} or to \var{TRAV}.\\
+{\tiny$\blacksquare$} The explicit part ($T_s^{exp}$) is added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated or not, and whether we iterate over \fort{navstv}.\\
 
-\item Le terme d'accumulation de masse ($\dive(\rho \underline {u})$) est
-calcul\'{e} en appelant le sous-programme \fort{divmas} avec en argument le flux de
-masse. Lors de la premi\`{e}re it\'{e}ration faite sur le sous-programme \fort{navstv},
-le terme correspondant \`{a} la contribution explicite de l'accumulation de masse
-($\underline{u}^{n}\ \dive(\rho \underline{u})$) est ajout\'{e} \`a \var{TRAVA} ou \`{a}
-\var{TRAV}. Le vecteur \var{ROVSDT} est initialis\'{e} par $\theta\,\dive(\rho
-\underline{u})$ (par coh\'{e}rence avec ce qui est fait dans le sous-programme
-\fort{bilsc2}) puis la contribution du terme instationnaire ($\displaystyle
-\frac{\rho}{\Delta t}$) ajout\'{e}e \`{a} ce dernier.\\
+\item The mass accumulation term ($\dive(\rho \underline {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{navstv},
+the term corresponding to the explicit contribution of the mass accumulation ($\underline{u}^{n}\ \dive(\rho \underline{u})$) is added to \var{TRAVA} or to \var{TRAV}. The vector \var{ROVSDT} is initialized by $\theta\,\dive(\rho \underline{u})$ (to remain coherent with the approach implemented in the subroutine
+\fort{bilsc2}) after which the contribution of the non-stationary term ($\displaystyle
+\frac{\rho}{\Delta t}$) is added to the latter.\\
 
-\item Le vecteur \var{ROVSDT} est ensuite compl\'{e}t\'{e} avec la contribution des termes sources implicites utilisateur (stock\'{e}e dans \var{XIMPA}) et avec celle des perte de charge ($\rho\,\tens{K}_{\,d}$) si $\var{NCEPDP}>0$.\\
-{\tiny$\blacksquare$} Dans le cas ou les termes sources ne sont pas extrapol\'{e}s, la partie implicite des termes sources utilisateur n'est ajout\'{e}e \`{a} \var{ROVSDT} que si elle est n\'{e}gative de fa\c con \`{a} ne pas affaiblir la diagonale du syt\`{e}me.\\
-{\tiny$\blacksquare$} Dans le cas ou ils sont extrapol\'{e}s par contre, elle est prise en compte quel que soit son signe.\\
+\item The vector \var{ROVSDT} is next completed with the contribution of the user-defined implicit source terms (stored in \var{XIMPA}) and with that of the head loss term ($\rho\,\tens{K}_{\,d}$) should $\var{NCEPDP}>0$.\\
+{\tiny$\blacksquare$} When there is no source term extrapolation, the implicit part of the user source terms is  only added to \var{ROVSDT} if it is negative so as not to weaken the diagonal of the system.\\
+{\tiny$\blacksquare$} When the source terms are extrapolated however, it is taken into account whatever its sign may be.\\
 
-\item Les termes sources implicite et explicite de masse, s'ils existent
-(~$\var{NCESMP}>0$~), sont calcul\'{e}s \`{a} la premi\`{e}re it\'{e}ration sur \fort{navstv}
-par le sous-programme \fort{catsma}. $\Gamma\,\underline{u}_i$ est ajout\'{e} \`{a}
-\var{TRAV}, \var{TRAVA} ou \var{PROPCE} pour être \'{e}ventuellement
-extrapol\'{e}. $\Gamma\,\underline{u}^n$ est rajout\'{e} \`{a} \var{TRAV} ou \var{TRAVA} et
-$-\Gamma$ \`{a} \var{ROVSDT}.
+\item The implicit and explicit mass source terms, if any (~$\var{NCESMP}>0$~), are computed at the first iteration by the subroutine  \fort{catsma} over \fort{navstv}. $\Gamma\,\underline{u}_i$ is added to \var{TRAV}, \var{TRAVA} or \var{PROPCE} for potential extrapolation. $\Gamma\,\underline{u}^n$ is added to \var{TRAV} or \var{TRAVA} and
+$-\Gamma$ to \var{ROVSDT}.
 \\
-\item Le second membre est enfin assembl\'{e} en tenant compte de toutes les
-contributions stock\'{e}es dans les tableaux \var{PROPCE}, \var{TRAVA} et
+\item The second member is then assembled taking account of all of the
+contributions stored in the arrays \var{PROPCE}, \var{TRAVA} and
 \var{TRAV}.\\
-{\tiny$\blacksquare$} Si les termes sources sont extrapol\'{e}s alors :
+{\tiny$\blacksquare$} If the source terms are extrapolated, then the second member reads:
 $$\var{SMBR}=(1-\theta_S)\,\var{PROPCE}+\var{TRAVA}+\var{TRAV}$$
-{\tiny$\blacksquare$} Sinon on a directement :
+{\tiny$\blacksquare$} If not, we directly obtain:
 $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
 
-\item Prise en compte des physiques particuli\`{e}res (lagrangien, arc \'{e}lectrique,
-...) ajout\'{e}s directement \`{a} \var{SMBR}.
+\item If a specific physics (lagrangian, electric arc, ...) is taken into account, its contribution is directly added to \var{SMBR}.
 \\
-\item La resolution du syst\`{e}me lin\'{e}aire est faite par le sous-programme
-\fort{codits} avec pour argument \var{ROVSDT} et \var{SMBR}.\\
+\item The solution of the linear system is computed by the subroutine
+\fort{codits}, taking as argument \var{ROVSDT} and \var{SMBR}.\\
 
-\item Si on utilise le couplage instationnaire renforc\'{e} vitesse-pression ($\ \var{IPUCOU} = 1\ $) (uniquement disponible avec l'ordre 1, sans extrapolation des termes sources et sans it\'{e}ration sur \fort{navstv}) on r\'{e}sout, en utilisant pour \fort{codits} :
+\item When strengthened transient velocity-pressure coupling ($\ \var{IPUCOU} = 1\ $) (only available with a first-order scheme, where there is neither source term extrapolation nor iteration over \fort{navstv}) is implemented, \fort{codits} solves the following equation:
 \begin{equation}\label{Base_Predvv_Eq_Tdir}
 \tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}} =
 \tens{\Omega}\,.\,\vect{1}
 \end{equation}
-avec $\tens{RHO}^n$ le tenseur diagonal d'\'el\'ement $\rho^{n}_{IEL}$,
-$\tens{\Omega}$ le tenseur diagonal d'\'el\'ement $|\Omega_{IEL}|$, $\vect{1}$ le
-vecteur de composantes toutes \'egales \`a 1.\\
- L'inversion du syst\`{e}me par \fort{codits} fournit
-$(\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}}$, qui est ensuite multipli\'{e} par $\tens{RHO}^{\,n}$
-pour obtenir $\underline{T}_{\,\var{DIR}}$.
-Ceci est r\'ealis\'e pour chaque composante \var{DIR} de la vitesse. $\underline{T}_{\,\var{DIR}}$
-est alors une approximation de type matrice diagonale de
-$\tens{RHO}^{\,n}\,.\,\tens{EM}_{\,\var{DIR}}^{-1}$, avec
-$\tens{EM}_{\,\var{DIR}}$ repr\'{e}sentant toujours la partie implicite de l'\'{e}quation de quantit\'{e} de mouvement
-(\emph{i.e.} \var{ROVSDT} + contribution des
-termes de convection-diffusion pris en compte dans le sous-programme
-\fort{matrix}). $\underline{T}_{\,\var{DIR}}$
-intervient dans l'\'{e}tape corrective (cf. sous-programme \fort{resopv}).\\
+with $\tens{RHO}^n$ the diagonal tensor of element $\rho^{n}_{IEL}$,
+$\tens{\Omega}$ the diagonal tensor of element $|\Omega_{IEL}|$ and $\vect{1}$ denoting the
+vector whose components are all equal to one.\\
+Inversion of the system by \fort{codits} yields
+$(\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}}$, which is subsequently multiplied by $\tens{RHO}^{\,n}$
+to obtain $\underline{T}_{\,\var{DIR}}$.
+This process is repeated for each component \var{DIR} of the velocity. $\underline{T}_{\,\var{DIR}}$
+is therefore a diagonal matrix approximation of
+$\tens{RHO}^{\,n}\,.\,\tens{EM}_{\,\var{DIR}}^{-1}$, with
+$\tens{EM}_{\,\var{DIR}}$ representing the implicit part of the solution to the discrete momentum equation (\emph{i.e.} \var{ROVSDT} + contribution of the convection-diffusion terms accounted for in the subroutine
+\fort{matrix}). $\underline{T}_{\,\var{DIR}}$ is also involved in the correction step (cf. subroutine \fort{resopv}).\\
 \end{itemize}
-Fin de la boucle sur les composantes de la vitesse.\\
+This terminates the loop over the velocity components.\\
 
-\etape{Fin du calcul du r\'esidu de normalisation pour l'\'etape de pression}
+\etape{Final calculation of the normalized residual for the pressure step}
 
-Comme indiqu\'e pr\'ec\'edemment, on peut maintenant compl\'eter le calcul du
-r\'esidu de normalisation pour l'\'etape de pression de \fort{resopv}.
+As mentioned beforehand, the computation of the normalized residual for the pressure step of \fort{resopv} can now be completed.
 
-Le tableau \var{XNORMP} contient d\'ej\`a
-$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ . On
-lui ajoute donc
+The \var{XNORMP} array already contains
+$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) -\Gamma d\Omega}$ to which we now add
 $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u^{n+1}}})d\Omega}$.
 
-Pour
-cela, on proc\`ede comme pr\'ec\'edemment pour le calcul de
-$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$. Un appel \`a
-\fort{inimas} permet d'obtenir
-$\rho\,S\,\widetilde{\vect{u}}^{n+1}\cdot\widetilde{\vect{n}}$ aux faces \`a partir de
-$\widetilde{\vect{u}}^{n+1}$ connu aux cellules (tableau \var{RTP}). Les conditions
-aux limites pour \fort{inimas} sont naturellement celles de la vitesse. Comme
-pr\'ec\'edemment, on se contente pour gagner du temps calcul lors du passage par
-\fort{inimas}, d'une \'evaluation des valeurs aux faces \`a l'ordre 1 en espace
-sur les maillages non orthogonaux (pas de
-reconstruction~: \var{NSWRP=1}). On utilise ensuite \fort{divmas} pour calculer
-aux cellules la divergence
-$\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ et
-l'ajouter directement \`a \var{XNORMP}.
+To do so, we follow the same procedure used previously to compute the integral
+$\int\limits_{\Omega_{iel}}{\dive(\Delta\,t\,\grad{P^{n-1+\theta}}) d\Omega}$. A call to
+\fort{inimas} enables to obtain
+$\rho\,S\,\widetilde{\vect{u}}^{n+1}\cdot\widetilde{\vect{n}}$ at the faces calculated from the of
+$\widetilde{\vect{u}}^{n+1}$ known at the cells (array \var{RTP}). The boundary conditions
+employed in \fort{inimas} are naturally those of the velocity. As beforehand, evaluation of the face values is only up to first-order in space on non-orthogonal meshes (no reconstruction~: \var{NSWRP=1}) in order to save computation time when passing through \fort{inimas}. The subroutine \fort{divmas} is then used to compute the divergence $\int\limits_{\Omega_{iel}}{\dive(\rho\,\widetilde{\vect{u}}^{n+1})d\Omega}$ at the cells, which is then added directly to \var{XNORMP}.
 
-Pour finir, le r\'esidu de normalisation est d\'etermin\'e et stock\'e dans \var{RNORMP} par un appel \`a \fort{prodsc}  (qui r\'ealise le calcul de la somme sur les cellules du
-carr\'e des valeurs de \var{XNORMP} et en prend la racine carr\'ee).\\
+Lastly, the normalized residual is determined and then stored in \var{RNORMP(IIPHAS)} by a call to \fort{prodsc}  (which computes the sum of the squares of the values at the faces contained in \var{XNORMP} and then takes the square root of the result).\\
 
 
 \newpage
 
-On r\'{e}sume dans les tableaux (\ref{Base_Predvv_tab_ext0}), (\ref{Base_Predvv_tab_ext1}), (\ref{Base_Predvv_tab_exp0})
-et (\ref{Base_Predvv_tab_exp1}) les diff\'{e}rentes contributions (hors convection-diffusion)
-affect\'{e}es \`{a} chacun des vecteurs \var{TRAV}, \var{TRAVA}, \var{PROPCE} et
-\var{ROVSDT} \`{a} l'it\'{e}ration $n$. On diff\'{e}rencie pour chacun des sch\'{e}mas en temps
-appliqu\'{e}s aux les termes sources, deux cas suivant qu'un point fixe sur le
-syst\`{e}me en vitesse-pression est utilis\'{e} ou non (it\'{e}ration sur \fort{navstv} pour
-\var{NTERUP}$>1$). En l'absence d'indication les propri\'{e}t\'{e}s physiques $\Phi$
-($\rho$,$\mu$,etc...) sont suppos\'{e}es prises au temps $n+\theta_\Phi$, et le flux
-de masse $(\,\rho \underline{u})$ pris au temps $n+\theta_F$, o\`{u} $\theta_\Phi$
-et $\theta_F$ d\'{e}pendent des sch\'{e}mas en temps sp\'{e}cifiquement utilis\'{e}s pour ces
-grandeurs (cf. \fort{introd}).
+The different contributions (excluding convection-diffusion) assigned to each of the vectors \var{TRAV}, \var{TRAVA}, \var{PROPCE} and \var{ROVSDT} at iteration $n$ are summarized in tables (\ref{Base_Predvv_tab_ext0}), (\ref{Base_Predvv_tab_ext1}), (\ref{Base_Predvv_tab_exp0}) and (\ref{Base_Predvv_tab_exp1}). We differentiate two cases for each of the time-stepping schemes applied to the source terms, depending on whether or not a fixed-point algorithm is used to solve the velocity-pressure system (iteration over \fort{navstv} for
+\var{NTERUP}$>1$). Unless otherwise specified, the physical properties $\Phi$
+($\rho$,$\mu$,etc...) are assumed to be evaluated at the time level $n+\theta_\Phi$, and the mass flux
+ $(\,\rho \underline{u})$ at $n+\theta_F$, where $\theta_\Phi$ and $\theta_F$ are dependent on the specific time-stepping schemes selected for these quantities (cf. \fort{introd}).
 \\\\
-Les termes figurant dans ces tableaux sont \'{e}crits tels qu'ils ont \'{e}t\'{e} implant\'{e}s
-dans le code, d'o\`{u} l'origine de certaines diff\'{e}rences par rapport \`{a} l'\'{e}criture
-adopt\'{e}e dans l'\'{e}quation (\ref{Base_Predvv_eq_di2}).
+The terms appearing in these tables are written as they have been implemented in the code, this being the source of some differences in relation to the form adopted in equation (\ref{Base_Predvv_eq_di2}).
 \\\\
-Par souci de simplification, on pose~:
+In order to simplify the problem, we pose:
 \begin{equation}\notag
 \mu_{\,tot}=
 \begin{cases}
-\mu+\mu_t & \text{pour les mod\`{e}les \`{a} viscosit\'{e} turbulente ou en LES}, \\
-\mu & \text{pour les mod\`{e}les au second ordre ou en laminaire}\\
+\mu+\mu_t & \text{for turbulent viscosity models and in LES}, \\
+\mu & \text{for second-order models and in laminar regime}\\
 \end{cases} \
 \end{equation}
 
-\minititre{Avec extrapolation des termes sources}
+\minititre{With extrapolation of source terms}
 \begin{equation}\notag
 \underline{turb}^{n}=
 \begin{cases}
 \displaystyle\frac {2}{3}\,\rho^{n}\,\grad (\,k^{n}) &
-\text{pour les mod\`{e}les \`{a} viscosit\'{e} turbulente}, \\
-\dive(\rho^{n}\,\tens{R}^n) & \text{pour les mod\`{e}les au second ordre},\\
-0 & \text{en laminaire ou en LE.}\\
+\text{for turbulent viscosity models}, \\
+\dive(\rho^{n}\,\tens{R}^n) & \text{for second-order models},\\
+0 & \text{in laminar or LES computations.}\\
 \end{cases}
 \end{equation}
 $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAV}^n$
@@ -673,7 +547,7 @@ $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{T
 \end{array}
 \end{equation}
 \\\\
-$\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAVA}^n+\var{TRAV}^n$
+$\bullet$ \var{NTERUP} $>$ 1 (sub-iteration $k$) : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{TRAVA}^n+\var{TRAV}^n$
 \begin{equation}\label{Base_Predvv_tab_ext1}
 \begin{array}{|l|c|}
 \hline
@@ -698,15 +572,15 @@ $\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=(1-\theta_
 \end{array}
 \end{equation}
 
-\minititre{Sans extrapolation des termes sources}
+\minititre{Without source term extrapolation}
 
 \begin{equation}\notag
 \underline{turb}^{n}=
 \begin{cases}
 \displaystyle\frac {2}{3}\,\rho\,\grad (\,k^{n}) &
-\text{pour les mod\`{e}les \`{a} viscosit\'{e} turbulente}, \\
-\dive(\rho\,\tens{R}^n) & \text{pour les mod\`{e}les au second ordre},\\
-0 & \text{en laminaire ou en LES.}\\
+\text{for turbulent viscosity models}, \\
+\dive(\rho\,\tens{R}^n) & \text{for second-order models},\\
+0 & \text{in laminaire or LES computations.}\\
 \end{cases}
 \end{equation}
 $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=\var{TRAV}^n$
@@ -730,7 +604,7 @@ $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=\var{TRAV}^n$
 \end{array}
 \end{equation}
 \\\\
-$\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=\var{TRAVA}^n+\var{TRAV}^n$
+$\bullet$ \var{NTERUP} $>$ 1 (sub-iteration $k$) : $\var{SMBR}^n=\var{TRAVA}^n+\var{TRAV}^n$
 \begin{equation}\label{Base_Predvv_tab_exp1}
 \begin{array}{|l|c|}
 \hline
@@ -754,53 +628,36 @@ $\bullet$ \var{NTERUP} $>$ 1 (sous-it\'{e}ration $k$) : $\var{SMBR}^n=\var{TRAVA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}\label{Base_Predvv_section4}
+\section*{Points to treat}\label{Base_Predvv_section4}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\etape{Prise en compte du terme $\grad(\rho k)$ pour les mod\`{e}les \`{a} viscosit\'{e} turbulente}
-Pour les mod\`{e}les \`{a} viscosit\'{e} turbulente, on calcule $\rho\ \grad k$ au lieu de $\grad(\rho k)$. Cette
-approximation, historique, provient du fait que les conditions aux limites de
-$\rho k$ ne sont pas directement accessibles, contrairement \`a celles de
-$k$.\\
+\etape{Evaluation of the term $\grad(\rho k)$ for turbulent viscosity models}
+When modelling turbulent viscosity, we compute $\rho\ \grad k$ instead of $\grad(\rho k)$. This
+approximation was implemented from the outset because the $\rho k$ boundary conditions are not directly accessible, in contrast to those of $k$.\\
 
-\etape{Prise en compte de la diagonale de $\tens{K}_{\,pdc}$}
-Actuellement, dans le sous-programme utilisateur \fort{cs\_user\_head\_losses.f90}, une mise en
-garde explicite est \'ecrite, mais en commentaire.
-% \footnote{Son contenu est : Veillez
-%\`a ce que les coefficients diagonaux  (du tenseur de pertes de charge consid\'er\'e) soient positifs. Vous risquez un PLANTAGE
-%si ce n'est pas le cas. AUCUN contr\^ole ult\'erieur ne sera effectu\'e.}.
- La partie diagonale $\tens{K}_{\,d}$ du tenseur de pertes de charge
-$\tens{K}_{\,pdc}$ peut donc intervenir syst\'ematiquement dans le calcul du
-coefficient $f_s^{\,imp}$, que sa contribution $K_{\,d}$ soit positive ou non, si
-l'utilisateur n'y prend garde. Un test de positivit\'e  sur les \'el\'ements de
-$\tens{K}_{\,d}$ assurant une prise en compte correcte (contribution renfor\c
-cant r\'eellement la diagonale de la matrice globale) devrait \^etre implant\'e.
+\etape{Account taken of the diagonal of $\tens{K}_{\,pdc}$}
+The user subroutine \fort{uskpdc}, currently contains an explicit warning regarding this issue, however it is written in as a comment.
+% \footnote{Which reads: Always ensure
+%\that the diagonal coefficients (of the head loss tensor considered) are positive. If this is not the case,
+%you run the risk of CRASHING. No subsequent check is performed.}.
+If the user doesn't take sufficient care, the diagonal part $\tens{K}_{\,d}$ of the velocity head loss tensor
+$\tens{K}_{\,pdc}$ can be systematically taken into account in the computation of the coefficient
+coefficient $f_s^{\,imp}$, whether its contribution $K_{\,d}$ is positive or not. A positivity test to check the positive definiteness of the elements of $\tens{K}_{\,d}$ should be implemented to ensure these are correctly taken into account (contribution genuinely increasing the diagonal dominance of the global matrix).
 
-\etape{\'Ecriture de $\tens{EM}$}
-Dans la r\'esolution proc\'edant par incr\'ements, il n'est pas indispensable
-\`a convergence
-que la viscosit\'e utilis\'ee pour l'\'ecriture de l'op\'erateur $\mathcal{E}$  soit la m\^eme que celle prise en
-compte dans $\tens{EM}$, matrice du syst\`eme en incr\'ements. Ainsi, en $R_{ij}-\varepsilon$, la
-viscosit\'e totale utilis\'ee dans $\tens{EM}$ contient la viscosit\'e mol\'eculaire mais aussi la
-viscosit\'e turbulente si l'on choisit l'option \var{IRIJNU = 1 }, alors que
-dans $\mathcal{E}$ intervient seule la viscosit\'e mol\'eculaire. Cet ajout de
-la viscosit\'e turbulente qui n'a pas de raison d'appara\^\i tre en
-$R_{ij}-\varepsilon$, a \'et\'e h\'erit\'e des pratiques mises en \oe uvre dans
-ESTET et N3S-EF pour renforcer la stabilit\'e (lissage \'eventuel de l'incr\'ement). Mais, ce
-n'est peut \^etre pas le seul effet produit. En outre, cette pratique n'a pas aujourd'hui montr\'e son absolue
-n\'ecessit\'e dans \CS. Par cons\'equent, une \'etude approfondie serait int\'eressante.
+\etape{Expression of $\tens{EM}$}
+With incremental solving, it is not absolutely necessary for convergence that the value of the viscosity appearing in the expression of the operator $\mathcal{E}$ be the same as that taken into account in the incremental system matrix, $\tens{EM}$. In $R_{ij}-\varepsilon$, for example, the total viscosity used in $\tens{EM}$ contains the molecular viscosity but can also contain the turbulent viscosity if the option \var{IRIJNU = 1 } is selected, whereas only the former is included in the operator $\mathcal{E}$. This addition of the turbulent viscosity, which is not at all relevant to the $R_{ij}-\varepsilon$ model, has been inherited from practices implemented in
+ESTET and N3S-EF to improve numerical stability (incremental smoothing). However, it may have other, potentially less desirable effects. Moreover, it has not been demonstrated to date that this practice is of absolute necessity in the use of \CS. An in-depth study would therefore be of some interest.
 
 
-\etape{R\'esidu de normalisation de l'\'etape de pression}
-On pourra v\'erifier le calcul du r\'esidu de normalisation et en
-particulier l'utilisation des conditions aux limites de vitesse.
+\etape{Normalized residual relating to the pressure step}
+We could check the normalized residual computation and in particular the use of the velocity boundary conditions.
 
-\etape{Calcul des pertes de charges}
-Avec extrapolation des termes sources on a :
+\etape{Calculation of the head losses}
+When the source terms are extrapolated in time, we now obtain:
 \begin{equation}\notag
 (\tens{K}_{\,e}\underline{u})^{n+\theta_S} + \tens{K}_{\,d}^{n}\ \underline{u}^{n+\theta}
 \end{equation}
-Il serait aussi envisageable d'utiliser~:
+It would also be possible to envisage using:
 \begin{equation}\notag
 (\tens{K}_{\,e}\underline{u})^{n+\theta_S} + \tens{K}_{\,d}^{n+\theta_S}\ \underline{u}^{n+\theta}
 \end{equation}
