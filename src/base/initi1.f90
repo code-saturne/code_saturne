@@ -105,6 +105,10 @@ call iniusi
 call ppini1
 !==========
 
+! Radiative model options
+call rayopt
+!==========
+
 call addfld
 !==========
 
@@ -133,11 +137,6 @@ ttsuit = -1.d0
 wtsuit = -1.d0
 
 call dflsui(ntsuit, ttsuit, wtsuit);
-!==========
-
-! Radiative model options
-
-call rayopt
 !==========
 
 ! Lagrangian model options
