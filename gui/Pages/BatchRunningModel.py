@@ -71,7 +71,7 @@ class BatchRunningModel(Model):
         self.dictValues['job_procs'] = None
         self.dictValues['job_walltime'] = None
         self.dictValues['job_class'] = None
-        self.dictValues['job_group'] = None
+        self.dictValues['job_account'] = None
 
         # Do we force a number of MPI ranks ?
 
@@ -201,8 +201,8 @@ class BatchRunningModel(Model):
                                 self.dictValues['job_walltime'] = int(wt[0])
                         elif kw == 'class':
                             self.dictValues['job_class'] = val
-                        elif kw == 'group':
-                            self.dictValues['job_group'] = val
+                        elif kw == 'account':
+                            self.dictValues['job_account'] = val
                 except Exception:
                     pass
 
@@ -237,8 +237,8 @@ class BatchRunningModel(Model):
                                                     wt%60)
                         elif kw == 'class':
                             val = self.dictValues['job_class']
-                        elif kw == 'group':
-                            val = self.dictValues['job_group']
+                        elif kw == 'account':
+                            val = self.dictValues['job_account']
                         else:
                             continue
                         batch_lines[i] = '# @ ' + kw + ' = ' + str(val)
@@ -538,6 +538,8 @@ class BatchRunningModel(Model):
                                 = th + int(wt[0])*60
                 elif kw == '--partition=' or kw == '-p':
                     self.dictValues['job_class'] = val
+                elif kw == '--account=' or kw == '-A':
+                    self.dictValues['job_account'] = val
 
 
     def updateBatchSLURM(self):
@@ -579,6 +581,8 @@ class BatchRunningModel(Model):
                                                 wt%60)
                 elif kw == '--partition=' or kw == '-p':
                     val = self.dictValues['job_class']
+                elif kw == '--account=' or kw == '-A':
+                    val = self.dictValues['job_account']
                 else:
                     continue
                 batch_lines[i] = '#SBATCH ' + kw + str(val)
