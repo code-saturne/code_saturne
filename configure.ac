@@ -50,7 +50,7 @@ m4_define([cs_licence_c_comment],
 m4_define([cs_major_version], [3])
 m4_define([cs_minor_version], [0])
 m4_define([cs_release_version], [6])
-m4_define([cs_version_extra], [])
+m4_define([cs_version_extra], [-patch])
 m4_define([cs_version_string],
           [cs_major_version.cs_minor_version.cs_release_version@&t@cs_version_extra])
 
