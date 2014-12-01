@@ -5,6 +5,9 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix extended neighborhood creation when global number of cells with ghosts
+  exceeds 2^31.
+
 - Fix for handling of global numbers > 2**32 in restart.
 
 - Fix in cavitation module.
