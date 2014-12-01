@@ -47,6 +47,7 @@ from PyQt4.QtGui  import *
 from Base.Common import LABEL_LENGTH_MAX
 from Base.Toolbox import GuiParam
 from Base.QtPage import RegExpValidator, to_qvariant, from_qvariant, to_text_string
+from Base.QtPage import PYQT_API_1
 from Pages.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from Pages.OutputControlModel import OutputControlModel
 from Pages.OutputVolumicVariablesModel import OutputVolumicVariablesModel
@@ -109,7 +110,10 @@ class ProbesValidator(QRegExpValidator):
 
         self.state = state
 
-        return (state, stri, pos)
+        if PYQT_API_1:
+            return (state, pos)
+        else:
+            return (state, stri, pos)
 
 #-------------------------------------------------------------------------------
 #
