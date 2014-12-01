@@ -977,7 +977,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if self.case['batch_type'][0:5] == 'LOADL':
             self.groupBoxJob.setTitle("Load Leveler job parameters")
             self.labelJobAccount.setText(str("Group"))
-            self.groupBoxJob.setToolTip("To obtain a list of defined groups, run <b><tt>xloadl</tt></b>, then select <i>File -> Build a Job</i>, and check the group names in the <i>Group</i> field")
+            self.lineEditJobAccount.setToolTip("To obtain a list of defined groups, run <b><tt>xloadl</tt></b>, then select <i>File -> Build a Job</i>, and check the group names in the <i>Group</i> field")
         elif self.case['batch_type'][0:3] == 'LSF':
             self.groupBoxJob.setTitle("LSF job parameters")
         elif self.case['batch_type'][0:3] == 'PBS':
