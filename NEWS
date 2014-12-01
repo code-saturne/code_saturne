@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in cavitation module.
+
 - Fix crash in parallel MED output.
 
 - Fix indexing bug n ParaMEDMEM coupling.

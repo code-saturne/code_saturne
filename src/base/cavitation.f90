@@ -330,7 +330,7 @@ contains
     do ifac = 1, nfabor
       iel = ifabor(ifac)
       bvoidf = coavoi(ifac) + cobvoi(ifac)*voidf(iel)
-      brom(iel) = rov*bvoidf + rol*(1.d0 - bvoidf)
+      brom(ifac) = rov*bvoidf + rol*(1.d0 - bvoidf)
     enddo
 
     ! Update mixture viscosity
