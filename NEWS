@@ -5,11 +5,14 @@ Release 3.2.5 (unreleased)
 Bug fixes:
 ----------
 
+- Fix extended neighborhood creation when global number of cells with ghosts
+  exceeds 2^31.
+
 - Fix Crank-Nicolson time scheme for velocity.
 
 - Fix minor bugs detected by Address / Undefined Behavior Sanitizer.
 
-- Fix bug when iphydr=1 and (icorio or iturbo=1)
+- Fix bug when iphydr=1 and (icorio or iturbo=1).
 
 - Fix the boundary conditions coefficients for the second pressure correction in
   the fire algorithm (introduced by the fix of the boundary conditions
