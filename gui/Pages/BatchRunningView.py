@@ -535,8 +535,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
             validatorSimpleName = RegExpValidator(self.lineEditJobName,
                                                   QRegExp("[_A-Za-z0-9]*"))
+            validatorAccountName = RegExpValidator(self.lineEditJobAccount,
+                                                   QRegExp("\\S+"))
             self.lineEditJobName.setValidator(validatorSimpleName)
-            self.lineEditJobGroup.setValidator(validatorSimpleName)
+            self.lineEditJobAccount.setValidator(validatorAccountName)
             self.pushButtonRunSubmit.setText("Submit job")
 
         else:
@@ -568,8 +570,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                          self.slotJobWallTime)
             self.connect(self.comboBoxClass, SIGNAL("activated(const QString&)"),
                          self.slotClass)
-            self.connect(self.lineEditJobGroup, SIGNAL("textChanged(const QString &)"),
-                         self.slotJobGroup)
+            self.connect(self.lineEditJobAccount, SIGNAL("textChanged(const QString &)"),
+                         self.slotJobAccount)
 
         else:
             self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotParallelComputing)
@@ -666,13 +668,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
 
     @pyqtSignature("const QString &")
-    def slotJobGroup(self, v):
+    def slotJobAccount(self, v):
         """
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobName.validator().state == QValidator.Acceptable:
-            self.jmdl.dictValues['job_group'] = str(v)
-            self.jmdl.updateBatchFile('job_group')
+            self.jmdl.dictValues['job_account'] = str(v)
+            self.jmdl.updateBatchFile('job_account')
 
 
     @pyqtSignature("const QString &")
@@ -964,8 +966,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.spinBoxSeconds.hide()
         self.labelSeconds.hide()
         self.comboBoxClass.hide()
-        self.labelJobGroup.hide()
-        self.lineEditJobGroup.hide()
+        self.labelJobAccount.hide()
+        self.lineEditJobAccount.hide()
 
 
     def displayBatchInfo(self):
@@ -979,11 +981,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.job_procs = self.jmdl.dictValues['job_procs']
         self.job_walltime = self.jmdl.dictValues['job_walltime']
         self.job_class  = self.jmdl.dictValues['job_class']
-        self.job_group  = self.jmdl.dictValues['job_group']
+        self.job_account  = self.jmdl.dictValues['job_account']
 
         if self.job_name != None:
             self.labelJobName.show()
-            self.lineEditJobName.setText(QString(self.job_name))
+            self.lineEditJobName.setText(str(self.job_name))
             self.lineEditJobName.show()
 
         if self.job_nodes != None:
@@ -1050,15 +1052,17 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             if len(self.jmdl.dictValues['job_class']) > 0:
                 self.jmdl.updateBatchFile('job_class')
 
-        if self.job_group != None:
-            self.labelJobGroup.show()
-            self.lineEditJobGroup.setText(QString(self.job_group))
-            self.lineEditJobGroup.show()
+        if self.job_account != None:
+            self.labelJobAccount.show()
+            self.lineEditJobAccount.setText(str(self.job_account))
+            self.lineEditJobAccount.show()
 
         # Show Job management box
 
         if self.case['batch_type'][0:5] == 'LOADL':
             self.groupBoxJob.setTitle("Load Leveler job parameters")
+            self.labelJobAccount.setText(str("Group"))
+            self.lineEditJobAccount.setToolTip("To obtain a list of defined groups, run <b><tt>xloadl</tt></b>, then select <i>File -> Build a Job</i>, and check the group names in the <i>Group</i> field")
         elif self.case['batch_type'][0:3] == 'LSF':
             self.groupBoxJob.setTitle("LSF job parameters")
         elif self.case['batch_type'][0:3] == 'PBS':
