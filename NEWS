@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Update installer packages.
+
 - Fix postprocessing of boundary temperature.
 
 - Fix crash in builds with OpenMP in loggin in single-thread cases.
