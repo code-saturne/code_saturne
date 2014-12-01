@@ -74,15 +74,18 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
+integer          c_id, f_id0, f_dim
 
 double precision dt(ncelet)
 
 ! Local variables
 
 integer          ii, kk, node, ndrang, nvarpp, numcel, lng
+logical          interleaved
 double precision xx, yy, zz, xyztmp(3)
 
 double precision, dimension(:), pointer :: cvar_var
+double precision, dimension(:,:), pointer :: cvar_varv
 
 ! Monitoring points number (lower than a maximum of 100)
 integer          ncapmx
@@ -282,8 +285,20 @@ endif
 ! In a parallel run: the value may come from a different processor, to be
 !                    determined in 'vacapt(kk)' with the 'parhis' subroutine)
 
+f_id0 = -1
+c_id  = -1
 do ii = 1 , nvarpp
-  call field_get_val_s(ivarfl(ii), cvar_var)
+  call field_get_dim(ivarfl(ii), f_dim, interleaved)
+  if (f_dim.eq.1) then
+    call field_get_val_s(ivarfl(ii), cvar_var)
+  else
+    if (ivarfl(ii).ne.f_id0) c_id = 1
+    call field_get_val_v(ivarfl(ii), cvar_varv)
+    cvar_var => cvar_varv(c_id, :)
+    c_id = c_id + 1
+  endif
+  f_id0 = ivarfl(ii)
+
   do kk = 1, ncapts
     if (irangp.lt.0) then
       vacapt(kk) = cvar_var(icapt(kk))
@@ -292,6 +307,7 @@ do ii = 1 , nvarpp
       !==========
     endif
   enddo
+
   if (irangp.le.0) then
     write(impush(ii),1010) ntcabs, ttcabs, (vacapt(kk),kk=1,ncapts)
   endif

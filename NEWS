@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix example in ushist user subroutine for vector fields.
+
 - Fix crash in builds with OpenMP in loggin in single-thread cases.
 
 - Fix minor memory leaks in GUI reader.
