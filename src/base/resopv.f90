@@ -293,6 +293,7 @@ endif
 
 ! Index of the field
 iflid = ivarfl(ipr)
+call field_get_key_struct_solving_info(iflid, sinfo)
 
 if (iwgrec(ipr).eq.1) then
   ! Id weighting field for gradient

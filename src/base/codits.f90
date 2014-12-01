@@ -278,6 +278,7 @@ endif
 if (ivar.gt.0) then
   f_id = ivarfl(ivar)
   call field_get_name(f_id, chaine)
+  call field_get_key_struct_solving_info(f_id, sinfo)
 else
   f_id = -1
   chaine = nomva0
