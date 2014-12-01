@@ -2972,24 +2972,18 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
  *   global number of ghost cells
  *---------------------------------------------------------------------------*/
 
-cs_int_t
+cs_gnum_t
 cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh)
 {
-  cs_int_t  n_g_ghost_cells = 0;
-
-  if (cs_glob_n_ranks == 1)
-    n_g_ghost_cells = mesh->n_ghost_cells;
-
-  else {
-
-    assert(cs_glob_n_ranks > 1);
+  cs_gnum_t  n_g_ghost_cells = mesh->n_ghost_cells;
 
 #if defined(HAVE_MPI)
-    MPI_Allreduce(&(mesh->n_ghost_cells), &n_g_ghost_cells, 1, MPI_INT,
+  if (cs_glob_n_ranks > 1) {
+    cs_gnum_t  _n_g_ghost_cells = n_g_ghost_cells;
+    MPI_Allreduce(&_n_g_ghost_cells, &n_g_ghost_cells, 1, CS_MPI_GNUM,
                   MPI_SUM, cs_glob_mpi_comm);
-#endif
-
   }
+#endif
 
   return n_g_ghost_cells;
 }

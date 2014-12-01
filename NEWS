@@ -2,6 +2,9 @@
 Release 3.0.7 (unreleased)
 ==========================
 
+- Fix extended neighborhood creation when global number of cells with ghosts
+  exceeds 2^31.
+
 Release 3.0.6 (28 Nov 2014)
 ===========================
 

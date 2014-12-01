@@ -528,7 +528,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
  *  Global number of ghost cells
  *---------------------------------------------------------------------------*/
 
-cs_int_t
+cs_gnum_t
 cs_mesh_n_g_ghost_cells(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
