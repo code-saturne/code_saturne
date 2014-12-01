@@ -2126,7 +2126,8 @@ _estimate_imbalance(const cs_numbering_t  *face_numbering)
   if (face_numbering == NULL)
     return 0;
 
-  if (face_numbering->type == CS_NUMBERING_THREADS) {
+  if (   face_numbering->type == CS_NUMBERING_THREADS
+      && face_numbering->n_threads > 1) {
 
     int g_id;
 
