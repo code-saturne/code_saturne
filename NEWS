@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix GUI initialization formula for Enthalpy.
+
 - Fix some PyQt API compatibility issues.
 
 - Fix GUI handling of Lagrangian 2 way coupling activation/deactivation.

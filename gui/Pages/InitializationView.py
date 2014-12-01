@@ -329,9 +329,9 @@ class InitializationView(QWidget, Ui_InitializationForm):
         if not exp:
             exp = self.init.getDefaultThermalFormula()
         exa = """#example \n""" + self.init.getDefaultThermalFormula()
-        if self.therm.getThermalScalarModel() == 'enthalpy':
+        if self.therm.getThermalScalarModel() == "enthalpy":
             req = [('enthalpy', 'enthalpy')]
-        if self.therm.getThermalScalarModel() == 'total_energy':
+        elif self.therm.getThermalScalarModel() == "total_energy":
             req = [('total_energy', 'total energy')]
         else:
             req = [('temperature', 'temperature')]
