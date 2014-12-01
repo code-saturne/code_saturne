@@ -1744,11 +1744,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
             for (int ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac]-1;
-              mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
-              mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
-              mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
-              mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
               for (i = 0; i < f->dim; i++) {
+                mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
+                mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
+                mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
+                mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 1;
                 char *name = NULL;
                 BFT_MALLOC(name, strlen(f->name) + 4, char);
