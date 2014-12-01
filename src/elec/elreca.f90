@@ -187,6 +187,8 @@ if ( ippmod(ielarc).ge.1 ) then
     else
       elcou=0.d0
     endif
+
+    coepoa = 1.d0
     if(elcou.ne.0.d0) coepoa = couimp/elcou
     coepot = coepoa
 

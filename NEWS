@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bug in some electric arcs cases due to uninitialized boundary condition.
+
 - Fix bug in moments restart un case of restart before moment activation.
 
 - Fix uninitialized variables in radiative model.
