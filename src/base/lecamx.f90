@@ -894,7 +894,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
   nomflu(iv)='fm_a_v_phase'//cphase
   nomflu(iw)='fm_a_w_phase'//cphase
   if (itytur.eq.2 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
-    nomflu(ik)='fm_a_k_a_phase'//cphase
+    nomflu(ik)='fm_a_k_phase'//cphase
     nomflu(iep)='fm_a_eps_phase'//cphase
   elseif (itytur.eq.2.and.jtytur.eq.3) then
     nomflu(ik)='fm_a_R11_phase'//cphase
@@ -983,7 +983,7 @@ if (nfaiok.eq.1 .or. nfabok.eq.1) then
       nomflu(ial)='fm_a_k_phase'//cphase
     endif
   elseif (iturb.eq.60 .and. (jtytur.eq.2.or.jtytur.eq.5)) then
-    nomflu(ik  )='fm_a_k_a_phase'//cphase
+    nomflu(ik  )='fm_a_k_phase'//cphase
     nomflu(iomg)='fm_a_eps_phase'//cphase
   elseif (iturb.eq.60.and.jtytur.eq.3) then
     nomflu(ik  )='fm_a_R11_phase'//cphase

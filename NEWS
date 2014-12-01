@@ -5,6 +5,9 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix reading of mass flux for k in k-epsilon or k-omega when restarting
+  from k-epsilon or v2f model.
+
 - Fix logging name of mesh velocity.
 
 - Fix bug due to uninitialized variable in optional Crystal Router algorithm.
