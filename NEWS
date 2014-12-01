@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash in parallel MED output.
+
 - Fix indexing bug n ParaMEDMEM coupling.
 
 - Update installer packages.
