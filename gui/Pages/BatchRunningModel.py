@@ -201,7 +201,7 @@ class BatchRunningModel(Model):
                                 self.dictValues['job_walltime'] = int(wt[0])
                         elif kw == 'class':
                             self.dictValues['job_class'] = val
-                        elif kw == 'account':
+                        elif kw == 'group':
                             self.dictValues['job_account'] = val
                 except Exception:
                     pass
@@ -237,7 +237,7 @@ class BatchRunningModel(Model):
                                                     wt%60)
                         elif kw == 'class':
                             val = self.dictValues['job_class']
-                        elif kw == 'account':
+                        elif kw == 'group':
                             val = self.dictValues['job_account']
                         else:
                             continue
