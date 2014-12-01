@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix uninitialized variables in radiative model.
+
 - Fix reading of mass flux for k in k-epsilon or k-omega when restarting
   from k-epsilon or v2f model.
 

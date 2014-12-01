@@ -156,6 +156,12 @@ ivart = isca(iscalt)
 tpmax = -grand
 tpmin =  grand
 
+qcmax = -grand
+qcmin =  grand
+
+qrmax = -grand
+qrmin =  grand
+
 rapmax = 0.d0
 n1min  = 0
 n1max  = 0
