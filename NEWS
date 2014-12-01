@@ -8,6 +8,8 @@ Bug fixes:
 - Fix extended neighborhood creation when global number of cells with ghosts
   exceeds 2^31.
 
+- Fix restart output when global number of cells or faces exceeds 2^31.
+
 - Fix Crank-Nicolson time scheme for velocity.
 
 - Fix minor bugs detected by Address / Undefined Behavior Sanitizer.

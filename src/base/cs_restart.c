@@ -288,18 +288,19 @@ _free_restart_id(int id)
  *   n_location_vals <-- number of values per location
  *----------------------------------------------------------------------------*/
 
-static size_t
+static cs_gnum_t
 _compute_n_ents(const cs_restart_t  *r,
                 size_t               location_id,
                 size_t               n_location_vals)
 {
-  size_t retval = 0;
+  cs_gnum_t retval = 0;
 
   if (location_id == 0)
     retval = n_location_vals;
 
   else if (location_id > 0 && location_id <= r->n_locations)
-    retval = r->location[location_id-1].n_glob_ents_f * n_location_vals;
+    retval =   r->location[location_id-1].n_glob_ents_f
+             * (cs_gnum_t)n_location_vals;
 
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -2897,7 +2898,8 @@ cs_restart_write_section(cs_restart_t           *restart,
 {
   double timing[2];
 
-  cs_int_t         n_tot_vals, n_glob_ents, n_ents;
+  cs_lnum_t        n_ents;
+  cs_gnum_t        n_tot_vals, n_glob_ents;
   cs_datatype_t    elt_type = CS_DATATYPE_NULL;
 
   const cs_gnum_t  *ent_global_num;
