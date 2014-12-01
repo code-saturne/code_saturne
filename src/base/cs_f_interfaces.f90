@@ -123,12 +123,11 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine post_boundary_temperature &
-      (nfbrps, lstfbr, propce, btemp)
+      (nfbrps, lstfbr, btemp)
       use dimens
       use mesh
       integer, intent(in)                                        :: nfbrps
       integer, dimension(nfbrps), intent(in)                     :: lstfbr
-      double precision, dimension(ncelet, *), intent(in), target :: propce
       double precision, dimension(nfbrps), intent(out)           :: btemp
     end subroutine post_boundary_temperature
 

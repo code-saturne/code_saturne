@@ -5,14 +5,11 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
-- Fix example in ushist user subroutine for vector fields.
+- Fix postprocessing of boundary temperature.
 
 - Fix crash in builds with OpenMP in loggin in single-thread cases.
 
 - Fix minor memory leaks in GUI reader.
-
-- Fix bug in user-subroutine defined boundary condition example test
-  for ranks with no boundary faces.
 
 - Fix bug in some electric arcs cases due to uninitialized boundary condition.
 
@@ -68,6 +65,14 @@ Bug fixes:
 - Fix possible bugs for Lagrangian inlet conditions in parallel.
 
 - Fix memory leaks in Code_Saturne/Code_Saturne coupling.
+
+Documentation
+-------------
+
+- Fix example in ushist user subroutine for vector fields.
+
+- Fix bug in user-subroutine defined boundary condition example test
+  for ranks with no boundary faces.
 
 Release 3.3.2 (14 Aug 2014)
 ===========================

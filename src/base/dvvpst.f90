@@ -81,6 +81,7 @@ use mesh
 use field
 use field_operator
 use post
+use cs_f_interfaces
 use turbomachinery
 
 !===============================================================================
