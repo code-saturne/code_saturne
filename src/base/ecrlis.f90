@@ -339,6 +339,8 @@ do f_id = 0, nfld - 1
       enddo
     endif
 
+    ! Store the derive and the l2residual
+    call field_set_key_struct_solving_info(f_id, sinfo)
   endif
 
 enddo
