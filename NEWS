@@ -5,6 +5,8 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix minor memory leaks in GUI reader.
+
 - Fix bug in user-subroutine defined boundary condition example test
   for ranks with no boundary faces.
 

@@ -3159,6 +3159,7 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
 
       if (formula != NULL) {
         ev_formula = mei_tree_new(formula);
+        BFT_FREE(formula);
         mei_tree_insert(ev_formula,"x",0.0);
         mei_tree_insert(ev_formula,"y",0.0);
         mei_tree_insert(ev_formula,"z",0.0);
@@ -3215,6 +3216,7 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
       BFT_FREE(zone_id);
       BFT_FREE(mdl);
     }
+    BFT_FREE(status);
   }
 }
 
