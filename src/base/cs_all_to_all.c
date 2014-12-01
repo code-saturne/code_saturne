@@ -833,7 +833,7 @@ _crystal_create_s(size_t           n_elts,
   if (cr->add_src_id) {
     const size_t id_size = sizeof(cs_lnum_t);
     for (i = 0; i < n_elts; i++) {
-      cs_lnum_t src_id = j;
+      cs_lnum_t src_id = i;
       unsigned char *_src_id = (unsigned char *)(&src_id);
       unsigned char *pi = cr->buffer[0] + i*cr->comp_size + cr->src_id_shift;
       for (j = 0; j < id_size; j++)
