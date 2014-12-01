@@ -1063,7 +1063,8 @@ _field_labels_from_gui(void)
 
       for (i = 0;
            (   label[i] == cs_glob_label->_cs_gui_var_name[p_id][i]
-            && label[i] != '\0');
+            && label[i] != '\0'
+            && label[i] != '[');
            i++);
 
       if (i > 0)
