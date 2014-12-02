@@ -854,6 +854,32 @@ class XMLinit(Variables):
         if node:
             node['name'] = "thermal_flux"
 
+        # update wall functions settings
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        XMLTurbModelNode = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
+        if XMLTurbModelNode:
+            scaleModelNode = XMLTurbModelNode.xmlGetNode('scale_model')
+            wallFunctionNode = XMLTurbModelNode.xmlGetNode('wall_function')
+
+            if scaleModelNode and not wallFunctionNode:
+                scale = XMLTurbModelNode.xmlGetInt('scale_model')
+
+                if scale == 0:
+                    wallFunction = 2
+                elif scale == 1:
+                    wallFunction = 3
+                elif scale == 2:
+                    wallFunction = 4
+                else:
+                    wallFunction = 0
+
+                model = XMLTurbModelNode['model']
+                if model == 'v2f-BL-v2/k' or \
+                   model == 'Rij-EBRSM':
+                    wallFunction = 0
+
+                XMLTurbModelNode.xmlSetData('wall_function', wallFunction)
+                scaleModelNode.xmlRemoveNode()
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

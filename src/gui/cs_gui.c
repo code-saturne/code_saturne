@@ -175,11 +175,9 @@ cs_gui_advanced_options_turbulence(const char *param,
   if (cs_gui_strcmp("gravity_terms", param)) {
     cs_xpath_add_attribute(&path, "status");
     if (cs_gui_get_status(path, &result)) *keyword = result;
-
-  } else if (cs_gui_strcmp("scale_model", param)) {
+  } else if (cs_gui_strcmp("wall_function", param)) {
     cs_xpath_add_function_text(&path);
     if (cs_gui_get_int(path, &result)) *keyword = result;
-
   } else
     bft_error(__FILE__, __LINE__, 0, _("Invalid xpath: %s\n"), path);
 
@@ -2242,19 +2240,18 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTURB (ITURB, IDEUCH, IGRAKE, IGRAKI, XLOMLG)
+ * SUBROUTINE CSTURB (ITURB, IWALLF, IGRAKE, IGRAKI, XLOMLG)
  * *****************
  *
  * INTEGER          ITURB   -->   turbulence model
- * INTEGER          IDEUCH  -->   wall law treatment
+ * INTEGER          IWALLF  -->   wall law treatment
  * INTEGER          IGRAKE  -->   k-eps gravity effects
  * INTEGER          IGRAKI  -->   Rij-eps gravity effects
  * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
-
 void CS_PROCF (csturb, CSTURB) (int    *iturb,
-                                int    *ideuch,
+                                int    *iwallf,
                                 int    *igrake,
                                 int    *igrari,
                                 double *xlomlg)
@@ -2273,23 +2270,23 @@ void CS_PROCF (csturb, CSTURB) (int    *iturb,
     _option_turbulence_double("mixing_length_scale", xlomlg);
   } else if (cs_gui_strcmp(model, "k-epsilon")) {
     *iturb = 20;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
   } else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
     *iturb = 21;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
   } else if (cs_gui_strcmp(model, "Rij-epsilon")) {
     *iturb = 30;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
   } else if (cs_gui_strcmp(model, "Rij-SSG")) {
     *iturb = 31;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
   } else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
     *iturb = 32;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrari);
   } else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
     *iturb = 40;
@@ -2299,15 +2296,15 @@ void CS_PROCF (csturb, CSTURB) (int    *iturb,
     *iturb = 42;
   } else if (cs_gui_strcmp(model, "v2f-phi")) {
     *iturb = 50;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
   } else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
     *iturb = 51;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
   } else if (cs_gui_strcmp(model, "k-omega-SST")) {
     *iturb = 60;
-    cs_gui_advanced_options_turbulence("scale_model", ideuch);
+    cs_gui_advanced_options_turbulence("wall_function", iwallf);
     cs_gui_advanced_options_turbulence("gravity_terms", igrake);
   } else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
     *iturb = 70;
@@ -2321,7 +2318,7 @@ void CS_PROCF (csturb, CSTURB) (int    *iturb,
   bft_printf("--iturb = %i\n", *iturb);
   bft_printf("--igrake = %i\n", *igrake);
   bft_printf("--igrari = %i\n", *igrari);
-  bft_printf("--ideuch = %i\n", *ideuch);
+  bft_printf("--iwallf = %i\n", *iwallf);
   bft_printf("--xlomlg = %f\n", *xlomlg);
 #endif
 

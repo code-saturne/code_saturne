@@ -142,7 +142,6 @@ call physical_constants_init
 call fluid_properties_init
 call space_disc_options_init
 call piso_options_init
-call wall_reference_values_init
 call turb_reference_values_init
 
 !===============================================================================
@@ -766,9 +765,8 @@ itytur =-999
 !        IGRHOK = 1
 igrhok = 0
 igrake = 1
-ideuch =-999
+iwallf =-999
 iwallt = 0
-ilogpo = 1
 iclkep = 0
 ikecou =-999
 irijnu = 0

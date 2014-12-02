@@ -701,10 +701,10 @@ do ifac = 1, nfabor
     ! Dimensionless velocity
     uplus = log(yplus+1.d0)/xkappa
 
-    if (ideuch.eq.0) then
+    if (iwallf.le.2) then
       uk = uet
 
-    ! Si ideuch=1 ou 2 on calcule uk et uet
+    ! Si iwallf= 3, 4 ou 5 on calcule uk et uet
     else
 
       if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
@@ -733,7 +733,7 @@ do ifac = 1, nfabor
 
     endif
 
-    if (ideuch.eq.0) then
+    if (iwallf.le.2) then
       uk = uet
     endif
 

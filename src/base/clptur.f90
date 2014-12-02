@@ -156,7 +156,6 @@ integer          modntl
 integer          iuntur
 integer          nlogla, nsubla, iuiptn
 integer          ifccp
-integer          iwallf
 integer          yplus_id
 
 double precision rnx, rny, rnz, rxnn
@@ -179,12 +178,14 @@ double precision xkip
 double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
+double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), pointer :: cvar_k, cvar_ep
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -230,6 +231,7 @@ cofimp  = 0.d0
 ek = 0.d0
 rcprod = 0.d0
 uiptn = 0.d0
+rnnb = 0.d0
 
 rinfiv(1) = rinfin
 rinfiv(2) = rinfin
@@ -455,6 +457,9 @@ if (itytur.eq.3) then
   call field_get_val_s(ivarfl(ir11), cvar_r11)
   call field_get_val_s(ivarfl(ir22), cvar_r22)
   call field_get_val_s(ivarfl(ir33), cvar_r33)
+  call field_get_val_s(ivarfl(ir12), cvar_r12)
+  call field_get_val_s(ivarfl(ir13), cvar_r13)
+  call field_get_val_s(ivarfl(ir23), cvar_r23)
 endif
 
 ! min. and max. of wall tangential velocity
@@ -682,24 +687,22 @@ do ifac = 1, nfabor
       ek = cvar_k(iel)
     else if (itytur.eq.3) then
       ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-    endif
-
-
-    ! With power law (Werner & Wengle)
-    if (ideuch.eq.0.and.ilogpo.eq.0) then
-      iwallf = 3
-    else
-      iwallf = ideuch
-    endif
-
-    ! No wall functions for low Reynolds models
-    if (iturb.eq.0.or.itytur.eq.5.or.iturb.eq.32) then
-      iwallf = 4
+      if (iwallf == 5) then
+        rxx = cvar_r11(iel)
+        rxy = cvar_r12(iel)
+        rxz = cvar_r13(iel)
+        ryy = cvar_r22(iel)
+        ryz = cvar_r23(iel)
+        rzz = cvar_r33(iel)
+        rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
+               + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
+               + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
+      endif
     endif
 
     call wallfunctions &
   ( iwallf, ifac  ,                                        &
-    xnuii , xnuit , utau  , distbf, ek    ,                &
+    xnuii , xnuit , utau  , distbf, rnnb  , ek    ,        &
     iuntur, nsubla, nlogla,                                &
     uet   , uk    , yplus , ypup  , cofimp, dplus )
 
@@ -739,8 +742,7 @@ do ifac = 1, nfabor
     !===========================================================================
 
     ! Deprecated power law (Werner & Wengle)
-    ! If ilogpo=0, then ideuch=0
-    if (ilogpo.eq.0) then
+    if (iwallf.eq.1) then
       uiptn  = utau + uet*apow*bpow*yplus**bpow*(2.d0**(bpow-1.d0)-2.d0)
 
     ! Dependant on the turbulence Model

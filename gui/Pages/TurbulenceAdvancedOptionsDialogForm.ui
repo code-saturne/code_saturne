@@ -5,7 +5,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>320</width>
+    <width>400</width>
     <height>128</height>
    </rect>
   </property>
@@ -37,9 +37,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="labelScales" >
+           <widget class="QLabel" name="labelWallFunctions" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: IDEUCH</string>
+             <string>Code_Saturne key word: IWALLF</string>
             </property>
             <property name="text" >
              <string>Wall function type</string>
@@ -60,7 +60,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QComboBox" name="comboBoxScales" >
+           <widget class="QComboBox" name="comboBoxWallFunctions" >
             <property name="minimumSize" >
              <size>
               <width>150</width>
@@ -68,16 +68,21 @@
              </size>
             </property>
             <property name="toolTip" >
-             <string>Code_Saturne key word: IDEUCH</string>
+             <string>Code_Saturne key word: IWALLF</string>
             </property>
             <item>
              <property name="text" >
-              <string>One scale model</string>
+              <string>No wall function</string>
              </property>
             </item>
             <item>
              <property name="text" >
-              <string>Two scale model</string>
+              <string>One scale model (log law)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Two scales model (log law)</string>
              </property>
             </item>
             <item>

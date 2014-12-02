@@ -96,27 +96,31 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         self.result  = self.default.copy()
 
         self.checkBoxGravity.setEnabled(True)
-        self.comboBoxScales.setEnabled(True)
+        self.comboBoxWallFunctions.setEnabled(True)
 
-        if default['model'] == 'Spalart-Allmaras' or \
-           default['model'] == 'v2f-BL-v2/k' or \
+        if default['model'] == 'v2f-BL-v2/k' or \
            default['model'] == 'Rij-EBRSM':
-            self.modelScales = ComboModel(self.comboBoxScales, 1, 1)
-            self.modelScales.addItem(self.tr("One scale model"), '0')
+            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
+            self.wallFunctions.addItem(self.tr("No wall function"), '0')
             self.checkBoxGravity.setChecked(False)
             self.checkBoxGravity.setEnabled(False)
-            self.comboBoxScales.setEnabled(False)
+            self.comboBoxWallFunctions.setEnabled(False)
+        elif default['model'] == 'Spalart-Allmaras':
+            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 1, 1)
+            self.wallFunctions.addItem(self.tr("One scale model (log law)"), '2')
+            self.checkBoxGravity.setChecked(False)
+            self.checkBoxGravity.setEnabled(False)
+            self.comboBoxWallFunctions.setEnabled(False)
         else:
-            # Combo
-            self.modelScales = ComboModel(self.comboBoxScales, 3, 1)
-
-            self.modelScales.addItem(self.tr("One scale model"), '0')
-            self.modelScales.addItem(self.tr("Two scale model"), '1')
-            self.modelScales.addItem(self.tr("Scalable wall function"), '2')
+            # Combo - power law (iwallf=1) unavailable through the GUI
+            self.wallFunctions = ComboModel(self.comboBoxWallFunctions, 4, 1)
+            self.wallFunctions.addItem(self.tr("No wall function"), '0')
+            self.wallFunctions.addItem(self.tr("1 scale model (log law)"), '2')
+            self.wallFunctions.addItem(self.tr("2 scales model (log law)"), '3')
+            self.wallFunctions.addItem(self.tr("Scalable 2 scales model (log law)"), '4')
 
             # Initialization
-
-            self.modelScales.setItem(str_model=str(self.result['scale_model']))
+            self.wallFunctions.setItem(str_model=str(self.result['wall_function']))
             if self.result['gravity_terms'] == 'on':
                 self.checkBoxGravity.setChecked(True)
             else:
@@ -140,8 +144,8 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
             self.result['gravity_terms'] = "on"
         else:
             self.result['gravity_terms'] = "off"
-        self.result['scale_model'] = \
-        int(self.modelScales.dicoV2M[str(self.comboBoxScales.currentText())])
+        self.result['wall_function'] = \
+        int(self.wallFunctions.dicoV2M[str(self.comboBoxWallFunctions.currentText())])
 
         QDialog.accept(self)
 
@@ -263,11 +267,11 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.frameLength.show()
             self.frameAdvanced.hide()
             self.model.getLengthScale()
-        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+        elif model not in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
             self.frameLength.hide()
             self.frameAdvanced.show()
 
-        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
+        if model in ('off', 'LES_Smagorinsky', 'LES_dynamique', 'LES_WALE', 'Spalart-Allmaras'):
             self.line.hide()
         else:
             self.line.show()
@@ -281,7 +285,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         default = {}
         default['model']         = self.model.getTurbulenceModel()
-        default['scale_model']   = self.model.getScaleModel()
+        default['wall_function']   = self.model.getWallFunction()
         default['gravity_terms'] = self.model.getGravity()
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
@@ -290,7 +294,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))
             self.model.setTurbulenceModel(result['model'])
-            self.model.setScaleModel(result['scale_model'])
+            self.model.setWallFunction(result['wall_function'])
             self.model.setGravity(result['gravity_terms'])
 
 

@@ -170,7 +170,7 @@ endif
 if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
 
   if (itytur.eq.2) then
-    ideuch = 0
+    iwallf = 2
   endif
 
 endif

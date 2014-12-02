@@ -531,12 +531,12 @@ module optcal
   !> Class of turbulence model (integer value iturb/10)
   integer(c_int), pointer, save :: itytur
 
-  !> Activation of rotation/curvature correction for an eddy viscosity turbulence models
+  !> Activation of rotation/curvature correction for eddy viscosity turbulence models
   !>    - 0: false
   !>    - 1: true
   integer(c_int), pointer, save :: irccor
 
-  !> Type of rotation/curvature correction for an eddy viscosity turbulence models
+  !> Type of rotation/curvature correction for eddy viscosity turbulence models
   !>    - 1 Cazalbou correction (default when irccor=1 and itytur=2 or 5)
   !>    - 2 Spalart-Shur correction (default when irccor=1 and iturb=60 or 70)
   integer(c_int), pointer, save :: itycor
@@ -547,20 +547,19 @@ module optcal
   integer(c_int), pointer, save :: idirsm
 
   !>  Wall functions
-  !>    - 0: one scale of friction velocities
-  !>    - 1: two scale of friction velocities
-  !>    - 2: scalable wall functions
-  integer(c_int), pointer, save :: ideuch
+  !>    - 0: no wall functions
+  !>    - 1: one scale of friction velocities (power law)
+  !>    - 2: one scale of friction velocities (log law)
+  !>    - 3: two scales of friction velocities (log law)
+  !>    - 4: two scales of friction velocities (log law) - scalable wall functions
+  !>    - 5: two scales of friction velocities (mixing
+  !>          length based on V. Driest analysis)
+  integer(c_int), pointer, save :: iwallf
 
   !> exchange coefficient correlation
   !>    - 0: not use by default
   !>    - 1: exchange coefficient computed with a correlation
   integer(c_int), pointer, save :: iwallt
-
-  !> wall function with
-  !>    - 0 a power lay (deprecated)
-  !>    - 1 a log lay
-  integer(c_int), pointer, save :: ilogpo
 
   !> clipping of k and epsilon
   !>    - 0 absolute value clipping
@@ -1075,11 +1074,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global wall functions structure
 
-    subroutine cs_f_wall_functions_get_pointers(ideuch, iwallt, ilogpo) &
+    subroutine cs_f_wall_functions_get_pointers(iwallf, iwallt, ypluli) &
       bind(C, name='cs_f_wall_functions_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ideuch, iwallt, ilogpo
+      type(c_ptr), intent(out) :: iwallf, iwallt, ypluli
     end subroutine cs_f_wall_functions_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1302,17 +1301,18 @@ contains
   subroutine wall_functions_init
 
     use, intrinsic :: iso_c_binding
+    use cstphy, only: ypluli
     implicit none
 
     ! Local variables
 
-    type(c_ptr) :: c_ideuch, c_iwallt, c_ilogpo
+    type(c_ptr) :: c_iwallf, c_iwallt, c_ypluli
 
-    call cs_f_wall_functions_get_pointers( c_ideuch, c_iwallt, c_ilogpo)
+    call cs_f_wall_functions_get_pointers(c_iwallf, c_iwallt, c_ypluli)
 
-    call c_f_pointer(c_ideuch, ideuch)
+    call c_f_pointer(c_iwallf, iwallf)
     call c_f_pointer(c_iwallt, iwallt)
-    call c_f_pointer(c_ilogpo, ilogpo)
+    call c_f_pointer(c_ypluli, ypluli)
 
   end subroutine wall_functions_init
 

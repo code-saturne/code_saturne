@@ -272,6 +272,14 @@ const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
 const double cs_turb_xkappa = 0.42;
 
 /*!
+ * Van Driest constant. (= 25.6)
+ *
+ * Useful if and only if \ref iwallf = 5.
+ *  (Two scales log law at the wall using Van Driest mixing length expression).
+ */
+const double cs_turb_vdriest = 25.6;
+
+/*!
  * Constant of logarithmic law function:
  * \f$ \dfrac{1}{\kappa} \ln(y^+) + cstlog \f$
  * (\f$ cstlog = 5.2 \f$).

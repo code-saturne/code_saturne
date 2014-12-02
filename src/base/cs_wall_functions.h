@@ -45,24 +45,34 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/* Wall function type */
+/*--------------------*/
+
+typedef enum {
+
+  CS_WALL_F_DISABLED,
+  CS_WALL_F_1SCALE_POWER,
+  CS_WALL_F_1SCALE_LOG,
+  CS_WALL_F_2SCALES_LOG,
+  CS_WALL_F_SCALABLE_2SCALES_LOG,
+  CS_WALL_F_2SCALES_VDRIEST,
+
+} cs_wall_function_type_t;
+
 /* Wall functions descriptor */
-/*--------------------------------------------*/
+/*---------------------------*/
 
 typedef struct {
 
-  int           ideuch;       /* wall functions
-                                 - 0: one scale of friction velocities
-                                 - 1: two scale of friction velocities
-                                 - 2: scalable wall functions */
-  int           iwallt;       /* exchange coefficient correlation
-                                 - 0: not use by default
-                                 - 1: exchange coefficient computed with a
-                                      correlation */
-  int           ilogpo;       /* wall function with
-                                 - 0: a power lay (deprecated)
-                                 - 1: a log lay */
-  double        ypluli;       /* limit value of y+ for the viscous
-                                 sublayer */
+  cs_wall_function_type_t iwallf;  /* wall function type */
+
+  int                     iwallt;  /* exchange coefficient correlation
+                                      - 0: not used by default
+                                      - 1: exchange coefficient computed with a
+                                           correlation */
+
+  double                  ypluli;  /* limit value of y+ for the viscous
+                                      sublayer */
 
 } cs_wall_functions_t;
 
@@ -73,6 +83,535 @@ typedef struct {
 /* Pointer to wall functions descriptor structure */
 
 extern const cs_wall_functions_t *cs_glob_wall_functions;
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Power law: Werner & Wengle.
+ *
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_1scale_power(cs_real_t   l_visc,
+                               cs_real_t   vel,
+                               cs_real_t   y,
+                               int        *iuntur,
+                               cs_lnum_t  *nsubla,
+                               cs_lnum_t  *nlogla,
+                               cs_real_t  *ustar,
+                               cs_real_t  *uk,
+                               cs_real_t  *yplus,
+                               cs_real_t  *ypup,
+                               cs_real_t  *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
+  const double ydvisc =  y / l_visc;
+
+  /* Compute the friction velocity ustar */
+
+  *ustar = pow((vel/(cs_turb_apow * pow(ydvisc, cs_turb_bpow))), cs_turb_dpow);
+  *uk = *ustar;
+  *yplus = *ustar * ydvisc;
+
+  /* In the viscous sub-layer: U+ = y+ */
+  if (*yplus <= ypluli) {
+
+    *ustar = sqrt(vel / ydvisc);
+    *yplus = *ustar * ydvisc;
+    *uk = *ustar;
+    *ypup = 1.;
+    *cofimp = 0.;
+
+    /* Disable the wall funcion count the cell in the viscous sub-layer */
+    *iuntur = 0;
+    *nsubla += 1;
+
+  /* In the log layer */
+  } else {
+    *ypup =   pow(vel, 2. * cs_turb_dpow-1.)
+            / pow(cs_turb_apow, 2. * cs_turb_dpow);
+    *cofimp = 1. + cs_turb_bpow
+                   * pow(*ustar, cs_turb_bpow + 1. - 1./cs_turb_dpow)
+                   * (pow(2., cs_turb_bpow - 1.) - 2.);
+
+    /* Count the cell in the log layer */
+    *nlogla += 1;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log law: piecewise linear and log, with one velocity scale based on
+ * the friction.
+ *
+ * \param[in]     ifac          face number
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_1scale_log(cs_lnum_t    ifac,
+                             cs_real_t    l_visc,
+                             cs_real_t    vel,
+                             cs_real_t    y,
+                             int         *iuntur,
+                             cs_lnum_t   *nsubla,
+                             cs_lnum_t   *nlogla,
+                             cs_real_t   *ustar,
+                             cs_real_t   *uk,
+                             cs_real_t   *yplus,
+                             cs_real_t   *ypup,
+                             cs_real_t   *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
+  double ustarwer, ustarmin, ustaro, ydvisc;
+  double eps = 0.001;
+  int niter_max = 100;
+  int iter = 0;
+  double reynolds;
+
+  /* Compute the local Reynolds number */
+
+  ydvisc = y / l_visc;
+  reynolds = vel * ydvisc;
+
+  /*
+   * Compute the friction velocity ustar
+   */
+
+  /* In the viscous sub-layer: U+ = y+ */
+  if (reynolds <= ypluli * ypluli) {
+
+    *ustar = sqrt(vel / ydvisc);
+    *yplus = *ustar * ydvisc;
+    *uk = *ustar;
+    *ypup = 1.;
+    *cofimp = 0.;
+
+    /* Disable the wall funcion count the cell in the viscous sub-layer */
+    *iuntur = 0;
+    *nsubla += 1;
+
+  /* In the log layer */
+  } else {
+
+    /* The initial value is Wener or the minimun ustar to ensure convergence */
+    ustarwer = pow(fabs(vel) / cs_turb_apow / pow(ydvisc, cs_turb_bpow),
+                   cs_turb_dpow);
+    ustarmin = exp(-cs_turb_cstlog * cs_turb_xkappa)/ydvisc;
+    ustaro = CS_MAX(ustarwer, ustarmin);
+    *ustar = (cs_turb_xkappa * vel + ustaro)
+           / (log(ydvisc * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
+
+    /* Iterative solving */
+    for (iter = 0;   iter < niter_max
+                  && fabs(*ustar - ustaro) >= eps * ustaro; iter++) {
+      ustaro = *ustar;
+      *ustar = (cs_turb_xkappa * vel + ustaro)
+             / (log(ydvisc * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
+    }
+
+    if (iter >= niter_max) {
+      bft_printf(_("WARNING: non-convergence in the computation\n"
+                   "******** of the friction velocity\n\n"
+                   "face number: %d \n"
+                   "friction vel: %f \n" ), ifac, *ustar);
+    }
+
+    *uk = *ustar;
+    *yplus = *ustar * ydvisc;
+    *ypup = *yplus / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    *cofimp = 1. - *ypup / cs_turb_xkappa * 1.5 / *yplus;
+
+    /* Count the cell in the log layer */
+    *nlogla += 1;
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log law: piecewise linear and log, with two velocity scales based on
+ * the friction and the turbulent kinetic energy.
+ *
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_2scales_log(cs_real_t   l_visc,
+                              cs_real_t   t_visc,
+                              cs_real_t   vel,
+                              cs_real_t   y,
+                              cs_real_t   kinetic_en,
+                              int        *iuntur,
+                              cs_lnum_t  *nsubla,
+                              cs_lnum_t  *nlogla,
+                              cs_real_t  *ustar,
+                              cs_real_t  *uk,
+                              cs_real_t  *yplus,
+                              cs_real_t  *ypup,
+                              cs_real_t  *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
+  double rcprod, ml_visc, Re, g;
+
+  /* Compute the friction velocity ustar */
+
+  /* Blending for very low values of k */
+  Re = sqrt(kinetic_en) * y / l_visc;
+  g = exp(-Re/11.);
+
+  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+            + g * l_visc * vel / y);
+
+  *yplus = *uk * y / l_visc;
+
+  /* log layer */
+  if (*yplus > ypluli) {
+
+    *ustar = vel / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    *ypup = *yplus / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+    /* Mixing length viscosity */
+    ml_visc = cs_turb_xkappa * l_visc * *yplus;
+    rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+    *cofimp = 1. - *ypup / cs_turb_xkappa * ( 2. * rcprod - 1. / (2. * *yplus));
+
+    *nlogla += 1;
+
+  /* viscous sub-layer */
+  } else {
+
+    if (*yplus > 1.e-12) {
+      *ustar = fabs(vel / *yplus); /* FIXME remove that: its is here only to
+                                      be fully equivalent to the former code. */
+    } else {
+      *ustar = 0.;
+    }
+    *ypup = 1.;
+    *cofimp = 0.;
+
+    *iuntur = 0;
+    *nsubla += 1;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Scalable wall function: shift the wall if \f$ y^+ < y^+_{lim} \f$.
+ *
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    dplus         dimensionless shift to the wall for scalable
+ *                              wall functions
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
+                                   cs_real_t   t_visc,
+                                   cs_real_t   vel,
+                                   cs_real_t   y,
+                                   cs_real_t   kinetic_en,
+                                   int        *iuntur,
+                                   cs_lnum_t  *nsubla,
+                                   cs_lnum_t  *nlogla,
+                                   cs_real_t  *ustar,
+                                   cs_real_t  *uk,
+                                   cs_real_t  *yplus,
+                                   cs_real_t  *dplus,
+                                   cs_real_t  *ypup,
+                                   cs_real_t  *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
+  double rcprod, ml_visc, Re, g;
+  /* Compute the friction velocity ustar */
+
+  /* Blending for very low values of k */
+  Re = sqrt(kinetic_en) * y / l_visc;
+  g = exp(-Re/11.);
+
+  *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
+            + g * l_visc * vel / y);
+
+  *yplus = *uk * y / l_visc;
+
+  /* Compute the friction velocity ustar */
+  *uk = cs_turb_cmu025 * sqrt(kinetic_en);
+  *yplus = *uk * y / l_visc;
+
+  /* Log layer */
+  if (*yplus > ypluli) {
+
+    *dplus = 0.;
+
+    *nlogla += 1;
+
+  /* Viscous sub-layer and therefore shift */
+  } else {
+
+    *dplus = ypluli - *yplus;
+    *yplus = ypluli;
+
+    /* Count the cell as if it was in the viscous sub-layer */
+    *nsubla += 1;
+
+  }
+
+  /* Mixing length viscosity */
+  ml_visc = cs_turb_xkappa * l_visc * *yplus;
+  rcprod = CS_MIN(cs_turb_xkappa, CS_MAX(1., sqrt(ml_visc / t_visc)) / *yplus);
+
+  *ustar = vel / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+  *ypup = (*yplus - *dplus) / (log(*yplus) / cs_turb_xkappa + cs_turb_cstlog);
+  *cofimp = 1. - *ypup
+                 / cs_turb_xkappa * (2. * rcprod - 1. / (2. * *yplus - *dplus));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Two velocity scales wall function with Van Driest mixing length.
+ *
+ * \f$ u^+ \f$ is computed as follows:
+ *   \f[ u^+ = \int_0^{y_k^+} \dfrac{dy_k^+}{1+L_m^k} \f]
+ * with \f$ L_m^k \f$ standing for Van Driest mixing length:
+ *  \f[ L_m^k = \kappa y_k^+ (1 - exp(\dfrac{-y_k^+}{A})) \f].
+ *
+ * A polynome fitting the integral is used for \f$ y_k^+ < 200 \f$,
+ * and a log law is used for \f$ y_k^+ >= 200 \f$.
+ *
+ * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
+                                  cs_real_t   l_visc,
+                                  cs_real_t   vel,
+                                  cs_real_t   y,
+                                  cs_real_t   kinetic_en,
+                                  int        *iuntur,
+                                  cs_lnum_t  *nsubla,
+                                  cs_lnum_t  *nlogla,
+                                  cs_real_t  *ustar,
+                                  cs_real_t  *uk,
+                                  cs_real_t  *yplus,
+                                  cs_real_t  *ypup,
+                                  cs_real_t  *cofimp)
+{
+  double y1,y2,y3,y4,y5,y6,y7,y8,y9,y10;
+  double uplus, lmk, lm15k;
+
+  /* Coefficients of the polynome fitting u+ for yk < 200 */
+  static double aa[11] = {-0.0091921, 3.9577, 0.031578,
+                          -0.51013, -2.3254, -0.72665,
+                          2.969, 0.48506, -1.5944,
+                          0.087309, 0.1987 };
+
+  *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
+  *yplus = *uk * y / l_visc;
+
+  if (*yplus <= 1.e-1) {
+
+    uplus = *yplus;
+    *iuntur = 0;
+    *nsubla += 1;
+
+    *ypup = 1.;
+
+    *cofimp = 0.;
+
+  } else if (*yplus <= 200.) {
+
+    y1 = 0.25 * log(*yplus);
+    y2 = y1 * y1;
+    y3 = y2 * y1;
+    y4 = y3 * y1;
+    y5 = y4 * y1;
+    y6 = y5 * y1;
+    y7 = y6 * y1;
+    y8 = y7 * y1;
+    y9 = y8 * y1;
+    y10= y9 * y1;
+
+    uplus =   aa[0]
+            + aa[1]  * y1
+            + aa[2]  * y2
+            + aa[3]  * y3
+            + aa[4]  * y4
+            + aa[5]  * y5
+            + aa[6]  * y6
+            + aa[7]  * y7
+            + aa[8]  * y8
+            + aa[9]  * y9
+            + aa[10] * y10;
+
+    uplus = exp(uplus);
+    *nlogla += 1;
+
+    *ypup = *yplus / uplus;
+
+    /* Mixing length in y+ */
+    lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
+
+    /* Mixing length in 3/2*y+ */
+    lm15k = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus / cs_turb_vdriest));
+
+    *cofimp = 1. - (2. / (1. + lmk) - 1. / (1. + lm15k)) * *ypup;
+
+  } else {
+
+    uplus = 16.088739022054590 + log(*yplus/200.) / cs_turb_xkappa;
+    *nlogla += 1;
+
+    *ypup = *yplus / uplus;
+
+    /* Mixing length in y+ */
+    lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
+
+    /* Mixing length in 3/2*y+ */
+    lm15k = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus / cs_turb_vdriest));
+
+    *cofimp = 1. - (2. / lmk - 1. / lm15k) * *ypup;
+
+  }
+
+  *ustar = vel / uplus;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief No wall function.
+ *
+ * \param[in]     l_visc        kinematic viscosity
+ * \param[in]     t_visc        turbulent kinematic viscosity
+ * \param[in]     vel           wall projected cell center velocity
+ * \param[in]     y             wall distance
+ * \param[out]    iuntur        indicator: 0 in the viscous sublayer
+ * \param[out]    nsubla        counter of cell in the viscous sublayer
+ * \param[out]    nlogla        counter of cell in the log-layer
+ * \param[out]    ustar         friction velocity
+ * \param[out]    uk            friction velocity
+ * \param[out]    yplus         dimensionless distance to the wall
+ * \param[out]    dplus         dimensionless shift to the wall for scalable
+ *                              wall functions
+ * \param[out]    ypup          yplus projected vel ratio
+ * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
+ *                              turbulence production
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_disabled(cs_real_t   l_visc,
+                           cs_real_t   t_visc,
+                           cs_real_t   vel,
+                           cs_real_t   y,
+                           int        *iuntur,
+                           cs_lnum_t  *nsubla,
+                           cs_lnum_t  *nlogla,
+                           cs_real_t  *ustar,
+                           cs_real_t  *uk,
+                           cs_real_t  *yplus,
+                           cs_real_t  *dplus,
+                           cs_real_t  *ypup,
+                           cs_real_t  *cofimp)
+{
+  const double ypluli = cs_glob_wall_functions->ypluli;
+
+  /* Compute the friction velocity ustar */
+
+  *ustar = sqrt(vel * l_visc / y);
+  *yplus = *ustar * y / l_visc;
+  *uk = *ustar;
+  *ypup = l_visc / (l_visc + t_visc);
+  *cofimp = 0.;
+  *iuntur = 0;
+
+  if (*yplus <= ypluli) {
+
+    /* Disable the wall funcion count the cell in the viscous sub-layer */
+    *nsubla += 1;
+
+  } else {
+
+    /* Count the cell as if it was in the viscous sub-layer */
+    *nsubla += 1;
+
+  }
+}
 
 /*============================================================================
  * Public function definitions for Fortran API
@@ -90,8 +629,9 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const t_visc,
  const cs_real_t  *const vel,
  const cs_real_t  *const y,
+ const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
-       cs_int_t        *iuntur,
+       cs_int_t         *iuntur,
        cs_lnum_t        *nsubla,
        cs_lnum_t        *nlogla,
        cs_real_t        *ustar,
@@ -137,6 +677,7 @@ void CS_PROCF (hturbp, HTURBP)
  * \param[in]     vel           wall projected
  *                              cell center velocity
  * \param[in]     y             wall distance
+ * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     kinetic_en    turbulente kinetic energy
  * \param[in]     iuntur        indicator:
  *                              0 in the viscous sublayer
@@ -155,22 +696,23 @@ void CS_PROCF (hturbp, HTURBP)
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_velocity(int          iwallf,
-                           cs_lnum_t    ifac,
-                           cs_real_t    l_visc,
-                           cs_real_t    t_visc,
-                           cs_real_t    vel,
-                           cs_real_t    y,
-                           cs_real_t    kinetic_en,
-                           int         *iuntur,
-                           cs_lnum_t   *nsubla,
-                           cs_lnum_t   *nlogla,
-                           cs_real_t   *ustar,
-                           cs_real_t   *uk,
-                           cs_real_t   *yplus,
-                           cs_real_t   *ypup,
-                           cs_real_t   *cofimp,
-                           cs_real_t   *dplus);
+cs_wall_functions_velocity(cs_wall_function_type_t  iwallf,
+                           cs_lnum_t                ifac,
+                           cs_real_t                l_visc,
+                           cs_real_t                t_visc,
+                           cs_real_t                vel,
+                           cs_real_t                y,
+                           cs_real_t                rnnb,
+                           cs_real_t                kinetic_en,
+                           int                     *iuntur,
+                           cs_lnum_t               *nsubla,
+                           cs_lnum_t               *nlogla,
+                           cs_real_t               *ustar,
+                           cs_real_t               *uk,
+                           cs_real_t               *yplus,
+                           cs_real_t               *ypup,
+                           cs_real_t               *cofimp,
+                           cs_real_t               *dplus);
 
 /*-------------------------------------------------------------------------------*/
 

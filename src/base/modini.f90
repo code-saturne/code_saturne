@@ -719,26 +719,27 @@ elseif (iturb.eq.70) then
   cdtvar(inusa)= cdtvar(inusa)
 endif
 
-! ---> IDEUCH, YPLULI
-!      En laminaire, longueur de melange, Spalar-Allmaras et LES,
-!      une echelle de vitesse.
-!      Sinon, 2 echelles, sauf si l'utilisateur choisit 1 echelle.
-!      On a initialise IDEUCH a -999 pour voir si l'utilisateur essaye
-!        de choisir deux echelles quand ce n'est pas possible et le
-!        prevenir dans la section verification.
+! ---> IWALLF
+! For laminar cases or when using low Reynolds model: no wall function.
+! When using mixing length, Spalart-Allmaras or LES: one scale log law.
+! In all other cases: 2 scales log law.
+! Here iwallf is set automatically only if it wasn't set in the gui or
+! in a user subroutine.
 
-if (ideuch.eq.-999) then
-  if (iturb.eq. 0.or.                                     &
-      iturb.eq.10.or.                                     &
-      itytur.eq.4.or.itytur.eq.5.or.iturb.eq.32.or.       &
-      iturb.eq.70) then
-    ideuch = 0
+if (iwallf.eq.-999) then
+  if (    iturb.eq.10.or.iturb.eq.70 &
+      .or.itytur.eq.4) then
+    iwallf = 2
+  elseif (    iturb.eq. 0.or.iturb.eq.32 &
+          .or.itytur.eq.5) then
+    iwallf = 0
   else
-    ideuch = 1
+    iwallf = 3
   endif
 endif
 
-! Pour YPLULI, 1/XKAPPA est la valeur qui assure la continuite de la derivee
+! ---> YPLULI
+! 1/XKAPPA est la valeur qui assure la continuite de la derivee
 ! entre la zone lineaire et la zone logarithmique.
 
 ! Dans le cas des lois de paroi invariantes, on utilise la valeur de
@@ -750,7 +751,7 @@ endif
 ! Idem en Spalart-Allmaras.
 
 if (ypluli.lt.-grand) then
-  if (ideuch.eq.2 .or. itytur.eq.4 .or. iturb.eq.70) then
+  if (iwallf.eq.4 .or. itytur.eq.4 .or. iturb.eq.70) then
     ypluli = 10.88d0
   else
     ypluli = 1.d0/xkappa

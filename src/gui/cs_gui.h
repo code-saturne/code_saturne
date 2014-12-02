@@ -81,14 +81,14 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
  * *****************
  *
  * INTEGER          ITURB   -->   turbulence model
- * INTEGER          IDEUCH  -->   wall law treatment
+ * INTEGER          IWALLF  -->   wall law treatment
  * INTEGER          IGRAKE  -->   k-eps gravity effects
  * INTEGER          IGRAKI  -->   Rij-eps gravity effects
  * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csturb, CSTURB) (int    *iturb,
-                                int    *ideuch,
+                                int    *iwallf,
                                 int    *igrake,
                                 int    *igrari,
                                 double *xlomlg);

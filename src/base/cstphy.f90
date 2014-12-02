@@ -212,7 +212,7 @@ module cstphy
 
   !> limit value of \f$y^+\f$ for the viscous sublayer.
   !> \ref ypluli depends on the chosen wall function: it is
-  !> initialised to 10.88 for the scalable wall function (\ref ideuch=2),
+  !> initialised to 10.88 for the scalable wall function (\ref iwallf=4),
   !> otherwise it is initialised to \f$1/\kappa\approx 2,38\f$.
   !> In LES, \ref ypluli is taken by default to be 10.88.
   !>
@@ -804,24 +804,6 @@ contains
     call c_f_pointer(c_xlomlg, xlomlg)
 
   end subroutine turb_reference_values_init
-
-  !> \brief Initialize Fortran wall functions API.
-  !> This maps Fortran pointers to global C structure members.
-
-  subroutine wall_reference_values_init
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Local variables
-
-    type(c_ptr) :: c_ypluli
-
-    call cs_f_wall_reference_values( c_ypluli)
-
-    call c_f_pointer(c_ypluli , ypluli )
-
-  end subroutine wall_reference_values_init
 
   !=============================================================================
 

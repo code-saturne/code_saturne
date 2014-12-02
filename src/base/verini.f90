@@ -912,22 +912,18 @@ if (nscal.ge.1) then
 
 endif
 
-if (ideuch.lt.0.or.ideuch.gt.2) then
-  write(nfecra,2211)'IDEUCH',ideuch
+if (iwallf.lt.0.or.iwallf.gt.5) then
+  write(nfecra,2001)'IWALLF',5,iwallf
   iok = iok + 1
 endif
-if (ideuch.ne.0 .and.                                    &
+if (iwallf.gt.2 .and.                                    &
     (iturb.eq.0 .or. iturb.eq.10 .or.                    &
-    itytur.eq.4 .or. iturb.eq.7 )) then
-  write(nfecra,2209)iturb,ideuch
+    itytur.eq.4 .or. iturb.eq.70)) then
+  write(nfecra,2209)iturb,iwallf
   iok = iok + 1
 endif
 if (iwallt.lt.0.or.iwallt.gt.1) then
   write(nfecra,2201)'IWALLT',iwallt
-  iok = iok + 1
-endif
-if (ilogpo.ne.0.and.ilogpo.ne.1) then
-  write(nfecra,2201)'ILOGPO',ilogpo
   iok = iok + 1
 endif
 
@@ -1842,6 +1838,23 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 2001 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@    =========',                                               /,&
+'@',    a6,' DOIT ETRE UN ENTIER POSITIF',                      /,&
+'@      ET INFERIEUR OU EGAL A', i10,                           /,&
+'@    IL VAUT ICI', i10,                                        /,&
+'@',                                                            /,&
+'@  Le calcul ne peut etre execute',                            /,&
+'@',                                                            /,&
+'@  Verifier les parametres donnes via l''interface',           /,&
+'@    ou cs_user_parameters.f90.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
  2005 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1866,7 +1879,7 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    ITHERM DOIT ETRE UN ENTIER EGAL A 0, 10, 11, 20,30',      /,&
+'@    ITHERM DOIT ETRE UN ENTIER EGAL A 0, 1, 2 or 3',      /,&
 '@    IL VAUT ICI', i10,                                        /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
@@ -2680,11 +2693,11 @@ endif
 '@',                                                            /,&
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
 '@    =========',                                               /,&
-'@    LE MODELE DE PAROI A DEUX ECHELLES (IDEUCH=1 OU 2)',      /,&
+'@    LE MODELE DE PAROI A DEUX ECHELLES (IWALLF=3, 4 OU 5)',   /,&
 '@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN',        /,&
 '@    LONGUEUR DE MELANGE, EN SPALART-ALLMARAS OU EN L.E.S.',   /,&
 '@    ON A ICI ITURB=',i10,                                     /,&
-'@         ET IDEUCH=',i10,                                     /,&
+'@         ET IWALLF=',i10,                                     /,&
 '@',                                                            /,&
 '@  Le calcul ne peut etre execute.',                           /,&
 '@',                                                            /,&
@@ -4356,6 +4369,23 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 2001 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@    =========',                                               /,&
+'@',    a6,' MUST BE AN INTEGER POSITIVE ',                     /,&
+'@      AND LESS THAN or EGAL TO',i10,                          /,&
+'@   IT HAS VALUE', i10,                                        /,&
+'@',                                                            /,&
+'@  The calculation could NOT run.',                            /,&
+'@',                                                            /,&
+'@ Check the input data given through the User Interface',      /,&
+'@   or in cs_user_parameters.f90.',                            /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
  2005 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -4380,7 +4410,7 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    ITHERM MUST BE AN INTEGER EGAL TO 0, 10, 11, 20,30',      /,&
+'@    ITHERM MUST BE AN INTEGER EGAL TO 0, 1, 2 or 3',      /,&
 '@   IT HAS VALUE', i10,                                        /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
@@ -5196,11 +5226,11 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    2u*scales version of WALL FUNCTION (IDEUCH=1 or 2)',      /,&
+'@    2u*scales version of WALL FUNCTION (IWALLF=3, 4 or 5)',   /,&
 '@    EST INCOMPATIBLE AVEC UN CALCUL EN LAMINAIRE, EN',        /,&
 '@    LONGUEUR DE MELANGE or EN L.E.S.',                        /,&
 '@    ON A ICI ITURB=',i10,                                     /,&
-'@         ET IDEUCH=',i10,                                     /,&
+'@         ET IWALLF=',i10,                                     /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&

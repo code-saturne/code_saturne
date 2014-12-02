@@ -174,6 +174,7 @@ extern const cs_turb_les_model_t     *cs_glob_turb_les_model;
 /* Constant for turbulence models */
 
 extern const double cs_turb_xkappa;
+extern const double cs_turb_vdriest;
 extern const double cs_turb_cstlog;
 extern const double cs_turb_apow;
 extern const double cs_turb_bpow;

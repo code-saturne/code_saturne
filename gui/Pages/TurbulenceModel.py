@@ -149,7 +149,7 @@ class TurbulenceModel(Variables, Model):
         default = {}
         default['turbulence_model'] = "k-epsilon-PL"
         default['length_scale']     = 1.0
-        default['scale_model']      = 1
+        default['wall_function']      = 3
         default['gravity_terms']    = "on"
 
         return default
@@ -206,6 +206,7 @@ class TurbulenceModel(Variables, Model):
         if model_turb == 'mixing_length':
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__removeVariablesAndProperties([], 'smagorinsky_constant^2')
+            self.node_turb.xmlRemoveChild('wall_function')
 
         elif model_turb in ('k-epsilon', 'k-epsilon-PL'):
             lst = ('k', 'epsilon')
@@ -234,10 +235,13 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
+            wall_function = 0
+            self.setWallFunction(wall_function)
 
         elif model_turb in self.LESmodels():
             self.setNewProperty(self.node_turb, 'smagorinsky_constant^2')
             self.__removeVariablesAndProperties([], 'turbulent_viscosity')
+            self.node_turb.xmlRemoveChild('wall_function')
 
             from code_saturne.Pages.TimeStepModel import TimeStepModel
             TimeStepModel(self.case).setTimePassing(0)
@@ -256,6 +260,8 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
+            wall_function = 0
+            self.setWallFunction(wall_function)
 
         elif model_turb == 'k-omega-SST':
             lst = ('k', 'omega')
@@ -271,11 +277,13 @@ class TurbulenceModel(Variables, Model):
             self.setNewProperty(self.node_turb, 'turbulent_viscosity')
             self.__updateInletsForTurbulence()
             self.__removeVariablesAndProperties(lst, 'smagorinsky_constant^2')
+            self.node_turb.xmlRemoveChild('wall_function')
 
         else:
             model_turb = 'off'
             self.node_turb.xmlRemoveChild('variable')
             self.node_turb.xmlRemoveChild('property')
+            self.node_turb.xmlRemoveChild('wall_function')
 
         DefineUserScalarsModel(self.case).setTurbulentFluxGlobalModel(model_turb)
 
@@ -326,24 +334,24 @@ class TurbulenceModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getScaleModel(self):
+    def getWallFunction(self):
         """
-        Return scale model from advanced options.
+        Return wall function from advanced options.
         """
-        scale = self.node_turb.xmlGetInt('scale_model')
-        if scale != 0 and scale != 1 and scale != 2:
-            scale = self.defaultTurbulenceValues()['scale_model']
-            self.setScaleModel(scale)
-        return scale
+        wall_function = self.node_turb.xmlGetInt('wall_function')
+        if wall_function < 0 or wall_function > 5:
+            wall_function = self.defaultTurbulenceValues()['wall_function']
+            self.setWallFunction(wall_function)
+        return wall_function
 
 
     @Variables.undoLocal
-    def setScaleModel(self, scale):
+    def setWallFunction(self, wall_function):
         """
-        Input scale model for advanced options.
+        Input wall function for advanced options.
         """
-        self.isIntInList(scale, [0, 1, 2])
-        self.node_turb.xmlSetData('scale_model', scale)
+        self.isIntInList(wall_function, [0, 1, 2, 3, 4, 5])
+        self.node_turb.xmlSetData('wall_function', wall_function)
 
 
     @Variables.noUndo
@@ -643,11 +651,11 @@ class TurbulenceModelTestCase(ModelTest):
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
            'Could not set the mixing length scale'
 
-    def checkSetandGetScaleModel(self):
-        """Check whether the scale model could be get"""
+    def checkSetandGetWallFunction(self):
+        """Check whether the wall function could be get"""
         mdl = TurbulenceModel(self.case)
         mdl.setTurbulenceModel('k-epsilon')
-        mdl.setScaleModel(2)
+        mdl.setWallFunction(2)
 
         doc = '''<turbulence model="k-epsilon">
                 <variable label="TurbEner" name="k"/>
@@ -656,12 +664,12 @@ class TurbulenceModelTestCase(ModelTest):
                 <initialization choice="reference_velocity">
                     <reference_velocity>1</reference_velocity>
                 </initialization>
-                <scale_model>2</scale_model>
+                <wall_function>2</wall_function>
                 </turbulence>'''
         assert mdl.node_turb == self.xmlNodeFromString(doc),\
-            'Could not set the scale model '
-        assert mdl.getScaleModel() == 2,\
-            'Could not get the scale model '
+            'Could not set the wall function '
+        assert mdl.getWallFunction() == 2,\
+            'Could not get the wall function '
 
     def checkSetandGetgravity(self):
         """Check whether the gravity could be get"""
