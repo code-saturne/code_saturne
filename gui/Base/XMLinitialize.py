@@ -360,11 +360,19 @@ class XMLinit(Variables):
                         n.xmlRemoveNode()
                     ThermalScalarModel(self.case).setThermalModel('enthalpy')
                 else:
-                    if (mdl == "dry"):
+                    if mdl == "dry":
                         n = node.xmlGetNode('scalar', name="potential_temperature")
                         if n:
                             n.xmlRemoveNode()
                         ThermalScalarModel(self.case).setThermalModel('potential_temperature')
+                    elif mdl == "constant":
+                        n = node.xmlGetNode('scalar', name="potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
+                        if n:
+                            n.xmlRemoveNode()
+                        ThermalScalarModel(self.case).setThermalModel('off')
                     else:
                         n = node.xmlGetNode('scalar', name="liquid_potential_temperature")
                         if n:
