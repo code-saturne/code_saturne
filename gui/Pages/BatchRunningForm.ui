@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>474</width>
-    <height>509</height>
+    <height>539</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -454,6 +454,40 @@
           </item>
           <item>
            <spacer name="horizontalSpacer_9">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="labelJobWCKey">
+          <property name="text">
+           <string>WCKey</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="2">
+         <layout class="QHBoxLayout" name="horizontalLayout_WCKey">
+          <item>
+           <widget class="QLineEdit" name="lineEditJobWCKey">
+            <property name="minimumSize">
+             <size>
+              <width>300</width>
+              <height>0</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_WCKey">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>

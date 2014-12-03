@@ -5,7 +5,8 @@ Release 3.0.7 (unreleased)
 Changes:
 --------
 
-- GUI: add handling of SLURM "--account" option in batch handling dialog box.
+- GUI: add handling of SLURM "--account" and "--wckeys" options
+  in batch handling dialog box.
 
 Bug fixes:
 ----------

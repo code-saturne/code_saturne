@@ -539,6 +539,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                                                    QRegExp("\\S+"))
             self.lineEditJobName.setValidator(validatorSimpleName)
             self.lineEditJobAccount.setValidator(validatorAccountName)
+            self.lineEditJobWCKey.setValidator(validatorAccountName)
             self.pushButtonRunSubmit.setText("Submit job")
 
         else:
@@ -572,6 +573,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                          self.slotClass)
             self.connect(self.lineEditJobAccount, SIGNAL("textChanged(const QString &)"),
                          self.slotJobAccount)
+            self.connect(self.lineEditJobWCKey, SIGNAL("textChanged(const QString &)"),
+                         self.slotJobWCKey)
 
         else:
             self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotParallelComputing)
@@ -672,9 +675,19 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        if self.lineEditJobName.validator().state == QValidator.Acceptable:
+        if self.lineEditJobAccount.validator().state == QValidator.Acceptable:
             self.jmdl.dictValues['job_account'] = str(v)
             self.jmdl.updateBatchFile('job_account')
+
+
+    @pyqtSignature("const QString &")
+    def slotJobWCKey(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        if self.lineEditJobWCKey.validator().state == QValidator.Acceptable:
+            self.jmdl.dictValues['job_wckey'] = str(v)
+            self.jmdl.updateBatchFile('job_wckey')
 
 
     @pyqtSignature("const QString &")
@@ -968,6 +981,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.comboBoxClass.hide()
         self.labelJobAccount.hide()
         self.lineEditJobAccount.hide()
+        self.labelJobWCKey.hide()
+        self.lineEditJobWCKey.hide()
 
 
     def displayBatchInfo(self):
@@ -982,6 +997,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.job_walltime = self.jmdl.dictValues['job_walltime']
         self.job_class  = self.jmdl.dictValues['job_class']
         self.job_account  = self.jmdl.dictValues['job_account']
+        self.job_wckey  = self.jmdl.dictValues['job_wckey']
 
         if self.job_name != None:
             self.labelJobName.show()
@@ -1056,6 +1072,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.labelJobAccount.show()
             self.lineEditJobAccount.setText(str(self.job_account))
             self.lineEditJobAccount.show()
+
+        if self.job_wckey != None:
+            self.labelJobWCKey.show()
+            self.lineEditJobWCKey.setText(str(self.job_wckey))
+            self.lineEditJobWCKey.show()
 
         # Show Job management box
 
