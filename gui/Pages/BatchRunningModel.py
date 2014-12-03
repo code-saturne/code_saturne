@@ -72,6 +72,7 @@ class BatchRunningModel(Model):
         self.dictValues['job_walltime'] = None
         self.dictValues['job_class'] = None
         self.dictValues['job_account'] = None
+        self.dictValues['job_wckey'] = None
 
         # Do we force a number of MPI ranks ?
 
@@ -540,6 +541,8 @@ class BatchRunningModel(Model):
                     self.dictValues['job_class'] = val
                 elif kw == '--account=' or kw == '-A':
                     self.dictValues['job_account'] = val
+                elif kw == '--wckey=':
+                    self.dictValues['job_wckey'] = val
 
 
     def updateBatchSLURM(self):
@@ -583,6 +586,8 @@ class BatchRunningModel(Model):
                     val = self.dictValues['job_class']
                 elif kw == '--account=' or kw == '-A':
                     val = self.dictValues['job_account']
+                elif kw == '--wckey=':
+                    val = self.dictValues['job_wckey']
                 else:
                     continue
                 batch_lines[i] = '#SBATCH ' + kw + str(val)
