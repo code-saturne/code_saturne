@@ -50,7 +50,7 @@ rcParams['ytick.labelsize'] = 'large'
 rcParams['figure.dpi']      = 200
 rcParams['figure.figsize']  = (4,4)
 rcParams['font.family']     = 'sans-serif'
-#rcParams['text.usetex']     = True
+rcParams['text.usetex']     = True
 
 #-------------------------------------------------------------------------------
 # additional colors
@@ -425,12 +425,15 @@ class Plotter(object):
         return nbr
 
 
-    def plot_study(self, study_label, study_object):
+    def plot_study(self, study_label, study_object, disable_tex):
         """
         Method used to plot all plots from a I{study_label} (all cases).
         @type study_label: C{String}
         @param study_label: label of a study
         """
+        # disable tex in Matplotlib (use Mathtext instead)
+        rcParams['text.usetex'] = not disable_tex
+
         # initialisation for each Study
         self.curves  = []
         self.figures = []

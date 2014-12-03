@@ -117,12 +117,17 @@ def process_cmd_line(argv, pkg):
                       type="string",
                       help="addresses for sending the reports")
 
+    parser.add_option("-z", "--disable-tex",
+                      action="store_true", dest="disable_tex", default=False,
+                      help="disable text rendering with LaTex in Matplotlib (use Mathtext)")
+
     (options, args) = parser.parse_args(argv)
 
     return  options.filename, options.verbose, \
         options.update, options.updatexml, options.compile, \
         options.runcase, options.n_iterations, options.compare, \
-        options.reference, options.post, options.log_file, options.addresses
+        options.reference, options.post, options.log_file, options.addresses, \
+        options.disable_tex
 
 #-------------------------------------------------------------------------------
 # Send the report.
@@ -204,7 +209,7 @@ def release():
 # Start point of Auto V & V script
 #-------------------------------------------------------------------------------
 
-def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to):
+def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z):
     """
     Main function
       1. parse the command line,
@@ -241,7 +246,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, op
 
     # Read the file of parameters
 
-    studies = Studies(pkg, opt_f, opt_v, opt_x, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif, opt_l)
+    studies = Studies(pkg, opt_f, opt_v, opt_x, opt_r, opt_n, opt_c, opt_d, opt_p, exe, dif, opt_l, opt_z)
     if opt_x == False:
         os.chdir(studies.getDestination())
     else:
@@ -339,11 +344,10 @@ def main(argv, pkg):
 
     # Command line
 
-    opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses = process_cmd_line(argv, pkg)
+    opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, addresses, opt_z = process_cmd_line(argv, pkg)
     opt_to  = addresses.split()
 
-    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to)
-
+    retcode = runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, opt_d, opt_p, opt_l, opt_to, opt_z)
     sys.exit(retcode)
 
 #-------------------------------------------------------------------------------

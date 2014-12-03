@@ -663,7 +663,7 @@ class Studies(object):
     """
     Manage all Studies and all Cases described in the files of parameters.
     """
-    def __init__(self, pkg, f, v, x, r, n, c, d, p, exe, dif, log):
+    def __init__(self, pkg, f, v, x, r, n, c, d, p, exe, dif, log, dis_tex):
         """
         Constructor.
           1. create if necessary the destination directory,
@@ -749,6 +749,7 @@ class Studies(object):
         self.__compare = c
         self.__ref     = d
         self.__postpro = p
+        self.__dis_tex = dis_tex
 
         # in case of restart
         iok = 0
@@ -1123,11 +1124,11 @@ class Studies(object):
         if self.__plotter:
             for l, s in self.studies:
                 self.reporting('  o Plot study: ' + l)
-                self.__plotter.plot_study(l, s)
+                self.__plotter.plot_study(l, s, self.__dis_tex)
 
         if self.__plotvtk:
             for l, s in self.studies:
-                self.__plotvtk.plot_study(l, s)
+                self.__plotvtk.plot_study(l, s, self.__dis_tex)
 
 
     def build_reports(self, report1, report2):
