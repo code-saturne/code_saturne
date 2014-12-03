@@ -640,6 +640,7 @@ class XMLinit(Variables):
                 content = content.replace("v =", "velocity[1] =")
                 content = content.replace("w =", "velocity[2] =")
                 content = content.replace("P =", "pressure =")
+                node.xmlSetTextNode(content)
 
         for node in nth.xmlGetNodeList('formula'):
             status = node["status"]
@@ -648,6 +649,7 @@ class XMLinit(Variables):
                 content = content.replace("T =", "temperature =")
                 content = content.replace("temperature_celsius =", "temperature =")
                 content = content.replace("temperature_kelvin =", "temperature =")
+                node.xmlSetTextNode(content)
 
         for node in XMLThermoPhysicalNode.xmlGetNodeList('formula'):
             status = node["status"]
