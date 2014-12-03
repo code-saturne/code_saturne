@@ -116,6 +116,7 @@ def findDockWindow(xmlName, caseName, studyCFDName):
     """
     Find if the dockwindow corresponding to this xmlcase is already opened
     """
+    log.debug("findDockWindow")
     bool_findDockWindow = False
 
     if _c_CFDGUI != None:
@@ -496,6 +497,7 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         studyId = sgPyQt.getStudyId()
         if _c_CFDGUI != None:
             _c_CFDGUI.showDocks(studyId)
+            _c_CFDGUI.tabifyDockWindows(sgPyQt.getDesktop(),studyId)
 
         updateObjectBrowser()
 

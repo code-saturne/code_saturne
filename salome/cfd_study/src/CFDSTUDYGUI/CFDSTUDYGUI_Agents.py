@@ -54,6 +54,14 @@ is the main window's central widget.
 #-------------------------------------------------------------------------------
 # Classes definition
 #-------------------------------------------------------------------------------
+import logging
+#-------------------------------------------------------------------------------
+# log config
+#-------------------------------------------------------------------------------
+
+logging.basicConfig()
+log = logging.getLogger("CFDSTUDYGUI_Agents")
+log.setLevel(logging.NOTSET)
 
 class Desktop_Agent:
     """
@@ -63,6 +71,7 @@ class Desktop_Agent:
         """
         Constructor.
         """
+        log.debug("CFDSTUDYGUI_Agents.Desktop_Agent.__init__: ")
         self._WORKSPACE = None
 
 
@@ -73,6 +82,7 @@ class Desktop_Agent:
         @type ws: C{QWidget}
         @param ws: main window's central widget.
         """
+        log.debug("CFDSTUDYGUI_Agents.Desktop_Agent.setWorkspace: ")
         self._WORKSPACE = ws
 
 
@@ -83,6 +93,7 @@ class Desktop_Agent:
         @return: main window's central widget.
         @rtype: C{QWidget}
         """
+        log.debug("CFDSTUDYGUI_Agents.Desktop_Agent.workspace: ")
         return self._WORKSPACE
 
 #-------------------------------------------------------------------------------

@@ -43,10 +43,6 @@ logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_Management")
 log.setLevel(logging.NOTSET)
 
-#2011/02/14 nouvelle classe CFDGUI_Management permettant a terme de remplacer _d_DockWindows, _d_DockWindowsBrowser
-#CFDGUI_Management.d_CfdCases = {SalomeStudyId: [[DockWindow, DockWindowBrowser, MwCFD, AStudyCFD, ACaseCFD, AxmlFileName], ...]}
-#CFDGUI_Management.d_CfdCases[studyId].append([dock,mw.dockWidgetBrowser,mw,aStudyCFD,aCaseCFD,xmlFileName,sobjXML])
-
 #-------------------------------------------------------------------------------
 # Class definitions
 #-------------------------------------------------------------------------------
@@ -67,6 +63,7 @@ class Mapper:
 class CFDGUI_Management:
     """
     Dock windows are managed by CFDGUI_Management class
+    CFDGUI_Management.d_CfdCases[studyId].append([dock,mw.dockWidgetBrowser,mw,aStudyCFD,aCaseCFD,xmlFileName,sobjXML])
     """
     def __init__(self):
       self.dockPosInListe                  = 0
@@ -278,6 +275,24 @@ class CFDGUI_Management:
                 dock.close()
         # remove the liste which contains the removed docks in the dictionary
         self.d_CfdCases[studyId].remove(liste)
+
+
+    def cleanAllDock(self, dsk):
+        """
+        clean all dock windows of cfd cases and clean attached dictionary;
+        called when closing salome study and remaining into the desktop
+        """
+        if self.d_CfdCases == {} : return
+        for liste in self.d_CfdCases.values() :
+            for liste_object in liste :
+                dockcfd, docwb = liste_object[self.dockPosInListe], liste_object[self.dockWBPosInListe]
+                for dock in [dockcfd, docwb]:
+                    if dock != None:
+                        dsk.removeDockWidget(dock)
+                        dock.setParent(None)
+                        dock.close()
+        # clean the associated dictionary
+        self.d_CfdCases.clear()
 
 
     def tabifyDockWindows(self,dsk,studyId):

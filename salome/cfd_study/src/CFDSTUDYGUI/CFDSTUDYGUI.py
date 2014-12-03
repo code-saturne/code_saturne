@@ -33,14 +33,14 @@ Main file of the CFD_STUDY module. Defines the standard SALOME callback.
 # Standard modules
 #-------------------------------------------------------------------------------
 
-import os
+import os, string
 import logging
 
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
 
-from PyQt4.QtGui import QDialog, QMessageBox, QDockWidget, QCursor, QApplication
+from PyQt4.QtGui import QDialog, QMessageBox, QDockWidget, QCursor, QApplication, QTabWidget
 from PyQt4.QtCore import Qt, QObject, SIGNAL
 
 #-------------------------------------------------------------------------------
@@ -51,6 +51,7 @@ import SalomePyQt
 from SalomePyQt import WT_ObjectBrowser, WT_PyConsole, WT_LogWindow
 import SALOMEDS
 import SALOMEDS_Attributes_idl
+import salome, salome_version
 
 #-------------------------------------------------------------------------------
 # Application modules
@@ -60,6 +61,7 @@ import CFDSTUDYGUI_ActionsHandler
 import CFDSTUDYGUI_DataModel
 import CFDSTUDYGUI_Commons
 import CFDSTUDYGUI_DesktopMgr
+import CFDSTUDYGUI_SolverGUI
 
 from CFDSTUDYGUI_Commons import sg, sgPyQt
 from CFDSTUDYGUI_Commons import CFD_Saturne, CFD_Neptune
@@ -76,8 +78,8 @@ log.setLevel(logging.NOTSET)
 #-------------------------------------------------------------------------------
 # Global definitions
 #-------------------------------------------------------------------------------
-
-studyId = 1
+__MODULE_NAME__ = "CFDSTUDY"
+studyId = salome.myStudyId
 d_activation = {}
 
 # Desktop manager: instance of CFDSTUDYGUI_DesktopMgr class to store the SALOME Workspace
@@ -120,6 +122,14 @@ def windows():
     winMap[ WT_PyConsole ]     = Qt.BottomDockWidgetArea
     #winMap[ WT_LogWindow ]     = Qt.BottomDockWidgetArea
     return winMap
+
+
+def closeStudy(aStudyId) :
+    """
+    This method is called when salome study is closed (Salome desktop button File -> close -> close w/o saving button) and Salome Main window desktop is already available
+    """
+    if salome_version.getVersion() >= '7.5.0' :
+        CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
 
 
 def views():
@@ -184,6 +194,13 @@ def activate():
 
     dsk = sgPyQt.getDesktop()
     studyId = sgPyQt.getStudyId()
+    dsk.setTabPosition(Qt.RightDockWidgetArea,QTabWidget.South)
+    dsk.setTabPosition(Qt.LeftDockWidgetArea,QTabWidget.South)
+
+    if salome_version.getVersion() <= '7.4.0' :
+        if salome.myStudy.FindComponent(__MODULE_NAME__) == None :
+            CFDSTUDYGUI_SolverGUI._c_CFDGUI.cleanAllDock(sgPyQt.getDesktop())
+            log.debug("activate ->  CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases = %s" % CFDSTUDYGUI_SolverGUI._c_CFDGUI.d_CfdCases)
     # instance of the CFDSTUDYGUI_ActionsHandler class for the current desktop
     ActionHandler = _DesktopMgr.getActionHandler(dsk)
 

@@ -543,12 +543,16 @@ class RunCaseDialogHandler(RunCaseDialog):
     def setInitData(self, aCaseObj):
         self.CurrentCase = aCaseObj
 
+
     def setCurrentCase(self, aCase):
         self.CurrentCase = aCase
+
 
     # use before fill data
     def setCurrentStudy(self, theStudy):
         self.CurrentStudy = theStudy
+
+
 #----------------------------------------------------------------------------------------------------------------------
 
 class ECSConversionDialog(QtGui.QDialog,Ui_ECSConversionDialog):
