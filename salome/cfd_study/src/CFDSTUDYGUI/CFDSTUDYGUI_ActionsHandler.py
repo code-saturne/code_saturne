@@ -2035,7 +2035,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         Salome
         """
         log.debug("disconnectSolverGUI")
-        #self._SolverGUI.disconnectDockWindowsBrowser()
         self._SolverGUI.disconnectDockWindows()
 
 
@@ -2045,4 +2044,3 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         log.debug("connectSolverGUI")
         self._SolverGUI.connectDockWindows()
-        #self._SolverGUI.connectDockWindowsBrowser()
