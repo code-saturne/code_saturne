@@ -2456,7 +2456,6 @@ void CS_PROCF (csivis, CSIVIS) (void)
           }
         }
       }
-
     }
   }
 
@@ -2470,6 +2469,10 @@ void CS_PROCF (csivis, CSIVIS) (void)
           if (_scalar_properties_choice(i+1, &choice1))
             if (iscalt != i+1)
               cs_field_set_key_int(f, kivisl, choice1 - 1);
+          // for darcy we impose variable property
+          if (cs_gui_strcmp(vars->model, "darcy_model"))
+            if (iscalt != i+1)
+              cs_field_set_key_int(f, kivisl, 0);
         }
       }
     }
@@ -3106,33 +3109,35 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
      the solver, one sets the diffusivity, thus one need to multiply
      this coefficient by the density to remain coherent */
 
-  int n_fields = cs_field_n_fields();
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
-    if (   (f->type & CS_FIELD_VARIABLE)
-        && (f->type & CS_FIELD_USER)) {
-      int i = cs_field_get_key_int(f, keysca) - 1;
-      if (cs_field_get_key_int(f, kscavr) < 0) {
+  if (!cs_gui_strcmp(vars->model, "darcy_model")) {
+    int n_fields = cs_field_n_fields();
+    for (int f_id = 0; f_id < n_fields; f_id++) {
+      const cs_field_t  *f = cs_field_by_id(f_id);
+      if (   (f->type & CS_FIELD_VARIABLE)
+          && (f->type & CS_FIELD_USER)) {
+        int i = cs_field_get_key_int(f, keysca) - 1;
+        if (cs_field_get_key_int(f, kscavr) < 0) {
 
-        if (cs_gui_strcmp(vars->model, "solid_fuels")) {
-          /* Air molar mass */
-          result = 0.028966;
-          cs_gui_reference_initialization("mass_molar", &result);
-          if (result <= 0)
+          if (cs_gui_strcmp(vars->model, "solid_fuels")) {
+            /* Air molar mass */
+            result = 0.028966;
+            cs_gui_reference_initialization("mass_molar", &result);
+            if (result <= 0)
+              bft_error(__FILE__, __LINE__, 0,
+                        _("mass molar value is zero or not found in the xml file.\n"));
+            density = *p0 * result / (8.31434 *(*t0));
+          }
+          else
+            cs_gui_properties_value("density", &density);
+
+          if (density <= 0)
             bft_error(__FILE__, __LINE__, 0,
-                      _("mass molar value is zero or not found in the xml file.\n"));
-          density = *p0 * result / (8.31434 *(*t0));
+                      _("Density value is zero or not found in the xml file.\n"));
+
+          coeff = visls0[i] / density ;
+          cs_gui_scalar_diffusion_value(i+1, &coeff);
+          visls0[i] = coeff * density;
         }
-        else
-          cs_gui_properties_value("density", &density);
-
-        if (density <= 0)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("Density value is zero or not found in the xml file.\n"));
-
-        coeff = visls0[i] / density ;
-        cs_gui_scalar_diffusion_value(i+1, &coeff);
-        visls0[i] = coeff * density;
       }
 #if _XML_DEBUG_
       bft_printf("--visls0[%i] = %f\n", i, visls0[i]);
@@ -4633,9 +4638,12 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   double time0;
   mei_tree_t *ev_law = NULL;
   int i, iel;
+  int *cells_list = NULL;
+  int cells = 0;
 
   cs_var_t  *vars = cs_glob_var;
   const int iscalt = cs_glob_thermal_model->iscalt;
+  const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   /* law for density */
   if (!cs_gui_strcmp(vars->model, "compressible_model") ||
@@ -4728,10 +4736,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       }
 
       if (user_law) {
-          int diff_id = cs_field_get_key_int(f, keysca);
-          cs_field_t *c_prop = NULL;
-          if (diff_id > -1)
-            c_prop = cs_field_by_id(diff_id);
+        int diff_id = cs_field_get_key_int(f, keysca);
+        cs_field_t *c_prop = NULL;
+        if (diff_id > -1)
+          c_prop = cs_field_by_id(diff_id);
 
         /* search the formula for the law */
         path = cs_xpath_init_path();
@@ -4758,15 +4766,19 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
           }
 
           /* try to build the interpreter */
+          char *tmp = NULL;
+          BFT_MALLOC(tmp, strlen(f->name) + 13, char);
+          strcpy(tmp, f->name);
+          strcat(tmp, "_diffusivity");
 
           if (mei_tree_builder(ev_law))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not interpret expression: %s\n"), ev_law->string);
 
-          if (mei_tree_find_symbol(ev_law, "diffusivity"))
+          if (mei_tree_find_symbol(ev_law, tmp))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not find the required symbol: %s\n"),
-                      "diffusivity");
+                      tmp);
 
           /* for each cell, update the value of the table of symbols for each scalar
              (including the thermal scalar), and evaluate the interpreter */
@@ -4783,7 +4795,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
               }
 
               mei_evaluate(ev_law);
-              c_prop->val[iel] = mei_tree_lookup(ev_law, "diffusivity") * c_rho->val[iel];
+              c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * c_rho->val[iel];
             }
           }
           else {
@@ -4797,9 +4809,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
               }
 
               mei_evaluate(ev_law);
-              c_prop->val[iel] = mei_tree_lookup(ev_law, "diffusivity") * (*ro0);
+              c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * (*ro0);
             }
           }
+          BFT_FREE(tmp);
           mei_tree_destroy(ev_law);
 
           cs_gui_add_mei_time(cs_timer_wtime() - time0);
@@ -5278,54 +5291,6 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
             }
           }
         }
-
-        int user_id = -1;
-        int n_fields = cs_field_n_fields();
-        const int keysca = cs_field_key_id("scalar_diffusivity_id");
-
-        for (int f_id = 0; f_id < n_fields; f_id++) {
-          cs_field_t *f = cs_field_by_id(f_id);
-          if (   (f->type & CS_FIELD_VARIABLE)
-              && (f->type & CS_FIELD_USER)) {
-            user_id++;
-            char *delayname = NULL;
-            int len = strlen(f->name) + 7;
-            BFT_MALLOC(delayname, len, char);
-            strcpy(delayname, f->name);
-            strcat(delayname, "_delay");
-            cs_field_t *fdelay = cs_field_by_name_try(delayname);
-            cs_real_t   *delay_val = fdelay->val;
-            BFT_FREE(delayname);
-
-            for (int icel = 0; icel < cells; icel++) {
-              int iel = cells_list[icel];
-              delay_val[iel] = 1. + 0.15 / saturation_field[iel];
-
-              if (delay_val[iel] < 1.) {
-                bft_printf("soil_tracer_law, WARNING : delay must be greater or equal to 1\n");
-                bft_printf("                           current value is %15.8E\n", delay_val[iel]);
-              }
-            }
-            int diff_id = cs_field_get_key_int(f, keysca);
-            if (diff_id >= 0) {
-              cs_field_t *c_prop = NULL;
-              if (diff_id > -1)
-                c_prop = cs_field_by_id(diff_id);
-
-              for (int icel = 0; icel < cells; icel++) {
-                int iel = cells_list[icel];
-                c_prop->val[iel] = saturation_field[iel] * molecular_diffusion + 1.e-15;
-                if (c_prop->val[iel] < 0.) {
-                  bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be greater or equal to 0\n");
-                  bft_printf("                           current value is %15.8E\n", c_prop->val[iel]);
-                }
-                if (*diffusion == 1 && c_prop->val[iel] <= 0.) {
-                  bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be strictly greater than 0 if no anisotropic part\n");
-                }
-              }
-            }
-          }
-        }
       }
       else {  // user law
         path = cs_xpath_init_path();
@@ -5450,6 +5415,105 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
           visten_v[iel][5] =       diff * vel[iel][2] * vel[iel][0] / denom;
         }
       }
+
+      int user_id = -1;
+      int n_fields = cs_field_n_fields();
+      const int keysca = cs_field_key_id("scalar_diffusivity_id");
+
+      for (int f_id = 0; f_id < n_fields; f_id++) {
+        cs_field_t *f = cs_field_by_id(f_id);
+        if (   (f->type & CS_FIELD_VARIABLE)
+            && (f->type & CS_FIELD_USER)) {
+          user_id++;
+          char *delayname = NULL;
+          int len = strlen(f->name) + 7;
+          BFT_MALLOC(delayname, len, char);
+          strcpy(delayname, f->name);
+          strcat(delayname, "_delay");
+          cs_field_t *fdelay = cs_field_by_name_try(delayname);
+          cs_real_t   *delay_val = fdelay->val;
+
+          char *diffname = NULL;
+          BFT_MALLOC(diffname, strlen(f->name) + 13, char);
+          strcpy(diffname, f->name);
+          strcat(diffname, "_diffusivity");
+
+          int diff_id = cs_field_get_key_int(f, keysca);
+          cs_field_t *c_prop = NULL;
+          if (diff_id >= 0)
+            c_prop = cs_field_by_id(diff_id);
+
+          path = cs_xpath_init_path();
+          cs_xpath_add_elements(&path, 3,
+                                "thermophysical_models",
+                                "darcy",
+                                "darcy_law");
+          cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
+          cs_xpath_add_element_num(&path, "variable", user_id +1);
+          cs_xpath_add_element(&path, "property");
+          cs_xpath_add_element(&path, "formula");
+          cs_xpath_add_function_text(&path);
+
+          formula = cs_gui_get_text_value(path);
+          BFT_FREE(path);
+
+          if (formula != NULL) {
+            /* return an empty interpreter */
+            time0 = cs_timer_wtime();
+
+            ev_formula = mei_tree_new(formula);
+            BFT_FREE(formula);
+
+            mei_tree_insert(ev_formula, "x", 0.0);
+            mei_tree_insert(ev_formula, "y", 0.0);
+            mei_tree_insert(ev_formula, "z", 0.0);
+            mei_tree_insert(ev_formula, "saturation", 0.0);
+            mei_tree_insert(ev_formula, f->name, 0.0);
+
+            /* try to build the interpreter */
+
+            if (mei_tree_builder(ev_formula))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not interpret expression: %s\n"), ev_formula->string);
+
+            const char *symbols[] = {delayname,
+                                     diffname};
+
+            if (mei_tree_find_symbols(ev_formula, 2, symbols))
+              bft_error(__FILE__, __LINE__, 0,
+                        _("Error: can not find the required symbol: %s %s\n"),
+                        delayname, diffname);
+
+            for (int icel = 0; icel < cells; icel++) {
+              int iel = cells_list[icel];
+
+              mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+              mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+              mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
+              mei_tree_insert(ev_formula, "saturation", saturation_field[iel]);
+              mei_tree_insert(ev_formula, f->name, f->val[iel]);
+
+              mei_evaluate(ev_formula);
+              delay_val[iel] = mei_tree_lookup(ev_formula, delayname);
+              c_prop->val[iel] = mei_tree_lookup(ev_formula, diffname);
+
+              if (c_prop->val[iel] < 0.) {
+                bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be greater or equal to 0\n");
+                bft_printf("                           current value is %15.8E\n", c_prop->val[iel]);
+              }
+              if (*diffusion == 1 && c_prop->val[iel] <= 0.) {
+                bft_printf("soil_tracer_law, WARNING : isotropic diffusion must be strictly greater than 0 if no anisotropic part\n");
+              }
+            }
+            mei_tree_destroy(ev_formula);
+
+            cs_gui_add_mei_time(cs_timer_wtime() - time0);
+          }
+          BFT_FREE(delayname);
+          BFT_FREE(diffname);
+        }
+      }
+
       BFT_FREE(cells_list);
       BFT_FREE(mdl);
       BFT_FREE(zone_id);

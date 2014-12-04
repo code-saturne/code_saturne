@@ -146,7 +146,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
 
         self.lineEditRELAXP.setText(str(self.model.getPressureRelaxation()))
         self.modelEXTRAG.setItem(str_model=self.model.getWallPressureExtrapolation())
-        self.modelIMRGRA.setItem(str_model=self.model.getGradientReconstruction())
+        self.modelIMRGRA.setItem(str_model=str(self.model.getGradientReconstruction()))
 
         if modl_joul != 'off' or modl_gas != 'off' or modl_coal != 'off':
             self.labelSRROM.show()

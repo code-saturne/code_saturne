@@ -40,9 +40,11 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Common import *
-from code_saturne.Base.XMLvariables import Variables, Model
-from code_saturne.Base.XMLmodel import ModelTest
+from code_saturne.Base.Common                     import *
+from code_saturne.Base.XMLvariables               import Variables, Model
+from code_saturne.Base.XMLmodel                   import ModelTest
+from code_saturne.Pages.TurbulenceModel           import TurbulenceModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
 # Mobil Mesh model class
@@ -97,7 +99,12 @@ class DarcyModel(Model):
         """
         self.isInList(choice, ['off', 'darcy'])
         self.node_darcy['model'] = choice
+
         ### TODO remove node when set off
+        if choice != "off":
+            TurbulenceModel(self.case).setTurbulenceModel('off')
+            FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
+            FluidCharacteristicsModel(self.case).setInitialValue('density', 1.)
 
 
     @Variables.noUndo

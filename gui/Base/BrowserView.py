@@ -796,10 +796,12 @@ Calculation management
             self.setRowClose(self.tr('Turbulence models'))
             self.setRowClose(self.tr('Turbomachinery'))
             self.setRowClose(self.tr('Gravity'))
+            self.setRowClose(self.tr('Fluid properties'))
         else:
             self.setRowOpen(self.tr('Turbulence models'))
             self.setRowOpen(self.tr('Turbomachinery'))
             self.setRowOpen(self.tr('Gravity'))
+            self.setRowOpen(self.tr('Fluid properties'))
 
         # Source terms view
         node_domain = case.xmlGetNode('solution_domain')
