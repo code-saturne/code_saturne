@@ -1128,7 +1128,7 @@ class Studies(object):
 
         if self.__plotvtk:
             for l, s in self.studies:
-                self.__plotvtk.plot_study(l, s, self.__dis_tex)
+                self.__plotvtk.plot_study(l, s)
 
 
     def build_reports(self, report1, report2):
