@@ -5502,7 +5502,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
                                             enc1,
                                             enc2,
                                             tkelvi,
-                                            0);
+                                            1);
 
         _tracking_info(particles, j)->state = cur_part_state;
 

@@ -5,6 +5,10 @@ Release 3.3.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix occasional crash in Lagragian module postprocessing.
+
+- Fix and incorrect info on lost particles in some cases.
+
 - Fix extended neighborhood creation when global number of cells with ghosts
   exceeds 2^31.
 

@@ -1129,7 +1129,7 @@ _predefine_mesh(int        mesh_id,
 
     if (j < n_writers) {
       post_mesh->n_writers = j;
-      BFT_MALLOC(post_mesh->writer_id, j, int);
+      BFT_REALLOC(post_mesh->writer_id, j, int);
     }
 
   }
