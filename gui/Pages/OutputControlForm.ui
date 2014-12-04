@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>655</width>
-    <height>493</height>
+    <height>485</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1106,6 +1106,12 @@
             </item>
             <item>
              <widget class="QComboBox" name="comboBoxProbeFmt">
+              <property name="minimumSize">
+               <size>
+                <width>20</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="sizeAdjustPolicy">
                <enum>QComboBox::AdjustToContents</enum>
               </property>
@@ -1240,6 +1246,28 @@
               </property>
               <property name="text">
                <string>Duplicate</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButtonImportCSV">
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>120</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="statusTip">
+               <string>Delet several lines if you want</string>
+              </property>
+              <property name="text">
+               <string>import from CSV</string>
               </property>
              </widget>
             </item>

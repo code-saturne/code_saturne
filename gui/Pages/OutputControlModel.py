@@ -1051,6 +1051,38 @@ class OutputControlModel(Model):
 
 
     @Variables.undoLocal
+    def ImportProbesFromCSV(self, fle):
+        """
+        Public method.
+        Read a csv file to add monitoring probes
+        """
+        probFile = open(fle, "r")
+        lines = probFile.readlines()
+
+        num = 0
+
+        for line in lines:
+            tmp = line.split(',')
+            if len(tmp) != 3:
+                pass
+            self.addMonitoringPoint(float(tmp[0]), float(tmp[1]), float(tmp[2]))
+            num = num + 1
+        return num
+
+
+        propFile.close()
+
+        self.isFloat(x)
+        self.isFloat(y)
+        self.isFloat(z)
+        num = str(self.getNumberOfMonitoringPoints() + 1)
+        status="on"
+        node = self.node_out.xmlInitNode('probe', name=num, status=status)
+        for coord, val in [('probe_x', x), ('probe_y', y), ('probe_z', z)]:
+            self.__setCoordinates(num, coord, val)
+
+
+    @Variables.undoLocal
     def replaceMonitoringPointCoordinates(self, name, x=0.0, y=0.0, z=0.0):
         """
         Public method.

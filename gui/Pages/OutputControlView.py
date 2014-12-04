@@ -47,6 +47,7 @@ import logging
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui  import *
+import os
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -1383,6 +1384,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.connect(self.toolButtonAdd, SIGNAL("clicked()"), self.slotAddMonitoringPoint)
         self.connect(self.toolButtonDelete, SIGNAL("clicked()"), self.slotDeleteMonitoringPoints)
         self.connect(self.toolButtonDuplicate, SIGNAL("clicked()"), self.slotDuplicateMonitoringPoints)
+        self.connect(self.toolButtonImportCSV, SIGNAL("clicked()"), self.slotImportMonitoringPoints)
         self.connect(self.comboBoxHisto, SIGNAL("activated(const QString&)"), self.slotMonitoringPoint)
         self.connect(self.lineEditHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequency)
         self.connect(self.lineEditFRHisto, SIGNAL("textChanged(const QString &)"), self.slotMonitoringPointFrequencyTime)
@@ -2454,7 +2456,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         Duplicate monitoring points selected with these coordinates in the list in the Hlist
         """
-        log.debug("slotDuplicateMonitoringPoints ")
+        log.debug("slotDuplicateMonitoringPoints")
 
         l1 = []
         l2 = []
@@ -2469,6 +2471,37 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
             new_name = str(probe_number + idx)
             self.mdl.addMonitoringPoint(x=X, y=Y, z=Z)
+            self.__insertMonitoringPoint(new_name, X, Y, Z)
+
+            if self.case['salome']:
+                self.__salomeHandlerAddMonitoringPoint(probe_number + idx, X, Y, Z)
+
+            idx = idx + 1
+
+
+    @pyqtSignature("")
+    def slotImportMonitoringPoints(self):
+        """
+        select a csv file to add probes
+        """
+        log.debug("slotImportMonitoringPoints")
+
+        data = self.case['data_path']
+        title = self.tr("Probes location")
+        filetypes = self.tr("csv file (*.csv);;All Files (*)")
+        fle = QFileDialog.getOpenFileName(self, title, data, filetypes)
+        fle = str(fle)
+        if not fle:
+            return
+        fle = os.path.basename(os.path.abspath(fle))
+
+        probe_number = self.mdl.getNumberOfMonitoringPoints()
+
+        lst = self.mdl.ImportProbesFromCSV(fle)
+
+        for idx in range(lst):
+            new_name = str(probe_number + idx + 1)
+            X, Y, Z = self.mdl.getMonitoringPointCoordinates(new_name)
             self.__insertMonitoringPoint(new_name, X, Y, Z)
 
             if self.case['salome']:
