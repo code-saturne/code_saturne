@@ -924,8 +924,6 @@ class Studies(object):
                                 # when control_file is copied to the run directory on all systems
                                 control_file.flush()
                                 control_file.close
-                            else:
-                                print("Warning: there is already a control_file in the DATA directory of case %s." % case.label)
 
                         self.reporting('    - running %s ...' % case.label, True)
                         error = case.run()
