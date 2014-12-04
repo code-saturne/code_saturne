@@ -176,13 +176,11 @@ class DefineUserScalarsModel(Variables, Model):
         Update suffixe number for scalar name and diffusivity' name.
         """
         lst = []
-        n = 0
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            n = n + 1
             nprop = node.xmlGetChildNode('property')
             if nprop:
                 old_name = nprop['name']
-                nprop['name'] = 'diffusion_coefficient_' + str(n)
+                nprop['name'] = node['name'] + '_diffusivity'
                 new_name = nprop['name']
                 if old_name:
                     for no in self.case.xmlGetNodeList('formula'):

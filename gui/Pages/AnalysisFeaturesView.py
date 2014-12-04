@@ -293,6 +293,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             if darcy == 'off':
                 self.comboBoxDarcy.setEnabled(False)
 
+        if darcy != 'off':
+            self.comboBoxSteadyFlow.setEnabled(False)
+            self.comboBoxLagrangian.setEnabled(False)
+
         # Update the Tree files and folders
 
         self.browser.configureTree(self.case)
@@ -306,7 +310,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         Change to NORMAL the state of the reactive flow OptionMenu buttons.
         """
         self.comboBoxSteadyFlow.setEnabled(True)
-        #self.comboBoxLagrangian.setEnabled(True)
+        self.comboBoxLagrangian.setEnabled(True)
         self.comboBoxGasCombustionModel.setEnabled(True)
         self.comboBoxPulverizedCoal.setEnabled(True)
         self.comboBoxJouleEffect.setEnabled(True)
@@ -540,6 +544,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         if model != 'off':
             self.__disableComboBox()
             self.comboBoxDarcy.setEnabled(True)
+            self.comboBoxSteadyFlow.setEnabled(False)
+            self.comboBoxLagrangian.setEnabled(False)
+            title = self.tr("Warning")
+            msg   = self.tr("Darcy module is under development")
+            QMessageBox.information(self, title, msg)
 
         self.browser.configureTree(self.case)
 
