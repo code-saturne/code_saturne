@@ -230,15 +230,21 @@ class XMLinit(Variables):
             self.__backwardCompatibilityFrom_3_0()
             self.__backwardCompatibilityFrom_3_1()
             self.__backwardCompatibilityFrom_3_2()
+            self.__backwardCompatibilityFrom_3_3()
         elif from_vers == "3.0":
             self.__backwardCompatibilityFrom_3_0()
             self.__backwardCompatibilityFrom_3_1()
             self.__backwardCompatibilityFrom_3_2()
+            self.__backwardCompatibilityFrom_3_3()
         elif from_vers == "3.1":
             self.__backwardCompatibilityFrom_3_1()
             self.__backwardCompatibilityFrom_3_2()
+            self.__backwardCompatibilityFrom_3_3()
         elif from_vers == "3.2":
             self.__backwardCompatibilityFrom_3_2()
+            self.__backwardCompatibilityFrom_3_3()
+        elif from_vers == "3.3":
+            self.__backwardCompatibilityFrom_3_3()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -803,7 +809,7 @@ class XMLinit(Variables):
                     n.xmlSetTextNode(f)
 
 
-    def __backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_3_2(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -864,6 +870,11 @@ class XMLinit(Variables):
         if node:
             node['name'] = "thermal_flux"
 
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
         # update wall functions settings
         XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
         XMLTurbModelNode = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
