@@ -182,16 +182,16 @@ class CoalCombustionModel(Variables, Model):
         Private method
         Create list of properties for a class
         """
-        modelProperties = ["t_coal", "w_solid_coal", "rho_coal", "diameter_coal", "dissapear_rate_coal",
-                                "m_transfer_v1_coal",  "m_transfer_v2_coal", "het_ts_o2_coal"]
+        modelProperties = ["t_p_", "x_p_", "rho_p_", "diam_p_", "dissapear_rate_p_",
+                           "m_transfer_v1_p_",  "m_transfer_v2_p_", "het_ts_o2_p_"]
         if self.getCoalCombustionModel() == 'homogeneous_fuel_moisture' or self.getCoalCombustionModel() == 'homogeneous_fuel_moisture_lagr':
-            modelProperties.append("dry_ts_coal")
+            modelProperties.append("dry_ts_p")
 
         if self.getCO2KineticsStatus() == 'on':
-            modelProperties.append("het_ts_co2_coal")
+            modelProperties.append("het_ts_co2_p")
 
         if self.getH2OKineticsStatus() == 'on':
-            modelProperties.append("het_ts_h2o_coal")
+            modelProperties.append("het_ts_h2o_p")
 
         return modelProperties
 
@@ -304,7 +304,7 @@ class CoalCombustionModel(Variables, Model):
         lst = ["t_gas", "rho_gas", "ym_chx1m", "ym_chx2m",
                "ym_co", "ym_o2", "ym_co2", "ym_h2o", "ym_n2",
                "ym_h2s", "ym_h2", "ym_hcn", "ym_nh3", "ym_so2",
-               "xm", "balance_c", "balance_o", "balance_h"]
+               "xm"]
 
         baseNames = self.__getPropertiesList()
 
@@ -314,6 +314,9 @@ class CoalCombustionModel(Variables, Model):
                 lst.append(name)
 
         lst.append("intensity")
+        lst.append("x_carbone")
+        lst.append("x_oxygen")
+        lst.append("x_hydrogen")
 
         if self.getNOxFormationStatus() == "on":
             lst.append("exp1")

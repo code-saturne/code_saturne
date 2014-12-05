@@ -391,55 +391,55 @@ cs_field_pointer_map_coal_combustion(int  n_coals,
                        cs_field_by_name_try("enthalpy"));
 
   for (int i = 0; i < n_classes; i++) {
-    snprintf(s, 63, "np_coal_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "n_p_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(np), i, cs_field_by_name_try(s));
   }
 
   for (int i = 0; i < n_classes; i++) {
-    snprintf(s, 63, "x_coal_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "x_p_coal_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(xch), i, cs_field_by_name_try(s));
   }
 
   for (int i = 0; i < n_classes; i++) {
-    snprintf(s, 63, "xck_coal_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "x_p_char_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(xck), i, cs_field_by_name_try(s));
   }
 
   for (int i = 0; i < n_classes; i++) {
-    snprintf(s, 63, "xwt_coal_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "x_p_wt_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(xwt), i, cs_field_by_name_try(s));
   }
 
   for (int i = 0; i < n_classes; i++) {
-    snprintf(s, 63, "h2_coal_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "x_p_h_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(h2), i, cs_field_by_name_try(s));
   }
 
   for (int i = 0; i < n_coals; i++) {
-    snprintf(s, 63, "mv1_fraction_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "fr_mv1_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(f1m), i, cs_field_by_name_try(s));
   }
 
   for (int i = 0; i < n_coals; i++) {
-    snprintf(s, 63, "mv2_fraction_%02d", i+1); s[63] = '\0';
+    snprintf(s, 63, "fr_mv2_%02d", i+1); s[63] = '\0';
     cs_field_pointer_map_indexed(CS_ENUMF_(f2m), i, cs_field_by_name_try(s));
   }
 
-  cs_field_pointer_map(CS_ENUMF_(f4m), cs_field_by_name_try("oxyd2_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(f5m), cs_field_by_name_try("oxyd3_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(f6m), cs_field_by_name_try("h2o_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(f7m), cs_field_by_name_try("het_o2_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(f8m), cs_field_by_name_try("het_co2_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(f9m), cs_field_by_name_try("het_h2o_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(f4m), cs_field_by_name_try("fr_oxyd2"));
+  cs_field_pointer_map(CS_ENUMF_(f5m), cs_field_by_name_try("fr_oxyd3"));
+  cs_field_pointer_map(CS_ENUMF_(f6m), cs_field_by_name_try("fr_h2o"));
+  cs_field_pointer_map(CS_ENUMF_(f7m), cs_field_by_name_try("fr_het_o2"));
+  cs_field_pointer_map(CS_ENUMF_(f8m), cs_field_by_name_try("fr_het_co2"));
+  cs_field_pointer_map(CS_ENUMF_(f9m), cs_field_by_name_try("fr_het_h2o"));
 
   cs_field_pointer_map(CS_ENUMF_(fvp2m), cs_field_by_name_try("f1f2_variance"));
 
-  cs_field_pointer_map(CS_ENUMF_(yco2), cs_field_by_name_try("co2_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(yhcn), cs_field_by_name_try("hcn_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(yno), cs_field_by_name_try("no_fraction"));
-  cs_field_pointer_map(CS_ENUMF_(ynh3), cs_field_by_name_try("nh3_fraction"));
+  cs_field_pointer_map(CS_ENUMF_(yco2), cs_field_by_name_try("x_c_co2"));
+  cs_field_pointer_map(CS_ENUMF_(yhcn), cs_field_by_name_try("x_c_hcn"));
+  cs_field_pointer_map(CS_ENUMF_(yno), cs_field_by_name_try("x_c_no"));
+  cs_field_pointer_map(CS_ENUMF_(ynh3), cs_field_by_name_try("x_c_nh3"));
 
-  cs_field_pointer_map(CS_ENUMF_(hox), cs_field_by_name_try("ox_enthalpy"));
+  cs_field_pointer_map(CS_ENUMF_(hox), cs_field_by_name_try("x_c_h_ox"));
 }
 
 /*----------------------------------------------------------------------------*/
