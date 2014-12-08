@@ -134,6 +134,7 @@ test_2 (void)
   criteria_id
     = fvm_selector_get_list(s,
                             "11 or (1, inlet; outlet and 6)",
+                            1,
                             &n_se,
                             se);
 
@@ -151,6 +152,7 @@ test_2 (void)
   criteria_id
     = fvm_selector_get_list(s,
                             "x < 5",
+                            1,
                             &n_se,
                             se);
 
@@ -162,6 +164,7 @@ test_2 (void)
   criteria_id
     = fvm_selector_get_list(s,
                             "range[1, 3, attribute]",
+                            1,
                             &n_se,
                             se);
 
@@ -173,6 +176,7 @@ test_2 (void)
   criteria_id
     = fvm_selector_get_list(s,
                             "sphere[4.1, 0, 0, 2] and (not no_group[])",
+                            1,
                             &n_se,
                             se);
 
