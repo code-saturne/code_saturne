@@ -543,13 +543,18 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
     deallocate(surfbm)
   endif
 
-
+  ! Dilatable mass conservative algorithm
+  if (idilat.eq.2) then
+    do iel = 1, ncel
+      drom = crom(iel) - croma(iel)
+      xnormp(iel) = xnormp(iel) + drom*volf(iel)/dt(iel)
+    enddo
   ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
-  if (idilat.eq.4)then
+  else if (idilat.eq.4)then
     do iel = 1, ncel
       xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))/crom(iel)
     enddo
-  elseif (idilat.eq.5) then
+  else if (idilat.eq.5) then
     do iel = 1, ncel
       xnormp(iel) = xnormp(iel) + propce(iel,ipproc(iustdy(itsrho)))
     enddo
