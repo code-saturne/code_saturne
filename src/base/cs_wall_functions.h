@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -470,29 +471,38 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
                                   cs_real_t  *uk,
                                   cs_real_t  *yplus,
                                   cs_real_t  *ypup,
-                                  cs_real_t  *cofimp)
+                                  cs_real_t  *cofimp,
+                                  cs_real_t  *lmk,
+                                  bool        wf)
 {
   double y1,y2,y3,y4,y5,y6,y7,y8,y9,y10;
-  double uplus, lmk, lm15k;
+  double uplus, lmk15;
 
   /* Coefficients of the polynome fitting u+ for yk < 200 */
   static double aa[11] = {-0.0091921, 3.9577, 0.031578,
                           -0.51013, -2.3254, -0.72665,
                           2.969, 0.48506, -1.5944,
                           0.087309, 0.1987 };
+  if (wf)
+    *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
 
-  *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
-  *yplus = *uk * y / l_visc;
+  /* Set a low threshold value in case tangential velocity is zero */
+  *yplus = CS_MAX(*uk * y / l_visc, 1.e-4);
 
   if (*yplus <= 1.e-1) {
 
     uplus = *yplus;
-    *iuntur = 0;
-    *nsubla += 1;
 
-    *ypup = 1.;
+    if (wf) {
+      *iuntur = 0;
+      *nsubla += 1;
 
-    *cofimp = 0.;
+      *lmk = 0.;
+
+      *ypup = 1.;
+
+      *cofimp = 0.;
+    }
 
   } else if (*yplus <= 200.) {
 
@@ -520,32 +530,40 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
             + aa[10] * y10;
 
     uplus = exp(uplus);
-    *nlogla += 1;
 
-    *ypup = *yplus / uplus;
+    if (wf) {
+      *nlogla += 1;
 
-    /* Mixing length in y+ */
-    lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
+      *ypup = *yplus / uplus;
 
-    /* Mixing length in 3/2*y+ */
-    lm15k = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus / cs_turb_vdriest));
+      /* Mixing length in y+ */
+      *lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
 
-    *cofimp = 1. - (2. / (1. + lmk) - 1. / (1. + lm15k)) * *ypup;
+      /* Mixing length in 3/2*y+ */
+      lmk15 = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus
+                                                    / cs_turb_vdriest));
+
+      *cofimp = 1. - (2. / (1. + *lmk) - 1. / (1. + lmk15)) * *ypup;
+    }
 
   } else {
 
     uplus = 16.088739022054590 + log(*yplus/200.) / cs_turb_xkappa;
-    *nlogla += 1;
 
-    *ypup = *yplus / uplus;
+    if (wf) {
+      *nlogla += 1;
 
-    /* Mixing length in y+ */
-    lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
+      *ypup = *yplus / uplus;
 
-    /* Mixing length in 3/2*y+ */
-    lm15k = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus / cs_turb_vdriest));
+      /* Mixing length in y+ */
+      *lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
 
-    *cofimp = 1. - (2. / lmk - 1. / lm15k) * *ypup;
+      /* Mixing length in 3/2*y+ */
+      lmk15 = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus
+                                                    / cs_turb_vdriest));
+
+      *cofimp = 1. - (2. / *lmk - 1. / lmk15) * *ypup;
+    }
 
   }
 
