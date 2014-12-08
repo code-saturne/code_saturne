@@ -116,8 +116,7 @@ do f_id = 0, nfld - 1
   call field_get_key_int(f_id, keylog, kval)
 
   ! Is the field of type FIELD_VARIABLE?
-  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE    &
-     .and.kval.gt.0) then
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     chainc = 'c'
     chain = ' '
     ic = 4
@@ -245,7 +244,7 @@ do f_id = 0, nfld - 1
     ic=ic+12
 
     ! Finalize the log of the line
-    write(nfecra,'(a)') chainc(1:ic)
+    if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
     ! Vector or tensor derive (by component)
     if (f_dim.gt.1) then
@@ -334,7 +333,7 @@ do f_id = 0, nfld - 1
         ic=ic+12
 
         ! Print the derive of the component
-        write(nfecra,'(a)') chainc(1:ic)
+        if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
       enddo
     endif
