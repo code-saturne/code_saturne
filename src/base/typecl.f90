@@ -314,6 +314,14 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #else
     write(nfecra,6020) 'Free inlet       ', ii, inb
 #endif
+    ii = i_convective_inlet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree convective', ii, inb
+#else
+    write(nfecra,6020) 'Convective inlet ', ii, inb
+#endif
 
     ! Presence of free entrance face(s)
     if (inb.gt.0) then
@@ -354,6 +362,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 
     do ii = 1, ntypmx
       if (ii.ne.ientre  .and. &
+          ii.ne.i_convective_inlet .and. &
           ii.ne.iparoi  .and. &
           ii.ne.iparug  .and. &
           ii.ne.isymet  .and. &
@@ -493,10 +502,11 @@ endif
 
 do ivar = 1, nvar
   do ifac = 1, nfabor
-    if ((itypfb(ifac) .ne. isolib) .and. &
-        (itypfb(ifac) .ne. ifrent) .and. &
-        (itypfb(ifac) .ne. ifreesf) .and. &
-        (itypfb(ifac) .ne. ientre) .and. &
+    if ((itypfb(ifac) .ne. isolib)            .and. &
+        (itypfb(ifac) .ne. ifrent)            .and. &
+        (itypfb(ifac) .ne. ifreesf)           .and. &
+        (itypfb(ifac) .ne. i_convective_inlet).and. &
+        (itypfb(ifac) .ne. ientre)            .and. &
         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
       rcodcl(ifac,ivar,1) = 0.d0
     endif
@@ -511,24 +521,27 @@ do iscal = 1, nscal
     iwt = nvar + 3*(ifltur(iscal) - 1) + 3
 
     do ifac = 1, nfabor
-      if ((itypfb(ifac) .ne. isolib) .and. &
-          (itypfb(ifac) .ne. ifrent) .and. &
-          (itypfb(ifac) .ne. ifreesf) .and. &
-          (itypfb(ifac) .ne. ientre) .and. &
+      if ((itypfb(ifac) .ne. isolib)             .and. &
+          (itypfb(ifac) .ne. ifrent)             .and. &
+          (itypfb(ifac) .ne. ifreesf)            .and. &
+          (itypfb(ifac) .ne. i_convective_inlet) .and. &
+          (itypfb(ifac) .ne. ientre)             .and. &
           (rcodcl(ifac,iut,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,iut,1) = 0.d0
       endif
-      if ((itypfb(ifac) .ne. isolib) .and. &
-          (itypfb(ifac) .ne. ifrent) .and. &
-          (itypfb(ifac) .ne. ifreesf) .and. &
-          (itypfb(ifac) .ne. ientre) .and. &
+      if ((itypfb(ifac) .ne. isolib)             .and. &
+          (itypfb(ifac) .ne. ifrent)             .and. &
+          (itypfb(ifac) .ne. ifreesf)            .and. &
+          (itypfb(ifac) .ne. i_convective_inlet) .and. &
+          (itypfb(ifac) .ne. ientre)             .and. &
           (rcodcl(ifac,ivt,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,ivt,1) = 0.d0
       endif
-      if ((itypfb(ifac) .ne. isolib) .and. &
-          (itypfb(ifac) .ne. ifrent) .and. &
-          (itypfb(ifac) .ne. ifreesf) .and. &
-          (itypfb(ifac) .ne. ientre) .and. &
+      if ((itypfb(ifac) .ne. isolib)             .and. &
+          (itypfb(ifac) .ne. ifrent)             .and. &
+          (itypfb(ifac) .ne. ifreesf)            .and. &
+          (itypfb(ifac) .ne. i_convective_inlet) .and. &
+          (itypfb(ifac) .ne. ientre)             .and. &
           (rcodcl(ifac,iwt,1) .gt. rinfin*0.5d0)) then
         rcodcl(ifac,iwt,1) = 0.d0
       endif
@@ -672,7 +685,7 @@ endif
 !     (pressure, velocity, ...)
 !===============================================================================
 
-! 6.1 ENTREE
+! 6.1.1 Inlet
 ! ===========
 
 ! ---> La pression a un traitement Neumann, le reste Dirichlet
@@ -694,6 +707,30 @@ do ivar = 1, nvar
     enddo
   endif
 enddo
+
+! 6.1.2 Convective Inlet
+! ======================
+
+! ---> La pression a un traitement Neumann, le reste Dirichlet
+!                                           sera traite plus tard.
+
+ideb = idebty(i_convective_inlet)
+ifin = ifinty(i_convective_inlet)
+
+do ivar = 1, nvar
+  if (ivar.eq.ipr) then
+    do ii = ideb, ifin
+      ifac = itrifb(ii)
+      if(icodcl(ifac,ivar).eq.0) then
+        icodcl(ifac,ivar)   = 3
+        rcodcl(ifac,ivar,1) = 0.d0
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+    enddo
+  endif
+enddo
+
 
 ! 6.2 SORTIE (entree-sortie libre) (ISOLIB)
 ! ===================
@@ -1126,13 +1163,13 @@ enddo
 !    TRAITEMENT PARTICULIER (HORS PRESSION, VITESSE ...)
 !===============================================================================
 
-! 6.1 ENTREE bis
-! ===========
+! 6.1.1 Inlet bis
+! ===============
 
-! ---> La pression a un traitement Neumann (deja traitee plus haut),
-!      La vitesse  Dirichlet. Les scalaires ont un traitement
-!     Dirichlet si l'utilisateur fournit une valeur, sinon on utilise
-!     Neumann homogene si le flux de masse est sortant (erreur sinon).
+! ---> Pressure is already treated (with a Neumann BC)
+!      Dirichlet BC for the velocity.
+!      Dirichlet BC for scalars if the user give a value, otherwise homogeneous
+!      Neumann if the mass flux is outgoing.
 
 ideb = idebty(ientre)
 ifin = ifinty(ientre)
@@ -1184,6 +1221,66 @@ if (iok.gt.0) then
   if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
   call bcderr(itypfb)
 endif
+
+! 6.1.1 Convective Inlet bis
+! ==========================
+
+! ---> Pressure is already treated (with a Neumann BC)
+!      Dirichlet BC for the velocity.
+!      Dirichlet BC for scalars if the user give a value, otherwise homogeneous
+!      Neumann if the mass flux is outgoing.
+
+ideb = idebty(i_convective_inlet)
+ifin = ifinty(i_convective_inlet)
+
+iok = 0
+do ivar = 1, nvar
+  do ii = ideb, ifin
+    ifac = itrifb(ii)
+    if(icodcl(ifac,ivar).eq.0) then
+
+      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw)      &
+           then
+        if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+          itypfb(ifac) = - abs(itypfb(ifac))
+          if (iok.eq.0.or.iok.eq.2) iok = iok + 1
+        else
+          icodcl(ifac,ivar) = 13
+          ! rcodcl(ifac,ivar,1) = User
+          rcodcl(ifac,ivar,2) = rinfin
+          rcodcl(ifac,ivar,3) = 0.d0
+        endif
+
+      elseif (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
+
+        flumbf = bmasfl(ifac)
+        if( flumbf.ge.-epzero) then
+          icodcl(ifac,ivar)   = 3
+          rcodcl(ifac,ivar,1) = 0.d0
+          rcodcl(ifac,ivar,2) = rinfin
+          rcodcl(ifac,ivar,3) = 0.d0
+        else
+          itypfb(ifac) = - abs(itypfb(ifac))
+          if (iok.lt.2) iok = iok + 2
+        endif
+      else
+        icodcl(ifac,ivar) = 13
+        ! rcodcl(ifac,ivar,1) = User
+        rcodcl(ifac,ivar,2) = rinfin
+        rcodcl(ifac,ivar,3) = 0.d0
+      endif
+
+    endif
+  enddo
+enddo
+
+if (irangp.ge.0) call parcmx(iok)
+if (iok.gt.0) then
+  if (iok.eq.1 .or. iok.eq.3) write(nfecra,6060)
+  if (iok.eq.2 .or. iok.eq.3) write(nfecra,6070)
+  call bcderr(itypfb)
+endif
+
 
 ! 6.2.a SORTIE (entree sortie libre)
 ! ==================================
@@ -1483,6 +1580,17 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
 #else
     write(nfecra,7020) 'Free inlet       ',ii,inb,flumty(ii)
 #endif
+    ii = i_convective_inlet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) then
+      call parcpt (inb)
+      call parsom (flumty(ii))
+    endif
+#if defined(_CS_LANG_FR)
+    write(nfecra,7020) 'Entree convective',ii,inb,flumty(ii)
+#else
+    write(nfecra,7020) 'Convective inlet ',ii,inb,flumty(ii)
+#endif
 
     ii = ifreesf
     inb = ifinty(ii)-idebty(ii)+1
@@ -1524,6 +1632,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
 
     do ii = 1, ntypmx
       if ( ii.ne.ientre  .and.                                    &
+           ii.ne.i_convective_inlet .and.                         &
            ii.ne.iparoi  .and.                                    &
            ii.ne.iparug  .and.                                    &
            ii.ne.isymet  .and.                                    &

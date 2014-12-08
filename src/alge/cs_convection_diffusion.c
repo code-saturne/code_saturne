@@ -3162,6 +3162,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
+          || ityp == CS_CONVECTIVE_INLET
           || (ifaccp == 1 && ityp == CS_COUPLED))
         bndcel[b_face_cells[face_id]] = 0.;
     }
@@ -5477,6 +5478,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
       ityp = bc_type[face_id];
       if (   ityp == CS_OUTLET
           || ityp == CS_INLET
+          || ityp == CS_CONVECTIVE_INLET
           || (ifaccp == 1 && ityp == CS_COUPLED)) {
         bndcel[b_face_cells[face_id]] = 0.;
       }

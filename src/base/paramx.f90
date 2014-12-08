@@ -212,9 +212,23 @@ module paramx
   !>  - Dirichlet (\ref icodcl=1) for the pressure.
   integer   ifreesf
 
+  !> \anchor i_convective_inlet
+  !> if \ref itypfb=i_convective_inlet: inlet face where the total mass flux is
+  !>                                    prescribed.
+  !> -  Zero-flux condition for pressure and Dirichlet condition for all
+  !> other variables. The value of the Dirichlet must be given in
+  !> \ref rcodcl(ifac,ivar,1) for every value of \ref ivar, except for
+  !> \ref ivar=ipr. The other values of \ref rcodcl and
+  !> \ref icodcl are filled automatically.
+  !> The diffusive flux is CANCELLED (therefore the total mass flux is due to
+  !> convection only).
+  integer   i_convective_inlet
+
+
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
-            iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,       &
-            ieqhcf=11, icscpl=12, ifrent=13, ifreesf=14)
+            iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,      &
+            ieqhcf=11, icscpl=12, ifrent=13, ifreesf=14      ,      &
+            i_convective_inlet=15)
 
   !> maximal number of valuators for Navier-Stokes
   integer    nestmx

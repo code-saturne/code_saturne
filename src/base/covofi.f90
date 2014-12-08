@@ -114,6 +114,7 @@ use cs_f_interfaces
 use atchem
 use darcy_module
 use cs_c_bindings
+use pointe, only: itypfb
 
 !===============================================================================
 
@@ -174,7 +175,8 @@ double precision, allocatable, dimension(:) :: w1, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
-double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:) :: grad, grdni
+double precision, allocatable, dimension(:) :: coefa_p, coefb_p
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
 double precision, allocatable, dimension(:) :: srcmas
@@ -196,7 +198,7 @@ double precision, dimension(:), pointer :: cpro_viscls
 double precision, allocatable, dimension(:) :: diverg
 double precision, dimension(:), pointer :: cpro_delay, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_sat
-double precision, dimension(:), pointer :: cvar_var, cvara_var
+double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
 
 !===============================================================================
 
@@ -627,7 +629,8 @@ if (itspdv.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.3 .or. itytur.eq.5 .or. iturb.eq.60) then
 
     ! Allocate a temporary array for the gradient reconstruction
-    allocate(grad(3,ncelet))
+    allocate(grad(3,ncelet),grdni(ncelet,3))
+    allocate(coefa_p(nfabor), coefb_p(nfabor))
 
     ! Remarque : on a prevu la possibilite de scalaire associe non
     !  variable de calcul, mais des adaptations sont requises
@@ -643,9 +646,43 @@ if (itspdv.eq.1) then
     inc = 1
     iccocg = 1
 
-    call field_gradient_scalar(ivarfl(iii), iprev, imrgra, inc,   &
-                               iccocg,                            &
-                               grad)
+    ! Homogeneous Neumann on convective inlet on the production term for the
+    ! variance
+    call field_get_val_prev_s(ivarfl(iii), cvara_varsca)
+    call field_get_coefa_s (ivarfl(iii), coefap)
+    call field_get_coefb_s (ivarfl(iii), coefbp)
+
+    ! pas de diffusion en entree
+    do ifac = 1, nfabor
+      coefa_p(ifac) = coefap(ifac)
+      coefb_p(ifac) = coefbp(ifac)
+      if (itypfb(ifac).eq.i_convective_inlet) then
+        coefa_p(ifac) = 0.d0
+        coefb_p(ifac) = 1.d0
+      endif
+    enddo
+
+    nswrgp = nswrgr(iii)
+    imligp = imligr(iii)
+    iwarnp = iwarni(iii)
+    epsrgp = epsrgr(iii)
+    climgp = climgr(iii)
+    extrap = extrag(iii)
+
+    call grdcel &
+    !==========
+     ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+       iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+       cvara_varsca    , coefa_p, coefb_p,                            &
+       grdni   )
+
+    do iel = 1, ncel
+      grad(1,iel) = grdni(iel,1)
+      grad(2,iel) = grdni(iel,2)
+      grad(3,iel) = grdni(iel,3)
+    enddo
+
+    deallocate (grdni, coefa_p, coefb_p)
 
     ! Traitement de la production
     ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping
