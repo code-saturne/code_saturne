@@ -809,7 +809,7 @@ class XMLinit(Variables):
                     n.xmlSetTextNode(f)
 
 
-    def __backwardCompatibilityFrom_3_2(self):
+    def __backwardCompatibilityFrom_3_3(self):
         """
         Change XML in order to ensure backward compatibility.
         """
