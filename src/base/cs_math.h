@@ -97,7 +97,6 @@ cs_math_33_3_product(const cs_real_33_t m,
 {
   for (int ii = 0; ii < 3; ii++)
     mv[ii] = m[ii][0] * v[0] + m[ii][1] * v[1] + m[ii][2] * v[2];
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -135,12 +134,10 @@ cs_math_sym_33_3_product(const cs_real_6_t  m,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_real_t
-cs_math_3_dot_product(const cs_real_3_t u, const cs_real_3_t v)
+cs_math_3_dot_product(const cs_real_3_t u,
+                      const cs_real_3_t v)
 {
-  cs_real_t uv = 0.;
-
-  for (int ii = 0; ii < 3; ii++)
-    uv += u[ii]*v[ii];
+  cs_real_t uv = u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
 
   return uv;
 }
@@ -158,10 +155,7 @@ cs_math_3_dot_product(const cs_real_3_t u, const cs_real_3_t v)
 static inline cs_real_t
 cs_math_3_square_norm(const cs_real_3_t v)
 {
-  cs_real_t v2 = 0.;
-
-  for (int ii = 0; ii < 3; ii++)
-    v2 += v[ii]*v[ii];
+  cs_real_t v2 = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 
   return v2;
 }
