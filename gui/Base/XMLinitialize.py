@@ -811,7 +811,7 @@ class XMLinit(Variables):
 
     def __backwardCompatibilityFrom_3_3(self):
         """
-        Change XML in order to ensure backward compatibility.
+        Change XML in order to ensure backward compatibility from 3.3 to 4.0
         """
         XMLAnaControl = self.case.xmlGetNode('analysis_control')
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
@@ -866,9 +866,10 @@ class XMLinit(Variables):
                 nodeV['label'] = 'Velocity'
         #update input_thermal_flux
         nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
-        node = nth.xmlGetNode('property', name="input_thermal_flux")
-        if node:
-            node['name'] = "thermal_flux"
+        if nth:
+            node = nth.xmlGetNode('property', name="input_thermal_flux")
+            if node:
+                node['name'] = "thermal_flux"
 
 
     def __backwardCompatibilityCurrentVersion(self):
