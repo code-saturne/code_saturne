@@ -253,6 +253,21 @@ AC_SUBST(enable_shared)
 
 LT_INIT([disable-static, win32-dll])
 
+# Add some preprocessor flags on some systems to work around autotools issues
+#----------------------------------------------------------------------------
+
+if test "x$enable_shared" = "xyes" ; then
+  if test "x$auto_flags" = "xyes" ; then
+    case "$ple_ac_cc_version" in
+      Cray* )
+        CFLAGS="${CFLAGS} -fPIC"
+        ;;
+      *)
+        ;;
+    esac
+  fi
+fi
+
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------

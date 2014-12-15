@@ -1096,6 +1096,42 @@ toolchain even for large meshes.
 Similarly, \metis could be used on the front-end node, and \parmetis
 on the compute nodes.
 
+\subsubsection{Compiling for Cray X series}
+
+For Cray X series, when using the GNU compilers, installation should
+be similar to that on standard clusters. Using The Cray compilers,
+options such as in the following example are recommended:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/xc30
+\textbackslash \\
+\textcolor{Violet}{--with-libxml2}=\textcolor{OliveGreen}{\$CS\_OPT}/libxml2-2.8/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.8.13/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-3.0/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.2/arch/xc30 \textbackslash \\
+\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/xc30 \textbackslash \\
+\textcolor{Violet}{
+--disable-sockets --disable-nls \textbackslash \\
+--disable-shared \textbackslash
+} \\
+\textcolor{Magenta}{--host}=x86\_64-unknown-linux-gnu \textbackslash \\
+\textcolor{red}{CC}=cc \textbackslash \\
+\textcolor{red}{CXX}=CC \textbackslash \\
+\textcolor{red}{FC}=ftn
+}\end{minipage}}
+
+In case the automated environment modules handling causes issues,
+adding the \texttt{--without-modules} option may be necessary.
+In that case, caution must be exerciced so that the user will load
+the same modules as those used for installation. This is not an issue
+if modules for \CS is also built, and the right dependencies
+handled at that level.
+
+Note that to build without OpenMP with the Cray compilers,
+\texttt{CFLAGS=\"-h noomp\"} and \texttt{FCFLAGS=\"-h noomp\"}
+need to be added.
+
 \subsection{Troubleshooting\label{sec:config:troubleshoot}}
 
 If \texttt{configure} fails and reports an error, the message should

@@ -1356,7 +1356,8 @@ class mpi_environment:
             launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
                               'mpiexec.hydra', 'mpiexec.smpd',
                               'mpiexec.gforker', 'mpiexec.remshell',
-                              'mpirun.mpich2', 'mpirun.mpich', 'mpirun']
+                              'mpirun.mpich2', 'mpirun.mpich',
+                              'aprun', 'mpirun']
 
             for d in p:
                 for name in launcher_names:

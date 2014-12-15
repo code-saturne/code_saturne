@@ -293,10 +293,10 @@ if (irangp.ge.0) then
 endif
 ! print the global maxima
 write(nfecra,5090) itab(1), itab(2), itab(3)
- 5090 format(' cs_user_extra_operations: Max. number of cells per proc. =    &
-             ', i10, /,  &
-             '         Max. number of interior faces per proc. = ', i10, /,  &
-             '         Max. number of boundary faces per proc. = ', i10)
+ 5090 format(' cs_user_extra_operations: Max. number of cells per rank = ',  &
+             i10, /,  &
+             '         Max. number of interior faces per rank = ', i10, /,   &
+             '         Max. number of boundary faces per rank = ', i10)
 !< [example_9]
 
 ! Minima from an array of integers;
@@ -314,10 +314,10 @@ if (irangp.ge.0) then
 endif
 ! print the global minima
 write(nfecra,5100) itab(1), itab(2), itab(3)
- 5100 format(' cs_user_extra_operations: Min. number of cells per proc. =    &
-             ', i10, /,  &
-             '         Min. number of interior faces per proc. = ', i10, /,  &
-             '         Min. number of boundary faces per proc. = ', i10)
+ 5100 format(' cs_user_extra_operations: Min. number of cells per rank = ',  &
+             i10, /,  &
+             '         Min. number of interior faces per rank = ', i10, /,   &
+             '         Min. number of boundary faces per rank = ', i10)
 !< [example_10]
 
 ! Sum of an array of reals;

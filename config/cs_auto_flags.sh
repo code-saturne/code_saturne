@@ -1056,7 +1056,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     cs_ac_fc_version=`$FC -V 2>&1 | grep "Cray Fortran" | head -1`
     cs_fc_compiler_known=yes
 
-    fcflags_default="-eF -em"
+    fcflags_default="-eF -em -J."
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O2"
     fcflags_default_prf="-h profile_generate" # resulting code must be run under CrayPat
