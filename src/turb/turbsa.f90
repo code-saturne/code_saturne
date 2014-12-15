@@ -528,40 +528,6 @@ if (idiff(ivar).ge.1) then
    w1     ,                                                       &
    viscf  , viscb  )
 
-  ! Be carefull with the walls:
-  !  If we have a smooth wall then nusa is zero at the wall
-  !  If we have a rough wall then nusa_wall*(1- IprF/d0)=Vipr
-
-  do ifac = 1, nfabor
-
-    iel   = ifabor(ifac)
-    surfn = surfbn(ifac)
-
-    ! Smooth wall
-    if (itypfb(ifac).eq.iparoi) then
-      viscb(ifac) = dsigma * viscl(iel)*surfn/distb(ifac)
-
-    ! Rough wall
-    elseif (itypfb(ifac).eq.iparug) then
-
-      rom = crom(iel)
-
-      ! dsa0 is recomputed in case of many different roughness
-      cofbnu = coefbp(ifac)
-
-      ! Roughness of the wall
-      dsa0   = distb(ifac) *cofbnu/(1.d0-cofbnu)
-      hssa   = exp(8.5d0*xkappa)*dsa0
-
-      ! For rough walls: nusa_F*(IprF/d0+1) = nusa_Ipr
-      viscb(ifac) = dsigma * ( viscl(iel)                            &
-                   + idifft(ivar)*cvara_nusa(iel)*rom                    &
-                   * dsa0/(distb(ifac)+dsa0)            )*surfn/distb(ifac)
-
-    endif
-
-  enddo
-
 else
 
   do ifac = 1, nfac
