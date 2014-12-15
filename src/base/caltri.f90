@@ -922,6 +922,11 @@ endif
 ! Test presence of control_file to modify ntmabs if required
 call cs_control_check_file
 
+if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
+    .and. (ttmabs.gt.0 .and. ttcabs.ge.ttmabs)) then
+  ntmabs = ntcabs
+endif
+
 call dmtmps(titer1)
 !==========
 
