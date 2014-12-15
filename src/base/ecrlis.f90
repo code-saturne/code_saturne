@@ -141,10 +141,10 @@ do f_id = 0, nfld - 1
     ic=ic+14
     chain = ' '
 
-    ! Compute the derive
-    !-------------------
+    ! Compute the time drift
+    !-----------------------
 
-    ! Scalar derive (except pressure)
+    ! Scalar time drift (except pressure)
     if (f_dim.eq.1.and.(ippmod(icompf).ge.0.or.trim(fname).ne.'pressure')) then
       call field_get_val_s(f_id, field_s_v)
       call field_get_val_prev_s(f_id, field_s_vp)
@@ -157,11 +157,11 @@ do f_id = 0, nfld - 1
       if (irangp.ge.0) call parsom (dervar(1))
       dervar(1) = dervar(1) / voltot
 
-    ! Pressure derive (computed in resopv.f90)
+    ! Pressure ime drift (computed in resopv.f90)
     else if (f_dim.eq.1) then
       dervar(1) = sinfo%dervar
 
-    ! Vector or tensor derive (total derive)
+    ! Vector or tensor time drift (total time drift)
     else
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
@@ -207,7 +207,7 @@ do f_id = 0, nfld - 1
       if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
       sinfo%l2residual = varres(1)
 
-    ! Vector or tensor derive (total L2 time residual)
+    ! Vector or tensor time drift (total L2 time residual)
     else
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
@@ -246,7 +246,7 @@ do f_id = 0, nfld - 1
     ! Finalize the log of the line
     if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
-    ! Vector or tensor derive (by component)
+    ! Vector or tensor time drift (by component)
     if (f_dim.gt.1) then
       call field_get_val_v(f_id, field_v_v)
       call field_get_val_prev_v(f_id, field_v_vp)
@@ -254,7 +254,7 @@ do f_id = 0, nfld - 1
       ! Loop over the components
       do c_id = 1, f_dim
 
-        ! Compute the derive
+        ! Compute the time drift
         dervar(c_id) = 0.d0
         do icel = 1, ncel
           dervar(c_id) = dervar(c_id)                                      &
@@ -332,13 +332,13 @@ do f_id = 0, nfld - 1
         chainc(ic:ic+12) = chain(1:12)
         ic=ic+12
 
-        ! Print the derive of the component
+        ! Print the time drift of the component
         if (kval.gt.0) write(nfecra,'(a)') chainc(1:ic)
 
       enddo
     endif
 
-    ! Store the derive and the l2residual
+    ! Store the time drift and the l2residual
     call field_set_key_struct_solving_info(f_id, sinfo)
   endif
 
@@ -359,7 +359,7 @@ deallocate(w1, w2)
  1000 format (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
           3X,'   -------------------------------')
  1011 format ('   Variable    Norm 2nd mb.',                      &
-        '  Nbiter  Residu norme        derive Residu en temps')
+        '  Nbiter  Residu norme        Derive Residu en temps')
  1010 format ('---------------------------',                      &
         '----------------------------------------------------')
 
@@ -371,7 +371,7 @@ deallocate(w1, w2)
  1000 format (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
           3X,'   --------------------------')
  1011 format ('   Variable    Rhs norm    ',                      &
-        '  N_iter  Norm. residual      derive Time residual')
+        '  N_iter  Norm. residual      Drift  Time residual')
  1010 format ('---------------------------',                      &
         '--------------------------------------------------')
 

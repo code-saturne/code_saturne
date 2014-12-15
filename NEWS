@@ -123,7 +123,7 @@ Architectural changes
   linkers not allowing or configured to allow multiple definitions might be
   an issue.
 
-- Restart files now use a new section naming field, at least for field data.
+- Restart files now use a new section naming scheme, at least for field data.
   this allows more automated handling of variables and properties in
   checkpoint/restart.
 
@@ -150,7 +150,7 @@ Bug fixes:
   - in rev 4491, the call to specific physics laws was moved from BEFORE
     the user call to AFTER the user call, which was only needed for the
     compressible module, whereas it impinges ALL the specifics physics.
-  - therefore ppphyv is splitted into two.
+  - therefore ppphyv is split into two.
   - WARNING: this change MAY impige all the specific physics
     (Atmospheric, Electric Arcs, Combustion, etc.)
 
