@@ -186,6 +186,7 @@ double precision, dimension(:), allocatable :: byplus, buk, buet, buplus, bcfnns
 
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:), pointer :: cvara_nusa
 
 double precision, dimension(:,:), pointer :: coefau, cofafu
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -434,11 +435,13 @@ else
 endif
 
 if (inusa.gt.0) then
+  call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)
   call field_get_coefa_s(ivarfl(inusa), coefa_nu)
   call field_get_coefaf_s(ivarfl(inusa), coefaf_nu)
   call field_get_coefb_s(ivarfl(inusa), coefb_nu)
   call field_get_coefbf_s(ivarfl(inusa), coefbf_nu)
 else
+  cvara_nusa => null()
   coefa_nu => null()
   coefb_nu => null()
   coefaf_nu => null()
@@ -1219,10 +1222,17 @@ do ifac = 1, nfabor
     elseif (iturb.eq.70) then
 
       dsa0 = rugd
+      hint = (visclc + idifft(inusa)*cvara_nusa(iel)*romc*dsa0/(distbf+dsa0) ) / distbf / csasig
 
+      ! If we have a rough wall then:
+      ! nusa_wall*(1- I'F/d0)=nusa_I'
+      ! which is a Robin type BC
       coefa_nu(ifac) = 0.d0
-      coefb_nu(ifac) = dsa0/(dsa0+distbf) !TODO
+      coefb_nu(ifac) = dsa0/(dsa0+distbf)
 
+
+      coefaf_nu(ifac) = 0.d0
+      coefbf_nu(ifac) = hint*distbf/(dsa0+distbf)
     endif
 
     byplus(ifac) = yplus

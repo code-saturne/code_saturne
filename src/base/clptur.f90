@@ -1405,7 +1405,7 @@ do ifac = 1, nfabor
 
       pimp = 0.d0
 
-      hint = visclc/distbf !FIXME nusa
+      hint = visclc / distbf / csasig ! Note: nusa is zero at the wall
 
       call set_dirichlet_scalar &
            !====================
