@@ -25,7 +25,7 @@ subroutine lages2 &
 
  ( propce ,                                                       &
    taup   , tlag   , piil   ,                                     &
-   tsuf   , tsup   , bx     , tsfext ,                            &
+   bx     , tsfext ,                                              &
    vagaus , gradpr ,                                              &
    romp   , brgaus , terbru , fextla )
 
@@ -55,10 +55,6 @@ subroutine lages2 &
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpart,3)   ! tr ! <-- ! terme dans l'integration des eds up            !
-! tsup(nbpart,3)   ! tr ! <-- ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse des particules                    !
-! tsuf(nbpart,3)   ! tr ! <-- ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse du fluide vu                      !
 ! bx(nbpart,3,2)   ! tr ! <-- ! caracteristiques de la turbulence              !
 ! tsfext(nbpart)   ! tr ! --> ! infos pour couplage retour dynamique           !
 ! vagaus           ! tr ! <-- ! variables aleatoires gaussiennes               !
@@ -102,7 +98,6 @@ implicit none
 double precision propce(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
-double precision tsuf(nbpart,3) , tsup(nbpart,3)
 double precision tsfext(nbpart)
 double precision vagaus(nbpart,*), brgaus(nbpart,*)
 double precision gradpr(3,ncelet)
@@ -213,7 +208,7 @@ if (nor.eq.1) then
 
     if (ipepa(jisor,ip).gt.0) then
 
-      eptp(jtaux,ip) = taup(ip)
+      pepa(jtaux,ip) = taup(ip)
 
     endif
 
@@ -258,8 +253,8 @@ if (nor.eq.1) then
         aux4 = tlag(ip,id) / (tlag(ip,id) - taup(ip))
         aux5 = aux3 - aux2
 
-        tsuf(ip,id) = 0.5d0 * eptpa(juf+i0,ip) * aux3             &
-                    + auxl(ip,id+3) * ( -aux3 + (aux3-1.d0) /aux1)
+        pepa(jtsuf(id),ip) =   0.5d0 * eptpa(juf+i0,ip) * aux3               &
+                             + auxl(ip,id+3) * ( -aux3 + (aux3-1.d0) /aux1)
 
         ter1 = 0.5d0 * eptpa(jup+i0,ip) * aux2
         ter2 = 0.5d0 * eptpa(juf+i0,ip) * aux4 * aux5
@@ -269,7 +264,7 @@ if (nor.eq.1) then
              - (1.d0 + tlag(ip,id) / dtp) * aux4 * aux5)
         ter4 = auxl(ip,id) * (-aux2 + (aux2 - 1.d0) / aux0)
 
-        tsup(ip,id) = ter1 + ter2 + ter3 + ter4
+        pepa(jtsup(id),ip) = ter1 + ter2 + ter3 + ter4
 
       endif
 
@@ -322,8 +317,8 @@ else
 
         ter5 = 0.5d0 * tlag(ip,id) * (1.d0 - aux6)
 
-        eptp(juf+i0,ip) = tsuf(ip,id) + ter1 + ter2               &
-                            + sige * sqrt(ter5) * vagaus(ip,id)
+        eptp(juf+i0,ip) =   pepa(jtsuf(id),ip) + ter1 + ter2      &
+                          + sige * sqrt(ter5) * vagaus(ip,id)
 
 !---> Calcul de Up :
 !     --------------
@@ -335,7 +330,7 @@ else
              + (tlag(ip,id) / dtp) * aux4 * aux5)                 &
              + auxl(ip,id) * (1.d0 - (aux2 - 1.d0) / aux0)
 
-        tapn  = eptp(jtaux,ip)
+        tapn  = pepa(jtaux,ip)
         aux7  = exp(-dtp / tapn)
         aux8  = 1.d0 - aux3 * aux7
         aux9  = 1.d0 - aux6
@@ -415,8 +410,8 @@ else
 
 ! ---> finalisation de l'ecriture
 
-        eptp(jup+i0,ip) = tsup(ip,id) +ter1 +ter2 +ter3 +ter4     &
-                        + tbriu
+        eptp(jup+i0,ip) =   pepa(jtsup(id),ip)                    &
+                          + ter1 + ter2 + ter3 + ter4 + tbriu
 
       endif
 

@@ -82,6 +82,7 @@ double precision propce(ncelet,*)
 
 ! Local variables
 
+logical          ltsvar
 integer          npt   , iel   , mode
 
 double precision ct    , aux1  , aux2   , ter1   , ter2
@@ -112,6 +113,12 @@ energ = 0.d0
 ct = 1.d0
 
 mode = 1
+
+if (associated(ptsvar)) then
+  ltsvar = .true.
+else
+  ltsvar = .false.
+endif
 
 if (iprev.eq.0) then
 
@@ -249,28 +256,31 @@ if (nor.eq.1) then
 
       ! Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
 
-      ! tsvar(npt,jtf) =    0.5d0 * ter1                               &
-      !                   + tempf(iel) * ( -aux2 +(aux2-1.d0) / aux1 )
+      if (ltsvar) then
+        ptsvar(jtf,npt) =    0.5d0 * ter1                                 &
+                           + tempf(iel) * ( -aux2 +(aux2-1.d0) / aux1 )
+      endif
+
     endif
   enddo
 
-! else if (nor.eq.2) then
+else if (nor.eq.2) then
 
-!  do npt = 1,nbpart
+  do npt = 1,nbpart
 
-!    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
+    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
 
-!      iel = ipepa(jisor,npt)
+      iel = ipepa(jisor,npt)
 
-!      aux1 = -dtp/auxl1(npt)
-!      aux2 = exp(aux1)
+      aux1 = -dtp/auxl1(npt)
+      aux2 = exp(aux1)
 
-!      ter1 = 0.5d0 * eptpa(jtf,npt) * aux2
-!      ter2 = tempf(iel) * (1.d0 - (aux2-1.d0) / aux1)
+      ter1 = 0.5d0 * eptpa(jtf,npt) * aux2
+      ter2 = tempf(iel) * (1.d0 - (aux2-1.d0) / aux1)
 
-!      eptp(jtf,npt) = tsvar(npt,jtf) + ter1 + ter2
-!    endif
-!  enddo
+      eptp(jtf,npt) = ptsvar(jtf,npt) + ter1 + ter2
+    endif
+  enddo
 
 endif
 

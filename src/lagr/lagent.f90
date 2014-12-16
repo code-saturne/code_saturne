@@ -1039,6 +1039,10 @@ do ii = 1,nfrtot
           ipepa(jclst,ip) = iuslag(nc,nb,iclst)
         endif
 
+        if (jtaux.gt.0) then
+          pepa(jtaux,ip) = 0.0d0 ! used for 2nd order only
+        endif
+
         if (iphyla.eq.0 .or. iphyla.eq.1) then
 
           eptp(jmp,ip) = ruslag(nc,nb,iropt) * pis6 * d3
@@ -1118,7 +1122,6 @@ do ii = 1,nfrtot
           ipepa(jinch,ip)  = iuslag(nc,nb,inuchl)
 
           ! Remplissage de eptp
-          eptp(jtaux,ip) = 0.0d0 ! non utilise pour iphyla=2
           eptp(jtf,ip) = temp1(iel) - tkelvi
 
           do ilayer = 1, nlayer

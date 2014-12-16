@@ -1186,7 +1186,7 @@ endif
 !   This division is applied in each writing in the listing and in
 !   the post-processing files.
 
-if (1.eq.0) then
+if (.false.) then
 
  if(istala.eq.1 .and. iplas.ge.idstnt .and. nvlsts.gt.0) then
 
@@ -1220,7 +1220,7 @@ endif
 
 !  This example is unactivated and must be adapted to the case
 
-if (1.eq.0) then
+if (.false.) then
 
   zz(1) = 0.1d0
   zz(2) = 0.15d0
@@ -1270,7 +1270,7 @@ endif
 
 !  This example is unactivated and must be adapted to the case
 
-if (1.eq.0) then
+if (.false.) then
 
   if(ntcabs.eq.ntmabs) then
 
@@ -1542,7 +1542,7 @@ ip = numpt
 !   as an indication.
 
 
-if (1.eq.0) then
+if (.false.) then
 
   prt  = xnul / xrkl
 
@@ -1720,7 +1720,7 @@ ip = numpt
 ! This example is unactivated, it gives the standard relaxation time
 ! as an indication:
 
-if (1.eq.0) then
+if (.false.) then
 
   cd1  = 0.15d0
   cd2  = 0.687d0

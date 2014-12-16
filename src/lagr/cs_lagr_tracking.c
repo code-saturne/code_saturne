@@ -164,7 +164,8 @@ typedef enum {
    time steps */
 
 typedef enum {
-  EPTP = 1,
+  EPTP_TS = 1, /* EPTP with possible source terms */
+  EPTP,
   IEPTP,
   PEPA,
   IPEPA,
@@ -325,6 +326,9 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_COORDS",
   "CS_LAGR_VELOCITY",
   "CS_LAGR_VELOCITY_SEEN",
+  "CS_LAGR_TURB_STATE_1",
+  "CS_LAGR_PRED_VELOCITY",
+  "CS_LAGR_PRED_VELOCITY_SEEN",
   "CS_LAGR_YPLUS",
   "CS_LAGR_INTERF",
   "CS_LAGR_NEIGHBOR_FACE_ID",
@@ -372,7 +376,7 @@ static  MPI_Datatype  _cs_mpi_particle_type;
 /* Global Lagragian module parameters and associated pointer
    Should move to cs_lagr.c */
 
-static cs_lagr_param_t  _lagr_param = {0, 1, 0, 0, 0, 0, 0, 0};
+static cs_lagr_param_t  _lagr_param = {0, 1, 0, 0, 0, 0, 0, 0, 1};
 const  cs_lagr_param_t  *cs_glob_lagr_params = &_lagr_param;
 
 /*============================================================================
@@ -385,10 +389,12 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
                    int          dim_pepa[2],
                    int          dim_eptp[2],
                    int          dim_eptpa[2],
+                   int          dim_ptsvar[2],
                    cs_int_t   **p_ipeta,
                    cs_real_t  **p_peta,
                    cs_real_t  **p_eptp,
                    cs_real_t  **p_eptpa,
+                   cs_real_t  **p_ptsvar,
                    cs_int_t   **p_nbpart,
                    cs_real_t  **p_dnbpar,
                    cs_int_t   **p_nbpout,
@@ -481,6 +487,8 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
 
   }
 
+  p_am->source_term_displ = NULL;
+
   for (attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
     p_am->size[attr] = 0;
     p_am->datatype[attr] = CS_REAL_TYPE;
@@ -529,6 +537,7 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
       /* Behavior depending on array */
 
       switch(attr_keys[attr][0]) {
+      case EPTP_TS:
       case EPTP:
         max_time_id = 1;
         break;
@@ -571,6 +580,34 @@ _create_attr_map(cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3])
       }
 
       p_am->extents += p_am->size[attr];
+
+    }
+
+    p_am->extents = _align_extents(p_am->extents);
+
+  }
+
+  /* Add source terms for 2nd order */
+
+  if (cs_glob_lagr_params->t_order > 1) {
+
+    BFT_MALLOC(p_am->source_term_displ, CS_LAGR_N_ATTRIBUTES, ptrdiff_t);
+
+    /* loop again on ordered attributes */
+
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+
+      attr = order[i];
+
+      /* Add attribute to map if in EPTPS array */
+
+      if (   attr_keys[attr][0] == EPTP_TS
+          && p_am->count[0][attr] > 0) {
+        p_am->source_term_displ[attr] = p_am->extents;
+        p_am->extents += p_am->size[attr];
+      }
+      else
+        p_am->source_term_displ[attr] = -1;
 
     }
 
@@ -4410,24 +4447,26 @@ _finalize_displacement(cs_lagr_particle_set_t  *particles)
  * This function is intended for use by Fortran wrappers.
  *
  * parameters:
- *   dim_ipepa --> dimensions for ipepa pointer
- *   dim_peta  --> dimensions for pepa pointer
- *   dim_eptp  --> dimensions for eptp pointer
- *   dim_eptpa --> dimensions for eptpa pointer
- *   p_ipeta   --> ipepa pointer
- *   p_pepa    --> pepa pointer
- *   p_eptp    --> eptp pointer
- *   p_eptpa   --> eptpa pointer
- *   p_nbpart  --> nbpart pointer
- *   p_dnbpar  --> dnbpar pointer
- *   p_nbpout  --> nbpout pointer
- *   p_dnbpou  --> dnbpou pointer
- *   p_nbperr  --> nbperr pointer
- *   p_dnbper  --> dnbper  pointer
- *   p_nbpdep  --> nbpdep pointer
- *   p_dnbdep  --> dnbdep  pointer
- *   p_npencr  --> npencr pointer
- *   p_dnpenc  --> dnpenc  pointer
+ *   dim_ipepa   --> dimensions for ipepa pointer
+ *   dim_peta    --> dimensions for pepa pointer
+ *   dim_eptp    --> dimensions for eptp pointer
+ *   dim_eptpa   --> dimensions for eptpa pointer
+ *   dim_ptsvar  --> dimensions for ptsvar pointer
+ *   p_ipeta     --> ipepa pointer
+ *   p_pepa      --> pepa pointer
+ *   p_eptp      --> eptp pointer
+ *   p_eptpa     --> eptpa pointer
+ *   p_ptsvar    --> ptsvar pointer
+ *   p_nbpart    --> nbpart pointer
+ *   p_dnbpar    --> dnbpar pointer
+ *   p_nbpout    --> nbpout pointer
+ *   p_dnbpou    --> dnbpou pointer
+ *   p_nbperr    --> nbperr pointer
+ *   p_dnbper    --> dnbper  pointer
+ *   p_nbpdep    --> nbpdep pointer
+ *   p_dnbdep    --> dnbdep  pointer
+ *   p_npencr    --> npencr pointer
+ *   p_dnpenc    --> dnpenc  pointer
  *
  * returns:
  *   pointer to the field structure, or NULL
@@ -4438,10 +4477,12 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
                    int          dim_pepa[2],
                    int          dim_eptp[2],
                    int          dim_eptpa[2],
+                   int          dim_ptsvar[2],
                    cs_int_t   **p_ipeta,
                    cs_real_t  **p_peta,
                    cs_real_t  **p_eptp,
                    cs_real_t  **p_eptpa,
+                   cs_real_t  **p_ptsvar,
                    cs_int_t   **p_nbpart,
                    cs_real_t  **p_dnbpar,
                    cs_int_t   **p_nbpout,
@@ -4471,6 +4512,15 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
   dim_eptpa[0] = extents / sizeof(cs_real_t);
   dim_eptpa[1] = max_data_size / sizeof(cs_real_t);
 
+  if (cs_glob_lagr_params->t_order > 1) {
+    dim_ptsvar[0] = extents / sizeof(cs_real_t);
+    dim_ptsvar[1] = max_data_size / sizeof(cs_real_t);
+  }
+  else {
+    dim_ptsvar[0] = 0;
+    dim_ptsvar[1] = 0;
+  }
+
   *p_ipeta = (cs_int_t *)particles->p_buffer;
   *p_peta = (cs_real_t *)particles->p_buffer;
 
@@ -4478,6 +4528,16 @@ cs_f_lagr_pointers(int          dim_ipepa[2],
   *p_eptpa = (cs_real_t *)(  particles->p_buffer
                            + p_am->displ[1][CS_LAGR_COORDS]
                            - p_am->displ[0][CS_LAGR_COORDS]);
+
+  if (cs_glob_lagr_params->t_order > 1) {
+    assert(p_am->displ[0][CS_LAGR_MASS] > -1);
+    *p_ptsvar = (cs_real_t *)(  particles->p_buffer
+                              + p_am->source_term_displ[CS_LAGR_MASS]
+                              - p_am->displ[0][CS_LAGR_MASS]);
+    assert(p_am->displ[0][CS_LAGR_TURB_STATE_1] > 0);
+  }
+  else
+    *p_ptsvar = NULL;
 
   *p_nbpart = &(particles->n_particles);
   *p_dnbpar = &(particles->weight);
@@ -4551,6 +4611,7 @@ cs_f_lagr_current_to_previous(cs_lnum_t  pn)
  * and indexes
  *
  * parameters:
+ *   nordre          <--  time algorithm order (1 or 2)
  *   iphyla          <--  kind of physics used for the lagrangian approach
  *   nvls            <--  number of user-defined variables
  *   nbclst          <--  number of stat. class to study sub-set of particles
@@ -4558,7 +4619,8 @@ cs_f_lagr_current_to_previous(cs_lnum_t  pn)
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
+CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
+                          const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
                           const cs_int_t    *irough,
@@ -4587,6 +4649,9 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
                           cs_int_t          *jvf,
                           cs_int_t          *jwf,
                           cs_int_t          *jtaux,
+                          cs_int_t           jbx1[3],
+                          cs_int_t           jtsup[3],
+                          cs_int_t           jtsuf[3],
                           cs_int_t          *jryplu,
                           cs_int_t          *jrinpf,
                           cs_int_t          *jdfac,
@@ -4617,6 +4682,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
 
   int n_layers = 0;
   int ieptp_loc_count = 0;
+  int pepa_loc_add = 1000; /* should be abore any j* pointer if used */
 
   cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3];
 
@@ -4636,6 +4702,8 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
 
   _lagr_param.n_user_variables = *nvls;
   _lagr_param.n_stat_classes = *nbclst;
+
+  _lagr_param.t_order = *nordre;
 
   /* Set indexes */
 
@@ -4673,9 +4741,10 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
   attr_keys[CS_LAGR_RESIDENCE_TIME][0] = PEPA;
   attr_keys[CS_LAGR_RESIDENCE_TIME][1] = *jrtsp;
 
-  attr_keys[CS_LAGR_MASS][0] = EPTP;
+  attr_keys[CS_LAGR_MASS][0] = EPTP_TS;
   attr_keys[CS_LAGR_MASS][1] = *jmp;
 
+  attr_keys[CS_LAGR_DIAMETER][0] = EPTP_TS;
   attr_keys[CS_LAGR_DIAMETER][1] = *jdp;
 
   attr_keys[CS_LAGR_COORDS][1] = *jxp;
@@ -4687,7 +4756,22 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
   attr_keys[CS_LAGR_VELOCITY_SEEN][1] = *juf;
   attr_keys[CS_LAGR_VELOCITY_SEEN][2] = 3;
 
-  attr_keys[CS_LAGR_TAUP_AUX][1] = *jtaux;
+  if (_lagr_param.t_order > 1) {
+    attr_keys[CS_LAGR_TAUP_AUX][0] = PEPA;
+    attr_keys[CS_LAGR_TAUP_AUX][1] = ++pepa_loc_add;
+
+    attr_keys[CS_LAGR_TURB_STATE_1][0] = PEPA;
+    attr_keys[CS_LAGR_TURB_STATE_1][1] = ++pepa_loc_add;
+    attr_keys[CS_LAGR_TURB_STATE_1][2] = 3;
+
+    attr_keys[CS_LAGR_PRED_VELOCITY][0] = PEPA;
+    attr_keys[CS_LAGR_PRED_VELOCITY][1] = ++pepa_loc_add;
+    attr_keys[CS_LAGR_PRED_VELOCITY][2] = 3;
+
+    attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][0] = PEPA;
+    attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][1] = ++pepa_loc_add;
+    attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][2] = 3;
+  }
 
   attr_keys[CS_LAGR_DEPOSITION_FLAG][0] = IPEPA;
   attr_keys[CS_LAGR_DEPOSITION_FLAG][1] = *jdepo;
@@ -4719,6 +4803,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
   attr_keys[CS_LAGR_DISPLACEMENT_NORM][0] = PEPA;
   attr_keys[CS_LAGR_DISPLACEMENT_NORM][1] = *jndisp;
 
+  attr_keys[CS_LAGR_TEMPERATURE][0] = EPTP_TS;
   if (*jtp > 0) {
     attr_keys[CS_LAGR_TEMPERATURE][1] = *jtp;
   }
@@ -4728,6 +4813,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
       = cs_glob_lagr_params->n_temperature_layers;
   }
 
+  attr_keys[CS_LAGR_FLUID_TEMPERATURE][0] = EPTP_TS;
   attr_keys[CS_LAGR_FLUID_TEMPERATURE][1] = *jtf;
 
   attr_keys[CS_LAGR_WATER_MASS][1] = *jmwat;
@@ -4859,6 +4945,36 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
   *jwf = *jvf + 1;
 
   *jtaux = p_am->displ[0][CS_LAGR_TAUP_AUX]/sizeof(cs_real_t) + 1;
+
+  if (p_am->count[0][CS_LAGR_TURB_STATE_1] > 0) {
+    for (int id = 0; id < 3; id++)
+      jbx1[id]
+        = p_am->displ[0][CS_LAGR_TURB_STATE_1]/sizeof(cs_real_t) + 1 + id;
+  }
+  else {
+    for (int id = 0; id < 3; id++)
+      jbx1[id] = -1;
+  }
+
+  if (p_am->count[0][CS_LAGR_PRED_VELOCITY] > 0) {
+    for (int id = 0; id < 3; id++)
+      jtsup[id]
+        = p_am->displ[0][CS_LAGR_PRED_VELOCITY]/sizeof(cs_real_t) + 1 + id;
+  }
+  else {
+    for (int id = 0; id < 3; id++)
+      jtsup[id] = -1;
+  }
+
+  if (p_am->count[0][CS_LAGR_PRED_VELOCITY_SEEN] > 0) {
+    for (int id = 0; id < 3; id++)
+      jtsuf[id]
+        = p_am->displ[0][CS_LAGR_PRED_VELOCITY_SEEN]/sizeof(cs_real_t) + 1 + id;
+  }
+  else {
+    for (int id = 0; id < 3; id++)
+      jtsuf[id] = -1;
+  }
 
   if (p_am->count[0][CS_LAGR_YPLUS] > 0)
     *jryplu = p_am->displ[0][CS_LAGR_YPLUS]/sizeof(cs_real_t) + 1;

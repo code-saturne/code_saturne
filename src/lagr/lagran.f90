@@ -180,6 +180,16 @@ module lagran
 
   !> \}
 
+  !> \defgroup lag_st_pointers Lagrangian source term pointers
+
+  !> \addtogroup lag_st_pointers
+  !> \{
+
+  !> \anchor ptsvar
+  double precision, dimension(:,:), pointer, save :: ptsvar
+
+  !> \}
+
   !> \}
 
   !=============================================================================
@@ -407,10 +417,19 @@ module lagran
   integer, save ::  jmch(nlayer)
   !> pointer to mass of coke of the coal particle for pointer \ref eptp
   integer, save ::  jmck(nlayer)
-  !> pointer to work array for the second order in time for pointer \ref eptp
-  integer, save ::  jtaux
   !> pointer to additional user variable for pointer \ref eptp
   integer, save ::  jvls(nusvar)
+
+  !> pointer to work array for the second order in time for pointer \ref pepa
+  integer, save ::  jtaux
+  !> pointer to turbulence characteristics for second order in time
+  !> for array \ref pepa
+  integer, save ::  jbx1(3)
+  !> pointer to velocity prediction for second order in time for array \ref pepa
+  integer, save ::  jtsup(3)
+  !> pointer to seen velocity prediction for second order in time
+  !> for array \ref pepa
+  integer, save ::  jtsuf(3)
 
   !> pointer to random number associated with a particle
   !> for array \ref pepa
@@ -1312,7 +1331,9 @@ module lagran
 
     ! Interface to C function returning particle attribute pointers
     subroutine cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa,    &
+                                  dim_ptsvar,                                  &
                                   p_ipepa, p_pepa, p_eptp, p_eptpa,            &
+                                  p_ptsvar,                                    &
                                   p_nbpart, p_dnbpar, p_nbpout, p_dnbpou,      &
                                   p_nbperr, p_dnbper, p_nbpdep, p_dnbdep,      &
                                   p_npencr, p_dnpenc)                          &
@@ -1320,7 +1341,9 @@ module lagran
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(2) :: dim_ipepa, dim_pepa, dim_eptp, dim_eptpa
+      integer(c_int), dimension(2) :: dim_ptsvar
       type(c_ptr), intent(out)     :: p_ipepa, p_pepa, p_eptp, p_eptpa
+      type(c_ptr), intent(out)     :: p_ptsvar
       type(c_ptr), intent(out)     :: p_nbpart, p_dnbpar, p_nbpout, p_dnbpou
       type(c_ptr), intent(out)     :: p_nbperr, p_dnbper, p_nbpdep, p_dnbdep
       type(c_ptr), intent(out)     :: p_npencr, p_dnpenc
@@ -1659,21 +1682,30 @@ contains
     ! Local variables
 
     integer(c_int), dimension(2) :: dim_ipepa, dim_pepa, dim_eptp, dim_eptpa
-    type(c_ptr) :: p_ipepa, p_pepa, p_eptp, p_eptpa
+    integer(c_int), dimension(2) :: dim_ptsvar
+    type(c_ptr) :: p_ipepa, p_pepa, p_eptp, p_eptpa, p_ptsvar
     type(c_ptr) :: p_nbpart, p_dnbpar, p_nbpout, p_dnbpou
     type(c_ptr) :: p_nbperr, p_dnbper, p_nbpdep, p_dnbdep
     type(c_ptr) :: p_npencr, p_dnpenc
 
-    call cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa, &
-                            p_ipepa, p_pepa, p_eptp, p_eptpa,         &
-                            p_nbpart, p_dnbpar, p_nbpout, p_dnbpou,   &
-                            p_nbperr, p_dnbper, p_nbpdep, p_dnbdep,   &
+    call cs_f_lagr_pointers(dim_ipepa, dim_pepa, dim_eptp, dim_eptpa,   &
+                            dim_ptsvar,                                 &
+                            p_ipepa, p_pepa, p_eptp, p_eptpa,           &
+                            p_ptsvar,                                   &
+                            p_nbpart, p_dnbpar, p_nbpout, p_dnbpou,     &
+                            p_nbperr, p_dnbper, p_nbpdep, p_dnbdep,     &
                             p_npencr, p_dnpenc)
 
     call c_f_pointer(p_ipepa, ipepa, [dim_ipepa(1), dim_ipepa(2)])
     call c_f_pointer(p_pepa,  pepa,  [dim_pepa(1),  dim_pepa(2)])
     call c_f_pointer(p_eptp,  eptp,  [dim_eptp(1),  dim_eptp(2)])
     call c_f_pointer(p_eptpa, eptpa, [dim_eptpa(1), dim_eptpa(2)])
+
+    if (dim_ptsvar(2) .gt. 0) then
+      call c_f_pointer(p_ptsvar, ptsvar, [dim_ptsvar(1), dim_ptsvar(2)])
+    else
+      nullify(ptsvar)
+    endif
 
     call c_f_pointer(p_nbpart, nbpart)
     call c_f_pointer(p_dnbpar, dnbpar)

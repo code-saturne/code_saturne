@@ -61,6 +61,12 @@ typedef enum {
   CS_LAGR_VELOCITY,
   CS_LAGR_VELOCITY_SEEN,
 
+  /* Arrays for 2nd order scheme */
+
+  CS_LAGR_TURB_STATE_1,        /* turbulence characteristics of first pass */
+  CS_LAGR_PRED_VELOCITY,       /* 1st step prediction for particle velocity */
+  CS_LAGR_PRED_VELOCITY_SEEN,  /* 1st step prediction for relative velocity */
+
   /* Deposition submodel additional parameters */
 
   CS_LAGR_YPLUS,
@@ -130,12 +136,17 @@ typedef struct {
                                                       time value */
   cs_datatype_t   datatype[CS_LAGR_N_ATTRIBUTES];  /* datatype of associated
                                                       attributes */
-  ptrdiff_t      (*displ)[CS_LAGR_N_ATTRIBUTES];   /* displacement (in bytes) of
-                                                      attributes in particle data,
-                                                      per associated time_id*/
   int            (*count)[CS_LAGR_N_ATTRIBUTES];   /* number of values for each
                                                       attribute, per associated
                                                       time_id */
+  ptrdiff_t      (*displ)[CS_LAGR_N_ATTRIBUTES];   /* displacement (in bytes) of
+                                                      attributes in particle data,
+                                                      per associated time_id*/
+
+  ptrdiff_t      *source_term_displ;               /* displacement (in bytes) of
+                                                      source term values
+                                                      for second-order scheme,
+                                                      or NULL */
 
 } cs_lagr_attribute_map_t;
 
@@ -178,6 +189,7 @@ typedef struct {
 } cs_lagr_particle_set_t;
 
 /* Global parameters for Lagrangian module */
+/*-----------------------------------------*/
 
 typedef struct {
 
@@ -193,6 +205,8 @@ typedef struct {
 
   int  n_stat_classes;
   int  n_user_variables;
+
+  int  t_order;          /* Algorithm order in time */
 
 } cs_lagr_param_t;
 
@@ -215,6 +229,7 @@ extern const cs_lagr_param_t  *cs_glob_lagr_params;
  * and indexes
  *
  * parameters:
+ *   nordre          <--  time algorithm order (1 or 2)
  *   iphyla          <--  kind of physics used for the lagrangian approach
  *   nvls            <--  number of user-defined variables
  *   nbclst          <--  number of stat. class to study sub-set of particles
@@ -222,7 +237,8 @@ extern const cs_lagr_param_t  *cs_glob_lagr_params;
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
+CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
+                          const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
                           const cs_int_t    *irough,
@@ -251,6 +267,9 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nlayer,
                           cs_int_t          *jvf,
                           cs_int_t          *jwf,
                           cs_int_t          *jtaux,
+                          cs_int_t           jbx1[3],
+                          cs_int_t           jtsup[3],
+                          cs_int_t           jtsuf[3],
                           cs_int_t          *jryplu,
                           cs_int_t          *jrinpf,
                           cs_int_t          *jdfac,
@@ -793,6 +812,58 @@ cs_lagr_particles_set_real_n(cs_lagr_particle_set_t  *particle_set,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get pointer to 2nd order scheme source terms for an attribute
+ *        of a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
+ *
+ * \return    pointer to current attribute data
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_lagr_particles_source_terms(cs_lagr_particle_set_t  *particle_set,
+                               cs_lnum_t                particle_id,
+                               cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->source_term_displ != NULL);
+  assert(particle_set->p_am->source_term_displ[attr] >= 0);
+
+  return (cs_real_t *)(  (unsigned char *)particle_set->p_buffer
+                       + particle_set->p_am->extents*particle_id
+                       + particle_set->p_am->source_term_displ[attr]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get const pointer to 2nd order scheme source terms an attribute
+ *        of a given particle in a set.
+ *
+ * \param[in]  particle_set  pointer to particle set
+ * \param[in]  particle_id   particle id
+ * \param[in]  attr          requested attribute id
+ *
+ * \return    pointer to current attribute data
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static const cs_real_t *
+cs_lagr_particles_source_terms_const(cs_lagr_particle_set_t  *particle_set,
+                                     cs_lnum_t                particle_id,
+                                     cs_lagr_attribute_t      attr)
+{
+  assert(particle_set->p_am->source_term_displ != NULL);
+  assert(particle_set->p_am->source_term_displ[attr] >= 0);
+
+  return (const cs_real_t *)(  (unsigned char *)particle_set->p_buffer
+                             + particle_set->p_am->extents*particle_id
+                             + particle_set->p_am->source_term_displ[attr]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get pointer to current attribute data of a particle.
  *
  * \param[in]  particle  pointer to particle data
@@ -1176,6 +1247,54 @@ cs_lagr_particle_set_real_n(void                           *particle,
 
   *((cs_real_t *)(  (unsigned char *)particle
                   + attr_map->displ[time_id][attr])) = value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to 2nd order scheme attribute source terms of a particle.
+ *
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr      requested attribute id
+ *
+ * \return  pointer to attribute source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_lagr_particle_source_term(void                           *particle,
+                             const cs_lagr_attribute_map_t  *attr_map,
+                             cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->source_term_displ != NULL);
+  assert(attr_map->source_term_displ[attr] >= 0);
+
+  return  (cs_real_t *)(  (unsigned char *)particle
+                        + attr_map->source_term_displ[attr]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to 2nd order scheme attribute source terms of a particle.
+ *
+ * \param[in]  particle  pointer to particle data
+ * \param[in]  attr_map  pointer to attribute map
+ * \param[in]  attr      requested attribute id
+ *
+ * \return  pointer to attribute source terms
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static const cs_real_t *
+cs_lagr_particle_source_term_const(void                           *particle,
+                                   const cs_lagr_attribute_map_t  *attr_map,
+                                   cs_lagr_attribute_t             attr)
+{
+  assert(attr_map->source_term_displ != NULL);
+  assert(attr_map->source_term_displ[attr] >= 0);
+
+  return  (const cs_real_t *)(  (unsigned char *)particle
+                              + attr_map->source_term_displ[attr]);
 }
 
 /*----------------------------------------------------------------------------

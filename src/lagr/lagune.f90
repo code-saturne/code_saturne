@@ -197,13 +197,13 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nlayer , iphyla , idepst , irough , ireent , iclogst,          &
+ ( nordre , nlayer , iphyla , idepst , irough , ireent , iclogst, &
    nvls   , nbclst , icocel , itycel ,                            &
    jisor  , jisora , jirka  , jord1  ,                            &
    jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
-   juf    , jvf    , jwf    , jtaux  , jryplu ,                   &
-   jrinpf , jdfac  , jimark ,                                     &
+   juf    , jvf    , jwf    , jtaux  , jbx1   , jtsup  , jtsuf  , &
+   jryplu , jrinpf , jdfac  , jimark ,                            &
    jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
    jcp    , jrdck  , jrd0p  , jinch  , jrhock ,                   &
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
@@ -532,6 +532,16 @@ else
   iprev = 0
 endif
 
+! Retrieve bx values associated with particles from previous pass
+
+if (nordre.eq.2 .and. nor.eq.2) then
+  do ip = 1,nbpart
+    do ii = 1, 3
+      bx(ip,ii,1) = pepa(jbx1(ii),ip)
+    enddo
+  enddo
+endif
+
 call lagcar                                                     &
 !==========
  ( nvar   , nscal  ,                                            &
@@ -540,7 +550,6 @@ call lagcar                                                     &
    taup   , tlag   ,                                            &
    piil   , bx     , tempct , statis ,                          &
    gradpr , gradvf , w1     , w2     )
-
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     POSITION, VITESSE FLUIDE, VITESSE PARTICULE
@@ -553,6 +562,16 @@ call lagesp                                                       &
      statis , stativ , taup   , tlag   , piil   ,                 &
      bx     , tsfext ,                                            &
      gradpr , gradvf , terbru , vislen)
+
+! Save bx values associated with particles for next pass
+
+if (nordre.eq.2 .and. nor.eq.1) then
+  do ip = 1,nbpart
+    do ii = 1, 3
+      pepa(jbx1(ii),ip) = bx(ip,ii,1)
+    enddo
+  enddo
+endif
 
 !---> INTEGRATION DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES
 !     LIEES AUX PHYSIQUES PARTICULIERES PARTICULAIRES
@@ -676,7 +695,6 @@ if (nor.eq.1) then
   endif
 
 endif
-
 
 !===============================================================================
 ! 10.  TEMPS DE SEJOUR
