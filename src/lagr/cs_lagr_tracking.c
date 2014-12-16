@@ -90,7 +90,6 @@ BEGIN_C_DECLS
 
 #define  N_GEOL 13
 #define  CS_LAGR_MIN_COMM_BUF_SIZE  8
-#define  CS_LAGR_MAX_PROPAGATION_LOOPS  30
 
 /*=============================================================================
  * Local Enumeration definitions
@@ -360,6 +359,8 @@ enum {X, Y, Z};  /* Used for _get_norm() and _get_dot_prod() */
 
 static  double              _reallocation_factor = 2.0;
 static  unsigned long long  _n_g_max_particles = ULLONG_MAX;
+
+static  int                 _max_propagation_loops = 100;
 
 /* MPI datatype associated to each particle "structure" */
 
@@ -1758,9 +1759,9 @@ _continue_displacement(void)
  *   p_am          <-- pointer to attributes map
  *
  * returns:
- *    -1 if the cell-center -> particle segment does not go through the
- *    face's plane, minimum relative distance (in terms of barycentric
- *    coordinates) of intersection point to face.
+ *   -1 if the cell-center -> particle segment does not go through the face's
+ *   plane, minimum relative distance (in terms of barycentric coordinates)
+ *   of intersection point to face.
  *----------------------------------------------------------------------------*/
 
 static double
@@ -3034,7 +3035,7 @@ _local_propagation(void                           *particle,
 
     n_loops++;
 
-    if (n_loops > CS_LAGR_MAX_PROPAGATION_LOOPS) { /* Manage error */
+    if (n_loops > _max_propagation_loops) { /* Manage error */
 
       _manage_error(failsafe_mode,
                     particle,
@@ -3205,6 +3206,45 @@ _local_propagation(void                           *particle,
         cur_cell_id = c_id1;
       }
 
+      /* Specific treatment for the particle deposition model */
+
+      if (lagr_params->deposition > 0 && *particle_yplus < 100.) {
+
+        cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
+        cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
+        cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
+
+        cs_real_t face_normal[3], face_cog[3];
+
+        for (k = 0; k < 3; k++) {
+          face_normal[k] = fvq->i_face_normal[3*face_id+k];
+          face_cog[k] = fvq->i_face_cog[3*face_id+k];
+        }
+
+        cs_real_t aa =   x_p_q * face_normal[0]
+                       + y_p_q * face_normal[1]
+                       + z_p_q * face_normal[2];
+
+
+        cs_real_t bb = (  face_normal[0] * face_cog[0]
+                        + face_normal[1] * face_cog[1]
+                        + face_normal[2] * face_cog[2]
+                        - face_normal[0] * p_info->start_coords[0]
+                        - face_normal[1] * p_info->start_coords[1]
+                        - face_normal[2] * p_info->start_coords[2]) / aa;
+
+        cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
+        cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
+        cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
+
+        cs_real_t *xyzcen = fvq->cell_cen;
+
+        particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
+        particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
+        particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
+
+      }
+
       /* Particle changes rank */
 
       if (cur_cell_id >= mesh->n_cells) {
@@ -3212,40 +3252,9 @@ _local_propagation(void                           *particle,
         particle_state = CS_LAGR_PART_TO_SYNC;
         move_particle = CS_LAGR_PART_ERR;
 
+        /* Specific treatment for the particle deposition model */
+
         if (lagr_params->deposition > 0 && *particle_yplus < 100.) {
-
-          cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
-          cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
-          cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
-
-          cs_real_t face_normal[3], face_cog[3];
-
-          for (k = 0; k < 3; k++) {
-            face_normal[k] = fvq->i_face_normal[3*face_id+k];
-            face_cog[k] = fvq->i_face_cog[3*face_id+k];
-          }
-
-          cs_real_t aa =   x_p_q * face_normal[0]
-                         + y_p_q * face_normal[1]
-                         + z_p_q * face_normal[2];
-
-
-          cs_real_t bb = (  face_normal[0] * face_cog[0]
-                          + face_normal[1] * face_cog[1]
-                          + face_normal[2] * face_cog[2]
-                          - face_normal[0] * p_info->start_coords[0]
-                          - face_normal[1] * p_info->start_coords[1]
-                          - face_normal[2] * p_info->start_coords[2]) / aa;
-
-          cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
-          cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
-          cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
-
-          cs_real_t *xyzcen = fvq->cell_cen;
-
-          particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
-          particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
-          particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
 
           /* Marking of particles */
 
@@ -3287,38 +3296,6 @@ _local_propagation(void                           *particle,
 
         if (save_yplus < 100.) {
 
-          cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
-          cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
-          cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
-
-          cs_real_t face_normal[3], face_cog[3];
-
-          for (k = 0; k < 3; k++) {
-            face_normal[k] = fvq->i_face_normal[3*face_id+k];
-            face_cog[k] = fvq->i_face_cog[3*face_id+k];
-          }
-
-          cs_real_t aa =   x_p_q * face_normal[0]
-                         + y_p_q * face_normal[1]
-                         + z_p_q * face_normal[2];
-
-          cs_real_t bb = (  face_normal[0] * face_cog[0]
-                          + face_normal[1] * face_cog[1]
-                          + face_normal[2] * face_cog[2]
-                          - face_normal[0] *  p_info->start_coords[0]
-                          - face_normal[1] *  p_info->start_coords[1]
-                          - face_normal[2] *  p_info->start_coords[2]) / aa;
-
-          cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
-          cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
-          cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
-
-          cs_real_t* xyzcen = fvq->cell_cen;
-
-          particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
-          particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
-          particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
-
           /* Second test with the new particle position */
 
           _test_wall_cell(particle, p_am, visc_length, dlgeo,
@@ -3326,21 +3303,16 @@ _local_propagation(void                           *particle,
 
           if (*particle_yplus < 100.e0) {
 
-            cs_real_t flow_velo_x, flow_velo_y, flow_velo_z;
-
             assert(u->interleaved);
 
-            flow_velo_x = u->val[cur_cell_id*3];
-            flow_velo_y = u->val[cur_cell_id*3 + 1];
-            flow_velo_z = u->val[cur_cell_id*3 + 2];
+            cs_real_t flow_velo_x = u->val[cur_cell_id*3];
+            cs_real_t flow_velo_y = u->val[cur_cell_id*3 + 1];
+            cs_real_t flow_velo_z = u->val[cur_cell_id*3 + 2];
 
             /* The particle is still in the boundary layer */
 
-            cs_real_t old_bdy_normal[3];
-
-            for (k = 0; k < 3; k++)
-              old_bdy_normal[k]
-                = fvq->b_face_normal[3*save_close_face_id + k];
+            const cs_real_t *old_bdy_normal
+              = fvq->b_face_normal + 3*save_close_face_id;
 
             cs_real_t old_area  = _get_norm(old_bdy_normal);
 
