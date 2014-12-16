@@ -5,3 +5,11 @@ This directory contains files fixing potential problems that could arise
 in some particular situations. These patches have not been fully validated
 and therefore are NOT SUPPORTED.
 
+* Particle tracking discards particles in case of warped faces
+  ------------------------------------------------------------
+
+The tracking algorithm assumes perfectly planar faces. A partial rewrite of
+this algorithm, using new location tests, has been done for versions > 4.
+The following patch provides this algorithm for version 4.0.
+
+patch: cs_lagr_tracking.c 
