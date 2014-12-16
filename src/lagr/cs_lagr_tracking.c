@@ -3136,8 +3136,7 @@ _local_propagation(void                           *particle,
                    const cs_real_t                 visref[],
                    const cs_real_t                 enc1[],
                    const cs_real_t                 enc2[],
-                   cs_real_t                       tkelvi,
-                   cs_lnum_t                       ipass)
+                   cs_real_t                       tkelvi)
 {
   cs_lnum_t  i, j, k;
   cs_real_t  depl[3];
@@ -3242,20 +3241,19 @@ _local_propagation(void                           *particle,
 
     if (n_loops > CS_LAGR_MAX_PROPAGATION_LOOPS) { /* Manage error */
 
-      if (ipass == 1)
-        _manage_error(failsafe_mode,
-                      particle,
-                      p_am,
-                      CS_LAGR_TRACKING_ERR_MAX_LOOPS,
-                      &n_failed_particles,
-                      &failed_particle_weight);
+      _manage_error(failsafe_mode,
+                    particle,
+                    p_am,
+                    CS_LAGR_TRACKING_ERR_MAX_LOOPS,
+                    &n_failed_particles,
+                    &failed_particle_weight);
 
       move_particle  = CS_LAGR_PART_MOVE_OFF;
       particle_state = CS_LAGR_PART_ERR;
 
     }
 
-    /* Treatment for particles which change rank*/
+    /* Treatment for depositing particles */
 
     if (lagr_params->deposition > 0 && *particle_yplus < 0.) {
 
@@ -3323,399 +3321,389 @@ _local_propagation(void                           *particle,
 
     /* Loop on faces connected to the current cell */
 
+    cs_lnum_t exit_face = 0; /* > 0 for interior faces,
+                                < 0 for boundary faces */
+
     for (i = start; i < end && move_particle == CS_LAGR_PART_MOVE_ON; i++) {
+
+      cs_lnum_t  face_id, vtx_start, vtx_end, n_vertices;
 
       cs_lnum_t  face_num = cell_face_lst[i];
       cs_lnum_t  indian = 0;
 
-      if (face_num > 0 && face_num != old_face_num) {
+      if (face_num == old_face_num)
+        continue;
 
-        /* Interior face which is different from the incoming face */
+      if (face_num > 0) {
 
-        cs_lnum_t  face_id = face_num - 1;
-        cs_lnum_t  vtx_start = mesh->i_face_vtx_idx[face_id];
-        cs_lnum_t  vtx_end = mesh->i_face_vtx_idx[face_id+1];
-        cs_lnum_t  n_vertices = vtx_end - vtx_start + 1;
+        /* Interior face */
+
+        face_id = face_num - 1;
+        vtx_start = mesh->i_face_vtx_idx[face_id];
+        vtx_end = mesh->i_face_vtx_idx[face_id+1];
+        n_vertices = vtx_end - vtx_start + 1;
 
         for (k = 0, j = vtx_start; j < vtx_end; j++, k++)
           face_connect[k] = mesh->i_face_vtx_lst[j];
         face_connect[n_vertices-1] = face_connect[0];
 
-        /*
-          indian = -1 : keep inside the same cell.
-          indian = 0  : trajectory doesn't go through the current face.
-          indian = 1  : trajectory goes through the current face.
-        */
+      }
+      else {
 
-        indian = _where_are_you(face_num,
-                                n_vertices,
-                                face_connect,
-                                particle,
-                                p_am,
-                                &error);
-
-        if (error == 1 && ipass == 1) {
-
-          _manage_error(failsafe_mode,
-                        particle,
-                        p_am,
-                        CS_LAGR_TRACKING_ERR_DISPLACEMENT_I_FACE,
-                        &n_failed_particles,
-                        &failed_particle_weight);
-
-          move_particle = CS_LAGR_PART_MOVE_OFF;
-          particle_state = CS_LAGR_PART_ERR;
-
-        }
-        else if (indian == 1) { /* Particle moves to the neighbor cell
-                                   through the current face "face_num" */
-
-          cs_lnum_t  c_id1 = mesh->i_face_cells[face_id][0];
-          cs_lnum_t  c_id2 = mesh->i_face_cells[face_id][1];
-
-          p_info->last_face_num = face_num;
-
-          if (cur_cell_id == c_id1) {
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                      c_id2 + 1);
-            cur_cell_id = c_id2;
-          }
-
-          else {
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                      c_id1 + 1);
-            cur_cell_id = c_id1;
-          }
-
-          if (cur_cell_id >= mesh->n_cells) {
-
-            particle_state = CS_LAGR_PART_TO_SYNC;
-            move_particle = CS_LAGR_PART_ERR;
-
-            if (lagr_params->deposition > 0 && *particle_yplus < 100.) {
-
-              cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
-              cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
-              cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
-
-              cs_real_t face_normal[3], face_cog[3];
-
-              for (k = 0; k < 3; k++) {
-                face_normal[k] = fvq->i_face_normal[3*face_id+k];
-                face_cog[k] = fvq->i_face_cog[3*face_id+k];
-              }
-
-              cs_real_t aa =   x_p_q * face_normal[0]
-                             + y_p_q * face_normal[1]
-                             + z_p_q * face_normal[2];
-
-
-              cs_real_t bb = (  face_normal[0] * face_cog[0]
-                              + face_normal[1] * face_cog[1]
-                              + face_normal[2] * face_cog[2]
-                              - face_normal[0] * p_info->start_coords[0]
-                              - face_normal[1] * p_info->start_coords[1]
-                              - face_normal[2] * p_info->start_coords[2]) / aa;
-
-              cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
-              cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
-              cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
-
-              cs_real_t *xyzcen = fvq->cell_cen;
-
-              particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
-              particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
-              particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
-
-              /* Marking of particles */
-
-              *particle_yplus = - *particle_yplus;
-
-              /*Saving of dot product */
-
-              cs_real_t bdy_normal[3];
-
-              for (k = 0; k < 3; k++)
-                bdy_normal[k]
-                  = fvq->b_face_normal[(*neighbor_face_id)*3 + k];
-
-              cs_real_t area  = _get_norm(bdy_normal);
-
-              cs_real_t  face_norm[3] = {bdy_normal[0]/area,
-                                         bdy_normal[1]/area,
-                                         bdy_normal[2]/area};
-
-              particle_velocity_seen[0]
-                =   particle_velocity_seen[0] * face_norm[0]
-                  + particle_velocity_seen[1] * face_norm[1]
-                  + particle_velocity_seen[2] * face_norm[2];
-
-            }
-
-          }
-          else {
-
-            /* Specific treatment for the particle deposition model */
-
-            if (lagr_params->deposition > 0) {
-
-              cs_lnum_t save_close_face_id = *neighbor_face_id;
-              cs_real_t save_yplus = *particle_yplus;
-
-              /*Wall cell detection */
-
-              _test_wall_cell(particle, p_am, visc_length, dlgeo,
-                              particle_yplus, neighbor_face_id);
-
-              if (save_yplus < 100.) {
-
-                cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
-                cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
-                cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
-
-                cs_real_t face_normal[3], face_cog[3];
-
-                for (k = 0; k < 3; k++) {
-                  face_normal[k]
-                    = fvq->i_face_normal[3*face_id+k];
-                  face_cog[k] = fvq->i_face_cog[3*face_id+k];
-                }
-
-                cs_real_t aa =   x_p_q * face_normal[0]
-                               + y_p_q * face_normal[1]
-                               + z_p_q * face_normal[2];
-
-
-                cs_real_t bb = (  face_normal[0] * face_cog[0]
-                                + face_normal[1] * face_cog[1]
-                                + face_normal[2] * face_cog[2]
-                                - face_normal[0] *  p_info->start_coords[0]
-                                - face_normal[1] *  p_info->start_coords[1]
-                                - face_normal[2] *  p_info->start_coords[2]) / aa;
-
-                cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
-                cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
-                cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
-
-                cs_real_t* xyzcen = fvq->cell_cen;
-
-                particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
-                particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
-                particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
-
-                /* Second test with the new particle position */
-
-                _test_wall_cell(particle, p_am, visc_length, dlgeo,
-                                particle_yplus, neighbor_face_id);
-
-                if (*particle_yplus < 100.e0) {
-
-                  cs_real_t flow_velo_x, flow_velo_y, flow_velo_z;
-
-                  assert(u->interleaved);
-
-                  flow_velo_x = u->val[cur_cell_id*3];
-                  flow_velo_y = u->val[cur_cell_id*3 + 1];
-                  flow_velo_z = u->val[cur_cell_id*3 + 2];
-
-                  /* The particle is still in the boundary layer */
-
-                  cs_real_t old_bdy_normal[3];
-
-                  for (k = 0; k < 3; k++)
-                    old_bdy_normal[k]
-                      = fvq->b_face_normal[3*save_close_face_id + k];
-
-                  cs_real_t old_area  = _get_norm(old_bdy_normal);
-
-                  cs_real_t  old_face_norm[3] = {old_bdy_normal[0]/old_area,
-                                                 old_bdy_normal[1]/old_area,
-                                                 old_bdy_normal[2]/old_area};
-
-                  cs_real_t old_fl_seen_norm
-                    =   particle_velocity_seen[0] * old_face_norm[0]
-                      + particle_velocity_seen[1] * old_face_norm[1]
-                      + particle_velocity_seen[2] * old_face_norm[2];
-
-                  /* e1 (normal) vector coordinates */
-                  cs_real_t e1_x = dlgeo[*neighbor_face_id];
-                  cs_real_t e1_y = dlgeo[*neighbor_face_id + n_b_faces];
-                  cs_real_t e1_z = dlgeo[*neighbor_face_id + n_b_faces*2];
-
-                  /* e2 vector coordinates */
-                  cs_real_t e2_x = dlgeo[*neighbor_face_id + n_b_faces*7];
-                  cs_real_t e2_y = dlgeo[*neighbor_face_id + n_b_faces*8];
-                  cs_real_t e2_z = dlgeo[*neighbor_face_id + n_b_faces*9];
-
-                  /* e3 vector coordinates */
-                  cs_real_t e3_x = dlgeo[*neighbor_face_id + n_b_faces*10];
-                  cs_real_t e3_y = dlgeo[*neighbor_face_id + n_b_faces*11];
-                  cs_real_t e3_z = dlgeo[*neighbor_face_id + n_b_faces*12];
-
-                  /* V_n * e1 */
-
-                  cs_real_t v_n_e1[3] = {old_fl_seen_norm * e1_x,
-                                         old_fl_seen_norm * e1_y,
-                                         old_fl_seen_norm * e1_z};
-
-                  /* (U . e2) * e2 */
-
-                  cs_real_t flow_e2 =   flow_velo_x * e2_x
-                                      + flow_velo_y * e2_y
-                                      + flow_velo_z * e2_z;
-
-                  cs_real_t u_e2[3] = {flow_e2 * e2_x,
-                                       flow_e2 * e2_y,
-                                       flow_e2 * e2_z};
-
-                  /* (U . e3) * e3 */
-
-                  cs_real_t flow_e3 =   flow_velo_x * e3_x
-                                      + flow_velo_y * e3_y
-                                      + flow_velo_z * e3_z;
-
-                  cs_real_t u_e3[3] = {flow_e3 * e3_x,
-                                       flow_e3 * e3_y,
-                                       flow_e3 * e3_z};
-
-                  /* Update of the flow seen velocity */
-
-                  particle_velocity_seen[0] = v_n_e1[0] + u_e2[0] + u_e3[0];
-                  particle_velocity_seen[1] = v_n_e1[1] + u_e2[1] + u_e3[1];
-                  particle_velocity_seen[2] = v_n_e1[2] + u_e2[2] + u_e3[2];
-                }
-
-                move_particle =  CS_LAGR_PART_MOVE_OFF;
-                particle_state = CS_LAGR_PART_TREATED;
-
-              }
-            }
-          }
-        } else if (indian == -1) {
-
-          move_particle =  CS_LAGR_PART_MOVE_OFF;
-          particle_state = CS_LAGR_PART_TREATED;
-        }
-
-      } /* End if face_num > 0 (interior face) && face_num != old_face_num */
-
-      else if (face_num < 0 &&  face_num != old_face_num) {
+        assert(face_num < 0);
 
         /* Boundary faces */
 
-        cs_lnum_t  face_id = CS_ABS(face_num) - 1;
-        cs_lnum_t  vtx_start = mesh->b_face_vtx_idx[face_id];
-        cs_lnum_t  vtx_end = mesh->b_face_vtx_idx[face_id+1];
-        cs_lnum_t  n_vertices = vtx_end - vtx_start + 1;
+        face_id = -face_num - 1;
+        vtx_start = mesh->b_face_vtx_idx[face_id];
+        vtx_end = mesh->b_face_vtx_idx[face_id+1];
+        n_vertices = vtx_end - vtx_start + 1;
 
         for (k = 0, j = vtx_start; j < vtx_end; j++, k++)
           face_connect[k] = mesh->b_face_vtx_lst[j];
         face_connect[n_vertices-1] = face_connect[0];
 
-        /* Interior face which is different from the incoming face */
+      }
 
-        indian = _where_are_you(face_num,
-                                n_vertices,
-                                face_connect,
-                                particle,
-                                p_am,
-                                &error);
+      /*
+        indian = -1 : keep inside the same cell.
+        indian = 0  : trajectory doesn't go through the current face.
+        indian = 1  : trajectory goes through the current face.
+      */
 
-        face_num = -face_num;
+      indian = _where_are_you(face_num,
+                              n_vertices,
+                              face_connect,
+                              particle,
+                              p_am,
+                              &error);
 
-        if (error == 1 && ipass == 1) {
+      if (error == 1) {
 
-          _manage_error(failsafe_mode,
-                        particle,
-                        p_am,
-                        CS_LAGR_TRACKING_ERR_DISPLACEMENT_I_FACE,
-                        &n_failed_particles,
-                        &failed_particle_weight);
+        _manage_error(failsafe_mode,
+                      particle,
+                      p_am,
+                      CS_LAGR_TRACKING_ERR_DISPLACEMENT_I_FACE,
+                      &n_failed_particles,
+                      &failed_particle_weight);
 
-          move_particle = CS_LAGR_PART_MOVE_OFF;
-          particle_state = CS_LAGR_PART_ERR;
+        move_particle = CS_LAGR_PART_MOVE_OFF;
+        particle_state = CS_LAGR_PART_ERR;
+
+      }
+
+      else if (indian == -1) {
+        move_particle =  CS_LAGR_PART_MOVE_OFF;
+        particle_state = CS_LAGR_PART_TREATED;
+        break;
+      }
+
+      else if (indian == 1)
+        exit_face = face_num;
+
+    }
+
+    if (exit_face == 0) {
+      move_particle =  CS_LAGR_PART_MOVE_OFF;
+      particle_state = CS_LAGR_PART_TREATED;
+    }
+
+    else if (exit_face > 0) { /* Particle moves to the neighbor cell
+                                 through the current face "face_num" */
+
+      cs_lnum_t face_id = exit_face - 1;
+
+      cs_lnum_t  c_id1 = mesh->i_face_cells[face_id][0];
+      cs_lnum_t  c_id2 = mesh->i_face_cells[face_id][1];
+
+      p_info->last_face_num = exit_face;
+
+      if (cur_cell_id == c_id1) {
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
+                                  c_id2 + 1);
+        cur_cell_id = c_id2;
+      }
+
+      else {
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
+                                  c_id1 + 1);
+        cur_cell_id = c_id1;
+      }
+
+      /* Particle changes rank */
+
+      if (cur_cell_id >= mesh->n_cells) {
+
+        particle_state = CS_LAGR_PART_TO_SYNC;
+        move_particle = CS_LAGR_PART_ERR;
+
+        if (lagr_params->deposition > 0 && *particle_yplus < 100.) {
+
+          cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
+          cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
+          cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
+
+          cs_real_t face_normal[3], face_cog[3];
+
+          for (k = 0; k < 3; k++) {
+            face_normal[k] = fvq->i_face_normal[3*face_id+k];
+            face_cog[k] = fvq->i_face_cog[3*face_id+k];
+          }
+
+          cs_real_t aa =   x_p_q * face_normal[0]
+                         + y_p_q * face_normal[1]
+                         + z_p_q * face_normal[2];
+
+
+          cs_real_t bb = (  face_normal[0] * face_cog[0]
+                          + face_normal[1] * face_cog[1]
+                          + face_normal[2] * face_cog[2]
+                          - face_normal[0] * p_info->start_coords[0]
+                          - face_normal[1] * p_info->start_coords[1]
+                          - face_normal[2] * p_info->start_coords[2]) / aa;
+
+          cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
+          cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
+          cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
+
+          cs_real_t *xyzcen = fvq->cell_cen;
+
+          particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
+          particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
+          particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
+
+          /* Marking of particles */
+
+          *particle_yplus = - *particle_yplus;
+
+          /*Saving of dot product */
+
+          cs_real_t bdy_normal[3];
+
+          for (k = 0; k < 3; k++)
+            bdy_normal[k] = fvq->b_face_normal[(*neighbor_face_id)*3 + k];
+
+          cs_real_t area  = _get_norm(bdy_normal);
+
+          cs_real_t  face_norm[3] = {bdy_normal[0]/area,
+                                     bdy_normal[1]/area,
+                                     bdy_normal[2]/area};
+
+          particle_velocity_seen[0]
+            =   particle_velocity_seen[0] * face_norm[0]
+              + particle_velocity_seen[1] * face_norm[1]
+              + particle_velocity_seen[2] * face_norm[2];
 
         }
-        else if (indian == 1) { /* Particle moves to the neighbor cell
-                                   through the current face "face_num" */
 
-          /* particle / boundary condition interaction
-             1 - modify particle cell_num : 0 or boundary_cell_num
-             2 -
+      } /* end of case where particle changes rank */
 
-             P -->  *         *  <-- Q
-             \       /
-             \     /
-             \   /
-             \ /
-             ------------------      boundary condition
-             K
+      else if (lagr_params->deposition > 0) {
 
-             3 - move_particle = 0: end of particle tracking
-             move_particle = 1: continue particle tracking
+        /* Specific treatment for the particle deposition model */
 
-          */
-          particle_state
-            = _boundary_treatment(_particle_set,
-                                  particle,
-                                  face_num,
-                                  boundary_stat,
-                                  bdy_conditions->b_face_zone_num[face_num-1]-1,
-                                  failsafe_mode,
-                                  &move_particle,
-                                  &n_failed_particles,
-                                  &failed_particle_weight,
-                                  iensi3,
-                                  inbr,
-                                  inbrbd,
-                                  iang,
-                                  iangbd,
-                                  ivit,
-                                  ivitbd,
-                                  iencnb,
-                                  iencma,
-                                  iencdi,
-                                  iencck,
-                                  iencnbbd,
-                                  iencmabd,
-                                  iencdibd,
-                                  iencckbd,
-                                  inclg,
-                                  iscovc,
-                                  nusbor,
-                                  iusb,
-                                  part_b_mass_flux,
-                                  energt,
-                                  tprenc,
-                                  visref,
-                                  enc1,
-                                  enc2,
-                                  tkelvi);
+        cs_lnum_t save_close_face_id = *neighbor_face_id;
+        cs_real_t save_yplus = *particle_yplus;
 
-          if (scheme_order == 2)
-            cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1,
-                                      CS_LAGR_SWITCH_ON);
+        /* Wall cell detection */
 
-          assert(   move_particle == CS_LAGR_PART_MOVE_ON
-                 || move_particle == CS_LAGR_PART_MOVE_OFF);
+        _test_wall_cell(particle, p_am, visc_length, dlgeo,
+                        particle_yplus, neighbor_face_id);
 
-          p_info->last_face_num = -face_num;
+        if (save_yplus < 100.) {
 
-          break;
+          cs_real_t x_p_q = particle_coord[0] - p_info->start_coords[0];
+          cs_real_t y_p_q = particle_coord[1] - p_info->start_coords[1];
+          cs_real_t z_p_q = particle_coord[2] - p_info->start_coords[2];
 
-        } /* End if indian == 1 */
+          cs_real_t face_normal[3], face_cog[3];
 
-        else if (indian == -1) {
+          for (k = 0; k < 3; k++) {
+            face_normal[k] = fvq->i_face_normal[3*face_id+k];
+            face_cog[k] = fvq->i_face_cog[3*face_id+k];
+          }
 
+          cs_real_t aa =   x_p_q * face_normal[0]
+                         + y_p_q * face_normal[1]
+                         + z_p_q * face_normal[2];
+
+          cs_real_t bb = (  face_normal[0] * face_cog[0]
+                          + face_normal[1] * face_cog[1]
+                          + face_normal[2] * face_cog[2]
+                          - face_normal[0] *  p_info->start_coords[0]
+                          - face_normal[1] *  p_info->start_coords[1]
+                          - face_normal[2] *  p_info->start_coords[2]) / aa;
+
+          cs_real_t xk =  p_info->start_coords[0] + bb * x_p_q;
+          cs_real_t yk =  p_info->start_coords[1] + bb * y_p_q;
+          cs_real_t zk =  p_info->start_coords[2] + bb * z_p_q;
+
+          cs_real_t* xyzcen = fvq->cell_cen;
+
+          particle_coord[0] = xk + 1e-8 * (xyzcen[3*cur_cell_id] - xk);
+          particle_coord[1] = yk + 1e-8 * (xyzcen[3*cur_cell_id + 1] - yk);
+          particle_coord[2] = zk + 1e-8 * (xyzcen[3*cur_cell_id + 2] - zk);
+
+          /* Second test with the new particle position */
+
+          _test_wall_cell(particle, p_am, visc_length, dlgeo,
+                          particle_yplus, neighbor_face_id);
+
+          if (*particle_yplus < 100.e0) {
+
+            cs_real_t flow_velo_x, flow_velo_y, flow_velo_z;
+
+            assert(u->interleaved);
+
+            flow_velo_x = u->val[cur_cell_id*3];
+            flow_velo_y = u->val[cur_cell_id*3 + 1];
+            flow_velo_z = u->val[cur_cell_id*3 + 2];
+
+            /* The particle is still in the boundary layer */
+
+            cs_real_t old_bdy_normal[3];
+
+            for (k = 0; k < 3; k++)
+              old_bdy_normal[k]
+                = fvq->b_face_normal[3*save_close_face_id + k];
+
+            cs_real_t old_area  = _get_norm(old_bdy_normal);
+
+            cs_real_t  old_face_norm[3] = {old_bdy_normal[0]/old_area,
+                                           old_bdy_normal[1]/old_area,
+                                           old_bdy_normal[2]/old_area};
+
+            cs_real_t old_fl_seen_norm
+              =   particle_velocity_seen[0] * old_face_norm[0]
+                + particle_velocity_seen[1] * old_face_norm[1]
+                + particle_velocity_seen[2] * old_face_norm[2];
+
+            /* e1 (normal) vector coordinates */
+            cs_real_t e1_x = dlgeo[*neighbor_face_id];
+            cs_real_t e1_y = dlgeo[*neighbor_face_id + n_b_faces];
+            cs_real_t e1_z = dlgeo[*neighbor_face_id + n_b_faces*2];
+
+            /* e2 vector coordinates */
+            cs_real_t e2_x = dlgeo[*neighbor_face_id + n_b_faces*7];
+            cs_real_t e2_y = dlgeo[*neighbor_face_id + n_b_faces*8];
+            cs_real_t e2_z = dlgeo[*neighbor_face_id + n_b_faces*9];
+
+            /* e3 vector coordinates */
+            cs_real_t e3_x = dlgeo[*neighbor_face_id + n_b_faces*10];
+            cs_real_t e3_y = dlgeo[*neighbor_face_id + n_b_faces*11];
+            cs_real_t e3_z = dlgeo[*neighbor_face_id + n_b_faces*12];
+
+            /* V_n * e1 */
+
+            cs_real_t v_n_e1[3] = {old_fl_seen_norm * e1_x,
+                                   old_fl_seen_norm * e1_y,
+                                   old_fl_seen_norm * e1_z};
+
+            /* (U . e2) * e2 */
+
+            cs_real_t flow_e2 =   flow_velo_x * e2_x
+                                + flow_velo_y * e2_y
+                                + flow_velo_z * e2_z;
+
+            cs_real_t u_e2[3] = {flow_e2 * e2_x,
+                                 flow_e2 * e2_y,
+                                 flow_e2 * e2_z};
+
+            /* (U . e3) * e3 */
+
+            cs_real_t flow_e3 =   flow_velo_x * e3_x
+                                + flow_velo_y * e3_y
+                                + flow_velo_z * e3_z;
+
+            cs_real_t u_e3[3] = {flow_e3 * e3_x,
+                                 flow_e3 * e3_y,
+                                 flow_e3 * e3_z};
+
+            /* Update of the flow seen velocity */
+
+            particle_velocity_seen[0] = v_n_e1[0] + u_e2[0] + u_e3[0];
+            particle_velocity_seen[1] = v_n_e1[1] + u_e2[1] + u_e3[1];
+            particle_velocity_seen[2] = v_n_e1[2] + u_e2[2] + u_e3[2];
+          }
+
+          move_particle =  CS_LAGR_PART_MOVE_OFF;
           particle_state = CS_LAGR_PART_TREATED;
-          move_particle = CS_LAGR_PART_MOVE_OFF;
 
         }
 
-      } /* End if face_num < 0 (boundary face) && face_num != old_face_num */
+      } /* End of case for deposition */
 
-    } /* End of loop on faces
-         Cell -> face connect && error == 1 */
+    }
+    else if (exit_face < 0) { /* Particle moves to the boundary
+                                 through the current face "face_num" */
+
+      cs_lnum_t face_num = -exit_face;
+
+      /* particle / boundary condition interaction
+         1 - modify particle cell_num : 0 or boundary_cell_num
+         2 -
+
+         P -->  *         *  <-- Q
+         \       /
+         \     /
+         \   /
+         \ /
+         ------------------      boundary condition
+         K
+
+         3 - move_particle = 0: end of particle tracking
+         move_particle = 1: continue particle tracking
+
+      */
+      particle_state
+        = _boundary_treatment(_particle_set,
+                              particle,
+                              face_num,
+                              boundary_stat,
+                              bdy_conditions->b_face_zone_num[face_num-1]-1,
+                              failsafe_mode,
+                              &move_particle,
+                              &n_failed_particles,
+                              &failed_particle_weight,
+                              iensi3,
+                              inbr,
+                              inbrbd,
+                              iang,
+                              iangbd,
+                              ivit,
+                              ivitbd,
+                              iencnb,
+                              iencma,
+                              iencdi,
+                              iencck,
+                              iencnbbd,
+                              iencmabd,
+                              iencdibd,
+                              iencckbd,
+                              inclg,
+                              iscovc,
+                              nusbor,
+                              iusb,
+                              part_b_mass_flux,
+                              energt,
+                              tprenc,
+                              visref,
+                              enc1,
+                              enc2,
+                              tkelvi);
+
+      if (scheme_order == 2)
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_SWITCH_ORDER_1,
+                                  CS_LAGR_SWITCH_ON);
+
+      assert(   move_particle == CS_LAGR_PART_MOVE_ON
+             || move_particle == CS_LAGR_PART_MOVE_OFF);
+
+      p_info->last_face_num = -face_num;
+
+      break;
+
+    } /* end if exit_face < 0 */
 
   } /* End of while : local displacement */
 
@@ -5332,8 +5320,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                             visref,
                                             enc1,
                                             enc2,
-                                            *tkelvi,
-                                            1);
+                                            *tkelvi);
 
         _tracking_info(particles, j)->state = cur_part_state;
 
