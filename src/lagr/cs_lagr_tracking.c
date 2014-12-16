@@ -57,6 +57,7 @@
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_interface.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_order.h"
@@ -145,11 +146,7 @@ enum {
 typedef enum {
 
   CS_LAGR_TRACKING_OK,
-
-  CS_LAGR_TRACKING_ERR_INSIDE_B_FACES,
-  CS_LAGR_TRACKING_ERR_MAX_LOOPS,
-  CS_LAGR_TRACKING_ERR_DISPLACEMENT_I_FACE,
-  CS_LAGR_TRACKING_ERR_DISPLACEMENT_B_FACE
+  CS_LAGR_TRACKING_ERR_MAX_LOOPS
 
 } cs_lagr_tracking_error_t;
 
@@ -271,9 +268,6 @@ typedef struct {
 */
 
 typedef struct {
-
-  cs_lnum_t  max_face_connect_size;
-  cs_lnum_t *face_connect_buffer;
 
   /* Cell -> Face connectivity */
 
@@ -1469,7 +1463,6 @@ static cs_lagr_track_builder_t *
 _init_track_builder(cs_lnum_t  n_particles_max,
                     size_t     extents)
 {
-  cs_lnum_t  i;
   cs_mesh_t  *mesh = cs_glob_mesh;
 
   cs_lagr_track_builder_t  *builder = NULL;
@@ -1478,33 +1471,6 @@ _init_track_builder(cs_lnum_t  n_particles_max,
     return NULL;
 
   BFT_MALLOC(builder, 1, cs_lagr_track_builder_t);
-
-  /* Define _max_face_connect_size and _face_connect_buffer */
-
-  builder->max_face_connect_size = 0;
-
-  /* Loop on interior faces */
-
-  for (i = 0; i < mesh->n_i_faces; i++)
-    builder->max_face_connect_size =
-      CS_MAX(builder->max_face_connect_size,
-             mesh->i_face_vtx_idx[i+1] - mesh->i_face_vtx_idx[i]);
-
-  /* Loop on border faces */
-
-  for (i = 0; i < mesh->n_b_faces; i++)
-    builder->max_face_connect_size =
-      CS_MAX(builder->max_face_connect_size,
-             mesh->b_face_vtx_idx[i+1] - mesh->b_face_vtx_idx[i]);
-
-  builder->max_face_connect_size += 1;
-
-  BFT_MALLOC(builder->face_connect_buffer,
-             builder->max_face_connect_size,
-             cs_lnum_t);
-
-  for (i = 0; i < builder->max_face_connect_size; i++)
-    builder->face_connect_buffer[i] = -1;
 
   /* Define a cell->face connectivity */
 
@@ -1558,7 +1524,6 @@ _destroy_track_builder(cs_lagr_track_builder_t  *builder)
   if (builder == NULL)
     return builder;
 
-  BFT_FREE(builder->face_connect_buffer);
   BFT_FREE(builder->cell_face_idx);
   BFT_FREE(builder->cell_face_lst);
 
@@ -1709,22 +1674,9 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 
   if (failsafe_mode == 1) {
     switch (error_type) {
-    case CS_LAGR_TRACKING_ERR_INSIDE_B_FACES:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Error during boundary treatment.\n"
-                  " Part of trajectography inside the boundary faces."));
-      break;
     case CS_LAGR_TRACKING_ERR_MAX_LOOPS:
       bft_error(__FILE__, __LINE__, 0,
                 _("Max number of loops reached in particle displacement."));
-      break;
-    case CS_LAGR_TRACKING_ERR_DISPLACEMENT_I_FACE:
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error during the particle displacement (Interior face)."));
-      break;
-    case CS_LAGR_TRACKING_ERR_DISPLACEMENT_B_FACE:
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error during the particle displacement (Boundary face)."));
       break;
     default:
       break;
@@ -1804,336 +1756,188 @@ _continue_displacement(void)
  *   face_connect  <-- face -> vertex connectivity
  *   particle      <-- particle attributes
  *   p_am          <-- pointer to attributes map
- *   p_error       <-> pointer to an error indicator
  *
  * returns:
- *   -1: if the particle remains inside the same cell
- *    0: if the trajectory doesn't go through the current face
- *    1: if the trajectory goes through the current face
+ *    -1 if the cell-center -> particle segment does not go through the
+ *    face's plane, minimum relative distance (in terms of barycentric
+ *    coordinates) of intersection point to face.
  *----------------------------------------------------------------------------*/
 
-static int
-_where_are_you(cs_lnum_t                       face_num,
-               cs_lnum_t                       n_vertices,
-               const cs_lnum_t                 face_connect[],
-               const void                     *particle,
-               const cs_lagr_attribute_map_t  *p_am,
-               int                            *p_error)
+static double
+_intersect_face(cs_lnum_t                       face_num,
+                cs_lnum_t                       n_vertices,
+                const cs_lnum_t                 face_connect[],
+                const void                     *particle,
+                const cs_lagr_attribute_map_t  *p_am)
 {
-  cs_lnum_t  i, j, vtx_id1, vtx_id2;
-  cs_real_t  face_cog[3], cell_cen[3], vtx1[3], vtx2[3];
+  cs_lnum_t  i, j;
+  cs_real_t  face_surf;
+  const cs_real_t  *face_norm, *face_cog, *cell_cen;
 
   cs_lnum_t  cur_cell_id
     = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM) - 1;
-  const cs_real_t  *prev_location
-    = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
   const cs_real_t  *next_location
     = cs_lagr_particle_attr_const(particle, p_am, CS_LAGR_COORDS);
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
+  const double epsilon = 1.e-15;
+  const double bc_epsilon = 1.e-2;
+
+  double retval = -1;
+
   cs_mesh_t  *mesh = cs_glob_mesh;
-
-  /* Initialize local parameters */
-
-  cs_real_t  max_value = DBL_MIN;
-  cs_lnum_t  orient_count = 0;
-  cs_lnum_t  face_orient = 0;
-  int        orient = 0;
-  int        orient_test = 0;
-  int        first_orient = 0;
-  int        ijkl_ref = 0;
-  int        colocalization = -1;
-  int        error = 0;
-  int        retcode = -999; /* initialize to an incoherent value */
 
   assert(sizeof(cs_real_t) == 8);
 
   /* Initialization */
 
-  for (j = 0; j < 3; j++)
-    cell_cen[j] = fvq->cell_cen[3*cur_cell_id+j];
+  cell_cen = fvq->cell_cen + (3*cur_cell_id);
 
   if (face_num > 0) { /* Interior  face */
 
     cs_lnum_t  face_id = face_num - 1;
-
-    for (j = 0; j < 3; j++)
-      face_cog[j] = fvq->i_face_cog[3*face_id+j];
-
-  }
-  else { /* Border face */
-
-    cs_lnum_t  face_id = CS_ABS(face_num) - 1;
-
-    for (j = 0; j < 3; j++)
-      face_cog[j] = fvq->b_face_cog[3*face_id+j];
+    face_cog = fvq->i_face_cog + (3*face_id);
+    face_norm = fvq->i_face_normal + (3*face_id);
+    face_surf = fvq->i_face_surf[face_id];
 
   }
+  else { /* Boundary face */
 
-  /* First: compute max_value to set a calculation grid */
+    cs_lnum_t  face_id = -face_num - 1;
+    face_cog = fvq->b_face_cog + (3*face_id);
+    face_norm = fvq->b_face_normal + (3*face_id);
+    face_surf = fvq->b_face_surf[face_id];
 
-  /* Vertex coordinates of the studied face */
+    /* Avoid tangential trajectory in _boundary_treatment */
+    const cs_real_t  *prev_location
+      = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
+    cs_real_3_t depl = {next_location[0] - prev_location[0],
+                        next_location[1] - prev_location[1],
+                        next_location[2] - prev_location[2]};
+    if ((cs_math_3_dot_product(depl, face_norm) / face_surf) < 1.1e-15)
+      return retval;
 
-  for (i = 0; i < n_vertices - 1; i++) {
-    cs_lnum_t  vtx_id = face_connect[i];
-    for (j = 0; j < 3; j++)
-      max_value = CS_MAX(max_value, CS_ABS(mesh->vtx_coord[3*vtx_id+j]));
   }
 
-  /* Center of the current cell */
-  for (j = 0; j < 3; j++)
-    max_value = CS_MAX(max_value, CS_ABS(cell_cen[j]));
+  cs_real_3_t s01 = {next_location[0] - cell_cen[0],
+                     next_location[1] - cell_cen[1],
+                     next_location[2] - cell_cen[2]};
+  cs_real_3_t scf = {face_cog[0] - cell_cen[0],
+                     face_cog[1] - cell_cen[1],
+                     face_cog[2] - cell_cen[2]};
 
-  /* Center of gravity of the current face */
-  for (j = 0; j < 3; j++)
-    max_value = CS_MAX(max_value, CS_ABS(face_cog[j]));
+  /* Check basic orientation relative to plane */
 
-  /* Starting/Ending location of the particle */
-  for (j = 0; j < 3; j++) {
-    max_value = CS_MAX(max_value, CS_ABS(prev_location[j]));
-  }
+  double rin = (  face_norm[0]*scf[0]
+                + face_norm[1]*scf[1]
+                + face_norm[2]*scf[2]) / face_surf;
+  double rid = (  face_norm[0]*s01[0]
+                + face_norm[1]*s01[1]
+                + face_norm[2]*s01[2]) / face_surf;
 
-  /* Starting/Ending location of the particle */
-  for (j = 0; j < 3; j++) {
-    max_value = CS_MAX(max_value, CS_ABS(next_location[j]));
-  }
+  /* If direction is parallel or nearly parallel, we consider that
+     exit is not done through this face */
+  if (rid < epsilon && rid > -epsilon)
+    return retval;
 
-  /* Check if the two location are different */
+  double ri = rin/rid;
 
-  colocalization = cs_lagrang_check_colocalization(prev_location,
-                                                   next_location);
+  if (ri < 0 || ri >= 1)
+    return retval;
 
-  if (colocalization == 1) {
-    retcode = -1;
-    return retcode;
-  }
+  int n_intersects = 0;
 
-  /* Check face orientation with the tetrahedron [P, */
+  retval = HUGE_VAL;
 
-  assert(colocalization == 0);
+  /* If segment intersects plane, compute intersection barycentric
+     coordinates of successive triangles:
+     - loop on sub-triangles of the face and test for each, recomputing
+       intersection on each triangle's plane, in case the face is not plane
+     - use Moller-Trumbore algorithm (without backface culling)
+       for each triangle */
 
-  vtx_id1 = face_connect[0]; /* First vertex of the face */
-  vtx_id2 = face_connect[1]; /* Second vertex of the face */
+  for (i = 0; i < n_vertices; i++) {
 
-  for (i = 0; i < 3; i++) {
-    vtx1[i] = mesh->vtx_coord[3*vtx_id1+i];
-    vtx2[i] = mesh->vtx_coord[3*vtx_id2+i];
-  }
+    cs_real_3_t  vtx_0, vtx_1, e0, e1;
 
-  face_orient = cs_lagrang_tetra_orientation(prev_location,
-                                             face_cog,
-                                             vtx1,
-                                             vtx2);
+    const cs_lnum_t vtx_id_0 = face_connect[i];
+    const cs_lnum_t vtx_id_1 = face_connect[(i+1)%n_vertices];
 
-  /* Special treatment in case of periodicity  */
-
-  if (mesh->n_init_perio > 0)
-    face_orient = 0;
-
-  if (face_orient == 0)  /* => coplanar. Change prev_location
-                            by cell center */
-    face_orient = cs_lagrang_tetra_orientation(cell_cen,
-                                               face_cog,
-                                               vtx1,
-                                               vtx2);
-
-  if (face_orient == 0) { /* points are still coplanar */
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf(_(" Lagrangian module warning.\n"
-                 "  Failure during the particle tracking.\n"
-                 "  Wrong face orientation"
-                 "  => particle is lost.\n"
-                 "  Local face num.:  %d\n"
-                 "  Local cell num.:  %d\n"), face_num, cur_cell_id+1);
-#endif
-    error = 1;
-    *p_error = error;
-
-    return retcode;
-  }
-
-  /* Test first vertex of the face: [P, Q, Face_CoG, V1] */
-
-  first_orient = cs_lagrang_tetra_orientation(prev_location,
-                                              next_location,
-                                              face_cog,
-                                              vtx1);
-
-  first_orient *= face_orient;
-
-  if (first_orient == 0) { /* points are coplanar */
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf(_(" Lagrangian module warning.\n"
-                 "  Failure during the particle tracking.\n"
-                 "  [P, Q, Face CoG, V(1)] orientation failed"
-                 "  => Particle is lost.\n"
-                 "  Local face num.:  %d\n"
-                 "  Local cell num.:  %d\n"), face_num, cur_cell_id+1);
-#endif
-    error = 1;
-    *p_error = error;
-
-    return retcode;
-  }
-
-  /* Loop on all the vertices of the face and test orientation */
-
-  for (i = 1; i < n_vertices; i++) {
-
-    vtx_id1 = face_connect[i];
-    for (j = 0; j < 3; j++)
-      vtx1[j] = mesh->vtx_coord[3*vtx_id1+j];
-
-    /* Test first vertex of the face: [P, Q, Face_CoG, V(i)] */
-
-    orient = cs_lagrang_tetra_orientation(prev_location,
-                                          next_location,
-                                          face_cog,
-                                          vtx1);
-
-    orient *= face_orient;
-
-    if (orient == 0) { /* points are coplanar */
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-      bft_printf(_(" Lagrangian module warning.\n"
-                   "  Failure during the particle tracking.\n"
-                   "  [P, Q, Face CoG, V(%d)] orientation failed"
-                   "  => Particle is lost.\n"
-                   "  Local face num.:  %d\n"
-                   "  Local cell num.:  %d\n"), i+1, face_num, cur_cell_id+1);
-#endif
-      error = 1;
-      *p_error = error;
-
-      return retcode;
+    for (j = 0; j < 3; j++) {
+      vtx_0[j] = mesh->vtx_coord[3*vtx_id_0+j];
+      vtx_1[j] = mesh->vtx_coord[3*vtx_id_1+j];
+      e0[j] = vtx_0[j] - face_cog[j];
+      e1[j] = vtx_1[j] - face_cog[j];
     }
 
-    if (first_orient == -orient) {
+    /* determinant */
 
-      /* Inversed orientation between faces */
+    const cs_real_3_t pvec = {s01[1]*e1[2] - s01[2]*e1[1],
+                              s01[2]*e1[0] - s01[0]*e1[2],
+                              s01[0]*e1[1] - s01[1]*e1[0]};
 
-      if (first_orient == 1)
-        ijkl_ref = i;
+    const double det = cs_math_3_dot_product(e0, pvec);
 
-      first_orient = orient;
+    if (det/face_surf < epsilon && det/face_surf > -epsilon)
+      continue;
 
-      /* Test orienation of [P, Q, V(i-1), V(i)] */
+    const double inv_det = 1./det;
 
-      vtx_id2 = face_connect[i-1];
-      for (j = 0; j < 3; j++)
-        vtx2[j] = mesh->vtx_coord[3*vtx_id2+j];
+    const double u = cs_math_3_dot_product(s01, pvec) * inv_det;
 
-      orient_test = cs_lagrang_tetra_orientation(prev_location,
-                                                 next_location,
-                                                 vtx2,
-                                                 vtx1);
+    const cs_real_3_t qvec = {scf[1]*e0[2] - scf[2]*e0[1],
+                              scf[2]*e0[0] - scf[0]*e0[2],
+                              scf[0]*e0[1] - scf[1]*e0[0]};
 
-      orient_test *= face_orient;
-      orient_count += orient_test;
+    const double v = cs_math_3_dot_product(s01, qvec) * inv_det;
 
-      if (orient_test == 0) { /* points are coplanar */
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-        bft_printf(_(" Lagrangian module warning.\n"
-                     "  Failure during the particle tracking.\n"
-                     "  [P, Q, V(%d), V(%d)] orientation failed"
-                     "  => Particle is lost.\n"
-                     "  Local face num.:  %d\n"
-                     "  Local cell num.:  %d\n"),
-                   i, i+1, face_num, cur_cell_id+1);
-#endif
-        error = 1;
-        *p_error = error;
+    /* We have an intersection if u in [0,1] and u+v in [0,1] */
 
-        return retcode;
-      }
+    const double bc1 = fabs(u - 0.5);
+    const double bc2 = fabs(u + v - 0.5);
+    const double max_bc = 2.0 * CS_MAX(bc1, bc2);
 
-    } /* orient = -first_orient */
+    /*
+      intersection point (not currently used):
+      const double t = cs_math_3_dot_product(e1, qvec) * inv_det;
+    */
 
-  } /* End of loop on face vertices */
+    /* Update return code */
 
-  if (orient_count != -2 && orient_count != 0 && orient_count != 2) {
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf(_(" Lagrangian module warning.\n"
-                 "  Failure during the particle tracking.\n"
-                 "  Local orientation counter must be -2, 0 or 2. Here is %d"
-                 "  => Particle is lost.\n"
-                 "  Local face num.:  %d\n"
-                 "  Local cell num.:  %d\n"),
-               orient_count, face_num, cur_cell_id+1);
-#endif
-    error = 1;
-    *p_error = error;
+    if (max_bc < retval)
+      retval = max_bc;
 
-    return retcode;
-  }
-  else if ( (orient_count == -2 || orient_count == 2) && ijkl_ref == 0 ) {
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf(_(" Lagrangian module warning.\n"
-                 "  Failure during the particle tracking.\n"
-                 "  => Particle is lost.\n"
-                 "  Local face num.:  %d\n"
-                 "  Local cell num.:  %d\n"),
-               face_num, cur_cell_id+1);
-#endif
-    error = 1;
-    *p_error = error;
+    /* In case of "true" intersect */
 
-    return retcode;
+    if (max_bc < 1.0 + bc_epsilon) {
+
+      /* Compare orientation of triangle normal with face normal
+         so as to handle non-convex cases; */
+
+      const cs_real_3_t tn = {e0[1]*e1[2] - e0[2]*e1[1],
+                              e0[2]*e1[0] - e0[0]*e1[2],
+                              e0[0]*e1[1] - e0[1]*e1[0]};
+
+      if (cs_math_3_dot_product(tn, face_norm) < 0)
+        n_intersects -= 1;
+      else if (max_bc < 1.0 - bc_epsilon)
+        n_intersects += 1;
+
+    }
+
   }
 
-  if (orient_count == 0 || orient_count == -2) {
-    retcode = 0;
-    return retcode;
-  }
+  /* In case intersections were removed due to non-convex cases,
+     n_intersects < 0, but we may not be "far" from cutting this
+     face. To trace this with a single "distance", we set the
+     distance to 1 + nc_epsilon; this way, a better fitting face
+     will intersect with a better distance, but if none is found,
+     this face will be chosen. */
 
-  /* Relative position between the current face and the starting and ending
-     particle locations */
+  if (n_intersects < 1 && retval < 1 + bc_epsilon)
+    retval = 1 + bc_epsilon;
 
-  assert(orient_count == 2);
-  assert(ijkl_ref > 0);
-
-  vtx_id1 = face_connect[ijkl_ref - 1];
-  vtx_id2 = face_connect[ijkl_ref];
-
-  for (j = 0; j < 3; j++) {
-    vtx1[j] = mesh->vtx_coord[3*vtx_id1+j];
-    vtx2[j] = mesh->vtx_coord[3*vtx_id2+j];
-  }
-
-  orient = cs_lagrang_tetra_orientation(next_location,
-                                        face_cog,
-                                        vtx1,
-                                        vtx2);
-
-  if (orient == 0) { /* points are coplanar */
-#if 1 && defined(DEBUG) && !defined(NDEBUG)
-    bft_printf(_(" Lagrangian module warning.\n"
-                 "  Failure during the particle tracking.\n"
-                 "  Do not find the relative position between:\n"
-                 "   - P [%9.4f, %9.4f, %9.4f]\n"
-                 "   - Q [%9.4f, %9.4f, %9.4f]\n"
-                 "   - and the current face: CoG [%9.4f, %9.4f, %9.4f]\n"
-                 "  => Particle is lost.\n"
-                 "  Local face num.:  %d\n"
-                 "  Local cell num.:  %d\n"),
-               prev_location[0], prev_location[1], prev_location[2],
-               next_location[0], next_location[1], next_location[2],
-               face_cog[0], face_cog[1], face_cog[2],
-               face_num, cur_cell_id+1);
-#endif
-    error = 1;
-    *p_error = error;
-
-    return retcode;
-  }
-
-  retcode = -orient * face_orient;
-
-  /* Returns pointers */
-
-  *p_error = error;
-
-  return retcode;
+  return retval;
 }
 
 /*----------------------------------------------------------------------------
@@ -2212,7 +2016,7 @@ _test_wall_cell(const void                     *particle,
 }
 
 /*----------------------------------------------------------------------------
- * Test if the current particle moves to the next cell through this face
+ * Handle particles moving to boundary
  *
  * parameters:
  *   particles  <-- pointer to particle set
@@ -2229,7 +2033,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     cs_lnum_t                  face_num,
                     cs_real_t                 *boundary_stat,
                     cs_lnum_t                  boundary_zone,
-                    cs_lnum_t                  failsafe_mode,
                     cs_lnum_t                 *p_move_particle,
                     cs_lnum_t                 *p_n_failed_particles,
                     cs_real_t                 *p_failed_particle_weight,
@@ -2274,7 +2077,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_real_t  compo_vel[3] = {0.0, 0.0, 0.0};
   cs_real_t  norm_vel = 0.0;
 
-  cs_real_t  abs_curv = 0.0;
+  cs_real_t  s = 0.0;
   cs_lnum_t  move_particle = *p_move_particle;
   cs_lnum_t  n_failed_particles = *p_n_failed_particles;
   cs_real_t  failed_particle_weight = *p_failed_particle_weight;
@@ -2329,17 +2132,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       compo_vel[k] = particle_velocity[k];
   }
 
-  tmp = 0.0;
-  for (k = 0; k < 3; k++)
-    tmp += depl[k] * face_normal[k];
+  tmp = cs_math_3_dot_product(depl, face_normal);
 
-  if (fabs(tmp) < 1e-15)
-    _manage_error(failsafe_mode,
-                  particle,
-                  p_am,
-                  CS_LAGR_TRACKING_ERR_INSIDE_B_FACES,
-                  &n_failed_particles,
-                  &failed_particle_weight);
+  if (fabs(tmp)/face_area < 1e-15)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Error during boundary treatment.\n"
+                " Part of trajectography inside the boundary faces."));
 
   /* 3D geometry refresher:
      ~~~~~~~~~~~~~~~~~~~~~~
@@ -2353,12 +2151,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   */
 
   for (k = 0; k < 3; k++)
-    abs_curv
-      += face_normal[k]*face_cog[k] - face_normal[k]*p_info->start_coords[k];
-  abs_curv /= tmp;
+    s += face_normal[k] * (face_cog[k] - p_info->start_coords[k]);
+  s /= tmp;
 
   for (k = 0; k < 3; k++)
-    intersect_pt[k] = depl[k] * abs_curv + p_info->start_coords[k];
+    intersect_pt[k] = depl[k]*s + p_info->start_coords[k];
 
   if (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_ISORTL
       || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IENTRL
@@ -3138,14 +2935,13 @@ _local_propagation(void                           *particle,
                    const cs_real_t                 enc2[],
                    cs_real_t                       tkelvi)
 {
-  cs_lnum_t  i, j, k;
+  cs_lnum_t  i, k;
   cs_real_t  depl[3];
   cs_real_t  null_yplus;
 
   cs_lnum_t  *neighbor_face_id;
   cs_real_t  *particle_yplus;
 
-  cs_lnum_t  error = 0;
   cs_lnum_t  n_loops = 0;
   cs_lnum_t  move_particle = CS_LAGR_PART_MOVE_ON;
   cs_lnum_t  particle_state = CS_LAGR_PART_TO_SYNC;
@@ -3161,7 +2957,6 @@ _local_propagation(void                           *particle,
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
   cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
   cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
-  cs_lnum_t  *face_connect = builder->face_connect_buffer;
 
   cs_lnum_t  n_failed_particles = *p_n_failed_particles;
   cs_real_t  failed_particle_weight = *p_failed_particle_weight;
@@ -3324,12 +3119,14 @@ _local_propagation(void                           *particle,
     cs_lnum_t exit_face = 0; /* > 0 for interior faces,
                                 < 0 for boundary faces */
 
+    double adist_min = HUGE_VAL;
+
     for (i = start; i < end && move_particle == CS_LAGR_PART_MOVE_ON; i++) {
 
       cs_lnum_t  face_id, vtx_start, vtx_end, n_vertices;
+      const cs_lnum_t  *face_connect;
 
       cs_lnum_t  face_num = cell_face_lst[i];
-      cs_lnum_t  indian = 0;
 
       if (face_num == old_face_num)
         continue;
@@ -3343,9 +3140,7 @@ _local_propagation(void                           *particle,
         vtx_end = mesh->i_face_vtx_idx[face_id+1];
         n_vertices = vtx_end - vtx_start + 1;
 
-        for (k = 0, j = vtx_start; j < vtx_end; j++, k++)
-          face_connect[k] = mesh->i_face_vtx_lst[j];
-        face_connect[n_vertices-1] = face_connect[0];
+        face_connect = mesh->i_face_vtx_lst + vtx_start;
 
       }
       else {
@@ -3359,47 +3154,27 @@ _local_propagation(void                           *particle,
         vtx_end = mesh->b_face_vtx_idx[face_id+1];
         n_vertices = vtx_end - vtx_start + 1;
 
-        for (k = 0, j = vtx_start; j < vtx_end; j++, k++)
-          face_connect[k] = mesh->b_face_vtx_lst[j];
-        face_connect[n_vertices-1] = face_connect[0];
+        face_connect = mesh->b_face_vtx_lst + vtx_start;
 
       }
 
       /*
-        indian = -1 : keep inside the same cell.
-        indian = 0  : trajectory doesn't go through the current face.
-        indian = 1  : trajectory goes through the current face.
+        adimensional distance estimation of face intersection
+        (-1 if no chance of intersection)
       */
 
-      indian = _where_are_you(face_num,
-                              n_vertices,
-                              face_connect,
-                              particle,
-                              p_am,
-                              &error);
+      double adist = _intersect_face(face_num,
+                                     n_vertices,
+                                     face_connect,
+                                     particle,
+                                     p_am);
 
-      if (error == 1) {
-
-        _manage_error(failsafe_mode,
-                      particle,
-                      p_am,
-                      CS_LAGR_TRACKING_ERR_DISPLACEMENT_I_FACE,
-                      &n_failed_particles,
-                      &failed_particle_weight);
-
-        move_particle = CS_LAGR_PART_MOVE_OFF;
-        particle_state = CS_LAGR_PART_ERR;
-
-      }
-
-      else if (indian == -1) {
-        move_particle =  CS_LAGR_PART_MOVE_OFF;
-        particle_state = CS_LAGR_PART_TREATED;
-        break;
-      }
-
-      else if (indian == 1)
+      if (adist > -0.5 && adist < adist_min) {
         exit_face = face_num;
+        adist_min = adist;
+        if (adist < 1.0)
+          break;
+      }
 
     }
 
@@ -3653,15 +3428,14 @@ _local_propagation(void                           *particle,
 
          3 - move_particle = 0: end of particle tracking
          move_particle = 1: continue particle tracking
-
       */
+
       particle_state
         = _boundary_treatment(_particle_set,
                               particle,
                               face_num,
                               boundary_stat,
                               bdy_conditions->b_face_zone_num[face_num-1]-1,
-                              failsafe_mode,
                               &move_particle,
                               &n_failed_particles,
                               &failed_particle_weight,
