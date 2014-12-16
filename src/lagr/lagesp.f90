@@ -152,8 +152,6 @@ enddo
 
 ! Allocate temporay arrays
 allocate(fextla(nbpart,3))
-allocate(tsuf(nbpart,3))
-allocate(tsup(nbpart,3))
 allocate(vagaus(nbpart,nvgaus))
 
 ! Random values
@@ -185,6 +183,29 @@ do ip = 1, nbpart
   fextla(ip,3) = 0.d0
 enddo
 
+allocate(tsuf(nbpart,3))
+allocate(tsup(nbpart,3))
+
+if (jtsuf(1).gt.0) then
+  do ip = 1, nbpart
+    tsup(ip,1) = pepa(jtsup(1),ip)
+    tsup(ip,2) = pepa(jtsup(2),ip)
+    tsup(ip,3) = pepa(jtsup(3),ip)
+    tsuf(ip,1) = pepa(jtsuf(1),ip)
+    tsuf(ip,2) = pepa(jtsuf(2),ip)
+    tsuf(ip,3) = pepa(jtsuf(3),ip)
+  enddo
+else
+  do ip = 1, nbpart
+    tsup(ip,1) = 0.d0
+    tsup(ip,2) = 0.d0
+    tsup(ip,3) = 0.d0
+    tsuf(ip,1) = 0.d0
+    tsuf(ip,2) = 0.d0
+    tsuf(ip,3) = 0.d0
+  enddo
+endif
+
 call uslafe                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
@@ -195,6 +216,9 @@ call uslafe                                                       &
    tsuf   , tsup   , bx     , tsfext ,                            &
    vagaus , gradpr , gradvf ,                                     &
    romp   , fextla )
+
+deallocate(tsuf)
+deallocate(tsup)
 
 !===============================================================================
 ! 4.  First order
@@ -242,7 +266,7 @@ else
   !==========
    ( propce ,                                                     &
      taup   , tlag   , piil   ,                                   &
-     tsuf   , tsup   , bx     , tsfext , vagaus ,                 &
+     bx     , tsfext , vagaus ,                                   &
      gradpr ,                                                     &
      romp   , brgaus , terbru , fextla )
 
@@ -254,8 +278,6 @@ if (lamvbr.eq.1) then
 endif
 deallocate(vagaus)
 deallocate(fextla)
-deallocate(tsuf)
-deallocate(tsup)
 
 !===============================================================================
 

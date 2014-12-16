@@ -1249,6 +1249,11 @@ do ilayer=1,nlayer
 enddo
 jmwat = 0
 jtaux = 0
+do ii = 1, 3
+  jbx1(ii) = 0
+  jtsup(ii) = 0
+  jtsuf(ii) = 0
+enddo
 do ii = 1,nusvar
   jvls(ii) = 0
 enddo
@@ -1305,8 +1310,7 @@ jwp = jvp + 1
 juf = jwp + 1
 jvf = juf + 1
 jwf = jvf + 1
-jtaux = jwf + 1
-irf = jtaux
+irf = jwf + 1
 
 if (irf.gt.nvp) then
   write(nfecra,3004) irf, nvp

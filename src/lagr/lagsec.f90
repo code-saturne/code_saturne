@@ -101,10 +101,10 @@ double precision mwat_max, volume_couche, sherw, fwat(nlayer)
 
 ! Local variables
 logical          limitateur
-integer          ilayer, ilayer_wat, iel
+integer          ilayer, ilayer_wat, iel, jtshp0
 double precision tpk, aux1, aux2, aux3, fwattot , fwat_restant
 double precision tsat, fwatsat(nlayer), phith(nlayer), temp(nlayer)
-! double precision tssauv(nlayer)
+double precision tssauv(nlayer)
 
 double precision precis, lv, tebl, tlimit, tmini
 precis = 1.d-15
@@ -113,6 +113,11 @@ tebl = 100.d0 + tkelvi
 tlimit = 302.24d0
 tmini = tlimit*(1.d0-tlimit*rr/(lv*wmole(ih2o)))
 
+if (associated(ptsvar)) then
+  jtshp0 = jhp(1) - 1
+else
+  jtshp0 = -1
+endif
 
 !===============================================================================
 ! 1. CALCUL DU FLUX DE VAPEUR POUR LA COUCHE ILAYER
@@ -219,9 +224,11 @@ do ilayer=1,nlayer
 enddo
 
 ! On sauvegarde le tableau de correction pour le 2e ordre
-! do ilayer=1,nlayer
-!  tssauv(ilayer) = tsvar(npt,jhp(ilayer))
-! enddo
+if (jtshp0.ge.0) then
+  do ilayer=1,nlayer
+    tssauv(ilayer) = ptsvar(jtshp0+ilayer,npt)
+  enddo
+endif
 
 call lagtmp                                                                    &
 !==========
@@ -230,16 +237,17 @@ call lagtmp                                                                    &
   rayon  , mlayer , phith , temp  , volume_couche )
 
 ! On remet le tableau de correction pour le 2e ordre
-! do ilayer=1,nlayer
-!  tsvar(npt,jhp(ilayer)) = tssauv(ilayer)
-! enddo
+if (jtshp0.ge.0) then
+  do ilayer=1,nlayer
+    ptsvar(jtshp0+ilayer,npt) = tssauv(ilayer)
+  enddo
+endif
 
 ! On calcule le flux d'evaporation/condensation tel que T_i=Tsat
 do ilayer=1,nlayer
   fwatsat(ilayer) = mlayer(ilayer)*eptpa(jcp,npt)                              &
                     *(temp(ilayer)-tsat)/(lv*dtp)
 enddo
-
 
 !===============================================================================
 ! 4. LIMITATION EVENTUELLE DE VAPEUR

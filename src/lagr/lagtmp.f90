@@ -98,7 +98,7 @@ double precision phith(nlayer), temp(nlayer)
 double precision volume_couche
 
 ! Local variables
-integer          ilayer, iel, icha
+integer          ilayer, iel, icha, jtshp0
 double precision delray(nlayer-1), rayond(nlayer)
 double precision tpscara, coefh, phirayo, temprayo, aux1, aux2
 double precision dd2, diamp2
@@ -113,6 +113,12 @@ double precision w1(nlayer-1), w2(nlayer)
 
 iel  = ipepa(jisor,npt)
 icha = ipepa(jinch,npt)
+
+if (associated(ptsvar)) then
+  jtshp0 = jhp(1) - 1
+else
+  jtshp0 = -1
+endif
 
 !===============================================================================
 ! A. RESOLUTION MONOCOUCHE (SI NLAYER > 1)
@@ -268,14 +274,16 @@ else if (nlayer.eq.1) then
   aux2 = exp(-dtp/tpscara)
 
   if (nor.eq.1) then
-    ! tsvar(npt,jhp(nlayer)) = 0.5d0*eptpa(jhp(nlayer),npt)*aux2               &
-    !                         + (-aux2+(1.0d0-aux2)*tpscara/dtp)*aux1
-    temp(nlayer) = eptpa(jhp(nlayer),npt)*aux2 +                               &
-                   (1.0d0-aux2)*aux1
+    if (jtshp0.ge.0) then
+      ptsvar(jtshp0+ilayer,npt) =    0.5d0*eptpa(jhp(nlayer),npt)*aux2         &
+                                  + (-aux2+(1.0d0-aux2)*tpscara/dtp)*aux1
+    endif
+    temp(nlayer) = eptpa(jhp(nlayer),npt)*aux2 + (1.0d0-aux2)*aux1
 
-  ! else if (nor.eq.2) then
-  !   temp(nlayer) = tsvar(npt,jhp(nlayer)) + 0.5d0*eptpa(jhp(nlayer),npt)*aux2  &
-  !                 + (1.0d0-(1.0d0-aux2)*tpscara/dtp)*aux1
+  else if (nor.eq.2) then
+    temp(nlayer) =   ptsvar(jtshp0+ilayer,npt)                                 &
+                   + 0.5d0*eptpa(jhp(nlayer),npt)*aux2                         &
+                   + (1.0d0-(1.0d0-aux2)*tpscara/dtp)*aux1
 
   endif
 

@@ -86,11 +86,17 @@ double precision tcarac(nbpart) , pip(nbpart)
 
 ! Local variables
 
+logical          ltsvar
 integer          npt
-double precision aux1 , aux2 , ter1 , ter2
+double precision aux1 , aux2 , ter1 , ter2 , ter3
 
 !===============================================================================
 
+if (associated(ptsvar)) then
+  ltsvar = .true.
+else
+  ltsvar = .false.
+endif
 
 if (nor.eq.1) then
 
@@ -115,32 +121,35 @@ if (nor.eq.1) then
 
       ! Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2
 
-      ! ter3 = ( -aux2 + (1.d0-aux2) / aux1 ) * pip(npt)
-      ! tsvar(npt,ivar) = 0.5d0 * ter1 + ter3
+      if (ltsvar) then
+        ter3 = (-aux2 + (1.d0-aux2) / aux1 ) * pip(npt)
+        ptsvar(ivar,npt) = 0.5d0 * ter1 + ter3
+      endif
+
     endif
   enddo
 
-! else if (nor.eq.2) then
+else if (nor.eq.2) then
 
-!  do npt = 1, nbpart
-!    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
+  do npt = 1, nbpart
+    if (ipepa(jisor,npt).gt.0 .and. ipepa(jord1,npt).eq.0) then
 
-!      if (tcarac(npt).le.0.d0) then
-!        write(nfecra,2000) ivar, tcarac(npt), npt
-!        call csexit (1)
-!      endif
+      if (tcarac(npt).le.0.d0) then
+        write(nfecra,2000) ivar, tcarac(npt), npt
+        call csexit (1)
+      endif
 
-!      aux1 = dtp/tcarac(npt)
-!      aux2 = exp(-aux1)
+      aux1 = dtp/tcarac(npt)
+      aux2 = exp(-aux1)
 
-!      ter1 = 0.5d0 * eptpa(ivar,npt) * aux2
-!      ter2 = pip(npt) * ( 1.d0 - (1.d0-aux2) / aux1 )
+      ter1 = 0.5d0 * eptpa(ivar,npt) * aux2
+      ter2 = pip(npt) * ( 1.d0 - (1.d0-aux2) / aux1 )
 
-!      ! Pour le cas NORDRE= 2, le ETTP suivant est le resultat final
+      ! Pour le cas NORDRE= 2, le ETTP suivant est le resultat final
 
-!      eptp(ivar,npt) = tsvar(npt,ivar) + ter1 + ter2
-!    endif
-!  enddo
+      eptp(ivar,npt) = ptsvar(ivar,npt) + ter1 + ter2
+    endif
+  enddo
 
 else
   write(nfecra,1000) nor
