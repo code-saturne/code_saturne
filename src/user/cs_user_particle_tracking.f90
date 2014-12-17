@@ -241,7 +241,7 @@ subroutine uslafe &
    dt     ,                                                       &
    statis , stativ ,                                              &
    taup   , tlag   , piil   ,                                     &
-   tsuf   , tsup   , bx     , tsfext ,                            &
+   bx     , tsfext ,                                              &
    vagaus , gradpr , gradvf ,                                     &
    romp   , fextla )
 
@@ -280,10 +280,6 @@ subroutine uslafe &
 ! taup(nbpart)     ! ra ! <-- ! particle relaxation time                       !
 ! tlag(nbpart)     ! ra ! <-- ! relaxation time for the flow                   !
 ! piil(nbpart,3)   ! ra ! <-- ! term in the integration of the sde             !
-! tsup(nbpart,3)   ! ra ! <-- ! prediction 1st substep for                     !
-!                  !    !     ! the velocity of the particles                  !
-! tsuf(nbpart,3)   ! ra ! <-- ! prediction 1st substep for                     !
-!                  !    !     ! the velocity of the flow seen                  !
 ! bx(nbpart,3,2)   ! ra ! <-- ! characteristics of the turbulence              !
 ! tsfext(nbpart)   ! ra ! <-- ! infos for the return coupling                  !
 ! vagaus           ! ra ! <-- ! Gaussian random variables                      !
@@ -330,7 +326,6 @@ double precision dt(ncelet)
 double precision statis(ncelet,*),stativ(ncelet,*)
 double precision taup(nbpart) , tlag(nbpart,3)
 double precision piil(nbpart,3) , bx(nbpart,3,2)
-double precision tsuf(nbpart,3) , tsup(nbpart,3)
 double precision tsfext(nbpart)
 double precision vagaus(nbpart,*)
 double precision gradpr(3,ncelet) , gradvf(3,3,ncelet)

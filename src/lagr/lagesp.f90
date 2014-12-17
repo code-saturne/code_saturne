@@ -64,10 +64,6 @@ subroutine lagesp &
 ! taup(nbpart)     ! tr ! <-- ! temps caracteristique dynamique                !
 ! tlag(nbpart)     ! tr ! <-- ! temps caracteristique fluide                   !
 ! piil(nbpart,3)   ! tr ! --> ! terme dans l'integration des eds up            !
-! tsup(nbpart,3)   ! tr ! --> ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse des particules                    !
-! tsuf(nbpart,3)   ! tr ! --> ! prediction 1er sous-pas pour                   !
-!                  !    !     !   la vitesse du fluide vu                      !
 ! bx(nbpart,3,2)   ! tr ! <-- ! caracteristiques de la turbulence              !
 ! tsfext(nbpart)   ! tr ! <-- ! infos pour le couplage retour                  !
 ! gradpr(3,ncel)   ! tr ! <-- ! gradient de pression                           !
@@ -124,7 +120,6 @@ integer          iifacl
 double precision d3 , aa
 
 double precision, allocatable, dimension(:,:) :: fextla
-double precision, allocatable, dimension(:,:) :: tsuf, tsup
 double precision, allocatable, dimension(:,:) :: vagaus, brgaus
 
 !===============================================================================
@@ -183,29 +178,6 @@ do ip = 1, nbpart
   fextla(ip,3) = 0.d0
 enddo
 
-allocate(tsuf(nbpart,3))
-allocate(tsup(nbpart,3))
-
-if (jtsuf(1).gt.0) then
-  do ip = 1, nbpart
-    tsup(ip,1) = pepa(jtsup(1),ip)
-    tsup(ip,2) = pepa(jtsup(2),ip)
-    tsup(ip,3) = pepa(jtsup(3),ip)
-    tsuf(ip,1) = pepa(jtsuf(1),ip)
-    tsuf(ip,2) = pepa(jtsuf(2),ip)
-    tsuf(ip,3) = pepa(jtsuf(3),ip)
-  enddo
-else
-  do ip = 1, nbpart
-    tsup(ip,1) = 0.d0
-    tsup(ip,2) = 0.d0
-    tsup(ip,3) = 0.d0
-    tsuf(ip,1) = 0.d0
-    tsuf(ip,2) = 0.d0
-    tsuf(ip,3) = 0.d0
-  enddo
-endif
-
 call uslafe                                                       &
 !==========
  ( nvar   , nscal  ,                                              &
@@ -213,12 +185,9 @@ call uslafe                                                       &
    dt     ,                                                       &
    statis , stativ ,                                              &
    taup   , tlag   , piil   ,                                     &
-   tsuf   , tsup   , bx     , tsfext ,                            &
+   bx     , tsfext ,                                              &
    vagaus , gradpr , gradvf ,                                     &
    romp   , fextla )
-
-deallocate(tsuf)
-deallocate(tsup)
 
 !===============================================================================
 ! 4.  First order
