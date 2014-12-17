@@ -206,10 +206,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         """
         Shows widgets for inlet.
         """
+        self.pressureWidget.hideWidget()
         if self.coalWidget.getCoalNumber() == 0:
             if DarcyModel(self.__case).getDarcyModel() == "off":
                 self.velocityWidget.showWidget(boundary)
-                self.pressureWidget.hideWidget()
             else:
                 self.velocityWidget.hideWidget()
                 self.pressureWidget.showWidget(boundary)
@@ -224,7 +224,6 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mobileMeshWidget.showWidget(boundary)
         self.electricalWidget.showWidget(boundary)
         self.externalHeadLossesWidget.hideWidget()
-        self.pressureWidget.showWidget(boundary)
 
 
     def __selectWallBoundary(self, boundary):
