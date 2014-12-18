@@ -3254,7 +3254,7 @@ _local_propagation(void                           *particle,
       if (cur_cell_id >= mesh->n_cells) {
 
         particle_state = CS_LAGR_PART_TO_SYNC;
-        move_particle = CS_LAGR_PART_ERR;
+        move_particle = CS_LAGR_PART_MOVE_OFF;
 
         /* Specific treatment for the particle deposition model */
 
@@ -3486,7 +3486,8 @@ _local_propagation(void                           *particle,
 
   }
 
-  assert(move_particle != 1 || particle_state !=1);
+  assert(   move_particle != CS_LAGR_PART_MOVE_ON
+         || particle_state != CS_LAGR_PART_TO_SYNC);
 
   /* Return pointers */
 
