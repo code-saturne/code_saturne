@@ -291,7 +291,7 @@ void
 cs_f_field_var_ptr_by_id(int          id,
                          int          pointer_type,
                          int          pointer_rank,
-                         int          dim[3],
+                         int          dim[2],
                          cs_real_t  **p);
 
 void

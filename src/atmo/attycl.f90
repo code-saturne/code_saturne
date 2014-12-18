@@ -492,16 +492,16 @@ endif
 ! clean up the 'imbrication'
 ! ---------------------------------
 if (imbrication_flag)then
-  if(cressman_u .and. ippmod(iatmos).ge.1 ) then
+  if(cressman_u) then
     deallocate(u_bord)
   endif
-  if(cressman_v .and. ippmod(iatmos).ge.1 ) then
+  if(cressman_v) then
     deallocate(v_bord)
   endif
-  if(cressman_tke .and. ippmod(iatmos).ge.1 ) then
+  if(cressman_tke) then
     deallocate(tke_bord)
   endif
-  if(cressman_eps .and. ippmod(iatmos).ge.1 ) then
+  if(cressman_eps) then
     deallocate(eps_bord)
   endif
   if(cressman_theta .and. ippmod(iatmos).ge.1 ) then

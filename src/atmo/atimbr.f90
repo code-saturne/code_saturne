@@ -1771,7 +1771,7 @@ if (first_call) then
   if (cressman_theta .and. ippmod(iatmos).ge.1) then
     call mestcr("theta",len("theta"),1,0,id_theta)
   endif
-  if (cressman_qw .and. ippmod(iatmos).ge.1) then
+  if (cressman_qw .and. ippmod(iatmos).ge.2) then
     call mestcr("qw",len("qw"),1,0,id_qw)
   endif
   if (cressman_nc.and.ippmod(iatmos).ge.2) then

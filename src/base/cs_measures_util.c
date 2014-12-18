@@ -598,7 +598,7 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
 #   pragma omp parallel for private(jj)
       for (ii = 0; ii < nb_measures; ii++) {
         for (jj = 0; jj < dim; jj++)
-          ms->measures[ii*dim + jj] = measures[ii*nb_measures + jj];
+          ms->measures[ii*dim + jj] = measures[jj*nb_measures + ii];
       }
     }
   }
