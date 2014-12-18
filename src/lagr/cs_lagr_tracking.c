@@ -2135,25 +2135,30 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   tmp = cs_math_3_dot_product(depl, face_normal);
 
-  if (fabs(tmp)/face_area < 1e-15)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Error during boundary treatment.\n"
-                " Part of trajectography inside the boundary faces."));
-
   /* 3D geometry refresher:
      ~~~~~~~~~~~~~~~~~~~~~~
      1)  equation of a plane with normal (a,b,c):
      a*x + b*y + c*z + d = 0
      2)  equation of a line passing through P and Q :
-     x = XP + (XQ-XP) * AA
-     y = YP + (YQ-YP) * AA
-     z = ZP + (ZQ-ZP) * AA
-     where AA is a real parameter
+     x = XP + (XQ-XP) * s
+     y = YP + (YQ-YP) * s
+     z = ZP + (ZQ-ZP) * s
+     where s is a real parameter
+
+     If trajectory is in (or nearly in) the face's plane,
+     the "arrival" position should be inside the face (otherwise,
+     the cell center -> arrival position segment should not have
+     intersected the face), so s = 1 in this case.
   */
 
-  for (k = 0; k < 3; k++)
-    s += face_normal[k] * (face_cog[k] - p_info->start_coords[k]);
-  s /= tmp;
+  if (fabs(tmp)/face_area < 1e-15)
+    s = 1.;
+
+  else {
+    for (k = 0; k < 3; k++)
+      s += face_normal[k] * (face_cog[k] - p_info->start_coords[k]);
+    s /= tmp;
+  }
 
   for (k = 0; k < 3; k++)
     intersect_pt[k] = depl[k]*s + p_info->start_coords[k];
@@ -3169,7 +3174,6 @@ _local_propagation(void                           *particle,
                                      face_connect,
                                      particle,
                                      p_am);
-
       if (adist > -0.5 && adist < adist_min) {
         exit_face = face_num;
         adist_min = adist;
@@ -3447,8 +3451,6 @@ _local_propagation(void                           *particle,
 
       p_info->last_face_num = -face_num;
 
-      break;
-
     } /* end if exit_face < 0 */
 
   } /* End of while : local displacement */
@@ -3483,6 +3485,8 @@ _local_propagation(void                           *particle,
     }
 
   }
+
+  assert(move_particle != 1 || particle_state !=1);
 
   /* Return pointers */
 
