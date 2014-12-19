@@ -209,10 +209,10 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  if ( itypfb(ifac).eq.ientre ) then
+  if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
 
     ! Fuel inlet at TINFUE
-    if ( ientfu(izone).eq.1 ) then
+    if (ientfu(izone).eq.1) then
 
       ! Mean mixture fraction
       rcodcl(ifac,isca(ifm),1)   = 1.d0
@@ -235,7 +235,7 @@ do ifac = 1, nfabor
       brom(ifac) = p0/(rr*tinfue/wmolg(1))
 
     ! Oxydant inlet at TINOXY
-    elseif( ientox(izone).eq.1 ) then
+    elseif (ientox(izone).eq.1) then
 
       ! Mean mixture fraction
       rcodcl(ifac,isca(ifm),1)   = 0.d0
@@ -364,7 +364,7 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  if ( itypfb(ifac).eq.ientre ) then
+  if (itypfb(ifac).eq.ientre.or.itypfb(ifac).eq.i_convective_inlet) then
 
     ! La turbulence est calculee par defaut si ICALKE different de 0
     !    - soit a partir du diametre hydraulique, d'une vitesse
