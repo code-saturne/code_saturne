@@ -51,10 +51,10 @@ subroutine dttvar &
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
 ! iwarnp           ! i  ! <-- ! verbosity                                      !
-! icepdc(ncelet    ! te ! <-- ! numero des ncepdp cellules avec pdc            !
-! icetsm(ncesmp    ! te ! <-- ! numero des cellules a source de masse          !
+! icepdc(ncelet)   ! te ! <-- ! numero des ncepdp cellules avec pdc            !
+! icetsm(ncesmp)   ! te ! <-- ! numero des cellules a source de masse          !
 ! itypsm           ! te ! <-- ! type de source de masse pour les               !
-! (ncesmp,nvar)    !    !     !  variables (cf. cs_user_mass_source_terms)                        !
+! (ncesmp,nvar)    !    !     !  variables (cf. cs_user_mass_source_terms)     !
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
 ! ckupdc           ! tr ! <-- ! tableau de travail pour pdc                    !
