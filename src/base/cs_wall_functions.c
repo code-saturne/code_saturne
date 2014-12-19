@@ -294,6 +294,7 @@ cs_wall_functions_velocity(cs_wall_function_type_t   iwallf,
                            cs_real_t                *dplus)
 {
   cs_real_t lmk;
+  cs_real_t kr = 0.;
   bool wf = true;
 
   /* Pseudo shift of the wall, 0 by default */
@@ -391,6 +392,7 @@ cs_wall_functions_velocity(cs_wall_function_type_t   iwallf,
                                       ypup,
                                       cofimp,
                                       &lmk,
+                                      kr,
                                       wf);
     break;
   default:

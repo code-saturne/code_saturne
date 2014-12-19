@@ -455,6 +455,11 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
  * \param[out]    ypup          yplus projected vel ratio
  * \param[out]    cofimp        \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
  *                              turbulence production
+ * \param[in]     lmk           dimensionless mixing length
+ * \param[in]     kr            wall roughness
+ * \param[in]     wf            enable full wall function computation,
+ *                              if false, uk is not recomputed and uplus is the
+ *                              only output
  */
 /*----------------------------------------------------------------------------*/
 
@@ -473,6 +478,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
                                   cs_real_t  *ypup,
                                   cs_real_t  *cofimp,
                                   cs_real_t  *lmk,
+                                  cs_real_t   kr,
                                   bool        wf)
 {
   double y1,y2,y3,y4,y5,y6,y7,y8,y9,y10;
@@ -489,7 +495,15 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
   /* Set a low threshold value in case tangential velocity is zero */
   *yplus = CS_MAX(*uk * y / l_visc, 1.e-4);
 
-  if (*yplus <= 1.e-1) {
+  /* Dimensionless roughness */
+  cs_real_t krp = *uk * kr / l_visc;
+
+  /* Extension of Van Driest mixing length according to Rotta (1962) with
+     Cebeci & Chang (1978) correlation */
+  cs_real_t dyrp = 0.9 * (sqrt(krp) - krp * exp(-krp / 6.));
+  cs_real_t yrplus = *yplus + dyrp;
+
+  if (yrplus <= 1.e-1) {
 
     uplus = *yplus;
 
@@ -504,9 +518,9 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
       *cofimp = 0.;
     }
 
-  } else if (*yplus <= 200.) {
+  } else if (yrplus <= 200.) {
 
-    y1 = 0.25 * log(*yplus);
+    y1 = 0.25 * log(yrplus);
     y2 = y1 * y1;
     y3 = y2 * y1;
     y4 = y3 * y1;
@@ -537,10 +551,10 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
       *ypup = *yplus / uplus;
 
       /* Mixing length in y+ */
-      *lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
+      *lmk = cs_turb_xkappa * (*yplus) *(1-exp(- (*yplus) / cs_turb_vdriest));
 
       /* Mixing length in 3/2*y+ */
-      lmk15 = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus
+      lmk15 = cs_turb_xkappa * 1.5 * (*yplus) *(1-exp(- 1.5 * (*yplus)
                                                     / cs_turb_vdriest));
 
       *cofimp = 1. - (2. / (1. + *lmk) - 1. / (1. + lmk15)) * *ypup;
@@ -548,7 +562,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 
   } else {
 
-    uplus = 16.088739022054590 + log(*yplus/200.) / cs_turb_xkappa;
+    uplus = 16.088739022054590 + log((yrplus)/(200.+dyrp)) / cs_turb_xkappa;
 
     if (wf) {
       *nlogla += 1;
@@ -556,10 +570,10 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
       *ypup = *yplus / uplus;
 
       /* Mixing length in y+ */
-      *lmk = cs_turb_xkappa * *yplus *(1-exp(- *yplus / cs_turb_vdriest));
+      *lmk = cs_turb_xkappa * (*yplus) *(1-exp(- (*yplus) / cs_turb_vdriest));
 
       /* Mixing length in 3/2*y+ */
-      lmk15 = cs_turb_xkappa * 1.5 * *yplus *(1-exp(- 1.5 * *yplus
+      lmk15 = cs_turb_xkappa * 1.5 * (*yplus) *(1-exp(- 1.5 * (*yplus)
                                                     / cs_turb_vdriest));
 
       *cofimp = 1. - (2. / *lmk - 1. / lmk15) * *ypup;
