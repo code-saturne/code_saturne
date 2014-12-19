@@ -5,6 +5,8 @@ Release 4.0.0 (unreleased)
 Changes:
 --------
 
+- Fix two last digits of the ideal gas constant (8.31446).
+
 - By default, do not force use of an iterative gradient reconstruction method
   for pressure gradients, or other gradients deriving from a potential.
   To force it, a negative value of the IMRGRA keyword may be used.
