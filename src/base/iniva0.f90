@@ -54,6 +54,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
+use dimens, only: nproce
 use pointe
 use entsor
 use albase
@@ -80,7 +81,7 @@ double precision dt(ncelet), propce(ncelet,*)
 
 ! Local variables
 
-integer          iis   , ivar  , iscal
+integer          iis   , iscal , iprop
 integer          iel   , ifac  , isou
 integer          iclip , ii    , jj    , idim
 integer          iivisa, iivism
@@ -88,7 +89,7 @@ integer          iicpa
 integer          ifcvsl
 integer          nn
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
-integer          f_id, f_id_prv, f_dim
+integer          f_id,  f_dim
 integer          kscmin, kscmax
 
 logical          interleaved, have_previous
@@ -120,9 +121,6 @@ double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls
 
 jj = 0
 
-! Memoire
-
-
 ! En compressible, ISYMPA initialise (= 1) car utile dans le calcul
 !     du pas de temps variable avant passage dans les C.L.
 
@@ -131,6 +129,41 @@ if ( ippmod(icompf).ge.0 ) then
     isympa(ifac) = 1
   enddo
 endif
+
+! Initialize all cell property fields to zero
+! (this is useful only for fields which are mapped;
+! fields who own their values, such as variables, are already
+! initialized after allocation).
+
+do iprop = 1, nproce
+
+  f_id = iprpfl(iprop)
+
+  call field_get_dim(f_id, f_dim, interleaved)
+
+  if (f_dim.gt.1) then
+    call field_get_val_v(f_id, field_v_v)
+  else if (f_dim.eq.1) then
+    call field_get_val_s(f_id, field_s_v)
+  endif
+
+  if (f_dim.gt.1) then
+    !$omp parallel do private(isou)
+    do iel = 1, ncelet
+      do isou = 1, f_dim
+        field_v_v(isou,iel) = 0.d0
+      enddo
+    enddo
+  else
+    !$omp parallel do
+    do iel = 1, ncelet
+      field_s_v(iel) = 0.d0
+    enddo
+  endif
+
+  call field_current_to_previous(f_id) ! For those properties requiring it.
+
+enddo
 
 !===============================================================================
 ! 2. PAS DE TEMPS
@@ -306,37 +339,6 @@ endif
 !$omp parallel do
 do iel = 1, ncel
   cvar_pr(iel) = pred0
-enddo
-
-!     Toutes les variables a 0
-f_id = -1
-
-do ivar = 1, nvar
-  f_id_prv = f_id
-  f_id = ivarfl(ivar)
-  if (f_id.eq.f_id_prv) cycle
-
-  call field_get_dim(f_id, f_dim, interleaved)
-
-  if (f_dim.gt.1) then
-    call field_get_val_v(f_id, field_v_v)
-  else if (f_dim.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-  endif
-
-  if (f_dim.gt.1) then
-    !$omp parallel do private(isou)
-    do iel = 1, ncel
-      do isou = 1, f_dim
-        field_v_v(isou,iel) = 0.d0
-      enddo
-    enddo
-  else
-    !$omp parallel do
-    do iel = 1, ncel
-      field_s_v(iel) = 0.d0
-    enddo
-  endif
 enddo
 
 ! On definit les clipping du taux de vide et on initialize au clipping inf.
