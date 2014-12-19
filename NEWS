@@ -1,5 +1,5 @@
 
-Release 3.3.3 (unreleased)
+Release 3.3.3 (19 Dec 2014)
 ==========================
 
 Bug fixes:
@@ -18,7 +18,7 @@ Bug fixes:
 
 - Fix crash in parallel MED output.
 
-- Fix indexing bug n ParaMEDMEM coupling.
+- Fix indexing bug in ParaMEDMEM coupling.
 
 - Update installer packages.
 

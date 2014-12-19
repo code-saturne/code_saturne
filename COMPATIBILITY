@@ -1,9 +1,9 @@
-CODE_SATURNE VERSION 3.2
+CODE_SATURNE VERSION 3.3
 ========================
 
-This is version 3.2 of the Code_Saturne CFD tool.
+This is version 3.3 of the Code_Saturne CFD tool.
 It is composed of the following elements:
-* Code_Saturne version 3.2 (including Graphical User Interface)
+* Code_Saturne version 3.3 (including Graphical User Interface)
 * Parallel Location and Exchange version 1.0
 Other versions of these elements might not be compatible.
 
@@ -39,4 +39,4 @@ number at the time of writing is given), but no specific command is
 used in the code so any other MPI library should work.
 * MPICH2: 1.2.5
 * MPICH:  3.0.4
-* Open-MPI: 1.6.4
+* Open-MPI: 1.6.5
