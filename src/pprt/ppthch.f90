@@ -51,7 +51,7 @@ module ppthch
   !>  (1 atmosphere, 0 \f$\text{\degresC}\f$) in \f$m^{-3}\f$
   double precision volmol
 
-  parameter ( rr     = 8.31434d0      ,                             &
+  parameter ( rr     = 8.31446d0      ,                             &
               trefth = 25.d0 + tkelvi ,                             &
               prefth = 1.01325d5      ,                             &
               volmol = 22.41d-3       )
