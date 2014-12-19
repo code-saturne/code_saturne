@@ -139,6 +139,8 @@ do iprop = 1, nproce
 
   f_id = iprpfl(iprop)
 
+  if (f_id.lt.0) cycle
+
   call field_get_dim(f_id, f_dim, interleaved)
 
   if (f_dim.gt.1) then
