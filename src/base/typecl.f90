@@ -314,14 +314,6 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #else
     write(nfecra,6020) 'Free inlet       ', ii, inb
 #endif
-    ii = i_convective_inlet
-    inb = ifinty(ii)-idebty(ii)+1
-    if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree convective', ii, inb
-#else
-    write(nfecra,6020) 'Convective inlet ', ii, inb
-#endif
 
     ! Presence of free entrance face(s)
     if (inb.gt.0) then
@@ -330,6 +322,15 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
     else
       iifren = 0
     endif
+
+    ii = i_convective_inlet
+    inb = ifinty(ii)-idebty(ii)+1
+    if (irangp.ge.0) call parcpt (inb)
+#if defined(_CS_LANG_FR)
+    write(nfecra,6020) 'Entree convective', ii, inb
+#else
+    write(nfecra,6020) 'Convective inlet ', ii, inb
+#endif
 
     if (nbrcpl.ge.1) then
       ii = icscpl
@@ -1239,8 +1240,7 @@ do ivar = 1, nvar
     ifac = itrifb(ii)
     if(icodcl(ifac,ivar).eq.0) then
 
-      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw)      &
-           then
+      if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
         if (rcodcl(ifac,ivar,1).gt.rinfin*0.5d0) then
           itypfb(ifac) = - abs(itypfb(ifac))
           if (iok.eq.0.or.iok.eq.2) iok = iok + 1
