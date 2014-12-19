@@ -2963,7 +2963,7 @@ void CS_PROCF (cssca3, CSSCA3) (const    int *const itherm,
           if (result <= 0)
             bft_error(__FILE__, __LINE__, 0,
                       _("mass molar value is zero or not found in the xml file.\n"));
-          density = *p0 * result / (8.31434 *(*t0));
+          density = *p0 * result / (8.31446 *(*t0));
         }
         else
           cs_gui_properties_value("density", &density);
