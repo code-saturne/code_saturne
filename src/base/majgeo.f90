@@ -29,8 +29,10 @@ subroutine majgeo &
    iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
    ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 ,                   &
    volmn2 , volmx2 , voltt2 ,                                     &
-   xyzce2 , surfa2 , surfb2 , cdgfa2 , cdgfb2 , xyzno2 ,          &
-   volum2 , srfan2 , srfbn2 , dist2  , distb2 , pond2  ,          &
+   xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
+   cdgfa2 , cdgfb2 , xyzno2 ,                                     &
+   volum2 , volf2  , srfan2 , srfbn2 ,                            &
+   dist2  , distb2 , pond2  ,                                     &
    dijpf2 , diipb2 , dofij2 )                                     &
 
  bind(C, name="cs_f_majgeo")
@@ -76,6 +78,8 @@ subroutine majgeo &
 ! xyzce2           ! ra ! <-- ! cell centers                                   !
 ! surfa2           ! ra ! <-- ! interior face normals                          !
 ! surfb2           ! ra ! <-- ! boundary face normals                          !
+! suffa2           ! ra ! <-- ! interior fluid face normals                    !
+! suffb2           ! ra ! <-- ! boundary fluid face normals                    !
 ! cdgfa2           ! ra ! <-- ! interior face centers                          !
 ! cdgfb2           ! ra ! <-- ! boundary face centers                          !
 ! xyzno2           ! ra ! <-- ! vertex coordinates                             !
@@ -134,9 +138,12 @@ double precision :: volmn2, volmx2, voltt2
 
 double precision, dimension(3,ncele2), target :: xyzce2
 double precision, dimension(3,nfac2), target :: surfa2, cdgfa2, dijpf2, dofij2
+double precision, dimension(3,nfac2), target :: suffa2
 double precision, dimension(3,nfabo2), target :: surfb2, cdgfb2, diipb2
+double precision, dimension(3,nfabo2), target :: suffb2
 double precision, dimension(3,nsom2), target :: xyzno2
 double precision, dimension(ncele2), target :: volum2
+double precision, dimension(ncele2), target :: volf2
 double precision, dimension(nfac2), target :: srfan2, dist2, pond2
 double precision, dimension(nfabo2), target :: srfbn2, distb2
 
@@ -209,12 +216,15 @@ isympa => isymp2(1:nfabor)
 
 surfac => surfa2(1:3,1:nfac)
 surfbo => surfb2(1:3,1:nfabor)
+suffac => suffa2(1:3,1:nfac)
+suffbo => suffb2(1:3,1:nfabor)
 cdgfac => cdgfa2(1:3,1:nfac)
 cdgfbo => cdgfb2(1:3,1:nfabor)
 
 xyznod => xyzno2(1:3,1:nnod)
 
 volume => volum2(1:ncelet)
+volf => volf2(1:ncelet)
 
 surfan => srfan2(1:nfac)
 surfbn => srfbn2(1:nfabor)

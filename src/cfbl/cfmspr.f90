@@ -208,7 +208,7 @@ enddo
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    smbrs(iel) = smbrs(iel) + smacel(iel,ipr)*volume(iel)
+    smbrs(iel) = smbrs(iel) + smacel(iel,ipr)*volf(iel)
   enddo
 endif
 
@@ -226,7 +226,7 @@ call cf_thermo_c_square(cvar_pr, crom, c2, ncel)
 !======================
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) + istat(ivar)*(volume(iel)/(dt(iel)*c2(iel)))
+  rovsdt(iel) = rovsdt(iel) + istat(ivar)*(volf(iel)/(dt(iel)*c2(iel)))
 enddo
 
 !===============================================================================
@@ -350,7 +350,7 @@ call cf_check_pressure(cvar_pr, ncel)
 if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                    &
-                 - istat(ivar)*(volume(iel)/dt(iel))                           &
+                 - istat(ivar)*(volf(iel)/dt(iel))                             &
                    *(cvar_pr(iel)-cvara_pr(iel))                               &
                    * max(0,min(nswrsm(ivar)-2,1))
   enddo

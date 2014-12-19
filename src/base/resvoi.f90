@@ -224,7 +224,7 @@ endif
 ! Cavitation source term (explicit)
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + volume(iel)*gamcav(iel)/rov
+  smbrs(iel) = smbrs(iel) + volf(iel)*gamcav(iel)/rov
 enddo
 
 ! Source term linked with the non-conservative form of convection term
@@ -256,24 +256,12 @@ else
   enddo
 endif
 
-! Unteady term and porosity
-!--------------------------
+! Unteady term
+!-------------
 
-! Without porosity
-if (iporos.eq.0) then
-  do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel) + istat(ivar)*volume(iel)/dt(iel)
-  enddo
-! With porosity
-else
-  call field_get_val_s(ipori, porosi)
-  do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)*porosi(iel)
-  enddo
-  do iel = 1, ncel
-    rovsdt(iel) = (rovsdt(iel) + istat(ivar)*volume(iel)/dt(iel))*porosi(iel)
-  enddo
-endif
+do iel = 1, ncel
+  rovsdt(iel) = rovsdt(iel) + istat(ivar)*volf(iel)/dt(iel)
+enddo
 
 !===============================================================================
 ! 3. Solving

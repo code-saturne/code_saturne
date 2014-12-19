@@ -52,7 +52,7 @@
 !> \f]
 !>
 !> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volume" term. More precisely:
+!> over the cells, so they include the "volf" term. More precisely:
 !>   - crvexp is expressed in kg.m/s2
 !>   - crvimp is expressed in kg/s
 !>
@@ -193,8 +193,8 @@ call field_get_val_s(icrom, cpro_rom)
 !  MMT = 100.d0 [kg/m2/s2] (momentum production by volume and time unit)
 !
 !which yields:
-!     crvimp(1, 1, iel) = volume(iel)* A = - volume(iel)*(rho*CKP )
-!     crvexp(1, iel) = volume(iel)* B = volume(iel)*(XMMT)
+!     crvimp(1, 1, iel) = volf(iel)* A = - volf(iel)*(rho*CKP )
+!     crvexp(1, iel) = volf(iel)* B = volf(iel)*(XMMT)
 
 ! ----------------------------------------------
 
@@ -210,11 +210,11 @@ ckp  = 10.d0
 qdm  = 100.d0
 
 do iel = 1, ncel
-  crvimp(1, 1, iel) = - volume(iel)*cpro_rom(iel)*ckp
+  crvimp(1, 1, iel) = - volf(iel)*cpro_rom(iel)*ckp
 enddo
 
 do iel = 1, ncel
-  crvexp(1, iel) = volume(iel)*qdm
+  crvexp(1, iel) = volf(iel)*qdm
 enddo
 
 !--------
@@ -302,11 +302,11 @@ subroutine ustssc &
 ! WARNING: If scalar is the temperature, the resulting equation
 !          solved by the code is:
 !
-!  rho*Cp*volume*dT/dt + .... = crvimp*T + crvexp
+!  rho*Cp*volf*dT/dt + .... = crvimp*T + crvexp
 !
 !
 ! Note that crvexp and crvimp are defined after the Finite Volume integration
-! over the cells, so they include the "volume" term. More precisely:
+! over the cells, so they include the "volf" term. More precisely:
 !   - crvexp is expressed in W
 !   - crvimp is expressed in W/K
 !
@@ -321,7 +321,7 @@ subroutine ustssc &
 !   where f(n) is the value of f at time tn, the beginning of the time step.
 !
 ! This yields :
-!   crvexp = volume*F(f(n))
+!   crvexp = volf*F(f(n))
 !   crvimp = 0
 !
 ! However, if the source term is potentially steep, this fully explicit
@@ -331,8 +331,8 @@ subroutine ustssc &
 !   df/dt = .... + dF/df*f(n+1) - dF/df*f(n) + F(f(n))
 !
 ! This yields:
-!   crvexp = volume*( F(f(n)) - dF/df*f(n) )
-!   crvimp = volume*dF/df
+!   crvexp = volf*( F(f(n)) - dF/df*f(n) )
+!   crvimp = volf*dF/df
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -398,7 +398,7 @@ character*80     chaine
 integer          ivar, iiscvr,  iel
 integer          ilelt, nlelt
 
-double precision tauf, prodf, volf, pwatt
+double precision tauf, prodf, voltf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
@@ -462,8 +462,8 @@ endif
 !     prodf  = 100.d0 [ [f]/s ] (production of f by unit of time)
 
 !which yields
-!     crvimp(iel) = volume(iel)* A = - volume(iel)*rho/tauf
-!     crvexp(iel) = volume(iel)* B =   volume(iel)*rho*prodf
+!     crvimp(iel) = volf(iel)* A = - volf(iel)*rho/tauf
+!     crvexp(iel) = volf(iel)* B =   volf(iel)*rho*prodf
 
 !===============================================================================
 
@@ -485,11 +485,11 @@ if (iscal.eq.2) then
    prodf = 100.d0
 
    do iel = 1, ncel
-      crvimp(iel) = - volume(iel)*cpro_rom(iel)/tauf
+      crvimp(iel) = - volf(iel)*cpro_rom(iel)/tauf
    enddo
 
    do iel = 1, ncel
-      crvexp(iel) =   volume(iel)*cpro_rom(iel)*prodf
+      crvexp(iel) =   volf(iel)*cpro_rom(iel)*prodf
    enddo
 
 endif
@@ -501,11 +501,11 @@ endif
 ! in the cells with coordinate X in [0;1.2] and Y in [3.1;4]
 
 ! The global heating power if Pwatt (in W) and the total volume of the concerned
-! cells is volf (in m3)
+! cells is voltf (in m3)
 
 ! This yields
 !     crvimp(iel) = 0
-!     crvexp(iel) = volume(iel)* Pwatt/volf
+!     crvexp(iel) = volf(iel)* Pwatt/voltf
 
 !===============================================================================
 
@@ -526,24 +526,24 @@ if (.true.) return
 ! by Cp because Cp is put outside the diffusion term and multiply
 ! the temperature equation as follows:
 !
-!  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/volf
+!  rho*Cp*volf*dT/dt + .... =  volf(iel)* Pwatt/voltf
 !
 
 pwatt = 100.d0
 
-! calculation of volf
+! calculation of voltf
 
-volf  = 0.d0
+voltf  = 0.d0
 call getcel('x > 0.0 and x < 1.2 and y > 3.1 and '//               &
             'y < 4.0',nlelt,lstelt)
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
-  volf = volf + volume(iel)
+  voltf = voltf + volf(iel)
 enddo
 
 if (irangp.ge.0) then
-  call parsom(volf)
+  call parsom(voltf)
 endif
 
 do ilelt = 1, nlelt
@@ -551,7 +551,7 @@ do ilelt = 1, nlelt
 ! No implicit source term
   crvimp(iel) = 0.d0
 ! Explicit source term
-  crvexp(iel) = volume(iel)*pwatt/volf
+  crvexp(iel) = volf(iel)*pwatt/voltf
 enddo
 
 !--------
@@ -730,8 +730,8 @@ endif
 !    (Source term on the TKE 'k' here)
 
 !      Source term for cvar_var:
-!         rho volume d(cvar_var)/dt       = ...
-!                        ... - rho*volume*ff - rho*volume*cvar_var/tau
+!         rho volf d(cvar_var)/dt       = ...
+!                        ... - rho*volf*ff - rho*volf*cvar_var/tau
 
 !      With ff=3.d0 and tau = 4.d0
 
@@ -755,13 +755,13 @@ if (.false.) then
 
     ! --- Explicit source terms
     do iel = 1, ncel
-      crvexp(iel) = -cpro_rom(iel)*volume(iel)*ff
+      crvexp(iel) = -cpro_rom(iel)*volf(iel)*ff
     enddo
 
     ! --- Implicit source terms
     !        crvimp is already initialized to 0, no need to set it here
     do iel = 1, ncel
-      crvimp(iel) = -cpro_rom(iel)*volume(iel)/tau
+      crvimp(iel) = -cpro_rom(iel)*volf(iel)/tau
     enddo
 
   endif

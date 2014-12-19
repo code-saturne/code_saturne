@@ -123,6 +123,17 @@ module mesh
   !> and it is oriented outwards
   double precision, dimension(:,:), pointer :: surfbo
 
+  !> \anchor suffac
+  !> fluid surface vector of the internal faces. Its norm is the surface of the face
+  !> and it is oriented from \c ifacel(1,.) to \c ifacel(2,.)
+  double precision, dimension(:,:), pointer :: suffac
+
+  !> \anchor suffbo
+  !> surface vector of the boundary faces. Its norm is the surface of the face
+  !> and it is oriented outwards
+  double precision, dimension(:,:), pointer :: suffbo
+
+
   !> \anchor cdgfac
   !> coordinates of the centers of the internal faces
   double precision, dimension(:,:), pointer :: cdgfac
@@ -138,6 +149,10 @@ module mesh
   !> \anchor volume
   !> volume of each cell
   double precision, dimension(:), pointer :: volume
+
+  !> \anchor volf
+  !> fluid volume of each cell
+  double precision, dimension(:), pointer :: volf
 
   !> \anchor surfan
   !> norm of the surface vector of the internal faces

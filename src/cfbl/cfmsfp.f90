@@ -362,7 +362,7 @@ if (itsqdm.ne.0) then
     !==========
  ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
    icetsm , itypsm(1,iu),                                      &
-   volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
+   volf   , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
    tsexp  , tsimp , gavinj )
 
     do iel = 1, ncel

@@ -226,10 +226,7 @@ double precision, allocatable, dimension(:) :: iflux, bflux
 double precision, allocatable, dimension(:) :: xunsro
 double precision, allocatable, dimension(:), target :: xdtsro
 double precision, allocatable, dimension(:,:), target :: tpusro
-double precision, allocatable, dimension(:), target :: xvolf
 double precision, dimension(:), pointer :: viscap
-double precision, dimension(:), pointer :: volf
-double precision, dimension(:), pointer :: porosi
 double precision, dimension(:,:), pointer :: vitenp
 double precision, allocatable, dimension(:,:) :: gradni
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -266,30 +263,6 @@ allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
 ! Associate pointers to pressure diffusion coefficient
 viscap => dt(:)
 if (idften(ipr).eq.6)  vitenp => tpucou(:,:)
-
-
-! Compute the Volume of fluid (in case of porosity)
-if (iporos.eq.0)  then
-  volf => volume(:)
-
-! With porosity
-else
-
-  call field_get_val_s(ipori, porosi)
-
-  allocate(xvolf(ncelet))
-
-  do iel = 1, ncel
-    xvolf(iel) = volume(iel) * porosi(iel)
-  enddo
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(xvolf)
-  endif
-
-  volf => xvolf(:)
-
-endif
 
 ! Index of the field
 iflid = ivarfl(ipr)
@@ -2372,7 +2345,6 @@ if (icavit.ge.0.or.idilat.eq.4) then
   if (allocated(xunsro)) deallocate(xunsro)
   if (allocated(tpusro)) deallocate(tpusro)
 endif
-if (allocated(xvolf)) deallocate(xvolf)
 
 !--------
 ! Formats

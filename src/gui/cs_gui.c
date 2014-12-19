@@ -3254,7 +3254,7 @@ void CS_PROCF (uiporo, UIPORO) (const int *ncelet,
 
   mei_tree_t *ev_formula  = NULL;
 
-  assert(*iporos == 1 || *iporos == 2);
+  assert(*iporos == 1 || *iporos == 2 || *iporos == 3);
 
   /* number of volumic zone */
   int zones = cs_gui_get_tag_number("/solution_domain/volumic_conditions/zone\n", 1);
@@ -3401,7 +3401,7 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
                               cs_real_33_t      *restrict tsimp)
 {
   const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_real_t *restrict cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
@@ -3507,34 +3507,34 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
           dSwdv = mei_tree_lookup(ev_formula,"dSwdv");
           dSwdw = mei_tree_lookup(ev_formula,"dSwdw");
 
-          tsimp[iel][0][0] = cell_vol[iel]*dSudu;
-          tsimp[iel][0][1] = cell_vol[iel]*dSudv;
-          tsimp[iel][0][2] = cell_vol[iel]*dSudw;
-          tsimp[iel][1][0] = cell_vol[iel]*dSvdu;
-          tsimp[iel][1][1] = cell_vol[iel]*dSvdv;
-          tsimp[iel][1][2] = cell_vol[iel]*dSvdw;
-          tsimp[iel][2][0] = cell_vol[iel]*dSwdu;
-          tsimp[iel][2][1] = cell_vol[iel]*dSwdv;
-          tsimp[iel][2][2] = cell_vol[iel]*dSwdw;
+          tsimp[iel][0][0] = cell_f_vol[iel]*dSudu;
+          tsimp[iel][0][1] = cell_f_vol[iel]*dSudv;
+          tsimp[iel][0][2] = cell_f_vol[iel]*dSudw;
+          tsimp[iel][1][0] = cell_f_vol[iel]*dSvdu;
+          tsimp[iel][1][1] = cell_f_vol[iel]*dSvdv;
+          tsimp[iel][1][2] = cell_f_vol[iel]*dSvdw;
+          tsimp[iel][2][0] = cell_f_vol[iel]*dSwdu;
+          tsimp[iel][2][1] = cell_f_vol[iel]*dSwdv;
+          tsimp[iel][2][2] = cell_f_vol[iel]*dSwdw;
 
           tsexp[iel][0] = mei_tree_lookup(ev_formula,"Su")
                         - ( dSudu*vel[iel][0]
                           + dSudv*vel[iel][1]
                           + dSudw*vel[iel][2]
                           );
-          tsexp[iel][0] *= cell_vol[iel];
+          tsexp[iel][0] *= cell_f_vol[iel];
           tsexp[iel][1] = mei_tree_lookup(ev_formula,"Sv")
                         - ( dSvdu*vel[iel][0]
                           + dSvdv*vel[iel][1]
                           + dSvdw*vel[iel][2]
                           );
-          tsexp[iel][1] *= cell_vol[iel];
+          tsexp[iel][1] *= cell_f_vol[iel];
           tsexp[iel][2] = mei_tree_lookup(ev_formula,"Sw")
                         - ( dSwdu*vel[iel][0]
                           + dSwdv*vel[iel][1]
                           + dSwdw*vel[iel][2]
                           );
-          tsexp[iel][2] *= cell_vol[iel];
+          tsexp[iel][2] *= cell_f_vol[iel];
         }
         mei_tree_destroy(ev_formula);
         BFT_FREE(label);
@@ -3570,7 +3570,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
 {
   const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  const cs_real_t *restrict cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
@@ -3644,9 +3644,9 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
           mei_tree_insert(ev_formula, _scalar_label(*f_id), pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
-          tsimp[iel] = cell_vol[iel]*dS;
+          tsimp[iel] = cell_f_vol[iel]*dS;
           tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
-          tsexp[iel] *= cell_vol[iel];
+          tsexp[iel] *= cell_f_vol[iel];
         }
         mei_tree_destroy(ev_formula);
       }
@@ -3678,7 +3678,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
 {
   const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  const cs_real_t *restrict cell_vol = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
@@ -3752,9 +3752,9 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
           mei_tree_insert(ev_formula, _scalar_label(*f_id), pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
-          tsimp[iel] = cell_vol[iel]*dS;
+          tsimp[iel] = cell_f_vol[iel]*dS;
           tsexp[iel] = mei_tree_lookup(ev_formula,"S") - dS*pvar[iel];
-          tsexp[iel] *= cell_vol[iel];
+          tsexp[iel] *= cell_f_vol[iel];
         }
         mei_tree_destroy(ev_formula);
       }

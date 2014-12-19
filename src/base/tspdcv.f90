@@ -94,7 +94,7 @@ endif
 do ielpdc = 1, ncepdp
 
   iel    = icepdc(ielpdc)
-  romvom =-crom(iel)*volume(iel)
+  romvom =-crom(iel)*volf(iel)
   cpdc11 = ckupdc(ielpdc,1)
   cpdc22 = ckupdc(ielpdc,2)
   cpdc33 = ckupdc(ielpdc,3)

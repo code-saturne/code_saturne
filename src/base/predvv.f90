@@ -224,9 +224,6 @@ double precision, dimension(:), allocatable :: xinvro
 double precision, dimension(:), pointer :: brom, crom, croma, pcrom
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
-double precision, dimension(:), pointer :: porosi
-double precision, dimension(:), pointer :: volf
-double precision, allocatable, dimension(:), target :: xvolf
 double precision, dimension(:,:), allocatable :: rij
 double precision, dimension(:), pointer :: coef1, coef2, coef3, coef4, coef5, coef6
 double precision, dimension(:,:), allocatable :: coefat
@@ -301,29 +298,6 @@ else
     call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
     call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
   endif
-endif
-
-! Compute the Volume of fluid (in case of porosity)
-if (iporos.eq.0)  then
-  volf => volume(:)
-
-! With porosity
-else
-
-  call field_get_val_s(ipori, porosi)
-
-  allocate(xvolf(ncelet))
-
-  do iel = 1, ncel
-    xvolf(iel) = volume(iel) * porosi(iel)
-  enddo
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(xvolf)
-  endif
-
-  volf => xvolf(:)
-
 endif
 
 if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
@@ -873,15 +847,6 @@ if ((ncepdp.gt.0).and.(iphydr.eq.0)) then
 
     call tspdcv(ncepdp, icepdc, vela, ckupdc, trav)
 
-    ! With porosity
-    if (iporos.ge.1) then
-      do iel = 1, ncel
-        trav(1, iel) = trav(1, iel)*porosi(iel)
-        trav(2, iel) = trav(2, iel)*porosi(iel)
-        trav(3, iel) = trav(3, iel)*porosi(iel)
-      enddo
-    endif
-
     ! Si on itere sur navsto, on utilise TRAVA ; sinon TRAV
     if(nterup.gt.1) then
       do iel = 1, ncel
@@ -1374,7 +1339,7 @@ if (iterns.eq.1) then
 
     do iel = 1, ncel
       !FIXME when using porosity
-      dvol = 1.d0/volume(iel)
+      dvol = 1.d0/volf(iel)
       do isou = 1, 3
         dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
       enddo
@@ -1383,15 +1348,6 @@ if (iterns.eq.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvin(dfrcxt)
     endif
-  endif
-
-  ! Porosity
-  if (iporos.ge.1) then
-    do iel = 1, ncel
-      do isou = 1, 3
-        tsexp(isou, iel) = porosi(iel)*tsexp(isou, iel)
-      enddo
-    enddo
   endif
 
 endif
@@ -1409,54 +1365,26 @@ endif
 
 ! ---> Explicit contribution due to implicit terms
 
-! Without porosity
-if (iporos.eq.0) then
-  if (iterns.eq.1) then
-    if (nterup.gt.1) then
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            trava(isou,iel) = trava(isou,iel)                                  &
-                            + tsimp(isou,jsou,iel)*vela(jsou,iel)
-          enddo
+if (iterns.eq.1) then
+  if (nterup.gt.1) then
+    do iel = 1, ncel
+      do isou = 1, 3
+        do jsou = 1, 3
+          trava(isou,iel) = trava(isou,iel)                                  &
+                          + tsimp(isou,jsou,iel)*vela(jsou,iel)
         enddo
       enddo
-    else
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            trav(isou,iel) = trav(isou,iel)                                    &
-                           + tsimp(isou,jsou,iel)*vela(jsou,iel)
-          enddo
+    enddo
+  else
+    do iel = 1, ncel
+      do isou = 1, 3
+        do jsou = 1, 3
+          trav(isou,iel) = trav(isou,iel)                                    &
+                         + tsimp(isou,jsou,iel)*vela(jsou,iel)
         enddo
       enddo
-    endif
+    enddo
   endif
-
-! With porosity
-else
-  if (iterns.eq.1) then
-    if (nterup.gt.1) then
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            trava(isou,iel) = trava(isou,iel)                                  &
-                            + tsimp(isou,jsou,iel)*vela(jsou,iel)*porosi(iel)
-          enddo
-        enddo
-      enddo
-    else
-      do iel = 1, ncel
-        do isou = 1, 3
-          do jsou = 1, 3
-            trav(isou,iel) = trav(isou,iel)                                    &
-                           + tsimp(isou,jsou,iel)*vela(jsou,iel)*porosi(iel)
-          enddo
-        enddo
-      enddo
-    endif
-  endif
-
 endif
 
 ! At the first PISO iteration, explicit source terms are added
@@ -1551,14 +1479,14 @@ if (ncesmp.gt.0) then
     !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
-    volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
+    volf   , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
     trav   , fimp , gavinj )
   else
     call catsmv &
     !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
-    volume , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
+    volf   , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
     trava  , fimp  , gavinj )
   endif
 
@@ -1953,7 +1881,6 @@ deallocate(tsexp)
 deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(divt)) deallocate(divt)
-if (allocated(xvolf)) deallocate(xvolf)
 
 !--------
 ! Formats

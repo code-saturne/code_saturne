@@ -163,7 +163,7 @@ if (itytur.ne.3 .and. itytur.ne.4) then
 endif
 
 ! With porosity
-if (iporos.ge.1) then
+if (iporos.eq.1.or.iporos.eq.2) then
   call field_get_val_s(ipori, porosi)
   do iel = 1, ncel
     secvis(iel) = secvis(iel)*porosi(iel)

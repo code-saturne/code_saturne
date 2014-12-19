@@ -99,6 +99,7 @@ integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
 integer          ivar
+integer          iel
 
 integer          inod   , idim
 integer          itrale , ntmsav
@@ -118,6 +119,7 @@ character        ficsui*32
 integer, allocatable, dimension(:) :: isostd
 
 double precision, pointer, dimension(:)   :: dt => null()
+double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: propce => null()
 
 double precision, pointer, dimension(:,:) :: frcxt => null()
@@ -514,6 +516,17 @@ if (iporos.ge.1) then
     call uiporo(ncelet, iporos)
   endif
   call usporo
+
+  call field_get_val_s(ipori, porosi)
+
+  do iel = 1, ncel
+    volf(iel) = volume(iel) * porosi(iel)
+  enddo
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(volf)
+  endif
+
 endif
 
 !===============================================================================

@@ -89,7 +89,7 @@ do ipt = 1, ncecpl
 
   ielloc = lcecpl(ipt)
 
-  rovtau = volume(ielloc)*crom(ielloc)/xtau
+  rovtau = volf(ielloc)*crom(ielloc)/xtau
 
   do isou = 1, 3
     xdis = rvcpce(isou,ipt)

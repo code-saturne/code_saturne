@@ -389,6 +389,9 @@ endif
 ! Choose which 3x3 cocg matrixes are computed for gradient algorithms.
 call comcoc(imrgra)
 
+! Choose the porous model
+call compor(iporos)
+
 ! --- Varpos
 call varpos
 !==========

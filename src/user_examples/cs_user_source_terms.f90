@@ -404,7 +404,7 @@ character*80     chaine
 integer          ivar, iiscvr,  iel
 integer          ilelt, nlelt
 
-double precision tauf, prodf, volf, pwatt
+double precision tauf, prodf, voltf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
@@ -516,11 +516,11 @@ endif
 ! in the cells with coordinate X in [0;1.2] and Y in [3.1;4]
 
 ! The global heating power if Pwatt (in W) and the total volume of the concerned
-! cells is volf (in m3)
+! cells is voltf (in m3)
 
 ! This yields
 !     crvimp(iel) = 0
-!     crvexp(iel) = volume(iel)* Pwatt/volf
+!     crvexp(iel) = volume(iel)* Pwatt/voltf
 
 !===============================================================================
 
@@ -542,24 +542,24 @@ if (.true.) return
 ! by Cp because Cp is put outside the diffusion term and multiply
 ! the temperature equation as follows:
 !
-!  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/volf
+!  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/voltf
 !
 
 pwatt = 100.d0
 
-! calculation of volf
-!< [calcul_volf]
-volf  = 0.d0
+! calculation of voltf
+!< [calcul_voltf]
+voltf  = 0.d0
 call getcel('x > 0.0 and x < 1.2 and y > 3.1 and '//               &
             'y < 4.0',nlelt,lstelt)
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
-  volf = volf + volume(iel)
+  voltf = voltf + volume(iel)
 enddo
 
 if (irangp.ge.0) then
-  call parsom(volf)
+  call parsom(voltf)
 endif
 
 do ilelt = 1, nlelt
@@ -567,10 +567,10 @@ do ilelt = 1, nlelt
 ! No implicit source term
   crvimp(iel) = 0.d0
 ! Explicit source term
-  crvexp(iel) = volume(iel)*pwatt/volf
+  crvexp(iel) = volume(iel)*pwatt/voltf
 enddo
 
-!< [calcul_volf]
+!< [calcul_voltf]
 !--------
 ! Formats
 !--------

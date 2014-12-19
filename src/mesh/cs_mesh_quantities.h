@@ -52,10 +52,15 @@ typedef struct {
 
   cs_real_t     *cell_cen;       /* Cell center coordinates  */
   cs_real_t     *cell_vol;       /* Cell volume */
+  cs_real_t     *cell_f_vol;     /* Cell fluid volume */
 
   cs_real_t     *i_face_normal;  /* Surface normal of interior faces.
                                     (L2 norm equals area of the face) */
   cs_real_t     *b_face_normal;  /* Surface normal of border faces.
+                                    (L2 norm equals area of the face) */
+  cs_real_t     *i_f_face_normal;/* Fluid Surface normal of interior faces.
+                                    (L2 norm equals area of the face) */
+  cs_real_t     *b_f_face_normal;/* Fluid Surface normal of border faces.
                                     (L2 norm equals area of the face) */
   cs_real_t     *i_face_cog;     /* Center of gravity of interior faces */
   cs_real_t     *b_face_cog;     /* Center of gravity of border faces */
@@ -106,6 +111,9 @@ typedef struct {
 /* Pointer to mesh quantities structure associated to the main mesh */
 
 extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
+
+/* Choice of the porous model */
+extern int cs_glob_porous_model;
 
 /*============================================================================
  * Public function prototypes for API Fortran
@@ -176,6 +184,16 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice);
 
 void
 cs_mesh_quantities_set_cocg_options(int  gradient_option);
+
+/*----------------------------------------------------------------------------
+ * Compute Fluid volumes and fluid surface in addition to cell volume and surfaces.
+ *
+ * parameters:
+ *   porous_model <-- gradient option (Fortran iporos)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_quantities_set_porous_model(int  porous_model);
 
 /*----------------------------------------------------------------------------
  * Create a mesh quantities structure.
