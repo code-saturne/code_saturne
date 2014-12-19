@@ -173,7 +173,10 @@ if (iirayo.eq.1) then
     !       (WARNING: the treatment is different from than of P-1 model)
     !   -------------------------------------------------
 
-    else if (itypfb(ifac).eq.ientre .or. itypfb(ifac).eq.isolib) then
+    else if (itypfb(ifac).eq.ientre            .or.   &
+             itypfb(ifac).eq.i_convective_inlet.or.   &
+             itypfb(ifac).eq.isolib            .or.   &
+             itypfb(ifac).eq.ifrent                ) then
 
       pimp = epzero
 
@@ -238,7 +241,10 @@ else if (iirayo.eq.2) then
     !       (WARNING: the treatment is different from than of DO model)
     !       ----------------------------------------------------------
 
-    else if (itypfb(ifac).eq.ientre .or. itypfb(ifac).eq.isolib) then
+    else if (itypfb(ifac).eq.ientre            .or.   &
+             itypfb(ifac).eq.i_convective_inlet.or.   &
+             itypfb(ifac).eq.isolib            .or.   &
+             itypfb(ifac).eq.ifrent                ) then
 
       ! Neumann Boundary Condition
       !---------------------------

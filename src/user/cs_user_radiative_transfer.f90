@@ -536,7 +536,10 @@ do ifac = 1, nfabor
     flunet(ifac) = zero
 
   ! Inlet/Outlet
-  else if (itypfb(ifac).eq.ientre .or. itypfb(ifac).eq.isolib) then
+  else if (itypfb(ifac).eq.ientre             .or. &
+           itypfb(ifac).eq.i_convective_inlet .or. &
+           itypfb(ifac).eq.isolib             .or. &
+           itypfb(ifac).eq.ifrent                 ) then
 
     if (iirayo.eq.1) then
       flunet(ifac) = qincid(ifac) -pi*coefap(ifac)
