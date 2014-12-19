@@ -222,16 +222,6 @@ if(iviext.gt.0) then
     propce(iel,iivisa) = viscl(iel)
   enddo
 endif
-!     Viscosite turbulente aux cellules (et au pdt precedent si ordre2)
-do iel = 1, ncel
-  visct(iel) = 0.d0
-enddo
-if(iviext.gt.0) then
-  iivisa = ipproc(ivista)
-  do iel = 1, ncel
-    propce(iel,iivisa) = visct(iel)
-  enddo
-endif
 
 !     Chaleur massique aux cellules (et au pdt precedent si ordre2)
 if(icp.gt.0) then
@@ -275,27 +265,6 @@ do iscal = 1, nscal
     endif
   endif
 enddo
-
-if (iscalt.gt.0.and.irovar.eq.1) then
-  if (iturt(iscalt).gt.0) then
-    do iel = 1, ncelet
-      propce(iel,ipproc(ibeta)) = 0.d0
-    enddo
-  endif
-endif
-
-! Initialisation of source terms for weakly compressible algorithm
-if (idilat.ge.4) then
-  do iel = 1, ncel
-    propce(iel,ipproc(iustdy(itsrho))) = 0.d0
-  enddo
-  do iscal = 1, nscal
-    do iel = 1, ncel
-      propce(iel,ipproc(iustdy(iscal))) = 0.d0
-    enddo
-  enddo
-endif
-
 
 !     Viscosite de maillage en ALE
 if (iale.eq.1) then
@@ -601,16 +570,6 @@ do ii = 1, nfld
   endif
 
 enddo
-
-!===============================================================================
-! 8.  INITIALISATION CONSTANTE DE SMAGORINSKY EN MODELE DYNAMIQUE
-!===============================================================================
-
-if(iturb.eq.41) then
-  do iel = 1, ncel
-    propce(iel,ipproc(ismago)) = 0.d0
-  enddo
-endif
 
 !===============================================================================
 ! 9.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
