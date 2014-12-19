@@ -40,7 +40,7 @@ module ppthch
 
   double precision rr
   double precision trefth, prefth, volmol
-  parameter ( rr     = 8.31434d0      ,                             &
+  parameter ( rr     = 8.31446d0      ,                             &
               trefth = 25.d0 + tkelvi ,                             &
               prefth = 1.01325d5      ,                             &
               volmol = 22.41d-3       )

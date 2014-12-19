@@ -201,7 +201,7 @@ t00  = 273.15d0
 p00  = 101325.d0
 del  = 0.622d0
 t1   = 273.15d0
-r    = 8.3143d0
+r    = rr
 
 
 !   Masse volumique au centre des cellules
