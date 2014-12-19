@@ -4597,8 +4597,8 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
 
   /* Porosity fields */
-  cs_field_t *fporo = CS_F_(poro);
-  cs_field_t *ftporo = CS_F_(t_poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
@@ -6058,9 +6058,8 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
   snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
 
   /* Porosity fields */
-
-  cs_field_t *fporo = CS_F_(poro);
-  cs_field_t *ftporo = CS_F_(t_poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
@@ -6819,9 +6818,8 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
   snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
 
   /* Porosity fields */
-
-  cs_field_t *fporo = CS_F_(poro);
-  cs_field_t *ftporo = CS_F_(t_poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;

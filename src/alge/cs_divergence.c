@@ -474,9 +474,8 @@ cs_mass_flux(const cs_mesh_t          *m,
   }
 
   /* Porosity fields */
-
-  cs_field_t *fporo = CS_F_(poro);
-  cs_field_t *ftporo = CS_F_(t_poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;

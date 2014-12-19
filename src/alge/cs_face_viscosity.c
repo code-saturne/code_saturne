@@ -218,7 +218,7 @@ cs_face_viscosity_scalar(const cs_mesh_t               *m,
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
 
   /* Porosity field */
-  cs_field_t *fporo = CS_F_(poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
 
   cs_real_t *porosi = NULL;
 
@@ -368,8 +368,8 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
   cs_real_6_t *w2 = NULL;
 
   /* Porosity fields */
-  cs_field_t *fporo = CS_F_(poro);
-  cs_field_t *ftporo = CS_F_(t_poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
@@ -596,8 +596,8 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   cs_real_6_t *w2 = NULL;
 
   /* Porosity fields */
-  cs_field_t *fporo = CS_F_(poro);
-  cs_field_t *ftporo = CS_F_(t_poro);
+  cs_field_t *fporo = cs_field_by_name_try("porosity");
+  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
