@@ -1188,7 +1188,8 @@ static void _option_turbulence_double(const char *param,
  * Return the length choice for initialize turbulence
  *----------------------------------------------------------------------------*/
 
-static char *cs_gui_reference_length_initialization_choice(void)
+static char
+*_reference_length_initialization_choice(void)
 {
   char *path = NULL;
   char *initialization_choice;
@@ -3165,12 +3166,13 @@ void CS_PROCF (cstini, CSTINI) (double *uref,
 
   cs_gui_reference_initialization("velocity", uref);
 
-  length_choice = cs_gui_reference_length_initialization_choice();
+  length_choice = _reference_length_initialization_choice();
 
-  if (cs_gui_strcmp(length_choice, "prescribed"))
-    cs_gui_reference_initialization("length", almax);
-
-  BFT_FREE(length_choice);
+  if (length_choice != NULL) {
+    if (cs_gui_strcmp(length_choice, "prescribed"))
+      cs_gui_reference_initialization("length", almax);
+    BFT_FREE(length_choice);
+  }
 
 #if _XML_DEBUG_
   bft_printf("==>CSTINI\n");
