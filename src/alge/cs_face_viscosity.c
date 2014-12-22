@@ -214,15 +214,15 @@ cs_face_viscosity(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
 
   /* Porosity field */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
 
   cs_real_t *porosi = NULL;
 
-  if (fporo != NULL) {
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
   }
 
@@ -247,7 +247,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
         double viscj = c_visc[jj];
 
         i_visc[face_id] = 0.5*(visci+viscj)
-                         *i_face_surf[face_id]/i_dist[face_id];
+                         *i_f_face_surf[face_id]/i_dist[face_id];
 
       }
 
@@ -263,7 +263,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
         double pnd   = weight[face_id];
 
         i_visc[face_id] = visci*viscj/(pnd*visci+(1.-pnd)*viscj)
-                         *i_face_surf[face_id]/i_dist[face_id];
+                         *i_f_face_surf[face_id]/i_dist[face_id];
 
       }
 
@@ -271,7 +271,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      b_visc[face_id] = b_face_surf[face_id];
+      b_visc[face_id] = b_f_face_surf[face_id];
 
     }
 
@@ -289,7 +289,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
         double viscj = c_visc[jj] * porosi[jj];
 
         i_visc[face_id] = 0.5*(visci+viscj)
-                         *i_face_surf[face_id]/i_dist[face_id];
+                         *i_f_face_surf[face_id]/i_dist[face_id];
 
       }
 
@@ -305,7 +305,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
         double pnd   = weight[face_id];
 
         i_visc[face_id] = visci*viscj/(pnd*visci+(1.-pnd)*viscj)
-                         *i_face_surf[face_id]/i_dist[face_id];
+                         *i_f_face_surf[face_id]/i_dist[face_id];
 
       }
 
@@ -315,7 +315,7 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
+      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
 
     }
 
@@ -359,8 +359,8 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
 
   double visci[3][3], viscj[3][3], s1[6], s2[6];
 
@@ -374,7 +374,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
 
-  if (fporo != NULL) {
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
     if (ftporo != NULL) {
       porosf = (cs_real_6_t *)ftporo->val;
@@ -452,7 +452,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
         for (int jsou = 0; jsou < 3; jsou++) {
           i_visc[face_id][jsou][isou] =  0.5*(visci[jsou][isou]
                                              +viscj[jsou][isou])
-                                       * i_face_surf[face_id]/i_dist[face_id];
+                                       * i_f_face_surf[face_id]/i_dist[face_id];
         }
       }
 
@@ -478,7 +478,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
 
       cs_math_sym_33_product(c_poro_visc[ii], s1, s2);
 
-      double srfddi = i_face_surf[face_id]/i_dist[face_id];
+      double srfddi = i_f_face_surf[face_id]/i_dist[face_id];
 
       i_visc[face_id][0][0] = s2[0]*srfddi;
       i_visc[face_id][1][1] = s2[1]*srfddi;
@@ -499,7 +499,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
-      b_visc[face_id] = b_face_surf[face_id];
+      b_visc[face_id] = b_f_face_surf[face_id];
 
     }
 
@@ -510,7 +510,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
+      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
 
     }
 
@@ -521,7 +521,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t               *m,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
+      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
 
     }
 
@@ -577,7 +577,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_face_normal
@@ -602,7 +602,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
 
-  if (fporo != NULL) {
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
     if (ftporo != NULL) {
       porosf = (cs_real_6_t *)ftporo->val;
@@ -747,7 +747,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[face_id] = b_face_surf[face_id];
+      b_visc[face_id] = b_f_face_surf[face_id];
     }
 
   /* With porosity */
@@ -758,7 +758,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
       cs_lnum_t ii = b_face_cells[face_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
+      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
 
     }
 
@@ -770,7 +770,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
       cs_lnum_t ii = b_face_cells[face_id];
 
       /* Warning: hint must be ||Ki.n||/I"F */
-      b_visc[face_id] = b_face_surf[face_id]*porosi[ii];
+      b_visc[face_id] = b_f_face_surf[face_id]*porosi[ii];
 
     }
 
