@@ -2840,7 +2840,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(h2, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "h2_coal", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "x_p_h_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -2848,7 +2848,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(np, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "np_coal", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "n_p_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -2856,7 +2856,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(xch, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "x_coal", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "x_p_coal_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -2864,7 +2864,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(xck, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "xck_coal", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "x_p_char_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -2872,7 +2872,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_classes; i++) {
     f = CS_FI_(xwt, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "xwt_coal", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "x_p_wt_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -2880,7 +2880,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_coals; i++) {
     f = CS_FI_(f1m, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "mv1_fraction", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "fr_mv1_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
@@ -2888,34 +2888,34 @@ cs_gui_labels_coal_combustion(int  n_coals,
   for (i = 0; i < n_coals; i++) {
     f = CS_FI_(f2m, i);
     if (f != NULL) {
-      snprintf(name, 63, "%s%2.2i", "mv2_fraction", i+1); name[63] = '\0';
+      snprintf(name, 63, "%s%2.2i", "fr_mv2_", i+1); name[63] = '\0';
       _set_scalar_name_label(f, "solid_fuels", name);
     }
   }
 
   f = CS_F_(f4m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "oxyd2_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "fr_oxyd2");
 
   f = CS_F_(f5m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "oxyd3_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "fr_oxyd3");
 
   f = CS_F_(f6m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "FR_H20");
+    _set_scalar_name_label(f, "solid_fuels", "fr_h20");
 
   f = CS_F_(f7m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "het_o2_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "fr_het_o2");
 
   f = CS_F_(f8m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "het_co2_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "fr_het_co2");
 
   f = CS_F_(f9m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "het_h2o_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "fr_het_h2o");
 
   f = CS_F_(fvp2m);
   if (f != NULL)
@@ -2923,23 +2923,23 @@ cs_gui_labels_coal_combustion(int  n_coals,
 
   f = CS_F_(yco2);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "co2_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "x_c_co2");
 
   f = CS_F_(yhcn);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "hcn_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "x_c_hcn");
 
   f = CS_F_(yno);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "no_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "x_c_no");
 
   f = CS_F_(ynh3);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "nh3_fraction");
+    _set_scalar_name_label(f, "solid_fuels", "x_c_nh3");
 
   f = CS_F_(hox);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "ox_enthalpy");
+    _set_scalar_name_label(f, "solid_fuels", "x_c_h_ox");
 }
 
 /*------------------------------------------------------------------------------
