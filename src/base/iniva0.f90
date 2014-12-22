@@ -150,12 +150,21 @@ do iprop = 1, nproce
   endif
 
   if (f_dim.gt.1) then
-    !$omp parallel do private(isou)
-    do iel = 1, ncelet
-      do isou = 1, f_dim
-        field_v_v(isou,iel) = 0.d0
+    if (interleaved) then
+      !$omp parallel do private(isou)
+      do iel = 1, ncelet
+        do isou = 1, f_dim
+          field_v_v(isou,iel) = 0.d0
+        enddo
       enddo
-    enddo
+    else
+      !$omp parallel do private(isou)
+      do iel = 1, ncelet
+        do isou = 1, f_dim
+          field_v_v(iel,isou) = 0.d0
+        enddo
+      enddo
+    endif
   else
     !$omp parallel do
     do iel = 1, ncelet
