@@ -196,6 +196,7 @@ endif
 
 if (irovar.eq.0) then
   call hide_property(irom)
+  call field_set_key_int(ibrom, keylog, 0)
 endif
 
 if (itytur.eq.4) then

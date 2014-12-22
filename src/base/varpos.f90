@@ -437,6 +437,9 @@ if (iroext.gt.0.or.icalhy.eq.1.or.idilat.gt.1.or.icavit.ge.0 &
   nproce = nproce + 1
   iroma  = nproce
   call field_set_n_previous(iprpfl(irom), 1)
+  if (iroext.gt.0.or.idilat.gt.1) then
+    call field_set_n_previous(ibrom, 1)
+  endif
 endif
 ! Dans le cas d'une extrapolation de la viscosite totale
 if (iviext.gt.0) then

@@ -195,28 +195,6 @@ do ii = 1, nscal
 
 enddo
 
-! Density field
-!--------------
-
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-
-! The boundary density at the previous time step is not required
-! if we perform a hydrostatic pressure correction (icalhy=1)
-lprev = .false.
-if (iroext.gt.0.or.idilat.gt.1) then
-  lprev = .true.
-endif
-
-f_name = 'boundary_density'
-ityloc = 3 ! boundary faces
-call field_create(f_name, itycat, ityloc, idim1, ilved, lprev, ibrom)
-
-! For now, base logging on that of cell density, and do not postprocess
-! boundary density by default
-
-call field_get_key_int(icrom, keylog, ikeyvl)
-call field_set_key_int(ibrom, keylog, ikeyvl)
-
 ! Reserved fields whose ids are not saved (may be queried by name)
 !-----------------------------------------------------------------
 
