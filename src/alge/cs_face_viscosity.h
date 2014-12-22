@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_face_viscosity_scalar
+ * Wrapper to cs_face_viscosity
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (viscfa, VISCFA)
@@ -121,12 +121,12 @@ void CS_PROCF (vitens, VITENS)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_viscosity_scalar(const cs_mesh_t               *m,
-                         cs_mesh_quantities_t          *fvq,
-                         const int                      visc_mean_type,
-                         cs_real_t            *restrict c_visc,
-                         cs_real_t            *restrict i_visc,
-                         cs_real_t            *restrict b_visc);
+cs_face_viscosity(const cs_mesh_t               *m,
+                  cs_mesh_quantities_t          *fvq,
+                  const int                      visc_mean_type,
+                  cs_real_t            *restrict c_visc,
+                  cs_real_t            *restrict i_visc,
+                  cs_real_t            *restrict b_visc);
 
 /*----------------------------------------------------------------------------*/
 /*!

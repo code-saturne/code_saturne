@@ -367,7 +367,7 @@ cs_balance_by_zone(const int  bc_type[],
     }
   }
 
-  cs_face_viscosity_scalar(m, fvq, imvisf, c_visc, i_visc, b_visc);
+  cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
   /* =========================================================================
      ---> Get user-selected zone
