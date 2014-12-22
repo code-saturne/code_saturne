@@ -148,6 +148,9 @@ ippok = 0
 call add_property_field('density', 'Density', irom)
 icrom = iprpfl(irom)
 
+call add_boundary_property_field_owner('boundary_density', 'Boundary Density', &
+                                       ibrom)
+
 call add_property_field('molecular_viscosity', 'Laminar Viscosity', iviscl)
 
 if (iturb.eq.0) then
@@ -862,5 +865,112 @@ return
 #endif
 
 end subroutine add_property_field_owner
+
+!===============================================================================
+
+!> \function add_boundary_property_field_owner
+!
+!> \brief add owner field defining a property field defined on boundary faces,
+!>        with default options
+!
+!> It is recommended not to define property names of more than 16
+!> characters, to get a clear execution listing (some advanced writing
+!> levels take into account only the first 16 characters).
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     name          field name
+!> \param[in]     label         field default label, or empty
+!> \param[out]    f_id          matching field id
+!_______________________________________________________________________________
+
+subroutine add_boundary_property_field_owner &
+ ( name, label, f_id )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use dimens
+use entsor
+use numvar
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+character(len=*), intent(in) :: name, label
+integer, intent(out)         :: f_id
+
+! Local variables
+
+integer  type_flag, location_id, dim1
+logical  interleaved, has_previous
+
+!===============================================================================
+
+type_flag = FIELD_INTENSIVE + FIELD_PROPERTY
+location_id = 3 ! variables defined on boundary faces
+interleaved = .true.
+dim1 = 1
+has_previous = .false.
+
+! Test if the field has already been defined
+call field_get_id_try(trim(name), f_id)
+if (f_id .ge. 0) then
+  write(nfecra,1000) trim(name)
+  call csexit (1)
+endif
+
+! Create field
+
+call field_create(name, type_flag, location_id, dim1, interleaved, &
+                  has_previous, f_id)
+
+call field_set_key_int(f_id, keyvis, 0)
+call field_set_key_int(f_id, keylog, 1)
+
+if (len(trim(label)).gt.0) then
+  call field_set_key_str(f_id, keylbl, trim(label))
+endif
+
+return
+
+!---
+! Formats
+!---
+
+#if defined(_CS_LANG_FR)
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    ========                                                ',/,&
+'@     LE CHAMP : ', a, 'EST DEJA DEFINI.                     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#else
+ 1000 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
+'@    ======                                                  ',/,&
+'@     FIELD: ', a, 'HAS ALREADY BEEN DEFINED.                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+#endif
+
+end subroutine add_boundary_property_field_owner
 
 !===============================================================================
