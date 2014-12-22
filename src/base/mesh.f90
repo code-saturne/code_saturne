@@ -162,6 +162,14 @@ module mesh
   !> norm of the surface of the boundary faces
   double precision, dimension(:), pointer :: surfbn
 
+  !> \anchor suffan
+  !> norm of the fluid surface vector of the internal faces
+  double precision, dimension(:), pointer :: suffan
+
+  !> \anchor suffbn
+  !> norm of the fluid surface of the boundary faces
+  double precision, dimension(:), pointer :: suffbn
+
   !> \anchor dist
   !> for every internal face, dot product of the vectors
   !> \f$ \vect{IJ}\f$ and \f$\vect{n}\f$.  I and J are respectively

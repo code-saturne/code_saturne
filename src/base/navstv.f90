@@ -123,7 +123,7 @@ integer          ndircp, icpt
 integer          numcpl
 integer          iflvoi, iflvob
 double precision rnorm , rnormt, rnorma, rnormi, vitnor
-double precision dtsrom, unsrom, surf  , rhom, rovolsdt
+double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3)
 double precision thetap, xdu, xdv, xdw
 double precision xxp0 , xyp0 , xzp0
@@ -329,7 +329,7 @@ if (nterup.gt.1) then
       xnrtmp = xnrtmp +(vela(1,iel)**2        &
                       + vela(2,iel)**2        &
                       + vela(3,iel)**2)       &
-                      * volume(iel)
+                      * volf(iel)
     enddo
     xnrmu0 = xnrtmp
     if (irangp.ge.0) then
@@ -942,7 +942,11 @@ if (ippmod(icompf).lt.0) then
       if (idften(ipr).eq.1) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
-          dtsrom = thetap*dt(iel)/crom(iel)
+          if (iporos.eq.3) then
+            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/volf(iel)
+          else
+            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/volf(iel)
+          endif
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
                  + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
@@ -953,26 +957,30 @@ if (ippmod(icompf).lt.0) then
       else if (idften(ipr).eq.6) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
-          unsrom = thetap/crom(iel)
+          if (iporos.eq.3) then
+            unsrom = thetap/crom(iel)*volume(iel)/volf(iel)
+          else
+            unsrom = thetap/crom(iel)
+          endif
 
-            vel(1, iel) = vel(1, iel)                                             &
-                 + unsrom*(                                                &
-                   dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-                 + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-                 + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
-                 )
-            vel(2, iel) = vel(2, iel)                                             &
-                 + unsrom*(                                                &
-                   dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
-                 + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
-                 + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
-                 )
-            vel(3, iel) = vel(3, iel)                                             &
-                 + unsrom*(                                                &
-                   dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
-                 + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
-                 + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
-                 )
+          vel(1, iel) = vel(1, iel)                                             &
+               + unsrom*(                                                &
+                 dttens(1,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+               + dttens(4,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+               + dttens(6,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+               )
+          vel(2, iel) = vel(2, iel)                                             &
+               + unsrom*(                                                &
+                 dttens(4,iel)*(dfrcxt(1, iel)-trav(1,iel))     &
+               + dttens(2,iel)*(dfrcxt(2, iel)-trav(2,iel))     &
+               + dttens(5,iel)*(dfrcxt(3, iel)-trav(3,iel))     &
+               )
+          vel(3, iel) = vel(3, iel)                                             &
+               + unsrom*(                                                &
+                 dttens(6,iel)*(dfrcxt(1 ,iel)-trav(1,iel))     &
+               + dttens(5,iel)*(dfrcxt(2 ,iel)-trav(2,iel))     &
+               + dttens(3,iel)*(dfrcxt(3 ,iel)-trav(3,iel))     &
+               )
         enddo
       endif
 
@@ -1007,7 +1015,11 @@ if (ippmod(icompf).lt.0) then
 
       !$omp parallel do private(dtsrom, isou)
       do iel = 1, ncel
-        dtsrom = thetap*dt(iel)/crom(iel)
+        if (iporos.eq.3) then
+          dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/volf(iel)
+        else
+          dtsrom = thetap*dt(iel)/crom(iel)
+        endif
         do isou = 1, 3
           vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
         enddo
@@ -1018,7 +1030,11 @@ if (ippmod(icompf).lt.0) then
 
       !$omp parallel do private(unsrom)
       do iel = 1, ncel
-        unsrom = thetap/crom(iel)
+        if (iporos.eq.3) then
+          unsrom = thetap/crom(iel)*volume(iel)/volf(iel)
+        else
+          unsrom = thetap/crom(iel)
+        endif
 
           vel(1, iel) = vel(1, iel)                              &
                       - unsrom*(                                 &
@@ -1293,7 +1309,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
       !$omp parallel do private(iel) if(ncetsm > thr_n_min)
       do iitsm = 1, ncetsm
         iel = icetsm(iitsm)
-        w1(iel) = w1(iel)-volume(iel)*smacel(iitsm,ipr)
+        w1(iel) = w1(iel)-volf(iel)*smacel(iitsm,ipr)
       enddo
     endif
 
@@ -1318,7 +1334,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
     !$omp parallel do private(rovolsdt, isou)
     do iel = 1, ncel
-      rovolsdt = crom(iel)*volume(iel)/dt(iel)
+      rovolsdt = crom(iel)*volf(iel)/dt(iel)
       do isou = 1, 3
         trav(isou,iel) = rovolsdt * (vela(isou,iel) - vel(isou,iel))
       enddo
@@ -1364,7 +1380,7 @@ if (nterup.gt.1) then
     xdu = vel(1,iel) - uvwk(1,iel)
     xdv = vel(2,iel) - uvwk(2,iel)
     xdw = vel(3,iel) - uvwk(3,iel)
-    xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * volume(iel)
+    xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * volf(iel)
   enddo
   xnrmu = xnrtmp
   ! --->    TRAITEMENT DU PARALLELISME
@@ -1397,7 +1413,7 @@ endif
 if (ndircp.le.0) then
   call prmoy0 &
   !==========
-( ncelet , ncel   , volume , cvar_pr )
+( ncelet , ncel   , volf , cvar_pr )
 endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )
@@ -1475,13 +1491,12 @@ if (iwarni(iu).ge.1) then
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
-    surf = surfan(ifac)
-    if (iporos.ge.1) then
+    if (iporos.eq.1.or.iporos.eq.2) then
       rhom = (porosi(iel1)*crom(iel1)+porosi(iel2)*crom(iel2))*0.5d0
     else
       rhom = (crom(iel1)+crom(iel2))*0.5d0
     endif
-    rnorm = abs(imasfl(ifac))/(surf*rhom)
+    rnorm = abs(imasfl(ifac))/(suffan(ifac)*rhom)
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
@@ -1494,10 +1509,10 @@ if (iwarni(iu).ge.1) then
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfabor
-    if (iporos.ge.1) then
+    if (iporos.eq.1.or.iporos.eq.2) then
       rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac)*porosi(ifabor(ifac)))
     else
-      rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac))
+      rnorm = bmasfl(ifac)/(suffbn(ifac)*brom(ifac))
     endif
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)

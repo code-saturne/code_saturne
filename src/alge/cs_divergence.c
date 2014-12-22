@@ -415,10 +415,10 @@ cs_mass_flux(const cs_mesh_t          *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_3_t *restrict dofij
@@ -480,7 +480,7 @@ cs_mass_flux(const cs_mesh_t          *m,
   cs_real_t *porosi = NULL;
   cs_real_6_t *porosf = NULL;
 
-  if (fporo != NULL) {
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
     porosi = fporo->val;
     if (ftporo != NULL) {
       porosf = (cs_real_6_t *)ftporo->val;
@@ -670,7 +670,7 @@ cs_mass_flux(const cs_mesh_t          *m,
           /* u, v, w Components */
           for (int isou = 0; isou < 3; isou++) {
             i_massflux[face_id] += (pnd*qdm[ii][isou]+(1.-pnd)*qdm[jj][isou])
-                                  * i_face_normal[face_id][isou];
+                                  * i_f_face_normal[face_id][isou];
           }
 
         }
@@ -698,7 +698,7 @@ cs_mass_flux(const cs_mesh_t          *m,
                 pfac += romb[face_id]*coefbv[face_id][jsou][isou]*vel[ii][jsou];
               }
 
-              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+              b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
             }
 
           }
@@ -724,7 +724,7 @@ cs_mass_flux(const cs_mesh_t          *m,
                 pfac += coefbv[face_id][jsou][isou]*vel[ii][jsou];
               }
 
-              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+              b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
             }
 
           }
@@ -792,7 +792,7 @@ cs_mass_flux(const cs_mesh_t          *m,
                  + 0.5*(grdqdm[ii][isou][0] +grdqdm[jj][isou][0])*dofx
                  + 0.5*(grdqdm[ii][isou][1] +grdqdm[jj][isou][1])*dofy
                  + 0.5*(grdqdm[ii][isou][2] +grdqdm[jj][isou][2])*dofz
-                 )*i_face_normal[face_id][isou];
+                 )*i_f_face_normal[face_id][isou];
           }
 
         }
@@ -833,7 +833,7 @@ cs_mass_flux(const cs_mesh_t          *m,
 
               }
 
-              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+              b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
 
             }
 
@@ -872,7 +872,7 @@ cs_mass_flux(const cs_mesh_t          *m,
 
               }
 
-              b_massflux[face_id] += pfac*b_face_normal[face_id][isou];
+              b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
 
             }
 
@@ -1167,12 +1167,12 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict dijpf
@@ -1233,15 +1233,15 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-      double surfn = b_face_surf[face_id];
+      double surfn = b_f_face_surf[face_id];
       double distbf = b_dist[face_id];
 
       b_massflux[face_id] =  b_massflux[face_id]
                            +  b_visc[face_id]*distbf/surfn
                              *cofbfp[face_id]
-                             *( frcxt[ii][0]*b_face_normal[face_id][0]
-                               +frcxt[ii][1]*b_face_normal[face_id][1]
-                               +frcxt[ii][2]*b_face_normal[face_id][2] );
+                             *( frcxt[ii][0]*b_f_face_normal[face_id][0]
+                               +frcxt[ii][1]*b_f_face_normal[face_id][1]
+                               +frcxt[ii][2]*b_f_face_normal[face_id][2] );
 
     }
 
@@ -1265,7 +1265,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       double dijpfy = dijpf[face_id][1];
       double dijpfz = dijpf[face_id][2];
 
-      double surfn = i_face_surf[face_id];
+      double surfn = i_f_face_surf[face_id];
 
       /* Recompute II' and JJ' at this level */
 
@@ -1308,15 +1308,15 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-      double surfn = b_face_surf[face_id];
+      double surfn = b_f_face_surf[face_id];
       double distbf = b_dist[face_id];
 
       b_massflux[face_id] = b_massflux[face_id]
                            + b_visc[face_id]*distbf/surfn
                             *cofbfp[face_id]
-                            *( frcxt[ii][0]*b_face_normal[face_id][0]
-                              +frcxt[ii][1]*b_face_normal[face_id][1]
-                              +frcxt[ii][2]*b_face_normal[face_id][2] );
+                            *( frcxt[ii][0]*b_f_face_normal[face_id][0]
+                              +frcxt[ii][1]*b_f_face_normal[face_id][1]
+                              +frcxt[ii][2]*b_f_face_normal[face_id][2] );
 
     }
   }
@@ -1374,13 +1374,13 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict b_f_face_surf = fvq->b_f_face_surf;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)fvq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
 
@@ -1443,15 +1443,15 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
 
       cs_lnum_t ii = b_face_cells[face_id];
-      double surfn = b_face_surf[face_id];
+      double surfn = b_f_face_surf[face_id];
       double distbf = b_dist[face_id];
 
       b_massflux[face_id] =  b_massflux[face_id]
                            + b_visc[face_id]*distbf/surfn
                             *cofbfp[face_id]
-                            *( frcxt[ii][0]*b_face_normal[face_id][0]
-                              +frcxt[ii][1]*b_face_normal[face_id][1]
-                              +frcxt[ii][2]*b_face_normal[face_id][2] );
+                            *( frcxt[ii][0]*b_f_face_normal[face_id][0]
+                              +frcxt[ii][1]*b_f_face_normal[face_id][1]
+                              +frcxt[ii][2]*b_f_face_normal[face_id][2] );
 
     }
 
@@ -1486,9 +1486,9 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       /* II" = IF + FI" */
       for (int i = 0; i < 3; i++) {
         diippf[i] =  i_face_cog[face_id][i]-cell_cen[ii][i]
-                   - fikdvi*(  visci[0][i]*i_face_normal[face_id][0]
-                             + visci[1][i]*i_face_normal[face_id][1]
-                             + visci[2][i]*i_face_normal[face_id][2] );
+                   - fikdvi*(  visci[0][i]*i_f_face_normal[face_id][0]
+                             + visci[1][i]*i_f_face_normal[face_id][1]
+                             + visci[2][i]*i_f_face_normal[face_id][2] );
       }
 
       viscj[0][0] = viscel[jj][0];
@@ -1507,9 +1507,9 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       /* JJ" = JF + FJ" */
       for (int i = 0; i < 3; i++) {
         djjppf[i] =   i_face_cog[face_id][i]-cell_cen[jj][i]
-                    + fjkdvi*(  viscj[0][i]*i_face_normal[face_id][0]
-                              + viscj[1][i]*i_face_normal[face_id][1]
-                              + viscj[2][i]*i_face_normal[face_id][2] );
+                    + fjkdvi*(  viscj[0][i]*i_f_face_normal[face_id][0]
+                              + viscj[1][i]*i_f_face_normal[face_id][1]
+                              + viscj[2][i]*i_f_face_normal[face_id][2] );
       }
 
       i_massflux[face_id] =  i_massflux[face_id]
@@ -1544,15 +1544,15 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      double surfn = b_face_surf[face_id];
+      double surfn = b_f_face_surf[face_id]; //FIXME when 0
       double distbf = b_dist[face_id];
 
       /* FIXME: wrong if dirichlet and viscel is really a tensor */
       b_massflux[face_id] =  b_massflux[face_id]
                             + b_visc[face_id]*distbf/surfn*cofbfp[face_id]
-                             *(  frcxt[ii][0]*b_face_normal[face_id][0]
-                               + frcxt[ii][1]*b_face_normal[face_id][1]
-                               + frcxt[ii][2]*b_face_normal[face_id][2] );
+                             *(  frcxt[ii][0]*b_f_face_normal[face_id][0]
+                               + frcxt[ii][1]*b_f_face_normal[face_id][1]
+                               + frcxt[ii][2]*b_f_face_normal[face_id][2] );
 
     }
   }

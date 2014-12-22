@@ -23,7 +23,7 @@
 subroutine prmoy0 &
 !================
 
- ( ncelet , ncel   , volume , pvar   )
+ ( ncelet , ncel   , volf , pvar   )
 
 !===============================================================================
 ! FONCTION :
@@ -39,14 +39,10 @@ subroutine prmoy0 &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! volume(ncelet    ! tr ! <-- ! volume des elements                            !
+! volf             ! tr ! <-- ! fluid volume of cells                          !
 ! pvar             ! tr ! <-- ! tableau de valeurs au cellules                 !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -65,7 +61,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision volume(ncelet), pvar(ncelet)
+double precision volf(ncelet), pvar(ncelet)
 
 ! Local variables
 
@@ -76,7 +72,7 @@ double precision pmoy
 
 pmoy = 0.0d0
 do iel = 1, ncel
-  pmoy = pmoy + volume(iel) * pvar(iel)
+  pmoy = pmoy + volf(iel) * pvar(iel)
 enddo
 if (irangp.ge.0) then
   call parsom (pmoy)

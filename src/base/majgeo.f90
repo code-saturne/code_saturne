@@ -31,7 +31,7 @@ subroutine majgeo &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
    cdgfa2 , cdgfb2 , xyzno2 ,                                     &
-   volum2 , volf2  , srfan2 , srfbn2 ,                            &
+   volum2 , volf2  , srfan2 , srfbn2 , sffan2 , sffbn2 ,          &
    dist2  , distb2 , pond2  ,                                     &
    dijpf2 , diipb2 , dofij2 )                                     &
 
@@ -86,6 +86,8 @@ subroutine majgeo &
 ! volum2           ! ra ! <-- ! cell volumes                                   !
 ! srfan2           ! ra ! <-- ! interior face surfaces                         !
 ! srfbn2           ! ra ! <-- ! boundary face surfaces                         !
+! sffan2           ! ra ! <-- ! interior fluid face surfaces                   !
+! sffbn2           ! ra ! <-- ! boundary fluid face surfaces                   !
 ! dist2            ! ra ! <-- ! distance IJ.Nij                                !
 ! distb2           ! ra ! <-- ! likewise for boundary faces                    !
 ! pond2            ! ra ! <-- ! weighting (Aij=pond Ai+(1-pond)Aj)             !
@@ -144,8 +146,8 @@ double precision, dimension(3,nfabo2), target :: suffb2
 double precision, dimension(3,nsom2), target :: xyzno2
 double precision, dimension(ncele2), target :: volum2
 double precision, dimension(ncele2), target :: volf2
-double precision, dimension(nfac2), target :: srfan2, dist2, pond2
-double precision, dimension(nfabo2), target :: srfbn2, distb2
+double precision, dimension(nfac2), target :: srfan2, sffan2, dist2, pond2
+double precision, dimension(nfabo2), target :: srfbn2, sffbn2, distb2
 
 ! Local variables
 
@@ -228,6 +230,8 @@ volf => volf2(1:ncelet)
 
 surfan => srfan2(1:nfac)
 surfbn => srfbn2(1:nfabor)
+suffan => sffan2(1:nfac)
+suffbn => sffbn2(1:nfabor)
 
 dist => dist2(1:nfac)
 distb => distb2(1:nfabor)
