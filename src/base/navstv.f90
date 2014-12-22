@@ -329,7 +329,7 @@ if (nterup.gt.1) then
       xnrtmp = xnrtmp +(vela(1,iel)**2        &
                       + vela(2,iel)**2        &
                       + vela(3,iel)**2)       &
-                      * volf(iel)
+                      * cell_f_vol(iel)
     enddo
     xnrmu0 = xnrtmp
     if (irangp.ge.0) then
@@ -943,9 +943,9 @@ if (ippmod(icompf).lt.0) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
           if (iporos.eq.3) then
-            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/volf(iel)
+            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
           else
-            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/volf(iel)
+            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
           endif
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
@@ -958,7 +958,7 @@ if (ippmod(icompf).lt.0) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
           if (iporos.eq.3) then
-            unsrom = thetap/crom(iel)*volume(iel)/volf(iel)
+            unsrom = thetap/crom(iel)*volume(iel)/cell_f_vol(iel)
           else
             unsrom = thetap/crom(iel)
           endif
@@ -1016,7 +1016,7 @@ if (ippmod(icompf).lt.0) then
       !$omp parallel do private(dtsrom, isou)
       do iel = 1, ncel
         if (iporos.eq.3) then
-          dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/volf(iel)
+          dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
         else
           dtsrom = thetap*dt(iel)/crom(iel)
         endif
@@ -1031,7 +1031,7 @@ if (ippmod(icompf).lt.0) then
       !$omp parallel do private(unsrom)
       do iel = 1, ncel
         if (iporos.eq.3) then
-          unsrom = thetap/crom(iel)*volume(iel)/volf(iel)
+          unsrom = thetap/crom(iel)*volume(iel)/cell_f_vol(iel)
         else
           unsrom = thetap/crom(iel)
         endif
@@ -1309,7 +1309,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
       !$omp parallel do private(iel) if(ncetsm > thr_n_min)
       do iitsm = 1, ncetsm
         iel = icetsm(iitsm)
-        w1(iel) = w1(iel)-volf(iel)*smacel(iitsm,ipr)
+        w1(iel) = w1(iel)-cell_f_vol(iel)*smacel(iitsm,ipr)
       enddo
     endif
 
@@ -1334,7 +1334,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
     !$omp parallel do private(rovolsdt, isou)
     do iel = 1, ncel
-      rovolsdt = crom(iel)*volf(iel)/dt(iel)
+      rovolsdt = crom(iel)*cell_f_vol(iel)/dt(iel)
       do isou = 1, 3
         trav(isou,iel) = rovolsdt * (vela(isou,iel) - vel(isou,iel))
       enddo
@@ -1380,7 +1380,7 @@ if (nterup.gt.1) then
     xdu = vel(1,iel) - uvwk(1,iel)
     xdv = vel(2,iel) - uvwk(2,iel)
     xdw = vel(3,iel) - uvwk(3,iel)
-    xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * volf(iel)
+    xnrtmp = xnrtmp +(xdu**2 + xdv**2 + xdw**2) * cell_f_vol(iel)
   enddo
   xnrmu = xnrtmp
   ! --->    TRAITEMENT DU PARALLELISME
@@ -1413,7 +1413,7 @@ endif
 if (ndircp.le.0) then
   call prmoy0 &
   !==========
-( ncelet , ncel   , volf , cvar_pr )
+( ncelet , ncel   , cell_f_vol , cvar_pr )
 endif
 
 ! Calcul de la pression totale IPRTOT : (definie comme propriete )

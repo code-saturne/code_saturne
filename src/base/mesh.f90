@@ -150,9 +150,9 @@ module mesh
   !> volume of each cell
   double precision, dimension(:), pointer :: volume
 
-  !> \anchor volf
+  !> \anchor cell_f_vol
   !> fluid volume of each cell
-  double precision, dimension(:), pointer :: volf
+  double precision, dimension(:), pointer :: cell_f_vol
 
   !> \anchor surfan
   !> norm of the surface vector of the internal faces

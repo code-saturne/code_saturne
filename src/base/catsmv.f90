@@ -42,7 +42,7 @@
 !> \param[in]     icetsm        source mass cells pointer
 !> \param[in]     itpsmp        mass source type for the working variable
 !>                              (cf. \ref cs_user_mass_source_terms)
-!> \param[in]     volf          cells fluid volume
+!> \param[in]     cell_f_vol    cells fluid volume
 !> \param[in]     vela          variable value at time step beginning
 !> \param[in]     smcelv        value of the variable associated to the mass
 !>                              source; NOT INTERLEAVED
@@ -58,7 +58,7 @@ subroutine catsmv &
  ( ncelet , ncel   , ncesmp , iterns , isnexp ,                   &
    thetv  ,                                                       &
    icetsm , itpsmp ,                                              &
-   volf   , vela   , smcelv , gamma  ,                            &
+   cell_f_vol      , vela   , smcelv , gamma  ,                   &
    tsexpv , tsimpv , gavinj )
 
 !===============================================================================
@@ -72,7 +72,7 @@ implicit none
 integer          ncelet, ncel  , ncesmp, iterns, isnexp
 integer          icetsm(ncesmp), itpsmp(ncesmp)
 double precision thetv
-double precision volf(ncelet)
+double precision cell_f_vol(ncelet)
 double precision vela  (3,ncelet)
 double precision smcelv(ncesmp,3), gamma (ncesmp)
 double precision tsexpv(3,ncelet), tsimpv(3,3,ncelet), gavinj(3,ncelet)
@@ -107,8 +107,8 @@ if(iterns.eq.1) then
     iel = icetsm(ii)
     if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
       do isou = 1, 3
-        tsexpv(isou,iel) = tsexpv(isou,iel)-volf(iel)*gamma(ii)*vela(isou,iel)
-        gavinj(isou,iel) = volf(iel)*gamma(ii) * smcelv(ii,isou)
+        tsexpv(isou,iel) = tsexpv(isou,iel)-cell_f_vol(iel)*gamma(ii)*vela(isou,iel)
+        gavinj(isou,iel) = cell_f_vol(iel)*gamma(ii) * smcelv(ii,isou)
       enddo
     endif
   enddo
@@ -120,7 +120,7 @@ if(isnexp.gt.0) then
     iel = icetsm(ii)
     if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
       do isou = 1, 3
-        tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+volf(iel)*gamma(ii)*thetv
+        tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+cell_f_vol(iel)*gamma(ii)*thetv
       enddo
     endif
   enddo
@@ -129,7 +129,7 @@ else
     iel = icetsm(ii)
     if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
       do isou = 1, 3
-        tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+volf(iel)*gamma(ii)
+        tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+cell_f_vol(iel)*gamma(ii)
       enddo
     endif
   enddo

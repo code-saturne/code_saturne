@@ -89,7 +89,7 @@ do ipt = 1, ncecpl
 
   ielloc = lcecpl(ipt)
 
-  rovtau = volf(ielloc)*crom(ielloc)/xtau
+  rovtau = cell_f_vol(ielloc)*crom(ielloc)/xtau
 
   do isou = 1, 3
     xdis = rvcpce(isou,ipt)
@@ -100,11 +100,11 @@ do ipt = 1, ncecpl
 enddo
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return

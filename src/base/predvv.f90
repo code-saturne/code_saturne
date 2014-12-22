@@ -392,7 +392,7 @@ endif
 if (iporos.eq.3) then
   do iel = 1, ncelet
     do isou = 1, 3
-      grad(isou,iel) = grad(isou,iel)*volume(iel)/volf(iel)
+      grad(isou,iel) = grad(isou,iel)*volume(iel)/cell_f_vol(iel)
     enddo
   enddo
 endif
@@ -498,7 +498,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      xnormp(iel) = xnormp(iel) - volf(iel)*smacel(ii,ipr)
+      xnormp(iel) = xnormp(iel) - cell_f_vol(iel)*smacel(ii,ipr)
     enddo
   endif
 
@@ -529,7 +529,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   if (idilat.eq.2) then
     do iel = 1, ncel
       drom = crom(iel) - croma(iel)
-      xnormp(iel) = xnormp(iel) + drom*volf(iel)/dt(iel)
+      xnormp(iel) = xnormp(iel) + drom*cell_f_vol(iel)/dt(iel)
     enddo
   ! Semi-analytic weakly compressible algorithm add + 1/rho Drho/Dt
   else if (idilat.eq.4)then
@@ -546,7 +546,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   ! Cavitation source term
   if (icavit.gt.0) then
     do iel = 1, ncel
-      xnormp(iel) = xnormp(iel) -volf(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+      xnormp(iel) = xnormp(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -570,30 +570,30 @@ endif
 if (iappel.eq.1) then
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * volf(iel)
-      trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * volf(iel)
-      trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * volf(iel)
+      trav(1,iel) = (frcxt(1 ,iel) - grad(1,iel)) * cell_f_vol(iel)
+      trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * cell_f_vol(iel)
+      trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * cell_f_vol(iel)
     enddo
     elseif (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
-      trav(1,iel) = (rom*gx - grdphd(iel,1) - grad(1,iel)) * volf(iel)
-      trav(2,iel) = (rom*gy - grdphd(iel,2) - grad(2,iel)) * volf(iel)
-      trav(3,iel) = (rom*gz - grdphd(iel,3) - grad(3,iel)) * volf(iel)
+      trav(1,iel) = (rom*gx - grdphd(iel,1) - grad(1,iel)) * cell_f_vol(iel)
+      trav(2,iel) = (rom*gy - grdphd(iel,2) - grad(2,iel)) * cell_f_vol(iel)
+      trav(3,iel) = (rom*gz - grdphd(iel,3) - grad(3,iel)) * cell_f_vol(iel)
     enddo
     elseif (ippmod(icompf).ge.0) then
     do iel = 1, ncel
       rom = crom(iel)
-      trav(1,iel) = (rom*gx - grad(1,iel)) * volf(iel)
-      trav(2,iel) = (rom*gy - grad(2,iel)) * volf(iel)
-      trav(3,iel) = (rom*gz - grad(3,iel)) * volf(iel)
+      trav(1,iel) = (rom*gx - grad(1,iel)) * cell_f_vol(iel)
+      trav(2,iel) = (rom*gy - grad(2,iel)) * cell_f_vol(iel)
+      trav(3,iel) = (rom*gz - grad(3,iel)) * cell_f_vol(iel)
     enddo
   else
     do iel = 1, ncel
       drom = (crom(iel)-ro0)
-      trav(1,iel) = (drom*gx - grad(1,iel) ) * volf(iel)
-      trav(2,iel) = (drom*gy - grad(2,iel) ) * volf(iel)
-      trav(3,iel) = (drom*gz - grad(3,iel) ) * volf(iel)
+      trav(1,iel) = (drom*gx - grad(1,iel) ) * cell_f_vol(iel)
+      trav(2,iel) = (drom*gy - grad(2,iel) ) * cell_f_vol(iel)
+      trav(3,iel) = (drom*gz - grad(3,iel) ) * cell_f_vol(iel)
     enddo
   endif
 
@@ -601,23 +601,23 @@ else if(iappel.eq.2) then
 
   if (iphydr.eq.1) then
     do iel = 1, ncel
-      trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(1,iel))*volf(iel)
-      trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*volf(iel)
-      trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*volf(iel)
+      trav(1,iel) = trav(1,iel) + (frcxt(1 ,iel) - grad(1,iel))*cell_f_vol(iel)
+      trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*cell_f_vol(iel)
+      trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*cell_f_vol(iel)
     enddo
     elseif (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
-      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1) - grad(1,iel))*volf(iel)
-      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2) - grad(2,iel))*volf(iel)
-      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3) - grad(3,iel))*volf(iel)
+      trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(iel,1) - grad(1,iel))*cell_f_vol(iel)
+      trav(2,iel) = trav(2,iel) + (rom*gy - grdphd(iel,2) - grad(2,iel))*cell_f_vol(iel)
+      trav(3,iel) = trav(3,iel) + (rom*gz - grdphd(iel,3) - grad(3,iel))*cell_f_vol(iel)
     enddo
   else
     do iel = 1, ncel
       drom = (crom(iel)-ro0)
-      trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*volf(iel)
-      trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*volf(iel)
-      trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*volf(iel)
+      trav(1,iel) = trav(1,iel) + (drom*gx - grad(1,iel))*cell_f_vol(iel)
+      trav(2,iel) = trav(2,iel) + (drom*gy - grad(2,iel))*cell_f_vol(iel)
+      trav(3,iel) = trav(3,iel) + (drom*gz - grad(3,iel))*cell_f_vol(iel)
     enddo
   endif
 
@@ -713,7 +713,7 @@ if (iappel.eq.1) then
 
   do iel = 1, ncel
     do isou = 1, 3
-      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*volf(iel)
+      fimp(isou,isou,iel) = istat(iu)*pcrom(iel)/dt(iel)*cell_f_vol(iel)
       do jsou = 1, 3
         if(jsou.ne.isou) fimp(isou,jsou,iel) = 0.d0
       enddo
@@ -768,7 +768,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
     call field_get_val_s(icrom, crom)
     call field_get_val_prev_s(icrom, croma)
     do iel = 1, ncel
-      romvom = -croma(iel)*volf(iel)*d2s3
+      romvom = -croma(iel)*cell_f_vol(iel)*d2s3
       do isou = 1, 3
         c_st_vel(isou,iel) = c_st_vel(isou,iel)+grad(isou,iel)*romvom
       enddo
@@ -777,14 +777,14 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   else
     if(nterup.eq.1) then
       do iel = 1, ncel
-        romvom = -crom(iel)*volf(iel)*d2s3
+        romvom = -crom(iel)*cell_f_vol(iel)*d2s3
         do isou = 1, 3
           trav(isou,iel) = trav(isou,iel) + grad(isou,iel) * romvom
         enddo
       enddo
     else
       do iel = 1, ncel
-        romvom = -crom(iel)*volf(iel)*d2s3
+        romvom = -crom(iel)*cell_f_vol(iel)*d2s3
         do isou = 1, 3
           trava(isou,iel) = trava(isou,iel) + grad(isou,iel) * romvom
         enddo
@@ -884,7 +884,7 @@ if (iappel.eq.1) then
     thetap = thetav(iu)
     do ielpdc = 1, ncepdp
       iel = icepdc(ielpdc)
-      romvom = crom(iel)*volf(iel)*thetap
+      romvom = crom(iel)*cell_f_vol(iel)*thetap
 
       ! Diagonal part
       do isou = 1, 3
@@ -924,7 +924,7 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
       call field_get_val_s(icrom, crom)
 
       do iel = 1, ncel
-        romvom = -ccorio*crom(iel)*volf(iel)
+        romvom = -ccorio*crom(iel)*cell_f_vol(iel)
         call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trav(:,iel))
       enddo
 
@@ -932,7 +932,7 @@ if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
     else
 
       do iel = 1, ncel
-        romvom = -ccorio*crom(iel)*volf(iel)
+        romvom = -ccorio*crom(iel)*cell_f_vol(iel)
         call add_coriolis_v(irotce(iel), romvom, vela(:,iel), trava(:,iel))
       enddo
 
@@ -949,7 +949,7 @@ if(iappel.eq.1) then
     thetap = thetav(iu)
 
     do iel = 1, ncel
-      romvom = -ccorio*crom(iel)*volf(iel)*thetap
+      romvom = -ccorio*crom(iel)*cell_f_vol(iel)*thetap
       call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
     enddo
 
@@ -1346,7 +1346,7 @@ if (iterns.eq.1) then
 
     do iel = 1, ncel
       !FIXME when using porosity
-      dvol = 1.d0/volf(iel)
+      dvol = 1.d0/cell_f_vol(iel)
       do isou = 1, 3
         dfrcxt(isou, iel) = dfrcxt(isou, iel) + tsexp(isou, iel)*dvol
       enddo
@@ -1486,14 +1486,14 @@ if (ncesmp.gt.0) then
     !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
-    volf   , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
+    cell_f_vol    , vela , smacel(1,iu) , smacel(1,ipr) ,       &
     trav   , fimp , gavinj )
   else
     call catsmv &
     !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
-    volf   , vela , smacel(1,iu) ,smacel(1,ipr) ,               &
+    cell_f_vol    , vela , smacel(1,iu) , smacel(1,ipr) ,       &
     trava  , fimp  , gavinj )
   endif
 
@@ -1602,7 +1602,7 @@ if (ippmod(ielarc).ge.1) then
   do iel = 1, ncel
     do isou = 1, 3
       smbr(isou,iel) = smbr(isou,iel)                               &
-                     + volf(iel)*propce(iel,ipproc(ilapla(isou)))
+                     + cell_f_vol(iel)*propce(iel,ipproc(ilapla(isou)))
     enddo
   enddo
 endif
@@ -1698,7 +1698,7 @@ if (iappel.eq.1) then
     nswrsp = -1
     do iel = 1, ncel
       do isou = 1, 3
-        smbr(isou,iel) = volf(iel)
+        smbr(isou,iel) = cell_f_vol(iel)
       enddo
     enddo
     do iel = 1, ncelet

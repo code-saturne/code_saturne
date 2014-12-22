@@ -224,7 +224,7 @@ endif
 ! Cavitation source term (explicit)
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + volf(iel)*gamcav(iel)/rov
+  smbrs(iel) = smbrs(iel) + cell_f_vol(iel)*gamcav(iel)/rov
 enddo
 
 ! Source term linked with the non-conservative form of convection term
@@ -260,7 +260,7 @@ endif
 !-------------
 
 do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel) + istat(ivar)*volf(iel)/dt(iel)
+  rovsdt(iel) = rovsdt(iel) + istat(ivar)*cell_f_vol(iel)/dt(iel)
 enddo
 
 !===============================================================================

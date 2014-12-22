@@ -448,7 +448,7 @@ if (irnpnw.ne.1) then
   if (ncesmp.gt.0) then
     do ii = 1, ncesmp
       iel = icetsm(ii)
-      res(iel) = res(iel) - volf(iel)*smacel(ii,ipr)
+      res(iel) = res(iel) - cell_f_vol(iel)*smacel(ii,ipr)
     enddo
   endif
 
@@ -479,7 +479,7 @@ if (irnpnw.ne.1) then
   ! Cavitation source term
   if (icavit.gt.0) then
     do iel = 1, ncel
-      res(iel) = res(iel) -volf(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+      res(iel) = res(iel) -cell_f_vol(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
     enddo
   endif
 
@@ -801,13 +801,13 @@ enddo
 ! Implicit part of the cavitation source
 if (icavit.gt.0.and.itscvi.eq.1) then
   do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel) - volf(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
+    rovsdt(iel) = rovsdt(iel) - cell_f_vol(iel)*dgdpca(iel)*(1.d0/rov - 1.d0/rol)
   enddo
 endif
 ! Strengthen the diagonal for Low Mach Algorithme
 if (idilat.eq.3) then
   do iel = 1, ncel
-    rovsdt(iel) = rovsdt(iel) + epsdp*volf(iel)/dt(iel)
+    rovsdt(iel) = rovsdt(iel) + epsdp*cell_f_vol(iel)/dt(iel)
   enddo
 endif
 
@@ -1422,7 +1422,7 @@ endif
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    divu(iel) = divu(iel) -volf(iel)*smacel(ii,ipr)
+    divu(iel) = divu(iel) -cell_f_vol(iel)*smacel(ii,ipr)
   enddo
 endif
 
@@ -1455,7 +1455,7 @@ endif
 if (idilat.eq.2.or.idilat.eq.3) then
   do iel = 1, ncel
     drom = crom(iel) - croma(iel)
-    divu(iel) = divu(iel) + drom*volf(iel)/dt(iel)
+    divu(iel) = divu(iel) + drom*cell_f_vol(iel)/dt(iel)
   enddo
 endif
 
@@ -1469,7 +1469,7 @@ endif
 ! --- Cavitation source term
 if (icavit.gt.0) then
   do iel = 1, ncel
-    divu(iel) = divu(iel) - volf(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
+    divu(iel) = divu(iel) - cell_f_vol(iel)*gamcav(iel)*(1.d0/rov - 1.d0/rol)
   enddo
 endif
 
@@ -2149,7 +2149,7 @@ if (idilat.eq.5) then
 
   ! --- Initialization of the variable to solve
   do iel = 1, ncel
-    rovsdt(iel) = 340.d0/dt(iel) * volf(iel)
+    rovsdt(iel) = 340.d0/dt(iel) * cell_f_vol(iel)
     dpvar(iel)   = 0.d0
     ddpvar(iel)  = 0.d0
     rhs(iel)    = - rhs(iel)

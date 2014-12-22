@@ -226,7 +226,7 @@ cdgfbo => cdgfb2(1:3,1:nfabor)
 xyznod => xyzno2(1:3,1:nnod)
 
 volume => volum2(1:ncelet)
-volf => volf2(1:ncelet)
+cell_f_vol => volf2(1:ncelet)
 
 surfan => srfan2(1:nfac)
 surfbn => srfbn2(1:nfabor)

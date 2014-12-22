@@ -23,7 +23,7 @@
 subroutine prmoy0 &
 !================
 
- ( ncelet , ncel   , volf , pvar   )
+ ( ncelet , ncel   , cell_f_vol , pvar   )
 
 !===============================================================================
 ! FONCTION :
@@ -39,7 +39,7 @@ subroutine prmoy0 &
 !__________________!____!_____!________________________________________________!
 ! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
-! volf             ! tr ! <-- ! fluid volume of cells                          !
+! cell_f_vol       ! tr ! <-- ! fluid volume of cells                          !
 ! pvar             ! tr ! <-- ! tableau de valeurs au cellules                 !
 !__________________!____!_____!________________________________________________!
 
@@ -61,7 +61,7 @@ implicit none
 
 integer          ncelet , ncel
 
-double precision volf(ncelet), pvar(ncelet)
+double precision cell_f_vol(ncelet), pvar(ncelet)
 
 ! Local variables
 
@@ -72,7 +72,7 @@ double precision pmoy
 
 pmoy = 0.0d0
 do iel = 1, ncel
-  pmoy = pmoy + volf(iel) * pvar(iel)
+  pmoy = pmoy + cell_f_vol(iel) * pvar(iel)
 enddo
 if (irangp.ge.0) then
   call parsom (pmoy)

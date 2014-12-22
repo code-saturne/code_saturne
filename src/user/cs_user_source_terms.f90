@@ -52,7 +52,7 @@
 !> \f]
 !>
 !> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volf" term. More precisely:
+!> over the cells, so they include the "volume" term. More precisely:
 !>   - crvexp is expressed in kg.m/s2
 !>   - crvimp is expressed in kg/s
 !>
@@ -193,8 +193,8 @@ call field_get_val_s(icrom, cpro_rom)
 !  MMT = 100.d0 [kg/m2/s2] (momentum production by volume and time unit)
 !
 !which yields:
-!     crvimp(1, 1, iel) = volf(iel)* A = - volf(iel)*(rho*CKP )
-!     crvexp(1, iel) = volf(iel)* B = volf(iel)*(XMMT)
+!     crvimp(1, 1, iel) = cell_f_vol(iel)* A = - cell_f_vol(iel)*(rho*CKP )
+!     crvexp(1, iel) = cell_f_vol(iel)* B = cell_f_vol(iel)*(XMMT)
 
 ! ----------------------------------------------
 
@@ -210,11 +210,11 @@ ckp  = 10.d0
 qdm  = 100.d0
 
 do iel = 1, ncel
-  crvimp(1, 1, iel) = - volf(iel)*cpro_rom(iel)*ckp
+  crvimp(1, 1, iel) = - cell_f_vol(iel)*cpro_rom(iel)*ckp
 enddo
 
 do iel = 1, ncel
-  crvexp(1, iel) = volf(iel)*qdm
+  crvexp(1, iel) = cell_f_vol(iel)*qdm
 enddo
 
 !--------
@@ -302,11 +302,11 @@ subroutine ustssc &
 ! WARNING: If scalar is the temperature, the resulting equation
 !          solved by the code is:
 !
-!  rho*Cp*volf*dT/dt + .... = crvimp*T + crvexp
+!  rho*Cp*cell_f_vol*dT/dt + .... = crvimp*T + crvexp
 !
 !
 ! Note that crvexp and crvimp are defined after the Finite Volume integration
-! over the cells, so they include the "volf" term. More precisely:
+! over the cells, so they include the "volume" term. More precisely:
 !   - crvexp is expressed in W
 !   - crvimp is expressed in W/K
 !
@@ -321,7 +321,7 @@ subroutine ustssc &
 !   where f(n) is the value of f at time tn, the beginning of the time step.
 !
 ! This yields :
-!   crvexp = volf*F(f(n))
+!   crvexp = cell_f_vol*F(f(n))
 !   crvimp = 0
 !
 ! However, if the source term is potentially steep, this fully explicit
@@ -331,8 +331,8 @@ subroutine ustssc &
 !   df/dt = .... + dF/df*f(n+1) - dF/df*f(n) + F(f(n))
 !
 ! This yields:
-!   crvexp = volf*( F(f(n)) - dF/df*f(n) )
-!   crvimp = volf*dF/df
+!   crvexp = cell_f_vol*( F(f(n)) - dF/df*f(n) )
+!   crvimp = cell_f_vol*dF/df
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -462,8 +462,8 @@ endif
 !     prodf  = 100.d0 [ [f]/s ] (production of f by unit of time)
 
 !which yields
-!     crvimp(iel) = volf(iel)* A = - volf(iel)*rho/tauf
-!     crvexp(iel) = volf(iel)* B =   volf(iel)*rho*prodf
+!     crvimp(iel) = cell_f_vol(iel)* A = - cell_f_vol(iel)*rho/tauf
+!     crvexp(iel) = cell_f_vol(iel)* B =   cell_f_vol(iel)*rho*prodf
 
 !===============================================================================
 
@@ -485,11 +485,11 @@ if (iscal.eq.2) then
    prodf = 100.d0
 
    do iel = 1, ncel
-      crvimp(iel) = - volf(iel)*cpro_rom(iel)/tauf
+      crvimp(iel) = - cell_f_vol(iel)*cpro_rom(iel)/tauf
    enddo
 
    do iel = 1, ncel
-      crvexp(iel) =   volf(iel)*cpro_rom(iel)*prodf
+      crvexp(iel) =   cell_f_vol(iel)*cpro_rom(iel)*prodf
    enddo
 
 endif
@@ -505,7 +505,7 @@ endif
 
 ! This yields
 !     crvimp(iel) = 0
-!     crvexp(iel) = volf(iel)* Pwatt/voltf
+!     crvexp(iel) = cell_f_vol(iel)* Pwatt/voltf
 
 !===============================================================================
 
@@ -526,7 +526,7 @@ if (.true.) return
 ! by Cp because Cp is put outside the diffusion term and multiply
 ! the temperature equation as follows:
 !
-!  rho*Cp*volf*dT/dt + .... =  volf(iel)* Pwatt/voltf
+!  rho*Cp*cell_f_vol*dT/dt + .... =  cell_f_vol(iel)* Pwatt/voltf
 !
 
 pwatt = 100.d0
@@ -539,7 +539,7 @@ call getcel('x > 0.0 and x < 1.2 and y > 3.1 and '//               &
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
-  voltf = voltf + volf(iel)
+  voltf = voltf + cell_f_vol(iel)
 enddo
 
 if (irangp.ge.0) then
@@ -551,7 +551,7 @@ do ilelt = 1, nlelt
 ! No implicit source term
   crvimp(iel) = 0.d0
 ! Explicit source term
-  crvexp(iel) = volf(iel)*pwatt/voltf
+  crvexp(iel) = cell_f_vol(iel)*pwatt/voltf
 enddo
 
 !--------
@@ -730,8 +730,8 @@ endif
 !    (Source term on the TKE 'k' here)
 
 !      Source term for cvar_var:
-!         rho volf d(cvar_var)/dt       = ...
-!                        ... - rho*volf*ff - rho*volf*cvar_var/tau
+!         rho cell_f_vol d(cvar_var)/dt       = ...
+!                        ... - rho*cell_f_vol*ff - rho*cell_f_vol*cvar_var/tau
 
 !      With ff=3.d0 and tau = 4.d0
 
@@ -755,13 +755,13 @@ if (.false.) then
 
     ! --- Explicit source terms
     do iel = 1, ncel
-      crvexp(iel) = -cpro_rom(iel)*volf(iel)*ff
+      crvexp(iel) = -cpro_rom(iel)*cell_f_vol(iel)*ff
     enddo
 
     ! --- Implicit source terms
     !        crvimp is already initialized to 0, no need to set it here
     do iel = 1, ncel
-      crvimp(iel) = -cpro_rom(iel)*volf(iel)/tau
+      crvimp(iel) = -cpro_rom(iel)*cell_f_vol(iel)/tau
     enddo
 
   endif
