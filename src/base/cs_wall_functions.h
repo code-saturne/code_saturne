@@ -682,7 +682,6 @@ void CS_PROCF (hturbp, HTURBP)
 (
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
- const cs_real_t  *const ckarm,
  const cs_real_t  *const yplus,
  const cs_real_t  *const dplus,
        cs_real_t        *htur,
@@ -784,7 +783,6 @@ cs_wall_functions_velocity(cs_wall_function_type_t  iwallf,
 /*!
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
- * \param[in]     ckarm         Von Karman constant
  * \param[in]     yplus         dimensionless distance to the wall
  * \param[in]     dplus         dimensionless distance for scalable
  *                              wall functions
@@ -796,7 +794,6 @@ cs_wall_functions_velocity(cs_wall_function_type_t  iwallf,
 void
 cs_wall_functions_scalar(double  prl,
                          double  prt,
-                         double  ckarm,
                          double  yplus,
                          double  dplus,
                          double  *htur,

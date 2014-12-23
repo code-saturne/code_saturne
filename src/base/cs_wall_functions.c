@@ -221,7 +221,6 @@ void CS_PROCF (hturbp, HTURBP)
 (
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
- const cs_real_t  *const ckarm,
  const cs_real_t  *const yplus,
  const cs_real_t  *const dplus,
        cs_real_t        *htur,
@@ -230,7 +229,6 @@ void CS_PROCF (hturbp, HTURBP)
 {
   cs_wall_functions_scalar(*prl,
                            *prt,
-                           *ckarm,
                            *yplus,
                            *dplus,
                            htur,
@@ -438,7 +436,6 @@ cs_wall_functions_velocity(cs_wall_function_type_t   iwallf,
 /*!
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
- * \param[in]     ckarm         Von Karman constant
  * \param[in]     yplus         dimensionless distance to the wall
  * \param[out]    dplus         dimensionless shift to the wall for scalable
  *                              wall functions
@@ -450,7 +447,6 @@ cs_wall_functions_velocity(cs_wall_function_type_t   iwallf,
 void
 cs_wall_functions_scalar(double  prl,
                          double  prt,
-                         double  ckarm,
                          double  yplus,
                          double  dplus,
                          double  *htur,
@@ -483,9 +479,9 @@ cs_wall_functions_scalar(double  prl,
     ==========================================================================*/
 
   if (prl <= prlm1) {
-    (*yplim)   = prt/(prl*ckarm);
+    (*yplim)   = prt/(prl*cs_turb_xkappa);
     if (yplus > (*yplim)) {
-      tplus = prl*(*yplim) + prt/ckarm * log(yplus/(*yplim));
+      tplus = prl*(*yplim) + prt/cs_turb_xkappa * log(yplus/(*yplim));
       (*htur) = prl*(yplus-dplus)/tplus;
     }
 
@@ -494,7 +490,7 @@ cs_wall_functions_scalar(double  prl,
       ========================================================================*/
 
   } else {
-    yp2   = ckarm*1000./prt;
+    yp2   = cs_turb_xkappa*1000./prt;
     yp2   = sqrt(yp2);
     (*yplim)   = pow(1000./prl,1./3.);
 
@@ -507,7 +503,7 @@ cs_wall_functions_scalar(double  prl,
     }
 
     if (yplus >= yp2) {
-      tplus = beta2 + prt/ckarm*log(yplus/yp2);
+      tplus = beta2 + prt/cs_turb_xkappa*log(yplus/yp2);
       (*htur) = prl*(yplus-dplus)/tplus;
     }
 

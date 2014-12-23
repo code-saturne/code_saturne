@@ -2146,7 +2146,7 @@ do ifac = 1, nfabor
     ! Dirichlet on the scalar, with wall function
     if (iturb.ne.0.and.icodcl(ifac,ivar).eq.5) then
 
-      call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,ypth)
+      call hturbp (prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
 
       ! Compute (y+-d+)/T+ *PrT
       yptp = hflui/prdtl
@@ -2155,7 +2155,7 @@ do ifac = 1, nfabor
 
       ! Neumann on the scalar, with wall function (for post-processing)
     elseif (iturb.ne.0.and.icodcl(ifac,ivar).eq.3) then
-      call hturbp (prdtl,sigmas(iscal),xkappa,yplus,dplus,hflui,ypth)
+      call hturbp (prdtl,sigmas(iscal),yplus,dplus,hflui,ypth)
       ! y+/T+ *PrT
       yptp = hflui/prdtl
       hflui = hint

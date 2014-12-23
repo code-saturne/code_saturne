@@ -115,11 +115,11 @@ void CS_PROCF (viscfa, VISCFA)
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   cs_face_viscosity(m,
-                           fvq,
-                           *visc_mean_type,
-                           c_visc,
-                           i_visc,
-                           b_visc);
+                    fvq,
+                    *visc_mean_type,
+                    c_visc,
+                    i_visc,
+                    b_visc);
 }
 
 /*----------------------------------------------------------------------------
