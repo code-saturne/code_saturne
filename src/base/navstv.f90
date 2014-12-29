@@ -945,7 +945,7 @@ if (ippmod(icompf).lt.0) then
           if (iporos.eq.3) then
             dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
           else
-            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
+            dtsrom = thetap*dt(iel)/crom(iel)
           endif
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
