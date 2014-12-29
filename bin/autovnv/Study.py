@@ -176,29 +176,31 @@ class Case(object):
         # 3) Update the GUI script from the Repository
         ref = os.path.join(self.__repo, self.label, "DATA", self.pkg.guiname)
 
+        have_gui = 1
         try:
             f = file(ref, mode = 'r')
         except IOError:
-            print("Error: can not open %s\n" % ref)
-            sys.exit(1)
+           print("Warning SaturneGUI does not exist: %s\n" % ref)
+           have_gui = 0
 
-        lines = f.readlines()
-        f.close()
+        if have_gui:
+           lines = f.readlines()
+           f.close()
 
-        for i in range(len(lines)):
-            if re.search(r'^prefix=', lines[i]):
-                if xmlonly:
-                    lines[i] = "prefix=\n"
-                else:
-                    lines[i] = "prefix=" + self.pkg.get_dir('prefix') + "\n"
-            if re.search(r'^export PATH=', lines[i]):
-                if xmlonly:
-                    lines[i] = 'export PATH="":$PATH\n'
-                else:
-                    lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-        f = file(ref, mode = 'w')
-        f.writelines(lines)
-        f.close()
+           for i in range(len(lines)):
+               if re.search(r'^prefix=', lines[i]):
+                   if xmlonly:
+                       lines[i] = "prefix=\n"
+                   else:
+                       lines[i] = "prefix=" + self.pkg.get_dir('prefix') + "\n"
+               if re.search(r'^export PATH=', lines[i]):
+                   if xmlonly:
+                       lines[i] = 'export PATH="":$PATH\n'
+                   else:
+                       lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
+           f = file(ref, mode = 'w')
+           f.writelines(lines)
+           f.close()
 
         # 4) Update the runcase script from the Repository
         ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
