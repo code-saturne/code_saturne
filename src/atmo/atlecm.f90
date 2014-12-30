@@ -141,7 +141,8 @@ backspace(impmet)
 if (imode.eq.0) then
   read(impmet, *, err=999, end=906)
 else
-  read(impmet, *, err=907, end=906) year, month, day, hour, minute, second
+  read(impmet, '(5i10, f10.2)', err=907, end=906) year, month, day,  &
+                                                  hour, minute, second
   call comp_quantile(day, month, year, quant)
   goto 908
 907  continue
