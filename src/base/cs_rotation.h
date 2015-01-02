@@ -156,7 +156,7 @@ cs_rotation_add_coriolis_v(const cs_rotation_t  *r,
 
   vr[0] += (- r->axis[2]*v[1] + r->axis[1]*v[2]) * f;
   vr[1] += (- r->axis[0]*v[2] + r->axis[2]*v[0]) * f;
-  vr[0] += (- r->axis[1]*v[0] + r->axis[0]*v[1]) * f;
+  vr[2] += (- r->axis[1]*v[0] + r->axis[0]*v[1]) * f;
 }
 
 /*----------------------------------------------------------------------------
@@ -179,7 +179,7 @@ cs_rotation_coriolis_v(const cs_rotation_t  *r,
 
   vr[0] = (- r->axis[2]*v[1] + r->axis[1]*v[2]) * f;
   vr[1] = (- r->axis[0]*v[2] + r->axis[2]*v[0]) * f;
-  vr[0] = (- r->axis[1]*v[0] + r->axis[0]*v[1]) * f;
+  vr[2] = (- r->axis[1]*v[0] + r->axis[0]*v[1]) * f;
 }
 
 /*----------------------------------------------------------------------------
