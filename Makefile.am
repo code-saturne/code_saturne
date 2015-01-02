@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2014 EDF S.A.
+# Copyright (C) 1998-2015 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -332,15 +332,14 @@ install-doc:
 # Generate ChangeLog
 
 changelog:
+	start=2015-01-01; \
 	if test -d ${top_srcdir}/.svn ; then \
 	  today=`date +%F`; \
-	  start=`date +%Y`-01-01; \
 	  svn2cl --reparagraph --include-rev --include-actions \
 	  --authors=${top_srcdir}/extras/changelog/authors.xml \
 	  --output=${top_srcdir}/ChangeLog \
 	  ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"} ; \
         elif test -d ${top_srcdir}/.git ; then \
-	  start=`date +%Y`-01-01; \
 	  git --no-pager --git-dir=${top_srcdir}/.git --work-tree=${top_srcdir} log \
 	    --since={$${start}} --no-merges --date-order --date=iso \
 	    --format="%n%cd %aN <%ce> %n%n%x09* [%H]%n%w(82,8,8)%s" --name-status > ${top_srcdir}/ChangeLog ; \
