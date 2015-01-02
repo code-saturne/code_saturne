@@ -91,6 +91,7 @@ use period
 use mesh
 use field
 use post
+use cs_c_bindings
 
 !===============================================================================
 

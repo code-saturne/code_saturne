@@ -2,7 +2,7 @@
  * Define postprocessing output.
  *============================================================================*/
 
-/* Code_Saturne version 3.0.0 */
+/* VERS */
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
