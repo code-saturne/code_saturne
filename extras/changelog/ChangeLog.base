@@ -4522,11 +4522,6 @@
 
 2013-12-31 17:41  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
 
-	* [r5599] Move finite volume operators (divmas, itrmas, itrgrp,
-	  projts, projtv) to C.
-
-2013-12-31 17:41  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
-
 	* [r5599] src/alge/Makefile.am, src/alge/cs_matrix_building.c,
 	  src/alge/cs_matrix_building.h, src/alge/divmas.f90[DEL],
 	  src/alge/itrgrp.f90[DEL], src/alge/itrmas.f90[DEL],
