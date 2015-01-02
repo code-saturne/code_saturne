@@ -157,7 +157,8 @@ typedef struct {
 
   int                     f_id;         /* Associated field id, or -1 */
 
-  int                     dim;          /* Associated data field dimensions */
+  int                     dim;          /* Associated field dimensions */
+  int                     data_dim;     /* Associated data field dimensions */
   int                     location_id;  /* Associated mesh location id */
 
   cs_time_moment_data_t  *data_func;    /* Associated data elements computation
@@ -836,13 +837,14 @@ _check_restart(const char                     *name,
          m_type--) {
 
       cs_time_moment_type_t s_type = m_type -1;
+      int l_dim = (dim == 6 && m_type == CS_TIME_MOMENT_VARIANCE) ? 3 : dim;
 
       int l_id = ri->l_id[prev_id];
 
       if (   ri->wa_id[l_id] != prev_wa_id
              || ri->m_type[l_id] != (int)s_type
           || ri->location_id[l_id] != location_id
-          || ri->dimension[l_id] != dim)
+          || ri->dimension[l_id] != l_dim)
         bft_error(__FILE__, __LINE__, 0,
                   _("Restart data for time moment \"%s\"\n"
                     " (previously \"%s\") seems inconsistent:\n"
@@ -1363,7 +1365,7 @@ _find_or_add_moment(int                     location_id,
 
   for (int i = 0; i < _n_moments; i++) {
     mt = _moment + i;
-    if (   location_id == mt->location_id && dim == mt->dim
+    if (   location_id == mt->location_id && dim == mt->data_dim
         && data_func == mt->data_func && data_input == mt->data_input
         && type == mt->type && wa_id == mt->wa_id
         && prev_id == mt->restart_id)
@@ -1394,7 +1396,8 @@ _find_or_add_moment(int                     location_id,
   mt->wa_id = wa_id;
   mt->f_id = -1;
 
-  mt->dim = dim;
+  mt->dim = (dim == 3 && type == CS_TIME_MOMENT_VARIANCE) ? 6 : dim;
+  mt->data_dim = dim;
   mt->location_id = location_id;
 
   mt->data_func = data_func;
@@ -1619,7 +1622,7 @@ _ensure_init_moment(cs_time_moment_t  *mt)
 {
   if (mt->f_id < 0 && mt->val == NULL) {
     cs_lnum_t n_elts = cs_mesh_location_get_n_elts(mt->location_id)[0];
-    cs_lnum_t n_d_elts = n_elts*mt->dim;
+    cs_lnum_t n_d_elts = n_elts*(cs_lnum_t)(mt->dim);
     BFT_MALLOC(mt->val, n_d_elts, cs_real_t);
     for (cs_lnum_t i = 0; i < n_d_elts; i++)
       mt->val[i] = 0.;
@@ -1910,6 +1913,8 @@ cs_time_moment_define_by_func(const char                *name,
 
   cs_time_moment_t *mt = NULL;
 
+  int moment_dim = (   dim == 3
+                    && type == CS_TIME_MOMENT_VARIANCE) ? 6 : dim;
   int moment_id = -1;
   int prev_id = -1, prev_wa_id = -1;
   int _nt_start = nt_start;
@@ -1937,7 +1942,7 @@ cs_time_moment_define_by_func(const char                *name,
                              ri,
                              location_id,
                              wa_location_id,
-                             dim,
+                             moment_dim,
                              type,
                              &_nt_start,
                              &_t_start,
@@ -1982,7 +1987,7 @@ cs_time_moment_define_by_func(const char                *name,
   f = cs_field_create(name,
                       CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
                       location_id,
-                      dim,
+                      moment_dim,
                       true,    /* interleaved */
                       false);  /* no previous values */
 
@@ -2277,8 +2282,8 @@ cs_time_moment_update_all(void)
       cs_time_moment_wa_t *mwa = _moment_wa + mt->wa_id;
 
       if (   mt->nt_cur < ts->nt_cur
-           && (int)(mt->type) == m_type
-           && (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)) {
+          && (int)(mt->type) == m_type
+          && (mwa->nt_start > -1 && mwa->nt_start <= ts->nt_cur)) {
 
         /* Current and accumulated weight */
 
@@ -2325,14 +2330,51 @@ cs_time_moment_update_all(void)
             m = f_mean->val;
           }
 
-          for (cs_lnum_t j = 0; j < nd; j++) {
-            const cs_lnum_t k = (j*wa_stride) / mt->dim;
-            double wa_sum_n = w[k] + wa_sum[k];
-            double delta = x[j] - m[j];
-            double r = delta * (w[k] / (fmax(wa_sum_n, 1e-100)));
-            double m_n = m[j] + r;
-            val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
-            m[j] += r;
+          if (mt->dim == 6) { /* variance-covariance matrix */
+            assert(mt->data_dim == 3);
+            for (cs_lnum_t je = 0; je < n_elts; je++) {
+              double delta[3], delta_n[3], r[3], m_n[3];
+              const cs_lnum_t k = je*wa_stride;
+              const double wa_sum_n = w[k] + wa_sum[k];
+              for (cs_lnum_t l = 0; l < 3; l++) {
+                cs_lnum_t jl = je*6 + l, jml = je*3 + l;
+                delta[l]   = x[jml] - m[jml];
+                r[l] = delta[l] * (w[k] / (fmax(wa_sum_n, 1e-100)));
+                m_n[l] = m[jml] + r[l];
+                delta_n[l] = x[jml] - m_n[l];
+                val[jl] =   (val[jl]*wa_sum[k] + (w[k]*delta[l]*delta_n[l]))
+                          / wa_sum_n;
+              }
+              /* Covariance terms.
+                 Note we could have a symmetric formula using
+                   0.5*(delta[i]*delta_n[j] + delta[j]*delta_n[i])
+                 instead of
+                   delta[i]*delta_n[j]
+                 but unit tests in cs_moment_test.c do not seem to favor
+                 one variant over the other; we use the simplest one.
+              */
+              cs_lnum_t j3 = je*6 + 3, j4 = je*6 + 4, j5 = je*6 + 5;
+              val[j3] =   (val[j3]*wa_sum[k] + (w[k]*delta[0]*delta_n[1]))
+                        / wa_sum_n;
+              val[j4] =   (val[j4]*wa_sum[k] + (w[k]*delta[1]*delta_n[2]))
+                        / wa_sum_n;
+              val[j5] =   (val[j5]*wa_sum[k] + (w[k]*delta[0]*delta_n[2]))
+                        / wa_sum_n;
+              for (cs_lnum_t l = 0; l < 3; l++)
+                m[je*3 + l] += r[l];
+            }
+          }
+
+          else { /* simple variance */
+            for (cs_lnum_t j = 0; j < nd; j++) {
+              const cs_lnum_t k = (j*wa_stride) / mt->dim;
+              double wa_sum_n = w[k] + wa_sum[k];
+              double delta = x[j] - m[j];
+              double r = delta * (w[k] / (fmax(wa_sum_n, 1e-100)));
+              double m_n = m[j] + r;
+              val[j] = (val[j]*wa_sum[k] + (w[k]*delta*(x[j]-m_n))) / wa_sum_n;
+              m[j] += r;
+            }
           }
 
           mt_mean->nt_cur = ts->nt_cur;
