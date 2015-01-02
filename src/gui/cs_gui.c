@@ -3164,6 +3164,8 @@ void CS_PROCF (cstini, CSTINI) (double *uref,
 {
   char* length_choice = NULL;
 
+  *uref = 1.; /* default if not specified */
+
   cs_gui_reference_initialization("velocity", uref);
 
   length_choice = _reference_length_initialization_choice();
