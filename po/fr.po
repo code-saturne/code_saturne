@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-11-20 00:37+0100\n"
+"POT-Creation-Date: 2014-12-29 00:27+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7596,20 +7596,6 @@ msgstr ""
 "irrégulier ;\n"
 "il peut être utile d'ajuster les paramètres de recollement."
 
-#, c-format
-msgid ""
-"WARNING: non-convergence in the computation\n"
-"******** of the friction velocity\n"
-"\n"
-"face number: %d \n"
-"friction vel: %f \n"
-msgstr ""
-"ATTENTION : non-convergence du calcul\n"
-"*********   de la vitesse de frottement\n"
-"\n"
-"face numéro : %d \n"
-"vitesse de frottement : %f \n"
-
 msgid "bft_mem_init() has already been called"
 msgstr ""
 
@@ -8922,6 +8908,10 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "Error: can not find the required symbol: %s %s\n"
+msgstr ""
+
+#, c-format
 msgid "Invalid thermal model: %s\n"
 msgstr ""
 
@@ -9151,86 +9141,7 @@ msgstr ""
 msgid "Error reading main particle restart data."
 msgstr "Erreur à la lecture des données de reprise particulaires."
 
-msgid ""
-" Error during boundary treatment.\n"
-" Part of trajectography inside the boundary faces."
-msgstr ""
-
 msgid "Max number of loops reached in particle displacement."
-msgstr ""
-
-msgid "Error during the particle displacement (Interior face)."
-msgstr ""
-
-msgid "Error during the particle displacement (Boundary face)."
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  Wrong face orientation  => particle is lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  [P, Q, Face CoG, V(1)] orientation failed  => Particle is lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  [P, Q, Face CoG, V(%d)] orientation failed  => Particle is lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  [P, Q, V(%d), V(%d)] orientation failed  => Particle is lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  Local orientation counter must be -2, 0 or 2. Here is %d  => Particle is "
-"lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  => Particle is lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Lagrangian module warning.\n"
-"  Failure during the particle tracking.\n"
-"  Do not find the relative position between:\n"
-"   - P [%9.4f, %9.4f, %9.4f]\n"
-"   - Q [%9.4f, %9.4f, %9.4f]\n"
-"   - and the current face: CoG [%9.4f, %9.4f, %9.4f]\n"
-"  => Particle is lost.\n"
-"  Local face num.:  %d\n"
-"  Local cell num.:  %d\n"
 msgstr ""
 
 #, c-format
@@ -11220,6 +11131,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-
-#~ msgid "Torus dimensions:    "
-#~ msgstr "Dimensions du tore : "
