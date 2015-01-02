@@ -287,10 +287,14 @@ module cs_c_bindings
 
     !> \brief  Get field id associated with a given moment.
 
+    !> For moments not defined by the user, but defined automatically so as
+    !> to allow computation of higher order moments (i.e. variances), no field
+    !> is associated, so the returned value is -1.
+
     !> \param[in]   m_num   moment number (based on moment creation order,
     !>                      1 to n numbering)
 
-    !> \return      f_id    associated field id
+    !> \return      f_id    associated field id, or -1
 
     function time_moment_field_id(m_num) result(f_id)  &
       bind(C, name='cs_f_time_moment_field_id')

@@ -146,6 +146,7 @@ n_moments = cs_time_moment_n_moments()
 
 do imom = 1, n_moments
   f_id = time_moment_field_id(imom)
+  if (f_id.lt.0) cycle
   call field_is_key_set(f_id, keyvis, is_set)
   if (.not. is_set) call field_set_key_int(f_id, keyvis, 1)
   call field_is_key_set(f_id, keylog, is_set)
