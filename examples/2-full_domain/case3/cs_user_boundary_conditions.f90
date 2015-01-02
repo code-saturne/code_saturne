@@ -38,7 +38,7 @@
 !>
 !> Boundary faces may be selected using the \ref getfbr subroutine.
 !>
-!> \code getfbr(string, nelts, eltlst) \endcode
+!> \code getfbr(string, nelts, lstelt) \endcode
 !>  - string is a user-supplied character string containing selection criteria;
 !>  - nelts is set by the subroutine. It is an integer value corresponding to
 !>    the number of boundary faces verifying the selection criteria;
@@ -190,11 +190,13 @@
 !>  - 5: Smooth wall    (usable for any variable except for pressure)
 !>  - 6: Rough wall     (usable for any variable except for pressure)
 !>  - 9: Free outlet    (usable only for velocity)
+!>  - 13: Dirichlet for the advection operator and
+!>        Neumann for the diffusion operator
 !>
 !> The values of the 3 \c rcodcl components are:
 !>  - \c rcodcl(ifac, ivar, 1):
-!>     - Dirichlet for the variable          if \c icodcl(ifac, ivar) =  1
-!>     - Wall value (sliding velocity, temp) if \c icodcl(ifac, ivar) =  5
+!>     - Dirichlet for the variable          if \c icodcl(ifac, ivar) = 1 or 13
+!>     - Wall value (sliding velocity, temp) if \c icodcl(ifac, ivar) = 5
 !>     .
 !>     The dimension of \c rcodcl(ifac, ivar, 1) is that of the
 !>     resolved variable, for instance:
@@ -218,7 +220,7 @@
 !>        \c rcodcl(ifac, ivar, 2) =    (viscls+visct/sigmas) / d
 !>            (d has the dimension of a distance in m)
 !>
-!>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 3:
+!>  - \c rcodcl(ifac, ivar, 3) if \c icodcl(ifac, ivar) = 3 or 13:
 !>      Flux density (< 0 if gain, n outwards-facing normal)
 !>     - For velocities U,                in kg/(m s2) = J:
 !>        \c rcodcl(ifac, ivar, 3) =         -(viscl+visct) * (grad U).n
@@ -363,6 +365,8 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in]     itrifb        indirection for boundary faces ordering
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
