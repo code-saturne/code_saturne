@@ -209,8 +209,8 @@ endif
 
 ! De plus, les variables sont envoyées dans l'ordre:
 
-!     - pression (unique pour toute les phases)
 !     - vitesse
+!     - pression
 !     - grandeurs turbulentes (selon le modèle)
 !   Et ensuite :
 !     - scalaires physique particulière (pas encore traités)
@@ -221,84 +221,7 @@ endif
 ipos = 1
 
 !=========================================================================
-! 1.  Prepare for pressure
-!=========================================================================
-
-call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,  &
-                           iccocg,                           &
-                           grad)
-
-! For a specific face to face coupling, geometric assumptions are made
-
-if (ifaccp.eq.1) then
-
-  do ipt = 1, nptdis
-
-    iel = locpts(ipt)
-
-    ! --- Pour la pression on veut imposer un dirichlet tel que le gradient
-    !     de pression se conserve entre les deux domaines couplés Pour cela
-    !     on impose une interpolation centrée
-
-    xjjp = djppts(1,ipt)
-    yjjp = djppts(2,ipt)
-    zjjp = djppts(3,ipt)
-
-    rvdis(ipt,ipos) = cvar_pr(iel) &
-         + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-
-    ! On prend en compte le potentiel centrifuge en repère relatif
-    if (icormx(numcpl).eq.1) then
-
-      ! Calcul de la distance a l'axe de rotation
-      ! On suppose que les axes sont confondus...
-
-      xx = xyzcen(1,iel) + xjjp
-      yy = xyzcen(2,iel) + yjjp
-      zz = xyzcen(3,iel) + zjjp
-
-      daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
-               + (omegar(3)*xx - omegar(1)*zz)**2 &
-               + (omegar(1)*yy - omegar(2)*xx)**2
-
-      daxis2 = daxis2 / omgnrr**2
-
-      rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
-           + 0.5d0*crom(iel)*(omgnrl**2 - omgnrd**2)*daxis2
-
-    endif
-
-  enddo
-
-  ! For a generic coupling, no assumption can be made
-
-else
-
-  do ipt = 1, nptdis
-
-    iel = locpts(ipt)
-
-    xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
-    yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
-    zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
-
-    if (pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
-      jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
-    else
-      jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
-    endif
-
-    rvdis(ipt,ipos) = (xjpf*grad(1,iel)+yjpf*grad(2,iel)+zjpf*grad(3,iel))  &
-         /jpf
-
-  enddo
-
-endif
-!       FIn pour la pression
-
-
-!=========================================================================
-! 2.  Prepare for velocity
+! 1.  Prepare for velocity
 !=========================================================================
 
 call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
@@ -394,6 +317,82 @@ do isou = 1, 3
 
 enddo
 !       Fin de la boucle sur les composantes de la vitesse
+
+!=========================================================================
+! 2.  Prepare for pressure
+!=========================================================================
+
+call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,  &
+                           iccocg,                           &
+                           grad)
+
+! For a specific face to face coupling, geometric assumptions are made
+
+if (ifaccp.eq.1) then
+
+  do ipt = 1, nptdis
+
+    iel = locpts(ipt)
+
+    ! --- Pour la pression on veut imposer un dirichlet tel que le gradient
+    !     de pression se conserve entre les deux domaines couplés Pour cela
+    !     on impose une interpolation centrée
+
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
+
+    rvdis(ipt,ipos) = cvar_pr(iel) &
+         + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
+
+    ! On prend en compte le potentiel centrifuge en repère relatif
+    if (icormx(numcpl).eq.1) then
+
+      ! Calcul de la distance a l'axe de rotation
+      ! On suppose que les axes sont confondus...
+
+      xx = xyzcen(1,iel) + xjjp
+      yy = xyzcen(2,iel) + yjjp
+      zz = xyzcen(3,iel) + zjjp
+
+      daxis2 =   (omegar(2)*zz - omegar(3)*yy)**2 &
+               + (omegar(3)*xx - omegar(1)*zz)**2 &
+               + (omegar(1)*yy - omegar(2)*xx)**2
+
+      daxis2 = daxis2 / omgnrr**2
+
+      rvdis(ipt,ipos) = rvdis(ipt,ipos)                         &
+           + 0.5d0*crom(iel)*(omgnrl**2 - omgnrd**2)*daxis2
+
+    endif
+
+  enddo
+
+  ! For a generic coupling, no assumption can be made
+
+else
+
+  do ipt = 1, nptdis
+
+    iel = locpts(ipt)
+
+    xjpf = coopts(1,ipt) - xyzcen(1,iel)- djppts(1,ipt)
+    yjpf = coopts(2,ipt) - xyzcen(2,iel)- djppts(2,ipt)
+    zjpf = coopts(3,ipt) - xyzcen(3,iel)- djppts(3,ipt)
+
+    if (pndpts(ipt).ge.0.d0.and.pndpts(ipt).le.1.d0) then
+      jpf = -1.d0*sqrt(xjpf**2+yjpf**2+zjpf**2)
+    else
+      jpf =       sqrt(xjpf**2+yjpf**2+zjpf**2)
+    endif
+
+    rvdis(ipt,ipos) = (xjpf*grad(1,iel)+yjpf*grad(2,iel)+zjpf*grad(3,iel))  &
+         /jpf
+
+  enddo
+
+endif
+!       Fin pour la pression
 
 !=========================================================================
 ! 3.  PREPARATION DES GRANDEURS TURBULENTES
