@@ -1765,15 +1765,20 @@ cs_f_time_moment_define_by_field_ids(const char                *name,
  *   m_num <-- moment number (1 to n)
  *
  * returns:
- *   field id
+ *   field id, or -1
  *----------------------------------------------------------------------------*/
 
 int
 cs_f_time_moment_field_id(int m_num)
 
 {
+  int retval = -1;
+
   const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
-  return f->id;
+  if (f != NULL)
+    retval = f->id;
+
+  return retval;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

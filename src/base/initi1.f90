@@ -47,7 +47,7 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp, imom, n_moments
+integer          iok, ipp, nmodpp, imom, n_moments, f_id
 double precision ttsuit, wtsuit
 
 !===============================================================================
@@ -119,7 +119,9 @@ call cs_user_time_moments
 
 n_moments = cs_time_moment_n_moments()
 do imom = 1, n_moments
-  ipp = field_post_id(time_moment_field_id(imom))
+  f_id = time_moment_field_id(imom)
+  if (f_id.lt.0) cycle
+  ipp = field_post_id(f_id)
 enddo
 
 ! Postprocessing and logging
