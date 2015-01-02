@@ -62,15 +62,15 @@ _sum_kahan(size_t         n,
 int
 main (int argc, char *argv[])
 {
-  int sub_id;
-  double m_ref, v_ref;
-  double *xr = NULL, *wr = NULL;
+  double m_ref, m_y_ref, v_ref, c_ref;
+  double *xr = NULL, *yr = NULL, *wr = NULL;
 
   const size_t nr = 50;
 
   /* Initialization and environment */
 
   xr = malloc(nr*sizeof(double));
+  yr = malloc(nr*sizeof(double));
   wr = malloc(nr*sizeof(double));
 
   printf("\n");
@@ -81,30 +81,43 @@ main (int argc, char *argv[])
     double b = (double)(rand()) / RAND_MAX;
     wr[i] = (2. + a) * 0.0001;
     xr[i] = 1. + b;
+    yr[i] = 1. + a + b;
   }
 
   /* Reference moments */
 
   {
     double *wx = malloc(nr*sizeof(double));
-    for (size_t i = 0; i < nr; i++)
+    double *wy = malloc(nr*sizeof(double));
+    for (size_t i = 0; i < nr; i++) {
       wx[i] = wr[i]*xr[i];
+      wy[i] = wr[i]*yr[i];
+    }
 
     double swx = _sum_kahan(nr, wx);
+    double swy = _sum_kahan(nr, wy);
     double sw = _sum_kahan(nr, wr);
 
     m_ref = swx / sw;
+    m_y_ref = swy / sw;
 
-    for (size_t i = 0; i < nr; i++)
+    for (size_t i = 0; i < nr; i++) {
       wx[i] = wr[i]*(xr[i]-m_ref)*(xr[i]-m_ref);
+      wy[i] = wr[i]*(yr[i]-m_y_ref)*(xr[i]-m_ref);
+    }
 
     swx = _sum_kahan(nr, wx);
+    swy = _sum_kahan(nr, wy);
 
     v_ref = swx / sw;
+    c_ref = swy / sw;
 
     printf("Reference mean:      %12.5g\n"
-           "Reference variance:  %12.5g\n\n", m_ref, v_ref);
+           "Reference variance:  %12.5g\n"
+           "Reference covariance:  %12.5g\n\n",
+           m_ref, v_ref, c_ref);
 
+    free(wy);
     free(wx);
   }
 
@@ -123,25 +136,35 @@ main (int argc, char *argv[])
     {
       double ws = 0;
       double m = 0;
+      double m_y = 0;
       double m2 = 0;
+      double c2 = 0;
 
       for (size_t i = 0; i < n_test; i++) {
         size_t j = i % nr;
         double ws_n = wr[j] + ws;
         double delta = xr[j] - m;
+        double delta_y = yr[j] - m_y;
+
         double r = delta * (wr[j] / (fmax(ws_n, 1e-100)));
+        double r_y = delta_y * (wr[j] / (fmax(ws_n, 1e-100)));
         m2 += ws * delta * r;
+        c2 += ws * delta * r_y;
         m += r;
+        m_y += r_y;
         ws += wr[j];
       }
 
       double v = m2 / ws;
+      double c = c2 / ws;
 
       double me = fabs(m_ref - m);
       double ve = fabs(v_ref - v);
+      double ce = fabs(c_ref - c);
       printf("Algorithm 1a, n_test = %d\n"
              "  mean error:        %12.5g\n"
-             "  variance error:    %12.5g\n\n", n_test, me, ve);
+             "  variance error:    %12.5g\n"
+             "  covariance error:  %12.5g\n\n", (int)n_test, me, ve, ce);
     }
 
     /* Variant 1b */
@@ -149,26 +172,35 @@ main (int argc, char *argv[])
     {
       double ws = 0;
       double m = 0;
+      double m_y = 0;
       double m2 = 0;
+      double c2 = 0;
 
       for (size_t i = 0; i < n_test; i++) {
         size_t j = i % nr;
         double ws_n = wr[j] + ws;
         double delta = xr[j] - m;
+        double delta_y = yr[j] - m_y;
         double r = delta * (wr[j] / (fmax(ws_n, 1e-100)));
+        double r_y = delta_y * (wr[j] / (fmax(ws_n, 1e-100)));
         double m_n = m + r;
         m2 += wr[j] * delta * (xr[j]-m_n);
+        c2 += wr[j] * delta_y * (xr[j]-m_n);
         m += r;
+        m_y += r_y;
         ws += wr[j];
       }
 
       double v = m2 / ws;
+      double c = c2 / ws;
 
       double me = fabs(m_ref - m);
       double ve = fabs(v_ref - v);
+      double ce = fabs(c_ref - c);
       printf("Algorithm 1b, n_test = %d\n"
              "  mean error:        %12.5g\n"
-             "  variance error:    %12.5g\n\n", n_test, me, ve);
+             "  variance error:    %12.5g\n"
+             "  covariance error:  %12.5g\n\n", (int)n_test, me, ve, ce);
     }
 
     /* Variant 2a */
@@ -176,24 +208,32 @@ main (int argc, char *argv[])
     {
       double ws = 0;
       double m = 0;
+      double m_y = 0;
       double v = 0;
+      double c = 0;
 
       for (size_t i = 0; i < n_test; i++) {
         size_t j = i % nr;
         double ws_n = wr[j] + ws;
         double delta = xr[j] - m;
+        double delta_y = yr[j] - m_y;
         double r = delta * (wr[j] / (fmax(ws_n, 1e-100)));
+        double r_y = delta_y * (wr[j] / (fmax(ws_n, 1e-100)));
         double m_n = m + r;
         v = v*(ws/ws_n) + (wr[j] * delta * (xr[j]-m_n)/ws_n);
+        c = c*(ws/ws_n) + (wr[j] * delta_y * (xr[j]-m_n)/ws_n);
         m += r;
+        m_y += r_y;
         ws += wr[j];
       }
 
       double me = fabs(m_ref - m);
       double ve = fabs(v_ref - v);
+      double ce = fabs(c_ref - c);
       printf("Algorithm 2a, n_test = %d\n"
              "  mean error:        %12.5g\n"
-             "  variance error:    %12.5g\n\n", n_test, me, ve);
+             "  variance error:    %12.5g\n"
+             "  covariance error:  %12.5g\n\n", (int)n_test, me, ve, ce);
     }
 
     /* Variant 2b */
@@ -201,24 +241,65 @@ main (int argc, char *argv[])
     {
       double ws = 0;
       double m = 0;
+      double m_y = 0;
       double v = 0;
+      double c = 0;
 
       for (size_t i = 0; i < n_test; i++) {
         size_t j = i % nr;
         double ws_n = wr[j] + ws;
         double delta = xr[j] - m;
+        double delta_y = yr[j] - m_y;
         double r = delta * (wr[j] / (fmax(ws_n, 1e-100)));
+        double r_y = delta_y * (wr[j] / (fmax(ws_n, 1e-100)));
         double m_n = m + r;
         v = (v*ws + (wr[j] * delta * (xr[j]-m_n))) / ws_n;
+        c = (c*ws + (wr[j] * delta_y * (xr[j]-m_n))) / ws_n;
         m += r;
+        m_y += r_y;
         ws += wr[j];
       }
 
       double me = fabs(m_ref - m);
       double ve = fabs(v_ref - v);
+      double ce = fabs(c_ref - c);
       printf("Algorithm 2b, n_test = %d\n"
              "  mean error:        %12.5g\n"
-             "  variance error:    %12.5g\n\n", n_test, me, ve);
+             "  variance error:    %12.5g\n"
+             "  covariance error:  %12.5g\n\n", (int)n_test, me, ve, ce);
+    }
+
+    /* Variant 3 */
+
+    {
+      double ws = 0;
+      double m = 0;
+      double m_y = 0;
+      double c = 0;
+
+      for (size_t i = 0; i < n_test; i++) {
+        size_t j = i % nr;
+        double ws_n = wr[j] + ws;
+        double delta = xr[j] - m;
+        double delta_y = yr[j] - m_y;
+        double r = delta * (wr[j] / (fmax(ws_n, 1e-100)));
+        double r_y = delta_y * (wr[j] / (fmax(ws_n, 1e-100)));
+        double m_n = m + r;
+        double m_y_n = m_y + r_y;
+        c = (c*ws + (wr[j] * 0.5* (  delta_y * (xr[j]-m_n)
+                                   + delta * (yr[j]-m_y_n)))) / ws_n;
+        m += r;
+        m_y += r_y;
+        ws += wr[j];
+      }
+
+      double me = fabs(m_ref - m);
+      double mye = fabs(m_y_ref - m_y);
+      double ce = fabs(c_ref - c);
+      printf("Algorithm 3, n_test = %d\n"
+             "  mean error x:      %12.5g\n"
+             "  mean error y:      %12.5g\n"
+             "  covariance error:  %12.5g\n\n", (int)n_test, me, mye, ce);
     }
   }
 
