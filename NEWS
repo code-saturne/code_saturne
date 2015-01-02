@@ -5,6 +5,8 @@ Release 3.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for crash with time moment variance (bug #109).
+
 - Fix two last digits of the ideal gas constant (8.31446).
 
 Release 3.3.3 (19 Dec 2014)
