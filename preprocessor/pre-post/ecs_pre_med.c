@@ -422,8 +422,7 @@ ecs_loc_pre_med__lit_noeud(ecs_maillage_t   *maillage,
 static void
 ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
                             const ecs_med_t  *fic_maillage,
-                            const char       *nom_maillage,
-                            int               dim_e)
+                            const char       *nom_maillage)
 {
   ecs_entmail_t   entmail_e;
 
@@ -1519,7 +1518,7 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
 {
   char            *nom_maillage;
   int              ind;
-  int              dim_e;
+  med_int          dim_e;
   ecs_med_t       *fic_maillage;
   ecs_famille_t  **vect_famille;
 
@@ -1653,8 +1652,7 @@ ecs_pre_med__lit_maillage(const char  *nom_fic_maillage,
 
   ecs_loc_pre_med__lit_maille(maillage,
                               fic_maillage,
-                              nom_maillage,
-                              dim_e);
+                              nom_maillage);
 
   /* Lecture des familles */
   /*----------------------*/

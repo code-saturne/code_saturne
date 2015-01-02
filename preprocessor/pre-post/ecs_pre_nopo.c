@@ -1000,6 +1000,8 @@ ecs_pre_nopo__lit_maillage(const char  *nom_fic_maillage)
   size_t  ne4 = 0, le4 = 0; /* Segmentation of NOP4 array */
   size_t  ne5 = 0, le5 = 0; /* Segmentation of NOP5 array */
 
+  int32_t nop0_c[29];
+
   /* Création d'un maillage initialement vide (valeur de retour) */
 
   ecs_maillage_t  *maillage = ecs_maillage__cree_nodal();
@@ -1192,25 +1194,28 @@ ecs_pre_nopo__lit_maillage(const char  *nom_fic_maillage)
     architecture requires the following call (the converse should be tested).
   */
 
+  for (ind = 0; ind < 29; ind++)
+    nop0_c[ind] = nop0[ind];
+
   if (ecs_file_get_swap_endian(fic_maillage) == 1) {
-    ecs_file_swap_endian((ecs_byte_t *)nop0,
-                         (ecs_byte_t *)nop0,
+    ecs_file_swap_endian((ecs_byte_t *)nop0_c,
+                         (ecs_byte_t *)nop0_c,
                          4, 29);
   }
 
   /* Remove whitespace at end of title (80 characters) */
-  *((char *)(nop0) + 79) = '\0';
-  for (ind = 79; ind > 0 && *((char *)(nop0) + ind) == ' '; ind--) {
-    *((char *)(nop0) + ind) = '\0';
+  *((char *)(nop0_c) + 79) = '\0';
+  for (ind = 79; ind > 0 && *((char *)(nop0_c) + ind) == ' '; ind--) {
+    *((char *)(nop0_c) + ind) = '\0';
   }
 
-  printf(_("  Title     : %.80s\n"), (char *)nop0);
+  printf(_("  Title     : %.80s\n"), (char *)nop0_c);
   printf(_("  Date      : %2.2s/%2.2s/%4.4s\n"),
-         (char *)(nop0 + 20),
-         ((char *)(nop0 + 20)) + 2, ((char *)(nop0 + 20)) + 4);
-  printf(_("  Creator   : %24.24s\n"), (char *)(nop0 + 22));
+         (char *)(nop0_c + 20),
+         ((char *)(nop0_c + 20)) + 2, ((char *)(nop0_c + 20)) + 4);
+  printf(_("  Creator   : %24.24s\n"), (char *)(nop0_c + 22));
 
-  if (strncmp("NOPO", (char *)(nop0 + 28), 4) != 0)
+  if (strncmp("NOPO", (char *)(nop0_c + 28), 4) != 0)
     ecs_error(__FILE__, __LINE__, 0,
               _("Format error for file \"%s\" :\n"
                 "String 'NOPO' does not appear in header;\n"

@@ -81,6 +81,11 @@ Architectural changes
   features and algorithm versioning. This requires an update on the Syrthes
   side for conjugate heat transfer.
 
+- The preprocessor now uses integers of the same size as the kernel's
+  global numbers (cs_gnum_t). This allows handling of meshes above
+  200 million cells, at the cost of about 50% higher memory usage for
+  this stage (unlesss the code is configured  with --disable-long-gnum).
+
 - Remove rtp and rtpa arrays. Variables are stored with field
   structure owning its value arrays.
 
@@ -1708,7 +1713,6 @@ Architectural changes
   package. Add ParMETIS and PT-SCOTCH/SCOTCH support. By default, serial
   partitionning is done, but parallel partitioning may be selected with
   the user script.
-
 
 Bug fixes:
 ----------
