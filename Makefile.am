@@ -104,14 +104,6 @@ build-aux/ylwrap
 
 EXTRA_DIST = \
 $(AUX_DIST) \
-ChangeLog.old \
-ChangeLog.2007 \
-ChangeLog.2008 \
-ChangeLog.2009 \
-ChangeLog.2010 \
-ChangeLog.2011 \
-ChangeLog.2012 \
-ChangeLog.2013 \
 COMPATIBILITY \
 QUALITY_ASSURANCE \
 po/Makevars.template \
@@ -393,12 +385,21 @@ install-doc:
 # Generate ChangeLog
 
 changelog:
-	today=`date +%F`; \
-	start=`date +%Y`-01-01; \
-	svn2cl --reparagraph --include-rev --include-actions \
-      --authors=${top_srcdir}/extras/changelog/authors.xml \
-      --output=${top_srcdir}/ChangeLog \
-      ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"}
+	start=2015-01-01; \
+	if test -d ${top_srcdir}/.svn ; then \
+	  today=`date +%F`; \
+	  svn2cl --reparagraph --include-rev --include-actions \
+	  --authors=${top_srcdir}/extras/changelog/authors.xml \
+	  --output=${top_srcdir}/ChangeLog \
+	  ${top_srcdir} --revision {"$${today} 23:59"}:{"$${start} 00:00"} ; \
+        elif test -d ${top_srcdir}/.git ; then \
+	  git --no-pager --git-dir=${top_srcdir}/.git --work-tree=${top_srcdir} log \
+	    --since={$${start}} --no-merges --date-order --date=iso \
+	    --format="%n%cd %aN <%ce> %n%n%x09* [%H]%n%w(82,8,8)%s" --name-status > ${top_srcdir}/ChangeLog ; \
+	else \
+	  echo "ChangeLog must be generated from a Subversion or git working copy."  > ${top_srcdir}/ChangeLog ; \
+	fi; \
+	cat ${top_srcdir}/extras/changelog/ChangeLog.base >> ${top_srcdir}/ChangeLog;
 
 # Update Copyright
 
