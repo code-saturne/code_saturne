@@ -896,7 +896,7 @@ void CS_PROCF (tplend, TPLEND)
     if (*tplfmt & fmt_mask) {
 
       if (*tplnum <= 0 || *tplnum > (int)_n_files_max[fmt])
-        bft_error(__FILE__, __LINE__, errno,
+        bft_error(__FILE__, __LINE__, 0,
                   _("Plot number must be in the interval [1, %d] and not %d."),
                   (int)(_n_files_max[fmt]), *tplnum);
 

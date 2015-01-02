@@ -16,7 +16,7 @@
 !
 ! You should have received a copy of the GNU General Public License along with
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
-! Street, Fifth Floor, Boston, MA 02110-1301, USA.
+! Street, Fifth Floor6b1e433ea7e612c18f94b936f94db2eba9e887f2, Boston, MA 02110-1301, USA.
 
 !-------------------------------------------------------------------------------
 
@@ -64,7 +64,6 @@ logical          interleaved
 integer          tplnum, ii, lpre, lnom, lng
 integer          icap, ncap, ipp, ippf
 integer          c_id, f_id, f_dim, f_type, n_fields
-integer          nbcap(nvppmx)
 double precision varcap(ncaptm)
 
 integer, dimension(:), allocatable :: lsttmp
@@ -74,7 +73,10 @@ double precision, dimension(:,:), pointer :: val_v
 double precision, dimension(:), pointer :: val_s
 
 character(len=3), dimension(3), save :: nomext3 = (/'[X]', '[Y]', '[Z]'/)
-character(len=4), dimension(3), save :: nomext63 = (/'[11]', '[22]', '[33]'/)
+character(len=4), dimension(6), save :: nomext6 &
+  = (/'[XX]', '[YY]', '[ZZ]', '[XY]', '[YZ]', '[XZ]'/)
+character(len=4), dimension(9), save :: nomext9 &
+  = (/'[XX]', '[XY]', '[XZ]', '[YX]', '[YY]', '[YZ]', '[ZX]', '[ZY]', '[ZZ]'/)
 integer, save :: keypp = -1
 
 ! Time plot number shift (in case multiple routines define plots)
@@ -136,12 +138,6 @@ if (ipass.eq.1) then
   nompre = trim(adjustl(emphis)) // trim(adjustl(prehis))
   lpre = len_trim(nompre)
 
-  ! Number of probes per variable
-  do ipp = 2, nvppmx
-    nbcap(ipp) = ihisvr(ipp,1)
-    if (nbcap(ipp).lt.0) nbcap(ipp) = ncapt
-  enddo
-
   allocate(lsttmp(ncapt))
   allocate(xyztmp(3, ncapt))
 
@@ -156,12 +152,13 @@ if (ipass.eq.1) then
 
     call field_get_dim (f_id, f_dim, interleaved)
 
-    do c_id = 1, min(f_dim, 3)
+    do c_id = 1, min(f_dim, 9)
 
       ipp = ippf + c_id - 1
 
       if (ihisvr(ipp,1) .gt. 0) then
-        do ii=1, ihisvr(ipp,1)
+        ncap = ihisvr(ipp,1)
+        do ii=1, ncap
           lsttmp(ii) = ihisvr(ipp,ii+1)
           if (irangp.lt.0 .or. irangp.eq.ndrcap(ihisvr(ipp, ii+1))) then
             xyztmp(1, ii) = xyzcen(1, nodcap(ihisvr(ipp, ii+1)))
@@ -175,7 +172,8 @@ if (ipass.eq.1) then
           endif
         enddo
       else
-        do ii = 1, nbcap(ipp)
+        ncap = ncapt
+        do ii = 1, ncap
           lsttmp(ii) = ii
           if (irangp.lt.0 .or. irangp.eq.ndrcap(ii)) then
             xyztmp(1, ii) = xyzcen(1, nodcap(ii))
@@ -190,7 +188,7 @@ if (ipass.eq.1) then
         enddo
       endif
 
-      if (nbcap(ipp) .gt. 0) then
+      if (ncap .gt. 0) then
 
         if (irangp.le.0) then
 
@@ -199,14 +197,16 @@ if (ipass.eq.1) then
           if (f_dim .eq. 3) then
             nomhis = trim(nomhis) // nomext3(c_id)
           else if (f_dim .eq. 6) then
-            nomhis = trim(nomhis) // nomext63(c_id)
+            nomhis = trim(nomhis) // nomext6(c_id)
+          else if (f_dim .eq. 9) then
+            nomhis = trim(nomhis) // nomext9(c_id)
           endif
           lnom = len_trim(nomhis)
 
           tplnum = nptpl + ipp
           call tppini(tplnum, nomhis, nompre, tplfmt, idtvar, nthsav, tplflw, &
           !==========
-                      nbcap(ipp), lsttmp(1), xyzcap(1,1), lnom, lpre)
+                      ncap, lsttmp(1), xyzcap(1,1), lnom, lpre)
 
         endif ! (irangp.le.0)
 
@@ -239,7 +239,7 @@ if (modhis.eq.0 .or. modhis.eq.1) then
     call field_get_dim (f_id, f_dim, interleaved)
     call field_get_type(f_id, f_type)
 
-    do c_id = 1, min(f_dim, 3)
+    do c_id = 1, min(f_dim, 9)
 
       ipp = ippf + c_id - 1
 
@@ -343,17 +343,30 @@ if (modhis.eq.0 .or. modhis.eq.1) then
 
 if (modhis.eq.2) then
 
-  do ipp = 2, nvppmx
-    if (ihisvr(ipp,1).lt.0) then
-      ncap = ncapt
-    else
+  call field_get_n_fields(n_fields)
+
+  do f_id = 0, n_fields - 1
+
+    call field_get_key_int(f_id, keypp, ippf)
+    if (ippf.le.1) cycle
+
+    call field_get_dim (f_id, f_dim, interleaved)
+
+    do c_id = 1, min(f_dim, 3)
+
+      ipp = ippf + c_id - 1
+
       ncap = ihisvr(ipp,1)
-    endif
-    if (irangp.le.0 .and. ncap.gt.0) then
-      tplnum = nptpl + ipp
-      call tplend(tplnum, tplfmt)
-      !==========
-    endif
+      if (ncap.lt.0) ncap = ncapt
+
+      if (ncap.gt.0 .and. irangp.le.0) then
+        tplnum = nptpl + ipp
+        call tplend(tplnum, tplfmt)
+        !==========
+      endif
+
+    enddo
+
   enddo
 
 endif
