@@ -7839,14 +7839,6 @@
 	  src/alge/projts.f90[DEL], src/alge/projtv.f90[DEL]: Move finite
 	  volume operators (divmas, itrmas, itrgrp, projts, projtv) to C.
 
-2013-12-31 17:41  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
-
-	* [r5599] src/alge/Makefile.am, src/alge/cs_matrix_building.c,
-	  src/alge/cs_matrix_building.h, src/alge/divmas.f90[DEL],
-	  src/alge/itrgrp.f90[DEL], src/alge/itrmas.f90[DEL],
-	  src/alge/projts.f90[DEL], src/alge/projtv.f90[DEL]: Move finite
-	  volume operators (divmas, itrmas, itrgrp, projts, projtv) to C.
-
 2013-12-27 18:22  Erwan Le Coupanec <erwan.lecoupanec@edf.fr>
 
 	* [r5598] src/alge/cs_convection_diffusion_balance.c,
