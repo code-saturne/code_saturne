@@ -13,13 +13,13 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_5">
+  <layout class="QGridLayout" name="gridLayout_4">
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
       <string>Definition of 1D profiles</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_4">
+     <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="1">
        <widget class="QTreeView" name="treeViewProfile">
         <property name="indentation">
@@ -136,8 +136,8 @@
         </property>
        </spacer>
       </item>
-      <item row="2" column="1" rowspan="2">
-       <layout class="QGridLayout" name="gridLayout_3">
+      <item row="2" column="1">
+       <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0" colspan="3">
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
@@ -150,10 +150,16 @@
           <item row="0" column="1">
            <widget class="QLineEdit" name="lineEditBaseName"/>
           </item>
-          <item row="0" column="2" colspan="2">
+          <item row="0" column="2">
            <layout class="QHBoxLayout" name="horizontalLayoutFormat">
             <item>
              <widget class="QLabel" name="labelFormat">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>Format</string>
               </property>
@@ -186,24 +192,41 @@ frequency</string>
            <widget class="QComboBox" name="comboBoxFreq"/>
           </item>
           <item row="2" column="2">
-           <widget class="QLineEdit" name="lineEditFreq">
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QLineEdit" name="lineEditFreqTime">
-            <property name="maximumSize">
-             <size>
-              <width>50</width>
-              <height>16777215</height>
-             </size>
-            </property>
-           </widget>
+           <layout class="QHBoxLayout" name="horizontalLayoutFormat">
+            <item>
+             <widget class="QLineEdit" name="lineEditFreq">
+              <property name="maximumSize">
+               <size>
+                <width>50</width>
+                <height>16777215</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="lineEditFreqTime">
+              <property name="maximumSize">
+               <size>
+                <width>50</width>
+                <height>16777215</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <spacer name="horizontalSpacer">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </item>
           <item row="3" column="0">
            <widget class="QLabel" name="label_3">
@@ -246,7 +269,7 @@ frequency</string>
             </item>
            </layout>
           </item>
-          <item row="3" column="2" colspan="2">
+          <item row="3" column="2">
            <spacer name="spacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -286,7 +309,7 @@ frequency</string>
             </item>
            </layout>
           </item>
-          <item row="4" column="2" colspan="2">
+          <item row="4" column="2">
            <spacer name="spacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -404,7 +427,7 @@ frequency</string>
         </item>
        </layout>
       </item>
-      <item row="3" column="2">
+      <item row="2" column="2">
        <spacer>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
