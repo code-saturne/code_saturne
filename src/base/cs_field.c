@@ -1322,6 +1322,10 @@ cs_field_create(const char   *name,
 
   f->n_time_vals = has_previous ? 2 : 1;
 
+  BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
+  for (int i = 0; i < f->n_time_vals; i++)
+    f->vals[i] = NULL;
+
   return f;
 }
 
@@ -1364,6 +1368,10 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 
   f->n_time_vals = _n_time_vals;
 
+  BFT_REALLOC(f->vals, f->n_time_vals, cs_real_t *);
+  for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
+    f->vals[i] = NULL;
+
   /* If allocation or mapping has already been done */
 
   if (f->val != NULL) {
@@ -1401,9 +1409,7 @@ cs_field_allocate_values(cs_field_t  *f)
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
     int ii;
 
-    BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t*);
-
-   /* Initialization */
+    /* Initialization */
 
     for (ii = 0; ii < f->n_time_vals; ii++)
       f->vals[ii] = _add_val(n_elts[2], f->dim, f->vals[ii]);
