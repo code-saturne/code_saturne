@@ -128,8 +128,21 @@ typedef unsigned long long uint64_t;
  * Local type definitions
  *----------------------------------------------------------------------------*/
 
-typedef int             ecs_int_t;      /* Integer */
-typedef size_t          ecs_size_t;     /* Index size */
+#if defined(HAVE_LONG_GNUM)
+  #if (SIZEOF_LONG == 8)
+    typedef long                ecs_int_t;   /* Integer */
+    typedef unsigned long       ecs_size_t;  /* Index size */
+  #elif (SIZEOF_LONG_LONG == 8)
+    typedef long long           ecs_int_t;   /* Integer */
+    typedef unsigned long long  ecs_size_t;  /* Index size */
+  #else
+    #error
+  #endif
+#else
+  typedef int           ecs_int_t;      /* Integer */
+  typedef size_t        ecs_size_t;     /* Index size */
+#endif
+
 typedef double          ecs_coord_t;    /* Real (floating point) */
 typedef char            ecs_byte_t;     /* Byte (untyped memory) */
 

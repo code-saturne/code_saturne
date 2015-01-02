@@ -409,7 +409,6 @@ _table__attribue_fam(const ecs_table_t      *table_att_unifie,
                      int                    *nbr_fam)
 {
   ecs_int_t     cpt_fam;
-  size_t        cpt_val;
   ecs_int_t     idescr;
   size_t        ielt;
   ecs_int_t     ifam;
@@ -462,7 +461,6 @@ _table__attribue_fam(const ecs_table_t      *table_att_unifie,
   for (ifam = 0; ifam < *nbr_fam; ifam++)
     ECS_MALLOC((*def_fam_descr)[ifam], (*nbr_descr_fam)[ifam], ecs_int_t);
 
-  cpt_val = 0;
   cpt_fam = 0;
 
   for (ielt = 0; ielt < nbr_elt; ielt++) {
