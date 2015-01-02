@@ -1,10 +1,10 @@
 CODE_SATURNE VERSION 2.0
 ========================
 
-This is version 2.0-rc2 of the Code_Saturne CFD tool.
+This is version 2.0 of the Code_Saturne CFD tool.
 It is composed of the following elements:
-* Code_Saturne Kernel version 2.0-rc2 (including Graphical User Interface)
-* Code_Saturne Preprocessor version 2.0-rc2
+* Code_Saturne Kernel version 2.0 (including Graphical User Interface)
+* Code_Saturne Preprocessor version 2.0
 Other versions of these elements might not be compatible.
 
 
@@ -13,10 +13,10 @@ Compulsory libraries
 The BFT (Base Functions and Types) and FVM (Finite Volume Mesh) libraries
 are compulsory. The MEI (Mathematical Expressions Interpreter) is optional.
 They are distributed under the LGPL licence (copyright EDF S.A., France).
-Code_Saturne version 2.0-rc2 is compliant with the following versions:
-* BFT 1.1.3 or newer
-* FVM 0.15.1 or newer
-* MEI 1.0.2 or newer
+Code_Saturne version 2.0 is compliant with the following versions:
+* BFT 1.1.5 or newer
+* FVM 0.15.4 or newer
+* MEI 1.0.4 or newer
 Older versions might yet be compatible, possibly with limited features.
 
 
@@ -24,7 +24,7 @@ Optionnal libraries
 -------------------
 Here is given the list of optional libraries that can be linked to
 Code_Saturne. The version number is the one used for developping and
-testing version 2.0-beta2 of Code_Saturne. Other versions (newer or older)
+testing version 2.0 of Code_Saturne. Other versions (newer or older)
 might still be compatible.
 * python: > 2.4     - (necessary for the Code_Saturne GUI)
           > 2.3     - (if Code_Saturne GUI is disabled)
