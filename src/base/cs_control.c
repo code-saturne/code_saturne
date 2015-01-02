@@ -50,6 +50,7 @@
 #include "bft_printf.h"
 
 #include "cs_file.h"
+#include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_restart.h"
@@ -86,6 +87,8 @@ BEGIN_C_DECLS
 
 static double  _control_file_wt_interval = 0.;
 static double  _control_file_wt_last = -1.;
+
+static int     _flush_log_nt = -1;
 
 /*============================================================================
  * Private function definitions
@@ -314,101 +317,23 @@ _control_postprocess(const cs_time_step_t   *ts,
 
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*----------------------------------------------------------------------------
+ * Parse control file
+ *
+ * parameters:
+ *   buffer <-- pointer to file contents buffer
+ *   f_size <-- size of buffer
+ *----------------------------------------------------------------------------*/
 
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Check the presence of a control file and deal with the interactive
- *        control.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_check_file(void)
+static void
+_parse_control_file(char  *buffer,
+                    long  f_size)
 {
   int nt_max;
 
-  long f_size = 0;
   char *s;
-  char *buffer = NULL, *cur_line = NULL;
+  char *cur_line = NULL;
   const cs_time_step_t  *ts = cs_glob_time_step;
-
-  const char path[] = "control_file";
-
-  /* Test existence and size of file */
-
-  if (cs_glob_rank_id <= 0) {
-
-    if (   _control_file_wt_interval <= 0.
-        ||(    cs_timer_wtime() - _control_file_wt_last
-           >= _control_file_wt_interval)) {
-
-#if defined(HAVE_UNISTD_H) && defined(HAVE_ACCESS)
-
-      /* Test existence of file using access() before stat(),
-         as this may be less costly on some filesytems
-         (such as on LUSTRE, due to metadata handling aspects). */
-
-      if (access(path, F_OK) == 0)
-        f_size = cs_file_size(path);
-
-#else
-
-      f_size = cs_file_size(path);
-
-#endif
-
-    }
-
-  }
-
-#if defined(HAVE_MPI)
-  if (cs_glob_rank_id >= 0)
-    MPI_Bcast(&f_size,  1, MPI_LONG,  0, cs_glob_mpi_comm);
-#endif
-
-  /* If no control file is present, we are done */
-
-  if (f_size == 0)
-    return;
-
-  /* If file exists, handle it */
-
-  BFT_MALLOC(buffer, f_size + 1, char);
-
-  if (cs_glob_rank_id <= 0) {
-
-    size_t r_size = 0;
-    FILE *control_file = fopen("control_file", "r");
-
-    if (control_file != NULL) {
-      r_size = fread(buffer, 1, f_size, control_file);
-      buffer[r_size] = '\0'; /* precaution for partial read */
-      fclose(control_file);
-      remove("control_file");
-    }
-    else
-      bft_printf
-        (_("\n"
-           " Warning: error opening %s (ignored):\n"
-           " --------\n"
-           "   \"%s\"\n\n"), path, strerror(errno));
-
-
-    _control_file_wt_last = cs_timer_wtime();
-
-  }
-
-#if defined(HAVE_MPI)
-  if (cs_glob_rank_id >= 0)
-    MPI_Bcast(buffer, f_size + 1, MPI_CHAR, 0, cs_glob_mpi_comm);
-#endif
-
-  /* Now all ranks have required buffer */
 
   cur_line = buffer;
 
@@ -476,6 +401,11 @@ cs_control_check_file(void)
       if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0)
         nt_max = CS_MAX(nt_max, 0);
     }
+    else if (strncmp(s, "time_step_limit ", 16) == 0) {
+      if (_read_next_int(cur_line, (const char **)&s, &nt_max) > 0)
+        if (ts->nt_max > -1)
+          nt_max = CS_MIN(nt_max, ts->nt_max);
+    }
 
     if (nt_max > -1) {
       nt_max = CS_MAX(nt_max, ts->nt_cur);
@@ -510,6 +440,21 @@ cs_control_check_file(void)
     else if (strncmp(s, "postprocess_", 12) == 0)
       _control_postprocess(ts, cur_line, (const char **)&s);
 
+    /* Force flush of logs */
+
+    else if (strncmp(s, "flush_logs", 10) == 0) {
+      int nt = -1;
+      if (_read_next_int(cur_line, (const char **)&s, &nt) > 0) {
+        if (nt > -1)
+          _flush_log_nt = CS_MAX(nt, ts->nt_cur);
+        else
+          _flush_log_nt = -1;
+      }
+      else
+        _flush_log_nt = ts->nt_cur;
+      bft_printf(_("  flush logs at time step %12d\n"), _flush_log_nt);
+    }
+
     /* Unhandled lines */
 
     else
@@ -524,8 +469,106 @@ cs_control_check_file(void)
   bft_printf
     (_("\n"
        " Finished reading \"control_file\".\n\n"));
+}
 
-  BFT_FREE(buffer);
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the presence of a control file and deal with the interactive
+ *        control.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_control_check_file(void)
+{
+  long f_size = 0;
+  char *buffer = NULL, *cur_line = NULL;
+  const cs_time_step_t  *ts = cs_glob_time_step;
+
+  const char path[] = "control_file";
+
+  /* Test existence and size of file */
+
+  if (cs_glob_rank_id <= 0) {
+
+    if (   _control_file_wt_interval <= 0.
+        ||(    cs_timer_wtime() - _control_file_wt_last
+           >= _control_file_wt_interval)) {
+
+#if defined(HAVE_UNISTD_H) && defined(HAVE_ACCESS)
+
+      /* Test existence of file using access() before stat(),
+         as this may be less costly on some filesytems
+         (such as on LUSTRE, due to metadata handling aspects). */
+
+      if (access(path, F_OK) == 0)
+        f_size = cs_file_size(path);
+
+#else
+
+      f_size = cs_file_size(path);
+
+#endif
+
+    }
+
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_rank_id >= 0)
+    MPI_Bcast(&f_size,  1, MPI_LONG,  0, cs_glob_mpi_comm);
+#endif
+
+  /* If file exists, handle it */
+
+  if (f_size > 0) {
+
+    BFT_MALLOC(buffer, f_size + 1, char);
+
+    if (cs_glob_rank_id <= 0) {
+
+      size_t r_size = 0;
+      FILE *control_file = fopen("control_file", "r");
+
+      if (control_file != NULL) {
+        r_size = fread(buffer, 1, f_size, control_file);
+        buffer[r_size] = '\0'; /* precaution for partial read */
+        fclose(control_file);
+        remove("control_file");
+      }
+      else
+        bft_printf
+          (_("\n"
+             " Warning: error opening %s (ignored):\n"
+             " --------\n"
+             "   \"%s\"\n\n"), path, strerror(errno));
+
+      _control_file_wt_last = cs_timer_wtime();
+
+    }
+
+#if defined(HAVE_MPI)
+    if (cs_glob_rank_id >= 0)
+      MPI_Bcast(buffer, f_size + 1, MPI_CHAR, 0, cs_glob_mpi_comm);
+#endif
+
+    /* Now all ranks have required buffer */
+
+    _parse_control_file(buffer, f_size);
+
+  }
+
+  if (_flush_log_nt == ts->nt_cur) {
+    _flush_log_nt = -1;
+    cs_log_printf_flush(CS_LOG_N_TYPES);
+    bft_printf_flush();
+  }
 }
 
 /*----------------------------------------------------------------------------*/

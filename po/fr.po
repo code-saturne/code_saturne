@@ -4532,6 +4532,10 @@ msgstr ""
 msgid "current:"
 msgstr "courant :"
 
+#, c-format
+msgid "  flush logs at time step %12d\n"
+msgstr "  vidage des tampons des fichiers journaux au pas de temps %12d\n"
+
 msgid ""
 "\n"
 " Finished reading \"control_file\".\n"
