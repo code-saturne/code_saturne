@@ -1274,6 +1274,12 @@ _locate_all_distant(ple_locator_t               *this_locator,
   const int dim = this_locator->dim;
   const ple_lnum_t idb = this_locator->point_id_base;
 
+  if (distance == NULL) {
+    PLE_MALLOC(_distance, n_points, float);
+    for (j = 0; j < n_points; j++)
+      _distance[j] = -1.0;
+  }
+
   /* Now update locations */
 
   _locate_distant(this_locator,
@@ -1285,7 +1291,7 @@ _locate_all_distant(ple_locator_t               *this_locator,
                   point_coords,
                   location,
                   location_rank_id,
-                  distance,
+                  _distance,
                   mesh_extents_f,
                   mesh_locate_f);
 
