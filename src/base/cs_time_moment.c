@@ -200,8 +200,8 @@ typedef struct {
                                              global (loc 0) accumulators */
 
   int                    *m_type;         /* Moment types */
-  int                    *location_id;    /* Moment types */
-  int                    *dimension;      /* Moment types */
+  int                    *location_id;    /* Moment location */
+  int                    *dimension;      /* Moment dimension */
   int                    *wa_id;          /* Associated accumulator ids */
   int                    *l_id;           /* Associated lower order ids */
 
@@ -909,7 +909,7 @@ _build_sd_desc(int        n_fields,
  * Simple data is defined by an array of integers of size:
  *   3 + (2+dim)*n_fields
  * It contains, in succession: location_id, field_dimension, n_fields,
- * the (field_id, component_id, component_id_0, component_id_dim-1) tuples.
+ * then (field_id, component_id, component_id_0, component_id_dim-1) tuples.
  * Negative component ids in the second position mean all components are used.
  *
  * parameters:
@@ -949,8 +949,10 @@ _find_or_add_sd(const char  *name,
       is_different = true;
     else {
       for (int i = 0; i < n_fields; i++) {
+        const cs_field_t *f = cs_field_by_id(f_id[i]);
+        const int _c_id = (f->dim > 1) ? c_id[i] : 0;
         if (   msd[3 + i*stride] != f_id[i]
-            || msd[3 + i*stride+1] != c_id[i])
+            || msd[3 + i*stride+1] != _c_id)
           is_different = true;
       }
     }
@@ -1056,30 +1058,30 @@ _find_or_add_sd(const char  *name,
 
     if (_c_id > -1) {
       for (int j = 0; j < dim; j++)
-        msd[3 + i*stride + 1 + j] = _c_id;
+        msd[3 + i*stride + 2 + j] = _c_id;
     }
     else if (f->dim == dim) {
       assert(cur_dim == 1);
       for (int j = 0; j < dim; j++)
-        msd[3 + i*stride + 1 + j] = j;
+        msd[3 + i*stride + 2 + j] = j;
       cur_dim = dim;
     }
     else {
       assert(dim == 6);
       assert(f->dim == 3);
-      msd[3 + i*stride + 1 + 0] = 0;
-      msd[3 + i*stride + 1 + 1] = 1;
-      msd[3 + i*stride + 1 + 2] = 2;
+      msd[3 + i*stride + 2 + 0] = 0;
+      msd[3 + i*stride + 2 + 1] = 1;
+      msd[3 + i*stride + 2 + 2] = 2;
       if (cur_dim == 1) {
-        msd[3 + i*stride + 1 + 3] = 0;
-        msd[3 + i*stride + 1 + 4] = 1;
-        msd[3 + i*stride + 1 + 5] = 0;
+        msd[3 + i*stride + 2 + 3] = 0;
+        msd[3 + i*stride + 2 + 4] = 1;
+        msd[3 + i*stride + 2 + 5] = 0;
         cur_dim = 3;
       }
       else {
-        msd[3 + i*stride + 1 + 3] = 1;
-        msd[3 + i*stride + 1 + 4] = 2;
-        msd[3 + i*stride + 1 + 5] = 2;
+        msd[3 + i*stride + 2 + 3] = 1;
+        msd[3 + i*stride + 2 + 4] = 2;
+        msd[3 + i*stride + 2 + 5] = 2;
         cur_dim = 6;
       }
     }
@@ -1184,7 +1186,7 @@ _sd_moment_data(const void  *input,
     cs_lnum_t m0 = f_dim[0];
     cs_lnum_t m1 = f_dim[1];
     for (cs_lnum_t k = 0; k < dim; k++) {
-      cs_lnum_t c_id = msd[3 + 1 + k]; /* as below, with j = 0 */
+      cs_lnum_t c_id = msd[3 + 2 + k]; /* as below, with j = 0 */
       vals[i*dim + k] = v[m0*i + m1*c_id];
     }
     for (int j = 1; j < n_fields; j++) {
@@ -1192,7 +1194,7 @@ _sd_moment_data(const void  *input,
       m0 = f_dim[j*2];
       m1 = f_dim[j*2 + 1];
       for (cs_lnum_t k = 0; k < dim; k++) {
-        cs_lnum_t c_id = msd[3 + j*stride + 1 + k];
+        cs_lnum_t c_id = msd[3 + j*stride + 2 + k];
         vals[i*dim + k] *= v[m0*i + m1*c_id];
       }
     }
@@ -2001,37 +2003,34 @@ cs_time_moment_define_by_func(const char                *name,
 
   /* Define sub moments */
 
-  if (prev_id > 1) {
+  for (cs_time_moment_type_t m_type = type;
+       m_type > CS_TIME_MOMENT_MEAN;
+       m_type--) {
 
     const cs_time_moment_restart_info_t  *ri = _restart_info;
 
-    int s_prev_id = prev_id;
-    for (cs_time_moment_type_t m_type = type;
-         m_type > CS_TIME_MOMENT_MEAN;
-         m_type--) {
+    int s_prev_id = (ri != NULL) ? ri->l_id[prev_id] : prev_id;
 
-      cs_time_moment_type_t s_type = m_type -1;
-      s_prev_id = ri->l_id[s_prev_id];
+    cs_time_moment_type_t s_type = m_type -1;
 
-      int sub_id = _find_or_add_moment(location_id,
-                                       dim,
-                                       data_func,
-                                       data_input,
-                                       s_type,
-                                       wa_id,
-                                       s_prev_id);
+    int l_id = _find_or_add_moment(location_id,
+                                   dim,
+                                   data_func,
+                                   data_input,
+                                   s_type,
+                                   wa_id,
+                                   s_prev_id);
 
-      mt = _moment + sub_id;
+    mt->l_id = l_id;
+    mt = _moment + l_id;
 
-      if (mt->f_id < 0) {
-        char s[64];
-        snprintf(s, 64, "<auto_%s_moment_%d>",
-                 cs_time_moment_type_name[mt->type], sub_id);
-        s[63] = '\0';
-        BFT_MALLOC(mt->name, strlen(s)+1, char);
-        strcpy(mt->name, s);
-      }
-
+    if (mt->f_id < 0) {
+      char s[64];
+      snprintf(s, 64, "<auto_%s_moment_%d>",
+               cs_time_moment_type_name[mt->type], l_id);
+      s[63] = '\0';
+      BFT_MALLOC(mt->name, strlen(s)+1, char);
+      strcpy(mt->name, s);
     }
 
   }
@@ -2316,6 +2315,8 @@ cs_time_moment_update_all(void)
         }
 
         if (mt->type == CS_TIME_MOMENT_VARIANCE) {
+
+          assert(mt->l_id > -1);
 
           cs_time_moment_t *mt_mean = _moment + mt->l_id;
           cs_real_t *restrict m = mt_mean->val;
