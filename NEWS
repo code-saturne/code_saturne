@@ -5,6 +5,11 @@ Release 3.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash in Code_Saturne/Code_Saturne coupling, due to permutation of
+  pressure and velocity exchange.
+
+- Fix for occasional crash in initialization during field values allocation.
+
 - Fix for crash with time moment variance (bug #109).
 
 - Fix two last digits of the ideal gas constant (8.31446).
