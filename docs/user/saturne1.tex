@@ -278,7 +278,7 @@ version of the code, ...).
 \multicolumn{2}{l}{\texttt{STUDY/CASE1/RESU/}\emph{\texttt{YYYYMMDD-hhmm:}}}&{\bf Results} for the
                                                              calculation YYYYMMDD-hhmm\\
 &        \texttt{postprocessing}    &Directory containing the \CS post-processing output\\
-&                                   &in the {\em EnSight} format (both volume and boundary);\\
+&                                   &in the {\em EnSight}, \med, or CGNS format (both volume and boundary);\\
 &        \texttt{src\_saturne}      &copy of the \CS user subroutines used for the calculation\\
 &        \texttt{monitoring}        &Directory containing the chronological records for \CS\\
 &        \texttt{checkpoint}        &Directory containing the \CS restart files \\
@@ -752,15 +752,17 @@ machine, for example experimenting MPI mapping and ``bind to core''
 features.
 
 %==================================
-\subsubsection{Interactive modification of the target time step}
+\subsubsection{Interactive modification of selected parameters}
 %==================================
 \label{sec:prg_control_file}%
 During a calculation, it is possible to change the limit time step number
 (\texttt{ntmabs}) specified through the GUI or in \texttt{cs\_user\_parameters.f90}.
 To do so, a file named \texttt{control\_file} must be placed in the
 execution directory (see \S\ref{sec:prg_temporarydirectory}).
-This file must contain a line indicating the value of the new limit
-number of time steps.\\
+The existence of this file is checked at the beginning of each time step.
+
+To change the maximum number of time steps, this file must contain a line
+indicating the value of the new limit number of time steps.\\
 If this new limit has already been reached,
  \CS will stop
 properly at the end of the current time step (the results and restart files
@@ -768,7 +770,11 @@ will be written correctly).\\
 This procedure allows the user to stop a calculation in a clean and interactive
 way whenever they wish.
 
-The \texttt{control\_file} may also contain a few other commands:
+The \texttt{control\_file} may also contain a few other commands,
+allowing the user to force checkpointing or postprocessing at a given time step
+or physical time, or to force an update of log and \texttt{listing} files.
+The following commands are available (using the common notations $< >$ to
+indicate a required argument, $[ ]$ to indicate an optional argument).
 
 \begin{tabular}[top]{|p{6.5cm}%
                      |>{\PreserveBackslash\raggedright\hspace{0pt}}p{8.5cm}|}
@@ -785,10 +791,29 @@ The \texttt{control\_file} may also contain a few other commands:
 \hline
 \texttt{control\_file\_wtime\_interval}     & $<$wall\_time\_interval$>$ \\
 \hline
+\texttt{flush\_logs}                        & $[$time\_step\_number$]$ \\
+\hline
 \texttt{postprocess\_time\_step}           & $<$time\_step\_number$>$ [writer\_id] \\
 \texttt{postprocess\_time\_value}          & $<$time\_step\_value$>$ [writer\_id] \\
 \hline
+\texttt{time\_step\_limit}                 & $<$time\_step\_count$>$ \\
+\hline
 \end{tabular}
+
+The \texttt{time\_step\_limit} differs from the \texttt{max\_time\_step} command,
+in the sense that it allows reducing the maximum number of time steps,
+but not increasing it.
+
+Note that for the \texttt{postprocess\_time\_*} options, the last argument
+(\texttt{writer\_id}} is optional. If not defined, or 0, postprocessing
+is activated for all writers; if specified, only the writer with the specified
+id is affected. Also, postprocessing output by one ore more writers at a
+future time step may be cancelled using the negative value of that time step.
+
+For the \texttt{flush\_logs} option, the time step is also optional. If not
+specified, logs are updated at the beginning of the next time step.
+
+Multiple entries may be defined in this file, with one line per entry.
 
 %==================================
 \subsection{Case preparer}

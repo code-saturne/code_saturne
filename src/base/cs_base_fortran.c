@@ -86,6 +86,10 @@ static FILE  *_bft_printf_file = NULL;
  * Prototypes for Fortran subroutines
  *============================================================================*/
 
+/* Flush standard output */
+
+extern void cs_f_flush_logs(void);
+
 /*----------------------------------------------------------------------------
  * Print a message to standard output.
  *----------------------------------------------------------------------------*/
@@ -196,8 +200,9 @@ _bft_printf_flush(void)
 {
   if (_bft_printf_file != NULL)
     return fflush(_bft_printf_file);
-  else
-    return 0;
+  else if (bft_printf_proxy_get() == _bft_printf_f)
+    cs_f_flush_logs();
+  return 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -207,7 +212,7 @@ _bft_printf_flush(void)
 static void
 _close_c_log_file(void)
 {
-  if (_bft_printf_file != NULL) {
+  if (_bft_printf_file != NULL && _bft_printf_file != stdout) {
     fclose(_bft_printf_file);
     _bft_printf_file = NULL;
   }

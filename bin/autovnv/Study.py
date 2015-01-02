@@ -921,7 +921,7 @@ class Studies(object):
                             # Create a control_file in each case DATA
                             if not os.path.exists('control_file'):
                                 control_file = open('control_file','w')
-                                control_file.write(str(self.__n_iter) + "\n")
+                                control_file.write("time_step_limit " + str(self.__n_iter) + "\n")
                                 # Flush to ensure that control_file content is seen
                                 # when control_file is copied to the run directory on all systems
                                 control_file.flush()

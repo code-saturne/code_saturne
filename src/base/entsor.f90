@@ -401,6 +401,14 @@ contains
 
   !=============================================================================
 
+  !> \brief Flush Fortran log
+
+  subroutine flush_nfecra() bind(C, name='cs_f_flush_logs')
+    flush(nfecra)
+  end subroutine flush_nfecra
+
+  !=============================================================================
+
   !> \brief Map a field to time plot (probes) activation array.
   !> This will set the "post_id" keyword for the given field, if not
   !> already set.

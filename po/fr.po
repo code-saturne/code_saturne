@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2014-12-29 00:27+0100\n"
+"POT-Creation-Date: 2015-01-02 01:53+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4531,6 +4531,10 @@ msgstr ""
 
 msgid "current:"
 msgstr "courant :"
+
+#, c-format
+msgid "  flush logs at time step %12d\n"
+msgstr "  vidage des tampons des fichiers journaux au pas de temps %12d\n"
 
 msgid ""
 "\n"
