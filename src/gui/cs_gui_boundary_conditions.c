@@ -1916,7 +1916,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         }
 
         if (boundaries->itype[izone] == *iesicf) {
-          cs_field_t *b_rho = CS_F_(rho_b);
+          cs_field_t *b_rho = cs_field_by_name_try("boundary_density");
           const cs_field_t  *ft = cs_field_by_name_try("temperature");
           int ivart = cs_field_get_key_int(ft, var_key_id) -1;
 
