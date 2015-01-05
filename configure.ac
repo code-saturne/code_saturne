@@ -440,7 +440,7 @@ AC_ARG_ENABLE(openmp,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-openmp]) ;;
     esac
   ],
-  [ cs_have_openmp=no ]
+  [ cs_have_openmp=yes ]
 )
 
 if test "x$cs_have_openmp" = "xyes" ; then
