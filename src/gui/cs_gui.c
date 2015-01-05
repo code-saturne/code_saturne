@@ -814,12 +814,13 @@ cs_gui_time_parameters(const char   *param,
  * Modify restart parameters.
  *
  * parameters:
- *   param               <--  restart parameter
- *   keyword            <<--  new value of the restart parameter
+ *   param     <--  restart parameter
+ *   keyword   <->  new value of the restart parameter
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_restart_parameters_status(const char *param, int *keyword)
+_restart_parameters_status(const char  *param,
+                           int         *keyword)
 {
   int   result;
   char *path = NULL;
@@ -2605,9 +2606,9 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
                                 int *ileaux,
                                 int *iccvfg)
 {
-  cs_gui_restart_parameters_status("restart_rescue",         ntsuit);
-  cs_gui_restart_parameters_status("restart_with_auxiliary", ileaux);
-  cs_gui_restart_parameters_status("frozen_field",           iccvfg);
+  _restart_parameters_status("restart_rescue",         ntsuit);
+  _restart_parameters_status("restart_with_auxiliary", ileaux);
+  _restart_parameters_status("frozen_field",           iccvfg);
 
 #if _XML_DEBUG_
   bft_printf("==>CSISUI\n");
@@ -6231,7 +6232,7 @@ cs_gui_time_moments(void)
     return;
 
   int imom = 0;
-  int isuite = 0;
+  int isuite = cs_restart_present();
 
   int ntimaver
     = cs_gui_get_tag_number("/analysis_control/time_averages/time_average", 1);
@@ -6251,12 +6252,11 @@ cs_gui_time_moments(void)
     _get_time_average_data(imom, "time_step_start", &nt_start);
     _get_time_average_time_start(imom, "time_start", &t_start);
 
-    /* test on isuite */
-    cs_gui_restart_parameters_status("restart", &isuite);
+    /* test on restart */
 
     if (isuite != 0) {
+      restart_id = -2;
       _get_time_average_data(imom, "restart_from_time_average", &restart_id);
-      if (restart_id == imom) restart_id = -2;
       cs_time_moment_restart_options_by_id(restart_id,
                                            &restart_mode,
                                            &restart_name);

@@ -253,16 +253,6 @@ const char  *cs_time_moment_type_name[] = {N_("mean"),
  *============================================================================*/
 
 int
-cs_f_time_moment_define_by_field_ids(const char                *name,
-                                     int                        n_fields,
-                                     const int                  field_id[],
-                                     const int                  component_id[],
-                                     cs_time_moment_type_t      type,
-                                     int                        nt_start,
-                                     double                     t_start,
-                                     int                        restart_id);
-
-int
 cs_f_time_moment_field_id(int  m_num);
 
 /*============================================================================
@@ -1711,57 +1701,6 @@ _restart_read_legacy(cs_restart_t  *restart)
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Define a moment of a product of existing fields components.
- *
- * Moments will involve the tensor products of their component fields,
- * and only scalar, vector, or rank-2 tensors are handled (for
- * post-processing output reasons), so a moment may not involve more than
- * 2 vectors or 1 tensor, unless single components are specified.
- *
- * parameters:
- *   name         <--  name of associated moment
- *   n_fields     <--  number of associated fields
- *   field_id     <--  ids of associated fields
- *   component_id <--  ids of matching field components (-1 for all)
- *   type         <--  moment type
- *   nt_start     <--  starting time step (or -1 to use t_start)
- *   t_start      <--  starting time
- *   restart_id   <--  -2: automatic, -1: reset, >= 0: id of
- *                     matching moment in restart data
- *
- * returns:
- *   id of new moment in case of success, -1 in case of error.
- *----------------------------------------------------------------------------*/
-
-int
-cs_f_time_moment_define_by_field_ids(const char                *name,
-                                     int                        n_fields,
-                                     const int                  field_id[],
-                                     const int                  component_id[],
-                                     cs_time_moment_type_t      type,
-                                     int                        nt_start,
-                                     double                     t_start,
-                                     int                        restart_id)
-{
-  cs_time_moment_restart_t   restart_mode;
-  const char                *restart_name = NULL;
-
-  cs_time_moment_restart_options_by_id(restart_id,
-                                       &restart_mode,
-                                       &restart_name);
-
-  return cs_time_moment_define_by_field_ids(name,
-                                            n_fields,
-                                            field_id,
-                                            component_id,
-                                            type,
-                                            nt_start,
-                                            t_start,
-                                            restart_mode,
-                                            restart_name);
-}
 
 /*----------------------------------------------------------------------------
  * Return field id associated with a given moment
