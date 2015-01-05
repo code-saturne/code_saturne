@@ -167,93 +167,77 @@ if ((modhis.eq.0 .or. modhis.eq.1) .and. irangp.le.0) then
 
   allocate(vartmp(nbstru))
 
-  do ii = 1, nbname
-
-    tplnum = nptpl + 1
-    do jj = 1, nbstru
-      vartmp(jj) = xstr(1, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 2
-    do jj = 1, nbstru
-      vartmp(jj) = xstr(2, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 3
-    do jj = 1, nbstru
-      vartmp(jj) = xstr(3, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 4
-    do jj = 1, nbstru
-      vartmp(jj) = xpstr(1, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 5
-    do jj = 1, nbstru
-      vartmp(jj) = xpstr(2, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 6
-    do jj = 1, nbstru
-      vartmp(jj) = xpstr(3, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 7
-    do jj = 1, nbstru
-      vartmp(jj) = xppstr(1, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 8
-    do jj = 1, nbstru
-      vartmp(jj) = xppstr(2, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 9
-    do jj = 1, nbstru
-      vartmp(jj) = xppstr(3, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 10
-    do jj = 1, nbstru
-      vartmp(jj) = forstr(1, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 11
-    do jj = 1, nbstru
-      vartmp(jj) = forstr(2, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
-    tplnum = nptpl + 12
-    do jj = 1, nbstru
-      vartmp(jj) = forstr(3, jj)
-    enddo
-    call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
-    !==========
-
+  tplnum = nptpl + 1
+  do jj = 1, nbstru
+    vartmp(jj) = xstr(1, jj)
   enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 2
+  do jj = 1, nbstru
+    vartmp(jj) = xstr(2, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 3
+  do jj = 1, nbstru
+    vartmp(jj) = xstr(3, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 4
+  do jj = 1, nbstru
+    vartmp(jj) = xpstr(1, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 5
+  do jj = 1, nbstru
+    vartmp(jj) = xpstr(2, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 6
+  do jj = 1, nbstru
+    vartmp(jj) = xpstr(3, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 7
+  do jj = 1, nbstru
+    vartmp(jj) = xppstr(1, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 8
+  do jj = 1, nbstru
+    vartmp(jj) = xppstr(2, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 9
+  do jj = 1, nbstru
+    vartmp(jj) = xppstr(3, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 10
+  do jj = 1, nbstru
+    vartmp(jj) = forstr(1, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 11
+  do jj = 1, nbstru
+    vartmp(jj) = forstr(2, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
+
+  tplnum = nptpl + 12
+  do jj = 1, nbstru
+    vartmp(jj) = forstr(3, jj)
+  enddo
+  call tplwri(tplnum, tplfmt, nbstru, ntcabs, ttcabs, vartmp)
 
   deallocate(vartmp)
 
