@@ -114,14 +114,12 @@ double precision, dimension(:), pointer :: cvar_fvap, cvar_f7m, cvar_fvp2m
 double precision, dimension(:), pointer :: cvar_yco2
 double precision, dimension(:), pointer :: cvar_yhcn, cvar_yno, cvar_hox
 
-! NOMBRE DE PASSAGES DANS LA ROUTINE
-
 integer          ipass
 data             ipass /0/
 save             ipass
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1. Initializations
 !===============================================================================
 
 ipass = ipass + 1
@@ -154,18 +152,17 @@ call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 call field_get_val_s(ivarfl(isca(ifvap)), cvar_fvap)
 call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
 call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
-if ( ieqco2.ge.1 ) then
+if (ieqco2.ge.1) then
   call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
 endif
-if ( ieqnox.eq.1 ) then
+if (ieqnox.eq.1) then
   call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
   call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
   call field_get_val_s(ivarfl(isca(ihox)), cvar_hox)
 endif
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 2. Variable initialization
 !===============================================================================
 
 ! RQ IMPORTANTE : pour la combustion FU, 1 seul passage suffit
@@ -216,15 +213,15 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
   endif
 
-! --> On initialise tout le domaine de calcul avec de l'air a TINITK
-!                   ================================================
+  ! --> All the domain is filled with the first oxidizer at TINITK
+  !                   ============================================
 
-! ---- Calculs de H1INIT et H2INIT
+  ! ---- Computation of H1INIT and H2INIT
 
   t1init = t0
   t2init = t0
 
-! ------ Variables de transport relatives a la phase liquide
+  ! ------ Variables de transport relatives a la phase liquide
   do icla = 1, nclafu
     call field_get_val_s(ivarfl(isca(iyfol(icla))), cvar_yfolcl)
     call field_get_val_s(ivarfl(isca(ing(icla))), cvar_ngcl)
@@ -236,12 +233,14 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     enddo
   enddo
 
-! ------ Variables de transport relatives au melange
+  ! ------ Transported variables for the mix (liquid+carrying gas)^2
 
   do ige = 1, ngazem
     coefe(ige) = zero
   enddo
-!  On considere l'oxydant 1
+
+  ! Oxidizer are mix of O2, N2 (air), CO2 and H2O (recycled exhaust)
+  ! the composition of the fisrt oxidiser is taken in account
   coefe(io2) = wmole(io2)*oxyo2(1)                                &
               /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
                 +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
@@ -252,7 +251,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
               /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
                 +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
   coefe(in2) = 1.d0-coefe(io2)-coefe(ih2o)-coefe(ico2)
-!
+
   mode = -1
 
   call cs_fuel_htconvers1 ( mode   , h1init , coefe  ,  t1init )
@@ -261,8 +260,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     cvar_scalt(iel) = h1init
   enddo
 
-! ------ Variables de transport relatives au melange gazeux
-!        (scalaires passifs et variances associees)
+  ! ------ Transported variables for the mix (passive scalars, variance)
 
   do iel = 1, ncel
     cvar_fvap(iel) = zero
@@ -288,7 +286,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 endif
 
 !===============================================================================
-! 2.  ON DONNE LA MAIN A L'UTILISATEUR
+! 3. User initialization
 !===============================================================================
 
 if (ipass.eq.1) then
@@ -300,9 +298,9 @@ if (ipass.eq.1) then
 
 endif
 
-!----
+!--------
 ! Formats
-!----
+!--------
 
 !----
 ! End
