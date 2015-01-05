@@ -115,7 +115,7 @@ double precision, dimension(:,:), pointer :: cvar_varv, cvara_varv
 !===============================================================================
 
 !===============================================================================
-! 1. INITIALISATION
+! 1. Initialization
 !===============================================================================
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -132,13 +132,13 @@ call field_get_coefa_s(ivarfl(ipr), coefap)
 call field_get_coefb_s(ivarfl(ipr), coefbp)
 
 !===============================================================================
-! 2.  CALCUL DES EFFORTS SUR LES STRUCTURES
+! 2. Compute forces on the structures
 !===============================================================================
 
 do istr = 1, nbstru
   do ii = 1, ndim
     forsta(ii,istr) = forstr(ii,istr)
-!-a tester          FORSTA(II,ISTR) = FORSTP(II,ISTR)
+!-a tester          forsta(ii,istr) = forstP(ii,istr)
     forstr(ii,istr) = 0.d0
   enddo
 enddo
@@ -190,9 +190,8 @@ if (itrale.le.nalinf) then
 endif
 
 !===============================================================================
-! 3.  DEFINITION UTILISATEUR DES CARACTERISTIQUES DE LA STRUCTURE
+! 3. Structure characteristic given by the user
 !===============================================================================
-
 
 if (nbstru.gt.0) then
 
@@ -220,9 +219,8 @@ if (nbstru.gt.0) then
 endif
 
 !===============================================================================
-! 4.  DEPLACEMENT DES STRUCTURES INTERNES
+! 4. Internal structure displacement
 !===============================================================================
-
 
 do istr = 1, nbstru
 
@@ -238,7 +236,7 @@ do istr = 1, nbstru
 enddo
 
 !===============================================================================
-! 5.  TEST DE CONVERGENCE
+! 5. Convergence test
 !===============================================================================
 
 icvext = 0
@@ -257,8 +255,6 @@ if (nbstru.gt.0) then
 endif
 
 if (nbaste.gt.0) call astcv1(ntcast, icvext)
-                 !==========
-
 
 if (nbstru.gt.0.and.nbaste.gt.0) then
    icv = icvext*icvint
@@ -298,7 +294,7 @@ call astcv2(ntcast, icv)
 !==========
 
 !===============================================================================
-! 6.  RETOUR AUX VALEURS ANTERIEURES SI NECESSAIRE
+! 6. Re set previous values if required
 !===============================================================================
 
 ! If NTERUP .GT. 1, values at previous time step have been modified after NAVSTO

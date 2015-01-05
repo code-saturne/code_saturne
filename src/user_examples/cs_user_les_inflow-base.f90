@@ -1,7 +1,7 @@
 !===============================================================================
 ! User synthetic turbulence inlet definition.
 !
-! 1) Global caracteristics of synthetic turbulence inlets
+! 1) Global characteristics of synthetic turbulence inlets
 ! 2) Caracteristics of one specific inlet
 ! 3) Accurate specification of target statistics at inlet
 !===============================================================================
@@ -36,7 +36,7 @@
 
 !> Generation of synthetic turbulence at LES inlets
 
-!> Definition of global caracteristics of synthetic turbulence inlets
+!> Definition of global characteristics of synthetic turbulence inlets
 
 !> nent and isuisy might be defined.
 
@@ -116,7 +116,7 @@ subroutine cs_user_les_inflow_define &
 
 ! Generation of synthetic turbulence at LES inlets
 
-! Definition of the caracteristics of the synthetic turbulence inlet 'nument'
+! Definition of the characteristics of the synthetic turbulence inlet 'nument'
 
 ! For each LES inlet, the following parameters might be defined:
 
