@@ -278,7 +278,7 @@ elseif (ippmod(icpl3c).ge.0) then
 
 elseif (ippmod(icfuel).ge.0) then
 
-  call cs_fuel_bcond(itypfb, izfppp, rcodcl)
+  call cs_fuel_bcond(itypfb, izfppp, icodcl, rcodcl)
   !=================
 
 ! ---> Compressible USCFCL

@@ -26,7 +26,7 @@
 ! --------
 !> \file cs_fuel_bcond.f90
 !>
-!> \brief   Automatic boundary conditions
+!> \brief Automatic boundary conditions
 !>          Fuel combustion
 !-------------------------------------------------------------------------------
 
@@ -36,8 +36,22 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     itypfb        boundary face types
-!> \param[in]     izfppp        zone number of the edge face
-!>                                for the specific physic module
+!> \param[in]     izfppp        zone number for the boundary face for
+!>                                      the specific physic module
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in,out] rcodcl        boundary conditions value on edge faces
 !>                               rcodcl(1) = value of the Dirichlet
 !>                               rcodcl(2) = value of the extern exchange coef.
@@ -53,7 +67,7 @@
 
 subroutine cs_fuel_bcond &
  ( itypfb , izfppp ,                                              &
-   rcodcl )
+   icodcl , rcodcl )
 
 !===============================================================================
 
@@ -72,11 +86,12 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use cs_fuel_incl
 use ppincl
 use ppcpfu
+use cs_fuel_incl
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -85,15 +100,20 @@ implicit none
 
 integer          itypfb(nfabor)
 integer          izfppp(nfabor)
+integer          icodcl(nfabor,nvarcl)
 
 double precision rcodcl(nfabor,nvarcl,3)
 
 ! Local variables
 
+character(len=80) :: name
+
 integer          ii, ifac, izone, mode, iel, ige, iok
 integer          icla , ioxy
 integer          icke
 integer          nbrval
+integer          f_id
+
 double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
 double precision xkent, xeent, t1, t2, ustar2
 double precision h1(nozppm) , h2(nozppm)
@@ -105,27 +125,28 @@ double precision coefe(ngazem)
 double precision xsolid(2)
 double precision hlf, totfu
 double precision dmas
-double precision, dimension(:), pointer ::  brom
+double precision, dimension(:), pointer :: brom, b_x1
 double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
 
 !===============================================================================
-! 1.  Initializations
+! 0. Initializations
 !===============================================================================
 !
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iprpfl(iviscl), viscl)
-!
+call field_get_val_s_by_name("b_x_c", b_x1)
+
 d2s3   = 2.d0 / 3.d0
-!
+
 !===============================================================================
 ! 1.  Parallel exchanges for the user data
 !===============================================================================
 
 !  In reality we can avoid this exchange by modifying uspcl and by
 !  asking the user to provide the bulks which depend of the zone
-!  out of the loop on he edge faces: the bulks
+!  out of the loop on the boundary faces: the bulks
 !  would be available on all processors. However, it makes the subroutine
 !  more complicated and mainly if the user modified it in a wrong way
 !  it will not work.
@@ -135,37 +156,25 @@ d2s3   = 2.d0 / 3.d0
 
 if(irangp.ge.0) then
   call parimx(nozapm,iqimp )
-  !==========
   call parimx(nozapm,ientat)
-  !==========
   call parimx(nozapm,ientfl)
-  !==========
   call parimx(nozapm,inmoxy)
-  !==========
   call parrmx(nozapm,qimpat)
-  !==========
   call parrmx(nozapm,timpat)
-  !==========
   nbrval = nozppm
   call parrmx(nbrval,qimpfl)
-  !==========
   nbrval = nozppm
   call parrmx(nbrval,timpfl)
-  !==========
   nbrval = nozppm*nclcpm
   call parrmx(nbrval,distfu)
-  !==========
 endif
-
 
 !===============================================================================
 ! 2.  Velocity correction (in norm) to control the imposed flows
-!     Loop on all input faces
+!       Loop over all inlet faces
 !                     =========================
 !===============================================================================
-
-! --- Calculated outflow
-
+! --- Calculated flow
 do izone = 1, nozppm
   qcalc(izone) = 0.d0
   h1(izone)    = 0.d0
@@ -173,17 +182,17 @@ enddo
 do ifac = 1, nfabor
   izone = izfppp(ifac)
   qcalc(izone) = qcalc(izone) - brom(ifac) *             &
-      ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +                 &
-        rcodcl(ifac,iv,1)*surfbo(2,ifac) +                 &
-        rcodcl(ifac,iw,1)*surfbo(3,ifac) )
+                ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +       &
+                  rcodcl(ifac,iv,1)*surfbo(2,ifac) +       &
+                  rcodcl(ifac,iw,1)*surfbo(3,ifac) )
 enddo
 
-if(irangp .ge. 0) then
+if (irangp.ge.0) then
   call parrsm(nozapm,qcalc )
 endif
 
 do izone = 1, nozapm
-  if ( iqimp(izone) .eq. 0 ) then
+  if (iqimp(izone).eq.0) then
     qimpc(izone) = qcalc(izone)
   endif
 enddo
@@ -197,8 +206,8 @@ if ( ntcabs .gt. 1 ) then
   iok = 0
   do ii = 1, nzfppp
     izone = ilzppp(ii)
-    if ( iqimp(izone) .eq. 1 ) then
-      if(abs(qcalc(izone)) .lt. epzero) then
+    if ( iqimp(izone).eq.1 ) then
+      if(abs(qcalc(izone)).lt.epzero) then
         write(nfecra,2001)izone,iqimp(izone),qcalc(izone)
         iok = iok + 1
       endif
@@ -206,12 +215,10 @@ if ( ntcabs .gt. 1 ) then
   enddo
   if(iok.ne.0) then
     call csexit (1)
-    !==========
   endif
-
   do ifac = 1, nfabor
     izone = izfppp(ifac)
-    if ( iqimp(izone) .eq. 1 ) then
+    if ( iqimp(izone).eq.1 ) then
       qimpc(izone) = qimpat(izone) + qimpfl(izone)
       qisqc = qimpc(izone) / qcalc(izone)
       rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
@@ -223,14 +230,15 @@ if ( ntcabs .gt. 1 ) then
 else
 
   do izone = 1, nozapm
-    if ( iqimp(izone) .eq. 1 ) then
+    if (iqimp(izone).eq.1) then
       qimpc(izone) = qimpat(izone) + qimpfl(izone)
     endif
   enddo
 
 endif
 
- 2001 format(                                                           &
+
+ 2001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -288,8 +296,8 @@ enddo
 
 if(iok.ne.0) then
   call csexit (1)
-  !==========
 endif
+
 
  2010 format(                                                           &
 '@                                                            ',/,&
@@ -336,8 +344,6 @@ endif
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
-
-  !      Adjacent element to the edge face
 
   if ( itypfb(ifac).eq.ientre ) then
 
@@ -409,11 +415,10 @@ do ifac = 1, nfabor
 
   endif
 
- enddo
-
+enddo
 
 !===============================================================================
-! 2.  Filling the boundary conditions table
+! 5.  Filling the boundary conditions table
 !     Loop on all input faces
 !                     =========================
 !     We determine the family and its properties
@@ -427,7 +432,7 @@ do ii = 1, nzfppp
 
   ! An input ientre must be of type
   ! ientat = 1 or ientfl = 1
-  if ( ientat(izone).eq.1 .or. ientfl(izone).eq.1) then
+  if (ientat(izone).eq.1 .or. ientfl(izone).eq.1) then
 
     x20t  (izone) = zero
     x2h20t(izone) = zero
@@ -435,7 +440,7 @@ do ii = 1, nzfppp
     do icla = 1, nclafu
 
       ! ------ Calculation of total X2 per zone
-      !        Small correction in case of an closed input
+      !        Small correction in case of an closed inlet
       if(abs(qimpc(izone)).le.epzero) then
         x20(izone,icla) = 0.d0
       else
@@ -488,12 +493,10 @@ do ii = 1, nzfppp
   endif
 enddo
 
-
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  !      Adjacent element to the edge face
 
   if ( itypfb(ifac).eq.ientre ) then
 
@@ -507,6 +510,13 @@ do ifac = 1, nfabor
                                       /xmg0(izone,icla)
       ! ------ Boundary conditions for X2HLF
       rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)*h2(izone)
+
+      if (i_coal_drift.eq.1) then
+        rcodcl(ifac, isca(iv_p_x(icla)), 1) = rcodcl(ifac,iu,1)
+        rcodcl(ifac, isca(iv_p_y(icla)), 1) = rcodcl(ifac,iv,1)
+        rcodcl(ifac, isca(iv_p_z(icla)), 1) = rcodcl(ifac,iw,1)
+      endif
+
     enddo
     ! ------ Boundary conditions for X1.FVAP
     rcodcl(ifac,isca(ifvap),1) = zero
@@ -516,7 +526,10 @@ do ifac = 1, nfabor
     rcodcl(ifac,isca(ifvp2m),1)   = zero
     ! ------ Boundary conditions for HM
     rcodcl(ifac,isca(iscalt),1) = (1.d0-x20t(izone))*h1(izone)+x2h20t(izone)
+    rcodcl(ifac,isca(ihgas),1) = (1.d0-x20t(izone))*h1(izone)
 
+    ! Store the Boundary value of X1
+    b_x1(ifac) = (1.d0-x20t(izone))
     ! ------ Boundary conditions for X1.F4M (Oxyd 2)
     if ( noxyd .ge. 2 ) then
       if ( inmoxy(izone) .eq. 2 ) then
@@ -525,7 +538,9 @@ do ifac = 1, nfabor
         rcodcl(ifac,isca(if4m),1)   = zero
       endif
     endif
+
     ! ------ Boundary conditions for X1.F5M (Oxyd3)
+
     if ( noxyd .eq. 3 ) then
       if ( inmoxy(izone) .eq. 3 ) then
         rcodcl(ifac,isca(if5m),1)   = (1.d0-x20t(izone))
@@ -548,17 +563,32 @@ do ifac = 1, nfabor
 
   endif
 
+  ! Wall BCs on the particle velocity: zero Dirichlet
+  if (i_coal_drift.eq.1) then
+    if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
+
+      do icla = 1, nclafu
+
+        icodcl(ifac, isca(iv_p_x(icla))) = 1
+        icodcl(ifac, isca(iv_p_y(icla))) = 1
+        icodcl(ifac, isca(iv_p_z(icla))) = 1
+        rcodcl(ifac, isca(iv_p_x(icla)), 1) = 0.d0
+        rcodcl(ifac, isca(iv_p_y(icla)), 1) = 0.d0
+        rcodcl(ifac, isca(iv_p_z(icla)), 1) = 0.d0
+      enddo
+
+    endif
+  endif
+
 enddo
 
-!----
+!--------
 ! Formats
-!----
-
+!--------
 
 !----
 ! End
 !----
-
 
 return
 end subroutine

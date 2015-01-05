@@ -97,7 +97,7 @@ double precision dt(ncelet)
 
 ! Local variables
 
-integer          iel, ige, mode, icla , ioxy
+integer          iel, ige, mode, icla , ioxy, ifac
 
 double precision t1init, h1init, coefe(ngazem)
 double precision t2init
@@ -113,6 +113,7 @@ double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cvar_fvap, cvar_f7m, cvar_fvp2m
 double precision, dimension(:), pointer :: cvar_yco2
 double precision, dimension(:), pointer :: cvar_yhcn, cvar_yno, cvar_hox
+double precision, dimension(:), pointer :: x1, b_x1
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -123,6 +124,10 @@ save             ipass
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
+
+! Massic fraction of gas
+call field_get_val_s_by_name("x_c", x1)
+call field_get_val_s_by_name("b_x_c", b_x1)
 
 ipass = ipass + 1
 
@@ -283,6 +288,15 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       cvar_yno(iel) = zero
       cvar_hox(iel) = h1init
     endif
+
+    ! Initialization of the continuous mass fraction
+    x1(iel) = 1.d0
+
+  enddo
+
+  ! Initialization of the continuous mass fraction AT the BCs
+  do ifac = 1, nfabor
+    b_x1(ifac) = 1.d0
   enddo
 
 endif

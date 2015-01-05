@@ -81,7 +81,8 @@ double precision propce(ncelet,*)
 
 integer          iel, icha, icla, ipcro2
 integer          izone, ifac
-integer          ipcx2c, iromf , ioxy , nbclip1,nbclip2
+integer          ipcx2c
+integer          iromf , ioxy , nbclip1,nbclip2
 integer          iscdri, keydri, iflid, nfld, keyccl
 integer          f_id
 integer          iok1,iok2,iok3
@@ -165,7 +166,7 @@ allocate(f4m(1:ncelet), f5m(1:ncelet), STAT=iok1)
 allocate(f6m(1:ncelet), f7m(1:ncelet), f8m(1:ncelet), f9m(1:ncelet), STAT=iok2)
 allocate(enth1(1:ncel), fvp2m(1:ncel), STAT=iok3)
 !----
-if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) THEN
+if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0) then
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_physprop             '
   call csexit(1)
@@ -184,9 +185,9 @@ endif
 iromf = ipproc(irom1)
 !
 !===============================================================================
-! 2. Calculation of the physic properties of the despersed phase
-!                    cells values
-!                    ----------------
+! 2. Calculation of the physical properties of the dispersed phase
+!                    cell values
+!                    -----------
 !    Mass fraction of solid
 !    Diameter
 !    Mass density
@@ -196,15 +197,15 @@ call cs_coal_physprop2 ( ncelet , ncel , propce )
 !=====================
 
 !===============================================================================
-! 3. Calculation of the physic properties of the gaseous phase
-!                    cells value
-!                    ----------------
+! 3. Calculation of the physical properties of the gaseous phase
+!                    cell values
+!                    -----------
 !    Temperature
 !    Mass density
 !    Concentrations of the gaseous species
 !===============================================================================
 
-! --- Calculation of the gas enthalpy     enth1
+! --- Calculation of the gas enthalpy  enth1
 !        of F1M
 !        of F2M
 !        of F3M                    in W3=1-F1M-F2M-F4M-F5M-F6M-F7M-F8M-F9M
@@ -262,7 +263,7 @@ nbclip2= 0
 valmin = 1.d+20
 valmax =-1.d+20
 do iel = 1, ncel
-  uns1pw = 1.d0/ cpro_x1(iel)
+  uns1pw = 1.d0/cpro_x1(iel)
   if ( noxyd .ge. 2 ) then
     f4m(iel) = cvar_f4m(iel)
     if ( noxyd .eq. 3 ) then
@@ -286,6 +287,7 @@ do iel = 1, ncel
 
   fvp2m(iel) = cvar_fvp2m(iel)
 
+  ! Units: [kg scalars / kg gas]
   f1m(iel)  = f1m(iel)    *uns1pw
   f2m(iel)  = f2m(iel)    *uns1pw
   f4m(iel)  = f4m(iel)    *uns1pw
@@ -321,10 +323,10 @@ endif
 
 write(nfecra,*) ' Values of F3 min and max: ',ff3min,ff3max
 if (nbclip1 .gt. 0) then
-  write(nfecra,*) ' Clipping phase gas variance in min :',nbclip1,valmin
+  write(nfecra,*) ' Clipping phase gas variance in min:',nbclip1,valmin
 endif
 if (nbclip2 .gt. 0) then
-  write(nfecra,*) ' Clipping phase gas variance in max :',nbclip2,valmax
+  write(nfecra,*) ' Clipping phase gas variance in max:',nbclip2,valmax
 endif
 
 ! ---- Gas Enthalpy h1 (cpro_x1 h1 is transported)
@@ -341,7 +343,7 @@ call cs_coal_physprop1 &
    propce , propce(1,iromf)   )
 
 !===============================================================================
-! 4. Calculation of the physic properties of the dispersed phase
+! 4. Calculation of the physical properties of the dispersed phase
 !                    cells value
 !                    -----------
 !    Temperature
@@ -349,11 +351,11 @@ call cs_coal_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_coal_thfieldconv2  ( ncelet , ncel , propce )
+call  cs_coal_thfieldconv2 ( ncelet , ncel , propce )
 !=========================
 
 !===============================================================================
-! 5. Calculation of the physic properties of the mixture
+! 5. Calculation of the physical properties of the mixture
 !                    cells value
 !                    -----------
 !    Mass density
@@ -387,24 +389,24 @@ enddo
 
 
 !===============================================================================
-! 6. Calculation of rho of the mixture
-!                      facet values
-!                      ------------
+! 6. Calculation of the density of the mixture
+!                      face values
+!                      -----------
 !===============================================================================
 
 mbrom = 1
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icrom, crom)
 
-! ---> Mass density on edge for all facets
-!      The input facets are recalculated.
+! ---> Mass density on edges for all faces
+!      The input faces are recalculated.
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
   brom(ifac) = crom(iel)
 enddo
 
-! ---> Mass density on edge for all ONLY input facets
+! ---> Mass density on edge for all ONLY inlet faces
 !      The test on izone is used for the calculation
 
 if ( ipass.gt.1 .or. isuite.eq.1 ) then
@@ -612,13 +614,13 @@ elseif (i_coal_drift.gt.1) then
   enddo
 endif
 
-!----
+!--------
 ! Formats
-!----
+!--------
 
 !===============================================================================
 ! Deallocation dynamic arrays
-!----
+
 deallocate(f1m,f2m,f3m,f4m,f5m,STAT=iok1)
 deallocate(f6m,f7m,f8m,f9m,    STAT=iok2)
 deallocate(enth1,fvp2m,     STAT=iok3)

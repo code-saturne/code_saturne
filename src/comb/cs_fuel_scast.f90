@@ -85,12 +85,13 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use cs_fuel_incl
 use ppincl
 use ppcpfu
+use cs_fuel_incl
 use mesh
 use pointe
 use field
+use radiat
 
 !===============================================================================
 
@@ -105,7 +106,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-character(len=80) :: chaine
+character(len=80) :: chaine, fname, name
 integer          ivar , iel, icla , numcla
 integer          iexp1 , iexp2 , iexp3
 integer          ipcro2 , ipcte1 , ipcte2
@@ -115,6 +116,7 @@ integer          ipcgev , ipcght , ipchgl
 integer          itermx,nbpauv,nbrich,nbepau,nberic
 integer          nbarre,nbimax,nbpass
 integer          iterch
+integer          keyccl, f_id
 
 double precision aux, rhovst
 double precision rom
@@ -133,12 +135,19 @@ double precision ymoy
 double precision fn0,fn1,fn2,anmr0,anmr1,anmr2
 double precision lnk0p,l10k0e,lnk0m,t0e,xco2eq,xcoeq,xo2eq
 double precision xcom,xo2m,xkcequ,xkpequ,xden
+double precision smbrs1
+double precision, dimension(:), pointer :: vp_x, vp_y, vp_z
+double precision, dimension(:,:), pointer :: vdc
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
 double precision, dimension(:), pointer :: cvar_yfolcl, cvara_yfolcl
 double precision, dimension(:), pointer :: cvara_yno, cvara_yhcn
 double precision, dimension(:), pointer :: cvara_var
 type(pmapper_double_r1), dimension(:), allocatable :: cvara_yfol
+double precision, dimension(:), pointer :: taup
+double precision, dimension(:), pointer :: smbrsh1, rovsdth1
+double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer ::  vg_lim_pi
 
 !===============================================================================
 ! 1. Initialization
@@ -160,21 +169,40 @@ call field_get_val_s(icrom, crom)
 
 ipcte1 = ipproc(itemp1)
 
+call field_get_val_v(ivarfl(iu), vel)
+
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
+
+! source term for gas enthalpy due to inter-phase fluxes
+call field_get_val_s_by_name('x_h_c_exp_st',smbrsh1)
+call field_get_val_s_by_name('x_h_c_imp_st',rovsdth1)
+
 !===============================================================================
 ! 2. Taking into account the source terms for the relative particles
 !    in the particles classes
 !===============================================================================
 
-! --> Source term for the liquid enthalpy
+!===============================================================================
+! 2.1 Source term for the enthalpies
+!===============================================================================
 
-if ( ivar .ge. isca(ih2(1))     .and.                            &
-     ivar .le. isca(ih2(nclafu))      ) then
+if ( ivar .ge. isca(ih2(1)) .and. ivar .le. isca(ih2(nclafu)) ) then
+
+  ! Initialization of the exchange terms for gas enthalpy
+  if (ivar.eq.isca(ih2(1))) then
+    do iel = 1, ncel
+      smbrsh1(iel) = 0.d0
+      rovsdth1(iel) = 0.d0
+    enddo
+  endif
 
   if (iwarni(ivar).ge.1) then
     write(nfecra,1000) chaine(1:8)
   endif
 
-  numcla = ivar-isca(ih2(1))+1
+  ! index of the droplet class
+  call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
   call field_get_val_prev_s(ivarfl(isca(iyfol(numcla))), cvara_yfolcl)
   ipcro2 = ipproc(irom2 (numcla))
@@ -204,7 +232,7 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
   imode = -1
   do iel = 1, ncel
 
-    if ( cvara_yfolcl(iel) .gt. epsifl ) then
+    if (cvara_yfolcl(iel) .gt. epsifl) then
 
       rom = crom(iel)
 
@@ -230,8 +258,9 @@ if ( ivar .ge. isca(ih2(1))     .and.                            &
       gmhet = 16.d0/12.d0*propce(iel,ipcght)*ho2                    &
              -28.d0/12.d0*propce(iel,ipcght)*hco
 
-      smbrs(iel) = smbrs(iel) +                                     &
-           ( gmech+gmvap+gmhet )*rom*volume(iel)
+      smbrs(iel) = smbrs(iel) + (gmech+gmvap+gmhet)*rom*volume(iel)
+      ! FIXME better time stepping?
+      smbrsh1(iel) = smbrsh1(iel) -(gmech+gmvap+gmhet)*rom*volume(iel)
       rhovst = ( propce(iel,ipchgl)                                 &
                 -propce(iel,ipcgev)*hfov )/cp2fol                   &
               *rom*volume(iel)
@@ -250,7 +279,8 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
     write(nfecra,1000) chaine(1:8)
   endif
 
-  numcla = ivar-isca(iyfol(1))+1
+  ! index of the droplet class
+  call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 
   ipcro2 = ipproc(irom2 (numcla))
   ipcdia = ipproc(idiam2(numcla))
@@ -277,9 +307,127 @@ elseif ( ivar .ge. isca(iyfol(1))     .and.                       &
 
   enddo
 
-! --> Source term for the vopor tracer
+endif
 
-elseif ( ivar .eq. isca(ifvap) ) then
+!===============================================================================
+! 2.2 Particle velocity source terms
+!===============================================================================
+
+if (i_coal_drift.eq.1) then
+
+  call field_get_name(ivarfl(ivar), fname)
+
+  ! index of the particle class
+  call field_get_key_int(ivarfl(ivar), keyccl, icla)
+
+  if (icla.ge.1) then
+
+    ! Taup
+    write(name,'(a,i2.2)')'nd_fuel_' ,icla!FIXME change name?
+    call field_get_id('drift_tau_'//trim(name), f_id)
+    call field_get_val_s(f_id, taup)
+
+    if (fname(1:6).eq.'v_x_p_') then
+
+      write(name,'(a,i2.2)')'v_x_p_' ,icla
+      call field_get_val_s_by_name(name, vp_x)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      ! Vitesse de deviation de la phase continue
+      name='vd_c'
+      call field_get_val_v_by_name(name, vdc)
+
+      do iel = 1, ncel
+        ! TODO PP
+        smbrs1 = 0.d0
+
+        ! relaxation to drop velocity
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
+               *(vel(1,iel)+vdc(1,iel)+vg_lim_pi(1, iel)-vp_x(iel))
+
+        smbrs(iel) = smbrs(iel) + smbrs1
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+
+      enddo !sur iel
+
+    elseif (fname(1:6).eq.'v_y_p_') then
+
+      write(name,'(a,i2.2)')'v_y_p_' ,icla
+      call field_get_val_s_by_name(name, vp_y)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      ! Vitesse de deviation de la phase continue
+      name='vd_c'
+      call field_get_val_v_by_name(name, vdc)
+
+      do iel = 1, ncel
+        ! TODO PP
+        smbrs1 = 0.d0
+        ! relaxation to drop velocity
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
+               *(vel(2,iel)+vdc(2, iel)+vg_lim_pi(2, iel)-vp_y(iel))
+        smbrs(iel) = smbrs(iel) + smbrs1
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+
+      enddo !sur iel
+
+
+    elseif (fname(1:6).eq.'v_z_p_') then
+
+      write(name,'(a,i2.2)')'v_z_p_' ,icla
+      call field_get_val_s_by_name(name, vp_z)
+
+      write(name,'(a,i2.2)')'vg_lim_p_' ,icla
+      call field_get_val_v_by_name(name, vg_lim_pi)
+
+      ! Vitesse de deviation de la phase continue
+      name='vd_c'
+      call field_get_val_v_by_name(name, vdc)
+
+      do iel = 1, ncel
+        ! TODO PP
+        smbrs1 = 0.d0
+
+        ! relaxation to drop velocity
+        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
+               *(vel(3,iel)+vdc(3, iel)+vg_lim_pi(3, iel)-vp_z(iel))
+
+        smbrs(iel) = smbrs(iel) + smbrs1
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+
+      enddo !on iel
+
+    endif !on fname
+
+  endif
+
+endif !on icoal drift
+
+!===============================================================================
+! 3. Taking into account source terms for relative variables in the mixture
+!===============================================================================
+
+if (ivar .eq. isca(ihgas)) then
+
+  ! source terms from particles (convection and enthalpy drived by mass fluxes)
+  do iel = 1, ncel
+    smbrs(iel) = smbrs(iel) + smbrsh1(iel)
+    rovsdt(iel) = rovsdt(iel) + rovsdth1(iel)
+  enddo
+
+  ! terme source de rayonnement pour l'enthalpie du gaz
+  ! serait mieux dans ... raysca
+  if (iirayo.ge.1) then
+    !TODO PP
+  endif
+endif
+
+
+if ( ivar .eq. isca(ifvap) ) then
 
   if (iwarni(ivar).ge.1) then
     write(nfecra,1000) chaine(1:8)

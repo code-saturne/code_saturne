@@ -51,11 +51,11 @@ use entsor
 use cstnum
 use ppppar
 use ppthch
-use coincl
 use ppcpfu
+use coincl
 use cpincl
-use cs_fuel_incl
 use ppincl
+use cs_fuel_incl
 use field
 
 !===============================================================================
@@ -66,6 +66,7 @@ implicit none
 
 integer          icla
 integer          f_id, itycat, ityloc, idim1, idim3, nprini
+integer          keyccl
 integer          iopchr
 
 logical          ilved, iprev, inoprv
@@ -85,15 +86,16 @@ iprev  = .true.    ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! postprocessing level for variables
 
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
+
+! ---> Definition of pointers related to state variables
+
 nprini = nproce
 
 ! Continuous phase (gaseous mix)
 call add_property_field('t_gas', 'T_Gas', itemp1)
 call add_property_field('rho_gas', 'Rho_Gas', irom1)
-
-! Mass fraction of the continuous phase (X1)
-f_name= 'x_c'
-call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
 
 ! Gas mixture fractions
 call add_property_field('ym_fo0',   'Ym_FO0',   iym1(1))
@@ -113,6 +115,7 @@ call add_property_field('ym_n2',    'Ym_N2',    iym1(12))
 call add_property_field('xm',    'Xm',    immel)
 call hide_property(immel)
 
+! Algebraic variables specific to continuous phase
 if (ieqnox .eq. 1) then
   call add_property_field('exp1',      'EXP1',      ighcn1)
   call add_property_field('exp2',      'EXP1',      ighcn2)
@@ -156,8 +159,86 @@ do icla = 1, nclafu
   call add_property_field(f_name, f_label, igmhtf(icla))
 enddo
 
-! Balance: C, O, H
+if (i_coal_drift.ge.1) then
+  do icla = 1, nclafu
 
+    ! Limit velocity
+    write(f_name,'(a,i2.2)')'vg_lim_p_' ,icla
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+    ! For log in the listing
+    call field_set_key_int(f_id, keylog, 1)
+
+    write(f_name,'(a,i2.2)')'vg_p_' ,icla
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+    ! For log in the listing
+    call field_set_key_int(f_id, keylog, 1)
+
+    ! Additional drift velocity for the particle class
+    write(f_name,'(a,i2.2)')'vd_p_' ,icla
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+    ! For post-processing
+    call field_set_key_int(f_id, keyvis, iopchr)
+    ! For log in the listing
+    call field_set_key_int(f_id, keylog, 1)
+
+  enddo
+endif
+
+
+! Continuous phase variables
+!---------------------------
+
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+if (i_coal_drift.ge.1) then
+
+  ! Additional fields for drift velocity for the gas
+
+  f_name= 'vd_c'
+  call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+  call field_set_key_str(f_id, keylbl, f_name)
+  ! For post-processing
+  call field_set_key_int(f_id, keyvis, iopchr)
+  ! For log in the listing
+  call field_set_key_int(f_id, keylog, 1)
+
+endif
+
+! Mass fraction of the continuous phase (X1)
+f_name= 'x_c'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+call field_set_key_str(f_id, keylbl, f_name)
+
+! Mass fraction of the continuous phase (X1) BOUNDARY VALUE
+f_name= 'b_x_c'
+call field_create(f_name, itycat, 3, idim1, ilved, inoprv, f_id)
+call field_set_key_str(f_id, keylbl, f_name)
+
+! Explicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
+f_name= 'x_h_c_exp_st'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+
+! Implicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
+f_name= 'x_h_c_imp_st'
+call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+
+! Bulk
+!-----
+
+! Mass fraction of elements: C,  O,  H (used in balances)
 call add_property_field('balance_c', 'Balance_C', ibcarbone)
 call add_property_field('balance_o', 'Balance_O', iboxygen)
 call add_property_field('balance_h', 'Balance_H', ibhydrogen)

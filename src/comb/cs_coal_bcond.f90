@@ -21,10 +21,11 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-! Function :
+! Function:
 ! --------
-!>  \file cs_coal_bcomb.f90
-!>  \brief   Boundary condition automatic for pulverized coal combution
+!> \file cs_coal_bcomb.f90
+!>
+!> \brief Automatic boundary condition for pulverized coal combution
 !
 !-------------------------------------------------------------------------------
 
@@ -34,7 +35,7 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     itypfb        boundary face types
-!> \param[in,out] izfppp        zone number for the edge face for
+!> \param[in]     izfppp        zone number for the boundary face for
 !>                                      the specific physic module
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
@@ -87,7 +88,6 @@ use entsor
 use parall
 use ppppar
 use ppthch
-use ppcpfu
 use coincl
 use cpincl
 use ppincl
@@ -107,6 +107,7 @@ integer          izfppp(nfabor)
 integer          icodcl(nfabor,nvarcl)
 
 double precision rcodcl(nfabor,nvarcl,3)
+
 ! Local variables
 
 character(len=80) :: name
@@ -130,7 +131,7 @@ double precision, dimension(:), pointer :: brom, b_x1
 integer, dimension (:), allocatable :: iagecp
 double precision, dimension(:), pointer :: viscl
 !===============================================================================
-! 0. Initialization
+! 0. Initializations
 !===============================================================================
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iprpfl(iviscl), viscl)
@@ -152,11 +153,11 @@ if (iage.ge.1) then
   enddo
 endif
 !===============================================================================
-! 1.  Exchanges in parallel for the user data
+! 1.  Parallel exchanges for the user data
 !===============================================================================
 !  In fact this exchange could be avoided by changing uscpcl and by asking
 !    the user to give the variables which depend of the area out of the loop
-!    on the edge faces: the variables would be available on all processors.
+!    on the boundary faces: the variables would be available on all processors.
 !  However, it makes the user subroutine a bit more complicated and especially
 !    if the user modifies it through, it does not work.
 !  We assume that all the provided variables are positive,
@@ -179,7 +180,7 @@ endif
 
 !===============================================================================
 ! 2.  Correction of the velocities (in norm) for controlling the imposed flow
-!       Loop over all input faces
+!       Loop over all inlet faces
 !                     =========================
 !===============================================================================
 ! --- Calculated flow
@@ -194,12 +195,12 @@ do ifac = 1, nfabor
                   rcodcl(ifac,iw,1)*surfbo(3,ifac) )
 enddo
 
-if(irangp.ge.0) then
+if (irangp.ge.0) then
   call parrsm(nozapm,qcalc )
 endif
 
 do izone = 1, nozapm
-  if ( iqimp(izone).eq.0 ) then
+  if (iqimp(izone).eq.0) then
     qimpc(izone) = qcalc(izone)
   endif
 enddo
@@ -280,6 +281,7 @@ endif
 ! 3. Verifications
 !        Sum coal distribution = 100% for area ientcp = 1
 !===============================================================================
+
 iok = 0
 do ii = 1, nzfppp
   izone = ilzppp(ii)
@@ -353,9 +355,7 @@ do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  ! Neighboring element to the edge face
   if ( itypfb(ifac).eq.ientre ) then
-    ! ----  Automatic processing of turbulence
 
     !       The turbulence is calculated by default if icalke different from 0
     !          - or from hydraulic diameter and a reference velocity adapted
@@ -379,10 +379,12 @@ do ifac = 1, nfabor
       xeent = epzero
       if (icke.eq.1) then
         call keendb                                               &
+        !==========
         ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
           ustar2, xkent, xeent )
       else if (icke.eq.2) then
         call keenin                                               &
+        !==========
         ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
       endif
 
@@ -422,17 +424,20 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 5.  Filling the table  of the boundary conditions
-!       Loop on all input faces
+! 5.  Filling the boundary conditions table
+!     Loop on all input faces
 !                     =========================
-!         Determining the family and its properties
-!         Imposing boundary conditions for scalars
+!     We determine the family and its properties
+!     We impose the boundary conditions
+!     for the scalars
 !===============================================================================
+
 do ii = 1, nzfppp
 
   izone = ilzppp(ii)
-  ! One input ientre is necessarily the type
-  !            ientat = 1 or ientcp = 1
+
+  ! An input ientre must be of type
+  ! ientat = 1 or ientcp = 1
   if ( ientat(izone).eq.1 .or. ientcp(izone).eq.1) then
 
     x20t  (izone) = zero
@@ -445,8 +450,8 @@ do ii = 1, nzfppp
       do iclapc = 1, nclpch(icha)
 
         icla = iclapc + idecal
-        ! ------ Calculating X2 total per area
-        !         Small correction in case the input is close
+        ! ------ Calculation of total X2 per zone
+        !        Small correction in case of an closed inlet
         if(abs(qimpc(izone)).lt.epzero) then
           x20(izone,icla) = 0.d0
         else
@@ -497,7 +502,7 @@ do ii = 1, nzfppp
     enddo
 
     ioxy = inmoxy(izone)
-    dmas = wmole(io2) *oxyo2(ioxy) +wmole(in2) *oxyn2(ioxy)       &
+    dmas = wmole(io2) *oxyo2(ioxy) +wmole(in2) *oxyn2(ioxy)    &
           +wmole(ih2o)*oxyh2o(ioxy)+wmole(ico2)*oxyco2(ioxy)
 
     coefe(io2)  = wmole(io2 )*oxyo2(ioxy )/dmas
@@ -514,14 +519,12 @@ do ii = 1, nzfppp
     call cs_coal_htconvers1(mode,h1(izone),coefe,f1mc,f2mc,t1)
 
   endif
-
 enddo
 
 do ifac = 1, nfabor
 
   izone = izfppp(ifac)
 
-  !      Adjacent element of the edge face
   if ( itypfb(ifac).eq.ientre ) then
 
     ! ----  Automatic processing of specific physic scalar
@@ -648,7 +651,8 @@ do ifac = 1, nfabor
       xco2 = oxyco2(ioxy)*wmco2/dmas
       rcodcl(ifac,isca(iyco2),1)   = xco2*(1.d0-x20t(izone))
     endif
-    ! ------ Boundary conditions for X1.HCN, X1.NO, Taire
+
+    ! ------ Boundary conditions for X1.HCN, X1.NO, T air
     if( ieqnox .eq. 1 ) then
       rcodcl(ifac,isca(iyhcn ),1)  = zero
       rcodcl(ifac,isca(iyno  ),1)  = zero

@@ -36,11 +36,6 @@ subroutine cs_fuel_varpos
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 !__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -58,16 +53,18 @@ use ppppar
 use ppthch
 use coincl
 use cpincl
-use cs_fuel_incl
 use ppincl
 use ppcpfu
+use cs_fuel_incl
 use field
 
 !===============================================================================
 
 implicit none
 
-integer           :: icla, keyccl, kscmin, kscmax, f_id
+integer          icla, f_id
+integer          keyccl, keydri, kscmin, kscmax
+integer          iscdri
 character(len=80) :: f_label, f_name
 
 !===============================================================================
@@ -76,6 +73,9 @@ character(len=80) :: f_label, f_name
 
 ! Key id of the fuel scalar class
 call field_get_key_id("scalar_class", keyccl)
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
 
 ! Key ids for clipping
 call field_get_key_id("min_scalar_clipping", kscmin)
@@ -96,28 +96,52 @@ f_id = ivarfl(isca(iscalt))
 call field_set_key_double(f_id, kscmin, -grand)
 call field_set_key_double(f_id, kscmax, grand)
 
-! ---> Variables propres a la phase dispersee
+! Activate the drift: 0 (no activation),
+!                     1 (transported particle velocity)
+!                     2 (limit drop particle velocity)
+if (i_coal_drift.ge.1) then
+  iscdri = 1
+endif
 
+! Dispersed phase variables
+!--------------------------
+
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+! "ibset" function set in the variable "iscdri" the fact that
+! that the first element of the class (here Np) creates the convective
+! flux of the class. The convective flux of the calls is common to all the
+! elements of the class!
+! note that the function "ibclr" means that the other element of the class
+! DO NOT create any additional convective flux (but use the one of the class)
+
+! Number of particles of the class icla per kg of air-fuel mixture (bulk)
 do icla = 1, nclafu
 
-  write(f_name,'(a8,i2.2)') 'nd_fuel_', icla
-  write(f_label,'(a6,i2.2)') 'NG_FOL', icla
+  write(f_name,'(a,i2.2)') 'nd_fuel_', icla
+  write(f_label,'(a,i2.2)') 'NG_FOL', icla
   call add_model_scalar_field(f_name, f_label, ing(icla))
-  f_id = ivarfl(isca(inp(icla)))
+  f_id = ivarfl(isca(ing(icla)))
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
-
   ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, rinfin)
 
+  ! Scalar with drift: DO create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
 enddo
 
+! Mass fraction of ???? of the class icla per kg of bulk
 do icla = 1, nclafu
 
-  write(f_name,'(a10,i2.2)') 'yfol_fuel_', icla
-  write(f_label,'(a8,i2.2)') 'YFOL_FOL', icla
+  write(f_name,'(a,i2.2)') 'x_p_', icla
+  write(f_label,'(a,i2.2)') 'YFOL_FOL', icla
   call add_model_scalar_field(f_name, f_label, iyfol(icla))
   f_id = ivarfl(isca(iyfol(icla)))
 
@@ -128,8 +152,17 @@ do icla = 1, nclafu
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 4.d-1)
 
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
 enddo
 
+! Enthalpy of the class icla per kg of bulk
+! (Enthalpy of the class is the product of the mass fraction of the class
+!  by massic enthalpy of the class).
 do icla = 1, nclafu
 
   write(f_name,'(a9,i2.2)') 'hlf_fuel_', icla
@@ -141,88 +174,279 @@ do icla = 1, nclafu
   call field_set_key_int(f_id, keyccl, icla)
   ! min clipping is set later, as h02fol is known after reading fuel data
   ! call field_set_key_double(f_id, kscmin, h02fol)
-  call field_set_key_double(f_id, kscmax, +grand)
+  call field_set_key_double(f_id, kscmax, grand)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
 
 enddo
 
-! Variables specific to gas phase
+! Particles velocities (when they are transported)
+if (i_coal_drift .eq. 1) then
+  do icla = 1, nclafu
 
+    write(f_name,'(a,i2.2)') 'v_x_p_', icla
+    write(f_label,'(a,i2.2)') 'Vp_X_', icla
+    call add_model_scalar_field(f_name, f_label, iv_p_x(icla))
+    f_id = ivarfl(isca(iv_p_x(icla)))
+
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+
+    write(f_name,'(a,i2.2)') 'v_y_p_', icla
+    write(f_label,'(a,i2.2)') 'Vp_Y_', icla
+    call add_model_scalar_field(f_name, f_label, iv_p_y(icla))
+    f_id = ivarfl(isca(iv_p_y(icla)))
+
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+
+    write(f_name,'(a,i2.2)') 'v_z_p_', icla
+    write(f_label,'(a,i2.2)') 'Vp_Z_', icla
+    call add_model_scalar_field(f_name, f_label, iv_p_z(icla))
+    f_id = ivarfl(isca(iv_p_z(icla)))
+
+    ! Set the index of the scalar class in the field structure
+    call field_set_key_int(f_id, keyccl, icla)
+
+    ! Scalar with drift: BUT Do NOT create additional mass flux
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+
+  enddo
+endif
+
+icla = -1
+
+! Continuous phase variables
+!---------------------------
+
+! NB: 'c' stands for continuous <> 'p' stands for particles
+
+! Field gas enthalpy
+
+! Enthalpy of the gas phase per kg of bulk
+! (The gas phase is a class with a negative icla, Enthalpy of the class
+!  is the product of the mass fraction of the class
+!  by massic enthalpy of the class).
+f_name = 'x_c_h'
+f_label = 'Xc_Ent'
+call add_model_scalar_field(f_name, f_label, ihgas)
+f_id = ivarfl(isca(ihgas))
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
+! The first gas salar contains the drift flux, the others
+! Scalar with drift: DO create additional mass flux
+if (i_coal_drift.ge.1) then
+  iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+endif
+
+! Mass of vapor divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 call add_model_scalar_field('vap_fraction', 'Fr_VAP', ifvap)
 f_id = ivarfl(isca(ifvap))
 
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
+! Set min and max clipping
 call field_set_key_double(f_id, kscmin, 0.d0)
 call field_set_key_double(f_id, kscmax, 1.d0)
+! Scalar with drift: BUT Do NOT create additional mass flux
+if (i_coal_drift.ge.1) then
+  iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+endif
 
-! Oxydants
 
+! Mass of the Oxydant 2 divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 if (noxyd .ge. 2) then
+
+
 
   call add_model_scalar_field('oxyd2_fraction', 'Fr_OXYD2', if4m)
   f_id = ivarfl(isca(if4m))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
 endif
 
+! Mass of the Oxydant 3 divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 if (noxyd .ge. 3) then
+
+
 
   call add_model_scalar_field('oxyd3_fraction', 'Fr_OXYD3', if5m)
   f_id = ivarfl(isca(if5m))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
 
 endif
 
 ! Combustion heterogene
 
+
+
 call add_model_scalar_field('het_fraction', 'Fr_HET', if7m)
 f_id = ivarfl(isca(if7m))
 
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
+! Set min and max clipping
 call field_set_key_double(f_id, kscmin, 0.d0)
 call field_set_key_double(f_id, kscmax, 1.d0)
 
+! Scalar with drift: BUT Do NOT create additional mass flux
+if (i_coal_drift.ge.1) then
+  iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+endif
+
+
 ! Variance
+
 
 call add_model_scalar_field('cb_variance', 'Var_CB', ifvp2m)
 f_id = ivarfl(isca(ifvp2m))
 
+! Set the index of the scalar class in the field structure
+call field_set_key_int(f_id, keyccl, icla)
+
+! Set min and max clipping
 call field_set_key_double(f_id, kscmin, 0.d0)
 call field_set_key_double(f_id, kscmax, 0.25d0)
 
-! CO2 transport
-if (ieqco2 .ge. 1) then
+! Scalar with drift: BUT Do NOT create additional mass flux
+if (i_coal_drift.ge.1) then
+  iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+  call field_set_key_int(f_id, keydri, iscdri)
+endif
+
+
+! Mass of the Carbon dioxyde (CO or CO2) divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+!FIXME check for the oxycombustion, it would be more relevant to track CO
+if (ieqco2.ge.1) then
+
+
 
   call add_model_scalar_field('co2_fraction', 'FR_CO2', iyco2)
   f_id = ivarfl(isca(iyco2))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
 
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
 endif
 
-!  NOx transport: HCN, NOx and Hox
+! Mass of the HCN divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+if (ieqnox.eq.1) then
 
-if (ieqnox .eq. 1) then
+
 
   call add_model_scalar_field('hcn_fraction', 'FR_HCN', iyhcn)
   f_id = ivarfl(isca(iyhcn))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! Mass of the NO divided by the mass of bulk
+  ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+
 
   call add_model_scalar_field('no_fraction', 'FR_NO', iyno)
   f_id = ivarfl(isca(iyno))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, 0.d0)
   call field_set_key_double(f_id, kscmax, 1.d0)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
+
+  ! Enthalpy of the oxydizer times the fraction of gas divided by the mass of bulk
+  ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+
 
   call add_model_scalar_field('ox_enthalpy', 'Enth_Ox', ihox)
   f_id = ivarfl(isca(ihox))
 
+  ! Set the index of the scalar class in the field structure
+  call field_set_key_int(f_id, keyccl, icla)
+
+  ! Set min and max clipping
   call field_set_key_double(f_id, kscmin, -grand)
-  call field_set_key_double(f_id, kscmax, +grand)
+  call field_set_key_double(f_id, kscmax,  grand)
+
+  ! Scalar with drift: BUT Do NOT create additional mass flux
+  if (i_coal_drift.ge.1) then
+    iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
+    call field_set_key_int(f_id, keydri, iscdri)
+  endif
 
 endif
 
@@ -233,9 +457,9 @@ endif
 !    - PROPRES A LA SUSPENSION : ICP
 !===============================================================================
 
-! ---- Bien que l on soit en enthalpie on conserve un CP constant
+! Although we are in enthalpy formulation, we keep Cp constant
 
-icp    = 0
+icp = 0
 
 !----
 ! End
