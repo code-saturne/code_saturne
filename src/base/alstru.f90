@@ -34,52 +34,82 @@ module alstru
 
   !=============================================================================
 
-  !  Methode ale - mouvement de structures en couplage interne
+  !> \defgroup alstru Module for ALE structure movement with internal coupling
 
-  ! nbstru : nombre de structures mobiles
+  !> \addtogroup alstru
+  !> \{
 
-  ! xmstru : matrice de masse des structures (kgl)
-  ! xcstru : matrice de friction des structures (kg/s)
-  ! xkstru : matrice de raideur des structures (kg/s2 = N/m)
-  ! xstreq : vecteur ecart de la position des structure dans le maillage
-  !          initial par rapport a leur position d'equilibre (m)
-  ! xstr   : vecteur deplacement des structures par rapport a leur position
-  !          dans le maillage initial (m)
-  ! xpstr  : vecteur vitesse des structures (m/s)
-  ! xppstr : vecteur acceleration des structures (m/s2)
-  ! forstr : vecteur force exerce sur les structures (N)
-  ! xsta   : valeur de xstr au pas de temps precedent
-  ! xpsta  : valeur de xpstr au pas de temps precedent
-  ! xppsta : valeur de xppstr au pas de temps precedent
-  ! forsta : valeur de forstr au pas de temps precedent
-  ! xstp   : valeur predite de xstr
-  ! forstp : valeur predite de forstr
-  ! dtstr  : pas de temps associe au mouvement des structures
-  ! aexxst : coefficient de prediction du deplacement (sur xpstr)
-  ! bexxst : coefficient de prediction du deplacement (sur xpstr-xpsta)
-  ! cfopre : coefficient de prediction des efforts
-
+  !> number of structures, automatically computed
   integer, save :: nbstru
 
+  !> \anchor xmstru mass matrix of the structure (kg)
+  !> (for \ref xmstru(i,j,k), i and j are the array of mass structure
+  !> and k is the index of the structure)
   double precision, save :: xmstru(3,3,nstrmx)
+
+  !> \anchor xcstru damping matric coefficient of the structure (kg/s)
   double precision, save :: xcstru(3,3,nstrmx)
+
+  !> \anchor xkstru spring matrix constant of the structure (kg/s2 = N/m)
   double precision, save :: xkstru(3,3,nstrmx)
-  double precision, save :: xstr(3,nstrmx)  ,xsta(3,nstrmx)
-  double precision, save :: xstp(3,nstrmx)  ,xstreq(3,nstrmx)
-  double precision, save :: xpstr(3,nstrmx) ,xpsta(3,nstrmx)
-  double precision, save :: xppstr(3,nstrmx),xppsta(3,nstrmx)
-  double precision, save :: forstr(3,nstrmx),forsta(3,nstrmx)
+
+  !> \anchor xstr displacement vector of the structure compared to its position
+  !> in the initial mesh (m)
+  double precision, save :: xstr(3,nstrmx)
+
+  !> \anchor xsta value of \ref xstr at the previous time step (m)
+  double precision, save :: xsta(3,nstrmx)
+
+  !> predicted value of \ref xstr (m)
+  double precision, save :: xstp(3,nstrmx)
+
+  !> \anchor xstreq equilibrum position of a structure (m)
+  double precision, save :: xstreq(3,nstrmx)
+
+  !> \anchor xpstr velocity vector of the structure (m/s)
+  double precision, save :: xpstr(3,nstrmx)
+
+  !> \ref xpstr at previous time step (m/s)
+  double precision, save :: xpsta(3,nstrmx)
+
+  !> \anchor xppstr acceleration vector of the structure (m/s2)
+  double precision, save :: xppstr(3,nstrmx)
+
+  !> \ref xppstr at previous time step (m/s2)
+  double precision, save :: xppsta(3,nstrmx)
+
+  !> \anchor forstr force vector acting on the structure (N)
+  double precision, save :: forstr(3,nstrmx)
+
+  !> \ref forstr at previous time step (N)
+  double precision, save :: forsta(3,nstrmx)
+
+  !> predicted force vector acting on the structure (N)
   double precision, save :: forstp(3,nstrmx)
+
+  !> time step used to solved structure movement
+  !> (can be different from th fluid time step)
   double precision, save :: dtstr(nstrmx)
-  double precision, save :: aexxst, bexxst, cfopre
 
-  ! methode de Newmark hht
+  !> coefficient for the predicted displacement
+  double precision, save :: aexxst
 
-  !  alpnmk : coefficient alpha de la methode de Newmark hht
-  !  betnmk : coefficient beta  de la methode de Newmark hht
-  !  gamnmk : coefficient gamma de la methode de Newmark hht
+  !> coefficient for the predicted displacement
+  double precision, save :: bexxst
 
-  double precision, save :: alpnmk, gamnmk, betnmk
+  !> coefficient for the predicted force
+  double precision, save :: cfopre
+
+  !> alpha coefficient for the Newmark hht methode
+  double precision, save :: alpnmk
+
+  !> beta coefficient for the Newmark hht methode
+  double precision, save :: betnmk
+
+  !> gamma coefficient for the Newmark hht methode
+  double precision, save :: gamnmk
+
+  !> \}
 
   !=============================================================================
 
