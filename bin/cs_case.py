@@ -1197,6 +1197,16 @@ echo "exit \$?" >> $localexec
                 s.write('  source ' + rcfile + '\n')
             s.write('fi\n\n')
 
+        # Handle OpenMP if needed
+
+        n_threads = exec_env.resources.n_threads
+        if self.package_compute.config.features['openmp'] == 'yes' or n_threads:
+            if not n_threads:
+                n_threads = 1
+            cs_exec_environment.write_export_env(s, 'OMP_NUM_THREADS',
+                                                 str(n_threads))
+            s.write('\n')
+
         # Boot MPI daemons if necessary
 
         if mpi_env.gen_hostsfile != None:
@@ -1292,6 +1302,7 @@ echo "exit \$?" >> $localexec
 
     def prepare_data(self,
                      n_procs = None,
+                     n_threads = None,
                      mpiexec_options=None,
                      run_id = None,
                      force_id = False):
@@ -1346,7 +1357,8 @@ echo "exit \$?" >> $localexec
         exec_env = cs_exec_environment.exec_environment(self.package_compute,
                                                         self.exec_dir,
                                                         n_procs,
-                                                        n_procs_default)
+                                                        n_procs_default,
+                                                        n_threads)
 
         # Set user MPI options if required.
 
@@ -1638,6 +1650,7 @@ echo "exit \$?" >> $localexec
 
     def run(self,
             n_procs = None,
+            n_threads = None,
             mpiexec_options=None,
             scratchdir = None,
             run_id = None,
@@ -1694,6 +1707,7 @@ echo "exit \$?" >> $localexec
             retcode = 0
             if prepare_data == True:
                 retcode = self.prepare_data(n_procs,
+                                            n_threads,
                                             mpiexec_options,
                                             run_id,
                                             force_id)

@@ -69,6 +69,7 @@ class BatchRunningModel(Model):
         self.dictValues['job_nodes'] = None
         self.dictValues['job_ppn'] = None
         self.dictValues['job_procs'] = None
+        self.dictValues['job_threads'] = None
         self.dictValues['job_walltime'] = None
         self.dictValues['job_class'] = None
         self.dictValues['job_account'] = None
@@ -77,6 +78,7 @@ class BatchRunningModel(Model):
         # Do we force a number of MPI ranks ?
 
         self.dictValues['run_nprocs'] = None
+        self.dictValues['run_nthreads'] = None
 
         # Is a batch file present ?
 
@@ -103,6 +105,7 @@ class BatchRunningModel(Model):
         """
 
         self.dictValues['run_nprocs'] = self.case['runcase'].get_nprocs()
+        self.dictValues['run_nthreads'] = self.case['runcase'].get_nthreads()
 
 
     def updateBatchRunOptions(self, keyword=None):
@@ -112,6 +115,8 @@ class BatchRunningModel(Model):
 
         if (keyword == 'run_nprocs' or not keyword) and self.case['runcase']:
             self.case['runcase'].set_nprocs(self.dictValues['run_nprocs'])
+        if (keyword == 'run_nthreads' or not keyword) and self.case['runcase']:
+            self.case['runcase'].set_nthreads(self.dictValues['run_nthreads'])
 
 
     def parseBatchCCC(self):
@@ -190,6 +195,8 @@ class BatchRunningModel(Model):
                             self.dictValues['job_ppn'] = val
                         elif kw == 'total_tasks':
                             self.dictValues['job_procs'] = val
+                        elif kw == 'parallel_threads':
+                            self.dictValues['job_threads'] = val
                         elif kw == 'wall_clock_limit':
                             wt = (val.split(',')[0].rstrip()).split(':')
                             if len(wt) == 3:
@@ -231,6 +238,8 @@ class BatchRunningModel(Model):
                             val = self.dictValues['job_ppn']
                         elif kw == 'total_tasks':
                             val = self.dictValues['job_procs']
+                        elif kw == 'parallel_threads':
+                            val = self.dictValues['job_threads']
                         elif kw == 'wall_clock_limit':
                             wt = self.dictValues['job_walltime']
                             val = '%d:%02d:%02d' % (wt/3600,
@@ -512,6 +521,8 @@ class BatchRunningModel(Model):
                     self.dictValues['job_nodes'] = val
                 elif kw == '--ntasks-per-node=':
                     self.dictValues['job_ppn'] = val
+                elif kw == '--cpus-per-task=':
+                    self.dictValues['job_threads'] = val
                 elif kw == '--time=' or kw == '-t':
                     wt0 = val.split('-')
                     if len(wt0) == 2:
@@ -571,6 +582,8 @@ class BatchRunningModel(Model):
                     val = str(self.dictValues['job_nodes'])
                 elif kw == '--ntasks-per-node=':
                     val = self.dictValues['job_ppn']
+                elif kw == '--cpus-per-task=':
+                    val = self.dictValues['job_threads']
                 elif kw == '--time=' or kw == '-t':
                     wt = self.dictValues['job_walltime']
                     if wt > 86400: # 3600*24
@@ -591,6 +604,72 @@ class BatchRunningModel(Model):
                 else:
                     continue
                 batch_lines[i] = '#SBATCH ' + kw + str(val)
+
+
+    def parseBatchEnvVars(self):
+        """
+        Parse environment variables in batch file lines
+        """
+        batch_lines = self.case['runcase'].lines
+
+        for i in range(len(batch_lines)):
+            j = batch_lines[i].find('#')
+            if j > -1:
+                toks = batch_lines[i][:j].split()
+            else:
+                toks = batch_lines[i].split()
+            if len(toks) > 1:
+                var = None
+                val = None
+                if toks[0] in ('set', 'export'):
+                    k = toks[1].find('=')
+                    if k > 1:
+                        var = toks[1][0:k]
+                        val = toks[1][k+1:]
+                elif toks[0] in ('setenv'):
+                    if len(toks) > 2:
+                        var = toks[1]
+                        val = toks[2]
+                if var == 'OMP_NUM_THREADS':
+                    try:
+                        self.dictValues['job_threads'] = int(val)
+                    except Exception:
+                        pass
+
+
+    def updateBatchEnvVars(self):
+        """
+        Update environment variables in batch file lines
+        """
+        batch_lines = self.case['runcase'].lines
+
+        for i in range(len(batch_lines)):
+            j = batch_lines[i].find('#')
+            if j > -1:
+                toks = batch_lines[i][:j].split()
+            else:
+                toks = batch_lines[i].split()
+            if len(toks) > 1:
+                var = None
+                val = None
+                if toks[0] in ('set', 'export'):
+                    k = toks[1].find('=')
+                    if k > 1:
+                        var = toks[1][0:k]
+                        val = toks[1][k+1:]
+                elif toks[0] in ('setenv'):
+                    if len(toks) > 2:
+                        var = toks[1]
+                        val = toks[2]
+                if var == 'OMP_NUM_THREADS' and self.dictValues['job_threads']:
+                    s_threads = str(self.dictValues['job_threads'])
+                    if toks[0] in ('set', 'export'):
+                        s = toks[0] + ' ' + var + '=' + s_threads
+                    elif toks[0] in ('setenv'):
+                        s = toks[0] + ' ' + var + ' ' + s_threads
+                    if j > 1:
+                        s += ' ' + batch_lines[i][j:]
+                    batch_lines[i] = s
 
 
     def parseBatchFile(self):
@@ -617,6 +696,8 @@ class BatchRunningModel(Model):
             self.parseBatchSGE()
         elif self.case['batch_type'][0:5] == 'SLURM':
             self.parseBatchSLURM()
+
+        self.parseBatchEnvVars()
 
 
     def updateBatchFile(self, keyword=None):
@@ -648,6 +729,8 @@ class BatchRunningModel(Model):
                 self.updateBatchSGE()
             elif batch_type[0:5] == 'SLURM':
                 self.updateBatchSLURM()
+
+        self.updateBatchEnvVars()
 
 
 #-------------------------------------------------------------------------------

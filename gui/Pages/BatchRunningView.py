@@ -456,6 +456,21 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.case['batch_type'] = cs_batch_type
 
+        # Get MPI and OpenMP features
+
+        self.have_mpi = False
+        self.have_openmp = False
+        config_features = self.case['package'].config.features
+        if config.has_option('install', 'compute_versions'):
+            compute_versions = config.get('install', 'compute_versions').split(':')
+            if compute_versions[0]:
+                pkg_compute = self.case['package'].get_alternate_version(compute_versions[0])
+                config_features = pkg_compute.config.features
+        if config_features['mpi'] == 'yes':
+            self.have_mpi = True
+        if config_features['openmp'] == 'yes':
+            self.have_openmp = True
+
         self.jmdl = BatchRunningModel(parent, self.case)
 
         # Batch info
@@ -464,6 +479,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.labelNProcs.hide()
         self.spinBoxNProcs.hide()
+
+        self.labelNThreads.hide()
+        self.spinBoxNThreads.hide()
 
         self.class_list = None
 
@@ -506,6 +524,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                          self.slotJobPpn)
             self.connect(self.spinBoxProcs, SIGNAL("valueChanged(int)"),
                          self.slotJobProcs)
+            self.connect(self.spinBoxThreads, SIGNAL("valueChanged(int)"),
+                         self.slotJobThreads)
             self.connect(self.spinBoxDays, SIGNAL("valueChanged(int)"),
                          self.slotJobWallTime)
             self.connect(self.spinBoxHours, SIGNAL("valueChanged(int)"),
@@ -522,7 +542,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                          self.slotJobWCKey)
 
         else:
-            self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotParallelComputing)
+            self.connect(self.spinBoxNProcs, SIGNAL("valueChanged(int)"), self.slotNProcs)
+            self.connect(self.spinBoxNThreads, SIGNAL("valueChanged(int)"), self.slotNThreads)
 
         self.connect(self.toolButtonSearchBatch, SIGNAL("clicked()"), self.slotSearchBatchFile)
         self.connect(self.comboBoxRunType, SIGNAL("activated(const QString&)"), self.slotArgRunType)
@@ -597,6 +618,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.jmdl.updateBatchFile('job_procs')
 
 
+    @pyqtSignature("int")
+    def slotJobThreads(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        self.jmdl.dictValues['job_threads']  = str(self.spinBoxThreads.text())
+        self.jmdl.updateBatchFile('job_threads')
+
+
     @pyqtSignature("")
     def slotJobWallTime(self):
 
@@ -645,7 +675,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
 
     @pyqtSignature("int")
-    def slotParallelComputing(self, v):
+    def slotNProcs(self, v):
         """
         Increment, decrement and colorize the input argument entry
         """
@@ -654,6 +684,18 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             self.jmdl.dictValues['run_nprocs'] = None
         self.jmdl.updateBatchFile('run_nprocs')
+
+
+    @pyqtSignature("int")
+    def slotNThreads(self, v):
+        """
+        Increment, decrement and colorize the input argument entry
+        """
+        if v > 1:
+            self.jmdl.dictValues['run_nthreads'] = str(v)
+        else:
+            self.jmdl.dictValues['run_nthreads'] = None
+        self.jmdl.updateBatchFile('run_nthreads')
 
 
     @pyqtSignature("")
@@ -883,6 +925,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.spinBoxPpn.hide()
         self.labelProcs.hide()
         self.spinBoxProcs.hide()
+        self.labelThreads.hide()
+        self.spinBoxThreads.hide()
         self.labelClass.hide()
         self.labelWTime.hide()
         self.spinBoxDays.hide()
@@ -909,6 +953,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.job_nodes = self.jmdl.dictValues['job_nodes']
         self.job_ppn  = self.jmdl.dictValues['job_ppn']
         self.job_procs = self.jmdl.dictValues['job_procs']
+        self.job_threads = self.jmdl.dictValues['job_threads']
         self.job_walltime = self.jmdl.dictValues['job_walltime']
         self.job_class  = self.jmdl.dictValues['job_class']
         self.job_account  = self.jmdl.dictValues['job_account']
@@ -933,6 +978,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.labelProcs.show()
             self.spinBoxProcs.setValue(int(self.job_procs))
             self.spinBoxProcs.show()
+
+        if self.job_threads != None:
+            self.labelThreads.show()
+            self.spinBoxThreads.setValue(int(self.job_threads))
+            self.spinBoxThreads.show()
 
         if self.job_walltime != None:
             seconds = self.job_walltime
@@ -1023,19 +1073,33 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
 
         if self.case['batch_type'] == None:
-            self.labelNProcs.show()
-            self.spinBoxNProcs.show()
+            if self.have_mpi:
+                self.labelNProcs.show()
+                self.spinBoxNProcs.show()
+            if self.have_openmp:
+                self.labelNThreads.show()
+                self.spinBoxNThreads.show()
         else:
             self.labelNProcs.hide()
             self.spinBoxNProcs.hide()
+            self.labelNThreads.hide()
+            self.spinBoxNThreads.hide()
 
         if self.case['batch_type'] == None:
-            n_procs_s = self.jmdl.dictValues['run_nprocs']
-            if n_procs_s:
-                n_procs = int(n_procs_s)
-            else:
-                n_procs = 1
-            self.spinBoxNProcs.setValue(n_procs)
+            if self.have_mpi:
+                n_procs_s = self.jmdl.dictValues['run_nprocs']
+                if n_procs_s:
+                    n_procs = int(n_procs_s)
+                else:
+                    n_procs = 1
+                self.spinBoxNProcs.setValue(n_procs)
+            if self.have_openmp == 'yes':
+                n_threads_s = self.jmdl.dictValues['run_nthreads']
+                if n_threads_s:
+                    n_threads = int(n_threads_s)
+                else:
+                    n_threads = 1
+                self.spinBoxNThreads.setValue(n_threads)
         else:
             pass
 

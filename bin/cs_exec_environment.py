@@ -736,6 +736,9 @@ class batch_info:
             cmd = "qstat -r $PBS_JOBID | grep $PBS_JOBID" \
                 + " | sed -e's/ \{1,\}/ /g' | cut -d ' ' -f 9"
             rtime = get_command_output(cmd)
+        elif self.batch_type == 'SLURM':
+            cmd = "squeue -h -j $SLURM_JOBID -o %L"
+            # TODO parse this
 
         return rtime
 
@@ -745,7 +748,7 @@ class resource_info(batch_info):
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, n_procs = None, n_procs_default = None):
+    def __init__(self, n_procs = None, n_procs_default = None, n_threads = None):
 
         """
         Get execution resources information.
@@ -756,6 +759,7 @@ class resource_info(batch_info):
         self.manager = None
         self.n_procs = None
         self.n_nodes = None
+        self.n_threads = None
 
         # If obtained from an environment variable, express
         # the hosts file using a shell variable rather than
@@ -796,6 +800,11 @@ class resource_info(batch_info):
                             self.n_procs += int(s0)
                 else:
                     self.n_procs = self.n_nodes
+
+        if self.manager == 'SLURM':
+            s = os.getenv('SLURM_CPUS_PER_TASK')
+            if s != None:
+                self.nthreads = int(s)
 
         # Test for Platform LSF.
 
@@ -842,6 +851,12 @@ class resource_info(batch_info):
             if s != None:
                 self.manager = 'PBS'
                 self.hosts_file = '$PBS_NODEFILE'
+                s = os.getenv('PBS_NUM_NODES')
+                if s != None:
+                    self.n_nodes = int(s)
+                    s = os.getenv('PBS_NUM_PPN')
+                    if s != None:
+                        self.n_procs = int(s)*self.n_nodes
 
         # Test for Oracle Grid Engine.
 
@@ -897,6 +912,22 @@ class resource_info(batch_info):
 
         if self.n_procs == None:
             self.n_procs = n_procs_default
+
+        # Check and possibly set number of threads
+
+        if n_threads == None:
+            s = os.getenv('OMP_NUM_THREADS')
+            if s != None:
+                n_threads = int(s)
+
+        if n_threads != None:
+            if self.n_threads != None and n_threads != self.n_threads:
+                sys.stderr.write('Warning:\n'
+                                 +'   Will use ' + str(self.n_threads)
+                                 + ' threads per task while resource manager ('
+                                 + self.manager + ')\n   allows for '
+                                 + str(n_threads) + '.\n\n')
+            self.n_threads = n_threads
 
     #---------------------------------------------------------------------------
 
@@ -1818,7 +1849,8 @@ class exec_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, pkg, wdir=None, n_procs=None, n_procs_default = None):
+    def __init__(self, pkg, wdir=None,
+                 n_procs=None, n_procs_default=None, n_threads=None):
         """
         Returns Execution environment.
         """
@@ -1832,7 +1864,7 @@ class exec_environment:
         if self.wdir == None:
             self.wdir = os.getcwd()
 
-        self.resources = resource_info(n_procs, n_procs_default)
+        self.resources = resource_info(n_procs, n_procs_default, n_threads)
 
         self.mpi_env = None
 

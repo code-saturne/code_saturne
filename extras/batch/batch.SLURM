@@ -5,6 +5,7 @@
 #
 #SBATCH --nodes=2
 #SBATCH --ntasks-per-node=12
+#SBATCH --cpus-per-task=1
 #SBATCH --time=0:30:00
 #SBATCH --partition=par
 #SBATCH --output=nameandcase%j
@@ -20,6 +21,7 @@
 #  --ntasks-per-node=<ntasks>         : number of tasks per node
 #  --ntasks-per-socket=<ntasks>       : number of tasks per socket
 #  --ntasks-per-core=<ntasks>         : number of tasks per core
+#  --cpus-per-task=<nthreads>         : number of threads per task
 #  --cpu-bind=cores, sockets          : bind CPUs to cores or sockets
 #  --mem-bind=local
 #  --qos=<qos>                        : request given quality of service
