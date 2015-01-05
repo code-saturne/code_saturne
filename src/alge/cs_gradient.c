@@ -1766,8 +1766,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
   const cs_real_t *restrict b_face_surf
     = (const cs_real_t *restrict)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
@@ -1860,7 +1860,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
           udbfs = extrab / b_face_surf[face_id];
 
           for (ll = 0; ll < 3; ll++)
-            dddij[ll] =   udbfs * b_f_face_normal[face_id][ll]
+            dddij[ll] =   udbfs * b_face_normal[face_id][ll]
                         + umcbdd * diipb[face_id][ll];
 
           for (ll = 0; ll < 3; ll++) {
@@ -2026,7 +2026,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
           umcbdd = (1. - coefbp[face_id]) * unddij;
 
           for (ll = 0; ll < 3; ll++)
-            dsij[ll] =   udbfs * b_f_face_normal[face_id][ll]
+            dsij[ll] =   udbfs * b_face_normal[face_id][ll]
                        + umcbdd*diipb[face_id][ll];
 
           pfac =   (coefap[face_id]*inc + (coefbp[face_id] -1.)*rhsv[ii][3])
@@ -2156,7 +2156,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
           umcbdd = (1. - coefbp[face_id]) * unddij;
 
           for (ll = 0; ll < 3; ll++)
-            dsij[ll] =   udbfs * b_f_face_normal[face_id][ll]
+            dsij[ll] =   udbfs * b_face_normal[face_id][ll]
                        + umcbdd*diipb[face_id][ll];
 
           pfac
