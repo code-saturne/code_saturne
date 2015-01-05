@@ -183,12 +183,6 @@ endif
 ! Free memory
 deallocate(forast)
 
-!     Si on est en phase d'initialisation du fluide
-if (itrale.le.nalinf) then
-  itrfin = -1
-  return
-endif
-
 !===============================================================================
 ! 3. Structure characteristic given by the user
 !===============================================================================
@@ -216,6 +210,12 @@ if (nbstru.gt.0) then
    xmstru , xcstru , xkstru , xstreq , xstr   , xpstr  , forstp , &
    dtstr  )
 
+endif
+
+! If the fluid is initailizing, we do read structures
+if (itrale.le.nalinf) then
+  itrfin = -1
+  return
 endif
 
 !===============================================================================
