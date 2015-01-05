@@ -120,37 +120,37 @@ if (ieqnox .eq. 1) then
 endif
 
 ! Dispersed phase (particle classes)
-do icla = 1, nclacp
+do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 't_fuel_', icla
   write(f_label, '(a,i2.2)') 'T_Fuel_', icla
   call add_property_field(f_name, f_label, itemp2(icla))
 enddo
 
-do icla = 1, nclacp
+do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'rho_fuel_', icla
   write(f_label, '(a,i2.2)') 'Rho_Fuel_', icla
   call add_property_field(f_name, f_label, irom2(icla))
 enddo
 
-do icla = 1, nclacp
+do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'diameter_fuel_', icla
   write(f_label, '(a,i2.2)') 'Diam_Drop_', icla
   call add_property_field(f_name, f_label, idiam2(icla))
 enddo
 
-do icla = 1, nclacp
+do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'h1_hlf_', icla
   write(f_label, '(a,i2.2)') 'H1-Hlf_', icla
   call add_property_field(f_name, f_label, ih1hlf(icla))
 enddo
 
-do icla = 1, nclacp
+do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'eva_fuel_', icla
   write(f_label, '(a,i2.2)') 'EVA_Fuel_', icla
   call add_property_field(f_name, f_label, igmeva(icla))
 enddo
 
-do icla = 1, nclacp
+do icla = 1, nclafu
   write(f_name,  '(a,i2.2)') 'het_ts_fuel_', icla
   write(f_label, '(a,i2.2)') 'Het_TS_Fuel_', icla
   call add_property_field(f_name, f_label, igmhtf(icla))
