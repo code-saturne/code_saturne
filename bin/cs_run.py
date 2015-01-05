@@ -68,6 +68,9 @@ def process_cmd_line(argv, pkg):
                       metavar="<nprocs>",
                       help="number of MPI processes for the computation")
 
+    parser.add_option("--nt", "--threads-per-task", dest="nthreads", type="int",
+                      help="number of OpenMP threads per task")
+
     parser.add_option("-p", "--param", dest="param", type="string",
                       metavar="<param>",
                       help="path or name of the parameters file")
@@ -122,6 +125,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(domain=None)
     parser.set_defaults(id=None)
     parser.set_defaults(nprocs=None)
+    parser.set_defaults(nthreads=None)
 
     # Note: we could use args to pass a calculation status file as an argument,
     # which would allow pursuing the later calculation stages.
@@ -217,10 +221,11 @@ def process_cmd_line(argv, pkg):
         save_results = True
 
     n_procs = options.nprocs
+    n_threads = options.nthreads
 
     return  (casedir, options.id, param, coupling,
              options.id_prefix, options.id_suffix, options.suggest_id, force_id,
-             n_procs, prepare_data, run_solver, save_results)
+             n_procs, n_threads, prepare_data, run_solver, save_results)
 
 #===============================================================================
 # Run the calculation
@@ -232,7 +237,7 @@ def main(argv, pkg):
     """
 
     (casedir, run_id, param, coupling,
-     id_prefix, id_suffix, suggest_id, force, n_procs,
+     id_prefix, id_suffix, suggest_id, force, n_procs, n_threads,
      prepare_data, run_solver, save_results) = process_cmd_line(argv, pkg)
 
     if not casedir:
@@ -291,6 +296,7 @@ def main(argv, pkg):
     # Now run case
 
     retval = c.run(n_procs=n_procs,
+                   n_threads=n_threads,
                    run_id=run_id,
                    force_id=force,
                    prepare_data=prepare_data,

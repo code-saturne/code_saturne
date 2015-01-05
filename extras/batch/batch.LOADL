@@ -16,6 +16,7 @@
 #
 # @ node = 128
 # @ tasks_per_node = 6
+# @ parallel_threads = 1
 # @ node_usage = not_shared
 # @ class = standard
 #

@@ -4,6 +4,7 @@
 #
 #SBATCH --ntasks=64
 #SBATCH --ntasks-per-node=16
+#SBATCH --cpus-per-task=2
 #SBATCH --time=0:30:00
 #SBATCH --output nameandcase.%j 
 #SBATCH --error nameandcase.%j 
@@ -18,6 +19,7 @@
 #  --ntasks-per-node=<ntasks>         : number of tasks per node
 #  --ntasks-per-socket=<ntasks>       : number of tasks per socket
 #  --ntasks-per-core=<ntasks>         : number of tasks per core
+#  --cpus-per-task=<nthreads>         : number of threads per task
 #  --contiguous                       : force use of contiguous nodes for
 #                                       better latency and minimal latency
 #  --partition=<name>, -p<name>       : partition (queue) (run "sinfo -s"

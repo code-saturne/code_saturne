@@ -309,6 +309,37 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
+    def get_nthreads(self):
+        """
+        Get the nthreads option in the run command
+        """
+
+        args = separate_args(self.lines[self.run_cmd_line_id])
+
+        return get_command_single_value(args,
+                                        ('--threads-per-task',
+                                         '--threads-per-task=',
+                                         '-nt'))
+
+    #---------------------------------------------------------------------------
+
+    def set_nthreads(self, parameters):
+        """
+        Set the nthreads option in the run command
+        """
+
+        line = self.lines[self.run_cmd_line_id]
+
+        args = update_command_single_value(separate_args(line),
+                                           ('--threads-per-task',
+                                            '--threads-per-task=',
+                                            '-nt'),
+                                           enquote_arg(parameters))
+
+        self.lines[self.run_cmd_line_id] = assemble_args(args)
+
+    #---------------------------------------------------------------------------
+
     def get_run_id(self):
         """
         Get the run id, id_prefix, and id_suffix options in the run command

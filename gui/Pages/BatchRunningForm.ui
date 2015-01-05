@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>474</width>
-    <height>539</height>
+    <width>480</width>
+    <height>561</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -217,8 +217,11 @@
           </item>
           <item>
            <widget class="QLabel" name="labelPpn">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes per node&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
-             <string>CPUs per node</string>
+             <string>Tasks per node</string>
             </property>
            </widget>
           </item>
@@ -228,7 +231,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>32</number>
+             <number>64</number>
             </property>
             <property name="value">
              <number>2</number>
@@ -261,11 +264,14 @@
          <layout class="QHBoxLayout" name="horizontalLayoutProcs">
           <item>
            <widget class="QSpinBox" name="spinBoxProcs">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="minimum">
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>131172</number>
+             <number>524288</number>
             </property>
            </widget>
           </item>
@@ -285,13 +291,50 @@
          </layout>
         </item>
         <item row="3" column="0">
+         <widget class="QLabel" name="labelThreads">
+          <property name="text">
+           <string>Threads per task</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <layout class="QHBoxLayout" name="horizontalLayoutThreads">
+          <item>
+           <widget class="QSpinBox" name="spinBoxThreads">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of OpenMP threads per MPI task&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>128</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacerThreads">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>0</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item row="4" column="0">
          <widget class="QLabel" name="labelWTime">
           <property name="text">
            <string>Wall-clock  time</string>
           </property>
          </widget>
         </item>
-        <item row="3" column="2">
+        <item row="4" column="2">
          <layout class="QHBoxLayout" name="horizontalLayoutWallclock">
           <item>
            <widget class="QSpinBox" name="spinBoxDays">
@@ -393,14 +436,14 @@
           </item>
          </layout>
         </item>
-        <item row="4" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="labelClass">
           <property name="text">
            <string>Class</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="2">
+        <item row="5" column="2">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
            <widget class="QComboBox" name="comboBoxClass">
@@ -433,14 +476,14 @@
           </item>
          </layout>
         </item>
-        <item row="5" column="0">
+        <item row="6" column="0">
          <widget class="QLabel" name="labelJobAccount">
           <property name="text">
            <string>Account</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="2">
+        <item row="6" column="2">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QLineEdit" name="lineEditJobAccount">
@@ -467,14 +510,14 @@
           </item>
          </layout>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="QLabel" name="labelJobWCKey">
           <property name="text">
            <string>WCKey</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="2">
+        <item row="7" column="2">
          <layout class="QHBoxLayout" name="horizontalLayout_WCKey">
           <item>
            <widget class="QLineEdit" name="lineEditJobWCKey">
@@ -546,14 +589,17 @@
         </item>
         <item>
          <layout class="QGridLayout" name="gridLayout_3">
-          <item row="1" column="0">
-           <widget class="QLabel" name="labelNProcs">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
             <property name="text">
-             <string>Number of processes</string>
+             <string>Run type</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
+          <item row="0" column="2">
+           <widget class="QComboBox" name="comboBoxRunType"/>
+          </item>
+          <item row="0" column="1">
            <spacer>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -566,14 +612,48 @@
             </property>
            </spacer>
           </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="labelNProcs">
+            <property name="text">
+             <string>Number of processes</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QSpinBox" name="spinBoxNProcs">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of MPI processes&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>524288</number>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="0">
+           <widget class="QLabel" name="labelNThreads">
+            <property name="text">
+             <string>Threads per task</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QSpinBox" name="spinBoxNThreads">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of OpenMP threads per MPI task&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>128</number>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
            <widget class="QLabel" name="labelAdvanced">
             <property name="text">
              <string>Advanced options</string>
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
+          <item row="3" column="2">
            <widget class="QToolButton" name="toolButtonAdvanced">
             <property name="text">
              <string>...</string>
@@ -589,23 +669,6 @@
              </size>
             </property>
            </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QSpinBox" name="spinBoxNProcs">
-            <property name="maximum">
-             <number>131072</number>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Run type</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QComboBox" name="comboBoxRunType"/>
           </item>
          </layout>
         </item>
@@ -631,8 +694,8 @@
     <widget class="QGroupBox" name="groupBox">
      <property name="sizeHint" stdset="0">
       <size>
-       <width>186</width>
-       <height>63</height>
+       <width>187</width>
+       <height>59</height>
       </size>
      </property>
      <property name="title">
