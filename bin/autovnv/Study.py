@@ -96,17 +96,35 @@ class Case(object):
         self.is_compare = "not done"
         self.threshold  = "default"
         self.diff_value = []
+        self.subdomains = None
         self.run_dir    = ""
 
-        self.exe, self.pkg = self.__get_exe()
+        # Specific case for coupling
+
+        coupling = os.path.join(self.__repo, self.label, "coupling_parameters.py")
+        if os.path.isfile(coupling):
+            import cs_case_coupling
+            try:
+                exec(compile(open(coupling).read(), '<string>', 'exec'))
+            except Exception:
+                execfile(coupling)
+            run_ref = os.path.join(self.__repo, self.label, "runcase")
+            self.exe, self.pkg = self.__get_exe(run_ref)
+            self.subdomains = []
+            for d in domains:
+                if d['solver'] == self.pkg.code_name:
+                    self.subdomains.append(d['domain'])
+
+        else:
+            run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
+            self.exe, self.pkg = self.__get_exe(run_ref)
 
 
-    def __get_exe(self):
+    def __get_exe(self, run_ref):
         """
         Return the name of the exe of the case, in order to mix
         Code_Saturne and NEPTUNE_CFD test cases in the same study.
         """
-        run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
 
         # Read the runcase script from the Repository
 
@@ -124,7 +142,7 @@ class Case(object):
         return runcase.cmd_name, pkg
 
 
-    def update(self, xmlonly=False):
+    def __update_domain(self, subdir, xmlonly=False):
         """
         Update path for the script in the Repository.
         """
@@ -143,8 +161,8 @@ class Case(object):
 
         n_procs = {}
 
-        for fn in os.listdir(os.path.join(self.__repo, self.label, "DATA")):
-            fp = os.path.join(self.__repo, self.label, "DATA", fn)
+        for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
+            fp = os.path.join(self.__repo, subdir, "DATA", fn)
             if os.path.isfile(fp):
                 fd = os.open(fp , os.O_RDONLY)
                 f = os.fdopen(fd)
@@ -169,12 +187,12 @@ class Case(object):
 
         # 2) Create RESU directory if needed
         if not xmlonly:
-            r = os.path.join(self.__repo, self.label, "RESU")
+            r = os.path.join(self.__repo, subdir, "RESU")
             if not os.path.isdir(r):
                 os.makedirs(r)
 
         # 3) Update the GUI script from the Repository
-        ref = os.path.join(self.__repo, self.label, "DATA", self.pkg.guiname)
+        ref = os.path.join(self.__repo, subdir, "DATA", self.pkg.guiname)
 
         have_gui = 1
         try:
@@ -203,7 +221,7 @@ class Case(object):
            f.close()
 
         # 4) Update the runcase script from the Repository
-        ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
+        ref = os.path.join(self.__repo, subdir, "SCRIPTS", "runcase")
 
         try:
             f = file(ref, mode = 'r')
@@ -242,26 +260,86 @@ class Case(object):
         f.close()
 
 
+    def update(self, xmlonly=False):
+        """
+        Update path for the script in the Repository.
+        """
+        # 1) Load the xml file of parameters in order to update it
+        #    with the __backwardCompatibility method.
+
+        from Base.XMLengine import Case
+        from Pages.ScriptRunningModel import ScriptRunningModel
+        from cs_exec_environment import \
+            separate_args, get_command_single_value, update_command_single_value, assemble_args, enquote_arg
+
+        if self.exe == "code_saturne":
+            from Base.XMLinitialize import XMLinit
+        elif self.exe == "neptune_cfd":
+            from core.XMLinitialize import XMLinit
+
+        if self.subdomains:
+            cdirs = []
+            for d in self.subdomains:
+                cdirs.append(os.path.join(self.label, d))
+        else:
+            cdirs = (self.label,)
+
+        for d in cdirs:
+            self.__update_domain(d, xmlonly)
+
+        # Update the runcase script from the Repository in case of coupling
+
+        if self.subdomains:
+            ref = os.path.join(self.__repo, self.label, "runcase")
+            try:
+                f = file(ref, mode = 'r')
+                lines = f.readlines()
+                f.close()
+                for i in range(len(lines)):
+                    if lines[i].strip()[0:1] == '#':
+                        continue
+                    if xmlonly:
+                        if re.search(r'^export PATH=', lines[i]):
+                            lines[i] = 'export PATH="":$PATH\n'
+                    else:
+                        if re.search(r'^export PATH=', lines[i]):
+                            lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
+                f = file(ref, mode = 'w')
+                f.writelines(lines)
+                f.close()
+            except IOError:
+                pass
+
     def compile(self, d):
         """
         Just compile user sources if exist.
         @rtype: C{String}
         @return: the status of the succes of the compilation.
         """
-        home = os.getcwd()
-        os.chdir(os.path.join(d, self.label, 'SRC'))
-        cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " compile -t"
 
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        output = p.communicate()
-        o = output[1]
-        if o.find('erreur') != -1 or o.find('error') != -1:
-            self.is_compil = "KO"
+        if self.subdomains:
+            sdirs = []
+            for sd in self.subdomains:
+                sdirs.append(os.path.join(d, self.label, sd, 'SRC'))
         else:
-            self.is_compil = "OK"
+            sdirs = (os.path.join(d, self.label, 'SRC'),)
+
+        home = os.getcwd()
+
+        self.is_compil = "OK"
+
+        for s in sdirs:
+
+            os.chdir(s)
+            cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " compile -t"
+            p = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            output = p.communicate()
+            o = output[1]
+            if o.find('erreur') != -1 or o.find('error') != -1:
+                self.is_compil = "KO"
 
         os.chdir(home)
 
@@ -285,8 +363,13 @@ class Case(object):
         """
         Update the command line in the launcher C{runcase}.
         """
-        run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
-        run_new = os.path.join(self.__dest, self.label, "SCRIPTS", "runcase")
+
+        if self.subdomains:
+            run_ref = os.path.join(self.__repo, self.label, "runcase")
+            run_new = os.path.join(self.__dest, self.label, "runcase")
+        else:
+            run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
+            run_new = os.path.join(self.__dest, self.label, "SCRIPTS", "runcase")
 
         # Read the runcase from the Repository
 
@@ -607,7 +690,6 @@ class Study(object):
                 for cpr in ["", ".gz"]:
                     for fmt in ["unv",
                                 "med",
-                                "ngeom",
                                 "ccm",
                                 "cgns",
                                 "neu",
@@ -638,10 +720,26 @@ class Study(object):
         for c in self.Cases:
             if not os.path.isdir(c.label):
                 e = os.path.join(c.pkg.get_dir('bindir'), c.exe)
-                cmd = e + " create --case " + c.label  \
-                      + " --quiet --noref --copy-from "    \
-                      + os.path.join(self.__repo, c.label)
-                retval, t = run_autovnv_command(cmd, self.__log)
+                if c.subdomains:
+                    os.mkdir(c.label)
+                    os.chdir(c.label)
+                    refdir = os.path.join(self.__repo, c.label)
+                    for node in os.listdir(refdir):
+                        ref = os.path.join(self.__repo, c.label, node)
+                        if node in c.subdomains:
+                            cmd = e + " create --case " + node \
+                                  + " --quiet --noref --copy-from " \
+                                  + ref
+                            retval, t = run_autovnv_command(cmd, self.__log)
+                        elif os.path.isdir(ref):
+                            shutil.copytree(ref, node, symlinks=True)
+                        else:
+                            shutil.copy2(ref, node)
+                else:
+                    cmd = e + " create --case " + c.label  \
+                          + " --quiet --noref --copy-from "    \
+                          + os.path.join(self.__repo, c.label)
+                    retval, t = run_autovnv_command(cmd, self.__log)
             else:
                 print("Warning: the case %s already exists in the destination." % c.label)
 
@@ -916,7 +1014,11 @@ class Studies(object):
                     if case.compute == 'on' and case.is_compil != "KO":
 
                         if self.__n_iter:
-                            case_dir = os.path.join(self.dest, s.label, case.label, "DATA")
+                            if case.subdomains:
+                                case_dir = os.path.join(self.dest, s.label, case.label,
+                                                        case.subdomains[0], "DATA")
+                            else:
+                                case_dir = os.path.join(self.dest, s.label, case.label, "DATA")
                             os.chdir(case_dir)
                             # Create a control_file in each case DATA
                             if not os.path.exists('control_file'):
