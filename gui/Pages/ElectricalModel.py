@@ -167,7 +167,7 @@ class ElectricalModel(Variables, Model):
 
             listP = ['temperature', 'joule_power', 'elec_sigma']
             for dim in range(0, 3):
-                name = '%s%2.2i' % ('current_re_', dim+1)
+                name = '%s%i' % ('current_re_', dim+1)
                 listP.append(name)
 
             if model == 'arc':

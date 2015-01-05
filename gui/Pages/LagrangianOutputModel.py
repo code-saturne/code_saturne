@@ -299,7 +299,7 @@ class LagrangianOutputModel(Model):
         status = node_mass['status']
         if not status:
             status = self._defaultLagrangianOutputValues()['raw_coal_mass_fraction']
-            self.setCoalParticleDiameterStatus(status)
+            self.setCoalParticleMassStatus(status)
         return status
 
 
@@ -324,8 +324,7 @@ class LagrangianOutputModel(Model):
         status = node_mass['status']
         if not status:
             status = self._defaultLagrangianOutputValues()['char_mass_fraction']
-            self.setCoalParticleDiameterStatus(status)
-        return status
+            self.setCokeParticleMassStatus(status)
         return status
 
 

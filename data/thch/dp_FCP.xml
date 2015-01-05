@@ -119,14 +119,14 @@
 			<property label="YM_H2O" name="ym_h2o"/>
 			<property label="YM_N2" name="ym_n2"/>
 			<property label="XM" name="xm"/>
-			<property label="Temp_CP01" name="t_coal01"/>
-			<property label="Frm_CP01" name="w_solid_coal01"/>
-			<property label="Rho_CP01" name="rho_coal01"/>
-			<property label="Dia_CK01" name="diameter_coal01"/>
-			<property label="Ga_DCH01" name="dissapear_rate_coal01"/>
-			<property label="Ga_DV101" name="m_transfer_v1_coal01"/>
-			<property label="Ga_DV201" name="m_transfer_v2_coal01"/>
-			<property label="Ga_HET_O201" name="het_ts_o2_coal01"/>
+			<property label="Temp_CP01" name="t_p_01"/>
+			<property label="Frm_CP01" name="x_p_01"/>
+			<property label="Rho_CP01" name="rho_p_01"/>
+			<property label="Dia_CK01" name="diam_p_01"/>
+			<property label="Ga_DCH01" name="dissapear_rate_p_01"/>
+			<property label="Ga_DV101" name="m_transfer_v1_p_01"/>
+			<property label="Ga_DV201" name="m_transfer_v2_p_01"/>
+			<property label="Ga_HET_O201" name="het_ts_o2_p_01"/>
 			<property label="IntLuminance_4PI" name="intensity"/>
 		        <oxidants>
 			        <oxidant ox_id="1">
