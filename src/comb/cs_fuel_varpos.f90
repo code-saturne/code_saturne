@@ -165,8 +165,8 @@ enddo
 !  by massic enthalpy of the class).
 do icla = 1, nclafu
 
-  write(f_name,'(a9,i2.2)') 'hlf_fuel_', icla
-  write(f_label,'(a7,i2.2)') 'HLF_FOL', icla
+  write(f_name,'(a,i2.2)') 'x_p_h_', icla
+  write(f_label,'(a,i2.2)') 'Xp_Ent_', icla
   call add_model_scalar_field(f_name, f_label, ih2(icla))
   f_id = ivarfl(isca(ih2(icla)))
 
@@ -256,7 +256,7 @@ endif
 
 ! Mass of vapor divided by the mass of bulk
 ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
-call add_model_scalar_field('vap_fraction', 'Fr_VAP', ifvap)
+call add_model_scalar_field('fr_vap', 'Fr_VAP', ifvap)
 f_id = ivarfl(isca(ifvap))
 
 ! Set the index of the scalar class in the field structure
@@ -276,9 +276,9 @@ endif
 ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 if (noxyd .ge. 2) then
 
-
-
-  call add_model_scalar_field('oxyd2_fraction', 'Fr_OXYD2', if4m)
+  f_name = 'fr_oxyd2'
+  f_label = 'FR_OXYD2'
+  call add_model_scalar_field(f_name, f_label, if4m)
   f_id = ivarfl(isca(if4m))
 
   ! Set the index of the scalar class in the field structure
@@ -300,9 +300,9 @@ endif
 ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 if (noxyd .ge. 3) then
 
-
-
-  call add_model_scalar_field('oxyd3_fraction', 'Fr_OXYD3', if5m)
+  f_name = 'fr_oxyd3'
+  f_label = 'FR_OXYD3'
+  call add_model_scalar_field(f_name, f_label, if5m)
   f_id = ivarfl(isca(if5m))
 
   ! Set the index of the scalar class in the field structure
@@ -322,9 +322,11 @@ endif
 
 ! Combustion heterogene
 
-
-
-call add_model_scalar_field('het_fraction', 'Fr_HET', if7m)
+! Mass of the Carbon from coal oxydized by O2 divided by the mass of bulk
+! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
+f_name = 'fr_het_o2'
+f_label  = 'FR_HET_O2'
+call add_model_scalar_field(f_name, f_label, if7m)
 f_id = ivarfl(isca(if7m))
 
 ! Set the index of the scalar class in the field structure
@@ -343,8 +345,10 @@ endif
 
 ! Variance
 
-
-call add_model_scalar_field('cb_variance', 'Var_CB', ifvp2m)
+! Variance
+f_name = 'f1f2_variance'
+f_label  = 'Var_F1F2'
+call add_model_scalar_field(f_name, f_label, ifvp2m)
 f_id = ivarfl(isca(ifvp2m))
 
 ! Set the index of the scalar class in the field structure
@@ -360,15 +364,14 @@ if (i_coal_drift.ge.1) then
   call field_set_key_int(f_id, keydri, iscdri)
 endif
 
-
 ! Mass of the Carbon dioxyde (CO or CO2) divided by the mass of bulk
 ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 !FIXME check for the oxycombustion, it would be more relevant to track CO
 if (ieqco2.ge.1) then
 
-
-
-  call add_model_scalar_field('co2_fraction', 'FR_CO2', iyco2)
+  f_name = 'x_c_co2'
+  f_label  = 'Xc_CO2'
+  call add_model_scalar_field(f_name, f_label, iyco2)
   f_id = ivarfl(isca(iyco2))
 
   ! Set the index of the scalar class in the field structure
@@ -390,9 +393,9 @@ endif
 ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 if (ieqnox.eq.1) then
 
-
-
-  call add_model_scalar_field('hcn_fraction', 'FR_HCN', iyhcn)
+  f_name = 'x_c_hcn'
+  f_label = 'Xc_HCN'
+  call add_model_scalar_field(f_name, f_label, iyhcn)
   f_id = ivarfl(isca(iyhcn))
 
   ! Set the index of the scalar class in the field structure
@@ -412,7 +415,9 @@ if (ieqnox.eq.1) then
   ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
 
 
-  call add_model_scalar_field('no_fraction', 'FR_NO', iyno)
+  f_name =  'x_c_no'
+  f_label =  'Xc_NO'
+  call add_model_scalar_field(f_name, f_label, iyno)
   f_id = ivarfl(isca(iyno))
 
   ! Set the index of the scalar class in the field structure
@@ -430,9 +435,9 @@ if (ieqnox.eq.1) then
 
   ! Enthalpy of the oxydizer times the fraction of gas divided by the mass of bulk
   ! NB: mixture fraction (fr) (unreactive) <> mass fraction (x) (reactive)
-
-
-  call add_model_scalar_field('ox_enthalpy', 'Enth_Ox', ihox)
+  f_name =  'x_c_h_ox'
+  f_label =  'Xc_Ent_Ox'
+  call add_model_scalar_field(f_name, f_label, ihox)
   f_id = ivarfl(isca(ihox))
 
   ! Set the index of the scalar class in the field structure
