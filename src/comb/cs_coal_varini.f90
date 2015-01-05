@@ -130,7 +130,7 @@ data             ipass /0/
 save             ipass
 
 !===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
+! 1. Initializations
 !===============================================================================
 
 ! Massic fraction of gas
@@ -164,27 +164,27 @@ endif
 
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
-if ( noxyd .ge. 2 ) then
+if (noxyd.ge.2) then
   call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
 endif
-if ( noxyd .ge. 3 ) then
+if (noxyd.ge.3) then
   call field_get_val_s(ivarfl(isca(if5m)), cvar_f5m)
 endif
-if ( ippmod(iccoal) .ge. 1 ) then
+if (ippmod(iccoal).ge.1) then
   call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
 endif
 call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
-if ( ihtco2 .eq. 1 ) then
+if (ihtco2.eq.1) then
   call field_get_val_s(ivarfl(isca(if8m)), cvar_f8m)
 endif
-if ( ihth2o .eq. 1 ) then
+if (ihth2o.eq.1) then
   call field_get_val_s(ivarfl(isca(if9m)), cvar_f9m)
 endif
 call field_get_val_s(ivarfl(isca(ifvp2m)), cvar_fvp2m)
-if ( ieqco2.ge.1 ) then
+if (ieqco2.ge.1) then
   call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
 endif
-if ( ieqnox .eq. 1 ) then
+if (ieqnox.eq.1) then
   call field_get_val_s(ivarfl(isca(iyhcn)), cvar_yhcn)
   call field_get_val_s(ivarfl(isca(iynh3)), cvar_ynh3)
   call field_get_val_s(ivarfl(isca(iyno)), cvar_yno)
@@ -192,8 +192,7 @@ if ( ieqnox .eq. 1 ) then
 endif
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! 2. Variable initialization
 !===============================================================================
 
 ! RQ IMPORTANTE : pour la combustion CP, 1 seul passage suffit
@@ -244,10 +243,10 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
   endif
 
-! --> On initialise tout le domaine de calcul avec de l'air a TINITK
-!                   ================================================
+  ! --> All the domain is filled with the first oxidizer at TINITK
+  !                   ============================================
 
-! ---- Calculs de H1INIT et H2INIT
+  ! ---- Computation of H1INIT and H2INIT
 
   t1init = t0
   t2init = t0
@@ -279,14 +278,14 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     enddo
   enddo
 
-! ------ Variables de transport relatives au melange
+  ! ------ Transported variables for the mix (solid+carrying gas)^2
 
   do ige = 1, ngazem
     coefe(ige) = zero
   enddo
 
-!       On considere l'oxydant 1
-
+  ! Oxidizer are mix of O2, N2 (air), CO2 and H2O (recycled exhaust)
+  ! the composition of the fisrt oxidiser is taken in account
   coefe(io2) = wmole(io2)*oxyo2(1)                                &
               /( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)       &
                 +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))
@@ -311,7 +310,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
     cvar_scalt(iel) = h1init
   enddo
 
-! ------ Variables de transport relatives au melange gazeux
+  ! ------ Transported variables for the mix (passive scalars, variance)
 !        (scalaires passifs et variances associees)
 
   do icha = 1, ncharb
@@ -324,7 +323,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   enddo
 
   do iel = 1, ncel
-!
+
     if ( noxyd .ge. 2 ) then
       cvar_f4m(iel) = zero
     endif
@@ -358,8 +357,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       xco2 = oxyco2(ioxy)*wmco2/dmas
       cvar_yco2(iel) = oxyco2(ioxy)*wmco2/dmas
     endif
-!
-    if ( ieqnox .eq. 1 ) then
+    if ( ieqnox.eq.1 ) then
       cvar_yhcn(iel) = zero
 ! Initialisation du NH3
       cvar_ynh3(iel) = zero
@@ -380,7 +378,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 endif
 
 !===============================================================================
-! 2.  ON DONNE LA MAIN A L'UTILISATEUR
+! 3. User initialization
 !===============================================================================
 
 if (ipass.eq.1) then
@@ -392,12 +390,12 @@ if (ipass.eq.1) then
 
 endif
 
-!----
-! FORMATS
-!----
+!--------
+! Formats
+!--------
 
 !----
-! FIN
+! End
 !----
 
 return
