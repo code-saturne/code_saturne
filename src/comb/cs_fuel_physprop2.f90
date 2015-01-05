@@ -17,15 +17,17 @@
 ! You should have received a copy of the GNU General Public License along with
 ! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 ! Street, Fifth Floor, Boston, MA 02110-1301, USA.
-!-------------------------------------------------------------------------------
-
 
 !-------------------------------------------------------------------------------
+
 !===============================================================================
-! Function :
+! Function:
 ! --------
 !> \file cs_fuel_physprop2.f90
+!>
 !> \brief Calculation of the physical properties of the dispersed phase
+!>
+!>
 !> Cell values
 !> -----------
 !> - Mass fraction of liquid
@@ -33,19 +35,20 @@
 !> - Diameter
 !> - Mass density
 !>   and eventual clippings
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     propce        physic properties at cell centers
-!>______________________________________________________________________________!
+!> \param[in,out] propce        physic properties at cell centers
+!______________________________________________________________________________!
 
 subroutine cs_fuel_physprop2 &
- ( ncelet , ncel   ,                              &
-   propce )
+ ( ncelet , ncel , propce )
 
 !===============================================================================
 ! Module files
@@ -80,6 +83,7 @@ double precision propce(ncelet,*)
 
 integer          iel
 integer          n1     , n2     , ipcdia , ipcro2 , icla
+
 double precision xnp    ,  d1s3
 double precision diam2m , diam2x
 
@@ -88,7 +92,7 @@ double precision, dimension(:), pointer :: cvar_yfolcl, cvar_ngcl
 !===============================================================================
 
 !===============================================================================
-! 1. Initialization
+! 1. Initializations
 !===============================================================================
 
 d1s3 = 1.d0/3.d0
@@ -97,7 +101,7 @@ d1s3 = 1.d0/3.d0
 ! 2. Calculation for each class
 !    - of mass density of fol
 !    - of mass fraction of fol
-!    - of diameter of coke
+!    - of the coke diameter
 !===============================================================================
 
 do icla = 1, nclafu
@@ -166,8 +170,9 @@ do icla = 1, nclafu
 
 enddo
 
-!----
+!--------
 ! Formats
+!--------
 !----
 
  1001 format(/,1X,' clipping in max of class diameter:',I2,           &

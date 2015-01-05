@@ -30,36 +30,36 @@
 !> Cell values
 !> -----------
 !> Temperature, mass density and average concentrations
-!> (use of a PDF RECTANGLE-DIRAC)
-!> ==> Fast chemistry model in 3 points
+!> (use of a PDF rectangle-dirac)
+!> ==> fast chemistry model in 3 points
 !> Extension for 3 fuels for pulverized coal
 !>
 !> Heterogeneous reactions
-!>   - Pyrolysis
-!>     Elementary composition of the mol of volatile materials
-!>     The reactive coal is written C(1)H(ALPHA)O(BETA)
-!>       -(k1)-> ALPHA/4 CH4  + BETA CO + (1-ALPHA/4-BETA)    Coke
-!>     Reactive coal
-!>       -(k2)-> ALPHA/Y CXHY + BETA CO + (1-ALPHA/RYSX-BETA) Coke
-!>       With RYSX = Y/X
-!>   - Heterogeneous combustion
-!>     Coke + 1/2 (O2 + XSI N2) -> CO + XSI/2 N2
-!>   - Reactions in gaaseous phase
+!>  - Pyrolysis
+!>    Elementary composition of the mol of volatile materials
+!>    The reactive coal is written C(1)H(ALPHA)O(BETA)
+!>      -(k1)-> ALPHA/4 CH4  + BETA CO + (1-ALPHA/4-BETA)    Coke
+!>    Reactive coal
+!>      -(k2)-> ALPHA/Y CXHY + BETA CO + (1-ALPHA/RYSX-BETA) Coke
+!>      With RYSX = Y/X
+!>  - Heterogeneous combustion
+!>    Coke + 1/2 (O2 + XSI N2) -> CO + XSI/2 N2
+!>  - Gas-phase reaction
 !> (4/(4-RYSX)) CH4 + (O2 + XSI N2)   -(1)->  4/X/(4-RYSX)*CXHY + 2 H2O
-!>                                           + XSI N2
+!>                                            + XSI N2
 !> CXHY + X/4*(2+RYSX) (O2 + XSI N2)  -(2)->  X CO + Y/2 H2O
 !>                                           + X/4*(2+RYSX)*XSI N2
-!>           CO + 1/2 (O2 + XSI N2)  -(3)->  CO2 + XSI/2 N2
-!> Variables choice
-!> - f1 is the mass fractions of volatile materials: CH4  + CO
-!> - f2 is the mass fractions of volatile materials: CXHY + CO
-!> - f3 is the mass fraction of carbone coming from the heterogeneous
+!>            CO + 1/2 (O2 + XSI N2)  -(3)->  CO2 + XSI/2 N2
+!> Variable choice
+!> - F1 is the mass fractions of volatile materials: CH4  + CO
+!> - F2 is the mass fractions of volatile materials: CXHY + CO
+!> - F3 is the mass fraction of carbon coming from the heterogeneous
 !>    combustion
 !>
 !> Let Y  be the mass fractions and Z be the concentrations [moles/kg]
 !> index f before reaction, b final
 !>
-!> Joint PDF degenerated into a PDF 1D of type RECTANGLE - DIRAC
+!> Joint PDF degenerated into a 1D PDF of type RECTANGLE - DIRAC
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -69,21 +69,13 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     nitbcp        size of the macro table \f$C_p\f$ integers
-!> \param[in]     nrtbcp        size of the macro table \f$C_p\f$ reals
-!> \param[in]     nitbmc        size of the macro table mc integers
-!> \param[in]     nrtbmc        size of the macro table mc reals
-!> \param[in]     nitbwo        size of the macro table work integers
-!> \param[in]     nrtbwo        size of the macro table work reals
-!> \param[in]     pa            absolute pressure in [pascals]
-!> \param[in]     f1m           average of tracer 1 mvl [chx1+CO]
-!> \param[in]     f2m           average of tracer 2 mvl [chx2+CO]
+!> \param[in]     f1m           average of tracer 1 mvl [CHx1+CO]
+!> \param[in]     f2m           average of tracer 2 mvl [CHx2+CO]
 !> \param[in]     f3m           average of tracer 3 (CO heterogeneous comb.)
 !> \param[in]     f4m           average of tracer 4 (air)
-!> \param[in]     f4m           average of tracer 5 (H2O)
-!> \param[in]     f4p2m         variance of tracer 4 (air)
-!> \param[in]     enth          enthalpy in \f$j . kg^{-1}\f$  either gaz
-!>                              or mixture
+!> \param[in]     f5m           average of tracer 5 (H2O)
+!> \param[in]     enth          enthalpy in \f$ j . kg^{-1} \f$  either of
+!>                                         the gas or of the mixture
 !> \param[in,out] propce        physical properties at cell centers
 !______________________________________________________________________________!
 
@@ -121,7 +113,7 @@ implicit none
 
 ! Arguments
 integer          ncelet , ncel
-!
+
 double precision f1m(ncelet), f2m(ncelet) , f3m(ncelet)
 double precision f4m(ncelet), f5m(ncelet) , f6m(ncelet)
 double precision f7m(ncelet), f8m(ncelet) , f9m(ncelet)
@@ -129,16 +121,18 @@ double precision fvp2m(ncelet)
 double precision enth(ncelet),enthox(ncelet)
 double precision propce(ncelet,*)
 double precision rom1(ncelet)
+
 ! Local variables
+
 integer          iel , ii ,ice , icla
 integer          ipcyf1,ipcyf2,ipcyf3,ipcyf4,ipcyf5,ipcyf6,ipcyf7
 integer          ipcyox,ipcyp1,ipcyp2,ipcyp3,ipcyin
 integer          ipcte1
+integer          iok1 , iok2 , iok3 , iok4 , iok5
 
 double precision wmolme
 double precision somch , cfolc , cfolh , cfolo
 
-integer          iok1 , iok2 , iok3 , iok4 , iok5
 integer          , dimension ( : )     , allocatable :: intpdf
 double precision , dimension ( : )     , allocatable :: fmini,fmaxi,ffuel
 double precision , dimension ( : )     , allocatable :: dfuel,doxyd,pdfm1,pdfm2,hrec
@@ -160,13 +154,13 @@ data ipass / 0 /
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", cpro_x1)
 
-allocate(intpdf(1:ncel)                                       ,stat=iok1)
-allocate(fmini(1:ncel)      ,fmaxi(1:ncel)      ,ffuel(1:ncel),stat=iok2)
-allocate(dfuel(1:ncel)      ,doxyd(1:ncel)      ,pdfm1(1:ncel),stat=iok3)
-allocate(pdfm2(1:ncel)      ,hrec(1:ncel)                     ,stat=iok3)
-allocate(cx1m(1:ncel)       ,cx2m(1:ncel) ,stat=iok4)
-allocate(wmf1(1:ncel)       ,wmf2(1:ncel)                     ,stat=iok4)
-allocate(af1(1:ncel,1:ngazg),af2(1:ncel,1:ngazg)              ,stat=iok5)
+allocate(intpdf(1:ncel)                                 ,stat=iok1)
+allocate(fmini(1:ncel)      ,fmaxi(1:ncel),ffuel(1:ncel),stat=iok2)
+allocate(dfuel(1:ncel)      ,doxyd(1:ncel),pdfm1(1:ncel),stat=iok3)
+allocate(pdfm2(1:ncel)      ,hrec(1:ncel)               ,stat=iok3)
+allocate(cx1m(1:ncel) ,cx2m(1:ncel) ,stat=iok4)
+allocate(wmf1(1:ncel)       ,wmf2(1:ncel)               ,stat=iok4)
+allocate(af1(1:ncel,1:ngazg),af2(1:ncel,1:ngazg)        ,stat=iok5)
 !----
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
   write(nfecra,*) ' Memory allocation error inside: '
@@ -175,18 +169,14 @@ if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
 endif
 
 if ( ieqnox .eq. 1 ) then
-
   allocate(fs3no(1:ncel) , fs4no(1:ncel),stat=iok1)
-
   if ( iok1 > 0 ) then
     write(nfecra,*) ' Memory allocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1           '
     write(nfecra,*) ' for fs3no and fs4no arrays      '
     call csexit(1)
   endif
-
   allocate(yfs4no(1:ncel,1:ngazg),stat=iok2)
-
   if ( iok2 > 0 ) then
     write(nfecra,*) ' Memory allocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1           '
@@ -231,7 +221,7 @@ allocate(tpdf(ncelet))
 
 call pppdfr &
 !==========
- ( ncelet ,ncel   , intpdf ,                                      &
+ ( ncelet , ncel  , intpdf ,                                      &
    tpdf   ,                                                       &
    ffuel  , fvp2m ,                                               &
    fmini  , fmaxi ,                                               &
@@ -251,9 +241,9 @@ do iel = 1, ncel
   wmf2(iel) = wmole(ifov)
 enddo
 
-do iel=1,ncel
+do iel = 1, ncel
 
-  do ii=1,ngazg
+  do ii = 1, ngazg
     af1(iel,ii) = zero
     af2(iel,ii) = zero
   enddo
@@ -284,6 +274,7 @@ call cs_gascomb &
 
 do iel = 1, ncel
   do ice = 1, ngazg
+
     if ( propce(iel,ipproc(iym1(ice))) .lt. zero )  then
        propce(iel,ipproc(iym1(ice))) = zero
     endif
@@ -299,7 +290,7 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 4. Calculation of temperature and mass density
+! 4. Calculation of temperature and density
 !===============================================================================
 
 ipcte1 = ipproc(itemp1)
@@ -417,16 +408,16 @@ do icla = 1, nclafu
   enddo
 enddo
 
-!----
+!--------
 ! Formats
-!----
+!--------
 
 ! Deallocation dynamic arrays
-deallocate(intpdf,                      stat=iok1)
-deallocate(fmini,fmaxi,ffuel,           stat=iok2)
+deallocate(intpdf,stat=iok1)
+deallocate(fmini,fmaxi,ffuel,stat=iok2)
 deallocate(dfuel,doxyd,pdfm1,pdfm2,hrec,stat=iok3)
-deallocate(cx1m,cx2m,wmf1,wmf2,      stat=iok4)
-deallocate(af1, af2,                    stat=iok5)
+deallocate(cx1m,cx2m,wmf1,wmf2,stat=iok4)
+deallocate(af1, af2,stat=iok5)
 
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
   write(nfecra,*) ' Memory deallocation error inside: '
@@ -443,9 +434,7 @@ if ( ieqnox .eq. 1 ) then
     write(nfecra,*) ' for fs3no and fs4no arrays        '
     call csexit(1)
   endif
-
   deallocate(yfs4no,stat=iok2)
-
   if ( iok2 > 0 ) then
     write(nfecra,*) ' Memory deallocation error inside: '
     write(nfecra,*) '     cs_fuel_physprop1             '

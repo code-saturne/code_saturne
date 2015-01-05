@@ -25,16 +25,16 @@
 ! --------
 !> \file cs_coal_physprop2.f90
 !>
-!> \brief Calculation of physic properties of dispersed phase
+!> \brief Calculation of the physical properties of the dispersed phase
 !>        (classes of particules)
-
-!> Cell calues
+!>
+!> Cell values
 !> -----------
 !> - Mass fraction of solid
-!>   and eventual clipping
+!>   and eventual clippings
 !> - Diameter
 !> - Mass density
-!>   and eventual clipping
+!>   and eventual clippings
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -47,7 +47,7 @@
 !> \param[in,out] propce        physic properties at cell centers
 !______________________________________________________________________________!
 
-subroutine cs_coal_physprop2  &
+subroutine cs_coal_physprop2 &
  ( ncelet , ncel , propce )
 
 !===============================================================================
@@ -105,7 +105,7 @@ double precision, dimension(:), pointer :: cvar_xwtcl
 !===============================================================================
 
 d1s3 = 1.d0/3.d0
-!
+
 ! --> Coefficient relating to the coke diameter
 coedmi = 1.2d0
 !
@@ -306,28 +306,28 @@ do icla = 1, nclacp
   endif
 
   if ( n1 .gt. 0 ) then
-     write(nfecra,1001) icla, n1, x2max
+    write(nfecra,1001) icla, n1, x2max
   endif
   if ( n2 .gt. 0 ) then
-     write(nfecra,1002) icla, n2, x2min
+    write(nfecra,1002) icla, n2, x2min
   endif
   if ( n3 .gt. 0 ) then
-     write(nfecra,1003) icla, n3, dchmax
+    write(nfecra,1003) icla, n3, dchmax
   endif
   if ( n4 .gt. 0 ) then
-     write(nfecra,1004) icla, n4, dchmin
+    write(nfecra,1004) icla, n4, dchmin
   endif
   if ( n5 .gt. 0 ) then
-     write(nfecra,1005) icla, n5, dckmax
+    write(nfecra,1005) icla, n5, dckmax
   endif
   if ( n6 .gt. 0 ) then
-     write(nfecra,1006) icla, n6, dckmin
+    write(nfecra,1006) icla, n6, dckmin
   endif
   if ( n7 .gt. 0 ) then
-     write(nfecra,1007) icla, n7, romax
+    write(nfecra,1007) icla, n7, romax
   endif
   if ( n8 .gt. 0 ) then
-     write(nfecra,1008) icla, n8, romin
+    write(nfecra,1008) icla, n8, romin
   endif
 
 enddo
