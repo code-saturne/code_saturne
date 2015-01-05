@@ -1350,13 +1350,22 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         f = NULL;
       }
 
-      if (f != NULL)
-        _boundary_scalar(nature,
-                         dtref,
-                         ttcabs,
-                         ntcabs,
-                         izone,
-                         f->id);
+      if (f != NULL) {
+        if (boundaries->meteo == NULL)
+          _boundary_scalar(nature,
+                           dtref,
+                           ttcabs,
+                           ntcabs,
+                           izone,
+                           f->id);
+        else if (boundaries->meteo[izone].read_data == 0)
+          _boundary_scalar(nature,
+                           dtref,
+                           ttcabs,
+                           ntcabs,
+                           izone,
+                           f->id);
+      }
 
       /* Meteo scalars */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
@@ -1370,26 +1379,28 @@ _init_boundaries(const cs_lnum_t  *nfabor,
         size = cs_gui_get_nb_element(path_meteo);
         BFT_FREE(path_meteo);
 
-        for (int j = 0; j < size; j++)
-        {
-          path_meteo = cs_xpath_init_path();
-          cs_xpath_add_elements(&path_meteo, 2,
-                                 "thermophysical_models",
-                                 "atmospheric_flows");
-          cs_xpath_add_element_num(&path_meteo, "variable", j +1);
-          cs_xpath_add_element(&path_meteo, "name");
-          cs_xpath_add_function_text(&path_meteo);
-          char *name = cs_gui_get_text_value(path_meteo);
+        if (boundaries->meteo[izone].read_data == 0) {
+          for (int j = 0; j < size; j++)
+          {
+            path_meteo = cs_xpath_init_path();
+            cs_xpath_add_elements(&path_meteo, 2,
+                                   "thermophysical_models",
+                                   "atmospheric_flows");
+            cs_xpath_add_element_num(&path_meteo, "variable", j +1);
+            cs_xpath_add_element(&path_meteo, "name");
+            cs_xpath_add_function_text(&path_meteo);
+            char *name = cs_gui_get_text_value(path_meteo);
 
-          cs_field_t *c = cs_field_by_name_try(name);
-          BFT_FREE(path_meteo);
+            cs_field_t *c = cs_field_by_name_try(name);
+            BFT_FREE(path_meteo);
 
-          _boundary_scalar(nature,
-                           dtref,
-                           ttcabs,
-                           ntcabs,
-                           izone,
-                           c->id);
+            _boundary_scalar(nature,
+                             dtref,
+                             ttcabs,
+                             ntcabs,
+                             izone,
+                             c->id);
+          }
         }
       }
       /* Electric arc scalars */
