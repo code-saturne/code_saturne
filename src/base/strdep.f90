@@ -197,8 +197,8 @@ if (nbstru.gt.0) then
     call uistr2 &
     !==========
  ( xmstru, xcstru, xkstru,     &
-   forstr,                     &
-   dtref, ttcabs, ntcabs   )
+   forstp,                     &
+   dtref , ttcabs, ntcabs   )
 
   endif
 
