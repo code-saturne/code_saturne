@@ -1388,20 +1388,13 @@ do while (iterns.le.nterup)
 
   if (iale.eq.1) then
 
-    if (itrale.eq.0 .or. itrale.gt.nalinf) then
+    ! otherwise it is done in navstv.f90
+    if (itrale.eq.0) then
 
-      ! otherwise it is done in navstv.f90
-      if (itrale.eq.0) then
-
-        call alelav(propce)
-        !==========
-
-      endif
-
+      call alelav(propce)
+      goto 200
 
     endif
-
-    if (itrale.eq.0) goto 200
 
   endif
 

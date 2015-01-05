@@ -833,7 +833,6 @@ if (iale.eq.1) then
 
   if (itrale.gt.nalinf) then
     call alelav(propce)
-    !==========
   endif
 
 endif

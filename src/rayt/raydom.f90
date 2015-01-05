@@ -237,7 +237,7 @@ else
       sf = 0.d0
       vv = 0.d0
 
-      ! Compute the caracteristic length of the computational domain
+      ! Compute the characteristic length of the computational domain
       do ifac = 1, nfabor
         sf = sf + sqrt(surfbo(1,ifac)**2 +                      &
                        surfbo(2,ifac)**2 +                      &
