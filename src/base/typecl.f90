@@ -91,6 +91,7 @@ use ppincl
 use cplsat
 use mesh
 use field
+use field_operator
 
 !===============================================================================
 
@@ -110,7 +111,7 @@ double precision frcxt(3,ncelet)
 ! Local variables
 
 integer          ifac, ivar, iel
-integer          iok, inc, iccocg, ideb, ifin, inb, isum, iwrnp
+integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
 integer          ityp, ii, jj, iwaru, iflmab
 integer          nswrgp, imligp, iwarnp
@@ -126,7 +127,6 @@ double precision xyzref(4) ! xyzref(3) + PI' for broadcast
 double precision, allocatable, dimension(:) :: pripb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl
-double precision, dimension(:), pointer :: coefap, coefbp
 
 double precision, dimension(:), pointer :: cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
@@ -620,8 +620,9 @@ endif
 if (itbslb.gt.0) then
 
   ! Allocate a work array for the gradient calculation
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
+  iprev = 1
   inc = 1
   iccocg = 1
   nswrgp = nswrgr(ipr)
@@ -631,17 +632,9 @@ if (itbslb.gt.0) then
   climgp = climgr(ipr)
   extrap = extrag(ipr)
 
-  call field_get_coefa_s(ivarfl(ipr), coefap)
-  call field_get_coefb_s(ivarfl(ipr), coefbp)
-
-  call grdpot &
-  !==========
-     ( ipr , imrgra , inc    , iccocg , nswrgp , imligp , iphydr ,    &
-       iwarnp , epsrgp , climgp , extrap ,                            &
-       frcxt  ,                                                       &
-       cvara_pr   , coefap , coefbp ,                                     &
-       grad   )
-
+  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,      &
+                                iccocg, iphydr,                       &
+                                frcxt, grad)
 
   !  Put in pripb the value at I' or F (depending on iphydr) of the
   !  total pressure, computed from P*
@@ -653,7 +646,7 @@ if (itbslb.gt.0) then
       diipby = diipb(2,ifac)
       diipbz = diipb(3,ifac)
       pripb(ifac) = cvara_pr(ii)                                          &
-           + diipbx*grad(ii,1)+ diipby*grad(ii,2) + diipbz*grad(ii,3) &
+           + diipbx*grad(1,ii)+ diipby*grad(2,ii) + diipbz*grad(3,ii) &
            + ro0*( gx*(cdgfbo(1,ifac)-xxp0)                           &
            + gy*(cdgfbo(2,ifac)-xyp0)                                 &
            + gz*(cdgfbo(3,ifac)-xzp0))                                &
@@ -663,9 +656,9 @@ if (itbslb.gt.0) then
     do ifac = 1, nfabor
       ii = ifabor(ifac)
       pripb(ifac) = cvara_pr(ii)                                    &
-           + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(ii,1)           &
-           + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(ii,2)           &
-           + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(ii,3)           &
+           + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(1,ii)           &
+           + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(2,ii)           &
+           + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(3,ii)           &
            + ro0*(  gx*(cdgfbo(1,ifac)-xxp0)                    &
            + gy*(cdgfbo(2,ifac)-xyp0)                           &
            + gz*(cdgfbo(3,ifac)-xzp0))                          &

@@ -4029,7 +4029,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
 void CS_PROCF (cgdcel, CGDCEL)
 (
- const cs_int_t   *const ivar,        /* <-- variable number                  */
+ const cs_int_t   *const f_id,        /* <-- field id                         */
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
  const cs_int_t   *const ilved,       /* <-- 1: interleaved; 0: non-interl.   */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
@@ -4071,7 +4071,11 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
   char var_name[32];
-  snprintf(var_name, 31, "Var. %2d", *ivar); var_name[31] = '\0';
+  if (*f_id > -1)
+    snprintf(var_name, 31, "Field %2d", *f_id);
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Allocate work arrays */
 
@@ -4147,7 +4151,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
 void CS_PROCF (cgdvec, CGDVEC)
 (
- const cs_int_t         *const ivar,
+ const cs_int_t         *const f_id,
  const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
  const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
  const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction      */
@@ -4172,7 +4176,11 @@ void CS_PROCF (cgdvec, CGDVEC)
                              &gradient_type,
                              &halo_type);
 
-  snprintf(var_name, 31, "Var. %2d", *ivar); var_name[31] = '\0';
+  if (*f_id > -1)
+    snprintf(var_name, 31, "Field %2d", *f_id);
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   cs_gradient_vector(var_name,
                      gradient_type,

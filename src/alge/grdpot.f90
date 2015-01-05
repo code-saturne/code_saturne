@@ -98,6 +98,7 @@ use pointe
 use parall
 use period
 use mesh
+use numvar, only: ivarfl
 
 !===============================================================================
 
@@ -115,7 +116,7 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          imrgrp, ilved
+integer          imrgrp, ilved, f_id
 integer          idimtr, ipond
 
 double precision rvoid(1)
@@ -140,13 +141,19 @@ ilved = 0
 idimtr = 0
 ipond = 0
 
+if (ivar.le.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
+
 !===============================================================================
 ! 1. Compute gradient
 !===============================================================================
 
 call cgdcel &
 !==========
- ( ivar   , imrgrp , ilved  , inc    , iccocg , nswrgp ,          &
+ ( f_id   , imrgrp , ilved  , inc    , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , frcxt  , coefap , coefbp ,                            &
    pvar   , rvoid  , grad   )

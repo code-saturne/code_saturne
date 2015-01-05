@@ -853,7 +853,8 @@ contains
 
   !=============================================================================
 
-  !> \brief Assign a gas_mix_species_prop for a cs_gas_mix_species_prop_t key to a field.
+  !> \brief Assign a gas_mix_species_prop for a cs_gas_mix_species_prop_t
+  !> key to a field.
 
   !> If the field category is not compatible, a fatal error is provoked.
 
@@ -1021,6 +1022,144 @@ contains
     return
 
   end subroutine field_get_key_struct_gas_mix_species_prop
+
+  !=============================================================================
+
+  !> \brief  Compute cell gradient of potential-type values
+
+  !> \param[in]       f_id             field id, or -1
+  !> \param[in]       imrgra           gradient computation mode
+  !> \param[in]       inc              0: increment; 1: do not increment
+  !> \param[in]       recompute_cocg   1 or 0: recompute COCG or not
+  !> \param[in]       nswrgp           number of sweeps for reconstruction
+  !> \param[in]       imligp           gradient limitation method:
+  !>                                     < 0 no limitation
+  !>                                     = 0 based on neighboring gradients
+  !>                                     = 1 based on mean gradient
+  !> \param[in]       hyd_p_flag       flag for hydrostatic pressure
+  !> \param[in]       iwarnp           verbosity
+  !> \param[in]       epsgrp           relative precision for reconstruction
+  !> \param[in]       climgp           limiter coefficient for imligp
+  !> \param[in]       extrap           gradient extrapolation coefficient
+  !> \param[in]       f_ext            exterior force generating
+  !>                                   the hydrostatic pressure
+  !> \param[in, out]  pvar             cell values whose gradient is computed
+  !> \param[in]       coefap           boundary coefap coefficients
+  !> \param[in]       coefbp           boundary coefap coefficients
+  !> \param[out]      grad             resulting gradient
+
+  subroutine gradient_potential_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
+                                  imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
+                                  extrap, f_ext, pvar, coefap, coefbp, grad)
+
+    use, intrinsic :: iso_c_binding
+    use paramx
+    use mesh
+    use field
+
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
+    integer, intent(in) :: imligp, hyd_p_flag, iwarnp
+    double precision, intent(in) :: epsrgp, climgp, extrap
+    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
+    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
+    real(kind=c_double), dimension(3, *), intent(in) :: f_ext
+    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
+
+    ! Local variables
+
+    integer          :: imrgrp, ilved
+    integer          :: idimtr, ipond
+
+    ! Use iterative gradient
+
+    if (imrgra.lt.0) then
+      imrgrp = 0
+    else
+      imrgrp = imrgra
+    endif
+
+    ! The gradient of a potential (pressure, ...) is a vector
+
+    ilved = 1
+    idimtr = 0
+    ipond = 0
+
+    call cgdcel(f_id, imrgrp, ilved, inc, recompute_cocg, nswrgp,              &
+                idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
+                climgp, f_ext, coefap, coefbp,                                 &
+                pvar, c_null_ptr, grad)
+
+  end subroutine gradient_potential_s
+
+  !=============================================================================
+
+  !> \brief  Compute cell gradient of a scalar with weighting
+
+  !> \param[in]       f_id             field id, or -1
+  !> \param[in]       imrgra           gradient computation mode
+  !> \param[in]       inc              0: increment; 1: do not increment
+  !> \param[in]       recompute_cocg   1 or 0: recompute COCG or not
+  !> \param[in]       nswrgp           number of sweeps for reconstruction
+  !> \param[in]       imligp           gradient limitation method:
+  !>                                     < 0 no limitation
+  !>                                     = 0 based on neighboring gradients
+  !>                                     = 1 based on mean gradient
+  !> \param[in]       iwarnp           verbosity
+  !> \param[in]       epsgrp           relative precision for reconstruction
+  !> \param[in]       climgp           limiter coefficient for imligp
+  !> \param[in]       extrap           gradient extrapolation coefficient
+  !> \param[in, out]  pvar             cell values whose gradient is computed
+  !> \param[in, out]  c_weight         cell weighting coefficient
+  !> \param[in]       coefap           boundary coefap coefficients
+  !> \param[in]       coefbp           boundary coefap coefficients
+  !> \param[out]      grad             resulting gradient
+
+  subroutine gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
+                                 imligp, iwarnp, epsrgp, climgp, extrap,      &
+                                 pvar, c_weight, coefap, coefbp, grad)
+
+    use, intrinsic :: iso_c_binding
+    use paramx
+    use mesh
+    use field
+
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
+    integer, intent(in) :: imligp, iwarnp
+    double precision, intent(in) :: epsrgp, climgp, extrap
+    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
+    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
+    real(kind=c_double), dimension(*), intent(in) :: c_weight
+    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
+
+    ! Local variables
+
+    integer          :: hyd_p_flag, ilved
+    integer          :: idimtr, ipond
+
+    ! The current variable is a scalar
+    ilved = 1
+    idimtr = 0
+
+    ! the gradient is computed with no extern hydrostatic force
+    hyd_p_flag = 0
+
+    ! the pressure gradient coefficient weighting is used
+    ipond = 1
+
+    call cgdcel(f_id, imrgra, ilved, inc, recompute_cocg, nswrgp,              &
+                idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
+                climgp, c_null_ptr, coefap, coefbp,                            &
+                pvar, c_weight, grad)
+
+  end subroutine gradient_weighted_s
 
   !=============================================================================
 

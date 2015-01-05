@@ -91,6 +91,7 @@ use pointe
 use parall
 use period
 use mesh
+use numvar, only: ivarfl
 
 !===============================================================================
 
@@ -109,7 +110,7 @@ double precision grad(ncelet,3)
 
 ! Local variables
 
-integer          iphydp, ipond, ilved
+integer          iphydp, ipond, ilved, f_id
 integer          idimtr
 
 double precision rvoid(1)
@@ -133,9 +134,15 @@ iphydp = 0
 ! the pressure gradient coefficient ponderation activated
 ipond = 1
 
+if (ivar.le.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
+
 call cgdcel &
 !==========
- ( ivar   , imrgra , ilved  , inc    , iccocg , nswrgp ,          &
+ ( f_id   , imrgra , ilved  , inc    , iccocg , nswrgp ,          &
    idimtr , iphydp , ipond  , iwarnp , imligp , epsrgp , extrap , &
    climgp , rvoid  , coefap , coefbp ,                            &
    pvar   , ktvar  , grad   )

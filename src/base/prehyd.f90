@@ -103,11 +103,11 @@ implicit none
 
 ! Arguments
 
-double precision prhyd(ncelet), grdphd(ncelet,ndim)
+double precision prhyd(ncelet), grdphd(ndim, ncelet)
 
 ! Local variables
 
-integer          iccocg, inc, isym  , isqrt
+integer          iccocg, inc, isym  , isqrt, f_id
 integer          iel   , ifac
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
@@ -282,9 +282,14 @@ iccocg = 1
 nswrgp = 1
 extrap = 0.d0
 
-call grdpre &
-!==========
- ( ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+if (ivar.le.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
+
+call gradient_weighted_s &
+ ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
    iwarnp , epsrgp , climgp , extrap ,                           &
    prhyd  , xinvro , coefap , coefbp ,                           &
    grdphd   )

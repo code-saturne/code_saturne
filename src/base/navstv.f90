@@ -91,6 +91,7 @@ use turbomachinery
 use ptrglo
 use field
 use cavitation
+use cs_c_bindings
 
 !===============================================================================
 
@@ -247,7 +248,7 @@ allocate(coefa_dp(ndimfb), coefb_dp(ndimfb))
 
 allocate(dfrcxt(3,ncelet))
 if (iphydr.eq.2) then
-  allocate(grdphd(ncelet,ndim))
+  allocate(grdphd(ndim, ncelet))
 else
   grdphd => rvoid2
 endif
@@ -712,7 +713,7 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       call resize_vec_real_array(frcxt)
     elseif (iphydr.eq.2) then
       call resize_sca_real_array(prhyd)
-      call resize_vec_real_array_ni(grdphd)
+      call resize_vec_real_array(grdphd)
     endif
 
     if (nterup.gt.1) then
@@ -893,13 +894,12 @@ if (ippmod(icompf).lt.0) then
     extrap = extrag(ipr)
 
     !Allocation
-    allocate(gradp(ncelet,3))
+    allocate(gradp(3, ncelet))
 
     if (icavit.lt.0) then
-      call grdpot &
-      !==========
-      ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp , iphydr , &
-        iwarnp , epsrgp , climgp , extrap ,                            &
+      call gradient_potential_s &
+       (ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
+        iphydr , iwarnp , epsrgp , climgp , extrap ,                   &
         dfrcxt ,                                                       &
         dpvar  , coefa_dp        , coefb_dp        ,                   &
         gradp  )
@@ -909,9 +909,8 @@ if (ippmod(icompf).lt.0) then
         xinvro(iel) = 1.d0/crom(iel)
       enddo
 
-      call grdpre &
-      !==========
-      ( ipr    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+      call gradient_weighted_s &
+      ( ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
         iwarnp , epsrgp , climgp , extrap ,                            &
         dpvar  , xinvro , coefa_dp , coefb_dp ,                        &
         gradp  )
@@ -920,12 +919,22 @@ if (ippmod(icompf).lt.0) then
     endif
 
     thetap = thetav(ipr)
-    !$omp parallel do private(isou)
-    do iel = 1, ncelet
-      do isou = 1, 3
-        trav(isou,iel) = gradp(iel,isou)
+    if (iporos.eq.3) then
+      !$omp parallel do private(isou)
+      do iel = 1, ncelet
+        do isou = 1, 3
+          trav(isou,iel) = gradp(isou, iel)*volume(iel)/cell_f_vol(iel)
+        enddo
       enddo
-    enddo
+    else
+      !$omp parallel do private(isou)
+      do iel = 1, ncelet
+        do isou = 1, 3
+          trav(isou,iel) = gradp(isou, iel)
+        enddo
+      enddo
+    endif
+
 
     !Free memory
     deallocate(gradp)
@@ -942,11 +951,7 @@ if (ippmod(icompf).lt.0) then
       if (idften(ipr).eq.1) then
         !$omp parallel do private(dtsrom, isou)
         do iel = 1, ncel
-          if (iporos.eq.3) then
-            dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
-          else
-            dtsrom = thetap*dt(iel)/crom(iel)
-          endif
+          dtsrom = thetap*dt(iel)/crom(iel)
           do isou = 1, 3
             vel(isou,iel) = vel(isou,iel)                            &
                  + dtsrom*(dfrcxt(isou, iel)-trav(isou,iel))
@@ -957,11 +962,7 @@ if (ippmod(icompf).lt.0) then
       else if (idften(ipr).eq.6) then
         !$omp parallel do private(unsrom)
         do iel = 1, ncel
-          if (iporos.eq.3) then
-            unsrom = thetap/crom(iel)*volume(iel)/cell_f_vol(iel)
-          else
-            unsrom = thetap/crom(iel)
-          endif
+          unsrom = thetap/crom(iel)
 
           vel(1, iel) = vel(1, iel)                                             &
                + unsrom*(                                                &
@@ -1015,11 +1016,7 @@ if (ippmod(icompf).lt.0) then
 
       !$omp parallel do private(dtsrom, isou)
       do iel = 1, ncel
-        if (iporos.eq.3) then
-          dtsrom = thetap*dt(iel)/crom(iel)*volume(iel)/cell_f_vol(iel)
-        else
-          dtsrom = thetap*dt(iel)/crom(iel)
-        endif
+        dtsrom = thetap*dt(iel)/crom(iel)
         do isou = 1, 3
           vel(isou,iel) = vel(isou,iel) - dtsrom*trav(isou,iel)
         enddo

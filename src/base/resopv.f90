@@ -228,7 +228,6 @@ double precision, allocatable, dimension(:), target :: xdtsro
 double precision, allocatable, dimension(:,:), target :: tpusro
 double precision, dimension(:), pointer :: viscap
 double precision, dimension(:,:), pointer :: vitenp
-double precision, allocatable, dimension(:,:) :: gradni
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, croma
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
@@ -910,7 +909,6 @@ if (icavit.lt.0) then
                                 frcxt, gradp)
 else
   ! Cavitating flows: continuity of the diffusive flux across internal faces
-  allocate(gradni(ncelet,3))
 
   nswrgp = nswrgr(ipr)
   imligp = imligr(ipr)
@@ -919,25 +917,27 @@ else
   climgp = climgr(ipr)
   extrap = extrag(ipr)
 
-  call grdpre (ipr, imrgra, inc, iccocg, nswrgp, imligp,  &
-               iwarnp, epsrgp, climgp, extrap,            &
-               cvar_pr, xunsro, coefa_p , coefb_p,        &
-               gradni )
+  call gradient_weighted_s(ivarfl(ipr), imrgra, inc, iccocg, nswrgp, imligp,  &
+                           iwarnp, epsrgp, climgp, extrap,                    &
+                           cvar_pr, xunsro, coefa_p , coefb_p,                &
+                           gradp )
 
-  do iel = 1, ncelet
-    do isou = 1, 3
-      gradp(isou,iel) = gradni(iel,isou)
-    enddo
-  enddo
-
-  deallocate(gradni)
 endif
 
-do iel = 1, ncelet
-  do isou = 1, 3
-    trav(isou,iel) = gradp(isou,iel)
+
+if (iporos.eq.3) then
+  do iel = 1, ncelet
+    do isou = 1, 3
+      trav(isou,iel) = gradp(isou,iel)*volume(iel)/cell_f_vol(iel)
+    enddo
   enddo
-enddo
+else
+  do iel = 1, ncelet
+    do isou = 1, 3
+      trav(isou,iel) = gradp(isou,iel)
+    enddo
+  enddo
+endif
 
 if (iphydr.eq.1) then
   do iel = 1, ncel

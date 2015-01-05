@@ -78,7 +78,7 @@ extern const char *cs_gradient_type_name[];
 
 void CS_PROCF (cgdcel, CGDCEL)
 (
- const cs_int_t   *const ivar,        /* <-- variable number                  */
+ const cs_int_t   *const f_id,        /* <-- field id, or -1                  */
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
  const cs_int_t   *const ilved,       /* <-- 1: interleaved; 0: non-interl.   */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
@@ -109,7 +109,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
 void CS_PROCF (cgdvec, CGDVEC)
 (
- const cs_int_t         *const ivar,
+ const cs_int_t         *const f_id,      /* <-- field id, or -1              */
  const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
  const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
  const cs_int_t         *const n_r_sweeps,/* <-- >1: with reconstruction      */
