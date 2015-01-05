@@ -97,6 +97,9 @@ integer          istr, ii, iel, ifac, ntab
 integer          iflmas, iflmab
 integer          indast
 integer          icvext, icvint, icv
+integer          f_dim
+
+logical          interleaved
 
 double precision delta
 
@@ -107,6 +110,7 @@ double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp
 double precision, dimension(:), pointer :: cvar_var, cvara_var
+double precision, dimension(:,:), pointer :: cvar_varv, cvara_varv
 
 !===============================================================================
 
@@ -301,37 +305,54 @@ call astcv2(ntcast, icv)
 ! We must then go back to a previous value
 if (itrfin.ne.-1) then
   do ii = 1, nvar
-    call field_get_val_s(ivarfl(ii), cvar_var)
-    call field_get_val_prev_s(ivarfl(ii), cvara_var)
-    if (ii.eq.ipr .and. nterup.gt.1) then
+    call field_get_dim (ivarfl(ii), f_dim, interleaved)
+
+    ! Fields of dimension one
+    if (f_dim.eq.1) then
+      call field_get_val_s(ivarfl(ii), cvar_var)
+      call field_get_val_prev_s(ivarfl(ii), cvara_var)
+      if (ii.eq.ipr .and. nterup.gt.1) then
+        do iel = 1, ncelet
+          cvara_var(iel) = xprale(iel)
+        enddo
+      endif
       do iel = 1, ncelet
-        cvara_var(iel) = xprale(iel)
+        cvar_var(iel) = cvara_var(iel)
       enddo
+
+    ! Vector fields
+    else if (f_dim.eq.3) then
+      call field_get_val_v(ivarfl(ii), cvar_varv)
+      call field_get_val_prev_v(ivarfl(ii), cvara_varv)
+      do iel = 1, ncelet
+        cvar_varv(1, iel) = cvara_varv(1, iel)
+        cvar_varv(2, iel) = cvara_varv(2, iel)
+        cvar_varv(3, iel) = cvara_varv(3, iel)
+      enddo
+    else
+      call csexit(1)
     endif
-    do iel = 1, ncelet
-      cvar_var(iel) = cvara_var(iel)
-    enddo
   enddo
   do ifac = 1, nfac
-     imasfl(ifac) = flmalf(ifac)
+    imasfl(ifac) = flmalf(ifac)
   enddo
   do ifac = 1, nfabor
-     bmasfl(ifac) = flmalb(ifac)
-     coefap(ifac) = cofale(ifac,1)
-     coefau(1, ifac) = cofale(ifac,2)
-     coefau(2, ifac) = cofale(ifac,3)
-     coefau(3, ifac) = cofale(ifac,4)
-     coefbp(ifac) = cofale(ifac,5)
-     coefbu(1, 1, ifac) = cofale(ifac,6)
-     coefbu(2, 2, ifac) = cofale(ifac,7)
-     coefbu(3, 3, ifac) = cofale(ifac,8)
-     coefbu(1, 2, ifac) = cofale(ifac,9)
-     coefbu(2, 3, ifac) = cofale(ifac,10)
-     coefbu(1, 3, ifac) = cofale(ifac,11)
-     ! the coefficient B is supposed to be symmetric
-     coefbu(2, 1, ifac) = cofale(ifac,9)
-     coefbu(3, 2, ifac) = cofale(ifac,10)
-     coefbu(3, 1, ifac) = cofale(ifac,11)
+    bmasfl(ifac) = flmalb(ifac)
+    coefap(ifac) = cofale(ifac,1)
+    coefau(1, ifac) = cofale(ifac,2)
+    coefau(2, ifac) = cofale(ifac,3)
+    coefau(3, ifac) = cofale(ifac,4)
+    coefbp(ifac) = cofale(ifac,5)
+    coefbu(1, 1, ifac) = cofale(ifac,6)
+    coefbu(2, 2, ifac) = cofale(ifac,7)
+    coefbu(3, 3, ifac) = cofale(ifac,8)
+    coefbu(1, 2, ifac) = cofale(ifac,9)
+    coefbu(2, 3, ifac) = cofale(ifac,10)
+    coefbu(1, 3, ifac) = cofale(ifac,11)
+    ! the coefficient B is supposed to be symmetric
+    coefbu(2, 1, ifac) = cofale(ifac,9)
+    coefbu(3, 2, ifac) = cofale(ifac,10)
+    coefbu(3, 1, ifac) = cofale(ifac,11)
   enddo
 endif
 
