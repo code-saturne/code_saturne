@@ -90,7 +90,7 @@ enddo
 ihm = 0 ! enthalpy, common to many models
 
 isoot = -1
-i_coal_drift = 0
+i_comb_drift = 0
 
 !> --- Specific condensation modelling
 !>     (icond = -1 : not activated by default)

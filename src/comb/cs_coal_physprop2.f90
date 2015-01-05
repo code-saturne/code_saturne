@@ -134,7 +134,7 @@ do icla = 1, nclacp
   romin  =  grand
   romax  = -grand
 
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     write(name,'(a,i2.2)') 'n_p_age_', icla
     call field_get_val_s_by_name(name,nagcpi)
 
@@ -253,7 +253,7 @@ do icla = 1, nclacp
     endif
 
     ! Particles' age of each particle class
-    if(i_coal_drift.ge.1) then
+    if(i_comb_drift.ge.1) then
       if (xnp.ge.epsicp) then
         agecpi(iel) = nagcpi(iel)/xnp
       else

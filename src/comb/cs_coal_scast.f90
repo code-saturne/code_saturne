@@ -388,7 +388,7 @@ endif
 ! 2.3 Particle age source term
 !===============================================================================
 
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
 
   call field_get_name(ivarfl(ivar), fname)
 
@@ -421,7 +421,7 @@ endif
 ! 2.4 Particle velocity source terms
 !===============================================================================
 
-if (i_coal_drift.eq.1) then
+if (i_comb_drift.eq.1) then
 
   call field_get_name(ivarfl(ivar), fname)
 

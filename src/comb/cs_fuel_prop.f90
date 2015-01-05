@@ -159,7 +159,7 @@ do icla = 1, nclafu
   call add_property_field(f_name, f_label, igmhtf(icla))
 enddo
 
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
   do icla = 1, nclafu
 
     ! Limit velocity
@@ -203,7 +203,7 @@ endif
 
 ! NB: 'c' stands for continuous <> 'p' stands for particles
 
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
 
   ! Additional fields for drift velocity for the gas
 

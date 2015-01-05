@@ -199,7 +199,7 @@ module ppincl
   integer ::  iccoal
 
   !> coal with drift (0: without drift (default), 1: with)
-  integer ::  i_coal_drift
+  integer ::  i_comb_drift
 
   !> pointer to specify multi-classes pulverised heavy fuel combustion
   !> with indicator ippmod(icfuel)

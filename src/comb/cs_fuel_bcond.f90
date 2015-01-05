@@ -511,7 +511,7 @@ do ifac = 1, nfabor
       ! ------ Boundary conditions for X2HLF
       rcodcl(ifac,isca(ih2(icla)),1) = x20(izone,icla)*h2(izone)
 
-      if (i_coal_drift.eq.1) then
+      if (i_comb_drift.eq.1) then
         rcodcl(ifac, isca(iv_p_x(icla)), 1) = rcodcl(ifac,iu,1)
         rcodcl(ifac, isca(iv_p_y(icla)), 1) = rcodcl(ifac,iv,1)
         rcodcl(ifac, isca(iv_p_z(icla)), 1) = rcodcl(ifac,iw,1)
@@ -564,7 +564,7 @@ do ifac = 1, nfabor
   endif
 
   ! Wall BCs on the particle velocity: zero Dirichlet
-  if (i_coal_drift.eq.1) then
+  if (i_comb_drift.eq.1) then
     if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
 
       do icla = 1, nclafu

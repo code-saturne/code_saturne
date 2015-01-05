@@ -124,7 +124,7 @@ call field_set_key_double(f_id, kscmax, grand)
 ! Activate the drift: 0 (no activation),
 !                     1 (transported particle velocity)
 !                     2 (limit drop particle velocity)
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
   iscdri = 1
 endif
 
@@ -155,7 +155,7 @@ do icla = 1, nclacp
   call field_set_key_double(f_id, kscmax, rinfin)
 
   ! Scalar with drift: DO create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -177,7 +177,7 @@ do icla = 1, nclacp
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -199,7 +199,7 @@ do icla = 1, nclacp
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -223,7 +223,7 @@ if (ippmod(iccoal).eq.1) then
     call field_set_key_double(f_id, kscmax, 1.d0)
 
     ! Scalar with drift: BUT Do NOT create additional mass flux
-    if (i_coal_drift.ge.1) then
+    if (i_comb_drift.ge.1) then
       iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
       call field_set_key_int(f_id, keydri, iscdri)
     endif
@@ -249,7 +249,7 @@ do icla = 1, nclacp
   call field_set_key_double(f_id, kscmax, grand)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -257,7 +257,7 @@ do icla = 1, nclacp
 enddo
 
 ! Age of the class icla time the Np (number of particle per kg of bulk)
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
 
   do icla = 1, nclacp
 
@@ -286,7 +286,7 @@ if (i_coal_drift.ge.1) then
 endif
 
 ! Particles velocities (when they are transported)
-if (i_coal_drift .eq. 1) then
+if (i_comb_drift .eq. 1) then
   do icla = 1, nclacp
 
     write(f_name,'(a,i2.2)') 'v_x_p_', icla
@@ -350,7 +350,7 @@ call field_set_key_int(f_id, keyccl, icla)
 
 ! The first gas salar contains the drift flux, the others
 ! Scalar with drift: DO create additional mass flux
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
   iscdri = ibset(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
   call field_set_key_int(f_id, keydri, iscdri)
 endif
@@ -375,7 +375,7 @@ do icha = 1, ncharb
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! The first gas salar (x_c_h) creates the drift flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     ! Scalar with drift: BUT Do NOT create additional mass flux
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
@@ -401,7 +401,7 @@ do icha = 1, ncharb
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -425,7 +425,7 @@ if (noxyd .ge. 2) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -449,7 +449,7 @@ if (noxyd .ge. 3) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -473,7 +473,7 @@ if (ippmod(iccoal).eq.1) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -495,7 +495,7 @@ call field_set_key_double(f_id, kscmin, 0.d0)
 call field_set_key_double(f_id, kscmax, 1.d0)
 
 ! Scalar with drift: BUT Do NOT create additional mass flux
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
   iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
   call field_set_key_int(f_id, keydri, iscdri)
 endif
@@ -517,7 +517,7 @@ if (ihtco2.eq.1) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -541,7 +541,7 @@ if (ihth2o.eq.1) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -562,7 +562,7 @@ call field_set_key_double(f_id, kscmin, 0.d0)
 call field_set_key_double(f_id, kscmax, 0.25d0)
 
 ! Scalar with drift: BUT Do NOT create additional mass flux
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
   iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
   call field_set_key_int(f_id, keydri, iscdri)
 endif
@@ -585,7 +585,7 @@ if (ieqco2.ge.1) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -609,7 +609,7 @@ if (ieqnox.eq.1) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -625,7 +625,7 @@ if (ieqnox.eq.1) then
   call field_set_key_int(f_id, keyccl, icla)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -645,7 +645,7 @@ if (ieqnox.eq.1) then
   call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -665,7 +665,7 @@ if (ieqnox.eq.1) then
   call field_set_key_double(f_id, kscmax,  grand)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
-  if (i_coal_drift.ge.1) then
+  if (i_comb_drift.ge.1) then
     iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
     call field_set_key_int(f_id, keydri, iscdri)
   endif
@@ -674,7 +674,7 @@ endif
 
 ! Age of bulk
 !FIXME give the possibility of having the age seperately
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
 
   f_name = 'age'
   f_label = 'Age'

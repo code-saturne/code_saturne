@@ -567,10 +567,10 @@ do ifac = 1, nfabor
                                         *h2(izone,icla)
 
         ! Boundary conditions for particle age
-        if (i_coal_drift.ge.1) then
+        if (i_comb_drift.ge.1) then
           rcodcl(ifac, iagecp(icla), 1) = 0.d0
         endif
-        if (i_coal_drift.eq.1) then
+        if (i_comb_drift.eq.1) then
           rcodcl(ifac, isca(iv_p_x(icla)), 1) = rcodcl(ifac,iu,1)
           rcodcl(ifac, isca(iv_p_y(icla)), 1) = rcodcl(ifac,iv,1)
           rcodcl(ifac, isca(iv_p_z(icla)), 1) = rcodcl(ifac,iw,1)
@@ -673,7 +673,7 @@ do ifac = 1, nfabor
 
         icla = iclapc + idecal
 
-        if (i_coal_drift.eq.1) then
+        if (i_comb_drift.eq.1) then
           icodcl(ifac, isca(iv_p_x(icla))) = 1
           icodcl(ifac, isca(iv_p_y(icla))) = 1
           icodcl(ifac, isca(iv_p_z(icla))) = 1

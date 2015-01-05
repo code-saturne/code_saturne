@@ -239,7 +239,7 @@ endif
 !                     1 (transported particle velocity)
 !                     2 (limit drop particle velocity)
 if (.false.) then
-  i_coal_drift = 1
+  i_comb_drift = 1
 endif
 
 

@@ -313,7 +313,7 @@ endif
 ! 2.2 Particle velocity source terms
 !===============================================================================
 
-if (i_coal_drift.eq.1) then
+if (i_comb_drift.eq.1) then
 
   call field_get_name(ivarfl(ivar), fname)
 

@@ -442,7 +442,7 @@ endif
 !===============================================================================
 ! 7. Compute the drift velocity if needed
 !===============================================================================
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
 
   ! Get all needed fields
   call field_get_val_v(ivarfl(iu), cvar_vel)
@@ -513,7 +513,7 @@ endif
 
 ! 3. Transported particle velocity
 !---------------------------------
-if (i_coal_drift.eq.1) then
+if (i_comb_drift.eq.1) then
 
   do icla = 1, nclacp
 
@@ -572,7 +572,7 @@ if (i_coal_drift.eq.1) then
 
 ! Prescribed drift
 !-----------------
-elseif (i_coal_drift.gt.1) then
+elseif (i_comb_drift.gt.1) then
 
   do icla = 1, nclacp
 

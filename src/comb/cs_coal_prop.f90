@@ -192,7 +192,7 @@ do icla = 1, nclacp
   call add_property_field(f_name, f_label, igmhet(icla))
 enddo
 
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
   do icla = 1, nclacp
 
     ! Age of the particle class
@@ -269,7 +269,7 @@ endif
 
 ! NB: 'c' stands for continuous <> 'p' stands for particles
 
-if (i_coal_drift.ge.1) then
+if (i_comb_drift.ge.1) then
 
   ! Additional fields for drift velocity for the gas
 
