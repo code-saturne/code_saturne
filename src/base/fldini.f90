@@ -89,6 +89,9 @@ integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
 integer          f_id, kscavr, f_vis, f_log, f_dften
 integer          kislts, ifctsl
+integer          iopchr
+integer          iscdri, icla, iclap
+integer          keyccl, keydri
 integer          idfm, nfld
 
 character(len=80) :: name, f_name
@@ -111,7 +114,7 @@ ityloc = 1 ! variables defined on cells
 idim1  = 1
 idim3  = 3
 idim6  = 6
-ilved  = .false.   ! not interleaved by default
+ilved  = .true.    ! interleaved by default
 iprev = .true.     ! variables have previous value
 inoprv = .false.   ! variables have no previous value
 
@@ -131,6 +134,13 @@ call field_get_key_id("diffusivity_tensor", kdiftn)
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id('turbulent_flux_id', kfturt)
 
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
+
+! Key id for drift scalar
+call field_get_key_id("drift_scalar_model", keydri)
+
+! Number of fields
 call field_get_n_fields(nfld)
 
 !===============================================================================
@@ -214,7 +224,7 @@ else
 endif
 
 ! The same mass flux for every variable, an other mass flux
-! might be defined afterwards in addfld.f90
+! might be defined hereafterwards
 do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kimasf, f_id)
 enddo
@@ -234,10 +244,108 @@ else
 endif
 
 ! The same mass flux for every variable, an other mass flux
-! might be defined afterwards in addfld.f90
+! might be defined hereafterwards
 do ivar = 1, nvar
   call field_set_key_int(ivarfl(ivar), kbmasf, f_id)
 enddo
+
+! Add mass flux for scalar with a drift (one mass flux per class)
+!----------------------------------------------------------------
+
+do iflid = 0, nfld-1
+
+  call field_get_key_int(iflid, keydri, iscdri)
+
+  if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
+
+    call field_get_name(iflid, name)
+    ! Index of the class, all member of the class share the same mass flux
+    call field_get_key_int(iflid, keyccl, icla)
+
+    ! The comming field are not solved, they are properties
+    itycat = FIELD_PROPERTY
+    ityloc = 2 ! variables defined on interior faces
+
+    ! Mass flux for the class on interior faces
+    f_name = 'inner_mass_flux_'//trim(name)
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+
+    ! Set the inner mass flux index
+    call field_set_key_int(iflid, kimasf, f_id)
+
+    ! If the scalar is the representant of a class, then
+    ! set the mass flux index to all members of the class
+    if (icla.ne.0) then
+      do ii = 0, nfld-1
+        call field_get_key_int(ii, keyccl, iclap)
+        if (icla.eq.iclap) then
+          call field_set_key_int(ii, kimasf, f_id)
+        endif
+      enddo
+    endif
+
+    ityloc = 3 ! variables defined on boundary faces
+
+    ! Mass flux for the class on boundary faces
+    f_name = 'boundary_mass_flux_'//trim(name)
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+
+    ! Set the boundary mass flux index
+    call field_set_key_int(iflid, kbmasf, f_id)
+
+    ! If the scalar is the representant of a class, then
+    ! set the mass flux index to all members of the class
+    if (icla.ne.0) then
+      do ii = 0, nfld-1
+        call field_get_key_int(ii, keyccl, iclap)
+        if (icla.eq.iclap) then
+          call field_set_key_int(ii, kbmasf, f_id)
+        endif
+      enddo
+    endif
+
+    ityloc = 1 ! variables defined on cells
+
+    ! Relaxation time
+    f_name = 'drift_tau_'//trim(name)
+    call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+
+    ! Set the same visualization options as the scalar
+    call field_get_key_int(iflid, keyvis, iopchr)
+    if (iopchr.eq.1) then
+      call field_set_key_int(f_id, keyvis, iopchr)
+    endif
+
+    ! Store the drift velocity
+    f_name = 'drift_vel_'//trim(name)
+    call field_create(f_name, itycat, ityloc, idim3, ilved, inoprv, f_id)
+    call field_set_key_str(f_id, keylbl, f_name)
+
+    ! Set the same visualization options as the scalar
+    call field_get_key_int(iflid, keyvis, iopchr)
+    if (iopchr.eq.1) then
+      call field_set_key_int(f_id, keyvis, iopchr)
+    endif
+
+    ! Interaction time particle--eddies
+    if (btest(iscdri, DRIFT_SCALAR_TURBOPHORESIS)) then
+      f_name = 'drift_turb_tau_'//trim(name)
+      call field_create(f_name, itycat, ityloc, idim1, ilved, inoprv, f_id)
+      call field_set_key_str(f_id, keylbl, f_name)
+    endif
+
+    ! Set the same visualization options as the scalar
+    call field_get_key_int(iflid, keyvis, iopchr)
+    if (iopchr.eq.1) then
+      call field_set_key_int(f_id, keyvis, iopchr)
+    endif
+
+  endif
+enddo
+
 
 !===============================================================================
 
