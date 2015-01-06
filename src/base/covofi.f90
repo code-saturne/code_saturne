@@ -340,16 +340,6 @@ do iel = 1, ncel
   smbrs(iel) = 0.d0
 enddo
 
-if (ibdtso(ivar).gt.ntinit.and.ntcabs.gt.1 &
-    .and.(idtvar.eq.0.or.idtvar.eq.1)) then
-  ! TODO: remove test on ntcabs and implemente a "proper" condition for
-  ! initialization.
-  f_id = ivarfl(ivar)
-  call cs_backward_differentiation_in_time(f_id, smbrs, rovsdt)
-endif
-! Skip first time step after restart if previous values have not been read.
-if (ibdtso(ivar).lt.0) ibdtso(ivar) = iabs(ibdtso(ivar))
-
 if (iihmpr.eq.1) then
 
   if (iscal.ne.iscalt) then
@@ -369,6 +359,16 @@ call ustssc &
   dt     ,                                                       &
   ckupdc , smacel , smbrs  , rovsdt )
 
+if (ibdtso(ivar).gt.ntinit.and.ntcabs.gt.1 &
+    .and.(idtvar.eq.0.or.idtvar.eq.1)) then
+  ! TODO: remove test on ntcabs and implemente a "proper" condition for
+  ! initialization.
+  f_id = ivarfl(ivar)
+  call cs_backward_differentiation_in_time(f_id, smbrs, rovsdt)
+endif
+! Skip first time step after restart if previous values have not been read.
+if (ibdtso(ivar).lt.0) ibdtso(ivar) = iabs(ibdtso(ivar))
+
 ! Atmospheric chemistry
 ! In case of a semi-coupled resolution, computation of the explicit
 ! chemical source term to be considered during dynamical resolution
@@ -377,7 +377,6 @@ if ((ichemistry.ge.1).and.(isepchemistry.eq.2)                    &
      .and.(iscal.le.nespg).and.(ntcabs.gt.1)) then
   call chem_source_terms(iscal, smbrs, rovsdt)
 endif
-
 
 ! Si on extrapole les TS :
 !   SMBRS recoit -theta PROPCE du pas de temps precedent
