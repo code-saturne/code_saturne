@@ -117,13 +117,14 @@ endif
 !      NTHSAV =  0 : periode par defaut (voir caltri)
 !             > 0  : periode
 
-do ii = 0, n_fields-1
-  call field_get_key_int(ii, keyvar, ivar)
+do f_id = 0, n_fields-1
+  call field_get_key_int(f_id, keyvar, ivar)
   if (ivar.ge.1) then
-    call field_get_key_int(ii, keyipp, ipp)
-    if (ihisvr(ipp,1).eq.-999) then
-      ihisvr(ipp,1) = -1
-    endif
+    call field_get_key_int(f_id, keyipp, ipp)
+    call field_get_dim(f_id, f_dim, interleaved)
+    do ii = 1, f_dim
+      if (ihisvr(ipp + ii-1,1).eq.-999) ihisvr(ipp + ii-1,1) = -1
+    enddo
   endif
 enddo
 if (ihisvr(ippdt, 1).eq.-999) ihisvr(ippdt, 1) = -1
