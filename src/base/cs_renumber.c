@@ -5138,8 +5138,7 @@ _renumber_i_test(cs_mesh_t  *mesh)
       for (c_id_0 = 0; c_id_0 < mesh->n_cells_with_ghosts; c_id_0++)
         accumulator[c_id_0] = 0;
 
-      /* TODO test more cleanly for OpenMP 4 */
-#     if defined(HAVE_OPENMP) && !defined(__INTEL_COMPILER)
+#     if defined(HAVE_OPENMP_SIMD)
 #       pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
 #     else
 #       pragma dir nodep
@@ -5298,7 +5297,7 @@ _renumber_b_test(cs_mesh_t  *mesh)
       for (c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
         accumulator[c_id] = 0;
 
-#       if defined(HAVE_OPENMP)
+#       if defined(HAVE_OPENMP_SIMD)
 #         pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
 #       else
 #         pragma dir nodep

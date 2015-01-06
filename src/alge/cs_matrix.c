@@ -1610,8 +1610,7 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
 
     if (mc->symmetric) {
 
-      /* TODO test more cleanly for OpenMP 4 */
-#     if defined(HAVE_OPENMP) && !defined(__INTEL_COMPILER)
+#     if defined(HAVE_OPENMP_SIMD)
 #       pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
 #     else
 #       pragma dir nodep
@@ -1627,7 +1626,7 @@ _mat_vec_p_l_native_vector(bool                exclude_diag,
     }
     else {
 
-#     if defined(HAVE_OPENMP)
+#     if defined(HAVE_OPENMP_SIMD)
 #       pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
 #     else
 #       pragma dir nodep
