@@ -83,6 +83,8 @@ integer          iclip , iok   , ii
 integer          imodif, ifcven, ifclam
 integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_id_prv, c_id, f_dim
+integer          iflid, iflidp
+integer          idimf
 
 logical          interleaved
 
@@ -177,6 +179,39 @@ if  (ippmod(icompf).ge.0) then
   endif
 
 endif
+
+do ivar = 1, nvar
+  if (iwgrec(ivar).eq.1) then
+
+    if (idiff(ivar).lt.1) cycle
+    iflid = ivarfl(ivar)
+    if (iflid.eq.iflidp) cycle
+    iflidp = iflid
+    if (idften(ivar).eq.1) then
+      idimf = 1
+    elseif (idften(ivar).eq.6) then
+      idimf = 6
+    endif
+    call field_get_key_int(iflid, kwgrec, f_id)
+  if (idimf.eq.6) then
+    call field_get_val_v(f_id, field_v_v)
+    do iel = 1, ncelet
+      field_v_v(1,iel) = 1.d0
+      field_v_v(2,iel) = 1.d0
+      field_v_v(3,iel) = 1.d0
+      field_v_v(4,iel) = 0.d0
+      field_v_v(5,iel) = 0.d0
+      field_v_v(6,iel) = 0.d0
+    enddo
+  else if (idimf.eq.1) then
+    call field_get_val_s(f_id, field_s_v)
+    do iel = 1, ncelet
+      field_s_v(iel) = 1.d0
+    enddo
+  endif
+
+  endif
+enddo
 
 ! - Interface Code_Saturne
 !   ======================

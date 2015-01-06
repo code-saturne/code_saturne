@@ -89,9 +89,6 @@ integer          f_id
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 
-double precision, dimension(:), pointer :: field_s_v
-double precision, dimension(:,:), pointer :: field_v_v
-
 !===============================================================================
 
 !===============================================================================
@@ -140,22 +137,6 @@ do ivar = 1, nvar
     endif
     call field_create(f_name, itycat, ityloc, idimf, ilved, inoprv, f_id)
     call field_set_key_int(iflid, kwgrec, f_id)
-  if (idimf.eq.6) then
-    call field_get_val_v(f_id, field_v_v)
-    do iel = 1, ncelet
-      field_v_v(1,iel) = 1.d0
-      field_v_v(2,iel) = 1.d0
-      field_v_v(3,iel) = 1.d0
-      field_v_v(4,iel) = 0.d0
-      field_v_v(5,iel) = 0.d0
-      field_v_v(6,iel) = 0.d0
-    enddo
-  else if (idimf.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-    do iel = 1, ncelet
-      field_s_v(iel) = 1.d0
-    enddo
-  endif
 
   endif
 enddo
