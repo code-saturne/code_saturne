@@ -110,67 +110,188 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
                           cs_real_t  wbuf1[],
                           cs_real_t  wbuf2[])
 {
-  cs_lnum_t  i, j, k;
+  cs_les_filter(1, var, f_var);
+}
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute filters for dynamic models.
+ *
+ * This function deals with the standard or extended neighborhood.
+ *
+ * \param[in]   stride   stride of array to filter
+ * \param[in]   val      array of values to filter
+ * \param[out]  f_val    array of filtered values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_filter(int        stride,
+              cs_real_t  val[],
+              cs_real_t  f_val[])
+{
+  cs_real_t *w1 = NULL, *w2 = NULL;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_lnum_t  _stride = stride;
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_cells_ghost = mesh->n_ghost_cells;
+  const cs_lnum_t  n_elts_l = n_cells * _stride;
+  const cs_lnum_t  n_elts = n_cells_ext * _stride;
+  const int n_i_groups = mesh->i_face_numbering->n_groups;
+  const int n_i_threads = mesh->i_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = mesh->i_face_numbering->group_index;
   const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
   const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
   assert(cell_cells_idx != NULL);
 
-  /* Synchronize variable */
-
-  if (mesh->halo != NULL)
-    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, var);
-
   /* Allocate and initialize working buffers */
 
-  for (i = 0; i < n_cells_ext; i++) {
-    wbuf1[i] = 0;
-    wbuf2[i] = 0;
-  }
+  BFT_MALLOC(w1, n_elts, cs_real_t);
+  BFT_MALLOC(w2, n_elts, cs_real_t);
 
-  /* Define filtered variable array */
+  /* Case for scalar variable */
+  /*--------------------------*/
 
-  for (i = 0; i < n_cells; i++) {
+  if (stride == 1) {
 
-    wbuf1[i] += var[i] * cell_vol[i];
-    wbuf2[i] += cell_vol[i];
+    /* Synchronize valiable */
 
-    /* Loop on connected cells (without cells sharing a face) */
+    if (mesh->halo != NULL)
+      cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, val);
 
-    for (j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
+    /* Define filtered valiable array */
 
-      k = cell_cells_lst[j];
-      wbuf1[i] += var[k] * cell_vol[k];
-      wbuf2[i] += cell_vol[k];
+#   pragma omp parallel for
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+      w1[i] = val[i] * cell_vol[i];
+      w2[i] = cell_vol[i];
+
+      /* Loop on connected cells (without cells sharing a face) */
+
+      for (cs_lnum_t j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
+        cs_lnum_t k = cell_cells_lst[j];
+        w1[i] += val[k] * cell_vol[k];
+        w2[i] += cell_vol[k];
+      }
+
+    } /* End of loop on cells */
+
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
+
+          cs_lnum_t i = mesh->i_face_cells[face_id][0];
+          cs_lnum_t j = mesh->i_face_cells[face_id][1];
+
+          w1[i] += val[j] * cell_vol[j];
+          w2[i] += cell_vol[j];
+          w1[j] += val[i] * cell_vol[i];
+          w2[j] += cell_vol[i];
+
+        }
+
+      }
 
     }
 
-  } /* End of loop on cells */
+#   pragma omp parallel for
+    for (cs_lnum_t i = 0; i < n_cells; i++)
+      f_val[i] = w1[i]/w2[i];
 
-  for (k = 0; k < mesh->n_i_faces; k++) {
+    /* Synchronize valiable */
 
-    i = mesh->i_face_cells[k][0];
-    j = mesh->i_face_cells[k][1];
-
-    wbuf1[i] += var[j] * cell_vol[j];
-    wbuf2[i] += cell_vol[j];
-    wbuf1[j] += var[i] * cell_vol[i];
-    wbuf2[j] += cell_vol[i];
-
+    if (mesh->halo != NULL)
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_val);
   }
 
-  for (i = 0; i < n_cells; i++)
-    f_var[i] = wbuf1[i]/wbuf2[i];
+  /* Case for vector or tensor variable */
+  /*------------------------------------*/
 
-  /* Synchronize variable */
+  if (stride == 1) {
 
-  if (mesh->halo != NULL)
-    cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_var);
+    /* Synchronize valiable */
+
+    if (mesh->halo != NULL)
+      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, val, stride);
+
+    /* Define filtered valiable array */
+
+#   pragma omp parallel for
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+
+      for (cs_lnum_t c_id = 1; c_id < _stride; c_id++) {
+        const cs_lnum_t ic = i *_stride + c_id;
+        w1[ic] = val[ic] * cell_vol[i];
+        w2[ic] = cell_vol[i];
+      }
+
+      /* Loop on connected cells (without cells sharing a face) */
+
+      for (cs_lnum_t j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
+        cs_lnum_t k = cell_cells_lst[j];
+        for (cs_lnum_t c_id = 1; c_id < _stride; c_id++) {
+          const cs_lnum_t ic = i *_stride + c_id;
+          const cs_lnum_t kc = k *_stride + c_id;
+          w1[ic] += val[kc] * cell_vol[k];
+          w2[ic] += cell_vol[k];
+        }
+      }
+
+    } /* End of loop on cells */
+
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             face_id++) {
+
+          cs_lnum_t i = mesh->i_face_cells[face_id][0];
+          cs_lnum_t j = mesh->i_face_cells[face_id][1];
+
+          for (cs_lnum_t c_id = 1; c_id < _stride; c_id++) {
+            const cs_lnum_t ic = i *_stride + c_id;
+            const cs_lnum_t jc = j *_stride + c_id;
+            w1[ic] += val[jc] * cell_vol[j];
+            w2[ic] += cell_vol[j];
+            w1[jc] += val[ic] * cell_vol[i];
+            w2[jc] += cell_vol[i];
+          }
+
+        }
+
+      }
+
+    }
+
+#   pragma omp parallel for
+    for (cs_lnum_t i = 0; i < n_elts_l; i++)
+      f_val[i] = w1[i]/w2[i];
+
+    /* Synchronize valiable */
+
+    if (mesh->halo != NULL)
+      cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED, f_val, stride);
+  }
+
+  BFT_FREE(w2);
+  BFT_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------*/

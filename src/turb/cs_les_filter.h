@@ -70,6 +70,26 @@ CS_PROCF (cfiltr, CFILTR)(cs_real_t  var[],
                           cs_real_t  wbuf1[],
                           cs_real_t  wbuf2[]);
 
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute filters for dynamic models.
+ *
+ * This function deals with the standard or extended neighborhood.
+ *
+ * parameters:
+ *   stride  <--  stride of array to filter
+ *   val     <->  array of values to filter
+ *   f_val   -->  array of filtered values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_les_filter(int        stride,
+              cs_real_t  val[],
+              cs_real_t  f_val[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
