@@ -531,6 +531,8 @@ cs_src_revision=""
 if test "x$cs_use_revision" = "xyes" ; then
   if test -d ${srcdir}/.svn -o -d ${srcdir}/.git ; then
     cs_src_revision=`$PYTHON ${srcdir}/build-aux/cs_version.py --revision-only`
+  elif test -f ${srcdir}/build-aux/version ; then
+    cs_src_revision=`cat ${srcdir}/build-aux/version`
   fi
 fi
 
