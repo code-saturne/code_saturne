@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix for handling of GUI-defined time moment restart options.
+
 - Fix two last digits of the ideal gas constant (8.31446).
 
 - Fix extended neighborhood creation when global number of cells with ghosts

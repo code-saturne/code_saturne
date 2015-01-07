@@ -485,7 +485,7 @@ cs_gui_time_parameters(const char   *const param,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_restart_parameters_status(const char *param, int *const keyword)
+_restart_parameters_status(const char *param, int *const keyword)
 {
   int   result;
   char *path = NULL;
@@ -2328,9 +2328,9 @@ void CS_PROCF (csisui, CSISUI) (int *const ntsuit,
                                 int *const ileaux,
                                 int *const iccvfg)
 {
-  cs_gui_restart_parameters_status("restart_rescue",         ntsuit);
-  cs_gui_restart_parameters_status("restart_with_auxiliary", ileaux);
-  cs_gui_restart_parameters_status("frozen_field",           iccvfg);
+  _restart_parameters_status("restart_rescue",         ntsuit);
+  _restart_parameters_status("restart_with_auxiliary", ileaux);
+  _restart_parameters_status("frozen_field",           iccvfg);
 
 #if _XML_DEBUG_
   bft_printf("==>CSISUI\n");
@@ -3207,7 +3207,7 @@ void CS_PROCF (uimoyt, UIMOYT) (const int *const ndgmox,
     _get_time_average_data(imom, "time_step_start", &ntdmom[i]);
 
     /* test on isuite */
-    cs_gui_restart_parameters_status("restart", &isuite);
+    isuite = cs_restart_present();
 
     if (isuite != 0) {
       _get_time_average_data(imom, "restart_from_time_average", &imoold[i]);
