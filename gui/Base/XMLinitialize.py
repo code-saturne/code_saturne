@@ -905,13 +905,6 @@ class XMLinit(Variables):
 
         n = XMLThermoPhysicalModelNode.xmlGetNode('variable', type='thermal')
         if n:
-            for nf in n.xmlGetNodeList('formula'):
-                if nf:
-                    status = nf["status"]
-                    if not(status) or status == "on":
-                        content = nf.xmlGetTextNode()
-                        content = content.replace(n['label'], n['name'])
-                        nf.xmlSetTextNode(content)
             # try to get turbulent_flux_model
             ntfm = n.xmlGetString("turbulent_flux_model")
             if not ntfm:
