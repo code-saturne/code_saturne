@@ -872,7 +872,13 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
-
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        n = XMLThermoPhysicalModelNode.xmlGetNode('variable', type='thermal')
+        if n:
+            # try to get turbulent_flux_model
+            ntfm = n.xmlGetString("turbulent_flux_model")
+            if not ntfm:
+                n.xmlSetData('turbulent_flux_model', "SGDH")
 
 
 #-------------------------------------------------------------------------------
