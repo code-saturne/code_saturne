@@ -92,6 +92,7 @@ use period
 use mesh
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -130,7 +131,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10, w0
-double precision, allocatable, dimension(:,:) :: xmij
+double precision, allocatable, dimension(:,:) :: xmij, w61, w62, w63
 double precision, dimension(:,:,:), allocatable :: gradv, gradvf
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
@@ -154,7 +155,6 @@ allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(w10(ncelet), w0(ncelet))
-allocate(xmij(ncelet,6))
 
 ! --- Rang des variables dans PROPCE (prop. physiques au centre)
 ipcvst = ipproc(ivisct)
@@ -178,23 +178,18 @@ xsmgmx = smagmx
 !       au debut du pas de temps (donc pas utile de le refaire ici)
 
 ! Allocate temporary arrays for gradients calculation
-allocate(gradv(3, 3, ncelet), gradvf(ncelet,3,3))
+allocate(gradv(3,3,ncelet), gradvf(3,3,ncelet))
 
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc, gradv)
 
 ! Filter the velocity gradient on the extended neighborhood
 
-do isou = 1, 3
-  do jsou = 1, 3
-    call cfiltr &
-    !==========
- ( gradv(1,isou,jsou), gradvf(1,isou,jsou), w1     , w2      )
-  enddo
-enddo
+call les_filter(9, gradv, gradvf)
+
+allocate(xmij(6,ncelet))
 
 do iel = 1, ncel
 
@@ -209,22 +204,22 @@ do iel = 1, ncel
   dwdx  = gradv(1, 3, iel)
   dwdy  = gradv(2, 3, iel)
 
-  s11f  = gradvf(iel,1,1)
-  s22f  = gradvf(iel,2,2)
-  s33f  = gradvf(iel,3,3)
-  dudyf = gradvf(iel,2,1)
-  dudzf = gradvf(iel,3,1)
-  dvdxf = gradvf(iel,1,2)
-  dvdzf = gradvf(iel,3,2)
-  dwdxf = gradvf(iel,1,3)
-  dwdyf = gradvf(iel,2,3)
+  s11f  = gradvf(1, 1, iel)
+  s22f  = gradvf(2, 2, iel)
+  s33f  = gradvf(3, 3, iel)
+  dudyf = gradvf(2, 1, iel)
+  dudzf = gradvf(3, 1, iel)
+  dvdxf = gradvf(1, 2, iel)
+  dvdzf = gradvf(3, 2, iel)
+  dwdxf = gradvf(1, 3, iel)
+  dwdyf = gradvf(2, 3, iel)
 
-  xmij(iel,1) = s11
-  xmij(iel,2) = s22
-  xmij(iel,3) = s33
-  xmij(iel,4) = 0.5d0*(dudy+dvdx)
-  xmij(iel,5) = 0.5d0*(dudz+dwdx)
-  xmij(iel,6) = 0.5d0*(dvdz+dwdy)
+  xmij(1,iel) = s11
+  xmij(2,iel) = s22
+  xmij(3,iel) = s33
+  xmij(4,iel) = 0.5d0*(dudy+dvdx)
+  xmij(5,iel) = 0.5d0*(dudz+dwdx)
+  xmij(6,iel) = 0.5d0*(dvdz+dwdy)
 
   propce(iel,ipcvst) = radeux*sqrt(                               &
                        s11**2 + s22**2 + s33**2                   &
@@ -256,33 +251,31 @@ do iel = 1, ncel
   w7(iel) = xfil *(xa*volume(iel))**xb
 enddo
 
-do ii = 1, 6
+allocate(w61(6,ncelet), w62(6,ncelet), w63(6,ncelet))
 
-  call cfiltr &
-  !==========
- ( xmij(1,ii) , w1     , w2     , w3     )
+call les_filter(6, xmij, w61)
 
-  do iel = 1, ncel
-    delta = w7(iel)
-    w2(iel) = -deux*delta**2*propce(iel,ipcvst)*xmij(iel,ii)
+do iel = 1, ncel
+  delta = w7(iel)
+  do ii = 1, 6
+    w62(ii,iel) = -deux*delta**2*visct(iel)*xmij(ii,iel)
   enddo
-
-  call cfiltr &
-  !==========
- ( w2     , w3     , w4     , w5     )
-
-  do iel = 1, ncel
-    delta = w7(iel)
-    deltaf = xfil2*delta
-    aij    = -deux*deltaf**2*w9(iel)*w1(iel)
-    bij    =  w3(iel)
-    xmij(iel,ii) = aij - bij
-  enddo
-
 enddo
 
-!     Ici Aij contient alpha_ij, Bij contient beta_ij tilde
-!        et XMIJ contient M_ij
+call les_filter(6, w62, w63)
+
+do iel = 1, ncel
+  delta = w7(iel)
+  deltaf = xfil2*delta
+  do ii = 1, 6
+    xmij(ii,iel) = -deux*deltaf**2*w9(iel)*w61(ii,iel) - w63(ii,iel)
+  enddo
+enddo
+
+deallocate(w61, w62, w63)
+
+!     Here Aij contains alpha_ij, Bij contains beta_ij tilde
+!        and XMIJ contains M_ij
 
 !===============================================================================
 ! 4.  CALCUL DE LA CONSTANTE DE SMAGORINSKY DYNAMIQUE
@@ -295,73 +288,55 @@ enddo
 do iel = 1,ncel
   w0(iel) = vel(1,iel)*vel(1,iel)
 enddo
-call cfiltr  &
-!==========
- ( w0     , w1     , w7     , w8     )
+call les_filter(1, w0, w1)
 
 ! V**2
 do iel = 1,ncel
   w0(iel) = vel(2,iel)*vel(2,iel)
 enddo
-call cfiltr &
-!==========
- ( w0     , w2     , w7     , w8     )
+call les_filter(1, w0, w2)
 
 ! W**2
 do iel = 1,ncel
   w0(iel) = vel(3,iel)*vel(3,iel)
 enddo
-call cfiltr &
-!==========
- ( w0     , w3     , w7     , w8     )
+call les_filter(1, w0, w3)
 
 ! UV
 do iel = 1,ncel
   w0(iel) = vel(1,iel)*vel(2,iel)
 enddo
-call cfiltr &
-!==========
- ( w0     , w4     , w7     , w8     )
+call les_filter(1, w0, w4)
 
 ! UW
 do iel = 1,ncel
   w0(iel) = vel(1,iel)*vel(3,iel)
 enddo
-call cfiltr &
-!==========
- ( w0     , w5     , w7     , w8     )
+call les_filter(1, w0, w5)
 
 ! VW
 do iel = 1,ncel
   w0(iel) = vel(2,iel)*vel(3,iel)
 enddo
-call cfiltr &
-!==========
- ( w0     , w6     , w7     , w8     )
+call les_filter(1, w0, w6)
 
 ! U
 do iel = 1,ncel
   w0(iel) = vel(1,iel)
 enddo
-call cfiltr &
-!==========
- ( w0    , w7     , w8     , w9     )
+call les_filter(1, w0, w7)
 
 ! V
 do iel = 1,ncel
   w0(iel) = vel(2,iel)
 enddo
-call cfiltr &
-!==========
- ( w0    , w8     , w9     , smagor )
+call les_filter(1, w0, w8)
 
 ! W
 do iel = 1,ncel
   w0(iel) = vel(3,iel)
 enddo
-call cfiltr &
-!==========
- ( w0    , w9     , smagor , w10    )
+call les_filter(1, w0, w9)
 
 do iel = 1, ncel
 
@@ -373,12 +348,12 @@ do iel = 1, ncel
   xl13 = w5(iel) - w7(iel) * w9(iel)
   xl23 = w6(iel) - w8(iel) * w9(iel)
 
-  xm11 = xmij(iel,1)
-  xm22 = xmij(iel,2)
-  xm33 = xmij(iel,3)
-  xm12 = xmij(iel,4)
-  xm13 = xmij(iel,5)
-  xm23 = xmij(iel,6)
+  xm11 = xmij(1,iel)
+  xm22 = xmij(2,iel)
+  xm33 = xmij(3,iel)
+  xm12 = xmij(4,iel)
+  xm13 = xmij(5,iel)
+  xm23 = xmij(6,iel)
 ! ---Calcul de Mij :: Lij
   w1(iel) = xm11 * xl11 + 2.d0* xm12 * xl12 + 2.d0* xm13 * xl13 + &
                                 xm22 * xl22 + 2.d0* xm23 * xl23 + &
@@ -389,6 +364,8 @@ do iel = 1, ncel
                                                     xm33 * xm33
 
 enddo
+
+deallocate(xmij)
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(w1)
@@ -401,13 +378,9 @@ endif
 !     denominateur, puis seulement on fait le rapport.
 !     L'utilisateur peut faire autrement dans USSMAG
 
-call cfiltr                                                       &
-!==========
- ( w1     , w3     , w5     , w6     )
+call les_filter(1, w1, w3)
 
-call cfiltr                                                       &
-!==========
- ( w2     , w4     , w5     , w6     )
+call les_filter(1, w2, w4)
 
 do iel = 1, ncel
   if(abs(w4(iel)).le.epzero) then
@@ -483,7 +456,6 @@ deallocate(w1, w2, w3)
 deallocate(w4, w5, w6)
 deallocate(w7, w8, w9)
 deallocate(w10, w0)
-deallocate(xmij)
 
 !----
 ! FORMAT

@@ -94,6 +94,23 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Compute filters for dynamic models.
+
+    !> \param[in]   dim            stride of array to filter
+    !> \param[in]   val            array of values to filter
+    !> \param[out]  f_val          array of filtered values
+
+    subroutine les_filter(stride, val, f_val)  &
+      bind(C, name='cs_les_filter')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: stride
+      real(kind=c_double), dimension(*) :: val
+      real(kind=c_double), dimension(*), intent(out) :: f_val
+    end subroutine les_filter
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Read restart metadata.
 
     subroutine parameters_read_restart_info()  &
