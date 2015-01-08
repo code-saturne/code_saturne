@@ -341,7 +341,8 @@ if (idverl.ge.0) then
   !---> Temperature transport
   if (itherm.eq.1) then
 
-    if (itpscl.eq.1) then
+    ! iscalt is in Celsius
+    if (itpscl.eq.2) then
       do iel = 1, ncel
         tempk(iel,1) = rtpa(iel,ivart) + tkelvi
       enddo

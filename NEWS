@@ -5,6 +5,8 @@ Release 3.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bad temperature at the wall with radiation heat transfer (bug #115).
+
 - Fix crash in Code_Saturne/Code_Saturne coupling, due to permutation of
   pressure and velocity exchange.
 
