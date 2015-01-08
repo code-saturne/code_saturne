@@ -221,7 +221,7 @@ cs_les_filter(int        stride,
   /* Case for vector or tensor variable */
   /*------------------------------------*/
 
-  if (stride == 1) {
+  else {
 
     /* Synchronize valiable */
 
@@ -233,7 +233,7 @@ cs_les_filter(int        stride,
 #   pragma omp parallel for
     for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-      for (cs_lnum_t c_id = 1; c_id < _stride; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
         const cs_lnum_t ic = i *_stride + c_id;
         w1[ic] = val[ic] * cell_vol[i];
         w2[ic] = cell_vol[i];
@@ -243,7 +243,7 @@ cs_les_filter(int        stride,
 
       for (cs_lnum_t j = cell_cells_idx[i]; j < cell_cells_idx[i+1]; j++) {
         cs_lnum_t k = cell_cells_lst[j];
-        for (cs_lnum_t c_id = 1; c_id < _stride; c_id++) {
+        for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
           const cs_lnum_t ic = i *_stride + c_id;
           const cs_lnum_t kc = k *_stride + c_id;
           w1[ic] += val[kc] * cell_vol[k];
@@ -265,7 +265,7 @@ cs_les_filter(int        stride,
           cs_lnum_t i = mesh->i_face_cells[face_id][0];
           cs_lnum_t j = mesh->i_face_cells[face_id][1];
 
-          for (cs_lnum_t c_id = 1; c_id < _stride; c_id++) {
+          for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
             const cs_lnum_t ic = i *_stride + c_id;
             const cs_lnum_t jc = j *_stride + c_id;
             w1[ic] += val[jc] * cell_vol[j];
