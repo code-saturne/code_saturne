@@ -794,6 +794,10 @@ _check_restart(const char                     *name,
       }
       if (matching_restart == false)
         prev_id = -1;
+      else {
+        *nt_start = ri->wa_nt_start[prev_wa_id];
+        *t_start = ri->wa_t_start[prev_wa_id];
+      }
       break;
     }
   }
