@@ -5,6 +5,8 @@ Release 3.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix incorrect time moment values in case of restart.
+
 - Fix crash using dynamic filter in LES.
 
 - Fix bad temperature at the wall with radiation heat transfer (bug #115).
