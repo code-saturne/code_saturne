@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix missing updates to CFL and/or Fourier numbers when at time steps where
+  logging is not active.
+
 - Fix for handling of GUI-defined time moment restart options.
 
 - Fix two last digits of the ideal gas constant (8.31446).

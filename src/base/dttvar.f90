@@ -170,25 +170,25 @@ ipbrom  = ipprob(irom  )
 ipccou  = ipproc(icour )
 ipcfou  = ipproc(ifour )
 
-if(ntlist.gt.0) then
+if (ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
-elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
   modntl = 0
 else
   modntl = 1
 endif
 
-if (                                                              &
-   .not. ( iconv(iu).ge.1.and.                                    &
-           (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
-   .not. ( idiff(iu).ge.1.and.                                    &
-           (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
-   .not. ( ippmod(icompf).ge.0.and.                               &
-           (iwarnp.ge.2.or.modntl.eq.0) ) .and.                   &
-   .not. ( idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.         &
-           ( (iwarnp.ge.2.or.modntl.eq.0).and.                    &
-             (idiff(iu).ge.1.or.iconv(iu).ge.1                    &
-                               .or.ippmod(icompf).ge.0)  ) )      &
+if (                                                             &
+   .not. (iconv(iu).ge.1 .and. ipccou.ge.1) .and.                &
+   .not. (idiff(iu).ge.1 .and. ipcfou.ge.1) .and.                &
+   .not. ((iconv(iu).ge.1 .or.idiff(iu).ge.1).and.               &
+           (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
+   .not. (ippmod(icompf).ge.0.and.                               &
+           (iwarnp.ge.2.or.modntl.eq.0)) .and.                   &
+   .not. (idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.         &
+           ((iwarnp.ge.2.or.modntl.eq.0).and.                    &
+             (idiff(iu).ge.1.or.iconv(iu).ge.1                   &
+                               .or.ippmod(icompf).ge.0)))        &
    ) then
 
   return
@@ -274,8 +274,8 @@ if (idtvar.ge.0) then
 ! 4.1  PAS DE TEMPS VARIABLE A PARTIR DE COURANT ET FOURIER IMPOSES
 !===============================================================================
 
-!     On calcule le pas de temps thermique max (meme en IDTVAR=0, pour affichage)
-!     DTTMAX = 1/SQRT(MAX(0+,gradRO.g/RO) -> W3
+  ! On calcule le pas de temps thermique max (meme en IDTVAR=0, pour affichage)
+  ! DTTMAX = 1/SQRT(MAX(0+,gradRO.g/RO) -> W3
 
   if (iptlro.eq.1) then
 
@@ -615,8 +615,7 @@ if (idtvar.ge.0) then
 ! 4.2  CALCUL DU NOMBRE DE COURANT POUR AFFICHAGE
 !===============================================================================
 
-  if ( iconv(iu).ge.1.and.                                     &
-       (iwarnp.ge.2.or.modntl.eq.0) ) then
+  if (iconv(iu).ge.1 .and. ipccou.ge.1) then
 
     idiff0 = 0
     CNOM   =' COURANT'
@@ -662,35 +661,39 @@ if (idtvar.ge.0) then
 
     enddo
 
-    xyzmin(1) = xyzcen(1,icfmin)
-    xyzmin(2) = xyzcen(2,icfmin)
-    xyzmin(3) = xyzcen(3,icfmin)
-    xyzmax(1) = xyzcen(1,icfmax)
-    xyzmax(2) = xyzcen(2,icfmax)
-    xyzmax(3) = xyzcen(3,icfmax)
+    if (iwarnp.ge.2.or.modntl.eq.0) then
 
-    if (irangp.ge.0) then
-      nbrval = 3
-      call parmnl (nbrval, cfmin, xyzmin)
-      !==========
-      call parmxl (nbrval, cfmax, xyzmax)
-      !==========
+      xyzmin(1) = xyzcen(1,icfmin)
+      xyzmin(2) = xyzcen(2,icfmin)
+      xyzmin(3) = xyzcen(3,icfmin)
+      xyzmax(1) = xyzcen(1,icfmax)
+      xyzmax(2) = xyzcen(2,icfmax)
+      xyzmax(3) = xyzcen(3,icfmax)
+
+      if (irangp.ge.0) then
+        nbrval = 3
+        call parmnl (nbrval, cfmin, xyzmin)
+        !==========
+        call parmxl (nbrval, cfmax, xyzmax)
+        !==========
+      endif
+
+      if(iwarnp.ge.2) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      endif
+
+      ! -> pour listing
+      ptploc(1,1) = cfmin
+      ptploc(1,2) = xyzmin(1)
+      ptploc(1,3) = xyzmin(2)
+      ptploc(1,4) = xyzmin(3)
+      ptploc(2,1) = cfmax
+      ptploc(2,2) = xyzmax(1)
+      ptploc(2,3) = xyzmax(2)
+      ptploc(2,4) = xyzmax(3)
+
     endif
-
-    if(iwarnp.ge.2) then
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-    endif
-
-!       -> pour listing
-    ptploc(1,1) = cfmin
-    ptploc(1,2) = xyzmin(1)
-    ptploc(1,3) = xyzmin(2)
-    ptploc(1,4) = xyzmin(3)
-    ptploc(2,1) = cfmax
-    ptploc(2,2) = xyzmax(1)
-    ptploc(2,3) = xyzmax(2)
-    ptploc(2,4) = xyzmax(3)
 
   endif
 
@@ -698,8 +701,7 @@ if (idtvar.ge.0) then
 ! 4.3  CALCUL DU NOMBRE DE FOURIER POUR AFFICHAGE
 !===============================================================================
 
-  if ( idiff(iu).ge.1.and.                                     &
-       (iwarnp.ge.2.or.modntl.eq.0) ) then
+  if (idiff(iu).ge.1 .and. ipcfou.ge.1) then
 
     iconv0 = 0
     CNOM   =' FOURIER'
@@ -745,35 +747,39 @@ if (idtvar.ge.0) then
 
     enddo
 
-    xyzmin(1) = xyzcen(1,icfmin)
-    xyzmin(2) = xyzcen(2,icfmin)
-    xyzmin(3) = xyzcen(3,icfmin)
-    xyzmax(1) = xyzcen(1,icfmax)
-    xyzmax(2) = xyzcen(2,icfmax)
-    xyzmax(3) = xyzcen(3,icfmax)
+    if (iwarnp.ge.2.or.modntl.eq.0) then
 
-    if (irangp.ge.0) then
-      nbrval = 3
-      call parmnl (nbrval, cfmin, xyzmin)
-      !==========
-      call parmxl (nbrval, cfmax, xyzmax)
-      !==========
+      xyzmin(1) = xyzcen(1,icfmin)
+      xyzmin(2) = xyzcen(2,icfmin)
+      xyzmin(3) = xyzcen(3,icfmin)
+      xyzmax(1) = xyzcen(1,icfmax)
+      xyzmax(2) = xyzcen(2,icfmax)
+      xyzmax(3) = xyzcen(3,icfmax)
+
+      if (irangp.ge.0) then
+        nbrval = 3
+        call parmnl (nbrval, cfmin, xyzmin)
+        !==========
+        call parmxl (nbrval, cfmax, xyzmax)
+        !==========
+      endif
+
+      if(iwarnp.ge.2) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      endif
+
+      ! -> pour listing
+      ptploc(3,1) = cfmin
+      ptploc(3,2) = xyzmin(1)
+      ptploc(3,3) = xyzmin(2)
+      ptploc(3,4) = xyzmin(3)
+      ptploc(4,1) = cfmax
+      ptploc(4,2) = xyzmax(1)
+      ptploc(4,3) = xyzmax(2)
+      ptploc(4,4) = xyzmax(3)
+
     endif
-
-    if(iwarnp.ge.2) then
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-    endif
-
-!       -> pour listing
-    ptploc(3,1) = cfmin
-    ptploc(3,2) = xyzmin(1)
-    ptploc(3,3) = xyzmin(2)
-    ptploc(3,4) = xyzmin(3)
-    ptploc(4,1) = cfmax
-    ptploc(4,2) = xyzmax(1)
-    ptploc(4,3) = xyzmax(2)
-    ptploc(4,4) = xyzmax(3)
 
   endif
 
@@ -784,9 +790,7 @@ if (idtvar.ge.0) then
 !     En incompressible uniquement (en compressible, on preferera
 !       afficher la contrainte liee a la masse volumique)
 
-  if ( (iwarnp.ge.2.or.modntl.eq.0).and.                          &
-      (idiff(iu).ge.1.or.iconv(iu).ge.1)                    &
-      .and.(ippmod(icompf).lt.0)               ) then
+  if ((idiff(iu).ge.1.or.iconv(iu).ge.1) .and. (ippmod(icompf).lt.0)) then
 
     CNOM   =' COU/FOU'
 !                                   2
@@ -831,35 +835,39 @@ if (idtvar.ge.0) then
 
     enddo
 
-    xyzmin(1) = xyzcen(1,icfmin)
-    xyzmin(2) = xyzcen(2,icfmin)
-    xyzmin(3) = xyzcen(3,icfmin)
-    xyzmax(1) = xyzcen(1,icfmax)
-    xyzmax(2) = xyzcen(2,icfmax)
-    xyzmax(3) = xyzcen(3,icfmax)
+    if (iwarnp.ge.2.or.modntl.eq.0) then
 
-    if (irangp.ge.0) then
-      nbrval = 3
-      call parmnl (nbrval, cfmin, xyzmin)
-      !==========
-      call parmxl (nbrval, cfmax, xyzmax)
-      !==========
+      xyzmin(1) = xyzcen(1,icfmin)
+      xyzmin(2) = xyzcen(2,icfmin)
+      xyzmin(3) = xyzcen(3,icfmin)
+      xyzmax(1) = xyzcen(1,icfmax)
+      xyzmax(2) = xyzcen(2,icfmax)
+      xyzmax(3) = xyzcen(3,icfmax)
+
+      if (irangp.ge.0) then
+        nbrval = 3
+        call parmnl (nbrval, cfmin, xyzmin)
+        !==========
+        call parmxl (nbrval, cfmax, xyzmax)
+        !==========
+      endif
+
+      if(iwarnp.ge.2) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      endif
+
+      ! -> pour listing
+      ptploc(5,1) = cfmin
+      ptploc(5,2) = xyzmin(1)
+      ptploc(5,3) = xyzmin(2)
+      ptploc(5,4) = xyzmin(3)
+      ptploc(6,1) = cfmax
+      ptploc(6,2) = xyzmax(1)
+      ptploc(6,3) = xyzmax(2)
+      ptploc(6,4) = xyzmax(3)
+
     endif
-
-    if(iwarnp.ge.2) then
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-    endif
-
-!       -> pour listing
-    ptploc(5,1) = cfmin
-    ptploc(5,2) = xyzmin(1)
-    ptploc(5,3) = xyzmin(2)
-    ptploc(5,4) = xyzmin(3)
-    ptploc(6,1) = cfmax
-    ptploc(6,2) = xyzmax(1)
-    ptploc(6,3) = xyzmax(2)
-    ptploc(6,4) = xyzmax(3)
 
   endif
 
@@ -869,11 +877,9 @@ if (idtvar.ge.0) then
 
 ! En Compressible uniquement
 
-  if ( (iwarnp.ge.2.or.modntl.eq.0).and.                          &
-       (ippmod(icompf).ge.0)                        ) then
+  if (ippmod(icompf).ge.0) then
 
     CNOM   =' CFL/MAS'
-
 
 !     CALCUL DU NOMBRE DE COURANT/FOURIER MAXIMUM ET MINIMUM
 
@@ -898,35 +904,39 @@ if (idtvar.ge.0) then
 
     enddo
 
-    xyzmin(1) = xyzcen(1,icfmin)
-    xyzmin(2) = xyzcen(2,icfmin)
-    xyzmin(3) = xyzcen(3,icfmin)
-    xyzmax(1) = xyzcen(1,icfmax)
-    xyzmax(2) = xyzcen(2,icfmax)
-    xyzmax(3) = xyzcen(3,icfmax)
+    if (iwarnp.ge.2.or.modntl.eq.0) then
 
-    if (irangp.ge.0) then
-      nbrval = 3
-      call parmnl (nbrval, cfmin, xyzmin)
-      !==========
-      call parmxl (nbrval, cfmax, xyzmax)
-      !==========
+      xyzmin(1) = xyzcen(1,icfmin)
+      xyzmin(2) = xyzcen(2,icfmin)
+      xyzmin(3) = xyzcen(3,icfmin)
+      xyzmax(1) = xyzcen(1,icfmax)
+      xyzmax(2) = xyzcen(2,icfmax)
+      xyzmax(3) = xyzcen(3,icfmax)
+
+      if (irangp.ge.0) then
+        nbrval = 3
+        call parmnl (nbrval, cfmin, xyzmin)
+        !==========
+        call parmxl (nbrval, cfmax, xyzmax)
+        !==========
+      endif
+
+      if(iwarnp.ge.2) then
+        write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
+        write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
+      endif
+
+      !-> pour listing
+      ptploc(5,1) = cfmin
+      ptploc(5,2) = xyzmin(1)
+      ptploc(5,3) = xyzmin(2)
+      ptploc(5,4) = xyzmin(3)
+      ptploc(6,1) = cfmax
+      ptploc(6,2) = xyzmax(1)
+      ptploc(6,3) = xyzmax(2)
+      ptploc(6,4) = xyzmax(3)
+
     endif
-
-    if(iwarnp.ge.2) then
-      write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
-      write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
-    endif
-
-!       -> pour listing
-    ptploc(5,1) = cfmin
-    ptploc(5,2) = xyzmin(1)
-    ptploc(5,3) = xyzmin(2)
-    ptploc(5,4) = xyzmin(3)
-    ptploc(6,1) = cfmax
-    ptploc(6,2) = xyzmax(1)
-    ptploc(6,3) = xyzmax(2)
-    ptploc(6,4) = xyzmax(3)
 
   endif
 
