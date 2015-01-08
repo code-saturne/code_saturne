@@ -1048,7 +1048,7 @@ cs_turbomachinery_initialize(void)
      first remove the boundary face numbering, as it will need to be
      rebuilt after the first joining */
 
-  if (cs_glob_mesh->b_face_numbering != NULL)
+  if (cs_glob_mesh->b_face_numbering != NULL && cs_glob_n_joinings > 0)
     cs_numbering_destroy(&(cs_glob_mesh->b_face_numbering));
 
   _copy_mesh(cs_glob_mesh, tbm->reference_mesh);
