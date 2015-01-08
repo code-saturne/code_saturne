@@ -258,7 +258,7 @@ call les_filter(6, xmij, w61)
 do iel = 1, ncel
   delta = w7(iel)
   do ii = 1, 6
-    w62(ii,iel) = -deux*delta**2*visct(iel)*xmij(ii,iel)
+    w62(ii,iel) = -deux*delta**2*propce(iel,ipcvst)*xmij(ii,iel)
   enddo
 enddo
 

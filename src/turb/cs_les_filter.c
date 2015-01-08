@@ -190,8 +190,8 @@ cs_les_filter(int        stride,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t i = mesh->i_face_cells[face_id][0];
-          cs_lnum_t j = mesh->i_face_cells[face_id][1];
+          cs_lnum_t i = mesh->i_face_cells[2*face_id] -1;
+          cs_lnum_t j = mesh->i_face_cells[2*face_id + 1] -1;
 
           w1[i] += val[j] * cell_vol[j];
           w2[i] += cell_vol[j];
@@ -258,8 +258,8 @@ cs_les_filter(int        stride,
              face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
              face_id++) {
 
-          cs_lnum_t i = mesh->i_face_cells[face_id][0];
-          cs_lnum_t j = mesh->i_face_cells[face_id][1];
+          cs_lnum_t i = mesh->i_face_cells[2*face_id] -1;
+          cs_lnum_t j = mesh->i_face_cells[2*face_id + 1] -1;
 
           for (cs_lnum_t c_id = 0; c_id < _stride; c_id++) {
             const cs_lnum_t ic = i *_stride + c_id;
