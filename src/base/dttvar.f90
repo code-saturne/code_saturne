@@ -801,9 +801,7 @@ if (idtvar.ge.0) then
 !     En incompressible uniquement (en compressible, on preferera
 !       afficher la contrainte liee a la masse volumique)
 
-  if ((iwarnp.ge.2.or.modntl.eq.0)                         &
-      .and. (idiff(iu).ge.1.or.iconv(iu).ge.1)             &
-      .and. (ippmod(icompf).lt.0))              then
+  if ((idiff(iu).ge.1.or.iconv(iu).ge.1) .and. (ippmod(icompf).lt.0)) then
 
     cnom   =' COU/FOU'
 
@@ -880,7 +878,7 @@ if (idtvar.ge.0) then
 
   ! En Compressible uniquement
 
-  if ((iwarnp.ge.2.or.modntl.eq.0) .and. (ippmod(icompf).ge.0)) then
+  if (ippmod(icompf).ge.0) then
 
     cnom =' CFL/MAS'
 
