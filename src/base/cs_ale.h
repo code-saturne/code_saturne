@@ -77,17 +77,17 @@ CS_PROCF (algrma, ALGRMA)(cs_real_t  *min_vol,
  * claale            : <-- : Boundary conditions A
  * clbale            : <-- : Boundary conditions B
  * dt                : <-- : Time step
- * deproj            : --> : Displacement projected on vertices
+ * disp_proj         : --> : Displacement projected on vertices
  *----------------------------------------------------------------------------*/
 
 void
 CS_PROCF (aledis, ALEDIS)(const cs_int_t      ialtyb[],
-                          const cs_real_t    *meshv,
+                          const cs_real_3_t  *meshv,
                           const cs_real_33_t  gradm[],
-                          const cs_real_t    *claale,
-                          const cs_real_t    *clbale,
+                          const cs_real_3_t  *claale,
+                          const cs_real_33_t *clbale,
                           const cs_real_t    *dt,
-                          cs_real_t          *disp_proj);
+                          cs_real_3_t        *disp_proj);
 
 /*----------------------------------------------------------------------------*/
 
