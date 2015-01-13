@@ -2042,6 +2042,7 @@ cs_time_moment_restart_options_by_id(int                         restart_id,
                                      cs_time_moment_restart_t   *restart_mode,
                                      const char                **restart_name)
 {
+  *restart_name = NULL;
   if (restart_id < -1) {
     *restart_mode = CS_TIME_MOMENT_RESTART_AUTO;
     if (_restart_info_checked == false)
