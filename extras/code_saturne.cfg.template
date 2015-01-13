@@ -57,11 +57,11 @@
 ### Option to pass arguments (usually none, or -args)
 # mpiexec_args =
 ### Option to define executable (usually none, or -exe)
-# mpi_env.mpiexec_exe =
+# mpiexec_exe =
 ### Option to define number of ranks (e.g. ' -n ', ' -np '; trailing whitespace
 ### is significant, as SLURM for example requires ' -n', for a -n<n_procs>
 ### type syntax, so quotes may be used here)
-# mpi_env.mpiexec_n = ' -n '
+# mpiexec_n = ' -n '
 ### Option to define number of ranks per node (e.g. ' -ppn 6 ', ' --ranks-per-node 16 ')
 # mpiexec_n_per_node =
 ### Separator after mpiexec options (':' for Blue Gene/Q without SLURM)
