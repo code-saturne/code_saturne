@@ -102,7 +102,7 @@ double precision smagor(ncelet)
 
 ! Local variables
 
-integer          ii, iel, inc, isou, jsou
+integer          ii, iel, inc
 integer          iprev
 integer          iclipc
 
@@ -111,7 +111,6 @@ double precision s11, s22, s33, s11f, s22f, s33f
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision dudyf, dudzf, dvdxf, dvdzf, dwdxf, dwdyf
 double precision xfil, xa, xb, xfil2, xsmgmx
-double precision aij, bij
 double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmn, smagmy
@@ -120,7 +119,7 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7, w8, w9
 double precision, allocatable, dimension(:) :: w10, w0
-double precision, allocatable, dimension(:,:) :: xmij, w61, w62, w63
+double precision, allocatable, dimension(:,:) :: xmij, w61, w62
 double precision, dimension(:,:,:), allocatable :: gradv, gradvf
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
@@ -140,16 +139,10 @@ call field_get_val_prev_v(ivarfl(iu), vel)
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 
-! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
-allocate(w10(ncelet), w0(ncelet))
-
 call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(icrom, crom)
 
-! --- For the calculation of the viscosity of the sub-mesh
+! For the calculation of the viscosity of the sub-mesh
 xfil   = xlesfl
 xfil2  = xlesfd
 xa     = ales
@@ -157,6 +150,11 @@ xb     = bles
 deux   = 2.d0
 radeux = sqrt(deux)
 xsmgmx = smagmx
+
+! Allocate some work arrays
+
+allocate(w0(ncelet), w1(ncelet))
+allocate(xmij(6,ncelet))
 
 !===============================================================================
 ! 2.  Calculation of velocity gradient and of
@@ -174,8 +172,6 @@ call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc, gradv)
 ! Filter the velocity gradient on the extended neighborhood
 
 call les_filter(9, gradv, gradvf)
-
-allocate(xmij(6,ncelet))
 
 do iel = 1, ncel
 
@@ -213,7 +209,7 @@ do iel = 1, ncel
                              + (dudz+dwdx)**2                     &
                              + (dvdz+dwdy)**2 )  )
 
-  w9(iel) = radeux*sqrt(                                          &
+  w1(iel) = radeux*sqrt(                                          &
                        s11f**2 + s22f**2 + s33f**2                &
                      + 0.5d0*( (dudyf+dvdxf)**2                   &
                              + (dudzf+dwdxf)**2                   &
@@ -226,7 +222,7 @@ deallocate(gradv, gradvf)
 !     Here XMIJ contains Sij
 !         VISCT contains ||S||
 !            sqrt(2)*sqrt(S11^2+S22^2+S33^2+2(S12^2+S13^2+S23^2))
-!         W9                 contains ||SF||
+!         W1                 contains ||SF||
 !            sqrt(2)*sqrt(S11F^2+S22F^2+S33F^2+2(S12F^2+S13F^2+S23F^2))
 
 !===============================================================================
@@ -234,41 +230,46 @@ deallocate(gradv, gradvf)
 !===============================================================================
 
 do iel = 1, ncel
-  w7(iel) = xfil *(xa*volume(iel))**xb
+  w0(iel) = xfil *(xa*volume(iel))**xb
 enddo
 
-allocate(w61(6,ncelet), w62(6,ncelet), w63(6,ncelet))
+allocate(w61(6,ncelet), w62(6,ncelet))
 
 call les_filter(6, xmij, w61)
 
+! Reuse xmij as temporary array
+
 do iel = 1, ncel
-  delta = w7(iel)
+  delta = w0(iel)
   do ii = 1, 6
-    w62(ii,iel) = -deux*delta**2*visct(iel)*xmij(ii,iel)
+    xmij(ii,iel) = -deux*delta**2*visct(iel)*xmij(ii,iel)
   enddo
 enddo
 
-call les_filter(6, w62, w63)
+call les_filter(6, xmij, w62)
+
+! Now compute final xmij value: M_ij = alpha_ij - beta_ij
 
 do iel = 1, ncel
-  delta = w7(iel)
+  delta = w0(iel)
   deltaf = xfil2*delta
   do ii = 1, 6
-    xmij(ii,iel) = -deux*deltaf**2*w9(iel)*w61(ii,iel) - w63(ii,iel)
+    xmij(ii,iel) = -deux*deltaf**2*w1(iel)*w61(ii,iel) - w62(ii,iel)
   enddo
 enddo
 
-deallocate(w61, w62, w63)
-
-!     Here Aij contains alpha_ij, Bij contains beta_ij tilde
-!        and XMIJ contains M_ij
+deallocate(w61, w62)
 
 !===============================================================================
 ! 4.  Calculation of the dynamic Smagorinsky constant
 !===============================================================================
 
-! Filtering the velocity and its square
+! Allocate work arrays
+allocate(w2(ncelet), w3(ncelet), w4(ncelet))
+allocate(w5(ncelet), w6(ncelet), w7(ncelet))
+allocate(w8(ncelet), w9(ncelet), w10(ncelet))
 
+! Filtering the velocity and its square
 
 ! U**2
 do iel = 1,ncel
@@ -326,7 +327,7 @@ call les_filter(1, w0, w9)
 
 do iel = 1, ncel
 
-! --- Calculation of Lij
+  ! Calculation of Lij
   xl11 = w1(iel) - w7(iel) * w7(iel)
   xl22 = w2(iel) - w8(iel) * w8(iel)
   xl33 = w3(iel) - w9(iel) * w9(iel)
@@ -340,14 +341,14 @@ do iel = 1, ncel
   xm12 = xmij(4,iel)
   xm13 = xmij(5,iel)
   xm23 = xmij(6,iel)
-! ---Calculation of Mij :: Lij
-  w1(iel) = xm11 * xl11 + 2.d0* xm12 * xl12 + 2.d0* xm13 * xl13 + &
-                                xm22 * xl22 + 2.d0* xm23 * xl23 + &
-                                                    xm33 * xl33
-! ---Calculation of Mij :: Mij
-  w2(iel) = xm11 * xm11 + 2.d0* xm12 * xm12 + 2.d0* xm13 * xm13 + &
-                                xm22 * xm22 + 2.d0* xm23 * xm23 + &
-                                                    xm33 * xm33
+  ! Calculation of Mij :: Lij
+  w1(iel) = xm11 * xl11 + 2.d0* xm12 * xl12 + 2.d0* xm13 * xl13  &
+                        +       xm22 * xl22 + 2.d0* xm23 * xl23  &
+                        +                           xm33 * xl33
+  ! Calculation of Mij :: Mij
+  w2(iel) = xm11 * xm11 + 2.d0* xm12 * xm12 + 2.d0* xm13 * xm13  &
+                        +       xm22 * xm22 + 2.d0* xm23 * xm23  &
+                        +                           xm33 * xm33
 
 enddo
 
@@ -360,9 +361,9 @@ if (irangp.ge.0.or.iperio.eq.1) then
   !==========
 endif
 
-!     By default we make a local average of numerator and of
-!     denominator, then only we make the quotient.
-!     The user can make otherwise in ussmag.
+! By default we make a local average of numerator and of
+! denominator, then only we make the quotient.
+! The user can do otherwise in ussmag.
 
 call les_filter(1, w1, w3)
 
@@ -404,12 +405,11 @@ enddo
 do iel = 1, ncel
   coef = smagor(iel)
   delta  = xfil * (xa*volume(iel))**xb
-  visct(iel) = crom(iel)                         &
-       * coef * delta**2 * visct(iel)
+  visct(iel) = crom(iel) * coef * delta**2 * visct(iel)
 enddo
 
 !     Some printings
-if(iwarni(iu).ge.1) then
+if (iwarni(iu).ge.1) then
 
   smagma = -1.0d12
   smagmn =  1.0d12
@@ -419,7 +419,7 @@ if(iwarni(iu).ge.1) then
     smagmn = min(smagmn,smagor(iel))
     smagmy = smagmy + smagor(iel)*volume(iel)
   enddo
-  if(irangp.ge.0) then
+  if (irangp.ge.0) then
     call parmax(smagma)
     !==========
     call parmin(smagmn)
@@ -438,10 +438,10 @@ if(iwarni(iu).ge.1) then
 endif
 
 ! Free memory
-deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
-deallocate(w10, w0)
+deallocate(w10, w9, w8)
+deallocate(w7, w6, w5)
+deallocate(w4, w3, w2)
+deallocate(w1, w0)
 
 !----
 ! Formats
