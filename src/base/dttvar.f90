@@ -116,7 +116,7 @@ integer          iflmas, iflmab
 integer          icou, ifou , icoucf
 integer          inc, iccocg
 integer          nswrgp, imligp
-integer          iivar
+integer          f_id
 integer          nbrval, nclptr
 integer          ipccou, ipcfou, ntcam1
 
@@ -296,7 +296,7 @@ if (idtvar.ge.0) then
   if (iptlro.eq.1) then
 
     ! Allocate a temporary array for the gradient calculation
-    allocate(grad(ncelet,3))
+    allocate(grad(3,ncelet))
     allocate(coefbr(nfabor))
 
     do ifac = 1, nfabor
@@ -310,19 +310,18 @@ if (idtvar.ge.0) then
     climgp = climgr(ipr)
     extrap = 0.d0
 
-    iivar = 0
+    f_id = -1
     inc   = 1
     iccocg = 1
 
-    call grdcel                                                   &
-    !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   crom, brom, coefbr ,                   &
+    call gradient_s                                               &
+ ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
+   crom, brom, coefbr ,                                           &
    grad )
 
     do iel = 1, ncel
-      w3(iel) = (grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz)&
+      w3(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz)&
            /crom(iel)
       w3(iel) = 1.d0/sqrt(max(epzero,w3(iel)))
 
