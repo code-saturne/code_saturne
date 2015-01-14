@@ -382,6 +382,20 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function initializing ghost cell values
+    ! for Reynolds stress tensor gradient.
+
+    subroutine cs_gradient_perio_init_rij(f, idimtr, grad) &
+      bind(C, name='cs_gradient_perio_init_rij')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value                                  :: f
+      integer(c_int), intent(out)                         :: idimtr
+      real(kind=c_double), dimension(3, *), intent(inout) :: grad
+    end subroutine cs_gradient_perio_init_rij
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Define user variables through the GUI.
 
     subroutine cs_gui_user_variables()  &
@@ -1039,6 +1053,93 @@ contains
     return
 
   end subroutine field_get_key_struct_gas_mix_species_prop
+
+  !=============================================================================
+
+  !> \brief  Compute cell gradient
+
+  !> \param[in]       f_id             field id, or -1
+  !> \param[in]       imrgra           gradient computation mode
+  !> \param[in]       inc              0: increment; 1: do not increment
+  !> \param[in]       recompute_cocg   1 or 0: recompute COCG or not
+  !> \param[in]       nswrgp           number of sweeps for reconstruction
+  !> \param[in]       imligp           gradient limitation method:
+  !>                                     < 0 no limitation
+  !>                                     = 0 based on neighboring gradients
+  !>                                     = 1 based on mean gradient
+  !> \param[in]       iwarnp           verbosity
+  !> \param[in]       epsgrp           relative precision for reconstruction
+  !> \param[in]       climgp           limiter coefficient for imligp
+  !> \param[in]       extrap           gradient extrapolation coefficient
+  !> \param[in, out]  pvar             cell values whose gradient is computed
+  !> \param[in]       coefap           boundary coefap coefficients
+  !> \param[in]       coefbp           boundary coefap coefficients
+  !> \param[out]      grad             resulting gradient
+
+  subroutine gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,             &
+                        imligp, iwarnp, epsrgp, climgp, extrap,                &
+                        pvar, coefap, coefbp, grad)
+
+    use, intrinsic :: iso_c_binding
+    use paramx
+    use mesh
+    use field
+    use period
+
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
+    integer, intent(in) :: imligp, iwarnp
+    double precision, intent(in) :: epsrgp, climgp, extrap
+    real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
+    real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
+    real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
+
+    ! Local variables
+
+    integer        :: hyd_p_flag, ilved
+    integer        :: idimtr, ipond
+    type(c_ptr)    :: f
+
+    ! Preparation for periodicity of rotation
+
+    ! By default, the gradient will be treated as a vector ...
+    !   (i.e. we assume it is the gradient of a scalar field)
+
+    ! If rotational periodicities are present,
+    !   we determine if the variable is a tensor (Reynolds stresses)
+    !   so as to apply the necessary treatment.
+    !   We set idimtr and we retrieve the matching gradient.
+    ! Note that if halo gradients have not been saved before, they cannot be
+    !   retrieved here (...)
+    !   So this subroutine is called by phyvar (in perinr)
+    !   to compute gradients at the beginning of the time step and save them
+    !   in dudxyz et drdxyz
+
+    ! It is necessary for idimtr to always be initialized, even with no
+    !   periodicity of rotation, so it's default value is set.
+
+    idimtr = 0
+
+    if (iperot.eq.1 .and. f_id.gt.-1) then
+      f = cs_field_by_id(f_id)
+      call cs_gradient_perio_init_rij(f, idimtr, grad)
+    endif
+
+    ! The gradient of a potential (pressure, ...) is a vector
+
+    ilved = 1
+    hyd_p_flag = 0
+    ipond = 0
+
+    call cgdcel(f_id, imrgra, ilved, inc, recompute_cocg, nswrgp,              &
+                idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
+                climgp, c_null_ptr, coefap, coefbp,                            &
+                pvar, c_null_ptr, grad)
+
+  end subroutine gradient_s
 
   !=============================================================================
 
