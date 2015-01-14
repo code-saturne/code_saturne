@@ -41,12 +41,6 @@ subroutine grdvec &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! ivar             ! e  ! <-- ! numero de la variable                          !
-!                  !    !     !   destine a etre utilise pour la               !
-!                  !    !     !   periodicite uniquement (pering)              !
-!                  !    !     !   on pourra donner ivar=0 si la                !
-!                  !    !     !   variable n'est ni une composante de          !
-!                  !    !     !   la vitesse, ni une composante du             !
-!                  !    !     !   tenseur des contraintes rij                  !
 ! imrgra           ! e  ! <-- ! methode de reconstruction du gradient          !
 !                  !    !     !  0 reconstruction 97                           !
 !                  !    !     !  1 moindres carres                             !
@@ -85,6 +79,7 @@ subroutine grdvec &
 
 use paramx
 use pointe
+use numvar
 use parall
 use period
 use mesh
@@ -111,14 +106,20 @@ logical ilved
 
 ! Local variables
 
-integer          iel, isou
+integer          iel, isou, f_id
 
 double precision, dimension(:,:), allocatable :: pvari
 
 !===============================================================================
 
+if (ivar.le.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
+
 !===============================================================================
-! 1. Computation of the gardient
+! 1. Computation of the gradient
 !===============================================================================
 
 ! the velocity and the gradient fields are interleaved
@@ -126,7 +127,7 @@ if (ilved) then
 
   call cgdvec &
   !==========
- ( ivar   ,                                                       &
+ ( f_id   ,                                                       &
    imrgra , inc    , nswrgp , iwarnp , imligp , epsrgp , climgp , &
    coefav , coefbv , pvar   ,                                     &
    gradv  )
@@ -145,7 +146,7 @@ else
 
   call cgdvec &
   !==========
- ( ivar   ,                                                       &
+ ( f_id   ,                                                       &
    imrgra , inc    , nswrgp , iwarnp , imligp , epsrgp , climgp , &
    coefav , coefbv , pvari  ,                                     &
    gradv  )
