@@ -79,7 +79,9 @@ TEXINPUTFILES = input
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) \
+graphics/clthermique.pdf \
+graphics/loilog.pdf
 
 # Generated pdf document
 
