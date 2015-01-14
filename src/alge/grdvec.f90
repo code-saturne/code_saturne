@@ -132,28 +132,6 @@ if (ilved) then
    coefav , coefbv , pvar   ,                                     &
    gradv  )
 
-! We interleave the velocity
-else
-
-  !Allocation
-  allocate(pvari(3,ncelet))
-
-  do isou = 1, 3
-    do iel = 1, ncelet
-      pvari(isou,iel) = pvar(iel + (isou-1)*ncelet)
-    enddo
-  enddo
-
-  call cgdvec &
-  !==========
- ( f_id   ,                                                       &
-   imrgra , inc    , nswrgp , iwarnp , imligp , epsrgp , climgp , &
-   coefav , coefbv , pvari  ,                                     &
-   gradv  )
-
-  ! Free memory
-  deallocate(pvari)
-
 endif
 
 return

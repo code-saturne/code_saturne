@@ -83,14 +83,12 @@ double precision vela(3,ncelet)
 
 ! Local variables
 
-integer          ipt    , iel    , isou
+integer          ipt    , iel    , isou   , f_id
 integer          inc    , iccocg , nswrgp
 integer          iwarnp , imligp
 
 double precision epsrgp , climgp
 double precision dx     , dy     , dz
-
-logical ilved
 
 double precision, dimension(:,:,:), allocatable :: gradv
 
@@ -106,16 +104,19 @@ imligp = imligr(ivar)
 iwarnp = iwarni(ivar)
 epsrgp = epsrgr(ivar)
 climgp = climgr(ivar)
-ilved  = .true.
 
-call grdvec &
+if (ivar.le.0) then
+  f_id = -1
+else
+  f_id = ivarfl(ivar)
+endif
+
+call cgdvec &
 !==========
-( ivar   , imrgra , inc    , nswrgp , imligp ,                   &
-  iwarnp , epsrgp , climgp ,                                     &
-  ilved  ,                                                       &
-  vela   , coefav , coefbv ,                                     &
+( f_id   , imrgra , inc    , nswrgp , iwarnp , imligp ,          &
+  epsrgp , climgp ,                                              &
+  coefav , coefbv , vela   ,                                     &
   gradv)
-
 
 ! --- Interpolation
 

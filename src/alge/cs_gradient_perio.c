@@ -315,7 +315,7 @@ CS_PROCF (permas, PERMAS)(const cs_int_t  *iappel,
  * thus periodicity). I seems possible to use a least-squares gradient.
  *
  * The gradient is then saved in an array representing the ghost cells, then
- * rotated where necessary to be ready for use (cf. pering).
+ * rotated where necessary to be ready for use (cf. cs_gradient_perio_init_rij).
  *
  * Compute cell gradient of vector field.
  *----------------------------------------------------------------------------*/
@@ -401,134 +401,6 @@ void CS_PROCF (perinr, PERINR)
   cs_halo_perio_rotate_rij(_drdxyz);
 
   BFT_FREE(grad);
-}
-
-/*----------------------------------------------------------------------------
- * Process dpdx, dpdy, dpdz buffers in case of rotation on
- * Reynolds stress tensor.
- *
- * We retrieve the gradient given by perinr (phyvar) for the Reynolds
- * stress tensor in a buffer on ghost cells. then we define
- * dpdx, dpdy and dpdz gradient (1 -> n_cells_with_ghosts).
- *
- * We can't implicitly take into account rotation of a gradient of a tensor
- * variable because we have to know the all components.
- *
- * We set idimtr to 2 for the Reynolds stress tensor.
- *
- * We assume that is correct to treat periodicities implicitly for the other
- * variables when reconstructing gradients.
- *
- * Fortran Interface:
- *
- * subroutine pering
- * *****************
- *
- * integer          f_id         : <-- : field_id
- * integer          tr_dim       : --> : 2 for tensor (Rij) in case of
- *                                       rotation, 0 otherwise
- * double precision dpdx(ncelet) : <-> : gradient of ivar
- * double precision dpdy(ncelet) : <-> :    "        "
- * double precision dpdz(ncelet) : <-> :    "        "
- *
- * size of _drdxyz and _wdrdxy = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (pering, PERING)(const cs_int_t  *f_id,
-                          cs_int_t        *tr_dim,
-                          cs_real_t        dpdx[],
-                          cs_real_t        dpdy[],
-                          cs_real_t        dpdz[])
-{
-  cs_lnum_t  d_var = -1;
-  cs_mesh_t  *mesh = cs_glob_mesh;
-
-  cs_field_t  *f = cs_field_by_id(*f_id);
-
-  if (f->name[0] == 'r') {
-    if (strlen(f->name) == 3) {
-      if (f->name[1] == '1') {
-        if (f->name[2] == '1')
-          d_var = 0;
-        else if (f->name[2] == '2')
-          d_var = 3;
-        else if (f->name[2] == '3')
-          d_var = 4;
-      }
-      else if (f->name[1] == '2') {
-        if (f->name[2] == '2')
-          d_var = 1;
-        else if (f->name[2] == '3')
-          d_var = 5;
-      }
-      else if (f->name[1] == '3' && f->name[2] == '3')
-        d_var = 2;
-    }
-  }
-
-  if (mesh->halo == NULL || d_var < 0) {
-    *tr_dim = 0;
-    return;
-  }
-  else
-    *tr_dim = 2;
-
-  /*
-    When there is periodicity of rotation :
-      - Retrieve gradient values for ghost cells and for the previous
-        time step without reconstruction
-      - Ghost cells without rotation keep their value.
-  */
-
-  if (_drdxyz != NULL) {
-
-    int  rank_id, t_id;
-    cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-
-    cs_halo_t  *halo = mesh->halo;
-    const cs_lnum_t  n_cells   = mesh->n_cells;
-    const cs_lnum_t  n_transforms = mesh->n_transforms;
-    const fvm_periodicity_t  *periodicity = mesh->periodicity;
-
-    for (t_id = 0; t_id < n_transforms; t_id++) {
-
-      if (   fvm_periodicity_get_type(periodicity, t_id)
-          >= FVM_PERIODICITY_ROTATION) {
-
-        shift = 4 * halo->n_c_domains * t_id;
-
-        for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-          start_std = halo->perio_lst[shift + 4*rank_id];
-          end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-          for (i = start_std; i < end_std; i++) {
-            dpdx[n_cells + i] = _drdxyz[0 + d_var*3 + 18*i];
-            dpdy[n_cells + i] = _drdxyz[1 + d_var*3 + 18*i];
-            dpdz[n_cells + i] = _drdxyz[2 + d_var*3 + 18*i];
-          }
-
-          if (mesh->halo_type == CS_HALO_EXTENDED) {
-
-            start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-            end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-            for (i = start_ext; i < end_ext; i++) {
-              dpdx[n_cells + i] = _drdxyz[0 + d_var*3 + 18*i];
-              dpdy[n_cells + i] = _drdxyz[1 + d_var*3 + 18*i];
-              dpdz[n_cells + i] = _drdxyz[2 + d_var*3 + 18*i];
-            }
-
-          } /* End if extended halo */
-
-        } /* End of loop on ranks */
-
-      } /* End of test on rotation */
-
-    } /* End of loop on transformations */
-
-  }
 }
 
 /*============================================================================

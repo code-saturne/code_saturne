@@ -105,10 +105,6 @@ cs_sles_default.c \
 cs_sles_it.c \
 bilsca.f90 \
 bilscv.f90 \
-grdcel.f90 \
-grdpre.f90 \
-grdvec.f90 \
-grdpot.f90 \
 prodsc.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined

@@ -90,7 +90,7 @@ CS_PROCF (permas, PERMAS)(const cs_int_t  *iappel,
  * thus periodicity). I seems possible to use a least-squares gradient.
  *
  * The gradient is then saved in an array representing the ghost cells, then
- * rotated where necessary to be ready for use (cf. pering).
+ * rotated where necessary to be ready for use (cf. cs_gradient_perio_init_rij).
  *
  * Compute cell gradient of vector field.
  *----------------------------------------------------------------------------*/
@@ -103,44 +103,6 @@ void CS_PROCF (perinr, PERINR)
                                          calculation                          */
  const cs_real_t  *const extrap   /* <-- extrapolate gradient at boundary     */
 );
-
-/*----------------------------------------------------------------------------
- * Process dpdx, dpdy, dpdz buffers in case of rotation on
- * Reynolds stress tensor.
- *
- * We retrieve the gradient given by perinr (phyvar) for the Reynolds
- * stress tensor in a buffer on ghost cells. then we define
- * dpdx, dpdy and dpdz gradient (1 -> n_cells_with_ghosts).
- *
- * We can't implicitly take into account rotation of a gradient of a tensor
- * variable because we have to know the all three components.
- *
- * We set idimtr to 2 for the Reynolds stress tensor.
- *
- * We assume that is correct to treat periodicities implicitly for the other
- * variables when reconstructing gradients.
- *
- * Fortran Interface:
- *
- * subroutine pering
- * *****************
- *
- * integer          f_id         : <-- : field_id
- * integer          tr_dim       : --> : 2 for tensor (Rij) in case of
- *                                       rotation, 0 otherwise
- * double precision dpdx(ncelet) : <-> : gradient of ivar
- * double precision dpdy(ncelet) : <-> :    "        "
- * double precision dpdz(ncelet) : <-> :    "        "
- *
- * size of _drdxyz and _wdrdxy = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (pering, PERING)(const cs_int_t  *f_id,
-                          cs_int_t        *tr_dim,
-                          cs_real_t        dpdx[],
-                          cs_real_t        dpdy[],
-                          cs_real_t        dpdz[]);
 
 /*=============================================================================
  * Public function prototypes
