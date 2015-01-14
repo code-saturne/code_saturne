@@ -69,7 +69,7 @@ implicit none
 integer          nscal
 integer          ivar
 
-double precision gradro(ncelet,3)
+double precision gradro(3,ncelet)
 double precision smbr(ncelet)
 
 ! Local variables
@@ -131,15 +131,15 @@ if     (ivar.eq.ir11) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(iel,1)                            &
-        + cvara_r12(iel)*gradro(iel,2)                            &
-        + cvara_r13(iel)*gradro(iel,3)
-    r2t = cvara_r12(iel)*gradro(iel,1)                            &
-        + cvara_r22(iel)*gradro(iel,2)                            &
-        + cvara_r23(iel)*gradro(iel,3)
-    r3t = cvara_r13(iel)*gradro(iel,1)                            &
-        + cvara_r23(iel)*gradro(iel,2)                            &
-        + cvara_r33(iel)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(1,iel)                            &
+        + cvara_r12(iel)*gradro(2,iel)                            &
+        + cvara_r13(iel)*gradro(3,iel)
+    r2t = cvara_r12(iel)*gradro(1,iel)                            &
+        + cvara_r22(iel)*gradro(2,iel)                            &
+        + cvara_r23(iel)*gradro(3,iel)
+    r3t = cvara_r13(iel)*gradro(1,iel)                            &
+        + cvara_r23(iel)*gradro(2,iel)                            &
+        + cvara_r33(iel)*gradro(3,iel)
 
     kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
            /(2.d0*cvara_ep(iel))
@@ -159,15 +159,15 @@ elseif (ivar.eq.ir22) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(iel,1)                            &
-        + cvara_r12(iel)*gradro(iel,2)                            &
-        + cvara_r13(iel)*gradro(iel,3)
-    r2t = cvara_r12(iel)*gradro(iel,1)                            &
-        + cvara_r22(iel)*gradro(iel,2)                            &
-        + cvara_r23(iel)*gradro(iel,3)
-    r3t = cvara_r13(iel)*gradro(iel,1)                            &
-        + cvara_r23(iel)*gradro(iel,2)                            &
-        + cvara_r33(iel)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(1,iel)                            &
+        + cvara_r12(iel)*gradro(2,iel)                            &
+        + cvara_r13(iel)*gradro(3,iel)
+    r2t = cvara_r12(iel)*gradro(1,iel)                            &
+        + cvara_r22(iel)*gradro(2,iel)                            &
+        + cvara_r23(iel)*gradro(3,iel)
+    r3t = cvara_r13(iel)*gradro(1,iel)                            &
+        + cvara_r23(iel)*gradro(2,iel)                            &
+        + cvara_r33(iel)*gradro(3,iel)
 
     kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
            /(2.d0*cvara_ep(iel))
@@ -187,15 +187,15 @@ elseif (ivar.eq.ir33) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(iel,1)                            &
-        + cvara_r12(iel)*gradro(iel,2)                            &
-        + cvara_r13(iel)*gradro(iel,3)
-    r2t = cvara_r12(iel)*gradro(iel,1)                            &
-        + cvara_r22(iel)*gradro(iel,2)                            &
-        + cvara_r23(iel)*gradro(iel,3)
-    r3t = cvara_r13(iel)*gradro(iel,1)                            &
-        + cvara_r23(iel)*gradro(iel,2)                            &
-        + cvara_r33(iel)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(1,iel)                            &
+        + cvara_r12(iel)*gradro(2,iel)                            &
+        + cvara_r13(iel)*gradro(3,iel)
+    r2t = cvara_r12(iel)*gradro(1,iel)                            &
+        + cvara_r22(iel)*gradro(2,iel)                            &
+        + cvara_r23(iel)*gradro(3,iel)
+    r3t = cvara_r13(iel)*gradro(1,iel)                            &
+        + cvara_r23(iel)*gradro(2,iel)                            &
+        + cvara_r33(iel)*gradro(3,iel)
 
     kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
            /(2.d0*cvara_ep(iel))
@@ -215,12 +215,12 @@ elseif (ivar.eq.ir12) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(iel,1)                            &
-        + cvara_r12(iel)*gradro(iel,2)                            &
-        + cvara_r13(iel)*gradro(iel,3)
-    r2t = cvara_r12(iel)*gradro(iel,1)                            &
-        + cvara_r22(iel)*gradro(iel,2)                            &
-        + cvara_r23(iel)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(1,iel)                            &
+        + cvara_r12(iel)*gradro(2,iel)                            &
+        + cvara_r13(iel)*gradro(3,iel)
+    r2t = cvara_r12(iel)*gradro(1,iel)                            &
+        + cvara_r22(iel)*gradro(2,iel)                            &
+        + cvara_r23(iel)*gradro(3,iel)
 
     kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
            /(2.d0*cvara_ep(iel))
@@ -237,12 +237,12 @@ elseif (ivar.eq.ir13) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(iel,1)                            &
-        + cvara_r12(iel)*gradro(iel,2)                            &
-        + cvara_r13(iel)*gradro(iel,3)
-    r3t = cvara_r13(iel)*gradro(iel,1)                            &
-        + cvara_r23(iel)*gradro(iel,2)                            &
-        + cvara_r33(iel)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(1,iel)                            &
+        + cvara_r12(iel)*gradro(2,iel)                            &
+        + cvara_r13(iel)*gradro(3,iel)
+    r3t = cvara_r13(iel)*gradro(1,iel)                            &
+        + cvara_r23(iel)*gradro(2,iel)                            &
+        + cvara_r33(iel)*gradro(3,iel)
 
     kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
            /(2.d0*cvara_ep(iel))
@@ -259,12 +259,12 @@ elseif (ivar.eq.ir23) then
 
   do iel = 1, ncel
 
-    r2t = cvara_r12(iel)*gradro(iel,1)                            &
-        + cvara_r22(iel)*gradro(iel,2)                            &
-        + cvara_r23(iel)*gradro(iel,3)
-    r3t = cvara_r13(iel)*gradro(iel,1)                            &
-        + cvara_r23(iel)*gradro(iel,2)                            &
-        + cvara_r33(iel)*gradro(iel,3)
+    r2t = cvara_r12(iel)*gradro(1,iel)                            &
+        + cvara_r22(iel)*gradro(2,iel)                            &
+        + cvara_r23(iel)*gradro(3,iel)
+    r3t = cvara_r13(iel)*gradro(1,iel)                            &
+        + cvara_r23(iel)*gradro(2,iel)                            &
+        + cvara_r33(iel)*gradro(3,iel)
 
     kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
            /(2.d0*cvara_ep(iel))
@@ -294,15 +294,15 @@ elseif (ivar.eq.iep ) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(iel,1)                            &
-        + cvara_r12(iel)*gradro(iel,2)                            &
-        + cvara_r13(iel)*gradro(iel,3)
-    r2t = cvara_r12(iel)*gradro(iel,1)                            &
-        + cvara_r22(iel)*gradro(iel,2)                            &
-        + cvara_r23(iel)*gradro(iel,3)
-    r3t = cvara_r13(iel)*gradro(iel,1)                            &
-        + cvara_r23(iel)*gradro(iel,2)                            &
-        + cvara_r33(iel)*gradro(iel,3)
+    r1t = cvara_r11(iel)*gradro(1,iel)                            &
+        + cvara_r12(iel)*gradro(2,iel)                            &
+        + cvara_r13(iel)*gradro(3,iel)
+    r2t = cvara_r12(iel)*gradro(1,iel)                            &
+        + cvara_r22(iel)*gradro(2,iel)                            &
+        + cvara_r23(iel)*gradro(3,iel)
+    r3t = cvara_r13(iel)*gradro(1,iel)                            &
+        + cvara_r23(iel)*gradro(2,iel)                            &
+        + cvara_r33(iel)*gradro(3,iel)
 
     g11p = const*2.d0*(r1t*gx)
     g22p = const*2.d0*(r2t*gy)

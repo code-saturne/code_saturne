@@ -89,6 +89,8 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -125,7 +127,6 @@ double precision, allocatable, dimension(:) :: rom, romb
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:,:) :: coefav
 double precision, allocatable, dimension(:,:,:) :: coefbv
-double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: dpvar
 double precision, dimension(:), pointer :: crom
@@ -211,35 +212,24 @@ do ifac = 1, nfabor
   endif
 enddo
 
-! Allocate a temporary array for the gradient calculation
-allocate(grad(ncelet,3))
-
 ! Compute the gradient of the distance to the wall
-
-! Paralellism and periodicity
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(distpa)
-  !==========
-endif
 
 inc    = 1
 iccocg = 1
-ivar   = 0
+f_id   = -1
 
-call grdcel                                                       &
-!==========
- ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
-   iwarny , nfecra , epsrgy , climgy , extray ,                   &
+call gradient_s                                                   &
+ ( f_id   , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
+   epsrgy , climgy , extray ,                                     &
    distpa , coefap , coefbp ,                                     &
-   grad   )
-
+   q      )
 
 ! Normalisation (attention, le gradient peut etre nul, parfois)
 
 do iel = 1, ncel
-  xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
+  xnorme = max(sqrt(q(1,iel)**2+q(2,iel)**2+q(3,iel)**2),epzero)
   do isou = 1, 3
-    q(isou,iel) = grad(iel,isou)/xnorme
+    q(isou,iel) = q(isou,iel)/xnorme
   enddo
 enddo
 
@@ -247,9 +237,6 @@ enddo
 if (irangp.ge.0.or.iperio.eq.1) then
   call synvin(q)
 endif
-
-! Free memory
-deallocate(grad)
 
 !===============================================================================
 ! 4. Compute the flux of V

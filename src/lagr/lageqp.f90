@@ -80,7 +80,7 @@ double precision phi(ncelet), alphal(ncelet)
 
 character(len=80) :: chaine
 integer          idtva0, ivar
-integer          ifac, iel
+integer          ifac  , iel   , isou   , jsou
 integer          nswrgp, imligp, iwarnp , iescap
 integer          iconvp, idiffp, ndircp, nitmap
 integer          nswrsp, ircflp, ischcp, isstpp
@@ -97,9 +97,9 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: fmala, fmalb
 double precision, allocatable, dimension(:) :: phia
-double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: coefax, coefay, coefaz
-double precision, allocatable, dimension(:) :: coefbx, coefby, coefbz
+double precision, allocatable, dimension(:,:) :: w
+double precision, allocatable, dimension(:,:) :: coefaw
+double precision, allocatable, dimension(:,:,:) :: coefbw
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: dpvar
@@ -118,9 +118,9 @@ allocate(phia(ncelet))
 allocate(dpvar(ncelet))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+allocate(w(3,ncelet))
 
-CHAINE = 'Correction pression'
+chaine = 'Pressure correction'
 write(nfecra,1000) chaine(1:19)
 
 !===============================================================================
@@ -151,41 +151,39 @@ enddo
 ! CALCUL  de div(Alpha Up) avant correction
 
 do iel = 1, ncel
-  w1(iel) = -ul(iel)*alphal(iel)
-  w2(iel) = -vl(iel)*alphal(iel)
-  w3(iel) = -wl(iel)*alphal(iel)
+  w(1,iel) = -ul(iel)*alphal(iel)
+  w(2,iel) = -vl(iel)*alphal(iel)
+  w(3,iel) = -wl(iel)*alphal(iel)
 enddo
 
 ! --> Calcul du gradient de W1
 !     ========================
 
 ! Allocate temporary arrays
-allocate(coefax(nfabor), coefay(nfabor), coefaz(nfabor))
-allocate(coefbx(nfabor), coefby(nfabor), coefbz(nfabor))
+allocate(coefaw(3,nfabor))
+allocate(coefbw(3,3,nfabor))
 
 do ifac = 1, nfabor
   iel = ifabor(ifac)
-
-  coefax(ifac) = w1(iel)
-  coefbx(ifac) = zero
-
-  coefay(ifac) = w2(iel)
-  coefby(ifac) = zero
-
-  coefaz(ifac) = w3(iel)
-  coefbz(ifac) = zero
-
+  do isou = 1, 3
+    coefaw(isou,ifac) = w(isou,iel)
+  enddo
 enddo
 
-call diverv                                                       &
+do ifac = 1, nfabor
+  do isou = 1, 3
+    do jsou = 1, 3
+      coefbw(isou,jsou,ifac) = zero
+    enddo
+  enddo
+enddo
+
+call diverv(smbrs, w, coefaw, coefbw)
 !==========
- ( smbrs  , w1     , w2     , w3     ,                            &
-   coefax , coefay , coefaz ,                                     &
-   coefbx , coefby , coefbz )
 
 ! Free memory
-deallocate(coefax, coefay, coefaz)
-deallocate(coefbx, coefby, coefbz)
+deallocate(coefaw)
+deallocate(coefbw)
 
 ! --> Conditions aux limites sur PHI
 !     ==============================
@@ -316,7 +314,7 @@ deallocate(fmala, fmalb)
 deallocate(coefap, coefbp)
 deallocate(cofafp, cofbfp)
 deallocate(phia)
-deallocate(w1, w2, w3)
+deallocate(w)
 deallocate(dpvar)
 
 !--------

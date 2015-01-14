@@ -74,6 +74,7 @@ use ppincl
 use mesh
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -96,7 +97,7 @@ double precision prdv2f(ncelet)
 
 character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
-integer          iivar , iiun
+integer          f_id0 , iiun
 integer          iclip , isqrt
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
@@ -378,7 +379,7 @@ if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 else if (igrake.eq.1) then
 
   ! Allocate a temporary for the gradient calculation
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
   iccocg = 1
   inc = 1
@@ -394,12 +395,11 @@ else if (igrake.eq.1) then
     viscb(ifac) = 0.d0
   enddo
 
-  iivar = 0
+  f_id0 = -1
 
-  call grdcel &
-  !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  call gradient_s                                                 &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    cromo  , bromo  , viscb  ,                                     &
    grad   )
 
@@ -420,7 +420,7 @@ else if (igrake.eq.1) then
     xk   = cvara_k(iel)
     ttke = xk / xeps
 
-    gravke = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) &
+    gravke = -(grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
            / (rho*prdtur)
 
     ! Implicit Buoyant terms when negativ

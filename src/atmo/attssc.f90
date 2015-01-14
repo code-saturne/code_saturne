@@ -226,10 +226,10 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
       call define_r3()
       r3_is_defined = .TRUE.
 
-      allocate(grad1(ncelet,3))
+      allocate(grad1(3,ncelet))
       call grad_sed_ql(grad1)
 
-      allocate(grad2(ncelet,3))
+      allocate(grad2(3,ncelet))
       call grad_sed_nc(grad2)
 
     endif ! r3_not_defined
@@ -247,14 +247,14 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
         endif
 
         crvexp(iel) = crvexp(iel) -clatev*(ps/pp)**(rair/cp0)           &
-                    *(volume(iel)*grad1(iel,3)/crom(iel))
+                    *(volume(iel)*grad1(3,iel)/crom(iel))
       enddo
       treated_scalars=treated_scalars + 1
 
     elseif (ivar.eq.isca(iscapp(2))) then
 
       do iel = 1, ncel
-        crvexp(iel) = crvexp(iel) - volume(iel)*grad1(iel,3)          &
+        crvexp(iel) = crvexp(iel) - volume(iel)*grad1(3,iel)          &
                     / crom(iel)
       enddo
 
@@ -262,7 +262,7 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
     elseif(ivar.eq.isca(iscapp(3)))then
 
       do iel = 1, ncel
-        crvexp(iel) = crvexp(iel) + volume(iel)*grad2(iel,3)
+        crvexp(iel) = crvexp(iel) + volume(iel)*grad2(3,iel)
       enddo
 
       treated_scalars = treated_scalars + 1
@@ -275,8 +275,8 @@ if ( ippmod(iatmos).eq.2.and.modsedi.eq.1 ) then ! for humid atmosphere physics 
       do iel = 1, ncel    ! clean the arrays
         r3(iel) = 0.d0
         do i = 1, 3
-          grad1(iel,i) = 0.d0
-          grad1(iel,i) = 0.d0
+          grad1(i,iel) = 0.d0
+          grad2(i,iel) = 0.d0
         enddo
       enddo
       deallocate(r3)
@@ -344,15 +344,16 @@ subroutine grad_sed_ql(grad)
 
 ! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
 
+use cs_c_bindings
 implicit none
-double precision grad(ncelet,3)
+double precision grad(3,ncelet)
 
 double precision climgp
 double precision epsrgp
 double precision extrap
 
 integer    iccocg
-integer    iivar
+integer    iifld
 integer    imligp
 integer    inc
 integer    iqpp
@@ -365,7 +366,7 @@ double precision,dimension(:),allocatable :: local_field
 if (r3max.lt.1.d-10) then
   do iel = 1, ncel
     do i = 1, 3
-      grad(iel,i) = 0.d0
+      grad(i,iel) = 0.d0
     enddo
   enddo
   return
@@ -410,12 +411,11 @@ iwarnp = iwarni(iqpp)
 climgp = climgr(iqpp)
 extrap = extrag(iqpp)
 
-iivar = 0
+iifld = -1
 
-call grdcel                                                         &
-!==========
-   ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+call gradient_s                                                     &
+   ( iifld  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
+     iwarnp , epsrgp , climgp , extrap ,                            &
      local_field     , local_coefa , local_coefb ,                  &
      grad   )
 
@@ -432,15 +432,16 @@ subroutine grad_sed_nc(grad)
 
 ! Computation of the gradient of rho*qliq*V(r3)*exp(5*sc)
 
+use cs_c_bindings
 implicit none
-double precision grad(ncelet,3)
+double precision grad(3,ncelet)
 
 double precision climgp
 double precision epsrgp
 double precision extrap
 
 integer    iccocg
-integer    iivar
+integer    iifld
 integer    imligp
 integer    inc
 integer    iqpp
@@ -454,7 +455,7 @@ double precision,dimension(:),allocatable :: local_field
 if(r3max.lt.1.d-10) then
   do iel = 1, ncel
     do i = 1, 3
-      grad(iel,i) = 0.d0
+      grad(i,iel) = 0.d0
     enddo
   enddo
   return
@@ -498,12 +499,11 @@ iwarnp = iwarni(iqpp)
 climgp = climgr(iqpp)
 extrap = extrag(iqpp)
 
-iivar = 0
+iifld = -1
 
-call grdcel                                                         &
-!==========
-   ( iivar  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+call gradient_s                                                     &
+   ( iifld  , imrgra , inc    , iccocg , nswrgp ,imligp,            &
+     iwarnp , epsrgp , climgp , extrap ,                            &
      local_field     , local_coefa , local_coefb ,                  &
      grad   )
 

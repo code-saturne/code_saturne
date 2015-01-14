@@ -64,6 +64,7 @@ use period
 use lagpar
 use lagran
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -74,7 +75,7 @@ implicit none
 ! Local variables
 
 integer          npt , iel , ifac
-integer          ivar0
+integer          f_id0
 integer          inc, iccocg
 integer          nswrgp , imligp , iwarnp
 
@@ -139,22 +140,15 @@ climgp = 1.5d0
 extrap = 0.d0
 
 ! Allocate a work array
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 
-! En periodique et parallele, echange avant calcul du gradient
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(phil)
-  !==========
-endif
+!  f_id = -1 (indique pour la periodicite de rotation que la variable
+!             n'est pas Rij)
+f_id0 = -1
 
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-ivar0 = 0
-
-call grdcel                                                       &
-!==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+call gradient_s                                                   &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    phil   , coefap , coefbp ,                                     &
    grad   )
 
@@ -166,9 +160,9 @@ deallocate(coefap, coefbp)
 
 do iel = 1,ncel
   if ( statis(iel,ilpd) .gt. seuil ) then
-    statis(iel,ilvx) = statis(iel,ilvx) - grad(iel,1)
-    statis(iel,ilvy) = statis(iel,ilvy) - grad(iel,2)
-    statis(iel,ilvz) = statis(iel,ilvz) - grad(iel,3)
+    statis(iel,ilvx) = statis(iel,ilvx) - grad(1,iel)
+    statis(iel,ilvy) = statis(iel,ilvy) - grad(2,iel)
+    statis(iel,ilvz) = statis(iel,ilvz) - grad(3,iel)
   endif
 enddo
 
@@ -186,9 +180,9 @@ enddo
 do npt = 1,nbpart
   if (ipepa(jisor,npt).gt.0) then
     iel = ipepa(jisor,npt)
-    eptp(jup,npt) = eptp(jup,npt) - grad(iel,1)
-    eptp(jvp,npt) = eptp(jvp,npt) - grad(iel,2)
-    eptp(jwp,npt) = eptp(jwp,npt) - grad(iel,3)
+    eptp(jup,npt) = eptp(jup,npt) - grad(1,iel)
+    eptp(jvp,npt) = eptp(jvp,npt) - grad(2,iel)
+    eptp(jwp,npt) = eptp(jwp,npt) - grad(3,iel)
   endif
 enddo
 

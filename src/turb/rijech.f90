@@ -59,6 +59,8 @@ use parall
 use period
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -75,7 +77,7 @@ double precision smbr(ncelet)
 integer          ifacpt, iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
 integer          ifac
-integer          inc   , iccocg, ivar0
+integer          inc   , iccocg, f_id0
 
 double precision cmu075, distxn, d2s3  , trrij , xk
 double precision unssur, vnk   , vnm   , vni   , vnj
@@ -179,7 +181,7 @@ elseif(abs(icdpar).eq.1) then
   !       Calculation of gradient
 
   ! Allcoate a temporary array for the gradient calculation
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(dispar)
@@ -188,12 +190,10 @@ elseif(abs(icdpar).eq.1) then
 
   inc    = 1
   iccocg = 1
-  ivar0  = 0
+  f_id0  = -1
 
-  call grdcel                                                     &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgy , imligy ,          &
-   iwarny , nfecra ,                                              &
+  call gradient_s                                                 &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
    epsrgy , climgy , extray ,                                     &
    dispar , coefax , coefbx ,                                     &
    grad   )
@@ -204,10 +204,10 @@ elseif(abs(icdpar).eq.1) then
   !     Normalization (warning, the gradient may be sometimes equal to 0)
 
   do iel = 1 ,ncel
-    xnorme = max(sqrt(grad(iel,1)**2+grad(iel,2)**2+grad(iel,3)**2),epzero)
-    w2(iel) = -grad(iel,1)/xnorme
-    w3(iel) = -grad(iel,2)/xnorme
-    w4(iel) = -grad(iel,3)/xnorme
+    xnorme = max(sqrt(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2),epzero)
+    w2(iel) = -grad(1,iel)/xnorme
+    w3(iel) = -grad(2,iel)/xnorme
+    w4(iel) = -grad(3,iel)/xnorme
   enddo
 
   ! Free memory

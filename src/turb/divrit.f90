@@ -62,6 +62,7 @@ use pointe
 use field
 use field_operator
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -81,7 +82,7 @@ integer          ifac, init, inc, iprev
 integer          iccocg,iflmb0
 integer          nswrgp, imligp, iwarnp
 integer          itypfl
-integer          ivar , ivar0 , iel, ii, jj
+integer          ivar , iel, ii, jj
 integer          itt
 integer          f_id, f_id0
 
@@ -123,7 +124,7 @@ xtt = 0.d0
 
 ! First component is for x,y,z  and the 2nd for u,v,w
 allocate(gradv(3,3,ncelet))
-allocate(gradt(ncelet,3), thflxf(nfac), thflxb(nfabor))
+allocate(gradt(3,ncelet), thflxf(nfac), thflxb(nfabor))
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
@@ -157,12 +158,9 @@ extrap = extrag(ivar)
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
 
-ivar0 = 0
-
-call grdcel &
-!==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                  &
+call gradient_s                                                  &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,         &
+   iwarnp , epsrgp , climgp , extrap ,                           &
    cvara_scal      , coefap , coefbp ,                           &
    gradt  )
 
@@ -272,9 +270,9 @@ if (ityturt(iscal).ne.3) then
     ! Add the term in "grad T" which is implicited by the GGDH part in covofi.
     !  "-C_theta*k/eps* R.grad T"
     do ii = 1, 3
-      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(iel,1)  &
-                                                 + xrij(ii,2)*gradt(iel,2)  &
-                                                 + xrij(ii,3)*gradt(iel,3))
+      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
+                                                 + xrij(ii,2)*gradt(2,iel)  &
+                                                 + xrij(ii,3)*gradt(3,iel))
       ! In the next step, we compute the divergence of:
       !  "-Cp*C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
       !  The part "-C_theta*k/eps* R.Grad T" is computed by the GGDH part

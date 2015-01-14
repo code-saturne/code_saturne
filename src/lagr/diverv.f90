@@ -23,9 +23,7 @@
 subroutine diverv &
 !================
 
- ( div    , ux     , vy     , wz     ,                            &
-   coefax , coefay , coefaz ,                                     &
-   coefbx , coefby , coefbz )
+ ( div    , u      , coefa  , coefb  )
 
 !===============================================================================
 ! FONCTION :
@@ -72,6 +70,7 @@ use period
 use lagpar
 use lagran
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -79,21 +78,21 @@ implicit none
 
 ! Arguments
 
-double precision div(ncelet)
-double precision ux(ncelet) , vy(ncelet) , wz(ncelet)
-double precision coefax(nfabor) , coefay(nfabor) , coefaz(nfabor)
-double precision coefbx(nfabor) , coefby(nfabor) , coefbz(nfabor)
+double precision, dimension(ncelet)     :: div
+double precision, dimension(3,ncelet)   :: u
+double precision, dimension(3,nfabor)   :: coefa
+double precision, dimension(3,3,nfabor) :: coefb
 
 ! Local variables
 
-integer          ivar0
+integer          f_id0
 integer          iel
-integer          inc, iccocg
+integer          inc
 integer          nswrgp, imligp, iwarnp
 
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp
 
-double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
+double precision, allocatable, dimension(:,:,:) :: grad
 
 !===============================================================================
 
@@ -102,74 +101,38 @@ double precision, allocatable, dimension(:,:) :: gradu, gradv, gradw
 !===============================================================================
 
 ! Allocate work arrays
-allocate(gradu(ncelet,3), gradv(ncelet,3), gradw(ncelet,3))
+allocate(grad(3,3,ncelet))
 
-
-! En periodique et parallele, echange avant calcul du gradient
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synvec(ux, vy, wz)
-  !==========
-endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas Rij)
-ivar0 = 0
+f_id0 = -1
 
 inc = 1
-iccocg = 1
 nswrgp = 100
 imligp = -1
 iwarnp = 2
 epsrgp = 1.d-8
 climgp = 1.5d0
-extrap = 0.d0
 
 !===============================================================================
-! 1. Calcul du gradient de UX DANS W1
+! Calcul du gradient de U
 !===============================================================================
 
-call grdcel                                                       &
-!==========
-( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  ux     , coefax , coefbx ,                                      &
-  gradu  )
+call cgdvec                                                        &
+( f_id0  , imrgra , inc    , nswrgp , iwarnp , imligp ,            &
+  epsrgp , climgp , coefa  , coefb  , u      , grad   )
 
 !===============================================================================
-! 2. Calcul du gradient de VY DANS W2
-!===============================================================================
-
-call grdcel                                                       &
-!==========
-( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  vy     , coefay , coefby ,                                      &
-  gradv  )
-
-!===============================================================================
-! 3. Calcul du gradient de VZ DANS W3
-!===============================================================================
-
-call grdcel                                                       &
-!==========
-( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,           &
-  iwarnp , nfecra , epsrgp , climgp , extrap ,                    &
-  wz     , coefaz , coefbz ,                                      &
-  gradw  )
-
-!===============================================================================
-! 4. Calcul de la divergence du vecteur (UX,VY,WZ)
+! Calcul de la divergence du vecteur
 !===============================================================================
 
 do iel = 1,ncel
-  div(iel) = gradu(iel,1) + gradv(iel,2) + gradw(iel,3)
+  div(iel) = grad(1,1,iel) + grad(2,2,iel) + grad(3,3,iel)
 enddo
 
 ! Free memory
-deallocate(gradu, gradv, gradw)
+deallocate(grad)
 
 !----
-! FIN
+! End
 !----
 
 end subroutine

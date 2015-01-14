@@ -82,6 +82,7 @@ use ihmpre
 use dimens, only: ndimfb
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -100,9 +101,9 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          iappel
-integer          ifac   , iel    , iok    , izone
+integer          ifac   , iel    , iok    , izone  , isou   , jsou
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
-integer          mode   , icla   , ipcla  , ivar0
+integer          mode   , icla   , ipcla  , f_id0
 integer          idverl
 integer          iflux(nozrdm)
 double precision epsrgp, climgp, extrap
@@ -114,8 +115,10 @@ double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: dcp
 double precision, allocatable, dimension(:) :: ckmel
-double precision, allocatable, dimension(:,:) :: grad
+double precision, allocatable, dimension(:,:,:) :: grad
 double precision, allocatable, dimension(:,:) :: tempk
+double precision, allocatable, dimension(:,:) :: q, coefaq
+double precision, allocatable, dimension(:,:,:) :: coefbq
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: flurds, flurdb
@@ -946,21 +949,35 @@ endif
 
 if (idverl.eq.1 .or. idverl.eq.2) then
 
-  ! Allocate a temporary array for gradient computation
-  allocate(grad(ncelet,3))
+  ! Allocate  temporary arrays for gradient computation
 
-  do ifac = 1,nfabor
-    coefbp(ifac) = zero
+  allocate(q(3,ncelet))
+
+  do iel = 1, ncel
+    q(1,iel) = propce(iel,ipproc(iqx))
+    q(2,iel) = propce(iel,ipproc(iqy))
+    q(3,iel) = propce(iel,ipproc(iqz))
   enddo
 
-  !--> Calculation of the divergence
+  allocate(coefaq(3,nfabor))
+  allocate(coefbq(3,3,nfabor))
 
-  ! En periodique et parallele, echange avant calcul du gradient
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec &
-    !==========
-  ( propce(1,ipproc(iqx)), propce(1,ipproc(iqy)), propce(1,ipproc(iqz)) )
-  endif
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    coefaq(1,ifac) = bfnet(ifac)*surfbo(1,ifac) / surfbn(ifac)
+    coefaq(2,ifac) = bfnet(ifac)*surfbo(2,ifac) / surfbn(ifac)
+    coefaq(3,ifac) = bfnet(ifac)*surfbo(3,ifac) / surfbn(ifac)
+  enddo
+
+  do ifac = 1, nfabor
+    do isou = 1, 3
+      do jsou = 1, 3
+        coefbq(isou,jsou,ifac) = zero
+      enddo
+    enddo
+  enddo
+
+  allocate(grad(3,3,ncelet))
 
   ! Donnees pour le calcul de la divergence
   inc     = 1
@@ -972,68 +989,23 @@ if (idverl.eq.1 .or. idverl.eq.2) then
   extrap  = 0.d0
   nswrgp  = 100
 
-  !---> X direction
-  do ifac = 1, nfabor
-    coefap(ifac) = bfnet(ifac)*surfbo(1,ifac) / surfbn(ifac)
-  enddo
+  f_id0 = -1
 
-  !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-  !     n'est pas la vitesse ni Rij)
-  !    sera a revoir pour la periodicite de rotation
-  ivar0 = 0
-  call grdcel &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipproc(iqx))    , coefap , coefbp ,                   &
-   grad   )
+  call cgdvec                                                     &
+  ( f_id0  , imrgra , inc    , nswrgp , iwarnp , imligp ,         &
+    epsrgp , climgp , coefaq , coefbq , q      , grad   )
 
   do iel = 1,ncel
-    propce(iel,ipproc(itsre(1))) = - grad(iel,1)
-  enddo
-
-  !---> Y direction
-  do ifac = 1, nfabor
-    coefap(ifac) = bfnet(ifac)*surfbo(2,ifac) / surfbn(ifac)
-  enddo
-
-  !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-  !     n'est pas la vitesse ni Rij)
-  !    sera a revoir pour la periodicite de rotation
-  ivar0 = 0
-  call grdcel &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipproc(iqy))    , coefap , coefbp ,                   &
-   grad   )
-
-  do iel = 1, ncel
-    propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - grad(iel,2)
-  enddo
-
-  !---> Z direction
-  do ifac = 1, nfabor
-    coefap(ifac) = bfnet(ifac)*surfbo(3,ifac) / surfbn(ifac)
-  enddo
-
-  !  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-  !     n'est pas la vitesse ni Rij)
-  !    sera a revoir pour la periodicite de rotation
-  ivar0 = 0
-  call grdcel &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
-   propce(1,ipproc(iqz))    , coefap , coefbp ,                   &
-   grad   )
-
-  do iel = 1, ncel
-    propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(itsre(1))) - grad(iel,3)
+    propce(iel,ipproc(itsre(1))) = - grad(1,1,iel)                &
+                                   - grad(2,2,iel)                &
+                                   - grad(3,3,iel)
   enddo
 
   ! Free memory
   deallocate(grad)
+  deallocate(coefbq)
+  deallocate(coefaq)
+  deallocate(q)
 
 ! Fin du calcul de la divergence
 endif

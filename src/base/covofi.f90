@@ -175,7 +175,7 @@ double precision, allocatable, dimension(:) :: w1, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
-double precision, allocatable, dimension(:,:) :: grad, grdni
+double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: coefa_p, coefb_p
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: xcpp
@@ -628,7 +628,7 @@ if (itspdv.eq.1) then
   if (itytur.eq.2 .or. itytur.eq.3 .or. itytur.eq.5 .or. iturb.eq.60) then
 
     ! Allocate a temporary array for the gradient reconstruction
-    allocate(grad(3,ncelet),grdni(ncelet,3))
+    allocate(grad(3,ncelet))
     allocate(coefa_p(nfabor), coefb_p(nfabor))
 
     ! Remarque : on a prevu la possibilite de scalaire associe non
@@ -668,20 +668,13 @@ if (itspdv.eq.1) then
     climgp = climgr(iii)
     extrap = extrag(iii)
 
-    call grdcel &
-    !==========
-     ( iii    , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-       iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+    call gradient_s                                                   &
+     ( ivarfl(iii)     , imrgra , inc    , iccocg , nswrgp , imligp , &
+       iwarnp          , epsrgp , climgp , extrap ,                   &
        cvara_varsca    , coefa_p, coefb_p,                            &
-       grdni   )
+       grad )
 
-    do iel = 1, ncel
-      grad(1,iel) = grdni(iel,1)
-      grad(2,iel) = grdni(iel,2)
-      grad(3,iel) = grdni(iel,3)
-    enddo
-
-    deallocate (grdni, coefa_p, coefb_p)
+    deallocate (coefa_p, coefb_p)
 
     ! Traitement de la production
     ! On utilise MAX(PROPCE,ZERO) car en LES dynamique on fait un clipping

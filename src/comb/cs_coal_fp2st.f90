@@ -72,6 +72,7 @@ use ppcpfu
 use cs_coal_incl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -86,7 +87,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer           iel    , ifac   , ivar0
+integer           iel    , ifac   , f_id0
 integer           icla   , icha   , numcha
 integer           inc    , iccocg , nswrgp , imligp , iwarnp
 integer           ipcx2c
@@ -120,7 +121,7 @@ double precision, dimension(:), pointer :: cvara_scal
 ! Deallocation dynamic arrays
 !----
 allocate(x1(1:ncelet) , f1f2(1:ncelet),                STAT=iok1)
-allocate(grad(ncelet,3), STAT=iok1)
+allocate(grad(3,ncelet), stat=iok1)
 if ( iok1 > 0 ) then
   write(nfecra,*) ' Memory allocation error inside: '
   write(nfecra,*) '     cs_coal_fp2st               '
@@ -217,20 +218,12 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
     coefbp(ifac) = 1.d0
   enddo
 
-! En periodique et parallele, echange avant calcul du gradient
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(f1f2)
-    !==========
-  endif
-
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-  ivar0  = 0
-  call grdcel &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+!  f_id0 = -1 (indique pour la periodicite de rotation que la variable
+!              n'est pas Rij)
+  f_id0  = -1
+  call gradient_s                                                 &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    f1f2   , coefap , coefbp ,                                     &
    grad   )
 
@@ -250,8 +243,8 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel)                                            &
                 + 2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
-                 *( grad(iel,1)**2.d0 + grad(iel,2)**2.d0              &
-                  + grad(iel,3)**2.d0 )*x1(iel) - rhovst*cvara_scal(iel)
+                 *( grad(1,iel)**2.d0 + grad(2,iel)**2.d0              &
+                  + grad(3,iel)**2.d0 )*x1(iel) - rhovst*cvara_scal(iel)
 
   enddo
 
@@ -341,8 +334,8 @@ endif
 !--------
 
 ! Free memory
-deallocate(x1,f1f2,grad,STAT=iok1)
-deallocate(coefap, coefbp, STAT=iok2)
+deallocate(x1,f1f2,grad,stat=iok1)
+deallocate(coefap, coefbp, stat=iok2)
 
 if ( iok1 > 0 .or. iok2 > 0) then
   write(nfecra,*) ' Memory deallocation error inside: '

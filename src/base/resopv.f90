@@ -131,6 +131,7 @@ use cavitation
 use cs_f_interfaces
 use cs_c_bindings
 use cs_tagms, only:s_metal
+
 !===============================================================================
 
 implicit none
@@ -233,8 +234,8 @@ double precision, dimension(:), pointer :: brom, crom, croma
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
-
 double precision, allocatable, dimension(:) :: surfbm
+
 !===============================================================================
 
 !===============================================================================
@@ -1951,9 +1952,6 @@ call sles_free_native(ivarfl(ipr), '')
 
 if (idilat.eq.5) then
 
-  deallocate(gradp)
-  allocate(gradp(ncelet,3))
-
   ! Allocate temporary arrays
   allocate(ddpvar(ncelet))
   allocate(coefar(3,ndimfb), cofafr(3,ndimfb))
@@ -1962,7 +1960,6 @@ if (idilat.eq.5) then
   ! --- Convective flux: dt/rho grad(rho)
   inc = 1
   iccocg = 1
-  ivar   = 0
   nswrgp = nswrgr(iu)
   imligp = imligr(iu)
   iwarnp = iwarni(ipr)
@@ -1980,10 +1977,8 @@ if (idilat.eq.5) then
     coefb_rho(ifac) = 0.d0
   enddo
 
-  call grdcel &
-  !==========
-  (ivar   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra ,                                              &
+  call gradient_s                                                 &
+  (f_id0  , imrgra , inc    , iccocg , nswrgp , imligp , iwarnp , &
    epsrgp , climgp , extrap ,                                     &
    crom   ,                                                       &
    coefa_rho       , coefb_rho       ,                            &
@@ -1994,7 +1989,7 @@ if (idilat.eq.5) then
   ! --- dt/rho * grad rho
   do iel = 1, ncel
     do isou = 1, 3
-      trav(isou,iel) = gradp(iel,isou) * dt(iel) / crom(iel)
+      trav(isou,iel) = gradp(isou,iel) * dt(iel) / crom(iel)
     enddo
   enddo
 

@@ -115,7 +115,7 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision produc(6,ncelet)
-double precision gradro(ncelet,3)
+double precision gradro(3,ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision tslage(ncelet),tslagi(ncelet)

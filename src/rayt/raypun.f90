@@ -94,6 +94,7 @@ use radiat
 use parall
 use period
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -126,7 +127,7 @@ integer          ifac  , iel
 integer          iconv1, idiff1, ndirc1
 integer          nswrsp, nswrgp, iwarnp
 integer          imligp, ircflp, ischcp, isstpp, iescap
-integer          idtva0, ivar0
+integer          idtva0, ivar0,f_id0
 integer          inc, iccocg
 integer          imucpp, idftnp, iswdyp, icvflb
 integer          ivoid(1)
@@ -250,13 +251,7 @@ call codits &
 !===============================================================================
 
 ! Allocate a temporary array for gradient computation
-allocate(grad(ncelet,3))
-
-!    En periodique et parallele, echange avant calcul du gradient
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(theta4)
-  !==========
-endif
+allocate(grad(3,ncelet))
 
 !     Calcul de la densite du flux radiatif QX, QY, QZ
 
@@ -268,12 +263,11 @@ epsrgp  = 1.d-8
 climgp  = 1.5d0
 extrap  = 0.d0
 nswrgp  = 100
-ivar0   = 0
+f_id0   = -1
 
-call grdcel &
-!==========
-   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                 &
+call gradient_s                                                   &
+   ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp,         &
+     iwarnp , epsrgp , climgp , extrap ,                          &
      theta4 , coefap , coefbp ,                                   &
      grad   )
 
@@ -281,9 +275,9 @@ aa = - stephn * 4.d0 / 3.d0
 
 do iel = 1, ncel
   aaa = aa * ckmel(iel)
-  qx(iel) = grad(iel,1) * aaa
-  qy(iel) = grad(iel,2) * aaa
-  qz(iel) = grad(iel,3) * aaa
+  qx(iel) = grad(1,iel) * aaa
+  qy(iel) = grad(2,iel) * aaa
+  qz(iel) = grad(3,iel) * aaa
 enddo
 
 ! Free memory

@@ -81,6 +81,7 @@ use cpincl
 use ppincl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -96,7 +97,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          ivar   , ivarsc , ivarut, ivar0
+integer          ivar   , ivarsc , ivarut, f_id0
 integer          iel, ifac
 integer          icha
 integer          inc , iccocg , nswrgp , imligp , iwarnp
@@ -232,23 +233,16 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     endif
   enddo
 
-  ! En periodique et parallele, echange avant calcul du gradient
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(w7)
-    !==========
-  endif
-
   ! Allocate a temporary array for gradient computation
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-  ivar0 = 0
+!  f_id0 = -1 (indique pour la periodicite de rotation que la variable
+!              n'est pas Rij)
+  f_id0 = -1
 
-  call grdcel                                                     &
-  !==========
- ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  call gradient_s                                                 &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    w7     , coefap , coefbp ,                                     &
    grad   )
 
@@ -274,7 +268,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     rovsdt(iel) = rovsdt(iel) + max(zero,rhovst)
     smbrs(iel) = smbrs(iel) +                                        &
                 2.d0*visct(iel)*volume(iel)/sigmas(iscal)            &
-                * (grad(iel,1)**2 + grad(iel,2)**2 + grad(iel,3)**2) &
+                * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2) &
                 - rhovst*cvara_varsc(iel)
   enddo
 

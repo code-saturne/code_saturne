@@ -96,7 +96,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 character(len=80) :: chaine
 integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
-integer          ii, iivar , iiun  , ifacpt
+integer          ii, f_id , iiun  , ifacpt
 integer          iclipk, iclipw, isqrt
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
@@ -365,7 +365,7 @@ endif
 if (igrake.eq.1) then
 
   ! Allocate a temporary array for the gradient calculation
-  allocate(grad(ncelet,3))
+  allocate(grad(3,ncelet))
 
   ! --- Buoyant term:     G = Beta*g*GRAD(T)/PrT/rho
   !     Here is computed: G =-g*GRAD(rho)/PrT/rho
@@ -387,12 +387,12 @@ if (igrake.eq.1) then
     viscb(ifac) = 0.d0
   enddo
 
-  iivar = 0
+  f_id = -1
 
-  call grdcel &
+  call gradient_s                                                 &
   !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+ ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    cromo  , bromo  , viscb  ,                                     &
    grad   )
 
@@ -410,7 +410,7 @@ if (igrake.eq.1) then
     rho = cromo(iel)
     visct = cpro_pcvto(iel)
 
-    w2(iel) = -(grad(iel,1)*gx + grad(iel,2)*gy + grad(iel,3)*gz) / &
+    w2(iel) = -(grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) / &
                (rho*prdtur)
 
     prodw(iel) = prodw(iel)+visct*max(w2(iel),zero)

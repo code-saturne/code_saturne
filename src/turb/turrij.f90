@@ -75,6 +75,7 @@ use ppincl
 use mesh
 use field
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -103,7 +104,7 @@ integer          ifac  , iel   , ivar  , isou  , ii
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          nswrgp, imligp
-integer          iivar
+integer          f_id0
 integer          iitsla
 integer          iprev
 double precision epsrgp, climgp, extrap
@@ -259,7 +260,7 @@ endif
 if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
   ! Allocate a temporary array for the gradient calculation
   ! Warning, grad(theta) here
-  allocate(gradro(ncelet,3))
+  allocate(gradro(3,ncelet))
 
   call field_get_val_s(icrom, cromo)
 
@@ -283,7 +284,7 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
 
 else if (igrari.eq.1) then
   ! Allocate a temporary array for the gradient calculation
-  allocate(gradro(ncelet,3))
+  allocate(gradro(3,ncelet))
 
 ! Boundary conditions: Dirichlet romb
 !   We use viscb to store the relative coefficient of rom
@@ -302,7 +303,7 @@ else if (igrari.eq.1) then
   climgp = climgr(ir11)
   extrap = extrag(ir11)
 
-  iivar = 0
+  f_id0 = -1
 
   ! If we extrapolate the source terms and rho, we use cpdt rho^n
   if(isto2t.gt.0.and.iroext.gt.0) then
@@ -313,10 +314,9 @@ else if (igrari.eq.1) then
     call field_get_val_s(ibrom, bromo)
   endif
 
-  call grdcel &
-  !==========
- ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+  call gradient_s                                                 &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , epsrgp , climgp , extrap ,                            &
    cromo  , bromo  , viscb           ,                            &
    gradro )
 

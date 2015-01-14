@@ -78,6 +78,7 @@ use ppincl
 use cfpoin
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -112,7 +113,7 @@ double precision epsrgp, climgp, extrap, blencp, epsilp
 double precision sclnor, thetap, epsrsp, relaxp
 
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
-integer          ivar0  , ii , jj
+integer          f_id0  , ii , jj
 integer          iel1  , iel2
 integer          iterns
 
@@ -161,13 +162,11 @@ allocate(wb(nfabor))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
-allocate(grad(ncelet,3))
+allocate(grad(3,ncelet))
 allocate(w1(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
 allocate(w7(ncelet), w8(ncelet), w9(ncelet))
 allocate(dpvar(ncelet))
-
-
 
 ! Physical property numbers
 call field_get_val_s(icrom, crom)
@@ -303,13 +302,12 @@ enddo
 !        coefbp(ifac) = 1.d0
 !      enddo
 
-!  IVAR0 = 0 (indique pour la periodicite de rotation que la variable
-!     n'est pas la vitesse ni Rij)
-!      ivar0 = 0
-!      call grdcel
-!      !==========
-!     & ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,
-!     &   iwarnp , nfecra , epsrgp , climgp , extrap ,
+!  f_id0 = -1 (indique pour la periodicite de rotation que la variable
+!              n'est pas  Rij)
+!      f_id0 = -1
+!      call gradient_s
+!     & ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,
+!     &   iwarnp , epsrgp , climgp , extrap ,
 !     &   w7     , coefap , coefbp ,
 !     &   grad   )
 
@@ -334,8 +332,8 @@ enddo
 !        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+       pnd  * dijpfy
 !        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+       pnd  * dijpfz
 
-!        pip = w7(ii) +grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
-!        pjp = w7(jj) +grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
+!        pip = w7(ii) +grad(1,ii)*diipfx+grad(2,ii)*diipfy+grad(3,ii)*diipfz
+!        pjp = w7(jj) +grad(1,jj)*djjpfx+grad(2,jj)*djjpfy+grad(3,jj)*djjpfz
 
 !        flui = (imasfl(ifac)+abs(imasfl(ifac)))
 !        fluj = (imasfl(ifac)-abs(imasfl(ifac)))
@@ -493,13 +491,13 @@ if( idiff(ivar).ge. 1 ) then
     coefbp(ifac) = 1.d0
   enddo
 
-!  IVAR0 = 0 (indicates, for the rotation periodicity,
-!  that the variable is not Rij)
-  ivar0 = 0
-  call grdcel                                                       &
+!  f_id0 = -1 (indicates, for the rotation periodicity,
+!              that the variable is not Rij)
+  f_id0 = -1
+  call gradient_s                                                   &
   !==========
-   ( ivar0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
-     iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+     iwarnp , epsrgp , climgp , extrap ,                            &
      w7     , coefap , coefbp ,                                     &
      grad   )
 
@@ -528,8 +526,8 @@ if( idiff(ivar).ge. 1 ) then
     djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj) +  pnd  * dijpfy
     djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj) +  pnd  * dijpfz
 
-    pip = w7(ii) + grad(ii,1)*diipfx+grad(ii,2)*diipfy+grad(ii,3)*diipfz
-    pjp = w7(jj) + grad(jj,1)*djjpfx+grad(jj,2)*djjpfy+grad(jj,3)*djjpfz
+    pip = w7(ii) + grad(1,ii)*diipfx+grad(2,ii)*diipfy+grad(3,ii)*diipfz
+    pjp = w7(jj) + grad(1,jj)*djjpfx+grad(2,jj)*djjpfy+grad(3,jj)*djjpfz
 
     flux = viscf(ifac)*(pip-pjp)
 

@@ -80,7 +80,7 @@ integer          ipp
 integer          niterf
 integer          iinvpe
 integer          isqrt , iel   , ifac
-integer          inc   , iccocg, ivar
+integer          inc   , iccocg, ivar, f_id
 integer          isweep, nittot, idtva0
 integer          ibsize, iesize, mmprpl, nswrsl
 integer          imucpp, idftnp
@@ -329,31 +329,23 @@ enddo
 !===============================================================================
 
 ! Allocate a temporary array for the gradient calculation
-allocate(grad(ncelet,3))
-
-! - Synchronization for parallelism and periodicity
-
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(dvarp)
-  !==========
-endif
+allocate(grad(3,ncelet))
 
 ! - Compute gradient
 
 inc    = 1
 iccocg = 1
-ivar   = 0
+f_id   = -1
 
-call grdcel                                                       &
-!==========
- ( ivar   , imrgra , inc    , iccocg , nswrgy , imligy ,          &
-   iwarny , nfecra , epsrgy , climgy , extray ,                   &
+call gradient_s                                                   &
+ ( f_id   , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
+   epsrgy , climgy , extray ,                                     &
    dvarp  , coefad , coefbd ,                                     &
    grad   )
 
 do iel = 1, ncel
-  w1(iel) = grad(iel,1)**2.d0+grad(iel,2)**2.d0+grad(iel,3)**2.d0
-  if(w1(iel)+2.d0*dvarp(iel).gt.0.d0) then
+  w1(iel) = grad(1,iel)**2.d0+grad(2,iel)**2.d0+grad(3,iel)**2.d0
+  if (w1(iel)+2.d0*dvarp(iel).gt.0.d0) then
     distpa(iel) = - sqrt(w1(iel)) + sqrt(w1(iel)+2.d0*dvarp(iel))
   else
     write(nfecra,8000)iel, xyzcen(1,iel),xyzcen(2,iel),xyzcen(3,iel)

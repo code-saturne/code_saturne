@@ -77,6 +77,7 @@ use mesh
 use field
 use field_operator
 use rotation
+use cs_c_bindings
 
 !===============================================================================
 
@@ -89,7 +90,7 @@ double precision rotfct(ncel), ce2rc(ncel)
 
 ! Local variables
 
-integer          iel, ivar, ifac, isou
+integer          iel, ivar, ifac, isou, f_id
 integer          iccocg, inc, nswrgp, imligp, iwarnp
 integer          istrai(3,3), ivorab(3,3)
 integer          ii, jj, kk, iprev
@@ -212,7 +213,7 @@ deallocate(gradv)
 ! ------------------------------------------------------------------------------
 
 ! Allocate temporary arrays
-allocate(grdsij(ncelet,3))
+allocate(grdsij(3,ncelet))
 allocate(coeas(nfabor),coebs(nfabor))
 allocate(brtild(ncel),eta1(ncel),eta2(ncel))
 
@@ -291,13 +292,13 @@ do ii = 1, 3
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    ivar = 0
+    f_id = -1
 
-    call grdcel &
+    call gradient_s                                                &
     !==========
-  ( ivar , imrgra , inc    , iccocg , nswrgp , imligp ,            &
-    iwarnp , nfecra, epsrgp , climgp , extrap ,                    &
-    strain(1,istrai(ii,jj))   , coeas , coebs ,                    &
+  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+    iwarnp , epsrgp , climgp , extrap ,                            &
+    strain(1,istrai(ii,jj))  , coeas  , coebs ,                    &
     grdsij )
 
     do iel = 1, ncel
@@ -310,14 +311,14 @@ do ii = 1, 3
                  - straio(iel,istrai(ii,jj)))       &
                 /dt(iel))
       endif
-      dsijdt = dsijdt + vela(1,iel)*grdsij(iel,1)        &
-           + vela(2,iel)*grdsij(iel,2)                   &
-           + vela(3,iel)*grdsij(iel,3)
+      dsijdt = dsijdt + vela(1,iel)*grdsij(1,iel)        &
+                      + vela(2,iel)*grdsij(2,iel)        &
+                      + vela(3,iel)*grdsij(3,iel)
 
       ! (e_imn.S_jn+e_jmn.S_in)*Omega_m term
       trrota = 0.d0
       do kk = 1, 3
-        trrota = trrota                                         &
+        trrota = trrota                                       &
               + matrot(ii,kk)*strain(iel,istrai(jj,kk))       &
               + matrot(jj,kk)*strain(iel,istrai(ii,kk))
       enddo

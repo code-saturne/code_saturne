@@ -78,7 +78,7 @@ integer          nscal , iscal
 double precision dt(ncelet)
 double precision xcpp(ncelet), xut(3,ncelet), xuta(3,ncelet)
 double precision gradv(3,3,ncelet)
-double precision gradt(ncelet,3)
+double precision gradt(3,ncelet)
 
 ! Local variables
 
@@ -276,9 +276,9 @@ do iel = 1, ncel
                  + c2trit*(xuta(1,iel)*gradv(1,isou,iel)            &
                           +xuta(2,iel)*gradv(2,isou,iel)            &
                           +xuta(3,iel)*gradv(3,isou,iel))           &
-                 + c4trit*(-xrij(isou,1)*gradt(iel,1)               &
-                           -xrij(isou,2)*gradt(iel,2)               &
-                           -xrij(isou,3)*gradt(iel,3))
+                 + c4trit*(-xrij(isou,1)*gradt(1,iel)               &
+                           -xrij(isou,2)*gradt(2,iel)               &
+                           -xrij(isou,3)*gradt(3,iel))
     if (itt.gt.0) then
       phiith(isou) = phiith(isou)                                              &
              + c3trit*(cpro_beta(iel)*grav(isou)*cvar_tt(iel))
@@ -302,9 +302,9 @@ do iel = 1, ncel
                           -xuta(2,iel)*gradv(2,isou,iel)             &
                           -xuta(3,iel)*gradv(3,isou,iel)             &
                        ! Production term due to the mean temperature
-                         -xrij(isou,1)*gradt(iel,1)                  &
-                         -xrij(isou,2)*gradt(iel,2)                  &
-                         -xrij(isou,3)*gradt(iel,3)                  &
+                         -xrij(isou,1)*gradt(1,iel)                  &
+                         -xrij(isou,2)*gradt(2,iel)                  &
+                         -xrij(isou,3)*gradt(3,iel)                  &
                         )
 
     ! Production term due to the gravity

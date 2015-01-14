@@ -87,9 +87,7 @@ double precision depale(3,nnod), xyzno0(3,nnod)
 integer          inod
 integer          iel
 integer          idim
-integer          inc
-
-logical          ilved
+integer          inc, iprev
 
 double precision, dimension(:,:), pointer :: claale
 double precision, dimension(:,:,:), pointer :: clbale
@@ -122,20 +120,14 @@ call field_get_val_prev_v(ivarfl(iuma), mshvela)
 allocate(dproj(3,nnod))
 allocate(gradm(3,3,ncelet))
 
-ilved = .true.
 inc = 1
+iprev = 0
+
+call field_gradient_vector(ivarfl(iuma), iprev, imrgra, inc,      &
+                           gradm)
 
 call field_get_coefa_v(ivarfl(iuma), claale)
 call field_get_coefb_v(ivarfl(iuma), clbale)
-
-call grdvec &
-!==========
-( iuma   , imrgra , inc    ,                                     &
-  nswrgr(iuma)    , imligr(iuma)    , iwarni(iuma) ,             &
-  epsrgr(iuma), climgr(iuma),                                    &
-  ilved  ,                                                       &
-  mshvel , claale , clbale ,                                     &
-  gradm  )
 
 call aledis &
 !==========
@@ -182,6 +174,7 @@ if (itrale.eq.0) then
     enddo
   enddo
 endif
+
 !--------
 ! Formats
 !--------

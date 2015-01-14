@@ -86,6 +86,7 @@ use field
 use rotation
 use darcy_module
 use cs_f_interfaces
+use cs_c_bindings
 use cs_tagms, only: t_metal, tmet0
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
@@ -110,14 +111,14 @@ double precision, pointer, dimension(:) :: prhyd
 
 logical          interleaved
 
-integer          iel   , ifac  , inod  , ivar  , iscal , iappel
+integer          iel   , ifac  , ivar  , iscal , iappel
 integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
 integer          icmst
 
 integer          isvhb
-integer          ii    , jj    , ientha, ippcv
+integer          ii    , ientha, ippcv
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
@@ -170,7 +171,7 @@ integer, allocatable, dimension(:) :: delay_id
 double precision, dimension(:), pointer :: cpro_delay, cpro_capacity, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_capacity
 double precision, dimension(:), pointer :: cproa_sat
-character*80     fname
+character(len=80) :: fname
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
 
@@ -1600,7 +1601,7 @@ if (iccvfg.eq.0) then
 
   ! Si on est en v2f (phi-fbar ou BL-v2/k), on reserve un tableau
   ! de taille NCELET pour eviter de recalculer la production dans RESV2F
-  ! (trois appels a GRDCEL)
+  ! (trois appels a gradient_s)
   if (itytur.eq.5) then
     allocate(prdv2f(ncelet))
   endif
