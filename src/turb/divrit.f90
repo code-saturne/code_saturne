@@ -239,7 +239,6 @@ if (ityturt(iscal).ne.3) then
 
     ! Compute thermal flux u'T'
 
-    !FIXME compute u'T' for GGDH.
     do ii = 1, 3
 
       temp(ii) = 0.d0
