@@ -104,7 +104,8 @@ cs_fuel_thfieldconv2.f90 \
 cs_fuel_varini.f90 \
 cs_fuel_varpos.f90 \
 cs_fuel_verify.f90 \
-cs_gascomb.f90
+cs_gascomb.f90 \
+cs_physical_properties_combustion_drift.f90 
 libcscomb_la_LDFLAGS = -no-undefined
 
 clean-local:

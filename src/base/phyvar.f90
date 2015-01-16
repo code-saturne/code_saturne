@@ -183,7 +183,9 @@ call usphyv &
 ! Finalization of physical properties for specific physics
 ! AFTER the user
 if (ippmod(iphpar).ge.1) then
-  call cs_physical_properties2(propce)
+  call cs_physical_properties2 &
+ ( mbrom  , propce )
+
 endif
 
 !  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
