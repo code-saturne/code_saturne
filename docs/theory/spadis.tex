@@ -802,7 +802,7 @@ Without reconstruction, the vectorial gradient reads:
 \begin{equation}\label{eq:spadis:gradrv_nonrecontruit}
 \gradt_\celli^{NRec} \variav= \dfrac{1}{\norm{\vol{\celli}}} \left[
   \sum\limits_{\fij \in \Facei{\celli}} \left[\alpha_{\ij} \variav_\centi + (1 - \alpha_{\ij}) \variav_\centj) \right] \otimes \vect S_{\ij}
-+\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \varia_\centi
++\sum\limits_{\fib \in \Faceb{\celli}}(\epsilon_{\delta \variav} \vect{A}_{\fib} + \tens{B}_{\fib} \cdot \variav_\centi
 )\otimes  \vect{S}_{\ib} \right].
 \end{equation}
 
@@ -839,18 +839,18 @@ with:
 ,\\
 \tens{R}^{k+1}_{\celli} &=&
 \displaystyle
- -  \grad_{\celli}^{k} \varia
+ -  \gradt_{\celli}^{k} \variav
  + \dfrac{1}{\norm{\vol{\celli}}}
 \sum\limits_{\fij \in \Facei{\celli}}\left[
-(\alpha_{\ij} \varia_\celli + (1 - \alpha_{\ij}) \varia_\cellj)\right] \vect{S}_{\ij} \\
+(\alpha_{\ij} \variav_\celli + (1 - \alpha_{\ij}) \variav_\cellj)\right] \otimes \vect{S}_{\ij} \\
 &+& \displaystyle
  \dfrac{1}{\norm{\vol{\celli}}}
 \sum\limits_{\fij \in \Facei{\celli}} \frac{1}{2}
-\left(\grad_\celli^k \varia + \grad_\cellj^k \varia \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
+\left(\gradt_\celli^k \variav + \gradt_\cellj^k \variav \right) \cdot \left( \vect{\cento \centf} \otimes \vect{S}_{\ij} \right) \\
 &+& \displaystyle
  \dfrac{1}{\norm{\vol{\celli}}}
-\sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \varia} A_{\fib}
-+ B_{\fib} \left( \varia_\celli + \grad_\celli^k \varia \cdot \vect{\centi \centip} \right)  \right] \vect{S}_{\ib} .
+\sum\limits_{\fib \in \Faceb{\celli}}\left[ \epsilon_{\delta \variav} \vect{A}_{\fib}
++ \tens{B}_{\fib} \left( \variav_\celli + \gradt_\celli^k \variav \cdot \vect{\centi \centip} \right)  \right] \otimes \vect{S}_{\ib} .
 \end{array}\right.
 \end{equation}
 
