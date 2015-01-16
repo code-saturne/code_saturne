@@ -31,7 +31,7 @@ from cx_Freeze import setup, Executable
 # ---------------------
 
 # Module search path
-path = sys.path + ["bin", "lib/python" + sys.version[:3] + "/site-packages/code_saturne"]
+path = sys.path + ["bin", "lib/python" + sys.version[:3] + "/site-packages/code_saturne", "lib/python" + sys.version[:3] + "/site-packages"]
 path += [sys.prefix + "/Lib/site-packages"]
 
 # Specific modules to be included
@@ -115,7 +115,7 @@ target_cli = Executable(script = "bin/code_saturne",
 # ------------------
 
 setup(name = "Code_Saturne",
-      version = "4.0-alpha",
+      version = "4.0-beta",
       description = "General purpose CFD software",
       author = "EDF",
       options = {"build_exe": options},
