@@ -777,7 +777,7 @@ ${KERNEL_ROOT_DIR}/bin/salome/appli_gen.py --prefix=%(applidir)s --config=%(conf
         for a in apps:
 
             s_path = os.path.join(bin_dir, a[0])
-            s = open(s_path                     , 'w')
+            s = open(s_path, 'w')
 
             cs_exec_environment.write_shell_shebang(s)
 
@@ -1084,7 +1084,6 @@ $appli/runSession killSalome.py
 unset PYTHONHOME
 $appli/runAppli -t
 $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
-echo "exit \$?" >> $localexec
 
 """
         s.write(template % {'salomeenv': self.package.config.salome_env,

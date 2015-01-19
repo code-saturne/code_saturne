@@ -797,10 +797,11 @@ class domain(base_domain):
         if self.solver_args != None:
             args += ' ' + self.solver_args
 
-        if self.name != None:
-            args += ' --mpi --app-name ' + enquote_arg(self.name)
-        elif self.n_procs > 1:
-            args += ' --mpi'
+        if self.package_compute.config.features['mpi'] == 'yes':
+            if self.name != None:
+                args += ' --mpi --app-name ' + enquote_arg(self.name)
+            elif self.n_procs > 1:
+                args += ' --mpi'
 
         # Add FSI coupling (using SALOME YACS) if required
 
@@ -1098,7 +1099,7 @@ class syrthes_domain(base_domain):
 
         # Try to base Syrthes version on path used to import the syrthes module,
         # for consistency with case creation parameters; it this is not enough,
-        # use existign environment or load one based on current configuration.
+        # use existing environment or load one based on current configuration.
 
         try:
             for p in sys.path:
