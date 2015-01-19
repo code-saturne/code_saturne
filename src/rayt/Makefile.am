@@ -63,8 +63,6 @@ cs_radiation_solver.h
 noinst_LTLIBRARIES = libcsrayt.la
 libcsrayt_la_SOURCES = \
 cs_radiation_solver.c \
-radf08.f90 \
-radf50.f90 \
 raycli.f90 \
 raycll.f90 \
 raydak.f90 \
