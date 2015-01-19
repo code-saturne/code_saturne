@@ -114,11 +114,10 @@ integer          ifac, ivar, iel
 integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum, iwrnp
 integer          ifrslb, itbslb
 integer          ityp, ii, jj, iwaru, iflmab
-integer          nswrgp, imligp, iwarnp
 integer          irangd
 integer          ifadir
 integer          iut  , ivt   , iwt, iscal
-double precision pref, epsrgp, climgp, extrap, pipb
+double precision pref, pipb
 double precision diipbx, diipby, diipbz
 double precision flumbf, flumty(ntypmx)
 double precision xxp0, xyp0, xzp0, d0, d0min
@@ -625,12 +624,6 @@ if (itbslb.gt.0) then
   iprev = 1
   inc = 1
   iccocg = 1
-  nswrgp = nswrgr(ipr)
-  imligp = imligr(ipr)
-  iwarnp = iwarni(ipr)
-  epsrgp = epsrgr(ipr)
-  climgp = climgr(ipr)
-  extrap = extrag(ipr)
 
   call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,      &
                                 iccocg, iphydr,                       &
