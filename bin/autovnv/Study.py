@@ -99,6 +99,8 @@ class Case(object):
         self.subdomains = None
         self.run_dir    = ""
 
+        self.resu = 'RESU'
+
         # Specific case for coupling
 
         coupling = os.path.join(self.__repo, self.label, "coupling_parameters.py")
@@ -114,6 +116,7 @@ class Case(object):
             for d in domains:
                 if d['solver'] == self.pkg.code_name:
                     self.subdomains.append(d['domain'])
+            self.resu = 'RESU_COUPLING'
 
         else:
             run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
@@ -221,7 +224,51 @@ class Case(object):
            f.close()
 
         # 4) Update the runcase script from the Repository
-        ref = os.path.join(self.__repo, subdir, "SCRIPTS", "runcase")
+        self.__update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"))
+
+
+        # Also update nprocs for back compatibility
+        if n_procs[param] and not xmlonly:
+            ref = os.path.join(self.__repo, subdir, "SCRIPTS", "runcase")
+
+            try:
+                f = file(ref, mode = 'r')
+            except IOError:
+                print("Error: can not open %s\n" % ref)
+                sys.exit(1)
+
+            lines = f.readlines()
+            f.close()
+
+            for i in range(len(lines)):
+                if lines[i].strip()[0:1] == '#':
+                    continue
+                    j = lines[i].find(self.pkg.name)
+                    if j > -1:
+                        j = lines[i].find('run')
+                        args = separate_args(lines[i].rstrip())
+                        param = get_command_single_value(args, ('--param', '--param=', '-p'))
+                        try:
+                            args = update_command_single_value(args,
+                                                               ('--nprocs', '--nprocs=', '-n'),
+                                                               n_procs[param])
+                            lines[i] = assemble_args(args) + '\n'
+                        except Exception:
+                            pass
+
+            f = file(ref, mode = 'w')
+            f.writelines(lines)
+            f.close()
+
+
+    def update_runcase_path(self, subdir, destdir=None, xmlonly=False):
+        """
+        Update path for the script in the Repository.
+        """
+        if not destdir:
+            ref = os.path.join(self.__repo, subdir, "runcase")
+        else:
+            ref = os.path.join(destdir, subdir, "runcase")
 
         try:
             f = file(ref, mode = 'r')
@@ -242,18 +289,6 @@ class Case(object):
                 if re.search(r'^export PATH=', lines[i]):
                     lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
                 j = lines[i].find(self.pkg.name)
-                if j > -1:
-                    j = lines[i].find('run')
-                    args = separate_args(lines[i].rstrip())
-                    param = get_command_single_value(args, ('--param', '--param=', '-p'))
-                    try:
-                        if n_procs[param]:
-                            args = update_command_single_value(args,
-                                                               ('--nprocs', '--nprocs=', '-n'),
-                                                               n_procs[param])
-                            lines[i] = assemble_args(args) + '\n'
-                    except Exception:
-                        pass
 
         f = file(ref, mode = 'w')
         f.writelines(lines)
@@ -278,6 +313,7 @@ class Case(object):
             from core.XMLinitialize import XMLinit
 
         if self.subdomains:
+            self.update_runcase_path(d, self.label, xmlonly)
             cdirs = []
             for d in self.subdomains:
                 cdirs.append(os.path.join(self.label, d))
@@ -309,6 +345,7 @@ class Case(object):
                 f.close()
             except IOError:
                 pass
+
 
     def compile(self, d):
         """
@@ -350,6 +387,8 @@ class Case(object):
     def __suggest_run_id(self):
 
         cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " run --suggest-id"
+        if self.subdomains:
+            cmd += " --coupling=coupling_parameters.py"
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
@@ -358,7 +397,7 @@ class Case(object):
         i = p.communicate()[0]
         run_id = string.join(i.split())
 
-        return run_id, os.path.join(self.__dest, self.label, "RESU", run_id)
+        return run_id, os.path.join(self.__dest, self.label, self.resu, run_id)
 
 
     def __updateRuncase(self, run_id):
@@ -418,11 +457,14 @@ class Case(object):
         Run the case a thread.
         """
         home = os.getcwd()
-        os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
+        if self.subdomains:
+            os.chdir(os.path.join(self.__dest, self.label))
+        else:
+            os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
 
         if self.run_id:
             run_id = self.run_id
-            run_dir = os.path.join(self.__dest, self.label, "RESU", run_id)
+            run_dir = os.path.join(self.__dest, self.label, self.resu, run_id)
 
             if os.path.isdir(run_dir):
                 print("Warning: the directory %s already exists in the destination." % run_dir)
@@ -469,13 +511,13 @@ class Case(object):
         node = None
 
         if reference:
-            result = os.path.join(reference, self.label, 'RESU')
+            result = os.path.join(reference, self.label, self.resu)
         else:
-            result = os.path.join(self.__repo, self.label, 'RESU')
+            result = os.path.join(self.__repo, self.label, self.resu)
         repo = self.check_dir(studies, node, result, r, "repo")
         repo = os.path.join(result, repo, 'checkpoint', 'main')
 
-        result = os.path.join(self.__dest, self.label, 'RESU')
+        result = os.path.join(self.__dest, self.label, self.resu)
         dest = self.check_dir(studies, node, result, d, "dest")
         dest = os.path.join(result, dest, 'checkpoint', 'main')
 
@@ -599,14 +641,14 @@ class Case(object):
         if repo != None:
             # build path to RESU directory with path to study and case label in the repo
             if reference:
-                result = os.path.join(reference, self.label, 'RESU')
+                result = os.path.join(reference, self.label, self.resu)
             else:
-                result = os.path.join(self.__repo, self.label, 'RESU')
+                result = os.path.join(self.__repo, self.label, self.resu)
             self.check_dir(studies, node, result, repo, "repo")
 
         if dest != None:
             # build path to RESU directory with path to study and case label in the dest
-            result = os.path.join(self.__dest, self.label, 'RESU')
+            result = os.path.join(self.__dest, self.label, self.resu)
             self.check_dir(studies, node, result, dest, "dest")
 
 #-------------------------------------------------------------------------------
@@ -740,6 +782,7 @@ class Study(object):
                             shutil.copytree(ref, node, symlinks=True)
                         else:
                             shutil.copy2(ref, node)
+                    c.update_runcase_path(c.label, destdir=self.__dest)
                 else:
                     cmd = e + " create --case " + c.label  \
                           + " --quiet --noref --copy-from "    \
@@ -1038,7 +1081,7 @@ class Studies(object):
                         error = case.run()
                         if not error:
                             if not case.run_id:
-                                self.reporting('    - run %s --> Warning suffixe is not read' % case.label)
+                                self.reporting('    - run %s --> Warning suffix is not read' % case.label)
 
                             self.reporting('    - run %s --> OK (%s s) in %s' % (case.label, case.is_time, case.run_id))
                             self.__parser.setAttribute(case.node, "compute", "off")
@@ -1171,10 +1214,10 @@ class Studies(object):
             for case in s.Cases:
                 if case.is_run != "KO":
                     if case.run_dir == "":
-                        resu = os.path.join(self.dest, l, case.label, 'RESU')
-                        rep = case.check_dir(self, None, resu, "", "dest")
+                        resu = os.path.join(self.dest, l, case.label, case.resu)
+                        rep = case.check_dir(self, None, case.resu, "", "dest")
                         case.run_id = rep
-                        case.run_dir = os.path.join(resu, rep)
+                        case.run_dir = os.path.join(case.resu, rep)
 
             self.reporting('  o Postprocessing cases of study: ' + l)
             script, label, nodes, args = self.__parser.getPostPro(l)
