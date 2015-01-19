@@ -114,6 +114,59 @@ double precision propce(ncelet,*)
 ! 2. Fill properties depending on the model
 !===============================================================================
 
+! If combustion drift activated
+if (i_comb_drift.ge.1) then
+  call cs_physical_properties_combustion_drift()
+endif
+
+! ---> Flamme de diffusion chimie 3 points
+
+if (ippmod(icod3p).ge.0) then
+  call d3pphy(mbrom, izfppp, propce)
+endif
+
+! ---> Flamme de diffusion chimie equilibre
+
+!        if ( ippmod(icodeq).ge.0 )
+
+! ---> Flamme de premelange : Modele EBU
+
+if (ippmod(icoebu).ge.0) then
+  call ebuphy(mbrom, izfppp, propce)
+endif
+
+! ---> Flamme de premelange : Modele BML
+
+!        if ( ippmod(icobml).ge.0 )
+!     &     call bmlphy
+
+! ---> Flamme de premelange : Modele LWC
+
+if (ippmod(icolwc).ge.0) then
+  call lwcphy(mbrom, izfppp, propce)
+endif
+
+! ---> Flamme charbon pulverise
+
+if (ippmod(iccoal).ge.0) then
+  call cs_coal_physprop(mbrom, izfppp, propce)
+endif
+
+
+! ---> Flamme charbon pulverise couplee Transport Lagrangien
+!      des particules de charbon
+
+if (ippmod(icpl3c).ge.0) then
+  call cplphy(mbrom, izfppp, propce)
+endif
+
+! ---> Flamme fuel
+
+if (ippmod(icfuel).ge.0) then
+  call cs_fuel_physprop(mbrom, izfppp, propce)
+endif
+
+
 ! ---> Physique particuliere : Versions electriques
 !          Effet Joule
 !          Arc electrique
@@ -208,59 +261,6 @@ double precision propce(ncelet,*)
 !===============================================================================
 ! 2. Fill properties depending on the model
 !===============================================================================
-
-! If combustion drift activated
-if (i_comb_drift.ge.1) then
-  call cs_physical_properties_combustion_drift()
-endif
-
-! ---> Flamme de diffusion chimie 3 points
-
-if (ippmod(icod3p).ge.0) then
-  call d3pphy(mbrom, izfppp, propce)
-endif
-
-! ---> Flamme de diffusion chimie equilibre
-
-!        if ( ippmod(icodeq).ge.0 )
-
-! ---> Flamme de premelange : Modele EBU
-
-if (ippmod(icoebu).ge.0) then
-  call ebuphy(mbrom, izfppp, propce)
-endif
-
-! ---> Flamme de premelange : Modele BML
-
-!        if ( ippmod(icobml).ge.0 )
-!     &     call bmlphy
-
-! ---> Flamme de premelange : Modele LWC
-
-if (ippmod(icolwc).ge.0) then
-  call lwcphy(mbrom, izfppp, propce)
-endif
-
-! ---> Flamme charbon pulverise
-
-if (ippmod(iccoal).ge.0) then
-  call cs_coal_physprop(mbrom, izfppp, propce)
-endif
-
-
-! ---> Flamme charbon pulverise couplee Transport Lagrangien
-!      des particules de charbon
-
-if (ippmod(icpl3c).ge.0) then
-  call cplphy(mbrom, izfppp, propce)
-endif
-
-! ---> Flamme fuel
-
-if (ippmod(icfuel).ge.0) then
-  call cs_fuel_physprop(mbrom, izfppp, propce)
-endif
-
 
 ! Compressible
 if (ippmod(icompf).ge.0) then
