@@ -107,7 +107,7 @@ double precision prhyd(ncelet), grdphd(ndim, ncelet)
 
 ! Local variables
 
-integer          iccocg, inc, isym  , isqrt, f_id
+integer          iccocg, inc, isym  , f_id
 integer          iel   , ifac
 integer          nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
@@ -161,8 +161,6 @@ endif
 
 ! --- Matrix block size
 ibsize = 1
-
-isqrt = 1
 
 !===============================================================================
 ! 2. Solving a diffusion equation with source term to obtain

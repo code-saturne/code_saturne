@@ -187,7 +187,7 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl
-integer          iccocg, inc   , iprev , init  , ii    , jj    , isqrt
+integer          iccocg, inc   , iprev , init  , ii    , jj
 integer          nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
 integer          iconvp, idiffp, ndircp, nswrsp
@@ -1815,8 +1815,7 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   call divmas(init,viscf,viscb,xnormp)
 
   ! Compute the norm rnormp used in resopv
-  isqrt = 1
-  call prodsc(ncel,isqrt,xnormp,xnormp,rnormp)
+  rnormp = sqrt(cs_gdot(ncel,xnormp,xnormp))
 
   ! Free memory
   deallocate(xnormp)

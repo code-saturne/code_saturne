@@ -103,7 +103,7 @@ double precision viscf(nfac), viscb(nfabor)
 character(len=80) :: chaine
 integer          ivar
 integer          ifac  , iel
-integer          init  , isqrt , iii
+integer          init  , iii
 integer          ifcvsl, iflmas, iflmab
 integer          icvflb
 integer          nswrgp, imligp, iwarnp
@@ -661,8 +661,7 @@ if (iwarni(ivar).ge.2) then
                 *(cvar_energ(iel)-cvara_energ(iel))                            &
                 * max(0,min(nswrsm(ivar)-2,1))
   enddo
-  isqrt = 1
-  call prodsc(ncel,isqrt,smbrs,smbrs,sclnor)
+  sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))
   write(nfecra,1200)chaine(1:8) ,sclnor
 endif
 

@@ -104,7 +104,7 @@ double precision smacel(ncesmp,nvar)
 
 character(len=80) :: chaine
 integer          lchain
-integer          iccocg, inc   , init  , isym  , isqrt
+integer          iccocg, inc   , init  , isym
 integer          ii, iel   , ifac
 integer          nswmpr
 integer          isweep, niterf
@@ -217,9 +217,7 @@ enddo
 ! 3. Residual of the system if needed
 !===============================================================================
 
-isqrt = 1
-
-call prodsc(ncel,isqrt,rhs,rhs,rnorm)
+rnorm = sqrt(cs_gdot(ncel,rhs,rhs))
 
 !===============================================================================
 ! 4. Building of the linear system to solve
@@ -362,7 +360,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     enddo
 
     ! --- Convergence test
-    call prodsc(ncel, isqrt, rhs, rhs, residu)
+    residu = sqrt(cs_gdot(ncel, rhs, rhs))
 
     if (iwarni(ipr).ge.2) then
       if (rnorm.ge.epzero) then

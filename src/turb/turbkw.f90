@@ -97,7 +97,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 character(len=80) :: chaine
 integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
 integer          ii, f_id , iiun  , ifacpt
-integer          iclipk, iclipw, isqrt
+integer          iclipk, iclipw
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -757,8 +757,7 @@ if (ikecou.eq.1) then
    w5     )
 
   if (iwarni(ivar).ge.2) then
-    isqrt = 1
-    call prodsc(ncel,isqrt,smbrk,smbrk,rnorm)
+    rnorm = sqrt(cs_gdot(ncel,smbrk,smbrk))
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 
@@ -827,8 +826,7 @@ if (ikecou.eq.1) then
    w6     )
 
   if (iwarni(ivar).ge.2) then
-    isqrt = 1
-    call prodsc(ncel,isqrt,smbrw,smbrw,rnorm)
+    rnorm = sqrt(cs_gdot(ncel,smbrw,smbrw))
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 

@@ -166,7 +166,7 @@ double precision coefb_dp(ndimfb)
 
 character(len=80) :: chaine
 integer          lchain
-integer          iccocg, inc   , iprev, init  , isym  , isqrt
+integer          iccocg, inc   , iprev, init  , isym
 integer          ii, jj, iel   , ifac  , ifac0 , iel0
 integer          nswmpr
 integer          isweep, niterf
@@ -181,7 +181,6 @@ integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar
 integer          nswrsp
-integer          insqrt
 integer          imvisp
 integer          iflid, iflwgr, f_dim
 
@@ -316,8 +315,6 @@ endif
 ! Matrix block size
 ibsize = 1
 iesize = 1
-
-isqrt = 1
 
 ! Initialization dedicated to cavitation module
 if (icavit.ge.0) then
@@ -493,7 +490,7 @@ if (irnpnw.ne.1) then
 
   endif
 
-  call prodsc(ncel,isqrt,res,res,rnormp)
+  rnormp = sqrt(cs_gdot(ncel,res,res))
 
   if(iwarni(ipr).ge.2) then
     write(nfecra,1300)chaine(1:16) ,rnormp
@@ -1481,7 +1478,7 @@ enddo
 
 
 ! --- Right hand side residual
-call prodsc(ncel,isqrt,rhs,rhs,residu)
+residu = sqrt(cs_gdot(ncel,rhs,rhs))
 
 sinfo%rnsmbr = residu
 
@@ -1653,25 +1650,23 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
       adxk(iel) = - adxk(iel)
     enddo
 
-    insqrt = 0
-
     ! ||E.dx^(k-1)-E.0||^2
     nadxkm1 = nadxk
 
     ! ||E.dx^k-E.0||^2
-    call prodsc(ncel , insqrt , adxk , adxk , nadxk)
+    nadxk = cs_gdot(ncel, adxk, adxk)
 
     ! < E.dx^k-E.0; r^k >
-    call prodsc(ncel , insqrt , rhs , adxk , paxkrk)
+    paxkrk = cs_gdot(ncel, rhs, adxk)
 
     ! Relaxation with respect to dx^k and dx^(k-1)
     if (iswdyp.ge.2) then
 
       ! < E.dx^(k-1)-E.0; r^k >
-      call prodsc(ncel , insqrt , rhs , adxkm1 , paxm1rk)
+      paxm1rk = cs_gdot(ncel, rhs, adxkm1)
 
       ! < E.dx^(k-1)-E.0; E.dx^k -E.0 >
-      call prodsc(ncel , insqrt , adxk, adxkm1 , paxm1ax)
+      paxm1ax = cs_gdot(ncel, adxk, adxkm1)
 
       if (nadxkm1.gt.1.d-30*rnorm2.and.                    &
          (nadxk*nadxkm1-paxm1ax**2).gt.1.d-30*rnorm2) then
@@ -1787,7 +1782,7 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
   enddo
 
   ! --- Convergence test
-  call prodsc(ncel,isqrt,rhs,rhs,residu)
+  residu = sqrt(cs_gdot(ncel,rhs,rhs))
 
   ! Writing
   sinfo%nbivar = sinfo%nbivar + niterf

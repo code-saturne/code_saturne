@@ -79,7 +79,7 @@ double precision dt(ncelet), volume(ncelet)
 ! Local variables
 
 integer          ic, icel, f_id, c_id, f_dim
-integer          kval, nfld, f_type, isqrt
+integer          kval, nfld, f_type
 logical          interleaved
 character(len=200) :: chain, chainc, flabel,fname
 
@@ -199,10 +199,9 @@ do f_id = 0, nfld - 1
       enddo
 
       ! L2 error, square root
-      isqrt = 11
 
-      call prodsc(ncel,isqrt,w1,w1,varres(1))
-      call prodsc(ncel,isqrt,w2,w2,varnrm(1))
+      varres(1) = sqrt(cs_gres(ncel,volume,w1,w1))
+      varnrm(1) = sqrt(cs_gres(ncel,volume,w2,w2))
 
       if (varnrm(1).gt.0.d0) varres(1) = varres(1)/varnrm(1)
       sinfo%l2residual = varres(1)
@@ -222,10 +221,9 @@ do f_id = 0, nfld - 1
         enddo
 
         ! L2 error, NO square root
-        isqrt = 10
 
-        call prodsc(ncel,isqrt,w1,w1,varres(c_id))
-        call prodsc(ncel,isqrt,w2,w2,varnrm(c_id))
+        varres(c_id) = cs_gres(ncel,volume,w1,w1)
+        varnrm(c_id) = cs_gres(ncel,volume,w2,w2)
 
         if (c_id.gt.1) then
           varres(1) = varres(1) + varres(c_id)

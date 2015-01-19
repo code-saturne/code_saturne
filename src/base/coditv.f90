@@ -243,13 +243,13 @@ double precision eswork(3,ncelet)
 
 character(len=80) :: chaine
 character(len=16) :: cnom
-integer          f_id,isym,isqrt
+integer          f_id,isym
 integer          inc,isweep,niterf,iel,nswmod
 integer          iinvpe
 integer          idtva0
 integer          isou , jsou
 integer          ibsize, iesize
-integer          lvar, insqrt
+integer          lvar
 
 double precision residu, rnorm, ressol, rnorm2
 double precision thetex
@@ -300,9 +300,6 @@ if (iconvp.gt.0) isym  = 2
 ! be carefull here, xam is interleaved
 if (iesize.eq.1) allocate(xam(isym,nfac))
 if (iesize.eq.3) allocate(xam(3*3*isym,nfac))
-
-! PRISE DE SQRT DANS PS
-isqrt = 1
 
 ! iinvpe is useless in the vectorial framework
 iinvpe = 0
@@ -461,7 +458,7 @@ else
 endif
 
 ! --- Convergence test
-call prodsc(3*ncel, isqrt, smbrp, smbrp, residu)
+residu = sqrt(cs_gdot(3*ncel, smbrp, smbrp))
 
 ! ---> RESIDU DE NORMALISATION
 !    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
@@ -477,10 +474,10 @@ do iel = 1, ncel
    enddo
 enddo
 
-call prodsc(3*ncel, isqrt, w1, w1, rnorm)
+rnorm2 = cs_gdot(3*ncel, w1, w1)
+rnorm = sqrt(rnorm2)
 
 sinfo%rnsmbr = rnorm
-rnorm2 = rnorm**2
 
 deallocate(w1)  ! Free memory
 
@@ -556,25 +553,23 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
      icvflb , icvfli ,                                              &
      adxk   )
 
-    insqrt = 0
-
     ! ||E.dx^(k-1)-E.0||^2
     nadxkm1 = nadxk
 
     ! ||E.dx^k-E.0||^2
-    call prodsc(3*ncel , insqrt , adxk , adxk , nadxk)
+    nadxk = cs_gdot(3*ncel, adxk, adxk)
 
     ! < E.dx^k-E.0; r^k >
-    call prodsc(3*ncel , insqrt , smbrp , adxk , paxkrk)
+    paxkrk = cs_gdot(3*ncel, smbrp, adxk)
 
     ! Relaxation with respect to dx^k and dx^(k-1)
     if (iswdyp.ge.2) then
 
       ! < E.dx^(k-1)-E.0; r^k >
-      call prodsc(3*ncel , insqrt , smbrp , adxkm1 , paxm1rk)
+      paxm1rk = cs_gdot(3*ncel, smbrp, adxkm1)
 
       ! < E.dx^(k-1)-E.0; E.dx^k-E.0 >
-      call prodsc(3*ncel , insqrt , adxk, adxkm1 , paxm1ax)
+      paxm1ax = cs_gdot(3*ncel, adxk, adxkm1)
 
       if (nadxkm1.gt.1.d-30*rnorm2.and.                     &
           (nadxk*nadxkm1-paxm1ax**2).gt.1.d-30*rnorm2) then
@@ -705,7 +700,7 @@ do while (isweep.le.nswmod.and.residu.gt.epsrsp*rnorm.or.isweep.eq.1)
    smbrp  )
 
   ! --- Convergence test
-  call prodsc(3*ncel, isqrt, smbrp, smbrp, residu)
+  residu = sqrt(cs_gdot(3*ncel, smbrp, smbrp))
 
   ! Writing
   sinfo%nbivar = sinfo%nbivar + niterf

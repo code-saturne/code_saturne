@@ -98,7 +98,7 @@ double precision prdv2f(ncelet)
 character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          f_id0 , iiun
-integer          iclip , isqrt
+integer          iclip
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -946,8 +946,7 @@ if (ikecou.eq.1) then
    w7     )
 
   if (iwarni(ivar).ge.2) then
-    isqrt = 1
-    call prodsc(ncel,isqrt,smbrk,smbrk,rnorm)
+    rnorm = sqrt(cs_gdot(ncel,smbrk,smbrk))
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 
@@ -1020,8 +1019,7 @@ if (ikecou.eq.1) then
    w8     )
 
   if (iwarni(ivar).ge.2) then
-    isqrt = 1
-    call prodsc(ncel,isqrt,smbre,smbre,rnorm)
+    rnorm = sqrt(cs_gdot(ncel,smbre,smbre))
     write(nfecra,1100) chaine(1:8) ,rnorm
   endif
 

@@ -111,7 +111,7 @@ double precision, pointer, dimension(:)   :: dt
 
 integer iccocg, inc   , iel, isou, init
 integer nswrgp, imligp, iwarnp
-integer imucpp, ircflp, isqrt, isweep, isym, lchain
+integer imucpp, ircflp, isweep, isym, lchain
 integer ndircp, niterf, nswmpr
 integer iinvpe, iflmas, iflmab, iesize, idiffp, iconvp, ibsize
 integer fid
@@ -247,7 +247,6 @@ if (darcy_unsteady.eq.1) isym  = 2
 ! Matrix block size. Copied from reopv.
 ibsize = 1
 iesize = 1
-isqrt = 1
 
 allocate(dam(ncelet), xam(isym,nfac))
 
@@ -411,7 +410,7 @@ do iel = 1, ncel
   endif
 enddo
 
-call prodsc(ncel, isqrt, rhs, rhs, residu)
+residu = sqrt(cs_gdot(ncel, rhs, rhs))
 
 sinfo%rnsmbr = residu
 
@@ -427,7 +426,7 @@ call promav(isym, ibsize, iesize, iinvpe, dam, xam, cvar_pr, w1)
 do iel = 1, ncel
   w1(iel) = w1(iel) + rhs(iel)
 enddo
-call prodsc(ncel, isqrt, w1, w1, rnormp)
+rnormp = sqrt(cs_gdot(ncel, w1, w1))
 
 ! Free memory
 deallocate(w1)
@@ -514,7 +513,7 @@ do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
   enddo
 
   ! --- Convergence test
-  call prodsc(ncel, isqrt, rhs, rhs, residu)
+  residu = sqrt(cs_gdot(ncel, rhs, rhs))
 
   ! Writing
   sinfo%nbivar = sinfo%nbivar + niterf

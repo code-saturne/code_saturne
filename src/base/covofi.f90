@@ -145,7 +145,7 @@ logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
 integer          ii, ifac , iel, isou
-integer          iprev , inc   , iccocg, isqrt, iii, iiun, ibcl
+integer          iprev , inc   , iccocg, iii, iiun, ibcl
 integer          ivarsc
 integer          iiscav
 integer          ifcvsl, iflmas, iflmab
@@ -1135,8 +1135,7 @@ if (iwarni(ivar).ge.2) then
             - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)        &
                 *(cvar_var(iel)-cvara_var(iel))*ibcl
   enddo
-  isqrt = 1
-  call prodsc(ncel,isqrt,smbrs,smbrs,sclnor)
+  sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))
   write(nfecra,1200)chaine(1:16) ,sclnor
 endif
 

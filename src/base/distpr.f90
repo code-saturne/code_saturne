@@ -79,7 +79,7 @@ integer          ndircp, iconvp, idiffp, isym
 integer          ipp
 integer          niterf
 integer          iinvpe
-integer          isqrt , iel   , ifac
+integer          iel   , ifac
 integer          inc   , iccocg, ivar, f_id
 integer          isweep, nittot, idtva0
 integer          ibsize, iesize, mmprpl, nswrsl
@@ -217,7 +217,6 @@ nomva0 = 'wall_distance'
 ! Periodicity
 iinvpe = 0
 if(iperio.eq.1) iinvpe = 1
-isqrt = 1
 ibsize = 1
 iesize = 1
 nswrsl = nswrsy
@@ -241,7 +240,7 @@ enddo
 
 do isweep = 0, nswrsl
 
-  call prodsc(ncel,isqrt,smbdp,smbdp,rnorm)
+  rnorm = sqrt(cs_gdot(ncel,smbdp,smbdp))
   if (iwarny.ge.2) then
      write(nfecra,5000) nomva0,isweep,rnorm
   endif

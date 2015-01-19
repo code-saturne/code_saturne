@@ -97,7 +97,7 @@ double precision smbr(ncelet)
 
 character(len=80) :: chaine
 integer          lchain
-integer          f_id, iccocg, inc   , init  , isym  , isqrt
+integer          f_id, iccocg, inc   , init  , isym
 integer          iel   , ical
 integer          nswmpr
 integer          isweep, niterf
@@ -133,8 +133,6 @@ lchain = 16
 
 ! --- Symetrique
 isym  = 1
-
-isqrt = 1
 
 ! Matrix block size
 ibsize = 1
@@ -254,7 +252,7 @@ call projts                                                       &
 
 init = 1
 call divmas(init,flumas,flumab,w7)
-call prodsc(ncel,isqrt,w7,w7,rnorm)
+rnorm = sqrt(cs_gdot(ncel,w7,w7))
 
 !===============================================================================
 ! 4.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
@@ -285,7 +283,7 @@ do isweep = 1, nswmpr
 
 ! --- Test de convergence du calcul
 
-  call prodsc(ncel,isqrt,smbr,smbr,residu)
+  residu = sqrt(cs_gdot(ncel,smbr,smbr))
   if (iwarni(ipr).ge.2) then
      write(nfecra,1400)chaine(1:16),isweep,residu
   endif

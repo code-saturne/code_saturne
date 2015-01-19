@@ -76,6 +76,7 @@ use ppincl
 use mesh
 use pointe, only: itypfb
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -99,7 +100,7 @@ double precision vela  (3  ,ncelet)
 character(len=80) :: chaine
 integer          ivar
 integer          ifac  , iel
-integer          init  , inc   , iccocg, isqrt , ii, jj
+integer          init  , inc   , iccocg, ii, jj
 integer          iflmas, iflmab
 integer          iphydp, icvflb
 integer          nswrgp, imligp, iwarnp
@@ -354,8 +355,7 @@ if (iwarni(ivar).ge.2) then
                    *(cvar_pr(iel)-cvara_pr(iel))                               &
                    * max(0,min(nswrsm(ivar)-2,1))
   enddo
-  isqrt = 1
-  call prodsc(ncel,isqrt,smbrs,smbrs,sclnor)
+  sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))
   write(nfecra,1200) chaine(1:8) ,sclnor
 endif
 
