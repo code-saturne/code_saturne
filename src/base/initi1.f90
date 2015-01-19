@@ -38,6 +38,7 @@ use ihmpre
 use ppincl, only: ippmod, nmodmx
 use post
 use cs_c_bindings
+use field
 
 !===============================================================================
 
@@ -47,8 +48,12 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp, imom, n_moments, f_id
+integer          iok, ipp, nmodpp, imom, n_moments, f_id, f_type, nfld
+integer          keyvar, ivar
+
 double precision ttsuit, wtsuit
+
+type(var_cal_opt) vcopt
 
 !===============================================================================
 
@@ -185,6 +190,25 @@ call usipes(nmodpp)
 
 call gui_linear_solvers
 call user_linear_solvers
+
+! Number of fields
+call field_get_n_fields(nfld)
+call field_get_key_id("variable_id", keyvar)
+
+! Copy field calculation options into the field structure
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_int(f_id, keyvar, ivar)
+
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    vcopt%iwarni= iwarni(ivar)
+    call field_set_key_struct_var_cal_opt(f_id, vcopt)
+  endif
+enddo
 
 !===============================================================================
 ! 6. Coherency checks
