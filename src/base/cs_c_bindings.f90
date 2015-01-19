@@ -360,6 +360,32 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning the global dot product of 2 vectors
+
+    function cs_gdot(n, x, y) result(gdot) &
+      bind(C, name='cs_gdot')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: n
+      real(kind=c_double), dimension(*), intent(in) :: x, y
+      real(kind=c_double) :: gdot
+    end function cs_gdot
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning the global residual of 2 vectors
+
+    function cs_gres(n, vol, x, y) result(gres) &
+      bind(C, name='cs_gres')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: n
+      real(kind=c_double), dimension(*), intent(in) :: vol, x, y
+      real(kind=c_double) :: gres
+    end function cs_gres
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function initializing gradient rotational periodicity
     ! computation API.
 
