@@ -83,7 +83,7 @@ implicit none
 ! Local variables
 
 integer          ii, ivar
-integer          keycpl, iflid, ikeyvl
+integer          keycpl, iflid
 integer          kdiftn, kturt, kfturt
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv, lprev
@@ -473,6 +473,8 @@ enddo
 ! Copy field calculation options into the field structure
 do ivar = 1, nvar
   if (ivar.ne.iv.and.ivar.ne.iw) then
+    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
     vcopt%iwarni= iwarni(ivar)
     vcopt%iconv = iconv (ivar)
     vcopt%istat = istat (ivar)
