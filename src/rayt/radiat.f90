@@ -71,6 +71,12 @@ module radiat
   !> Useful if the radiation module is activated
   integer, save :: imodak
 
+  !>ADF model:
+  !> - 0 no ADF model
+  !> - 1 ADF model with 8 intervals of wave length
+  !> - 2 ADF model with 50 intervals of wave length
+  integer, save :: imoadf
+
   !--> pointeur dans le macrotableau propce :
 
   !                       ITSRE --> Terme source explicite
@@ -96,6 +102,7 @@ module radiat
   !                       IFNET  --> Flux Net radiatif
   !                       IFCONV --> Flux Convectif
   !                       IHCONV --> Coef d'echange fluide
+  !                       IQINSP --> densite de flux incident radiatif spectral
 
   integer, save ::  itparo = -1
   integer, save ::  iqinci = -1
@@ -105,6 +112,7 @@ module radiat
   integer, save ::  ifnet  = -1
   integer, save ::  ifconv = -1
   integer, save ::  ihconv = -1
+  integer, save ::  iqinsp = -1
 
   !--> XNP1MX : pour le modele P-1,
   !     pourcentage de cellules pour lesquelles on admet que l'epaisseur
@@ -170,6 +178,9 @@ module radiat
   !> (restart or not).
   !> Useful if and only if the radiation module is activated}
   integer, save ::           nfreqr
+
+  !--> ADF radiation model
+  integer, save ::           nwsgg
 
   !--> Informations sur les zones frontieres
 

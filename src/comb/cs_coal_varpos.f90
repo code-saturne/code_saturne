@@ -623,6 +623,9 @@ if (ieqnox.eq.1) then
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)
+  ! Set min and max clipping
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
 
   ! Scalar with drift: BUT Do NOT create additional mass flux
   if (i_comb_drift.ge.1) then
