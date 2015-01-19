@@ -48,23 +48,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/* Return the dot product of 2 vectors: x.y */
-
-double CS_PROCF(csdot, CSDOT)(const cs_int_t   *n,
-                              const cs_real_t  *x,
-                              const cs_real_t  *y);
-
-/* Return the global residual of 2 extensiv vectors: x.y */
-
-double CS_PROCF(csres, CSRES)(const cs_int_t   *n,
-                              const cs_real_t  *vol,
-                              const cs_real_t  *x,
-                              const cs_real_t  *y);
-
-/*============================================================================
  *  Public function prototypes or wrapper macros
  *============================================================================*/
 

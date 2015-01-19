@@ -34,22 +34,6 @@ $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/base \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCMODINCLUDE)$(top_builddir)/src/turb \
-$(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
-
 AM_LDFLAGS =
 
 # Public header files (to be installed)
@@ -105,7 +89,6 @@ cs_sles_default.c \
 cs_sles_it.c \
 bilsca.f90 \
 bilscv.f90 \
-prodsc.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined
 

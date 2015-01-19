@@ -74,30 +74,7 @@ BEGIN_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/* Return the dot product of 2 vectors: x.y */
-
-double CS_PROCF(csdot, CSDOT)(const cs_int_t   *n,
-                              const cs_real_t  *x,
-                              const cs_real_t  *y)
-{
-  return cs_dot(*n, x, y);
-}
-
-/* Return the global residual of 2 extensive vectors: x.y */
-
-double CS_PROCF(csres, CSRES)(const cs_int_t   *n,
-                              const cs_real_t  *vol,
-                              const cs_real_t  *x,
-                              const cs_real_t  *y)
-{
-  return cs_gres(*n, vol, x, y);
-}
-
-/*============================================================================
- *  Public function definitions
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
