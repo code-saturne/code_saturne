@@ -23,7 +23,7 @@
 subroutine ppcabs &
 !================
 
- ( propce , tempk, kgas , agas , agasbo )
+ ( propce )
 
 !===============================================================================
 ! FONCTION :
@@ -45,13 +45,6 @@ subroutine ppcabs &
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
 ! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! tempk            ! ra ! <-- ! Gas phase temperature                          !
-! kgas             ! ra ! <-- ! Radiation coeffcients of the i different grey  !
-!                  !    !     ! gases                                          !
-! agas             ! ra ! <-- ! Weights of the of the i different grey gases   !
-!                  !    !     ! in cell                                        !
-! agasbo           ! ra ! <-- ! Weights of the of the i different grey gases   !
-!                  !    !     ! at boundary faces                              !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -89,9 +82,6 @@ implicit none
 
 double precision propce(ncelet,*)
 
-double precision tempk(ncelet,nrphas)
-double precision kgas(ncelet,nwsgg), agas(ncelet,nwsgg), agasbo(nfabor,nwsgg)
-
 ! Local variables
 
 integer          iel, ifac, icla, ipck, icha, iok
@@ -105,7 +95,7 @@ double precision, dimension(:), pointer :: cvar_fsm
 ! 0 - Initialization
 !===============================================================================
 
-if (imodak.eq.1.or.imoadf.ge.1) allocate(w1(ncelet), w2(ncelet), w3(ncelet))
+if (imodak.eq.1) allocate(w1(ncelet), w2(ncelet), w3(ncelet))
 
 call field_get_val_s(icrom, crom)
 
@@ -178,31 +168,10 @@ else if ( ippmod(iccoal) .ge. 0 ) then
     !==========
      propce(1,ipproc(icak(1))),w1,w2,w3,propce(1,ipproc(itemp1)))
 
-  else if (imoadf.ge.1) then
-
-    do iel = 1,ncel
-! concentration volumique en CO2
-      w1(iel) = propce(iel,ipproc(immel))/wmole(ico2)             &
-               *propce(iel,ipproc(iym1(ico2)))
-! concentration volumique en H20
-      w2(iel) = propce(iel,ipproc(immel))/wmole(ih2o)             &
-               *propce(iel,ipproc(iym1(ih2o)))
-! fraction volumique de suies
-      w3(iel) = 0.d0
-    enddo
-
-    if (imoadf.eq.1) then
-      call radf08 (w1,w2,w3,tempk(1,1),kgas,agas,agasbo)
-    else if (imoadf.eq.2) then
-      call radf50 (w1,w2,w3,tempk(1,1),kgas,agas,agasbo)
-    endif
-
   else
-
     do iel = 1, ncel
       propce(iel,ipproc(icak(1))) = ckabs1
     enddo
-
   endif
 
 else if ( ippmod(icfuel).ge.0 ) then
@@ -227,36 +196,15 @@ else if ( ippmod(icfuel).ge.0 ) then
     !==========
      propce(1,ipproc(icak(1))),w1,w2,w3,propce(1,ipproc(itemp1)))
 
-  else if (imoadf.ge.1) then
-
-    do iel = 1,ncel
-! concentration volumique en CO2
-      w1(iel) = propce(iel,ipproc(immel))/wmole(ico2)             &
-               *propce(iel,ipproc(iym1(ico2)))
-! concentration volumique en H20
-      w2(iel) = propce(iel,ipproc(immel))/wmole(ih2o)             &
-               *propce(iel,ipproc(iym1(ih2o)))
-! fraction volumique de suies
-      w3(iel) = 0.d0
-    enddo
-
-    if (imoadf.eq.1) then
-      call radf08 (w1,w2,w3,tempk(1,1),kgas,agas,agasbo)
-    elseif (imoadf.eq.2) then
-      call radf50 (w1,w2,w3,tempk(1,1),kgas,agas,agasbo)
-    endif
-
   else
-
     do iel = 1, ncel
       propce(iel,ipproc(icak(1))) = ckabs1
     enddo
-
   endif
 
 endif
 
-if (imodak.eq.1.or.imoadf.ge.1) deallocate(w1, w2, w3)
+if (imodak.eq.1) deallocate(w1, w2, w3)
 
 !===============================================================================
 !  2 - COEFFICIENT D'ABSORPTION DES PARTICULES PAR CLASSE K2/X2 (m-1)
@@ -339,10 +287,9 @@ endif
 !--> MODELE P-1 : Controle standard des valeurs du coefficient
 !                 d'absorption. Ce coefficient doit assurer une
 !                 longueur optique au minimum de l'ordre de l'unite.
-!
-!                 !!!!DO NOT USE WITH ADF model!!!!
 
-  if (iirayo.eq.2.and.imoadf.eq.0) then
+
+  if (iirayo.eq.2) then
 
      allocate(w3(ncelet))
 

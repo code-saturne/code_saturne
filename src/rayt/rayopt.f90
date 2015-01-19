@@ -109,12 +109,6 @@ enddo
 
 imodak = 0
 
-!-->  IMOADF = 0 on n'utilise pas les model ADF
-!            = 1 Model ADF a 8 intervalle de longueur d'onde
-!            = 2 Model ADF a 50 intervalle de longueur d'onde
-
-imoadf = 0
-
 !-->  INDICATEUR SUITE DE CALCUL (LECTURE DU FICHIER SUITE)
 
 isuird = isuite
@@ -160,12 +154,6 @@ endif
 
 ! User paramters
 call cs_user_radiative_transfer_param
-
-if (imoadf.eq.1) then
-  nwsgg = 8
-elseif (imoadf.eq.2) then
-  nwsgg = 50
-endif
 
 !===============================================================================
 ! 2. VERIFICATION LA COHERENCE D'UTILISATION DU MODULE DE RAYONNEMENT

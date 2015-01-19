@@ -196,12 +196,6 @@ if (iirayo.gt.0) then
                     itycat, ityloc, 1, ilved, inoprv, iqinci)
   call field_set_key_str(iqinci, keylbl, 'Incident_flux')
 
-  if (imoadf.ge.1) then
-    call field_create('Spectral_rad_incident_flux',  &
-                      itycat, ityloc, nwsgg, ilved, inoprv, iqinsp)
-    call field_set_key_str(iqinsp, keylbl, 'Spectral_incident_flux')
-  endif
-
   call field_create('wall_thermal_conductivity',  &
                     itycat, ityloc, 1, ilved, inoprv, ixlam)
   call field_set_key_str(ixlam, keylbl, 'Th_conductivity')

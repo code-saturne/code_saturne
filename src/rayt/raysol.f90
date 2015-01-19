@@ -30,7 +30,7 @@ subroutine raysol &
    smbrs  , rovsdt ,                                              &
    sa     ,                                                       &
    qx     , qy     , qz     ,                                     &
-   qincid , snplus, iband )
+   qincid , snplus )
 
 !===============================================================================
 ! FONCTION :
@@ -89,7 +89,6 @@ subroutine raysol &
 !                  !    !     ! radiatif explicite                             !
 ! qincid(nfabor    ! tr ! --> ! densite de flux radiatif aux bords             !
 ! snplus(nfabor    ! tr ! --- ! integration du demi-espace egale a pi          !
-! iband            ! i  ! <-- ! Number of the i-th grey gas                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -114,13 +113,12 @@ use cpincl
 use ppincl
 use radiat
 use mesh
-use field
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
-integer          iband
 
 double precision coefap(nfabor), coefbp(nfabor)
 double precision cofafp(nfabor), cofbfp(nfabor)
@@ -159,10 +157,10 @@ double precision, allocatable, dimension(:) :: rhs0
 double precision, allocatable, dimension(:) :: ru, rua
 double precision, allocatable, dimension(:) :: dpvar
 
-double precision, dimension(:,:), pointer     :: qinspe
+!===============================================================================
 
 !===============================================================================
-! 0. Memory
+! 0. GESTION MEMOIRE
 !===============================================================================
 
 ! Allocate a work array
@@ -171,14 +169,8 @@ allocate(dpvar(ncelet))
 allocate(ru(ncelet), rua(ncelet))
 
 !===============================================================================
-! 1. Initialization
+! 1. INITIALISATION
 !===============================================================================
-
-if (imoadf.ge.1) then
-  ! Pointer to the table
-  ! which contains the spectral flux density
-  call field_get_val_v(iqinsp,qinspe)
-endif
 
 ivar0   = 0
 nswrsp  = 2
@@ -192,12 +184,12 @@ imucpp  = 0
 idftnp  = 1
 iswdyp  = 0
 iwarnp  = iimlum
-blencp  = 0.d0
+blencp  = zero
 epsilp  = 1.d-8
 epsrsp  = 1.d-8
 epsrgp  = 1.d-5
 climgp  = 1.5d0
-extrap  = 0.d0
+extrap  = zero
 relaxp  = 1.d0
 
 !--> Il y a des dirichlets
@@ -219,7 +211,7 @@ endif
 !===============================================================================
 
 do ifac = 1,nfabor
-  snplus(ifac) = 0.d0
+  snplus(ifac) = zero
 enddo
 
 do ii = -1,1,2
@@ -256,18 +248,15 @@ enddo
 !===============================================================================
 
 do ifac = 1, nfabor
-  qincid(ifac) = 0.d0
-  snplus(ifac) = 0.d0
-  if (imoadf.ge.1) then
-    qinspe(iband,ifac) = 0.d0
-  endif
+  qincid(ifac) = zero
+  snplus(ifac) = zero
 enddo
 
 do iel = 1, ncelet
-  sa(iel) = 0.d0
-  qx(iel) = 0.d0
-  qy(iel) = 0.d0
-  qz(iel) = 0.d0
+  sa(iel) = zero
+  qx(iel) = zero
+  qy(iel) = zero
+  qz(iel) = zero
 enddo
 
 !--> Stockage du SMBRS dans tableau tampon, il sont recharges
@@ -279,7 +268,7 @@ enddo
 
 !--> ROVSDT charge une seule fois
 do iel = 1, ncel
-  rovsdt(iel) = max(rovsdt(iel),0.d0)
+  rovsdt(iel) = max(rovsdt(iel),zero)
 enddo
 
 nomva0 = 'radiation_xxx'
@@ -330,10 +319,10 @@ do ii = -1,1,2
 
         idiff1 = 0
         do ifac = 1,nfac
-          viscf(ifac) = 0.d0
+          viscf(ifac) = zero
         enddo
         do ifac = 1,nfabor
-          viscb(ifac) = 0.d0
+          viscb(ifac) = zero
         enddo
 
         do iel = 1,ncelet
@@ -411,11 +400,8 @@ do ii = -1,1,2
 
           snplus(ifac) = snplus(ifac) + aa
 
-          if (imoadf.ge.1) then
-            qinspe(iband,ifac) =  qinspe(iband,ifac) + aa*ru(ifabor(ifac))
-          else
-            qincid(ifac) = qincid(ifac) + aa*ru(ifabor(ifac))
-          endif
+          qincid(ifac) = qincid(ifac) + aa*ru(ifabor(ifac))
+
         enddo
 
       enddo

@@ -30,7 +30,7 @@ subroutine raycll &
    izfrdp ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
-   tparoi , qincid , eps    ,  ckmel , abo, iband )
+   tparoi , qincid , eps    ,  ckmel  )
 
 !===============================================================================
 !  Purpose:
@@ -82,10 +82,7 @@ subroutine raycll &
 ! xlamp(nfabor)    ! ra ! --> ! conductivity (W/m/K)                           !
 ! epap(nfabor)     ! ra ! --> ! thickness (m)                                  !
 ! epsp(nfabor)     ! ra ! --> ! emissivity (>0)                                !
-! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
-!                  !    !     !   gaz-particules de charbon                    !
-! abo              ! ra ! <-- ! Weights of the i-th gray gas at boundaries     !
-! iband            ! i  ! <-- ! Number of the i-th grey gas                    !
+! ckmel(ncelet)    ! tr ! <-- ! absorption coefficient of the bulk             !
 !__________________!____!_____!________________________________________________!
 
 !     Type: i (integer), r (real), s (string), a (array), l (logical),
@@ -112,14 +109,13 @@ use ppincl
 use radiat
 use ihmpre
 use mesh
-use field
+
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          iband
 integer          itypfb(nfabor)
 integer          izfrdp(nfabor)
 
@@ -128,25 +124,17 @@ double precision cofafp(nfabor), cofbfp(nfabor)
 double precision tparoi(nfabor), qincid(nfabor)
 double precision eps(nfabor)
 double precision ckmel(ncelet)
-double precision abo(nfabor,nwsgg)
 
 ! Local variables
 
 integer          iel, ifac, iok
 double precision unspi, xit, distbf, pimp, hint, qimp, coefmn, xlimit, cfl
 
-double precision qpatmp
-double precision, dimension(:,:), pointer     :: qinspe
+!===============================================================================
 
 !===============================================================================
 ! 0 - Initialization
 !===============================================================================
-
-if (imoadf.ge.1) then
-  ! Pointer to the table
-  ! which contains the spectral flux density
-  call field_get_val_v(iqinsp,qinspe)
-endif
 
 ! Stop indicator (forgotten boundary faces)
 iok = 0
@@ -167,15 +155,6 @@ if (iirayo.eq.1) then
 
   do ifac = 1, nfabor
 
-    ! Copy the appropriate flux density to the local variable qpatmp
-
-    ! Value of the flux density at the boundary face
-    if (imoadf.ge.1) then
-      qpatmp = qinspe(iband,ifac)
-    else
-      qpatmp = qincid(ifac)
-    endif
-
     ! Dirichlet Boundary Conditions
     !------------------------------
 
@@ -188,7 +167,7 @@ if (iirayo.eq.1) then
 
     if (itypfb(ifac).eq.isymet) then
 
-      pimp = qpatmp * unspi
+      pimp = qincid(ifac) * unspi
 
     ! 1.2 - Inlet/Outlet face: entering intensity fixed to zero
     !       (WARNING: the treatment is different from than of P-1 model)
@@ -205,10 +184,10 @@ if (iirayo.eq.1) then
     !        ---------------------------------------
 
     else if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-      !Remember: In case of the usage of the standard radiation models of code_saturne
-      !abo=1
-      pimp = eps(ifac) * stephn*(tparoi(ifac)**4)*unspi*abo(ifac,iband)  &
-           + (1.d0-eps(ifac))*qpatmp*unspi
+
+      pimp = eps(ifac) * stephn*(tparoi(ifac)**4)*unspi  &
+           + (1.d0-eps(ifac))* qincid(ifac)*unspi
+
     else
 
       ! 1.4 - Stop if there are forgotten faces
@@ -292,7 +271,7 @@ else if (iirayo.eq.2) then
       ! Convective Boundary Condition
       !------------------------------
 
-      pimp = (tparoi(ifac)**4)*abo(ifac,iband)
+      pimp = tparoi(ifac)**4
 
       call set_convective_outlet_scalar &
            !===========================
