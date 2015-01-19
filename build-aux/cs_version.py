@@ -243,7 +243,8 @@ def svn_version(srcdir, defaults):
     cmd = ['svn', 'info', '--xml', srcdir]
     p = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True)
     output = p.communicate()
     if p.returncode != 0:
         return major, minor, release, extra, revision
@@ -275,7 +276,8 @@ def svn_version(srcdir, defaults):
 
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
         output = p.communicate()
         if p.returncode != 0:
             return major, minor, release, extra, revision
@@ -332,7 +334,8 @@ def svn_version_is_modified(srcdir):
 
     p = subprocess.Popen(['svn', 'status', '--xml', srcdir],
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True)
     output = p.communicate()
 
     if p.returncode == 0:
@@ -405,7 +408,8 @@ def git_version(srcdir, defaults):
            '--work-tree='+srcdir, 'log', '-n', '200']
     p = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True)
     output = p.communicate()
     if p.returncode != 0:
         return major, minor, release, extra
@@ -445,7 +449,8 @@ def git_version_is_modified(srcdir):
            '--work-tree='+srcdir, 'status', '-s', '-uno']
     p = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True)
     output = p.communicate()
     o0 = str(output[0])
     if p.returncode == 0:

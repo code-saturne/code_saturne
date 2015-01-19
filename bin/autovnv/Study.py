@@ -335,7 +335,8 @@ class Case(object):
             p = subprocess.Popen(cmd,
                                  shell=True,
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE,
+                                 universal_newlines=True)
             output = p.communicate()
             o = output[1]
             if o.find('erreur') != -1 or o.find('error') != -1:
@@ -352,7 +353,8 @@ class Case(object):
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
         i = p.communicate()[0]
         run_id = string.join(i.split())
 
@@ -493,7 +495,10 @@ class Case(object):
             except:
                 pass
 
-        l = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
+        l = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             universal_newlines=True).stdout
         lines = l.readlines()
 
         tab = []

@@ -510,10 +510,11 @@ def run_command(cmd, pkg = None, echo = False,
         p = subprocess.Popen(cmd,
                              shell=True,
                              executable=get_shell_type(),
+                             universal_newlines=True,
                              env = env,
                              **kwargs)
     else:
-        p = subprocess.Popen(cmd, env = env, **kwargs)
+        p = subprocess.Popen(cmd, universal_newlines=True, env = env, **kwargs)
 
     p.communicate()
 
@@ -535,7 +536,8 @@ def get_command_output(cmd):
                          shell=True,
                          executable=get_shell_type(),
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True)
     output = p.communicate()
     if p.returncode != 0:
         sys.stderr.write(output[1] + '\n')
@@ -553,7 +555,8 @@ def get_command_outputs(cmd):
                          shell=True,
                          executable=get_shell_type(),
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
+                         stderr=subprocess.STDOUT,
+                         universal_newlines=True)
     return p.communicate()[0]
 
 #-------------------------------------------------------------------------------
@@ -573,6 +576,7 @@ def set_modules(pkg):
         cmds.append('load ' + m)
     for cmd in cmds:
         (output, error) = subprocess.Popen([cmd_prefix, 'python'] + cmd.split(),
+                                           universal_newlines=True,
                                            stdout=subprocess.PIPE).communicate()
         exec(output)
 
@@ -601,7 +605,8 @@ def source_shell_script(path):
                          shell=True,
                          executable=user_shell,
                          stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+                         stderr=subprocess.PIPE,
+                         universal_newlines=True)
 
     output = p.communicate()[0]
 

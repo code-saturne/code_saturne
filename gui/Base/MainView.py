@@ -273,7 +273,8 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
             p = subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE,
+                                 universal_newlines=True)
             output = p.communicate()
             if p.returncode != 0:
                 sys.stderr.write(output[1] + '\n')
@@ -897,7 +898,8 @@ class MainView(object):
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
 
 
     @pyqtSignature("")

@@ -297,7 +297,8 @@ class QMeiEditorView(QDialog, Ui_QMeiDialog):
         check = subprocess.Popen([self.check_syntax],
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+                                 stderr=subprocess.PIPE,
+                                 universal_newlines=True)
         check.stdin.write(str(self.textEditExpression.toPlainText()) + '\30')
 
         check.stdin.write(str(len(self.symbols)) + '\30')

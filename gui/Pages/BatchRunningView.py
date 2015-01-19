@@ -801,7 +801,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         cmd = cs_exec_environment.enquote_arg(cmd) + " run --suggest-id"
         r_title = subprocess.Popen(cmd,
                                    shell=True,
-                                   stdout=subprocess.PIPE).stdout.read()[:-1]
+                                   stdout=subprocess.PIPE,
+                                   universal_newlines=True).stdout.read()[:-1]
         r_id = os.path.join(self.case['resu_path'], r_title)
 
         run_id = r_id
@@ -832,7 +833,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         p = subprocess.Popen(cmd,
                              shell=True,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
         lines = []
         while True:
             l = p.stdout.readline()

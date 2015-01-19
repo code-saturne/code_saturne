@@ -280,7 +280,10 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         Private slot. Find and kill all children of the spawned subprocess.
         """
         cmd = "ps eo pid,ppid --sort=pid --no-headers"
-        psraw = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+        psraw = subprocess.Popen(cmd,
+                                 shell=True,
+                                 stdout=subprocess.PIPE,
+                                 universal_newlines=True).stdout.readlines()
         psList = []
         killList = []
 
@@ -299,7 +302,10 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
             return
 
         cmd = "kill -9 %s" % string.join(list(map(str, killList)), ' ')
-        subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         universal_newlines=True)
 
 
     #def killPGroup(self):
@@ -308,7 +314,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         #"""
         ## get the pid, pgid, ppid of our current processes:
         #cmd = "ps eo pid,pgid --no-headers"
-        #psraw = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.readlines()
+        #psraw = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True).stdout.readlines()
         #psList = []
         #killList = []
         #for ps in psraw: # 1: gets rid of header
@@ -335,7 +341,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
             #return
 
         #cmd = "kill %s" % string.join(map(str, killList[1:-1]), ' ')
-        #subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        #subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 
     @pyqtSignature("")
