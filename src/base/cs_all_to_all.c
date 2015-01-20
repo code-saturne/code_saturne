@@ -42,6 +42,7 @@
 
 #include "bft_mem.h"
 #include "bft_error.h"
+#include "bft_printf.h"
 
 #include "cs_block_dist.h"
 #include "cs_log.h"
@@ -283,9 +284,6 @@ _alltoall_caller_create_meta_s(int            stride,
   dc->send_size = 0;
   dc->recv_size = 0;
 
-  dc->send_size = 0;
-  dc->recv_size = 0;
-
   dc->src_rank = NULL;
   dc->dest_rank = NULL;
 
@@ -357,8 +355,8 @@ _alltoall_caller_create_s(size_t         n_elts,
                           cs_datatype_t  datatype,
                           cs_datatype_t  dest_id_datatype,
                           bool           add_src_id,
-                          void          *elt,
-                          void          *elt_id,
+                          const void    *elt,
+                          const void    *elt_id,
                           const int      dest_rank[],
                           MPI_Comm       comm)
 {
@@ -367,8 +365,8 @@ _alltoall_caller_create_s(size_t         n_elts,
 
   size_t elt_size = cs_datatype_size[datatype]*stride;
 
-  unsigned char *_elt = elt;
-  unsigned char *_elt_id = elt_id;
+  unsigned const char *_elt = elt;
+  unsigned const char *_elt_id = elt_id;
 
   assert(elt != NULL || n_elts == 0);
 
@@ -473,7 +471,7 @@ _alltoall_caller_create_from_block_s(size_t                 n_elts,
                                      cs_datatype_t          datatype,
                                      cs_datatype_t          dest_id_datatype,
                                      bool                   add_src_id,
-                                     void                  *elt,
+                                     const void            *elt,
                                      const cs_gnum_t       *elt_gnum,
                                      cs_block_dist_info_t   bi,
                                      MPI_Comm               comm)
@@ -483,7 +481,7 @@ _alltoall_caller_create_from_block_s(size_t                 n_elts,
 
   size_t elt_size = cs_datatype_size[datatype]*stride;
 
-  unsigned char *_elt = elt;
+  unsigned const char *_elt = elt;
 
   const int rank_step = bi.rank_step;
   const cs_gnum_t block_size = bi.block_size;
@@ -783,14 +781,14 @@ _crystal_create_s(size_t           n_elts,
                   cs_datatype_t    datatype,
                   cs_datatype_t    dest_id_datatype,
                   bool             add_src_id,
-                  void            *elt,
-                  void            *dest_id,
+                  const void      *elt,
+                  const void      *dest_id,
                   const int        dest_rank[],
                   MPI_Comm         comm)
 {
   size_t i, j;
-  unsigned char *_elt = elt;
-  unsigned char *_dest_id = dest_id;
+  unsigned const char *_elt = elt;
+  unsigned const char *_dest_id = dest_id;
 
   /* Allocate structure */
 
@@ -806,7 +804,7 @@ _crystal_create_s(size_t           n_elts,
 
     int *pr = (int *)(cr->buffer[0] + i*cr->comp_size);
     unsigned char *pe = cr->buffer[0] + i*cr->comp_size + cr->elt_shift;
-    unsigned char *_psrc = _elt + i*cr->elt_size;
+    unsigned const char *_psrc = _elt + i*cr->elt_size;
 
     pr[0] = dest_rank[i];
     pr[1] = cr->rank_id;
@@ -822,7 +820,7 @@ _crystal_create_s(size_t           n_elts,
                            ? sizeof(cs_gnum_t) : sizeof(cs_lnum_t);
     for (i = 0; i < n_elts; i++) {
       unsigned char *pi = cr->buffer[0] + cr->comp_size + cr->dest_id_shift;
-      unsigned char *_p_dest_id = _dest_id + i*id_size;
+      unsigned const char *_p_dest_id = _dest_id + i*id_size;
       for (j = 0; j < id_size; j++)
         pi[j] = _p_dest_id[j];
     }
@@ -864,13 +862,13 @@ _crystal_create_from_block_s(size_t                 n_elts,
                              cs_datatype_t          datatype,
                              cs_datatype_t          dest_id_datatype,
                              bool                   add_src_id,
-                             void                  *elt,
+                             const void            *elt,
                              const cs_gnum_t       *elt_gnum,
                              cs_block_dist_info_t   bi,
                              MPI_Comm               comm)
 {
   size_t i, j;
-  unsigned char *_elt = elt;
+  unsigned const char *_elt = elt;
 
   /* Allocate structure */
 
@@ -889,7 +887,7 @@ _crystal_create_from_block_s(size_t                 n_elts,
 
     int *pr = (int *)(cr->buffer[0] + i*cr->comp_size);
     unsigned char *pe = cr->buffer[0] + i*cr->comp_size + cr->elt_shift;
-    unsigned char *_psrc = _elt + i*cr->elt_size;
+    unsigned const char *_psrc = _elt + i*cr->elt_size;
 
     cs_gnum_t g_elt_id = elt_gnum[i] -1;
     cs_gnum_t _dest_rank = g_elt_id / block_size;
@@ -980,7 +978,7 @@ _crystal_partition_strided(_crystal_router_t  *cr,
   cs_lnum_t n0 = 0, n1 = 0;
 
   const cs_lnum_t n = cr->n_elts[0];
-  const int id0 = (send_id + 1) % 2;;
+  const int id0 = (send_id + 1) % 2;
   const int id1 = send_id;
   const size_t comp_size = cr->comp_size;
 
@@ -1238,7 +1236,7 @@ cs_all_to_all_t *
 cs_all_to_all_create_s(size_t          n_elts,
                        int             stride,
                        cs_datatype_t   datatype,
-                       void           *elt,
+                       const void     *elt,
                        const int       dest_rank[],
                        MPI_Comm        comm)
 {
@@ -1331,8 +1329,8 @@ cs_all_to_all_create_with_ids_s(size_t            n_elts,
                                 cs_datatype_t     datatype,
                                 cs_datatype_t     dest_id_datatype,
                                 bool              add_src_id,
-                                void             *elt,
-                                void             *dest_id,
+                                const void       *elt,
+                                const void       *dest_id,
                                 const int         dest_rank[],
                                 MPI_Comm          comm)
 {
@@ -1426,7 +1424,7 @@ cs_all_to_all_create_from_block_s(size_t                 n_elts,
                                   cs_datatype_t          datatype,
                                   cs_datatype_t          dest_id_datatype,
                                   bool                   add_src_id,
-                                  void                  *elt,
+                                  const void            *elt,
                                   const cs_gnum_t       *elt_gnum,
                                   cs_block_dist_info_t   bi,
                                   MPI_Comm               comm)
@@ -1453,6 +1451,8 @@ cs_all_to_all_create_from_block_s(size_t                 n_elts,
   /* Create associated sub-structure */
 
   d->strided = true;
+  d->cr = NULL;
+  d->dc = NULL;
 
   if (_all_to_all_type == CS_ALL_TO_ALL_CRYSTAL_ROUTER)
     d->cr = _crystal_create_from_block_s(n_elts,

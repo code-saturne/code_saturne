@@ -92,7 +92,7 @@ cs_all_to_all_t *
 cs_all_to_all_create_s(size_t          n_elts,
                        int             stride,
                        cs_datatype_t   datatype,
-                       void           *elt,
+                       const void     *elt,
                        const int       dest_rank[],
                        MPI_Comm        comm);
 
@@ -129,8 +129,8 @@ cs_all_to_all_create_with_ids_s(size_t            n_elts,
                                 cs_datatype_t     datatype,
                                 cs_datatype_t     dest_id_datatype,
                                 bool              add_src_id,
-                                void             *elt,
-                                void             *dest_id,
+                                const void       *elt,
+                                const void       *dest_id,
                                 const int         dest_rank[],
                                 MPI_Comm          comm);
 
@@ -169,7 +169,7 @@ cs_all_to_all_create_from_block_s(size_t                 n_elts,
                                   cs_datatype_t          datatype,
                                   cs_datatype_t          dest_id_datatype,
                                   bool                   add_src_id,
-                                  void                  *elt,
+                                  const void            *elt,
                                   const cs_gnum_t       *elt_gnum,
                                   cs_block_dist_info_t   bi,
                                   MPI_Comm               comm);
@@ -289,7 +289,7 @@ cs_all_to_all_get_rank_pointers(cs_all_to_all_t   *d,
  *   d         <-- pointer to associated all-to-all distributor
  *   id_stride --> stride (in integers) between id items
  *   dest_id   --> pointer to destination ids (or NULL)
- *   dest_id   --> pointer to source ids (or NULL)
+ *   src_id    --> pointer to source ids (or NULL)
  *---------------------------------------------------------------------------*/
 
 void
