@@ -1516,18 +1516,24 @@ enddo
 ! general case, in order to compute the exact
 ! values of the boundary faces coefficients, we have to
 ! call boundary conditions routine again.
+! Moreover, we need an update of the boundary
+! conditions in the cases where they vary in time.
+
 if (ippmod(idarcy).eq.1) then
 
-  if ((darcy_unsteady.eq.1).or.(ntcabs.eq.1)) then
+  call cs_user_boundary_conditions &
+  !===============================
+  ( nvar   , nscal  ,                                              &
+    icodcl , itrifb , itypfb , izfppp ,                            &
+    dt     ,                                                       &
+    rcodcl )
 
-    call condli &
-     ( nvar   , nscal  , iterns ,                                     &
-       isvhb  ,                                                       &
-       icodcl , isostd ,                                              &
-       dt     , rcodcl ,                                              &
-       visvdr , hbord  , theipb , frcxt  )
-
-  endif
+  call condli &
+   ( nvar   , nscal  , iterns ,                                    &
+     isvhb  ,                                                      &
+     icodcl , isostd ,                                             &
+     dt     , rcodcl ,                                             &
+     visvdr , hbord  , theipb , frcxt  )
 
 endif
 
