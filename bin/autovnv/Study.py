@@ -1215,9 +1215,9 @@ class Studies(object):
                 if case.is_run != "KO":
                     if case.run_dir == "":
                         resu = os.path.join(self.dest, l, case.label, case.resu)
-                        rep = case.check_dir(self, None, case.resu, "", "dest")
+                        rep = case.check_dir(self, None, resu, "", "dest")
                         case.run_id = rep
-                        case.run_dir = os.path.join(case.resu, rep)
+                        case.run_dir = os.path.join(resu, rep)
 
             self.reporting('  o Postprocessing cases of study: ' + l)
             script, label, nodes, args = self.__parser.getPostPro(l)
