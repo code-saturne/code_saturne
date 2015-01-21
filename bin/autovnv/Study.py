@@ -783,6 +783,7 @@ class Study(object):
                         else:
                             shutil.copy2(ref, node)
                     c.update_runcase_path(c.label, destdir=self.__dest)
+                    os.chdir(self.__dest)
                 else:
                     cmd = e + " create --case " + c.label  \
                           + " --quiet --noref --copy-from "    \
