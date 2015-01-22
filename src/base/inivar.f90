@@ -180,6 +180,8 @@ if  (ippmod(icompf).ge.0) then
 
 endif
 
+iflidp = -1
+
 do ivar = 1, nvar
   if (iwgrec(ivar).eq.1) then
 
