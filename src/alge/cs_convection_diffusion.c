@@ -824,7 +824,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -1835,7 +1835,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -3410,7 +3410,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -4599,7 +4599,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -5169,7 +5169,7 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* 2. Compute the diffusive part with reconstruction technics */
 
@@ -5721,11 +5721,11 @@ cs_face_diffusion_potential(const int                 f_id,
 
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 31, "%s", f->name);
   }
-  else {
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
-  }
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Handle parallelism and periodicity */
 
@@ -6063,7 +6063,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                              &gradient_type,
                              &halo_type);
 
-  snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+  strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -6469,9 +6469,8 @@ cs_diffusion_potential(const int                 f_id,
     f = cs_field_by_id(f_id);
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
-  else {
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
-  }
+  else
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* Handle parallelism and periodicity */
 
@@ -6823,7 +6822,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                              &gradient_type,
                              &halo_type);
 
-  snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+  strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");

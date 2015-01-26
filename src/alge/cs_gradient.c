@@ -55,6 +55,8 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_prototypes.h"
@@ -4087,8 +4089,10 @@ void CS_PROCF (cgdcel, CGDCEL)
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
 
   char var_name[32];
-  if (*f_id > -1)
-    snprintf(var_name, 31, "Field %2d", *f_id);
+  if (*f_id > -1) {
+    cs_field_t *f = cs_field_by_id(*f_id);
+    snprintf(var_name, 31, "%s", f->name);
+  }
   else
     strcpy(var_name, "Work array");
   var_name[31] = '\0';

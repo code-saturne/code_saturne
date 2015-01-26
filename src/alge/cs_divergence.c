@@ -454,7 +454,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else
-    snprintf(var_name, 31, "Var. 0"); var_name[31] = '\0';
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* ---> Momentum computation */
 
