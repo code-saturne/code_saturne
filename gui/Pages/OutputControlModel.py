@@ -514,7 +514,7 @@ class OutputControlModel(Model):
 
 
     @Variables.noUndo
-    def getWriterTimeDependency(self, writer_id):#-------> a réutiliser
+    def getWriterTimeDependency(self, writer_id):
         """
         Return the type of time dependency for a writer
         """
@@ -530,7 +530,7 @@ class OutputControlModel(Model):
 
 
     @Variables.undoLocal
-    def setWriterTimeDependency(self, writer_id, choice):#-------> a réutiliser
+    def setWriterTimeDependency(self, writer_id, choice):
         """
         Set the type of time dependency for a writer
         """

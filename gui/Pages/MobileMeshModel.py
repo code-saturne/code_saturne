@@ -151,12 +151,12 @@ class MobileMeshModel(Model):
         typ = self.out.getWriterTimeDependency("-1")
         self.node_ale['status'] = status
         if status == 'on':
-            if typ not in ('10', '11', '12'):
-                typ = '10'
+            if typ == 'fixed_mesh':
+                typ = 'transient_coordinates'
             self.__setVariablesandProperties()
         else:
-            if typ not in ('0', '1', '2'):
-                typ = '0'
+            if typ == 'transient_coordinates':
+                typ = 'fixed_mesh'
             self.__removeVariablesandProperties()
 
             for zone in LocalizationModel('BoundaryZone', self.case).getZones():
@@ -164,7 +164,7 @@ class MobileMeshModel(Model):
                     Boundary("free_surface", zone.getLabel(), self.case).deleteFreeSurface()
                     LocalizationModel('BoundaryZone', self.case).deleteZone(zone.getLabel())
 
-        self.out.setWriterTimeDependency("-1", 'fixed_mesh')
+        self.out.setWriterTimeDependency("-1", typ)
 
 
     @Variables.undoLocal
