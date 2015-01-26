@@ -381,14 +381,6 @@ else
 
 endif
 
-if (iporos.eq.3) then
-  do iel = 1, ncelet
-    do isou = 1, 3
-      grad(isou,iel) = grad(isou,iel)*volume(iel)/cell_f_vol(iel)
-    enddo
-  enddo
-endif
-
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
 !    et on la transforme en pression totale

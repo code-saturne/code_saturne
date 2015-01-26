@@ -918,22 +918,12 @@ if (ippmod(icompf).lt.0) then
     endif
 
     thetap = thetav(ipr)
-    if (iporos.eq.3) then
-      !$omp parallel do private(isou)
-      do iel = 1, ncelet
-        do isou = 1, 3
-          trav(isou,iel) = gradp(isou, iel)*volume(iel)/cell_f_vol(iel)
-        enddo
+    !$omp parallel do private(isou)
+    do iel = 1, ncelet
+      do isou = 1, 3
+        trav(isou,iel) = gradp(isou, iel)
       enddo
-    else
-      !$omp parallel do private(isou)
-      do iel = 1, ncelet
-        do isou = 1, 3
-          trav(isou,iel) = gradp(isou, iel)
-        enddo
-      enddo
-    endif
-
+    enddo
 
     !Free memory
     deallocate(gradp)
@@ -1024,13 +1014,9 @@ if (ippmod(icompf).lt.0) then
       ! Tensorial diffusion for the pressure
       else if (idften(ipr).eq.6) then
 
-      !$omp parallel do private(unsrom)
-      do iel = 1, ncel
-        if (iporos.eq.3) then
-          unsrom = thetap/crom(iel)*volume(iel)/cell_f_vol(iel)
-        else
+        !$omp parallel do private(unsrom)
+        do iel = 1, ncel
           unsrom = thetap/crom(iel)
-        endif
 
           vel(1, iel) = vel(1, iel)                              &
                       - unsrom*(                                 &
@@ -1492,7 +1478,12 @@ if (iwarni(iu).ge.1) then
     else
       rhom = (crom(iel1)+crom(iel2))*0.5d0
     endif
-    rnorm = abs(imasfl(ifac))/(suffan(ifac)*rhom)
+    ! Deal with null fluid section
+    if (suffan(ifac)/surfan(ifac).gt.epzero) then
+      rnorm = abs(imasfl(ifac))/(suffan(ifac)*rhom)
+    else
+      rnorm = 0.d0
+    endif
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)
   enddo
@@ -1508,7 +1499,12 @@ if (iwarni(iu).ge.1) then
     if (iporos.eq.1.or.iporos.eq.2) then
       rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac)*porosi(ifabor(ifac)))
     else
-      rnorm = bmasfl(ifac)/(suffbn(ifac)*brom(ifac))
+      ! Deal with null fluid section
+      if (suffbn(ifac)/surfbn(ifac).gt.epzero) then
+        rnorm = bmasfl(ifac)/(suffbn(ifac)*brom(ifac))
+      else
+        rnorm = 0.d0
+      endif
     endif
     rnorma = max(rnorma,rnorm)
     rnormi = min(rnormi,rnorm)

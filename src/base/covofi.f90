@@ -419,7 +419,7 @@ if (idilat.eq.3 .and. iscalt.gt.0) then
   if (ivar.eq.isca(iscalt)) then
     ! unsteady thermodynamic source term added
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) + (pther - pthera)/dt(iel)*volume(iel)
+      smbrs(iel) = smbrs(iel) + (pther - pthera)/dt(iel)*cell_f_vol(iel)
     enddo
   endif
 endif
@@ -452,14 +452,14 @@ if (iirayo.ge.1) then
     call raysca &
     !==========
   ( iscalt,ncelet,ncel,     &
-    smbrs, rovsdt,volume)
+    smbrs, rovsdt,cell_f_vol)
 
     ! Store the explicit radiative source term
     if (idilat.ge.4) then
       do iel = 1, ncel
         propce(iel,ipproc(iustdy(iscalt))) = &
         propce(iel,ipproc(iustdy(iscalt)))   &
-        + propce(iel,ipproc(itsre(1)))*volume(iel)
+        + propce(iel,ipproc(itsre(1)))*cell_f_vol(iel)
       enddo
     endif
   endif
@@ -474,7 +474,7 @@ if (iirayo.ge.1) then
       call cs_coal_radst &
       !=================
       ( ivar   , ncelet , ncel  ,               &
-        volume , propce , smbrs , rovsdt )
+        cell_f_vol , propce , smbrs , rovsdt )
 
     endif
   endif
@@ -490,7 +490,7 @@ if (iirayo.ge.1) then
       call cs_fuel_radst &
      !==================
      ( ivar   , ncelet , ncel  ,                &
-       volume , propce , smbrs , rovsdt)
+       cell_f_vol , propce , smbrs , rovsdt)
 
     endif
   endif
@@ -535,7 +535,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) , thetv  ,   &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , cvara_var    , smacel(1,ivar) , srcmas   ,            &
+   cell_f_vol , cvara_var    , smacel(1,ivar) , srcmas   ,            &
    smbrs  , rovsdt , w1)
 
   deallocate(srcmas)
@@ -702,7 +702,7 @@ if (itspdv.eq.1) then
         call field_get_val_v(f_id, xut)
 
         do iel = 1, ncel
-          c_st_scal(iel) = c_st_scal(iel) -2.d0*xcpp(iel)*volume(iel) &
+          c_st_scal(iel) = c_st_scal(iel) -2.d0*xcpp(iel)*cell_f_vol(iel) &
                                           *(xut(1,iel)*grad(1,iel)    &
                                            +xut(2,iel)*grad(2,iel)    &
                                            +xut(3,iel)*grad(3,iel) )
@@ -712,7 +712,7 @@ if (itspdv.eq.1) then
         do iel = 1, ncel
           c_st_scal(iel) = c_st_scal(iel)                                     &
                + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)                  &
-               *volume(iel)/sigmas(iscal)                                     &
+               *cell_f_vol(iel)/sigmas(iscal)                                     &
                *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -734,7 +734,7 @@ if (itspdv.eq.1) then
         call field_get_val_v(f_id, xut)
 
         do iel = 1, ncel
-          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*volume(iel)   &
+          smbrs(iel) = smbrs(iel) -2.d0*xcpp(iel)*cell_f_vol(iel)   &
                                   *(xut(1,iel)*grad(1,iel)      &
                                    +xut(2,iel)*grad(2,iel)      &
                                    +xut(3,iel)*grad(3,iel) )
@@ -745,7 +745,7 @@ if (itspdv.eq.1) then
         do iel = 1, ncel
           smbrs(iel) = smbrs(iel)                                            &
                      + 2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)           &
-                     * volume(iel)/sigmas(iscal)                             &
+                     * cell_f_vol(iel)/sigmas(iscal)                             &
                      * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -756,7 +756,7 @@ if (itspdv.eq.1) then
           propce(iel,ipproc(iustdy(iscal))) =                     &
           propce(iel,ipproc(iustdy(iscal))) +                     &
                2.d0*xcpp(iel)*max(propce(iel,ipcvso),zero)        &
-             *volume(iel)/sigmas(iscal)                           &
+             *cell_f_vol(iel)/sigmas(iscal)                           &
              *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
         enddo
       endif
@@ -797,7 +797,7 @@ if (itspdv.eq.1) then
         xe = cmu*xk*cvara_omg(iel)
       endif
       rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
-             *volume(iel)
+             *cell_f_vol(iel)
 
       ! La diagonale recoit eps/Rk, (*theta eventuellement)
       rovsdt(iel) = rovsdt(iel) + rhovst*thetap
@@ -956,27 +956,13 @@ if (ippmod(idarcy).eq.1) then
   call field_get_val_s_by_name('saturation', cpro_sat)
 endif
 
-! Without porosity neither Darcy
-if ((iporos.eq.0).and.(ippmod(idarcy).eq.-1)) then
+! Not Darcy
+if (ippmod(idarcy).eq.-1) then
 
   ! --> Unsteady term and mass aggregation term
   do iel = 1, ncel
     rovsdt(iel) = rovsdt(iel)                                                 &
-                + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)
-  enddo
-! With porosity but not Darcy
-elseif (ippmod(idarcy).eq.-1) then
-  call field_get_val_s(ipori, porosi)
-
-  do iel = 1, ncel
-    smbrs(iel) = smbrs(iel)*porosi(iel)
-  enddo
-
-  ! --> Unsteady term and mass aggregation term
-  do iel = 1, ncel
-    rovsdt(iel) = ( rovsdt(iel)                                             &
-                  + istat(ivar)*xcpp(iel)*pcrom(iel)*volume(iel)/dt(iel)    &
-                  ) * porosi(iel)
+                + istat(ivar)*xcpp(iel)*pcrom(iel)*cell_f_vol(iel)/dt(iel)
   enddo
 ! Darcy : we take into account the porosity and delay for underground transport
 else
@@ -1023,7 +1009,7 @@ if (ippmod(idarcy).eq.1) then
     call divmas(1, imasfl , bmasfl , diverg)
     do iel = 1, ncel
       smbrs(iel) = smbrs(iel) - diverg(iel)*cvar_var(iel)              &
-        + volume(iel)/dt(iel)*cvar_var(iel)                            &
+        + cell_f_vol(iel)/dt(iel)*cvar_var(iel)                            &
         *( cproa_delay(iel)*cproa_sat(iel)                             &
          - cpro_delay(iel)*cpro_sat(iel) )
     enddo
@@ -1101,7 +1087,7 @@ if (idilat.ge.4.and.itspdv.eq.1) then
       xe = cmu*xk*cvara_omg(iel)
     endif
     rhovst = xcpp(iel)*crom(iel)*xe/(xk * rvarfl(iscal))       &
-           *volume(iel)
+           *cell_f_vol(iel)
 
     propce(iel,ipproc(iustdy(iscal))) =                               &
       propce(iel,ipproc(iustdy(iscal))) - rhovst*cvar_var(iel)
@@ -1117,7 +1103,7 @@ if (idilat.ge.4.and.iirayo.ge.1.and.iscal.eq.iscalt) then
     dvar = cvar_var(iel)-cvara_var(iel)
     propce(iel,ipproc(iustdy(iscalt))) = &
     propce(iel,ipproc(iustdy(iscalt)))   &
-    - propce(iel,ipproc(itsri(1)))*dvar*volume(iel)
+    - propce(iel,ipproc(itsri(1)))*dvar*cell_f_vol(iel)
   enddo
 endif
 
@@ -1132,7 +1118,7 @@ if (iwarni(ivar).ge.2) then
   endif
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                 &
-            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*volume(iel)        &
+            - istat(ivar)*xcpp(iel)*(pcrom(iel)/dt(iel))*cell_f_vol(iel)        &
                 *(cvar_var(iel)-cvara_var(iel))*ibcl
   enddo
   sclnor = sqrt(cs_gdot(ncel,smbrs,smbrs))

@@ -922,20 +922,11 @@ else
 
 endif
 
-
-if (iporos.eq.3) then
-  do iel = 1, ncelet
-    do isou = 1, 3
-      trav(isou,iel) = gradp(isou,iel)*volume(iel)/cell_f_vol(iel)
-    enddo
+do iel = 1, ncelet
+  do isou = 1, 3
+    trav(isou,iel) = gradp(isou,iel)
   enddo
-else
-  do iel = 1, ncelet
-    do isou = 1, 3
-      trav(isou,iel) = gradp(isou,iel)
-    enddo
-  enddo
-endif
+enddo
 
 if (iphydr.eq.1) then
   do iel = 1, ncel

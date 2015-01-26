@@ -1004,7 +1004,9 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_f_face_normal
@@ -1018,7 +1020,7 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
 
   cs_lnum_t  cell_id, face_id, ii, jj;
   int        g_id, t_id;
-  cs_real_t  pfac, vol_inv;
+  cs_real_t  pfac;
   cs_real_t  ktpond;
   cs_real_4_t  fctb;
 
@@ -1223,12 +1225,12 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
   /* Compute gradient */
   /*------------------*/
 
-# pragma omp parallel for private(vol_inv)
+# pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
-    vol_inv = 1.0 / cell_vol[cell_id];
-    grad[cell_id][0] = rhsv[cell_id][0] * vol_inv;
-    grad[cell_id][1] = rhsv[cell_id][1] * vol_inv;
-    grad[cell_id][2] = rhsv[cell_id][2] * vol_inv;
+    cs_real_t dvol = 1.0 / cell_f_vol[cell_id];
+    grad[cell_id][0] = rhsv[cell_id][0] * dvol;
+    grad[cell_id][1] = rhsv[cell_id][1] * dvol;
+    grad[cell_id][2] = rhsv[cell_id][2] * dvol;
   }
 
   /* Synchronize halos */
@@ -1301,7 +1303,9 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_f_face_normal
@@ -1445,9 +1449,9 @@ _iterative_scalar_gradient_old(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      rhsv[cell_id][0] = -grad[cell_id][0] * cell_vol[cell_id];
-      rhsv[cell_id][1] = -grad[cell_id][1] * cell_vol[cell_id];
-      rhsv[cell_id][2] = -grad[cell_id][2] * cell_vol[cell_id];
+      rhsv[cell_id][0] = -grad[cell_id][0] * cell_f_vol[cell_id];
+      rhsv[cell_id][1] = -grad[cell_id][1] * cell_f_vol[cell_id];
+      rhsv[cell_id][2] = -grad[cell_id][2] * cell_f_vol[cell_id];
     }
 
     /* Standard case, without hydrostatic pressure */
@@ -2753,7 +2757,10 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
+
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
@@ -2796,8 +2803,6 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
         cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
         pond = weight[face_id];
-        cs_real_t dvol1 = 1./cell_vol[cell_id1];
-        cs_real_t dvol2 = 1./cell_vol[cell_id2];
 
         /*
            Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -2811,8 +2816,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
           cs_real_t pfaci = (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
           cs_real_t pfacj = - pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
           for (int j = 0; j < 3; j++) {
-            gradv[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-            gradv[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+            gradv[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j];
+            gradv[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j];
           }
         }
 
@@ -2835,7 +2840,6 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
         cs_lnum_t cell_id = b_face_cells[face_id];
 
-        cs_real_t dvol = 1./cell_vol[cell_id];
 
         /*
            Remark: for the cell \f$ \celli \f$ we remove
@@ -2852,7 +2856,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
           }
 
           for (int j = 0; j < 3; j++)
-            gradv[cell_id][i][j] += pfac * b_f_face_normal[face_id][j]*dvol;
+            gradv[cell_id][i][j] += pfac * b_f_face_normal[face_id][j];
         }
 
       } /* loop on faces */
@@ -2860,6 +2864,15 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     } /* loop on threads */
 
   } /* loop on thread groups */
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    cs_real_t dvol = 1./cell_f_vol[cell_id];
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++)
+        gradv[cell_id][i][j] *= dvol;
+    }
+  }
 
   /* Periodicity and parallelism treatment */
 
@@ -2926,7 +2939,9 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict i_f_face_normal
     = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
   const cs_real_3_t *restrict b_f_face_normal
@@ -2962,7 +2977,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
       for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
         for (int i = 0; i < 3; i++) {
           for (int j = 0; j < 3; j++)
-            rhs[cell_id][i][j] = -gradv[cell_id][i][j];
+            rhs[cell_id][i][j] = -gradv[cell_id][i][j] * cell_f_vol[cell_id];
         }
       }
 
@@ -2980,9 +2995,6 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
             cs_lnum_t cell_id1 = i_face_cells[face_id][0];
             cs_lnum_t cell_id2 = i_face_cells[face_id][1];
             pond = weight[face_id];
-
-            cs_real_t dvol1 = 1./cell_vol[cell_id1];
-            cs_real_t dvol2 = 1./cell_vol[cell_id2];
 
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -3009,8 +3021,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
               pfaci += (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
               pfacj -=       pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
               for (int j = 0; j < 3; j++) {
-                rhs[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-                rhs[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+                rhs[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j];
+                rhs[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j];
               }
             }
 
@@ -3032,7 +3044,6 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                face_id++) {
 
             cs_lnum_t cell_id = b_face_cells[face_id];
-            cs_real_t dvol = 1./cell_vol[cell_id];
 
             for (int i = 0; i < 3; i++) {
 
@@ -3057,7 +3068,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
               }
 
               for (int j = 0; j < 3; j++)
-                rhs[cell_id][i][j] += pfac * b_f_face_normal[face_id][j] * dvol;
+                rhs[cell_id][i][j] += pfac * b_f_face_normal[face_id][j];
 
             }
 
@@ -3071,6 +3082,12 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        cs_real_t dvol = 1./cell_f_vol[cell_id];
+        for (int j = 0; j < 3; j++) {
+          for (int i = 0; i < 3; i++)
+            rhs[cell_id][i][j] *= dvol;
+        }
+
         for (int j = 0; j < 3; j++) {
           for (int i = 0; i < 3; i++) {
             for (int k = 0; k < 3; k++)
@@ -3360,6 +3377,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
                             cs_real_3_t        *restrict grad)
 {
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_groups = m->b_face_numbering->n_groups;
@@ -3373,7 +3391,9 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_f_face_normal
@@ -3416,9 +3436,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
           ii = i_face_cells[face_id][0];
           jj = i_face_cells[face_id][1];
 
-          cs_real_t dvol1 = 1./cell_vol[ii];
-          cs_real_t dvol2 = 1./cell_vol[jj];
-
           /*
              Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                       + (1-\alpha_\ij) \varia_\cellj\f$
@@ -3445,8 +3462,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
           pfacj -=      weight[face_id]  * (pvar[jj] - pvar[ii]);
 
           for (int j = 0; j < 3; j++) {
-            grad[ii][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-            grad[jj][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+            grad[ii][j] += pfaci * i_f_face_normal[face_id][j];
+            grad[jj][j] -= pfacj * i_f_face_normal[face_id][j];
           }
 
 
@@ -3469,8 +3486,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
           ii = b_face_cells[face_id];
 
-          cs_real_t dvol = 1./cell_vol[ii];
-
           /*
              Remark: for the cell \f$ \celli \f$ we remove
                      \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
@@ -3487,7 +3502,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
           pfac += (coefbp[face_id] - 1.0) * pvar[ii];
 
           for (int j = 0; j < 3; j++) {
-            grad[ii][j] += pfac * b_f_face_normal[face_id][j] * dvol;
+            grad[ii][j] += pfac * b_f_face_normal[face_id][j];
           }
 
         } /* loop on faces */
@@ -3522,9 +3537,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             ii = i_face_cells[face_id][0];
             jj = i_face_cells[face_id][1];
 
-            cs_real_t dvol1 = 1./cell_vol[ii];
-            cs_real_t dvol2 = 1./cell_vol[jj];
-
             cs_real_t ktpond =    weight[face_id] * c_weight[ii]
                              / (      weight[face_id] * c_weight[ii]
                                + (1.0-weight[face_id])* c_weight[jj]);
@@ -3541,8 +3553,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             cs_real_t pfacj = - ktpond * (pvar[jj] - pvar[ii]);
 
             for (int j = 0; j < 3; j++) {
-              grad[ii][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-              grad[jj][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+              grad[ii][j] += pfaci * i_f_face_normal[face_id][j];
+              grad[jj][j] -= pfacj * i_f_face_normal[face_id][j];
             }
 
           } /* loop on faces */
@@ -3568,9 +3580,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             ii = i_face_cells[face_id][0];
             jj = i_face_cells[face_id][1];
 
-            cs_real_t dvol1 = 1./cell_vol[ii];
-            cs_real_t dvol2 = 1./cell_vol[jj];
-
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                         + (1-\alpha_\ij) \varia_\cellj\f$
@@ -3583,8 +3592,8 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
             cs_real_t pfacj = - weight[face_id] * (pvar[jj] - pvar[ii]);
 
             for (int j = 0; j < 3; j++) {
-              grad[ii][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-              grad[jj][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+              grad[ii][j] += pfaci * i_f_face_normal[face_id][j];
+              grad[jj][j] -= pfacj * i_f_face_normal[face_id][j];
             }
 
           } /* loop on faces */
@@ -3608,7 +3617,6 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
           ii = b_face_cells[face_id];
 
-          cs_real_t dvol = 1./cell_vol[ii];
 
           /*
              Remark: for the cell \f$ \celli \f$ we remove
@@ -3618,7 +3626,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
           cs_real_t pfac = inc*coefap[face_id] + (coefbp[face_id]-1.0)*pvar[ii];
 
           for (int j = 0; j < 3; j++) {
-            grad[ii][j] += pfac * b_f_face_normal[face_id][j] * dvol;
+            grad[ii][j] += pfac * b_f_face_normal[face_id][j];
           }
 
         } /* loop on faces */
@@ -3627,6 +3635,14 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
     } /* loop on thread groups */
 
+  }
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t dvol = 1./cell_f_vol[cell_id];
+    grad[cell_id][0] *= dvol;
+    grad[cell_id][1] *= dvol;
+    grad[cell_id][2] *= dvol;
   }
 
   /* Synchronize halos */
@@ -3695,7 +3711,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict i_f_face_normal
@@ -3751,9 +3769,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-      rhs[cell_id][0] = -grad[cell_id][0];
-      rhs[cell_id][1] = -grad[cell_id][1];
-      rhs[cell_id][2] = -grad[cell_id][2];
+      rhs[cell_id][0] = -grad[cell_id][0] * cell_f_vol[cell_id];
+      rhs[cell_id][1] = -grad[cell_id][1] * cell_f_vol[cell_id];
+      rhs[cell_id][2] = -grad[cell_id][2] * cell_f_vol[cell_id];
     }
 
     /* Case with hydrostatic pressure */
@@ -3774,9 +3792,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
             cs_lnum_t cell_id1 = i_face_cells[face_id][0];
             cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-
-            cs_real_t dvol1 = 1./cell_vol[cell_id1];
-            cs_real_t dvol2 = 1./cell_vol[cell_id2];
 
             fexd[0] = 0.5 * (f_ext[cell_id1][0] - f_ext[cell_id2][0]);
             fexd[1] = 0.5 * (f_ext[cell_id1][1] - f_ext[cell_id2][1]);
@@ -3821,8 +3836,8 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             pfacj -= weight[face_id] * (pvar[cell_id2] - pvar[cell_id1]);
 
             for (int j = 0; j < 3; j++) {
-              rhs[cell_id1][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-              rhs[cell_id2][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+              rhs[cell_id1][j] += pfaci * i_f_face_normal[face_id][j];
+              rhs[cell_id2][j] -= pfacj * i_f_face_normal[face_id][j];
             }
 
           } /* loop on faces */
@@ -3843,7 +3858,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                face_id++) {
 
             cs_lnum_t cell_id = b_face_cells[face_id];
-            cs_real_t dvol = 1./cell_vol[cell_id];
 
             /*
                Remark: for the cell \f$ \celli \f$ we remove
@@ -3863,9 +3877,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
             pfac += (coefbp[face_id] -1.0) * pvar[cell_id];
 
-            rhs[cell_id][0] += pfac * b_f_face_normal[face_id][0] * dvol;
-            rhs[cell_id][1] += pfac * b_f_face_normal[face_id][1] * dvol;
-            rhs[cell_id][2] += pfac * b_f_face_normal[face_id][2] * dvol;
+            rhs[cell_id][0] += pfac * b_f_face_normal[face_id][0];
+            rhs[cell_id][1] += pfac * b_f_face_normal[face_id][1];
+            rhs[cell_id][2] += pfac * b_f_face_normal[face_id][2];
 
           } /* loop on faces */
 
@@ -3894,9 +3908,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             cs_lnum_t cell_id1 = i_face_cells[face_id][0];
             cs_lnum_t cell_id2 = i_face_cells[face_id][1];
 
-            cs_real_t dvol1 = 1./cell_vol[cell_id1];
-            cs_real_t dvol2 = 1./cell_vol[cell_id2];
-
             /*
                Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
                                         + (1-\alpha_\ij) \varia_\cellj\f$
@@ -3917,8 +3928,8 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
             pfacj -= weight[face_id] * (pvar[cell_id2] - pvar[cell_id1]);
 
             for (int j = 0; j < 3; j++) {
-              rhs[cell_id1][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
-              rhs[cell_id2][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+              rhs[cell_id1][j] += pfaci * i_f_face_normal[face_id][j];
+              rhs[cell_id2][j] -= pfacj * i_f_face_normal[face_id][j];
             }
 
           } /* loop on faces */
@@ -3939,7 +3950,6 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
                face_id++) {
 
             cs_lnum_t cell_id = b_face_cells[face_id];
-            cs_real_t dvol = 1./cell_vol[cell_id];
 
             /*
                Remark: for the cell \f$ \celli \f$ we remove
@@ -3957,9 +3967,9 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
             pfac += (coefbp[face_id] -1.0) * pvar[cell_id];
 
-            rhs[cell_id][0] += pfac * b_f_face_normal[face_id][0] * dvol;
-            rhs[cell_id][1] += pfac * b_f_face_normal[face_id][1] * dvol;
-            rhs[cell_id][2] += pfac * b_f_face_normal[face_id][2] * dvol;
+            rhs[cell_id][0] += pfac * b_f_face_normal[face_id][0];
+            rhs[cell_id][1] += pfac * b_f_face_normal[face_id][1];
+            rhs[cell_id][2] += pfac * b_f_face_normal[face_id][2];
 
           } /* loop on faces */
 
@@ -3974,6 +3984,12 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      cs_real_t dvol = 1./cell_f_vol[cell_id];
+
+      rhs[cell_id][0] *= dvol;
+      rhs[cell_id][1] *= dvol;
+      rhs[cell_id][2] *= dvol;
+
       grad[cell_id][0] +=   rhs[cell_id][0] * cocg[cell_id][0][0]
                           + rhs[cell_id][1] * cocg[cell_id][1][0]
                           + rhs[cell_id][2] * cocg[cell_id][2][0];
