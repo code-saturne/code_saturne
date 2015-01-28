@@ -1946,7 +1946,22 @@ class OutletBoundary(Boundary) :
 
 
     @Variables.noUndo
-    def getScalarFormula(self, label, choice):
+    def getDefaultScalarFormula(self, scalarLabel, scalar_model):
+        """
+        Get defaut scalar formula
+        """
+        if scalar_model == 'dirichlet_formula':
+            formula = scalarLabel+""" = 0;\n"""
+        elif scalar_model == 'neumann_formula':
+            formula = """flux = 0;\n"""
+        elif scalar_model == 'exchange_coefficient_formula':
+            formula = scalarLabel+""" = 0;\nhc = 0;\n"""
+
+        return formula
+
+
+    @Variables.noUndo
+    def getScalarFormula(self, label, choice, name = None):
         """
         Public method.
         Return the formula for a scalar variable.
@@ -1955,6 +1970,12 @@ class OutletBoundary(Boundary) :
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula'))
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
         formula = scalarNode.xmlGetChildString(choice)
+
+        if not formula:
+            if name != None:
+                scalarLabel = name
+            formula = self.getDefaultScalarFormula(scalarLabel, choice)
+
         return formula
 
 
@@ -2420,7 +2441,22 @@ class WallBoundary(Boundary) :
 
 
     @Variables.noUndo
-    def getScalarFormula(self, label, choice):
+    def getDefaultScalarFormula(self, scalarLabel, scalar_model):
+        """
+        Get defaut scalar formula
+        """
+        if scalar_model == 'dirichlet_formula':
+            formula = scalarLabel+""" = 0;\n"""
+        elif scalar_model == 'neumann_formula':
+            formula = """flux = 0;\n"""
+        elif scalar_model == 'exchange_coefficient_formula':
+            formula = scalarLabel+""" = 0;\nhc = 0;\n"""
+
+        return formula
+
+
+    @Variables.noUndo
+    def getScalarFormula(self, label, choice, name = None):
         """
         Public method.
         Return the formula for a turbulent variable.
@@ -2429,6 +2465,12 @@ class WallBoundary(Boundary) :
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula'))
         scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
         formula = scalarNode.xmlGetChildString(choice)
+
+        if not formula:
+            if name != None:
+                scalarLabel = name
+            formula = self.getDefaultScalarFormula(scalarLabel, choice)
+
         return formula
 
 
