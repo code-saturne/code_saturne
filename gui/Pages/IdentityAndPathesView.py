@@ -37,7 +37,8 @@ This module contains the following classes:
 import os, string
 import logging
 
-from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import *
+from PyQt4.QtGui  import *
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -67,7 +68,7 @@ unknown_dir = "????????"
 #
 #-------------------------------------------------------------------------------
 
-class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
+class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
     """
     Class to open Identity and Pathes Page.
     """
@@ -75,7 +76,7 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
         """
         Constructor
         """
-        QtGui.QWidget.__init__(self, parent)
+        QWidget.__init__(self, parent)
 
         Ui_IdentityAndPathesForm.__init__(self)
         self.setupUi(self)
@@ -94,7 +95,7 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
         self.mdl = IdentityAndPathesModel(self.case)
 
         # Create the Page layout.
-        self.connect(self.toolButton, QtCore.SIGNAL("pressed()"), self.searchDir)
+        self.connect(self.toolButton, SIGNAL("pressed()"), self.searchDir)
         self.lineEditCasePath.setReadOnly(True)
 
         # Initialize the contens of the widgets.
@@ -116,7 +117,7 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
                         title = self.tr("WARNING")
                         msg   = self.tr("Warning: the xml file must be in directory "\
                                         "DATA of the case.")
-                        QtGui.QMessageBox.warning(self, title, msg)
+                        QMessageBox.warning(self, title, msg)
                         self.mdl.setCasePath(file_dir)
                 else:
                     self.mdl.setCasePath(os.path.split(os.getcwd())[0])
@@ -149,8 +150,8 @@ class IdentityAndPathesView(QtGui.QWidget, Ui_IdentityAndPathesForm):
 
         title    = self.tr("Select directory")
         default  = path_case
-        options  = QtGui.QFileDialog.ShowDirsOnly # | QtGui.QFileDialog.DontResolveSymlinks
-        dir_name = QtGui.QFileDialog.getExistingDirectory(self, title, default, options)
+        options  = QFileDialog.ShowDirsOnly # | QFileDialog.DontResolveSymlinks
+        dir_name = QFileDialog.getExistingDirectory(self, title, default, options)
         dir_name = str(dir_name)
 
         if dir_name:

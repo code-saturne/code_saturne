@@ -240,7 +240,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
         path = os.getcwd()
         dataPath = os.path.join(path, "..", "DATA")
-        if os.path.isdir(dataPath): path = datapath
+        if os.path.isdir(dataPath): path = dataPath
 
         dirName = getexistingdirectory(self, title,
                                        path,
@@ -269,7 +269,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
                    'create', '-c',
                    os.path.join(self.currentPath, self.caseName)]
             if self.copyFrom == True:
-                cmd += ['--copy-from=', self.copyFromName]
+                cmd += ['--copy-from', self.copyFromName]
 
             p = subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
