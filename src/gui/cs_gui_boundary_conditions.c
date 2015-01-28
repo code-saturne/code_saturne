@@ -1728,37 +1728,43 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             break;
 
           case DIRICHLET_FORMULA:
-            mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-            mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-            mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
             for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac];
               for (i = 0; i < f->dim; i++) {
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
+                mei_tree_insert(ev_formula, "t", *ttcabs);
+                mei_tree_insert(ev_formula, "dt", *dtref);
+                mei_tree_insert(ev_formula, "iter", *ntcabs);
                 mei_tree_insert(ev_formula, "x", cdgfbo[3 * ifbr + 0]);
                 mei_tree_insert(ev_formula, "y", cdgfbo[3 * ifbr + 1]);
                 mei_tree_insert(ev_formula, "z", cdgfbo[3 * ifbr + 2]);
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 1;
-                char *name = NULL;
-                BFT_MALLOC(name, strlen(f->name) + 4, char);
-                sprintf(name, "%s[%d]", f->name, i);
                 mei_evaluate(ev_formula);
-                rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
-                  = mei_tree_lookup(ev_formula, name);
-                BFT_FREE(name);
+                if (f->dim > 1)
+                {
+                  char *name = NULL;
+                  BFT_MALLOC(name, strlen(f->name) + 4, char);
+                  sprintf(name, "%s[%d]", f->name, i);
+                  rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
+                    = mei_tree_lookup(ev_formula, name);
+                  BFT_FREE(name);
+                } else {
+                  rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
+                    = mei_tree_lookup(ev_formula, f->name);
+                }
               }
             }
             break;
 
           case NEUMANN_FORMULA:
-            mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-            mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-            mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
             for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac];
               for (i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) *(*nfabor) + ifbr] = 3;
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
+                mei_tree_insert(ev_formula, "t", *ttcabs);
+                mei_tree_insert(ev_formula, "dt", *dtref);
+                mei_tree_insert(ev_formula, "iter", *ntcabs);
                 mei_evaluate(ev_formula);
                 rcodcl[2 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = mei_tree_lookup(ev_formula, "flux");
@@ -1767,9 +1773,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
             break;
 
           case EXCHANGE_COEFF_FORMULA:
-            mei_tree_insert(boundaries->velocity[izone], "t", *ttcabs);
-            mei_tree_insert(boundaries->velocity[izone], "dt", *dtref);
-            mei_tree_insert(boundaries->velocity[izone], "iter", *ntcabs);
             for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
               ifbr = faces_list[ifac];
               for (i = 0; i < f->dim; i++) {
@@ -1778,6 +1781,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                 BFT_MALLOC(name, strlen(f->name) + 4, char);
                 sprintf(name, "%s[%d]", f->name, i);
                 mei_tree_t *ev_formula = boundaries->scalar[f->id][izone * f->dim + i];
+                mei_tree_insert(ev_formula, "t", *ttcabs);
+                mei_tree_insert(ev_formula, "dt", *dtref);
+                mei_tree_insert(ev_formula, "iter", *ntcabs);
                 mei_evaluate(ev_formula);
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = mei_tree_lookup(ev_formula, name);
