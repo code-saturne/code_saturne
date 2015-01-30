@@ -137,8 +137,9 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
 
         self.listViewDirectory.setRootIndex(self.model.index(self.currentPath))
 
-
         self.lineEditCurrentPath.setText(str(self.currentPath))
+
+        self.pushButtonCopyFrom.setEnabled(False)
 
         self.connect(self.listViewDirectory,   SIGNAL("doubleClicked(QModelIndex)"),   self.slotParentDirectory)
         self.connect(self.listViewFolder,      SIGNAL("clicked(QModelIndex)"),         self.slotSelectFolder)

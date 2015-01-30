@@ -73,8 +73,9 @@ class StandardItemModelOutput(QStandardItemModel):
         self.case = case
         self.mdl = mdl
 
-        self.setColumnCount(2)
+        self.setColumnCount(3)
         self.dataLabel      = []
+        self.dataName       = []
         self.dataPost       = []
         self.disableItem    = []
         self.populateModel()
@@ -94,6 +95,7 @@ class StandardItemModelOutput(QStandardItemModel):
                 post = "off"
 
             self.dataLabel.append(label)
+            self.dataName.append(name)
             self.dataPost.append(post)
 
 
@@ -103,16 +105,12 @@ class StandardItemModelOutput(QStandardItemModel):
 
         # ToolTips BUG
         if role == Qt.ToolTipRole:
-            if index.column() == 0 and index.column() > 3:
-                return to_qvariant(self.tr("Code_Saturne keyword: nbrvaf"))
-            elif index.column() == 1 and index.column() > 3:
-                return to_qvariant(self.tr("Code_Saturne keyword: irayvf"))
-            elif index.column() == 1 and index.column() <= 3:
+            if index.column() == 2:
                 return to_qvariant(self.tr("Code_Saturne keyword: ipstdv"))
 
         # StatusTips
         if role == Qt.StatusTipRole:
-            if index.column() == 1:
+            if index.column() == 2:
                 return to_qvariant("Post-processing")
 
         # Display
@@ -120,13 +118,15 @@ class StandardItemModelOutput(QStandardItemModel):
             row = index.row()
             if index.column() == 0:
                 return to_qvariant(self.dataLabel[row])
+            elif index.column() == 1:
+                return to_qvariant(self.dataName[row])
             else:
                 return to_qvariant()
 
         # CheckState
         if role == Qt.CheckStateRole:
             row = index.row()
-            if index.column() == 1:
+            if index.column() == 2:
                 value = self.dataPost[row]
                 if value == 'on':
                     return to_qvariant(Qt.Checked)
@@ -145,6 +145,8 @@ class StandardItemModelOutput(QStandardItemModel):
         elif index.column() == 0 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         elif index.column() == 1 :
+            return  Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif index.column() == 2 :
             return  Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -153,8 +155,10 @@ class StandardItemModelOutput(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Name"))
-            elif section == 1:
+                return to_qvariant(self.tr("Output label"))
+            if section == 1:
+                return to_qvariant(self.tr("Internal name"))
+            elif section == 2:
                 return to_qvariant(self.tr("Post-\nprocessing"))
         return to_qvariant()
 
@@ -163,11 +167,12 @@ class StandardItemModelOutput(QStandardItemModel):
         row = index.row()
         if index.column() == 0:
             label = str(from_qvariant(value, to_text_string))
-            if label == "": label = self.dataLabel[row]
+            if label == "":
+                label = self.dataLabel[row]
             self.mdl.setPropertyLabel(self.dataLabel[row], label)
             self.dataLabel[row] = label
 
-        elif index.column() == 1:
+        elif index.column() == 2:
             v = from_qvariant(value, int)
             if v == Qt.Checked:
                 self.dataPost[row] = "on"
