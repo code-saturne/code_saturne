@@ -115,8 +115,8 @@ call balance_by_zone(itypfb,         &
 
 !< [example_2]
 
-call balance_by_zone(itypfb,                                &
-                     "x > -0.35 and (x < 0.5 or y < 0.90)", &
+call balance_by_zone(itypfb,                                        &
+                     "box[-0.5d0, 1.3d0, 0.d0, 1.d0, 1.9d0, 1.d0]", &
                      "scalar1")
 
 !< [example_2]

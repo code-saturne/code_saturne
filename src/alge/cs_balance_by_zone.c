@@ -1373,7 +1373,7 @@ cs_balance_by_zone(const int  bc_type[],
                "   Volume       Divergence   Inj. Mass.   Suc. Mass.\n"
                "  %12.4e %12.4e %12.4e %12.4e\n"
                "------------------------------------------------------------\n"
-               "   BI inlet     BI outlet    Inlet        Outlet\n"
+               "   IB inlet     IB outlet    Inlet        Outlet\n"
                "  %12.4e %12.4e %12.4e %12.4e\n"
                "------------------------------------------------------------\n"
                "   Sym.         Smooth W.    Rough W.     Coupled      Undef. BC\n"
