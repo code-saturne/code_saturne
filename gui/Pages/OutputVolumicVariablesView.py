@@ -215,8 +215,9 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         self.case   = case
         self.mdl    = mdl
 
-        self.setColumnCount(4)
+        self.setColumnCount(5)
         self.dataLabel    = []
+        self.dataName     = []
         self.dataPrinting = []
         self.dataPost     = []
         self.dataProbe    = []
@@ -238,17 +239,17 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             if OutputControlModel(self.case).getAssociatedWriterIdList("-1") == []:
                 post = "off"
                 self.mdl.setPostStatus(label, post)
-                self.disabledItem.append((row, 2))
+                self.disabledItem.append((row, 3))
             else:
                  post = self.mdl.getPostStatus(label)
 
             if TimeStepModel(self.case).getTimePassing() in (0, 1):
                 if name == 'local_time_step':
-                    self.disabledItem.append((row, 2))
                     self.disabledItem.append((row, 3))
+                    self.disabledItem.append((row, 4))
 
             if not self.mdl.getVariableProbeList():
-                self.disabledItem.append((row, 3))
+                self.disabledItem.append((row, 4))
 
             listProbe = self.mdl.getProbesList(label)
             if listProbe:
@@ -258,6 +259,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
             # StandardItemModel data
             self.dataLabel.append(label)
+            self.dataName.append(name)
             self.dataPrinting.append(printing)
             self.dataPost.append(post)
             self.dataProbe.append(probes)
@@ -265,7 +267,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                if column == 0 or column == 3:
+                if column == 0 or column == 4:
                     role = Qt.DisplayRole
                 else:
                     role = Qt.CheckStateRole
@@ -280,7 +282,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            if index.column() == 3:
+            if index.column() == 4:
                 return to_qvariant(self.tr("Code_Saturne key word: IHISVR"))
             else:
                 return to_qvariant()
@@ -289,11 +291,11 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         if role == Qt.StatusTipRole:
             if index.column() == 0:
                 return to_qvariant(self.tr("Variable/Scalar name"))
-            elif index.column() == 1:
-                return to_qvariant(self.tr("Print in listing"))
             elif index.column() == 2:
-                return to_qvariant(self.tr("Post-processing"))
+                return to_qvariant(self.tr("Print in listing"))
             elif index.column() == 3:
+                return to_qvariant(self.tr("Post-processing"))
+            elif index.column() == 4:
                 return to_qvariant(self.tr("Enter Probes number"))
 
         # Display
@@ -301,7 +303,9 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
             row = index.row()
             if index.column() == 0:
                 return to_qvariant(self.dataLabel[row])
-            elif index.column() == 3:
+            if index.column() == 1:
+                return to_qvariant(self.dataName[row])
+            elif index.column() == 4:
                 return to_qvariant(self.dataProbe[row])
             else:
                 return to_qvariant()
@@ -309,14 +313,14 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         # CheckState
         if role == Qt.CheckStateRole:
             row = index.row()
-            if index.column() == 1:
+            if index.column() == 2:
                 value = self.dataPrinting[row]
                 if value == 'on':
                     return to_qvariant(Qt.Checked)
                 else:
                     return to_qvariant(Qt.Unchecked)
 
-            elif index.column() == 2:
+            elif index.column() == 3:
                 value = self.dataPost[row]
                 if value == 'on':
                     return to_qvariant(Qt.Checked)
@@ -334,8 +338,10 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         if (index.row(), index.column()) in self.disabledItem:
             return Qt.ItemIsEnabled
 
-        if index.column() == 1 or index.column() == 2:
+        if index.column() == 2 or index.column() == 3:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+        elif index.column() == 1:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
@@ -343,12 +349,14 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return to_qvariant(self.tr("Name"))
+                return to_qvariant(self.tr("Output label"))
             elif section == 1:
-                return to_qvariant(self.tr("Print in\nlisting"))
+                return to_qvariant(self.tr("Internal name"))
             elif section == 2:
-                return to_qvariant(self.tr("Post-\nprocessing"))
+                return to_qvariant(self.tr("Print in\nlisting"))
             elif section == 3:
+                return to_qvariant(self.tr("Post-\nprocessing"))
+            elif section == 4:
                 return to_qvariant(self.tr("Probes"))
         return to_qvariant()
 
@@ -357,11 +365,12 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
         row = index.row()
         if index.column() == 0:
             label = str(from_qvariant(value, to_text_string))
-            if label == "": label = self.dataLabel[row]
+            if label == "":
+                label = self.dataLabel[row]
             self.mdl.setVariableLabel(self.dataLabel[row], label)
             self.dataLabel[row] = label
 
-        elif index.column() == 1:
+        elif index.column() == 2:
             v = from_qvariant(value, int)
             if v == Qt.Checked:
                 self.dataPrinting[row] = "on"
@@ -369,7 +378,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
                 self.dataPrinting[row] = "off"
             self.mdl.setPrintingStatus(self.dataLabel[row], self.dataPrinting[row])
 
-        elif index.column() == 2:
+        elif index.column() == 3:
             v = from_qvariant(value, int)
             if v == Qt.Checked:
                 self.dataPost[row] = "on"
@@ -381,7 +390,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
             self.mdl.setPostStatus(self.dataLabel[row], self.dataPost[row])
 
-        elif index.column() == 3:
+        elif index.column() == 4:
             probes = str(from_qvariant(value, to_text_string))
             self.dataProbe[row] = probes
             self.mdl.updateProbes(self.dataLabel[row], probes)
@@ -425,7 +434,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.tableViewOutput.setItemDelegateForColumn(0, labelDelegate)
 
         probesDelegate = ProbesDelegate(self.tableViewOutput, self.mdl)
-        self.tableViewOutput.setItemDelegateForColumn(3, probesDelegate)
+        self.tableViewOutput.setItemDelegateForColumn(4, probesDelegate)
 
         self.case.undoStartGlobal()
 
