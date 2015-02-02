@@ -134,15 +134,16 @@ _code_saturne() {
             ;;
         run)
             case ${prev} in
-                -p|--param)  _filedir; return 0;;
-                --case)      _filedir -d; return 0;;
-                --id)         COMPREPLY=( ); return 0;;
-                --id-prefix)  COMPREPLY=( ); return 0;;
-                --id-suffix)  COMPREPLY=( ); return 0;;
-                --n|--nprocs) COMPREPLY=( ); return 0;;
+                -p|--param)              _filedir; return 0;;
+                --case)                  _filedir -d; return 0;;
+                --id)                    COMPREPLY=( ); return 0;;
+                --id-prefix)             COMPREPLY=( ); return 0;;
+                --id-suffix)             COMPREPLY=( ); return 0;;
+                --n|--nprocs)            COMPREPLY=( ); return 0;;
+                --nt|--threads-per-task) COMPREPLY=( ); return 0;;
                 *) cmdOpts="-p --param --case --id --id-prefix --id-suffix \
                      --suggest-id --force --initialize --execute --finalize \
-                     -n --nprocs";;
+                     -n --nprocs --nt --threads-per-task";;
             esac
             ;;
         *)
