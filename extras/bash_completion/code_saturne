@@ -2,7 +2,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2011 EDF S.A., France
+#   Copyright (C) 2009-2015 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -20,7 +20,7 @@
 #   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #-------------------------------------------------------------------------------
 
-# Batch completion script for:
+# Bash completion script for:
 # - "code_saturne" user Python script
 # - "cs_solver" binary executable
 
@@ -34,7 +34,7 @@ _code_saturne() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     # Possible commands except "help", as given by "code_saturne help"
-    cmds="autovnv compile config create gui info run salome"
+    cmds="autovnv bdiff bdump compile config create gui info run salome"
 
     # Help and Case options
     local helpOpts="-h --help"
@@ -82,6 +82,28 @@ _code_saturne() {
                 -f|--file) _filedir -d; return 0;;
                 -m|--mail) COMPREPLY=( ); return 0;;
                 *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
+            esac
+            ;;
+        bdiff)
+            case ${prev} in
+                --f-format)    COMPREPLY=( ); return 0;;
+                --location)    COMPREPLY=( ); return 0;;
+                -n)            COMPREPLY=( ); return 0;;
+                --section)     COMPREPLY=( ); return 0;;
+                --threshold)   COMPREPLY=( ); return 0;;
+                *) cmdOpts="--f-format --location -n \
+                     --section --threshold";;
+            esac
+            ;;
+        bdump)
+            case ${prev} in
+                -e|--extract)  COMPREPLY=( ); return 0;;
+                --f-format)    COMPREPLY=( ); return 0;;
+                --location)    COMPREPLY=( ); return 0;;
+                -n)            COMPREPLY=( ); return 0;;
+                --section)     COMPREPLY=( ); return 0;;
+                *) cmdOpts="-e --extract --f-format --location -n \
+                     --section";;
             esac
             ;;
         compile)
