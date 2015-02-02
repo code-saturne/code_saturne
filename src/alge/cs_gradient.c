@@ -4075,7 +4075,10 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   /* Allocate work arrays */
 
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  if (*ilved == 0)
+    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  else
+    grad = (cs_real_3_t *restrict)grdini;
 
   /* Choose gradient type */
 
@@ -4085,7 +4088,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   /* Synchronize variable */
 
-  if (halo != NULL && *idimtr > 0) {
+  if (halo != NULL && *idimtr > 0 && *ilved == 0) {
     cs_real_t  *restrict dpdx = grdini;
     cs_real_t  *restrict dpdy = grdini + n_cells_ext;
     cs_real_t  *restrict dpdz = grdini + n_cells_ext*2;
@@ -4128,17 +4131,8 @@ void CS_PROCF (cgdcel, CGDCEL)
       grdini[ii + n_cells_ext]   = grad[ii][1];
       grdini[ii + n_cells_ext*2] = grad[ii][2];
     }
+    BFT_FREE(grad);
   }
-  else {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++) {
-      grdini[ii*3]   = grad[ii][0];
-      grdini[ii*3+1] = grad[ii][1];
-      grdini[ii*3+2] = grad[ii][2];
-    }
-  }
-
-  BFT_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
