@@ -80,7 +80,6 @@ void CS_PROCF (cgdcel, CGDCEL)
 (
  const cs_int_t   *const f_id,        /* <-- field id, or -1                  */
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
- const cs_int_t   *const ilved,       /* <-- 1: interleaved; 0: non-interl.   */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
  const cs_int_t   *const n_r_sweeps,  /* <-- >1: with reconstruction          */
@@ -100,7 +99,7 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
        cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
-       cs_real_t         grdini[]     /* <-> gradient (interleaved or not)    */
+       cs_real_3_t       grad[]       /* <-> gradient                         */
 );
 
 /*----------------------------------------------------------------------------

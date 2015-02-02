@@ -1125,7 +1125,7 @@ contains
 
     ! Local variables
 
-    integer        :: hyd_p_flag, ilved
+    integer        :: hyd_p_flag
     integer        :: idimtr, ipond
     type(c_ptr)    :: f
 
@@ -1156,11 +1156,10 @@ contains
 
     ! The gradient of a potential (pressure, ...) is a vector
 
-    ilved = 1
     hyd_p_flag = 0
     ipond = 0
 
-    call cgdcel(f_id, imrgra, ilved, inc, recompute_cocg, nswrgp,              &
+    call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
                 climgp, c_null_ptr, coefap, coefbp,                            &
                 pvar, c_null_ptr, grad)
@@ -1215,7 +1214,7 @@ contains
 
     ! Local variables
 
-    integer          :: imrgrp, ilved
+    integer          :: imrgrp
     integer          :: idimtr, ipond
 
     ! Use iterative gradient
@@ -1228,11 +1227,10 @@ contains
 
     ! The gradient of a potential (pressure, ...) is a vector
 
-    ilved = 1
     idimtr = 0
     ipond = 0
 
-    call cgdcel(f_id, imrgrp, ilved, inc, recompute_cocg, nswrgp,              &
+    call cgdcel(f_id, imrgrp, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
                 climgp, f_ext, coefap, coefbp,                                 &
                 pvar, c_null_ptr, grad)
@@ -1285,11 +1283,10 @@ contains
 
     ! Local variables
 
-    integer          :: hyd_p_flag, ilved
+    integer          :: hyd_p_flag
     integer          :: idimtr, ipond
 
     ! The current variable is a scalar
-    ilved = 1
     idimtr = 0
 
     ! the gradient is computed with no extern hydrostatic force
@@ -1298,7 +1295,7 @@ contains
     ! the pressure gradient coefficient weighting is used
     ipond = 1
 
-    call cgdcel(f_id, imrgra, ilved, inc, recompute_cocg, nswrgp,              &
+    call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
                 climgp, c_null_ptr, coefap, coefbp,                            &
                 pvar, c_weight, grad)

@@ -414,73 +414,6 @@ _sync_scalar_gradient_halo(const cs_mesh_t  *m,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize rotation halos values from non-interleaved copy.
- *
- * parameters:
- *   halo      <-> halo associated with variables to set
- *   sync_mode <-> synchronization mode
- *   dpdx      <-- x component of gradient
- *   dpdy      <-- y component of gradient
- *   dpdz      <-- z component of gradient
- *   grad      <-> interleaved gradient components
- *----------------------------------------------------------------------------*/
-
-static void
-_initialize_rotation_values(const cs_halo_t  *halo,
-                            cs_halo_type_t    sync_mode,
-                            const cs_real_t   dpdx[],
-                            const cs_real_t   dpdy[],
-                            const cs_real_t   dpdz[],
-                            cs_real_3_t       grad[])
-{
-  int  rank_id, t_id;
-  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
-
-  const cs_lnum_t  n_cells   = halo->n_local_elts;
-  const cs_lnum_t  n_transforms = halo->n_transforms;
-  const fvm_periodicity_t  *periodicity = halo->periodicity;
-
-  assert(halo != NULL);
-
-  for (t_id = 0; t_id < n_transforms; t_id++) {
-
-    if (   fvm_periodicity_get_type(periodicity, t_id)
-        >= FVM_PERIODICITY_ROTATION) {
-
-      shift = 4 * halo->n_c_domains * t_id;
-
-      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
-
-        start_std = n_cells + halo->perio_lst[shift + 4*rank_id];
-        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
-
-        for (i = start_std; i < end_std; i++) {
-          grad[i][0] = dpdx[i];
-          grad[i][1] = dpdy[i];
-          grad[i][2] = dpdz[i];
-        }
-
-        if (sync_mode == CS_HALO_EXTENDED) {
-
-          start_ext = halo->perio_lst[shift + 4*rank_id + 2];
-          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
-
-          for (i = start_ext; i < end_ext; i++) {
-            grad[i][0] = dpdx[i];
-            grad[i][1] = dpdy[i];
-            grad[i][2] = dpdz[i];
-          }
-
-        } /* End if extended halo */
-
-      } /* End of loop on ranks */
-
-    } /* End of test on rotation */
-
-  } /* End of loop on transformations */
-}
-
-/*----------------------------------------------------------------------------
  * Clip the gradient of a scalar if necessary. This function deals with
  * the standard or extended neighborhood.
  *
@@ -4049,7 +3982,6 @@ void CS_PROCF (cgdcel, CGDCEL)
 (
  const cs_int_t   *const f_id,        /* <-- field id                         */
  const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
- const cs_int_t   *const ilved,       /* <-- 1: interleaved; 0: non-interl.   */
  const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
  const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
  const cs_int_t   *const n_r_sweeps,  /* <-- >1: with reconstruction          */
@@ -4069,15 +4001,13 @@ void CS_PROCF (cgdcel, CGDCEL)
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
        cs_real_t         pvar[],      /* <-- gradient's base variable         */
        cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
-       cs_real_t         grdini[]     /* <-> gradient (interleaved or not)    */
+       cs_real_3_t       grad[]       /* <-> gradient                         */
 )
 {
   cs_lnum_t ii;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
-
-  cs_real_3_t  *restrict grad;
 
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
@@ -4097,29 +4027,11 @@ void CS_PROCF (cgdcel, CGDCEL)
     strcpy(var_name, "Work array");
   var_name[31] = '\0';
 
-  /* Allocate work arrays */
-
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
   /* Choose gradient type */
 
   cs_gradient_type_by_imrgra(*imrgra,
                              &gradient_type,
                              &halo_type);
-
-  /* Synchronize variable */
-
-  if (halo != NULL && *idimtr > 0) {
-    cs_real_t  *restrict dpdx = grdini;
-    cs_real_t  *restrict dpdy = grdini + n_cells_ext;
-    cs_real_t  *restrict dpdz = grdini + n_cells_ext*2;
-    _initialize_rotation_values(halo,
-                                halo_type,
-                                dpdx,
-                                dpdy,
-                                dpdz,
-                                grad);
-  }
 
   /* Compute gradient */
 
@@ -4142,27 +4054,6 @@ void CS_PROCF (cgdcel, CGDCEL)
                      pvar,
                      c_weight,
                      grad);
-
-  /* Copy gradient to component arrays */
-
-  if (*ilved == 0) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++) {
-      grdini[ii]                 = grad[ii][0];
-      grdini[ii + n_cells_ext]   = grad[ii][1];
-      grdini[ii + n_cells_ext*2] = grad[ii][2];
-    }
-  }
-  else {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++) {
-      grdini[ii*3]   = grad[ii][0];
-      grdini[ii*3+1] = grad[ii][1];
-      grdini[ii*3+2] = grad[ii][2];
-    }
-  }
-
-  BFT_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
