@@ -406,7 +406,7 @@ _physical_property(const char *param,
         for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
           cs_field_t  *f = cs_field_by_id(f_id);
           if (f->type & CS_FIELD_USER)
-            mei_tree_insert(ev_law, cs_field_get_label(f), f->val[iel]);
+            mei_tree_insert(ev_law, f->name, f->val[iel]);
         }
 
         if (fth != NULL)
