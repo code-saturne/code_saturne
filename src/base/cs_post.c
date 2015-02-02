@@ -49,6 +49,7 @@
 
 #include "cs_base.h"
 #include "cs_field.h"
+#include "cs_file.h"
 #include "cs_lagr_extract.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
@@ -5713,7 +5714,7 @@ cs_post_init_error_writer(void)
 
   if (default_format_id == fvm_writer_get_format_id("Catalyst")) {
     if (! cs_file_isreg("error.py")) {
-      int default_format_id = fvm_writer_get_format_id("EnSight Gold");
+      default_format_id = fvm_writer_get_format_id("EnSight Gold");
       default_format_options = null_str;
     }
   }

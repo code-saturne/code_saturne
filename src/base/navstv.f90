@@ -130,7 +130,6 @@ double precision thetap, xdu, xdv, xdw
 double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac, ddepx , ddepy, ddepz
 double precision xnrdis, xnrtmp
-double precision vitbox, vitboy, vitboz
 double precision t1, t2, t3, t4
 double precision visclc, visctc
 double precision distbf, srfbnf, hint
@@ -571,7 +570,7 @@ if (iprco.le.0) then
   ! si le maillage est mobile (solide rigide)
   ! En turbomachine, on connait exactement la vitesse de maillage a ajouter
   if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
-    !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
+    !$omp parallel do private(iel1, iel2, dtfac, rhofac )
     do ifac = 1, nfac
       iel1 = ifacel(1,ifac)
       iel2 = ifacel(2,ifac)
@@ -587,7 +586,7 @@ if (iprco.le.0) then
                         + surfac(3,ifac)*(vr1(3) + vr2(3)) )
       endif
     enddo
-    !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
+    !$omp parallel do private(iel, dtfac, rhofac) &
     !$omp          if(nfabor > thr_n_min)
     do ifac = 1, nfabor
       iel = ifabor(ifac)
@@ -1128,7 +1127,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
   if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
                                   !==========
 
-  !$omp parallel do private(iel1, iel2, dtfac, rhofac, vitbox, vitboy, vitboz)
+  !$omp parallel do private(iel1, iel2, dtfac, rhofac)
   do ifac = 1, nfac
     iel1 = ifacel(1,ifac)
     iel2 = ifacel(2,ifac)
@@ -1144,8 +1143,7 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
                         + surfac(3,ifac)*(vr1(3) + vr2(3)) )
     endif
   enddo
-  !$omp parallel do private(iel, dtfac, rhofac, vitbox, vitboy, vitboz) &
-  !$omp          if(nfabor > thr_n_min)
+  !$omp parallel do private(iel, dtfac, rhofac) if(nfabor > thr_n_min)
   do ifac = 1, nfabor
     iel = ifabor(ifac)
     if (irotce(iel).ne.0) then

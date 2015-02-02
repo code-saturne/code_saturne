@@ -1366,7 +1366,8 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
   const  cs_lnum_t  n_b_faces = mesh->n_b_faces;
   const  cs_lnum_t  n_cells = mesh->n_cells;
   const  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
-  const  cs_lnum_2_t  *i_face_cells = mesh->i_face_cells;
+  const  cs_lnum_2_t  *i_face_cells
+    = (const cs_lnum_2_t *)(mesh->i_face_cells);
   const  cs_lnum_t  *b_face_cells = mesh->b_face_cells;
 
   /* Return if ther is not enough data (Solcom case except rediative module

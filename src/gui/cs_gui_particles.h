@@ -214,7 +214,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 const int *const nlayer,
                                 const int *const inuchl,
                                 const int *const irawcl,
-                                const int  const ihpt[],
+                                const int        ihpt[],
                                 int     ifrlag[],
                                 int     iusncl[],
                                 int     iusclb[]);

@@ -86,7 +86,7 @@ integer          ii, ivar
 integer          keycpl, iflid
 integer          kdiftn, kturt, kfturt
 integer          itycat, ityloc, idim1, idim3, idim6
-logical          ilved, iprev, inoprv, lprev
+logical          ilved, iprev, inoprv
 integer          f_id, kscavr, f_vis, f_log, f_dften
 integer          kislts, ifctsl
 integer          iopchr

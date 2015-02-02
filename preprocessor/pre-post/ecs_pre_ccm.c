@@ -706,7 +706,7 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
   cpt_val_som_ent[entmail_e] = 0;
 
   for (ifac = 0; ifac < n_faces; ifac++)
-    cpt_val_som_ent[entmail_e] += faces->nbr_n[abs(val_cel_fac[ifac])-1] + 1;
+    cpt_val_som_ent[entmail_e] += faces->nbr_n[ECS_ABS(val_cel_fac[ifac])-1] + 1;
 
   if (cpt_elt_ent[entmail_e] > 0) {
 
@@ -736,7 +736,7 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
          ifac < (size_t)(pos_cel_fac[icel + 1] - 1);
          ifac++)
       cpt_val_som_ent[entmail_e]
-        += faces->nbr_n[abs(val_cel_fac[ifac]) - 1] + 1;
+        += faces->nbr_n[ECS_ABS(val_cel_fac[ifac]) - 1] + 1;
 
     elt_pos_som_ent[entmail_e][icel + 1]
       = elt_pos_som_ent[entmail_e][icel] + cpt_val_som_ent[entmail_e];
@@ -780,9 +780,9 @@ ecs_pre_ccm__prepa_mail(_nodes_t    *noeuds,
 
   for (ifac = 0; ifac < n_faces; ifac++) {
 
-    pos_fac = elt_pos_som_ent[ECS_ENTMAIL_FAC][abs(val_cel_fac[ifac])-1];
+    pos_fac = elt_pos_som_ent[ECS_ENTMAIL_FAC][ECS_ABS(val_cel_fac[ifac])-1];
 
-    nbr_som_fac = faces->nbr_n[abs(val_cel_fac[ifac])-1];
+    nbr_som_fac = faces->nbr_n[ECS_ABS(val_cel_fac[ifac])-1];
 
     /* Orientation */
 

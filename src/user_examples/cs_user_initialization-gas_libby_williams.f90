@@ -93,9 +93,9 @@ double precision hinit, coefg(ngazgm)
 double precision sommqf, sommqt, sommq, tentm, fmelm
 
 
-character*80     chaine
-integer          iscal, ivar, ii
-double precision valmax, valmin
+character(len=80) :: chaine
+integer           :: iscal, ivar, ii
+double precision  :: valmax, valmin
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: cvar_yfm, cvar_fm, cvar_cyfp2m

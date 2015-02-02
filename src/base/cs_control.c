@@ -488,7 +488,7 @@ void
 cs_control_check_file(void)
 {
   long f_size = 0;
-  char *buffer = NULL, *cur_line = NULL;
+  char *buffer = NULL;
   const cs_time_step_t  *ts = cs_glob_time_step;
 
   const char path[] = "control_file";

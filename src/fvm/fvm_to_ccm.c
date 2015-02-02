@@ -1584,7 +1584,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
 
   const cs_lnum_t *face_vtx_idx = b_mesh->i_face_vtx_idx;
   const cs_lnum_t *face_vtx_lst = b_mesh->i_face_vtx_lst;
-  const cs_lnum_t *face_cells = b_mesh->i_face_cells;
+  const cs_lnum_t *face_cells = (const cs_lnum_t *)(b_mesh->i_face_cells);
 
   /* Allocate arrays large enough for both periodic boundary + true interior
      faces to avoid counting loop */
@@ -1751,7 +1751,7 @@ _write_face_cells_perio_g(const cs_mesh_t        *b_mesh,
   const cs_datatype_t ccm_num_type
     = (sizeof(cs_ccm_num_t) == 8) ? CS_INT64 : CS_INT32;
 
-  const cs_lnum_t *face_cells = b_mesh->i_face_cells;
+  const cs_lnum_t *face_cells = (const cs_lnum_t *)(b_mesh->i_face_cells);
 
   if (entity == kCCMIOInternalFaces)
     n_cells_per_face = 2;
@@ -3416,6 +3416,7 @@ _write_field(const char                 *name,
   default: /* Unknown */
     bft_error(__FILE__, __LINE__, 0,
               _("Unhandled field data format"));
+    dimensionality = kCCMIODimNull;
     break;
 
   }

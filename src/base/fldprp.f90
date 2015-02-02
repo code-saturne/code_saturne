@@ -74,7 +74,7 @@ implicit none
 character(len=80) :: f_label, f_name, s_name
 integer           :: ii
 integer           :: ippok
-integer           :: iest  , ipropp, idim1, idim6, iflid
+integer           :: ipropp, idim1, idim6, iflid
 logical           :: has_previous
 
 !===============================================================================

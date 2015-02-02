@@ -163,8 +163,6 @@ _b_faces_select_example(void         *input,
                         cs_lnum_t    *n_faces,
                         cs_lnum_t   **face_ids)
 {
-  cs_lnum_t i;
-
   cs_lnum_t n_b_faces = 0;
   cs_lnum_t *b_face_ids = NULL;
 
@@ -206,8 +204,6 @@ _he_fraction_05_select(void        *input,
                        cs_lnum_t   *n_cells,
                        cs_lnum_t  **cell_ids)
 {
-  cs_lnum_t i;
-
   cs_lnum_t _n_cells = 0;
   cs_lnum_t *_cell_ids = NULL;
 
@@ -226,7 +222,7 @@ _he_fraction_05_select(void        *input,
 
     BFT_MALLOC(_cell_ids, m->n_cells, cs_lnum_t); /* Allocate selection list */
 
-    for (i = 0; i < m->n_cells; i++) {
+    for (cs_lnum_t i = 0; i < m->n_cells; i++) {
       if (f->val[i] > 5.e-2) {
         _cell_ids[_n_cells] = i;
         _n_cells += 1;

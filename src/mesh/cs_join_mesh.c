@@ -1683,7 +1683,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
                                 const cs_lnum_t        selection[],
                                 const cs_join_mesh_t  *parent_mesh)
 {
-  cs_lnum_t  i, j, shift, parent_id, vtx_id, start, end;
+  cs_lnum_t  i, j, shift, parent_id, start, end;
 
   cs_lnum_t  n_select_vertices = 0;
   cs_lnum_t  *select_vtx_id = NULL;

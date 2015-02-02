@@ -89,7 +89,7 @@ use entsor
 use pointe
 use field
 use mesh,     only:ifabor
-use cs_tagmr, only:tmur, tpar0
+use cs_tagmr, only:tmur
 
 !===============================================================================
 

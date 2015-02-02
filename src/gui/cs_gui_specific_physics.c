@@ -225,7 +225,7 @@ _get_diameter_type(const int icha)
 {
   char *path;
   char *buff = NULL;
-  int   ichoice;
+  int   ichoice = 0;
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2,"thermophysical_models", "solid_fuels");
   cs_xpath_add_element_num(&path, "solid_fuel", icha);
@@ -637,14 +637,14 @@ _get_ashes_thermal_capacity(const int icha)
  *    integer for PCI type
  *----------------------------------------------------------------------------*/
 
-static double
-_get_PCI_type(const int icha)
+static int
+_get_PCI_type(int icha)
 {
   char *path;
   char *path2;
   char *buff = NULL;
   char *buff2 = NULL;
-  double ichoice;
+  int ichoice = 0.;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2,"thermophysical_models", "solid_fuels");
@@ -652,9 +652,7 @@ _get_PCI_type(const int icha)
   cs_xpath_add_element(&path, "Heating_model");
   cs_xpath_add_attribute(&path,"choice");
   buff = cs_gui_get_attribute_value(path);
-  if (buff == NULL) {
-    ichoice = 0.;
-  } else {
+  if (buff != NULL) {
     if (cs_gui_strcmp(buff, "LHV"))
       {
         path2 = cs_xpath_init_path();
@@ -730,7 +728,7 @@ _get_Y1Y2_coefficient_type(const int icha)
 {
   char *path;
   char *buff = NULL;
-  int ichoice;
+  int ichoice = 0;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2,"thermophysical_models", "solid_fuels");
@@ -739,9 +737,7 @@ _get_Y1Y2_coefficient_type(const int icha)
                         "stoichiometric_coefficient");
   cs_xpath_add_attribute(&path,"type");
   buff = cs_gui_get_attribute_value(path);
-  if (buff == NULL) {
-    ichoice = 0;
-  } else {
+  if (buff != NULL) {
     if (cs_gui_strcmp(buff, "automatic_CHONS"))
       ichoice = 0;
     else if (cs_gui_strcmp(buff, "user_define"))
@@ -1306,7 +1302,7 @@ _get_oxydant_type(void) /*ici un char*/
 {
   char *path;
   char *buff = NULL;
-  int   ichoice;
+  int   ichoice = 0;
 
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path,3,
@@ -1316,9 +1312,7 @@ _get_oxydant_type(void) /*ici un char*/
   cs_xpath_add_element(&path,"oxidant_type");
   cs_xpath_add_function_text(&path);
   buff = cs_gui_get_text_value(path);
-  if (buff == NULL) {
-    ichoice = 0;
-  } else {
+  if (buff != NULL) {
     if (cs_gui_strcmp(buff, "volumic_percent"))
       ichoice = 0;
     else if (cs_gui_strcmp(buff, "molar"))
@@ -2153,7 +2147,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
                                 double       *const och,
                                 double       *const nch,
                                 double       *const sch,
-                                double       *const ipci,
+                                int          *const ipci,
                                 double       *const pcich,
                                 double       *const cp2ch,
                                 double       *const rho0ch,

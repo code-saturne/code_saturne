@@ -132,7 +132,7 @@ double precision sir(nelemx)   ,sii(nelemx)
 double precision sirb(nbtrmx,6),siib(nbtrmx,6)
 double precision ur(nbtrmx,6)  ,ui(nbtrmx,6)
 double precision sirt(nbtrmx)  ,siit(nbtrmx)
-character*200    chain
+character(len=200) :: chain
 
 integer, allocatable, dimension(:) :: lstelt
 

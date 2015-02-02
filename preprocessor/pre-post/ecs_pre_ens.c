@@ -194,7 +194,7 @@ ecs_loc_pre_ens__ouverture_fic_geo(const char  *nom_fic_geo)
   /* Si le fichier est binaire, on vérifiera plus tard l'aspect
      "big-endian/little-endian" */
 
-  else if (strncmp(chaine, "C Binary", strlen("C Binary") != 0)) {
+  else if (strncmp(chaine, "C Binary", strlen("C Binary")) != 0) {
 
     ecs_file_set_type(fic, ECS_FILE_TYPE_TEXT);
 

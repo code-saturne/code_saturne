@@ -111,8 +111,6 @@ integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
 integer          ifcsii, iflpst, itplus, iprev
 
-double precision pcentr
-
 double precision rbid(1)
 double precision vr(3)
 

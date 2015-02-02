@@ -90,7 +90,7 @@ double precision flux_ms(ncelet)
 
 ! Local variables
 
-integer          ii, icmet,  iel, ifac, iesp
+integer          icmet,  iel, iesp
 integer          ivar, f_id, ifcvsl
 
 double precision flux
@@ -100,11 +100,9 @@ double precision Sh_z, Nu_z, Gr_z, schdt, Prdtl
 double precision lcar, l_cell, xnu
 double precision x_inc,y_ncond, x_k
 double precision x_vapint,x_ncond_int,y_ncond_int
-double precision distbf
 double precision ratio_tkpr,drho
 double precision xkloc
 double precision xmab,xvab,patm,a1
-double precision g_n
 double precision flmin, flmax
 double precision C_k1,C_k2,C_k3,C_k4,C_k5,C_k6
 double precision C_k7,C_k8,C_k9,t_wall

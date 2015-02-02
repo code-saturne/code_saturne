@@ -158,6 +158,20 @@ CS_PROCF (algcen, ALGCEN) (cs_int_t  *const iopt);
 void
 CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra);
 
+/*----------------------------------------------------------------------------
+ * Set porous model
+ *
+ * Fortran interface :
+ *
+ * subroutine compor (iporos)
+ * *****************
+ *
+ * integer          iporos        : <-- : porous model
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (compor, COMPOR) (const cs_int_t  *const iporos);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

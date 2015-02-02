@@ -50,7 +50,7 @@ extern "C" {
 
 typedef struct
 {
-    double value;  /*!< value of constant */
+  double value;  /*!< value of constant */
 } const_node_t;
 
 /*!
@@ -59,9 +59,9 @@ typedef struct
 
 typedef struct
 {
-    char *i;    /*!< label of the identifier */
-    int l;      /*!< line number */
-    int c;      /*!< column number */
+  char *i;    /*!< label of the identifier */
+  int l;      /*!< line number */
+  int c;      /*!< column number */
 } id_node_t;
 
 /*!
@@ -70,10 +70,10 @@ typedef struct
 
 typedef struct
 {
-    char *name;              /*!< label of the function */
-    int l;                   /*!< line number */
-    int c;                   /*!< column number */
-    struct _mei_node_t *op;  /*!< variable of the function */
+  char *name;              /*!< label of the function */
+  int l;                   /*!< line number */
+  int c;                   /*!< column number */
+  struct _mei_node_t *op;  /*!< variable of the function */
 } func_node_t;
 
 /*!
@@ -82,11 +82,11 @@ typedef struct
 
 typedef struct
 {
-    char *name;                 /*!< label of the operand  */
-    int l;                      /*!< line number  */
-    int c;                      /*!< column number  */
-    int nops;                   /*!< number of operands */
-    struct _mei_node_t *op[];   /*!< list of variable of the function */
+  char *name;                 /*!< label of the operand  */
+  int l;                      /*!< line number  */
+  int c;                      /*!< column number  */
+  int nops;                   /*!< number of operands */
+  struct _mei_node_t *op[];   /*!< list of variable of the function */
 } func2_node_t;
 
 /*!
@@ -95,13 +95,13 @@ typedef struct
 
 typedef struct
 {
-    char *name;              /*!< label of the interpolation function */
-    char *data;              /*!< name of the file of the data  */
-    int l;                   /*!< line number  */
-    int c;                   /*!< column number  */
-    int col1;                /*!< column number in the file for interpolation  */
-    int col2;                /*!< column number in the file for interpolation  */
-    struct _mei_node_t *op;  /*!< variable to be interpolate  */
+  char *name;              /*!< label of the interpolation function */
+  char *data;              /*!< name of the file of the data  */
+  int l;                   /*!< line number  */
+  int c;                   /*!< column number  */
+  int col1;                /*!< column number in the file for interpolation  */
+  int col2;                /*!< column number in the file for interpolation  */
+  struct _mei_node_t *op;  /*!< variable to be interpolate  */
 } interp1d_node_t;
 
 /*!
@@ -110,9 +110,9 @@ typedef struct
 
 typedef struct
 {
-    int oper;                   /*!< operator */
-    int nops;                   /*!< number of operands */
-    struct _mei_node_t *op[];   /*!< list of operands (expandable) */
+  int oper;                   /*!< operator */
+  int nops;                   /*!< number of operands */
+  struct _mei_node_t *op[];   /*!< list of operands (expandable) */
 } opr_node_t;
 
 /*!
@@ -121,12 +121,12 @@ typedef struct
 
 typedef union
 {
-    const_node_t con;         /* constants */
-    id_node_t    id;          /* identifiers */
-    func_node_t  func;        /* function with one argument  */
-    func2_node_t funcx;       /* function with two, three, or four arguments */
-    interp1d_node_t interp1d; /* function of 1D interpolation */
-    opr_node_t   opr;         /* operators */
+  const_node_t con;         /* constants */
+  id_node_t    id;          /* identifiers */
+  func_node_t  func;        /* function with one argument  */
+  func2_node_t funcx;       /* function with two, three, or four arguments */
+  interp1d_node_t interp1d; /* function of 1D interpolation */
+  opr_node_t   opr;         /* operators */
 } node_type_t;
 
 /*!
@@ -138,9 +138,9 @@ typedef union
 
 struct _mei_node_t
 {
-    mei_flag_t      flag;       /*!< type of node */
-    hash_table_t   *ht;         /*!< pointer of the hash table of the expression */
-    node_type_t    *type;       /*!< type of node */
+  mei_flag_t      flag;       /*!< type of node */
+  hash_table_t   *ht;         /*!< pointer of the hash table of the expression */
+  node_type_t    *type;       /*!< type of node */
 };
 
 /*!

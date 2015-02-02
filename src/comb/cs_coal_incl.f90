@@ -33,14 +33,13 @@ module cs_coal_incl
 
   ! Combustion du coke par H2O
 
-  integer, save :: ihth2o , ighh2o(nclcpm)
+  integer, save :: ihth2o , ighh2o(nclcpm), ipci(ncharm)
 
   ! Modele de NOx
   ! qpr : % d'azote libere pendant la devol.% de MV libere pendant la devol.
   ! fn : concentration en azote sur pur
 
-  double precision, save :: qpr(ncharm), fn(ncharm), ipci(ncharm),             &
-                            xashsec(ncharm)
+  double precision, save :: qpr(ncharm), fn(ncharm), xashsec(ncharm)
 
   ! Nouveau modele NOx
   ! ==================

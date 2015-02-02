@@ -104,7 +104,7 @@ double precision, allocatable, dimension(:) :: smbrs, rovsdt
 double precision, allocatable, dimension(:) :: dpvar, divu
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:), pointer :: porosi, c_st_voidf
+double precision, dimension(:), pointer :: c_st_voidf
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 

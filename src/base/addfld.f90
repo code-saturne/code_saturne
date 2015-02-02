@@ -80,10 +80,10 @@ implicit none
 
 ! Local variables
 
-integer          ii, iel
+integer          ii
 integer          ifcvsl
 integer          iflid, iflidp, iopchr, ivar
-integer          nfld, itycat, ityloc, idim1, idim3, idimf
+integer          itycat, ityloc, idim1, idim3, idimf
 logical          ilved, iprev, inoprv, is_set
 integer          f_id
 

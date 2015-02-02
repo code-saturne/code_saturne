@@ -246,8 +246,6 @@ implicit none
 ! Arguments
 integer          mbrom
 
-double precision dt(ncelet)
-
 double precision propce(ncelet,*)
 
 ! Local variables

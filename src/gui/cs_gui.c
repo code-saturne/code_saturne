@@ -1571,7 +1571,7 @@ _volumic_zone_localization(const char *zone_id)
  *   value              -->  new initial value of the property
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _VanGenuchten_parameter_value(const char* zone_id,
                               const char  *parameter,
                               double      *value)
@@ -3904,7 +3904,6 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         /* pressure initialization for darcy model */
         if (*idarcy > 0) {
           char *formula        = NULL;
-          char *buff           = NULL;
           mei_tree_t *ev_formula       = NULL;
           path = cs_xpath_short_path();
           cs_xpath_add_element(&path, "variable");
@@ -4640,12 +4639,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   double time0;
   mei_tree_t *ev_law = NULL;
   int i, iel;
-  int *cells_list = NULL;
-  int cells = 0;
 
   cs_var_t  *vars = cs_glob_var;
   const int iscalt = cs_glob_thermal_model->iscalt;
-  const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   /* law for density */
   if (!cs_gui_strcmp(vars->model, "compressible_model") ||
@@ -5173,10 +5169,8 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
 {
   char *path = NULL;
   char *status = NULL;
-  char *law = NULL;
   double time0;
   char *formula = NULL;
-  mei_tree_t *ev_law = NULL;
   int *cells_list = NULL;
   int cells = 0;
   mei_tree_t *ev_formula  = NULL;
@@ -6278,15 +6272,15 @@ cs_gui_time_moments(void)
       BFT_FREE(f_name);
     }
 
-    int m_id = cs_time_moment_define_by_field_ids(m_name,
-                                                  n_m_fields,
-                                                  m_f_id,
-                                                  m_c_id,
-                                                  CS_TIME_MOMENT_MEAN,
-                                                  nt_start,
-                                                  t_start,
-                                                  restart_mode,
-                                                  restart_name);
+    cs_time_moment_define_by_field_ids(m_name,
+                                       n_m_fields,
+                                       m_f_id,
+                                       m_c_id,
+                                       CS_TIME_MOMENT_MEAN,
+                                       nt_start,
+                                       t_start,
+                                       restart_mode,
+                                       restart_name);
 
     m_c_id = NULL;
     BFT_FREE(m_f_id);

@@ -68,7 +68,7 @@ implicit none
 
 ! Local variables
 
-integer          ivart, iel, ifac
+integer          iel, ifac
 integer          ivar
 integer          f_id
 integer          icla
@@ -85,7 +85,7 @@ double precision aa7, bb7, cc7, dd7
 double precision visco_O2, visco_CO, visco_H2, visco_N2
 double precision visco_SO2, visco_NH3, visco_CO2
 
-character*80     fname
+character(len=80) :: fname
 
 double precision, allocatable, dimension(:) :: visco
 

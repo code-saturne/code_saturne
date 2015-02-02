@@ -583,8 +583,6 @@ _check_geometry(cs_mesh_t  *mesh)
 {
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
-  cs_lnum_t  f_id;
-
   cs_gnum_t n_errors = 0;
 
   const int  *cell_flag = tbm->cell_rotor_num;

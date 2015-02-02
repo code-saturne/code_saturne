@@ -262,12 +262,6 @@ static const ecs_loc_gambit_elt_t  ecs_loc_gambit_elt_liste_c[7] = {
 /* fichiers au format 'DOS'                     */
 #define ECS_LOC_LNG_MAX_CHAINE_GAMBIT  84        /* Dimension des chaines */
 
-static const int ecs_loc_nbr_max_elt_c = 1000; /* Nombre initial d'elements  */
-static const int ecs_loc_nbr_moy_som_c =    8; /* Nombre initial de sommets  */
-                                                /*  par element en moyenne    */
-
-
-
 /*============================================================================
  *  Fonctions privées
  *============================================================================*/

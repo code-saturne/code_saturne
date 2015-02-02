@@ -143,7 +143,7 @@ double precision crvexp(3,ncelet), crvimp(3,3,ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          iel
 double precision ckp, qdm
 
@@ -394,7 +394,7 @@ double precision crvexp(ncelet), crvimp(ncelet)
 
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar, iiscvr,  iel
 integer          ilelt, nlelt
 
@@ -687,11 +687,12 @@ double precision ff, tau
 
 type(var_cal_opt) vcopt
 
-character*80     fname
+character(len=80) :: fname
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
 double precision, dimension(:), pointer ::  cvar_var
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START

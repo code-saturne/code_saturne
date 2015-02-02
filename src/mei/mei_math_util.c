@@ -92,28 +92,30 @@ static int data_length = 0;     /* number of user data set                     *
  */
 /*----------------------------------------------------------------------------*/
 
+#if 0
 static void
 _user_data_dump(const mei_user_data_t *d)
 {
-    bft_printf("\n\nDUMP OF THE MEI_USER_DATA STRUCTURE: %p\n\n",
-               (const void *)d);
+  bft_printf("\n\nDUMP OF THE MEI_USER_DATA STRUCTURE: %p\n\n",
+             (const void *)d);
 
-    bft_printf("  name:              %s\n",   d->name);
-    bft_printf("  commentaries:\n%s\n",       d->commentaries);
-    bft_printf("  number of columns: %i\n",   d->col);
-    bft_printf("  number of lines:   %i\n\n", d->row);
+  bft_printf("  name:              %s\n",   d->name);
+  bft_printf("  commentaries:\n%s\n",       d->commentaries);
+  bft_printf("  number of columns: %i\n",   d->col);
+  bft_printf("  number of lines:   %i\n\n", d->row);
 
-    for (int i = 0; i < d->row; i++) {
-        bft_printf("\nline #%i: ", i);
-        for (int j = 0; j < d->col; j++) {
-            bft_printf("%f ", d->values[i][j]);
-        }
+  for (int i = 0; i < d->row; i++) {
+    bft_printf("\nline #%i: ", i);
+    for (int j = 0; j < d->col; j++) {
+      bft_printf("%f ", d->values[i][j]);
     }
+  }
 
-    bft_printf("\n\nEND OF DUMP OF MEI_USER_DATA STRUCTURE\n\n");
-    bft_printf_flush();
-    return;
+  bft_printf("\n\nEND OF DUMP OF MEI_USER_DATA STRUCTURE\n\n");
+  bft_printf_flush();
+  return;
 }
+#endif
 
 /*-----------------------------------------------------------------------------*/
 /*!
@@ -172,7 +174,7 @@ _user_data_reader(const char *filename)
                 "Add this data file to the list of users file to copy \n"
                 "in the computational directory.\n"), filename);
   else
-    /* If file exists, close it. It will be reopen. */
+    /* If file exists, close it. It will be reopened. */
     close(file_descriptor);
 
   /* Searching the file extension */
@@ -188,13 +190,13 @@ _user_data_reader(const char *filename)
   do {
     ext = strtok(NULL, ".");
 
-    if (_user_data_strcmp(ext, "dat"))
-    {
+    if (_user_data_strcmp(ext, "dat")) {
       BFT_MALLOC(separator, 4, char);
       strcpy(separator, " \t");
       break;
 
-    } else if (_user_data_strcmp(ext, "csv")) {
+    }
+    else if (_user_data_strcmp(ext, "csv")) {
       BFT_MALLOC(separator, 3, char);
       strcpy(separator, ",");
       break;
@@ -202,7 +204,7 @@ _user_data_reader(const char *filename)
 
   } while (ext != NULL);
 
-  if ( !(_user_data_strcmp(ext, "dat") || _user_data_strcmp(ext, "csv")) )
+  if (!(_user_data_strcmp(ext, "dat") || _user_data_strcmp(ext, "csv")))
     bft_error(__FILE__, __LINE__, 0,
               _("interp1d: the file extention expected "
                 "is dat or csv.  Extension found: %s\n"), ext);
@@ -284,18 +286,18 @@ _user_data_reader(const char *filename)
     if (!_user_data_strcmp(line, "\n")) {
 
       if (!strncmp(line, "#", 1)) {
-          if (data[data_length-1]->commentaries == NULL) {
-            BFT_MALLOC(data[data_length-1]->commentaries,
-                       strlen(line)+1,
+        if (data[data_length-1]->commentaries == NULL) {
+          BFT_MALLOC(data[data_length-1]->commentaries,
+                     strlen(line)+1,
+                     char);
+          strcpy(data[data_length-1]->commentaries, line);
+        }
+        else {
+          BFT_REALLOC(data[data_length-1]->commentaries,
+                      strlen(data[data_length-1]->commentaries)+strlen(line)+1,
                       char);
-            strcpy(data[data_length-1]->commentaries, line);
-          }
-          else {
-            BFT_REALLOC(data[data_length-1]->commentaries,
-                        strlen(data[data_length-1]->commentaries)+strlen(line)+1,
-                        char);
-            strcat(data[data_length-1]->commentaries, line);
-          }
+          strcat(data[data_length-1]->commentaries, line);
+        }
       }
       else {
 
@@ -310,39 +312,46 @@ _user_data_reader(const char *filename)
           if (!_user_data_strcmp(end, ""))
             bft_error(__FILE__, __LINE__, 0,
                       _("In the file %s, line %i, there is a wrong value :%s\n"),
-                        filename, i+1, string_tok);
+                      filename, i+1, string_tok);
 
           for (int j = 2; j < nb_col + 1; j++) {
             string_tok = strtok(NULL, separator);
 
             if (string_tok == NULL || _user_data_strcmp(string_tok, "\n")) {
               bft_error(__FILE__, __LINE__, 0,
-                        _("The file %s does not have a correct structure at line %i.\n"), filename, i);
+                        _("The file %s does not have a correct "
+                          "structure at line %i.\n"),
+                        filename, i);
             }
             else {
-              data[data_length - 1]->values[row - 1][j - 1] = strtod(string_tok, &end);
+              data[data_length - 1]->values[row - 1][j - 1]
+                = strtod(string_tok, &end);
 
-              if (!_user_data_strcmp(end, "") && !_user_data_strcmp(end, "\n"))
+              if (   !_user_data_strcmp(end, "")
+                  && !_user_data_strcmp(end, "\n"))
                 bft_error(__FILE__, __LINE__, 0,
-                          _("In the file %s, line %i, there is a wrong value :%s\n"),
-                            filename, i, string_tok);
-              }
+                          _("In the file %s, line %i, "
+                            "there is a wrong value :%s\n"),
+                          filename, i, string_tok);
             }
           }
-          BFT_FREE(saveptr);
         }
+        BFT_FREE(saveptr);
       }
     }
+  }
 
-    fclose(fr);
+  fclose(fr);
 
-    assert(row == nb_line);
+  assert(row == nb_line);
 
-    /* _user_data_dump(data[data_length-1]); */
+#if 0
+  _user_data_dump(data[data_length-1]);
+#endif
 
-    BFT_FREE(separator);
+  BFT_FREE(separator);
 
-    return;
+  return;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -356,26 +365,26 @@ _user_data_reader(const char *filename)
 static void
 _user_data_create(const char *filename)
 {
-    data_length += 1;
+  data_length += 1;
 
-    if (data_length == 1)
-        BFT_MALLOC(data, data_length, mei_user_data_t*);
-    else
-        BFT_REALLOC(data, data_length, mei_user_data_t*);
+  if (data_length == 1)
+    BFT_MALLOC(data, data_length, mei_user_data_t*);
+  else
+    BFT_REALLOC(data, data_length, mei_user_data_t*);
 
-    BFT_MALLOC(data[data_length - 1], 1, mei_user_data_t);
+  BFT_MALLOC(data[data_length - 1], 1, mei_user_data_t);
 
-    BFT_MALLOC(data[data_length - 1]->name, strlen(filename) + 1, char);
-    strcpy(data[data_length - 1]->name, filename);
+  BFT_MALLOC(data[data_length - 1]->name, strlen(filename) + 1, char);
+  strcpy(data[data_length - 1]->name, filename);
 
-    BFT_MALLOC(data[data_length-1]->commentaries, strlen(" ") + 1, char);
-    strcpy(data[data_length-1]->commentaries, "");
+  BFT_MALLOC(data[data_length-1]->commentaries, strlen(" ") + 1, char);
+  strcpy(data[data_length-1]->commentaries, "");
 
-    data[data_length-1]->col = -1;
-    data[data_length-1]->row = -1;
+  data[data_length-1]->col = -1;
+  data[data_length-1]->row = -1;
 
-    _user_data_reader(filename);
-    return;
+  _user_data_reader(filename);
+  return;
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -406,8 +415,7 @@ _user_data_interp(const mei_user_data_t *d,
 
   /* verification of the abscissa colomn */
 
-  for (int i = 0; i < row - 1; i++)
-  {
+  for (int i = 0; i < row - 1; i++) {
     if (values[i + 1][c1 - 1] < values[i][c1 - 1])
       bft_error(__FILE__, __LINE__, 0,
                 _("Abscissa colomn is not in the rigth order.\n"));
@@ -471,27 +479,27 @@ mei_interp1d(const char *filename,
              const int c2,
              const double x)
 {
-    int data_index = -1;
+  int data_index = -1;
 
-    if (data_length > 0) {
-        /* Data exists: search if data are alerady read */
-        for (int i = 0; i < data_length; i++) {
-            if (_user_data_strcmp(data[i]->name, filename))
-                data_index = i;
-        }
-        /* Data exists but required data are not found */
-        if (data_index == -1) {
-            _user_data_create(filename);
-            data_index = data_length - 1;
-        }
+  if (data_length > 0) {
+    /* Data exists: search if data are alerady read */
+    for (int i = 0; i < data_length; i++) {
+      if (_user_data_strcmp(data[i]->name, filename))
+        data_index = i;
     }
-    else {
-        /* No data yet */
-        _user_data_create(filename);
-        data_index = 0;
+    /* Data exists but required data are not found */
+    if (data_index == -1) {
+      _user_data_create(filename);
+      data_index = data_length - 1;
     }
+  }
+  else {
+    /* No data yet */
+    _user_data_create(filename);
+    data_index = 0;
+  }
 
-    return _user_data_interp(data[data_index], c1, c2, x);
+  return _user_data_interp(data[data_index], c1, c2, x);
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -502,19 +510,18 @@ mei_interp1d(const char *filename,
 
 void mei_data_free(void)
 {
-    for(int i = 0; i < data_length - 1; i++)
-    {
-        BFT_FREE(data[i]->name);
-        BFT_FREE(data[i]->commentaries);
-        for (int j = 0; j < data[i]->row; j++)
-            BFT_FREE(data[i]->values[i]);
-        BFT_FREE(data[i]->values);
-        BFT_FREE(data[i]);
-    }
+  for(int i = 0; i < data_length - 1; i++) {
+    BFT_FREE(data[i]->name);
+    BFT_FREE(data[i]->commentaries);
+    for (int j = 0; j < data[i]->row; j++)
+      BFT_FREE(data[i]->values[i]);
+    BFT_FREE(data[i]->values);
+    BFT_FREE(data[i]);
+  }
 
-    BFT_FREE(data);
+  BFT_FREE(data);
 
-    data_length = 0;
+  data_length = 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -530,10 +537,10 @@ void mei_data_free(void)
 double
 mei_max(const double x1, const double x2)
 {
-    if (x1 < x2)
-        return x2;
-    else
-        return x1;
+  if (x1 < x2)
+    return x2;
+  else
+    return x1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -549,10 +556,10 @@ mei_max(const double x1, const double x2)
 double
 mei_min(const double x1, const double x2)
 {
-    if (x1 < x2)
-        return x1;
-    else
-        return x2;
+  if (x1 < x2)
+    return x1;
+  else
+    return x2;
 }
 
 /*-----------------------------------------------------------------------------*/

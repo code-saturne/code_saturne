@@ -140,7 +140,6 @@ cs_les_filter(int        stride,
   const cs_lnum_t  _stride = stride;
   const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
-  const cs_lnum_t  n_cells_ghost = mesh->n_ghost_cells;
   const cs_lnum_t  n_elts_l = n_cells * _stride;
   const cs_lnum_t  n_elts = n_cells_ext * _stride;
   const int n_i_groups = mesh->i_face_numbering->n_groups;

@@ -97,17 +97,20 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  char        *material;                              /* material choice (water, ...) */
-  char        *method;                                /* method choice (cathare, thetis, freesteam, ...) */
-  char        *reference;                             /* reference (automatic) */
-  char        *phas;                                  /* phas choice (liquid/gas) */
-  int          type;                                  /* 0 for user
-                                                       * 1 for freesteam
-                                                       * 2 (other) */
+  char        *material;             /* material choice (water, ...) */
+  char        *method;               /* method choice
+                                        (cathare, thetis, freesteam, ...) */
+  char        *reference;            /* reference (automatic) */
+  char        *phas;                 /* phase choice (liquid/gas) */
+  int          type;                 /* 0 for user
+                                      * 1 for freesteam
+                                      * 2 (other) */
+
   cs_phys_prop_thermo_plane_type_t   thermo_plane;
-  int          temp_scale;                            /* temperature scale if needed
-                                                       *     1 for kelvin
-                                                       *     2 for Celsius */
+
+  int          temp_scale;           /* temperature scale if needed
+                                      * 1 for kelvin
+                                      * 2 for Celsius */
 
 } cs_thermal_table_t;
 
@@ -136,10 +139,14 @@ typedef void
 
 cs_thermal_table_t *cs_glob_thermal_table = NULL;
 
+#if defined(HAVE_DLOPEN) && defined(HAVE_EOS)
+
 static void                *_cs_eos_dl_lib = NULL;
 static cs_eos_create_t     *_cs_eos_create = NULL;
 static cs_eos_destroy_t    *_cs_eos_destroy = NULL;
 static cs_phys_prop_eos_t  *_cs_phys_prop_eos = NULL;
+
+#endif
 
 /*----------------------------------------------------------------------------
  * Create an empty thermal_table structure

@@ -1263,7 +1263,7 @@ _print_join_info(cs_mesh_t  *mesh,
                 _("\nJoining number %d:\n\n"), join_param.num);
 
   if (join_param.perio_type != FVM_PERIODICITY_NULL) {
-    const double m[3][4];
+    double m[3][4];
     memcpy(m, join_param.perio_matrix, sizeof(double)*12);
     bft_printf(_("  Periodicity type: %s\n"),
                _(fvm_periodicity_type_name[join_param.perio_type]));
