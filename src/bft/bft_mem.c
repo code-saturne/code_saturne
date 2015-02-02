@@ -190,6 +190,10 @@ static size_t  _bft_mem_global_n_frees = 0;
 static bft_error_handler_t  *_bft_mem_error_handler
                               = (_bft_mem_error_handler_default);
 
+#if defined(HAVE_OPENMP)
+static omp_lock_t _bft_mem_lock;
+#endif
+
 /*-----------------------------------------------------------------------------
  * Local function definitions
  *-----------------------------------------------------------------------------*/
@@ -570,6 +574,14 @@ bft_mem_init(const char *log_file_name)
 {
   size_t alloc_size;
 
+#if defined(HAVE_OPENMP)
+  if (omp_in_parallel()) {
+    if (omp_get_thread_num() != 0)
+      return;
+  }
+  omp_init_lock(&_bft_mem_lock);
+#endif
+
   if (_bft_mem_global_initialized == 1) {
     _bft_mem_error(__FILE__, __LINE__, 0,
                    _("bft_mem_init() has already been called"));
@@ -637,6 +649,14 @@ bft_mem_init(const char *log_file_name)
 
 void bft_mem_end(void)
 {
+#if defined(HAVE_OPENMP)
+  if (omp_in_parallel()) {
+    if (omp_get_thread_num() != 0)
+      return;
+  }
+  omp_destroy_lock(&_bft_mem_lock);
+#endif
+
   if (_bft_mem_global_initialized == 0) {
     _bft_mem_error(__FILE__, __LINE__, 0,
                    _("bft_mem_end() called before bft_mem_init()"));
@@ -751,25 +771,38 @@ bft_mem_malloc(size_t       ni,
 
   /* Memory allocation counting */
 
-  _bft_mem_global_alloc_cur += alloc_size;
+  {
+#if defined(HAVE_OPENMP)
+    int in_parallel = omp_in_parallel();
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
+#endif
 
-  if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-    _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+    _bft_mem_global_alloc_cur += alloc_size;
 
-  if (_bft_mem_global_file != NULL) {
-    fprintf(_bft_mem_global_file, "\n  alloc: %-27s:%6d : %-39s: %9lu",
-            _bft_mem_basename(file_name), line_num,
-            var_name, (unsigned long)alloc_size);
-    fprintf(_bft_mem_global_file, " : (+%9lu) : %12lu : [%10p]",
-            (unsigned long)alloc_size,
-            (unsigned long)_bft_mem_global_alloc_cur,
-            p_loc);
-    fflush(_bft_mem_global_file);
+    if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
+      _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+
+    if (_bft_mem_global_file != NULL) {
+      fprintf(_bft_mem_global_file, "\n  alloc: %-27s:%6d : %-39s: %9lu",
+              _bft_mem_basename(file_name), line_num,
+              var_name, (unsigned long)alloc_size);
+      fprintf(_bft_mem_global_file, " : (+%9lu) : %12lu : [%10p]",
+              (unsigned long)alloc_size,
+              (unsigned long)_bft_mem_global_alloc_cur,
+              p_loc);
+      fflush(_bft_mem_global_file);
+    }
+
+    _bft_mem_block_malloc(p_loc, alloc_size);
+
+    _bft_mem_global_n_allocs += 1;
+
+#if defined(HAVE_OPENMP)
+    if (in_parallel)
+      omp_unset_lock(&_bft_mem_lock);
+#endif
   }
-
-  _bft_mem_block_malloc(p_loc, alloc_size);
-
-  _bft_mem_global_n_allocs += 1;
 
   /* Return pointer to allocated memory */
 
@@ -823,7 +856,18 @@ bft_mem_realloc(void        *ptr,
 
   /* If the old size equals the new size, nothing needs to be done. */
 
+#if defined(HAVE_OPENMP)
+  int in_parallel = omp_in_parallel();
+  if (in_parallel)
+    omp_set_lock(&_bft_mem_lock);
+#endif
+
   old_size = _bft_mem_block_size(ptr);
+
+#if defined(HAVE_OPENMP)
+  if (in_parallel)
+    omp_unset_lock(&_bft_mem_lock);
+#endif
 
   if (new_size == old_size)
     return ptr;
@@ -856,29 +900,41 @@ bft_mem_realloc(void        *ptr,
     else if (_bft_mem_global_initialized == 0)
       return p_loc;
 
-    _bft_mem_global_alloc_cur += size_diff;
+    {
+#if defined(HAVE_OPENMP)
+      if (in_parallel)
+        omp_set_lock(&_bft_mem_lock);
+#endif
 
-    if (size_diff > 0) {
-      if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-        _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+      _bft_mem_global_alloc_cur += size_diff;
+
+      if (size_diff > 0) {
+        if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
+          _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+      }
+
+      if (_bft_mem_global_file != NULL) {
+        char sgn = (size_diff > 0) ? '+' : '-';
+        fprintf(_bft_mem_global_file, "\nrealloc: %-27s:%6d : %-39s: %9lu",
+                _bft_mem_basename(file_name), line_num,
+                var_name, (unsigned long)new_size);
+        fprintf(_bft_mem_global_file, " : (%c%9lu) : %12lu : [%10p]",
+                sgn,
+                (unsigned long) ((size_diff > 0) ? size_diff : -size_diff),
+                (unsigned long)_bft_mem_global_alloc_cur,
+                p_loc);
+        fflush(_bft_mem_global_file);
+      }
+
+      _bft_mem_block_realloc(ptr, p_loc, new_size);
+
+      _bft_mem_global_n_reallocs += 1;
+
+#if defined(HAVE_OPENMP)
+      if (in_parallel)
+        omp_unset_lock(&_bft_mem_lock);
+#endif
     }
-
-    if (_bft_mem_global_file != NULL) {
-      char sgn = (size_diff > 0) ? '+' : '-';
-      fprintf(_bft_mem_global_file, "\nrealloc: %-27s:%6d : %-39s: %9lu",
-              _bft_mem_basename(file_name), line_num,
-              var_name, (unsigned long)new_size);
-      fprintf(_bft_mem_global_file, " : (%c%9lu) : %12lu : [%10p]",
-              sgn,
-              (unsigned long) ((size_diff > 0) ? size_diff : -size_diff),
-              (unsigned long)_bft_mem_global_alloc_cur,
-              p_loc);
-      fflush(_bft_mem_global_file);
-    }
-
-    _bft_mem_block_realloc(ptr, p_loc, new_size);
-
-    _bft_mem_global_n_reallocs += 1;
 
     return p_loc;
   }
@@ -919,6 +975,12 @@ bft_mem_free(void        *ptr,
 
   if (_bft_mem_global_initialized != 0) {
 
+#if defined(HAVE_OPENMP)
+    int in_parallel = omp_in_parallel();
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
+#endif
+
     size_info = _bft_mem_block_size(ptr);
 
     _bft_mem_global_alloc_cur -= size_info;
@@ -937,6 +999,11 @@ bft_mem_free(void        *ptr,
     _bft_mem_block_free(ptr);
 
     _bft_mem_global_n_frees += 1;
+
+#if defined(HAVE_OPENMP)
+    if (in_parallel)
+      omp_unset_lock(&_bft_mem_lock);
+#endif
   }
 
   free(ptr);
@@ -1006,25 +1073,38 @@ bft_mem_memalign(size_t       alignment,
 
   /* Memory allocation counting */
 
-  _bft_mem_global_alloc_cur += alloc_size;
+  {
+#if defined(HAVE_OPENMP)
+    int in_parallel = omp_in_parallel();
+    if (in_parallel)
+      omp_set_lock(&_bft_mem_lock);
+#endif
 
-  if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
-    _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+    _bft_mem_global_alloc_cur += alloc_size;
 
-  if (_bft_mem_global_file != NULL) {
-    fprintf(_bft_mem_global_file, "\n  alloc: %-27s:%6d : %-39s: %9lu",
-            _bft_mem_basename(file_name), line_num,
-            var_name, (unsigned long)alloc_size);
-    fprintf(_bft_mem_global_file, " : (+%9lu) : %12lu : [%10p]",
-            (unsigned long)alloc_size,
-            (unsigned long)_bft_mem_global_alloc_cur,
-            p_loc);
-    fflush(_bft_mem_global_file);
+    if (_bft_mem_global_alloc_max < _bft_mem_global_alloc_cur)
+      _bft_mem_global_alloc_max = _bft_mem_global_alloc_cur;
+
+    if (_bft_mem_global_file != NULL) {
+      fprintf(_bft_mem_global_file, "\n  alloc: %-27s:%6d : %-39s: %9lu",
+              _bft_mem_basename(file_name), line_num,
+              var_name, (unsigned long)alloc_size);
+      fprintf(_bft_mem_global_file, " : (+%9lu) : %12lu : [%10p]",
+              (unsigned long)alloc_size,
+              (unsigned long)_bft_mem_global_alloc_cur,
+              p_loc);
+      fflush(_bft_mem_global_file);
+    }
+
+    _bft_mem_block_malloc(p_loc, alloc_size);
+
+    _bft_mem_global_n_allocs += 1;
+
+#if defined(HAVE_OPENMP)
+    if (in_parallel)
+      omp_unset_lock(&_bft_mem_lock);
+#endif
   }
-
-  _bft_mem_block_malloc(p_loc, alloc_size);
-
-  _bft_mem_global_n_allocs += 1;
 
   /* Return pointer to allocated memory */
 
