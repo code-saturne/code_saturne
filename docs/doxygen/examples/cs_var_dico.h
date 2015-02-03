@@ -116,21 +116,21 @@
 // _____________________________________________________________________________
 /*!
 
-  \page field Variables, properties and fields (\c rtp, \c propce)
+  \page field Variables, properties and fields (deprecated \c rtp, \c propce)
 
   - In Fortran:
-    - \ref vars "Variables" are accessed through the array \c rtp as: \n
+    - \ref vars "Variables" are accessed through the deprecated array \c rtp as: \n
       <tt>rtp(iel,index)</tt>.
-    - \ref props "Properties" are accessed through the array \c propce as: \n
+    - \ref props "Properties" are accessed through the deprecated array \c propce as: \n
       <tt>propce(iel,index)</tt>.
     - The scalar indexes are accessed as \c isca(j), and the scalar values as
       follows: \n
       <tt>rtp(iel,isca(iscalt))</tt>.
-    - Alternatively, both variables and properties can be accessed via the
+    - Now, both variables and properties can be accessed via the
       \ref field.f90 "cs_field" API, as in the following examples: \n
-      <tt>call field_get_val_s(ivarfl(ipr), cvar_pr) \n cvar_pr(iel)</tt>, \n\n
-      <tt>call field_get_val_v(ivarfl(iu), cvar_vel) \n cvar_vel(isou,iel)</tt>, \n\n
-      <tt>call field_get_val_s(iprpfl(icp), cpro_cp) \n cpro_cp(iel)</tt>, \n\n
+      <tt>call \ref field_get_val_s(ivarfl(ipr), cvar_pr) \n cvar_pr(iel)</tt>, \n\n
+      <tt>call \ref field_get_val_v(ivarfl(iu), cvar_vel) \n cvar_vel(isou,iel)</tt>, \n\n
+      <tt>call \ref field_get_val_s(iprpfl(icp), cpro_cp) \n cpro_cp(iel)</tt>, \n\n
       where \ref ipr, \ref iu are variable indexes and \ref icp is a property index.
   - In C:
     - Both variables and properties are accessed as: \n
@@ -164,28 +164,28 @@
   \ref cs_field_pointer.h. \n Note that \c dt is just an \c allocatable array in
   Fortran while it is mapped as a field in C.
 
-  Fortran code                    | C code                       | Description
-  ------------------------------- | ---------------------------- | ------------
-  <tt> dt                         | CS_F_(dt)->val[cell_id]      | Local time step
-  rtp(iel,\ref ipr)               | CS_F_(p)->val[cell_id]       | Pressure
-  <EM>(WARNING: deprecated)</EM> \n rtp(iel,\ref iu) \n rtp(iel,\ref iv) \n rtp(iel,\ref iw) | \n CS_F_(u)->val[3*cell_id] \n CS_F_(u)->val[3*cell_id+1] \n CS_F_(u)->val[3*cell_id+2] | Velocity
-  rtp(iel,\ref ivoidf)            | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
-  rtp(iel,\ref ik)                | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
-  rtp(iel,\ref iep)               | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
-  rtp(iel,\ref ir11)              | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
-  rtp(iel,\ref ir22)              | CS_F_(r22)->val[cell_id]     | Reynolds stress component \f$ R_{yy} \f$
-  rtp(iel,\ref ir33)              | CS_F_(r33)->val[cell_id]     | Reynolds stress component \f$ R_{zz} \f$
-  rtp(iel,\ref ir12)              | CS_F_(r12)->val[cell_id]     | Reynolds stress component \f$ R_{xy} \f$
-  rtp(iel,\ref ir23)              | CS_F_(r23)->val[cell_id]     | Reynolds stress component \f$ R_{yz} \f$
-  rtp(iel,\ref ir13)              | CS_F_(r13)->val[cell_id]     | Reynolds stress component \f$ R_{xz} \f$
-  rtp(iel,\ref iphi)              | CS_F_(phi)->val[cell_id]     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
-  rtp(iel,\ref ifb)               | CS_F_(f_bar)->val[cell_id]   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
-  rtp(iel,\ref ial)               | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
-  rtp(iel,\ref iomg)              | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
-  rtp(iel,\ref inusa)             | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
-  rtp(iel,\ref iuma) \n rtp(iel,\ref ivma) \n rtp(iel,\ref iwma) | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
-  rtp(iel,\ref isca(\ref ihm))    | CS_F_(h)->val[cell_id]       | Enthalpy
-  rtp(iel,\ref isca(\ref iscalt)) | CS_F_(t)->val[cell_id]       | Temperature </tt>
+  deprecated Fortran code         | Fortran code                                     | C code                       | Description
+  ------------------------------- | ------------------------------------------------ | ---------------------------- | ------------
+  <tt> dt                         | <tt> dt                                          | CS_F_(dt)->val[cell_id]      | Local time step
+  rtp(iel,\ref ipr)               | call field_get_val_s(ivarfl(ipr), cvar_pr)       | CS_F_(p)->val[cell_id]       | Pressure
+  <EM>(WARNING: deprecated)</EM> \n rtp(iel,\ref iu) \n rtp(iel,\ref iv) \n rtp(iel,\ref iw) | call field_get_val_v(ivarfl(iu), cvar_vel) \n cvar_vel(1, iel) \n cvar_vel(2, iel) \n cvar_vel(3, iel) | \n CS_F_(u)->val[cell_id][0] \n CS_F_(u)->val[cell_id][1] \n CS_F_(u)->val[cell_id][2] | Velocity
+  rtp(iel,\ref ivoidf)            | call field_get_val_s(ivarfl(ivoidf), cvar_voidf) | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
+  rtp(iel,\ref ik)                | call field_get_val_s(ivarfl(ik  ), cvar_k  )     | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
+  rtp(iel,\ref iep)               | call field_get_val_s(ivarfl(iep ), cvar_eps)     | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
+  rtp(iel,\ref ir11)              | call field_get_val_s(ivarfl(ir11), cvar_r11)     | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
+  rtp(iel,\ref ir22)              | call field_get_val_s(ivarfl(ir22), cvar_r22)     | CS_F_(r22)->val[cell_id]     | Reynolds stress component \f$ R_{yy} \f$
+  rtp(iel,\ref ir33)              | call field_get_val_s(ivarfl(ir33), cvar_r33)     | CS_F_(r33)->val[cell_id]     | Reynolds stress component \f$ R_{zz} \f$
+  rtp(iel,\ref ir12)              | call field_get_val_s(ivarfl(ir12), cvar_r12)     | CS_F_(r12)->val[cell_id]     | Reynolds stress component \f$ R_{xy} \f$
+  rtp(iel,\ref ir23)              | call field_get_val_s(ivarfl(ir23), cvar_r23)     | CS_F_(r23)->val[cell_id]     | Reynolds stress component \f$ R_{yz} \f$
+  rtp(iel,\ref ir13)              | call field_get_val_s(ivarfl(ir13), cvar_r13)     | CS_F_(r13)->val[cell_id]     | Reynolds stress component \f$ R_{xz} \f$
+  rtp(iel,\ref iphi)              | call field_get_val_s(ivarfl(iphi), cvar_phi)     | CS_F_(phi)->val[cell_id]     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
+  rtp(iel,\ref ifb)               | call field_get_val_s(ivarfl(ifb ), cvar_fb )     | CS_F_(f_bar)->val[cell_id]   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
+  rtp(iel,\ref ial)               | call field_get_val_s(ivarfl(ial ), cvar_al )     | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
+  rtp(iel,\ref iomg)              | call field_get_val_s(ivarfl(iomg), cvar_omg)     | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
+  rtp(iel,\ref inusa)             | call field_get_val_s(ivarfl(inusa), cvar_nusa)   | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
+  rtp(iel,\ref iuma) \n rtp(iel,\ref ivma) \n rtp(iel,\ref iwma) | call field_get_val_v(ivarfl(iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
+  rtp(iel,\ref isca(\ref ihm))    | call field_get_val_s(ivarfl(isca(ihm)), cvar_hm)       | CS_F_(h)->val[cell_id]       | Enthalpy
+  rtp(iel,\ref isca(\ref iscalt)) | call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt) | CS_F_(t)->val[cell_id]       | Temperature </tt>
 
 
   \section props Properties
@@ -193,32 +193,31 @@
   These properties are defined in the files \ref numvar.f90 and
   \ref cs_field_pointer.h.
 
-  Fortran code               | C code                       | Description
-  -------------------------- | ---------------------------- | ------------
-  <tt> propce(iel,\ref irom) | CS_F_(rho)->val[cell_id]     | Density at the current time step
-  propce(iel,\ref iroma)     | CS_F_(rho)->val_pre[cell_id] | Density at the previous time step
-  propce(iel,\ref iromaa)    | <em>not yet implemented</em> | Density at the second previous time
-  propce(iel,\ref iviscl)    | CS_F_(mu)->val[cell_id]      | Molecular viscosity
-  propce(iel,\ref ivisct)    | CS_F_(mu_t)->val[cell_id]    | Turbulent dynamic viscosity
-  propce(iel,\ref ivisla)    | CS_F_(mu)->val_pre[cell_id]  | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
-  propce(iel,\ref ivista)    | CS_F_(mu_t)->val_pre[cell_id] | Dynamic turbulent viscosity \n at the previous time-step
-  propce(iel,\ref icp)       | CS_F_(cp)->val[cell_id]      | Specific heat
-  propce(iel,\ref icpa)      | CS_F_(cp)->val_pre[cell_id]  | specific heat at the previous time-step
-  propce(iel,\ref icrom)     | CS_F_(rho)->val[cell_id]     | Density (at cells)
-  propce(iel,\ref ibrom)     | CS_F_(rho_b)->val[cell_id]   | Density (at boundary faces)
-  propce(iel,\ref icroaa)    | CS_F_(rho)->val_pre[cell_id] | Cell density at the second previous time step \n key id of the variables
-  propce(iel,\ref ismago)    | <em>not yet implemented</em> | Field id of the anisotropic turbulent viscosity
-  propce(iel,\ref icour)     | <em>not yet implemented</em> | Courant number
-  propce(iel,\ref ifour)     | <em>not yet implemented</em> | Fourier number
-  propce(iel,\ref iprtot)    | <em>not yet implemented</em> | Total pressure at cell centres
-  propce(iel,\ref ivisma(1)) \n propce(iel,\ref ivisma(2)) \n propce(iel,\ref ivisma(3)) | <em>not yet implemented</em> | Mesh velocity viscosity for the ALE module
-  propce(iel,\ref itsrho)    | <em>not yet implemented</em> | Global dilatation source terms
-  propce(iel,\ref ibeta)     | <em>not yet implemented</em> | Thermal expansion coefficient
-  call field_get_val_s(\ref ipori, porosi) \n porosi(iel)     | CS_F_(poro)->val[cell_id]       | Porosity
-  call field_get_val_v(\ref iporf, porosf) \n porosf(ii,iel)  | CS_F_(t_poro)->val[cell_id][ii] | Tensorial porosity
-  call field_get_val_v(\ref iforbr, forbr) \n forbr(ii,iel)   | <em>not yet implemented</em>    | Field id of the stresses at boundary
-  call field_get_val_s(\ref iyplbr, yplbr) \n yplbr(iel)      | <em>not yet implemented</em>    | Field id of \f$y^+\f$ at boundary
-  call field_get_val_v(\ref idtten, dttens) \n dttens(ii,iel) | <em>not yet implemented</em>    | Field id for the dttens tensor</tt>
+  Deprecated Fortran code    | Deprecated Fortran code                                  |C code                       | Description
+  -------------------------- | -------------------------------------------------------- |---------------------------- | ------------
+  <tt> propce(iel,\ref irom) | call field_get_val_s(iprpfl(irom  ), cpro_rho  )         |CS_F_(rho)->val[cell_id]     | Density at the current time step
+  propce(iel,\ref iroma)     | call field_get_val_s(iprpfl(iroma ), cpro_rhoa )         |CS_F_(rho)->val_pre[cell_id] | Density at the previous time step
+  propce(iel,\ref iromaa)    | call field_get_val_s(iprpfl(iromaa), cpro_rhoaa)         |<em>not yet implemented</em> | Density at the second previous time
+  propce(iel,\ref iviscl)    | call field_get_val_s(iprpfl(iviscl), cpro_viscl)         |CS_F_(mu)->val[cell_id]      | Molecular viscosity
+  propce(iel,\ref ivisct)    | call field_get_val_s(iprpfl(ivisct), cpro_visct)         |CS_F_(mu_t)->val[cell_id]    | Turbulent dynamic viscosity
+  propce(iel,\ref ivisla)    | call field_get_val_s(iprpfl(iromaa), cpro_romaa)         |CS_F_(mu)->val_pre[cell_id]  | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
+  propce(iel,\ref ivista)    | call field_get_val_s(iprpfl(ivista), cpro_viscta)        |CS_F_(mu_t)->val_pre[cell_id] | Dynamic turbulent viscosity \n at the previous time-step
+  propce(iel,\ref icp)       | call field_get_val_s(iprpfl(icp   ), cpro_cp   )         |CS_F_(cp)->val[cell_id]      | Specific heat
+  propce(iel,\ref icpa)      | call field_get_val_s(iprpfl(icpa  ), cpro_cpa  )         |CS_F_(cp)->val_pre[cell_id]  | specific heat at the previous time-step
+  propce(iel,\ref icrom)     | call field_get_val_s(iprpfl(icrom ), cpro_crom )         |CS_F_(rho)->val[cell_id]     | Density (at cells)
+  propce(iel,\ref ibrom)     | call field_get_val_s(iprpfl(ibrom ), bpro_rho  )         |CS_F_(rho_b)->val[cell_id]   | Density (at boundary faces)
+  propce(iel,\ref ismago)    | call field_get_val_s(iprpfl(ismago), cpro_smago)         |<em>not yet implemented</em> | Field id of the anisotropic turbulent viscosity
+  propce(iel,\ref icour)     | call field_get_val_s(iprpfl(icour ), cpro_cour )         |<em>not yet implemented</em> | Courant number
+  propce(iel,\ref ifour)     | call field_get_val_s(iprpfl(ifour ), cpro_four )         |<em>not yet implemented</em> | Fourier number
+  propce(iel,\ref iprtot)    | call field_get_val_s(iprpfl(iprtot), cpro_prtot)         |<em>not yet implemented</em> | Total pressure at cell centres
+  propce(iel,\ref ivisma(1)) \n propce(iel,\ref ivisma(2)) \n propce(iel,\ref ivisma(3))| <em>not yet implemented</em> | Mesh velocity viscosity for the ALE module
+  propce(iel,\ref itsrho)    | call field_get_val_s(iprpfl(itsrho), cpro_tsrho )        |<em>not yet implemented</em> | Global dilatation source terms
+  propce(iel,\ref ibeta)     | call field_get_val_s(iprpfl(ibeta ), cpro_beta  )        |<em>not yet implemented</em> | Thermal expansion coefficient
+                             | call field_get_val_s(\ref ipri, porosi) \n porosi(iel)   | CS_F_(poro)->val[cell_id]       | Porosity
+                             | call field_get_val_v(\ref iprf, porosf) \n porosf(ii,iel)| CS_F_(t_poro)->val[cell_id][ii] | Tensorial porosity
+                             | call field_get_val_v(\ref ifrbr, forbr) \n forbr(ii,iel) | <em>not yet implemented</em>    | Field id of the stresses at boundary
+                             | call field_get_val_s(\ref iylbr, yplbr) \n yplbr(iel)    | <em>not yet implemented</em>    | Field id of \f$y^+\f$ at boundary
+                             | call field_get_val_v(\ref idten, dttens) \n dttens(ii,iel) | <em>not yet implemented</em>    | Field id for the dttens tensor</tt>
 
 
   \section part Specific physics
