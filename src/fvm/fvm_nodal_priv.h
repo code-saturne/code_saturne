@@ -251,10 +251,10 @@ fvm_nodal_section_destroy(fvm_nodal_section_t  * this_section);
 
 void
 fvm_nodal_section_copy_on_write(fvm_nodal_section_t  *this_section,
-                                _Bool                 copy_face_index,
-                                _Bool                 copy_face_num,
-                                _Bool                 copy_vertex_index,
-                                _Bool                 copy_vertex_num);
+                                bool                  copy_face_index,
+                                bool                  copy_face_num,
+                                bool                  copy_vertex_index,
+                                bool                  copy_vertex_num);
 
 /*----------------------------------------------------------------------------
  * Return global number of elements associated with section.
