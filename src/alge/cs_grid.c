@@ -3794,6 +3794,9 @@ cs_grid_coarsen(const cs_grid_t   *f,
 
   const int *db_size = f->diag_block_size;
 
+  if (db_size[0] > 0 && cs_glob_n_threads > 1)
+    coarse_matrix_type = CS_MATRIX_MSR;
+
   assert(f != NULL);
 
   /* Initialization */
