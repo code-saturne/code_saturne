@@ -2903,7 +2903,7 @@ cs_gui_labels_coal_combustion(int  n_coals,
 
   f = CS_F_(f6m);
   if (f != NULL)
-    _set_scalar_name_label(f, "solid_fuels", "fr_h20");
+    _set_scalar_name_label(f, "solid_fuels", "fr_h2o");
 
   f = CS_F_(f7m);
   if (f != NULL)
