@@ -35,6 +35,8 @@ class master_script:
         self.package = package
 
         self.commands = {'autovnv':self.autovnv,
+                         'bdiff':self.bdiff,
+                         'bdump':self.bdump,
                          'compile':self.compile,
                          'config':self.config,
                          'create':self.create,
@@ -96,6 +98,8 @@ class master_script:
 Topics:
   help
   autovnv
+  bdiff
+  bdump
   compile
   config
   create
@@ -112,6 +116,14 @@ Options:
     def autovnv(self, options = None):
         import cs_autovnv
         return cs_autovnv.main(options, self.package)
+
+    def bdiff(self, options = None):
+        import cs_bdiff
+        return cs_bdiff.main(options, self.package)
+
+    def bdump(self, options = None):
+        import cs_bdump
+        return cs_bdump.main(options, self.package)
 
     def compile(self, options = None):
         import cs_compile
