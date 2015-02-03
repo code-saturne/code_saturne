@@ -137,7 +137,7 @@ class Case(object):
             from Base.XMLinitialize import XMLinit
             from cs_package import package
             pkg = package(old_pkg.scriptdir)
-         elif runcase.cmd_name == "neptune_cfd":
+        elif runcase.cmd_name == "neptune_cfd":
             from core.XMLinitialize import XMLinit
             from nc_package import package
             pkg = package(old_pkg.scriptdir)
@@ -224,7 +224,7 @@ class Case(object):
            f.close()
 
         # 4) Update the runcase script from the Repository
-        self.__update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"))
+        self.update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"))
 
 
         # Also update nprocs for back compatibility
