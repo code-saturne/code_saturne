@@ -2253,25 +2253,33 @@ combustion (the code then automatically sets {\tt visls0} to {\tt diftl0} for th
 representing the enthalpy)\\
 always useful for gas or coal combustion}
 
-\motcleb{scamin}{ra}{real number}{\tt grand}{O}{L1}
-{{\tt scamin(iscal)} is the lower limit value for the scalar {\tt iscal}. At each time step,
-in every cell where the calculated value for {\tt rtp(iel,isca(iscal))} is less than
-\mbox{\tt scamin(iscal)}, {\tt rtp(iel,isca(iscal))} will be reset to
-\mbox{\tt scamin(iscal)}\\
-there is no limitation if {\tt scamin(iscal)}$>${\tt scamax(iscal)}\\
-{\tt scamin} shall not be specified for non-user scalars (specific physics) or for
-scalar variances\\
-useful if and only if 1$\leqslant${\tt iscal}$\leqslant$ {\tt nscaus}}
+\motcleb{min\_scalar\_clipping}{ra}{real number}{\tt grand}{O}{L1}
+{field key work (get the index of the key using
+\code{call field\_get\_key\_id("min\_scalar\_clipping", kscmin)})
+which is the lower limit value for the scalar {\tt iscal}. At each time step,
+in every cell where the calculated value for the field \code{ivarfl(isca(iscal))}
+is less than the set \code{min\_value}
+(\code{call field\_set\_key\_double(ivarfl(isca(iscal)), kscmin, min\_value)})
+the field will be reset to
+\mbox{\code{min\_value}}\\
+there is no limitation if \code{min\_value}$>$\code{max\_value}\\
+\code{min\_value} shall not be specified for non-user scalars (specific physics) or for
+scalar variances
+}
 
-\motcleb{scamax}{ra}{real number}{\tt -grand}{O}{L1}
-{{\tt scamax(iscal)} is the upper limit value for the scalar {\tt iscal}. At each time step,
-in every cell where the calculated value for {\tt rtp(iel,isca(iscal))} is greater than
-\mbox{\tt scamax(iscal)}, {\tt rtp(iel,isca(iscal))} will be reset to
-\mbox{\tt scamax(iscal)}\\
-there is no limitation if {\tt scamin(iscal)}$>${\tt scamax(iscal)}\\
-{\tt scamax} shall not be specified for non-user scalars (specific physics)
- or for scalar variances\\
-useful if and only if 1$\leqslant${\tt iscal}$\leqslant$ {\tt nscaus}}
+\motcleb{max\_scalar\_clipping}{ra}{real number}{\tt grand}{O}{L1}
+{field key work (get the index of the key using
+\code{call field\_get\_key\_id("max\_scalar\_clipping", kscmax)})
+which is the upper limit value for the scalar {\tt iscal}. At each time step,
+in every cell where the calculated value for the field \code{ivarfl(isca(iscal))}
+is greater than the set \code{max\_value}
+(\code{call field\_set\_key\_double(ivarfl(isca(iscal)), kscmax, max\_value)})
+the field will be reset to
+\mbox{\code{max\_value}}\\
+there is no limitation if \code{max\_value}$>$\code{min\_value}\\
+\code{max\_value} shall not be specified for non-user scalars (specific physics) or for
+scalar variances
+}
 
 \motcle{sigmas}{ra}{real number $>$ 0}{1}{O}{L2}
 {{\tt sigmas(iscal)}: turbulent Prandtl (or Schmidt) number for the scalar
