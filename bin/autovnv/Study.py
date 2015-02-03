@@ -162,8 +162,6 @@ class Case(object):
         elif self.exe == "neptune_cfd":
             from core.XMLinitialize import XMLinit
 
-        n_procs = {}
-
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
             if os.path.isfile(fp):
@@ -183,9 +181,6 @@ class Case(object):
                     case['xmlfile'] = fp
                     case.xmlCleanAllBlank(case.xmlRootNode())
                     XMLinit(case).initialize()
-                    smdl = ScriptRunningModel(case)
-                    n_procs[str(fn)] = smdl.getString('n_procs')
-                    smdl.setString('n_procs', None)
                     case.xmlSaveDocument()
 
         # 2) Create RESU directory if needed
@@ -225,40 +220,6 @@ class Case(object):
 
         # 4) Update the runcase script from the Repository
         self.update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"))
-
-
-        # Also update nprocs for back compatibility
-        if n_procs[param] and not xmlonly:
-            ref = os.path.join(self.__repo, subdir, "SCRIPTS", "runcase")
-
-            try:
-                f = file(ref, mode = 'r')
-            except IOError:
-                print("Error: can not open %s\n" % ref)
-                sys.exit(1)
-
-            lines = f.readlines()
-            f.close()
-
-            for i in range(len(lines)):
-                if lines[i].strip()[0:1] == '#':
-                    continue
-                    j = lines[i].find(self.pkg.name)
-                    if j > -1:
-                        j = lines[i].find('run')
-                        args = separate_args(lines[i].rstrip())
-                        param = get_command_single_value(args, ('--param', '--param=', '-p'))
-                        try:
-                            args = update_command_single_value(args,
-                                                               ('--nprocs', '--nprocs=', '-n'),
-                                                               n_procs[param])
-                            lines[i] = assemble_args(args) + '\n'
-                        except Exception:
-                            pass
-
-            f = file(ref, mode = 'w')
-            f.writelines(lines)
-            f.close()
 
 
     def update_runcase_path(self, subdir, destdir=None, xmlonly=False):
