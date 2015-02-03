@@ -1166,6 +1166,9 @@ echo "exit \$?" >> $localexec
             cs_exec_environment.write_prepend_path(s,
                                                    'PATH',
                                                    self.package.get_dir("bindir"))
+            cs_exec_environment.write_prepend_path(s,
+                                                   'PATH',
+                                                   self.package.get_dir("libdir"))
 
         # Add MPI directories to PATH if in nonstandard path
 
