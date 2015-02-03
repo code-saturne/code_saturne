@@ -1562,6 +1562,10 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
     *max_vol = CS_MAX(*max_vol, cell_vol[cell_id]);
     *tot_vol = *tot_vol + cell_vol[cell_id];
 
+    /* Clipping of the negative volumes, the calculation will be stopped
+     * afterwards */
+    if (cell_vol[cell_id] < 0.)
+      cell_vol[cell_id] = 0.;
   }
 }
 
