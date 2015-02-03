@@ -4313,7 +4313,8 @@ conditions (see \S\ref{sec:prg_clnonstandard}), the arrays \texttt{icodcl} and
 The standard keywords used by the indicator \texttt{itypfb} are:
 \texttt{ientre\index{ientre}}, \texttt{iparoi\index{iparoi}},
 \texttt{iparug\index{iparug}}, \texttt{isymet\index{isymet}},
-\texttt{isolib\index{isolib}} and \texttt{iindef\index{iindef}}.
+\texttt{isolib\index{isolib}}, \texttt{ifrent\index{ifrent}},
+\texttt{i\_convective\_inlet\index{i\_convective\_inlet}} and \texttt{iindef\index{iindef}}.
 
 \begin{list}{$\bullet$}{}
 \item If \texttt{itypfb=ientre}: inlet face.
@@ -4411,6 +4412,15 @@ variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_cl
       and turbulent quantities.
 \end{list}
 
+\item If \texttt{itypfb=ifrent}: free outlet, free inlet (based on Bernoulli relationship) face.
+
+\begin{list}{$\rightarrow$}{}
+\item if outlet, the equivalent to standard outlet.
+      In case of ingoing flux, the Benoulli relationship which links pressure and velocity is used (see the thory guide for more information). An additional head loss modelling what is going on outward of the domain can be added by the user.
+\end{list}
+
+\item If \texttt{itypfb=i\_convective\_inlet}: inlet with zero diffusive flux for all transported variables (species and velocity). This allows to exactly impose the ingoing flux.
+
 \item If \texttt{itypfb=iindef}: undefined type face (non-standard case).
 \begin{list}{$\rightarrow$}{}
 \item Coding is done in a non-standard way by filling both arrays \texttt{rcodcl} and
@@ -4496,7 +4506,7 @@ must be filled as follows:
 \item \texttt{rcodcl(ifac,ivar,2)} has the following units (defined in such way
       that when multiplying the exchange coefficient by the variable, the
       given flux has the same units as the flux defined below when
-      \texttt{icodcl=3)}:
+      \texttt{icodcl=3}):
 
 \begin{list}{$\rightsquigarrow$}{}
 \item $kg.m^{-2}.s^{-1}$ for the velocity
