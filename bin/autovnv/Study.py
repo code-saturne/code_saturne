@@ -425,7 +425,7 @@ class Case(object):
 
         try:
             f = file(run_ref, mode = 'r')
-	    except:
+        except:
             try:
                 f = file(run_ref_win, mode = 'r')
             except IOError:
