@@ -97,7 +97,7 @@ if (ifcven.ge.0) then
 
   call field_get_val_s(ifcven, cpro_venerg)
 
-  call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifclam)
+  call field_get_key_int (ivarfl(isca(itempk)), kivisl, ifclam)
   if (ifclam.ge.0) then
     call field_get_val_s(ifclam, cpro_lambda)
     do iel = 1, ncel
