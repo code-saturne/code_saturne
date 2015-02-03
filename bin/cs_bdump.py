@@ -129,6 +129,13 @@ def main(argv, pkg):
     cmd = [pkg.get_io_dump()]
     cmd += argv
 
+    # Set environment modules if present
+
+    cs_exec_environment.set_modules(pkg)
+    cs_exec_environment.source_rcfile(pkg)
+
+    # Run executable
+
     return cs_exec_environment.run_command(cmd)
 
 #-------------------------------------------------------------------------------
