@@ -274,7 +274,7 @@ class Case(object):
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
-			                 universal_newlines=True)
+                             universal_newlines=True)
         i = p.communicate()[0]
         run_id = string.join(i.split())
 
@@ -298,7 +298,7 @@ class Case(object):
 
         try:
             f = file(run_ref, mode = 'r')
-	    except:
+        except:
             try:
                 f = file(run_ref_win, mode = 'r')
             except IOError:
