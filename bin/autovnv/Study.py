@@ -111,7 +111,7 @@ class Case(object):
             except Exception:
                 execfile(coupling)
             run_ref = os.path.join(self.__repo, self.label, "runcase")
-            self.exe, self.pkg = self.__get_exe(run_ref)
+            self.exe, self.pkg = self.__get_exe(pkg, run_ref)
             self.subdomains = []
             for d in domains:
                 if d['solver'] == self.pkg.code_name:
@@ -120,10 +120,10 @@ class Case(object):
 
         else:
             run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
-            self.exe, self.pkg = self.__get_exe(run_ref)
+            self.exe, self.pkg = self.__get_exe(pkg, run_ref)
 
 
-    def __get_exe(self, run_ref):
+    def __get_exe(self, old_pkg, run_ref):
         """
         Return the name of the exe of the case, in order to mix
         Code_Saturne and NEPTUNE_CFD test cases in the same study.
@@ -136,11 +136,11 @@ class Case(object):
         if runcase.cmd_name == "code_saturne":
             from Base.XMLinitialize import XMLinit
             from cs_package import package
-            pkg = package()
-        elif runcase.cmd_name == "neptune_cfd":
+            pkg = package(old_pkg.scriptdir)
+         elif runcase.cmd_name == "neptune_cfd":
             from core.XMLinitialize import XMLinit
             from nc_package import package
-            pkg = package()
+            pkg = package(old_pkg.scriptdir)
 
         return runcase.cmd_name, pkg
 
@@ -390,7 +390,6 @@ class Case(object):
         if self.subdomains:
             cmd += " --coupling=coupling_parameters.py"
         p = subprocess.Popen(cmd,
-                             shell=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                              universal_newlines=True)
@@ -404,25 +403,42 @@ class Case(object):
         """
         Update the command line in the launcher C{runcase}.
         """
+        from cs_exec_environment import separate_args, \
+                                 get_command_single_value
 
         if self.subdomains:
             run_ref = os.path.join(self.__repo, self.label, "runcase")
             run_new = os.path.join(self.__dest, self.label, "runcase")
+            run_ref_win = os.path.join(self.__repo, self.label, "runcase.bat")
         else:
             run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
             run_new = os.path.join(self.__dest, self.label, "SCRIPTS", "runcase")
+            run_ref_win = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase.bat")
+
+        if sys.platform.startswith('win'):
+            if self.subdomains:
+                run_new = os.path.join(self.__dest, self.label, "runcase.bat")
+            else:
+                run_new = os.path.join(self.__dest, self.label, "SCRIPTS", "runcase.bat")
 
         # Read the runcase from the Repository
 
         try:
             f = file(run_ref, mode = 'r')
-        except IOError:
-            print("Error: can not open %s\n" % run_ref)
-            sys.exit(1)
+	    except:
+            try:
+                f = file(run_ref_win, mode = 'r')
+            except IOError:
+                print("Error: can not open %s\n" % run_ref)
+                sys.exit(1)
 
         for line in f.readlines():
-            if re.search(r'^\\' + self.exe, line):
-                run_cmd = string.join(line.split())
+            if sys.platform.startswith('win'):
+                if re.search(self.exe, line):
+                    run_cmd = string.join(line.split())
+            else:
+                if re.search(r'^\\' + self.exe, line):
+                    run_cmd = string.join(line.split())
         f.close()
 
         # Write the new runcase
@@ -442,10 +458,16 @@ class Case(object):
                 continue
             if l[0] == '#':
                 continue
-            if re.search(r'^\\' + self.exe, lines[i]):
-                lines[i] = run_cmd + " --id=" + run_id
-            elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
-                lines[i] = '# ' + lines[i]
+            if sys.platform.startswith('win'):
+                if re.search(self.exe, lines[i]):
+                    lines[i] = run_cmd + " --id=" + run_id
+                elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
+                    lines[i] = '# ' + lines[i]
+            else:
+                if re.search(r'^\\' + self.exe, lines[i]):
+                    lines[i] = run_cmd + " --id=" + run_id
+                elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
+                    lines[i] = '# ' + lines[i]
 
         f = file(run_new, mode = 'w')
         f.writelines(lines)
@@ -493,7 +515,10 @@ class Case(object):
 
         self.__updateRuncase(run_id)
 
-        error, self.is_time = run_autovnv_command("./runcase", self.__log)
+        if sys.platform.startswith('win'):
+            error, self.is_time = run_autovnv_command("runcase.bat", self.__log)
+        else:
+            error, self.is_time = run_autovnv_command("./runcase", self.__log)
 
         if not error:
             self.is_run = "OK"
@@ -655,7 +680,7 @@ class Case(object):
 
 class Study(object):
     """
-    Create, run and compare all cases fir a given study.
+    Create, run and compare all cases for a given study.
     """
     def __init__(self, pkg, parser, study, exe, dif, rlog):
         """
@@ -746,7 +771,10 @@ class Study(object):
                 des = os.path.join(self.__dest, "MESH")
                 for m in l:
                     if m in meshes:
-                        os.symlink(os.path.join(ref, m), os.path.join(des, m))
+                        if sys.platform.startswith('win'):
+                            shutil.copy2(os.path.join(ref, m), os.path.join(des, m))
+                        else:
+                            os.symlink(os.path.join(ref, m), os.path.join(des, m))
                     elif m != ".svn":
                         t = os.path.join(ref, m)
                         if os.path.isdir(t):

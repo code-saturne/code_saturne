@@ -148,7 +148,7 @@ Name: "dev\scotch"; Description: "Scotch"; Types: full
 ;-------------------------------------------------------------------------------
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 ;-------------------------------------------------------------------------------
 
@@ -409,9 +409,19 @@ Source: "{#Install}\share\doc\salome\gui\CFDSTUDY\*"; DestDir: "{app}\share\doc\
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{userdesktop}"; Tasks: desktopicon
+#if HAVE_PDF == "yes"
+Name: "{group}\theory.pdf"; Filename: "{app}\share\doc\code_saturne\theory.pdf"
+Name: "{group}\autovnv.pdf"; Filename: "{app}\share\doc\code_saturne\autovnv.pdf"
+Name: "{group}\refcard.pdf"; Filename: "{app}\share\doc\code_saturne\refcard.pdf"
+Name: "{group}\theory.pdf"; Filename: "{app}\share\doc\code_saturne\theory.pdf"
+Name: "{group}\user.pdf"; Filename: "{app}\share\doc\code_saturne\user.pdf"
+#endif
+#if HAVE_DOXYGEN == "yes"
+Name: "{group}\doxygen"; Filename: "{app}\share\doc\code_saturne\doxygen\src\index.html"
+#endif
 
 ;-------------------------------------------------------------------------------
 
 [Run]
-Filename: "{app}\bin\{#MyAppExeName}"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"
+Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{userdesktop}"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"

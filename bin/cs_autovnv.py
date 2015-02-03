@@ -225,7 +225,7 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, op
     # Source environment if required before importing Autovnv modules, as it
     # pulls Python packages such as matplotlib or vtk which may not be in the
     # standard path.
-    from cs_exec_environment import set_modules, source_rcfile
+    from cs_exec_environment import set_modules, source_rcfile, enquote_arg
     set_modules(pkg)
     source_rcfile(pkg)
 
@@ -234,13 +234,17 @@ def runAutoverif(pkg, opt_f, opt_v, opt_u, opt_x, opt_t, opt_r, opt_n, opt_c, op
     # Scripts
 
     exe = os.path.join(pkg.get_dir('bindir'), pkg.name)
+    if sys.platform.startswith('win'):
+        exe = exe + ".com"
+    exe = enquote_arg(exe)
 
     dif = pkg.get_io_dump()
 
     for p in exe, dif:
         if not os.path.isfile(p):
             print("Error: executable %s not found." % p)
-            sys.exit(1)
+            if not sys.platform.startswith('win'):
+                sys.exit(1)
 
     dif += " -d"
 

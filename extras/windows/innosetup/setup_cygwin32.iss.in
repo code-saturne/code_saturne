@@ -109,46 +109,46 @@ Name: "help"; Description: "Code_Saturne Help files"; Types: full compact
 Name: "help\pdf"; Description: "Documentation manuals"; Types: full compact
 #endif
 #if HAVE_DOXYGEN == "yes"
-Name: "help\doxygen"; Description: "Source code documentation"; Types: full
+Name: "help\doxygen"; Description: "Source code documentation"; Types: full compact
 #endif
-Name: "dev"; Description: "Development tools, headers and libraries"; Types: full
-Name: "dev\saturne"; Description: "Code_Saturne"; Types: full
-Name: "dev\system"; Description: "System files"; Types: full
-Name: "dev\binutils"; Description: "GNU Binutils"; Types: full
-Name: "dev\gcc"; Description: "GNU Compiler Collection"; Types: full
+Name: "dev"; Description: "Development tools, headers and libraries"; Types: full compact custom; Flags: checkablealone fixed
+Name: "dev\saturne"; Description: "Code_Saturne"; Types: full compact custom; Flags: checkablealone fixed
+Name: "dev\system"; Description: "System files"; Types: full compact custom; Flags: checkablealone fixed
+Name: "dev\binutils"; Description: "GNU Binutils"; Types: full compact custom; Flags: checkablealone fixed
+Name: "dev\gcc"; Description: "GNU Compiler Collection"; Types: full compact custom; Flags: checkablealone fixed
 #if HAVE_CGNS == "yes"
-Name: "dev\cgns"; Description: "CGNS"; Types: full
+Name: "dev\cgns"; Description: "CGNS"; Types: full compact custom; Flags: checkablealone fixed
 #define CGNSPATH "@cgns_prefix@"
 #endif
 #if HAVE_HDF5 == "yes"
-Name: "dev\hdf5"; Description: "HDF5"; Types: full
+Name: "dev\hdf5"; Description: "HDF5"; Types: full compact custom; Flags: checkablealone fixed
 #define HDF5PATH "@hdf5_prefix@"
 #endif
 #if HAVE_LIBXML2 == "yes"
-Name: "dev\libxml2"; Description: "LibXML2"; Types: full
+Name: "dev\libxml2"; Description: "LibXML2"; Types: full compact custom; Flags: checkablealone fixed
 #define LIBXML2PATH "@libxml2_prefix@"
 #endif
 #if HAVE_MED == "yes"
-Name: "dev\med"; Description: "MED"; Types: full
+Name: "dev\med"; Description: "MED"; Types: full compact custom; Flags: checkablealone fixed
 #define MEDPATH "@med_prefix@"
 #endif
 #if HAVE_METIS == "yes"
-Name: "dev\metis"; Description: "Metis"; Types: full
+Name: "dev\metis"; Description: "Metis"; Types: full compact custom; Flags: checkablealone fixed
 #define METISPATH "@metis_prefix@"
 #endif
 #if HAVE_MPI == "yes"
-Name: "dev\mpi"; Description: "MPI"; Types: full
+Name: "dev\mpi"; Description: "MPI"; Types: full compact custom; Flags: checkablealone fixed
 #define MPIPATH "@mpi_prefix@"
 #endif
 #if HAVE_SCOTCH == "yes"
-Name: "dev\scotch"; Description: "Scotch"; Types: full
+Name: "dev\scotch"; Description: "Scotch"; Types: full compact custom; Flags: checkablealone fixed
 #define SCOTCHPATH "@scotch_prefix@"
 #endif
 
 ;-------------------------------------------------------------------------------
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 ;-------------------------------------------------------------------------------
 
@@ -281,12 +281,11 @@ Source: "{#SCOTCHPATH}\lib\libscotcherrexit.a"; DestDir: "{app}\lib"; Flags: ign
 Source: "{#SCOTCHPATH}\lib\libscotchmetis.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\scotch
 #endif
 ; Code_Saturne
-Source: "{#Install}\bin\libple-0.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#Install}\etc\code_saturne.cfg.template"; DestDir: "{commonappdata}\{#MyAppName}\{#MyAppVersionShort}"; DestName: "code_saturne.ini"; Flags: onlyifdoesntexist; Components: core
 Source: "{#Install}\etc\code_saturne.cfg.template"; DestDir: "{userappdata}\{#MyAppName}\{#MyAppVersionShort}"; DestName: "code_saturne.ini"; Flags: onlyifdoesntexist; Components: core
 Source: "{#Install}\include\code_saturne\*"; DestDir: "{app}\include\code_saturne"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: dev\saturne
 Source: "{#Install}\include\ple_*"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\saturne
-Source: "{#Install}\lib\libple.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\saturne
+Source: "{#Install}\lib\libple.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\saturne
 Source: "{#Install}\lib\libsaturne.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\saturne
 Source: "{#Install}\libexec\code_saturne\cs_check_syntax.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
 Source: "{#Install}\libexec\code_saturne\cs_io_dump.exe"; DestDir: "{app}\libexec\code_saturne"; Flags: ignoreversion; Components: core
@@ -342,9 +341,19 @@ Source: "{#Install}\share\doc\salome\gui\CFDSTUDY\*"; DestDir: "{app}\share\doc\
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{userdesktop}"; Tasks: desktopicon
+#if HAVE_PDF == "yes"
+Name: "{group}\theory.pdf"; Filename: "{app}\share\doc\code_saturne\theory.pdf"
+Name: "{group}\autovnv.pdf"; Filename: "{app}\share\doc\code_saturne\autovnv.pdf"
+Name: "{group}\refcard.pdf"; Filename: "{app}\share\doc\code_saturne\refcard.pdf"
+Name: "{group}\theory.pdf"; Filename: "{app}\share\doc\code_saturne\theory.pdf"
+Name: "{group}\user.pdf"; Filename: "{app}\share\doc\code_saturne\user.pdf"
+#endif
+#if HAVE_DOXYGEN == "yes"
+Name: "{group}\doxygen"; Filename: "{app}\share\doc\code_saturne\doxygen\src\index.html"
+#endif
 
 ;-------------------------------------------------------------------------------
 
 [Run]
-Filename: "{app}\bin\{#MyAppExeName}"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"
+Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{userdesktop}"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"
