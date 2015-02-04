@@ -254,6 +254,7 @@ class Case(object):
 
         p = subprocess.Popen(cmd,
                              shell=True,
+                             executable=get_shell_type(),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         output = p.communicate()
@@ -272,6 +273,8 @@ class Case(object):
 
         cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " run --suggest-id"
         p = subprocess.Popen(cmd,
+                             shell=True,
+                             executable=get_shell_type(),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                              universal_newlines=True)
@@ -432,7 +435,7 @@ class Case(object):
             except:
                 pass
 
-        l = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
+        l = subprocess.Popen(cmd, shell=True, executable=get_shell_type(), stdout=subprocess.PIPE).stdout
         info = l.read().replace("\"", " ").replace(";", " ").replace(":", " ").split()
 
         tab = []
