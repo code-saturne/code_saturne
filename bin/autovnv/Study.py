@@ -332,6 +332,7 @@ class Case(object):
             cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " compile -t"
             p = subprocess.Popen(cmd,
                                  shell=True,
+                                 executable=get_shell_type(),
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
                                  universal_newlines=True)
@@ -351,6 +352,8 @@ class Case(object):
         if self.subdomains:
             cmd += " --coupling=coupling_parameters.py"
         p = subprocess.Popen(cmd,
+                             shell=True,
+                             executable=get_shell_type(),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                              universal_newlines=True)
@@ -396,7 +399,11 @@ class Case(object):
         for line in f.readlines():
             if sys.platform.startswith('win'):
                 if re.search(self.exe, line):
-                    run_cmd = string.join(line.split())
+                    #we suppress "\" if needed
+                    content = line.split()
+                    if re.search(r'^\\' + self.exe, line):
+                        content[0] = self.exe
+                    run_cmd = string.join(content)
             else:
                 if re.search(r'^\\' + self.exe, line):
                     run_cmd = string.join(line.split())
@@ -525,6 +532,7 @@ class Case(object):
 
         l = subprocess.Popen(cmd,
                              shell=True,
+                             executable=get_shell_type(),
                              stdout=subprocess.PIPE,
                              universal_newlines=True).stdout
         lines = l.readlines()
