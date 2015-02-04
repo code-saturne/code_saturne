@@ -158,10 +158,10 @@ struct _ple_locator_t {
 
   /* Timing information (2 fields/time; 0: total; 1: communication) */
 
-  double  location_wtime[2];       /* Location Wall-clock time */
-  double  location_cpu_time[2];    /* Location CPU time */
-  double  exchange_wtime[2];       /* Variable exchange Wall-clock time */
-  double  exchange_cpu_time[2];    /* Variable exchange CPU time */
+  double  location_wtime[4];       /* Location Wall-clock time */
+  double  location_cpu_time[4];    /* Location CPU time */
+  double  exchange_wtime[4];       /* Variable exchange Wall-clock time */
+  double  exchange_cpu_time[4];    /* Variable exchange CPU time */
 };
 
 /*============================================================================
@@ -393,83 +393,6 @@ _within_extents(int                dim,
   }
 
   return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Compute minimum distances between points of different extents
- *
- * parameters:
- *   dim             <-- spatial (coordinates) dimension
- *   extents_1       <-- extents: x_min, y_min, ..., x_max, y_max, ...
- *                       size: dim*2
- *   extents_2       <-- extents: x_min, y_min, ..., x_max, y_max, ...
- *                       size: dim*2
- *   distances       <-- minimum and maximum estimated distance
- *                       between 2 points of extents_1 and extents_2
- *
- * returns:
- *   minimum possible distance between points of different extents
- *----------------------------------------------------------------------------*/
-
-inline static double
-_extents_min_distance(int           dim,
-                      const double  extents_1[],
-                      const double  extents_2[])
-{
-  int i;
-  double _c_dist_min[3] = {HUGE_VAL, HUGE_VAL, HUGE_VAL};
-
-  for (i = 0; i < dim; i++) {
-    if (extents_1[i] > extents_2[i + dim])
-      _c_dist_min[i] = extents_1[i] - extents_2[i + dim];
-    else if (extents_2[i] > extents_1[i + dim])
-      _c_dist_min[i] = extents_2[i] - extents_1[i + dim];
-    else
-      _c_dist_min[i] = 0.; /* Intersect */
-  }
-
-  return _MODULE(_c_dist_min);
-}
-
-/*----------------------------------------------------------------------------
- * Compute maximum distances between points of different extents
- *
- * parameters:
- *   dim             <-- spatial (coordinates) dimension
- *   extents_1       <-- extents: x_min, y_min, ..., x_max, y_max, ...
- *                       size: dim*2
- *   extents_2       <-- extents: x_min, y_min, ..., x_max, y_max, ...
- *                       size: dim*2
- *   distances       <-- minimum and maximum estimated distance
- *                       between 2 points of extents_1 and extents_2
- *
- * returns:
- *   maximum possible distance between points of different extents
- *----------------------------------------------------------------------------*/
-
-inline static double
-_extents_max_distance(int           dim,
-                      const double  extents_1[],
-                      const double  extents_2[])
-{
-  int i;
-  double _c_dist_max[3] = {0., 0., 0.};
-
-  for (i = 0; i < dim; i++) {
-
-    if (extents_1[i] > extents_2[i + dim])
-      _c_dist_max[i] = extents_1[i + dim] - extents_2[i];
-    else if (extents_2[i] > extents_1[i + dim])
-      _c_dist_max[i] = extents_2[i + dim] - extents_1[i];
-    else {
-      double d1 = fabs(extents_1[i + dim] - extents_2[i]);
-      double d2 = fabs(extents_1[i] - extents_2[i + dim]);
-      _c_dist_max[i] = PLE_MAX(d1, d2);
-    }
-
-  }
-
-  return _MODULE(_c_dist_max);
 }
 
 /*----------------------------------------------------------------------------
@@ -1688,9 +1611,10 @@ _locate_all_local(ple_locator_t               *this_locator,
   ple_lnum_t j, k;
   ple_lnum_t n_coords, n_interior, n_exterior, coord_idx;
   double extents[12];
-  ple_lnum_t *_location;
   ple_coord_t *coords;
   _rank_intersects_t intersects;
+
+  ple_lnum_t *_location = location;
   float *_distance = distance;
 
   const int dim = this_locator->dim;
