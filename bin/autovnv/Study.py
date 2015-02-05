@@ -39,6 +39,7 @@ import fnmatch
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from cs_exec_environment import get_shell_type
 from autovnv.Parser import Parser
 from autovnv.TexMaker import Report1, Report2
 try:
