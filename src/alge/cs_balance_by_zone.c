@@ -246,6 +246,7 @@ cs_balance_by_zone(const int  bc_type[],
     tot_balance   : total balance */
 
   double vol_balance = 0.;
+  double tot_vol_balance2 = 0.;
   double div_balance = 0.;
   double mass_i_balance = 0.;
   double mass_o_balance = 0.;
@@ -259,6 +260,7 @@ cs_balance_by_zone(const int  bc_type[],
   double cpl_balance = 0.;
   double ndef_balance = 0.;
   double tot_balance = 0.;
+  double unst_balance = 0.;
 
   /* Boundary condition coefficient for h */
   const cs_real_t *a_F = f->bc_coeffs->a;
@@ -467,8 +469,9 @@ cs_balance_by_zone(const int  bc_type[],
   /* 2. Compute the balance at time step n
     ======================================
 
-    --> Balance on interior volumes
-        --------------------------- */
+    --> Balance on interior volumes and
+        total quantity on interior volumes
+        ---------------------------------- */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells_sel; c_id++) {
 
@@ -477,6 +480,10 @@ cs_balance_by_zone(const int  bc_type[],
     vol_balance += cell_vol[c_id_sel] * rho[c_id_sel]
                  * cpro_cp[c_id_sel]
                  * (f->val_pre[c_id_sel] - f->val[c_id_sel]);
+
+    cs_real_t rho_y_dt =  rho[c_id_sel] * cpro_cp[c_id_sel]
+                        * f->val_pre[c_id_sel] * dt[c_id_sel];
+    tot_vol_balance2 += cell_vol[c_id_sel] * rho_y_dt * rho_y_dt;
   }
 
   /*
@@ -1336,6 +1343,7 @@ cs_balance_by_zone(const int  bc_type[],
   /* Sum of values on all ranks (parallel calculations) */
 
   cs_parall_sum(1, CS_DOUBLE, &vol_balance);
+  cs_parall_sum(1, CS_DOUBLE, &tot_vol_balance2);
   cs_parall_sum(1, CS_DOUBLE, &div_balance);
   cs_parall_sum(1, CS_DOUBLE, &mass_i_balance);
   cs_parall_sum(1, CS_DOUBLE, &mass_o_balance);
@@ -1361,6 +1369,12 @@ cs_balance_by_zone(const int  bc_type[],
               + mass_i_balance + mass_o_balance
               + cpl_balance + ndef_balance;
 
+  unst_balance = vol_balance + div_balance;
+
+  cs_real_t nrm_tot_balance = tot_balance;
+  if (tot_vol_balance2 > 0.)
+    nrm_tot_balance /= sqrt(tot_vol_balance2);
+
   /* 3. Write the balance at time step n
     ==================================== */
 
@@ -1370,23 +1384,29 @@ cs_balance_by_zone(const int  bc_type[],
                "   SCALAR: %s\n"
                "   ZONE SELECTION CRITERIA: \"%s\"\n"
                "------------------------------------------------------------\n"
-               "   Volume       Divergence   Inj. Mass.   Suc. Mass.\n"
-               "  %12.4e %12.4e %12.4e %12.4e\n"
+               "   Unst. term   Inj. Mass.   Suc. Mass.\n"
+               "  %12.4e %12.4e %12.4e\n"
                "------------------------------------------------------------\n"
-               "   IB inlet     IB outlet    Inlet        Outlet\n"
-               "  %12.4e %12.4e %12.4e %12.4e\n"
+               "   IB inlet     IB outlet\n"
+               "  %12.4e %12.4e\n"
                "------------------------------------------------------------\n"
-               "   Sym.         Smooth W.    Rough W.     Coupled      Undef. BC\n"
-               "  %12.4e %12.4e %12.4e %12.4e %12.4e\n"
+               "   Inlet        Outlet\n"
+               "  %12.4e %12.4e\n"
                "------------------------------------------------------------\n"
-               "   Total\n"
-               "  %12.4e\n"
+               "   Sym.         Smooth W.    Rough W.\n"
+               "  %12.4e %12.4e %12.4e\n"
+               "------------------------------------------------------------\n"
+               "   Coupled      Undef. BC\n"
+               "  %12.4e %12.4e\n"
+               "------------------------------------------------------------\n"
+               "   Total        Instant. norm. total\n"
+               "  %12.4e %12.4e\n"
                "------------------------------------------------------------\n\n"),
              nt_cur, scalar_name, selection_crit,
-             vol_balance, div_balance, mass_i_balance, mass_o_balance,
+             unst_balance, mass_i_balance, mass_o_balance,
              bi_i_balance, bi_o_balance, in_balance, out_balance, sym_balance,
              s_wall_balance, r_wall_balance, cpl_balance, ndef_balance,
-             tot_balance);
+             tot_balance, nrm_tot_balance);
 }
 
 /*----------------------------------------------------------------------------*/
