@@ -114,7 +114,7 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_xchcl, cvar_xckcl, cvar_xnpcl
 double precision, dimension(:), pointer :: cvar_xwtcl
 double precision, dimension(:), pointer :: cvar_h2cl
-double precision, dimension(:), pointer :: cvar_scalt
+double precision, dimension(:), pointer :: cvar_scalt, cvar_xch
 double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
 double precision, dimension(:), pointer :: cvar_f4m, cvar_f5m, cvar_f6m
 double precision, dimension(:), pointer :: cvar_f7m, cvar_f8m, cvar_f9m
@@ -163,6 +163,7 @@ elseif (iturb.eq.60) then
 endif
 
 call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
+call field_get_val_s_by_name("x_c_h",cvar_xch)
 
 if (noxyd.ge.2) then
   call field_get_val_s(ivarfl(isca(if4m)), cvar_f4m)
@@ -308,6 +309,7 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
 
   do iel = 1, ncel
     cvar_scalt(iel) = h1init
+    cvar_xch(iel)   = h1init
   enddo
 
   ! ------ Transported variables for the mix (passive scalars, variance)
