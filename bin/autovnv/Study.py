@@ -39,7 +39,7 @@ import fnmatch
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from cs_exec_environment import get_shell_type
+from cs_exec_environment import get_shell_type, enquote_arg
 from autovnv.Parser import Parser
 from autovnv.TexMaker import Report1, Report2
 try:
@@ -156,7 +156,7 @@ class Case(object):
         from Base.XMLengine import Case
         from Pages.ScriptRunningModel import ScriptRunningModel
         from cs_exec_environment import \
-            separate_args, get_command_single_value, update_command_single_value, assemble_args, enquote_arg
+            separate_args, get_command_single_value, update_command_single_value, assemble_args
 
         if self.exe == "code_saturne":
             from Base.XMLinitialize import XMLinit
@@ -349,7 +349,7 @@ class Case(object):
 
     def __suggest_run_id(self):
 
-        cmd = os.path.join(self.pkg.get_dir('bindir'), self.exe) + " run --suggest-id"
+        cmd = enquote_arg(os.path.join(self.pkg.get_dir('bindir'), self.exe)) + " run --suggest-id"
         if self.subdomains:
             cmd += " --coupling=coupling_parameters.py"
         p = subprocess.Popen(cmd,
