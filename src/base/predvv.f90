@@ -1281,7 +1281,7 @@ if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
   ! Add -div( rho R) as external force
   if (itytur.eq.3.and.igprij.eq.1) then
     do iel = 1, ncel
-      dvol = 1.d0/cell_f_vol(iel)
+      dvol = 1.d0/volf(iel)
       do isou = 1, 3
         dfrcxt(isou, iel) = dfrcxt(isou, iel) - divt(isou, iel)*dvol
       enddo
