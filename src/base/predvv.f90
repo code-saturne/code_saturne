@@ -74,7 +74,7 @@
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[in]     ximpa         idem
-!> \param[in]     uvwk          idem (stores the velocity at the previous iteration)*
+!> \param[in]     uvwk          idem (stores the velocity at the previous iteration)
 !> \param[in]     dfrcxt        variation of the external forces
 !> \param[in]                    making the hydrostatic pressure
 !> \param[in]     grdphd        hydrostatic pressure gradient to handle the imbalance

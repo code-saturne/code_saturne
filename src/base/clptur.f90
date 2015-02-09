@@ -237,9 +237,10 @@ rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
 
-! --- Constants
 uet = 1.d0
 utau = 1.d0
+
+! --- Constants
 sqrcmu = sqrt(cmu)
 
 yplbr => null()

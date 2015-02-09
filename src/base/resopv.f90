@@ -1082,6 +1082,9 @@ init   = 0
 inc    = 1
 iccocg = 1
 
+!----------------------
+! Rhie and Choow filter
+!----------------------
 if (arak.gt.0.d0) then
 
 ! --- Prise en compte de Arak : la viscosite face est multipliee
