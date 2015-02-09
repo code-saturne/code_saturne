@@ -818,7 +818,7 @@ endif
 !      (if iphydr=1 this term has already been taken into account)
 
 ! ---> Explicit part
-if ((ncepdp.gt.0).and.(iphydr.eq.0)) then
+if ((ncepdp.gt.0).and.(iphydr.ne.1)) then
 
   ! Les termes diagonaux sont places dans TRAV ou TRAVA,
   !   La prise en compte de uvwk a partir de la seconde iteration
@@ -896,7 +896,7 @@ endif
 
 ! --->  Explicit part
 
-if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.eq.0) then
+if ((icorio.eq.1.or.iturbo.eq.1) .and. iphydr.ne.1) then
 
   ! A la premiere iter sur navsto, on ajoute la partie issue des
   ! termes explicites
@@ -1238,8 +1238,9 @@ if (iappel.eq.1.and.iphydr.eq.1.and.iterns.eq.1) then
   ! Add -div( rho R) as external force
   if (itytur.eq.3.and.igprij.eq.1) then
     do iel = 1, ncel
+      dvol = 1.d0/cell_f_vol(iel)
       do isou = 1, 3
-        dfrcxt(isou, iel) = dfrcxt(isou, iel) - divt(isou, iel)
+        dfrcxt(isou, iel) = dfrcxt(isou, iel) - divt(isou, iel)*dvol
       enddo
     enddo
   endif
@@ -1325,7 +1326,7 @@ if (iterns.eq.1) then
     !==========
   endif
 
-  if (iphydr.eq.1.and.iterns.eq.1) then
+  if (iphydr.eq.1) then
 
     do iel = 1, ncel
       !FIXME when using porosity
