@@ -371,6 +371,8 @@ _field_create(const char   *name,
 
   cs_field_t *f =  NULL;
 
+  cs_base_check_bool(&interleaved);
+
   /* Initialize if necessary */
 
   if (_field_map == NULL)
@@ -1368,6 +1370,8 @@ cs_field_create(const char   *name,
                                   dim,
                                   interleaved);
 
+  cs_base_check_bool(&has_previous);
+
   f->n_time_vals = has_previous ? 2 : 1;
 
   BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
@@ -1541,6 +1545,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
   cs_lnum_t a_mult = f->dim;
   cs_lnum_t b_mult = f->dim;
+
+  cs_base_check_bool(&have_flux_bc);
+  cs_base_check_bool(&have_mom_bc);
+  cs_base_check_bool(&have_conv_bc);
 
   if (f->type & CS_FIELD_VARIABLE) {
     int coupled = 0;

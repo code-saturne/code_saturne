@@ -1931,6 +1931,32 @@ cs_base_get_pkglibdir(void)
                    &_cs_base_env_pkglibdir);
 }
 
+/*----------------------------------------------------------------------------
+ * Ensure bool argument has value 0 or 1.
+ *
+ * This allows working around issues with Intel compiler C bindings,
+ * which seem to pass incorrect values in some cases.
+ *
+ * parameters:
+ *   b <-> pointer to bool
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_check_bool(bool *b)
+{
+  if (sizeof(bool) == 1) {
+    char *pb = b;
+    int i = *pb;
+    if (i != 0 && i != 1)
+      *b = true;
+  }
+  else if (sizeof(bool) == sizeof(int)) {
+    int *pb = b;
+    if (*pb != 0 && *pb != 1)
+      *b = true;
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
