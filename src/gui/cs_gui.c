@@ -2120,18 +2120,17 @@ _c_head_losses(const char* zone_id, const char* c)
  *----------------------------------------------------------------------------*/
 
 static int
-_rotor_option(const char  *rotor_id,
+_rotor_option(int          rotor_id,
               const char  *name)
 {
   double value = 0.;
   char *path   = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 3,
+  cs_xpath_add_elements(&path, 2,
                         "thermophysical_models",
-                        "turbomachinery",
-                        "rotor");
-  cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
+                        "turbomachinery");
+  cs_xpath_add_element_num(&path, "rotor", rotor_id);
   cs_xpath_add_element(&path, "rotation");
   cs_xpath_add_element(&path, name);
   cs_xpath_add_function_text(&path);
@@ -4651,8 +4650,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   const int n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   /* law for density */
-  if (!cs_gui_strcmp(vars->model, "compressible_model") ||
-       cs_glob_time_step->nt_cur == 1) {
+  if (!cs_gui_strcmp(vars->model, "compressible_model")) {
       if (*irovar == 1) {
           cs_field_t *c_rho = CS_F_(rho);
           _physical_property("density", "density",
@@ -5890,8 +5888,6 @@ cs_gui_turbomachinery_rotor(void)
   char *cell_criteria;
   char *model;
 
-  const char rotor_id[] = "0";
-
   path = cs_xpath_init_path();
   cs_xpath_add_elements(&path, 2,
                         "thermophysical_models",
@@ -5903,49 +5899,52 @@ cs_gui_turbomachinery_rotor(void)
 
   if (!cs_gui_strcmp(model, "off")) {
 
-    rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
-    rotation_axis[1] = _rotor_option(rotor_id, "axis_y");
-    rotation_axis[2] = _rotor_option(rotor_id, "axis_z");
+    int n_rotors = cs_gui_get_tag_number("/thermophysical_models/turbomachinery/rotor\n", 1);
 
-    rotation_invariant[0] = _rotor_option(rotor_id, "invariant_x");
-    rotation_invariant[1] = _rotor_option(rotor_id, "invariant_y");
-    rotation_invariant[2] = _rotor_option(rotor_id, "invariant_z");
+    for (int rotor_id = 0; rotor_id < n_rotors; rotor_id++) {
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3,
-                          "thermophysical_models",
-                          "turbomachinery",
-                          "rotor");
+      rotation_axis[0] = _rotor_option(rotor_id, "axis_x");
+      rotation_axis[1] = _rotor_option(rotor_id, "axis_y");
+      rotation_axis[2] = _rotor_option(rotor_id, "axis_z");
 
-    cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
-    cs_xpath_add_element(&path, "velocity");
-    cs_xpath_add_element(&path, "value");
-    cs_xpath_add_function_text(&path);
-    cs_gui_get_double(path, &rotation_velocity);
-    BFT_FREE(path);
+      rotation_invariant[0] = _rotor_option(rotor_id, "invariant_x");
+      rotation_invariant[1] = _rotor_option(rotor_id, "invariant_y");
+      rotation_invariant[2] = _rotor_option(rotor_id, "invariant_z");
 
-    path = cs_xpath_init_path();
-    cs_xpath_add_elements(&path, 3,
-                          "thermophysical_models",
-                          "turbomachinery",
-                          "rotor");
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2,
+                            "thermophysical_models",
+                            "turbomachinery");
 
-    cs_xpath_add_test_attribute(&path, "rotor_id", rotor_id);
-    cs_xpath_add_element(&path, "criteria");
-    cs_xpath_add_function_text(&path);
-    cell_criteria = cs_gui_get_text_value(path);
-    BFT_FREE(path);
+      cs_xpath_add_element_num(&path, "rotor", rotor_id);
+      cs_xpath_add_element(&path, "velocity");
+      cs_xpath_add_element(&path, "value");
+      cs_xpath_add_function_text(&path);
+      cs_gui_get_double(path, &rotation_velocity);
+      BFT_FREE(path);
 
-    cs_turbomachinery_add_rotor(cell_criteria,
-                                rotation_velocity,
-                                rotation_axis,
-                                rotation_invariant);
+      path = cs_xpath_init_path();
+      cs_xpath_add_elements(&path, 2,
+                            "thermophysical_models",
+                            "turbomachinery");
 
-    BFT_FREE(cell_criteria);
+      cs_xpath_add_element_num(&path, "rotor", rotor_id);
+      cs_xpath_add_element(&path, "criteria");
+      cs_xpath_add_function_text(&path);
+      cell_criteria = cs_gui_get_text_value(path);
+      BFT_FREE(path);
+
+      cs_turbomachinery_add_rotor(cell_criteria,
+                                  rotation_velocity,
+                                  rotation_axis,
+                                  rotation_invariant);
+
+      BFT_FREE(cell_criteria);
+    }
 
     int n_join = 0;
     n_join = cs_gui_get_tag_number
-               ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
+                 ("/thermophysical_models/turbomachinery/joining/face_joining", 1);
 
     if (n_join != 0) {
       for (int join_id = 0; join_id < n_join; join_id++) {
