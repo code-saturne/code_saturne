@@ -556,6 +556,11 @@ module optcal
   !>          length based on V. Driest analysis)
   integer(c_int), pointer, save :: iwallf
 
+  !>  Wall functions for scalar
+  !>    - 0: three layer wall function of Arpaci and Larsen
+  !>    - 1: Van Driest wall function
+  integer(c_int), pointer, save :: iwalfs
+
   !> exchange coefficient correlation
   !>    - 0: not use by default
   !>    - 1: exchange coefficient computed with a correlation
@@ -1074,11 +1079,12 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global wall functions structure
 
-    subroutine cs_f_wall_functions_get_pointers(iwallf, iwallt, ypluli) &
+    subroutine cs_f_wall_functions_get_pointers(iwallf, iwalfs, iwallt, &
+                                                ypluli)                  &
       bind(C, name='cs_f_wall_functions_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iwallf, iwallt, ypluli
+      type(c_ptr), intent(out) :: iwallf, iwalfs, iwallt, ypluli
     end subroutine cs_f_wall_functions_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1306,11 +1312,13 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iwallf, c_iwallt, c_ypluli
+    type(c_ptr) :: c_iwallf, c_iwalfs, c_iwallt, c_ypluli
 
-    call cs_f_wall_functions_get_pointers(c_iwallf, c_iwallt, c_ypluli)
+    call cs_f_wall_functions_get_pointers(c_iwallf, c_iwalfs, c_iwallt, &
+                                          c_ypluli)
 
     call c_f_pointer(c_iwallf, iwallf)
+    call c_f_pointer(c_iwalfs, iwalfs)
     call c_f_pointer(c_iwallt, iwallt)
     call c_f_pointer(c_ypluli, ypluli)
 

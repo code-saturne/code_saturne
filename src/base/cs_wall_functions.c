@@ -84,19 +84,25 @@ BEGIN_C_DECLS
 
   \brief wall functions descriptor.
 
-  Members of this wall functions descriptor are publicly accessible, to allow for concise
-  syntax, as it is expected to be used in many places.
+  Members of this wall functions descriptor are publicly accessible, to allow
+  for concise syntax, as it is expected to be used in many places.
 
   \var  cs_wall_functions_t::iwallf
-        wall functions
+        wall functions for velocity
         - 0: no wall functions
         - 1: one scale of friction velocity (power law)
         - 2: one scale of friction velocity (log law)
         - 3: two scales of friction velocity (log law)
         - 4: two scales of friction velocity (log law)
              scalable wall functions
-        - 5: two scales of friction velocities (mixing
-             length based on V. Driest analysis)
+        - 5: two scales of friction velocity (using V. Driest mixing
+             length)
+  \var  cs_wall_functions_t::iwalfs
+        wall functions for scalar
+        - 0: three layers (Arpaci and Larsen) or two layers (Prandtl-Taylor) for
+             Prandtl number smaller than 0.1
+        - 1: consistant with the 2 scales wall function for velocity using Van
+             Driest mixing length
   \var  cs_wall_functions_t::iwallt
         exchange coefficient correlation
         - 0: not use by default
@@ -121,7 +127,7 @@ BEGIN_C_DECLS
 /* wall functions structure and associated pointer */
 
 static cs_wall_functions_t  _wall_functions =
-  {-999, 0, -1e13};
+  {-999, -999, 0, -1e13};
 
 const cs_wall_functions_t  *cs_glob_wall_functions = &_wall_functions;
 
@@ -132,6 +138,7 @@ const cs_wall_functions_t  *cs_glob_wall_functions = &_wall_functions;
 
 void
 cs_f_wall_functions_get_pointers(int     **iwallf,
+                                 int     **iwalfs,
                                  int     **iwallt,
                                  double  **ypluli);
 
@@ -146,19 +153,22 @@ cs_f_wall_functions_get_pointers(int     **iwallf,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   iwallf --> pointer to cs_glob_wall_functions->iwallf
- *   iwallt --> pointer to cs_glob_wall_functions->iwallt
- *   ypluli --> pointer to cs_glob_wall_functions->ypluli
+ *   iwallf  --> pointer to cs_glob_wall_functions->iwallf
+ *   iwalfs  --> pointer to cs_glob_wall_functions->iwalfs
+ *   iwallt  --> pointer to cs_glob_wall_functions->iwallt
+ *   ypluli  --> pointer to cs_glob_wall_functions->ypluli
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_wall_functions_get_pointers(int     **iwallf,
+                                 int     **iwalfs,
                                  int     **iwallt,
                                  double  **ypluli)
 {
-  *iwallf = (int *)&(_wall_functions.iwallf);
-  *iwallt = &(_wall_functions.iwallt);
-  *ypluli = &(_wall_functions.ypluli);
+  *iwallf  = (int *)&(_wall_functions.iwallf);
+  *iwalfs = (int *)&(_wall_functions.iwalfs);
+  *iwallt  = &(_wall_functions.iwallt);
+  *ypluli  = &(_wall_functions.ypluli);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -194,7 +204,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 {
   assert(*iwallf >= 0 && *iwallf <= 5);
 
-  cs_wall_functions_velocity((cs_wall_function_type_t)*iwallf,
+  cs_wall_functions_velocity((cs_wall_f_type_t)*iwallf,
                              *ifac,
                              *l_visc,
                              *t_visc,
@@ -219,6 +229,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 
 void CS_PROCF (hturbp, HTURBP)
 (
+ const cs_int_t   *const iwalfs,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
  const cs_real_t  *const yplus,
@@ -227,7 +238,8 @@ void CS_PROCF (hturbp, HTURBP)
        cs_real_t        *yplim
 )
 {
-  cs_wall_functions_scalar(*prl,
+  cs_wall_functions_scalar((cs_wall_f_s_type_t)*iwalfs,
+                           *prl,
                            *prt,
                            *yplus,
                            *dplus,
@@ -273,23 +285,23 @@ void CS_PROCF (hturbp, HTURBP)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_velocity(cs_wall_function_type_t   iwallf,
-                           cs_lnum_t                 ifac,
-                           cs_real_t                 l_visc,
-                           cs_real_t                 t_visc,
-                           cs_real_t                 vel,
-                           cs_real_t                 y,
-                           cs_real_t                 rnnb,
-                           cs_real_t                 kinetic_en,
-                           int                      *iuntur,
-                           cs_lnum_t                *nsubla,
-                           cs_lnum_t                *nlogla,
-                           cs_real_t                *ustar,
-                           cs_real_t                *uk,
-                           cs_real_t                *yplus,
-                           cs_real_t                *ypup,
-                           cs_real_t                *cofimp,
-                           cs_real_t                *dplus)
+cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
+                           cs_lnum_t         ifac,
+                           cs_real_t         l_visc,
+                           cs_real_t         t_visc,
+                           cs_real_t         vel,
+                           cs_real_t         y,
+                           cs_real_t         rnnb,
+                           cs_real_t         kinetic_en,
+                           int              *iuntur,
+                           cs_lnum_t        *nsubla,
+                           cs_lnum_t        *nlogla,
+                           cs_real_t        *ustar,
+                           cs_real_t        *uk,
+                           cs_real_t        *yplus,
+                           cs_real_t        *ypup,
+                           cs_real_t        *cofimp,
+                           cs_real_t        *dplus)
 {
   cs_real_t lmk;
   cs_real_t kr = 0.;
@@ -398,117 +410,65 @@ cs_wall_functions_velocity(cs_wall_function_type_t   iwallf,
   }
 }
 
-/*----------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------*/
 
-/*! \brief Compute the correction of the exchange coefficient between the fluid
-  and the wall for a turbulent flow.
-
-  This is function of the dimensionless
-  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
-
-  Then the return coefficient reads:
-  \f[
-  h_{tur} = Pr \dfrac{y^+}{T^+}
-  \f]
-
-  This coefficient is computed thanks to a similarity model between
-  dynamic viscous sub-layer and themal sub-layer.
-
-  \f$ T^+ \f$ is computed as follows:
-
-  - For a laminar Prandtl number smaller than 0.1 (such as liquid metals),
-    the standard model with two sub-layers (Prandtl-Taylor) is used.
-
-  - For a laminar Prandtl number larger than 0.1 (such as liquids and gaz),
-    a model with three sub-layers (Arpaci-Larsen) is used.
-
-  The final exchange coefficient is:
-  \f[
-  h = \dfrac{K}{\centip \centf} h_{tur}
-  \f]
-
-*/
-/*-----------------------------------------------------------------------------
+/*!
+ *  \brief Compute the correction of the exchange coefficient between the fluid and
+ *  the wall for a turbulent flow.
+ *
+ *  This is function of the dimensionless
+ *  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
+ *
+ *  Then the return coefficient reads:
+ *  \f[
+ *  h_{tur} = Pr \dfrac{y^+}{T^+}
+ *  \f]
+ *
+ */
+/*-------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
- _____________________________________________________________________________*/
+ ______________________________________________________________________________*/
 /*!
+ * \param[in]     iwalfs        type of wall functions for scalar
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
  * \param[in]     yplus         dimensionless distance to the wall
- * \param[out]    dplus         dimensionless shift to the wall for scalable
+ * \param[in]     dplus         dimensionless distance for scalable
  *                              wall functions
  * \param[out]    htur          corrected exchange coefficient
  * \param[out]    yplim         value of the limit for \f$ y^+ \f$
  */
-/*----------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_scalar(double  prl,
-                         double  prt,
-                         double  yplus,
-                         double  dplus,
-                         double  *htur,
-                         double  *yplim)
+cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
+                         cs_real_t           prl,
+                         cs_real_t           prt,
+                         cs_real_t           yplus,
+                         cs_real_t           dplus,
+                         cs_real_t          *htur,
+                         cs_real_t          *yplim)
 {
-
-  /* Local variables */
-
-  double tplus;
-  double beta2,a2;
-  double yp2;
-  double prlm1;
-
-  const double epzero = 1.e-12;
-
-  /*==========================================================================*/
-
-  /*==========================================================================
-    1. Initializations
-    ==========================================================================*/
-
-  /*==========================================================================*/
-
-  (*htur) = CS_MAX(yplus-dplus,epzero)/CS_MAX(yplus,epzero);
-
-  prlm1 = 0.1;
-
-  /*==========================================================================
-    2. Compute htur for small Prandtl numbers
-    ==========================================================================*/
-
-  if (prl <= prlm1) {
-    (*yplim)   = prt/(prl*cs_turb_xkappa);
-    if (yplus > (*yplim)) {
-      tplus = prl*(*yplim) + prt/cs_turb_xkappa * log(yplus/(*yplim));
-      (*htur) = prl*(yplus-dplus)/tplus;
-    }
-
-    /*========================================================================
-      3. Compute htur for the model with three sub-layers
-      ========================================================================*/
-
-  } else {
-    yp2   = cs_turb_xkappa*1000./prt;
-    yp2   = sqrt(yp2);
-    (*yplim)   = pow(1000./prl,1./3.);
-
-    a2 = 15.*pow(prl,2./3.);
-    beta2 = a2 - 500./ pow(yp2,2);
-
-    if (yplus >= (*yplim) && yplus < yp2) {
-      tplus = a2 - 500./(yplus*yplus);
-      (*htur) = prl*(yplus-dplus)/tplus;
-    }
-
-    if (yplus >= yp2) {
-      tplus = beta2 + prt/cs_turb_xkappa*log(yplus/yp2);
-      (*htur) = prl*(yplus-dplus)/tplus;
-    }
-
+  switch (iwalfs) {
+  case CS_WALL_F_S_ARPACI_LARSEN:
+    cs_wall_functions_s_arpaci_larsen(prl,
+                                      prt,
+                                      yplus,
+                                      dplus,
+                                      htur,
+                                      yplim);
+    break;
+  case CS_WALL_F_S_VDRIEST:
+    cs_wall_functions_s_vdriest(prl,
+                                prt,
+                                yplus,
+                                htur);
+    break;
+  default:
+    break;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

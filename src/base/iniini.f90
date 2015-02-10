@@ -766,6 +766,7 @@ itytur =-999
 igrhok = 0
 igrake = 1
 iwallf =-999
+iwalfs = -999
 iwallt = 0
 iclkep = 0
 ikecou =-999

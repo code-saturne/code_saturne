@@ -58,21 +58,30 @@ typedef enum {
   CS_WALL_F_SCALABLE_2SCALES_LOG,
   CS_WALL_F_2SCALES_VDRIEST,
 
-} cs_wall_function_type_t;
+} cs_wall_f_type_t;
+
+typedef enum {
+
+  CS_WALL_F_S_ARPACI_LARSEN,
+  CS_WALL_F_S_VDRIEST,
+
+} cs_wall_f_s_type_t;
 
 /* Wall functions descriptor */
 /*---------------------------*/
 
 typedef struct {
 
-  cs_wall_function_type_t iwallf;  /* wall function type */
+  cs_wall_f_type_t   iwallf;  /* wall function type */
 
-  int                     iwallt;  /* exchange coefficient correlation
-                                      - 0: not used by default
-                                      - 1: exchange coefficient computed with a
-                                           correlation */
+  cs_wall_f_s_type_t iwalfs;  /* wall function type for scalars */
 
-  double                  ypluli;  /* limit value of y+ for the viscous
+  int                iwallt;  /* exchange coefficient correlation
+                                 - 0: not used by default
+                                 - 1: exchange coefficient computed with a
+                                      correlation */
+
+  double             ypluli;  /* limit value of y+ for the viscous
                                       sublayer */
 
 } cs_wall_functions_t;
@@ -270,7 +279,7 @@ cs_wall_functions_1scale_log(cs_lnum_t    ifac,
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
- * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[out]    iuntur        indicator: 0 in the viscous sublayer
  * \param[out]    nsubla        counter of cell in the viscous sublayer
  * \param[out]    nlogla        counter of cell in the log-layer
@@ -351,7 +360,7 @@ cs_wall_functions_2scales_log(cs_real_t   l_visc,
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
- * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[out]    iuntur        indicator: 0 in the viscous sublayer
  * \param[out]    nsubla        counter of cell in the viscous sublayer
  * \param[out]    nlogla        counter of cell in the log-layer
@@ -430,7 +439,7 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Two velocity scales wall function with Van Driest mixing length.
+ * \brief Two velocity scales wall function using Van Driest mixing length.
  *
  * \f$ u^+ \f$ is computed as follows:
  *   \f[ u^+ = \int_0^{y_k^+} \dfrac{dy_k^+}{1+L_m^k} \f]
@@ -445,7 +454,7 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
  * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
- * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[out]    iuntur        indicator: 0 in the viscous sublayer
  * \param[out]    nsubla        counter of cell in the viscous sublayer
  * \param[out]    nlogla        counter of cell in the log-layer
@@ -645,6 +654,170 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ *  \brief The correction of the exchange coefficient is computed thanks to a
+ *  similarity model between dynamic viscous sub-layer and themal sub-layer.
+ *
+ *  \f$ T^+ \f$ is computed as follows:
+ *
+ *  - For a laminar Prandtl number smaller than 0.1 (such as liquid metals),
+ *    the standard model with two sub-layers (Prandtl-Taylor) is used.
+ *
+ *  - For a laminar Prandtl number larger than 0.1 (such as liquids and gaz),
+ *    a model with three sub-layers (Arpaci-Larsen) is used.
+ *
+ *  The final exchange coefficient is:
+ *  \f[
+ *  h = \dfrac{K}{\centip \centf} h_{tur}
+ *  \f]
+ *
+ * \param[in]     prl           laminar Prandtl number
+ * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     yplus         dimensionless distance to the wall
+ * \param[out]    dplus         dimensionless shift to the wall for scalable
+ *                              wall functions
+ * \param[out]    htur          corrected exchange coefficient
+ * \param[out]    yplim         value of the limit for \f$ y^+ \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
+                                  cs_real_t  prt,
+                                  cs_real_t  yplus,
+                                  cs_real_t  dplus,
+                                  cs_real_t *htur,
+                                  cs_real_t *yplim)
+{
+  /* Local variables */
+  double tplus;
+  double beta2,a2;
+  double yp2;
+  double prlm1;
+
+  const double epzero = 1.e-12;
+
+  /*==========================================================================*/
+
+  /*==========================================================================
+    1. Initializations
+    ==========================================================================*/
+
+  /*==========================================================================*/
+
+  (*htur) = CS_MAX(yplus-dplus,epzero)/CS_MAX(yplus,epzero);
+
+  prlm1 = 0.1;
+
+  /*==========================================================================
+    2. Compute htur for small Prandtl numbers
+    ==========================================================================*/
+
+  if (prl <= prlm1) {
+    (*yplim)   = prt/(prl*cs_turb_xkappa);
+    if (yplus > (*yplim)) {
+      tplus = prl*(*yplim) + prt/cs_turb_xkappa * log(yplus/(*yplim));
+      (*htur) = prl*(yplus-dplus)/tplus;
+    }
+
+    /*========================================================================
+      3. Compute htur for the model with three sub-layers
+      ========================================================================*/
+
+  } else {
+    yp2   = cs_turb_xkappa*1000./prt;
+    yp2   = sqrt(yp2);
+    (*yplim)   = pow(1000./prl,1./3.);
+
+    a2 = 15.*pow(prl,2./3.);
+    beta2 = a2 - 500./ pow(yp2,2);
+
+    if (yplus >= (*yplim) && yplus < yp2) {
+      tplus = a2 - 500./(yplus*yplus);
+      (*htur) = prl*(yplus-dplus)/tplus;
+    }
+
+    if (yplus >= yp2) {
+      tplus = beta2 + prt/cs_turb_xkappa*log(yplus/yp2);
+      (*htur) = prl*(yplus-dplus)/tplus;
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *  \brief The correction of the exchange coefficient
+ *  \f$ h_{tur} = \sigma \dfrac{y^+}{t^+} \f$ is computed thanks to a
+ *  numerical integration of:
+ *  \f[
+ *  \dfrac{T^+}{\sigma}
+ *           = \int_0^{y_k^+} \dfrac{dy_k^+}{1+\dfrac{\sigma}{\sigma_t}\nu_t^+}
+ *  \f]
+ *  with \f$ \nu_t^+ = L_m^k \f$ as assumed in the derivation of the two scales
+ *  wall function using Van Driest mixing length.
+ *  Therefore \f$ L_m^k = \kappa y_k^+(1 - exp(\dfrac{-y_k^+}{A})) \f$ is taken.
+ *
+ *  Notice that we integrate up to \f$ y^+=100 \f$ (YP100), beyond that value
+ *  the profile is prolonged by a logarithm relying on the fact that
+ *  \f$ \nu_t^+=\kappa y^+ \f$ beyond \f$ y^+=100 \f$.
+ *
+ * \param[in]     prl           molecular Prandtl number
+ *                              ( \f$ Pr=\sigma=\frac{\mu C_p}{\lambda_f} \f$ )
+ * \param[in]     prt           turbulent Prandtl number ( \f$ \sigma_t \f$ )
+ * \param[in]     yplus         dimensionless distance to the wall
+ * \param[out]    htur          corrected exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_wall_functions_s_vdriest(cs_real_t  prl,
+                            cs_real_t  prt,
+                            cs_real_t  yplus,
+                            cs_real_t *htur)
+{
+  cs_real_t prlrat = prl / prt;
+
+  /* Parameters of the numerical quadrature */
+  const int ninter_max = 100;
+  const cs_real_t ypmax = 1.e2;
+
+  /* No correction for very small yplus */
+  if (yplus <= 0.1)
+    *htur = 1.;
+  else {
+    cs_real_t ypint = CS_MIN(yplus, ypmax);
+
+    /* The number of sub-intervals is taken proportional to yplus and equal to
+     * ninter_max if yplus=ypmax */
+
+    int npeff = CS_MAX((int)(ypint / ypmax * (double)(ninter_max)), 1);
+
+    double dy = ypint / (double)(npeff);
+    cs_real_t stplus = 0.;
+    cs_real_t nut1 = 0.;
+    cs_real_t nut2 = 0.;
+
+    for (int ip = 1; ip <= npeff; ip++) {
+      double yp = ypint * (double)(ip) / (double)(npeff);
+      nut2 = cs_turb_xkappa * yp * (1. - exp(-yp / cs_turb_vdriest));
+      stplus += dy / (1. + prlrat * 0.5 * (nut1 + nut2));
+      nut1 = nut2;
+    }
+
+    if (yplus > ypint) {
+      cs_real_t r = prlrat * cs_turb_xkappa;
+      stplus += log( (1. + r*yplus) / (1. + r*ypint)) / r;
+    }
+
+    if (stplus >= 1.e-6)
+      *htur = yplus / stplus;
+    else
+      *htur = 1.;
+    }
+}
+
 /*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
@@ -680,6 +853,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 
 void CS_PROCF (hturbp, HTURBP)
 (
+ const cs_int_t   *const iwalfs,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
  const cs_real_t  *const yplus,
@@ -709,7 +883,7 @@ void CS_PROCF (hturbp, HTURBP)
  *                              cell center velocity
  * \param[in]     y             wall distance
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
- * \param[in]     kinetic_en    turbulente kinetic energy
+ * \param[in]     kinetic_en    turbulent kinetic energy
  * \param[in]     iuntur        indicator:
  *                              0 in the viscous sublayer
  * \param[in]     nsubla        counter of cell in the viscous
@@ -727,60 +901,46 @@ void CS_PROCF (hturbp, HTURBP)
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_velocity(cs_wall_function_type_t  iwallf,
-                           cs_lnum_t                ifac,
-                           cs_real_t                l_visc,
-                           cs_real_t                t_visc,
-                           cs_real_t                vel,
-                           cs_real_t                y,
-                           cs_real_t                rnnb,
-                           cs_real_t                kinetic_en,
-                           int                     *iuntur,
-                           cs_lnum_t               *nsubla,
-                           cs_lnum_t               *nlogla,
-                           cs_real_t               *ustar,
-                           cs_real_t               *uk,
-                           cs_real_t               *yplus,
-                           cs_real_t               *ypup,
-                           cs_real_t               *cofimp,
-                           cs_real_t               *dplus);
+cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
+                           cs_lnum_t         ifac,
+                           cs_real_t         l_visc,
+                           cs_real_t         t_visc,
+                           cs_real_t         vel,
+                           cs_real_t         y,
+                           cs_real_t         rnnb,
+                           cs_real_t         kinetic_en,
+                           int              *iuntur,
+                           cs_lnum_t        *nsubla,
+                           cs_lnum_t        *nlogla,
+                           cs_real_t        *ustar,
+                           cs_real_t        *uk,
+                           cs_real_t        *yplus,
+                           cs_real_t        *ypup,
+                           cs_real_t        *cofimp,
+                           cs_real_t        *dplus);
 
 /*-------------------------------------------------------------------------------*/
 
-/*! \brief Compute the correction of the exchange coefficient between the fluid and
-  the wall for a turbulent flow.
-
-  This is function of the dimensionless
-  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
-
-  Then the return coefficient reads:
-  \f[
-  h_{tur} = Pr \dfrac{y^+}{T^+}
-  \f]
-
-  This coefficient is computed thanks to a similarity model between
-  dynamic viscous sub-layer and themal sub-layer.
-
-  \f$ T^+ \f$ is computed as follows:
-
-  - For a laminar Prandtl number smaller than 0.1 (such as liquid metals),
-    the standard model with two sub-layers (Prandtl-Taylor) is used.
-
-  - For a laminar Prandtl number larger than 0.1 (such as liquids and gaz),
-    a model with three sub-layers (Arpaci-Larsen) is used.
-
-  The final exchange coefficient is:
-  \f[
-  h = \dfrac{K}{\centip \centf} h_{tur}
-  \f]
-
-*/
+/*!
+ *  \brief Compute the correction of the exchange coefficient between the fluid and
+ *  the wall for a turbulent flow.
+ *
+ *  This is function of the dimensionless
+ *  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
+ *
+ *  Then the return coefficient reads:
+ *  \f[
+ *  h_{tur} = Pr \dfrac{y^+}{T^+}
+ *  \f]
+ *
+ */
 /*-------------------------------------------------------------------------------
   Arguments
  ______________________________________________________________________________.
    mode           name          role                                           !
  ______________________________________________________________________________*/
 /*!
+ * \param[in]     iwalfs        type of wall functions for scalar
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
  * \param[in]     yplus         dimensionless distance to the wall
@@ -792,12 +952,13 @@ cs_wall_functions_velocity(cs_wall_function_type_t  iwallf,
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_wall_functions_scalar(double  prl,
-                         double  prt,
-                         double  yplus,
-                         double  dplus,
-                         double  *htur,
-                         double  *yplim);
+cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
+                         cs_real_t           prl,
+                         cs_real_t           prt,
+                         cs_real_t           yplus,
+                         cs_real_t           dplus,
+                         cs_real_t          *htur,
+                         cs_real_t          *yplim);
 
 /*----------------------------------------------------------------------------*/
 

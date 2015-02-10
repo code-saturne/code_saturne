@@ -741,6 +741,20 @@ if (iwallf.eq.-999) then
   endif
 endif
 
+! ---> IWALFS
+! If the wall function for the velocity is the two scales wall function using
+! Van Driest mixing length (iwallf=5), then the corresponding wall function for
+! scalar should be used (iwalfs=1).
+! Here iwalfs is set automatically only if it wasn't set in a user subroutine.
+
+if (iwalfs.eq.-999) then
+  if (iwallf.eq.5) then
+    iwalfs = 1
+  else
+    iwalfs = 0
+  endif
+endif
+
 ! ---> YPLULI
 ! 1/XKAPPA est la valeur qui assure la continuite de la derivee
 ! entre la zone lineaire et la zone logarithmique.
