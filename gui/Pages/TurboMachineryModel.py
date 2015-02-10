@@ -263,10 +263,11 @@ class TurboMachineryModel(Variables, Model):
         """
         lst = self.getRotorList()
         n = lst[rotor_id]
-        n.xmlRemoveNode()
         for node in lst:
-            if node['rotor_id'] >  rotor_id:
-                node['rotor_id'] = node['rotor_id'] - 1
+            nodeid = int(node['rotor_id'])
+            if nodeid > int(rotor_id):
+                node['rotor_id'] = str(nodeid-1)
+        n.xmlRemoveNode()
 
 
     def _getRotorNode(self, rotor_id):

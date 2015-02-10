@@ -251,6 +251,8 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.tableViewTurboMachinery.setModel(self.rotorModel)
         self.tableViewTurboMachinery.resizeColumnsToContents()
         self.tableViewTurboMachinery.resizeRowsToContents()
+        self.tableViewTurboMachinery.setAlternatingRowColors(True)
+        self.tableViewTurboMachinery.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         delegateVelocity = VelocityDelegate(self.tableViewTurboMachinery)
         self.tableViewTurboMachinery.setItemDelegateForColumn(0, delegateVelocity)
@@ -283,8 +285,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.connect(self.lineEditY1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationY1)
         self.connect(self.lineEditZ1, SIGNAL("textChanged(const QString &)"), self.slotCenterRotationZ1)
 
-        self.rotor_id = -1
-
         if self.mdl.getRotorList() != None:
             for i in range(len(self.mdl.getRotorList())):
                 self.rotorModel.addItem(i)
@@ -295,10 +295,11 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.case.undoStartGlobal()
 
 
-    def __setValuesRotation(self, rotor_id):
+    def __setValuesRotation(self):
         """
         Put values found in xml file as soon as mode is "rotation"
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         rx, ry, rz = self.mdl.getRotationDirection(rotor_id)
         px, py, pz = self.mdl.getRotationCenter(rotor_id)
 
@@ -316,17 +317,20 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         mdl = self.mdl.getTurboMachineryModel()
         self.modelTurboMachineryType.setItem(str_model = mdl)
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
 
         if mdl != "off":
-            if len(self.mdl.getRotorList()) < 2 or self.rotor_id == -1:
+            if len(self.mdl.getRotorList()) == 1:
                 self.pushButtonDelete.setEnabled(False)
+            else:
+                self.pushButtonDelete.setEnabled(True)
 
             self.groupBoxDefineTurboMachinery.show()
             self.groupBoxJoin.show()
             self.groupBoxRotation.hide()
-            if self.rotor_id != -1:
+            if rotor_id != -1:
                 self.groupBoxRotation.show()
-                self.__setValuesRotation(self.rotor_id)
+                self.__setValuesRotation()
             if mdl == "frozen":
                 self.groupBoxJoin.setTitle("Face joining (optionnal)")
             elif mdl == "transient":
@@ -343,8 +347,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.tableViewTurboMachinery.resizeRowsToContents()
         self.tableViewTurboMachinery.horizontalHeader().setResizeMode(1,QHeaderView.Stretch)
 
-        self.rotor_id = self.tableViewTurboMachinery.currentIndex().row()
-
         self.updateView()
 
 
@@ -353,7 +355,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         detect change selection to update constant properties
         """
-        self.rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         self.updateView()
 
 
@@ -383,7 +384,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.mdl.addRotor()
         self.rotorModel.addItem(len(self.mdl.getRotorList()) -1)
         self.tableViewTurboMachinery.clearSelection()
-        self.rotor_id = -1
         self.updateView()
 
 
@@ -392,10 +392,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Delete the selected rotor from the list
         """
-        self.mdl.delRotor(self.rotor_id)
-        self.rotorModel.delItem(self.rotor_id)
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
+        self.mdl.delRotor(rotor_id)
+        self.rotorModel.delItem(rotor_id)
         self.tableViewTurboMachinery.clearSelection()
-        self.rotor_id = -1
         self.updateView()
 
 
@@ -404,9 +404,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Periodicity rotation for X
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setRotationVector(self.rotor_id, "axis_x", val)
+            self.mdl.setRotationVector(rotor_id, "axis_x", val)
 
 
     @pyqtSignature("const QString&")
@@ -414,9 +415,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Periodicity rotation for Y
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setRotationVector(self.rotor_id, "axis_y", val)
+            self.mdl.setRotationVector(rotor_id, "axis_y", val)
 
 
     @pyqtSignature("const QString&")
@@ -424,9 +426,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Periodicity rotation for Z
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setRotationVector(self.rotor_id, "axis_z", val)
+            self.mdl.setRotationVector(rotor_id, "axis_z", val)
 
 
     @pyqtSignature("const QString&")
@@ -434,9 +437,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Periodicity : center of rotation
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setRotationCenter(self.rotor_id, "invariant_x", val)
+            self.mdl.setRotationCenter(rotor_id, "invariant_x", val)
 
 
     @pyqtSignature("const QString&")
@@ -444,9 +448,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Periodicity : center of rotation
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setRotationCenter(self.rotor_id, "invariant_y", val)
+            self.mdl.setRotationCenter(rotor_id, "invariant_y", val)
 
 
     @pyqtSignature("const QString&")
@@ -454,9 +459,10 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         """
         Periodicity : center of rotation
         """
+        rotor_id = self.tableViewTurboMachinery.currentIndex().row()
         if self.sender().validator().state == QValidator.Acceptable:
             val = float(text)
-            self.mdl.setRotationCenter(self.rotor_id, "invariant_z", val)
+            self.mdl.setRotationCenter(rotor_id, "invariant_z", val)
 
 
     def tr(self, text):
