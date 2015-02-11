@@ -65,13 +65,14 @@ BEGIN_C_DECLS
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_field_gradient_scalar(const cs_field_t          *f,
-                              bool                       use_previous_t,
-                              cs_gradient_type_t         gradient_type,
-                              cs_halo_type_t             halo_type,
-                              int                        inc,
-                              bool                       recompute_cocg,
-                              cs_real_3_t      *restrict grad);
+void
+cs_field_gradient_scalar(const cs_field_t          *f,
+                         bool                       use_previous_t,
+                         cs_gradient_type_t         gradient_type,
+                         cs_halo_type_t             halo_type,
+                         int                        inc,
+                         bool                       recompute_cocg,
+                         cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of scalar field or component of vector or
@@ -89,15 +90,16 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_field_gradient_potential(const cs_field_t          *f,
-                                 bool                       use_previous_t,
-                                 cs_gradient_type_t         gradient_type,
-                                 cs_halo_type_t             halo_type,
-                                 int                        inc,
-                                 bool                       recompute_cocg,
-                                 int                        hyd_p_flag,
-                                 cs_real_3_t                f_ext[],
-                                 cs_real_3_t      *restrict grad);
+void
+cs_field_gradient_potential(const cs_field_t          *f,
+                            bool                       use_previous_t,
+                            cs_gradient_type_t         gradient_type,
+                            cs_halo_type_t             halo_type,
+                            int                        inc,
+                            bool                       recompute_cocg,
+                            int                        hyd_p_flag,
+                            cs_real_3_t                f_ext[],
+                            cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------
  * Compute cell gradient of scalar field or component of vector or
@@ -114,12 +116,14 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_field_gradient_vector(const cs_field_t          *f,
-                              bool                       use_previous_t,
-                              cs_gradient_type_t         gradient_type,
-                              cs_halo_type_t             halo_type,
-                              int                        inc,
-                              cs_real_33_t     *restrict grad);
+void
+cs_field_gradient_vector(const cs_field_t          *f,
+                         bool                       use_previous_t,
+                         cs_gradient_type_t         gradient_type,
+                         cs_halo_type_t             halo_type,
+                         int                        inc,
+                         cs_real_33_t     *restrict grad);
+
 
 /*----------------------------------------------------------------------------*/
 

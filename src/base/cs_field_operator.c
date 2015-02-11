@@ -91,27 +91,30 @@ BEGIN_C_DECLS
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void cs_f_field_gradient_scalar(int                    f_id,
-                                int                    use_previous_t,
-                                int                    imrgra,
-                                int                    inc,
-                                int                    recompute_cocg,
-                                cs_real_3_t  *restrict grad);
+void
+cs_f_field_gradient_scalar(int                    f_id,
+                           int                    use_previous_t,
+                           int                    imrgra,
+                           int                    inc,
+                           int                    recompute_cocg,
+                           cs_real_3_t  *restrict grad);
 
-void cs_f_field_gradient_potential(int                    f_id,
-                                   int                    use_previous_t,
-                                   int                    imrgra,
-                                   int                    inc,
-                                   int                    recompute_cocg,
-                                   int                    hyd_p_flag,
-                                   cs_real_3_t            f_ext[],
-                                   cs_real_3_t  *restrict grad);
+void
+cs_f_field_gradient_potential(int                    f_id,
+                              int                    use_previous_t,
+                              int                    imrgra,
+                              int                    inc,
+                              int                    recompute_cocg,
+                              int                    hyd_p_flag,
+                              cs_real_3_t            f_ext[],
+                              cs_real_3_t  *restrict grad);
 
-void cs_f_field_gradient_vector(int                     f_id,
-                                int                     use_previous_t,
-                                int                     imrgra,
-                                int                     inc,
-                                cs_real_33_t  *restrict grad);
+void
+cs_f_field_gradient_vector(int                     f_id,
+                           int                     use_previous_t,
+                           int                     imrgra,
+                           int                     inc,
+                           cs_real_33_t  *restrict grad);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -138,12 +141,13 @@ void cs_f_field_gradient_vector(int                     f_id,
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_f_field_gradient_scalar(int                    f_id,
-                                int                    use_previous_t,
-                                int                    imrgra,
-                                int                    inc,
-                                int                    recompute_cocg,
-                                cs_real_3_t  *restrict grad)
+void
+cs_f_field_gradient_scalar(int                    f_id,
+                           int                    use_previous_t,
+                           int                    imrgra,
+                           int                    inc,
+                           int                    recompute_cocg,
+                           cs_real_3_t  *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
@@ -181,14 +185,15 @@ void cs_f_field_gradient_scalar(int                    f_id,
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_f_field_gradient_potential(int                    f_id,
-                                   int                    use_previous_t,
-                                   int                    imrgra,
-                                   int                    inc,
-                                   int                    recompute_cocg,
-                                   int                    hyd_p_flag,
-                                   cs_real_3_t            f_ext[],
-                                   cs_real_3_t  *restrict grad)
+void
+cs_f_field_gradient_potential(int                    f_id,
+                              int                    use_previous_t,
+                              int                    imrgra,
+                              int                    inc,
+                              int                    recompute_cocg,
+                              int                    hyd_p_flag,
+                              cs_real_3_t            f_ext[],
+                              cs_real_3_t  *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
@@ -228,11 +233,12 @@ void cs_f_field_gradient_potential(int                    f_id,
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
-void cs_f_field_gradient_vector(int                     f_id,
-                                int                     use_previous_t,
-                                int                     imrgra,
-                                int                     inc,
-                                cs_real_33_t  *restrict grad)
+void
+cs_f_field_gradient_vector(int                     f_id,
+                           int                     use_previous_t,
+                           int                     imrgra,
+                           int                     inc,
+                           cs_real_33_t  *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
@@ -274,13 +280,14 @@ void cs_f_field_gradient_vector(int                     f_id,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_field_gradient_scalar(const cs_field_t          *f,
-                              bool                       use_previous_t,
-                              cs_gradient_type_t         gradient_type,
-                              cs_halo_type_t             halo_type,
-                              int                        inc,
-                              bool                       recompute_cocg,
-                              cs_real_3_t      *restrict grad)
+void
+cs_field_gradient_scalar(const cs_field_t          *f,
+                         bool                       use_previous_t,
+                         cs_gradient_type_t         gradient_type,
+                         cs_halo_type_t             halo_type,
+                         int                        inc,
+                         bool                       recompute_cocg,
+                         cs_real_3_t      *restrict grad)
 {
   int tr_dim = 0;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -344,15 +351,16 @@ void cs_field_gradient_scalar(const cs_field_t          *f,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_field_gradient_potential(const cs_field_t          *f,
-                                 bool                       use_previous_t,
-                                 cs_gradient_type_t         gradient_type,
-                                 cs_halo_type_t             halo_type,
-                                 int                        inc,
-                                 bool                       recompute_cocg,
-                                 int                        hyd_p_flag,
-                                 cs_real_3_t                f_ext[],
-                                 cs_real_3_t      *restrict grad)
+void
+cs_field_gradient_potential(const cs_field_t          *f,
+                            bool                       use_previous_t,
+                            cs_gradient_type_t         gradient_type,
+                            cs_halo_type_t             halo_type,
+                            int                        inc,
+                            bool                       recompute_cocg,
+                            int                        hyd_p_flag,
+                            cs_real_3_t                f_ext[],
+                            cs_real_3_t      *restrict grad)
 {
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
@@ -409,12 +417,13 @@ void cs_field_gradient_potential(const cs_field_t          *f,
  */
 /*----------------------------------------------------------------------------*/
 
-void cs_field_gradient_vector(const cs_field_t          *f,
-                              bool                       use_previous_t,
-                              cs_gradient_type_t         gradient_type,
-                              cs_halo_type_t             halo_type,
-                              int                        inc,
-                              cs_real_33_t     *restrict grad)
+void
+cs_field_gradient_vector(const cs_field_t          *f,
+                         bool                       use_previous_t,
+                         cs_gradient_type_t         gradient_type,
+                         cs_halo_type_t             halo_type,
+                         int                        inc,
+                         cs_real_33_t     *restrict grad)
 {
   cs_real_3_t *var;
 
