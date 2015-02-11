@@ -545,9 +545,9 @@ endif
 
 ! ---> Compute the velocity in I' for boundary cells
 
-if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0) then
+if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.ineedf.eq.1) then
 
-  if(ntcabs.gt.1) then
+  if (ntcabs.gt.1) then
 
     ! Allocate a temporary array
     allocate(gradv(3,3,ncelet))
