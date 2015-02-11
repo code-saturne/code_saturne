@@ -5,6 +5,9 @@ Release 4.0.0 (unreleased)
 Changes:
 --------
 
+- Added boundary condition to flow mapping (feedback) functionnality
+  (see boundary_conditions_map and boundary_conditions_mapped_set functions).
+
 - Fix two last digits of the ideal gas constant (8.31446).
 
 - By default, do not force use of an iterative gradient reconstruction method

@@ -47,6 +47,17 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Field values interpolation type
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_FIELD_INTERPOLATE_MEAN,      /* mean element value (P0 interpolation) */
+  CS_FIELD_INTERPOLATE_GRADIENT   /* mean + gradient correction (pseudo-P1) */
+
+} cs_field_interpolate_t;
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -120,6 +131,28 @@ void cs_field_gradient_vector(const cs_field_t          *f,
                               cs_halo_type_t             halo_type,
                               int                        inc,
                               cs_real_33_t     *restrict grad);
+
+/*----------------------------------------------------------------------------
+ * Interpolate field values at a given set of points.
+ *
+ * parameters:
+ *   f                  <-- pointer to field
+ *   interpolation_type <-- interpolation type
+ *   n_points           <-- number of points at which interpolation
+ *                          is required
+ *   point_location     <-- location of points in mesh elements
+ *                          (based on the field location)
+ *   point_coords       <-- point coordinates
+ *   val                --> interpolated values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_interpolate(cs_field_t              *f,
+                     cs_field_interpolate_t   interpolation_type,
+                     cs_lnum_t                n_points,
+                     const cs_lnum_t          point_location[],
+                     const cs_real_3_t        point_coords[],
+                     cs_real_t               *val);
 
 /*----------------------------------------------------------------------------*/
 

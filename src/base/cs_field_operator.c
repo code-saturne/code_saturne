@@ -46,12 +46,17 @@
 #include "bft_printf.h"
 
 #include "cs_field.h"
+#include "cs_gradient.h"
 #include "cs_gradient_perio.h"
+#include "cs_halo.h"
+#include "cs_mesh.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_parameters.h"
 #include "cs_parall.h"
+#include "cs_mesh.h"
 #include "cs_mesh_location.h"
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -70,6 +75,15 @@ BEGIN_C_DECLS
 /*!
   \file cs_field_operator.c
         Field based algebraic operators.
+
+  \enum cs_field_interpolate_t
+
+  \brief Field interpolation modes
+
+  \var CS_FIELD_INTERPOLATE_MEAN
+       Mean element value (P0 interpolation)
+  \var CS_FIELD_INTERPOLATE_GRADIENT
+       Mean element value + gradient correction (pseudo-P1)
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -118,6 +132,137 @@ void cs_f_field_gradient_vector(int                     f_id,
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Interpolate field values at a given set of points using P0 interpolation.
+ *
+ * parameters:
+ *   f                  <-- pointer to field
+ *   n_points           <-- number of points at which interpolation
+ *                          is required
+ *   point_location     <-- location of points in mesh elements
+ *                          (based on the field location)
+ *   val                --> interpolated values
+ *----------------------------------------------------------------------------*/
+
+static void
+_field_interpolate_by_mean(cs_field_t         *f,
+                           cs_lnum_t           n_points,
+                           const cs_lnum_t     point_location[],
+                           cs_real_t          *val)
+{
+  for (cs_lnum_t i = 0; i < n_points; i++) {
+
+    cs_lnum_t cell_id = point_location[i];
+
+    assert(f->dim == 1 || f->interleaved == true);
+
+    for (cs_lnum_t j = 0; j < f->dim; j++)
+      val[i*f->dim + j] =  f->val[cell_id*f->dim + j];
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Interpolate field values at a given set of points using gradient-corrected
+ * interpolation.
+ *
+ * parameters:
+ *   f                  <-- pointer to field
+ *   n_points           <-- number of points at which interpolation
+ *                          is required
+ *   point_location     <-- location of points in mesh elements
+ *                          (based on the field location)
+ *   point_coords       <-- point coordinates
+ *   val                --> interpolated values
+ *----------------------------------------------------------------------------*/
+
+static void
+_field_interpolate_by_gradient(cs_field_t         *f,
+                               cs_lnum_t           n_points,
+                               const cs_lnum_t     point_location[],
+                               const cs_real_3_t   point_coords[],
+                               cs_real_t          *val)
+{
+  const cs_lnum_t dim = f->dim;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_real_3_t *cell_cen
+    = (const cs_real_3_t *)(cs_glob_mesh_quantities->cell_cen);
+
+  /* Currently possible only for fields on cell location */
+
+  if (f->location_id != CS_MESH_LOCATION_CELLS)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field gradient interpolation for field %s :\n"
+                " not implemented for fields on location %s."),
+              f->name, cs_mesh_location_type_name[f->location_id]);
+
+  /* Get the calculation option from the field */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  static int key_cal_opt_id = -1;
+  if (key_cal_opt_id < 0)
+    key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+  if (key_cal_opt_id >= 0) {
+    cs_var_cal_opt_t var_cal_opt;
+    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                               &gradient_type,
+                               &halo_type);
+  }
+
+  cs_real_t *grad;
+  BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
+
+  if (dim == 1)
+    cs_field_gradient_scalar(f,
+                             true, /* use_previous_t */
+                             gradient_type,
+                             halo_type,
+                             1,    /* inc */
+                             true, /* recompute_cocg */
+                             (cs_real_3_t *)grad);
+  else if (dim == 3)
+    cs_field_gradient_vector(f,
+                             true, /* use_previous_t */
+                             gradient_type,
+                             halo_type,
+                             1,    /* inc */
+                             (cs_real_33_t *)grad);
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field gradient interpolation for field %s of dimension %d:\n"
+                " not implemented."),
+              f->name, f->dim);
+
+  /* Now interpolated values */
+
+  for (cs_lnum_t i = 0; i < n_points; i++) {
+
+    cs_lnum_t cell_id = point_location[i];
+
+    cs_real_3_t d = {point_coords[i][0] - cell_cen[cell_id][0],
+                     point_coords[i][1] - cell_cen[cell_id][1],
+                     point_coords[i][2] - cell_cen[cell_id][2]};
+
+    assert(f->dim == 1 || f->interleaved == true);
+
+    for (cs_lnum_t j = 0; j < f->dim; j++) {
+      cs_lnum_t k = (cell_id*dim + j)*3;
+      val[i*dim + j] =   f->val[cell_id*dim + j]
+                       + d[0] * grad[k]
+                       + d[1] * grad[k+1]
+                       + d[2] * grad[k+2];
+    }
+
+  }
+
+  BFT_FREE(grad);
+}
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -456,6 +601,52 @@ void cs_field_gradient_vector(const cs_field_t          *f,
 
   if (! f->interleaved)
     BFT_FREE(var);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Interpolate field values at a given set of points.
+ *
+ * \param[in]   f                   pointer to field
+ * \param[in]   interpolation_type  interpolation type
+ * \param[in]   n_points            number of points at which interpolation
+ *                                  is required
+ * \param[in]   point_location      location of points in mesh elements
+ *                                  (based on the field location)
+ * \param[in]   point_coords        point coordinates
+ * \param[out]  val                 interpolated values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_interpolate(cs_field_t              *f,
+                     cs_field_interpolate_t   interpolation_type,
+                     cs_lnum_t                n_points,
+                     const cs_lnum_t          point_location[],
+                     const cs_real_3_t        point_coords[],
+                     cs_real_t               *val)
+{
+  switch (interpolation_type) {
+
+  case CS_FIELD_INTERPOLATE_MEAN:
+    _field_interpolate_by_mean(f,
+                               n_points,
+                               point_location,
+                               val);
+    break;
+
+  case CS_FIELD_INTERPOLATE_GRADIENT:
+    _field_interpolate_by_gradient(f,
+                                   n_points,
+                                   point_location,
+                                   point_coords,
+                                   val);
+    break;
+
+  default:
+    assert(0);
+    break;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
