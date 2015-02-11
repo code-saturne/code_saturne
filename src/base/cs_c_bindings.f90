@@ -110,6 +110,56 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Set mapped boundary conditions for a given field and mapping
+    !>        locator.
+
+    !> param[in]       field_id         id of field whose boundary conditions
+    !>                                  are set
+    !> param[in]       locator          associated mapping locator, as returned
+    !>                                  by \ref cs_boundary_conditions_map.
+    !> param[in]       location_type    matching values location
+    !>                                  (CS_MESH_LOCATION_CELLS or
+    !>                                  CS_MESH_LOCATION_BOUNDARY_FACES)
+    !> param[in]       normalize        normalization:
+    !>                                    0: values are simply mapped
+    !>                                    1: values are mapped, then multiplied
+    !>                                       by a constant factor so that their
+    !>                                       surface integral on selected faces
+    !>                                       is preserved (relative to the
+    !>                                       input values)
+    !>                                    2: as 1, but with a boundary-defined
+    !>                                       weight, defined by balance_w
+    !>                                    3: as 1, but with a cell-defined
+    !>                                       weight, defined by balance_w
+    !> param[in]       interpolate      interpolation option:
+    !>                                    0: values are simply based on
+    !>                                       matching cell or face center values
+    !>                                    1: values are based on matching cell
+    !>                                       or face center values, corrected
+    !>                                       by gradient interpolation
+    !> param[in]       n_faces          number of selected boundary faces
+    !> param[in]       faces            list of selected boundary faces (1 to n)
+    !> param[in]       balance_w        optional balance weight
+    !> param[in]       nvarcl           number of variables with BC's
+    !> param[in, out]  rcodcl           boundary condition values
+
+    subroutine boundary_conditions_mapped_set(field_id, locator,               &
+                                              location_type, normalize,        &
+                                              interpolate, n_faces, faces,     &
+                                              balance_w, nvarcl, rcodcl)       &
+      bind(C, name='cs_f_boundary_conditions_mapped_set')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: field_id
+      type(c_ptr), value :: locator
+      integer(c_int), value :: location_type, normalize, interpolate
+      integer(c_int), value :: n_faces, nvarcl
+      integer(c_int), dimension(*), intent(in) :: faces
+      real(kind=c_double), dimension(*), intent(in) :: balance_w, rcodcl
+    end subroutine boundary_conditions_mapped_set
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function logging field and other array statistics
     ! at relevant time steps.
 
@@ -357,6 +407,26 @@ module cs_c_bindings
       implicit none
       integer(c_int), dimension(*), intent(in) :: bc_type
     end subroutine cs_boundary_conditions_error
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function locating shifted bundary face coordinates on
+    ! possibly filtered cells or boundary faces for later interpolation.
+
+    function cs_boundary_conditions_map(location_type, n_location_elts,         &
+                                        n_faces, location_elts, faces,          &
+                                        coord_shift, coord_stride,              &
+                                        tolerance) result(l)                    &
+      bind(C, name='cs_boundary_conditions_map')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: location_type, n_location_elts, n_faces
+      integer(c_int), dimension(*), intent(in) :: location_elts, faces
+      real(kind=c_double), dimension(*) :: coord_shift
+      integer(c_int), value :: coord_stride
+      real(kind=c_double), value :: tolerance
+      type(c_ptr) :: l
+    end function cs_boundary_conditions_map
 
     !---------------------------------------------------------------------------
 
@@ -811,13 +881,27 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> Interface to C user function for time moments
+    ! Interface to C user function for time moments
 
     subroutine cs_user_time_moments()  &
       bind(C, name='cs_user_time_moments')
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_user_time_moments
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for the destruction of a locator structure.
+
+    !> \param[in, out]   this_locator
+
+    function ple_locator_destroy(this_locator) result (l) &
+      bind(C, name='ple_locator_destroy')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: this_locator
+      type(c_ptr) :: l
+    end function ple_locator_destroy
 
     !---------------------------------------------------------------------------
 
@@ -830,6 +914,106 @@ module cs_c_bindings
   !=============================================================================
 
 contains
+
+  !=============================================================================
+
+  !> \brief Compute balance on a given zone for a given scalar
+
+  !> param[in]       itypfb     array of boundary faces type
+  !> param[in]       sel_crit   selection criterium of a volumic zone
+  !> param[in]       name       scalar name
+
+  subroutine balance_by_zone(itypfb, sel_crit, name)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(kind=c_int), dimension(*), intent(in) :: itypfb
+    character(len=*), intent(in)             :: sel_crit, name
+
+    ! Local variables
+
+    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_sel_crit = trim(sel_crit)//c_null_char
+    c_name = trim(name)//c_null_char
+
+    call cs_balance_by_zone(itypfb, c_sel_crit, c_name)
+
+    return
+
+  end subroutine balance_by_zone
+
+  !=============================================================================
+
+  !> \brief Locate shifted boundary face coordinates on possibly filtered
+  !>        cells or boundary faces for later interpolation.
+
+  !> param[in]  location_type    matching values location (CS_MESH_LOCATION_CELLS
+  !>                             or CS_MESH_LOCATION_BOUNDARY_FACES)
+  !> param[in]  n_location_elts  number of selected location elements
+  !> param[in]  n_faces          number of selected boundary faces
+  !> param[in]  location_elts    list of selected location elements (1 to n),
+  !>                             or NULL if no indirection is needed
+  !> param[in]  faces            list of selected boundary faces (1 to n),
+  !>                             or NULL if no indirection is needed
+  !> param[in]  coord_shift      array of coordinates shift relative to selected
+  !>                             boundary faces
+  !> param[in]  coord_stride     access stride in coord_shift: 0 for uniform
+  !>                             shift, 1 for "per face" shift.
+  !> param[in]  tolerance        relative tolerance for point location.
+
+  !> return  associated locator structure
+
+  function boundary_conditions_map(location_type, n_location_elts,           &
+                                   n_faces, location_elts, faces,            &
+                                   coord_shift, coord_stride,                &
+                                   tolerance) result(l)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: location_type, n_location_elts, n_faces
+    integer, dimension(*), intent(in) :: location_elts, faces
+    real(kind=c_double), dimension(*) :: coord_shift
+    integer, intent(in) :: coord_stride
+    double precision, intent(in) :: tolerance
+    type(c_ptr) :: l
+
+    ! Local variables
+
+    integer iel, ifac
+    integer(c_int) :: c_loc_type, c_n_elts, c_n_faces, c_coord_stride
+    integer(c_int), dimension(:), allocatable :: c_loc_elts, c_faces
+    real(kind=c_double) :: c_tolerance
+
+    c_loc_type = location_type
+    c_n_elts = n_location_elts
+    c_n_faces = n_faces
+    c_coord_stride = coord_stride
+    c_tolerance = tolerance
+
+    allocate(c_loc_elts(n_location_elts))
+    allocate(c_faces(n_faces))
+
+    do iel = 1, n_location_elts
+      c_loc_elts(iel) = location_elts(iel) - 1
+    enddo
+    do ifac = 1, n_faces
+      c_faces(ifac) = faces(ifac) - 1
+    enddo
+
+    l = cs_boundary_conditions_map(c_loc_type, c_n_elts, c_n_faces,          &
+                                   c_loc_elts, c_faces,                      &
+                                   coord_shift, c_coord_stride, c_tolerance)
+
+    deallocate(c_faces)
+    deallocate(c_loc_elts)
+
+  end function boundary_conditions_map
 
   !=============================================================================
 
@@ -1312,6 +1496,27 @@ contains
                 pvar, c_weight, grad)
 
   end subroutine gradient_weighted_s
+
+  !=============================================================================
+
+  !> \brief Destruction of a locator structure.
+
+  !> \param[in, out]   this_locator
+
+  subroutine locator_destroy(this_locator)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    type(c_ptr) :: this_locator
+
+    ! Local variables
+
+    this_locator = ple_locator_destroy(this_locator)
+
+  end subroutine locator_destroy
 
   !=============================================================================
 
@@ -2148,37 +2353,6 @@ contains
     return
 
   end subroutine sles_pop
-
-  !=============================================================================
-
-  !> \brief Compute balance on a given zone for a given scalar
-
-  !> param[in]       itypfb     array of boundary faces type
-  !> param[in]       sel_crit   selection criterium of a volumic zone
-  !> param[in]       name       scalar name
-
-  subroutine balance_by_zone(itypfb, sel_crit, name)
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer(kind=c_int), dimension(*), intent(in) :: itypfb
-    character(len=*), intent(in)             :: sel_crit, name
-
-    ! Local variables
-
-    character(len=len_trim(sel_crit)+1, kind=c_char) :: c_sel_crit
-    character(len=len_trim(name)+1, kind=c_char) :: c_name
-
-    c_sel_crit = trim(sel_crit)//c_null_char
-    c_name = trim(name)//c_null_char
-
-    call cs_balance_by_zone(itypfb, c_sel_crit, c_name)
-
-    return
-
-  end subroutine balance_by_zone
 
   !=============================================================================
 

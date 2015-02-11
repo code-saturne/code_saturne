@@ -8,6 +8,9 @@ Release 4.0.0 (unreleased)
 Changes:
 --------
 
+- Added boundary condition to flow mapping (feedback) functionnality
+  (see boundary_conditions_map and boundary_conditions_mapped_set functions).
+
 - By default, do not force use of an iterative gradient reconstruction method
   for pressure gradients, or other gradients deriving from a potential.
   To force it, a negative value of the IMRGRA keyword may be used.
