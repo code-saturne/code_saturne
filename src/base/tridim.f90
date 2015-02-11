@@ -147,7 +147,7 @@ double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
-double precision, dimension(:), pointer :: brom, crom, crom_prev, crom_prev2
+double precision, dimension(:), pointer :: crom, crom_prev, crom_prev2
 
 double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
@@ -928,8 +928,6 @@ do while (iterns.le.nterup)
   !    physiques particulieres, meme sans physique particuliere
   !    -> sera modifie lors de la restructuration des zones de bord
 
-    call field_get_val_s(ibrom, brom)
-
     call uiclim &
     !==========
   ( ntcabs, nfabor, ippmod(idarcy),                                &
@@ -1520,6 +1518,55 @@ enddo
 ! conditions in the cases where they vary in time.
 
 if (ippmod(idarcy).eq.1) then
+
+  call precli(nvar, nscal, icodcl, rcodcl)
+  !==========
+
+  if (iihmpr.eq.1) then
+
+  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
+  !    physiques particulieres, meme sans physique particuliere
+  !    -> sera modifie lors de la restructuration des zones de bord
+
+    call uiclim &
+    !==========
+  ( ntcabs, nfabor, ippmod(idarcy),                                &
+    darcy_gravity, darcy_gravity_x, darcy_gravity_y,               &
+    darcy_gravity_z,                                               &
+    nozppm, ncharm, ncharb, nclpch,                                &
+    iindef, ientre, iesicf, isspcf, iephcf,                        &
+    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifreesf,       &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    ientfu, ientgb, ientgf, iprofm,                                &
+    coejou, dpot,   ielcor, ipoti,                                 &
+    itypfb, izfppp, icodcl,                                        &
+    dtref,  ttcabs, surfbo, cdgfbo,                                &
+    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    timpat, timpcp, tkent ,  fment, distch, nvarcl, rcodcl)
+
+    if (ippmod(iphpar).eq.0) then
+
+    ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
+
+      nbzfmx = nbzppm
+      nozfmx = nozppm
+      allocate(ilzfbr(nbzfmx))
+      allocate(qcalc(nozfmx))
+
+      call stdtcl &
+      !==========
+    ( nbzfmx , nozfmx ,                                              &
+      iqimp  , icalke , qimp   , dh , xintur,                        &
+      itypfb , izfppp , ilzfbr ,                                     &
+      rcodcl , qcalc  )
+
+      ! Free memory
+      deallocate(ilzfbr)
+      deallocate(qcalc)
+
+    endif
+
+  endif
 
   call cs_user_boundary_conditions &
   !===============================

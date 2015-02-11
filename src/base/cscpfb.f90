@@ -218,7 +218,7 @@ endif
 !     - vitesse de maillage (non couplée, donc non envoyée)
 
 
-ipos = 1
+ipos = 0
 
 !=========================================================================
 ! 1.  Prepare for velocity
@@ -321,6 +321,8 @@ enddo
 !=========================================================================
 ! 2.  Prepare for pressure
 !=========================================================================
+
+ipos = ipos + 1
 
 call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,  &
                            iccocg,                           &
