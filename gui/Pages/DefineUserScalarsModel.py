@@ -78,44 +78,44 @@ class DefineUserScalarsModel(Variables, Model):
         default['diffusion_choice']      = 'constant'
         default['zone_id']               = 1
         default['GGDH']                  = "SGDH"
-        if self.getScalarLabelsList():
-            default['variance']          = self.getScalarLabelsList()[0]
+        if self.getScalarNameList():
+            default['variance']          = self.getScalarNameList()[0]
         else:
             default['variance']          = "no scalar"
 
         return default
 
 
-    def __removeScalarChildNode(self, label, tag):
+    def __removeScalarChildNode(self, name, tag):
         """
         Private method.
-        Delete 'variance' or 'property' markup from scalar named I{label}
+        Delete 'variance' or 'property' markup from scalar named I{name}
         """
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            if node['label'] == label:
+            if node['name'] == name:
                 node.xmlRemoveChild(tag)
 
 
-    def __deleteScalarBoundaryConditions(self, label):
+    def __deleteScalarBoundaryConditions(self, name):
         """
         Private method.
-        Delete boundary conditions for scalar I{label}
+        Delete boundary conditions for scalar I{name}
         """
         for nature in ('inlet', 'outlet', 'wall'):
             for node in self.node_bc.xmlGetChildNodeList(nature):
                 for n in node.xmlGetChildNodeList('variable'):
-                    if n['label'] == label:
+                    if n['name'] == name:
                         n.xmlRemoveNode()
 
 
-    def __defaultScalarNameAndDiffusivityLabel(self, scalar_label=None):
+    def __defaultScalarNameAndDiffusivityLabel(self, scalar_name=None):
         """
         Private method.
         Return a default name and label for a new scalar.
         Create a default name for the associated diffusion coefficient to.
         """
         __coef = {}
-        for l in self.getScalarLabelsList():
+        for l in self.getScalarNameList():
             __coef[l] = self.getScalarDiffusivityLabel(l)
         length = len(__coef)
         Lscal = self.defaultScalarValues()['scalar_label']
@@ -123,7 +123,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         # new scalar: default value for both scalar and diffusivity
 
-        if not scalar_label:
+        if not scalar_name:
             if length != 0:
                 i = 1
                 while (Dscal + str(i)) in list(__coef.values()):
@@ -131,21 +131,21 @@ class DefineUserScalarsModel(Variables, Model):
                 num = str(i)
             else:
                 num = str(1)
-            scalar_label = Lscal + num
-            __coef[scalar_label] = Dscal + num
+            scalar_name = Lscal + num
+            __coef[scalar_name] = Dscal + num
 
         # existing scalar
 
         else:
-            if scalar_label not in list(__coef.keys())or \
-               (scalar_label in list(__coef.keys()) and __coef[scalar_label] == ''):
+            if scalar_name not in list(__coef.keys())or \
+               (scalar_name in list(__coef.keys()) and __coef[scalar_name] == ''):
 
-                __coef[scalar_label] = Dscal + str(length + 1)
+                __coef[scalar_name] = Dscal + str(length + 1)
 
-        return scalar_label, __coef[scalar_label]
+        return scalar_name, __coef[scalar_name]
 
 
-    def __defaultVarianceName(self, scalar_label=None):
+    def __defaultVarianceName(self, scalar_name=None):
         """
         Private method.
         Return a default name and label for a new variance.
@@ -158,7 +158,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         # new scalar: default value for both scalar and diffusivity
 
-        if not scalar_label:
+        if not scalar_name:
             if length != 0:
                 i = 1
                 while (Lscal + str(i)) in list(__coef.values()):
@@ -166,8 +166,8 @@ class DefineUserScalarsModel(Variables, Model):
                 num = str(i)
             else:
                 num = str(1)
-            scalar_label = Lscal + num
-        return scalar_label
+            scalar_name = Lscal + num
+        return scalar_name
 
 
     def __updateScalarNameAndDiffusivityName(self):
@@ -190,61 +190,61 @@ class DefineUserScalarsModel(Variables, Model):
                             no.xmlSetTextNode(f)
 
 
-    def __setScalarDiffusivity(self, scalar_label, coeff_label):
+    def __setScalarDiffusivity(self, scalar_name, coeff_label):
         """
         Private method.
 
         Input default initial value of property "diffusivity"
-        for a new scalar I{scalar_label}
+        for a new scalar I{scalar_name}
         """
-        self.isNotInList(scalar_label, self.getScalarsVarianceList())
-        self.isInList(scalar_label, self.getUserScalarLabelsList())
+        self.isNotInList(scalar_name, self.getScalarsVarianceList())
+        self.isInList(scalar_name, self.getUserScalarNameList())
 
-        n = self.scalar_node.xmlGetNode('variable', type='user', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', type='user', name=scalar_name)
         n.xmlInitChildNode('property', label=coeff_label)
 
-        if not self.getScalarDiffusivityChoice(scalar_label):
-            self.setScalarDiffusivityChoice(scalar_label, 'constant')
+        if not self.getScalarDiffusivityChoice(scalar_name):
+            self.setScalarDiffusivityChoice(scalar_name, 'constant')
 
-        if not self.getScalarDiffusivityInitialValue(scalar_label):
+        if not self.getScalarDiffusivityInitialValue(scalar_name):
             ini = self.defaultScalarValues()['diffusion_coefficient']
-            self.setScalarDiffusivityInitialValue(scalar_label, ini)
+            self.setScalarDiffusivityInitialValue(scalar_name, ini)
 
 
-    def __deleteScalar(self, label):
+    def __deleteScalar(self, name):
         """
         Private method.
 
-        Delete scalar I{label}.
+        Delete scalar I{name}.
         """
-        node = self.scalar_node.xmlGetNode('variable', label=label)
+        node = self.scalar_node.xmlGetNode('variable', name=name)
         node.xmlRemoveNode()
-        self.__deleteScalarBoundaryConditions(label)
+        self.__deleteScalarBoundaryConditions(name)
         self.__updateScalarNameAndDiffusivityName()
 
 
     @Variables.noUndo
-    def getThermalScalarLabelsList(self):
+    def getThermalScalarName(self):
         """Public method.
-        Return the User scalar label list (thermal scalar included)"""
+        Return the thermal scalar name"""
         lst = []
         for node in self.node_therm.xmlGetNodeList('variable'):
-            lst.append(node['label'])
+            lst.append(node['name'])
         return lst
 
 
     @Variables.noUndo
-    def getScalarLabelsList(self):
+    def getScalarNameList(self):
         """Public method.
-        Return the User scalar label list (thermal scalar included)"""
+        Return the User scalar name list (thermal scalar included)"""
         lst = []
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            lst.append(node['label'])
+            lst.append(node['name'])
         return lst
 
 
     @Variables.noUndo
-    def getMeteoScalarsList(self):
+    def getMeteoScalarsNameList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('atmospheric_flows', 'model')
@@ -256,7 +256,7 @@ class DefineUserScalarsModel(Variables, Model):
             node_list = node.xmlGetNodeList('variable')
             list_scalar=[]
             for node_scalar in node_list:
-                list_scalar.append(node_scalar['label'])
+                list_scalar.append(node_scalar['name'])
         else:
             return
 
@@ -264,7 +264,7 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getElectricalScalarsList(self):
+    def getElectricalScalarsNameList(self):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('joule_effect', 'model')
@@ -276,7 +276,7 @@ class DefineUserScalarsModel(Variables, Model):
             node_list = node.xmlGetNodeList('variable')
             list_scalar=[]
             for node_scalar in node_list:
-                list_scalar.append(node_scalar['label'])
+                list_scalar.append(node_scalar['name'])
         else:
             return
 
@@ -284,14 +284,14 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getUserScalarLabelsList(self):
+    def getUserScalarNameList(self):
         """Public method.
-        Return the user scalar label list (without thermal scalar).
+        Return the user scalar name list (without thermal scalar).
         Method also used by UserScalarPropertiesView
         """
         lst = []
         for node in self.scalar_node.xmlGetNodeList('variable', type='user'):
-            lst.append(node['label'])
+            lst.append(node['name'])
         return lst
 
 
@@ -303,24 +303,24 @@ class DefineUserScalarsModel(Variables, Model):
         from code_saturne.Pages.Boundary import Boundary
 
         for node in self.node_bc.xmlGetChildNodeList('inlet'):
-            model = Boundary('inlet', node['label'], self.case)
-            for label in self.getScalarLabelsList():
-                model.setScalarValue(label, 'dirichlet', 0.0)
+            model = Boundary('inlet', node['name'], self.case)
+            for name in self.getScalarNameList():
+                model.setScalarValue(name, 'dirichlet', 0.0)
 
         for node in self.node_bc.xmlGetChildNodeList('outlet'):
-            model = Boundary('outlet', node['label'], self.case)
-            for label in self.getScalarLabelsList():
-                model.setScalarValue(label, 'dirichlet', 0.0)
+            model = Boundary('outlet', node['name'], self.case)
+            for name in self.getScalarNameList():
+                model.setScalarValue(name, 'dirichlet', 0.0)
 
 
     @Variables.undoGlobal
-    def addUserScalar(self, label=None):
+    def addUserScalar(self, name=None):
         """Public method.
-        Input a new user scalar I{label}"""
+        Input a new user scalar I{name}"""
 
-        l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
+        l, c = self.__defaultScalarNameAndDiffusivityLabel(name)
 
-        if l not in self.getScalarLabelsList() and l not in self.getThermalScalarLabelsList():
+        if l not in self.getScalarNameList() and l not in self.getThermalScalarName():
             self.scalar_node.xmlInitNode('variable', name=l, type="user", label=l)
 
             self.__setScalarDiffusivity(l, c)
@@ -332,14 +332,14 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoGlobal
-    def addVariance(self, label=None):
+    def addVariance(self, name=None):
         """Public method.
-        Input a new user scalar I{label}"""
+        Input a new user scalar I{name}"""
 
-        l= self.__defaultVarianceName(label)
+        l= self.__defaultVarianceName(name)
         if l not in self.getScalarsVarianceList():
             self.scalar_node.xmlInitNode('variable', name=l, type="user", label=l)
-            if self.getScalarLabelsList() != None:
+            if self.getScalarNameList() != None:
                 self.setScalarVariance(l, self.defaultScalarValues()['variance'])
 
         self.__updateScalarNameAndDiffusivityName()
@@ -348,54 +348,54 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def renameScalarLabel(self, old_label, new_label):
+    def renameScalarLabel(self, old_name, new_name):
         """Public method.
-        Modify old_label of scalar with new_label and put new label if variancy exists"""
+        Modify old_name of scalar with new_name and put new name if variancy exists"""
         # fusion de cette methode avec OutputVolumicVariablesModel.setVariablesLabel
-        self.isInList(old_label, self.getScalarLabelsList())
+        self.isInList(old_name, self.getScalarNameList())
 
-        label = new_label[:LABEL_LENGTH_MAX]
-        if label not in self.getScalarLabelsList():
+        name = new_name[:LABEL_LENGTH_MAX]
+        if name not in self.getScalarNameList():
             for node in self.scalar_node.xmlGetNodeList('variable'):
-                if node['label'] == old_label:
-                    node['label'] = label
-                    node['name']  = label
+                if node['name'] == old_name:
+                    node['label'] = name
+                    node['name']  = name
 
-                if node.xmlGetString('variance') == old_label:
-                    node.xmlSetData('variance', label)
+                if node.xmlGetString('variance') == old_name:
+                    node.xmlSetData('variance', name)
 
         for nature in ('inlet', 'outlet', 'wall'):
             for node in self.node_bc.xmlGetChildNodeList(nature):
                 for n in node.xmlGetChildNodeList('variable'):
-                    if n['label'] == old_label:
-                        n['label'] = new_label
-                        n['name']  = new_label
+                    if n['name'] == old_name:
+                        n['label'] = new_name
+                        n['name']  = new_name
 
         for node in self.case.xmlGetNodeList('formula'):
-            f = node.xmlGetTextNode().replace(old_label, new_label)
+            f = node.xmlGetTextNode().replace(old_name, new_name)
             node.xmlSetTextNode(f)
 
 
     @Variables.undoGlobal
     def setTurbulentFluxGlobalModel(self, TurbulenceModel):
-        """Put turbulent flux model of an additional_scalar with label scalar_label"""
-        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
+        """Put turbulent flux model of an additional_scalar with name scalar_name"""
+        lst = self.getScalarNameList() + self.getThermalScalarName()
 
         if TurbulenceModel not in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             mdl = self.defaultScalarValues()['GGDH']
             for var in lst:
-                n = self.case.xmlGetNode('variable', label=var)
+                n = self.case.xmlGetNode('variable', name=var)
                 n.xmlSetData('turbulent_flux_model', mdl)
 
 
     @Variables.noUndo
     def getTurbulentFluxModel(self, l):
         """
-        Get turbulent flux model of an additional_scalar with label I{l}.
+        Get turbulent flux model of an additional_scalar with name I{l}.
         """
-        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
+        lst = self.getScalarNameList() + self.getThermalScalarName()
         self.isInList(l, lst)
-        n = self.case.xmlGetNode('variable', label=l)
+        n = self.case.xmlGetNode('variable', name=l)
         mdl = n.xmlGetString('turbulent_flux_model')
         if not mdl:
             mdl = self.defaultScalarValues()['GGDH']
@@ -405,37 +405,37 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoGlobal
-    def setTurbulentFluxModel(self, scalar_label, TurbFlux):
-        """Put turbulent flux model of an additional_scalar with label scalar_label"""
-        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
-        self.isInList(scalar_label, lst)
+    def setTurbulentFluxModel(self, scalar_name, TurbFlux):
+        """Put turbulent flux model of an additional_scalar with name scalar_name"""
+        lst = self.getScalarNameList() + self.getThermalScalarName()
+        self.isInList(scalar_name, lst)
 
-        n = self.case.xmlGetNode('variable', label=scalar_label)
+        n = self.case.xmlGetNode('variable', name=scalar_name)
         n.xmlSetData('turbulent_flux_model', TurbFlux)
 
 
     @Variables.noUndo
     def getScalarVariance(self, l):
         """
-        Get variance of an additional_scalar with label I{l}.
+        Get variance of an additional_scalar with name I{l}.
         Method also used by UserScalarPropertiesView
         """
-        self.isInList(l, self.getScalarLabelsList())
+        self.isInList(l, self.getScalarNameList())
 
-        return self.scalar_node.xmlGetNode('variable', label=l).xmlGetString('variance')
+        return self.scalar_node.xmlGetNode('variable', name=l).xmlGetString('variance')
 
 
     @Variables.undoGlobal
-    def setScalarVariance(self, scalar_label, variance_label):
-        """Put variance of an additional_scalar with label scalar_label"""
-        self.isInList(scalar_label, self.getUserScalarLabelsList())
-        lst = self.getScalarLabelsList() + self.getThermalScalarLabelsList()
-        self.isInList(variance_label, lst)
+    def setScalarVariance(self, scalar_name, variance_name):
+        """Put variance of an additional_scalar with name scalar_name"""
+        self.isInList(scalar_name, self.getUserScalarNameList())
+        lst = self.getScalarNameList() + self.getThermalScalarName()
+        self.isInList(variance_name, lst)
 
-        n = self.scalar_node.xmlGetNode('variable', type='user', label=scalar_label)
-        n.xmlSetData('variance', variance_label)
+        n = self.scalar_node.xmlGetNode('variable', type='user', name=scalar_name)
+        n.xmlSetData('variance', variance_name)
 
-        self.__removeScalarChildNode(scalar_label, 'property')
+        self.__removeScalarChildNode(scalar_name, 'property')
 
 
     @Variables.noUndo
@@ -458,35 +458,35 @@ class DefineUserScalarsModel(Variables, Model):
         """
         lst = []
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            if node.xmlGetString('variance') and node['label'] not in lst:
-                lst.append(node['label'])
+            if node.xmlGetString('variance') and node['name'] not in lst:
+                lst.append(node['name'])
         return lst
 
 
     @Variables.noUndo
-    def getVarianceLabelFromScalarLabel(self, label):
+    def getVarianceLabelFromScalarLabel(self, name):
         """
-        Get the label of scalar with variancy's label: label
+        Get the name of scalar with variancy's name: name
         """
-        self.isInList(label, self.getScalarLabelsList())
+        self.isInList(name, self.getScalarNameList())
 
         lab = ""
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            if node.xmlGetString('variance') == label:
-                lab = node['label']
+            if node.xmlGetString('variance') == name:
+                lab = node['name']
         return lab
 
 
     @Variables.noUndo
-    def getScalarDiffusivityName(self, scalar_label):
+    def getScalarDiffusivityName(self, scalar_name):
         """
-        Get label of diffusivity's property for an additional_scalar
-        with label scalar_label
+        Get name of diffusivity's property for an additional_scalar
+        with name scalar_name
         """
-        self.isInList(scalar_label, self.getScalarLabelsList())
+        self.isInList(scalar_name, self.getScalarNameList())
 
         lab_diff = ""
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n_diff = n.xmlGetChildNode('property')
         if n_diff:
             lab_diff = n_diff['name']
@@ -495,26 +495,26 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setScalarDiffusivityLabel(self, scalar_label, diff_label):
+    def setScalarDiffusivityLabel(self, scalar_name, diff_label):
         """
-        Set label of diffusivity's property for an additional_scalar
+        Set name of diffusivity's property for an additional_scalar
         """
-        self.isInList(scalar_label, self.getScalarLabelsList())
+        self.isInList(scalar_name, self.getScalarNameList())
 
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n.xmlGetChildNode('property')['label'] = diff_label
 
 
     @Variables.noUndo
-    def getScalarDiffusivityLabel(self, scalar_label):
+    def getScalarDiffusivityLabel(self, scalar_name):
         """
-        Get label of diffusivity's property for an additional_scalar
-        with label scalar_label
+        Get name of diffusivity's property for an additional_scalar
+        with name scalar_name
         """
-        self.isInList(scalar_label, self.getScalarLabelsList())
+        self.isInList(scalar_name, self.getScalarNameList())
 
         lab_diff = ""
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n_diff = n.xmlGetChildNode('property')
         if n_diff:
             lab_diff = n_diff['label']
@@ -523,68 +523,68 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoLocal
-    def setScalarDiffusivityInitialValue(self, scalar_label, initial_value):
+    def setScalarDiffusivityInitialValue(self, scalar_name, initial_value):
         """
         Set initial value of diffusivity's property for an additional_scalar
-        with label scalar_label. Method also called by UserScalarPropertiesView.
+        with name scalar_name. Method also called by UserScalarPropertiesView.
         """
-        self.isNotInList(scalar_label, self.getScalarsVarianceList())
-        self.isInList(scalar_label, self.getUserScalarLabelsList())
+        self.isNotInList(scalar_name, self.getScalarsVarianceList())
+        self.isInList(scalar_name, self.getUserScalarNameList())
         self.isFloat(initial_value)
 
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n_diff = n.xmlInitChildNode('property')
         n_diff.xmlSetData('initial_value', initial_value)
 
 
     @Variables.noUndo
-    def getScalarDiffusivityInitialValue(self, scalar_label):
+    def getScalarDiffusivityInitialValue(self, scalar_name):
         """
         Get initial value of diffusivity's property for an additional_scalar
-        with label scalar_label. Method also called by UserScalarPropertiesView.
+        with name scalar_name. Method also called by UserScalarPropertiesView.
         """
-        self.isNotInList(scalar_label, self.getScalarsVarianceList())
-        self.isInList(scalar_label, self.getUserScalarLabelsList())
+        self.isNotInList(scalar_name, self.getScalarsVarianceList())
+        self.isInList(scalar_name, self.getUserScalarNameList())
 
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n_diff = n.xmlInitChildNode('property')
         diffu = n_diff.xmlGetDouble('initial_value')
         if diffu == None:
             diffu = self.defaultScalarValues()['diffusion_coefficient']
-            self.setScalarDiffusivityInitialValue(scalar_label, diffu)
+            self.setScalarDiffusivityInitialValue(scalar_name, diffu)
 
         return diffu
 
 
     @Variables.undoLocal
-    def setScalarDiffusivityChoice(self, scalar_label, choice):
+    def setScalarDiffusivityChoice(self, scalar_name, choice):
         """
         Set choice of diffusivity's property for an additional_scalar
-        with label scalar_label
+        with name scalar_name
         """
-        self.isNotInList(scalar_label, self.getScalarsVarianceList())
-        self.isInList(scalar_label, self.getUserScalarLabelsList())
+        self.isNotInList(scalar_name, self.getScalarsVarianceList())
+        self.isInList(scalar_name, self.getUserScalarNameList())
         self.isInList(choice, ('constant', 'variable'))
 
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n_diff = n.xmlInitChildNode('property')
         n_diff['choice'] = choice
 
 
     @Variables.noUndo
-    def getScalarDiffusivityChoice(self, scalar_label):
+    def getScalarDiffusivityChoice(self, scalar_name):
         """
         Get choice of diffusivity's property for an additional_scalar
-        with label scalar_label
+        with name scalar_name
         """
-        self.isNotInList(scalar_label, self.getScalarsVarianceList())
-        self.isInList(scalar_label, self.getUserScalarLabelsList())
+        self.isNotInList(scalar_name, self.getScalarsVarianceList())
+        self.isInList(scalar_name, self.getUserScalarNameList())
 
-        n = self.scalar_node.xmlGetNode('variable', label=scalar_label)
+        n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         choice = n.xmlInitChildNode('property')['choice']
         if not choice:
             choice = self.defaultScalarValues()['diffusion_choice']
-            self.setScalarDiffusivityChoice(scalar_label, choice)
+            self.setScalarDiffusivityChoice(scalar_name, choice)
 
         return choice
 
@@ -596,8 +596,8 @@ class DefineUserScalarsModel(Variables, Model):
         'specific_heat' or 'thermal_conductivity'
         """
         self.isNotInList(scalar, self.getScalarsVarianceList())
-        self.isInList(scalar, self.getUserScalarLabelsList())
-        n = self.scalar_node.xmlGetNode('variable',label = scalar)
+        self.isInList(scalar, self.getUserScalarNameList())
+        n = self.scalar_node.xmlGetNode('variable', name = scalar)
         node = n.xmlGetNode('property')
         formula = node.xmlGetString('formula')
         if not formula:
@@ -612,9 +612,9 @@ class DefineUserScalarsModel(Variables, Model):
         Return default formula
         """
         self.isNotInList(scalar, self.getScalarsVarianceList())
-        self.isInList(scalar, self.getUserScalarLabelsList())
+        self.isInList(scalar, self.getUserScalarNameList())
 
-        name = self.getScalarDiffusivityName(scalar)
+        name = scalar
 
         formula = str(name) + " ="
 
@@ -628,49 +628,49 @@ class DefineUserScalarsModel(Variables, Model):
         'specific_heat'or 'thermal_conductivity'
         """
         self.isNotInList(scalar, self.getScalarsVarianceList())
-        self.isInList(scalar, self.getUserScalarLabelsList())
-        n = self.scalar_node.xmlGetNode('variable',label = scalar)
+        self.isInList(scalar, self.getUserScalarNameList())
+        n = self.scalar_node.xmlGetNode('variable', name = scalar)
         node = n.xmlGetNode('property')
         node.xmlSetData('formula', str)
 
 
     @Variables.undoGlobal
-    def setScalarValues(self, label, vari):
+    def setScalarValues(self, name, vari):
         """
-        Put values to scalar with labelled I{label} for creating or replacing values.
+        Put values to scalar with name I{name} for creating or replacing values.
         """
-        l = self.getScalarLabelsList()
+        l = self.getScalarNameList()
         l.append('no')
         self.isInList(vari, l)
 
         if vari != "no":
-            self.setScalarVariance(label, vari)
+            self.setScalarVariance(name, vari)
         else:
-            self.__removeScalarChildNode(label, 'variance')
-            l, c = self.__defaultScalarNameAndDiffusivityLabel(label)
+            self.__removeScalarChildNode(name, 'variance')
+            l, c = self.__defaultScalarNameAndDiffusivityLabel(name)
             self.__setScalarDiffusivity(l, c)
 
         self.__updateScalarNameAndDiffusivityName()
 
 
     @Variables.undoGlobal
-    def deleteScalar(self, slabel):
+    def deleteScalar(self, sname):
         """
         Public method.
-        Delete scalar I{label}
+        Delete scalar I{name}
         Warning: deleting a scalar may delete other scalar which are variances
         of previous deleting scalars.
         """
-        self.isInList(slabel, self.getScalarLabelsList())
+        self.isInList(sname, self.getScalarNameList())
 
         # First add the main scalar to delete
         lst = []
-        lst.append(slabel)
+        lst.append(sname)
 
         # Then add variance scalar related to the main scalar
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            if node.xmlGetString('variance') == slabel:
-                lst.append(node['label'])
+            if node.xmlGetString('variance') == sname:
+                lst.append(node['name'])
 
         # Delete all scalars
         for scalar in lst:
@@ -680,108 +680,98 @@ class DefineUserScalarsModel(Variables, Model):
 
 
     @Variables.undoGlobal
-    def deleteThermalScalar(self, slabel):
+    def deleteThermalScalar(self, sname):
         """
         Public method.
-        Delete scalar I{label}. Called by ThermalScalarModel
+        Delete scalar I{namel}. Called by ThermalScalarModel
         Warning: deleting a scalar may delete other scalar which are variances
         of previous deleting scalars.
         """
-        self.isInList(slabel, self.getThermalScalarLabelsList())
+        self.isInList(sname, self.getThermalScalarName())
 
         # First add the main scalar to delete
         lst = []
-        lst.append(slabel)
+        lst.append(sname)
 
         # Then add variance scalar related to the main scalar
         for node in self.scalar_node.xmlGetNodeList('variable'):
-            if node.xmlGetString('variance') == slabel:
-                self.__deleteScalar(node['label'])
+            if node.xmlGetString('variance') == sname:
+                self.__deleteScalar(node['name'])
 
         # Delete scalars
-        node = self.node_therm.xmlGetNode('variable', label=slabel)
+        node = self.node_therm.xmlGetNode('variable', name=sname)
         node.xmlRemoveNode()
-        self.__deleteScalarBoundaryConditions(slabel)
+        self.__deleteScalarBoundaryConditions(sname)
         self.__updateScalarNameAndDiffusivityName()
 
         return lst
 
 
     @Variables.noUndo
-    def getScalarType(self, scalar_label):
+    def getScalarTypeByName(self, scalarName):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
-        if scalar_label not in self.getScalarLabelsList():
-            node = self.node_therm.xmlGetNode('variable', 'name', label=scalar_label)
+        self.isInList(scalarName, self.getScalarNameList() + self.getThermalScalarName())
+        if scalarName not in self.getScalarNameList():
+            node = self.node_therm.xmlGetNode('variable', name = scalarName)
         else:
-            node = self.scalar_node.xmlGetNode('variable', 'type', label=scalar_label)
+            node = self.scalar_node.xmlGetNode('variable', 'type', name = scalarName)
         Model().isInList(node['type'], ('user', 'thermal'))
         return node['type']
 
 
     @Variables.noUndo
-    def getScalarName(self, scalar_label):
+    def getScalarType(self, scalar_name):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_label, self.getScalarLabelsList() + self.getThermalScalarLabelsList())
-        if scalar_label not in self.getScalarLabelsList():
-            node = self.node_therm.xmlGetNode('variable', 'name', label=scalar_label)
+        self.isInList(scalar_name, self.getScalarNameList() + self.getThermalScalarName())
+        if scalar_name not in self.getScalarNameList():
+            node = self.node_therm.xmlGetNode('variable', name=scalar_name)
         else:
-            node = self.scalar_node.xmlGetNode('variable', 'name', label=scalar_label)
+            node = self.scalar_node.xmlGetNode('variable', 'type', name=scalar_name)
+        Model().isInList(node['type'], ('user', 'thermal'))
+        return node['type']
+
+
+    @Variables.noUndo
+    def getScalarName(self, scalar_name):
+        """
+        Return type of scalar for choice of color (for view)
+        """
+        self.isInList(scalar_name, self.getScalarNameList() + self.getThermalScalarName())
+        if scalar_name not in self.getScalarNameList():
+            node = self.node_therm.xmlGetNode('variable', name=scalar_name)
+        else:
+            node = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         return node['name']
 
 
     @Variables.noUndo
-    def getMeteoScalarType(self, scalar_label):
+    def getMeteoScalarType(self, scalarName):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_label, self.getMeteoScalarsList())
+        self.isInList(scalarName, self.getMeteoScalarsNameList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('atmospheric_flows', 'model')
-        n = node.xmlGetNode('variable', 'type', label=scalar_label)
+        n = node.xmlGetNode('variable', 'type', name=scalarName)
         Model().isInList(n['type'], ('user', 'thermal', 'model'))
         return n['type']
 
 
     @Variables.noUndo
-    def getMeteoScalarName(self, scalar_label):
+    def getElectricalScalarType(self, scalarName):
         """
         Return type of scalar for choice of color (for view)
         """
-        self.isInList(scalar_label, self.getMeteoScalarsList())
-        models = self.case.xmlGetNode('thermophysical_models')
-        node = models.xmlGetNode('atmospheric_flows', 'model')
-        n = node.xmlGetNode('variable', 'name', label=scalar_label)
-        return n['name']
-
-
-    @Variables.noUndo
-    def getElectricalScalarType(self, scalar_label):
-        """
-        Return type of scalar for choice of color (for view)
-        """
-        self.isInList(scalar_label, self.getElectricalScalarsList())
+        self.isInList(scalarName, self.getElectricalScalarsNameList())
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('joule_effect', 'model')
-        n = node.xmlGetNode('variable', 'type', label=scalar_label)
+        n = node.xmlGetNode('variable', 'type', name=scalarName)
         Model().isInList(n['type'], ('user', 'thermal', 'model'))
         return n['type']
-
-
-    @Variables.noUndo
-    def getElectricalScalarName(self, scalar_label):
-        """
-        Return type of scalar for choice of color (for view)
-        """
-        self.isInList(scalar_label, self.getElectricalScalarsList())
-        models = self.case.xmlGetNode('thermophysical_models')
-        node = models.xmlGetNode('joule_effect', 'model')
-        n = node.xmlGetNode('variable', 'name', label=scalar_label)
-        return n['name']
 
 
 #-------------------------------------------------------------------------------

@@ -910,6 +910,24 @@ class XMLinit(Variables):
             if not ntfm:
                 n.xmlSetData('turbulent_flux_model', "SGDH")
 
+        # replace label by name in each formula
+        for node in self.case.xmlGetNodeList('formula'):
+            if node:
+                status = node["status"]
+                if not(status) or status == "on":
+                    content = node.xmlGetTextNode()
+                    for n in self.case.xmlGetNodeList('variable', 'name', 'label'):
+                        content = content.replace(n['label'], n['name'])
+                    node.xmlSetTextNode(content)
+        for node in self.case.xmlGetNodeList('variable'):
+            variance = node.xmlGetString('variance')
+            if variance:
+                for n in self.case.xmlGetNodeList('variable', 'name', 'label'):
+                    if variance == n['label']:
+                        node.xmlSetData('variance', n['name'])
+                        break
+
+
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

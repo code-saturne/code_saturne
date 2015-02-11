@@ -141,20 +141,6 @@ cs_var_t    *cs_glob_var = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return the label of a scalar field, given by its field Id
- *
- * parameters:
- *   id <-- field id
- *----------------------------------------------------------------------------*/
-
-static inline const char *
-_scalar_label(const int id)
-{
-  cs_field_t  *f = cs_field_by_id(id);
-  return cs_field_get_label(f);
-}
-
-/*----------------------------------------------------------------------------
  * Turbulence model parameters.
  *
  * parameters:
@@ -379,7 +365,7 @@ _physical_property(const char *param,
         fth = NULL;
       }
       if (fth != NULL)
-        mei_tree_insert(ev_law, cs_field_get_label(fth), 0.0);
+        mei_tree_insert(ev_law, fth->name, 0.0);
 
       /* try to build the interpreter */
 
@@ -410,7 +396,7 @@ _physical_property(const char *param,
         }
 
         if (fth != NULL)
-          mei_tree_insert(ev_law, cs_field_get_label(fth), fth->val[iel]);
+          mei_tree_insert(ev_law, fth->name, fth->val[iel]);
 
         if (cs_gui_strcmp(param, "molecular_viscosity")) {
           mei_tree_insert(ev_law, "rho", c_rho->val[iel]);
@@ -610,7 +596,7 @@ _compressible_physical_property(const char *param,
           }
         }
 
-        mei_tree_insert(ev_law, cs_field_get_label(f), f->val[iel]);
+        mei_tree_insert(ev_law, f->name, f->val[iel]);
 
         mei_evaluate(ev_law);
         c->val[iel] = mei_tree_lookup(ev_law, symbol);
@@ -2415,6 +2401,32 @@ void CS_PROCF (uithsc, UITHSC) (void)
 }
 
 /*----------------------------------------------------------------------------
+ * User scalar label.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UISCSC
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiscsc, UISCSC) (void)
+{
+  const int keylbl = cs_field_key_id("label");
+
+  int n_user_scalars = cs_gui_get_tag_number("/additional_scalars/variable", 1);
+
+  for (int i = 0; i < n_user_scalars; i++) {
+    char *label = _scalar_name_label("label", i+1);
+    char *name = _scalar_name_label("name", i+1);
+    cs_field_t *f = cs_field_by_name_try(name);
+    if (f != NULL)
+      cs_field_set_key_str(f, keylbl, label);
+    BFT_FREE(label);
+    BFT_FREE(name);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
  *
  * Fortran Interface:
@@ -2459,6 +2471,7 @@ void CS_PROCF (csivis, CSIVIS) (void)
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
+
     if (   (f->type & CS_FIELD_VARIABLE)
         && (f->type & CS_FIELD_USER)) {
       int i = cs_field_get_key_int(f, keysca) - 1;
@@ -3421,10 +3434,6 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
   char *status = NULL;
   char *zone_id = NULL;
   char *formula = NULL;
-  char *label_u = NULL;
-  char *label_v = NULL;
-  char *label_w = NULL;
-  char *label  = NULL;
 
   mei_tree_t *ev_formula  = NULL;
 
@@ -3462,19 +3471,9 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
         mei_tree_insert(ev_formula,"x",0.0);
         mei_tree_insert(ev_formula,"y",0.0);
         mei_tree_insert(ev_formula,"z",0.0);
-        label = _variable_label("velocity");
-        BFT_MALLOC(label_u, strlen(label) + 6, char);
-        strcpy(label_u, label);
-        strcat(label_u, "[0]");
-        mei_tree_insert(ev_formula, label_u, 0.0);
-        BFT_MALLOC(label_v, strlen(label) + 6, char);
-        strcpy(label_v, label);
-        strcat(label_v, "[1]");
-        mei_tree_insert(ev_formula, label_v, 0.0);
-        BFT_MALLOC(label_w, strlen(label) + 6, char);
-        strcpy(label_w, label);
-        strcat(label_w, "[2]");
-        mei_tree_insert(ev_formula, label_w, 0.0);
+        mei_tree_insert(ev_formula, "velocity[0]", 0.0);
+        mei_tree_insert(ev_formula, "velocity[1]", 0.0);
+        mei_tree_insert(ev_formula, "velocity[2]", 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3496,9 +3495,9 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, label_u, vel[iel][0]);
-          mei_tree_insert(ev_formula, label_v, vel[iel][1]);
-          mei_tree_insert(ev_formula, label_w, vel[iel][2]);
+          mei_tree_insert(ev_formula, "velocity[0]", vel[iel][0]);
+          mei_tree_insert(ev_formula, "velocity[1]", vel[iel][1]);
+          mei_tree_insert(ev_formula, "velocity[2]", vel[iel][2]);
           mei_evaluate(ev_formula);
 
           dSudu = mei_tree_lookup(ev_formula,"dSudu");
@@ -3541,10 +3540,6 @@ void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
           tsexp[iel][2] *= cell_f_vol[iel];
         }
         mei_tree_destroy(ev_formula);
-        BFT_FREE(label);
-        BFT_FREE(label_u);
-        BFT_FREE(label_v);
-        BFT_FREE(label_w);
       }
       BFT_FREE(cells_list);
       BFT_FREE(zone_id);
@@ -3589,6 +3584,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
   char *formula = NULL;
 
   mei_tree_t *ev_formula  = NULL;
+  cs_field_t  *f = cs_field_by_id(*f_id);
 
   /* number of volumic zone */
 
@@ -3617,7 +3613,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
                             "thermophysical_models",
                             "source_terms",
                             "scalar_formula");
-      cs_xpath_add_test_attribute(&path, "label", _scalar_label(*f_id));
+      cs_xpath_add_test_attribute(&path, "name", f->name);
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
       cs_xpath_add_function_text(&path);
       formula = cs_gui_get_text_value(path);
@@ -3628,7 +3624,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
         mei_tree_insert(ev_formula,"x",0.);
         mei_tree_insert(ev_formula,"y",0.);
         mei_tree_insert(ev_formula,"z",0.);
-        mei_tree_insert(ev_formula, _scalar_label(*f_id), 0.0);
+        mei_tree_insert(ev_formula, f->name, 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3645,7 +3641,7 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *f_id,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, _scalar_label(*f_id), pvar[iel]);
+          mei_tree_insert(ev_formula, f->name, pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
           tsimp[iel] = cell_f_vol[iel]*dS;
@@ -3697,6 +3693,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
   char *formula = NULL;
 
   mei_tree_t *ev_formula  = NULL;
+  cs_field_t  *f = cs_field_by_id(*f_id);
 
   /* number of volumic zone */
 
@@ -3725,7 +3722,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                             "thermophysical_models",
                             "source_terms",
                             "thermal_formula");
-      cs_xpath_add_test_attribute(&path, "label", _scalar_label(*f_id));
+      cs_xpath_add_test_attribute(&path, "name", f->name);
       cs_xpath_add_test_attribute(&path, "zone_id", zone_id);
       cs_xpath_add_function_text(&path);
       formula = cs_gui_get_text_value(path);
@@ -3736,7 +3733,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
         mei_tree_insert(ev_formula,"x",0.);
         mei_tree_insert(ev_formula,"y",0.);
         mei_tree_insert(ev_formula,"z",0.);
-        mei_tree_insert(ev_formula, _scalar_label(*f_id), 0.0);
+        mei_tree_insert(ev_formula, f->name, 0.0);
         /* try to build the interpreter */
         if (mei_tree_builder(ev_formula))
           bft_error(__FILE__, __LINE__, 0,
@@ -3753,7 +3750,7 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
           mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
           mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
           mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
-          mei_tree_insert(ev_formula, _scalar_label(*f_id), pvar[iel]);
+          mei_tree_insert(ev_formula, f->name, pvar[iel]);
           mei_evaluate(ev_formula);
           dS = mei_tree_lookup(ev_formula,"dS");
           tsimp[iel] = cell_f_vol[iel]*dS;
@@ -5619,40 +5616,35 @@ cs_gui_user_variables(void)
 
     /* Names are equivalent to labels for initial definition of user fields */
 
-    char *name = _scalar_name_label("label", i+1);
+    char *name = _scalar_name_label("name", i+1);
 
 #if _XML_DEBUG_
-    bft_printf("--label of scalar[%i]: %s\n", i, label);
+    bft_printf("--name of scalar[%i]: %s\n", i, name);
 #endif
 
-    char *variance_label = _scalar_variance(name);
+    char *variance_name = _scalar_variance(name);
 
     /* In case of variance, search for matching field */
 
-    if (variance_label != NULL) {
+    if (variance_name != NULL) {
 
       /* Search in thermal and user scalars */
 
       for (int j = var_start_id; j < var_end_id; j++) {
-        char *cmp_label;
+        char *cmp_name;
         if (j == 0)
-          cmp_label = _thermal_scalar_name_label("label");
+          cmp_name = _thermal_scalar_name_label("name");
         else
-          cmp_label = _scalar_name_label("label", j);
-        if (strcmp(cmp_label, variance_label) == 0) {
-          char *variance_name;
-          if (j == 0)
-            variance_name = _thermal_scalar_name_label("name");
-          else
-            variance_name = _scalar_name_label("name", j);
+          cmp_name = _scalar_name_label("name", j);
+
+        if (strcmp(cmp_name, variance_name) == 0) {
           cs_parameters_add_variable_variance(name, variance_name);
+          BFT_FREE(cmp_name);
           BFT_FREE(variance_name);
-          BFT_FREE(cmp_label);
-          BFT_FREE(variance_label);
           break;
         }
         else
-          BFT_FREE(cmp_label);
+          BFT_FREE(cmp_name);
       }
 
     }

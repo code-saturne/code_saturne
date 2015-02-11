@@ -32,12 +32,13 @@ import sys, unittest
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Base.Toolbox import GuiParam
+from code_saturne.Base.Toolbox      import GuiParam
 from code_saturne.Base.XMLvariables import Model, Variables
-from code_saturne.Base.XMLmodel import ModelTest
-from code_saturne.Base.XMLengine import *
+from code_saturne.Base.XMLmodel     import ModelTest
+from code_saturne.Base.XMLengine    import *
+
 from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
+from code_saturne.Pages.ThermalScalarModel     import ThermalScalarModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -156,33 +157,22 @@ class Boundary(object) :
         pass
 
 
-    def updateScalarTypeAndName(self, scalarNode, label):
+    def updateScalarTypeAndName(self, scalarNode, scalarName):
         """
-        Check and update type and name of scalar labelled label for boundary conditions for wall
+        Check and update type of scalar scalarName for boundary conditions for wall
         """
-        if self.sca_model.getMeteoScalarsList() != None:
-            if label in self.sca_model.getMeteoScalarsList():
-                scalarNode['name'] = self.sca_model.getMeteoScalarName(label)
-                scalarNode['type'] = self.sca_model.getMeteoScalarType(label)
+        if self.sca_model.getMeteoScalarsNameList() != None:
+            if scalarName in self.sca_model.getMeteoScalarsNameList():
+                scalarNode['type'] = self.sca_model.getMeteoScalarType(scalarName)
             else :
-                if self.sca_model.getScalarType(label) == 'thermal':
-                    Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
-                scalarNode['name'] = self.sca_model.getScalarName(label)
-                scalarNode['type'] = self.sca_model.getScalarType(label)
-        elif self.sca_model.getElectricalScalarsList() != None:
-            if label in self.sca_model.getElectricalScalarsList():
-                scalarNode['name'] = self.sca_model.getElectricalScalarName(label)
-                scalarNode['type'] = self.sca_model.getElectricalScalarType(label)
+                scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
+        elif self.sca_model.getElectricalScalarsNameList() != None:
+            if scalarName in self.sca_model.getElectricalScalarsNameList():
+                scalarNode['type'] = self.sca_model.getElectricalScalarType(scalarName)
             else :
-                if self.sca_model.getScalarType(label) == 'thermal':
-                    Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
-                scalarNode['name'] = self.sca_model.getScalarName(label)
-                scalarNode['type'] = self.sca_model.getScalarType(label)
+                scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
         else:
-            if self.sca_model.getScalarType(label) == 'thermal':
-                Model().isInList(self.sca_model.getScalarName(label), self._thermalLabelsList)
-            scalarNode['name'] = self.sca_model.getScalarName(label)
-            scalarNode['type'] = self.sca_model.getScalarType(label)
+            scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
 
 
     @Variables.noUndo
@@ -222,16 +212,35 @@ class InletBoundary(Boundary):
         """
         Initialize the boundary, add nodes in the boundary node
         """
-        self.__velocityChoices = ['norm', 'flow1', 'flow2',
-                                  'norm_formula', 'flow1_formula', 'flow2_formula']
-        self.__directionChoices = ['normal', 'coordinates', 'formula']
-        self.__directionTags = ['direction_x', 'direction_y', 'direction_z', 'direction_formula']
-        self.__turbulenceChoices = ['hydraulic_diameter', 'turbulent_intensity', 'formula']
-        self._scalarChoicesList = ['dirichlet', 'neumann', 'exchange_coefficient',
-                                   'dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula']
+        self.__velocityChoices   = ['norm',
+                                    'flow1',
+                                    'flow2',
+                                    'norm_formula',
+                                    'flow1_formula',
+                                    'flow2_formula']
+        self.__directionChoices  = ['normal',
+                                    'coordinates',
+                                    'formula']
+        self.__directionTags     = ['direction_x',
+                                    'direction_y',
+                                    'direction_z',
+                                    'direction_formula']
+        self.__turbulenceChoices = ['hydraulic_diameter',
+                                    'turbulent_intensity',
+                                    'formula']
+        self._scalarChoicesList  = ['dirichlet',
+                                    'neumann',
+                                    'exchange_coefficient',
+                                    'dirichlet_formula',
+                                    'neumann_formula',
+                                    'exchange_coefficient_formula']
 
-        self.typeList        = ['imposed_inlet', 'subsonic_inlet_PH']
-        self.typeListGasComb = ['oxydant', 'fuel', 'unburned', 'burned']
+        self.typeList            = ['imposed_inlet',
+                                    'subsonic_inlet_PH']
+        self.typeListGasComb     = ['oxydant',
+                                    'fuel',
+                                    'unburned',
+                                    'burned']
 
         self.th_model = ThermalScalarModel(self.case)
 
@@ -241,9 +250,9 @@ class InletBoundary(Boundary):
         self.getDirectionChoice()
         self.getTurbulenceChoice()
 
-        for label in self.sca_model.getScalarLabelsList():
-            if self.getScalarChoice(label) == 'dirichlet':
-                self.getScalarValue(label,'dirichlet')
+        for name in self.sca_model.getScalarNameList():
+            if self.getScalarChoice(name) == 'dirichlet':
+                self.getScalarValue(name,'dirichlet')
 
         from code_saturne.Pages.CoalCombustionModel import CoalCombustionModel
         from code_saturne.Pages.CompressibleModel import CompressibleModel
@@ -258,34 +267,35 @@ class InletBoundary(Boundary):
         Default values
         """
         dico = {}
-        dico['velocityChoice'] = 'norm'
-        dico['directionChoice'] = 'normal'
-        dico['turbulenceChoice'] = 'hydraulic_diameter'
-        dico['hydraulic_diameter'] = 1
+        dico['velocityChoice']      = 'norm'
+        dico['directionChoice']     = 'normal'
+        dico['turbulenceChoice']    = 'hydraulic_diameter'
+        dico['hydraulic_diameter']  = 1
         dico['turbulent_intensity'] = 2
-        dico['velocity'] = 0.0
-        dico['flow1'] = 1
-        dico['flow2'] = 1
-        dico['norm'] = 1
-        dico['flow1_formula'] = "q_m = 1;"
-        dico['flow2_formula'] = "q_v = 1;"
-        dico['norm_formula'] = "u_norm = 1;"
-        dico['direction_x'] = 0.0
-        dico['direction_y'] = 0.0
-        dico['direction_z'] = 0.0
-        dico['direction_formula'] = "dir_x = 1;\ndir_y = 0;\ndir_z = 0;\n"
-        dico['scalar'] = 0.0
-        dico['scalarChoice'] = 'dirichlet'
-        dico['pressure']    = 101300.
-        dico['density']     = 0.0
-        dico['temperature'] = 273.
-        dico['energy']      = 0.0
-        dico['total_pressure']    = 101300.
-        dico['enthalpy']    = 0.0
-        dico['status']      = 'off'
+        dico['velocity']            = 0.0
+        dico['flow1']               = 1
+        dico['flow2']               = 1
+        dico['norm']                = 1
+        dico['flow1_formula']       = "q_m = 1;"
+        dico['flow2_formula']       = "q_v = 1;"
+        dico['norm_formula']        = "u_norm = 1;"
+        dico['direction_x']         = 0.0
+        dico['direction_y']         = 0.0
+        dico['direction_z']         = 0.0
+        dico['direction_formula']   = "dir_x = 1;\ndir_y = 0;\ndir_z = 0;\n"
+        dico['scalar']              = 0.0
+        dico['scalarChoice']        = 'dirichlet'
+        dico['pressure']            = 101300.
+        dico['density']             = 0.0
+        dico['temperature']         = 273.
+        dico['energy']              = 0.0
+        dico['total_pressure']      = 101300.
+        dico['enthalpy']            = 0.0
+        dico['status']              = 'off'
         dico['compressible_type']   = 'imposed_inlet'
-        dico['fraction'] = 0.0
-        dico['pressure'] = 0.0
+        dico['fraction']            = 0.0
+        dico['pressure']            = 0.0
+
         from code_saturne.Pages.GasCombustionModel import GasCombustionModel
         model = GasCombustionModel(self.case).getGasCombustionModel()
         del GasCombustionModel
@@ -293,6 +303,7 @@ class InletBoundary(Boundary):
             dico['gas_type'] = 'unburned'
         elif model == 'd3p':
             dico['gas_type'] = 'oxydant'
+
         from code_saturne.Pages.ReferenceValuesModel import ReferenceValuesModel
         dico['temperatureGas'] = ReferenceValuesModel(self.case).getTemperature()
 
@@ -317,26 +328,26 @@ class InletBoundary(Boundary):
 
     def __getscalarList(self):
         """
-        return list of scalars
+        return list of scalars name
         """
-        scalar_list =  self.sca_model.getScalarLabelsList()
-        if self.sca_model.getMeteoScalarsList() != None:
-            for sca in self.sca_model.getMeteoScalarsList():
+        scalar_list =  self.sca_model.getScalarNameList()
+        if self.sca_model.getMeteoScalarsNameList() != None:
+            for sca in self.sca_model.getMeteoScalarsNameList():
                 scalar_list.append(sca)
-        if len(self.sca_model.getThermalScalarLabelsList()) > 0:
-            scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
+        if len(self.sca_model.getThermalScalarName()) > 0:
+            scalar_list.append(self.sca_model.getThermalScalarName()[0])
 
         return scalar_list
 
 
-    def __deleteScalarNodes(self, label, tag):
+    def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(tag, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
         for tt in self._scalarChoicesList:
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
@@ -648,125 +659,123 @@ omega = 0.;"""
 
 
     @Variables.noUndo
-    def getScalarChoice(self, scalarLabel):
+    def getScalarChoice(self, scalarName):
         """
         Get scalar choice
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
-        #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, scalarLabel)
+        #update type of scalar
+        self.updateScalarTypeAndName(scalarNode, scalarName)
 
         choice = scalarNode['choice']
         if not choice:
             choice = self.__defaultValues()['scalarChoice']
-            self.setScalarChoice(scalarLabel, choice)
+            self.setScalarChoice(scalarName, choice)
 
         return choice
 
 
     @Variables.undoGlobal
-    def setScalarChoice(self, scalarLabel, choice) :
+    def setScalarChoice(self, scalarName, choice) :
         """
         Set scalar choice
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, scalarLabel)
+        self.updateScalarTypeAndName(scalarNode, scalarName)
 
         if scalarNode['choice'] == choice:
             return
 
         scalarNode['choice'] = choice
-        self.__deleteScalarNodes(scalarLabel, choice)
+        self.__deleteScalarNodes(scalarName, choice)
 
 
     @Variables.noUndo
-    def getScalarValue(self, scalarLabel, choice) :
+    def getScalarValue(self, scalarName, choice) :
         """
         Get scalar value
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, scalarLabel)
+        self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
             value = self.__defaultValues()['scalar']
-            self.setScalarValue(scalarLabel, choice, value)
+            self.setScalarValue(scalarName, choice, value)
         return value
 
 
     @Variables.undoGlobal
-    def setScalarValue(self, scalarLabel, choice, value):
+    def setScalarValue(self, scalarName, choice, value):
         """
         Set scalar value
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isFloat(value)
         Model().isInList(choice, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, scalarLabel)
+        self.updateScalarTypeAndName(scalarNode, scalarName)
 
         scalarNode.xmlSetData(choice, value)
 
 
     @Variables.noUndo
-    def getDefaultScalarFormula(self, scalarLabel, scalar_model):
+    def getDefaultScalarFormula(self, scalarName, scalar_model):
         """
         Get defaut scalar formula
         """
         if scalar_model == 'dirichlet_formula':
-            formula = scalarLabel+""" = 0;\n"""
+            formula = scalarName+""" = 0;\n"""
         elif scalar_model == 'neumann_formula':
             formula = """flux = 0;\n"""
         elif scalar_model == 'exchange_coefficient_formula':
-            formula = scalarLabel+""" = 0;\nhc = 0;\n"""
+            formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
 
 
     @Variables.noUndo
-    def getScalarFormula(self, scalarLabel, choice, name = None):
+    def getScalarFormula(self, scalarName, choice):
         """
         Public method.
         Return the formula for a turbulent variable.
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, self._scalarChoicesList)
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
         formula = scalarNode.xmlGetChildString(choice)
 
         if not formula:
-            if name != None:
-                scalarLabel = name
-            formula = self.getDefaultScalarFormula(scalarLabel, choice)
+            formula = self.getDefaultScalarFormula(scalarName, choice)
 
         return formula
 
 
     @Variables.undoLocal
-    def setScalarFormula(self, scalarLabel, choice, formula):
+    def setScalarFormula(self, scalarName, choice, formula):
         """
         Public method.
         Set the formula for a turbulent variable.
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, self._scalarChoicesList)
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         n = scalarNode.xmlSetData(choice, formula)
 
@@ -1118,11 +1127,11 @@ class JouleBoundary(Boundary) :
 
     def __getscalarList(self):
         """
-        return list of scalars
+        return list of scalars name
         """
         scalar_list = []
         self.sca_model = DefineUserScalarsModel(self.case)
-        for sca in self.sca_model.getElectricalScalarsList():
+        for sca in self.sca_model.getElectricalScalarsNameList():
             scalar_list.append(sca)
 
         return scalar_list
@@ -1138,154 +1147,154 @@ class JouleBoundary(Boundary) :
         return scalarChoicesList
 
 
-    def __deleteScalarNodes(self, label, tag):
+    def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(tag, self.scalarChoicesList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
         for tt in self.scalarChoicesList():
             if tt != tag:
                 scalarNode.xmlRemoveChild(tt)
 
 
-    def getPotentialVectorChoice(self, label):
+    def getPotentialVectorChoice(self, name):
         """
         Get potential vector choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
         if not choice:
             choice = self.__defaultValues()['PotVectChoice']
-            self.setPotentialVectorChoice(label, choice)
+            self.setPotentialVectorChoice(name, choice)
 
         return choice
 
 
-    def setPotentialVectorChoice(self, label, choice):
+    def setPotentialVectorChoice(self, name, choice):
         """
         Set potential vector choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, self.scalarChoicesList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
             return
 
         scalarNode['choice'] = choice
         if choice == 'dirichlet_formula' or choice == 'neumann_formula':
-            self.__deleteScalarNodes(label, 'dirichlet')
+            self.__deleteScalarNodes(name, 'dirichlet')
         else:
-            self.__deleteScalarNodes(label, choice)
+            self.__deleteScalarNodes(name, choice)
 
 
-    def getElecScalarChoice(self, label):
+    def getElecScalarChoice(self, name):
         """
         Get scalar choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
         if not choice:
             choice = self.__defaultValues()['scalarChoice']
-            self.setElecScalarChoice(label, choice)
+            self.setElecScalarChoice(name, choice)
 
         return choice
 
 
-    def setElecScalarChoice(self, label, choice) :
+    def setElecScalarChoice(self, name, choice) :
         """
         Set scalar choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, self.scalarChoicesList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
             return
 
         scalarNode['choice'] = choice
         if choice == 'dirichlet_formula' or choice == 'neumann_formula':
-            self.__deleteScalarNodes(label, 'dirichlet')
+            self.__deleteScalarNodes(name, 'dirichlet')
         else:
-            self.__deleteScalarNodes(label, choice)
+            self.__deleteScalarNodes(name, choice)
 
 
-    def getElecScalarValue(self, scalarLabel, choice) :
+    def getElecScalarValue(self, scalarName, choice) :
         """
         Get scalar value
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, self.scalarChoicesList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, scalarLabel)
+        self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
             value = self.__defaultValues()['scalar']
-            self.setElecScalarValue(scalarLabel, choice, value)
+            self.setElecScalarValue(scalarName, choice, value)
         return value
 
 
-    def setElecScalarValue(self, scalarLabel, choice, value):
+    def setElecScalarValue(self, scalarName, choice, value):
         """
         Set scalar value
         """
-        Model().isInList(scalarLabel, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isFloat(value)
         Model().isInList(choice, self.scalarChoicesList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=scalarLabel)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, scalarLabel)
+        self.updateScalarTypeAndName(scalarNode, scalarName)
 
         scalarNode.xmlSetData(choice, value)
 
 
-    def getElecScalarFormula(self, label, choice):
+    def getElecScalarFormula(self, scalarName, choice):
         """
         Public method.
         Return the formula for a scalar variable.
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula'))
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
         formula = scalarNode.xmlGetChildString(choice)
         return formula
 
 
-    def setElecScalarFormula(self,label, choice, formula):
+    def setElecScalarFormula(self, scalarName, choice, formula):
         """
         Public method.
         Set the formula for a scalar variable.
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(scalarName, self.__getscalarList())
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula'))
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=scalarName)
 
         n = scalarNode.xmlSetData(choice, formula)
 
@@ -1800,34 +1809,34 @@ class OutletBoundary(Boundary) :
                                    'dirichlet_formula', 'neumann_formula']
         self.getReferencePressure()
 
-        for label in self.sca_model.getScalarLabelsList():
-            if self.getScalarChoice(label) == 'dirichlet' or \
-               self.getScalarChoice(label) == 'neumann':
-                self.getScalarValue(label, self.getScalarChoice(label))
+        for name in self.sca_model.getScalarNameList():
+            if self.getScalarChoice(name) == 'dirichlet' or \
+               self.getScalarChoice(name) == 'neumann':
+                self.getScalarValue(name, self.getScalarChoice(name))
 
 
     def __getscalarList(self):
         """
-        return list of scalars
+        return list of scalars name
         """
-        scalar_list =  self.sca_model.getScalarLabelsList()
-        if self.sca_model.getMeteoScalarsList() != None:
-            for sca in self.sca_model.getMeteoScalarsList():
+        scalar_list =  self.sca_model.getScalarNameList()
+        if self.sca_model.getMeteoScalarsNameList() != None:
+            for sca in self.sca_model.getMeteoScalarsNameList():
                 scalar_list.append(sca)
-        if len(self.sca_model.getThermalScalarLabelsList()) > 0:
-            scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
+        if len(self.sca_model.getThermalScalarName()) > 0:
+            scalar_list.append(self.sca_model.getThermalScalarName()[0])
 
         return scalar_list
 
 
-    def __deleteScalarNodes(self, label, tag):
+    def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(tag, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         for tt in self._scalarChoicesList:
             if tt != tag:
@@ -1849,132 +1858,130 @@ class OutletBoundary(Boundary) :
 
 
     @Variables.noUndo
-    def getScalarChoice(self, label):
+    def getScalarChoice(self, name):
         """
         Get scalar choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
         if not choice:
             choice = self.__defaultValues()['scalarChoice']
-            self.setScalarChoice(label, choice)
+            self.setScalarChoice(name, choice)
 
         return choice
 
 
     @Variables.undoLocal
-    def setScalarChoice(self, label, choice) :
+    def setScalarChoice(self, name, choice) :
         """
         Set scalar choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
             return
 
         scalarNode['choice'] = choice
         if choice == 'dirichlet_formula' or choice == 'neumann_formula':
-            self.__deleteScalarNodes(label, 'dirichlet')
+            self.__deleteScalarNodes(name, 'dirichlet')
         else:
-            self.getScalarValue(label, choice)
-            self.__deleteScalarNodes(label, choice)
+            self.getScalarValue(name, choice)
+            self.__deleteScalarNodes(name, choice)
 
 
     @Variables.noUndo
-    def getScalarValue(self, label, choice) :
+    def getScalarValue(self, name, choice) :
         """
         Get variableName variable
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
-        choice = self.getScalarChoice(label)
+        choice = self.getScalarChoice(name)
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
             value = self.__defaultValues()['scalar']
-            self.setScalarValue(label, choice, value)
+            self.setScalarValue(name, choice, value)
         return value
 
 
     @Variables.undoLocal
-    def setScalarValue(self, label, choice, value) :
+    def setScalarValue(self, name, choice, value) :
         """
         Set variableName variable
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isFloat(value)
         Model().isInList(choice, self._scalarChoicesList)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
-        choice = self.getScalarChoice(label)
+        choice = self.getScalarChoice(name)
         scalarNode.xmlSetData(choice, value)
 
 
     @Variables.undoLocal
-    def setScalarFormula(self,label, choice, formula):
+    def setScalarFormula(self, name, choice, formula):
         """
         Public method.
         Set the formula for a scalar variable.
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula'))
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         n = scalarNode.xmlSetData(choice, formula)
 
 
     @Variables.noUndo
-    def getDefaultScalarFormula(self, scalarLabel, scalar_model):
+    def getDefaultScalarFormula(self, scalarName, scalar_model):
         """
         Get defaut scalar formula
         """
         if scalar_model == 'dirichlet_formula':
-            formula = scalarLabel+""" = 0;\n"""
+            formula = scalarName+""" = 0;\n"""
         elif scalar_model == 'neumann_formula':
             formula = """flux = 0;\n"""
         elif scalar_model == 'exchange_coefficient_formula':
-            formula = scalarLabel+""" = 0;\nhc = 0;\n"""
+            formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
 
 
     @Variables.noUndo
-    def getScalarFormula(self, label, choice, name = None):
+    def getScalarFormula(self, name, choice):
         """
         Public method.
         Return the formula for a scalar variable.
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula'))
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
         formula = scalarNode.xmlGetChildString(choice)
 
         if not formula:
-            if name != None:
-                scalarLabel = name
-            formula = self.getDefaultScalarFormula(scalarLabel, choice)
+            formula = self.getDefaultScalarFormula(name, choice)
 
         return formula
 
@@ -2132,8 +2139,8 @@ class WallBoundary(Boundary) :
         self.getRoughnessChoice()
 
         # Scalars
-        for label in self.sca_model.getScalarLabelsList():
-            self.getScalarChoice(label)
+        for name in self.sca_model.getScalarNameList():
+            self.getScalarChoice(name)
 
 
     def __deleteVelocities(self, node):
@@ -2147,26 +2154,26 @@ class WallBoundary(Boundary) :
 
     def __getscalarList(self):
         """
-        return list of scalars
+        return list of scalars name
         """
-        scalar_list =  self.sca_model.getScalarLabelsList()
-        if self.sca_model.getMeteoScalarsList() != None:
-            for sca in self.sca_model.getMeteoScalarsList():
+        scalar_list =  self.sca_model.getScalarNameList()
+        if self.sca_model.getMeteoScalarsNameList() != None:
+            for sca in self.sca_model.getMeteoScalarsNameList():
                 scalar_list.append(sca)
-        if len(self.sca_model.getThermalScalarLabelsList()) > 0:
-            scalar_list.append(self.sca_model.getThermalScalarLabelsList()[0])
+        if len(self.sca_model.getThermalScalarName()) > 0:
+            scalar_list.append(self.sca_model.getThermalScalarName()[0])
 
         return scalar_list
 
 
-    def __deleteScalarNodes(self, label, tag):
+    def __deleteScalarNodes(self, name, tag):
         """
         Delete nodes of scalars
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(tag, self._scalarChoices)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         if tag == 'exchange_coefficient':
             for tt in self._scalarChoices:
@@ -2343,133 +2350,131 @@ class WallBoundary(Boundary) :
 
 
     @Variables.noUndo
-    def getScalarChoice(self, label):
+    def getScalarChoice(self, name):
         """
         Get scalar choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update type and name of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         choice = scalarNode['choice']
         if not choice:
             choice = self.__defaultValues()['scalarChoice']
-            self.setScalarChoice(label, choice)
+            self.setScalarChoice(name, choice)
 
         return choice
 
 
     @Variables.undoGlobal
-    def setScalarChoice(self, label, choice) :
+    def setScalarChoice(self, name, choice) :
         """
         Set scalar choice
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, self._scalarChoices)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         if scalarNode['choice'] == choice:
             return
 
         scalarNode['choice'] = choice
         if choice in self._scalarFormula:
-            self.__deleteScalarNodes(label, choice)
+            self.__deleteScalarNodes(name, choice)
         elif choice == 'exchange_coefficient':
-            self.getScalarValue(label, 'dirichlet')
-            self.getScalarValue(label, 'exchange_coefficient')
-            self.__deleteScalarNodes(label, choice)
+            self.getScalarValue(name, 'dirichlet')
+            self.getScalarValue(name, 'exchange_coefficient')
+            self.__deleteScalarNodes(name, choice)
         else:
-            value = self.getScalarValue(label, choice)
-            self.__deleteScalarNodes(label, choice)
+            value = self.getScalarValue(name, choice)
+            self.__deleteScalarNodes(name, choice)
 
 
     @Variables.noUndo
-    def getScalarValue(self, label, choice) :
+    def getScalarValue(self, name, choice) :
         """
         Get variableName variable
         """
-        Model().isInList(label, self.__getscalarList())
-        Model().isInList(self.getScalarChoice(label), ('dirichlet', 'neumann', 'exchange_coefficient'))
+        Model().isInList(name, self.__getscalarList())
+        Model().isInList(self.getScalarChoice(name), ('dirichlet', 'neumann', 'exchange_coefficient'))
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         value = scalarNode.xmlGetChildDouble(choice)
         if value == None :
             value = self.__defaultValues()['scalarValue']
-            self.setScalarValue(label, choice, value)
+            self.setScalarValue(name, choice, value)
         return value
 
 
     @Variables.undoLocal
-    def setScalarValue(self, label, choice, value) :
+    def setScalarValue(self, name, choice, value) :
         """
         Set variableName variable
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isFloat(value)
         Model().isInList(choice, self._scalarChoices)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         #update name and type of scalar
-        self.updateScalarTypeAndName(scalarNode, label)
+        self.updateScalarTypeAndName(scalarNode, name)
 
         scalarNode.xmlSetData(choice, value)
 
 
     @Variables.undoLocal
-    def setScalarFormula(self, label, choice, formula):
+    def setScalarFormula(self, name, choice, formula):
         """
         Public method.
         Set the formula for a turbulent variable.
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula'))
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
 
         scalarNode.xmlSetData(choice, formula)
 
 
     @Variables.noUndo
-    def getDefaultScalarFormula(self, scalarLabel, scalar_model):
+    def getDefaultScalarFormula(self, scalarName, scalar_model):
         """
         Get defaut scalar formula
         """
         if scalar_model == 'dirichlet_formula':
-            formula = scalarLabel+""" = 0;\n"""
+            formula = scalarName+""" = 0;\n"""
         elif scalar_model == 'neumann_formula':
             formula = """flux = 0;\n"""
         elif scalar_model == 'exchange_coefficient_formula':
-            formula = scalarLabel+""" = 0;\nhc = 0;\n"""
+            formula = scalarName+""" = 0;\nhc = 0;\n"""
 
         return formula
 
 
     @Variables.noUndo
-    def getScalarFormula(self, label, choice, name = None):
+    def getScalarFormula(self, name, choice):
         """
         Public method.
         Return the formula for a turbulent variable.
         """
-        Model().isInList(label, self.__getscalarList())
+        Model().isInList(name, self.__getscalarList())
         Model().isInList(choice, ('dirichlet_formula', 'neumann_formula', 'exchange_coefficient_formula'))
-        scalarNode = self.boundNode.xmlInitNode('scalar', label=label)
+        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
         formula = scalarNode.xmlGetChildString(choice)
 
         if not formula:
-            if name != None:
-                scalarLabel = name
-            formula = self.getDefaultScalarFormula(scalarLabel, choice)
+            formula = self.getDefaultScalarFormula(name, choice)
 
         return formula
 

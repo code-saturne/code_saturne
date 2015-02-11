@@ -96,7 +96,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
 
         # Thermal scalar
         namesca, unit = self.getThermalLabelAndUnit()
-        self.th_sca_label = namesca
+        self.th_sca_name = namesca
 
         # 1/ Combo box models
 
@@ -169,7 +169,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.labelSpecies.show()
             setGreenColor(self.pushButtonSpecies, True)
             self.scalar = ""
-            scalar_list = self.th_sca.getUserScalarLabelsList()
+            scalar_list = self.th_sca.getUserScalarNameList()
             for s in self.th_sca.getScalarsVarianceList():
                 if s in scalar_list: scalar_list.remove(s)
             if scalar_list != []:
@@ -284,7 +284,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         model = self.therm.getThermalScalarModel()
 
         if model != 'off':
-            th_sca_label = self.therm.getThermalScalarLabel()
+            th_sca_name = self.therm.getThermalScalarName()
             if model == "temperature_celsius":
                 unit = "<sup>o</sup>C"
             elif model == "temperature_kelvin":
@@ -292,12 +292,12 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
             elif model == "enthalpy":
                 unit = "J/kg"
         else:
-            th_sca_label = ''
+            th_sca_name = ''
             unit = None
 
-        self.th_sca_label = th_sca_label
+        self.th_sca_name = th_sca_name
 
-        return th_sca_label, unit
+        return th_sca_name, unit
 
 
     @pyqtSignature("const QString&")
@@ -305,9 +305,9 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         """
         Input the initial formula of thermal scalar
         """
-        exp = self.mdl.getThermalFormula(self.zone, self.th_sca_label)
+        exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
         if not exp:
-            exp = self.mdl.getDefaultThermalFormula(self.th_sca_label)
+            exp = self.mdl.getDefaultThermalFormula(self.th_sca_name)
         exa = """#example: """
         req = [('S', 'thermal source term'),
                ('dS', 'thermal source term derivative')]
@@ -329,7 +329,7 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
-            self.mdl.setThermalFormula(self.zone, self.th_sca_label, result)
+            self.mdl.setThermalFormula(self.zone, self.th_sca_name, result)
             setGreenColor(self.sender(), False)
 
 

@@ -89,7 +89,7 @@ class FluidCharacteristicsView(QWidget, Ui_FluidCharacteristicsForm):
     Class to open Molecular Properties Page.
     """
     density = """# Density of air
-density = 1.293*(273.15 / TempK);
+density = 1.293*(273.15 / temperature);
 
 
 # density for mixtures of gases
@@ -104,7 +104,7 @@ density = 1.0 / A;
 
 """
     density_h = """# Density
-density = Enthalpy / 1040. * 1.29;
+density = enthalpy / 1040. * 1.29;
 
 # density for mixtures of gases
 #
@@ -134,8 +134,8 @@ CST = 120;
 T0 = 291.15;
 mu_ref = 18.27e-6;
 
-if ( TempK > 0 && TempK < 555) {
-molecular_viscosity = mu_ref * (T0+CST / TempK+CST) * (TempK/T0)^(3./2.);
+if ( temperature > 0 && temperature < 555) {
+molecular_viscosity = mu_ref * (T0+CST / temperature+CST) * (temperature/T0)^(3./2.);
 } else {
 molecular_viscosity = -999.0;
 }
@@ -145,10 +145,10 @@ molecular_viscosity = -999.0;
 CST = 120;
 T0 = 291.15;
 mu_ref = 18.27e-6;
-Temp = Enthalpy / 1040.;
+temperature = enthalpy / 1040.;
 
-if ( Enthalpy > 0) {
-molecular_viscosity = mu_ref * (T0+CST / Temp+CST) * (Temp/T0)^(3./2.);
+if ( enthalpy > 0) {
+molecular_viscosity = mu_ref * (T0+CST / temperature+CST) * (temperature/T0)^(3./2.);
 } else {
 molecular_viscosity = -999.0;
 }
@@ -166,18 +166,18 @@ specific_heat = Y1 * Cp1 + Y2 *Cp2;
     volume_viscosity="""# volume_viscosity
 """
     thermal_conductivity="""# oxygen
-thermal_conductivity = 6.2e-5 * TempK + 8.1e-3;
+thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
 # nitrogen
-thermal_conductivity = 6.784141e-5 * TempK + 5.564317e-3;
+thermal_conductivity = 6.784141e-5 * temperature + 5.564317e-3;
 
 # hydrogen
-thermal_conductivity = 4.431e-4 * TempK + 5.334e-2;
+thermal_conductivity = 4.431e-4 * temperature + 5.334e-2;
 
 """
     thermal_conductivity_h="""
-Temp = Enthalpy / 1040.;
-thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
+temperature = enthalpy / 1040.;
+thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 """
 
 
@@ -226,12 +226,18 @@ thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
 
         self.list_scalars = []
         self.m_th = ThermalScalarModel(self.case)
-        s = self.m_th.getThermalScalarLabel()
-        if s:
+        s = self.m_th.getThermalScalarName()
+        mdl = self.m_th.getThermalScalarModel()
+
+        if mdl == "temperature_celsius":
+            self.list_scalars.append((s, self.tr("Thermal scalar: temperature (C)")))
+        elif mdl == "temperature_kelvin":
+            self.list_scalars.append((s, self.tr("Thermal scalar: temperature (K)")))
+        elif mdl != "off":
             self.list_scalars.append((s, self.tr("Thermal scalar")))
 
         self.m_sca = DefineUserScalarsModel(self.case)
-        for s in self.m_sca.getUserScalarLabelsList():
+        for s in self.m_sca.getUserScalarNameList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
         # Particular Widget initialization taking into account of "Calculation Features"
@@ -314,7 +320,7 @@ thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
             self.updateMethod()
 
         self.scalar = ""
-        scalar_list = self.m_sca.getUserScalarLabelsList()
+        scalar_list = self.m_sca.getUserScalarNameList()
         for s in self.m_sca.getScalarsVarianceList():
             if s in scalar_list: scalar_list.remove(s)
 
@@ -800,16 +806,15 @@ thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
         exp = self.mdl.getFormula('density')
         req = [('density', 'Density')]
         self.m_th = ThermalScalarModel(self.case)
-        s = self.m_th.getThermalScalarLabel()
-        if s == "TempC":
+        s = self.m_th.getThermalScalarName()
+        mdl = self.m_th.getThermalScalarModel()
+        if mdl == "temperature_celsius":
             TempInContext = "("+s+" + 273.15)"
-            exa = FluidCharacteristicsView.density.replace("TempK", TempInContext)
-        elif s == "Enthalpy":
+            exa = FluidCharacteristicsView.density.replace("temperature", TempInContext)
+        elif mdl == "enthalpy":
             exa = FluidCharacteristicsView.density_h
         else:
             exa = FluidCharacteristicsView.density
-
-        setGreenColor(self.sender(), False)
 
         symbols_rho = []
         for s in self.list_scalars:
@@ -840,11 +845,12 @@ thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
         exp = self.mdl.getFormula('molecular_viscosity')
         req = [('molecular_viscosity', 'Molecular Viscosity')]
         self.m_th = ThermalScalarModel(self.case)
-        s = self.m_th.getThermalScalarLabel()
-        if s == "TempC":
+        s = self.m_th.getThermalScalarName()
+        mdl = self.m_th.getThermalScalarModel()
+        if mdl == "temperature_celsius":
             TempInContext = "("+s+" + 273.15)"
-            exa = FluidCharacteristicsView.molecular_viscosity.replace("TempK", TempInContext)
-        elif s == "Enthalpy":
+            exa = FluidCharacteristicsView.molecular_viscosity.replace("temperature", TempInContext)
+        elif mdl == "enthalpy":
             exa = FluidCharacteristicsView.molecular_viscosity_h
         else:
             exa = FluidCharacteristicsView.molecular_viscosity
@@ -946,11 +952,11 @@ thermal_conductivity = 6.2e-5 * Temp + 8.1e-3;
         exp = self.mdl.getFormula('thermal_conductivity')
         req = [('thermal_conductivity', 'Thermal conductivity')]
         self.m_th = ThermalScalarModel(self.case)
-        s = self.m_th.getThermalScalarLabel()
-        if s == "TempC":
-            TempInContext = "("+s+" + 273.15)"
-            exa = FluidCharacteristicsView.thermal_conductivity.replace("TempK", TempInContext)
-        elif s == "Enthalpy":
+        s = self.m_th.getThermalScalarName()
+        mdl = self.m_th.getThermalScalarModel()
+        if mdl == "temperature_celsius":
+            exa = FluidCharacteristicsView.thermal_conductivity.replace("temperature", TempInContext)
+        elif mdl == "enthalpy":
             exa = FluidCharacteristicsView.thermal_conductivity_h
         else:
             exa = FluidCharacteristicsView.thermal_conductivity

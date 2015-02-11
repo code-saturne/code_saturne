@@ -153,7 +153,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         # species treatment
         self.modelSpecies = ComboModel(self.comboBoxSpecies, 1, 1)
         self.scalar = ""
-        scalar_list = self.th_sca.getUserScalarLabelsList()
+        scalar_list = self.th_sca.getUserScalarNameList()
         for s in self.th_sca.getScalarsVarianceList():
             if s in scalar_list: scalar_list.remove(s)
 
@@ -172,7 +172,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         # meteo
         self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
         self.scalar_meteo = ""
-        scalar_meteo_list = DefineUserScalarsModel( self.case).getMeteoScalarsList()
+        scalar_meteo_list = DefineUserScalarsModel( self.case).getMeteoScalarsNameList()
         if scalar_meteo_list != None and scalar_meteo_list != []:
             self.scalar_meteo = scalar_meteo_list[0]
             for item in self.meteo_group:
@@ -390,7 +390,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         """
         exp = self.init.getMeteoFormula(self.zone, self.scalar_meteo)
-        name = self.th_sca.getMeteoScalarName(self.scalar_meteo)
+        name = self.scalar_meteo
         if not exp:
             exp = str(name)+""" = 0;\n"""
         exa = """#example: \n""" + str(name)+""" = 0;\n"""

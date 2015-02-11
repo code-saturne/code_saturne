@@ -2493,7 +2493,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         fle = str(fle)
         if not fle:
             return
-        fle = os.path.basename(os.path.abspath(fle))
+        fle = os.path.abspath(fle)
 
         probe_number = self.mdl.getNumberOfMonitoringPoints()
 
