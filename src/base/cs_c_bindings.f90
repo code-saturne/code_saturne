@@ -349,6 +349,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function handling boundary condition errors and output
+
+    subroutine cs_boundary_conditions_error(bc_type) &
+      bind(C, name='cs_boundary_conditions_error')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(*), intent(in) :: bc_type
+    end subroutine cs_boundary_conditions_error
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function checking the presence of a control file
     ! and dealing with the interactive control.
 

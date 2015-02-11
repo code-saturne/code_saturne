@@ -92,6 +92,7 @@ use ppincl
 use parall
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -1226,6 +1227,7 @@ if (nstvit.gt.0 .or. nstopp.gt.0 .or. nstoke.gt.0 .or. nstrij.gt.0 .or.        &
 endif
 
 if (irangp.ge.0) call parcmx(iok)
+
 if(iok.ne.0) then
 
   call sync_bc_err(nstoni, 2, icodni)
@@ -1407,15 +1409,16 @@ if(iok.ne.0) then
     write (nfecra,1901) nstoni, nstosc, nstovf, nstusc
   endif
 
-if (nstvit.gt.0 .or. nstopp.gt.0 .or. nstoke.gt.0 .or. nstrij.gt.0 .or.        &
-    nstov2.gt.0 .or. nstonu.gt.0 .or. nstuvw.gt.0 .or. nstoup.gt.0 .or.        &
-    nstuke.gt.0 .or. nsurij.gt.0 .or. nstuv2.gt.0 .or. nstunu.gt.0     ) then
-  write (nfecra,1902)  nstvit,nstopp, nstoke,nstrij,             &
-                       nstov2,nstonu, nstuvw,nstoup,             &
-                       nstuke,nsurij, nstuv2,nstunu
-endif
-  call bcderr(itypfb)
-  !==========
+  if (nstvit.gt.0 .or. nstopp.gt.0 .or. nstoke.gt.0 .or. nstrij.gt.0 .or.    &
+      nstov2.gt.0 .or. nstonu.gt.0 .or. nstuvw.gt.0 .or. nstoup.gt.0 .or.    &
+      nstuke.gt.0 .or. nsurij.gt.0 .or. nstuv2.gt.0 .or. nstunu.gt.0     ) then
+    write (nfecra,1902)  nstvit,nstopp, nstoke,nstrij,                       &
+                         nstov2,nstonu, nstuvw,nstoup,                       &
+                         nstuke,nsurij, nstuv2,nstunu
+  endif
+
+  call cs_boundary_conditions_error(itypfb)
+
 endif
 
 !===============================================================================

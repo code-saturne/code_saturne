@@ -97,6 +97,7 @@ use radiat
 use dimens, only: ndimfb
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -603,7 +604,7 @@ if (iok.ne.0) then
                        rvferr(24), rvferr(25)
   endif
 
-  call bcderr(itypfb)
+  call cs_boundary_conditions_error(itypfb)
 
 endif
 

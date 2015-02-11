@@ -2,7 +2,7 @@
 #define __CS_BOUNDARY_CONDITIONS_H__
 
 /*============================================================================
- * Post-processing management
+ * Boundary condition handling.
  *============================================================================*/
 
 /*
@@ -55,32 +55,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Global variables
  *============================================================================*/
-
-/*============================================================================
- * Public Fortran function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Handling of boundary condition definition errors and associated output.
- *
- * For each boundary face, itypfb defines the boundary condition type.
- * As a convention here, zero values correspond to undefined types,
- * positive values to defined types (with no error), and negative values
- * to defined types with inconsistent or incompatible values, the
- * aboslute value indicationg the original boundary condition type.
- *
- * Fortran Interface:
- *
- * SUBROUTINE BCDERR (ITYPFB)
- * *****************
- *
- * INTEGER          ITYPFB      : <-> : Array of BC type ids
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (bcderr, BCDERR)
-(
- cs_int_t        *itypfb
-);
 
 /*============================================================================
  * Public function prototypes

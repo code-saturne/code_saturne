@@ -68,6 +68,15 @@
 
 BEGIN_C_DECLS
 
+/*=============================================================================
+ * Additional doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_boundary_conditions.c
+        Boundary condition handling.
+*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -244,40 +253,13 @@ _post_valid_faces_select(void         *input,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public Fortran function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Handling of boundary condition definition errors and associated output.
- *
- * For each boundary face, itypfb defines the boundary condition type.
- * As a convention here, zero values correspond to undefined types,
- * positive values to defined types (with no error), and negative values
- * to defined types with inconsistent or incompatible values, the
- * absolute value indicating the original boundary condition type.
- *
- * Fortran Interface:
- *
- * SUBROUTINE BCDERR (ITYPFB)
- * *****************
- *
- * INTEGER          ITYPFB      : <-> : Array of BC type ids
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (bcderr, BCDERR)
-(
- cs_int_t        *itypfb
-)
-{
-  cs_boundary_conditions_error(itypfb);
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Handling of boundary condition definition errors and associated output.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handling of boundary condition definition errors and
+ *        associated output.
  *
  * For each boundary face, bc_type defines the boundary condition type.
  * As a convention here, zero values correspond to undefined types,
@@ -285,10 +267,9 @@ void CS_PROCF (bcderr, BCDERR)
  * to defined types with inconsistent or incompatible values, the
  * absolute value indicating the original boundary condition type.
  *
- *
- * parameters:
- *   bc_type   <-- array of BC type ids
- *----------------------------------------------------------------------------*/
+ * \param[in]  bc_type  array of BC type ids
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_boundary_conditions_error(const cs_int_t  bc_type[])
