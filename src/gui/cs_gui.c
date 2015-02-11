@@ -2130,7 +2130,7 @@ _rotor_option(int          rotor_id,
   cs_xpath_add_elements(&path, 2,
                         "thermophysical_models",
                         "turbomachinery");
-  cs_xpath_add_element_num(&path, "rotor", rotor_id);
+  cs_xpath_add_element_num(&path, "rotor", rotor_id + 1);
   cs_xpath_add_element(&path, "rotation");
   cs_xpath_add_element(&path, name);
   cs_xpath_add_function_text(&path);
@@ -5916,7 +5916,7 @@ cs_gui_turbomachinery_rotor(void)
                             "thermophysical_models",
                             "turbomachinery");
 
-      cs_xpath_add_element_num(&path, "rotor", rotor_id);
+      cs_xpath_add_element_num(&path, "rotor", rotor_id + 1);
       cs_xpath_add_element(&path, "velocity");
       cs_xpath_add_element(&path, "value");
       cs_xpath_add_function_text(&path);
@@ -5928,7 +5928,7 @@ cs_gui_turbomachinery_rotor(void)
                             "thermophysical_models",
                             "turbomachinery");
 
-      cs_xpath_add_element_num(&path, "rotor", rotor_id);
+      cs_xpath_add_element_num(&path, "rotor", rotor_id + 1);
       cs_xpath_add_element(&path, "criteria");
       cs_xpath_add_function_text(&path);
       cell_criteria = cs_gui_get_text_value(path);

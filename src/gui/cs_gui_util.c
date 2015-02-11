@@ -1086,7 +1086,7 @@ cs_gui_characters_number(int num)
   int i      = 1;
   int number = 0;
 
-  assert(num > 0);
+  assert(num >= 0);
 
   if (num == 0)
     number ++;
