@@ -203,24 +203,28 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IPARUG  --> type of boundary: wall with rugosity
  * INTEGER          ISYMET  --> type of boundary: symmetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
+ * INTEGER          IFREESF <-- type of boundary: free surface
+ * INTEGER          IALE    <-- ALE module activated
  * INTEGER          ITYPFB  --> type of boundary for each face
  * INTEGER          IZFPPP  --> zone number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE) (const int  *nfabor,
-                                const int  *nozppm,
-                                const int  *iindef,
-                                const int  *ientre,
-                                const int  *iesicf,
-                                const int  *iephcf,
-                                const int  *isspcf,
-                                const int  *isopcf,
-                                const int  *iparoi,
-                                const int  *iparug,
-                                const int  *isymet,
-                                const int  *isolib,
-                                int        *itypfb,
-                                int        *izfppp);
+void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
+                               const int  *nozppm,
+                               const int  *iindef,
+                               const int  *ientre,
+                               const int  *iesicf,
+                               const int  *iephcf,
+                               const int  *isspcf,
+                               const int  *isopcf,
+                               const int  *iparoi,
+                               const int  *iparug,
+                               const int  *isymet,
+                               const int  *isolib,
+                               const int  *ifreesf,
+                               const int  *iale,
+                               int        *itypfb,
+                               int        *izfppp);
 
 /*=============================================================================
  * Public function prototypes

@@ -2754,6 +2754,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IPARUG  <-- type of boundary: rough wall
  * INTEGER          ISYMET  <-- type of boundary: symetry
  * INTEGER          ISOLIB  <-- type of boundary: outlet
+ * INTEGER          IFREESF <-- type of boundary: free surface
+ * INTEGER          IALE    <-- ALE module activated
  * INTEGER          ITYPFB  <-- type of boundary for each face
  * INTEGER          IZFPPP  <-- zone number
  *----------------------------------------------------------------------------*/
@@ -2770,6 +2772,8 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
+                               const int  *ifreesf,
+                               const int  *iale,
                                      int  *itypfb,
                                      int  *izfppp)
 {
@@ -2796,6 +2800,9 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
       inature = *isymet;
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface") && *iale) {
+      inature = *ifreesf;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
       inature = *iindef;

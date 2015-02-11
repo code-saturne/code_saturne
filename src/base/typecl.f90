@@ -928,7 +928,7 @@ do ivar = 1, nvar
 enddo
 
 
-! ---> surface libre
+! ---> Free surface: Dirichlet on the pressure
 
 ideb = idebty(ifreesf)
 ifin = ifinty(ifreesf)
