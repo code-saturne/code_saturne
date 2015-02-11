@@ -302,6 +302,19 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                           ple_mesh_elements_locate_t  *mesh_locate_f);
 
 /*----------------------------------------------------------------------------
+ * Shift location ids for located points after locator initialization.
+ *
+ * This is useful mainly to switch between 0-based to 1-based numberings.
+ *
+ * parameters:
+ *   this_locator <-> pointer to locator structure
+ *----------------------------------------------------------------------------*/
+
+void
+ple_locator_shift_locations(ple_locator_t  *this_locator,
+                            ple_lnum_t      location_shift);
+
+/*----------------------------------------------------------------------------
  * Return number of distant points after locator initialization.
  *
  * parameters:
