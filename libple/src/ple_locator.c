@@ -1568,7 +1568,7 @@ _intersects_local(ple_locator_t       *this_locator,
   /* Copy only element (and not point) extents */
 
   for (j = 0; j < stride2; j++)
-    intersects.extents[stride2 + j] = extents[j];
+    intersects.extents[j] = extents[j];
 
   return intersects;
 }
@@ -1610,7 +1610,6 @@ _locate_all_local(ple_locator_t               *this_locator,
   int l;
   ple_lnum_t j, k;
   ple_lnum_t n_coords, n_interior, n_exterior, coord_idx;
-  double extents[12];
   ple_coord_t *coords;
   _rank_intersects_t intersects;
 
@@ -1638,6 +1637,8 @@ _locate_all_local(ple_locator_t               *this_locator,
 
   n_coords = 0;
 
+  this_locator->n_intersects = intersects.n;
+
   /* Build partial buffer */
 
   if (intersects.n > 0) {
@@ -1654,7 +1655,7 @@ _locate_all_local(ple_locator_t               *this_locator,
 
       if (_within_extents(dim,
                           &(point_coords[dim*coord_idx]),
-                          extents) == true) {
+                          intersects.extents) == true) {
 
         for (k = 0; k < dim; k++)
           coords[n_coords*dim + k]
@@ -1701,6 +1702,8 @@ _locate_all_local(ple_locator_t               *this_locator,
     }
 
   }
+
+  PLE_FREE(intersects.extents);
 
   /* Reorganize location information */
   /*---------------------------------*/
@@ -2877,6 +2880,9 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                       distance,
                       mesh_extents_f,
                       mesh_locate_f);
+
+    PLE_FREE(location);
+
   }
 
   /* Update local_point_ids values */
@@ -2940,6 +2946,29 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
 
   this_locator->location_wtime[1] += comm_timing[0];
   this_locator->location_cpu_time[1] += comm_timing[1];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Shift location ids for located points after locator initialization.
+ *
+ * This is useful mainly to switch between 0-based to 1-based numberings.
+ *
+ * \param[in, out] this_locator pointer to locator structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_shift_locations(ple_locator_t  *this_locator,
+                            ple_lnum_t      location_shift)
+{
+  int n_intersects = this_locator->n_intersects;
+  const ple_lnum_t n_points = this_locator->distant_points_idx[n_intersects];
+
+  for (ple_lnum_t i = 0; i < n_points; i++) {
+    if (this_locator->distant_point_location[i] > -1)
+      this_locator->distant_point_location[i] += location_shift;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
