@@ -209,7 +209,12 @@ if (iplar.eq.1) then
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
    jndisp , jclst  , jvls   )
 
+  ! first initializations
+
   call lagr_update_pointers
+
+  nbpart = 0;
+  dnbpar = 0.d0
 
   ! Postprocessing options
 
@@ -217,10 +222,12 @@ if (iplar.eq.1) then
   !==========
               ivismp, ivisdk, iviswat, ivisch, ivisck)
 
-  ! first initializations
-
-  nbpart = 0;
-  dnbpar = 0.d0
+  ! Read particle restart data
+  
+  if (iilagr.gt.0) then
+    call laglec_p
+    call lagr_update_pointers
+  endif
 
 ! --> if the deposition model is activated
 

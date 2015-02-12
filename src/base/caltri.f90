@@ -605,8 +605,8 @@ endif
 
 if (iilagr.gt.0) then
 
-  call laglec                                                     &
-  !==========
+  call laglec_m                                                   &
+  !============
  ( ncelet , ncel   , nfabor ,                                     &
    ntersl , nvlsta , nvisbr ,                                     &
    statis , stativ , parbor , tslagr )
