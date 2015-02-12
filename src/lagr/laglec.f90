@@ -20,8 +20,8 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine laglec &
-!================
+subroutine laglec_m &
+!==================
 
  ( ncelet , ncel   , nfabor ,                                     &
    ntersl , nvlsta , nvisbr ,                                     &
@@ -115,11 +115,10 @@ double precision parbor(nfabor,nvisbr)
 character        rubriq*64 , car4*4, car8*8, kar8*8
 character        nomtsl(nvplmx)*60
 character        ficsui*32
-integer          ierror , itysup , nbval  , n_sec
+integer          ierror , itysup , nbval
 integer          ilecec , nberro , ivers
-integer          mvls   , ivar   , icha
-integer          ifac   , iel    , iok
-integer          jphyla , jtpvar , jdpvar , jmpvar
+integer          ivar   , icha
+integer          ifac   , iel
 integer          jsttio , jdstnt , mstist , mvlsts
 integer          mstbor , musbor , mstits , jturb, jtytur
 integer          ipas   , ivl    , nclsto
@@ -180,208 +179,7 @@ endif
 if (isuila.eq.0) return
 
 !===============================================================================
-! 2. LECTURE DU FICHIER SUITE : VARIABLES LIEES AUX PARTICULES
-!===============================================================================
-
-!  ---> Ouverture
-
-write(nfecra,6000)
-
-!     (ILECEC=1:lecture)
-ilecec = 1
-ficsui = 'lagrangian'
-call restart_create(ficsui, '', 0, rp)
-
-write(nfecra,6010)
-
-!  ---> Type de fichier suite
-!        Pourrait porter le numero de version si besoin.
-
-itysup = 0
-nbval  = 1
-rubriq = 'version_fichier_suite_Lagrangien_variables'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-ivers = ival(1)
-
-if (ierror.ne.0) then
-  write(nfecra,9020) ficsui
-  call csexit (1)
-endif
-
-!  ---> Tests
-
-iok = 0
-
-!     Dimensions des supports
-
-call restart_check_base_location(rp,ncelok,nfaiok,nfabok,nsomok)
-if (ncelok.eqv..false.) then
-  write(nfecra,9030) ficsui
-  iok = iok + 1
-endif
-
-if (nfaiok.eqv..false.) write(nfecra,9031) ficsui,'internes','internes'
-
-if (nfabok.eqv..false.) write(nfecra,9031) ficsui,'de bord ','de bord '
-
-itysup = 0
-nbval  = 1
-
-!     Physique associee aux particules
-
-rubriq = 'indicateur_physique_particules'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-jphyla = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9040) ficsui, rubriq
-  iok = iok + 1
-endif
-
-rubriq = 'indicateur_temperature_particules'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-jtpvar = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9040) ficsui,                                      &
-  'indicateur_temperature_particules                           '
-  iok = iok + 1
-endif
-
-!     Arret
-if (iok.ne.0) then
-  call csexit (1)
-endif
-
-rubriq = 'indicateur_diametre_particules'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-jdpvar = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9062) ficsui,                                      &
-  'indicateur_diametre_particules                              '
-  jdpvar = idpvar
-endif
-
-rubriq = 'indicateur_masse_particules'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-jmpvar = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9062) ficsui,                                      &
-  'indicateur_masse_particules                                 '
-  jmpvar = impvar
-endif
-
-! ---> On previent si des parametres sont differents
-
-if ( jphyla.ne.iphyla .or.                                        &
-     jtpvar.ne.itpvar .or.                                        &
-     jdpvar.ne.idpvar .or.                                        &
-     jmpvar.ne.impvar      ) then
-  write(nfecra,9070) ficsui,                                      &
-                     jphyla, jtpvar, jdpvar, jmpvar,              &
-                     iphyla, itpvar, idpvar, impvar
-endif
-
-! ---> Verification de la compatibilite si changement de thermique
-
-if (jphyla.ne.0 .and. iphyla.eq.0) then
-  write(nfecra,9071) ficsui
-endif
-
-if (itpvar.eq.1 .and. jtpvar.eq.0) then
-  write(nfecra,9072) ficsui, tpart, cppart
-endif
-
-if (iphyla.eq.2 .and. jphyla.ne.2) then
-  write(nfecra,9073) ficsui
-  call csexit (1)
-endif
-
-if ( (jphyla.eq.2 .and. iphyla.eq.1) .or.                         &
-     (jphyla.eq.1 .and. iphyla.eq.2)      ) then
-  write(nfecra,9074) ficsui
-  call csexit (1)
-endif
-
-! ---> Infos suivi du calcul
-
-rubriq = 'nombre_iterations_Lagrangiennes'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-iplas = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9060) ficsui,                                      &
-  'nombre_iterations_Lagrangiennes                             ', &
-  'IPLAS',iplas
-endif
-
-if (istala.eq.1 .and. isuist.eq.0 .and. iplas.ge.idstnt) then
-  write(nfecra,9065) ficsui, isuist, iplas +1, idstnt
-  call csexit (1)
-endif
-
-if (iensi3.eq.1 .and. isuist.eq.0 .and. iplas.ge.nstbor) then
-  write(nfecra,9066) ficsui, isuist, iplas +1, nstbor
-  call csexit (1)
-endif
-
-rubriq = 'temps_physique_Lagrangien'
-call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
-ttclag = rval(1)
-if (ierror.ne.0) then
-  write(nfecra,9061) ficsui,                                      &
-  'temps_physique_Lagrangien                                   ', &
-  'TTCLAG',ttclag
-endif
-
-rubriq = 'nombre_total_particules'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-nbptot = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9060) ficsui,                                      &
-  'nombre_total_particules                                     ', &
-  'NBPTOT',nbptot
-endif
-
-rubriq = 'nombre_particules_perdues'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-nbpert = ival(1)
-if (ierror.ne.0) then
-  write(nfecra,9060) ficsui,                                      &
-  'nombre_particules_perdues                                   ', &
-  'NBPERT',nbpert
-endif
-
-rubriq = 'nombre_variables_utilisateur'
-call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
-mvls = ival(1)
-if (ierror.ne.0) then
-  mvls = 0
-  if (nvls.gt.0) then
-    write(nfecra,9062) ficsui,                                    &
-  'nombre_variables_utilisateur                                '
-  endif
-endif
-
-if (nvls.lt.mvls) then
-  write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
-  mvls = nvls
-elseif (nvls.gt.mvls ) then
-  write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
-endif
-
-! --> Caracteristiques et infos particulaires
-
-n_sec = lagr_restart_read_particle_data(rp)
-
-write(nfecra,6011)
-
-!  ---> Fermeture du fichier suite
-
-call restart_destroy(rp)
-
-write(nfecra,6099)
-
-
-!===============================================================================
-! 3. LECTURE DU FICHIER SUITE STATISTIQUES ET TERMES SOURCES
+! 2. LECTURE DU FICHIER SUITE STATISTIQUES ET TERMES SOURCES
 !    DE COUPLAGE RETOUR
 !===============================================================================
 
@@ -892,14 +690,7 @@ write(nfecra,2000)
 '                                                             ',/,&
 '-------------------------------------------------------------',/)
 
- 6000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN',/,  &
-           3X,'   -------------------------------------      ',/,  &
-           3X,' Lecture d''un fichier suite                  ',/,  &
-           3X,'   sur les variables liees aux particules     '  )
- 6010 FORMAT (   3X,'   Debut de la lecture                  '  )
  6011 FORMAT (   3X,'   Fin   de la lecture                  '  )
- 6099 FORMAT (   3X,' Fin de la lecture du fichier suite     ',/,  &
-           3X,'   sur les variables liees aux particules    ',/)
 
  7000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN',/,  &
            3X,'   -------------------------------------      ',/,  &
@@ -1014,198 +805,6 @@ write(nfecra,2000)
 '@    Le mot cle est initialise avec sa valeur par defaut     ',/,&
 '@      ou celle donnee dans le sous-programme USLAG1 :       ',/,&
 '@        ',A10   ,'  = ',E14.5                                ,/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9062 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DE LA RUBRIQUE                    ',/,&
-'@ ',A60                                                       ,/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9065 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
-'@                                                            ',/,&
-'@    L''INDICATEUR DE CALCUL DES STATISTIQUES VOLUMIQUES     ',/,&
-'@       A UNE VALEUR NON PERMISE (LAGLEC).                   ',/,&
-'@                                                            ',/,&
-'@    LORSQU''IL N''Y A PAS DE SUITE DE CALCUL SUR LES        ',/,&
-'@    STATISTIQUES VOLUMIQUES (ISUIST = ',  I3, '),'           ,/,&
-'@    IDSTNT DOIT ETRE UN ENTIER SUPERIEUR AU NUMERO          ',/,&
-'@       DE L''ITERATION LAGRANGIENNE DE REDEMARRAGE ', I10    ,/,&
-'@       IL VAUT ICI IDSTNT = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de IDSTNT dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9066 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
-'@                                                            ',/,&
-'@    L''INDICATEUR DE CALCUL STATIONNAIRES DES STATISTIQUES  ',/,&
-'@       AUX FRONTIERES A UNE VALEUR NON PERMISE (LAGLEC).    ',/,&
-'@                                                            ',/,&
-'@    LORSQU''IL N''Y A PAS DE SUITE DE CALCUL SUR LES        ',/,&
-'@    STATISTIQUES AUX FRONTIERES (ISUIST = ',  I3, '),'       ,/,&
-'@    NSTBOR DOIT ETRE UN ENTIER SUPERIEUR AU NUMERO          ',/,&
-'@       DE L''ITERATION LAGRANGIENNE DE REDEMARRAGE ', I10    ,/,&
-'@       IL VAUT ICI NSTBOR = ', I10                           ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier la valeur de NSTBOR dans la subroutine USLAG1.   ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9070 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
-'@                                                            ',/,&
-'@    Les indicateurs concernant la physique associee         ',/,&
-'@      aux particules sont modifies :                        ',/,&
-'@                                                            ',/,&
-'@              IPHYLA    ITPVAR    IDPVAR    IMPVAR          ',/,&
-'@  AMONT : ',4I10                                             ,/,&
-'@  ACTUEL: ',4I10                                             ,/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@    Il est conseille de verifier ces indicateurs dans       ',/,&
-'@      le sous-programme USLAG1.                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9071 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
-'@                                                            ',/,&
-'@    Aucune selection de physique associee aux particules    ',/,&
-'@      n''est active. Les donnees amont sont perdues.        ',/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9072 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
-'@                                                            ',/,&
-'@    Une equation sur la temperature des particules est      ',/,&
-'@      enclenchee en cours de calcul.                        ',/,&
-'@    Initialisation par defaut :                             ',/,&
-'@       Temperature TPART = ', E14.5                          ,/,&
-'@       Chaleur massique CPPART = ', E14.5                    ,/,&
-'@                                                            ',/,&
-'@    Le calcul se poursuit...                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9073 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
-'@                                                            ',/,&
-'@    L''indicateur d''un calcul Lagrangien de grains         ',/,&
-'@      de charbon est enclenche (IPHYLA = 2).                ',/,&
-'@    Ce fichier suite ne correspond pas                      ',/,&
-'@      a un calcul Lagrangien de grains de charbon.          ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier IPHYLA dans le sous-programme USLAG1.          ',/,&
-'@    Verifier le fichier suite utilise.                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9074 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
-'@                                                            ',/,&
-'@    Ce fichier suite correspond                             ',/,&
-'@      a un calcul Lagrangien de grains de charbon.          ',/,&
-'@    L''indicateur de physique actuel associee aux particules',/,&
-'@      a une valeur non permise dans le cadre d''une suite   ',/,&
-'@      d''un calcul Lagrangien de grains de charbon.         ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier IPHYLA dans le sous-programme USLAG1.          ',/,&
-'@    Verifier le fichier suite utilise.                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 9080 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
-'@    =========     LAGRANGIEN ',A13                           ,/,&
-'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
-'@                                                            ',/,&
-'@    L''indicateur du  nombre de variables supplementaires   ',/,&
-'@      utilisateur est modifie, ou n''a pas pu etre relu.    ',/,&
-'@                                                            ',/,&
-'@              NVLS                                          ',/,&
-'@    AMONT : ',I10   ,'      ACTUEL : ',I10                   ,/,&
-'@                                                            ',/,&
-'@    Si ACTUEL > AMONT, on initialise les ',I10   ,' 1eres   ',/,&
-'@      variables supplementaires actuelles avec celles       ',/,&
-'@      du fichier suite, les autres sont initialisees a zero.',/,&
-'@                                                            ',/,&
-'@    Si ACTUEL < AMONT, on initialise les ',I10   ,' 1eres   ',/,&
-'@      variables supplementaires actuelles avec les 1eres    ',/,&
-'@      du fichier suite, le reste des variables du fichier   ',/,&
-'@      suite sont perdues.                                   ',/,&
 '@                                                            ',/,&
 '@    Le calcul se poursuit...                                ',/,&
 '@                                                            ',/,&
@@ -1743,6 +1342,614 @@ write(nfecra,2000)
 '@    Le calcul ne peut pas etre execute.                     ',/,&
 '@                                                            ',/,&
 '@    Verifier ces indicateurs dans le sous-programme USLAG1. ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+!----
+! FIN
+!----
+
+end subroutine
+
+!===============================================================================
+
+subroutine laglec_p
+
+!===============================================================================
+! FONCTION :
+! ----------
+
+!   SOUS-PROGRAMME DU MODULE LAGRANGIEN :
+!   -------------------------------------
+
+!    Lecture des fichiers suite Lagrangien "lagamo" et "lasamo"
+!    contenant les informations sur les particule, les statistiques
+!    volumiques et aux frontieres, ainsi que les termes sources
+!    de couplage retour.
+
+!    Tous les tableaux sont initialise a zero avant d'être remplis
+!    dans le cas d'une suite (sinon ils restent a zero).
+!    On realise donc ici l'initialisation des tableaux ouverts
+!    dans MEMLA1, ce qui termine l'etape d'initialisation debutee
+!    dans LAGOPT.
+
+!-------------------------------------------------------------------------------
+! Arguments
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+!__________________!____!_____!________________________________________________!
+
+!     Type: i (integer), r (real), s (string), a (array), l (logical),
+!           and composite types (ex: ra real array)
+!     mode: <-- input, --> output, <-> modifies data, --- work array
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use, intrinsic :: iso_c_binding
+
+use paramx
+use cstnum
+use cstphy
+use numvar
+use optcal
+use entsor
+use parall
+use period
+use lagpar
+use lagran
+use ppppar
+use ppthch
+use ppincl
+use cpincl
+use radiat
+use field
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+! Local variables
+
+character        rubriq*64
+character        ficsui*32
+integer          ierror , itysup , nbval  , n_sec
+integer          ilecec , ivers
+integer          mvls
+integer          iok
+integer          jphyla , jtpvar , jdpvar , jmpvar
+integer          ival(1)
+double precision rval(1)
+
+logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
+
+type(c_ptr) :: rp
+
+!===============================================================================
+
+if (isuila.eq.0) return
+
+!===============================================================================
+! 1. LECTURE DU FICHIER SUITE : VARIABLES LIEES AUX PARTICULES
+!===============================================================================
+
+!  ---> Ouverture
+
+write(nfecra,6000)
+
+!     (ILECEC=1:lecture)
+ilecec = 1
+ficsui = 'lagrangian'
+call restart_create(ficsui, '', 0, rp)
+
+write(nfecra,6010)
+
+!  ---> Type de fichier suite
+!        Pourrait porter le numero de version si besoin.
+
+itysup = 0
+nbval  = 1
+rubriq = 'version_fichier_suite_Lagrangien_variables'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+ivers = ival(1)
+
+if (ierror.ne.0) then
+  write(nfecra,9020) ficsui
+  call csexit (1)
+endif
+
+!  ---> Tests
+
+iok = 0
+
+!     Dimensions des supports
+
+call restart_check_base_location(rp,ncelok,nfaiok,nfabok,nsomok)
+if (ncelok.eqv..false.) then
+  write(nfecra,9030) ficsui
+  iok = iok + 1
+endif
+
+if (nfaiok.eqv..false.) write(nfecra,9031) ficsui,'internes','internes'
+
+if (nfabok.eqv..false.) write(nfecra,9031) ficsui,'de bord ','de bord '
+
+itysup = 0
+nbval  = 1
+
+!     Physique associee aux particules
+
+rubriq = 'indicateur_physique_particules'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jphyla = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9040) ficsui, rubriq
+  iok = iok + 1
+endif
+
+rubriq = 'indicateur_temperature_particules'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jtpvar = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9040) ficsui,                                      &
+  'indicateur_temperature_particules                           '
+  iok = iok + 1
+endif
+
+!     Arret
+if (iok.ne.0) then
+  call csexit (1)
+endif
+
+rubriq = 'indicateur_diametre_particules'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jdpvar = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9062) ficsui,                                      &
+  'indicateur_diametre_particules                              '
+  jdpvar = idpvar
+endif
+
+rubriq = 'indicateur_masse_particules'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+jmpvar = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9062) ficsui,                                      &
+  'indicateur_masse_particules                                 '
+  jmpvar = impvar
+endif
+
+! ---> On previent si des parametres sont differents
+
+if ( jphyla.ne.iphyla .or.                                        &
+     jtpvar.ne.itpvar .or.                                        &
+     jdpvar.ne.idpvar .or.                                        &
+     jmpvar.ne.impvar      ) then
+  write(nfecra,9070) ficsui,                                      &
+                     jphyla, jtpvar, jdpvar, jmpvar,              &
+                     iphyla, itpvar, idpvar, impvar
+endif
+
+! ---> Verification de la compatibilite si changement de thermique
+
+if (jphyla.ne.0 .and. iphyla.eq.0) then
+  write(nfecra,9071) ficsui
+endif
+
+if (itpvar.eq.1 .and. jtpvar.eq.0) then
+  write(nfecra,9072) ficsui, tpart, cppart
+endif
+
+if (iphyla.eq.2 .and. jphyla.ne.2) then
+  write(nfecra,9073) ficsui
+  call csexit (1)
+endif
+
+if ( (jphyla.eq.2 .and. iphyla.eq.1) .or.                         &
+     (jphyla.eq.1 .and. iphyla.eq.2)      ) then
+  write(nfecra,9074) ficsui
+  call csexit (1)
+endif
+
+! ---> Infos suivi du calcul
+
+rubriq = 'nombre_iterations_Lagrangiennes'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+iplas = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9060) ficsui,                                      &
+  'nombre_iterations_Lagrangiennes                             ', &
+  'IPLAS',iplas
+endif
+
+if (istala.eq.1 .and. isuist.eq.0 .and. iplas.ge.idstnt) then
+  write(nfecra,9065) ficsui, isuist, iplas +1, idstnt
+  call csexit (1)
+endif
+
+if (iensi3.eq.1 .and. isuist.eq.0 .and. iplas.ge.nstbor) then
+  write(nfecra,9066) ficsui, isuist, iplas +1, nstbor
+  call csexit (1)
+endif
+
+rubriq = 'temps_physique_Lagrangien'
+call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+ttclag = rval(1)
+if (ierror.ne.0) then
+  write(nfecra,9061) ficsui,                                      &
+  'temps_physique_Lagrangien                                   ', &
+  'TTCLAG',ttclag
+endif
+
+rubriq = 'nombre_total_particules'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+nbptot = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9060) ficsui,                                      &
+  'nombre_total_particules                                     ', &
+  'NBPTOT',nbptot
+endif
+
+rubriq = 'nombre_particules_perdues'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+nbpert = ival(1)
+if (ierror.ne.0) then
+  write(nfecra,9060) ficsui,                                      &
+  'nombre_particules_perdues                                   ', &
+  'NBPERT',nbpert
+endif
+
+rubriq = 'nombre_variables_utilisateur'
+call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
+mvls = ival(1)
+if (ierror.ne.0) then
+  mvls = 0
+  if (nvls.gt.0) then
+    write(nfecra,9062) ficsui,                                    &
+  'nombre_variables_utilisateur                                '
+  endif
+endif
+
+if (nvls.lt.mvls) then
+  write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
+  mvls = nvls
+elseif (nvls.gt.mvls ) then
+  write(nfecra,9080) ficsui, mvls, nvls, nvls, nvls
+endif
+
+! --> Caracteristiques et infos particulaires
+
+n_sec = lagr_restart_read_particle_data(rp)
+
+write(nfecra,6011)
+
+!  ---> Fermeture du fichier suite
+
+call restart_destroy(rp)
+
+write(nfecra,6099)
+
+!===============================================================================
+
+!--------
+! Formats
+!--------
+
+ 6000 FORMAT (/, 3X,'** INFORMATIONS SUR LE CALCUL LAGRANGIEN',/,  &
+           3X,'   -------------------------------------      ',/,  &
+           3X,' Lecture d''un fichier suite                  ',/,  &
+           3X,'   sur les variables liees aux particules     '  )
+ 6010 FORMAT (   3X,'   Debut de la lecture                  '  )
+ 6011 FORMAT (   3X,'   Fin   de la lecture                  '  )
+ 6099 FORMAT (   3X,' Fin de la lecture du fichier suite     ',/,  &
+           3X,'   sur les variables liees aux particules    ',/)
+
+ 9020 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      TYPE DE FICHIER INCORRECT                             ',/,&
+'@                                                            ',/,&
+'@    Ce fichier ne semble pas etre un fichier                ',/,&
+'@      suite Lagrangien.                                     ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@    Verifier que le fichier suite utilise correspond bien   ',/,&
+'@        a un fichier suite Lagrangien.                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9030 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
+'@                                                            ',/,&
+'@    Le nombre de cellules a ete modifie                     ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9031 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
+'@                                                            ',/,&
+'@    Le nombre de faces ',A8  ,' a ete modifie.              ',/,&
+'@                                                            ',/,&
+'@    Le calcul peut etre execute mais les donnees            ',/,&
+'@      sur les faces ',A8  ,' ne seront pas relues           ',/,&
+'@      dans le fichier suite.                                ',/,&
+'@    Elles seront initialisees par des valeurs par defaut.   ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9040 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE LA RUBRIQUE                    ',/,&
+'@ ',A60                                                       ,/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut pas etre execute.                     ',/,&
+'@                                                            ',/,&
+'@    Verifier que ce fichier suite                           ',/,&
+'@        correspond bien a un fichier suite Lagrangien,      ',/,&
+'@        et qu''il n''a pas ete endommage.                   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9060 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE LA RUBRIQUE                    ',/,&
+'@ ',A60                                                       ,/,&
+'@                                                            ',/,&
+'@    Le mot cle est initialise avec sa valeur par defaut     ',/,&
+'@      ou celle donnee dans le sous-programme USLAG1 :       ',/,&
+'@        ',A10   ,'  = ',I10                                  ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9061 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE LA RUBRIQUE                    ',/,&
+'@ ',A60                                                       ,/,&
+'@                                                            ',/,&
+'@    Le mot cle est initialise avec sa valeur par defaut     ',/,&
+'@      ou celle donnee dans le sous-programme USLAG1 :       ',/,&
+'@        ',A10   ,'  = ',E14.5                                ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9062 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@                                                            ',/,&
+'@      ERREUR A LA LECTURE DE LA RUBRIQUE                    ',/,&
+'@ ',A60                                                       ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9065 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
+'@                                                            ',/,&
+'@    L''INDICATEUR DE CALCUL DES STATISTIQUES VOLUMIQUES     ',/,&
+'@       A UNE VALEUR NON PERMISE (LAGLEC_P).                 ',/,&
+'@                                                            ',/,&
+'@    LORSQU''IL N''Y A PAS DE SUITE DE CALCUL SUR LES        ',/,&
+'@    STATISTIQUES VOLUMIQUES (ISUIST = ',  I3, '),'           ,/,&
+'@    IDSTNT DOIT ETRE UN ENTIER SUPERIEUR AU NUMERO          ',/,&
+'@       DE L''ITERATION LAGRANGIENNE DE REDEMARRAGE ', I10    ,/,&
+'@       IL VAUT ICI IDSTNT = ', I10                           ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de IDSTNT dans la subroutine USLAG1.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9066 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
+'@                                                            ',/,&
+'@    L''INDICATEUR DE CALCUL STATIONNAIRES DES STATISTIQUES  ',/,&
+'@       AUX FRONTIERES A UNE VALEUR NON PERMISE (LAGLEC_P).  ',/,&
+'@                                                            ',/,&
+'@    LORSQU''IL N''Y A PAS DE SUITE DE CALCUL SUR LES        ',/,&
+'@    STATISTIQUES AUX FRONTIERES (ISUIST = ',  I3, '),'       ,/,&
+'@    NSTBOR DOIT ETRE UN ENTIER SUPERIEUR AU NUMERO          ',/,&
+'@       DE L''ITERATION LAGRANGIENNE DE REDEMARRAGE ', I10    ,/,&
+'@       IL VAUT ICI NSTBOR = ', I10                           ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de NSTBOR dans la subroutine USLAG1.   ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9070 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
+'@                                                            ',/,&
+'@    Les indicateurs concernant la physique associee         ',/,&
+'@      aux particules sont modifies :                        ',/,&
+'@                                                            ',/,&
+'@              IPHYLA    ITPVAR    IDPVAR    IMPVAR          ',/,&
+'@  AMONT : ',4I10                                             ,/,&
+'@  ACTUEL: ',4I10                                             ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@    Il est conseille de verifier ces indicateurs dans       ',/,&
+'@      le sous-programme USLAG1.                             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9071 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
+'@                                                            ',/,&
+'@    Aucune selection de physique associee aux particules    ',/,&
+'@      n''est active. Les donnees amont sont perdues.        ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9072 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
+'@                                                            ',/,&
+'@    Une equation sur la temperature des particules est      ',/,&
+'@      enclenchee en cours de calcul.                        ',/,&
+'@    Initialisation par defaut :                             ',/,&
+'@       Temperature TPART = ', E14.5                          ,/,&
+'@       Chaleur massique CPPART = ', E14.5                    ,/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9073 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
+'@                                                            ',/,&
+'@    L''indicateur d''un calcul Lagrangien de grains         ',/,&
+'@      de charbon est enclenche (IPHYLA = 2).                ',/,&
+'@    Ce fichier suite ne correspond pas                      ',/,&
+'@      a un calcul Lagrangien de grains de charbon.          ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@    Verifier IPHYLA dans le sous-programme USLAG1.          ',/,&
+'@    Verifier le fichier suite utilise.                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9074 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
+'@                                                            ',/,&
+'@    Ce fichier suite correspond                             ',/,&
+'@      a un calcul Lagrangien de grains de charbon.          ',/,&
+'@    L''indicateur de physique actuel associee aux particules',/,&
+'@      a une valeur non permise dans le cadre d''une suite   ',/,&
+'@      d''un calcul Lagrangien de grains de charbon.         ',/,&
+'@                                                            ',/,&
+'@    Le calcul ne peut etre execute.                         ',/,&
+'@                                                            ',/,&
+'@    Verifier IPHYLA dans le sous-programme USLAG1.          ',/,&
+'@    Verifier le fichier suite utilise.                      ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
+ 9080 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A LA LECTURE DU FICHIER SUITE               ',/,&
+'@    =========     LAGRANGIEN ',A13                           ,/,&
+'@      DONNEES AMONT ET ACTUELLES DIFFERENTES                ',/,&
+'@                                                            ',/,&
+'@    L''indicateur du  nombre de variables supplementaires   ',/,&
+'@      utilisateur est modifie, ou n''a pas pu etre relu.    ',/,&
+'@                                                            ',/,&
+'@              NVLS                                          ',/,&
+'@    AMONT : ',I10   ,'      ACTUEL : ',I10                   ,/,&
+'@                                                            ',/,&
+'@    Si ACTUEL > AMONT, on initialise les ',I10   ,' 1eres   ',/,&
+'@      variables supplementaires actuelles avec celles       ',/,&
+'@      du fichier suite, les autres sont initialisees a zero.',/,&
+'@                                                            ',/,&
+'@    Si ACTUEL < AMONT, on initialise les ',I10   ,' 1eres   ',/,&
+'@      variables supplementaires actuelles avec les 1eres    ',/,&
+'@      du fichier suite, le reste des variables du fichier   ',/,&
+'@      suite sont perdues.                                   ',/,&
+'@                                                            ',/,&
+'@    Le calcul se poursuit...                                ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

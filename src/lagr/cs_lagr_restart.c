@@ -628,16 +628,16 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
   /* Read particles location and info */
   /*----------------------------------*/
 
+  _lagr_section_name(CS_LAGR_COORDS, -1, sec_name);
+
   const int particles_location_id
-    = cs_restart_read_particles_info(r, "particles", &n_particles);
+    = cs_restart_read_particles_info(r, sec_name, &n_particles);
 
   if (particles_location_id < 0)
     return retval;
 
   /* Read coordinates and get mesh location */
   /*-----------------------------------------*/
-
-  _lagr_section_name(CS_LAGR_COORDS, -1, sec_name);
 
   cs_lnum_t  *p_cell_num;
   cs_real_t  *p_coords;
@@ -654,12 +654,8 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
     p_set->n_particles = n_particles;
 
-    if (p_set->n_particles_max < p_set->n_particles_max)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Maximum number of particles (%lu) is lower than the local\n"
-                  "number of particles read from restart (%lu)."),
-                (unsigned long)(p_set->n_particles_max),
-                (unsigned long)(p_set->n_particles));
+    if (p_set->n_particles_max < p_set->n_particles)
+      cs_lagr_resize_particle_set(p_set->n_particles);
 
     _set_particle_values(p_set, CS_LAGR_COORDS, CS_REAL_TYPE,
                          3, -1, p_coords);
@@ -803,7 +799,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
           _set_particle_values(p_set,
                                attr,
                                datatype,
-                               1,
+                               stride,
                                -1,
                                vals);
 
