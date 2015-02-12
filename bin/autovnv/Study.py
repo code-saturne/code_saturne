@@ -312,7 +312,11 @@ class Case(object):
         for line in f.readlines():
             if sys.platform.startswith('win'):
                 if re.search(self.exe, line):
-                    run_cmd = string.join(line.split())
+                    #we suppress "\" if needed
+                    content = line.split()
+                    if re.search(r'^\\' + self.exe, line):
+                        content[0] = self.exe
+                    run_cmd = string.join(content)
             else:
                 if re.search(r'^\\' + self.exe, line):
                     run_cmd = string.join(line.split())
