@@ -2107,6 +2107,7 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
   }
 
 #if defined(HAVE_MPI)
+#if !defined(_WIN32)
   if (n_ranks > 1) {
 
     MPI_Datatype  MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
@@ -2132,6 +2133,7 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
     MPI_Type_free(&MPI_JOIN_VERTEX);
 
   }
+#endif
 #endif
 
 }

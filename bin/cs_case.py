@@ -1169,6 +1169,7 @@ echo "exit \$?" >> $localexec
             cs_exec_environment.write_prepend_path(s,
                                                    'PATH',
                                                    self.package.get_dir("libdir"))
+            s.write('set CS_ROOT_DIR=' + self.package.get_dir("exec_prefix") + '\n')
 
         # Add MPI directories to PATH if in nonstandard path
 
