@@ -220,7 +220,7 @@ class Case(object):
            f.close()
 
         # 4) Update the runcase script from the Repository
-        self.update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"))
+        self.update_runcase_path(os.path.join(self.__repo, subdir, "SCRIPTS"), None, xmlonly)
 
 
     def update_runcase_path(self, subdir, destdir=None, xmlonly=False):
