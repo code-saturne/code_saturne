@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-02-10 12:26+0100\n"
+"POT-Creation-Date: 2015-02-13 10:11+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4454,6 +4454,14 @@ msgstr ""
 "  ou visualisez le post traitement dédié aux erreurs."
 
 #, c-format
+msgid ""
+"\n"
+"In function %s,\n"
+"  %llu boundary faces (of %llu selected) were not matched to mesh\n"
+"  elements. Check your coordinate shift definitions."
+msgstr ""
+
+#, c-format
 msgid "    %d first and last elements:\n"
 msgstr "    %d premiers et derniers éléments :\n"
 
@@ -5052,6 +5060,18 @@ msgstr ""
 "Valeurs de clés définies par champ :\n"
 "------------------------------------\n"
 "\n"
+
+#, c-format
+msgid ""
+"Field gradient interpolation for field %s :\n"
+" not implemented for fields on location %s."
+msgstr ""
+
+#, c-format
+msgid ""
+"Field gradient interpolation for field %s of dimension %d:\n"
+" not implemented."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9173,12 +9193,6 @@ msgid ""
 msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
-
-#, c-format
-msgid ""
-"Maximum number of particles (%lu) is lower than the local\n"
-"number of particles read from restart (%lu)."
-msgstr ""
 
 msgid "Error reading main particle restart data."
 msgstr "Erreur à la lecture des données de reprise particulaires."
