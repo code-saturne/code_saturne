@@ -1,3 +1,11 @@
+2015-02-11  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Fixes in PLE locator for local (serial) mode.
+
+2015-01-02  Yvan Fournier <yvan.fournier@edf.fr>
+
+	* Fix for crash in some cases of PLE locator.
+
 2014-11-14  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* Update version to PLE 2.0.0 due to API change.

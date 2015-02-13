@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-02-03 10:34+0100\n"
+"POT-Creation-Date: 2015-02-13 10:08+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -2825,17 +2825,23 @@ msgid ""
 "   SCALAR: %s\n"
 "   ZONE SELECTION CRITERIA: \"%s\"\n"
 "------------------------------------------------------------\n"
-"   Volume       Divergence   Inj. Mass.   Suc. Mass.\n"
-"  %12.4e %12.4e %12.4e %12.4e\n"
+"   Unst. term   Inj. Mass.   Suc. Mass.\n"
+"  %12.4e %12.4e %12.4e\n"
 "------------------------------------------------------------\n"
-"   IB inlet     IB outlet    Inlet        Outlet\n"
-"  %12.4e %12.4e %12.4e %12.4e\n"
+"   IB inlet     IB outlet\n"
+"  %12.4e %12.4e\n"
 "------------------------------------------------------------\n"
-"   Sym.         Smooth W.    Rough W.     Coupled      Undef. BC\n"
-"  %12.4e %12.4e %12.4e %12.4e %12.4e\n"
+"   Inlet        Outlet\n"
+"  %12.4e %12.4e\n"
 "------------------------------------------------------------\n"
-"   Total\n"
-"  %12.4e\n"
+"   Sym.         Smooth W.    Rough W.\n"
+"  %12.4e %12.4e %12.4e\n"
+"------------------------------------------------------------\n"
+"   Coupled      Undef. BC\n"
+"  %12.4e %12.4e\n"
+"------------------------------------------------------------\n"
+"   Total        Instant. norm. total\n"
+"  %12.4e %12.4e\n"
 "------------------------------------------------------------\n"
 "\n"
 msgstr ""
@@ -3125,6 +3131,9 @@ msgstr ""
 "  nombre total limite de cellules grossières: %llu\n"
 "  nombre minimum de rangs actifs:             %d\n"
 
+msgid "invalid value of isym"
+msgstr ""
+
 msgid "native"
 msgstr "native"
 
@@ -3266,9 +3275,6 @@ msgstr ""
 "Test de variantes de structures et opérations matricielles (diff/"
 "référence) :\n"
 "---------------------------------------------------------------------------\n"
-
-msgid "invalid value of isym"
-msgstr ""
 
 #, c-format
 msgid ""
@@ -4448,6 +4454,14 @@ msgstr ""
 "  ou visualisez le post traitement dédié aux erreurs."
 
 #, c-format
+msgid ""
+"\n"
+"In function %s,\n"
+"  %llu boundary faces (of %llu selected) were not matched to mesh\n"
+"  elements. Check your coordinate shift definitions."
+msgstr ""
+
+#, c-format
 msgid "    %d first and last elements:\n"
 msgstr "    %d premiers et derniers éléments :\n"
 
@@ -5046,6 +5060,18 @@ msgstr ""
 "Valeurs de clés définies par champ :\n"
 "------------------------------------\n"
 "\n"
+
+#, c-format
+msgid ""
+"Field gradient interpolation for field %s :\n"
+" not implemented for fields on location %s."
+msgstr ""
+
+#, c-format
+msgid ""
+"Field gradient interpolation for field %s of dimension %d:\n"
+" not implemented."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -8719,110 +8745,11 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Invalid xpath: %s\n"
-msgstr ""
-
-#, c-format
 msgid "Error: can not interpret expression: %s\n"
 msgstr ""
 
 #, c-format
 msgid "Error: can not find the required symbol: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not use evaluate property: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid xpath: %s\n"
-" component not found"
-msgstr ""
-
-#, c-format
-msgid ""
-"The group or attribute \"%s\" in the selection\n"
-"criteria:\n"
-"\"%s\"\n"
-" does not correspond to any cell.\n"
-msgstr ""
-"Le groupe ou attribut \"%s\" figurant dans le\n"
-"critère de sélection:\n"
-"\"%s\"\n"
-" ne correspond à aucune cellule.\n"
-
-#, c-format
-msgid ""
-"Invalid xpath: %s\n"
-" name not found"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid markup name: %s\n"
-" label not found"
-msgstr ""
-
-#, c-format
-msgid ""
-"Invalid attribute value: %s \n"
-"Xpath: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid turbulence model: %s.\n"
-msgstr ""
-
-msgid "mass molar value is zero or not found in the xml file.\n"
-msgstr ""
-
-msgid "Density value is zero or not found in the xml file.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not interpret expression: %s\n"
-" %i"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-"%s\n"
-"%s\n"
-"%s\n"
-msgstr ""
-
-#, c-format
-msgid "Unable to open the file: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not find the required symbol: %s\n"
-" %s\n"
-" %s\n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not find the required symbol: %s %s\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid thermal model: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"Time elapsed defining values using MEI: %12.5f\n"
 msgstr ""
 
 #, c-format
@@ -8849,6 +8776,16 @@ msgid ""
 "@                                                            \n"
 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
 "@                                                            \n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not interpret expression: %s\n"
+" %i"
+msgstr ""
+
+#, c-format
+msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
 #, c-format
@@ -8916,6 +8853,95 @@ msgstr ""
 "critère de sélection:\n"
 "\"%s\"\n"
 " ne correspond à aucune face de bord.\n"
+
+#, c-format
+msgid "Invalid xpath: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Error: can not use evaluate property: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid xpath: %s\n"
+" component not found"
+msgstr ""
+
+#, c-format
+msgid ""
+"The group or attribute \"%s\" in the selection\n"
+"criteria:\n"
+"\"%s\"\n"
+" does not correspond to any cell.\n"
+msgstr ""
+"Le groupe ou attribut \"%s\" figurant dans le\n"
+"critère de sélection:\n"
+"\"%s\"\n"
+" ne correspond à aucune cellule.\n"
+
+#, c-format
+msgid ""
+"Invalid xpath: %s\n"
+" name not found"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid markup name: %s\n"
+" label not found"
+msgstr ""
+
+#, c-format
+msgid ""
+"Invalid attribute value: %s \n"
+"Xpath: %s\n"
+msgstr ""
+
+msgid "mass molar value is zero or not found in the xml file.\n"
+msgstr ""
+
+msgid "Density value is zero or not found in the xml file.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not find the required symbol: %s\n"
+" %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not find the required symbol: %s\n"
+"%s\n"
+"%s\n"
+"%s\n"
+msgstr ""
+
+#, c-format
+msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not find the required symbol: %s\n"
+" %s\n"
+" %s\n"
+msgstr ""
+
+#, c-format
+msgid "Error: can not find the required symbol: %s %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid thermal model: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Time elapsed defining values using MEI: %12.5f\n"
+msgstr ""
 
 #, c-format
 msgid "Number of periodicities (%d) and modes (%d) do not match."
@@ -9127,12 +9153,6 @@ msgid ""
 msgstr ""
 "L'attribut %s a %d composantes\n"
 "mais la composante %d est demandée."
-
-#, c-format
-msgid ""
-"Maximum number of particles (%lu) is lower than the local\n"
-"number of particles read from restart (%lu)."
-msgstr ""
 
 msgid "Error reading main particle restart data."
 msgstr "Erreur à la lecture des données de reprise particulaires."
@@ -9927,6 +9947,83 @@ msgstr ""
 "  Définition de maillage incohérente. Ne peut pas construire les arêtes.\n"
 "  La Face %d contient deux fois le sommet %d.\n"
 
+msgid "Bad Cell Ortho Norm"
+msgstr ""
+
+msgid "Bad Cell Offset"
+msgstr ""
+
+msgid "Bad Cell LSQ Gradient"
+msgstr ""
+
+msgid "Bad Cell Volume Ratio"
+msgstr ""
+
+msgid "Bad Cell Association"
+msgstr ""
+
+msgid "Bad Cell by User"
+msgstr ""
+
+msgid ""
+"\n"
+"  Criterion 1: Orthogonality:\n"
+msgstr ""
+"\n"
+"  Critère 1 : orthogonalité :\n"
+
+#, c-format
+msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
+msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
+
+msgid ""
+"\n"
+"  Criterion 2: Offset:\n"
+msgstr ""
+"\n"
+"  Critère 2 : décentrement :\n"
+
+msgid ""
+"\n"
+"  Criterion 3: Least-Squares Gradient Quality:\n"
+msgstr ""
+"\n"
+"  Critère 3 : qualité du gradient moindres-carrés :\n"
+
+msgid ""
+"\n"
+"  Criterion 4: Cells Volume Ratio:\n"
+msgstr ""
+"\n"
+"  Critère 4 : ratio des volumes de cellules :\n"
+
+msgid ""
+"\n"
+"  Criterion 5: Guilt by Association:\n"
+msgstr ""
+"\n"
+"  Critère 5 : culpabilité par association :\n"
+
+msgid ""
+"\n"
+" Warning:\n"
+" --------\n"
+"    Mesh quality issue has been detected\n"
+"\n"
+"    The mesh should be re-considered using the listed criteria.\n"
+"\n"
+"    The calculation will run but the solution quality may be degraded...\n"
+msgstr ""
+"\n"
+" Attention :\n"
+" ---------\n"
+"    Un défaut de qualité de maillage a été détecté\n"
+"\n"
+"    Le maillage devrait être revu en fonction des critères indiqués.\n"
+"\n"
+"    Le calcul sera effectué mais la qualité de la solution peut être "
+"dégradée...\n"
+
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
 
@@ -10221,83 +10318,6 @@ msgid ""
 "  interior faces   %10d  %12.5f\n"
 "  boundary faces   %10d  %12.5f\n"
 msgstr ""
-
-msgid "Bad Cell Ortho Norm"
-msgstr ""
-
-msgid "Bad Cell Offset"
-msgstr ""
-
-msgid "Bad Cell LSQ Gradient"
-msgstr ""
-
-msgid "Bad Cell Volume Ratio"
-msgstr ""
-
-msgid "Bad Cell Association"
-msgstr ""
-
-msgid "Bad Cell by User"
-msgstr ""
-
-msgid ""
-"\n"
-"  Criterion 1: Orthogonality:\n"
-msgstr ""
-"\n"
-"  Critère 1 : orthogonalité :\n"
-
-#, c-format
-msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
-msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
-
-msgid ""
-"\n"
-"  Criterion 2: Offset:\n"
-msgstr ""
-"\n"
-"  Critère 2 : décentrement :\n"
-
-msgid ""
-"\n"
-"  Criterion 3: Least-Squares Gradient Quality:\n"
-msgstr ""
-"\n"
-"  Critère 3 : qualité du gradient moindres-carrés :\n"
-
-msgid ""
-"\n"
-"  Criterion 4: Cells Volume Ratio:\n"
-msgstr ""
-"\n"
-"  Critère 4 : ratio des volumes de cellules :\n"
-
-msgid ""
-"\n"
-"  Criterion 5: Guilt by Association:\n"
-msgstr ""
-"\n"
-"  Critère 5 : culpabilité par association :\n"
-
-msgid ""
-"\n"
-" Warning:\n"
-" --------\n"
-"    Mesh quality issue has been detected\n"
-"\n"
-"    The mesh should be re-considered using the listed criteria.\n"
-"\n"
-"    The calculation will run but the solution quality may be degraded...\n"
-msgstr ""
-"\n"
-" Attention :\n"
-" ---------\n"
-"    Un défaut de qualité de maillage a été détecté\n"
-"\n"
-"    Le maillage devrait être revu en fonction des critères indiqués.\n"
-"\n"
-"    Le calcul sera effectué mais la qualité de la solution peut être "
-"dégradée...\n"
 
 msgid "    Checking the face -> cells connectivity coherency\n"
 msgstr "    Test de cohérence de la connectivité faces -> cellules\n"
@@ -11127,10 +11147,3 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
-
-#~ msgid ""
-#~ "Value type <%d> given for a restart file section\n"
-#~ "is invalid using the Fortran API."
-#~ msgstr ""
-#~ "Le type de valeur <%d> indiqué pour une rubrique de\n"
-#~ "fichier de reprise de calcul est invalide pour l'interface Fortran."
