@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
-mainpage.h images/icon.png examples/bft_error_example.c doxypypy.py
+DoxygenLayout.xml doxypypy.py mainpage.h images examples 
 
 # Overload doxygen executable
 
