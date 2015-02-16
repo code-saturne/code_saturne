@@ -172,9 +172,9 @@ d2s3 = 2.d0/3.d0
 ! For each subset:
 ! - use selection criteria to filter boundary faces of a given subset
 ! - use boundary_conditions_map_set and boundary_conditions_mapped_set
-    to apply a profile from inside the domain to the inlet, renormalizing
-    for some variables.
-
+!   to apply a profile from inside the domain to the inlet, renormalizing
+!   for some variables.
+!
 ! The impled feedback loop allows progressively reaching a state similar
 ! to that of a periodic channel at the inlet.
 !===============================================================================
@@ -336,11 +336,11 @@ if (ntcabs.gt.1) then
   enddo
 
 endif
-!< [example_1_map_free]
+!< [example_1_map_apply]
 
 ! Destroy locator at end
 
-!< [example_1_map_clean]
+!< [example_1_map_free]
 if (ntcabs.eq.ntmabs) then
   call locator_destroy(inlet_l)
 endif

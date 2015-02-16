@@ -37,11 +37,11 @@
   Here is the list of examples dedicated to different physics:
 
   - \subpage base_examples
-  - \subpage channel_inlet
+  - \subpage channel_inlet_mapped
+  - \subpage channel_inlet_auto
   - \subpage advanced_examples
   - \subpage atmospheric_examples
   - \subpage compressible_examples
-  - \subpage cooling_towers_examples
   - \subpage electric_arcs_examples
   - \subpage electric_arcs_ieljou_3_or_4_examples
   - \subpage fuel_examples
@@ -173,20 +173,112 @@
 // __________________________________________________________________________________
 /*!
  
-  \page channel_inlet Infinite channel inlet
+  \page channel_inlet_mapped Infinite channel inlet
 
-  \section channel_inlet_loc_var_bc Local variables to be added
+  A method of defining an inlet condition which converges towards an infinite
+  channel profile is based simply on feedback from values computed downstream
+  from the inlet.
+
+  Here, we define an inlet boundary condition for a very long channel or duct
+  with a section matching the boundary faces of group 'INLET'.
+
+  \section channel_inlet_mapped_loc_var_bc Local variables to be added
+
+  The following local variables need to be defined for the examples
+  in this section:
+
+  \snippet cs_user_boundary_conditions-mapped_inlet.f90 loc_var_dec
+
+  Note that the \ref inlet_l pointer has the \c save attribute, as the
+  matching structure usually needs to be built only once, then reused at
+  each time step.
+
+  \section channel_inlet_mapped_init_bc Initialization and finalization
+
+  Initialization and finalization is similar to that of the base examples,
+  with the addition of the mapping object, described in a specific section
+  hereafter
+
+  \section channel_inlet_mapped_example_1_base Base definition
+
+  \warning We assume other boundary conditions are defined before this one
+  (ideally, using the GUI).
+
+  The base definition given here ensures initialization of a (flat) inlet profile
+  with the required mean velocity.
+
+  \note We may skip the addition of the following block in the user
+  subroutine if we define an equivalent inlet condition using the GUI,
+  which will ensure the appropriate initialization before entering the
+  user subroutine.
+  
+  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_base
+
+  \section channel_inlet_mapped_example_1_map_init Mapping definition
+
+  To define the appropriate mapping object, the \ref boundary_conditions_map
+  function is used. In this example, coordinates of the selected inlet face
+  are shifted by a constant distance (5.95 meters along the \emp x axis),
+  and mapped to the corresponding mesh cells. Here, all cells are selected
+  as point location candidates, but optionally, a restricted list of cells
+  may be provided, which may accelerate location (or ensure it is done on a
+  selected subset). In most cases, as in this example, a constant coordinate
+  shift is used for all inlet points, but it is possible to define a
+  specific shift for each face (defining a \stride argument of 1 instead of 0
+  and \c coord_shift(:,ifac) instead of \c coord_shift(:,1)).
+
+  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_init
+
+  In general, when defining a pseudo-periodic boundary condition, it is assumed
+  that the mesh is not moving, so the mapping may be defined once and for
+  all. Hence the test on \ref ntcabs and \ref ntpabs and the \c save attribute
+  for the \c inlet_1 pointer.
+
+  \section channel_inlet_mapped_example_1_map_apply Applying the map
+
+  At all time steps after the first (possibly even the first if the flow
+  at the mapping locations is initialized to nonzero values), the values at
+  points mapped to inlet face centers are applied to the \c rcodcl(ifac,1)
+  values of the corresponding faces. Optionally, a normalization by be applied,
+  ensuring the mean values initially defined are preserved. Normalization
+  is recommended for the velocity, and possibly scalars, but not for
+  turbulent quantities, which should adapt to the velocity.
+
+  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_apply
+
+  \section channel_inlet_mapped_example_1_map_clean Finalization
+
+  At the end of the computation, it is good practice to free the mapping
+  structure:
+
+  \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_free
+
+*/
+// __________________________________________________________________________________
+/*!
+ 
+  \page channel_inlet_auto Infinite channel inlet with near-inlet feedback
+
+  A second method of defining an inlet condition which converges towards
+  an infinite channel profile is based simply on feedback from values
+  computed at inlet cell centers (combining the inlet boundary conditions
+  and the effect of wall friction on the inlet walls). It assumes the mesh
+  is very regular and orthogonal, at least on the first two inlet cell layers
+  (using a gradient correction in the case of a less regular mesh might work,
+  but has never been tested.
+
+  \section channel_inlet_auto_loc_var_bc Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
 
   \snippet cs_user_boundary_conditions-auto_inlet_profile.f90 loc_var_dec
 
-  \section channel_inlet_init_bc Initialization and finalization
+  \section channel_inlet_auto_init_bc Initialization and finalization
 
   Initialization and finalization is similar to that of the base examples
 
-  \section channel_inlet_example_1_bc Body
+  \section channel_inlet_auto_example_1_bc Body
 
   Here, we define an inlet boundary condition for a very long channel or duct
   with a section matching the boundary faces of group 'INLET'.
@@ -436,38 +528,6 @@ TODO : Verifier la traduction
   Symmetry example
 
   \snippet cs_user_boundary_conditions-compressible.f90 example_7
-
-*/
-// __________________________________________________________________________________
-/*!
- 
-  \page cooling_towers_examples Cooling towers examples
-
-  \section advanced_loc_var_cle Local variables to be added
-
-  \snippet cs_user_boundary_conditions-cooling_towers.f90 loc_var_dec
-
-  \section base_init_cte Initialization and finalization
-
-  Initialization and finalization is similar to that of the base examples
-
-  \section cooling_towers_ex_1 Example 1
-
-  Assign a free outlet for faces of color/group 2
-
-  \snippet cs_user_boundary_conditions-cooling_towers.f90 example_1
-
-  \section cooling_towers_ex_2 Example 2
-
-  Assign a wall condition for faces of color/group 4
-
-  \snippet cs_user_boundary_conditions-cooling_towers.f90 example_2
-
-  \section cooling_towers_ex_3 Example 3
-
-  Assign a symmetry for faces of color/group 5
-
-  \snippet cs_user_boundary_conditions-cooling_towers.f90 example_3
 
 */
 // __________________________________________________________________________________
