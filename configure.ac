@@ -328,7 +328,7 @@ LT_INIT([disable-static, win32-dll])
 cs_special_user_link=
 if test "x$enable_shared" = "xno" ; then
   case "$host_os" in
-    linux* | *bsd* | solaris2.* | cnk* )
+    linux* | *bsd* | solaris2.* | cnk* | mingw32 | cygwin* )
       if test "x$auto_flags" = "xyes" ; then
         LDFLAGS="${LDFLAGS} -Wl,--allow-multiple-definition"
       fi

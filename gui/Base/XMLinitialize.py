@@ -684,6 +684,14 @@ class XMLinit(Variables):
                 content = content.replace(node['label'], node['name'])
                 nfor.xmlSetTextNode(content)
 
+        for node in XMLBoundaryNode.xmlGetNodeList('turbulence'):
+            if node["choice"] == "formula":
+                nf = node.xmlGetNode('formula')
+                if nf:
+                    content = nf.xmlGetTextNode()
+                    content = content.replace("eps =", "epsilon =")
+                    nf.xmlSetTextNode(content)
+
         # TODO update formula BC for turbulence
         #for node in XMLBoundaryNode.xmlGetNodeList('turbulence'):
         #    if node["choice"] = "formula":
@@ -868,7 +876,10 @@ class XMLinit(Variables):
         nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
         if nth:
             node = nth.xmlGetNode('property', name="input_thermal_flux")
-            if node:
+            node2 = nth.xmlGetNode('property', name="thermal_flux")
+            if node2 and node:
+                node.xmlRemoveNode()
+            elif node:
                 node['name'] = "thermal_flux"
 
 
@@ -919,6 +930,7 @@ class XMLinit(Variables):
                     for n in self.case.xmlGetNodeList('variable', 'name', 'label'):
                         content = content.replace(n['label'], n['name'])
                     node.xmlSetTextNode(content)
+
         for node in self.case.xmlGetNodeList('variable'):
             variance = node.xmlGetString('variance')
             if variance:

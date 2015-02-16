@@ -176,7 +176,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                     name = 'total_energy'
                 else:
                     name = 'temperature'
-                if node['name'] != name:
+                if node['name'] != name or name == 'temperature':
                     self.deleteThermalScalar(node['name'])
             self._setNewThermalScalar(thermal_scalar)
 
