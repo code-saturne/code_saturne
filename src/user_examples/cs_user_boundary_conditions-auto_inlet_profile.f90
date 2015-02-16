@@ -52,6 +52,8 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in]     itrifb        indirection for boundary faces ordering
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
@@ -100,11 +102,13 @@ use cpincl
 use ppincl
 use ppcpfu
 use atincl
+use atsoil
 use ctincl
 use elincl
 use cs_fuel_incl
 use mesh
 use field
+use turbomachinery
 
 !===============================================================================
 
