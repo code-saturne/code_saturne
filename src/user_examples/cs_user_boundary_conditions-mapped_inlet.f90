@@ -336,11 +336,11 @@ if (ntcabs.gt.1) then
   enddo
 
 endif
-!< [example_1_map_free]
+!< [example_1_map_apply]
 
 ! Destroy locator at end
 
-!< [example_1_map_clean]
+!< [example_1_map_free]
 if (ntcabs.eq.ntmabs) then
   call locator_destroy(inlet_l)
 endif
