@@ -357,7 +357,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         if DefineUserScalarsModel(self.__case).getScalarNameList() or\
            DefineUserScalarsModel(self.__case).getMeteoScalarsNameList() or\
-           DefineUserScalarsModel(self.__case).getThermalScalarNameList():
+           DefineUserScalarsModel(self.__case).getThermalScalarName():
             self.__setBoundary(boundary)
             self.show()
         else:
