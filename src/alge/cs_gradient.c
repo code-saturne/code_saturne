@@ -4004,8 +4004,6 @@ void CS_PROCF (cgdcel, CGDCEL)
        cs_real_3_t       grad[]       /* <-> gradient                         */
 )
 {
-  cs_lnum_t ii;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
 

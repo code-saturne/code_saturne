@@ -301,7 +301,7 @@ do ilelt = 1, nlelt
 !      - Oxidizer's Temperature in K
   timpat(izone) = 800.d0  + tkelvi
 
-!        Coal inlet, initialisation
+!        Coal inlet, initialization
   do icha = 1, ncharm
     qimpcp(izone,icha) = zero
     timpcp(izone,icha) = zero

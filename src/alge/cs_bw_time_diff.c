@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_time_operator.c
+/*! \file  cs_bw_time_diff.c
 
 */
 

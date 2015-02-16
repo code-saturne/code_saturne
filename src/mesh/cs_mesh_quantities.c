@@ -94,7 +94,7 @@ enum {X, Y, Z};
 
 cs_mesh_quantities_t  *cs_glob_mesh_quantities = NULL;
 
-/* Choice of the algorithm for computing gravity centres of the cells */
+/* Choice of the algorithm for computing gravity centers of the cells */
 
 static int cs_glob_mesh_quantities_cell_cen = 0;
 
@@ -782,7 +782,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t      *m,
  *
  *
  *                          Pi+1
- *              *---------*                   B  : barycentre of the polygon
+ *              *---------*                   B  : barycenter of the polygon
  *             / .       . \
  *            /   .     .   \                 Pi : vertices of the polygon
  *           /     .   .     \
@@ -806,7 +806,7 @@ _compute_face_normal(cs_lnum_t         dim,
 {
   cs_lnum_t  i, face_id, tri_id, vtx_id, start_id, end_id, shift;
   cs_lnum_t  n_face_vertices, n_max_face_vertices;
-  _vtx_coords_t  this_face_normal, this_face_barycentre;
+  _vtx_coords_t  this_face_normal, this_face_barycenter;
   _vtx_coords_t  vect1, vect2;
 
   _vtx_coords_t  *face_vtx_coord = NULL;
@@ -867,19 +867,19 @@ _compute_face_normal(cs_lnum_t         dim,
     for (i = 0; i < 3; i++)
       face_vtx_coord[n_face_vertices][i] = face_vtx_coord[0][i];
 
-    /* Compute the barycentre of the face */
+    /* Compute the barycenter of the face */
 
     for (i = 0; i < 3; i++) {
 
-      this_face_barycentre[i] = 0.0;
+      this_face_barycenter[i] = 0.0;
       for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
-        this_face_barycentre[i] += face_vtx_coord[vtx_id][i];
-      this_face_barycentre[i] /= n_face_vertices;
+        this_face_barycenter[i] += face_vtx_coord[vtx_id][i];
+      this_face_barycenter[i] /= n_face_vertices;
 
     }
 
     /* Loop on the triangles of the face (defined by an edge of the face
-       and its barycentre) */
+       and its barycenter) */
 
     for (tri_id = 0 ; tri_id < n_face_vertices ; tri_id++) {
 
@@ -891,8 +891,8 @@ _compute_face_normal(cs_lnum_t         dim,
       /*----------------------------------------------------------------------*/
 
       for (i = 0; i < 3; i++) {
-        vect1[i] = face_vtx_coord[tri_id    ][i] - this_face_barycentre[i];
-        vect2[i] = face_vtx_coord[tri_id + 1][i] - this_face_barycentre[i];
+        vect1[i] = face_vtx_coord[tri_id    ][i] - this_face_barycenter[i];
+        vect2[i] = face_vtx_coord[tri_id + 1][i] - this_face_barycenter[i];
       }
 
       _CS_CROSS_PRODUCT(triangle_normal[tri_id], vect1, vect2);
@@ -935,12 +935,12 @@ _compute_face_normal(cs_lnum_t         dim,
  *   vtx_coord       <--  vertex coordinates
  *   face_vtx_idx    <--  "face -> vertices" connectivity index
  *   face_vtx_lst    <--  "face -> vertices" connectivity list
- *   face_cog        -->  coordinates of the centre of gravity of the faces
+ *   face_cog        -->  coordinates of the center of gravity of the faces
  *   face_norm       -->  face surface normals
  *   face_surf       -->  face surfaces (optional), or NULL
  *
  *                          Pi+1
- *              *---------*                   B  : barycentre of the polygon
+ *              *---------*                   B  : barycenter of the polygon
  *             / .       . \
  *            /   .     .   \                 Pi : vertices of the polygon
  *           /     .   .     \
@@ -970,8 +970,8 @@ _compute_face_quantities(const cs_lnum_t   dim,
   cs_lnum_t  lower_coord_id;
   cs_real_t  face_surface, tri_surface;
   cs_real_t  face_vol_part, tri_vol_part, rectif_cog;
-  _vtx_coords_t  face_barycentre, face_normal;
-  _vtx_coords_t  face_centre, tri_centre;
+  _vtx_coords_t  face_barycenter, face_normal;
+  _vtx_coords_t  face_center, tri_center;
   _vtx_coords_t  vect1, vect2;
 
   _vtx_coords_t  *face_vtx_coord = NULL;
@@ -1036,7 +1036,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
       face_vtx_coord[n_face_vertices][i] = face_vtx_coord[0][i];
 
     /*------------------------------------------------------------------------
-     * Compute barycentre (B) coordinates for the polygon (P)
+     * Compute barycenter (B) coordinates for the polygon (P)
      *
      *  -->    1   n-1  -->
      *  OB  =  -  Somme OPi
@@ -1045,18 +1045,18 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
     for (i = X; i < 3; i++) {
 
-      face_barycentre[i] = 0.0;
+      face_barycenter[i] = 0.0;
 
       for (vtx_id = 0; vtx_id < n_face_vertices; vtx_id++)
-        face_barycentre[i] += face_vtx_coord[vtx_id][i];
+        face_barycenter[i] += face_vtx_coord[vtx_id][i];
 
-      face_barycentre[i] /= n_face_vertices;
+      face_barycenter[i] /= n_face_vertices;
 
     }
 
     for (i = X; i < 3; i++) {
       face_normal[i] = 0.0;
-      face_centre[i] = 0.0;
+      face_center[i] = 0.0;
     }
 
     /* First loop on triangles of the face (computation of surface normals)   */
@@ -1072,8 +1072,8 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *----------------------------------------------------------------------*/
 
       for (i = X; i < 3; i++) {
-        vect1[i] = face_vtx_coord[tri_id    ][i] - face_barycentre[i];
-        vect2[i] = face_vtx_coord[tri_id + 1][i] - face_barycentre[i];
+        vect1[i] = face_vtx_coord[tri_id    ][i] - face_barycenter[i];
+        vect2[i] = face_vtx_coord[tri_id + 1][i] - face_barycenter[i];
       }
 
       _CS_CROSS_PRODUCT(triangle_norm[tri_id], vect1, vect2);
@@ -1095,13 +1095,13 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
     } /* End of loop on triangles of the face */
 
-    /* Second loop on triangles of the face (for the barycentre)        */
+    /* Second loop on triangles of the face (for the barycenter)        */
     /*==================================================================*/
 
     for (tri_id = 0; tri_id < n_face_vertices; tri_id++) {
 
       /*----------------------------------------------------------------------
-       * Compation of the gravity centre G(Ti) of each triangle (Ti)
+       * Compation of the gravity center G(Ti) of each triangle (Ti)
        *
        *  -->            -->  -->   -->
        *  OG(Ti) = 1/3 ( OB + OPi + OPi+1 )
@@ -1114,13 +1114,13 @@ _compute_face_quantities(const cs_lnum_t   dim,
 
       for (i = X; i < 3; i++) {
 
-        tri_centre[i] = face_barycentre[i]
+        tri_center[i] = face_barycenter[i]
                       + face_vtx_coord[tri_id    ][i]
                       + face_vtx_coord[tri_id + 1][i];
 
-        tri_centre[i] /= 3.0;
+        tri_center[i] /= 3.0;
 
-        tri_vol_part += (tri_centre[i] * triangle_norm[tri_id][i]);
+        tri_vol_part += (tri_center[i] * triangle_norm[tri_id][i]);
 
       }
 
@@ -1145,12 +1145,12 @@ _compute_face_quantities(const cs_lnum_t   dim,
        *----------------------------------------------------------------------*/
 
       for (i = X; i < 3; i++)
-        face_centre[i] += tri_surface * tri_centre[i];
+        face_center[i] += tri_surface * tri_center[i];
 
     } /* End of second loop  on triangles of the face */
 
     /*------------------------------------------------------------------------
-     * Compute the centre of gravity G(P) of the polygon P :
+     * Compute the center of gravity G(P) of the polygon P :
      *
      *           n-1
      *           Sum  Surf(Ti) G(Ti)
@@ -1169,19 +1169,19 @@ _compute_face_quantities(const cs_lnum_t   dim,
     face_vol_part = 0.0;
 
     for (i = X; i < 3; i++) {
-      face_centre[i] = face_centre[i] / face_surface;
-      face_vol_part += (face_centre[i] * face_normal[i]);
+      face_center[i] = face_center[i] / face_surface;
+      face_vol_part += (face_center[i] * face_normal[i]);
     }
 
     rectif_cog = (tri_vol_part - face_vol_part) / (face_surface * face_surface);
 
     for (i = X; i < 3; i++)
-      face_centre[i] += rectif_cog * face_normal[i];
+      face_center[i] += rectif_cog * face_normal[i];
 
     /* Store result in appropriate structure */
 
     for (i = X; i < 3; i++) {
-      face_cog[fac_id * 3 + i] = face_centre[i];
+      face_cog[fac_id * 3 + i] = face_center[i];
       face_norm[fac_id * 3 + i] = face_normal[i];
     }
 
@@ -1213,7 +1213,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
 }
 
 /*----------------------------------------------------------------------------*
- * Compute centre of gravity of cells C from their vertices S(i) where
+ * Compute center of gravity of cells C from their vertices S(i) where
  * i=0, n-1
  *
  * -->      1    n-1   -->
@@ -1222,7 +1222,7 @@ _compute_face_quantities(const cs_lnum_t   dim,
  *
  * parameters:
  *   mesh          <--  pointer to mesh structure
- *   cell_cen      -->  centre of gravity of cells
+ *   cell_cen      -->  center of gravity of cells
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1245,7 +1245,7 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
 
   if (mesh->dim != 3)
     bft_error(__FILE__, __LINE__,0,
-              _("Cell centre computation is only implemented in 3D."));
+              _("Cell center computation is only implemented in 3D."));
 
   assert(cell_cen != NULL);
 
@@ -1326,7 +1326,7 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------*
- * Compute centre of gravity of cells C from their faces F(i) where i=0, n-1
+ * Compute center of gravity of cells C from their faces F(i) where i=0, n-1
  *
  *           n-1
  *           Sum  Surf(Fi) G(Fi)
@@ -1339,10 +1339,10 @@ _compute_cell_cen_vertex(const cs_mesh_t  *mesh,
  * parameters:
  *   mesh           <--  pointer to mesh structure
  *   i_face_norm    <--  surface normal of internal faces
- *   i_face_cog     <--  centre of gravity of internal faces
+ *   i_face_cog     <--  center of gravity of internal faces
  *   b_face_norm    <--  surface normal of border faces
- *   b_face_cog     <--  centre of gravity of border faces
- *   cell_cen       -->  centre of gravity of cells
+ *   b_face_cog     <--  center of gravity of border faces
+ *   cell_cen       -->  center of gravity of cells
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1380,7 +1380,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
 
   if (dim != 3)
     bft_error(__FILE__, __LINE__,0,
-              _("Cell centre computation is only implemented in 3D."));
+              _("Cell center computation is only implemented in 3D."));
 
   assert(cell_cen != NULL);
 
@@ -1459,7 +1459,7 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
   } /* End of loop on border faces */
 
   /* ------------------------------------------------------------------
-   * Loop on cells to finalize the computation of centre of gravity
+   * Loop on cells to finalize the computation of center of gravity
    * ------------------------------------------------------------------*/
 
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -1486,9 +1486,9 @@ _compute_cell_cen_face(const cs_mesh_t  *mesh,
  * parameters:
  *   mesh           <--  pointer to mesh structure
  *   i_face_norm    <--  surface normal of internal faces
- *   i_face_cog     <--  centre of gravity of internal faces
+ *   i_face_cog     <--  center of gravity of internal faces
  *   b_face_norm    <--  surface normal of border faces
- *   b_face_cog     <--  centre of gravity of border faces
+ *   b_face_cog     <--  center of gravity of border faces
  *   cell_vol       -->  cells volume
  *   min_vol        -->  minimum control volume
  *   max_vol        -->  maximum control volume
@@ -1576,8 +1576,8 @@ _compute_cell_volume(const cs_mesh_t  *mesh,
  *   b_face_cells   <--  border "faces -> cells" connectivity
  *   i_face_norm    <--  surface normal of interior faces
  *   b_face_norm    <--  surface normal of border faces
- *   i_face_cog     <--  centre of gravity of interior faces
- *   b_face_cog     <--  centre of gravity of border faces
+ *   i_face_cog     <--  center of gravity of interior faces
+ *   b_face_cog     <--  center of gravity of border faces
  *   i_face_surf    <--  interior faces surface
  *   b_face_surf    <--  border faces surface
  *   cell_cen       <--  cell center
@@ -1625,13 +1625,13 @@ _compute_face_distances(int                dim,
     cell_id1 = i_face_cells[face_id][0];
     cell_id2 = i_face_cells[face_id][1];
 
-    /* Distance between the face centre of gravity
-       and the neighbor cell centre */
+    /* Distance between the face center of gravity
+       and the neighbor cell center */
     xvn = cell_cen[cell_id2*dim]     - i_face_cog[face_id*dim];
     yvn = cell_cen[cell_id2*dim + 1] - i_face_cog[face_id*dim + 1];
     zvn = cell_cen[cell_id2*dim + 2] - i_face_cog[face_id*dim + 2];
 
-    /* Distance between the neighbor cell centres */
+    /* Distance between the neighbor cell centers */
     xvv = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
     yvv = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
     zvv = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
@@ -1671,8 +1671,8 @@ _compute_face_distances(int                dim,
 
     cell_id = b_face_cells[face_id];
 
-    /* Distance between the face centre of gravity
-       and the neighbor cell centre */
+    /* Distance between the face center of gravity
+       and the neighbor cell center */
     xvn = b_face_cog[face_id*dim]     - cell_cen[cell_id*dim];
     yvn = b_face_cog[face_id*dim + 1] - cell_cen[cell_id*dim + 1];
     zvn = b_face_cog[face_id*dim + 2] - cell_cen[cell_id*dim + 2];
@@ -1713,8 +1713,8 @@ _compute_face_distances(int                dim,
  *   b_face_cells   <--  border "faces -> cells" connectivity
  *   i_face_norm    <--  surface normal of interior faces
  *   b_face_norm    <--  surface normal of border faces
- *   i_face_cog     <--  centre of gravity of interior faces
- *   b_face_cog     <--  centre of gravity of border faces
+ *   i_face_cog     <--  center of gravity of interior faces
+ *   b_face_cog     <--  center of gravity of border faces
  *   i_face_surf    <--  interior faces surface
  *   b_face_surf    <--  border faces surface
  *   cell_cen       <--  cell center
@@ -1844,7 +1844,7 @@ _compute_face_vectors(int                dim,
  *   n_i_faces      <--  number of interior faces
  *   i_face_cells   <--  interior "faces -> cells" connectivity
  *   i_face_norm    <--  surface normal of interior faces
- *   i_face_cog     <--  centre of gravity of interior faces
+ *   i_face_cog     <--  center of gravity of interior faces
  *   i_face_surf    <--  interior faces surface
  *   cell_cen       <--  cell center
  *   diipf          -->  vector ii' for interior faces
@@ -2001,7 +2001,7 @@ cs_mesh_quantities_cell_cen_choice(const int algo_choice)
       (__FILE__, __LINE__,0,
        _("The algorithm selection indicator for the cell center of gravity computation\n"
          "can take the following values:\n"
-         "  0: computation based on the face centres and surfaces\n"
+         "  0: computation based on the face centers and surfaces\n"
          "  1: computation based on the vertices\n"
          "and not %d."), cs_glob_mesh_quantities_cell_cen);
 
@@ -2297,7 +2297,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   if (mesh_quantities->b_sym_flag == NULL)
     BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
 
-  /* Compute centres of gravity, normals, and surfaces of interior faces */
+  /* Compute centers of gravity, normals, and surfaces of interior faces */
 
   _compute_face_quantities(dim,
                            n_i_faces,
@@ -2308,7 +2308,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            mesh_quantities->i_face_normal,
                            mesh_quantities->i_face_surf);
 
-  /* Compute centres of gravity, normals, and surfaces of boundary faces */
+  /* Compute centers of gravity, normals, and surfaces of boundary faces */
 
   _compute_face_quantities(dim,
                            n_b_faces,
@@ -2319,7 +2319,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                            mesh_quantities->b_face_normal,
                            mesh_quantities->b_face_surf);
 
-  /* Compute cell centers from face barycentres or vertices */
+  /* Compute cell centers from face barycenters or vertices */
 
   switch (cs_glob_mesh_quantities_cell_cen) {
 

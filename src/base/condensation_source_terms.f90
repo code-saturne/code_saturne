@@ -38,7 +38,6 @@
 !> \param[in]     ncel          number of cells
 !> \param[in]     iscal         scalar number
 !> \param[in]     nfbpcd        number of faces with condensation source terms
-!> \param[in]     iterns        iteration number on Navier-Stokes
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     itypcd        type of condensation source terms for each ivar
 !> \param[in]     ncmast        number of cells with metal mass condensation
@@ -53,7 +52,7 @@
 !> \param[in]     fluxv_ms      metal mass condensation heat transfer flux
 !> \param[in]     pvara         variable value at time step beginning
 !> \param[in,out] tsexp         explicit source term part linear in the variable
-!> \param[in,out] tsimp         associated value withr \ref tsexp
+!> \param[in,out] tsimp         associated value with \c tsexp
 !>                              to be stored in the matrix
 !______________________________________________________________________________
 

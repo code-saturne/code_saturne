@@ -23,9 +23,9 @@
 !> \file precli.f90
 !> \brief Preparation of boudary conditions determination
 !> Boundary faces of precedent step are used.
-!> Except at first time step, where arrays \ref itypfb and \ref itrifb
-!> are undefined.
-!>
+!> Except at first time step, where arrays \ref itypfb and
+!> \ref pointe::itrifb "itrifb" are undefined.
+!
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------

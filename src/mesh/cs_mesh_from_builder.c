@@ -887,7 +887,7 @@ _f_face_center(cs_lnum_t         n_f_faces,
 
     }
 
-    /* Compute the barycentre of the face vertices */
+    /* Compute the barycenter of the face vertices */
 
     for (i = 0; i < 3; i++) {
       vtx_cog[i] = 0.0;
@@ -897,7 +897,7 @@ _f_face_center(cs_lnum_t         n_f_faces,
     }
 
     /* Loop on the triangles of the face (defined by an edge of the face
-       and its barycentre) */
+       and its barycenter) */
 
     for (i = 0; i < 3; i++) {
       ref_normal[i] = 0.;

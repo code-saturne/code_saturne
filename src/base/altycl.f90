@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file altycl.f90
-!> \brief Boundary condition code (in \ref ialtyb) for the ALE module
+!> \brief Boundary condition code for the ALE module
 !>
 !------------------------------------------------------------------------------
 

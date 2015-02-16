@@ -280,7 +280,7 @@ return
 '@                                                            ',/,&
 '@  The type of calculation defined                           ',/,&
 '@    corresponds  to the following number of properties      ',/,&
-'@      at the cell centres          : NPROCE = ',i10          ,/,&
+'@      at the cell centers          : NPROCE = ',i10          ,/,&
 '@  The maximum number of properties allowed                  ',/,&
 '@                      in   paramx   is  NPROMX = ',i10       ,/,&
 '@                                                            ',/,&
@@ -304,8 +304,6 @@ end subroutine fldprp
 
 !===============================================================================
 
-!> \fn add_property_field_nd
-!
 !> \brief add field defining a property field defined on cells,
 !>        with default options
 !
@@ -439,8 +437,6 @@ end subroutine add_property_field_nd
 
 !===============================================================================
 
-!> \fn add_property_field_hidden
-!
 !> \brief add field defining a hidden property field defined on cells
 !
 !-------------------------------------------------------------------------------
@@ -561,8 +557,6 @@ end subroutine add_property_field_hidden
 
 !===============================================================================
 
-!> \fn add_property_field
-!
 !> \brief add field defining a property field defined on cells,
 !>        with default options
 !
@@ -608,8 +602,6 @@ end subroutine add_property_field
 
 !===============================================================================
 
-!> \fn hide_property
-!
 !> \brief disable logging and postprocessing for a property
 !
 !-------------------------------------------------------------------------------
@@ -661,8 +653,6 @@ return
 end subroutine hide_property
 
 !===============================================================================
-
-!> \fn fldprp_check_nproce
 
 !> \brief check npromx is sufficient for the required number of properties.
 
@@ -757,8 +747,6 @@ end subroutine fldprp_check_nproce
 
 !===============================================================================
 
-!> \function add_property_field_owner
-!
 !> \brief add owner field defining a property field defined on cells,
 !>        with default options
 !
@@ -774,6 +762,8 @@ end subroutine fldprp_check_nproce
 !> \param[in]     name          field name
 !> \param[in]     label         field default label, or empty
 !> \param[in]     dim           field dimension
+!> \param[in]     has_previous  indicates if the field also has previous
+!>                              time step values
 !> \param[out]    f_id          matching field id
 !_______________________________________________________________________________
 
@@ -868,8 +858,6 @@ end subroutine add_property_field_owner
 
 !===============================================================================
 
-!> \function add_boundary_property_field_owner
-!
 !> \brief add owner field defining a property field defined on boundary faces,
 !>        with default options
 !

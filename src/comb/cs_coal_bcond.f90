@@ -23,7 +23,7 @@
 !===============================================================================
 ! Function:
 ! --------
-!> \file cs_coal_bcomb.f90
+!> \file cs_coal_bcond.f90
 !>
 !> \brief Automatic boundary condition for pulverized coal combution
 !

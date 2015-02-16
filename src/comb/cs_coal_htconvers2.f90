@@ -43,6 +43,7 @@
 !> \param[in,out] enthal        mass enthalpy (in \f$ j . kg^{-1}) \f$
 !> \param[in]     xsolid        mass fraction of components
 !> \param[in,out] temper        temperature (in kelvin)
+!> \param[in]     t1            coal inlet temperature
 !______________________________________________________________________________!
 
 subroutine cs_coal_htconvers2 &

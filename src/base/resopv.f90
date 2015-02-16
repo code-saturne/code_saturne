@@ -65,7 +65,12 @@
 !> \param[in]     isostd        indicator of standard outlet and index
 !>                               of the reference outlet face
 !> \param[in]     dt            time step (per cell)
+!> \param[in]     vel           velocity
 !> \param[in]     propce        physical properties at cell centers
+!> \param[in]     coefav        boundary condition array for the variable
+!>                               (explicit part)
+!> \param[in]     coefbv        boundary condition array for the variable
+!>                               (implicit part)
 !> \param[in]     coefa_dp      boundary conditions for the pressure increment
 !> \param[in]     coefb_dp      boundary conditions for the pressure increment
 !> \param[in]     smacel        variable value associated to the mass source

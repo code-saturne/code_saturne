@@ -23,9 +23,12 @@
 !> \file fldvar.f90
 !> \brief Variables definition initialization, according to calculation type
 !> selected by the user.
-!>
+!
 !------------------------------------------------------------------------------
-
+!
+!> \brief Variables definition initialization, according to calculation type
+!> selected by the user.
+!
 !------------------------------------------------------------------------------
 ! Arguments
 !------------------------------------------------------------------------------
@@ -546,8 +549,6 @@ end subroutine
 
 !===============================================================================
 
-!> \fn add_variable_field
-!
 !> \brief add field defining a general solved variable, with default options
 !
 !> It is recommended not to define variable names of more than 16
@@ -678,8 +679,6 @@ end subroutine add_variable_field
 
 !===============================================================================
 
-!> \fn add_user_scalar_fields
-!
 !> \brief add fields defining user solved scalar variables,
 !>        with default options
 !
@@ -782,8 +781,6 @@ end subroutine add_user_scalar_fields
 
 !===============================================================================
 
-!> \fn add_model_scalar_field
-!
 !> \brief add field defining a non-user solved scalar variable,
 !>        with default options
 !
@@ -912,7 +909,6 @@ return
 end subroutine add_model_scalar_field
 
 !===============================================================================
-!> \fn add_model_scalar_field
 !
 !> \brief add field defining a non-user solved scalar variable,
 !>        with default options
@@ -1053,9 +1049,7 @@ end subroutine add_model_field
 
 !===============================================================================
 
-!> \fn fldvar_check_nvar
-
-!> \brief check nvarmx is sufficient for the required number of variables.
+!> \brief Check nvarmx is sufficient for the required number of variables.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -1148,9 +1142,7 @@ end subroutine fldvar_check_nvar
 
 !===============================================================================
 
-!> \fn fldvar_check_nscapp
-!
-!> \brief check nscamx is sufficient for the required number of model scalars.
+!> \brief Check nscamx is sufficient for the required number of model scalars.
 !
 !-------------------------------------------------------------------------------
 ! Arguments

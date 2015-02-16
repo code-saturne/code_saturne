@@ -88,7 +88,7 @@
 
   \snippet cs_user_parameters-linear_solvers.c sles_user_1
 
-  \subsection cs_user_parameters_h_sles_user_1 Changing the verbosity
+  \subsection cs_user_parameters_h_sles_verbosity_1 Changing the verbosity
 
   By default, a linear solver uses the same verbosity as its matching variable,
   and is not verbose for non-variable quantities. The verbosity
@@ -133,7 +133,7 @@
   either of expressions evaluated through a user function, or
   of expressions of the type \f$<f_1*f_2...*f_n>\f$. The variables
   may be fields or field components. This is done calling either
-  through the GUI, or in the user function \ref cs_user_time_moment.
+  through the GUI, or in the user function \ref cs_user_time_moments.
   Each temporal mean is declared using either
   \ref cs_time_moment_define_by_func, or \ref cs_time_moment_define_by_field_ids.
 
@@ -147,10 +147,10 @@
   1, 3, 6, or 9 (scalars, vectors, or tensors of rank 2) are allowed, so
   moment definitions not matching this constraint should be split.
 
-  To count defined moments, use the \cs_time_moments_n_moments function,
+  To count defined moments, use the \ref cs_time_moment_n_moments function,
   whether from Fortran or C. To access the matching fields, use
-  \ref time_moment_field_id in Fortran, or \ref cs_time_moment_get_field
-  in C.
+  \ref cs_c_bindings::time_moment_field_id "time_moment_field_id" in Fortran,
+  or \ref cs_time_moment_get_field in C.
 
   \section cs_user_parameters_h_examples Examples
 

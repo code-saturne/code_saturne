@@ -130,13 +130,13 @@ typedef enum {
   CS_ENUMF_(h2),           /*!< mass enthalpy for coal class (permeatic case) */
   CS_ENUMF_(f1m),          /*!< mean value light volatiles for coal class */
   CS_ENUMF_(f2m),          /*!< mean value heavy volatiles for coal class */
-  CS_ENUMF_(f4m),
-  CS_ENUMF_(f5m),
-  CS_ENUMF_(f6m),
-  CS_ENUMF_(f7m),
-  CS_ENUMF_(f8m),
-  CS_ENUMF_(f9m),
-  CS_ENUMF_(fvp2m),
+  CS_ENUMF_(f4m),          /*!< oxydant 2 mass fraction */
+  CS_ENUMF_(f5m),          /*!< oxydant 3 mass fraction */
+  CS_ENUMF_(f6m),          /*!< water from coal drying mass fraction */
+  CS_ENUMF_(f7m),          /*!< carbon from coal oxidyzed by O2 mass fraction */
+  CS_ENUMF_(f8m),          /*!< carbon from coal gasified by CO2 mass fraction */
+  CS_ENUMF_(f9m),          /*!< carbon from coal gasified by H2O mass fraction */
+  CS_ENUMF_(fvp2m),        /*!< f1f2 variance */
   CS_ENUMF_(yco2),         /*!< CO2 fraction */
   CS_ENUMF_(yhcn),         /*!< HCN fraction */
   CS_ENUMF_(yno),          /*!< NO fraction */

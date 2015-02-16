@@ -125,14 +125,14 @@ Therefore :
 
 \subsubsection manda Mandatory data
 
-   - \ref isothp(ifac) boundary face type
+   - \c isothp(ifac) boundary face type
                -  \c itpimp -> Gray wall with fixed inside temperature
                -  \c ipgrno -> Gray wall with fixed outside temperature
                -  \c iprefl -> Reflecting wall with fixed outside temperature
                -  \c ifgrno -> Gray wall with fixed conduction flux
                -  \c ifrefl -> Reflecting wall with fixed conduction flux
 
-   - \ref tintp(ifac) inside wall temperature (Kelvin)
+   - \c tintp(ifac) inside wall temperature (Kelvin)
                   initialize thwall at the first time step.
                   If \c isothp = \c itpimp, the value of thwall is fixed to \c tintp
                   In the other case, \c tintp is only for initialization.

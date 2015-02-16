@@ -262,8 +262,8 @@ cs_i_no_relax_c_val(const cs_real_t   pi,
  * \param[in]     pir     relaxed value at cell i
  * \param[in]     pjr     relaxed value at cell j
  * \param[out]    pifri   contribution of i to flux from i to j
- * \param[out]    pjfrj   contribution of j to flux from i to j
- * \param[out]    pjfri   contribution of i to flux from j to i
+ * \param[out]    pifrj   contribution of i to flux from j to i
+ * \param[out]    pjfri   contribution of j to flux from i to j
  * \param[out]    pjfrj   contribution of j to flux from j to i
  */
 /*----------------------------------------------------------------------------*/
@@ -288,14 +288,14 @@ cs_upwind_f_val(const cs_real_t  pi,
 /*!
  * \brief Prepare value at face ij by using a centered scheme.
  *
- * \param[in]     weight   geometrical weight
+ * \param[in]     pnd      weight
  * \param[in]     pip      reconstructed value at cell i
  * \param[in]     pjp      reconstructed value at cell j
  * \param[in]     pipr     relaxed reconstructed value at cell i
  * \param[in]     pjpr     relaxed reconstructed value at cell j
  * \param[out]    pifri    contribution of i to flux from i to j
- * \param[out]    pjfrj    contribution of j to flux from i to j
- * \param[out]    pjfri    contribution of i to flux from j to i
+ * \param[out]    pifrj    contribution of i to flux from j to i
+ * \param[out]    pjfri    contribution of j to flux from i to j
  * \param[out]    pjfrj    contribution of j to flux from j to i
  */
 /*----------------------------------------------------------------------------*/
@@ -331,8 +331,8 @@ cs_centered_f_val(const double     pnd,
  * \param[in]     pir          relaxed value at cell i
  * \param[in]     pjr          relaxed value at cell j
  * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from i to j
- * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pifrj        contribution of i to flux from j to i
+ * \param[out]    pjfri        contribution of j to flux from i to j
  * \param[out]    pjfrj        contribution of j to flux from j to i
  */
 /*----------------------------------------------------------------------------*/
@@ -381,8 +381,8 @@ cs_solu_f_val(const cs_real_3_t  cell_ceni,
  * \param[in]     pir      relaxed value at cell i
  * \param[in]     pjr      relaxed value at cell j
  * \param[out]    pifri    contribution of i to flux from i to j
- * \param[out]    pjfrj    contribution of j to flux from i to j
- * \param[out]    pjfri    contribution of i to flux from j to i
+ * \param[out]    pifrj    contribution of i to flux from j to i
+ * \param[out]    pjfri    contribution of j to flux from i to j
  * \param[out]    pjfrj    contribution of j to flux from j to i
  */
 /*----------------------------------------------------------------------------*/
@@ -413,8 +413,8 @@ cs_blend_f_val(const double     blencp,
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
  * \param[in]     pifri        contribution of i to flux from i to j
- * \param[in]     pjfrj        contribution of j to flux from i to j
- * \param[in]     pjfri        contribution of i to flux from j to i
+ * \param[in]     pifrj        contribution of i to flux from j to i
+ * \param[in]     pjfri        contribution of j to flux from i to j
  * \param[in]     pjfrj        contribution of j to flux from j to i
  * \param[in]     i_massflux   mass flux at face ij
  * \param[in,out] fluxij       fluxes at face ij
@@ -447,8 +447,8 @@ cs_i_conv_flux(const int       iconvp,
  *
  * \param[in]     iconvp       convection flag
  * \param[in]     pifri        contribution of i to flux from i to j
- * \param[in]     pjfrj        contribution of j to flux from i to j
- * \param[in]     pjfri        contribution of i to flux from j to i
+ * \param[in]     pifrj        contribution of i to flux from j to i
+ * \param[in]     pjfri        contribution of j to flux from i to j
  * \param[in]     pjfrj        contribution of j to flux from j to i
  * \param[in]     i_massflux   mass flux at face ij
  * \param[in]     xcppi        specific heat value if the scalar is the temperature,
@@ -525,8 +525,8 @@ cs_i_diff_flux(const int       idiffp,
  * \param[in]     pia          old value at cell i
  * \param[in]     pja          old value at cell j
  * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from i to j
- * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pifrj        contribution of i to flux from j to i
+ * \param[out]    pjfri        contribution of j to flux from i to j
  * \param[out]    pjfrj        contribution of j to flux from j to i
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
@@ -614,8 +614,8 @@ cs_i_cd_steady_upwind(const int          ircflp,
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
  * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from i to j
- * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pifrj        contribution of i to flux from j to i
+ * \param[out]    pjfri        contribution of j to flux from i to j
  * \param[out]    pjfrj        contribution of j to flux from j to i
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
@@ -703,8 +703,8 @@ cs_i_cd_unsteady_upwind(const int          ircflp,
  * \param[in]     pia          old value at cell i
  * \param[in]     pja          old value at cell j
  * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from i to j
- * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pifrj        contribution of i to flux from j to i
+ * \param[out]    pjfri        contribution of j to flux from i to j
  * \param[out]    pjfrj        contribution of j to flux from j to i
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
@@ -837,8 +837,8 @@ cs_i_cd_steady(const int          ircflp,
  * \param[in]     pi           value at cell i
  * \param[in]     pj           value at cell j
  * \param[out]    pifri        contribution of i to flux from i to j
- * \param[out]    pjfrj        contribution of j to flux from i to j
- * \param[out]    pjfri        contribution of i to flux from j to i
+ * \param[out]    pifrj        contribution of i to flux from j to i
+ * \param[out]    pjfri        contribution of j to flux from i to j
  * \param[out]    pjfrj        contribution of j to flux from j to i
  * \param[out]    pip          reconstructed value at cell i
  * \param[out]    pjp          reconstructed value at cell j
@@ -975,8 +975,8 @@ cs_i_cd_unsteady(const int          ircflp,
  * \param[in]     pia             old value at cell i
  * \param[in]     pja             old value at cell j
  * \param[out]    pifri           contribution of i to flux from i to j
- * \param[out]    pjfrj           contribution of j to flux from i to j
- * \param[out]    pjfri           contribution of i to flux from j to i
+ * \param[out]    pifrj           contribution of i to flux from j to i
+ * \param[out]    pjfri           contribution of j to flux from i to j
  * \param[out]    pjfrj           contribution of j to flux from j to i
  * \param[out]    pip             reconstructed value at cell i
  * \param[out]    pjp             reconstructed value at cell j
@@ -1161,8 +1161,8 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
  * \param[in]     pi              value at cell i
  * \param[in]     pj              value at cell j
  * \param[out]    pifri           contribution of i to flux from i to j
- * \param[out]    pjfrj           contribution of j to flux from i to j
- * \param[out]    pjfri           contribution of i to flux from j to i
+ * \param[out]    pifrj           contribution of i to flux from j to i
+ * \param[out]    pjfri           contribution of j to flux from i to j
  * \param[out]    pjfrj           contribution of j to flux from j to i
  * \param[out]    pip             reconstructed value at cell i
  * \param[out]    pjp             reconstructed value at cell j
@@ -1736,9 +1736,9 @@ cs_b_cd_unsteady(const int          ircflp,
  * \param[out]    grdpa        upwind gradient
  * \param[in]     pvar         values
  * \param[in]     coefap       boundary condition array for the variable
- * \param[in]                  (Explicit part)
+ *                             (explicit part)
  * \param[in]     coefbp       boundary condition array for the variable
- * \param[in]                  (Implicit part)
+ *                             (implicit part)
  * \param[in]     i_massflux   mass flux at interior faces
  */
 /*----------------------------------------------------------------------------*/
@@ -2196,13 +2196,13 @@ void CS_PROCF (itrgrv, ITRGRV)
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2281,13 +2281,13 @@ cs_convection_diffusion_scalar(int                       idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     coefav        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafv        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2355,13 +2355,13 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2424,13 +2424,13 @@ cs_convection_diffusion_thermal(int                       idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -2496,13 +2496,13 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
  * \param[in]     coefav        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafv        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
@@ -2573,13 +2573,13 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -2669,13 +2669,13 @@ cs_face_diffusion_potential(const int                 f_id,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -2761,13 +2761,13 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -2857,13 +2857,13 @@ cs_diffusion_potential(const int                 f_id,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$

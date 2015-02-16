@@ -3776,8 +3776,8 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  *
  * integer          ncelet   <--  number of cells with halo
  * integer          isuite   <--  restart indicator
- * integer          idarcy   <--  darcy module activate or not
- * integer          iccfth   -->  type of initialisation(compressible model)
+ * integer          idarcy   <--  darcy module activation
+ * integer          iccfth   -->  type of initialization (compressible model)
  * double precision ro0      <--  value of density if IROVAR=0
  * double precision cp0      <--  value of specific heat if ICP=0
  * double precision viscl0   <--  value of viscosity if IVIVAR=0

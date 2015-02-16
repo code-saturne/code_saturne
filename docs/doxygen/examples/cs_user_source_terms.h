@@ -123,18 +123,7 @@ which yields:
 
  \section body1 Body 
 
- \warning It is quite frequent to forget to remove this example when it is
-  not needed. Therefore the following test is designed to prevent
-  any bad surprise.
-
-   \snippet cs_user_source_terms.f90 test_1
-
-It is followed by:
- 
    \snippet  cs_user_source_terms.f90 remaining_1
-
-  
- 
 
 */
 //_________________________________________________________________________________________________
@@ -191,10 +180,7 @@ It is followed by:
    - \f$crvimp\f$ is expressed in \f$ W \cdot K^{-1} \f$
 
 
-
-
    \section steep Steep source terms
-
 
  In case of a complex, non-linear source term, say \f$ F(f) \f$, for scalar \f$ f \f$, the
  easiest method is to implement the source term explicitely.
@@ -217,9 +203,6 @@ It is followed by:
    - <tt> crvimp = volume*dF/df </tt>
 
 
-
-
-
    \section loc_var2 Local variables 
 
    \snippet cs_user_source_terms.f90 loc_var_dec_2
@@ -233,7 +216,7 @@ At the end of the subroutine, it is recommended to deallocate the work array:
  
   \snippet cs_user_source_terms.f90 deallocate_2
 
-In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their alloacation is good pratice, and avoids using a diff erent logic C and Fortran.
+In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symmetric manner to their alloacation is good pratice, and avoids using a different logic between C and Fortran.
 
   <b> Remaining initialization</b>
 
@@ -248,9 +231,9 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
  Indicator of variance scalars
 
  - If <tt> iscavr(iscal) = 0 </tt>:
-   the scalar \ref iscal is not a variance
+   the scalar \c iscal is not a variance
  - If <tt> iscavr(iscal) > 0 </tt> and <tt> iscavr(iscal) < nscal + 1:</tt>
-   the scalar \ref iscal is the variance of the scalar \c iscavr(iscal)
+   the scalar \c iscal is the variance of the scalar \c iscavr(iscal)
 
 \n
 
@@ -279,21 +262,14 @@ with:
  - prodf = 100.d0 (in \f$ [f]\cdot s^{-1} \f$) (production of \f$f\f$ by unit of time)
 
 which yields:
- - <tt> crvimp(iel) = volume(iel)*A = -volume(iel)*rho\tauf </tt>
+ - <tt> crvimp(iel) = volume(iel)*A = -volume(iel)*rho/tauf </tt>
  - <tt> crvexp(iem) = volume(iel)*B= volume(iel)*rho*prod_f </tt>
 
  \subsection bodysource2 Body
  
- \warning It is quite frequent to forget to remove this example when it is not needed. Therefore t he following test is designed to prevent any bad surprise.
-
-  \snippet cs_user_source_terms.f90 bodytest_2
-
  <b> Source term applied to second scalar</b>
 
   \snippet cs_user_source_terms.f90 src_term_applied
- 
- 
-
 
   \section examplesource2_2 Example 2
 
@@ -303,8 +279,8 @@ Example of arbitrary volumic heat term in the equation for enthalpy h.
  In the considered example, a uniform volumic source of heating is imposed
  in the cells with coordinate X in [0;1.2] and Y in [3.1;4].
 
- The global heating power if \c Pwatt (in \f$W\f$) and the total volume of the concerned
- cells is \c volf (in \f$m^3\f$).
+ The global heating power if \c Pwatt (in \f$W\f$) and the total volume of the
+ selected cells is \c volf (in \f$m^3\f$).
 
  This yields:
     - <tt> crvimp(iel) = 0 </tt>
@@ -313,22 +289,19 @@ Example of arbitrary volumic heat term in the equation for enthalpy h.
 
   \subsection end2 Body
 
-  \warning It is quite frequent to forget to remove this example when it is not needed. Therefore  the following test is designed to prevend any bad surprise.
-   
-   \snippet cs_user_source_terms.f90 test_2_2
-
-   \warning It is assumed here that the thermal scalar is an enthalpy. If the scalar is a  temperature. PWatt does not need to  be devided by \f$ C_p \f$ because \f$C_p\f$ is put  o utside thediffusion term and multily the temperature equation as follows:
- \f[ \rho C_p \norm{\vol{\celli}} \frac{dT}{dt} + ... = \norm{\vol{\celli}(iel)} \frac{pwatt}{volf} \f]
+   \warning It is assumed here that the thermal scalar is an enthalpy. If the scalar is a  temperature. PWatt does not need to  be divided by \f$ C_p \f$ because \f$C_p\f$ is put outside thediffusion term and multiplied in the temperature equation as follows:
+ \f[ \rho C_p \norm{\vol{\celli}} \frac{dT}{dt} + ... = \norm{\vol{\celli}(iel)} \frac{pwatt}{voltf} \f]
 
 with  <tt> pwatt = 100.d0 </tt>
  
-   \subsection cal_volf Calculation of volf 
+   \subsection cs_user_st_3_cal_volf Calculation of voltf 
 
-   \snippet cs_user_source_terms.f90 calcul_volf
+   \snippet cs_user_source_terms.f90 ex_3_compute_voltf
 
-   \subsection format2 Format
+   \subsection cs_user_st_3_apply Apply source term
 
-   \snippet   cs_user_source_terms.f90 format_2
+   \snippet cs_user_source_terms.f90 ex_3_apply
+
 */
 //________________________________________________________________________________________________
 /*! 
@@ -390,7 +363,7 @@ In theory Fortran 95 deallocates locally-allocated arrays automatically, but dea
 
  <b> Remaining initialization</b>
 
-  Get the density array in \ref cpro_rom
+  Get the density array in \c cpro_rom
 
    \snippet cs_user_source_terms.f90 dens_array_3    
 

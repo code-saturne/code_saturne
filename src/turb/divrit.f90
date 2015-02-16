@@ -36,6 +36,7 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nscal         total number of scalars
+!> \param[in]     iscal         number of the scalar used
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     xcpp          Cp
 !> \param[out]    smbrs         Right hand side to update

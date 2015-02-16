@@ -31,7 +31,7 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> param[in]      nvar          total number of variables
+!> \param[in]     nvar          total number of variables
 !> \param[in,out] icodcl        face boundary condition code:
 !>                               - 1 Dirichlet
 !>                               - 2 Radiative outlet
@@ -46,8 +46,8 @@
 !>                                 (input mass flux blocked to 0)
 !>                               - 13 Dirichlet for the advection operator and
 !>                                    Neumann for the diffusion operator
-!> param[in]      itypfb        boundary face types
-!> param[in]      dt            time step (per cell)
+!> \param[in]     itypfb        boundary face types
+!> \param[in]     dt            time step (per cell)
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
@@ -65,8 +65,6 @@
 !______________________________________________________________________________
 
 subroutine cfxtcl &
-!================
-
  ( nvar   ,                                                       &
    icodcl , itypfb , dt     , rcodcl )
 

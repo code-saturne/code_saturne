@@ -350,7 +350,7 @@ cs_field_pointer_map_base(void)
  * \brief Map base fields to enumerated pointers for atmospheric models
  *
  * \param[in]  n_chem_species  number of chemical species
- * \param[in]  species_f_if    field id for each chemical species
+ * \param[in]  species_f_id    field id for each chemical species
  */
 /*----------------------------------------------------------------------------*/
 

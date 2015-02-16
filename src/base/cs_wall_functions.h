@@ -457,7 +457,6 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
  *
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     l_visc        kinematic viscosity
- * \param[in]     t_visc        turbulent kinematic viscosity
  * \param[in]     vel           wall projected cell center velocity
  * \param[in]     y             wall distance
  * \param[in]     kinetic_en    turbulent kinetic energy

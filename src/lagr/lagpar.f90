@@ -36,10 +36,10 @@ module lagpar
   !> \addtogroup lagpar
   !> \{
 
-  !         Trois modules complementaires
-  !                            lagran qui porte les non dimensions
-  !                            lagdim qui porte les dimensions variables
-  !                            lagpar qui porte les parametres
+  !         Three associated modules
+  !                            lagran which holds non dimensions
+  !                            lagdim which holds variable dimensions
+  !                            lagpar which holds parameters
 
   !=============================================================================
 

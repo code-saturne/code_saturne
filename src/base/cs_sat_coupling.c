@@ -549,7 +549,7 @@ _sat_coupling_destroy(cs_sat_coupling_t  *couplage)
 }
 
 /*----------------------------------------------------------------------------
- * Computed some quantities needed for a centred-like interpolation
+ * Computed some quantities needed for a centered-like interpolation
  *  - distance JJ' for distant boundary faces
  *  - local weighting coefficients
  *----------------------------------------------------------------------------*/
@@ -614,7 +614,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
 
   /* Calculation of the distance DJJPB defining the distance from */
-  /* the local cell centre to the distant boundary face norm      */
+  /* the local cell center to the distant boundary face norm      */
   /*--------------------------------------------------------------*/
 
   BFT_MALLOC(couplage->distant_dist_fbr, 3*n_fbr_dist, cs_real_t);
@@ -692,7 +692,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   BFT_MALLOC(couplage->distant_pond_fbr, n_fbr_dist, cs_real_t);
   BFT_MALLOC(couplage->local_pond_fbr, n_fbr_loc, cs_real_t);
 
-  /* Get the cell centres coordinates (reverse = 0) */
+  /* Get the cell center coordinates (reverse = 0) */
 
   reverse = 0;
 
@@ -1079,7 +1079,7 @@ void CS_PROCF (defloc, DEFLOC)
   if (coupl->face_cpl_sel != NULL) BFT_FREE(f_elt_list);
 
 
-  /* Computed some quantities needed for a centred-like interpolation */
+  /* Computed some quantities needed for a centered-like interpolation */
 
   if (coupl->localis_fbr != NULL)
     _sat_coupling_interpolate(coupl);
@@ -1489,7 +1489,7 @@ void CS_PROCF (coocpl, COOCPL)
 }
 
 /*----------------------------------------------------------------------------
- * Get the weighting coefficient needed for a centred-like interpolation
+ * Get the weighting coefficient needed for a centered-like interpolation
  * in the case of a coupling on boundary faces.
  *
  * Fortran interface:
@@ -1530,7 +1530,7 @@ void CS_PROCF (pondcp, PONDCP)
 
   if (*ityloc == 1)
     bft_error(__FILE__, __LINE__, 0,
-              _("The centred interpolation scheme is not available\n"
+              _("The centered interpolation scheme is not available\n"
                 "when coupling cells"));
   else if (*ityloc == 2)
     localis = coupl->localis_fbr;

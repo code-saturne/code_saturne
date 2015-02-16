@@ -203,7 +203,7 @@ if ( isuite.eq.0 ) then
 
   enddo
 
-  ! ---> Control Output of the user defined initialisation values
+  ! ---> Control Output of the user defined initialization values
 
   write(nfecra,2000)
 
@@ -235,14 +235,14 @@ endif
 !--------
 
  9001 format(                                                   /,&
-'  cs_user_initialization: variables initialisation by user'   ,/,&
+'  cs_user_initialization: variables initialization by user'   ,/,&
                                                                 /)
 
  2000 format(                                                   /,&
                                                                 /,&
 ' -----------------------------------------------------------' ,/,&
                                                                 /,&
-' ** INITIALISATION OF VARIABLES FOR Libby-Williams model'     ,/,&
+' ** INITIALIZATION OF VARIABLES FOR Libby-Williams model'     ,/,&
 '    --------------------------------------------------------' ,/,&
 '           ONLY ONE PASS'                                     ,/,&
 ' ---------------------------------'                           ,/,&

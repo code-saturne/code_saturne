@@ -690,13 +690,13 @@ void CS_PROCF (itrgrv, ITRGRV)
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -1686,13 +1686,13 @@ cs_convection_diffusion_scalar(int                       idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     coefav        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafv        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -1895,7 +1895,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   }
 
   /* ======================================================================
-     ---> Compute uncentred gradient gradva for the slope test
+     ---> Compute uncentered gradient gradva for the slope test
      ======================================================================*/
 
 # pragma omp parallel for private(isou, jsou)
@@ -3263,13 +3263,13 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -3488,7 +3488,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   }
 
   /* ======================================================================
-     ---> Compute uncentred gradient gradpa for the slope test
+     ---> Compute uncentered gradient gradpa for the slope test
      ======================================================================*/
 
 # pragma omp parallel for
@@ -4476,13 +4476,13 @@ cs_convection_diffusion_thermal(int                       idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -5051,13 +5051,13 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_type       boundary condition type
  * \param[in]     coefav        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafv        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfv        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
@@ -5593,13 +5593,13 @@ cs_anisotropic_diffusion_vector(int                         idtvar,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -5949,13 +5949,13 @@ cs_face_diffusion_potential(const int                 f_id,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -6310,6 +6310,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
  *             - \sum_j \Delta t \grad_\fij p \cdot \vect{S}_\ij
  * \f]
  *
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init          indicator
@@ -6341,13 +6342,13 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -6701,13 +6702,13 @@ cs_diffusion_potential(const int                 f_id,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     coefap        boundary condition array for the variable
- *                               (Explicit part)
+ *                               (explicit part)
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofafp        boundary condition array for the diffusion
- *                               of the variable (Explicit part)
+ *                               of the variable (explicit part)
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$

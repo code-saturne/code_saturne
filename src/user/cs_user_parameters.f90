@@ -1962,7 +1962,7 @@ implicit none
 !===============================================================================
 
 ! Indicator: indicates whether the radiation variables should be
-! initialised (=0) or read from a restart file (=1)
+! initialized (=0) or read from a restart file (=1)
 ! Useful if and only if the radiation module is activated (in this case, a
 ! restart file rayamo must be available)
 

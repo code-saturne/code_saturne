@@ -342,9 +342,6 @@ if (i_comb_drift.ge.1) then
   call field_set_key_int(f_id, keydri, iscdri)
 endif
 
-
-! Variance
-
 ! Variance
 f_name = 'f1f2_variance'
 f_label  = 'Var_F1F2'

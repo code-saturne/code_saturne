@@ -78,7 +78,7 @@
   \section example1_comp Molecular viscosity varying with temperature
 
   The values of the molecular viscosity are provided as a function of
-  the temperature. All variables are evaluated at the cell centres.
+  the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
   
@@ -88,7 +88,7 @@
   \section example2_comp Molecular volumetric viscosity varying with temperature
 
   The values of the molecular volumetric viscosity are provided as a function
-  of the temperature. All variables are evaluated at the cell centres.
+  of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
   
@@ -98,7 +98,7 @@
   \section example3_comp Isobaric specific heat varying with temperature
 
   The values of the isobaric specific heat values are provided as a function
-  of the temperature. All variables are evaluated at the cell centres.
+  of the temperature. All variables are evaluated at the cell centers.
 
   \warning:
   do not discard the call to the subroutine 'usthht' at the end of this
@@ -114,7 +114,7 @@
   \section example4_comp Molecular thermal conductivity varying with temperature
 
   The values of the molecular thermal conductivity are provided as a function
-  of the temperature. All variables are evaluated at the cell centres.
+  of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
   
@@ -124,14 +124,14 @@
   \section example5_comp Molecular diffusivity of user-defined scalars varying with temperature
 
   The molecular diffusivity can be set for all the user-defined scalars
-  <b>except<b>:
+  <b>except</b>:
     - temperature and enthalpy (already dealt with above: for these
       variables, the 'diffusivity' is the thermal conductivity)
     - variances of the fluctuations of another scalar variable (the
       diffusivity is assumed to be equal to that of the associated
       scalar)
   The values of the molecular diffusivity are provided as a function
-  of the temperature. All variables are evaluated at the cell centres.
+  of the temperature. All variables are evaluated at the cell centers.
 
   Here is the corresponding code:
   

@@ -172,20 +172,20 @@ BEGIN_C_DECLS
         - 0: false (default)
   \var  cs_turb_rans_model_t::almax
         characteristic macroscopic length of the domain, used for the
-        initialisation of the turbulence and the potential clipping (with
+        initialization of the turbulence and the potential clipping (with
         \ref iclkep=1)
-        - Negative value: not initialised (the code then uses the cubic root of
+        - Negative value: not initialized (the code then uses the cubic root of
           the domain volume).
 
-        Useful if and only if \ref turb = 20, 21, 30, 31, 50 or 60
+        Useful if and only if \ref iturb = 20, 21, 30, 31, 50 or 60
         (RANS models).
   \var  cs_turb_rans_model_t::uref
-        characteristic flow velocity, used for the initialisation of the
+        characteristic flow velocity, used for the initialization of the
         turbulence
-        - Negative value: not initialised.
+        - Negative value: not initialized.
 
         Useful if and only if \ref iturb= 20, 21, 30, 31, 50 or 60 (RANS model)
-        and the turbulence is not initialised somewhere else (restart file or
+        and the turbulence is not initialized somewhere else (restart file or
         subroutine \ref cs\_user\_initialization).
   \var  cs_turb_rans_model_t::xlomlg
         mixing length for the mixing length model
@@ -274,7 +274,8 @@ const double cs_turb_xkappa = 0.42;
 /*!
  * Van Driest constant. (= 25.6)
  *
- * Useful if and only if \ref iwallf = 5.
+ * Useful if and only if \ref cs_wall_functions_t::iwallf
+ * "cs_glob_wall_functions::iwallf" = 5.
  *  (Two scales log law at the wall using Van Driest mixing length expression).
  */
 const double cs_turb_vdriest = 25.6;
@@ -369,7 +370,8 @@ const double cs_turb_crij3 = 0.55;
 /*!
  * Constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
  * corresponding to the wall echo terms.
- * Useful if and only if \ref iturb=30 and \ref cs_turb_irijec=1
+ * Useful if and only if \ref iturb=30 and \ref cs_turb_rans_model_t::irijec
+ * "cs_turb_rans_model_t::irijec"=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 const double cs_turb_crijp1 = 0.50;
@@ -377,7 +379,7 @@ const double cs_turb_crijp1 = 0.50;
 /*!
  * Constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
  * corresponding to the wall echo terms.
- * Useful if and only if \ref iturb=30 and \ref cs_turb_irijec=1
+ * Useful if and only if \ref iturb=30 and \ref cs_turb_rans_model_t::irijec=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
 const double cs_turb_crijp2 = 0.30;
@@ -669,7 +671,7 @@ const double cs_turb_xlesfl = 2.0;
 const double cs_turb_ales = 1.0;
 
 /*!
- * Constant used to define, for each cell $\Omega_i$, the width of
+ * Constant used to define, for each cell \f$Omega_i\f$, the width of
  * the (implicit) filter:
  * - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
  *
@@ -981,7 +983,7 @@ cs_f_turb_reference_values(double  **almax,
 }
 
 /*----------------------------------------------------------------------------
- * Initialise tubulence constants
+ * Initialize tubulence constants
  *----------------------------------------------------------------------------*/
 
 void

@@ -32,8 +32,8 @@
 !>
 !> \warning:
 !>  - it is forbidden to modify the turbulent viscosity here.
-!>  - \ref icp must be set to 1 if one wants the specific heat to be variable
-!>    in space
+!>  - \ref numvar::icp "icp" must be set to 1 if one wants the specific heat
+!>    to be variable in space
 !>  - it is necessary to call field_set_key_int(ivarfl(isca(iscal)), kivisl, 0)
 !>    if one wants the specific heat to be variable in space
 !> \remarks:

@@ -31,7 +31,7 @@ module radiat
 
   implicit none
 
-  !> \defgroup radiat Module for Radiative tranfer
+  !> \defgroup radiat Module for Radiative transfer
 
   !> \addtogroup radiat
   !> \{
@@ -156,7 +156,7 @@ module radiat
 
   double precision, dimension(:), allocatable :: sx, sy, sz, angsol
 
-  !> Indicates whether the radiation variables should be initialised (=0) or read
+  !> Indicates whether the radiation variables should be initialized (=0) or read
   !> from a restart file (=1)
   !> Useful if and only if the radiation module is activated (in this case, a
   !> restart file rayamo must be available)
@@ -164,10 +164,10 @@ module radiat
 
   !> Period of the radiation module.
   !> The radiation module is called every \ref nfreqr time steps (more precisely,
-  !> every time \ref ntcabs is a multiple of \ref nfreqr). Also, in order to
-  !> have proper initialisation of the variables, whatever the value of \ref nfreqr,
-  !> the radiation module is called at the first time step of a calculation
-  !> (restart or not).
+  !> every time \ref optcal::ntcabs "ntcabs" is a multiple of \ref nfreqr).
+  !> Also, in order to have proper initialization of the variables, whatever
+  !> the value of \ref nfreqr, the radiation module is called at
+  !> the first time step of a calculation (restart or not).
   !> Useful if and only if the radiation module is activated}
   integer, save ::           nfreqr
 

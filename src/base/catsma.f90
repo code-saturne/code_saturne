@@ -47,7 +47,7 @@
 !> \param[in]     smcelp        value of the variable associated with mass source
 !> \param[in]     gamma         flow mass value
 !> \param[in,out] tsexp         explicit source term part linear in the variable
-!> \param[in,out] tsimp         associated value withr \ref tsexp
+!> \param[in,out] tsimp         associated value with \c tsexp
 !>                              to be stored in the matrix
 !> \param[out]    gapinj        explicit source term part independant
 !>                              of the variable

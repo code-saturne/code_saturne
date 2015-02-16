@@ -271,7 +271,7 @@ BEGIN_C_DECLS
 
   The function may be associated using \ref cs_sles_set_default_verbosity, so
   that it may provide a definition that will be used when
-  \ref cs_sles_default_verbosity is called.
+  \ref cs_sles_find_or_add is called.
 
   \param[in]  f_id  associated field id, or < 0
   \param[in]  name  associated name if f_id < 0, or NULL
@@ -1515,7 +1515,7 @@ cs_sles_set_default_define(cs_sles_define_t  *define_func)
  * \brief Set default verbosity definition function.
  *
  * The provided function will be used to define the verbosity when
- * \ref cs_sles_default_verbosity is called.
+ * \ref cs_sles_find_or_add is called.
  *
  * \param[in]  verbosity_func pointer to default verbosity function
  */

@@ -36,6 +36,8 @@
 !> The user may define an arbitrary number of modules here, even though
 !> only one is defined in the example.
 !
+!> \cond DOXYGEN_SHOULD_SKIP_THIS
+
 !-------------------------------------------------------------------------------
 
 module user_module
@@ -103,3 +105,7 @@ contains
   !=============================================================================
 
 end module user_module
+
+!-------------------------------------------------------------------------------
+
+!> (DOXYGEN_SHOULD_SKIP_THIS) \endcond

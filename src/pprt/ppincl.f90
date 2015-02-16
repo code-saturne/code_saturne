@@ -54,7 +54,7 @@ module ppincl
   parameter(nmodmx = 50)
 
   !> global indicator for speciphic physics
-  !> By default, all the indicators ippmod(i.....) are initialised at -1,
+  !> By default, all the indicators ippmod(i.....) are initialized to -1,
   !> which means that no specific physics is activated.
   !>   - Diffusion flame in the framework of “3 points” rapid complete chemistry:
   !>  indicator ippmod(icod3p)
@@ -411,12 +411,8 @@ module ppincl
   !> from the three others)
   integer, save :: if4p2m
 
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
+  !> f1f2 variance
   integer, save :: ifvp2m
-  ! TODO absent de la doc utilisateur
-  !> transported variable of countinuous phase (gas mixture)
-  integer, save :: if3mc2
 
   !        Phase dispersee (classe de particules)
   !> coke mass fraction related to the class icla
@@ -787,10 +783,10 @@ module ppincl
   !> is the sub-relaxation coefficient for the density, following the formula:
   !> \f$\rho^{n+1}$\,=\,srrom\,$\rho^n$+(1-srrom)\,$\rho^{n+1}\f$
   !> hence, with a zero value, there is no sub-relaxation.
-  !> With combustion and pulversied coal, \ref srrom is initialised to \ref -grand
-  !> and the user must specify a proper value through the Interface or the
-  !> initialisation subroutines (\ref cs_user_combustion or
-  !> \ref uscpl1). With the electric module, \ref srrom is initialised in to 0
+  !> With combustion and pulverized coal, \ref srrom is initialized to
+  !> \ref cstnum::grand "-grand" and the user must specify a proper value through
+  !> the Interface or the initialization subroutine (\ref cs_user_combustion).
+  !> With the electric module, \ref srrom is initialized in to 0
   !> and may be modified by the user in \ref useli1.
   !> With gas combustion, pulverised coal or electric arcs, \ref srrom is
   !> automatically used after the second time-step. With Joule effect,
@@ -811,11 +807,13 @@ module ppincl
   !> imposed flow zone indicator
   !> in a way which is similar to the process described in the framework of the EBU module,
   !> the user chooses for every inlet face to impose the mass flow or not
-  !> (\ref iqimp(izone)=1 or 0). If the mass flow is imposed, the user
-  !> must set the air mass flow value \ref qimpat(izone), its direction in
-  !> \ref rcodcl(ifac,iu), \ref rcodcl(ifac,iv) and \ref rcodcl(ifac,iw) and the incoming
-  !> air temperature \ref timpat(izone) in Kelvin. If the velocity is imposed, he has to
-  !> set  \ref rcodcl(ifac,iu), \ref rcodcl(ifac,iv) and \ref rcodcl(ifac,iw).
+  !> (\ref iqimp "iqimp"(izone)=1 or 0). If the mass flow is imposed, the user
+  !> must set the air mass flow value \ref cpincl::qimpat "qimpat"(izone), its direction in
+  !> \ref rcodcl "rcodcl"(ifac,\ref iu), \ref rcodcl "rcodcl"(ifac,\ref iv)
+  !> and \ref rcodcl "rcodcl"(ifac,\ref iw) and the incoming
+  !> air temperature \ref cpincl::timpat "timpat"(izone) in Kelvin.
+  !> If the velocity is imposed, he has to set  \ref rcodcl "rcodcl"(ifac,\ref iu),
+  !> \ref rcodcl "rcodcl"(ifac,\ref iv), and \ref rcodcl "rcodcl"(ifac,\ref iw).
   integer, save ::          iqimp(nozppm)
 
   !> condition type turbulence indicator

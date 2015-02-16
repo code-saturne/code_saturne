@@ -261,7 +261,7 @@ void CS_PROCF (coocpl, COOCPL)
 );
 
 /*----------------------------------------------------------------------------
- * Get the weighting coefficient needed for a centred-like interpolation
+ * Get the weighting coefficient needed for a centered-like interpolation
  * in the case of a coupling on boundary faces.
  *
  * Fortran interface:

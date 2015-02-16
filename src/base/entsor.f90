@@ -41,9 +41,9 @@ module entsor
   !> standard output
   integer, save :: nfecra
 
-  !> characterises the level of detail of the outputs for the
-  !> variable \ref ivar (from 1 to \ref nvar). The quantity of information
-  !> increases with its value.
+  !> characterizes the level of detail of the outputs for the
+  !> variable \c ivar (from 1 to \ref dimens::nvar "nvar").
+  !> The quantity of information increases with its value.
   !> Impose the value 0 or 1 for a reasonable listing size. Impose the value 2
   !> to get a maximum quantity of information, in case of problem during the
   !> execution.  Always useful.
@@ -57,14 +57,14 @@ module entsor
   !> Useful if and only if ivrtex=1.
   integer, save :: impvvo
 
-  !> unit of the \ref ficvor data files for the vortex method. These
-  !> files are text files. Their number and names are specified by the user in
-  !> the \ref usvort subroutine.
+  !> unit of the \ref vorinc::ficvor "ficvor" data files for the vortex method.
+  !> These files are text files. Their number and names are specified by the user
+  !> in the \ref usvort subroutine.
   !> (Although it corresponds to an 'upstream' data file, \ref impdvo is
   !> initialized to 20 because, in case of multiple vortex entries,
-  !> it is opened at the same time as the \ref ficmvo upstream restart file,
+  !> it is opened at the same time as the upstream restart file,
   !> which already uses unit 11)
-  !> useful if and only if \ref ivrtex=1
+  !> useful if and only if \ref optcal::ivrtex "ivrtex"=1
   integer, save :: impdvo
 
   !> name of file, see usvort module.
@@ -96,8 +96,8 @@ module entsor
 
   !> name of the thermochemical data file. The launch script is designed
   !> to copy the user specified thermochemical data file in the temporary
-  !> execution directory under the name \ref dp_tch, for \ref CS to open it
-  !> properly.  Should the value of \ref ficfpp be changed, the launch script
+  !> execution directory under the name \em dp_thch, for \e Code_Saturne to open
+  !> it properly.  Should the value of \ref ficfpp be changed, the launch script
   !> would have to be adapted.
   !> Useful in case of gas or pulverised coal combustion.
   character(len=32), save :: ficfpp
@@ -132,7 +132,7 @@ module entsor
   !> - it is recommended to keep the default value and, if necessary, to modify
   !> the launch script to copy the files in the alternate destination directory
   !> - useful if and only if chronological record files are generated
-  !> (i.e. there is \ref n for which \ref ihisvr "ihisvr(n, 1)" \f$\ne\f$ 0)
+  !> (i.e. there is \c n for which \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)
   character(len=80), save :: emphis
 
   !> prefix of history files
@@ -175,14 +175,14 @@ module entsor
   !> - \>0: period  (every \ref nthist time step)
   !>
   !> The default value is -1 if there is no chronological record file to
-  !> generate (if there is no probe, \ref ncapt = 0, or if \ref ihisvr(n, 1)=0 for
+  !> generate (if there is no probe, \ref ncapt = 0, or if \ref ihisvr "ihisvr"(n, 1)=0 for
   !> all the variables) and 1 otherwise.
   !> If chronological records are generated, it is usually wise to keep the default
   !> value \ref nthist=1, in order to avoid missing any high frequency evolution (unless
   !> the total number of time steps is much too big).
   !> Useful if and only if chronological record files are generated (
-  !> i.e. there are probes (\ref ncapt>0) there is \ref n for which
-  !> \ref ihisvr(n, 1) \f$\ne\f$ 0)
+  !> i.e. there are probes (\ref ncapt>0) there is \c n for which
+  !> \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)
   integer, save :: nthist
 
   !> frhist : output frequency in seconds
@@ -197,24 +197,27 @@ module entsor
   !> During the calculation, the user can read the chronological record files
   !> in the execution directory when they have been saved, i.e. at the first
   !> time step, at the tenth time step and when the time step number is a multiple of
-  !> \ref nthsav (multiple of \ref (ntmabs-ntpabs)/4 if \ref nthsav=0).
-  !> \note Using the \ref control_file file allows to update the value of
-  !> \ref ntmabs. Hence, if the calculation is at the time step n, the saving of the
-  !> chronological record files can be forced by changing \ref ntmabs to
-  !> \ref ntpabs+4(n+1)
+  !> \ref nthsav (multiple of (\ref optcal::ntmabs "ntmabs"
+  !> - \ref optcal::ntpabs "ntpabs")/4 if \ref nthsav=0).
+  !> \note Using the \a control_file file allows to update the value of
+  !> \ref optcal::ntmabs "ntmabs". Hence, if the calculation is at the time step n,
+  !> the saving of the chronological record files can be forced by changing
+  !> \ref optcal::ntmabs "ntmabs" to
+  !> \ref optcal::ntpabs "ntpabs"+4(n+1)
   !>
-  !> Using \ref control_file; after the files have been saved, \ref ntmabs can be
-  !> reset to its original value, still using \ref control_file.
+  !> Using \a control_file; after the files have been saved,
+  !> \ref optcal::ntmabs "ntmabs" can be
+  !> reset to its original value, still using \a control_file.
   !> Useful if and only if chronological record files are generated (\em
   !> i.e. there are probes (\ref ncapt>0) there is n for which
-  !> \ref ihisvr(n, 1) \f$\ne\f$ 0)
+  !> \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ 0)
   integer, save :: nthsav
 
-  !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr "ihisvr(n, j>1)"
+  !> number \ref ihisvr "ihisvr(n, 1)" and index-numbers \ref ihisvr "ihisvr"(n, j>1)
   !> of the record probes to be used for each variable, em i.e. calculation variable
   !> or physical property defined at the cell centers.
-  !> With \ref ihisvr "ihisvr(n, 1)"=-999 or -1, \ref ihisvr(n, j>1) is useless.
-  !>  - \ref ihisvr "ihisvr(n, 1)": number of record probes to use
+  !> With \ref ihisvr "ihisvr"(n, 1)=-999 or -1, \ref ihisvr "ihisvr"(n, j>1) is useless.
+  !>  - \ref ihisvr "ihisvr"(n, 1): number of record probes to use
   !> for the variable N.
   !>     * = -999: by default: chronogical records are generated on
   !> all the probes if N is one of the main variables (pressure, velocity,
@@ -222,20 +225,20 @@ module entsor
   !> viscosity. For the other quantities, no chronological record is generated.
   !>     * = -1: chronological records are produced on all the probes.
   !>     * = 0: no chronological record on any probe.
-  !>     * > 0: chronological record on \ref ihisvr "ihisvr(n, 1)" probes to be
-  !> specified with  \ref ihisvr "ihisvr(n, j>1)".
+  !>     * > 0: chronological record on \ref ihisvr "ihisvr"(n, 1) probes to be
+  !> specified with  \ref ihisvr "ihisvr"(n, j>1).
   !> always useful, must be inferior or equal to \ref ncapt.
-  !>  - \ref ihisvr "ihisvr(n, j>1)": index-numbers of the probes
+  !>  - \ref ihisvr "ihisvr"(n, j>1): index-numbers of the probes
   !> used for the variable n.
-  !> (with j <= \ref ihisvr "ihisvr(n,1)+1").
-  !>     * = -999: by default: if \ref ihisvr "ihisvr(n, 1)" \f$\ne\f$ -999
+  !> (with j <= \ref ihisvr "ihisvr"(n,1)+1).
+  !>     * = -999: by default: if \ref ihisvr "ihisvr"(n, 1) \f$\ne\f$ -999
   !> the  code stops. Otherwise, refer to the description of the case
-  !> \ref ihisvr "ihisvr(n, 1)"=-999.
+  !> \ref ihisvr "ihisvr"(n, 1)=-999.
   !>
-  !> Useful if and only if \ref ihisvr "ihisvr(n, 1)" > 0 .
+  !> Useful if and only if \ref ihisvr "ihisvr"(n, 1) > 0 .
   !>
-  !> The condition \ref ihisvr "ihisvr(n, j)" <= \ref ncapt must be respected.
-  !> For an easier use, it is recommended to simply specify \ref ihisvr "ihisvr(n,1)"=-1 for
+  !> The condition \ref ihisvr "ihisvr"(n, j) <= \ref ncapt must be respected.
+  !> For an easier use, it is recommended to simply specify \ref ihisvr "ihisvr"(n,1)=-1 for
   !> all the interesting variables.
   integer, save :: ihisvr(nvppmx,ncaptm+1)
 
@@ -250,7 +253,7 @@ module entsor
 
   !> xyzcap : required position for a probe
   !> 3D-coordinates of the probes.
-  !> the coordinates are written: \ref xyzcap(i,j), with i = 1,2 or 3
+  !> the coordinates are written: \ref xyzcap "xyzcap"(i,j), with i = 1,2 or 3
   !> and j <= \ref ncapt.
   !> Useful if and only if \ref ncapt > 0.
   double precision, save :: xyzcap(3,ncaptm)
@@ -360,14 +363,14 @@ module entsor
   !> \{
 
   !> indicates the data to post-process on the boundary mesh (the boundary mesh must
-  !> have been activated with \ref ichrbo=1. Its value is
+  !> be associated with an active writer). Its value is
   !> the product of the following integers, depending on the variables
   !> that should be post-processed:
-  !> \ref ipstyp: \f$ y^+ \f$ at the boundary
+  !> \ref ipstyp "ipstyp": \f$ y^+ \f$ at the boundary
   !> \ref ipstft}: thermal flux at the boundary
-  !> ( \f$ W\,m^{-2} \f$ ), if a thermal scalar has been defined (\ref iscalt)
+  !> ( \f$ W\,m^{-2} \f$ ), if a thermal scalar has been defined (\ref optcal::iscalt "iscalt")
   !> With \ref ipstdv=1, none of these data are post-processed at the boundaries.
-  !> always useful if \ref ichrbo=1
+  !> always useful
   integer, save :: ipstdv(6)
 
   !> post-processed property: Efforts (1: all; 2: tangent; 4: normal)

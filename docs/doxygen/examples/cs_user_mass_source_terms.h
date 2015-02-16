@@ -59,7 +59,7 @@ Two options are available:
                   (\c icestm(ieltsm) in \c [1;ncel])
 
  - \c smacel(ieltsm,ipr): value of the injection mass rate gamma (in \f$ kg \cdot m^3 \cdot s^{-1}\f$)
-                             in the \ref ieltsm cell with mass source term
+                             in the \c ieltsm cell with mass source term
 
  - \c itypsm(ieltsm,ivar): type of treatment for variable ivar in the
                        \c ieltsm cell with mass source term.
@@ -77,7 +77,7 @@ Two options are available:
 
  - if \c smacel(ieltsm,ipr)<0, mass is removed from the system,
      therefore \c Code_Saturne automatically considers \f$ \varia^{in}=\varia^{(n+1)}\f$,
-     whatever the values of \ref itypsm or \ref smacel specified by the user
+     whatever the values of \c itypsm or \c smacel specified by the user
 
  - if a value \c ivar is not linked for a mass source
      term is imposed, no source term will be taken into account.
@@ -133,7 +133,7 @@ In this test in two parts, one must pay attention not to count
 the cells twice (a cell with a boundary face of color 3 can
 also have a coordinate X between 2.5 and 5).
 One should also pay attention that, on the first call, the
-array \ref icetsm doesn't exist yet. It mustn't be used outside
+array \c icetsm doesn't exist yet. It mustn't be used outside
 of tests (\c iappel.eq.2).
 
 \snippet  cs_user_mass_source_terms.f90 example_1_2

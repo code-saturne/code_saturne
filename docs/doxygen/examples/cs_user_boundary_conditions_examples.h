@@ -189,7 +189,7 @@
 
   \snippet cs_user_boundary_conditions-mapped_inlet.f90 loc_var_dec
 
-  Note that the \ref inlet_l pointer has the \c save attribute, as the
+  Note that the \c inlet_l pointer has the \c save attribute, as the
   matching structure usually needs to be built only once, then reused at
   each time step.
 
@@ -216,22 +216,24 @@
 
   \section channel_inlet_mapped_example_1_map_init Mapping definition
 
-  To define the appropriate mapping object, the \ref boundary_conditions_map
+  To define the appropriate mapping object, the
+  \ref cs_c_bindings::boundary_conditions_map "boundary_conditions_map"
   function is used. In this example, coordinates of the selected inlet face
-  are shifted by a constant distance (5.95 meters along the \emp x axis),
+  are shifted by a constant distance (5.95 meters along the \em x axis),
   and mapped to the corresponding mesh cells. Here, all cells are selected
   as point location candidates, but optionally, a restricted list of cells
   may be provided, which may accelerate location (or ensure it is done on a
   selected subset). In most cases, as in this example, a constant coordinate
   shift is used for all inlet points, but it is possible to define a
-  specific shift for each face (defining a \stride argument of 1 instead of 0
+  specific shift for each face (defining a \c stride argument of 1 instead of 0
   and \c coord_shift(:,ifac) instead of \c coord_shift(:,1)).
 
   \snippet cs_user_boundary_conditions-mapped_inlet.f90 example_1_map_init
 
   In general, when defining a pseudo-periodic boundary condition, it is assumed
   that the mesh is not moving, so the mapping may be defined once and for
-  all. Hence the test on \ref ntcabs and \ref ntpabs and the \c save attribute
+  all. Hence the test on \ref optcal::ntcabs "ntcabs" and
+  \ref optcal::ntpabs "ntpabs" and the \c save attribute
   for the \c inlet_1 pointer.
 
   \section channel_inlet_mapped_example_1_map_apply Applying the map
@@ -239,7 +241,10 @@
   At all time steps after the first (possibly even the first if the flow
   at the mapping locations is initialized to nonzero values), the values at
   points mapped to inlet face centers are applied to the \c rcodcl(ifac,1)
-  values of the corresponding faces. Optionally, a normalization by be applied,
+  values of the corresponding faces, using the
+  \ref cs_c_bindings::boundary_conditions_mapped_set
+  "boundary_conditions_mapped_set" subroutine.
+  Optionally, a normalization by be applied,
   ensuring the mean values initially defined are preserved. Normalization
   is recommended for the velocity, and possibly scalars, but not for
   turbulent quantities, which should adapt to the velocity.

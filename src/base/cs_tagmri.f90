@@ -24,7 +24,7 @@
 ! Function:
 ! ---------
 
-!> \file cs_tagmro.f90
+!> \file cs_tagmri.f90
 !>
 !> \brief The 1D thermal model to compute the temperature to impose
 !> at the cold wall. This one is used by the COPAIN model to estimate
@@ -66,7 +66,7 @@
 !>                                 -# for the pressure \f$ \Delta t
 !>                                    \grad P \cdot \vect{n}  \f$
 !>                                 -# for a scalar \f$ cp \left( K +
-!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \dfrac{K_T}{\sigma_T} \right) \f$
 !_______________________________________________________________________________
 
 subroutine cs_tagmri &

@@ -92,14 +92,20 @@ BEGIN_C_DECLS
   Members of this structure are publicly accessible, to allow for
   concise syntax, and for use by inline functions.
 
-  \var  cs_rotation_t::icorio
-        Coriolis source terms
-  \var  cs_rotation_t::omegax
-        x component of the rotation vector
-  \var  cs_rotation_t::omegay
-        y component of the rotation vector
-  \var  cs_rotation_t::omegaz
-        z component of the rotation vector
+  double  omega;
+  double  angle;
+  double  axis[3];
+  double  invariant[3];
+
+
+  \var  cs_rotation_t::omega
+        rotation velocity
+  \var  cs_rotation_t::angle
+        cumulated rotation
+  \var  cs_rotation_t::axis
+        rotation vector
+  \var  cs_rotation_t::invariant
+        coordinates of invariant point
 */
 
 /*! \fn inline static void \
@@ -377,7 +383,8 @@ cs_f_rotation_coriolis_t(int              r_num,
  * \param[in]  invariant_x  invariant point x component
  * \param[in]  invariant_y  invariant point y component
  * \param[in]  invariant_z  invariant point z component
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_rotation_define(double  omega_x,

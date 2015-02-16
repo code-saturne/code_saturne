@@ -58,9 +58,20 @@
 !> \param[in]     itypsm        type of mass source term for the variables
 !> \param[in]     itypcd        type of condensation source terms for the variables
 !> \param[in]     dt            time step (per cell)
+!> \param[in]     vel           velocity
+!> \param[in]     vela          velocity at the previous time step
 !> \param[in]     propce        physical properties at cell centers
 !> \param[in]     flumas        internal mass flux (depending on iappel)
 !> \param[in]     flumab        boundary mass flux (depending on iappel)
+!> \param[in]     tslagr        coupling term for the Lagrangian module
+!> \param[in]     coefav        boundary condition array for the variable
+!>                               (explicit part)
+!> \param[in]     coefbv        boundary condition array for the variable
+!>                               (implicit part)
+!> \param[in]     cofafv        boundary condition array for the diffusion
+!>                               of the variable (explicit part)
+!> \param[in]     cofbfv        boundary condition array for the diffusion
+!>                               of the variable (implicit part)
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
@@ -73,20 +84,21 @@
 !>                              \f$ \Gamma_{v, cond}^n \f$)
 !> \param[in]     frcxt         external forces making hydrostatic pressure
 !> \param[in]     trava         working array for the velocity-pressure coupling
-!> \param[in]     ximpa         idem
-!> \param[in]     uvwk          idem (stores the velocity at the previous iteration)
+!> \param[in]     ximpa         same
+!> \param[in]     uvwk          same (stores the velocity at the previous iteration)
 !> \param[in]     dfrcxt        variation of the external forces
-!> \param[in]                    making the hydrostatic pressure
-!> \param[in]     grdphd        hydrostatic pressure gradient to handle the imbalance
-!>                              between the pressure gradient and gravity source term
+!                               making the hydrostatic pressure
+!> \param[in]     grdphd        hydrostatic pressure gradient to handle the
+!>                              imbalance between the pressure gradient and
+!>                              gravity source term
 !> \param[in]     tpucou        non scalar time step in case of
 !>                              velocity pressure coupling
 !> \param[in]     trav          right hand side for the normalizing
 !>                              the residual
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
-!> \param[in]     viscfi        idem viscf pour increments
-!> \param[in]     viscbi        idem viscb pour increments
+!> \param[in]     viscfi        same as viscf for increments
+!> \param[in]     viscbi        same as viscb for increments
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
 !> \param[in]     w1            working array

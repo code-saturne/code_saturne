@@ -74,9 +74,19 @@
 !> \param[in]     f3m           average of tracer 3 (CO heterogeneous comb.)
 !> \param[in]     f4m           average of tracer 4 (air)
 !> \param[in]     f5m           average of tracer 5 (H2O)
+!> \param[in]     f6m           average of tracer 6 (water mass fraction)
+!> \param[in]     f7m           average of tracer 7 (coal oxidyzed by O2
+!>                              fraction)
+!> \param[in]     f8m           average of tracer 8 (coal gasified by CO2
+!>                              fraction)
+!> \param[in]     f9m           average of tracer 9 (coal gasified by H2O
+!>                              fraction)
+!> \param[in]     fvp2m         f1f2 variance
 !> \param[in]     enth          enthalpy in \f$ j . kg^{-1} \f$  either of
 !>                                         the gas or of the mixture
+!> \param[in]     enthox        oxydant enthalpy
 !> \param[in,out] propce        physical properties at cell centers
+!> \param[out]    rom1          gas density
 !______________________________________________________________________________!
 
 subroutine cs_fuel_physprop1 &

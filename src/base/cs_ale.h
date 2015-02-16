@@ -46,7 +46,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute cell and face centre of gravity, cell volume.
+ * Compute cell and face center of gravity, cell volume.
  *
  * Fortran Interface
  *

@@ -48,7 +48,7 @@
 !>                              source; NOT INTERLEAVED
 !> \param[in]     gamma         mass flow value
 !> \param[in,out] tsexpv        explicit source term part linear in the variable
-!> \param[in,out] tsimpv        associated value with \ref tsexp
+!> \param[in,out] tsimpv        associated value with \c tsexp
 !>                              to be stored in the matrix
 !> \param[out]    gavinj        explicit source term part independant
 !>                              of the variable

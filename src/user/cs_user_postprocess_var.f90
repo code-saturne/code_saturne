@@ -30,9 +30,9 @@
 !> \brief Output additional variables on a postprocessing mesh.
 !>
 !> Several "automatic" postprocessing meshes may be defined:
-!> - The volume mesh (ipart=-1) if 'ichrvl' = 1
-!> - The boundary mesh (ipart=-2) if 'ichrbo' = 1
-!> - SYRTHES coupling surface (ipart < -2) if 'ichrsy' = 1
+!> - The volume mesh (ipart=-1)
+!> - The boundary mesh (ipart=-2)
+!> - SYRTHES coupling surface (ipart < -2)
 !> - Cooling tower exchange zone meshes (ipart < -2) if 'ichrze' = 1
 !>
 !> Additional meshes (cells or faces) may also be defined through the GUI or

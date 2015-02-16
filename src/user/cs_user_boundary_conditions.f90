@@ -32,7 +32,7 @@
 !> (\c icodcl, \c rcodcl) for unknown variables.
 !>
 !>
-!> \section intro Introduction
+!> \section cs_user_boundary_conditions_intro Introduction
 !>
 !> Here one defines boundary conditions on a per-face basis.
 !>
@@ -325,7 +325,7 @@
 !>       entering the subroutine.
 !>
 !>
-!> \subsubsection cell_id Cell values of some variables
+!> \subsubsection cs_user_bc_cell_id Cell values of some variables
 !>
 !> Cell value field ids
 !>

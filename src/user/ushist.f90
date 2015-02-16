@@ -121,9 +121,6 @@ if(1.eq.1) return
 ! 1.  Initialization
 !===============================================================================
 
-! Memory management
-
-
 ! Current pass number in this subroutine
 
 ipass = ipass + 1
@@ -137,7 +134,7 @@ ipass = ipass + 1
 !   using the 'findpt' subroutine to find the monitoring points.
 
 ! At the first pass:
-!    Search for the cell number the centre of which is the closest of the
+!    Search for the cell number the center of which is the closest of the
 !    coordinates (xx, yy, zz).
 !    In case of parallelism, the cell number 'icapt(ii)' is local to the
 !    processor of rank 'ircapt(ii)' (from 0 to the number of processor - 1).

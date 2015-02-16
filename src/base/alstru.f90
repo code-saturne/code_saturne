@@ -43,7 +43,7 @@ module alstru
   integer, save :: nbstru
 
   !> \anchor xmstru mass matrix of the structure (kg)
-  !> (for \ref xmstru(i,j,k), i and j are the array of mass structure
+  !> (for \ref xmstru "xmstru"(i,j,k), i and j are the array of mass structure
   !> and k is the index of the structure)
   double precision, save :: xmstru(3,3,nstrmx)
 

@@ -422,7 +422,7 @@ end subroutine cs_gas_mix_physical_properties
 ! Purpose:
 ! -------
 
-!> \file cs_local_physical_properties
+!> \file cs_gas_mix_physical_properties.f90
 !>
 !> \brief This user subroutine is used to compute the dynamic viscosity and
 !> conductivity coefficient associated to each gas species.

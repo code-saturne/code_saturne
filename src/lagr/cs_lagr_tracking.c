@@ -5310,7 +5310,7 @@ cs_lagr_destroy(void)
  * By default, the total number of particles is not limited. A global limit
  * may be set using \ref cs_lagr_set_n_g_particles_max.
  *
- * \param[in]  n_particles  minumum number of particles required
+ * \param[in]  n_min_particles  minumum number of particles required
  *
  * \return  1 if resizing was required, -1 if the global minimum number
  *          of particles would exceed the global limit, 0 otherwise.

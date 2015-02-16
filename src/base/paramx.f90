@@ -91,8 +91,8 @@ module paramx
   !> if \ref itypfb=ientre: inlet face.
   !> -  Zero-flux condition for pressure and Dirichlet condition for all
   !> other variables. The value of the Dirichlet must be given in
-  !> \ref rcodcl(ifac,ivar,1) for every value of \ref ivar, except for
-  !> \ref ivar=ipr. The other values of \ref rcodcl and
+  !> \ref rcodcl "rcodcl"(ifac,ivar,1) for every value of \c ivar, except for
+  !> \c ivar = \ref ipr. The other values of \ref rcodcl and
   !> \ref icodcl are filled automatically.
   integer   ientre
 
@@ -217,8 +217,8 @@ module paramx
   !>                                    prescribed.
   !> -  Zero-flux condition for pressure and Dirichlet condition for all
   !> other variables. The value of the Dirichlet must be given in
-  !> \ref rcodcl(ifac,ivar,1) for every value of \ref ivar, except for
-  !> \ref ivar=ipr. The other values of \ref rcodcl and
+  !> \ref rcodcl "rcodcl"(ifac,ivar,1) for every value of \c ivar, except for
+  !> \c ivar = \ref numvar::ipr "ipr". The other values of \ref rcodcl and
   !> \ref icodcl are filled automatically.
   !> The diffusive flux is CANCELLED (therefore the total mass flux is due to
   !> convection only).
@@ -345,8 +345,8 @@ module paramx
   !> - In the case where all the nodes of a face have a imposed displacement,
   !> it is not necessary to fill the tables with boundary conditions
   !> mesh velocity for this face, they will be erased. In the other case,
-  !> the value of the Dirichlet must be given in \ref rcodcl(ifac,ivar,1) for
-  !> every value of \ref ivar (\ref iuma, \ref ivma and \ref iwma).
+  !> the value of the Dirichlet must be given in \ref rcodcl "rcodcl"(ifac,ivar,1)
+  !> for every value of \c ivar (\ref iuma, \ref ivma and \ref iwma).
   !> The other boxes of \ref rcodcl and \ref icodcl are completed automatically.
   !> The tangential mesh velocity is taken like a tape speed under the
   !> boundary conditions of wall for the fluid, except if wall fluid velocity

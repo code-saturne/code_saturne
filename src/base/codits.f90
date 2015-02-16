@@ -136,13 +136,13 @@
 !>                               it allows to initialize by something else than
 !>                               pvara (usually pvar=pvara)
 !> \param[in]     coefap        boundary condition array for the variable
-!>                               (Explicit part)
+!>                               (explicit part)
 !> \param[in]     coefbp        boundary condition array for the variable
-!>                               (Impplicit part)
+!>                               (implicit part)
 !> \param[in]     cofafp        boundary condition array for the diffusion
-!>                               of the variable (Explicit part)
+!>                               of the variable (explicit part)
 !> \param[in]     cofbfp        boundary condition array for the diffusion
-!>                               of the variable (Implicit part)
+!>                               of the variable (implicit part)
 !> \param[in]     flumas        mass flux at interior faces
 !> \param[in]     flumab        mass flux at boundary faces
 !> \param[in]     viscfm        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$

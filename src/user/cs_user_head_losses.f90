@@ -94,7 +94,7 @@
 !______________________________________________________________________________!
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     iappel        stage in the code
-!> \param[in]     icepd         numbers of ncepdp cells with head loss
+!> \param[in]     icepdc        numbers of ncepdp cells with head loss
 !> \param[in]     izcpdc        cells zone for head loss definition
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        work array for head loss

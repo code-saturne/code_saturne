@@ -110,9 +110,9 @@ BEGIN_C_DECLS
   \var  cs_wall_functions_t::ypluli
         limit value of \f$y^+\f$ for the viscous sublayer
 
-        \ref ypluli depends on the chosen wall function: it is initialised to
+        \ref ypluli depends on the chosen wall function: it is initialized to
         10.88 for the scalable wall function (\ref iwallf=4), otherwise it is
-        initialised to \f$1/\kappa\approx 2,38\f$. In LES, \ref ypluli is taken
+        initialized to \f$1/\kappa\approx 2,38\f$. In LES, \ref ypluli is taken
         by default to be 10.88. Always useful.
 
 */

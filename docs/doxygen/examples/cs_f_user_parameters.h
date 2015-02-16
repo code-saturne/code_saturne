@@ -120,7 +120,7 @@
   \snippet cs_user_parameters-output.f90 usipes_ex_07
 
   Activate or deactivate probes output.
-  If \ref ihisvr(.,1) = -1, output is done for all probes.
+  If \ref entsor::ihisvr "ihisvr"(.,1) = -1, output is done for all probes.
   In the following example, probes output for the velocity is restricted
   to the first component.
 

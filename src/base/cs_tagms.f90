@@ -41,9 +41,9 @@ module cs_tagms
   ! Numerical parameters to solve the 0-D thermal model of the metal mass
   !----------------------------------------------------------------------------
 
-  !> \defgroup numerical_parameters of 0-D thermal model
+  !> \defgroup cs_tagms_numerical_parameters Numerical parameters of 0-D thermal model
 
-  !> \addtogroup numerical_parameters
+  !> \addtogroup cs_tagms_numerical_parameters
   !> \{
 
   !> \anchor  xem
@@ -56,9 +56,9 @@ module cs_tagms
   ! Physical parameters to solve the 0-D thermal model of the metal mass
   !----------------------------------------------------------------------------
 
-  !> \defgroup physical_properties of 0-D thermal model
+  !> \defgroup cs_tagms_physical_properties Physical properties of 0-D thermal model
 
-  !> \addtogroup physcial_properties
+  !> \addtogroup cs_tagms_physcial_properties
   !> \{
 
   !> \anchor xro
@@ -89,6 +89,8 @@ module cs_tagms
   !> the wall temperature computed with the 0-D thermal model
   !> associated to the metal mass structure material
   double precision, dimension(:,:),  allocatable :: t_metal
+
+  !> \}
 
   !> \}
 

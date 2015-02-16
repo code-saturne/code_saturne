@@ -65,7 +65,7 @@ module lagran
   integer, save ::           iilagr
 
   !> activation (=1) or not (=0) of a Lagrangian calculation restart.
-  !> The calculation restart file read when this option is activated (\ref ficaml)
+  !> The calculation restart file read when this option is activated
   !> only contains the data related to the particles (see also \ref isuist)
   !> the global calculation must also be a restart calculation
   integer, save ::           isuila
@@ -94,7 +94,7 @@ module lagran
   !> \{
 
   !> number of current local particles
-  !> Always useful, but initialised and updated without intervention of the user
+  !> Always useful, but initialized and updated without intervention of the user
   integer(c_int), pointer, save :: nbpart
 
   !> number of new entering particles
@@ -162,8 +162,6 @@ module lagran
 
   !=======================
 
-  !> \addtogroup lagran
-  !> \{
   !> \defgroup lag_pointers Lagrangian pointers
 
   !> \addtogroup lag_pointers
@@ -225,14 +223,14 @@ module lagran
   !> Useful if si \ref iphyla = 1
   integer, save ::           impvar
 
-  !> initialisation temperature (in degree Celsius) for the particles already
+  !> initialization temperature (in degree Celsius) for the particles already
   !> present in the calculation domain when an evolution equation on
   !> the particle temperature is activated during a calculation (\ref iphyla =
   !> 1 and \ref itpvar = 1).
   !> Useful if \ref isuila = 1 and \ref itpvar = 0 in the previous calculation
   double precision, save ::  tpart
 
-  !> initialisation value for the specific heat (\f$ J.kg^{-1}.K^{-1} \f$)
+  !> initialization value for the specific heat (\f$ J.kg^{-1}.K^{-1} \f$)
   !> of the particles already present
   !> in the calculation domain when an evolution equation
   !> on the particle temperature is activated during a calculation
@@ -472,9 +470,9 @@ module lagran
   !> for \ref ipepa array.
   !> The additional variables can be accessed in the arrays
   !> \ref eptp and \ref eptpa by means of the
-  !> pointer \ref jvls:  \ref eptp(nbpt,jvls(ii)) and
-  !> \ref eptpa(nbpt,jvls(ii)) (\ref nbpt is
-  !> the index-number of the treated particle, and \ref ii an integer
+  !> pointer \ref jvls "jvls":  \ref eptp "eptp"(nbpt,jvls(ii)) and
+  !> \ref eptpa "eptpa"(nbpt,jvls(ii)) (\c nbpt is
+  !> the index-number of the treated particle, and \c ii an integer
   !> between 1 and \ref nvls)
   integer, save ::           nvls
 
@@ -492,7 +490,7 @@ module lagran
 
   !> activates (=1) or not (=0) the continuous injection of particles.
   !> this option allows to inject particles continuously during the duration
-  !> of the Lagrangian time step \ref dtp\indexdtp rather than only once at the
+  !> of the Lagrangian time step \ref dtp rather than only once at the
   !> beginning of the Lagrangian iteration. It helps avoiding the fractioning of
   !> the particles cloud close to the injection areas.
   integer, save :: injcon
@@ -502,45 +500,53 @@ module lagran
 
 
   !> for all the \ref nfrlag boundary zones previously identified, the number of classes
-  !> \ref nbclas (a class is a set of particles sharing the same physical properties
+  !> \c nbclas (a class is a set of particles sharing the same physical properties
   !> and the same characteristics concerning the injection in the calculation domain)
-  !> of entering particles is given: \ref iusncl(izone) = \ref nbclas.
+  !> of entering particles is given: \ref iusncl "iusncl"(izone) = \c nbclas.
   !> By default, the number of particle classes is zero.
-  !> The maximum number of classes is \ref nclagm (parameter stored in lagpar,
+  !> The maximum number of classes is \ref lagpar::nflagm "nflagm" (parameter stored in lagpar,
   !> whose default value is 20).
   integer, save :: iusncl(nflagm)
 
   !> for all the \ref nfrlag boundary zones
   !> previously identified, a particle boundary condition type is given.
   !> The categories of particle boundary condition types are marked out by the
-  !> key words \ref ientrl, \ref isortl, \ref irebol, \ref idepo1, \ref idepo2, \ref iencrl.
-  !> - if \ref iusclb(izone) = \ref ientrl, izone is a particle injection zone.
+  !> key words \ref lagpar::ientrl "ientrl", \ref lagpar::isortl "isortl",
+  !> \ref lagpar::irebol "irebol", \ref lagpar::idepo1 "idepo1",
+  !> \ref lagpar::idepo2 "idepo2", \ref lagpar::iencrl "iencrl".
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::ientrl "ientrl",
+  !>   izone is a particle injection zone.
   !> For each particle class associated with this zone, information must be
   !> provided (see below). If a particle trajectory may cross an injection zone,
   !> then this particle leaves the calculation domain.
 
-  !> - if \ref iusclb(izone) = \ref isortl, the particles interacting with the zone
-  !>   \ref izone leave definitely the calculation domain.
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::isortl "isortl",
+  !>   the particles interacting with the zone
+  !>   \c izone permanently exit the calculation domain.
 
-  !> - if \ref iusclb(izone) = \ref irebol, the particles undergo an elastic
-  !>   rebound on the boundary zone \ref izone.
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::irebol "irebol", the particles
+  !>   undergo an elastic rebound on the boundary zone \c izone.
 
-  !> - if \ref iusclb(izone) = \ref idepo1, the particles settle definitely on the
-  !>   boundary zone \ref izone. These particles leave the calculation domain
-  !>   and are definitely erased from the calculation
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::idepo1 "idepo1",
+  !>   the particles settle
+  !>   permanently on the boundary zone \c izone. These particles leave the
+  !>   calculation domain and are permanently erased from the calculation
 
-  !> - if \ref iusclb(izone) = \ref idepo2, the particles settle definitevely
-  !> on the boundary zone \ref izone and they are kept in the calculation
-  !> - if \ref iusclb(izone) = \ref idepo2, the particles settle definitevely
-  !> on the boundary zone \ref izone and they are kept in the calculation
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::idepo2 "idepo2",
+  !>   the particles settle
+  !>   definitevely on the boundary zone \c izone and they are kept in the calculation
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::idepo2 "idepo2",
+  !> the particles settle permanently
+  !> on the boundary zone \c izone and they are kept in the calculation
   !> domain: the particles do not disappear after touching the boundary zone.
-  !> However, using \ref idepo2 type zones necessitates more memory
-  !> than using \ref idepo1 type zones.
-  !> - if \ref iusclb(izone) = \ref iencrl, the particles which are coal particles
-  !> (if \ref iphyla = 2) can become fouled up on the zone \ref izone. The
-  !> slagging is a \ref idepo1 type deposit of the coal particle if a certain
+  !> However, using \ref lagpar::idepo2 "idepo2" type zones necessitates more memory
+  !> than using \ref lagpar::idepo1 "idepo1" type zones.
+  !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::iencrl "iencrl",
+  !>   the particles which are coal
+  !>   particles (if \ref iphyla = 2) can become fouled up on the zone \c izone. The
+  !> slagging is a \ref lagpar::idepo1 "idepo1" type deposit of the coal particle if a certain
   !> criterion is respected. Otherwise, the coal particle rebounds
-  !> (\ref irebol type behaviour). This boundary condition type is available
+  !> (\ref lagpar::irebol "irebol" type behaviour). This boundary condition type is available
   !> if \ref iencra = 1. A limit temperature \ref tprenc, a
   !> critical viscosity \ref visref and the coal composition
   !> in mineral matters must be given in the subroutine
@@ -553,30 +559,30 @@ module lagran
   !> Some pieces of information must be given for each particle class
   !> associated with an injection zone.
   !> The first part consists in integers contained in the
-  !> array \ref iuslag. There are at the most \ref ndlaim integers. These
-  !> pieces of information must be provided for each class \ref iclas and each
-  !> particle injection zone \ref izone.
+  !> array \ref iuslag. There are at the most \ref lagpar::ndlaim "ndlaim"
+  !> integers. This data must be provided for each class \c iclas and each
+  !> particle injection zone \c izone.
   !> They are marked out by means of "pointers":
-  !> - \ref iuslag(iclas,izone,ijnbp): number of particles to inject in
+  !> - \ref iuslag "iuslag"(iclas,izone,ijnbp): number of particles to inject in
   !> the calculation domain per class and per zone.
-  !> - \ref iuslag(iclas,izone,ijfre): injection period (expressed in number
+  !> - \ref iuslag "iuslag"(iclas,izone,ijfre): injection period (expressed in number
   !> of time steps). If the period is null, then there is injection only
   !> at the first absolute Lagrangian time step (including the restart
   !> calculations).
-  !> - \ref iuslag(iclas,izone,ijuvw): type of velocity condition:
-  !> - if \ref iuslag(iclas,izone,ijuvw) = 1, the particle velocity vector is
+  !> - \ref iuslag "iuslag"(iclas,izone,ijuvw): type of velocity condition:
+  !> - if \ref iuslag "iuslag"(iclas,izone,ijuvw) = 1, the particle velocity vector is
   !> imposed, and its components must be given in the array \ref ruslag (see
   !> below).
-  !> - if \ref iuslag(iclas,izone,ijuvw) = 0, the particle velocity is imposed
+  !> - if \ref iuslag "iuslag"(iclas,izone,ijuvw) = 0, the particle velocity is imposed
   !> perpendicular to the injection boundary face and with the norm
-  !> \ref ruslag(iclas,izone,iuno).
-  !> - if \ref iuslag(iclas,izone,ijuvw) = -1, the particle injection velocity
+  !> \ref ruslag "ruslag"(iclas,izone,iuno).
+  !> - if \ref iuslag "iuslag"(iclas,izone,ijuvw) = -1, the particle injection velocity
   !> is equal to the fluid velocity at the center of the cell
   !> neighboring the injection boundary face.
-  !> - \ref iuslag(iclas,izone,inuchl): when the particles are coal particles
+  !> - \ref iuslag "iuslag"(iclas,izone,inuchl): when the particles are coal particles
   !> (\ref iphyla = 2), this part of the array contains the coal index-number,
-  !> between 1 and \ref ncharb (defined by the user in the thermochemical
-  !> file dp\_FCP, with  \ref ncharb <= ncharm = 3).
+  !> between 1 and \ref cpincl::ncharb "ncharb" (defined by the user in the
+  !> thermochemical file dp\_FCP, with  \ref cpincl::ncharb "ncharb" <= ncharm = 3).
   integer, allocatable, dimension(:,:,:) :: iuslag
 
   !> massic flow rate for a boudary zone
@@ -604,7 +610,7 @@ module lagran
   !> - 2 temperature profile given by the user
   integer, save ::  ijprtp
 
-  !> type of user profiles in \ref uslag2:
+  !> type of user profiles in \ref uslag2 "uslag2":
   !>  - 1: flat profile of diameter given in \ref uslag2
   !>  - 2: user profile to be given
   integer, save ::  ijprdp
@@ -621,9 +627,9 @@ module lagran
   !> associated with an injection zone.
   !> The second and last part consists in real numbers
   !> contained in the array \ref ruslag. There are at the most
-  !> \ref ndlagm such real numbers. These pieces of information must
-  !> be provided for each class \ref iclas and each particle injection zone
-  !> \ref izone. They are marked out by means of "pointers":
+  !> \ref lagpar::ndlagm "ndlagm" such real numbers. This data must
+  !> be provided for each class \c iclas and each particle injection zone
+  !> \c izone. They are marked out by means of "pointers":
   double precision, allocatable, dimension(:,:,:) :: ruslag
 
   !> particle velocity magnitude
@@ -731,15 +737,16 @@ module lagran
   !> \anchor isuist
   !> during a Lagrangian calculation restart, indicates whether the particle
   !> statistics (volume and boundary) and two-way coupling terms are to be read
-  !> from a restart file (=1) or reinitialised (=0).
-  !> The file to be read is \ref ficmls. Useful if \ref isuila = 1
+  !> from a restart file (=1) or reinitialized (=0).
+  !> Useful if \ref isuila = 1
   integer, save ::  isuist
 
   !> number of additional user volume statistic
   !> the additional statistics (or their cumulated value in the steady
-  !> case) can be accessed in the array \ref statis by means of the pointer
-  !> \ref ilvu: \ref statis (iel,ilvu(ii))
-  !> (\ref iel is the cell index-number and \ref ii an integer between
+  !> case) can be accessed in the array \ref pointe::statis "statis"
+  !> by means of the pointer
+  !> \ref ilvu "ilvu": \ref pointe::statis "statis"(iel,ilvu(ii))
+  !> (\c iel is the cell index-number and \c ii an integer between
   !> 1 and \ref nvlsts). Useful if \ref istala = 1
   integer, save ::  nvlsts
 
@@ -763,7 +770,7 @@ module lagran
   !> been cumulated.
   !> Useful if \ref istala=1, \ref isttio=1 and if \ref nstist is
   !> inferior or equal to the current Lagrangian iteration.
-  !> \ref npst is initialised and updated automatically by the code, its
+  !> \ref npst is initialized and updated automatically by the code, its
   !> value is not to be modified by the user
   integer, save ::  npst
 
@@ -771,7 +778,7 @@ module lagran
   !> calculated (the potential iterations during which unsteady
   !> statistics have been calculated are counted in \ref npstt).
   !> Useful if \ref istala=1.
-  !> \ref npstt is initialised and updated automatically by the code,
+  !> \ref npstt is initialized and updated automatically by the code,
   !> its value is not to be modified by the user
   integer, save ::  npstt
 
@@ -782,7 +789,7 @@ module lagran
   !> then \ref tstat=dtp (it is the Lagrangian time step, because the
   !> statistics are reset to zero at every iteration).
   !> Useful if \ref istala=1.
-  !> \ref tstat is initialised and updated automatically by the code,
+  !> \ref tstat is initialized and updated automatically by the code,
   !> its value is not to be modified by the user
   double precision, save ::  tstat
 
@@ -917,7 +924,7 @@ module lagran
   !> if the number of absolute Lagrangian iterations is strictly inferior to
   !> \ref nstits, the code considers that the flow has not yet reached its
   !> steady state (transition period) and the averages appearing in the source
-  !> terms are reinitialised at each time step, as it is the case for unsteady
+  !> terms are reinitialized at each time step, as it is the case for unsteady
   !> flows (\ref isttio=0).
   !> Useful if \ref iilagr = 2 and \ref isttio = 1
   integer, save ::  nstits
@@ -947,7 +954,7 @@ module lagran
   !> activates (=1) or not (=0) of the particle cloning/fusion technique
   !> (option also called "Russian roulette").
   !> when \ref iroule = 1, the importance function must be specified  via the
-  !> array \ref croule\indexcroule in the user subroutine \ref uslaru
+  !> array \c croule in the user subroutine \ref uslaru
   integer, save ::           iroule
 
   !> \}
@@ -1123,7 +1130,7 @@ module lagran
   !> been cumulated.
   !> Useful if \ref iensi3=1, \ref isttio=1 and \ref nstbor inferior
   !> or equal to the current Lagrangian iteration.
-  !> \ref npstf is initialised and updated automatically by the code,
+  !> \ref npstf is initialized and updated automatically by the code,
   !> its value is not to be modified by the user
   integer, save ::  npstf
 
@@ -1132,13 +1139,13 @@ module lagran
   !> (the potential iterations during which unsteady
   !> statistics have been calculated are counted in \ref npstft).
   !> Useful if \ref iensi3=1.
-  !> \ref npstft is initialised and updated automatically by the code,
+  !> \ref npstft is initialized and updated automatically by the code,
   !> its value is not to be modified by the user
   integer, save ::  npstft
 
   !> activation (=1) or not (=0) of the recording of the number of particle/boundary
   !> interactions, and of the calculation of the associated boundary statistics.
-  !> \ref inbrd = 1 is a compulsory condition to use the particulate average
+  !> \ref inbrbd = 1 is a compulsory condition to use the particulate average
   !> \ref imoybr = 2.
   !> Useful if \ref iensi3=1
   integer, save ::  inbrbd
@@ -1146,7 +1153,7 @@ module lagran
   !> activation (=1) or not (=0) of the recording of the particulate mass flow
   !> related to the particle/boundary interactions, and of the calculation of
   !> the associated boundary statistics.
-  !> \ref inbrd = 1 is a compulsory condition to use \ref iflmbd=1.
+  !> \ref inbrbd = 1 is a compulsory condition to use \ref iflmbd=1.
   !> Useful if \ref iensi3=1 and \ref inbrbd=1
   integer, save ::  iflmbd
 
@@ -1174,19 +1181,19 @@ module lagran
   !> number of particle/boundary interactions
   integer, save ::  inbr
 
-  !> \ref iflm: particle mass flow at the boundary faces
+  !> particle mass flow at the boundary faces
   integer, save ::  iflm
 
-  !> \ref iang: mean interaction angle with the boundary faces
+  !> mean interaction angle with the boundary faces
   integer, save ::  iang
 
-  !> \ref ivit: mean interaction velocity with the boundary faces
+  !> mean interaction velocity with the boundary faces
   integer, save ::  ivit
 
   !> number of resuspended particles
   integer, save ::  ires
 
-  !> \ref iflres: mass flow of resuspended particles at the boundary faces
+  !> mass flow of resuspended particles at the boundary faces
   integer, save ::  iflres
 
   ! TODO
@@ -1214,7 +1221,7 @@ module lagran
   !> absolute Lagrangian iteration number is inferior to \ref nstbor.
   !> - = 2: a particulate average is calculated. The cumulated
   !> value is divided by the number of particle/boundary interactions (in terms
-  !> of statistical weight) recorded in \ref parbor(nfabor,inbr). This average
+  !> of statistical weight) recorded in \ref parbor "parbor"(nfabor,inbr). This average
   !> can only be calculated when \ref inbrbd=1. The average is calculated if
   !> the number of interactions (in statistical weight) of the considered
   !> boundary face is strictly higher than \ref seuilf, otherwise the average

@@ -38,7 +38,7 @@ implicit none
   !> \addtogroup dimens
   !> \{
 
-  !> number of solved variables (must be lower than \ref nvrmax)
+  !> number of solved variables (must be lower than \ref paramx::nvarmx "nvarmx")
   integer, save :: nvar
 
   !> number of solved user scalars
@@ -51,14 +51,14 @@ implicit none
   !> These scalars can be divided into two distinct groups: \ref nscaus
   !> user-defined scalars and \ref nscapp scalars related to a
   !> "specific physics". \ref nscal=nscaus+nscapp, and \ref nscal
-  !> must be inferior or equal to \ref nscamx.
+  !> must be inferior or equal to \ref paramx::nscamx "nscamx".
   integer, save :: nscal
 
   !> Number of scalars with variable diffusivity
   integer, save :: nvisls
 
   !> number of properties defined at the cells.
-  !> They will be stored in the array \ref propce
+  !> They will be stored in the array \c propce allocated in \ref caltri
   integer, save :: nproce
 
   !> fake dimension for arrays coefa and coefb

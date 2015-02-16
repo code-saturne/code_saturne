@@ -116,13 +116,13 @@
 !> \param[in]     pvar          solved velocity (current time step)
 !> \param[in]     pvara         solved velocity (previous time step)
 !> \param[in]     coefav        boundary condition array for the variable
-!>                               (Explicit part)
+!>                               (explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
-!>                               (Impplicit part)
+!>                               (implicit part)
 !> \param[in]     cofafv        boundary condition array for the diffusion
-!>                               of the variable (Explicit part)
+!>                               of the variable (explicit part)
 !> \param[in]     cofbfv        boundary condition array for the diffusion
-!>                               of the variable (Implicit part)
+!>                               of the variable (implicit part)
 !> \param[in]     flumas        mass flux at interior faces
 !> \param[in]     flumab        mass flux at boundary faces
 !> \param[in]     viscf         \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$

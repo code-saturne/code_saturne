@@ -52,7 +52,6 @@
 
 
 subroutine findpt &
-
  ( ncelet , ncel   , xyzcen ,                                     &
    xx     , yy     , zz     , node   , ndrang)
 

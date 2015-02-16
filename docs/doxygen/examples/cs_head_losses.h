@@ -30,7 +30,8 @@
 
   \page cs_head_losses Examples of data settings for head losses (cs_user_head_losses.f90)
 
-  \brief User \ref uskpdc subroutine which is called at three different stages in the code <tt>(iappel=1, 2 or 3)</tt>.
+  \brief User \ref cs_user_head_losses subroutine which is called at three
+         different stages in the code <em>(iappel=1, 2 or 3)</em>.
 
    -  \c iappel = 1:
         Calculation of the number of cells where a head loss term is

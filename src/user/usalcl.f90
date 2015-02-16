@@ -62,10 +62,11 @@
 !>           A zero Dirichlet boundary condition is automatically imposed on mesh
 !>           velocity. Moreover the displacement of corresponding nodes will
 !>           automatically be set to 0 (for further information please
-!>           read the paragraph dedicated to the description of \c impale array in the
-!>           usalcl.f90 subroutine), unless the USER has modified the condition of
-!>           at least one  component of mesh velocity (modification of \c icodcl array,
-!>           please read the following paragraph \ref non_std_bc)
+!>           read the paragraph dedicated to the description of \c impale array
+!>           in the usalcl.f90 subroutine), unless the USER has modified the
+!>           condition of at least one mesh velocity component (modification of
+!>           \c icodcl array, please read the following paragraph
+!>           \ref non_std_bc_usa).
 !>
 !>  - \c ialtyb(ifac) = \c igliss: The mesh slides on corresponding face \c ifac.
 !>           The normal component of mesh velocity is automatically set to 0.
