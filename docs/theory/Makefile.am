@@ -32,7 +32,9 @@ TEXOTHERS = \
 algebr.tex \
 apintr.tex \
 bilsc2.tex \
+biblio.tex \
 bndcnd.tex \
+cavitation.tex \
 cfbase.tex \
 cfener.tex \
 cfmsvl.tex \
