@@ -367,8 +367,8 @@ cs_gui_get_status(char  *path,
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_tag_number(const char  *markup,
-                      int          flag);
+cs_gui_get_tag_count(const char  *markup,
+                     int          flag);
 
 /*-----------------------------------------------------------------------------
  * Return the number of characters needed to print an integer number

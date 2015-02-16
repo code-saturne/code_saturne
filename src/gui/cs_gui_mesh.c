@@ -376,7 +376,7 @@ cs_gui_mesh_define_joinings(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  n_join = cs_gui_get_tag_number("/solution_domain/joining/face_joining", 1);
+  n_join = cs_gui_get_tag_count("/solution_domain/joining/face_joining", 1);
 
   if (n_join == 0)
     return;
@@ -436,8 +436,8 @@ cs_gui_mesh_define_periodicities(void)
     return;
 
   n_perio
-    = cs_gui_get_tag_number("/solution_domain/periodicity/face_periodicity",
-                            1);
+    = cs_gui_get_tag_count("/solution_domain/periodicity/face_periodicity",
+                           1);
   if (n_perio == 0)
     return;
 

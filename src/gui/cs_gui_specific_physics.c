@@ -2240,7 +2240,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
   }
 
   /* ---- Nb de charbons */
-  *ncharb = cs_gui_get_tag_number("/solid_fuels/solid_fuel", 1);
+  *ncharb = cs_gui_get_tag_count("/solid_fuels/solid_fuel", 1);
   if (*ncharb > *ncharm)
     bft_error(__FILE__, __LINE__, 0,
               _("Coal number is limited to %i\n"
@@ -2478,7 +2478,7 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
   /* --> Lecture caracteristiques Oxydants */
 
   /* ---- Nb d'oxydants */
-  *noxyd = cs_gui_get_tag_number("/oxidants/oxidant", 1);
+  *noxyd = cs_gui_get_tag_count("/oxidants/oxidant", 1);
   if (*noxyd < 1 || *noxyd > 3 ) {
     bft_error(__FILE__, __LINE__, 0,
         _("Oxidant number must be between 1 and 3.\n"

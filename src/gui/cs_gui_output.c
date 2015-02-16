@@ -1077,7 +1077,7 @@ void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
   char *frequency_choice;
   char *id_s;
   mei_tree_t *ev_formula  = NULL;
-  nwriter = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
+  nwriter = cs_gui_get_tag_count("/analysis_control/output/writer", 1);
   for (i = 1; i <= nwriter; i++) {
     id = 0;
     id_s = _output_type_choice("writer","id",i);
@@ -1180,7 +1180,7 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
   if (_surfacic_variable_post("boundary_layer_nusselt", true))
     ipstdv[5] = 1;
 
-  *ncapt = cs_gui_get_tag_number("/analysis_control/output/probe", 1);
+  *ncapt = cs_gui_get_tag_count("/analysis_control/output/probe", 1);
   for (i = 0; i < *ncapt; i++) {
     xyzcap[0 + i*3] = _probe_coordinate(i+1, "probe_x");
     xyzcap[1 + i*3] = _probe_coordinate(i+1, "probe_y");
@@ -1273,7 +1273,7 @@ cs_gui_postprocess_meshes(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  nmesh = cs_gui_get_tag_number("/analysis_control/output/mesh", 1);
+  nmesh = cs_gui_get_tag_count("/analysis_control/output/mesh", 1);
 
   for (i = 1; i <= nmesh; i++) {
     id_s = _output_type_choice("mesh","id",i);
@@ -1352,7 +1352,7 @@ cs_gui_postprocess_writers(void)
   if (!cs_gui_file_is_loaded())
     return;
 
-  n_writers = cs_gui_get_tag_number("/analysis_control/output/writer", 1);
+  n_writers = cs_gui_get_tag_count("/analysis_control/output/writer", 1);
 
   for (i = 1; i <= n_writers; i++) {
 

@@ -65,6 +65,7 @@ use radiat
 use ihmpre
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -290,7 +291,7 @@ if (nmodpp.eq.0) then
 endif
 
 if (iihmpr.eq.1) then
-  call uiscsc
+  call cs_gui_user_scalar_labels
 endif
 
 call add_user_scalar_fields

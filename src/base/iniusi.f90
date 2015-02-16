@@ -112,10 +112,7 @@ call csihmp(iihmpr)
 !==========
 
 if (iihmpr.eq.1) then
-
-  call uiinit
-  !==========
-
+  call cs_gui_init
 endif
 
 !===============================================================================

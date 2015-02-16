@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-02-16 10:26+0100\n"
+"POT-Creation-Date: 2015-02-16 15:11+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -8934,6 +8934,37 @@ msgid "Error: can not find the required symbol: %s %s\n"
 msgstr ""
 
 #, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  isotropic diffusion is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  isotropic diffusion is <= 0 in %llu cells\n"
+"  and  there is no anisotropic part.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  saturation must is outside [0, 1] in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  capacity is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  isotropic permeability is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
 msgid "Invalid thermal model: %s\n"
 msgstr ""
 
@@ -10544,6 +10575,7 @@ msgid ""
 "For these faces, the weight is set to 0.5.\n"
 msgstr ""
 
+#, c-format
 msgid ""
 "The algorithm selection indicator for the cell center of gravity "
 "computation\n"

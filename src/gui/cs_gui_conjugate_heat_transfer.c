@@ -138,9 +138,9 @@ void CS_PROCF (uisyrc, UISYRC) (void)
   char* boundary_criteria = NULL;
   char* volume_criteria = NULL;
 
-  int n_couplings =
-    cs_gui_get_tag_number("/conjugate_heat_transfer/external_coupling/syrthes",
-                          1);
+  int n_couplings
+    = cs_gui_get_tag_count("/conjugate_heat_transfer/external_coupling/syrthes",
+                           1);
 
   for (zone_id = 0; zone_id < n_couplings; zone_id++) {
 

@@ -503,7 +503,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Define user variables through the GUI.
+    ! Interface to C function Initializing GUI reader structures.
+
+    subroutine cs_gui_init()  &
+      bind(C, name='cs_gui_init')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_init
+
+    !---------------------------------------------------------------------------
+
+    !> Interface to C function defining user variables through the GUI.
 
     subroutine cs_gui_user_variables()  &
       bind(C, name='cs_gui_user_variables')
@@ -513,7 +523,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief  Define time moments through the GUI.
+    !> Interface to C function defining user scalar labels through the GUI.
+
+    subroutine cs_gui_user_scalar_labels()  &
+      bind(C, name='cs_gui_user_scalar_labels')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_gui_user_scalar_labels
+
+    !---------------------------------------------------------------------------
+
+    !> Interface to C function defining time moments through the GUI.
 
     subroutine cs_gui_time_moments()  &
       bind(C, name='cs_gui_time_moments')

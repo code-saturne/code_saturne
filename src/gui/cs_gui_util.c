@@ -1050,8 +1050,8 @@ cs_gui_get_status(char  *path,
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_get_tag_number(const char  *markup,
-                      int          flag)
+cs_gui_get_tag_count(const char  *markup,
+                     int          flag)
 {
   char *path = NULL;
   int   number = 0;
