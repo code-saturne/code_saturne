@@ -34,73 +34,65 @@ module cpincl
 
   !=============================================================================
 
-  !--> POINTEURS VARIABLES COMBUSTION CHARBON PULVERISE cpincl, ppincl
+  ! Combustion variable pointers for pulverized coal
 
-  ! -------voir ppppar
-  !       NCHARM        --> Nombre maximal de charbons
-  !       NCPCMX        --> Nombre maximal de classes par charbon
-  !       NCLCPM        --> Nombre total de classes
-  !
-  !      INTEGER    NCHARM  , NCPCMX   , NCLCPM
-  !      PARAMETER (NCHARM=3, NCPCMX=10, NCLCPM=NCHARM*NCPCMX)
+  ! see also ppppar: ncharm, ncpcmx, nclcpm
 
-  ! ------
-  !      EPSICP : Precision pour les tests
+  ! epsicp: precision for tests
 
   double precision epsicp
   parameter ( epsicp = 1.d-8 )
 
-  !--> DONNEES RELATIVES AU CHARBON
+  ! Data relative to coal
 
-  !       NCHARB        --> Nombre de charbons
-
+  !> Number of coals
   integer, save :: ncharb
 
-  ! ---- PAR CHARBON (grandeurs fournies)
+  ! By coal (given quantities)
 
-  !      - Distribution granulometrique
-  !        NCLPCH(CH)   --> Nombre de classes par charbon
+  ! Granulometric distribution
 
+  !> Number of classes per coal
   integer, save :: nclpch(ncharm)
 
   !      - Proprietes sur charbon sec
-  !        CCH(CH)      --> Composition elementaire en C, H, O , S , N sur sec (%)
-  !        HCH(CH)          du charbon
-  !        OCH(CH)
-  !        SCH(CH)
-  !        NCH(CH)
-  !        ALPHA(CH)    --> Composition du charbon reactif
-  !        BETA(CH)         sous la forme CH(ALPHA)O(BETA)S(GAMMA)
-  !        GAMMA(CH)        ALPHA(CH) = HCH(CH)/CCH(CH)
-  !        OMEGA(CH)        BETA (CH)  = OCH(CH)/CCH(CH)
-  !                         TETA (CH)  = SCH(CH)/CCH(CH)
-  !                         OMEGA(CH)  = NCH(CH)/CCH(CH)
-  !        PCICH(CH)    --> PCI (J/kg) charbon
-  !        RHO0CH(CH)   --> Masse volumique initiale (kg/m3)
-  !        THCDCH(CH)   --> Conductivite thermique du charbon (W/m/K)
+  !        cch(ch)      --> Composition elementaire en C, H, O , S , N sur sec (%)
+  !        hch(ch)          du charbon
+  !        och(ch)
+  !        sch(ch)
+  !        nch(ch)
+  !        alpha(ch)    --> Composition du charbon reactif
+  !        beta(ch)         sous la forme ch(alpha)o(beta)s(gamma)
+  !        gamma(ch)        alpha(ch) = hch(ch)/cch(ch)
+  !        omega(ch)        beta (ch)  = och(ch)/cch(ch)
+  !                         teta (ch)  = sch(ch)/cchl(ch)
+  !                         omega(ch)  = nch(ch)/cch(ch)
+  !        pcich(ch)    --> pci (J/kg) charbon
+  !        rho0ch(ch)   --> Masse volumique initiale (kg/m3)
+  !        thcdch(ch)   --> Conductivite thermique du charbon (W/m/K)
   !      - Proprietes sur charbon sec du coke
-  !        CCK(CH)      --> Composition elementaire en C, H, O , S , N sur sec (%)
-  !        HCK(CH)          du coke
-  !        OCK(CH)
-  !        SCK(CH)
-  !        NCK(CH)
-  !        GAMMA(CH)    --> Composition du coke
-  !        DELTA(CH)        sous la forme CH(GAMMA)O(DELTA)S(KAPPA)N(ZETA)
-  !        KAPPA(CH)        GAMMA(CH) = HCK(CH)/CCK(CH)
-  !        ZETA (CH)        DELTA(CH) = OCK(CH)/CCK(CH)
-  !                         KAPPA(CH) = SCK(CH)/CCK(CH)
-  !                         ZETA(CH)  = NCK(CH)/CCK(CH)
-  !        PCICK(CH)    --> PCI (J/kg) coke
-  !        RHOCK(CH)    --> Masse volumique coke
+  !        cck(ch)      --> Composition elementaire en C, H, O , S , N sur sec (%)
+  !        hck(ch)          du coke
+  !        ock(ch)
+  !        sck(ch)
+  !        nck(ch)
+  !        gamma(ch)    --> Composition du coke
+  !        delta(ch)        sous la forme ch(gamma)o(delta)s(kappa)n(zeta)
+  !        kappa(ch)        gamma(ch) = hck(ch)/cck(ch)
+  !        zeta (ch)        delta(ch) = ock(ch)/cck(ch)
+  !                         kappa(ch) = sck(ch)/cck(ch)
+  !                         zeta(ch)  = nck(ch)/cck(ch)
+  !        pcick(ch)    --> PCI (J/kg) coke
+  !        rhock(ch)    --> Masse volumique coke
   !      - Proprietes sur charbon sec des cendres (ou humide)
-  !         XASHCH(CH)   --> Taux de cendre (kg/kg)
-  !        CPASHC(CH)   --> CP des cendres (J/kg/K)
-  !        H0ASHC(CH)   --> Enthalpie de formation des cendres (J/kg)
-  !        H02CH        --> H0 du Charbon
-  !        CPCH         --> CP du Charbon
-  !        XWATCH(CH)   --> Taux d'humidite (kg/kg)
-  !        CREPN1(2,CH) --> repartition de l'azote en HCN etNo reaction 1
-  !        CREPN2(2,CH) --> repartition de l'azote en HCN etNo reaction 2
+  !        xashch(ch)   --> Taux de cendre (kg/kg)
+  !        cpashc(ch)   --> Cp des cendres (J/kg/K)
+  !        h0ashc(ch)   --> Enthalpie de formation des cendres (J/kg)
+  !        h02ch        --> H0 du Charbon
+  !        cpch         --> Cp du Charbon
+  !        xwatch(ch)   --> Taux d'humidite (kg/kg)
+  !        crepn1(2,ch) --> repartition de l'azote en HCN etNo reaction 1
+  !        crepn2(2,ch) --> repartition de l'azote en HCN etNo reaction 2
 
 double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
                           sch(ncharm)  , nch(ncharm),                      &
@@ -120,36 +112,36 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
 
   !      - Parametres cinetiques pour la devolatilisation
   !         (Modele de Kobayashi)
-  !        IY1CH(CH)    --> Indicateur : 0 si MVl = {CH4;CO}
+  !        iy1ch(ch)    --> Indicateur : 0 si MVl = {CH4;CO}
   !                                      1 si MVl = {CHz;CO}
-  !        Y1CH(CH)     --> Coefficient stoechiometrique (adim)
+  !        y1ch(ch)     --> Coefficient stoechiometrique (adim)
   !                         calcule si IY1CH = 0 ; donne si IY1CH = 1
-  !        A1CH(CH)     --> Facteur pre-exponetielle (1/s)
-  !         E1CH(CH)     --> Energie d'activation (J/mol)
-  !        IY2CH(CH)    --> Indicateur : 0 si MVL = {C2H4;CO}
+  !        a1ch(ch)     --> Facteur pre-exponetielle (1/s)
+  !        e1ch(ch)     --> Energie d'activation (J/mol)
+  !        iy2ch(ch)    --> Indicateur : 0 si MVL = {C2H4;CO}
   !                                      1 si MVL = {CxHy;CO}
-  !        Y2CH(CH)     --> Coefficient stoechiometrique (adim)
+  !        y2ch(ch)     --> Coefficient stoechiometrique (adim)
   !                         calcule si IY2CH = 0 ; donne si IY2CH = 1
-  !        A2CH(CH)     --> Constante preexponetielle (1/s)
-  !        E2CH(CH)     --> Energie d'activation (J/mol)
+  !        a2ch(ch)     --> Constante preexponetielle (1/s)
+  !        e2ch(ch)     --> Energie d'activation (J/mol)
 
   !        - Parametres cinetiques pour la combustion heterogene du coke avec O2
   !           (Modele a sphere retrecissante)
-  !        AHETCH(CH)   --> Constante pre-exponentielle (kg/m2/s/atm)
-  !        EHETCH(CH)   --> Energie d'activation (kcal/mol)
-  !        IOCHET(CH)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
+  !        ahetch(ch)   --> Constante pre-exponentielle (kg/m2/s/atm)
+  !        ehetch(ch)   --> Energie d'activation (kcal/mol)
+  !        iochet(ch)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
 
   !        - Parametres cinetiques pour la combustion heterogene du coke avec CO2
   !           (Modele a sphere retrecissante)
-  !        AHETC2(CH)   --> Constante pre-exponentielle (kg/m2/s/atm)
-  !        EHETC2(CH)   --> Energie d'activation (kcal/mol)
-  !        IOETC2(CH)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
+  !        ahetc2(ch)   --> Constante pre-exponentielle (kg/m2/s/atm)
+  !        ehetc2(ch)   --> Energie d'activation (kcal/mol)
+  !        ioetc2(ch)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
 
   !        - Parametres cinetiques pour la combustion heterogene du coke avec H2O
   !           (Modele a sphere retrecissante)
-  !        AHETWT(CH)   --> Constante pre-exponentielle (kg/m2/s/atm)
-  !        EHETWT(CH)   --> Energie d'activation (kcal/mol)
-  !        IOETWT(CH)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
+  !        ahetwt(ch)   --> Constante pre-exponentielle (kg/m2/s/atm)
+  !        ehetwt(ch)   --> Energie d'activation (kcal/mol)
+  !        ioetwt(ch)   --> Ordre de la reaction 0.5 si = 0 1 si = 1
 
   integer, save ::          iy1ch (ncharm), iy2ch (ncharm)
   integer, save ::          iochet (ncharm) , ioetc2(ncharm), ioetwt(ncharm)
@@ -160,20 +152,17 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
                             ahetwt(ncharm), ehetwt(ncharm)
 
   !      - Enthalpie du charbon reactif, coke et cendres
-  !     ICH(CH)      --> Pointeur dans le tableau EHSOLI pour
+  !     ich(ch)      --> Pointeur dans le tableau ehsoli pour
   !                         le Charbon Reactif
-  !     ICK(CH)      --> Pointeur dans le tableau EHSOLI pour
-  !                         le Coke
-  !     IASH(CH)     --> Pointeur dans le tableau EHSOLI pour
-  !                         les cendres
-  !     IWAT(CH)     --> Pointeur dans le tableau EHSOLI pour
-  !                         l'humidite
-  !     NSOLID       --> Nb constituants solides (Ch.Reactif, Coke, Ash)
-  !     NSOLIM       --> Nb maximal de constituants solides
-  !     EHSOLI(S,IT) --> Enthalpie massique (J/kg) du constituant solide
-  !                         no S a la temperature T(IT)
-  !     WMOLS(S)     --> Masse molaire du constituant solide
-  !     EH0SOL(S)    --- Enthalpie de formation (J/kg) du constituant solide
+  !     ick(ch)      --> Pointeur dans le tableau ehsoli pour le Coke
+  !     iash(ch)     --> Pointeur dans le tableau ehsoli pour les cendres
+  !     iwat(ch)     --> Pointeur dans le tableau ehsoli pour l'humidite
+  !     nsolid       --> Nb constituants solides (Ch.Reactif, Coke, Ash)
+  !     nsolim       --> Nb maximal de constituants solides
+  !     ehsoli(s,it) --> Enthalpie massique (J/kg) du constituant solide
+  !                         no S a la temperature T(it)
+  !     wmols(s)     --> Masse molaire du constituant solide
+  !     eh0sol(s)    --- Enthalpie de formation (J/kg) du constituant solide
   !                      no S
 
   integer    nsolim
@@ -184,54 +173,53 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
   double precision, save :: ehsoli(nsolim,npot), wmols(nsolim)
   double precision, save :: eh0sol(nsolim)
 
-  ! ---- PAR CLASSES (grandeurs deduites)
+  ! By class (deduced quantities)
 
-  !        NCLACP     --> Nb de classes
-
+  ! Number of classes
   integer, save ::          nclacp
 
   !      - Proprietes
-  !        ICHCOR(CL)  --> = ICH si la classe consideree appartient
-  !                        au charbon ICH (1, 2, ...)
-  !        DIAM20(CL)  --> Diametre initial (m)
-  !        DIA2MN(CL)  --> Diametre minimum (m)
-  !        RHO20(CL)   --> Masse volumique initiale (kg/m3)
-  !        RHO2MN(CL)  --> Masse volumique minimale (kg/m3)
-  !        XMP0(CL)    --> Masse initiale de la particule (m)
-  !        XMASH(CL)   --> Masse de cendres de la particule (m)
+  !        ichcor(cl)  --> = ich si la classe consideree appartient
+  !                        au charbon ich(1, 2, ...)
+  !        diam20(cl)  --> Diametre initial (m)
+  !        dia2mn(cl)  --> Diametre minimum (m)
+  !        rho20(cl)   --> Masse volumique initiale (kg/m3)
+  !        rho2mn(cl)  --> Masse volumique minimale (kg/m3)
+  !        xmp0(cl)    --> Masse initiale de la particule (m)
+  !        xmash(cl)   --> Masse de cendres de la particule (m)
 
   integer, save ::          ichcor(nclcpm)
   double precision, save :: diam20(nclcpm), dia2mn(nclcpm),                  &
                             rho20 (nclcpm), rho2mn(nclcpm),                  &
                             xmp0  (nclcpm), xmash (nclcpm)
 
-  !--> DONNEES RELATIVES A LA COMBUSTION DES ESPECES GAZEUSES
+  !--> Donnees relatives a la combustion des especes gazeuses
 
-  !        ICHX1C(CH)  --> Pointeur CHx1  pour EHGAZE et WMOLE
-  !        ICHX2C(CH)  --> Pointeur CHx2  pour EHGAZE et WMOLE
-  !        ICHX1       --> Pointeur CHx1m pour EHGAZE et WMOLE
-  !        ICHX2       --> Pointeur CHx2m pour EHGAZE et WMOLE
-  !        ICO         --> Pointeur CO    pour EHGAZE et WMOLE
-  !        IO2         --> Pointeur O2    pour EHGAZE et WMOLE
-  !        ICO2        --> Pointeur CO2   pour EHGAZE et WMOLE
-  !        IH2O        --> Pointeur H2O   pour EHGAZE et WMOLE
-  !        IN2         --> Pointeur N2    pour EHGAZE et WMOLE
-  !        CHX1(CH)    --> Composition de l'hydrocarbure relatif
+  !        ichx1c(ch)  --> Pointeur CHx1  pour ehgaze et wmole
+  !        ichx2c(ch)  --> Pointeur CHx2  pour ehgaze et wmole
+  !        ichx1       --> Pointeur CHx1m pour ehgaze et wmole
+  !        ichx2       --> Pointeur CHx2m pour ehgaze et wmole
+  !        ico         --> Pointeur CO    pour ehgaze et wmole
+  !        io2         --> Pointeur O2    pour ehgaze et wmole
+  !        ico2        --> Pointeur CO2   pour ehgaze et wmole
+  !        ih2o        --> Pointeur H2O   pour ehgaze et wmole
+  !        in2         --> Pointeur N2    pour ehgaze et wmole
+  !        chx1(ch)    --> Composition de l'hydrocarbure relatif
   !                        au MVl : CH(X1)
-  !        CHX2(CH)    --> Composition de l'hydrocarbure relatif
+  !        chx2(ch)    --> Composition de l'hydrocarbure relatif
   !                        au MVL : CH(X2)
-  !        A1(CH),     --> Coefficients stoechiometriques molaires pour
-  !        B1(CH)          la reaction de devolatilisation a basses T
-  !        C1(CH)
-  !        D1(CH)
-  !        E1(CH)
-  !        F1(CH)
-  !        A2(CH),     --> Coefficients stoechiometriques molaires pour
-  !        B2(CH)          la reaction de devolatilisation a basses T
-  !        C2(CH)
-  !        D2(CH)
-  !        E2(CH)
-  !        F2(CH)
+  !        a1(ch),     --> Coefficients stoechiometriques molaires pour
+  !        b1(ch)          la reaction de devolatilisation a basses T
+  !        c1(ch)
+  !        d1(ch)
+  !        e1(ch)
+  !        f1(ch)
+  !        a2(ch),     --> Coefficients stoechiometriques molaires pour
+  !        b2(ch)          la reaction de devolatilisation a basses T
+  !        c2(ch)
+  !        d2(ch)
+  !        e2(ch)
+  !        f2(ch)
 
   integer, save ::          ichx1c(ncharm), ichx2c(ncharm),                  &
                             ichx1, ichx2, ico, io2, ico2, ih2o, in2
@@ -241,38 +229,38 @@ double precision, save :: cch   (ncharm), hch   (ncharm), och   (ncharm),  &
                             a2(ncharm), b2(ncharm),c2(ncharm),d2(ncharm),    &
                             e2(ncharm), f2(ncharm)
 
-  !--> DONNEES COMPLEMENTAIRES RELATIVES AU CALCUL DE RHO
-  !    SUR LES FACETTES DE BORD
+  !--> Donnees complementaires relatives au calcul de rho
+  !    sur les facettes de bord
 
-  !       IENTAT(IENT) --> Indicateur air par type de facette d'entree
-  !       IENTCP(IENT) --> Indicateur CP  par type de facette d'entree
-  !       TIMPAT(IENT) --> Temperature en K pour l'air relative
-  !                         a l'entree IENT
-  !       X20(IENT,    --> Fraction massique dans le melange de charbon
-  !           ICLA   )     de la classe ICLA relative a l'entree IENT
+  !       ientat(ient) --> Indicateur air par type de facette d'entree
+  !       ientcp(ient) --> Indicateur Cp  par type de facette d'entree
+  !       timpat(ient) --> Temperature en K pour l'air relative
+  !                         a l'entree ient
+  !       x20(ient,    --> Fraction massique dans le melange de charbon
+  !           icla   )     de la classe icla relative a l'entree ient
 
   integer, save ::          ientat(nozppm), ientcp(nozppm)
   double precision, save :: timpat(nozppm), x20(nozppm,nclcpm)
 
-  !--> POINTEURS DANS LE TABLEAU TBMCR
+  !--> Pointeurs dans le tableau tbmcr
 
   integer, save :: if1mc(ncharm) , if2mc(ncharm)
   integer, save :: ix1mc ,ix2mc, ichx1f1, ichx2f2
   integer, save :: icof1, icof2, ih2of1 , ih2of2
   integer, save :: ih2sf1, ih2sf2 , ihcnf1 , ihcnf2
 
-  !--> GRANDEURS FOURNIES PAR L'UTILISATEUR EN CONDITIONS AUX LIMITES
-  !      PERMETTANT DE CALCULER AUTOMATIQUEMENT LA VITESSE, LA TURBULENCE,
-  !      L'ENTHALPIE D'ENTREE.
+  !--> Grandeurs fournies par l'utilisateur en conditions aux limites
+  !      permettant de calculer automatiquement la vitesse, la turbulence,
+  !      l'enthalpie d'entree.
 
-  !    POUR LES ENTREES UNIQUEMENT , IENT ETANT LE NUMERO DE ZONE FRONTIERE
+  !    Pour les entrees uniquement, ient etant le numero de zone frontiere
 
-  !       QIMPAT(IENT)           --> Debit       Air          en kg/s
-  !       TIMPAT(IENT)           --> Temperature Air          en K
-  !       QIMPCP(IENT,ICHA)      --> Debit       Charbon ICHA en kg/s
-  !       TIMPCP(IENT,ICHA)      --> Temperature Charbon ICHA en K
-  !       DISTCH(IENT,ICHA,ICLA) --> Distribution en %masse de la classe ICLA
-  !                                  pour le charbon ICHA
+  !       qimpat(ient)           --> Debit       air          en kg/s
+  !       timpat(ient)           --> Temperature air          en K
+  !       qimpcp(ient,icha)      --> Debit       charbon icha en kg/s
+  !       timpcp(ient,icha)      --> Temperature charbon icha en K
+  !       distch(ient,icha,icla) --> Distribution en %masse de la classe icla
+  !                                  pour le charbon icha
 
   double precision, save ::  qimpat(nozppm)
   double precision, save ::  qimpcp(nozppm,ncharm), timpcp(nozppm,ncharm)

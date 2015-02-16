@@ -242,8 +242,8 @@ contains
   !=============================================================================
 
   !> \anchor ipnfac
-  !> position of the first node of the each internal face in the array nodfac
-  !> (see \ref note_3)
+  !> position of the first node of the each internal face in the array
+  !> returned by \ref nodfac (see \ref note_3)
 
   elemental pure function ipnfac(ifac) result(ipn)
 
@@ -284,8 +284,8 @@ contains
   !=============================================================================
 
   !> \anchor ipnfbr
-  !> position of the first node of the each boundary face in the array nodfbr
-  !> (see \ref note_3)
+  !> position of the first node of the each boundary face in the array returned
+  !> by \ref nodfbr (see \ref note_3)
 
   elemental pure function ipnfbr(ifac) result(ipn)
 

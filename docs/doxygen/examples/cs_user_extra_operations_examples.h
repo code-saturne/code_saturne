@@ -38,22 +38,22 @@
   \section cs_user_extra_operations_examples_cs_user_extra_op_examples Extra operations examples
   Here is the list of examples dedicated to different physics:
 
-  - \subpage cs_user_extra_operations_examples_energy_balance
-  - \subpage cs_user_extra_operations_examples_scalar_balance_by_zone
-  - \subpage cs_user_extra_operations_examples_oned_profile
-  - \subpage cs_user_extra_operations_examples_force_temperature
-  - \subpage cs_user_extra_operations_examples_global_efforts
-  - \subpage cs_user_extra_operations_examples_parallel_oper
-  - \subpage cs_user_extra_operations_examples_print_moment
+  - \subpage cs_user_extra_operations_examples_energy_balance_p
+  - \subpage cs_user_extra_operations_examples_scalar_balance_by_zone_p
+  - \subpage cs_user_extra_operations_examples_oned_profile_p
+  - \subpage cs_user_extra_operations_examples_force_temperature_p
+  - \subpage cs_user_extra_operations_examples_global_efforts_p
+  - \subpage cs_user_extra_operations_examples_parallel_operations_p
 
 */
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_energy_balance Energy balance
+  \page cs_user_extra_operations_examples_energy_balance_p Energy balance
+
   \section cs_user_extra_operations_examples_energy_balance Energy balance
 
-  \subsection cs_user_extra_operations_examples_loc_var Local variables to be added
+  \subsection cs_user_extra_operations_examples_loc_var_eb Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
@@ -74,7 +74,7 @@
   but deallocating arrays in a symmetric manner to their allocation is good
   practice, and it avoids using a different logic for C and Fortran.
 
-  \subsection cs_user_extra_operations_examples_body Body
+  \subsection cs_user_extra_operations_examples_eb_body Body
 
   This example computes energy balance relative to temperature
   We assume that we want to compute balances  (convective and diffusive)
@@ -94,15 +94,17 @@
 
 
   To ensure calculations have physical meaning, it is best to use
-  a spatially uniform time step (\ref idtvar = 0 or 1).
+  a spatially uniform time step (\ref optcal::idtvar "idtvar" = 0 or 1).
   In addition, when restarting a calculation, the balance is
-  incorrect if \ref inpdt0 = 1 (visct not initialized and t(n-1) not known)
+  incorrect if \ref optcal::inpdt0 "inpdt0"= 1 (visct not initialized
+  and t(n-1) not known).
 
 
   Temperature variable
-  - ivar = \ref isca(\ref  iscalt) (use rtp(iel, ivar))
+  - ivar = \ref isca(\ref optcal::iscalt "iscalt")
 
-  Boundary coefficients coefap/coefbp are those of \ref ivarfl(ivar)
+  Boundary coefficients coefap/coefbp are those of
+  \ref numvar::ivarfl "ivarfl"(ivar).
 
 
   The balance at time step n is equal to:
@@ -153,13 +155,14 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_scalar_balance_by_zone Scalar balance by zone
+  \page cs_user_extra_operations_examples_scalar_balance_by_zone_p Scalar balance by zone
+
   \section cs_user_extra_operations_examples_scalar_balance_by_zone Scalar balance by zone
 
   This is an example of \ref cs_user_extra_operations which performs scalar
   balances on specified zones.
 
-  \subsection cs_user_extra_operations_examples_body body
+  \subsection cs_user_extra_operations_examples_bz_body body
 
   The algorithm implemented in the subroutine balance_by_zone adds up
   contributions of fluxes on the boundary of the sub-domain defined by the user.
@@ -169,7 +172,7 @@
   sub-domain but internal faces of the whole domain.
 
   To ensure calculations have physical meaning, it is best to use
-  a spatially uniform time step (\ref idtvar = 0 or 1).
+  a spatially uniform time step (\ref optcal::idtvar "idtvar" = 0 or 1).
 
   The balance at time step n over a subdomain \f$ \Omega \f$ of boundary
   \f$ \partial \Omega \f$ is equal to:
@@ -243,16 +246,17 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_oned_profile Extract a 1D profile
+  \page cs_user_extra_operations_examples_oned_profile_p Extract a 1D profile
+
   \section cs_user_extra_operations_examples_oned_profile Extract a 1D profile
 
   This is an example of \ref cs_user_extra_operations which performs 1D profile.
 
-  \subsection cs_user_extra_operations_examples_loc_var Local variables to be added
+  \subsection cs_user_extra_operations_examples_loc_var_1dp Local variables to be added
 
   \snippet cs_user_extra_operations-extract_1d_profile.f90 loc_var_dec
 
-  \subsection cs_user_extra_operations_examples_body Body
+  \subsection cs_user_extra_operations_examples_1dp_body Body
 
    We seek here to extract the profile of U, V, W, k and epsilon on an
    arbitrary 1D curve based on a curvilear abscissa.
@@ -278,17 +282,18 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_force_temperature Force temperature in a given region
+  \page cs_user_extra_operations_examples_force_temperature_p Force temperature in a given region
+
   \section cs_user_extra_operations_examples_force_temperature Force temperature in a given region
 
   This is an example of \ref cs_user_extra_operations
   which sets temperature to 20 in a given region starting at t = 12s
 
-  \subsection cs_user_extra_operations_examples_loc_var Local variables to be added
+  \subsection cs_user_extra_operations_examples_loc_var_ft Local variables to be added
 
   \snippet cs_user_extra_operations-force_temperature.f90 loc_var_dec
 
-  \subsection cs_user_extra_operations_examples_body Body
+  \subsection cs_user_extra_operations_examples_ft_body Body
 
 
   Do this with precaution...
@@ -302,16 +307,17 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_global_efforts Global efforts
+  \page cs_user_extra_operations_examples_global_efforts_p Global efforts
+
   \section cs_user_extra_operations_examples_global_efforts Global efforts
 
   This is an example of \ref cs_user_extra_operations which computes global efforts
 
-  \subsection cs_user_extra_operations_examples_loc_var Local variables to be added
+  \subsection cs_user_extra_operations_examples_loc_var_geff Local variables to be added
 
   \snippet cs_user_extra_operations-global_efforts.f90 loc_var_dec
 
-  \subsection cs_user_extra_operations_examples_body Body
+  \subsection cs_user_extra_operations_examples_geff_body Body
 
   Example: compute global efforts on a subset of faces.
   If efforts have been calculated correctly:
@@ -322,60 +328,61 @@
 // __________________________________________________________________________________
 /*!
 
-  \page cs_user_extra_operations_examples_parallel_oper Parallel operations
-  \section cs_user_extra_operations_examples_parallel_oper Parallel operations
+  \page cs_user_extra_operations_examples_parallel_operations_p Parallel operations
+
+  \section cs_user_extra_operations_examples_parallel_operations Parallel operations
 
   This is an example of \ref cs_user_extra_operations which performs parallel operations.
 
-  \subsection cs_user_extra_operations_examples_loc_var Local variables to be added
+  \subsection cs_user_extra_operations_examples_loc_var_po Local variables to be added
 
   \snippet cs_user_extra_operations-parallel_operations.f90 loc_var_dec
 
-  \subsection cs_user_extra_operations_examples_example_1 Example 1
+  \subsection cs_user_extra_operations_examples_example_1_po Example 1
 
   Sum of an integer counter 'ii', here the number of cells.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_1
 
-  \subsection cs_user_extra_operations_examples_example_2 Example 2
+  \subsection cs_user_extra_operations_examples_example_2_po Example 2
 
   Maximum of an integer counter 'ii', here the number of cells.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_2
 
-  \subsection cs_user_extra_operations_examples_example_3 Example 3
+  \subsection cs_user_extra_operations_examples_example_3_po Example 3
 
   Sum of a real 'rrr', here the volume.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_3
 
-  \subsection cs_user_extra_operations_examples_example_4 Example 4
+  \subsection cs_user_extra_operations_examples_example_4_po Example 4
 
   Minimum of a real 'rrr', here the volume.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_4
 
-  \subsection cs_user_extra_operations_examples_example_5 Example 5
+  \subsection cs_user_extra_operations_examples_example_5_po Example 5
 
   Minimum of a real 'rrr', here the volume.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_5
 
-  \subsection cs_user_extra_operations_examples_example_6 Example 6
+  \subsection cs_user_extra_operations_examples_example_6_po Example 6
 
   Maximum of a real and associated real values;
   here the volume and its location (3 coordinates).
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_6
 
-  \subsection cs_user_extra_operations_examples_example_7 Example 7
+  \subsection cs_user_extra_operations_examples_example_7_po Example 7
 
   Minimum of a real and associated real values;
   here the volume and its location (3 coordinates).
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_7
 
-  \subsection cs_user_extra_operations_examples_example_8 Example 8
+  \subsection cs_user_extra_operations_examples_example_8_po Example 8
 
   Sum of an array of integers;
   here, the number of cells, faces, and boundary faces.
@@ -387,7 +394,7 @@
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_8
 
-  \subsection cs_user_extra_operations_examples_example_9 Example 9
+  \subsection cs_user_extra_operations_examples_example_9_po Example 9
 
   Maxima from an array of integers;
   here, the number of cells, faces, and boundary faces.
@@ -395,35 +402,35 @@
   \snippet cs_user_extra_operations-parallel_operations.f90 example_9
 
 
-  \subsection cs_user_extra_operations_examples_example_10 Example 10
+  \subsection cs_user_extra_operations_examples_example_10_po Example 10
 
   Minima from an array of integers;
   here, the number of cells, faces, and boundary faces.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_10
 
-  \subsection cs_user_extra_operations_examples_example_11 Example 11
+  \subsection cs_user_extra_operations_examples_example_11_po Example 11
 
   Sum of an array of reals;
   here, the 3 velocity components (so as to compute a mean for example).
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_11
 
-  \subsection cs_user_extra_operations_examples_example_12 Example 12
+  \subsection cs_user_extra_operations_examples_example_12_po Example 12
 
   Maximum of an array of reals;
   here, the 3 velocity components.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_12
 
-  \subsection cs_user_extra_operations_examples_example_13 Example 13
+  \subsection cs_user_extra_operations_examples_example_13_po Example 13
 
   Maximum of an array of reals;
   here, the 3 velocity components.
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_13
 
-  \subsection cs_user_extra_operations_examples_example_14 Example 14
+  \subsection cs_user_extra_operations_examples_example_14_po Example 14
 
   Broadcast an array of local integers to other ranks;
   in this example, we use the number of cells, interior faces, and boundary
@@ -431,31 +438,11 @@
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_14
 
-  \subsection cs_user_extra_operations_examples_example_15 Example 15
+  \subsection cs_user_extra_operations_examples_example_15_po Example 15
 
   Broadcast an array of local reals to other ranks;
   in this example, we use 3 velocity values from process rank 0 (irangv).
 
   \snippet cs_user_extra_operations-parallel_operations.f90 example_15
-
-*/
-// __________________________________________________________________________________
-/*!
-
-  \page cs_user_extra_operations_examples_print_moment Print statistical moment
-  \section cs_user_extra_operations_examples_print_moment Print statistical moment
-
-  This is an example of \ref cs_user_extra_operations which
-  print first calculated statistical moment
-
-  \subsection cs_user_extra_operations_examples_loc_var Local variables to be added
-
-  \snippet cs_user_extra_operations-print_statistical_moment.f90 loc_var_dec
-
-  \subsection cs_user_extra_operations_examples_body Body
-
-  The body of this example:
-
-  \snippet cs_user_extra_operations-print_statistical_moment.f90 example_1
 
 */

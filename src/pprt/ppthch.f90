@@ -125,7 +125,8 @@ module ppthch
 
   !> molecular diffusivity for the enthalpy (\f$kg.m^{-1}.s^{-1}\f$)
   !> for gas or coal combustion (the code then automatically sets
-  !> \ref visls0 to \ref diftl0 for the scalar representing the enthalpy).
+  !> \ref optcal::visls0 "visls0" to \ref diftl0 for the scalar
+  !> representing the enthalpy).
   !>
   !> Always useful for gas or coal combustion.
   double precision, save ::  diftl0
@@ -134,6 +135,7 @@ module ppthch
   double precision, save ::  xco2
   !> Molar coefficient of H2O
   double precision, save ::  xh2o
+
   !=============================================================================
 
   !> \}

@@ -5627,7 +5627,7 @@ endif
 '@',                                                            /,&
 '@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@   A reduction of the extened neighbourhood was selected',    /,&
+'@   A reduction of the extened neighborhood was selected',     /,&
 '@   for the caculation of the gradients by least squares.',    /,&
 '@   However this will also be applied to the averaging in',    /,&
 '@    the LES Dynamic model (also selected)',                   /,&
@@ -5637,10 +5637,10 @@ endif
 '@  Computation will run, but',                                 /,&
 '@',                                                            /,&
 '@  averaging of the Smagorinsky constant can be',              /,&
-'@  degraded, as it uses the same reduced neighbourhood.',      /,&
+'@  degraded, as it uses the same reduced neighborhood.',       /,&
 '@',                                                            /,&
 '@  Recommendation',                                            /,&
-'@    - use extended neighbourhood',                            /,&
+'@    - use extended neighborhood',                             /,&
 '@',                                                            /,&
 '@      (IMRGRA = 2)',                                          /,&
 '@    - user defines (yourself) the averaging of the dynamic',  /,&

@@ -55,9 +55,9 @@
 !>
 !> Modification of the behaviour law of physical quantities (rom, viscl,
 !> viscls, cp) is not done here. It is the purpose of the user subroutine
-!> \ref cs_user_physical_properties.
+!> \ref usphyv (in cs_user_physical_properties.f90)
 !>
-!> \section cell_id Cells identification
+!> \section cs_user_initialization_cell_id Cells identification
 !>
 !> Cells may be identified using the \ref getcel subroutine.
 !> The syntax of this subroutine is described in the

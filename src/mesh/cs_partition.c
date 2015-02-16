@@ -467,7 +467,7 @@ _cell_center_g(cs_lnum_t         n_cells,
 
     }
 
-    /* Compute the barycentre of the face vertices */
+    /* Compute the barycenter of the face vertices */
 
     for (i = 0; i < 3; i++) {
       vtx_cog[i] = 0.0;
@@ -477,7 +477,7 @@ _cell_center_g(cs_lnum_t         n_cells,
     }
 
     /* Loop on the triangles of the face (defined by an edge of the face
-       and its barycentre) */
+       and its barycenter) */
 
     for (i = 0; i < 3; i++) {
       ref_normal[i] = 0.;
@@ -823,7 +823,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
 
     }
 
-    /* Compute the barycentre of the face vertices */
+    /* Compute the barycenter of the face vertices */
 
     for (i = 0; i < 3; i++) {
       vtx_cog[i] = 0.0;
@@ -833,7 +833,7 @@ _precompute_cell_center_l(const cs_mesh_builder_t  *mb,
     }
 
     /* Loop on the triangles of the face (defined by an edge of the face
-       and its barycentre) */
+       and its barycenter) */
 
     for (i = 0; i < 3; i++) {
       ref_normal[i] = 0.;

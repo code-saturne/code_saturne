@@ -67,8 +67,8 @@
            automatically be set to 0 (for further information please
            read the paragraph dedicated to the description of \c impale array in the
            usalcl.f90 subroutine), unless the USER has modified the condition of
-           at least one  component of mesh velocity (modification of \c icodcl array,
-           please read the following paragraph \ref non_std_bc)
+           at least one mesh velocity component (modification of \c icodcl array,
+           please read the following paragraph \ref non_std_bc_ale)
 
   - \c ialtyb(ifac) = \c igliss: The mesh slides on corresponding face \c ifac.
            The normal component of mesh velocity is automatically set to 0.
@@ -168,7 +168,7 @@
 
  For a better precision concerning mesh displacement, one can also assign values
  of displacement to certain internal and/or boundary nodes. Thus, one
- need to fill \c DEPALE and \c impale arrays :
+ need to fill \c depale and \c impale arrays :
   - \c depale(1,inod) = displacement of node inod in 'x' direction
   - \c depale(2,inod) = displacement of node inod in 'y' direction
   - \c depale(3,inod) = displacement of node inod in 'z' direction
@@ -181,12 +181,10 @@
        is not modified, corresponding value in \c DEPALE array will not be
        taken into account.
 
-\endnote
-
  During mesh's geometry re-calculation at each time step, the position of the
  nodes, which displacement is fixed (\c i.e. \c impale=1), is not calculated
  using the value of mesh velocity at the center of corresponding cell, but
- directly filled using the values of \s DEPALE.
+ directly filled using the values of \c depale.
 
  If the displacement is fixed for all nodes of a boundary face it's not
  necessary to prescribe boundary conditions at this face on mesh velocity.

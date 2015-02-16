@@ -140,16 +140,16 @@ typedef struct {
                                  - 0: iterative process
                                  - 1: standard least square method
                                  - 2: least square method with extended
-                                      neighbourhood
+                                      neighborhood
                                  - 3: least square method with reduced extended
-                                      neighbourhood
+                                      neighborhood
                                  - 4: iterative precess initialized by the least
                                       square method */
 
   double        anomax;       /* non orthogonality angle of the faces, in radians.
                                  For larger angle values, cells with one node
                                  on the wall are kept in the extended support of
-                                 the neighbouring cells. */
+                                 the neighboring cells. */
 
   int           iflxmw;       /* method to compute interior mass flux due to ALE
                                  mesh velocity

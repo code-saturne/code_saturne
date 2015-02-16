@@ -165,12 +165,12 @@ void CS_PROCF (matrvv, MATRVV)
  *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     rovsdt        working array
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
@@ -213,7 +213,7 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
  *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
@@ -221,9 +221,9 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
  *                               - 0 do not multiply the convective term by Cp
  *                               - 1 do multiply the convective term by Cp
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     rovsdt        working array
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -273,12 +273,12 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (Implicit part - 3x3 tensor array)
+ *                               (implicit part - 3x3 tensor array)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -321,14 +321,14 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     coefbu        boundary condition array for the variable
- *                               (Implicit part - 3x3 tensor array)
+ *                               (implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (Implicit part - 3x3 tensor array)
+ *                               (implicit part - 3x3 tensor array)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -372,9 +372,9 @@ cs_matrix_vector(const cs_mesh_t          *m,
  *                               - 1 symmetric matrix
  *                               - 2 non symmmetric matrix
  * \param[in]     coefbp        boundary condition array for the variable
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     cofbfp        boundary condition array for the variable flux
- *                               (Implicit part)
+ *                               (implicit part)
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -419,14 +419,14 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     coefbu        boundary condition array for the variable
- *                               (Implicit part - 3x3 tensor array)
+ *                               (implicit part - 3x3 tensor array)
  * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (Implicit part - 3x3 tensor array)
+ *                               (implicit part - 3x3 tensor array)
  * \param[in]     fimp
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at border faces
@@ -472,12 +472,12 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
- *                               - thetap = 0.5: time-centred
+ *                               - thetap = 0.5: time-centered
  *                               scheme (mix between Crank-Nicolson and
  *                               Adams-Bashforth)
  *                               - thetap = 1: implicit scheme
  * \param[in]     cofbfu        boundary condition array for the variable flux
- *                               (Implicit part - 3x3 tensor array)
+ *                               (implicit part - 3x3 tensor array)
  * \param[in]     fimp
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the matrix

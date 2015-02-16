@@ -77,7 +77,7 @@
 !>   (i.e. remove all unused example code)
 !>
 !>
-!> \section cell_id Cells identification
+!> \section usphyv_cell_id Cells identification
 !>
 !> Cells may be identified using the \ref getcel subroutine.
 !> The syntax of this subroutine is described in the
@@ -1548,7 +1548,7 @@ end subroutine ussmag
 !> Note that VISCMX, VISCMY and VISCMZ arrays are initialized at the first time step
 !> to the value of 1.
 !>
-!> \section cell_id Cells identification
+!> \section usvima_cell_id Cells identification
 !>
 !> Cells may be identified using the \ref getcel subroutine.
 !> The syntax of this subroutine is described in the

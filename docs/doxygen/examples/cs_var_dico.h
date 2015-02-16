@@ -27,14 +27,14 @@
 /*!
   \page cs_var_dico Fortran-C naming reference
 
-  \section intro
+  \section cs_var_dico_intro
 
   This page provides cross-reference tables containing the names of Fortran
   variables and their C counterparts.
 
   Note: Variables with the same name in Fortran and in C are not listed.
 
-  \section namingcontent Contents
+  \section cs_var_dico_namingcontent Contents
 
   Cross-reference tables are available for the following categories of
   variables:
@@ -49,7 +49,7 @@
 
   \page mesh Mesh and mesh quantities variables
 
-  \section mesh_vars Mesh variables
+  \section cs_var_dico_mesh_vars Mesh variables
 
   These variables are defined in the files \ref mesh.f90 and \ref cs_mesh.h.
 
@@ -68,7 +68,7 @@
   \ref nfac          | cs_glob_mesh->n_i_faces               | Number of interior faces
   \ref nfabor        | cs_glob_mesh->n_b_faces               | Number of boundary faces
   \ref nnod          | cs_glob_mesh->n_vertices              | Number of vertices
-                     | cs_glob_mesh->n_b_cells               | Number of boundary cells
+  -                  | cs_glob_mesh->n_b_cells               | Number of boundary cells
   \ref lndfac        | cs_glob_mesh->i_face_vtx_connect_size | Size of the connectivity \n interior faces -> vertices
   \ref lndfbr        | cs_glob_mesh->b_face_vtx_connect_size | Size of the connectivity \n boundary faces -> vertices
   \ref nfml          | cs_glob_mesh->n_families              | Number of families
@@ -80,10 +80,10 @@
   \ref nodfbr        | cs_glob_mesh->b_face_vtx_lst          | Boundary faces -> vertices connectivity
   \ref ifmfbr        | cs_glob_mesh->b_face_family           | Boundary face family
   \ref ifmcel        | cs_glob_mesh->cell_family             | Cell family
-                     | cs_glob_mesh->b_cells                 | Boundary cell list
+  -                  | cs_glob_mesh->b_cells                 | Boundary cell list
   \ref xyznod        | cs_glob_mesh->vtx_coord               | Vertex coordinates </tt>
 
-  \section mesh_q_vars Mesh quantities variables
+  \section cs_var_dico_mesh_q_vars Mesh quantity variables
 
   These variables are defined in the files \ref mesh.f90 and
   \ref cs_mesh_quantities.h.
@@ -116,22 +116,25 @@
 // _____________________________________________________________________________
 /*!
 
-  \page field Variables, properties and fields (deprecated \c rtp, \c propce)
+  \page field Variables, properties and fields (deprecated \c propce)
 
   - In Fortran:
-    - \ref vars "Variables" are accessed through the deprecated array \c rtp as: \n
-      <tt>rtp(iel,index)</tt>.
-    - \ref props "Properties" are accessed through the deprecated array \c propce as: \n
+    - \ref cs_var_dico_props "Properties" are accessed through the
+       deprecated array \c propce as: \n
       <tt>propce(iel,index)</tt>.
-    - The scalar indexes are accessed as \c isca(j), and the scalar values as
+    - The scalar indexes are accessed as \ref isca "isca"(j), and the scalar values as
       follows: \n
-      <tt>rtp(iel,isca(iscalt))</tt>.
-    - Now, both variables and properties can be accessed via the
+      <tt>isca(iscalt)</tt>.
+    - Both variables and properties can be accessed via the
       \ref field.f90 "cs_field" API, as in the following examples: \n
-      <tt>call \ref field_get_val_s(ivarfl(ipr), cvar_pr) \n cvar_pr(iel)</tt>, \n\n
-      <tt>call \ref field_get_val_v(ivarfl(iu), cvar_vel) \n cvar_vel(isou,iel)</tt>, \n\n
-      <tt>call \ref field_get_val_s(iprpfl(icp), cpro_cp) \n cpro_cp(iel)</tt>, \n\n
-      where \ref ipr, \ref iu are variable indexes and \ref icp is a property index.
+      <tt>call \ref field::field_get_val_s "field_get_val_s"(ivarfl(ipr), cvar_pr)
+          \n cvar_pr(iel)</tt>, \n\n
+      <tt>call \ref field::field_get_val_v "field_get_val_v"(ivarfl(iu), cvar_vel)
+          \n cvar_vel(isou,iel)</tt>, \n\n
+      <tt>call \ref field::field_get_val_s "field_get_val_s"(iprpfl(icp), cpro_cp) \n
+          cpro_cp(iel)</tt>, \n\n
+       where \ref numvar::ipr "ipr", \ref numvar::iu "iu" are variable indexes
+       and \ref numvar::icp "icp" is a property index.
   - In C:
     - Both variables and properties are accessed as: \n
       <tt>CS_F_(name)->val[cell_id]</tt>, \n
@@ -146,17 +149,17 @@
 
   Cross-reference tables are available for the variables and properties of the
   standard solver and the specific physics features:
-  - \ref vars
-  - \ref props
-  - \ref part
-    - \ref atmo
-    - \ref comb
-    - \ref cfbl
-    - \ref elec
-    - \ref cogz
-    - \ref rayt
+    - \ref cs_var_dico_vars
+    - \ref cs_var_dico_props
+    - \ref cs_var_dico_part
+    - \ref cs_var_dico_atmo
+    - \ref cs_var_dico_comb
+    - \ref cs_var_dico_cfbl
+    - \ref cs_var_dico_elec
+    - \ref cs_var_dico_cogz
+    - \ref cs_var_dico_rayt
 
-  \section vars Variables
+  \section cs_var_dico_vars Variables
 
   The Fortran variables indexes are defined in the files \ref numvar.f90 (with
   the exception of \c ihm and \c iscal, which are respectively defined in \ref
@@ -164,163 +167,163 @@
   \ref cs_field_pointer.h. \n Note that \c dt is just an \c allocatable array in
   Fortran while it is mapped as a field in C.
 
-  deprecated Fortran code         | Fortran code                                     | C code                       | Description
+  V3.0 and older Fortran code     | Current Fortran code                             | C code                       | Description
   ------------------------------- | ------------------------------------------------ | ---------------------------- | ------------
-  <tt> dt                         | <tt> dt                                          | CS_F_(dt)->val[cell_id]      | Local time step
-  rtp(iel,\ref ipr)               | call field_get_val_s(ivarfl(ipr), cvar_pr)       | CS_F_(p)->val[cell_id]       | Pressure
-  <EM>(WARNING: deprecated)</EM> \n rtp(iel,\ref iu) \n rtp(iel,\ref iv) \n rtp(iel,\ref iw) | call field_get_val_v(ivarfl(iu), cvar_vel) \n cvar_vel(1, iel) \n cvar_vel(2, iel) \n cvar_vel(3, iel) | \n CS_F_(u)->val[cell_id][0] \n CS_F_(u)->val[cell_id][1] \n CS_F_(u)->val[cell_id][2] | Velocity
-  rtp(iel,\ref ivoidf)            | call field_get_val_s(ivarfl(ivoidf), cvar_voidf) | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
-  rtp(iel,\ref ik)                | call field_get_val_s(ivarfl(ik  ), cvar_k  )     | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
-  rtp(iel,\ref iep)               | call field_get_val_s(ivarfl(iep ), cvar_eps)     | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
-  rtp(iel,\ref ir11)              | call field_get_val_s(ivarfl(ir11), cvar_r11)     | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
-  rtp(iel,\ref ir22)              | call field_get_val_s(ivarfl(ir22), cvar_r22)     | CS_F_(r22)->val[cell_id]     | Reynolds stress component \f$ R_{yy} \f$
-  rtp(iel,\ref ir33)              | call field_get_val_s(ivarfl(ir33), cvar_r33)     | CS_F_(r33)->val[cell_id]     | Reynolds stress component \f$ R_{zz} \f$
-  rtp(iel,\ref ir12)              | call field_get_val_s(ivarfl(ir12), cvar_r12)     | CS_F_(r12)->val[cell_id]     | Reynolds stress component \f$ R_{xy} \f$
-  rtp(iel,\ref ir23)              | call field_get_val_s(ivarfl(ir23), cvar_r23)     | CS_F_(r23)->val[cell_id]     | Reynolds stress component \f$ R_{yz} \f$
-  rtp(iel,\ref ir13)              | call field_get_val_s(ivarfl(ir13), cvar_r13)     | CS_F_(r13)->val[cell_id]     | Reynolds stress component \f$ R_{xz} \f$
-  rtp(iel,\ref iphi)              | call field_get_val_s(ivarfl(iphi), cvar_phi)     | CS_F_(phi)->val[cell_id]     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
-  rtp(iel,\ref ifb)               | call field_get_val_s(ivarfl(ifb ), cvar_fb )     | CS_F_(f_bar)->val[cell_id]   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
-  rtp(iel,\ref ial)               | call field_get_val_s(ivarfl(ial ), cvar_al )     | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
-  rtp(iel,\ref iomg)              | call field_get_val_s(ivarfl(iomg), cvar_omg)     | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
-  rtp(iel,\ref inusa)             | call field_get_val_s(ivarfl(inusa), cvar_nusa)   | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
-  rtp(iel,\ref iuma) \n rtp(iel,\ref ivma) \n rtp(iel,\ref iwma) | call field_get_val_v(ivarfl(iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
-  rtp(iel,\ref isca(\ref ihm))    | call field_get_val_s(ivarfl(isca(ihm)), cvar_hm)       | CS_F_(h)->val[cell_id]       | Enthalpy
-  rtp(iel,\ref isca(\ref iscalt)) | call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt) | CS_F_(t)->val[cell_id]       | Temperature </tt>
+  <tt> rtp(iel,ipr)               | call field_get_val_s(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val[cell_id]       | Pressure
+  <EM>(WARNING: removed)</EM> \n rtp(iel,iu) \n rtp(iel,iv) \n rtp(iel,iw) | call field_get_val_v(ivarfl(\ref iu), cvar_vel) \n cvar_vel(1, iel) \n cvar_vel(2, iel) \n cvar_vel(3, iel) | \n CS_F_(u)->val[cell_id][0] \n CS_F_(u)->val[cell_id][1] \n CS_F_(u)->val[cell_id][2] | Velocity
+  rtp(iel,ivoidf)                 | call field_get_val_s(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val[cell_id]  | Void fraction for cavitation modelling
+  rtp(iel,ik)                     | call field_get_val_s(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val[cell_id]       | Turbulent kinetic energy \f$ k \f$
+  rtp(iel,iep)                    | call field_get_val_s(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val[cell_id]     | Turbulent dissipation \f$ \varepsilon \f$
+  rtp(iel,ir11)                   | call field_get_val_s(ivarfl(\ref ir11), cvar_r11)     | CS_F_(r11)->val[cell_id]     | Reynolds stress component \f$ R_{xx} \f$
+  rtp(iel,ir22)                   | call field_get_val_s(ivarfl(\ref ir22), cvar_r22)     | CS_F_(r22)->val[cell_id]     | Reynolds stress component \f$ R_{yy} \f$
+  rtp(iel,ir33)                   | call field_get_val_s(ivarfl(\ref ir33), cvar_r33)     | CS_F_(r33)->val[cell_id]     | Reynolds stress component \f$ R_{zz} \f$
+  rtp(iel,ir12)                   | call field_get_val_s(ivarfl(\ref ir12), cvar_r12)     | CS_F_(r12)->val[cell_id]     | Reynolds stress component \f$ R_{xy} \f$
+  rtp(iel,ir23)                   | call field_get_val_s(ivarfl(\ref ir23), cvar_r23)     | CS_F_(r23)->val[cell_id]     | Reynolds stress component \f$ R_{yz} \f$
+  rtp(iel,ir13)                   | call field_get_val_s(ivarfl(\ref ir13), cvar_r13)     | CS_F_(r13)->val[cell_id]     | Reynolds stress component \f$ R_{xz} \f$
+  rtp(iel,iphi)                   | call field_get_val_s(ivarfl(\ref iphi), cvar_phi)     | CS_F_(phi)->val[cell_id]     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
+  rtp(iel,ifb)                    | call field_get_val_s(ivarfl(\ref ifb ), cvar_fb )     | CS_F_(f_bar)->val[cell_id]   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
+  rtp(iel,ial)                    | call field_get_val_s(ivarfl(\ref ial ), cvar_al )     | CS_F_(alpha)->val[cell_id]   | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
+  rtp(iel,iomg)                   | call field_get_val_s(ivarfl(\ref iomg), cvar_omg)     | CS_F_(omg)->val[cell_id]     | \f$ \omega \f$ for \f$ k-\omega \f$ SST model
+  rtp(iel,inusa)                  | call field_get_val_s(ivarfl(\ref inusa), cvar_nusa)   | CS_F_(nusa)->val[cell_id]    | \f$ \widetilde{\nu}_T \f$ for Spalart-Allmaras
+  rtp(iel,iuma) \n rtp(iel,ivma) \n rtp(iel,iwma) | call field_get_val_v(ivarfl(\ref iuma), cvar_mesh_v)  | CS_F_(mesh_u)->val[3*cell_id] \n CS_F_(mesh_u)->val[3*cell_id+1] \n CS_F_(mesh_u)->val[3*cell_id+2] | Mesh velocity
+  rtp(iel,ihm)                    | call field_get_val_s(ivarfl(isca(\ref ppincl::ihm "ihm")), cvar_hm) | CS_F_(h)->val[cell_id] | Enthalpy
+  rtp(iel,isca(iscalt)) | call field_get_val_s(ivarfl(isca(\ref optcal::iscalt "iscalt")), cvar_scalt) | CS_F_(t)->val[cell_id] | Temperature </tt>
 
 
-  \section props Properties
+  \section cs_var_dico_props Properties
 
   These properties are defined in the files \ref numvar.f90 and
   \ref cs_field_pointer.h.
 
-  Deprecated Fortran code    | Deprecated Fortran code                                  |C code                       | Description
-  -------------------------- | -------------------------------------------------------- |---------------------------- | ------------
-  <tt> propce(iel,\ref irom) | call field_get_val_s(iprpfl(irom  ), cpro_rho  )         |CS_F_(rho)->val[cell_id]     | Density at the current time step
-  propce(iel,\ref iroma)     | call field_get_val_s(iprpfl(iroma ), cpro_rhoa )         |CS_F_(rho)->val_pre[cell_id] | Density at the previous time step
-  propce(iel,\ref iromaa)    | call field_get_val_s(iprpfl(iromaa), cpro_rhoaa)         |<em>not yet implemented</em> | Density at the second previous time
-  propce(iel,\ref iviscl)    | call field_get_val_s(iprpfl(iviscl), cpro_viscl)         |CS_F_(mu)->val[cell_id]      | Molecular viscosity
-  propce(iel,\ref ivisct)    | call field_get_val_s(iprpfl(ivisct), cpro_visct)         |CS_F_(mu_t)->val[cell_id]    | Turbulent dynamic viscosity
-  propce(iel,\ref ivisla)    | call field_get_val_s(iprpfl(iromaa), cpro_romaa)         |CS_F_(mu)->val_pre[cell_id]  | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
-  propce(iel,\ref ivista)    | call field_get_val_s(iprpfl(ivista), cpro_viscta)        |CS_F_(mu_t)->val_pre[cell_id] | Dynamic turbulent viscosity \n at the previous time-step
-  propce(iel,\ref icp)       | call field_get_val_s(iprpfl(icp   ), cpro_cp   )         |CS_F_(cp)->val[cell_id]      | Specific heat
-  propce(iel,\ref icpa)      | call field_get_val_s(iprpfl(icpa  ), cpro_cpa  )         |CS_F_(cp)->val_pre[cell_id]  | specific heat at the previous time-step
-  propce(iel,\ref icrom)     | call field_get_val_s(iprpfl(icrom ), cpro_crom )         |CS_F_(rho)->val[cell_id]     | Density (at cells)
-  propce(iel,\ref ibrom)     | call field_get_val_s(iprpfl(ibrom ), bpro_rho  )         |CS_F_(rho_b)->val[cell_id]   | Density (at boundary faces)
-  propce(iel,\ref ismago)    | call field_get_val_s(iprpfl(ismago), cpro_smago)         |<em>not yet implemented</em> | Field id of the anisotropic turbulent viscosity
-  propce(iel,\ref icour)     | call field_get_val_s(iprpfl(icour ), cpro_cour )         |<em>not yet implemented</em> | Courant number
-  propce(iel,\ref ifour)     | call field_get_val_s(iprpfl(ifour ), cpro_four )         |<em>not yet implemented</em> | Fourier number
-  propce(iel,\ref iprtot)    | call field_get_val_s(iprpfl(iprtot), cpro_prtot)         |<em>not yet implemented</em> | Total pressure at cell centres
-  propce(iel,\ref ivisma(1)) \n propce(iel,\ref ivisma(2)) \n propce(iel,\ref ivisma(3))| <em>not yet implemented</em> | Mesh velocity viscosity for the ALE module
-  propce(iel,\ref itsrho)    | call field_get_val_s(iprpfl(itsrho), cpro_tsrho )        |<em>not yet implemented</em> | Global dilatation source terms
-  propce(iel,\ref ibeta)     | call field_get_val_s(iprpfl(ibeta ), cpro_beta  )        |<em>not yet implemented</em> | Thermal expansion coefficient
-                             | call field_get_val_s(\ref ipri, porosi) \n porosi(iel)   | CS_F_(poro)->val[cell_id]       | Porosity
-                             | call field_get_val_v(\ref iprf, porosf) \n porosf(ii,iel)| CS_F_(t_poro)->val[cell_id][ii] | Tensorial porosity
-                             | call field_get_val_v(\ref ifrbr, forbr) \n forbr(ii,iel) | <em>not yet implemented</em>    | Field id of the stresses at boundary
-                             | call field_get_val_s(\ref iylbr, yplbr) \n yplbr(iel)    | <em>not yet implemented</em>    | Field id of \f$y^+\f$ at boundary
-                             | call field_get_val_v(\ref idten, dttens) \n dttens(ii,iel) | <em>not yet implemented</em>    | Field id for the dttens tensor</tt>
+  Deprecated Fortran code  | Current Fortran code                                                      |C code                             | Description
+  ------------------------ | ------------------------------------------------------------------------- |---------------------------------- | ------------
+  <tt> dt                  | dt                                                                        |CS_F_(dt)->val[cell_id]            | Local time step
+  propce(iel,irom)         | call field_get_val_s(iprpfl(\ref numvar::irom "irom"), cpro_rho  )        |CS_F_(rho)->val[cell_id]           | Density at the current time step
+  propce(iel,irom)         | call field_get_val_s(iprpfl(\ref numvar::iroma "iroma"), cpro_rhoa )      |CS_F_(rho)->val_pre[cell_id]       | Density at the previous time step
+  propce(iel,iromaa)       | call field_get_val_s(iprpfl(\ref numvar::iromaa "iromaa"), cpro_rhoaa)    |cs_field_by_name("density_old")    | Density at the second previous time
+  propce(iel,iviscl)       | call field_get_val_s(iprpfl(\ref numvar::iviscl "iviscl"), cpro_viscl)    |CS_F_(mu)->val[cell_id]            | Molecular viscosity
+  propce(iel,ivisct)       | call field_get_val_s(iprpfl(\ref numvar::ivisct "ivisct"), cpro_visct)    |CS_F_(mu_t)->val[cell_id]          | Turbulent dynamic viscosity
+  propce(iel,ivisla)       | call field_get_val_s(iprpfl(\ref numvar::ivisla "ivisla"), cpro_romaa)    |CS_F_(mu)->val_pre[cell_id]        | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
+  propce(iel,ivista)       | call field_get_val_s(iprpfl(\ref numvar::ivista "ivista"), cpro_viscta)   |CS_F_(mu_t)->val_pre[cell_id]      | Dynamic turbulent viscosity \n at the previous time-step
+  propce(iel,icp)          | call field_get_val_s(iprpfl(\ref numvar::icp "icp"), cpro_cp)             |CS_F_(cp)->val[cell_id]            | Specific heat
+  propce(iel,icpa)         | call field_get_val_s(iprpfl(\ref numvar::icpa "icpa"), cpro_cpa)          |CS_F_(cp)->val_pre[cell_id]        | specific heat at the previous time-step
+  propce(iel,icrom)        | call field_get_val_s(iprpfl(\ref numvar::icrom "icrom"), cpro_crom)       |CS_F_(rho)->val[cell_id]           | Density (at cells)
+  propce(iel,ibrom)        | call field_get_val_s(iprpfl(\ref numvar::ibrom "ibrom"), bpro_rho)        |CS_F_(rho_b)->val[cell_id]         | Density (at boundary faces)
+  propce(iel,ismago)       | call field_get_val_s(iprpfl(\ref numvar::ismago "ismago"), cpro_smago)    |cs_field_by_name("smagorinsky_constant^2")| Field id of the anisotropic turbulent viscosity
+  propce(iel,icour)        | call field_get_val_s(iprpfl(\ref numvar::icour "icour"), cpro_cour)       |cs_field_by_name("courant_number") | Courant number
+  propce(iel,ifour)        | call field_get_val_s(iprpfl(\ref numvar::ifour "ifour"), cpro_four)       |cs_field_by_name("fourier_number") | Fourier number
+  propce(iel,iprtot)       | call field_get_val_s(iprpfl(\ref numvar::iprtot "iprtot"), cpro_prtot)    |cs_field_by_name("total_pressure") | Total pressure at cell centers
+  propce(iel,ivisma(1)) \n propce(iel,ivisma(2)) \n propce(iel,ivisma(3)) | call field_get_val_s(iprpfl(\ref numvar::ivisma "ivisma"(1)), cpro_vism1) \n call field_get_val_s(iprpfl(\ref numvar::ivisma "ivisma"(2)), cpro_vism2) \n call field_get_val_s(iprpfl(\ref numvar::ivisma "ivisma"(3)), cpro_vism3) | cs_field_by_name("mesh_viscosity_1") \n cs_field_by_name("mesh_viscosity_2") \n cs_field_by_name("mesh_viscosity_3") | Mesh velocity viscosity for the ALE module
+  propce(iel,itsrho)       | call field_get_val_s(iprpfl(\ref numvar::itsrho "itsrho"), cpro_tsrho )   |cs_field_by_name("dila_st")        | Global dilatation source terms
+  propce(iel,ibeta)        | call field_get_val_s(iprpfl(\ref numvar::ibeta "ibeta"), cpro_beta  )     |cs_field_by_name("thermal_expansion") | Thermal expansion coefficient
+  -                        | call field_get_val_s(\ref numvar::ipori "ipori", cpro_ipori)              |CS_F_(poro)->val[cell_id]          | Porosity
+  -                        | call field_get_val_v(\ref numvar::iporf "iporf", cpro_iporf)              |CS_F_(t_poro)->val[cell_id][ii]    | Tensorial porosity
+  -                        | call field_get_val_v(\ref numvar::iforbr "iforbr", bpro_forbr)            |cs_field_by_name("boundary_forces")| Field id of the stresses at boundary
+  -                        | call field_get_val_s(\ref numvar::iyplbr "iyplbr", bpro_yplus)            |cs_field_by_name("yplus")          | Field id of \f$y^+\f$ at boundary
+  -                        | call field_get_val_v(\ref numvar::idtten "idtten", dttens)                |cs_field_by_name("dttens")         | Field id for the dttens tensor</tt>
 
 
-  \section part Specific physics
+  \section cs_var_dico_part Specific physics
 
-  \subsection atmo Atmospheric
+  \subsection cs_var_dico_atmo Atmospheric
 
   Defined in \ref optcal.f90, \ref atincl.f90, \ref atvarp.f90 and
   \ref cs_field_pointer.h.
 
-  Fortran code                             | C code                                 | Description
-  ---------------------------------------- | -------------------------------------- | ------------
-  <tt> rtp(iel,\ref isca(\ref iscalt))     | CS_F_(pot_t)->val[cell_id]             | Potential temperature
-  rtp(iel,\ref isca(\ref itotwt))          | CS_F_(totwt)->val[cell_id]             | Total water content
-  rtp(iel,\ref isca(\ref intdrp))          | CS_F_(ntdrp)->val[cell_id]             | Total number of droplets
-  rtp(iel,\ref isca(\ref isca_chem(iesp))) | CS_FI_(chemistry,iesp-1)->val[cell_id] | Chemistry species (indexed) </tt>
+  Fortran code                                                                               | C code                                 | Description
+  ------------------------------------------------------------------------------------------ | -------------------------------------- | ------------
+  <tt> call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)                                | CS_F_(pot_t)->val[cell_id]             | Potential temperature
+  call field_get_val_s(ivarfl(\ref isca(\ref atincl::itotwt "itotwt")), cvar_totwt)          | CS_F_(totwt)->val[cell_id]             | Total water content
+  call field_get_val_s(ivarfl(\ref isca(\ref atincl::intdrp "intdrp")), cvar_intdrp)         | CS_F_(ntdrp)->val[cell_id]             | Total number of droplets
+  call field_get_val_s(ivarfl(\ref isca(\ref atchem::isca_chem "isca_chem"(iesp))), cvar_sc) | CS_FI_(chemistry,iesp-1)->val[cell_id] | Chemistry species (indexed) </tt>
 
 
-  \subsection comb Coal combustion
+  \subsection cs_var_dico_comb Coal combustion
 
   Defined in \ref ppincl.f90, \ref ppcpfu.f90 and \ref cs_field_pointer.h.
 
-  Fortran code                            | C code                           | Description
-  --------------------------------------- | -------------------------------- | ------------
-  <tt> rtp(iel,\ref isca(\ref inp(iesp))) | CS_FI_(np,iesp-1)->val[cell_id]  | Particles per kg for coal class
-  rtp(iel,\ref isca(\ref ixch(iesp)))     | CS_FI_(xch,iesp-1)->val[cell_id] | Reactive coal mass fraction for coal class
-  rtp(iel,\ref isca(\ref ixck(iesp)))     | CS_FI_(xck,iesp-1)->val[cell_id] | Coke mass fraction for coal class
-  rtp(iel,\ref isca(\ref ixwt(iesp)))     | CS_FI_(xwt,iesp-1)->val[cell_id] | Water mass fraction for coal class
-  rtp(iel,\ref isca(\ref ih2(iesp)))      | CS_FI_(h2,iesp-1)->val[cell_id]  | Mass enthalpy for coal class (permeatic case)
-  rtp(iel,\ref isca(\ref if1m(iesp)))     | CS_FI_(f1m,iesp-1)->val[cell_id] | Mean value light volatiles for coal class
-  rtp(iel,\ref isca(\ref if2m(iesp)))     | CS_FI_(f2m,iesp-1)->val[cell_id] | Mean value heavy volatiles for coal class
-  rtp(iel,\ref isca(\ref if4m))           | CS_F_(f4m)->val[cell_id]         | -
-  rtp(iel,\ref isca(\ref if5m))           | CS_F_(f5m)->val[cell_id]         | -
-  rtp(iel,\ref isca(\ref if6m))           | CS_F_(f6m)->val[cell_id]         | -
-  rtp(iel,\ref isca(\ref if7m))           | CS_F_(f7m)->val[cell_id]         | -
-  rtp(iel,\ref isca(\ref if8m))           | CS_F_(f8m)->val[cell_id]         | -
-  rtp(iel,\ref isca(\ref if9m))           | CS_F_(f9m)->val[cell_id]         | -
-  rtp(iel,\ref isca(\ref ifvp2m))         | CS_F_(fvp2m)->val[cell_id]       | -
-  rtp(iel,\ref isca(\ref iyco2))          | CS_F_(yco2)->val[cell_id]        | CO2 fraction
-  rtp(iel,\ref isca(\ref iyhcn))          | CS_F_(yhcn)->val[cell_id]        | HCN fraction
-  rtp(iel,\ref isca(\ref iyno))           | CS_F_(yno)->val[cell_id]         | NO fraction
-  rtp(iel,\ref isca(\ref iynh3))          | CS_F_(ynh3)->val[cell_id]        | NH3 enthalpy
-  rtp(iel,\ref isca(\ref ihox))           | CS_F_(hox)->val[cell_id]         | Ox enthalpy </tt>
+  Fortran code                                                                    | C code                           | Description
+  ------------------------------------------------------------------------------- | -------------------------------- | ------------
+  <tt> call field_get_val_s(\ref isca(\ref ppincl::inp "inp"(iesp)), cvar_inpcl)  | CS_FI_(np,iesp-1)->val[cell_id]  | Particles per kg for coal class
+  call field_get_val_s(\ref isca(\ref ppincl::ixch "ixch"(iesp)), cvar_xchcl)     | CS_FI_(xch,iesp-1)->val[cell_id] | Reactive coal mass fraction for coal class
+  call field_get_val_s(\ref isca(\ref ppincl::ixck "ixck"(iesp)), cvar_xckcl)     | CS_FI_(xck,iesp-1)->val[cell_id] | Coke mass fraction for coal class
+  call field_get_val_s(\ref isca(\ref ppincl::ixwt "ixwt"(iesp)), cvar_xwtcl)     | CS_FI_(xwt,iesp-1)->val[cell_id] | Water mass fraction for coal class
+  call field_get_val_s(\ref isca(\ref ppincl::ih2 "ih2"(iesp)), cvar_h2cl)        | CS_FI_(h2,iesp-1)->val[cell_id]  | Mass enthalpy for coal class (permeatic case)
+  call field_get_val_s(\ref isca(\ref ppincl::if1m "if1m"(iesp)), cvar_f1mcl)     | CS_FI_(f1m,iesp-1)->val[cell_id] | Mean value light volatiles for coal class
+  call field_get_val_s(\ref isca(\ref ppincl::if2m "if2m"(iesp)), cvar_f2mcl)     | CS_FI_(f2m,iesp-1)->val[cell_id] | Mean value heavy volatiles for coal class
+  call field_get_val_s(\ref isca(\ref ppincl::if4m "if4m"), cvar_f4m)             | CS_F_(f4m)->val[cell_id]         | Oxydant 2 mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::if5m "if5m"), cvar_f5m))            | CS_F_(f5m)->val[cell_id]         | Oxydant 3 mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::if6m "if6m"), cvar_f6m))            | CS_F_(f6m)->val[cell_id]         | Water from coal drying mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::if7m "if7m"), cvar_f7m))            | CS_F_(f7m)->val[cell_id]         | Carbon from coal oxidyzed by O2 mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::if8m "if8m"), cvar_f8m))            | CS_F_(f8m)->val[cell_id]         | Carbon from coal gasified by CO2 mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::if9m "if9m"), cvar_f9m))            | CS_F_(f9m)->val[cell_id]         | Carbon from coal gasified by H2O mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::ifvp2m "ifvp2m"), cvar_fvp2m)       | CS_F_(fvp2m)->val[cell_id]       | f1f2 variance
+  call field_get_val_s(\ref isca(\ref ppcpfu::iyco2 "iyco2"), cvar_yco2)          | CS_F_(yco2)->val[cell_id]        | CO2 fraction
+  call field_get_val_s(\ref isca(\ref ppcpfu::iyhcn "iyhcn"), cvar_yhnc)          | CS_F_(yhcn)->val[cell_id]        | HCN fraction
+  call field_get_val_s(\ref isca(\ref ppcpfu::iyno "iyno"), cvar, yno)            | CS_F_(yno)->val[cell_id]         | NO fraction
+  call field_get_val_s(\ref isca(\ref ppcpfu::iynh3 "iynh3"), cvar_ynh3)          | CS_F_(ynh3)->val[cell_id]        | NH3 enthalpy
+  call field_get_val_s(\ref isca(\ref ppcpfu::ihox "ihox"), cvar_hox)             | CS_F_(hox)->val[cell_id]         | Ox enthalpy </tt>
 
 
-  \subsection cfbl Compressible
-
-  Defined in \ref ppincl.f90 and \ref cs_field_pointer.h.
-
-  Fortran code                         | C code                        | Description
-  ------------------------------------ | ----------------------------- | ------------
-  <tt> rtp(iel,\ref isca(\ref ienerg)) | CS_F_(energy)->val[cell_id]   | Total energy
-  rtp(iel,\ref isca(\ref itempk))      | CS_F_(t_kelvin)->val[cell_id] | Temperature, in Kelvin </tt>
-
-
-  \subsection elec Electric arcs
+  \subsection cs_var_dico_cfbl Compressible
 
   Defined in \ref ppincl.f90 and \ref cs_field_pointer.h.
 
-  Fortran code                          | C code                             | Description
-  ------------------------------------- | ---------------------------------- | ------------
-  <tt> rtp(iel,\ref isca(\ref ipotr))   | CS_F_(potr)->val[cell_id]          | Electric potential, real part
-  rtp(iel,\ref isca(\ref ipoti))        | CS_F_(poti)->val[cell_id]          | Electric potential, imaginary part
-  rtp(iel,\ref isca(\ref ipotva(1))) \n rtp(iel,isca(ipotva(2))) \n rtp(iel,isca(ipotva(3))) | CS_F_(potva)->val[cell_id][0] \n CS_F_(potva)->val[cell_id][1] \n CS_F_(potva)->val[cell_id][2] | Vector potential
-  rtp(iel,\ref isca(\ref iycoel(iesp))) | CS_FI_(ycoel,iesp-1)->val[cell_id] | Constituent mass fraction </tt>
+  Fortran code                                                                   | C code                        | Description
+  ------------------------------------------------------------------------------ | ----------------------------- | ------------
+  <tt> call field_get_val_s(\ref isca(\ref ppincl::ienerg "ienerg"), cvar_energ) | CS_F_(energy)->val[cell_id]   | Total energy
+  call field_get_val_s(\ref isca(\ref ppincl::itempk "itempk"), cvar_tempk)      | CS_F_(t_kelvin)->val[cell_id] | Temperature, in Kelvin </tt>
 
 
-  \subsection cogz Gas combustion
+  \subsection cs_var_dico_elec Electric arcs
 
   Defined in \ref ppincl.f90 and \ref cs_field_pointer.h.
 
-  Fortran code                      | C code                     | Description
-  --------------------------------- | -------------------------- | ------------
-  <tt> rtp(iel,\ref isca(\ref ifm)) | CS_F_(fm)->val[cell_id]    | Mixture fraction
-  rtp(iel,\ref isca(\ref ifp2m))    | CS_F_(fp2m)->val[cell_id]  | Mixture fraction variance
-  rtp(iel,\ref isca(\ref ifsm))     | CS_F_(fsm)->val[cell_id]   | Soot mass fraction
-  rtp(iel,\ref isca(\ref inpm))     | CS_F_(npm)->val[cell_id]   | Soot precursor number
-  rtp(iel,\ref isca(\ref iygfm))    | CS_F_(ygfm)->val[cell_id]  | Fresh gas fraction
-  rtp(iel,\ref isca(\ref iyfm))     | CS_F_(yfm)->val[cell_id]   | Mass fraction
-  rtp(iel,\ref isca(\ref iyfp2m))   | CS_F_(yfp2m)->val[cell_id] | Mass fraction variance
-  rtp(iel,\ref isca(\ref icoyfp))   | CS_F_(coyfp)->val[cell_id] | Mass fraction covariance </tt>
+  Fortran code                                                                  | C code                             | Description
+  ----------------------------------------------------------------------------- | ---------------------------------- | ------------
+  <tt> call field_get_val_s(\ref isca(\ref ppincl::ipotr "ipotr"), cvar_potr)   | CS_F_(potr)->val[cell_id]          | Electric potential, real part
+  call field_get_val_s(\ref isca(\ref ppincl::ipoti "ipoti"), cvar_poti)        | CS_F_(poti)->val[cell_id]          | Electric potential, imaginary part
+  call field_get_val_s(\ref isca(\ref ppincl::ipotva "ipotva(1)"), cvar_potva1) \n call field_get_val_s(\ref isca(\ref ppincl::ipotva "ipotva(2")), cvar_potva2) \n call field_get_val_s(\ref isca(\ref ppincl::ipotva "ipotva(3)"), cvar_potva3) | CS_F_(potva)->val[cell_id][0] \n CS_F_(potva)->val[cell_id][1] \n CS_F_(potva)->val[cell_id][2] | Vector potential
+  call field_get_val_s(\ref isca(\ref ppincl::iycoel "iycoel"(iesp)), cvar_ycoel(iesp)) | CS_FI_(ycoel,iesp-1)->val[cell_id] | Constituent mass fraction </tt>
 
 
-  \subsection rayt Radiative transfer
+  \subsection cs_var_dico_cogz Gas combustion
+
+  Defined in \ref ppincl.f90 and \ref cs_field_pointer.h.
+
+  Fortran code                                                              | C code                     | Description
+  ------------------------------------------------------------------------- | -------------------------- | ------------
+  <tt> call field_get_val_s(\ref isca(\ref ppincl::ifm), cvar_fm)           | CS_F_(fm)->val[cell_id]    | Mixture fraction
+  call field_get_val_s(\ref isca(\ref ppincl::ifp2m "ifp2m"), cvar_fp2m)    | CS_F_(fp2m)->val[cell_id]  | Mixture fraction variance
+  call field_get_val_s(\ref isca(\ref ppincl::ifsm "ifsm"), cvar_fsm)       | CS_F_(fsm)->val[cell_id]   | Soot mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::inpm "inpm"), cvar_npm)       | CS_F_(npm)->val[cell_id]   | Soot precursor number
+  call field_get_val_s(\ref isca(\ref ppincl::iygfm "iygfm"), cvar_ygfm)    | CS_F_(ygfm)->val[cell_id]  | Fresh gas fraction
+  call field_get_val_s(\ref isca(\ref ppincl::iyfm "iyfm"), cvar_yfm)       | CS_F_(yfm)->val[cell_id]   | Mass fraction
+  call field_get_val_s(\ref isca(\ref ppincl::iyfp2m "iyfp2m"), cvar_yfp2m) | CS_F_(yfp2m)->val[cell_id] | Mass fraction variance
+  call field_get_val_s(\ref isca(\ref ppincl::icoyfp "icoyfp"), cvar_coyfp) | CS_F_(coyfp)->val[cell_id] | Mass fraction covariance </tt>
+
+
+  \subsection cs_var_dico_rayt Radiative transfer
 
   Defined in \ref radiat.f90 and \ref cs_field_pointer.h.
 
-  Fortran code                 | C code                               | Description
-  ---------------------------- | ------------------------------------ | ------------
-  <tt> propce(iel,\ref ilumin) | CS_F_(rad_lumin)->val[cell_id]       | Radiative luminance
-  propce(iel,\ref iqx) \n propce(iel,\ref iqy) \n propce(iel,\ref iqz) | CS_F_(rad_q)->val[cell_id][0] \n CS_F_(rad_q)->val[cell_id][1] \n CS_F_(rad_q)->val[cell_id][2] | Radiative flux
-  propce(iel,\ref itsre(iesp)) | CS_FI_(rad_ets,iesp-1)->val[cell_id] | Radiative flux explicit source term
-  propce(iel,\ref itsri(iesp)) | CS_FI_(rad_its,iesp-1)->val[cell_id] | Radiative flux implicit source term
-  propce(iel,\ref iabs(iesp))  | CS_FI_(rad_abs,iesp-1)->val[cell_id] | Radiative absorption
-  propce(iel,\ref iemi(iesp))  | CS_FI_(rad_emi,iesp-1)->val[cell_id] | Radiative emission
-  propce(iel,\ref icak(iesp))  | CS_FI_(rad_cak,iesp-1)->val[cell_id] | Radiative absorption coefficient
-  call field_get_val_s(\ref itparo,btparo) \n btparo(iel) | CS_F_(tparo)->val[cell_id]      | Wall temperature
-  call field_get_val_s(\ref iqinci,bqinci) \n bqinci(iel) | CS_F_(qinci)->val[cell_id]      | Radiative incident radiative flux density
-  call field_get_val_s(\ref ixlam,bxlam) \n bxlam(iel)    | CS_F_(xlam)->val[cell_id]       | Wall thermal conductivity
-  call field_get_val_s(\ref iepa,bepa) \n bepa(iel)       | CS_F_(epa)->val[cell_id]        | Wall thickness
-  call field_get_val_s(\ref ieps,beps) \n beps(iel)       | CS_F_(emissivity)->val[cell_id] | Wall emissivity
-  call field_get_val_s(\ref ifnet,bfnet) \n bfnet(iel)    | CS_F_(fnet)->val[cell_id]       | Boundary radiative flux
-  call field_get_val_s(\ref ifconv,bfconv) \n bfconv(iel) | CS_F_(fconv)->val[cell_id]      | Boundary radiative convective flux
-  call field_get_val_s(\ref ihconv,bhconv) \n bhconv(iel) | CS_F_(hconv)->val[cell_id]      | Radiative exchange coefficient </tt>
+  Fortran code                                                              | C code                               | Description
+  ------------------------------------------------------------------------- | ------------------------------------ | ------------
+  <tt> propce(iel,\ref radiat::ilumin "ilumin")                             | CS_F_(rad_lumin)->val[cell_id]       | Radiative luminance
+  propce(iel,\ref radiat::iqx "iqx") \n propce(iel,\ref radiat::iqy "iqy") \n propce(iel,\ref radiat::iqz "iqz") | CS_F_(rad_q)->val[cell_id][0] \n CS_F_(rad_q)->val[cell_id][1] \n CS_F_(rad_q)->val[cell_id][2] | Radiative flux
+  propce(iel,\ref radiat::itsre "itsre"(iesp))                              | CS_FI_(rad_ets,iesp-1)->val[cell_id] | Radiative flux explicit source term
+  propce(iel,\ref radiat::itsri "itsri"(iesp))                              | CS_FI_(rad_its,iesp-1)->val[cell_id] | Radiative flux implicit source term
+  propce(iel,\ref radiat::iabso "iabso"(iesp))                              | CS_FI_(rad_abs,iesp-1)->val[cell_id] | Radiative absorption
+  propce(iel,\ref radiat::iemi "iemi"(iesp))                                | CS_FI_(rad_emi,iesp-1)->val[cell_id] | Radiative emission
+  propce(iel,\ref radiat::icak "icak"(iesp))                                | CS_FI_(rad_cak,iesp-1)->val[cell_id] | Radiative absorption coefficient
+  call field_get_val_s(\ref radiat::itparo "itparo", btparo) \n btparo(iel) | CS_F_(tparo)->val[cell_id]           | Wall temperature
+  call field_get_val_s(\ref radiat::iqinci "iqinci", bqinci) \n bqinci(iel) | CS_F_(qinci)->val[cell_id]           | Radiative incident radiative flux density
+  call field_get_val_s(\ref radiat::ixlam "ixlam", bxlam) \n bxlam(iel)     | CS_F_(xlam)->val[cell_id]            | Wall thermal conductivity
+  call field_get_val_s(\ref radiat::iepa "iepa", bepa) \n bepa(iel)         | CS_F_(epa)->val[cell_id]             | Wall thickness
+  call field_get_val_s(\ref radiat::ieps "ieps", beps) \n beps(iel)         | CS_F_(emissivity)->val[cell_id]      | Wall emissivity
+  call field_get_val_s(\ref radiat::ifnet "ifnet", bfnet) \n bfnet(iel)     | CS_F_(fnet)->val[cell_id]            | Boundary radiative flux
+  call field_get_val_s(\ref radiat::ifconv "ifconv", bfconv) \n bfconv(iel) | CS_F_(fconv)->val[cell_id]           | Boundary radiative convective flux
+  call field_get_val_s(\ref radiat::ihconv "ihconv", bhconv) \n bhconv(iel) | CS_F_(hconv)->val[cell_id]           | Radiative exchange coefficient </tt>
 
 */
 // _____________________________________________________________________________
@@ -335,8 +338,8 @@
   ------------- | ---------- | ------------
   <tt> iel      | cell_id    | Cell index
   ifac          | face_id    | Face index
-  ig            | g_id       | Interior face number of associated groups
-  it            | t_id       | Interior face number of threads
+  ig            | g_id       | Interior face number of associated groups (OpenMP)
+  it            | t_id       | Interior face number of threads (OpenMP)
   idimtr        | tr_dim     | Indicator for tensor perodicity of rotation
   flumas        | i_massflux | Mass flux at interior faces
   flumab        | b_massflux | Mass flux at boundary faces
@@ -344,7 +347,7 @@
   viscb         | b_visc     | \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$ \n  at border faces for the r.h.s.
   smbrp         | rhs        | Right hand side \f$ \vect{Rhs} \f$ </tt>
 
-  \section conv Local naming convention for fields (Fotran and C)
+  \section cs_var_dico_conv Local naming convention for fields (Fotran and C)
 
   Rules have been stablished for local names denoting fields, depending on their nature. The convention, applying both in Fortran and in C, is as follows:
 

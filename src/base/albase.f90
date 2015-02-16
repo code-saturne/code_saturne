@@ -51,8 +51,8 @@ module albase
 
   !> indicator of imposed displacement
   integer, allocatable, dimension(:) :: impale
-  !> defines the mesh velocity from the colour of the boundary faces,
-  !> or more generally from their properties (colours, groups, ...),
+  !> defines the mesh velocity from the color of the boundary faces,
+  !> or more generally from their properties (colors, groups, ...),
   !> from the boundary conditions defined in cs user boundary conditions,
   !> or even from their coordinates.
   integer, allocatable, dimension(:) :: ialtyb

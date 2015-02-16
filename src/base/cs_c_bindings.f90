@@ -1278,7 +1278,7 @@ contains
   !>                                     = 0 based on neighboring gradients
   !>                                     = 1 based on mean gradient
   !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsgrp           relative precision for reconstruction
+  !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
   !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in, out]  pvar             cell values whose gradient is computed
@@ -1378,7 +1378,7 @@ contains
   !>                                     = 1 based on mean gradient
   !> \param[in]       hyd_p_flag       flag for hydrostatic pressure
   !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsgrp           relative precision for reconstruction
+  !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
   !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in]       f_ext            exterior force generating
@@ -1461,7 +1461,7 @@ contains
   !>                                     = 0 based on neighboring gradients
   !>                                     = 1 based on mean gradient
   !> \param[in]       iwarnp           verbosity
-  !> \param[in]       epsgrp           relative precision for reconstruction
+  !> \param[in]       epsrgp           relative precision for reconstruction
   !> \param[in]       climgp           limiter coefficient for imligp
   !> \param[in]       extrap           gradient extrapolation coefficient
   !> \param[in, out]  pvar             cell values whose gradient is computed
@@ -2060,7 +2060,6 @@ contains
   !> \param[in]   location_id   id of associated mesh location
   !> \param[in]   n_loc_vals    number of values per location
   !> \param[in]   val           values array
-  !> \param[out]  ierror        0: success, < 0: error code
 
   subroutine restart_write_section_real_t(r, sec_name,                     &
                                           location_id, n_loc_vals, val)
@@ -2137,7 +2136,6 @@ contains
   !> \param[in]   r       pointer to restart structure
   !> \param[in]   f_id    field id
   !> \param[in]   t_id    time id (0 for current, 1 for previous, ...)
-  !> \param[out]  ierror  return code
 
   subroutine restart_write_field_vals(r, f_id, t_id)
     use, intrinsic :: iso_c_binding

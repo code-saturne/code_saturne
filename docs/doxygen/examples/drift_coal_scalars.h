@@ -28,21 +28,21 @@
   \page drift_coal_scalars Data setting for drift scalars for coal combustion
  
 
-  \section intro Introduction
+  \section drift_coal_scalars_intro Introduction
 
   This page provides an example of code blocks that may be used
   to perform a calculation with drift scalars for coal combustion.
 
   \section cs_user_physical_properties-coal_drift Physical properties
 
-  \subsection loc_var Local variables to be added
+  \subsection drift_coal_scalars_loc_var Local variables to be added
 
   The following local variables need to be defined for the examples
   in this section:
 
   \snippet cs_user_physical_properties-coal_drift.f90 loc_var_dec
 
-  \subsection init Initialization and finalization
+  \subsection drift_coal_scalars_init Initialization and finalization
 
   The following initialization block needs to be added for the following examples:
 
@@ -52,7 +52,7 @@
   but deallocating arrays in a symmetric manner to their allocation is good
   practice, and it avoids using a different logic for C and Fortran.
 
-  \subsection body Body
+  \subsection drift_coal_scalars_body Body
 
   Here is the corresponding code:
   

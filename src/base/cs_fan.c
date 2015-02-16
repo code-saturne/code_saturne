@@ -533,7 +533,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
       fan = cs_glob_fans[fan_id];
 
-      /* Vector from the outlet face axis point to the cell centre */
+      /* Vector from the outlet face axis point to the cell center */
 
       for (coo_id = 0; coo_id < 3; coo_id++) {
         d_cel_axe[coo_id] =   (coo_cen[cell_id*3 + coo_id])
@@ -546,13 +546,13 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
                  + d_cel_axe[1] * fan->axis_dir[1]
                  + d_cel_axe[2] * fan->axis_dir[2]);
 
-      /* Cell potentially in the fan if its centre projection on the axis
+      /* Cell potentially in the fan if its center projection on the axis
          is within the thickness */
 
       if (coo_axe >= 0.0 && coo_axe <= fan->thickness) {
 
         /* Projection of the vector from the outlet face axis point
-           to the cell centre in the fan plane */
+           to the cell center in the fan plane */
 
         for (coo_id = 0; coo_id < 3; coo_id++)
           d_cel_axe[coo_id] -= coo_axe * fan->axis_dir[coo_id];
@@ -913,21 +913,21 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
           aux_2 = f_base * fan->axial_torque;
         }
 
-        /* Vector from the outlet face axis point to the cell centre */
+        /* Vector from the outlet face axis point to the cell center */
 
         for (coo_id = 0; coo_id < 3; coo_id++) {
           d_cel_axe[coo_id] =   (coo_cen[cell_id*3 + coo_id])
                             - fan->inlet_axis_coords[coo_id];
         }
 
-        /* Projection of the cell centre on the fan axis */
+        /* Projection of the cell center on the fan axis */
 
         coo_axe = (  d_cel_axe[0] * fan->axis_dir[0]
                    + d_cel_axe[1] * fan->axis_dir[1]
                    + d_cel_axe[2] * fan->axis_dir[2]);
 
         /* Projection of the vector from the outlet face axis point
-           to the cell centre in the fan plane */
+           to the cell center in the fan plane */
 
         for (coo_id = 0; coo_id < 3; coo_id++)
           d_cel_axe[coo_id] -= coo_axe * fan->axis_dir[coo_id];

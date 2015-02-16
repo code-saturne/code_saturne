@@ -27,7 +27,7 @@
 /*!
   \page cavit Data setting for the cavitation module
  
-  \section intro Introduction
+  \section cavitation_h_intro Introduction
 
   The cavitation module is based on a homogeneous mixture model.
   The physical properties (density and dynamic viscosity) of the mixture depends
@@ -44,7 +44,7 @@
   \ref cs_user_parameters.f90. The corresponding keyword is icavit in the
   \ref optcal module.
   This keyword can take the values:
-   - \ref icavit = -1: module desactivated (single-phase flow).
+   - \ref optcal::icavit "icavit" = -1: module desactivated (single-phase flow).
    - icavit =  0: the module is activated but there is no
         vaporization/condensation source term. The void fraction is only
         advected by the mixture velocity.
@@ -55,7 +55,7 @@
 
   When the module is activated, its specific input parameters should be set in
   the \ref usipsu routine of \ref cs_user_parameters.f90 file. An example is given
-  in \ref cs_user_parameters-cavitation.f90.
+  in cs_user_parameters-cavitation.f90.
 
   \subsection cavit_phprop Homogeneous mixture physical properties
 

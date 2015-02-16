@@ -1132,7 +1132,7 @@ cs_tensor_divergence(const cs_mesh_t            *m,
  *                               gradients
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in,out] i_massflux    mass flux at interior faces
  * \param[in,out] b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -1341,7 +1341,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
  *                               - 0 otherwise
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     cofbfp        boundary condition array for the diffusion
- *                               of the variable (Implicit part)
+ *                               of the variable (implicit part)
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$

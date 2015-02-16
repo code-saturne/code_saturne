@@ -24,7 +24,7 @@
 !===============================================================================
 !  Function  :
 !  --------
-!> \file cs_fuel_htconvers.f90
+!> \file cs_fuel_htconvers2.f90
 !>
 !> \brief   - Calculation of the temperature of particles
 !>  Function with enthalpy and concentrations
@@ -39,7 +39,6 @@
 !  mode           name             role
 !______________________________________________________________________________!
 !> \param[in]     mode             -1 : t -> h  ;   1 : h -> t
-!> \param[in]     icla             class number
 !> \param[in,out] enthal           mass enthalpy in \f$j\cdot kg^{-1}\f$
 !> \param[in]     xsolid           mass fraction
 !>                                   of the components
@@ -48,6 +47,7 @@
 
 subroutine cs_fuel_htconvers2 &
  ( mode   , enthal , xsolid , temper )
+
 !===============================================================================
 ! Module files
 !===============================================================================

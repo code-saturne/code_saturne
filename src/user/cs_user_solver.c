@@ -190,7 +190,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
     for (i = 0; i < n; i++)
       t_sol[i] = sin(pi*(0.5+i)/n)*exp(-r*pi*pi*(iter+1)/(n*n));
 
-    /* Plot maximum temperature value (centre-value) */
+    /* Plot maximum temperature value (center-value) */
 
     cs_time_plot_vals_write(time_plot,   /* time plot structure */
                             iter,        /* current iteration number */

@@ -30,22 +30,22 @@
   \section note_1 Note 1: ghost cells - (halos)
   A cell (real cell) is an elementary mesh element of the spatial
   discretisation of the calculation domain. The mesh is made of \ref ncel cells.
-  When using periodicity and parallelism, extra ``ghost'' cells
-  (called ``halo'' cells) are defined for temporary storage of some information
-  (on a given processor).
+  When using periodicity and parallelism, extra "ghost" cells
+  (also called "halo" cells) are defined for temporary storage of some information
+  (on a given process).
   The total number of real and ghost cells is \ref ncelet. 
    - Indeed, when periodicity is enabled, the cells with
-  periodic faces do not have any real neighbouring cell across these
-  particular faces. Their neighbouring cell is elsewhere in the calculation
+  periodic faces do not have any real neighboring cell across these
+  particular faces. Their neighboring cell is elsewhere in the calculation
   domain (its position is determined by the periodicity). In order to
   temporarily store the information coming from this ``distant''
-  neighbouring cell, a ghost cell (``halo'') is created. 
+  neighboring cell, a ghost cell (``halo'') is created. 
    - The same kind of problem exists in the case of a
   calculation on parallel machines: due to the decomposition of the
   calculation domain, some cells no longer have access to all
-  their neighbouring cells, some of them being treated by another processor. The
-  creation of ghost cells allows to temporarily store the information
-  coming from real neighbouring cells treated by other processors.
+  their neighboring cells, some of them being assigned to another parallel domain.
+  The creation of ghost cells allows to temporarily store the information
+  coming from real neighboring cells treated by other MPI ranks.
   The variables are generally arrays of size \ref ncelet (number of real and
   fictitious cells). The calculations (loops) are made on \ref ncel cells (only
   the real cells, the fictitious cells are only used to store information).
@@ -54,31 +54,36 @@
   \section note_2 Note 2: internal faces
   An internal face is an inferface shared by two cells (real or ghost
   ones) of the mesh. A boundary face is a face which has only one real
-  neighbouring cell. In the case of periodic calculations, a periodic face
+  neighboring cell. In the case of periodic calculations, a periodic face
   is an internal face. In the case of parallel running calculations, the
   faces situated at the boundary of a partition may be internal faces or
   boundary faces (of the whole mesh);
 
-  \section note_3 Note 3: faces-nodes connectivity
-  The faces - nodes connectivity is stored by
-  means of four integer arrays: \ref ipnfac and \ref nodfac for the
+  \section note_3 Note 3: faces-vertices connectivity
+  The faces - vertices connectivity is accessed by
+  means of four integer functions: \ref ipnfac and \ref nodfac for the
   internal faces, \ref ipnfbr and \ref nodfbr for the boundary faces.
-  \ref nodfac (size \ref lndfac)
-  contains the list of all the nodes of all the internal faces; first the nodes of
-  the first face, then the nodes of the second face, and so on.
-  \ref ipnfac (size: \ref nfac+1) gives the position \ref ipnfac(ifac)
-  in \ref nodfac of the first node of each internal face \ref ifac.
+  \ref nodfac accesses the list of all the vertices of all the internal faces;
+  first the vertices of the first face, then the vertices of the second face,
+  and so on.
+  \ref ipnfac (size: \ref nfac+1) gives the position \ref ipnfac "ipnfac"(ifac)
+  in \ref nodfac of the first node of each internal face \c ifac.
   Therefore, the reference numbers of all
-  the nodes of the internal face \ref ifac are: \ref nodfac(ipnfac(ifac)),
-  \ref nodfac(ipnfac(ifac)+1), ..., \ref nodfac(ipnfac(ifac+1)-1).
-  In order for this last formula to be valid even for \ref ifac=nfac,
+  the vertices of the internal face \c ifac are:
+  \ref nodfac "nodfac"(\ref ipnfac "ipnfac"(ifac)),
+  \ref nodfac "nodfac"(\ref ipnfac "ipnfac"(ifac)+1), ...,
+  \ref nodfac "nodfac"(\ref ipnfac "ipnfac"(ifac+1)-1).
+  In order for this last formula to be valid even for \c ifac=nfac,
   \ref ipnfac is of size \ref nfac+1 and \ref ipnfac(nfac+1)
   is equal to \ref lndfac+1.
-  The composition of the arrays \ref nodfbr and \ref ipnfbr is similar.
+  For boundary faces, the array access functions \ref nodfbr and \ref ipnfbr
+  are used in a similar fashion.
 
   \section note_4 Note 4: modules
-  The user will not modify the existing modules. This would require the
-  recompilation of the complete version, operation which is not allowed in
-  standard use.
+  The user must not modify the existing modules in user source directories,
+  as this may break the code in more or less subtle fashion.
+  Developers modifying modules must recompile the whole code. As this may
+  not be possible for users (and in any case breaks versioning and quality
+  assurance), modules should be defined in \ref cs_user_modules.f90.
 
 */

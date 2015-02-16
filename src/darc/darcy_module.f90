@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file darcy.f90
+!> \file darcy_module.f90
 !> Module for Darcy calculation options
 
 module darcy_module

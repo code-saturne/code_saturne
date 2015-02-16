@@ -89,14 +89,14 @@ BEGIN_C_DECLS
         type of gradient reconstruction
         - 0: iterative process
         - 1: standard least square method
-        - 2: least square method with extended neighbourhood
-        - 3: least square method with reduced extended neighbourhood
+        - 2: least square method with extended neighborhood
+        - 3: least square method with reduced extended neighborhood
         - 4: iterative process initialized by the least square method
   \var  cs_space_disc_t::anomax
         non orthogonality angle of the faces, in radians.
 
         For larger angle values, cells with one node on the wall are kept in the
-        extended support of the neighbouring cells.
+        extended support of the neighboring cells.
   \var  cs_space_disc_t::iflxmw
         method to compute interior mass flux due to ALE mesh velocity
         - 1: based on cell center mesh velocity

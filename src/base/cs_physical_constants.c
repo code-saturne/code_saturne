@@ -101,7 +101,7 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::ro0
         reference density
 
-        Negative value: not initialised.
+        Negative value: not initialized.
         Its value is not used in gas or coal combustion modelling (it will be
         calculated following the perfect gas law, with \f$P_0\f$ and \f$T_0\f$).
         With the compressible module, it is also not used by the code, but it
@@ -127,7 +127,7 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::viscl0
         reference molecular dynamic viscosity
 
-        Negative value: not initialised.
+        Negative value: not initialized.
 
         Always useful, it is the used value unless the user specifies the
         viscosity in the subroutine \ref usphyv.
@@ -149,7 +149,7 @@ BEGIN_C_DECLS
         to keep \ref pred0 to 0.
         With the compressible module, the "pressure" variable appearing in the
         equations directly represents the total pressure.
-        It is therefore initialised to \ref p0 and not \ref pred0 (see
+        It is therefore initialized to \ref p0 and not \ref pred0 (see
         \ref ro0).
         Always useful, except with the compressible module.
   \var  cs_fluid_properties_t::xyzp0[3]
@@ -182,25 +182,28 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::t0
         reference temperature
 
-        Useful for the specific physics gas or coal combustion (initialisation
-        of the density), for the electricity modules to initialise the domain
-        temperature and for the compressible module (initialisations).
+        Useful for the specific physics gas or coal combustion (initialization
+        of the density), for the electricity modules to initialize the domain
+        temperature and for the compressible module (initializations).
         It must be given in Kelvin.
   \var  cs_fluid_properties_t::cp0
         reference specific heat
 
-        Useful if there is 1 <= n <= nscaus.
-        So that \ref iscsth(n)=1 (there is a scalar "temperature"), unless the
+        Useful if there is 1 <= n <= nscaus
+        so that \ref cs_thermal_model_t::iscalt "cs_glob_thermal_model->iscalt" = n
+        and \ref cs_thermal_model_t::itherm "cs_glob_thermal_model->itherm" =  1
+       (there is a scalar "temperature"), unless the
         user specifies the specific heat in the user subroutine \ref usphyv
-        (\ref icp > 0) with the compressible module or coal combustion, \ref cp0
-        is also needed even when there is no user scalar. \note
+        (\ref numvar::icp "icp" > 0) with the compressible module or coal combustion,
+        \ref cp0 is also needed even when there is no user scalar. \note
         None of the scalars from the specific physics is a temperature. \note
         When using the Graphical Interface, \ref cp0 is also used to
         calculate the diffusivity of the thermal scalars, based on their
         conductivity; it is therefore needed, unless the diffusivity is also
         specified in \ref usphyv.
   \var  cs_fluid_properties_t::xmasmr
-        molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ieos=1)
+        molar mass of the perfect gas in \f$ kg/mol \f$
+        (if \ref ppincl::ieos "ieos"=1)
 
         Always useful.
   \var  cs_fluid_properties_t::pther

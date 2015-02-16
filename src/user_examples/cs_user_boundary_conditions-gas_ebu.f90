@@ -148,7 +148,7 @@ d2s3 = 2.d0/3.d0
 !   - set the boundary condition for each face
 !===============================================================================
 
-! Definition of a burned gas inlet (pilot flame) for each face of colour 11
+! Definition of a burned gas inlet (pilot flame) for each face of color 11
 
 !< [example_1]
 call getfbr('11', nlelt, lstelt)
@@ -256,7 +256,7 @@ enddo
 !< [example_1]
 
 
-! Definition of an unburned gas inlet for each face of colour 12
+! Definition of an unburned gas inlet for each face of color 12
 
 !< [example_2]
 call getfbr('12', nlelt, lstelt)
@@ -312,7 +312,7 @@ do ilelt = 1, nlelt
 enddo
 !< [example_2]
 
-!  Definition of a wall for each face of colour 51 and 5
+!  Definition of a wall for each face of color 51 and 5
 
 !< [example_3]
 call getfbr('51 or 5', nlelt, lstelt)
@@ -334,7 +334,7 @@ do ilelt = 1, nlelt
 enddo
 !< [example_3]
 
-!  Definition of an exit for each face of colour 91 and 9
+!  Definition of an exit for each face of color 91 and 9
 
 !< [example_4]
 call getfbr('91 or 9', nlelt, lstelt)
@@ -357,7 +357,7 @@ enddo
 !< [example_4]
 
 !  Definition of symmetric boundary conditions for each
-!  face of colour 41 and 4.
+!  face of color 41 and 4.
 
 !< [example_5]
 call getfbr('41 or 4', nlelt, lstelt)

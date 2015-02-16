@@ -49,7 +49,6 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     dt            time step (per cell)

@@ -29,7 +29,7 @@ subroutine usatdv &
 !            Atmospheric module subroutine
 !
 !             User definition of the vertical 1D arrays
-!             User initialisation of corresponding 1D ground model
+!             User initialization of corresponding 1D ground model
 !-------------------------------------------------------------------------------
 ! Arguments
 !__________________.____._____.________________________________________________.
@@ -304,7 +304,7 @@ ifbt1d = 0
 allocate(lstelt(nfabor))
 
 !===============================================================================
-! APPEL 1.  INITIALISATIONS
+! APPEL 1.  INITIALIZATIONS
 !===============================================================================
 
 if (iappel.eq.1) then
@@ -337,7 +337,7 @@ if (iappel.eq.2) then
   tab_sol(4)%csol = 1.7e-5
   tab_sol(4)%rugthe = 0.0012
 
-  ! Initialisation of the pourcent_sol array
+  ! Initialization of the pourcent_sol array
   do ifac = 1, nfmodsol
     do isol = 1, nbrsol
       pourcent_sol(ifac,isol) = 0

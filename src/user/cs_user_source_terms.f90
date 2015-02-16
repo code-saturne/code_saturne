@@ -41,7 +41,7 @@
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
-!> \section use  Usage
+!> \section ustsnv_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (\c crvexp) and
 !> an implicit part (\c crvimp) that must be provided here.
@@ -95,7 +95,8 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                               source terms or mass rate (see
+!>                               \ref cs_user_mass_source_terms)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
@@ -221,7 +222,7 @@ enddo
 ! Formats
 !--------
 
- 1000 format(' User source termes for variable ',A8,/)
+ 1000 format(' User source terms for variable ',A8,/)
 
 !----
 ! End
@@ -236,19 +237,6 @@ end subroutine ustsnv
 
 !===============================================================================
 
-
-!===============================================================================
-
-
-subroutine ustssc &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -336,30 +324,34 @@ subroutine ustssc &
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! ncepdp           ! i  ! <-- ! number of cells with head loss terms           !
-! ncssmp           ! i  ! <-- ! number of cells with mass source terms         !
-! iscal            ! i  ! <-- ! index number of the current scalar             !
-! icepdc(ncepdp)   ! ia ! <-- ! index number of cells with head loss terms     !
-! icetsm(ncesmp)   ! ia ! <-- ! index number of cells with mass source terms   !
-! itypsm           ! ia ! <-- ! type of mass source term for each variable     !
-!  (ncesmp,nvar)   !    !     !  (see cs_user_mass_source_terms)                                  !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! ckupdc(ncepdp,6) ! ra ! <-- ! head loss coefficient                          !
-! smacel           ! ra ! <-- ! value associated to each variable in the mass  !
-!  (ncesmp,nvar)   !    !     !  source terms or mass rate (see cs_user_mass_source_terms)        !
-! crvexp           ! ra ! --> ! explicit part of the source term               !
-! crvimp           ! ra ! --> ! implicit part of the source term               !
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________________.
+!  mode            name                 role                                           !
+! _____________________________________________________________________________________!
+!> \param[in]      nvar               total number of variables
+!> \param[in]      nscal              total number of scalars
+!> \param[in]      ncepdp             number of cells with head loss terms
+!> \param[in]      ncesmp             number of cells with mass source terms
+!> \param[in]      iscal              index number of the current scalar
+!> \param[in]      icepdc             index number of cells with head loss terms
+!> \param[in]      icetsm             index number of cells with mass source terms
+!> \param[in]      itypsm             type of mass source term for each variable
+!>                                     (see cs_user_mass_source_terms)
+!> \param[in]      dt                 time step (per cell)
+!> \param[in]      ckupdc             head loss coefficient
+!> \param[in]      smacel             value associated to each variable in the mass
+!>                                    source terms or mass rate
+!>                                    (see cs_user_mass_source_terms)
+!> \param[out]     crvexp             explicit part of the source term
+!> \param[out]     crvimp             implicit part of the source term
+!______________________________________________________________________________________!
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
+subroutine ustssc &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   iscal  ,                                                       &
+   icepdc , icetsm , itypsm ,                                     &
+   dt     ,                                                       &
+   ckupdc , smacel ,                                              &
+   crvexp , crvimp )
 
 !===============================================================================
 ! Module files
@@ -421,7 +413,6 @@ if (1.eq.1) return
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
 
-
 ! --- Index number of the variable associated to scalar iscal
 ivar = isca(iscal)
 
@@ -442,7 +433,6 @@ if (iwarni(ivar).ge.1) then
   write(nfecra,1000) chaine(1:8)
 endif
 
-
 !===============================================================================
 ! 2. Example of arbitrary source term for the scalar f, 2nd scalar in the
 !    calculation
@@ -457,7 +447,7 @@ endif
 !In the following example:
 !     A = - rho / tauf
 !     B =   rho * prodf
-!        AVEC
+!        with
 !     tauf   = 10.d0  [ s  ] (dissipation time for f)
 !     prodf  = 100.d0 [ [f]/s ] (production of f by unit of time)
 
@@ -500,7 +490,7 @@ endif
 ! In the considered example, a uniform volumic source of heating is imposed
 ! in the cells with coordinate X in [0;1.2] and Y in [3.1;4]
 
-! The global heating power if Pwatt (in W) and the total volume of the concerned
+! The global heating power if Pwatt (in W) and the total volume of the selected
 ! cells is volf (in m3)
 
 ! This yields
@@ -522,12 +512,11 @@ if (.true.) return
 
 ! WARNING :
 ! It is assumed here that the thermal scalar is an enthalpy.
-! If the scalar is a temperature, PWatt does not need to be devided
-! by Cp because Cp is put outside the diffusion term and multiply
-! the temperature equation as follows:
+! If the scalar is a temperature, PWatt does not need to be divided
+! by Cp because Cp is put outside the diffusion term and multiplied
+! in the temperature equation as follows:
 !
 !  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/volf
-!
 
 pwatt = 100.d0
 
@@ -535,7 +524,7 @@ pwatt = 100.d0
 
 volf  = 0.d0
 call getcel('x > 0.0 and x < 1.2 and y > 3.1 and '//               &
-            'y < 4.0',nlelt,lstelt)
+            'y < 4.0', nlelt, lstelt)
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
@@ -580,7 +569,7 @@ end subroutine ustssc
 
 !> \brief Additional right-hand side source terms for turbulence models
 !>
-!> \section use  Usage
+!> \section cs_user_turbulence_source_terms_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (crvexp) and
 !> an implicit part (crvimp) that must be provided here.
@@ -633,7 +622,8 @@ end subroutine ustssc
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                               source terms or mass rate (see
+!>                               \ref cs_user_mass_source_terms)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
@@ -713,7 +703,6 @@ allocate(lstelt(ncel))
 ! --- Get the density array in cpro_rom
 call field_get_val_s(icrom, cpro_rom)
 
-
 ! --- Get the array of the current turbulent variable and its name
 call field_get_val_s(f_id, cvar_var)
 call field_get_name(f_id, fname)
@@ -737,7 +726,7 @@ endif
 
 !===============================================================================
 
-! NB the turbulence varaible names are:
+! NB the turbulence variable names are:
 ! - 'k' and 'epsilon' for the k-epsilon models
 ! - 'r11', 'r22', 'r33', 'r12', 'r13', 'r23' and 'epsilon'
 !    for the Rij-epsilon LRR and SSG

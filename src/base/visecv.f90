@@ -31,9 +31,9 @@
 !>   - \f$ \kappa \f$ is the volume viscosity (generally zero)
 !>
 !> \remark:
-!>   In LES, the tensor <(u-<u>)(u-<u>)> is modeled by mut <S>
-!>   and not by mut <S> - 2/3 mut Tr(<S>) Id + 2/3 k Id
-!>   so that no term mut div<u> is needed.
+!>   In LES, the tensor \f$<(u-<u>)(u-<u>)>\f$ is modeled by \f$mut <S>\f$
+!>   and not by \f$mut <S> - 2/3 mut Tr(<S>) Id + 2/3 k Id\f$
+!>   so that no term \f$mut div<u>\f$ is needed.
 !------------------------------------------------------------------------------
 
 !------------------------------------------------------------------------------

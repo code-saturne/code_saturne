@@ -72,7 +72,7 @@ module cstphy
   integer(c_int), pointer, save ::          ixyzp0
 
   !> reference density.
-  !> Negative value: not initialised.
+  !> Negative value: not initialized.
   !> Its value is not used in gas or coal combustion modelling (it will be
   !> calculated following the perfect gas law, with \f$P0\f$ and \f$T0\f$).
   !> With the compressible module, it is also not used by the code,
@@ -99,7 +99,7 @@ module cstphy
   real(c_double), pointer, save :: ro0
 
   !> reference molecular dynamic viscosity.
-  !> Negative value: not initialised.
+  !> Negative value: not initialized.
   !>
   !> Always useful, it is the used value unless the user specifies the
   !> viscosity in the subroutine \ref usphyv
@@ -121,7 +121,7 @@ module cstphy
   !>  it is wiser to keep \ref pred0 to 0.
   !> With the compressible module, the "pressure" variable appearing in the
   !> equations directly represents the total pressure.
-  !> It is therefore initialised to \ref p0 and not \ref pred0 (see \ref ro0).
+  !> It is therefore initialized to \ref p0 and not \ref pred0 (see \ref ro0).
   !> Always useful, except with the compressible module
   real(c_double), pointer, save :: pred0
 
@@ -154,18 +154,19 @@ module cstphy
 
   !> reference temperature.
   !>
-  !> Useful for the specific physics gas or coal combustion (initialisation
-  !> of the density), for the electricity modules to initialise the domain
-  !> temperature and for the compressible module (initialisations).
+  !> Useful for the specific physics gas or coal combustion (initialization
+  !> of the density), for the electricity modules to initialize the domain
+  !> temperature and for the compressible module (initializations).
   !> It must be given in Kelvin.
   real(c_double), pointer, save :: t0
 
   !> reference specific heat.
   !>
-  !> Useful if there is 1 <= n <= nscaus.
-  !> So that \ref iscsth(n)=1 (there is a scalar "temperature"),
+  !> Useful if there is 1 <= n <= nscaus,
+  !> so that \ref optcal::iscalt "iscalt" = n and \ref optcal::itherm "itherm" = 1
+  !> (there is a "temperature" scalar),
   !> unless the user specifies the specific heat in the user subroutine
-  !> \ref {usphyv} (\ref icp > 0) with the compressible module or
+  !> \ref usphyv (\ref numvar::icp "icp" > 0) with the compressible module or
   !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.
   !> \note None of the scalars from the specific physics is a temperature.
   !> \note When using the Graphical Interface, \ref cp0 is also used to
@@ -174,7 +175,7 @@ module cstphy
   !> diffusivity is also specified in \ref usphyv.
   real(c_double), pointer, save :: cp0
 
-  !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ieos=1)
+  !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ppincl::ieos "ieos"=1)
   !>
   !> Always useful
   real(c_double), pointer, save :: xmasmr
@@ -212,7 +213,8 @@ module cstphy
 
   !> limit value of \f$y^+\f$ for the viscous sublayer.
   !> \ref ypluli depends on the chosen wall function: it is
-  !> initialised to 10.88 for the scalable wall function (\ref ideuch=2),
+  !> initialized to 10.88 for the scalable wall function
+  !> (\ref optcal::ideuch "ideuch"=2),
   !> otherwise it is initialised to \f$1/\kappa\approx 2,38\f$.
   !> In LES, \ref ypluli is taken by default to be 10.88.
   !>
@@ -249,7 +251,7 @@ module cstphy
 
   !> constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
   !> \f$R_{ij}-\varepsilon\f$ LRR models.
-  !> Useful if and only if {\tt iturb}= 20, 21 or 30
+  !> Useful if and only if \ref optcal::iturb "iturb"= 20, 21 or 30
   !> (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: ce2
 
@@ -290,13 +292,13 @@ module cstphy
 
   !> constant \f$C_1^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
   !> corresponding to the wall echo terms.
-  !> Useful if and only if \ref iturb=30 and \ref irijec=1
+  !> Useful if and only if \ref iturb=30 and \ref optcal::irijec "irijec"=1
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crijp1
 
   !> constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
   !> corresponding to the wall echo terms.
-  !> Useful if and only if \ref iturb=30 and \ref irijec=1
+  !> Useful if and only if \ref iturb=30 and \ref optcal::irijec "irijec"=1
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
   double precision, save :: crijp2
 
@@ -503,20 +505,20 @@ module cstphy
   double precision, save :: ccazd
 
   !> is a characteristic macroscopic
-  !> length of the domain, used for the initialisation of the turbulence and
-  !> the potential clipping (with \ref iclkep=1)
-  !>  - Negative value: not initialised (the code then uses the cubic root of
+  !> length of the domain, used for the initialization of the turbulence and
+  !> the potential clipping (with \ref optcal::iclkep "iclkep"=1)
+  !>  - Negative value: not initialized (the code then uses the cubic root of
   !> the domain volume).
   !>
-  !> Useful if and only if \ref turb = 20, 21, 30, 31, 50 or 60 (RANS models)
+  !> Useful if and only if \ref iturb = 20, 21, 30, 31, 50 or 60 (RANS models)
   real(c_double), pointer, save :: almax
 
   !> the characteristic flow velocity,
-  !> used for the initialisation of the turbulence.
-  !> Negative value: not initialised.
+  !> used for the initialization of the turbulence.
+  !> Negative value: not initialized.
   !>
   !> Useful if and only if \ref iturb= 20, 21, 30, 31, 50 or 60 (RANS model)
-  !> and the turbulence is not initialised somewhere
+  !> and the turbulence is not initialized somewhere
   !> else (restart file or subroutine \ref cs\_user\_initialization)
   real(c_double), pointer, save :: uref
 
@@ -529,17 +531,17 @@ module cstphy
   !> \f$ \delta = \text{xlesfl} . (\text{ales} . volume)^{\text{bles}} \f$
   double precision, save :: xlesfl
 
-  !> constant used to define, for each cell \f$\Omega_i\f$,
+  !> constant used to define, for each cell \f$Omega_i\f$,
   !> the width of the (implicit) filter:
-  !>  - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
+  !>  - \f$\overline{\Delta}=xlesfl(ales*|Omega_i|)^{bles}\f$
   !>
   !> Useful if and only if \ref iturb = 40 or 41.
   double precision, save :: ales
 
-  !> constant used to define, for each cell $\Omega_i$,
+  !> constant used to define, for each cell \f$Omega_i\f$,
   !>
   !> the width of the (implicit) filter:
-  !>  - \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$
+  !>  - \f$\overline{\Delta}=xlesfl(ales*|Omega_i|)^{bles}\f$
   !>
   !> Useful if and only if \ref iturb = 40 or 41
   double precision, save :: bles

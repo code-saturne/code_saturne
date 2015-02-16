@@ -143,9 +143,9 @@
 !>                               it allows to initialize by something else than
 !>                               pvara (usually pvar=pvara)
 !> \param[in]     coefav        boundary condition array for the variable
-!>                               (Explicit part)
+!>                               (explicit part)
 !> \param[in]     coefbv        boundary condition array for the variable
-!>                               (Impplicit part)
+!>                               (implicit part)
 !> \param[in]     cofafv        boundary condition array for the diffusion
 !>                               of the variable (Explicit part)
 !> \param[in]     cofbfv        boundary condition array for the diffusion
@@ -160,6 +160,8 @@
 !>                               at interior faces for the r.h.s.
 !> \param[in]     viscbs        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
 !>                               at boundary faces for the r.h.s.
+!> \param[in]     secvif        secondary viscosity at interior faces
+!> \param[in]     secvib        secondary viscosity at boundary faces
 !> \param[in]     icvflb        global indicator of boundary convection flux
 !>                               - 0 upwind scheme at all boundary faces
 !>                               - 1 imposed flux at some boundary faces

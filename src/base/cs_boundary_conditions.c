@@ -794,7 +794,7 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
 /*!
  * \brief Set mapped boundary conditions for a given field and mapping locator.
  *
- * \param[in]       field            field whose boundary conditions are set
+ * \param[in]       f                field whose boundary conditions are set
  * \param[in]       locator          associated mapping locator, as returned
  *                                   by \ref cs_boundary_conditions_map.
  * \param[in]       location_type    matching values location

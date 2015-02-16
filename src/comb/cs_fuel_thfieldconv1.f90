@@ -41,9 +41,14 @@
 !> \param[in]     fuel1         mass fraction CHx1
 !> \param[in]     fuel2         mass fraction CHx2
 !> \param[in]     fuel3         mass fraction CO
+!> \param[in]     fuel4         mass fraction H2S
+!> \param[in]     fuel5         mass fraction H2
+!> \param[in]     fuel6         mass fraction HCN
+!> \param[in]     fuel7         mass fraction NH3
 !> \param[in]     oxyd          mass fraction O2
 !> \param[in]     prod1         mass fraction CO2
 !> \param[in]     prod2         mass fraction H2O
+!> \param[in]     prod3         mass fraction SO2
 !> \param[in]     xiner         mass fraction N2
 !> \param[in,out] tp            gas temperature (in kelvin)
 !______________________________________________________________________________!

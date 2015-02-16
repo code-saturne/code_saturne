@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_xch, cvar_xck, cvar_np
 double precision, dimension(:), pointer :: cvar_h2, cvar_scalt
 double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m, cvar_f3m
-double precision, dimension(:), pointer :: cvar_f6m, cvar_f7m, cvar_f3mc2
+double precision, dimension(:), pointer :: cvar_f6m, cvar_f7m
 double precision, dimension(:), pointer :: cvar_yco2, cvar_yhcn, cvar_yno
 double precision, dimension(:), pointer :: cvar_taire
 !< [loc_var_dec]
@@ -276,7 +276,6 @@ if (isuite.eq.0) then
   enddo
 
   call field_get_val_s(ivarfl(isca(if3m)), cvar_f3m)
-  call field_get_val_s(ivarfl(isca(if3mc2)), cvar_f3mc2)
   call field_get_val_s(ivarfl(isca(if6m)), cvar_f6m)
   call field_get_val_s(ivarfl(isca(if7m)), cvar_f7m)
   call field_get_val_s(ivarfl(isca(iyco2)), cvar_yco2)
@@ -287,10 +286,6 @@ if (isuite.eq.0) then
   do iel = 1, ncel
 
     cvar_f3m(iel) = zero
-
-    if ( ihtco2 .eq. 1 ) then
-      cvar_f3mc2(iel) = zero
-    endif
 
     if ( noxyd .ge. 2 ) then
       cvar_f6m(iel) = zero

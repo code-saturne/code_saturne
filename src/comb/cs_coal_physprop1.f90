@@ -35,12 +35,12 @@
 !>
 !> Heterogeneous reactions
 !>  - Pyrolysis
-!>    Elemental composition of the mole volatile materials
+!>    Elementary composition of the mol of volatile materials
 !>    The reactive coal is written C(1)H(ALPHA)O(BETA)
 !>      -(k1)-> ALPHA/4 CH4  + BETA CO + (1-ALPHA/4-BETA)    Coke
 !>    Reactive coal
 !>      -(k2)-> ALPHA/Y CXHY + BETA CO + (1-ALPHA/RYSX-BETA) Coke
-!>      Avec RYSX = Y/X
+!>      With RYSX = Y/X
 !>  - Heterogeneous combustion
 !>    Coke + 1/2 (O2 + XSI N2) -> CO + XSI/2 N2
 !>  - Gas-phase reaction
@@ -56,7 +56,7 @@
 !> Let Y be the mass fractions and Z be the concentrations (moles/kg)
 !> of index f before reaction, b final
 !>
-!> PDF joint degenerate into a PDF 1D of type rectangle - dirac.
+!> Joint PDF degenerated into a 1D PDF of type RECTANGLE - DIRAC
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -66,16 +66,25 @@
 !______________________________________________________________________________!
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
-!> \param[in]     f1m           average of the tracer 1 mvl [chx1+co]
-!> \param[in]     f2m           average of the tracer 2 mvl [chx2+co]
-!> \param[in]     f3m           average of the tracer 3
-!>                              (heterogeneous comb. with CO)
-!> \param[in]     f4m           average of the tracer 4 (air)
-!> \param[in]     f4m           average of the tracer 5 (H2O)
+!> \param[in]     f1m           average of tracer 1 mvl [CHx1+CO]
+!> \param[in]     f2m           average of tracer 2 mvl [CHx2+CO]
+!> \param[in]     f3m           average of tracer 3 (CO heterogeneous comb.)
+!> \param[in]     f4m           average of tracer 4 (oxyd2 mass fraction)
+!> \param[in]     f5m           average of tracer 5 (oxyd3 mass fraction)
+!> \param[in]     f6m           average of tracer 6 (water mass fraction)
+!> \param[in]     f7m           average of tracer 7 (coal oxidyzed by O2
+!>                              fraction)
+!> \param[in]     f8m           average of tracer 8 (coal gasified by CO2
+!>                              fraction)
+!> \param[in]     f9m           average of tracer 9 (coal gasified by H2O
+!>                              fraction)
+!> \param[in]     fvp2m         f1f2 variance
 !> \param[in]     enth          enthalpy in \f$ j . kg^{-1} \f$  either of
-!>                                         the gaz or of the mixture melange
-!> \param[in,out] propce        physic properties at cell centers
-!_______________________________________________________________________________!
+!>                                         the gas or of the mixture
+!> \param[in]     enthox        oxydant enthalpy
+!> \param[in,out] propce        physical properties at cell centers
+!> \param[out]    rom1          gas density
+!______________________________________________________________________________!
 
 subroutine cs_coal_physprop1 &
  ( ncelet , ncel   ,                                      &
@@ -83,7 +92,6 @@ subroutine cs_coal_physprop1 &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
    enth   , enthox ,                                      &
    propce , rom1   )
-
 
 !===============================================================================
 ! Module files
@@ -158,9 +166,6 @@ data ipass / 0 /
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)
 
-!===============================================================================
-! Deallocation dynamic arrays
-!----
 allocate(intpdf(1:ncel)                                 ,stat=iok1)
 allocate(fmini(1:ncel)      ,fmaxi(1:ncel),ffuel(1:ncel),stat=iok2)
 allocate(dfuel(1:ncel)      ,doxyd(1:ncel),pdfm1(1:ncel),stat=iok3)
@@ -174,7 +179,7 @@ if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
   write(nfecra,*) '     cs_coal_physprop1            '
   call csexit(1)
 endif
-!
+
 if ( ieqnox .eq. 1 ) then
   allocate(fs3no(1:ncel) , fs4no(1:ncel),stat=iok1)
   if ( iok1 > 0 ) then
@@ -191,7 +196,6 @@ if ( ieqnox .eq. 1 ) then
     call csexit(1)
   endif
 endif
-!===============================================================================
 !
 !===============================================================================
 ! 1. Initialization
@@ -222,11 +226,11 @@ ipcyin = ipproc(iym1(in2  ))
 ipass = ipass + 1
 
 !===============================================================================
-! 2. Determination of the type of PDF
+! 2. Determining the type of pdf
 !===============================================================================
-!
+
 do iel = 1, ncel
-  !  min and max boundary of the pdf: F4CL = 1
+  !  min and max boundary of the pdf
   fmini(iel) = 0
   fmaxi(iel) = 1.d0
   ! Sum F1+F2
@@ -252,16 +256,16 @@ deallocate(tpdf)
 
 ! Calculation of F8MC = sum(F8M(icha))
 ! Calculation of F9MC = sum(F9M(icha))
-do iel=1,ncel
+do iel = 1, ncel
 
   do ii=1,ngazg
-    af1(iel,ii) = ZERO
-    af2(iel,ii) = ZERO
+    af1(iel,ii) = 0.d0
+    af2(iel,ii) = 0.d0
   enddo
 
 enddo
 
-do iel=1,ncel
+do iel = 1, ncel
 
   zchx10 = zero
   zchx20 = zero
@@ -381,7 +385,7 @@ do iel = 1, ncel
 enddo
 
 !===============================================================================
-! 4. Calculation of the temprature and mass density
+! 4. Calculation of temperature and density
 !===============================================================================
 
 ipcte1 = ipproc(itemp1)
@@ -402,7 +406,7 @@ do iel = 1, ncel
          + propce(iel,ipcyf3)/wmole(ico )                         &
          + propce(iel,ipcyf4)/wmole(ih2s)                         &
          + propce(iel,ipcyf5)/wmole(ihy )                         &
-         + propce(iel,ipcyf6)/wmole(ihcn )                        &
+         + propce(iel,ipcyf6)/wmole(ihcn)                         &
          + propce(iel,ipcyf7)/wmole(inh3)                         &
          + propce(iel,ipcyox)/wmole(io2 )                         &
          + propce(iel,ipcyp1)/wmole(ico2)                         &
@@ -410,11 +414,11 @@ do iel = 1, ncel
          + propce(iel,ipcyp3)/wmole(iso2)                         &
          + propce(iel,ipcyin)/wmole(in2 )
 
-  ! storage of mass molar of the mixture
+  ! storage of the mixture molar mass
 
   propce(iel,ipproc(immel)) = 1.d0 / wmolme
 
-  ! ---- Mecanic pressure is not meant to be included IPR
+  ! ---- We do not include the mecanical pressure IPR
   !      but P0
 
   rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
@@ -425,7 +429,7 @@ enddo
 !===============================================================================
 
 
-! Nox's model: we do not cross in in the first relative iteration
+! Nox's model: Not used at the first relative iteration
 
 if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
 
@@ -483,7 +487,7 @@ do iel=1,ncel
               +propce(iel,ipcyp2)*     wmolat(iato)/wmole(ih2o)   &
               +propce(iel,ipcyp3)*2.d0*wmolat(iato)/wmole(iso2) )
 
-   propce(iel,ipproc(ibhydrogen)) = x1(iel)                            &
+  propce(iel,ipproc(ibhydrogen)) = x1(iel)                             &
             *( propce(iel,ipcyf1)*cx1m(iel)*wmolat(iath)/wmchx1(iel)   &
               +propce(iel,ipcyf2)*cx2m(iel)*wmolat(iath)/wmchx2(iel)   &
               +propce(iel,ipcyf4)*2.d0     *wmolat(iath)/wmole(ih2s)   &
@@ -549,24 +553,22 @@ enddo
 ! Formats
 !--------
 
-!===============================================================================
 ! Deallocation dynamic arrays
-!----
 deallocate(intpdf,stat=iok1)
 deallocate(fmini,fmaxi,ffuel,stat=iok2)
 deallocate(dfuel,doxyd,pdfm1,pdfm2,hrec,stat=iok3)
 deallocate(cx1m,cx2m,wmchx1,wmchx2,stat=iok4)
 deallocate(af1, af2,stat=iok5)
-!----
+
 if ( iok1 > 0 .or. iok2 > 0 .or. iok3 > 0 .or. iok4 > 0 .or. iok5 > 0 ) then
   write(nfecra,*) ' Memory deallocation error inside: '
   write(nfecra,*) '     cs_coal_physprop1             '
   call csexit(1)
 endif
 if ( ieqnox .eq. 1 ) then
-  !--
+
   deallocate(fs3no,fs4no,stat=iok1)
-  !--
+
   if ( iok1 > 0 ) then
     write(nfecra,*) ' Memory deallocation error inside: '
     write(nfecra,*) '     cs_coal_physprop1             '
@@ -581,7 +583,6 @@ if ( ieqnox .eq. 1 ) then
     call csexit(1)
   endif
 endif
-!===============================================================================
 
 !----
 ! End

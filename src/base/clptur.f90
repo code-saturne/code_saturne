@@ -2272,12 +2272,12 @@ do ifac = 1, nfabor
       !     donc :
 
       !       lorsque la variable transportee est la temperature
-      !         abs(iscsth(ii)).eq.1 : hconv(ifac) = hint
+      !         hconv(ifac) = hint
       !         puisque hint = visls * cp / distbr
       !                      = lambda/distance en W/(m2 K)
 
       !       lorsque la variable transportee est l'enthalpie
-      !         iscsth(ii).eq.2 : hconv(ifac) = hint*cpr
+      !         hconv(ifac) = hint*cpr
       !         avec
       !            if (ipccp.gt.0) then
       !              cpr = cpro_cp(iel)
@@ -2288,7 +2288,6 @@ do ifac = 1, nfabor
       !                      = lambda/(cp * distance)
 
       !       lorsque la variable transportee est l'energie (compressible)
-      !         iscsth(ii).eq.3 :
       !         on procede comme pour l'enthalpie avec CV au lieu de CP
       !         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
       !               le flux est le bon et le coef d'echange aussi)

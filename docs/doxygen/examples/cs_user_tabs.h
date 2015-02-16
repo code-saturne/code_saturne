@@ -49,14 +49,3 @@ Here is a list of user examples. Thorougly documented snippets are provided.
    - \subpage cs_user_extra_operations-nusselt_calculation
    - \subpage cs_user_source_terms-scalar_in_a_channel
 */
-// _____________________________________________________________________________
-/*!
-
-  \page cs_sub_libraries Sub-libraries
-
-Here is a list of Code_Saturne sub-libraries.
-
-   - \subpage BFT
-   - \subpage FVM
-
-*/

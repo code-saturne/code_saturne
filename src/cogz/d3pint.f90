@@ -44,6 +44,12 @@
 !> \param[in]     fdeb          abscissa of rectangle low boundary
 !> \param[in]     ffin          abscissa of rectangle high boundary
 !> \param[in]     hrec          rectangle height
+!> \param[out]    tpdf          indicator for pdf shape:
+!                               - 0: Dirac at mean value
+!                               - 1: rectangle
+!                               - 2: Dirac's peak at \f$ f_{min} \f$
+!                               - 3: Dirac's peak at \f$ f_{max} \f$
+!                               - 4: rectangle and 2 Dirac's pics
 !> \param[in,out] propce        physical properties at cell centers
 !> \param[in]     w1            work array
 !_______________________________________________________________________________
@@ -72,6 +78,7 @@ use ppincl
 use radiat
 use mesh
 use field
+
 !===============================================================================
 
 implicit none

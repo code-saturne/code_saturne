@@ -41,7 +41,7 @@
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
-!> \section use_src1  Usage
+!> \section example_ustsnv_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (\c crvexp) and
 !> an implicit part (\c crvimp) that must be provided here.
@@ -95,7 +95,8 @@
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                               source terms or mass rate (see
+!>                               \ref cs_user_mass_source_terms)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
@@ -164,10 +165,10 @@ if (1.eq.1) return
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
 !< [allocate_1]
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
-
 
 if (iwarni(ivar).ge.1) then
   call field_get_label(ivarfl(ivar), chaine)
@@ -176,6 +177,7 @@ endif
 
 call field_get_val_s(icrom, cpro_rom)
 !< [allocate_1]
+
 !===============================================================================
 ! 2. Example of arbitrary source term for component u:
 
@@ -200,15 +202,7 @@ call field_get_val_s(icrom, cpro_rom)
 
 ! ----------------------------------------------
 
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
-!< [test_1]
-if (.true.) return
-!< [test_1]
-! ----------------------------------------------
-
-!< [remaining_1]
+!!< [remaining_1]
 ckp  = 10.d0
 qdm  = 100.d0
 
@@ -221,6 +215,7 @@ do iel = 1, ncel
 enddo
 
 !< [remaining_1]
+
 !--------
 ! Formats
 !--------
@@ -241,19 +236,6 @@ end subroutine ustsnv
 
 !===============================================================================
 
-
-!===============================================================================
-
-
-subroutine ustssc &
-!================
-
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   iscal  ,                                                       &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel ,                                              &
-   crvexp , crvimp )
 
 !===============================================================================
 ! Purpose:
@@ -347,21 +329,28 @@ subroutine ustssc &
 !> \param[in]      nvar               total number of variables
 !> \param[in]      nscal              total number of scalars
 !> \param[in]      ncepdp             number of cells with head loss terms
-!> \param[in]      ncssmp             number of cells with mass source terms
+!> \param[in]      ncesmp             number of cells with mass source terms
 !> \param[in]      iscal              index number of the current scalar
-!> \param[in]      icepdc(ncepdp)     index number of cells with head loss terms
-!> \param[in]      icetsm(ncesmp)     index number of cells with mass source terms
+!> \param[in]      icepdc             index number of cells with head loss terms
+!> \param[in]      icetsm             index number of cells with mass source terms
 !> \param[in]      itypsm             type of mass source term for each variable
-!>                  (ncesmp,nvar)      (see cs_user_mass_source_terms)
-!> \param[in]      dt(ncelet)         time step (per cell)
-!> \param[in]      ckupdc(ncepdp,6)   head loss coefficient
+!>                                     (see cs_user_mass_source_terms)
+!> \param[in]      dt                 time step (per cell)
+!> \param[in]      ckupdc             head loss coefficient
 !> \param[in]      smacel             value associated to each variable in the mass
-!>                  (ncesmp,nvar)     source terms or mass rate (see cs_user_mass_source_terms)
+!>                                    source terms or mass rate
+!>                                    (see cs_user_mass_source_terms)
 !> \param[out]     crvexp             explicit part of the source term
 !> \param[out]     crvimp             implicit part of the source term
 !______________________________________________________________________________________!
 
-
+subroutine ustssc &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   iscal  ,                                                       &
+   icepdc , icetsm , itypsm ,                                     &
+   dt     ,                                                       &
+   ckupdc , smacel ,                                              &
+   crvexp , crvimp )
 
 !===============================================================================
 ! Module files
@@ -394,22 +383,22 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
-
 !< [arg_2]
 
 !< [loc_var_dec_2]
 ! Local variables
 
-character*80     chaine
+character(len=80) :: chaine
 integer          ivar, iiscvr,  iel
 integer          ilelt, nlelt
 
-double precision tauf, prodf, volf, pwatt
+double precision tauf, prodf, voltf, pwatt
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
 
 !< [loc_var_dec_2]
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -428,17 +417,18 @@ if (1.eq.1) return
 !< [allocate_2]
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
-
 !< [allocate_2]
 
 ! --- Index number of the variable associated to scalar iscal
 !< [index_2]
 ivar = isca(iscal)
 !< [index_2]
+
 ! --- Name of the the variable associated to scalar iscal
 !< [name_2]
 call field_get_label(ivarfl(ivar), chaine)
 !< [name_2]
+
 ! --- Indicateur of variance scalars
 !         If iscavr(iscal) = 0:
 !           the scalar iscal is not a variance
@@ -471,7 +461,7 @@ endif
 !In the following example:
 !     A = - rho / tauf
 !     B =   rho * prodf
-!        WITH
+!        with
 !     tauf   = 10.d0  [ s  ] (dissipation time for f)
 !     prodf  = 100.d0 [ [f]/s ] (production of f by unit of time)
 
@@ -481,15 +471,6 @@ endif
 
 !===============================================================================
 
-
-! ----------------------------------------------
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
-!< [bodytest_2]
-if (.true.) return
-!< [bodytest_2]
 ! ----------------------------------------------
 
 !Source term applied to second scalar
@@ -509,83 +490,77 @@ if (iscal.eq.2) then
 
 endif
 !< [src_term_applied]
+
 !===============================================================================
 ! 3. Example of arbitrary volumic heat term in the equation for enthalpy h
 
 ! In the considered example, a uniform volumic source of heating is imposed
 ! in the cells with coordinate X in [0;1.2] and Y in [3.1;4]
 
-! The global heating power if Pwatt (in W) and the total volume of the concerned
-! cells is volf (in m3)
+! The global heating power if Pwatt (in W) and the total volume of the selected
+! cells is voltf (in m3)
 
 ! This yields
 !     crvimp(iel) = 0
-!     crvexp(iel) = volume(iel)* Pwatt/volf
+!     crvexp(iel) = volume(iel)* Pwatt/voltf
 
 !===============================================================================
 
-
-! ----------------------------------------------
-
-! It is quite frequent to forget to remove this example when it is
-!  not needed. Therefore the following test is designed to prevent
-!  any bad surprise.
-!< [test_2_2]
-if (.true.) return
-
-!< [test_2_2]
 ! ----------------------------------------------
 
 ! WARNING :
 ! It is assumed here that the thermal scalar is an enthalpy.
-! If the scalar is a temperature, PWatt does not need to be devided
-! by Cp because Cp is put outside the diffusion term and multiply
-! the temperature equation as follows:
+! If the scalar is a temperature, PWatt does not need to be divided
+! by Cp because Cp is put outside the diffusion term and multiplied
+! in the temperature equation as follows:
 !
-!  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/volf
+!  rho*Cp*volume*dT/dt + .... =  volume(iel)* Pwatt/voltf
 !
 
 pwatt = 100.d0
 
-! calculation of volf
-!< [calcul_volf]
-volf  = 0.d0
+! calculation of voltf
+
+!< [ex_3_compute_voltf]
+voltf  = 0.d0
 call getcel('x > 0.0 and x < 1.2 and y > 3.1 and '//               &
-            'y < 4.0',nlelt,lstelt)
+            'y < 4.0', nlelt, lstelt)
 
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
-  volf = volf + volume(iel)
+  voltf = voltf + volume(iel)
 enddo
 
 if (irangp.ge.0) then
-  call parsom(volf)
+  call parsom(voltf)
 endif
+!< [ex_3_compute_voltf]
 
+!< [ex_3_apply]
 do ilelt = 1, nlelt
   iel = lstelt(ilelt)
 ! No implicit source term
   crvimp(iel) = 0.d0
 ! Explicit source term
-  crvexp(iel) = volume(iel)*pwatt/volf
+  crvexp(iel) = volume(iel)*pwatt/voltf
 enddo
+!< [ex_3_apply]
 
-!< [calcul_volf]
 !--------
 ! Formats
 !--------
 
-!< [format_2]
  1000 format(' User source terms for variable ',A8,/)
 
-!< [format_2]
 !----
 ! End
 !----
+
 ! Deallocate the temporary array
 !< [deallocate_2]
 deallocate(lstelt)
 !< [deallocate_2]
+
 return
 end subroutine ustssc
 
@@ -599,7 +574,7 @@ end subroutine ustssc
 
 !> \brief Additional right-hand side source terms for turbulence models
 !>
-!> \section use  Usage
+!> \section cs_user_turbulence_source_terms_use  Usage
 !>
 !> The additional source term is decomposed into an explicit part (crvexp) and
 !> an implicit part (crvimp) that must be provided here.
@@ -652,7 +627,8 @@ end subroutine ustssc
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     ckupdc        head loss coefficient
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                               source terms or mass rate (see
+!>                               \ref cs_user_mass_source_terms)
 !> \param[out]    crvexp        explicit part of the source term
 !> \param[out]    crvimp        implicit part of the source term
 !_______________________________________________________________________________
@@ -679,10 +655,13 @@ use parall
 use period
 use mesh
 use field
+use cs_f_interfaces
+use cs_c_bindings
 
 !===============================================================================
 
 implicit none
+
 !< [arg_3]
 ! Arguments
 
@@ -697,18 +676,22 @@ double precision dt(ncelet)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 double precision crvexp(ncelet), crvimp(ncelet)
 !< [arg_3]
+
 !< [loc_var_dec_3]
 ! Local variables
 
 integer          iel
 double precision ff, tau
 
-character*80     fname
+type(var_cal_opt) vcopt
+
+character(len=80) :: fname
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer ::  cpro_rom
 double precision, dimension(:), pointer ::  cvar_var
 !< [loc_var_dec_3]
+
 !===============================================================================
 
 ! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
@@ -723,6 +706,7 @@ if (.true.) return
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
+
 !< [allocate_3]
 ! Allocate a temporary array for cells selection
 allocate(lstelt(ncel))
@@ -738,11 +722,14 @@ call field_get_val_s(icrom, cpro_rom)
 call field_get_val_s(f_id, cvar_var)
 call field_get_name(f_id, fname)
 
-if (iwarni(inusa).ge.1) then
+! --- Get variable calculation options
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+if (vcopt%iwarni.ge.1) then
   write(nfecra,1000)
 endif
-
 !< [current_turb_3]
+
 !===============================================================================
 ! 2. Example of arbitrary additional source term for turbulence models
 !    (Source term on the TKE 'k' here)
@@ -764,6 +751,7 @@ endif
 ! - 'k', 'epsilon', 'phi' and 'alpha' for the Bl-v2-k model
 ! - 'k' and 'omega' for the k-omega turbulence model
 ! - 'nu_tilda' for the Spalart Allmaras model
+
 !< [rem_code_3]
 if (.false.) then
   if (trim(fname).eq.'k') then
@@ -785,12 +773,15 @@ if (.false.) then
   endif
 endif
 !< [rem_code_3]
+
 !--------
 ! Formats
 !--------
+
 !< [format_3]
  1000 format(' User source terms for turbulence model',/)
 !< [format_3]
+
 !----
 ! End
 !----
@@ -798,6 +789,6 @@ endif
 ! Deallocate the temporary array
 deallocate(lstelt)
 !< [deallocate_3]
+
 return
 end subroutine cs_user_turbulence_source_terms
-

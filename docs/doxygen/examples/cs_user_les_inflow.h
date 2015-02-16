@@ -27,7 +27,7 @@
 /*!
   \page les_inflow Generation of synthetic turbulence at LES inlets
  
-  \section intro Introduction
+  \section cs_user_les_infow_intro Introduction
 
   This example contains 3 subroutines : 
   - cs_user_les_inflow_init: definition of global caracteristics of synthetic turbulence inlets
@@ -37,7 +37,7 @@
 
   \section cs_user_les_inflow_init Global caracteristics of synthetic turbulence inlets
 
-  \subsection purpose Purpose
+  \subsection cs_user_les_inflow_purpose Purpose
 
   Generation of synthetic turbulence at LES inlets.
   Definition of global caracteristics of synthetic turbulence inlets:
@@ -48,18 +48,18 @@
   - isuisy = 0: not activated (synthetic turbulence reinitialized)
 
 
-  \subsection loc_var_dec1 Local variables declaration
+  \subsection cs_user_les_inflow_loc_var_dec1 Local variables declaration
 
   No local variable.
 
 
-  \subsection init1 Initializations
+  \subsection cs_user_les_inflow_init1 Initializations
   \snippet cs_user_les_inflow-base.f90 init_1
 
 
   \section cs_user_les_inflow_define Caracteristics of one specific inlet
 
-  \subsection purpose Purpose
+  \subsection cs_user_les_inflow_purpose_base Purpose
 
   Generation of synthetic turbulence at LES inlets
   Definition of the caracteristics of the synthetic turbulence inlet 'nument'
@@ -90,11 +90,11 @@
          - Accurate specification of the statistics of the flow at LES inlet
            can be made via the user subroutine cs_user_les_inflow_advanced.
 
-  \subsection loc_var_dec2 Local variables declaration
+  \subsection cs_user_les_inflow_loc_var_dec2 Local variables declaration
 
   No local variable.
 
-  \subsection init2 Initializations
+  \subsection cs_user_les_inflow_init2 Initializations
 
   First synthetic turbulence inlet: the Batten Method is used
   for boundary faces of color '1'.
@@ -109,7 +109,7 @@
 
   \section cs_user_les_inflow_advanced Accurate specification of target statistics at inlet
 
-  \subsection purpose Purpose
+  \subsection cs_user_les_inflow_purpose_advanced Purpose
 
   Generation of synthetic turbulence at LES inlets.
   Accurate definition of mean velocity, Reynolds stresses and dissipation
@@ -121,11 +121,11 @@
    - epsent(     nfbent) : dissipation rate
 
 
-  \subsection loc_var_dec3 Local variables declaration
+  \subsection cs_user_les_inflow_loc_var_dec3 Local variables declaration
 
   \snippet cs_user_les_inflow-base.f90 loc_var_dec3
 
-  \subsection example_1 Example 1
+  \subsection cs_user_les_inflow_example_1 Example 1
 
   Mean velocity, Reynolds stresses an dissipation are deduced from a wall law for
   the first synthetic turbulence inlet, 
@@ -134,7 +134,7 @@
   
   \snippet cs_user_les_inflow-base.f90 example_1
   
-  \subsection example_2 Example 2
+  \subsection cs_user_les_inflow_example_2 Example 2
 
    Reynolds stresses and dissipation at the inlet are computed
    using the turbulence intensity and standard laws for

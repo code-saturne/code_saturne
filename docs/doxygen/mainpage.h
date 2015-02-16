@@ -27,7 +27,7 @@
 /*!
   \mainpage Code_Saturne documentation
 
-  \section intro Introduction
+  \section mainpage_intro Introduction
 
   Code_Saturne is EDF's general purpose Computational Fluid Dynamics (CFD)
   software.
@@ -39,18 +39,18 @@
   magneto-hydrodynamics, compressible flows, two-phase flows
   (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
 
-  \section install Installation
+  \section mainpage_install Installation
 
   Code_Saturne may be configured and installed using the
   \c configure shell script and \c make. Please read the \c INSTALL
   file in the toplevel source directory if you are not familiar
   with configuration scripts generated through GNU autoconf and automake.
 
-  \section Sub-libraries
+  \section mainpage_sublibs Sub-libraries
 
-  See \ref BFT and \ref FVM
+  See \ref bft_page and \ref fvm_page
 
-  \section user_sources User sources, functions, and subroutines
+  \section mainpage_user_sources User sources, functions, and subroutines
 
   Many user examples are available in the \ref cs_user_examples "user examples tab":
     - \ref cs_user_boundary_conditions_examples "User boundary conditions definitions",
@@ -58,16 +58,16 @@
     - \ref cs_user_initialization "Physical fields user initialization",
     - and so on ...
 
-  \page BFT BFT
+  \page bft_page BFT
 
-  \section BFT
+  \section bft BFT: Base Functions and Types
 
   The "Base Functions and Types" library is intended to simplify and enhance
   portability, memory and I/O use for scientific codes. It contains
   a number of system library wrappers for common services such as file
   I/O or memory management, ensuring portability of the calling code.
 
-  \subsection intro_portability Portability
+  \subsection bft_intro_portability Portability
 
   Using lower-level services in C or C++ often requires the definition
   of preprocessor symbols such as \c _POSIX_SOURCE (or \c OSF_SOURCE, or
@@ -80,7 +80,7 @@
   BFT tries to hide such portability issues while maintaining an API similar
   to that of the standard \c libc where applicable.
 
-  \subsection intro_retcode_error Return codes and error handling
+  \subsection bft_intro_retcode_error Return codes and error handling
 
   In most scientific codes destined to run in a batch environment, errors are
   usually fatal, especially when dealing with file access and memory allocation.
@@ -93,14 +93,14 @@
   Error handling may also be modified by writing a specific error handler
   (see bft_error_handler_example).
 
-  \subsection intro_add_func Added functionnality
+  \subsection bft_intro_add_func Added functionnality
 
   BFT functions similar to \c libc functions add functionnality such
   as optional byte-swapping for conversion from internal to external
   data repressentation (or vice-versa), or optional memory-allocation
   logging and tracking of non-freed pointers.
 
-  \subsection intro_goals Goals and Limitations
+  \subsection bft_intro_goals Goals and Limitations
 
   The BFT library tries to provide a set of utilitarian functions for
   common use, but does not seek to define a framework. As a general
@@ -121,15 +121,15 @@
   The user should thus check for the return values of such functions,
   but the API is guaranteed.
 
-  \page FVM FVM
+  \page fvm_page FVM
 
-  \section FVM
+  \section fvm FVM: Finite Volume Mesh
 
   The "Finite Volume Mesh" library is intended to provide mesh and associated
   fields I/O and manipulation services for unstructure Finite Volume codes
   or other tools with similar requirements.
 
-  \subsection intro_goals Goals and Limitations
+  \subsection fvm_intro_goals Goals and Limitations
 
   The FVM library is originaly intended for unstructured cell-centered
   finite-volume codes using almost arbitrary polyhedral cells. It
@@ -139,7 +139,7 @@
   There are also currently no optimizations for structured or
   block-structured meshes, wich are handled as unstructured meshes.
 
-  \subsection nodal_writer Nodal Mesh and Writer Structures
+  \subsection fvm_nodal_writer Nodal Mesh and Writer Structures
 
   FVM is used to handle post-processing output in external formats
   (EnSight, CGNS, or MED are currently handled), possibly running in
@@ -174,7 +174,7 @@
   data and frees the corresponding memory, but obviously leaves its
   shared data untouched.
 
-  If an \c fvm_nodal_t structure B is built from a structure A with
+  If a \c fvm_nodal_t structure B is built from a structure A with
   which it shares its data, and a second \c fvm_nodal_t mesh C
   is a view on B (for example a restriction to a part of the domain
   that we whish to post-process more frequently), C must be destroyed

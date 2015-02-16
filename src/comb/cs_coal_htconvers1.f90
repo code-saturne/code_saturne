@@ -37,6 +37,7 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
+!> \param[in]     mode          -1 : t -> h  ;   1 : h -> t
 !> \param[in,out] eh            gas enthalpy
 !>                                   (\f$ j . kg^{-1} \f$ of mixed gas)
 !> \param[in]     xesp          mass fraction of species

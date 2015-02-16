@@ -187,8 +187,8 @@ if ( isuite.eq.0 ) then
 
   endif
 
-! --> All the computation domain is initialised with air at TINITK
-!                   ================================================
+! --> All the computation domain is initialized with air at TINITK
+!             ====================================================
 
 ! ---- Computation of H1INIT and  H2INIT
 

@@ -297,7 +297,7 @@ contains
   !> \param[out] brom   Density at boudary faces array
   !> \param[out] viscl  Dynamic viscosity array
   !> \param[out] imasfl Mass flux at internal faces array
-  !> \param[out] imasfl Mass flux at internal boundary faces array
+  !> \param[out] bmasfl Mass flux at internal boundary faces array
 
   subroutine cavitation_update_phys_prop  &
             ( voidf, coavoi, cobvoi, ivoifl, bvoifl, &
@@ -414,7 +414,7 @@ contains
   !> \param[in]  croma  Density at cell center array at previous time step
   !> \param[in]  dt     Time step
   !> \param[in]  imasfl Mass flux at internal faces array
-  !> \param[in]  imasfl Mass flux at internal boundary faces array
+  !> \param[in]  bmasfl Mass flux at internal boundary faces array
 
   subroutine cavitation_print_mass_budget  &
             ( crom, croma, dt, imasfl, bmasfl )

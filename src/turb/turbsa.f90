@@ -48,6 +48,7 @@
 !> \param[in]     smacel        value of variables associated to the
 !                               mass source
 !                               for ivar = ipr, smacel = mass flux
+!> \param[in]     itypfb        boundary face types
 !______________________________________________________________________________!
 
 subroutine turbsa &

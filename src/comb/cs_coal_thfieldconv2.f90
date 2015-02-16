@@ -36,8 +36,6 @@
 !> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
 !> \param[in,out] propce        physical properties at cell centers
-!> \param[in,out] eh0           real work array
-!> \param[in,out] eh1           real work array
 !______________________________________________________________________________!
 
 subroutine cs_coal_thfieldconv2 &

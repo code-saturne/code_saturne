@@ -66,10 +66,12 @@
 !>         in this case the \f$ \Phi \f$ variable is not modified.
 !>
 !>       - the condensation rate is injected with a specific value
-!>         for \f \Phi = \Phi _i the specified value given by the
+!>         for \f$ \Phi = \Phi _i \f$ the specified value given by the
 !>         user.
 !>
-!> \section the three stages in the code where this User subroutine
+!> \section use Usage
+!>
+!> The three stages in the code where this User subroutine
 !> is called (with \code iappel = 1, 2 and 3\endcode)
 !>
 !> \code iappel = 1 \endcode
@@ -134,6 +136,9 @@
 !> \param[out]    spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{cond}^n \f$)
+!> \param[out]    tpar          temperature imposed at the cold wall
+!>                              as constant or variable in time
+!>                              with a 1D thermal model
 !_______________________________________________________________________________
 
 subroutine cs_user_boundary_mass_source_terms &

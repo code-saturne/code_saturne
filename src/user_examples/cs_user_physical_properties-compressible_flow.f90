@@ -177,7 +177,7 @@ double precision, dimension(:), pointer :: cvar_scalt
 ! Ex. 1: molecular viscosity varying with temperature
 ! =====
 !    The values of the molecular viscosity are provided as a function of
-!    the temperature. All variables are evaluated at the cell centres.
+!    the temperature. All variables are evaluated at the cell centers.
 !===============================================================================
 
 !< [example_1]
@@ -201,7 +201,7 @@ varbm =  6.2332d-7
 varcm = -4.5577d-5
 vardm =  1.6935d-3
 
-! --- Molecular dynamic viscosity mu at the cell centres, kg/(m s)
+! --- Molecular dynamic viscosity mu at the cell centers, kg/(m s)
 !     In this example, mu is provided as a function of the temperature T:
 !       mu(T)              =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
 !     that is:
@@ -217,7 +217,7 @@ enddo
 ! Ex. 2: molecular volumetric viscosity varying with temperature
 ! =====
 !    The values of the molecular volumetric viscosity are provided as a function
-!    of the temperature. All variables are evaluated at the cell centres.
+!    of the temperature. All variables are evaluated at the cell centers.
 !===============================================================================
 
 !     To refer to the user-defined scalar number 2 instead, for example, use
@@ -251,7 +251,7 @@ varbm =  6.2332d-7
 varcm = -4.5577d-5
 vardm =  1.6935d-3
 
-! --- Molecular dynamic volumetric viscosity kappa at the cell centres, kg/(m s)
+! --- Molecular dynamic volumetric viscosity kappa at the cell centers, kg/(m s)
 !     In this example, kappa is provided as a function of the temperature T:
 !       kappa(T)           =    T  *( T  *( am  * T +  bm  )+ cm  )+ dm
 !     that is:
@@ -267,7 +267,7 @@ enddo
 ! Ex. 3: isobaric specific heat varying with temperature
 ! =====
 !    The values of the isobaric specific heat values are provided as a function
-!    of the temperature. All variables are evaluated at the cell centres.
+!    of the temperature. All variables are evaluated at the cell centers.
 !===============================================================================
 
 ! Warning:
@@ -307,7 +307,7 @@ endif
 varac = 0.00001d0
 varbc = 1000.0d0
 
-! --- Isobaric specific heat cpro_cp at the cell centres, J/(kg degree)
+! --- Isobaric specific heat cpro_cp at the cell centers, J/(kg degree)
 !     In this example, cpro_cp is provided as a function of the temperature T:
 !       cpro_cp(T)              =      ac * T  + ab
 !     that is:
@@ -329,7 +329,7 @@ call cf_thermo_cv(cpro_cp, cpro_cv, ncel)
 ! Ex. 4: molecular thermal conductivity varying with temperature
 ! =====
 !    The values of the molecular thermal conductivity are provided as a function
-!    of the temperature. All variables are evaluated at the cell centres.
+!    of the temperature. All variables are evaluated at the cell centers.
 !===============================================================================
 
 !     To refer to the user-defined scalar number 2 instead, for example, use
@@ -365,7 +365,7 @@ varbl =  3.6021d-5
 varcl =  1.2527d-4
 vardl =  0.58923d0
 
-! --- Molecular thermal conductivity lambda at the cell centres, W/(m degree)
+! --- Molecular thermal conductivity lambda at the cell centers, W/(m degree)
 !     In this example, lambda is provided as a function of the temperature T:
 !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
 !     that is:
@@ -388,7 +388,7 @@ enddo
 !        diffusivity is assumed to be equal to that of the associated
 !        scalar)
 !    The values of the molecular diffusivity are provided as a function
-!    of the temperature. All variables are evaluated at the cell centres.
+!    of the temperature. All variables are evaluated at the cell centers.
 !===============================================================================
 
 !< [example_5]
@@ -438,7 +438,7 @@ do iscal = 1, nscaus
     varcl =  1.2527d-4
     vardl =  0.58923d0
 
-    ! --- Molecular diffusivity lambda at the cell centres, kg/(m s)
+    ! --- Molecular diffusivity lambda at the cell centers, kg/(m s)
     !     In this example, lambda is provided as a function of the temperature T:
     !       lambda(T)          =    T  *( T  *( al  * T +  bl  )+ cl  )+ dl
     !     that is:

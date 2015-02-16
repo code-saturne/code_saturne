@@ -1376,7 +1376,7 @@ if ( ippmod(icfuel).ge.0 ) then
 !       IENTCP ou IENTAT, on remet a zero le numero des zones IZFPPP
 !       car il a peut etre ete lu.
 !       Ceci permettra d'eviter de se servir des valeurs par defaut (=0)
-!       de TIMPAT dans cpphyv et cplphy.
+!       de timpat dans cpphyv et cplphy.
     if (ierrch.ne.0) then
       do ifac = 1, nfabor
         izfppp(ifac) = 0
@@ -1688,7 +1688,7 @@ return
 '@    The run can continue but the data on the                ',/,&
 '@      faces ',A8  ,' will not be reread                     ',/,&
 '@      in the suite file.                                    ',/,&
-'@    They will be initialised by the default values.         ',/,&
+'@    They will be initialized by the default values.         ',/,&
 '@                                                            ',/,&
 '@     This situation can occur when the restart file         ',/,&
 '@      originates from a run using different options         ',/,&
@@ -1720,7 +1720,7 @@ return
 '@                                                            ',/,&
 '@    It was not possible to read some values from the        ',/,&
 '@      auxiliary restart file.                               ',/,&
-'@    They will be initialised by the default values.         ',/,&
+'@    They will be initialized by the default values.         ',/,&
 '@                                                            ',/,&
 '@     This situation can occur when the restart file         ',/,&
 '@      originates from a run realised with different         ',/,&

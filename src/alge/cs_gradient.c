@@ -4054,8 +4054,6 @@ void CS_PROCF (cgdcel, CGDCEL)
        cs_real_t         grdini[]     /* <-> gradient (interleaved or not)    */
 )
 {
-  cs_lnum_t ii;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
 
@@ -4126,7 +4124,7 @@ void CS_PROCF (cgdcel, CGDCEL)
 
   if (*ilved == 0) {
 #   pragma omp parallel for
-    for (ii = 0; ii < n_cells_ext; ii++) {
+    for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
       grdini[ii]                 = grad[ii][0];
       grdini[ii + n_cells_ext]   = grad[ii][1];
       grdini[ii + n_cells_ext*2] = grad[ii][2];
