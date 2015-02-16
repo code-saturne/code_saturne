@@ -45,16 +45,16 @@ from PyQt4.QtGui  import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.Base.Toolbox import GuiParam
-from code_saturne.Base.QtPage import DoubleValidator, ComboModel, setGreenColor, from_qvariant
+from code_saturne.Base.QtPage  import DoubleValidator, ComboModel, setGreenColor, from_qvariant
 
 from code_saturne.Pages.BoundaryConditionsScalarsForm import Ui_BoundaryConditionsScalarsForm
-from code_saturne.Pages.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.DefineUserScalarsModel import DefineUserScalarsModel
-from code_saturne.Pages.ThermalScalarModel import ThermalScalarModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
-from code_saturne.Pages.Boundary import Boundary
-from code_saturne.Pages.CompressibleModel import CompressibleModel
-from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
+from code_saturne.Pages.LocalizationModel             import LocalizationModel, Zone
+from code_saturne.Pages.DefineUserScalarsModel        import DefineUserScalarsModel
+from code_saturne.Pages.ThermalScalarModel            import ThermalScalarModel
+from code_saturne.Pages.QMeiEditorView                import QMeiEditorView
+from code_saturne.Pages.Boundary                      import Boundary
+from code_saturne.Pages.CompressibleModel             import CompressibleModel
+from code_saturne.Pages.AtmosphericFlowsModel         import AtmosphericFlowsModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -168,7 +168,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
             self.modelTypeMeteo.addItem(  self.tr("Exchange coefficient (user law)"), 'exchange_coefficient_formula')
 
         self.species = ""
-        self.species_list = self.sca_mo.getUserScalarLabelsList()
+        self.species_list = self.sca_mo.getUserScalarNameList()
         for s in self.sca_mo.getScalarsVarianceList():
             if s in self.species_list:
                 self.species_list.remove(s)
@@ -188,14 +188,14 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
             self.groupBoxThermal.show()
             self.modelThermal = ComboModel(self.comboBoxThermal,1,1)
-            self.thermal = self.therm.getThermalScalarLabel()
+            self.thermal = self.therm.getThermalScalarName()
             self.modelThermal.addItem(self.tr(self.thermal),self.thermal)
             self.modelThermal.setItem(str_model = self.thermal)
         else:
             self.groupBoxThermal.hide()
 
         self.meteo_list = ""
-        self.meteo_list = self.sca_mo.getMeteoScalarsList()
+        self.meteo_list = self.sca_mo.getMeteoScalarsNameList()
 
         self.groupBoxMeteo.hide()
 
@@ -355,9 +355,9 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         """
         Show the widget
         """
-        if DefineUserScalarsModel(self.__case).getScalarLabelsList() or\
-           DefineUserScalarsModel(self.__case).getMeteoScalarsList() or\
-           DefineUserScalarsModel(self.__case).getThermalScalarLabelsList():
+        if DefineUserScalarsModel(self.__case).getScalarNameList() or\
+           DefineUserScalarsModel(self.__case).getMeteoScalarsNameList() or\
+           DefineUserScalarsModel(self.__case).getThermalScalarNameList():
             self.__setBoundary(boundary)
             self.show()
         else:
@@ -432,8 +432,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
     def slotThermalFormula(self):
         """
         """
-        name = self.therm.getThermalScalarName()
-        exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type, name = name)
+        name = self.thermal
+        exp = self.__boundary.getScalarFormula(self.thermal, self.thermal_type)
         exa = """#example: """
         if self.thermal_type == 'dirichlet_formula':
             req = [(name, str(name))]
@@ -506,7 +506,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         elif self.meteo_type == 'neumann_formula':
             req = [("flux", "flux")]
         elif self.meteo_type == 'exchange_coefficient_formula':
-            req = [(self.meteo, str(self.meteo)),("hc", "heat coefficient")]
+            req = [(self.meteo, str(self.meteo)),
+                   ("hc", "heat coefficient")]
 
         sym = [('x', "X face's gravity center"),
                ('y', "Y face's gravity center"),

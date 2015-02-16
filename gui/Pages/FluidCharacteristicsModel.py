@@ -141,32 +141,6 @@ class FluidCharacteristicsModel(Variables, Model):
 
 
     @Variables.noUndo
-    def getThermalModel(self):
-        """
-        Return node and model of choosen thermophysical model
-        """
-        modelList = []
-        node4 = self.node_models.xmlGetNode('thermal_scalar',    'model')
-        node6 = self.node_models.xmlGetNode('compressible_model', 'model')
-
-        for node in (node4, node6):
-            if node:
-                if node['model'] == "":
-                    node['model'] = "off"
-                if node['model'] != 'off':
-                    modelList.append(node['model'])
-                    nodeThermal = node
-
-        if len(modelList) > 1:
-            raise ValueError("Erreur de model thermique dans le fichier XML")
-        elif modelList == []:
-            modelList.append('off')
-            nodeThermal = None
-
-        return nodeThermal, modelList[0]
-
-
-    @Variables.noUndo
     def getThermoPhysicalModel(self):
         """
         Return values of attribute "model" of all thermophysical model nodes.

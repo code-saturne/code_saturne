@@ -26,7 +26,7 @@
 This module defines the 'Additional user's scalars' page.
 
 This module contains the following classes:
-- LabelDelegate
+- NameDelegate
 - GGDHDelegate
 - VarianceNameDelegate
 - VarianceDelegate
@@ -70,22 +70,22 @@ log = logging.getLogger("DefineUserScalarsView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Line edit delegate for the label
+# Line edit delegate for the name
 #-------------------------------------------------------------------------------
 
-class LabelDelegate(QItemDelegate):
+class NameDelegate(QItemDelegate):
     """
     Use of a QLineEdit in the table.
     """
     def __init__(self, parent=None):
         QItemDelegate.__init__(self, parent)
         self.parent = parent
-        self.old_plabel = ""
+        self.old_pname = ""
 
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        self.old_label = ""
+        self.old_pname = ""
         #editor.installEventFilter(self)
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
@@ -96,7 +96,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        self.old_plabel = str(value)
+        self.old_pname = str(value)
         editor.setText(value)
 
 
@@ -105,12 +105,12 @@ class LabelDelegate(QItemDelegate):
             return
 
         if editor.validator().state == QValidator.Acceptable:
-            new_plabel = str(editor.text())
+            new_pname = str(editor.text())
 
-            if new_plabel in model.mdl.getScalarLabelsList():
+            if new_pname in model.mdl.getScalarNameList():
                 default = {}
-                default['label']  = self.old_plabel
-                default['list']   = model.mdl.getScalarLabelsList()
+                default['name']  = self.old_pname
+                default['list']   = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
@@ -118,12 +118,12 @@ class LabelDelegate(QItemDelegate):
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
-                    new_plabel = result['label']
+                    new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
                 else:
-                    new_plabel = self.old_plabel
+                    new_pname = self.old_pname
 
-            model.setData(index, to_qvariant(str(new_plabel)), Qt.DisplayRole)
+            model.setData(index, to_qvariant(str(new_pname)), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -181,12 +181,12 @@ class VarianceNameDelegate(QItemDelegate):
     def __init__(self, parent=None):
         QItemDelegate.__init__(self, parent)
         self.parent = parent
-        self.old_plabel = ""
+        self.old_pname = ""
 
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        self.old_label = ""
+        self.old_pname = ""
         rx = "[_a-zA-Z][_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX-1) + "}"
         self.regExp = QRegExp(rx)
         v = RegExpValidator(editor, self.regExp)
@@ -196,7 +196,7 @@ class VarianceNameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        self.old_plabel = str(value)
+        self.old_pname = str(value)
         editor.setText(value)
 
 
@@ -205,12 +205,12 @@ class VarianceNameDelegate(QItemDelegate):
             return
 
         if editor.validator().state == QValidator.Acceptable:
-            new_plabel = str(editor.text())
+            new_pname = str(editor.text())
 
-            if new_plabel in model.mdl.getScalarLabelsList():
+            if new_pname in model.mdl.getScalarNameList():
                 default = {}
-                default['label']  = self.old_plabel
-                default['list']   = model.mdl.getScalarLabelsList()
+                default['name']  = self.old_pname
+                default['list']   = model.mdl.getScalarNameList()
                 default['regexp'] = self.regExp
                 log.debug("setModelData -> default = %s" % default)
 
@@ -218,12 +218,12 @@ class VarianceNameDelegate(QItemDelegate):
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
                 if dialog.exec_():
                     result = dialog.get_result()
-                    new_plabel = result['label']
+                    new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
                 else:
-                    new_plabel = self.old_plabel
+                    new_pname = self.old_pname
 
-            model.setData(index, to_qvariant(str(new_plabel)), Qt.DisplayRole)
+            model.setData(index, to_qvariant(str(new_pname)), Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -247,8 +247,8 @@ class VarianceDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        l1 = index.model().mdl.getScalarLabelsList()
-        for label in index.model().mdl.getThermalScalarLabelsList():
+        l1 = index.model().mdl.getScalarNameList()
+        for label in index.model().mdl.getThermalScalarName():
             l1.append(label)
         for s in index.model().mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
@@ -309,6 +309,10 @@ class StandardItemModelScalars(QStandardItemModel):
 
 
     def flags(self, index):
+        # first variable if thermal scalar
+        if self.mdl.getThermalScalarName():
+            if index.row() == 0 and index.column() == 0 :
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         if not index.isValid():
             return Qt.ItemIsEnabled
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -330,17 +334,17 @@ class StandardItemModelScalars(QStandardItemModel):
 
         # Label
         if col == 0:
-            old_plabel = self._data[row][col]
-            new_plabel = str(from_qvariant(value, to_text_string))
-            self._data[row][col] = new_plabel
-            self.mdl.renameScalarLabel(old_plabel, new_plabel)
+            old_pname = self._data[row][col]
+            new_pname = str(from_qvariant(value, to_text_string))
+            self._data[row][col] = new_pname
+            self.mdl.renameScalarLabel(old_pname, new_pname)
 
         # GGDH
         elif col == 1:
             turbFlux = str(from_qvariant(value, to_text_string))
             self._data[row][col] = turbFlux
-            [label, var] = self._data[row]
-            self.mdl.setTurbulentFluxModel(label, turbFlux)
+            [name, var] = self._data[row]
+            self.mdl.setTurbulentFluxModel(name, turbFlux)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -351,15 +355,15 @@ class StandardItemModelScalars(QStandardItemModel):
         return self._data[row]
 
 
-    def newItem(self, existing_label=None):
+    def newItem(self, existing_name=None):
         """
         Add an item in the table view
         """
         row = self.rowCount()
 
-        label = self.mdl.addUserScalar(existing_label)
-        turbFlux = self.mdl.getTurbulentFluxModel(label)
-        scalar = [label, turbFlux]
+        name = self.mdl.addUserScalar(existing_name)
+        turbFlux = self.mdl.getTurbulentFluxModel(name)
+        scalar = [name, turbFlux]
 
         self.setRowCount(row+1)
         self._data.append(scalar)
@@ -369,8 +373,8 @@ class StandardItemModelScalars(QStandardItemModel):
         """
         Return the values for an item.
         """
-        [label, turbFlux] = self._data[row]
-        return label, turbFlux
+        [name, turbFlux] = self._data[row]
+        return name, turbFlux
 
 
     def deleteItem(self, row):
@@ -446,18 +450,18 @@ class StandardItemModelVariance(QStandardItemModel):
 
         # Label
         if col == 0:
-            old_plabel = self._data[row][col]
-            new_plabel = str(from_qvariant(value, to_text_string))
-            self._data[row][col] = new_plabel
-            self.mdl.renameScalarLabel(old_plabel, new_plabel)
+            old_pname = self._data[row][col]
+            new_pname = str(from_qvariant(value, to_text_string))
+            self._data[row][col] = new_pname
+            self.mdl.renameScalarLabel(old_pname, new_pname)
 
 
         # Variance
         elif col == 1:
             variance = str(from_qvariant(value, to_text_string))
             self._data[row][col] = variance
-            [label, var] = self._data[row]
-            self.mdl.setScalarVariance(label,var)
+            [name, var] = self._data[row]
+            self.mdl.setScalarVariance(name,var)
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -468,25 +472,25 @@ class StandardItemModelVariance(QStandardItemModel):
         return self._data[row]
 
 
-    def newItem(self, existing_label=None):
+    def newItem(self, existing_name=None):
         """
         Add an item in the table view
         """
-        if not self.mdl.getScalarLabelsList() and not self.mdl.getThermalScalarLabelsList():
+        if not self.mdl.getScalarNameList() and not self.mdl.getThermalScalarName():
             title = self.tr("Warning")
             msg   = self.tr("There is no user scalar.\n"\
                             "Please define a user scalar.")
             QMessageBox.warning(self.parent, title, msg)
             return
         row = self.rowCount()
-        if existing_label == None:
-            label = self.mdl.addVariance()
+        if existing_name == None:
+            name = self.mdl.addVariance()
         else:
-            label = self.mdl.addVariance(existing_label)
-        var = self.mdl.getScalarVariance(label)
+            name = self.mdl.addVariance(existing_name)
+        var = self.mdl.getScalarVariance(name)
         if var in ("", "no variance", "no_variance"):
             var = "no"
-        scalar = [label, var]
+        scalar = [name, var]
 
         self.setRowCount(row+1)
         self._data.append(scalar)
@@ -496,8 +500,8 @@ class StandardItemModelVariance(QStandardItemModel):
         """
         Return the values for an item.
         """
-        [label, var] = self._data[row]
-        return label, var
+        [name, var] = self._data[row]
+        return name, var
 
 
     def deleteItem(self, row):
@@ -540,7 +544,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.tableVariance.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
         # Delegates
-        delegateLabel        = LabelDelegate(self.tableScalars)
+        delegateLabel        = NameDelegate(self.tableScalars)
         delegateGGDH         = GGDHDelegate(self.tableScalars, self.case)
         delegateVarianceName = VarianceNameDelegate(self.tableVariance)
         delegateVariance     = VarianceDelegate(self.tableVariance)
@@ -567,15 +571,15 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.modelVariance = StandardItemModelVariance(self, self.mdl)
         self.tableVariance.setModel(self.modelVariance)
 
-        l1 = self.mdl.getScalarLabelsList()
+        l1 = self.mdl.getScalarNameList()
         for s in self.mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
-        for label in l1:
-            self.modelScalars.newItem(label)
-        for label in self.mdl.getThermalScalarLabelsList():
-            self.modelScalars.newItem(label)
-        for label in self.mdl.getScalarsVarianceList():
-            self.modelVariance.newItem(label)
+        for name in self.mdl.getThermalScalarName():
+            self.modelScalars.newItem(name)
+        for name in l1:
+            self.modelScalars.newItem(name)
+        for name in self.mdl.getScalarsVarianceList():
+            self.modelVariance.newItem(name)
 
         self.case.undoStartGlobal()
 
@@ -604,14 +608,14 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         lst.reverse()
 
         for row in lst:
-            label = self.modelScalars.getItem(row)[0]
-            if self.mdl.getScalarType(label) == 'user':
-                self.mdl.deleteScalar(label)
+            name = self.modelScalars.getItem(row)[0]
+            if self.mdl.getScalarType(name) == 'user':
+                self.mdl.deleteScalar(name)
                 self.modelScalars.deleteItem(row)
             row_var = self.modelVariance.rowCount()
             del_var = []
             for r in range(row_var):
-                if label == self.modelVariance.getItem(r)[1]:
+                if name == self.modelVariance.getItem(r)[1]:
                     del_var.append(self.modelVariance.getItem(r)[0])
             for var in del_var:
                 tot_row = self.modelVariance.rowCount()
@@ -649,8 +653,8 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         lst.reverse()
 
         for row in lst:
-            label = self.modelVariance.getItem(row)[0]
-            self.mdl.deleteScalar(label)
+            name = self.modelVariance.getItem(row)[0]
+            self.mdl.deleteScalar(name)
             self.modelVariance.deleteItem(row)
 
         self.tableVariance.clearSelection()

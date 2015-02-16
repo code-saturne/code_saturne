@@ -76,29 +76,29 @@ class NumericalParamEquatModel(Model):
         self.var = []
         if self.darcy == "off":
             for node in self.node_varVP:
-                self.var.append(node['label'])
+                self.var.append(node['name'])
         else:
             for node in self.node_varVP:
                 if node['name'] != "velocity":
-                    self.var.append(node['label'])
+                    self.var.append(node['name'])
 
         for node in self._getThermalScalarNode():
-            self.var.append(node['label'])
+            self.var.append(node['name'])
         for node in self._getAdditionalScalarNodes():
-            self.var.append(node['label'])
+            self.var.append(node['name'])
 
         self.thermo = []
         for node in self._getThermalScalarNode():
-            self.thermo.append(node['label'])
+            self.thermo.append(node['name'])
 
         self.UVW = []
         if self.darcy == "off":
             for node in self.node_varVP:
                 if node['name'] == 'velocity':
-                    self.UVW.append(node['label'])
+                    self.UVW.append(node['name'])
 
 
-    def _defaultValues(self, label=""):
+    def _defaultValues(self, name=""):
         """ Private method: return default values """
         self.default = {}
         self.default['time_step_factor'] = 1.0
@@ -114,7 +114,7 @@ class NumericalParamEquatModel(Model):
         self.default['solver_choice_pressure'] = 'multigrid'
         self.default['solver_choice'] = 'automatic'
 
-        if label not in self.var:
+        if name not in self.var:
             self.default['order_scheme'] = 'upwind'
             self.default['blending_factor'] = 0.
         else:
@@ -128,21 +128,21 @@ class NumericalParamEquatModel(Model):
 
         if TurbulenceModel(self.case).getTurbulenceModel() in \
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
-            if label in self.UVW:
+            if name in self.UVW:
                 self.default['slope_test'] = 'off'
-            if label == 'Pressure':
+            if name == 'Pressure':
                 self.default['rhs_reconstruction'] = 5
             else:
                 self.default['rhs_reconstruction'] = 10
         else:
-            if label == 'Pressure':
+            if name == 'Pressure':
                 self.default['rhs_reconstruction'] = 2
             else:
                 self.default['rhs_reconstruction'] = 1
 
-        if label in self.thermo:
+        if name in self.thermo:
             for node in self._getThermalScalarNode():
-                if node['label'] == label:
+                if node['name'] == name:
                     mdl = ThermalScalarModel(self.case).getThermalScalarModel()
                     if mdl == 'temperature_celsius':
                         self.default['min_value'] = -273.15
@@ -294,31 +294,31 @@ class NumericalParamEquatModel(Model):
         return self.var_solv
 
 
-    def _getClippingLabelNode(self, label):
-        """ Private method: return node called with label'label' for solver scheme"""
+    def _getClippingNameNode(self, name):
+        """ Private method: return node called with name'name' for solver scheme"""
         for node in self._getClippingNodesList():
             for n in node:
-                if n['label'] == label:
+                if n['name'] == name:
                     return n
-        raise ValueError("This label does not exist: " + label)
+        raise ValueError("This name does not exist: " + name)
 
 
-    def _getSchemeLabelNode(self, label):
-        """ Private method: return node called with label'label' for scheme nodes"""
+    def _getSchemeNameNode(self, name):
+        """ Private method: return node called with name'name' for scheme nodes"""
         for node in self._getSchemeNodesList():
             for n in node:
-                if n['label'] == label:
+                if n['name'] == name:
                     return n
-        raise ValueError("This label does not exist: " + label)
+        raise ValueError("This name does not exist: " + name)
 
 
-    def _getSolverLabelNode(self, label):
-        """ Private method: return node called with label'label' for solver scheme"""
+    def _getSolverNameNode(self, name):
+        """ Private method: return node called with name'name' for solver scheme"""
         for node in self._getSolverNodesList():
             for n in node:
-                if n['label'] == label:
+                if n['name'] == name:
                     return n
-        raise ValueError("This label does not exist: " + label)
+        raise ValueError("This name does not exist: " + name)
 
 
     def _isPressure(self, node):
@@ -331,47 +331,47 @@ class NumericalParamEquatModel(Model):
     @Variables.undoGlobal
     def setSchemeDefaultValues(self):
         """Usefull for TurbulenceModel in case of LES"""
-        for label in self.var:
+        for name in self.var:
             try:
-                self.setBlendingFactor(label, self._defaultValues(label)['blending_factor'])
-                self.setScheme(label, self._defaultValues(label)['order_scheme'])
-                self.setSlopeTest(label, self._defaultValues(label)['slope_test'])
-                self.setFluxReconstruction(label, self._defaultValues(label)['flux_reconstruction'])
-                self.setRhsReconstruction(label, self._defaultValues(label)['rhs_reconstruction'])
+                self.setBlendingFactor(name, self._defaultValues(name)['blending_factor'])
+                self.setScheme(name, self._defaultValues(name)['order_scheme'])
+                self.setSlopeTest(name, self._defaultValues(name)['slope_test'])
+                self.setFluxReconstruction(name, self._defaultValues(name)['flux_reconstruction'])
+                self.setRhsReconstruction(name, self._defaultValues(name)['rhs_reconstruction'])
             except:
                 pass
 
 
     @Variables.noUndo
     def getClippingList(self):
-        """ Return the variables label list for clipping parameters """
+        """ Return the variables name list for clipping parameters """
         lst = []
         for node in self._getClippingNodesList():
             for n in node:
                 if n['type'] != 'model':
-                    lst.append(n['label'])
+                    lst.append(n['name'])
         return lst
 
 
     @Variables.noUndo
     def getSchemeList(self):
-        """ Return the variables label list for scheme parameters """
+        """ Return the variables name list for scheme parameters """
         lst = []
         if self.darcy == "off":
             for node in self._getSchemeNodesList():
                 for n in node:
-                    lst.append(n['label'])
+                    lst.append(n['name'])
         else:
             for node in self._getSchemeNodesList():
                 for n in node:
                     if n['name'] != "velocity":
-                        lst.append(n['label'])
+                        lst.append(n['name'])
         return lst
 
 
     @Variables.noUndo
     def getSolverList(self):
-        """ Return the variables label list for solver parameters """
+        """ Return the variables name list for solver parameters """
         lst = []
         from code_saturne.Pages.CompressibleModel import CompressibleModel
         comp_model = CompressibleModel(self.case).getCompressibleModel()
@@ -382,24 +382,24 @@ class NumericalParamEquatModel(Model):
                 for n in node:
                     if self._isPressure(n):
                         if comp_model == 'off':
-                            lst.append(n['label'])
+                            lst.append(n['name'])
                     else:
-                        lst.append(n['label'])
+                        lst.append(n['name'])
         else:
             for node in self._getSolverNodesList():
                 for n in node:
                     if n['name'] != "velocity":
-                        lst.append(n['label'])
+                        lst.append(n['name'])
 
         return lst
 
 
-    def isScalar(self, label):
+    def isScalar(self, name):
         """
         Return : 1 if type of node is 'user' or 'thermal' or 'model',
                  0 if not.  Only used by the view by solver class
         """
-        node = self._getSolverLabelNode(label)
+        node = self._getSolverNameNode(name)
         if node:
             if node['type'] in ['user', 'thermal', 'model']:
                 return 1
@@ -410,12 +410,12 @@ class NumericalParamEquatModel(Model):
 # Following methods for dependances of scheme:
 
     @Variables.noUndo
-    def getScheme(self, label):
-        """ Return value of order scheme for variable labelled label """
-        node = self._getSchemeLabelNode(label)
+    def getScheme(self, name):
+        """ Return value of order scheme for variable labelled name """
+        node = self._getSchemeNameNode(name)
         if self._isPressure(node):
             return None
-        value = self._defaultValues(label)['order_scheme']
+        value = self._defaultValues(name)['order_scheme']
         n = node.xmlGetNode('order_scheme')
         if n:
             value = n['choice']
@@ -423,24 +423,24 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getBlendingFactor(self, label):
-        """ Return value of blending factor for variable labelled label """
-        node = self._getSchemeLabelNode(label)
+    def getBlendingFactor(self, name):
+        """ Return value of blending factor for variable labelled name """
+        node = self._getSchemeNameNode(name)
         if self._isPressure(node):
             return None
         value = node.xmlGetDouble('blending_factor')
         if value == None:
-            value = self._defaultValues(label)['blending_factor']
+            value = self._defaultValues(name)['blending_factor']
         return value
 
 
     @Variables.noUndo
-    def getSlopeTest(self, label):
-        """ Return value of slope test for variable labelled label """
-        node = self._getSchemeLabelNode(label)
+    def getSlopeTest(self, name):
+        """ Return value of slope test for variable labelled name """
+        node = self._getSchemeNameNode(name)
         if self._isPressure(node):
             return None
-        value = self._defaultValues(label)['slope_test']
+        value = self._defaultValues(name)['slope_test']
         n = node.xmlGetNode('slope_test')
         if n:
             value = n['status']
@@ -448,9 +448,9 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getFluxReconstruction(self, label):
-        """ Return value of flux reconstruction for variable labelled label """
-        node = self._getSchemeLabelNode(label)
+    def getFluxReconstruction(self, name):
+        """ Return value of flux reconstruction for variable labelled name """
+        node = self._getSchemeNameNode(name)
         if self._isPressure(node):
             return None
         value = self._defaultValues()['flux_reconstruction']
@@ -460,56 +460,56 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getRhsReconstruction(self, label):
-        """ Return value of blending factor for variable labelled label """
-        node = self._getSchemeLabelNode(label)
+    def getRhsReconstruction(self, name):
+        """ Return value of blending factor for variable labelled name """
+        node = self._getSchemeNameNode(name)
         value = node.xmlGetDouble('rhs_reconstruction')
         if value == None:
             if self._isPressure(node): # temporary fix for probable mix between label and name
                 value = self._defaultValues('Pressure')['rhs_reconstruction']
             else:
-                value = self._defaultValues(label)['rhs_reconstruction']
+                value = self._defaultValues(name)['rhs_reconstruction']
         return value
 
 
     @Variables.undoGlobal
-    def setBlendingFactor(self, label, value):
+    def setBlendingFactor(self, name, value):
         """
-        Put value of blending factor for variable labelled label
+        Put value of blending factor for variable labelled name
         only if it 's different of default value
         """
-        node = self._getSchemeLabelNode(label)
+        node = self._getSchemeNameNode(name)
         if self._isPressure(node):
             return
         self.isGreaterOrEqual(value, 0.)
         self.isLowerOrEqual(value, 1.)
-        scheme = self.getScheme(label)
-        if scheme == self._defaultValues(label)['order_scheme']:
+        scheme = self.getScheme(name)
+        if scheme == self._defaultValues(name)['order_scheme']:
             if scheme == 'upwind':
                 node.xmlRemoveChild('blending_factor')
             else:
                 node.xmlSetData('blending_factor', value)
         else:
             node.xmlSetData('blending_factor', value)
-#            if value != self._defaultValues(label)['blending_factor']:
+#            if value != self._defaultValues(name)['blending_factor']:
 #                node.xmlSetData('blending_factor', value)
 #            else:
 #                node.xmlRemoveChild('blending_factor')
 
 
     @Variables.undoGlobal
-    def setScheme(self, label, value):
+    def setScheme(self, name, value):
         """
-        Put value of order scheme for variable or scalar labelled label
+        Put value of order scheme for variable or scalar labelled name
         only if it 's different of default value
         """
         self.isInList(value, ('upwind', 'centered', 'solu'))
-        node = self._getSchemeLabelNode(label)
-        if value == self._defaultValues(label)['order_scheme']:
+        node = self._getSchemeNameNode(name)
+        if value == self._defaultValues(name)['order_scheme']:
             node.xmlRemoveChild('order_scheme')
-            if self.getBlendingFactor(label) == self._defaultValues(label)['blending_factor']\
-                or value == 'centered' and self.getBlendingFactor(label) == 0. \
-                or value == 'upwind' and self.getBlendingFactor(label) != 0.:
+            if self.getBlendingFactor(name) == self._defaultValues(name)['blending_factor']\
+                or value == 'centered' and self.getBlendingFactor(name) == 0. \
+                or value == 'upwind' and self.getBlendingFactor(name) != 0.:
                     node.xmlRemoveChild('blending_factor')
         else:
             n = node.xmlInitNode('order_scheme')
@@ -517,11 +517,11 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.undoLocal
-    def setSlopeTest(self, label, status):
-        """ Put status of slope test for variable labelled label """
+    def setSlopeTest(self, name, status):
+        """ Put status of slope test for variable labelled name """
         self.isOnOff(status)
-        node = self._getSchemeLabelNode(label)
-        if status == self._defaultValues(label)['slope_test']:
+        node = self._getSchemeNameNode(name)
+        if status == self._defaultValues(name)['slope_test']:
             node.xmlRemoveChild('slope_test')
         else:
             n = node.xmlInitNode('slope_test')
@@ -529,10 +529,10 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.undoLocal
-    def setFluxReconstruction(self, label, value):
-        """ Put status of flux reconstruction for variable labelled label """
+    def setFluxReconstruction(self, name, value):
+        """ Put status of flux reconstruction for variable labelled name """
         self.isOnOff(value)
-        node = self._getSchemeLabelNode(label)
+        node = self._getSchemeNameNode(name)
         if value == self._defaultValues()['flux_reconstruction']:
             node.xmlRemoveChild('flux_reconstruction')
         else:
@@ -541,23 +541,23 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.undoLocal
-    def setRhsReconstruction(self, label, value):
+    def setRhsReconstruction(self, name, value):
         """
-        Put value of blending factor for variable labelled label
+        Put value of blending factor for variable labelled name
         only if it 's different of default value
         """
         self.isInt(value)
-        node = self._getSchemeLabelNode(label)
+        node = self._getSchemeNameNode(name)
         node.xmlSetData('rhs_reconstruction', value)
 
 
 # Following methods for dependances of solver:
 
     @Variables.undoLocal
-    def setMaxIterNumber(self, label, value):
-        """ Put number of maximum iterations for variable labelled label """
+    def setMaxIterNumber(self, name, value):
+        """ Put number of maximum iterations for variable labelled name """
         self.isInt(value)
-        node = self._getSolverLabelNode(label)
+        node = self._getSolverNameNode(name)
         if value != self._defaultValues()['max_iter_number']:
             node.xmlSetData('max_iter_number', value)
         else:
@@ -565,11 +565,11 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.undoLocal
-    def setSolverPrecision(self, label, value):
-        """ Put value of solver precision for variable labelled label """
+    def setSolverPrecision(self, name, value):
+        """ Put value of solver precision for variable labelled name """
         # for pressure default value always equal to 1e-8
         self.isPositiveFloat(value)
-        node = self._getSolverLabelNode(label)
+        node = self._getSolverNameNode(name)
         if self._isPressure(node):
             default = self._defaultValues()['solver_precision_pressure']
         else:
@@ -582,11 +582,11 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.undoLocal
-    def setSolverChoice(self, label, value):
-        """ Put choice of solver for variable labelled label """
+    def setSolverChoice(self, name, value):
+        """ Put choice of solver for variable labelled name """
         self.isInList(value, ('multigrid', 'conjugate_gradient', 'jacobi',
                               'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic'))
-        node = self._getSolverLabelNode(label)
+        node = self._getSolverNameNode(name)
         if self._isPressure(node):
             default = self._defaultValues()['solver_choice_pressure']
         else:
@@ -600,9 +600,9 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getMaxIterNumber(self, label):
-        """ Return number of maximum iterations for variable labelled label """
-        node = self._getSolverLabelNode(label)
+    def getMaxIterNumber(self, name):
+        """ Return number of maximum iterations for variable labelled name """
+        node = self._getSolverNameNode(name)
         value = node.xmlGetInt('max_iter_number')
         if value == None:
             value = self._defaultValues()['max_iter_number']
@@ -610,9 +610,9 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getSolverPrecision(self, label):
-        """ Return value of solver precision for variable labelled label """
-        node = self._getSolverLabelNode(label)
+    def getSolverPrecision(self, name):
+        """ Return value of solver precision for variable labelled name """
+        node = self._getSolverNameNode(name)
 
         if self._isPressure(node):
             default = self._defaultValues()['solver_precision_pressure']
@@ -626,9 +626,9 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getSolverChoice(self, label):
-        """ Return choice of solver for variable labelled label """
-        node = self._getSolverLabelNode(label)
+    def getSolverChoice(self, name):
+        """ Return choice of solver for variable labelled name """
+        node = self._getSolverNameNode(name)
         n = node.xmlGetNode('solver_choice')
 
         if n:
@@ -643,78 +643,78 @@ class NumericalParamEquatModel(Model):
 
 
     @Variables.noUndo
-    def getScalarTimeStepFactor(self, label):
-        """ Return value of time_step_factor for variable labelled label """
-        if self.isScalar(label):
-            node = self._getSolverLabelNode(label)
+    def getScalarTimeStepFactor(self, name):
+        """ Return value of time_step_factor for variable labelled name """
+        if self.isScalar(name):
+            node = self._getSolverNameNode(name)
             value = node.xmlGetDouble('time_step_factor')
             if value == None:
                 value = self._defaultValues()['time_step_factor']
             return value
         else:
-            raise ValueError("This method runs only with scalar label")
+            raise ValueError("This method runs only with scalar name")
 
 
     @Variables.undoLocal
-    def setScalarTimeStepFactor(self, label, value):
-        """ Put value of time_step_factor for variable labelled label """
+    def setScalarTimeStepFactor(self, name, value):
+        """ Put value of time_step_factor for variable labelled name """
         self.isStrictPositiveFloat(value)
-        if self.isScalar(label):
-            node = self._getSolverLabelNode(label)
+        if self.isScalar(name):
+            node = self._getSolverNameNode(name)
             if value != self._defaultValues()['time_step_factor']:
                 node.xmlSetData('time_step_factor', value)
             else:
                 node.xmlRemoveChild('time_step_factor')
         else:
-            raise ValueError("This method runs only with scalar label")
+            raise ValueError("This method runs only with scalar name")
 
 
     @Variables.noUndo
-    def getMinValue(self, label):
-        """Get minimal value from an additional_scalar with label scalar_label"""
-        self.isInList(label, self.getClippingList())
-        node = self._getClippingLabelNode(label)
+    def getMinValue(self, name):
+        """Get minimal value from an additional_scalar with label scalar_name"""
+        self.isInList(name, self.getClippingList())
+        node = self._getClippingNameNode(name)
         min_val = node.xmlGetChildDouble('min_value')
         if min_val == None:
-            min_val = self._defaultValues(label)['min_value']
-            self.setMinValue(label, min_val)
+            min_val = self._defaultValues(name)['min_value']
+            self.setMinValue(name, min_val)
 
         return min_val
 
 
     @Variables.undoLocal
-    def setMinValue(self, label, min_value):
+    def setMinValue(self, name, min_value):
         """
-        Put minimal value for an additional_scalar with label scalar_label.
+        Put minimal value for an additional_scalar with label scalar_name.
         Method also used by ThermalScalarModel
         """
         self.isFloat(min_value)
-        self.isInList(label, self.getClippingList())
-        node = self._getClippingLabelNode(label)
+        self.isInList(name, self.getClippingList())
+        node = self._getClippingNameNode(name)
         node.xmlSetData('min_value', min_value)
 
 
     @Variables.noUndo
-    def getMaxValue(self, label):
-        """Get maximal value from an additional_scalar with label scalar_label"""
-        self.isInList(label, self.getClippingList())
-        node = self._getClippingLabelNode(label)
+    def getMaxValue(self, name):
+        """Get maximal value from an additional_scalar with label scalar_name"""
+        self.isInList(name, self.getClippingList())
+        node = self._getClippingNameNode(name)
         max_val = node.xmlGetDouble('max_value')
         if max_val == None:
-            max_val = self._defaultValues(label)['max_value']
-            self.setMaxValue(label, max_val)
+            max_val = self._defaultValues(name)['max_value']
+            self.setMaxValue(name, max_val)
         return max_val
 
 
     @Variables.undoLocal
-    def setMaxValue(self, label, max_value):
+    def setMaxValue(self, name, max_value):
         """
-        Put maximal value for an additional_scalar with label scalar_label.
+        Put maximal value for an additional_scalar with label scalar_name.
         Method also used by ThermalScalarModel
         """
         self.isFloat(max_value)
-        self.isInList(label, self.getClippingList())
-        node = self._getClippingLabelNode(label)
+        self.isInList(name, self.getClippingList())
+        node = self._getClippingNameNode(name)
         node.xmlSetData('max_value', max_value)
 
 

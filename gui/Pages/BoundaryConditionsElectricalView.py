@@ -136,7 +136,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotElec.disableItem(1)
         self.modelPotElec.disableItem(3)
 
-        self.potElec = self.__model.getScalarLabel('PotElecReal')
+        self.potElec = "elec_pot_r"
         self.modelPotElecLabel = ComboModel(self.comboBoxPotElec,1,1)
         self.modelPotElecLabel.addItem(self.tr(self.potElec),self.potElec)
         self.modelPotElecLabel.setItem(str_model = self.potElec)
@@ -149,7 +149,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotElecIm.disableItem(1)
         self.modelPotElecIm.disableItem(3)
 
-        self.potElecIm = self.__model.getScalarLabel('POT_EL_I')
+        self.potElecIm = 'elec_pot_i'
         self.modelPotElecImLabel = ComboModel(self.comboBoxPotElecIm,1,1)
         self.modelPotElecImLabel.addItem(self.tr(self.potElecIm),self.potElecIm)
         self.modelPotElecImLabel.setItem(str_model = self.potElecIm)
@@ -159,7 +159,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotVector.addItem(self.tr("Implicit flux"), 'neumann_implicit')
         self.modelPotVector.disableItem(0)
 
-        self.potVect = self.__model.getScalarLabel('POT_VEC01')
+        self.potVect = 'vec_potential'
         self.modelPotVectLabel = ComboModel(self.comboBoxPotVector,1,1)
         self.modelPotVectLabel.addItem(self.tr(self.potVect),self.potVect)
         self.modelPotVectLabel.setItem(str_model = self.potVect)

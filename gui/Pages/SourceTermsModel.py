@@ -114,7 +114,7 @@ class SourceTermsModel(Model):
         Set the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
         node = self.node_sterm
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -131,7 +131,7 @@ class SourceTermsModel(Model):
         Return the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
         node = self.node_sterm
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
@@ -149,13 +149,12 @@ class SourceTermsModel(Model):
         Set the formula for tharmal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
+        self.isInList(scalar, ['enthalpy', 'total_energy', 'temperature'])
         node = self.node_sterm
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
-        name_scalar = DefineUserScalarsModel(self.case).getScalarName(scalar)
-        n = node.xmlInitChildNode('thermal_formula', name = name_scalar, label = scalar, zone_id=zone)
+        n = node.xmlInitChildNode('thermal_formula', name = scalar, zone_id=zone)
         n.xmlSetTextNode(formula)
 
 
@@ -166,14 +165,13 @@ class SourceTermsModel(Model):
         Return the formula for thermal scalars.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, ['TempC', 'TempK', 'Enthalpy'])
+        self.isInList(scalar, ['enthalpy', 'total_energy', 'temperature'])
         node = self.node_sterm
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
 
-        name_scalar = DefineUserScalarsModel(self.case).getScalarName(scalar)
-        formula = node.xmlGetString('thermal_formula', name = name_scalar, label = scalar, zone_id=zone)
+        formula = node.xmlGetString('thermal_formula', name = scalar, zone_id=zone)
 
         return formula
 

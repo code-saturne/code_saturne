@@ -131,6 +131,17 @@ void CS_PROCF (csvvva, CSVVVA) (int *iviscv);
 void CS_PROCF (uithsc, UITHSC) (void);
 
 /*----------------------------------------------------------------------------
+ * User scalar label.
+ *
+ * Fortran Interface:
+ *
+ * SUBROUTINE UISCSC
+ * *****************
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiscsc, UISCSC) (void);
+
+/*----------------------------------------------------------------------------
  * Constant or variable indicator for the user scalar laminar viscosity.
  *
  * Fortran Interface:

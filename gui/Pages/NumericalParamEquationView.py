@@ -270,7 +270,7 @@ class StandardItemModelScheme(QStandardItemModel):
                         self.tr("Slope\nTest"),
                         self.tr("Flux\nReconstruction"),
                         self.tr("RHS Sweep\nReconstruction")]
-        self.keys = ['label', 'ischcv', 'blencv', 'isstpc', 'ircflu', 'nswrsm']
+        self.keys = ['name', 'ischcv', 'blencv', 'isstpc', 'ircflu', 'nswrsm']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -289,14 +289,14 @@ class StandardItemModelScheme(QStandardItemModel):
         self.dicoV2M= {"Upwind" : 'upwind', "Centered": 'centered', "SOLU": 'solu'}
         self.dicoM2V= {"upwind" : 'Upwind', "centered": 'Centered', "solu": 'SOLU'}
 
-        for label in self.NPE.getSchemeList():
+        for name in self.NPE.getSchemeList():
             dico           = {}
-            dico['label']  = label
-            dico['blencv'] = self.NPE.getBlendingFactor(label)
-            dico['ischcv'] = self.NPE.getScheme(label)
-            dico['isstpc'] = self.NPE.getSlopeTest(label)
-            dico['ircflu'] = self.NPE.getFluxReconstruction(label)
-            dico['nswrsm'] = self.NPE.getRhsReconstruction(label)
+            dico['name']  = name
+            dico['blencv'] = self.NPE.getBlendingFactor(name)
+            dico['ischcv'] = self.NPE.getScheme(name)
+            dico['isstpc'] = self.NPE.getSlopeTest(name)
+            dico['ircflu'] = self.NPE.getFluxReconstruction(name)
+            dico['nswrsm'] = self.NPE.getRhsReconstruction(name)
             self.dataScheme.append(dico)
             log.debug("populateModel-> dataScheme = %s" % dico)
             row = self.rowCount()
@@ -367,7 +367,7 @@ class StandardItemModelScheme(QStandardItemModel):
     def setData(self, index, value, role=None):
         row = index.row()
         column = index.column()
-        label = self.dataScheme[row]['label']
+        name = self.dataScheme[row]['name']
 
         # for Pressure, most fields are empty
         if column > 0 and str(from_qvariant(value, to_text_string)) in ['', 'None']:
@@ -393,14 +393,14 @@ class StandardItemModelScheme(QStandardItemModel):
                     self.disabledItem.remove((row, 3))
                     self.dataScheme[row]['isstpc'] = "on"
 
-            self.NPE.setScheme(label, self.dataScheme[row]['ischcv'])
-            self.NPE.setBlendingFactor(label, self.dataScheme[row]['blencv'])
+            self.NPE.setScheme(name, self.dataScheme[row]['ischcv'])
+            self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
 
         # set BLENCV
         elif column == 2:
             if self.dataScheme[row]['ischcv'] != "upwind":
                 self.dataScheme[row]['blencv'] = from_qvariant(value, float)
-                self.NPE.setBlendingFactor(label, self.dataScheme[row]['blencv'])
+                self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
 
         # set ISSTPC
         elif column == 3:
@@ -410,7 +410,7 @@ class StandardItemModelScheme(QStandardItemModel):
                     self.dataScheme[row]['isstpc'] = "off"
                 else:
                     self.dataScheme[row]['isstpc'] = "on"
-                self.NPE.setSlopeTest(label, self.dataScheme[row]['isstpc'])
+                self.NPE.setSlopeTest(name, self.dataScheme[row]['isstpc'])
 
         # set IRCFLU
         elif column == 4:
@@ -419,12 +419,12 @@ class StandardItemModelScheme(QStandardItemModel):
                 self.dataScheme[row]['ircflu'] = "off"
             else:
                 self.dataScheme[row]['ircflu'] = "on"
-            self.NPE.setFluxReconstruction(label, self.dataScheme[row]['ircflu'])
+            self.NPE.setFluxReconstruction(name, self.dataScheme[row]['ircflu'])
 
         # set NSWRSM
         elif column == 5:
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
-            self.NPE.setRhsReconstruction(label, self.dataScheme[row]['nswrsm'])
+            self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -465,17 +465,17 @@ class StandardItemModelSolver(QStandardItemModel):
                        "bi_cgstab2": 'BiCGstab2',
                        'gmres': "GMRES",
                        "automatic": "Automatic"}
-        for label in self.NPE.getSolverList():
+        for name in self.NPE.getSolverList():
             row = self.rowCount()
             self.setRowCount(row + 1)
 
             dico           = {}
-            dico['label']  = label
-            dico['iresol'] = self.NPE.getSolverChoice(label)
-            dico['nitmax'] = self.NPE.getMaxIterNumber(label)
-            dico['epsilo'] = self.NPE.getSolverPrecision(label)
-            if self.NPE.isScalar(label):
-                dico['cdtvar'] = self.NPE.getScalarTimeStepFactor(label)
+            dico['name']   = name
+            dico['iresol'] = self.NPE.getSolverChoice(name)
+            dico['nitmax'] = self.NPE.getMaxIterNumber(name)
+            dico['epsilo'] = self.NPE.getSolverPrecision(name)
+            if self.NPE.isScalar(name):
+                dico['cdtvar'] = self.NPE.getScalarTimeStepFactor(name)
             else:
                 dico['cdtvar'] = ""
                 self.disabledItem.append((row,4))
@@ -500,7 +500,7 @@ class StandardItemModelSolver(QStandardItemModel):
             dico = self.dataSolver[row]
 
             if index.column() == 0:
-                return to_qvariant(dico['label'])
+                return to_qvariant(dico['name'])
             elif index.column() == 1:
                 return to_qvariant(self.dicoM2V[dico['iresol']])
             elif index.column() == 2:
@@ -551,23 +551,23 @@ class StandardItemModelSolver(QStandardItemModel):
 
     def setData(self, index, value, role=None):
         row = index.row()
-        label = self.dataSolver[row]['label']
+        name = self.dataSolver[row]['name']
 
         if index.column() == 1:
             self.dataSolver[row]['iresol'] = self.dicoV2M[from_qvariant(value, to_text_string)]
-            self.NPE.setSolverChoice(label, self.dataSolver[row]['iresol'])
+            self.NPE.setSolverChoice(name, self.dataSolver[row]['iresol'])
 
         elif index.column() == 2:
             self.dataSolver[row]['nitmax'] = from_qvariant(value, int)
-            self.NPE.setMaxIterNumber(label, self.dataSolver[row]['nitmax'])
+            self.NPE.setMaxIterNumber(name, self.dataSolver[row]['nitmax'])
 
         elif index.column() == 3:
             self.dataSolver[row]['epsilo'] = from_qvariant(value, float)
-            self.NPE.setSolverPrecision(label, self.dataSolver[row]['epsilo'])
+            self.NPE.setSolverPrecision(name, self.dataSolver[row]['epsilo'])
 
         elif index.column() == 4:
             self.dataSolver[row]['cdtvar'] = from_qvariant(value, float)
-            self.NPE.setScalarTimeStepFactor(label, self.dataSolver[row]['cdtvar'])
+            self.NPE.setScalarTimeStepFactor(name, self.dataSolver[row]['cdtvar'])
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -601,8 +601,8 @@ class MinimumDelegate(QItemDelegate):
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
                     maxi = model.getData(idx)['scamax']
-                    label = model.getData(idx)['label']
-                    if model.checkMinMax(label, value, maxi):
+                    name = model.getData(idx)['name']
+                    if model.checkMinMax(name, value, maxi):
                         model.setData(idx, to_qvariant(value), Qt.DisplayRole)
 
 
@@ -636,8 +636,8 @@ class MaximumDelegate(QItemDelegate):
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
                     mini = model.getData(idx)['scamin']
-                    label = model.getData(idx)['label']
-                    if model.checkMinMax(label, mini, value):
+                    name = model.getData(idx)['name']
+                    if model.checkMinMax(name, mini, value):
                         model.setData(idx, to_qvariant(value), Qt.DisplayRole)
 
 
@@ -670,13 +670,13 @@ class StandardItemModelClipping(QStandardItemModel):
         self.populateModel()
 
     def populateModel(self):
-        for label in self.NPE.getClippingList():
+        for name in self.NPE.getClippingList():
             row = self.rowCount()
             self.setRowCount(row + 1)
             dico             = {}
-            dico['label']    = label
-            dico['scamin']   = self.NPE.getMinValue(label)
-            dico['scamax']   = self.NPE.getMaxValue(label)
+            dico['name']    = name
+            dico['scamin']   = self.NPE.getMinValue(name)
+            dico['scamax']   = self.NPE.getMaxValue(name)
 
             self._data.append(dico)
             log.debug("populateModel-> _data = %s" % dico)
@@ -695,7 +695,7 @@ class StandardItemModelClipping(QStandardItemModel):
             row = index.row()
             dico = self._data[row]
             if col == 0:
-                return to_qvariant(dico['label'])
+                return to_qvariant(dico['name'])
             elif col == 1:
                 return to_qvariant(dico['scamin'])
             elif col == 2:
@@ -728,15 +728,15 @@ class StandardItemModelClipping(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         row = index.row()
-        label = self._data[row]['label']
+        name = self._data[row]['name']
 
         if index.column() == 1:
             self._data[row]['scamin'] = from_qvariant(value, float)
-            self.NPE.setMinValue(label, self._data[row]['scamin'])
+            self.NPE.setMinValue(name, self._data[row]['scamin'])
 
         elif index.column() == 2:
             self._data[row]['scamax'] = from_qvariant(value, float)
-            self.NPE.setMaxValue(label, self._data[row]['scamax'])
+            self.NPE.setMaxValue(name, self._data[row]['scamax'])
 
         self.emit(SIGNAL("dataChanged(const QModelIndex &, const QModelIndex &)"), index, index)
         return True
@@ -747,7 +747,7 @@ class StandardItemModelClipping(QStandardItemModel):
         return self._data[row]
 
 
-    def checkMinMax(self, label, mini, maxi):
+    def checkMinMax(self, name, mini, maxi):
         """
         Verify the coherence between mini and maxi
         """
@@ -757,7 +757,7 @@ class StandardItemModelClipping(QStandardItemModel):
             title = self.tr("Information")
             msg = self.tr("The minimal value is greater than the maximal "\
                           "value. Therefore there will be no clipping for the "\
-                          "scalar named:\n\n%1").arg(label)
+                          "scalar named:\n\n%1").arg(name)
             QMessageBox.information(self.parent, title, msg)
             return OK
 

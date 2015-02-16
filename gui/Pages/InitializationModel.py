@@ -547,8 +547,8 @@ omega = k^0.5/almax;"""
         Set the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
-        node = self.node_userscalar.xmlGetNode('variable', label = str(species))
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
+        node = self.node_userscalar.xmlGetNode('variable', name = str(species))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -563,8 +563,8 @@ omega = k^0.5/almax;"""
         Return the formula for a turbulent variable.
         """
         self.__verifyZone(zone)
-        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarLabelsList())
-        node = self.node_userscalar.xmlGetNode('variable', label = str(species))
+        self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
+        node = self.node_userscalar.xmlGetNode('variable', name = str(species))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -581,9 +581,9 @@ omega = k^0.5/almax;"""
         Set the formula for a meteo variable.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsList())
+        self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsNameList())
         node_atmo = self.models.xmlGetNode('atmospheric_flows')
-        node = node_atmo.xmlGetNode('variable', label = str(scalar))
+        node = node_atmo.xmlGetNode('variable', name = str(scalar))
         if not node:
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
@@ -598,11 +598,11 @@ omega = k^0.5/almax;"""
         Return the formula for a meteo variable.
         """
         self.__verifyZone(zone)
-        self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsList())
+        self.isInList(scalar, DefineUserScalarsModel( self.case).getMeteoScalarsNameList())
         node_atmo = self.models.xmlGetNode('atmospheric_flows')
-        node = node_atmo.xmlGetNode('variable', label = str(scalar))
+        node = node_atmo.xmlGetNode('variable', name = str(scalar))
         if not node:
-            msg = "There is an error: this node " + str(node) + "should be existed"
+            msg = "There is an error: this node " + str(node) + " should be existed"
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)

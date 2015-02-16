@@ -209,8 +209,8 @@ class AtmosphericFlowsModel(Model):
         """
         Create xml scalar
         """
-        scalar = parentNode.xmlInitChildNode('variable', label = labelStr)
-        scalar['name']  = nameStr
+        scalar = parentNode.xmlInitChildNode('variable', name = nameStr)
+        scalar['label'] = labelStr
         scalar['type']  = typeStr
 
 
@@ -218,8 +218,8 @@ class AtmosphericFlowsModel(Model):
         """
         Create xml property
         """
-        prop = parentNode.xmlInitChildNode('property', label = labelStr)
-        prop['name']  = nameStr
+        prop = parentNode.xmlInitChildNode('property', name = nameStr)
+        prop['label']  = labelStr
 
 
     def __removeScalar(self, parentNode, nameStr):

@@ -90,7 +90,7 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
         self.__boundary = None
 
         sca_mo  = DefineUserScalarsModel(self.__case)
-        self.species_list = sca_mo.getUserScalarLabelsList()
+        self.species_list = sca_mo.getUserScalarNameList()
 
         self.__case.undoStopGlobal()
 

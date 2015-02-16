@@ -149,6 +149,7 @@ class MobileMeshModel(Model):
         self.isOnOff(status)
         typ = ''
         typ = self.out.getWriterTimeDependency("-1")
+        old_status = self.node_ale['status']
         self.node_ale['status'] = status
         if status == 'on':
             if typ == 'fixed_mesh':
@@ -163,8 +164,8 @@ class MobileMeshModel(Model):
                 if zone.getNature() == "free_surface":
                     Boundary("free_surface", zone.getLabel(), self.case).deleteFreeSurface()
                     LocalizationModel('BoundaryZone', self.case).deleteZone(zone.getLabel())
-
-        self.out.setWriterTimeDependency("-1", typ)
+            if old_status and old_status != status:
+                self.out.setWriterTimeDependency("-1", typ)
 
 
     @Variables.undoLocal

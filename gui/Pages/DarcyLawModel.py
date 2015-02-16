@@ -281,7 +281,7 @@ permeability=1.;"""
         """
         self.isInt(int(zoneid))
         self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarLabelsList())
+        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
         self.isInList(choice, ('constant', 'variable'))
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
@@ -300,7 +300,7 @@ permeability=1.;"""
         """
         self.isInt(int(zoneid))
         self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarLabelsList())
+        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
 
@@ -322,7 +322,7 @@ permeability=1.;"""
         """
         self.isInt(int(zoneid))
         self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarLabelsList())
+        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
 
@@ -342,7 +342,7 @@ permeability=1.;"""
         Return default formula
         """
         self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarLabelsList())
+        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
 
@@ -359,7 +359,7 @@ permeability=1.;"""
         """
         self.isInt(int(zoneid))
         self.isNotInList(scalar_label, self.sca_mo.getScalarsVarianceList())
-        self.isInList(scalar_label, self.sca_mo.getUserScalarLabelsList())
+        self.isInList(scalar_label, self.sca_mo.getUserScalarNameList())
 
         name = self.sca_mo.getScalarDiffusivityName(scalar_label)
 

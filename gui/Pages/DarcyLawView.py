@@ -135,7 +135,7 @@ class DarcyLawView(QWidget, Ui_DarcyLawForm):
 
         self.list_scalars = []
         self.m_sca = DefineUserScalarsModel(self.case)
-        for s in self.m_sca.getUserScalarLabelsList():
+        for s in self.m_sca.getUserScalarNameList():
             self.list_scalars.append((s, self.tr("Additional scalar")))
 
         # Create the Page layout.
@@ -167,7 +167,7 @@ class DarcyLawView(QWidget, Ui_DarcyLawForm):
         self.lineEditTransverse.setValidator(DoubleValidator(self.lineEditTransverse))
 
         self.scalar = ""
-        scalar_list = self.m_sca.getUserScalarLabelsList()
+        scalar_list = self.m_sca.getUserScalarNameList()
         for s in self.m_sca.getScalarsVarianceList():
             if s in scalar_list: scalar_list.remove(s)
 

@@ -289,6 +289,10 @@ if (nmodpp.eq.0) then
 
 endif
 
+if (iihmpr.eq.1) then
+  call uiscsc
+endif
+
 call add_user_scalar_fields
 !==========================
 

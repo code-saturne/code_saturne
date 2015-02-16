@@ -809,8 +809,10 @@ class XMLinit(Variables):
                     n.xmlSetTextNode(f)
 
 
-
     def __backwardCompatibilityFrom_3_3(self):
+        """
+        Change XML in order to ensure backward compatibility from 3.3 to 4.0
+        """
         XMLAnaControl = self.case.xmlGetNode('analysis_control')
         self.scalar_node = self.case.xmlGetNode('additional_scalars')
         for node in self.scalar_node.xmlGetNodeList('variable'):
@@ -864,9 +866,11 @@ class XMLinit(Variables):
                 nodeV['label'] = 'Velocity'
         #update input_thermal_flux
         nth = XMLThermoPhysicalNode.xmlGetNode('thermal_scalar')
-        node = nth.xmlGetNode('property', name="input_thermal_flux")
-        if node:
-            node['name'] = "thermal_flux"
+        if nth:
+            node = nth.xmlGetNode('property', name="input_thermal_flux")
+            if node:
+                node['name'] = "thermal_flux"
+
 
     def __backwardCompatibilityCurrentVersion(self):
         """
@@ -879,6 +883,23 @@ class XMLinit(Variables):
             ntfm = n.xmlGetString("turbulent_flux_model")
             if not ntfm:
                 n.xmlSetData('turbulent_flux_model', "SGDH")
+
+        # replace label by name in each formula
+        for node in self.case.xmlGetNodeList('formula'):
+            if node:
+                status = node["status"]
+                if not(status) or status == "on":
+                    content = node.xmlGetTextNode()
+                    for n in self.case.xmlGetNodeList('variable', 'name', 'label'):
+                        content = content.replace(n['label'], n['name'])
+                    node.xmlSetTextNode(content)
+        for node in self.case.xmlGetNodeList('variable'):
+            variance = node.xmlGetString('variance')
+            if variance:
+                for n in self.case.xmlGetNodeList('variable', 'name', 'label'):
+                    if variance == n['label']:
+                        node.xmlSetData('variance', n['name'])
+                        break
 
 
 #-------------------------------------------------------------------------------
