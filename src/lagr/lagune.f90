@@ -223,7 +223,7 @@ if (iplar.eq.1) then
               ivismp, ivisdk, iviswat, ivisch, ivisck)
 
   ! Read particle restart data
-  
+
   if (iilagr.gt.0) then
     call laglec_p
     call lagr_update_pointers
