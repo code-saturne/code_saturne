@@ -66,7 +66,6 @@ class ProfilesModel(Model):
         self.node_var_vp    = self.node_model_vp.xmlGetNodeList('variable')
         self.node_pro_vp    = self.node_model_vp.xmlGetNodeList('property')
 
-        self.suffix = self.__defaultValues()['suffix']
         self.__var_prop_list = self.getVariablesAndVolumeProperties()
 
 
@@ -76,11 +75,14 @@ class ProfilesModel(Model):
         Returns a dictionnary with default values.
         """
         value = {}
-        value['nfreq']  = -1
-        value['formula']=  " "
-        value['points']=  200
-        value['suffix'] = ""
-        value['title']  = ""
+        value['nfreq']     = -1
+        value['formula']   =  "x = 0;\ny = s;\nz = 0;\n"
+        value['points']    =  200
+        value['title']     =  "profile"
+        value['label']     =  "profile"
+        value['choice']    =  "frequency"
+        value['frequency'] =  1
+        value['format']    =  "CSV"
 
         return value
 
@@ -129,37 +131,57 @@ class ProfilesModel(Model):
         return list(self.dicoLabel2Name.keys())
 
 
-    def __setFormula(self, label, str):
+    @Variables.undoGlobal
+    def addProfile(self):
         """
-        Private method.
+        Public method.
+        Add a new profile and return a default label
+        """
+        label = self.__defaultValues()['label']
+        def_label = label + str(len(self.getProfilesLabelsList()) + 1)
+
+        # define default label
+        if def_label in self.getProfilesLabelsList():
+            i = 2
+            while def_label in self.getProfilesLabelsList():
+                def_label = label + str(len(self.getProfilesLabelsList()) + i)
+                i = i + 1
+
+        node = self.node_prof.xmlInitNode('profile', label = def_label)
+
+        return def_label
+
+
+    @Variables.undoLocal
+    def setFormula(self, label, str):
+        """
+        Public method.
         Get coordinates for profile named I{label}
         """
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node = self.node_prof.xmlGetNode('profile', label = label)
         node.xmlSetData('formula', str)
 
 
-    def __getFormula(self, label):
+    def getFormula(self, label):
         """
         Private method.
         Gets coordinates for profile named I{label}.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node = self.node_prof.xmlGetNode('profile', label = label)
         return node.xmlGetString('formula')
 
 
-    def __setNbPoint(self, label, NbPoint):
+    @Variables.undoLocal
+    def setNbPoint(self, label, NbPoint):
         """
-        Private method.
+        Public method.
         Get coordinates for profile named I{label}
         """
         self.isInt(NbPoint)
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node = self.node_prof.xmlGetNode('profile', label = label)
         node.xmlSetData('points', NbPoint)
 
 
@@ -169,8 +191,7 @@ class ProfilesModel(Model):
         Gets coordinates for profile named I{label}.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node = self.node_prof.xmlGetNode('profile', label = label)
         return node.xmlGetInt('points')
 
 
@@ -187,59 +208,97 @@ class ProfilesModel(Model):
         return lst
 
 
-    @Variables.undoGlobal
-    def setProfile(self, label, title, format, lst, choice, freq, formula, NbPoint):
+    @Variables.undoLocal
+    def setOutputType(self, label, choice):
         """
         Public method.
-        Sets data to create one profile named I{label}.
         """
-        self.isNotInList(label, self.getProfilesLabelsList())
-        self.isInt(NbPoint)
+        self.isInList(label, self.getProfilesLabelsList())
+        self.isInList(choice, ["end", "frequency", "time_value"])
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        node.xmlSetData('output_type', choice)
+        # TODO si changement supprimer le 1.0
 
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlInitNode('profile', label=label_xml)
-        node.xmlAddChild('format', name=format)
+
+    @Variables.undoLocal
+    def setOutputFrequency(self, label, freq):
+        """
+        Public method.
+        """
+        self.isInList(label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        node.xmlSetData('output_frequency', freq)
+
+
+    @Variables.noUndo
+    def getOutputFrequency(self, label):
+        """
+        Public method.
+        """
+        self.isInList(label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        return node.xmlGetDouble('output_frequency')
+
+
+    @Variables.undoLocal
+    def setTitle(self, label, title):
+        """
+        Public method.
+        """
+        self.isInList(label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        node['title'] = title
+
+
+    @Variables.undoLocal
+    def setLabel(self, old_label, label):
+        """
+        Public method.
+        """
+        self.isInList(old_label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = old_label)
+        node['label'] = label
+
+
+    @Variables.undoLocal
+    def setFormat(self, label, fmt):
+        """
+        Public method.
+        """
+        self.isInList(label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        node.xmlRemoveChild('format')
+        node.xmlAddChild('format', name=fmt)
+
+
+    @Variables.undoLocal
+    def setVariable(self, label, lst):
+        """
+        Public method.
+        """
+        self.isInList(label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = label)
+        node.xmlRemoveChild('var_prop')
         for var in lst:
             self.isInList(var, self.__var_prop_list)
             (name, comp) = self.dicoLabel2Name[var]
             node.xmlAddChild('var_prop', name=name, component=comp)
-        node.xmlSetData('output_type', choice)
-        node.xmlSetData('output_frequency', freq)
-        node['title'] = title
-        self.__setFormula(label, formula)
-        self.__setNbPoint(label, NbPoint)
 
 
-    @Variables.undoGlobal
-    def replaceProfile(self, old_label, label, title, format, lst, choice, freq, formula, NbPoint):
+    @Variables.noUndo
+    def getVariable(self, label):
         """
         Public method.
-        Replaces data from I{old_label} profile
-        with label, frequency, and coordinates values.
         """
-        self.isInList(old_label,self.getProfilesLabelsList())
-        if label != old_label:
-            self.isNotInList(label, self.getProfilesLabelsList())
-        self.isInt(NbPoint)
+        self.isInList(label, self.getProfilesLabelsList())
+        node = self.node_prof.xmlGetNode('profile', label = label)
 
-        old_label_xml = old_label + self.suffix
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=old_label_xml)
-        if node:
-            node['title'] = ""
-            for tag in ('format', 'var_prop', 'output_frequency', 'formula','points'):
-                node.xmlRemoveChild(tag)
-            node.xmlAddChild('format', name=format)
-            for var in lst:
-                self.isInList(var, self.__var_prop_list)
-                (name, comp) = self.dicoLabel2Name[var]
-                node.xmlAddChild('var_prop', name=name, component=comp)
-            node['label'] = label_xml
-            node.xmlSetData('output_type', choice)
-            node.xmlSetData('output_frequency', freq)
-            node['title'] = title
-            self.__setFormula(label, formula)
-            self.__setNbPoint(label, NbPoint)
+        lst = []
+        for var in node.xmlGetChildNodeList('var_prop'):
+            for name in self.__var_prop_list:
+                if self.dicoLabel2Name[name] == (var['name'], var['component']) :
+                    lst.append(name)
+        return lst
 
 
     @Variables.undoLocal
@@ -249,8 +308,7 @@ class ProfilesModel(Model):
         Deletes profile named I{label}.
         """
         self.isInList(label, self.getProfilesLabelsList())
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node = self.node_prof.xmlGetNode('profile', label=label)
         if node:
             node.xmlRemoveNode()
 
@@ -264,28 +322,49 @@ class ProfilesModel(Model):
         """
         self.isInList(label, self.getProfilesLabelsList())
         lst = []
-        label_xml = label + self.suffix
-        node = self.node_prof.xmlGetNode('profile', label=label_xml)
+        node = self.node_prof.xmlGetNode('profile', label = label)
         choice = node.xmlGetString('output_type')
+
+        if not choice:
+            choice = self.__defaultValues()['choice']
+            self.setOutputType(label, choice)
+
         if choice == "time_value":
             freq = node.xmlGetDouble('output_frequency')
         else:
             freq = node.xmlGetInt('output_frequency')
+        if not freq:
+            freq = self.__defaultValues()['frequency']
+            self.setOutputFrequency(label, freq)
+
         title = node['title']
-        format = 'DAT'
+        if not title:
+            title = self.__defaultValues()['title']
+            self.setTitle(label, title)
+
         f_node = node.xmlGetChildNode('format')
-        if f_node:
-            format = f_node['name']
-        formula = self.__getFormula(label)
+        if not f_node:
+            fmt = self.__defaultValues()['format']
+            self.setFormat(label, fmt)
+        else:
+            fmt = f_node['name']
+
+        formula = self.getFormula(label)
+        if not formula:
+            formula = self.__defaultValues()['formula']
+            self.setFormula(label, formula)
+
         NbPoint = self.__getNbPoint(label)
+        if not NbPoint:
+            NbPoint = self.__defaultValues()['points']
+            self.setNbPoint(label, NbPoint)
+
         for var in node.xmlGetChildNodeList('var_prop'):
             for name in self.__var_prop_list:
                 if self.dicoLabel2Name[name] == (var['name'], var['component']) :
                     lst.append(name)
-        label_xml = node['label']
-        label = label_xml
 
-        return label, title, format, lst, choice, freq, formula, NbPoint
+        return label, title, fmt, lst, choice, freq, formula, NbPoint
 
 
 #-------------------------------------------------------------------------------
