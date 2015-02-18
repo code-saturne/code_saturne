@@ -187,7 +187,6 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.gridlayout2.setMargin(0)
         self.DropList = QListView(self.widgetDrop)
         self.gridlayout2.addWidget(self.DropList,0,0,1,1)
-        self.line_formula = "x = 0;\ny = 0;\nz = 0;\n"
 
         self.modelDrag = QStringListModel()
         self.modelDrop = QStringListModel()
@@ -211,13 +210,17 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         # Connections
         self.connect(self.treeViewProfile,       SIGNAL("pressed(const QModelIndex &)"), self.slotSelectProfile)
         self.connect(self.pushButtonAdd,         SIGNAL("clicked()"), self.slotAddProfile)
-        self.connect(self.pushButtonEdit,        SIGNAL("clicked()"), self.slotEditProfile)
         self.connect(self.pushButtonDelete,      SIGNAL("clicked()"), self.slotDeleteProfile)
         self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"), self.slotAddVarProfile)
         self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarProfile)
         self.connect(self.comboBoxFreq,          SIGNAL("activated(const QString&)"), self.slotFrequencyType)
         self.connect(self.comboBoxFormat,        SIGNAL("activated(const QString&)"), self.slotFormatType)
         self.connect(self.pushButtonFormula,     SIGNAL("clicked()"), self.slotFormula)
+        self.connect(self.lineEditBaseName,      SIGNAL("textChanged(const QString &)"), self.slotBaseName)
+        self.connect(self.lineEditTitle,         SIGNAL("textChanged(const QString &)"), self.slotTitle)
+        self.connect(self.lineEditFreq,          SIGNAL("textChanged(const QString &)"), self.slotFrequence)
+        self.connect(self.lineEditFreqTime,      SIGNAL("textChanged(const QString &)"), self.slotFrequenceTime)
+        self.connect(self.lineEditNbPoint,       SIGNAL("textChanged(const QString &)"), self.slotNbPoint)
 
         # Validators
         validatorFreq = IntValidator(self.lineEditFreq, min=0)
@@ -243,15 +246,14 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         liste_label = []
         for label in self.mdl.getVariablesAndVolumeProperties():
             liste_label.append(label)
-        self.modelDrag.setStringList(liste_label)
+        self.modelDrag.setStringList(sorted(liste_label, key=str.lower))
 
         #update list of profiles for view from xml file
         for lab in self.mdl.getProfilesLabelsList():
             self.entriesNumber = self.entriesNumber + 1
-            label, title, format, list, choice, freq, formula, nb_point = self.mdl.getProfileData(lab)
-            self.__insertProfile(label, list)
+            label, title, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(lab)
+            self.__insertProfile(label, lst)
 
-        setGreenColor(self.pushButtonFormula, True)
         self.__eraseEntries()
 
         self.case.undoStartGlobal()
@@ -291,29 +293,26 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
             self.lineEditFreq.setDisabled(True)
-            self.labelBaseName.setText("Filename")
 
         elif choice == "frequency":
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
-            nfreq = from_qvariant(self.lineEditFreq.text(), int)
-            if nfreq == -1: nfreq = 1
+            nfreq = self.mdl.getOutputFrequency(self.label_select)
+            if nfreq == -1:
+                nfreq = 1
             self.lineEditFreq.setEnabled(True)
             self.lineEditFreq.setText(str(nfreq))
-            self.labelBaseName.setText("Filename")
-
 
         elif choice == "time_value":
             self.lineEditFreq.hide()
             self.lineEditFreqTime.show()
-            if self.lineEditFreqTime.text() == "":
-                nfreq = 1.
-            else:
-                nfreq = from_qvariant(self.lineEditFreqTime.text(), float)
+            nfreq = self.mdl.getOutputFrequency(self.label_select)
+            if nfreq == -1:
+                nfreq = 1.0
             self.lineEditFreqTime.setText(str(nfreq))
-            self.labelBaseName.setText("Filename")
 
-        return choice, nfreq
+        self.mdl.setOutputType(self.label_select, choice)
+        self.mdl.setOutputFrequency(self.label_select, nfreq)
 
 
     @pyqtSignature("const QString&")
@@ -321,7 +320,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Input choice for frequency for profile.
         """
-        return self.modelFormat.dicoV2M[str(text)]
+        fmt = self.modelFormat.dicoV2M[str(text)]
+        self.mdl.setFormat(self.label_select, fmt)
 
 
     def __infoProfile(self, row):
@@ -329,22 +329,15 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Return info from the argument entry.
         """
         label = self.modelProfile.getLabel(row)
-        lab, title, format, list, choice, freq, formula, nb_point = self.mdl.getProfileData(label)
-        return label, title, format, list, choice, freq, formula, nb_point
+        lab, title, fmt, lst, choice, freq, formula, nb_point = self.mdl.getProfileData(label)
+        return label, title, fmt, lst, choice, freq, formula, nb_point
 
 
-    def __insertProfile(self, label, list):
+    def __insertProfile(self, label, lst):
         """
         Insert values in table view.
         """
-        self.modelProfile.addItem(label, " ; ".join(list))
-
-
-    def __replaceProfile(self, num, label, list):
-        """
-        Insert values in table view.
-        """
-        self.modelProfile.replaceItem(num-1, label, " ; ".join(list))
+        self.modelProfile.addItem(label, " ; ".join(lst))
 
 
     @pyqtSignature("")
@@ -352,38 +345,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Set in view label and variables to see on profile
         """
-        var_prof = [str(s) for s in self.modelDrop.stringList()]
-        log.debug("slotAddProfile -> %s" % (var_prof,))
-        if not var_prof:
-            title = self.tr("Warning")
-            msg   = self.tr("You must select at least one variable or property from list")
-            QMessageBox.information(self, title, msg)
-
-        else:
-            label = self.__verifLabel()
-
-            self.entriesNumber = self.entriesNumber + 1
-            if label == '':
-                label = 'profile' + repr(self.entriesNumber)
-
-            if label in self.mdl.getProfilesLabelsList():
-                title = self.tr("Warning")
-                msg = self.tr("This label already exists")
-                QMessageBox.information(self, title, msg)
-                return
-
-            log.debug("slotAddProfile -> %s" % (label,))
-            self.__insertProfile(label, var_prof)
-
-            choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
-            format = self.slotFormatType(self.comboBoxFormat.currentText())
-            title = str(self.lineEditTitle.text())
-            if not title: title = label
-            nb_point = from_qvariant(self.lineEditNbPoint.text(), int)
-            formula = self.line_formula
-
-            self.mdl.setProfile(label, title, format, var_prof, choice, freq, formula, nb_point)
-            self.__eraseEntries()
+        var_prof = []
+        label = self.mdl.addProfile()
+        self.__insertProfile(label, var_prof)
+        self.__eraseEntries()
 
 
     @pyqtSignature("")
@@ -398,59 +363,10 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             msg   = self.tr("You must select an existing profile")
             QMessageBox.information(self, title, msg)
         else:
-            label, title, format, list, choice, freq, formula, nb_point = self.__infoProfile(row)
+            label, title, fmt, lst, choice, freq, formula, nb_point = self.__infoProfile(row)
             self.modelProfile.deleteRow(row)
             self.mdl.deleteProfile(label)
             self.__eraseEntries()
-
-
-    @pyqtSignature("")
-    def slotEditProfile(self):
-        """
-        Edit profile to modify its characteristics.
-        """
-        row = self.treeViewProfile.currentIndex().row()
-        log.debug("slotEditProfile -> %s" % (row,))
-        if row == -1:
-            title = self.tr("Warning")
-            msg   = self.tr("You must select an existing profile")
-            QMessageBox.information(self, title, msg)
-        else:
-            old_label, title, format, vlist, choice, freq, formula, nb_point = self.__infoProfile(row)
-
-            var_prof = [str(s) for s in self.modelDrop.stringList()]
-            log.debug("slotEditProfile -> %s" % (var_prof,))
-            if not var_prof:
-                title = self.tr("Warning")
-                msg   = self.tr("You must select at least one variable or property from list")
-                QMessageBox.information(self, title, msg)
-
-            else:
-                new_label = str(self.lineEditBaseName.text())
-
-                if new_label == '':
-                    new_label = old_label
-
-                if new_label != old_label and new_label in self.mdl.getProfilesLabelsList():
-                    title = self.tr("Warning")
-                    msg = self.tr("This label already exists: the old label is kept")
-                    QMessageBox.information(self, title, msg)
-                    new_label = old_label
-
-                log.debug("slotEditedProfile -> %s" % (new_label,))
-                self.__replaceProfile(row+1, new_label, var_prof)
-                idx = self.treeViewProfile.currentIndex()
-                self.treeViewProfile.dataChanged(idx, idx)
-
-                choice, freq = self.slotFrequencyType(self.comboBoxFreq.currentText())
-                format = self.slotFormatType(self.comboBoxFormat.currentText())
-                title = str(self.lineEditTitle.text())
-                if not title: title = new_label
-                nb_point = from_qvariant(self.lineEditNbPoint.text(), int)
-                formula = self.line_formula
-
-                self.mdl.replaceProfile(old_label, new_label, title, format, var_prof, choice, freq, formula, nb_point)
-                self.__eraseEntries()
 
 
     @pyqtSignature("const QModelIndex &")
@@ -458,15 +374,17 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         """
         Return the selected item from the list.
         """
+        self.groupBoxProfile.show()
+
         row = index.row()
         log.debug("slotSelectProfile -> %s" % (row,))
 
-        label, title, format, liste, choice, freq, formula, nb_point = self.__infoProfile(row)
-        self.line_formula = formula
+        label, title, fmt, liste, choice, freq, formula, nb_point = self.__infoProfile(row)
+        self.label_select = label
 
         self.lineEditTitle.setText(str(title))
         self.lineEditBaseName.setText(str(label))
-        self.modelFormat.setItem(str_model=format)
+        self.modelFormat.setItem(str_model=fmt)
 
         self.modelFreq.setItem(str_model=choice)
         if choice == "end":
@@ -474,20 +392,17 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.lineEditFreqTime.hide()
             self.lineEditFreq.setText(str("-1"))
             self.lineEditFreq.setDisabled(True)
-            self.labelBaseName.setText("Filename")
 
         elif choice == "frequency":
             self.lineEditFreq.show()
             self.lineEditFreqTime.hide()
             self.lineEditFreq.setEnabled(True)
             self.lineEditFreq.setText(str(freq))
-            self.labelBaseName.setText("Filename")
 
         elif choice == "time_value":
             self.lineEditFreq.hide()
             self.lineEditFreqTime.show()
             self.lineEditFreqTime.setText(str(freq))
-            self.labelBaseName.setText("Filename")
 
         self.lineEditNbPoint.setText(str(nb_point))
 
@@ -495,6 +410,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         liste = [str(s) for s in liste]
 
         self.modelDrop.setStringList(liste)
+
+        setGreenColor(self.pushButtonFormula, True)
 
 
     @pyqtSignature("")
@@ -507,7 +424,13 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             var = self.modelDrag.stringList()[self.DragList.currentIndex().row()]
             if var not in liste :
                 liste.append(var)
+            liste = [str(s) for s in liste]
             self.modelDrop.setStringList(liste)
+            self.mdl.setVariable(self.label_select, liste)
+
+            row = self.treeViewProfile.currentIndex().row()
+            liste = self.mdl.getVariable(self.label_select)
+            self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
     @pyqtSignature("")
@@ -516,26 +439,21 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         Supress a var from profile
         """
         self.modelDrop.removeRows(self.DropList.currentIndex().row(), 1)
+        liste = self.modelDrop.stringList()
+        liste = [str(s) for s in liste]
+        self.mdl.setVariable(self.label_select, liste)
+
+        row = self.treeViewProfile.currentIndex().row()
+        liste = self.mdl.getVariable(self.label_select)
+        self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
     def __eraseEntries(self):
         """
         Delete all caracters in the entries.
         """
-        self.lineEditTitle.setText(str(""))
-        self.lineEditBaseName.setText(str(""))
-        self.lineEditNbPoint.setText(str(""))
-
-        self.lineEditFreq.show()
-        self.lineEditFreqTime.hide()
-        self.modelFreq.setItem(str_model='end')
-        self.lineEditFreq.setText(str("-1"))
-
-        self.lineEditFreq.setDisabled(True)
-        self.labelBaseName.setText("Filename")
-
-        self.modelDrop.setStringList([])
-
+        self.groupBoxProfile.hide()
+        self.label_select = None
         self.treeViewProfile.clearSelection()
 
 
@@ -543,7 +461,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
     def slotFormula(self):
         """
         """
-        exp = self.line_formula
+        exp = self.mdl.getFormula(self.label_select)
         exa = """#example: a line segment
 #(s, the parameter is always between 0 and 1)
 x = 2*s + 3.2;
@@ -564,7 +482,52 @@ z = -0.5*s+5;"""
             result = dialog.get_result()
             log.debug("slotLineFormula -> %s" % str(result))
             setGreenColor(self.pushButtonFormula, False)
-            self.line_formula = result
+            self.mdl.setFormula(self.label_select, result)
+
+
+    @pyqtSignature("const QString&")
+    def slotBaseName(self, text):
+        """
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setLabel(self.label_select, str(text))
+            self.label_select = str(text)
+
+            row = self.treeViewProfile.currentIndex().row()
+            liste = self.mdl.getVariable(self.label_select)
+            self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
+
+
+    @pyqtSignature("const QString&")
+    def slotTitle(self, text):
+        """
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setTitle(self.label_select, str(text))
+
+
+    @pyqtSignature("const QString&")
+    def slotFrequence(self, text):
+        """
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setOutputFrequency(self.label_select, int(text))
+
+
+    @pyqtSignature("const QString&")
+    def slotFrequenceTime(self, text):
+        """
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setOutputFrequency(self.label_select, float(text))
+
+
+    @pyqtSignature("const QString&")
+    def slotNbPoint(self, text):
+        """
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setNbPoint(self.label_select, int(text))
 
 
     def tr(self, text):

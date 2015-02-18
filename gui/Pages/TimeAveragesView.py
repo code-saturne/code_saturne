@@ -177,9 +177,6 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.case.undoStopGlobal()
         self.mdl = TimeAveragesModel(self.case)
         self.entriesNumber = 0
-        self.start = 1
-        self.timestart = 0.
-        self.restart = -2
 
         # Create the Page layout.
 
@@ -211,17 +208,17 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.modelStartType.addItem(self.tr('iteration'), 'iteration')
 
         # Connections
-        self.connect(self.pushButtonAdd,    SIGNAL("clicked()"), self.slotAddAverage)
-        self.connect(self.pushButtonEdit,   SIGNAL("clicked()"), self.slotEditAverage)
-        self.connect(self.pushButtonDelete, SIGNAL("clicked()"), self.slotdeleteTimeAverage)
-        self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"), self.slotAddVarAverage)
-        self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"), self.slotDeleteVarAverage)
-        self.connect(self.treeViewAverage,  SIGNAL("pressed(const QModelIndex &)"), self.slotSelectAverage)
-        self.connect(self.lineEditStart, SIGNAL("textChanged(const QString &)"), self.slotStart)
-        self.connect(self.lineEditStartTime, SIGNAL("textChanged(const QString &)"), self.slotStartTime)
-        self.connect(self.comboBoxIMOOLD, SIGNAL("activated(const QString&)"), self.slotRestartChoice)
-        self.connect(self.comboBoxStartType, SIGNAL("activated(const QString&)"), self.slotTimeChoice)
-        self.connect(self.lineEditRestart, SIGNAL("textChanged(const QString &)"), self.slotRestart)
+        self.connect(self.pushButtonAdd,         SIGNAL("clicked()"),                    self.slotAddAverage)
+        self.connect(self.pushButtonDelete,      SIGNAL("clicked()"),                    self.slotdeleteTimeAverage)
+        self.connect(self.pushButtonAddVar,      SIGNAL("clicked()"),                    self.slotAddVarAverage)
+        self.connect(self.pushButtonSuppressVar, SIGNAL("clicked()"),                    self.slotDeleteVarAverage)
+        self.connect(self.treeViewAverage,       SIGNAL("pressed(const QModelIndex &)"), self.slotSelectAverage)
+        self.connect(self.lineEditStart,         SIGNAL("textChanged(const QString &)"), self.slotStart)
+        self.connect(self.lineEditStartTime,     SIGNAL("textChanged(const QString &)"), self.slotStartTime)
+        self.connect(self.comboBoxIMOOLD,        SIGNAL("activated(const QString&)"),    self.slotRestartChoice)
+        self.connect(self.comboBoxStartType,     SIGNAL("activated(const QString&)"),    self.slotTimeChoice)
+        self.connect(self.lineEditRestart,       SIGNAL("textChanged(const QString &)"), self.slotRestart)
+        self.connect(self.lineEditAverage,       SIGNAL("textChanged(const QString &)"), self.slotBaseName)
 
         # Validators
         validatorStart = IntValidator(self.lineEditStart, min=-1)
@@ -244,7 +241,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         lst_label = [str(label) for label in list(self.mdl.dicoLabel2Name.keys())]
 
-        self.modelDrag.setStringList(lst_label)
+        self.modelDrag.setStringList(sorted(lst_label, key=str.lower))
 
         # Is it a following calculation ?
 
@@ -263,30 +260,11 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             label, start, timestart, restart, lst = self.mdl.getTimeAverageData(nb+1)
             self.insertAverage(label, start, timestart, restart, lst)
 
-        self.slotTimeChoice("iteration")
+        self.groupBoxTimeAverage.hide()
+
+        self.label_select = None
 
         self.case.undoStartGlobal()
-
-
-    def getLabel(self):
-        """
-        Return label of average.
-        """
-        label = str(self.lineEditAverage.text())
-        if label in self.mdl.getTimeAverageLabels():
-            default = {}
-            default['label'] = label
-            default['list'] = self.mdl.getTimeAverageLabels()
-            rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
-            default['regexp'] = QRegExp(rx)
-            from code_saturne.Pages.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
-            dialog = VerifyExistenceLabelDialogView(self, default)
-            if dialog.exec_():
-                result = dialog.get_result()
-                label = result['label']
-                if result['label'] == default['label']:
-                    label = ""
-        return label
 
 
     @pyqtSignature("const QString&")
@@ -296,9 +274,10 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         if self.sender().validator().state == QValidator.Acceptable:
             start = from_qvariant(text, int)
-            self.start = start
         else:
-            self.start = self.mdl.defaultValues()['start']
+            start = self.mdl.defaultValues()['start']
+        self.mdl.setTimeStepStart(self.label_select, start)
+        self.updateView()
 
 
     @pyqtSignature("const QString&")
@@ -308,26 +287,30 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         if self.sender().validator().state == QValidator.Acceptable:
             start = from_qvariant(text, float)
-            self.timestart = start
+            timestart = start
         else:
-            self.timestart = self.mdl.defaultValues()['timestart']
+            timestart = self.mdl.defaultValues()['timestart']
+        self.mdl.setTimeStart(self.label_select, timestart)
+        self.updateView()
 
 
     @pyqtSignature("const QString&")
     def slotRestartChoice(self, text):
         choice = self.modelIMOOLD.dicoV2M[str(text)]
         if choice == "automatic":
-            self.restart = -2
+            restart = -2
             self.lineEditRestart.setDisabled(True)
-            self.lineEditRestart.setText(str(self.restart))
+            self.lineEditRestart.setText(str(restart))
         elif choice == "reset":
-            self.restart = -1
+            restart = -1
             self.lineEditRestart.setDisabled(True)
-            self.lineEditRestart.setText(str(self.restart))
+            self.lineEditRestart.setText(str(restart))
         elif choice == "specified":
-            self.restart = self.mdl.defaultValues()['restart']
+            restart = self.mdl.defaultValues()['restart']
             self.lineEditRestart.setDisabled(False)
-            self.lineEditRestart.setText("")
+            self.lineEditRestart.setText(str(restart))
+        self.mdl.setRestart(self.label_select, restart)
+        self.updateView()
 
 
     @pyqtSignature("const QString&")
@@ -335,21 +318,26 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         choice = self.modelStartType.dicoV2M[str(text)]
         self.modelStartType.setItem(str_model=choice)
         if choice == "time":
-            self.start = -1
-            self.lineEditStart.setText(str(self.start))
-            self.lineEditStartTime.setText(str(self.timestart))
+            start = -1
+            self.mdl.setTimeStepStart(self.label_select, start)
+            timestart = self.mdl.getTimeStart(self.label_select)
+            self.lineEditStart.setText(str(start))
+            self.lineEditStartTime.setText(str(timestart))
             self.lineEditStart.hide()
             self.labelStart.hide()
             self.lineEditStartTime.show()
             self.labelStartTime.show()
         elif choice == "iteration":
-            self.timestart = -1.
-            self.lineEditStart.setText(str(self.start))
-            self.lineEditStartTime.setText(str(self.timestart))
+            timestart = -1.
+            self.mdl.setTimeStart(self.label_select, timestart)
+            start = self.mdl.getTimeStepStart(self.label_select)
+            self.lineEditStart.setText(str(start))
+            self.lineEditStartTime.setText(str(timestart))
             self.lineEditStart.show()
             self.labelStart.show()
             self.lineEditStartTime.hide()
             self.labelStartTime.hide()
+        self.updateView()
 
     @pyqtSignature("const QString&")
     def slotRestart(self, text):
@@ -358,9 +346,10 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         if self.sender().validator().state == QValidator.Acceptable:
             restart = from_qvariant(text, int)
-            self.restart = restart
         else:
-            self.restart = self.mdl.defaultValues()['restart']
+            restart = self.mdl.defaultValues()['restart']
+        self.mdl.setRestart(self.label_select, restart)
+        self.updateView()
 
 
     def averageInfo(self):
@@ -375,25 +364,15 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Insert values in Hlist.
         """
-        idfmom = "*".join(lst)
-
-        idfmom_view = "<" + idfmom +">"
+        if len(lst) > 0:
+            idfmom = "*".join(lst)
+            idfmom_view = "<" + idfmom +">"
+        else:
+            idfmom_view = ""
 
         if imoold == self.mdl.defaultValues()['restart']:
             imoold = ""
         self.modelAverage.addItem(label, ntdmom, ttdmom, imoold, idfmom_view)
-
-
-    def replaceTimeAverage(self, row, label, ntdmom, ttdmom, imoold, lst):
-        """
-        Insert values in Hlist.
-        """
-        idfmom = "*".join(lst)
-        idfmom_view = "<" + idfmom + ">"
-
-        if imoold == None:
-            imoold = -1
-        self.modelAverage.replaceItem(row, label, ntdmom, ttdmom, imoold, idfmom_view)
 
 
     @pyqtSignature("")
@@ -401,40 +380,9 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         """
         Set in view IMOM, NTDMOM, IMOOLD, IDFMOM
         """
-        var_prop = [str(s) for s in self.modelDrop.stringList()]
-        log.debug("slotAddAverage -> %s" % (var_prop,))
-        idfmom = "*".join(var_prop)
-
-        if idfmom == '':
-            title = self.tr("Warning")
-            msg   = self.tr("You must select at least one variable or property from list")
-            QMessageBox.information(self, title, msg)
-
-        else:
-            label = self.getLabel()
-
-            self.entriesNumber = self.entriesNumber + 1
-            if label == '':
-                label = 'TimeAverage' + repr(self.entriesNumber)
-
-            if label in self.mdl.getTimeAverageLabels():
-                title = self.tr("Warning")
-                msg = self.tr("This label already exists")
-                QMessageBox.information(self, title, msg)
-                return
-
-            log.debug("slotAddAverage -> %s" % (label,))
-
-            ntdmom = self.start
-            ttdmom = self.timestart
-            if StartRestartModel(self.case).getRestartPath():
-                imoold = self.restart
-            else:
-                imoold = self.mdl.defaultValues()['restart']
-
-            self.insertAverage(label, ntdmom, ttdmom, imoold, var_prop)
-            average = idfmom.split('*')
-            self.mdl.setTimeAverage(label, ntdmom, ttdmom, imoold, average)
+        var_prop = []
+        label, ntdmom, ttdmom, imoold = self.mdl.addTimeAverage()
+        self.insertAverage(label, ntdmom, ttdmom, imoold, var_prop)
         self.__eraseEntries()
 
 
@@ -460,65 +408,17 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.__eraseEntries()
 
 
-    @pyqtSignature("")
-    def slotEditAverage(self):
-        """
-        Edit average to modify the selected average from the list.
-        """
-        row = self.treeViewAverage.currentIndex().row()
-        log.debug("slotEditAverage -> %s" % (row,))
-        if row == -1:
-            title = self.tr("Warning")
-            msg   = self.tr("You must select an existing time average")
-            QMessageBox.information(self, title, msg)
-        else:
-            [imom, old_label, old_start, old_time_start, old_restart, old_average] = self.averageInfo()
-
-            var_prof = [str(s) for s in self.modelDrop.stringList()]
-            log.debug("slotEditAverage -> %s" % (var_prof,))
-            if not var_prof:
-                title = self.tr("Warning")
-                msg   = self.tr("You must select at least one variable or property from list")
-                QMessageBox.information(self, title, msg)
-
-            else:
-                new_label = str(self.lineEditAverage.text())
-
-                if new_label == '':
-                    new_label = old_label
-
-                if new_label != old_label and new_label in self.mdl.getTimeAverageLabels():
-                    title = self.tr("Warning")
-                    msg = self.tr("This label already exists: the old label is kept")
-                    QMessageBox.information(self, title, msg)
-                    new_label = old_label
-
-                log.debug("slotEditAverage -> %s" % (new_label,))
-
-                new_start = self.start
-                new_time_start = self.timestart
-                if StartRestartModel(self.case).getRestartPath():
-                    new_restart = self.restart
-                else:
-                    new_restart = self.mdl.defaultValues()['restart']
-
-                self.replaceTimeAverage(row, new_label, new_start, new_time_start, new_restart, var_prof)
-                self.mdl.replaceTimeAverage(old_label, new_label, new_start, new_time_start, new_restart, var_prof)
-                idx = self.treeViewAverage.currentIndex()
-                self.treeViewAverage.dataChanged(idx, idx)
-
-                self.__eraseEntries()
-
-
     @pyqtSignature("const QModelIndex &")
     def slotSelectAverage(self, index):
         """
         Return the selected item from the Hlist.
         """
+        self.groupBoxTimeAverage.show()
         row = index.row()
         log.debug("slotSelectAverage -> %s" % (row,))
 
         [imom, label, ntdmom, ttdmom, imoold, idfmom] = self.averageInfo()
+        self.label_select = label
 
         self.lineEditAverage.setText(str(label))
         self.lineEditStart.setText(str(ntdmom))
@@ -542,6 +442,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             self.lineEditRestart.setText(str(imoold))
 
         lst = [str(s) for s in idfmom.replace('>','').replace('<','').split('*')]
+        if lst[0] == "":
+            lst.remove(lst[0])
         self.modelDrop.setStringList(lst)
 
 
@@ -555,9 +457,12 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             var = self.modelDrag.stringList()[self.listViewDrag.currentIndex().row()]
             lst.append(var)
             self.modelDrop.setStringList(lst)
-        self.start = 1
-        self.timestart = 0.
-        self.slotTimeChoice("iteration")
+            lst = [str(s) for s in lst]
+            if lst[0] == "":
+                lst.remove(lst[0])
+            self.mdl.setVariable(self.label_select, lst)
+
+            self.updateView()
 
 
     @pyqtSignature("")
@@ -566,21 +471,42 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         Supress a var from profile
         """
         self.modelDrop.removeRows(self.listViewDrop.currentIndex().row(), 1)
-        self.slotTimeChoice("iteration")
-        self.start = 1
-        self.timestart = 0.
+        liste = self.modelDrop.stringList()
+        liste = [str(s) for s in liste]
+        self.mdl.setVariable(self.label_select, liste)
+
+        self.updateView()
+
+
+    @pyqtSignature("const QString&")
+    def slotBaseName(self, text):
+        """
+        """
+        if self.sender().validator().state == QValidator.Acceptable:
+            self.mdl.setLabel(self.label_select, str(text))
+            self.label_select = str(text)
+
+            self.updateView()
+
+
+    def updateView(self):
+        row = self.treeViewAverage.currentIndex().row()
+        lst = self.mdl.getVariable(self.label_select)
+        ntdmom = self.mdl.getTimeStepStart(self.label_select)
+        ttdmom = self.mdl.getTimeStart(self.label_select)
+        imoold = self.mdl.getRestart(self.label_select)
+        idfmom = "*".join(lst)
+        idfmom_view = "<" + idfmom +">"
+        self.modelAverage.replaceItem(row, self.label_select, ntdmom, ttdmom, imoold, idfmom_view)
 
 
     def __eraseEntries(self):
         """
         Delete all caracters in the entries.
         """
-        self.lineEditAverage.setText(str(""))
-        self.lineEditStart.setText(str(""))
-        if not StartRestartModel(self.case).getRestartPath():
-            self.lineEditRestart.setText(str(""))
-        self.modelDrop.setStringList([])
+        self.label_select = None
         self.treeViewAverage.clearSelection()
+        self.groupBoxTimeAverage.hide()
 
 
     def tr(self, text):
