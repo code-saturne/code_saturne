@@ -4195,14 +4195,7 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
         char *formula_meteo  = NULL;
         mei_tree_t *ev_formula_meteo = NULL;
 
-        path_meteo = cs_xpath_init_path();
-        cs_xpath_add_elements(&path_meteo, 3,
-                               "thermophysical_models",
-                               "atmospheric_flows",
-                               "variable");
-
-        cs_gui_get_text_values(path_meteo, &size);
-        BFT_FREE(path_meteo);
+        size = cs_gui_get_tag_count("/thermophysical_models/atmospheric_flows/variable\n", 1);
 
         for (int j = 0; j < size; j++)
         {
@@ -4210,10 +4203,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
           cs_xpath_add_elements(&path_meteo, 2,
                                  "thermophysical_models",
                                  "atmospheric_flows");
-          cs_xpath_add_element_num(&path_meteo, "variable", j);
-          cs_xpath_add_element(&path_meteo, "name");
-          cs_xpath_add_function_text(&path);
-          name = cs_gui_get_text_value(path_meteo);
+          cs_xpath_add_element_num(&path_meteo, "variable", j + 1);
+          cs_xpath_add_attribute(&path_meteo, "name");
+          name = cs_gui_get_attribute_value(path_meteo);
 
           cs_field_t *c = cs_field_by_name_try(name);
           BFT_FREE(path_meteo);
@@ -4222,12 +4214,10 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
           cs_xpath_add_elements(&path_meteo, 2,
                                  "thermophysical_models",
                                  "atmospheric_flows");
-          cs_xpath_add_element_num(&path_meteo, "variable", j);
-          name = cs_gui_get_text_value(path_meteo);
-          cs_xpath_add_element(&path_meteo, "formula");
+          cs_xpath_add_element_num(&path_meteo, "variable", j + 1);
           cs_xpath_add_test_attribute(&path_meteo, "zone_id", zone_id);
-          cs_xpath_add_function_text(&path_meteo);
-          formula_meteo = cs_gui_get_text_value(path_meteo);
+          cs_xpath_add_attribute(&path_meteo, "formula");
+          formula_meteo = cs_gui_get_attribute_value(path_meteo);
           BFT_FREE(path_meteo);
 
           if (formula_meteo != NULL) {
