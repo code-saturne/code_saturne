@@ -252,8 +252,9 @@ class Parser:
 
             l_args = []
             extension = self._getMeshExtension(name)
-            if extension == None and len(format) > 0:
-                l_args.append('--format ' + format)
+            if len(format) > 0:
+                l_args.append('--format')
+                l_args.append(format)
             if len(path) > 0:
                 name = os.path.join(path, name)
             if len(number) > 0:
