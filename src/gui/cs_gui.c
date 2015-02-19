@@ -3074,6 +3074,13 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
     cs_gui_variable_value(f->name, "max_value", &scal_max);
     cs_field_set_key_double(f, kscmin, scal_min);
     cs_field_set_key_double(f, kscmax, scal_max);
+    int i = cs_field_get_key_int(f, keysca) - 1;
+
+    if (*iturb == 3) {
+      int turb_mdl;
+      _variable_turbulent_flux_model(f->name, &turb_mdl);
+      iturt[i] = turb_mdl;
+    }
 #if _XML_DEBUG_
     bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
     bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
