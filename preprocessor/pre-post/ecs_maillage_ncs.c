@@ -547,8 +547,8 @@ ecs_maillage_ncs__ecr(const char      *output,
 {
   size_t          n_cells, n_faces, n_vertices, face_vertices_size;
 
-  int             nbr_fam;
-  int             nbr_max_propr;
+  int             nbr_fam, nbr_max_propr;
+  ecs_int_t       int_tmp_comm;
 
   size_t          ind_grp;
   ecs_int_t      *pos_nom_grp;
@@ -686,19 +686,23 @@ ecs_maillage_ncs__ecr(const char      *output,
 
   /* Écriture du nombre de familles (on ne compte pas la famille `0') */
 
+  int_tmp_comm = nbr_fam;  /* int type may differ */
+
   ecs_comm_write_section("n_group_classes",
                          1,
                          0, 0, 1, true,
-                         &nbr_fam,
+                         &int_tmp_comm,
                          ECS_TYPE_ecs_int_t,
                          comm);
 
   /* Écriture du nombre de propriétés max. des familles */
 
+  int_tmp_comm = nbr_max_propr;  /* int type may differ */
+
   ecs_comm_write_section("n_group_class_props_max",
                          1,
                          0, 0, 1, true,
-                         &nbr_max_propr,
+                         &int_tmp_comm,
                          ECS_TYPE_ecs_int_t,
                          comm);
 
