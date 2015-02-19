@@ -148,6 +148,8 @@ class MeshQualityCriteriaLogDialogView(QDialog, Ui_MeshQualityCriteriaLogDialogF
                     cmd = cmd + ['--grp-fac', meshNode['grp_fac']]
                 if meshNode['grp_cel']:
                     cmd = cmd + ['--grp-cel', meshNode['grp_cel']]
+                if format != None:
+                    cmd = cmd + ['--format', format]
 
                 # Define postprocessing output for errors and warnings.
 
