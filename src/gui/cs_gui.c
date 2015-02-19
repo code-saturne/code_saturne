@@ -4274,7 +4274,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *ncelet,
         char *formula_meteo  = NULL;
         mei_tree_t *ev_formula_meteo = NULL;
 
-        size = cs_gui_get_tag_count("/thermophysical_models/atmospheric_flows/variable\n", 1);
+        size = cs_gui_get_tag_number("/thermophysical_models/atmospheric_flows/variable\n", 1);
 
         for (int j = 0; j < size; j++)
         {
