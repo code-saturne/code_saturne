@@ -164,6 +164,8 @@ void CS_PROCF(astgeo, ASTGEO)
 
   n_vertices = fvm_nodal_get_n_entities(fsi_mesh, 0);
 
+  BFT_MALLOC(ast_coupling, 1, cs_ast_coupling_t);
+
   ast_coupling->n_vertices = n_vertices;
   ast_coupling->n_g_vertices = n_vertices;
 
