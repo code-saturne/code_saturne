@@ -294,26 +294,6 @@ bft_mem_memalign(size_t       alignment,
 int
 bft_mem_have_memalign(void);
 
-/*
- * Return current theoretical dynamic memory allocated.
- *
- * returns:
- *   current memory handled through bft_mem_...() (in kB).
- */
-
-size_t
-bft_mem_size_current(void);
-
-/*
- * Return maximum theoretical dynamic memory allocated.
- *
- * returns:
- *   maximum memory handled through bft_mem_...() (in kB).
- */
-
-size_t
-bft_mem_size_max(void);
-
 /* Returns the error handler associated with the bft_mem_...() functions.
  *
  * returns:

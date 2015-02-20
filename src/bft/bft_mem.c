@@ -649,6 +649,9 @@ bft_mem_init(const char *log_file_name)
 
 void bft_mem_end(void)
 {
+  if (_bft_mem_global_initialized == 0)
+    return;
+
 #if defined(HAVE_OPENMP)
   if (omp_in_parallel()) {
     if (omp_get_thread_num() != 0)
@@ -657,10 +660,6 @@ void bft_mem_end(void)
   omp_destroy_lock(&_bft_mem_lock);
 #endif
 
-  if (_bft_mem_global_initialized == 0) {
-    _bft_mem_error(__FILE__, __LINE__, 0,
-                   _("bft_mem_end() called before bft_mem_init()"));
-  }
   _bft_mem_global_initialized = 0;
 
   if (_bft_mem_global_file != NULL) {

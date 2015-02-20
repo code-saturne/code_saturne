@@ -390,9 +390,12 @@ _error_mem_summary(void)
     (_("Theoretical current allocated memory:   %llu kB\n"),
      (unsigned long long)(bft_mem_size_current()));
 
-  _cs_base_err_printf
-    (_("Theoretical maximum allocated memory:   %llu kB\n"),
-     (unsigned long long)(bft_mem_size_max()));
+  mem_usage = bft_mem_size_max();
+
+  if (mem_usage > 0)
+    _cs_base_err_printf
+      (_("Theoretical maximum allocated memory:   %llu kB\n"),
+       (unsigned long long)(bft_mem_size_max()));
 
   if (bft_mem_usage_initialized() == 1) {
 
@@ -1361,39 +1364,45 @@ cs_base_mem_init(void)
 
   /* Memory management initialization */
 
-  if ((base_name = getenv("CS_MEM_LOG")) != NULL) {
-
-    /* We may not use BFT_MALLOC here as memory management has
-       not yet been initialized using bft_mem_init() */
-
-    if (base_name != NULL) {
-
-      /* In parallel, we will have one trace file per MPI process */
-      if (cs_glob_rank_id >= 0) {
-        int i;
-        int n_dec = 1;
-        for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-        file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
-        sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id + 1);
-      }
-      else {
-        file_name = malloc((strlen(base_name) + 1) * sizeof (char));
-        strcpy(file_name, base_name);
-      }
-    }
-
-  }
-
   if (bft_mem_initialized())
     cs_glob_base_bft_mem_init = false;
 
   else {
-    cs_glob_base_bft_mem_init = true;
-    bft_mem_init(file_name);
-  }
 
-  if (file_name != NULL)
-    free (file_name);
+    if ((base_name = getenv("CS_MEM_LOG")) != NULL) {
+
+      /* We may not use BFT_MALLOC here as memory management has
+         not yet been initialized using bft_mem_init() */
+
+      if (base_name != NULL) {
+
+        /* In parallel, we will have one trace file per MPI process */
+        if (cs_glob_rank_id >= 0) {
+          int i;
+          int n_dec = 1;
+          for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
+          file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
+          sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id + 1);
+        }
+        else {
+          file_name = malloc((strlen(base_name) + 1) * sizeof (char));
+          strcpy(file_name, base_name);
+        }
+
+        /* Actually initialize bft_mem instrumentation only when
+           CS_MEM_LOG is defined (for better performance) */
+
+        bft_mem_init(file_name);
+
+        free (file_name);
+
+      }
+
+    }
+
+    cs_glob_base_bft_mem_init = true;
+
+  }
 }
 
 /*----------------------------------------------------------------------------
