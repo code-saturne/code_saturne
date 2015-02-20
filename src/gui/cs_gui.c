@@ -867,8 +867,8 @@ cs_gui_variable_value(const char   *variable_name,
  *----------------------------------------------------------------------------*/
 
 static void
-cs_gui_variable_turbulent_flux_model(const char   *const variable_name,
-                                           int    *const value)
+_variable_turbulent_flux_model(const char  *const variable_name,
+                               int         *const value)
 {
   char *path = NULL;
   char *result = NULL;
@@ -3045,7 +3045,7 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
 
           if (*iturb == 3) {
             int turb_mdl;
-            cs_gui_variable_turbulent_flux_model(f->name, &turb_mdl);
+            _variable_turbulent_flux_model(f->name, &turb_mdl);
             iturt[i] = turb_mdl;
           }
 #if _XML_DEBUG_
