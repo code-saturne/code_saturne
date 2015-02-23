@@ -5,6 +5,11 @@ Release 3.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix possibly uninitialized and incorrect values for optional arguments
+  to postprocessing command in control_file.
+
+- Fix crash in time moments for variances with automatically-defined means.
+
 - Fix incorrect time moment values in case of restart.
 
 - Fix crash using dynamic filter in LES.
