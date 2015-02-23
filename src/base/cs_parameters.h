@@ -124,6 +124,7 @@ enum {
   CS_COUPLED = 12,
   CS_FREE_INLET = 13,
   CS_FREE_SURFACE = 14,
+  CS_CONVECTIVE_INLET = 15
 };
 
 /*----------------------------------------------------------------------------
