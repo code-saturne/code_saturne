@@ -279,7 +279,7 @@ _control_postprocess(const cs_time_step_t   *ts,
   *s += 12; /* shift in string by lenght of "postprocess_" part */
 
   if (strncmp(*s, "time_step ", 10) == 0) {
-    int nt, writer_id;
+    int nt = 0, writer_id = 0;
     if (_read_next_int(cur_line, s, &nt) > 0) {
       if (_read_next_opt_int(s, &writer_id) == 0)
         writer_id = 0;
@@ -293,8 +293,8 @@ _control_postprocess(const cs_time_step_t   *ts,
     }
   }
   else if (strncmp(*s, "time_value ", 11) == 0) {
-    int writer_id;
-    double t;
+    int writer_id = 0;
+    double t = 0.;
     if (_read_next_double(cur_line, s, &t) > 0) {
       if (_read_next_opt_int(s, &writer_id) == 0)
         writer_id = 0;
