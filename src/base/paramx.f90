@@ -205,12 +205,14 @@ module paramx
   !> the flow is incoming, standard outlet when outgoing
   integer   ifrent
 
-  !> \anchor ifreesf
+  !> \anchor ifresf
   !> if \ref itypfb=ifresf: free surface for mobile mesh boundary condition
   !>  - Homogeneous Neumann boundary condition for velocity and total energy (seen by the reconstruction
   !> gradients and the diffusion operator).
   !>  - Dirichlet (\ref icodcl=1) for the pressure.
-  integer   ifreesf
+  !> Alse a boundary condition type for mesh velocity in ALE for modelling
+  !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
+  integer   ifresf
 
   !> \anchor i_convective_inlet
   !> if \ref itypfb=i_convective_inlet: inlet face where the total mass flux is
@@ -227,7 +229,7 @@ module paramx
 
   parameter(iindef=1, ientre=2, isolib=3, isymet=4, iparoi=5,       &
             iparug=6, iesicf=7, isspcf=8, isopcf=9, iephcf=10,      &
-            ieqhcf=11, icscpl=12, ifrent=13, ifreesf=14      ,      &
+            ieqhcf=11, icscpl=12, ifrent=13, ifresf=14       ,      &
             i_convective_inlet=15)
 
   !> maximal number of valuators for Navier-Stokes
@@ -354,12 +356,7 @@ module paramx
   !> (in which case it is this speed which is considered).
   integer   ivimpo
 
-  !> \anchor ifresf
-  !> boundary condition type for mesh velocity in ALE for modelling
-  !> free surface (\f$ \vect{u} \cdot \vect{S} = \vect{w} \cdot \vect{S} \f$).
-  integer   ifresf
-
-  parameter(ibfixe=1, igliss=2, ivimpo=3, ifresf=4)
+  parameter(ibfixe=1, igliss=2, ivimpo=3)
 
   !> maximum number of structures in ALE
   integer    nstrmx

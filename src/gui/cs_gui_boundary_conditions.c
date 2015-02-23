@@ -1543,7 +1543,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
  * integer          isymet           <-- type of boundary: symetry
  * integer          isolib           <-- type of boundary: outlet
  * integer          ifrent           <-- type of boundary: free inlet outlet
- * integer          ifreesf          <-- type of boundary: free surface
+ * integer          ifresf           <-- type of boundary: free surface
  * integer          iqimp            <-- 1 if flow rate is applied
  * integer          icalke           <-- 1 for automatic turbulent boundary conditions
  * integer          ientat           <-- 1 for air temperature boundary conditions (coal)
@@ -1599,7 +1599,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isymet,
                                const int  *isolib,
                                const int  *ifrent,
-                               const int  *ifreesf,
+                               const int  *ifresf,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -2595,7 +2595,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
         ifbr = faces_list[ifac];
         izfppp[ifbr] = zone_nbr;
-        itypfb[ifbr] = *ifreesf;
+        itypfb[ifbr] = *ifresf;
       }
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
@@ -2754,7 +2754,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IPARUG  <-- type of boundary: rough wall
  * INTEGER          ISYMET  <-- type of boundary: symetry
  * INTEGER          ISOLIB  <-- type of boundary: outlet
- * INTEGER          IFREESF <-- type of boundary: free surface
+ * INTEGER          IFRESF  <-- type of boundary: free surface
  * INTEGER          IALE    <-- ALE module activated
  * INTEGER          ITYPFB  <-- type of boundary for each face
  * INTEGER          IZFPPP  <-- zone number
@@ -2772,7 +2772,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
-                               const int  *ifreesf,
+                               const int  *ifresf,
                                const int  *iale,
                                      int  *itypfb,
                                      int  *izfppp)
@@ -2802,7 +2802,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
       inature = *isymet;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface") && *iale) {
-      inature = *ifreesf;
+      inature = *ifresf;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
       inature = *iindef;

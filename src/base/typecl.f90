@@ -342,7 +342,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
 #endif
     endif
 
-    ii = ifreesf
+    ii = ifresf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
 #if defined(_CS_LANG_FR)
@@ -368,7 +368,7 @@ if(ipass.eq.0.or.iwarni(iu).ge.2) then
           ii.ne.isymet  .and. &
           ii.ne.isolib  .and. &
           ii.ne.ifrent  .and. &
-          ii.ne.ifreesf .and. &
+          ii.ne.ifresf  .and. &
           ii.ne.icscpl  .and. &
           ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
@@ -504,7 +504,7 @@ do ivar = 1, nvar
   do ifac = 1, nfabor
     if ((itypfb(ifac) .ne. isolib)            .and. &
         (itypfb(ifac) .ne. ifrent)            .and. &
-        (itypfb(ifac) .ne. ifreesf)           .and. &
+        (itypfb(ifac) .ne. ifresf)            .and. &
         (itypfb(ifac) .ne. i_convective_inlet).and. &
         (itypfb(ifac) .ne. ientre)            .and. &
         (rcodcl(ifac,ivar,1) .gt. rinfin*0.5d0)) then
@@ -523,7 +523,7 @@ do iscal = 1, nscal
     do ifac = 1, nfabor
       if ((itypfb(ifac) .ne. isolib)             .and. &
           (itypfb(ifac) .ne. ifrent)             .and. &
-          (itypfb(ifac) .ne. ifreesf)            .and. &
+          (itypfb(ifac) .ne. ifresf)             .and. &
           (itypfb(ifac) .ne. i_convective_inlet) .and. &
           (itypfb(ifac) .ne. ientre)             .and. &
           (rcodcl(ifac,iut,1) .gt. rinfin*0.5d0)) then
@@ -531,7 +531,7 @@ do iscal = 1, nscal
       endif
       if ((itypfb(ifac) .ne. isolib)             .and. &
           (itypfb(ifac) .ne. ifrent)             .and. &
-          (itypfb(ifac) .ne. ifreesf)            .and. &
+          (itypfb(ifac) .ne. ifresf)             .and. &
           (itypfb(ifac) .ne. i_convective_inlet) .and. &
           (itypfb(ifac) .ne. ientre)             .and. &
           (rcodcl(ifac,ivt,1) .gt. rinfin*0.5d0)) then
@@ -539,7 +539,7 @@ do iscal = 1, nscal
       endif
       if ((itypfb(ifac) .ne. isolib)             .and. &
           (itypfb(ifac) .ne. ifrent)             .and. &
-          (itypfb(ifac) .ne. ifreesf)            .and. &
+          (itypfb(ifac) .ne. ifresf)             .and. &
           (itypfb(ifac) .ne. i_convective_inlet) .and. &
           (itypfb(ifac) .ne. ientre)             .and. &
           (rcodcl(ifac,iwt,1) .gt. rinfin*0.5d0)) then
@@ -967,8 +967,8 @@ enddo
 
 ! ---> Free surface: Dirichlet on the pressure
 
-ideb = idebty(ifreesf)
-ifin = ifinty(ifreesf)
+ideb = idebty(ifresf)
+ifin = ifinty(ifresf)
 
 do ivar = 1, nvar
   if (ivar.eq.ipr) then
@@ -1353,8 +1353,8 @@ enddo
 
 ! ---> Free surface
 
-ideb = idebty(ifreesf)
-ifin = ifinty(ifreesf)
+ideb = idebty(ifresf)
+ifin = ifinty(ifresf)
 
 do ivar = 1, nvar
   do ii = ideb, ifin
@@ -1592,7 +1592,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
     write(nfecra,7020) 'Convective inlet ',ii,inb,flumty(ii)
 #endif
 
-    ii = ifreesf
+    ii = ifresf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
       call parcpt (inb)
@@ -1638,7 +1638,7 @@ if(iwrnp.ge.1 .or. mod(ntcabs,ntlist).eq.0                      &
            ii.ne.isymet  .and.                                    &
            ii.ne.isolib  .and.                                    &
            ii.ne.ifrent  .and.                                    &
-           ii.ne.ifreesf .and.                                    &
+           ii.ne.ifresf  .and.                                    &
            ii.ne.icscpl  .and.                                    &
            ii.ne.iindef ) then
         inb = ifinty(ii)-idebty(ii)+1
