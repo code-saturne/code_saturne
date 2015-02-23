@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix possibly uninitialized and incorrect values for optional arguments
+  to postprocessing command in control_file.
+
 - Fix missing updates to CFL and/or Fourier numbers when at time steps where
   logging is not active.
 
