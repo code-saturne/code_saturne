@@ -505,7 +505,7 @@ lphi2 =  valen * charge * phi2 /  kboltz / tempf
 !  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)
 
 ! For the first particle
-tau = rpart1 / (1.d0/ldebye)
+tau = rpart1/ldebye
 
 lphi1 = 8.d0 * tanh(lphi1 / 4.d0) /                       &
 ( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &
