@@ -1605,7 +1605,7 @@ _update_weight_accumulator(cs_time_moment_wa_t  *mwa,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize weight value if required
+ * Initialize moment value if required
  *
  * parameters:
  *   mwa <-- moment
@@ -2268,6 +2268,8 @@ cs_time_moment_update_all(void)
           assert(mt->l_id > -1);
 
           cs_time_moment_t *mt_mean = _moment + mt->l_id;
+
+          _ensure_init_moment(mt_mean);
           cs_real_t *restrict m = mt_mean->val;
           if (mt_mean->f_id > -1) {
             cs_field_t *f_mean = cs_field_by_id(mt_mean->f_id);
