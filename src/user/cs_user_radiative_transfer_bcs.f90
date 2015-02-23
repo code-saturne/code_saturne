@@ -270,15 +270,15 @@ iok = 0
 
 do ifac = 1, nfabor
 
-  if     ( itypfb(ifac).eq.isolib                  ) then
+  if     (itypfb(ifac).eq.isolib) then
+    izfrdp(ifac) = 60
+  elseif (itypfb(ifac).eq.ifrent) then
     izfrdp(ifac) = 61
-  elseif ( itypfb(ifac).eq.ientre.and.                      &
-           cdgfbo(2,ifac)    .gt.0.d0                    ) then
+  elseif (itypfb(ifac).eq.ientre) then
     izfrdp(ifac) = 62
-  elseif ( itypfb(ifac).eq.ientre.and.                      &
-           cdgfbo(2,ifac)    .le.0.d0                    ) then
+  elseif (itypfb(ifac).eq.i_convective_inlet) then
     izfrdp(ifac) = 63
-  elseif ( itypfb(ifac).eq.isymet                  ) then
+  elseif (itypfb(ifac).eq.isymet) then
     izfrdp(ifac) = 64
 
 
