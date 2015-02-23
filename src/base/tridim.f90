@@ -936,7 +936,7 @@ do while (iterns.le.nterup)
     darcy_gravity_z,                                               &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifreesf,       &
+    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   ielcor, ipoti,                                 &
@@ -988,7 +988,7 @@ do while (iterns.le.nterup)
     !==========
   ( nfabor, nozppm,                                                &
     iindef, ientre, iesicf, iephcf, isspcf, isopcf,                &
-    iparoi, iparug, isymet, isolib, ifreesf, iale ,                &
+    iparoi, iparug, isymet, isolib, ifresf, iale  ,                &
     itypfb, izfppp )
 
   endif
@@ -1536,7 +1536,7 @@ if (ippmod(idarcy).eq.1) then
     darcy_gravity_z,                                               &
     nozppm, ncharm, ncharb, nclpch,                                &
     iindef, ientre, iesicf, isspcf, iephcf,                        &
-    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifreesf,       &
+    isopcf, iparoi, iparug, isymet, isolib, ifrent, ifresf,        &
     iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm,                                &
     coejou, dpot,   ielcor, ipoti,                                 &

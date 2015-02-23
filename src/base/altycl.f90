@@ -418,7 +418,7 @@ enddo
 '@'                                                            ,/,&
 '@ METHODE ALE'                                                ,/,&
 '@'                                                            ,/,&
-'@ Au moins une face de bord a un type de bord non reconnu.'  ,/,&
+'@ Au moins une face de bord a un type de bord non reconnu.'   ,/,&
 '@    Le calcul ne sera pas execute.'                          ,/,&
 '@'                                                            ,/,&
 '@ Verifier les conditions aux limites dans l''Interface'      ,/,&

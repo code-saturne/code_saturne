@@ -148,7 +148,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
                                const int  *isymet,
                                const int  *isolib,
                                const int  *ifrent,
-                               const int  *ifreesf,
+                               const int  *ifresf,
                                int        *iqimp,
                                int        *icalke,
                                int        *ientat,
@@ -203,7 +203,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * INTEGER          IPARUG  --> type of boundary: wall with rugosity
  * INTEGER          ISYMET  --> type of boundary: symmetry
  * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          IFREESF <-- type of boundary: free surface
+ * INTEGER          IFRESF  <-- type of boundary: free surface
  * INTEGER          IALE    <-- ALE module activated
  * INTEGER          ITYPFB  --> type of boundary for each face
  * INTEGER          IZFPPP  --> zone number
@@ -221,7 +221,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
-                               const int  *ifreesf,
+                               const int  *ifresf,
                                const int  *iale,
                                int        *itypfb,
                                int        *izfppp);
