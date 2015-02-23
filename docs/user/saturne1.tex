@@ -4311,7 +4311,7 @@ conditions (see \S\ref{sec:prg_clnonstandard}), the arrays \texttt{icodcl} and
 The standard keywords used by the indicator \texttt{itypfb} are:
 \texttt{ientre\index{ientre}}, \texttt{iparoi\index{iparoi}},
 \texttt{iparug\index{iparug}}, \texttt{isymet\index{isymet}},
-\texttt{isolib\index{isolib}}, \texttt{ifrent\index{ifrent}},
+\texttt{isolib\index{isolib}}, \texttt{ifrent\index{ifrent}}, \texttt{ifresf\index{ifresf}},
 \texttt{i\_convective\_inlet\index{i\_convective\_inlet}} and \texttt{iindef\index{iindef}}.
 
 \begin{list}{$\bullet$}{}
@@ -4369,15 +4369,14 @@ variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_cl
       velocity on the face. As a consequence, if the velocity specified
       by the user is not in the face plane, the wall moving velocity really
       taken into account will be different.}
-\item The dynamic roughness must be specified in \texttt{rcdocl(ifac,iu,3)}.
-      The values of \texttt{rcdocl(ifac,iv,3)} and
-      \texttt{rcdocl(ifac,iw,3)} are not used.
+\item The dynamic roughness must be specified in \texttt{rcodcl(ifac,iu,3)}.
+      The values of \texttt{rcodcl(ifac,iv,3)} stores the thermal and scalar roughness.
+      The values of \texttt{rcodcl(ifac,iw,3)} is not used.
 \item For scalars, two kinds of boundary conditions can be defined:
 \begin{list}{$\rightsquigarrow$}{}
 \item Imposed value at the wall. The user must write\\
 \hspace*{1cm}\texttt{icodcl(ifac,ivar)}=6\\
 \hspace*{1cm}\texttt{rcodcl(ifac,ivar,1)}=imposed value\\
-\hspace*{1cm}\texttt{rcodcl(ifac,ivar,3)}=thermal roughness value\\
 \item Imposed flux at the wall. The user must write\\
 \hspace*{1cm}\texttt{icodcl(ifac,ivar)}=3\\
 \hspace*{1cm}\texttt{rcodcl(ifac,ivar,3)}= imposed flux value (definition
@@ -4411,6 +4410,8 @@ variable, the user may refer to the case \texttt{icodcl}=3 of \S~\ref{sec:prg_cl
 \end{list}
 
 \item If \texttt{itypfb=ifrent}: free outlet, free inlet (based on Bernoulli relationship) face.
+
+\item If \texttt{itypfb=ifresf}: free-surface boundary condition.
 
 \begin{list}{$\rightarrow$}{}
 \item if outlet, the equivalent to standard outlet.

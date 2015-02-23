@@ -23,69 +23,69 @@
 \section{Introduction}
 
 Boundary conditions are required in at least three main cases:
- 
+
 \begin{itemize}
 \item calculation of the convection terms (first order derivative in space) at
-the boundary: the code uses a mass flux at the boundary and requires the 
+the boundary: the code uses a mass flux at the boundary and requires the
 value of the convected variable when the flow is entering into
 the domain (or more general wave relations in the sense of the characteristic curves of the system entering the domain);
 \item calculation of the diffusion terms (second order derivative
 in space): the code needs
-a method to determine the value of the first order spatial derivatives 
+a method to determine the value of the first order spatial derivatives
 at the boundary, these define \emph{e.g.} the stresses or the thermal fluxes at the wall;
 \item calculation of the cell  gradients: the variables at the boundary faces
  allow the code to define the gradient inside the cell connected to the boundary (\emph{e.g.} the pressure gradient or
-the transpose gradient terms in the stress-strain relation). 
+the transpose gradient terms in the stress-strain relation).
 \end{itemize}
 
-These considerations only concern the computational field variables  
-(velocity, pressure, Reynolds tensor, 
+These considerations only concern the computational field variables
+(velocity, pressure, Reynolds tensor,
 scalars solution of a advection-diffusion equations \emph{etc.}). For these variables
 \footnote{
-The other variables 
-(the physical properties for instance) have a different treatment which will 
-not be detailed here (for instance, for the density, the user defines 
-directly the values at the boundary. This information is then stored; one 
+The other variables
+(the physical properties for instance) have a different treatment which will
+not be detailed here (for instance, for the density, the user defines
+directly the values at the boundary. This information is then stored; one
 is referred to \fort{cs\_user\_physical\_properties} (see the \doxygenfile{cs_user_physical_properties_8f90}{programmers reference of the dedicated subroutine})
  or \fort{phyvar} for more information).
 },
 the user has to define the boundary conditions at every boundary face.
 
 The boundary conditions could be of Neumann type (when the flux is imposed)
-or Dirichlet type (when the value of the field variable is prescribed), or mixed type, also 
+or Dirichlet type (when the value of the field variable is prescribed), or mixed type, also
 called Robin type (when a combination linking the field variable to its derivative flux
 is imposed).
 
 The code (see the \href{../../../doxygen/src/html/condli_8f90.html}{programmers reference of the dedicated subroutine})
  transforms the boundary conditions provided by the user
- into two internal formats of representation of the boundary 
- conditions. 
- 
+ into two internal formats of representation of the boundary
+ conditions.
+
  A particular treatment is performed on walls:
  wall functions are used to model the boundary layer flow in the vicinity of the wall when the mesh is too coarse to correctly capture the sharp variations of the fields with a linear profile in the near wall cell.
  This will be detailed in the next sections.
- 
+
 A particular treatment on symmetry boundaries is also performed for vectors and tensors
 whereas a symmetry boundary is equivalent to an homogeneous Neumann condition (zero normal gradient) for scalar fields.
 
-The physics model that the user wishes to apply needs to be translated into pairs of coefficients 
+The physics model that the user wishes to apply needs to be translated into pairs of coefficients
 entering the linear system of equations that the code will solve. For any variable $\varia$ for every boundary faces $\fib$ these coefficients are:
 
 \begin{itemize}
-\item $\left( A^g_\fib , \, B^g_\fib\right)$ used by the gradient operator and by the advection operator. 
-The value at the boundary face $\fib$ of the variable $\varia$ is 
+\item $\left( A^g_\fib , \, B^g_\fib\right)$ used by the gradient operator and by the advection operator.
+The value at the boundary face $\fib$ of the variable $\varia$ is
 then defined as:
 \begin{equation}\label{eq:bndcnd:coef_g_def}
 \varia_\fib \equiv A^g_\fib + B^g_\fib \varia_\centip.
 \end{equation}
 %
 \item $\left( A^f_\ib , \, B^f_\ib\right)$ used by the diffusion operator.
-The value at the boundary face $\fib$ of the diffusive flux $q_\ib$ of the variable $\varia$ 
+The value at the boundary face $\fib$ of the diffusive flux $q_\ib$ of the variable $\varia$
 is then defined as (see Equation \eqref{eq:spadis:boundary_flux}):
 \begin{equation}\label{eq:bndcnd:coef_f_def}
 q_\ib \equiv \dfrac{D_\ib \left( K_\fib , \, \varia \right)}{\norm{\vect{S}}_\fib} = A^f_\ib + B^f_\ib  \varia_\centip.
 \end{equation}
-Note that the diffusive boundary coefficients are oriented, which means that they are such that $D_\ib \left( K_\fib , \, \varia \right) $ is positive, 
+Note that the diffusive boundary coefficients are oriented, which means that they are such that $D_\ib \left( K_\fib , \, \varia \right) $ is positive,
 this flux is gained by $\varia_\celli$.
  %
 \end{itemize}
@@ -156,35 +156,35 @@ B^f_\ib & = & 0 .
 The user generally gives standard boundary conditions, which are:
 
 \begin{description}
-\item[Inlet:] it corresponds to a Dirichlet boundary condition on all the transported variables 
-(and should therefore be given by the user) 
-and to a homogeneous Neumann on the pressure field. 
+\item[Inlet:] it corresponds to a Dirichlet boundary condition on all the transported variables
+(and should therefore be given by the user)
+and to a homogeneous Neumann on the pressure field.
 
 \item[Outlet:] it correspond to a homogeneous Neumann boundary condition on all the transported variables.
 For the pressure field, a Dirichlet boundary condition which is expected to mimic $\displaystyle\frac{\partial^2 P}{\partial n \partial \tau}=0$ for any vector  $\vect{\tau}$ parallel to the outlet face
-(see \S \ref{sec:bndcnd:outlet_pressure} for more details). 
+(see \S \ref{sec:bndcnd:outlet_pressure} for more details).
 This condition means that the pressure
-profile does not vary in the normal direction of the outlet. Warning: if the outgoing mass-flux is negative, 
+profile does not vary in the normal direction of the outlet. Warning: if the outgoing mass-flux is negative,
 \emph{i.e.} if the outlet becomes an inlet, then the mass-flux is clipped to zero. Moreover, since
  the pressure field is defined up to a constant, it is fixed to a reference pressure $P_0$
-at an arbitrary chosen outlet boundary face. 
+at an arbitrary chosen outlet boundary face.
 The user can choose an other desired face where a Dirichlet on pressure is prescribed.
 
 \item[Free inlet/outlet:] it corresponds to the standard outlet when the flow is outgoing (see \S \ref{sec:bndcnd:outlet_pressure}), but to a free inlet when the flow
-is ingoing. The Bernoulli relationship is used to derive a boundary condition on the pressure increment to couple velocity and pressure at 
-these free inlet faces. 
+is ingoing. The Bernoulli relationship is used to derive a boundary condition on the pressure increment to couple velocity and pressure at
+these free inlet faces.
 Note that no clipping on the velocity is imposed.
 The same boundary conditions as for outlet on the other variables is imposed. For more details please refer to \S \ref{sec:bndcnd:inlet_bernoulli_pressure}.
 
- 
-\item[Walls:] This particular treatment will be detailed in the following sections. 
-For the velocity, the aim is to transform the Dirichlet boundary condition (the velocity at the wall 
+
+\item[Walls:] This particular treatment will be detailed in the following sections.
+For the velocity, the aim is to transform the Dirichlet boundary condition (the velocity at the wall
 is equal to zero, or the velocity of a moving wall) into a Neumann boundary condition where the wall shear stress
-is imposed function of the local flow velocity and the turbulence characteristics. 
+is imposed function of the local flow velocity and the turbulence characteristics.
 A similar treatment using wall functions is done on every transported variable if this variable is prescribed.
 The boundary condition on the pressure field is a homogeneous Neumann by default, or alternatively an extrapolation of the gradient.
 
-\item[Symmetries:] This condition corresponds to a homogeneous Neumann for the scalar fields 
+\item[Symmetries:] This condition corresponds to a homogeneous Neumann for the scalar fields
 (\emph{e.g.} the pressure field or the temperature field). For vectors, such as the velocity, it corresponds
 to impose a zero Dirichlet on the component normal to the boundary, and a homogeneous Neumann
 on the tangential components. Thus, this condition couples the  vector components if the symmetry faces are not
@@ -197,20 +197,20 @@ aligned with the reference frame. The boundary condition for tensors, such as th
 As already mentioned, the boundary conditions set by the user for the variable $\varia$
 are translated into two pairs of coefficients $\left( A^g_\fib , \, B^g_\fib\right)$ which are used by the gradient operator and by the advection operator, and $\left( A^f_\ib , \, B^f_\ib\right)$ for use by the diffusion operator, this for all the boundary faces $\fib$.
 
-Let us first recall the general form of the transport equation of a variable $\varia$, which could be a scalar, 
-a vector or a tensor: 
+Let us first recall the general form of the transport equation of a variable $\varia$, which could be a scalar,
+a vector or a tensor:
 \begin{equation}\label{eq:bndcnd:gov_eqn_scalar}
 \displaystyle C \rho \frac{\partial \varia}{\partial t} + C \grad \varia \cdot \left( \rho \vect{u} \right) = \dive \left(\displaystyle K \, \grad \varia \right) +ST_\varia .
 \end{equation}
 
 In the Equation (\ref{eq:bndcnd:gov_eqn_scalar})
 $\rho$ is the density of the fluid, $\left( \rho \vect{u} \right)$ the convective mass flux of the variable $\varia$, $K$ its
-conductivity or diffusivity and $S$ any additional source terms. 
-Note that $K$ is the sum of molecular and turbulent diffusivity in case of RANS modelling with an eddy viscosity model. 
+conductivity or diffusivity and $S$ any additional source terms.
+Note that $K$ is the sum of molecular and turbulent diffusivity in case of RANS modelling with an eddy viscosity model.
 The dimension of $K$ for different variables is displayed in \tablename~\ref{tab:bdncnd:diffusivity}.
 The value of $C$ is $1$ for all the variables except for the temperature where $C$ is the specific heat $C_p$.
 If the variable $\varia$ is the variance of another scalar, then its diffusivity
-is deduced from the scalar itself. 
+is deduced from the scalar itself.
 
 \begin{table}
 {\scriptsize
@@ -266,7 +266,7 @@ B^f_\ib & = & h_{int}.
 \end{array}
 \end{equation}
 
-The term $h_{int}$ is a internal coding coefficient (automatically provided by the code) similar to an exchange coefficient. Its value for particular variables is 
+The term $h_{int}$ is a internal coding coefficient (automatically provided by the code) similar to an exchange coefficient. Its value for particular variables is
 given in \tablename~\ref{tab:bndcnd:hint_phi_condli}.
 
 \begin{remark}
@@ -401,7 +401,7 @@ symbol     & name                & units         & homogeneous to             & 
 $\vect{u}$ & velocity            & $m.s^{-1}$         &$\left( (\mu+\mu_t)\,\gradv \vect{u} \right)\cdot \vect{n}$  & $kg.m^{-1}.s^{-2} $       \\
 $p$        & pressure            & $kg.m^{-1}.s^{-2}$ &$\left( \Delta t \grad P \right) \cdot \vect{n}$             & $kg.m^{-2}.s^{-1}$                        \\
 $T$        & temperature         & $K$                &$\left( (\lambda+C_p\mu_t/\sigma_t)\grad T\right) \cdot \vect{n} $ &$kg.s^{-3}$ \\
-                 &                         &                                     &                                  &$W.m^{-2}$ \\       
+                 &                         &                                     &                                  &$W.m^{-2}$ \\
 $h$          & enthalpy           & $m^{2}.s^{-2}$          &$\left( \lambda/C_p+\mu_t/\sigma_t) \grad H \right) \cdot \vect{n}$&$kg.s^{-3}$ \\
                  &                        & $J.kg^{-1}$               &                                                                                                               & $W.m^{-2}$  \\
 $\varia$   & scalar               & unit of ($\varia$)       &$K \,\grad \varia \cdot \vect{n}$              & $kg.m^{-2}.s^{-1}.$ unit of ($\varia$)       \\
@@ -416,35 +416,35 @@ $\varia$   & scalar               & unit of ($\varia$)       &$K \,\grad \varia 
 %-------------------------------------------------------------------------------
 \section{Wall boundary conditions}\label{sec:clptur}
 
-This section is dedicated to wall boundary conditions 
- for the velocity, and any transported scalar (such as the temperature, the enthalpy, \emph{etc}.) 
+This section is dedicated to wall boundary conditions
+ for the velocity, and any transported scalar (such as the temperature, the enthalpy, \emph{etc}.)
 when a wall boundary value is prescribed and a wall function is set by the user. The dedicated boundary conditions of the turbulent variables ($k$, $\varepsilon$, $R_{ij}$) are detailed in \chaptername~ \ref{chapter:turbul}.
  Here is a link to the \doxygenfile{clptur_8f90}{programmers reference of the dedicated subroutine}.
 
-Simplified balance analysis proves that the fluid velocity profile or the Temperature profile are 
+Simplified balance analysis proves that the fluid velocity profile or the Temperature profile are
 highly non-linear  for turbulent flows in the vicinity of walls.
 
-The aim of wall functions is to model the vicinity of the wall by substituting the Dirichlet condition on the fluid velocity and on the scalars such as the temperature ($\vect{u}_\fib = \vect{v}_{wall}$, $T_\fib = T_{wall}$ where $\vect{v}_{wall}$ is the velocity of the wall and $T_{wall}$ is the temperature of the wall) by a Robin-type boundary condition linking the wall shear stress to the velocity of the fluid, and the 
+The aim of wall functions is to model the vicinity of the wall by substituting the Dirichlet condition on the fluid velocity and on the scalars such as the temperature ($\vect{u}_\fib = \vect{v}_{wall}$, $T_\fib = T_{wall}$ where $\vect{v}_{wall}$ is the velocity of the wall and $T_{wall}$ is the temperature of the wall) by a Robin-type boundary condition linking the wall shear stress to the velocity of the fluid, and the
 thermal wall flux to the temperature within the first cell.
 
 %-------------------------------------------------------------------------------
-\subsection{Velocity boundary condition for smooth walls}
+\subsection{Velocity boundary condition for smooth walls and rough walls}
 We assume it is projected onto the tangent plane to the wall (if it is not, then the code projects it).
-The fluid velocity in the reference frame attached to the wall ("relative" velocity) projected to the wall writes 
+The fluid velocity in the reference frame attached to the wall ("relative" velocity) projected to the wall writes
 $\vect{u}^r _\centip \equiv \left(\tens{1} - \vect{n} \otimes \vect{n} \right)\cdot \left( \vect{u}_\centip - \vect{v}_{wall} \right)$.
 
-The orthonormal coordinate system attached to the wall writes 
+The orthonormal coordinate system attached to the wall writes
 $\hat {\mathcal R}=(\vect{t}, \, -\vect{n}, \, \vect{b})$:
 %
 \begin{itemize}
-\item [$\bullet$] $\vect{t} = \displaystyle\frac{ \vect{u}^r_{\centip} }{ \norm{ \vect{u}^r_{\centip} }}$ is the unit vector parallel to the projection of the relative velocity at $\centip$, $\vect{u}^r_{\centip}$, in the plane tangent to the wall  
+\item [$\bullet$] $\vect{t} = \displaystyle\frac{ \vect{u}^r_{\centip} }{ \norm{ \vect{u}^r_{\centip} }}$ is the unit vector parallel to the projection of the relative velocity at $\centip$, $\vect{u}^r_{\centip}$, in the plane tangent to the wall
  (\emph{i.e.} orthogonal to $\vect{n}$),
 \item [$\bullet$] $-\vect{n}$ is the unit vector orthogonal to the wall and directed towards the interior of the computational domain,
 \item[$\bullet$] $\vect{b}$ is the unit vector which completes the positively oriented coordinate system.
 \end{itemize}
 In this reference-frame the wall distance of the cell centre to the wall $\overline{\centip \centf}$ is denoted by $y$.
 
-The objective of wall functions 
+The objective of wall functions
 is to increase the exchange coefficient
  to reflect the higher level of mixing effectively taking place in the near wall cell due to
 turbulence and due to effectively much sharper gradients of the computed variable than the
@@ -471,13 +471,13 @@ When using a refined near wall mesh, "down to the wall" or "low Reynolds" versio
 turbulence models must be selected (\emph{e.g.} $v^2-f$ or elliptic blending models). However in this
 case one must make sure the mesh is fine enough.
 
-To allow use of standard high Reynolds models whatever the mesh density, 
+To allow use of standard high Reynolds models whatever the mesh density,
 "scalable wall functions" can be activated. This consist in shifting slightly the
 wall outside of the mesh if the first cell lies in the viscous sub-layer. "Scalable wall function"
 only work with the "two friction velocity scales" version.
 
-The wall functions are usually derived from Eddy Viscosity Models such as $k-\varepsilon$, thus the coming sections 
-assume that $\tens{R} = \dfrac{2}{3}k \tens{1} - \nu_T \tens{S}$. 
+The wall functions are usually derived from Eddy Viscosity Models such as $k-\varepsilon$, thus the coming sections
+assume that $\tens{R} = \dfrac{2}{3}k \tens{1} - \nu_T \tens{S}$.
 
 
 %-------------------------------------------------------------------------------
@@ -501,14 +501,14 @@ the equation \eqref{eq:bndcnd:simplified_momentum_evm} can be rewritten:
 where $u^+ \equiv \norm{ \vect{u}^r_{\centip} } / u^\star$ and $ y^+ \equiv y u^\star / \nu$.
 
 The mixing length model states $\nu_T = L_m^2 S $, where the stain rate $S$ reduces to $ \frac{\partial u^r_{\centip} }{\partial y} $ in the wall vicinity.
-The mixing length is proportional to the wall distance according to the Prandtl model 
+The mixing length is proportional to the wall distance according to the Prandtl model
 \begin{equation}\label{eq:bndcnd:prandtl_model}
 L_m = \kappa y,
 \end{equation}
 where $\kappa = 0.42$ is the Karman constant.
 
 Two areas are therefore defined, one where $ \mu_T/\mu  \ll 1$ called the viscous sub-layer where $\mu_T/\mu $ is neglected in \eqref{eq:bndcnd:simplified_momentum_evm_adim} the velocity profile is found to be linear:
-% 
+%
 \begin{equation}\label{eq:bndcnd:linear_profile}
 u^+ = y^+,
 \end{equation}
@@ -522,7 +522,7 @@ where $C_{log}=5.2$.
 \eqref{eq:bndcnd:linear_profile} is valid for $y^+<5$ and \eqref{eq:bndcnd:log_profile} for $y^+>30$ so there is a gap (corresponding to the so called buffer
 layer) which more sophisticated models can cover, but they are not detailed here. Instead we
 introduce a dimensionless
- limit distance which crudely separates the viscous sub-layer from the logarithmic region writes $y^+_{lim}$. Its value is $1/ \kappa$ in general (to ensure the continuity of the velocity gradient) and $10.88$ in LES (to ensure the continuity of the velocity).  
+ limit distance which crudely separates the viscous sub-layer from the logarithmic region writes $y^+_{lim}$. Its value is $1/ \kappa$ in general (to ensure the continuity of the velocity gradient) and $10.88$ in LES (to ensure the continuity of the velocity).
 
 The $u^\star$ is computed by iteratively solving\eqref{eq:bndcnd:linear_profile} or \eqref{eq:bndcnd:log_profile}:
 
@@ -548,13 +548,13 @@ Therefore, the value of $\frac{y^+}{u^+}$ in the two layers reads:
 \dfrac{y^+}{u^+} &=& \dfrac{y^+}{ \dfrac{1}{\kappa} \ln \left( y^+\right) + C_{log}} & \textrm{otherwise}.
 \end{array}
 \right.
-\end{equation}  
+\end{equation}
 
 %-------------------------------------------------------------------------------
 \subsubsection{Two friction velocity scales}\label{sec:bndcnd:2velocityscales}
 
 The simplified momentum balance \eqref{eq:bndcnd:simplified_momentum_evm} still holds, but is non-dimensioned not only
-by the wall shear stress but also the turbulent kinetic energy. More precisely, let $u_k = \sqrt{\sqrt{C_\mu} k }$ be the friction velocity based on 
+by the wall shear stress but also the turbulent kinetic energy. More precisely, let $u_k = \sqrt{\sqrt{C_\mu} k }$ be the friction velocity based on
 the turbulent kinetic energy in the first cell.
 
 This definition is in fact valid only for high-$y^+$ values and a blending is performed in case of the intensity of turbulence is very low:
@@ -575,14 +575,14 @@ Equation \eqref{eq:bndcnd:simplified_momentum_evm} can now be rewritten:
 \end{equation}
 where $u^+ \equiv \frac{\norm{ \vect{u}^r_{\centip} }}{u^\star}$ but $ y^+_k \equiv \frac{y u_k}{ \nu}$.
 
-Let us now remark that $\nu_T = C_\mu^{\frac{1}{4}}\sqrt{k}  C_\mu^{\frac{3}{4}} \dfrac{k^{\frac{3}{2}}}{\epsilon} = u_k L_m $ where 
+Let us now remark that $\nu_T = C_\mu^{\frac{1}{4}}\sqrt{k}  C_\mu^{\frac{3}{4}} \dfrac{k^{\frac{3}{2}}}{\epsilon} = u_k L_m $ where
 $L_m = C_\mu^{\frac{3}{4}} \dfrac{k^{\frac{3}{2}}}{\epsilon}$ is the integral length scale. Again using the Prandtl model \eqref{eq:bndcnd:prandtl_model},
 the following equation is obtained:
 %
 \begin{equation}\label{eq:bndcnd:simplified_momentum_evm_adim_2scales}
 \left( 1 + \dfrac{1}{\kappa y_k^+} \right) \dfrac{\partial u^+}{\partial y^+_k} = 1.
 \end{equation}
- 
+
 The two areas defined in the previous section \eqref{eq:bndcnd:ypup_1scale} that are the viscous sub-layer and the logarithmic layer still hold, but with $y^+_k$ instead of $y^+$:
 %
 \begin{equation}\label{eq:bndcnd:ypup_2scale}
@@ -592,19 +592,28 @@ The two areas defined in the previous section \eqref{eq:bndcnd:ypup_1scale} that
 \dfrac{y^+_k}{u^+} &=& \dfrac{y^+_k}{ \dfrac{1}{\kappa} \ln \left( y^+_k\right) + C_{log}} & \textrm{otherwise}.
 \end{array}
 \right.
-\end{equation}  
+\end{equation}
+
+%-------------------------------------------------------------------------------
+\subsubsection{Rough wall functions}\label{sec:bndcnd:2velocityscales}
+When specifying a rough wall function with $z_0$ as roughness, the value of $\frac{y^+}{u^+}$ reads:
+\begin{equation}\label{eq:bndcnd:ypup_rough}
+\dfrac{y^+}{u^+} = \dfrac{y^+}{ \dfrac{1}{\kappa} \ln \left( \dfrac{y+z_0}{z_0}\right) + C_{log}}.
+\end{equation}
+
+
 
 %-------------------------------------------------------------------------------
 \subsubsection{Wall shear stress with wall functions}
-The previous sections can be summarized as follows: 
+The previous sections can be summarized as follows:
 
 \begin{equation}
 \tens{\tau} \cdot \vect{n} = \dfrac{\mu}{\overline{\centip \centf} } \dfrac{y^+}{u^+} \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot \left(\vect{u}_\centip - \vect{u}_{wall} \right)
 \end{equation}
 %
-where the rescaling factor $\frac{y^+}{u^+}$ depends on the wall function is given in \eqref{eq:bndcnd:ypup_1scale} or \eqref{eq:bndcnd:ypup_2scale}. Note that the wall shear stress is therefore parallel to the wall and fully implicit if the $\theta$-scheme on the velocity is implicit. 
+where the rescaling factor $\frac{y^+}{u^+}$ depends on the wall function is given in \eqref{eq:bndcnd:ypup_1scale} or \eqref{eq:bndcnd:ypup_2scale}. Note that the wall shear stress is therefore parallel to the wall and fully implicit if the $\theta$-scheme on the velocity is implicit.
 
-The internal pair of boundary condition coefficient for the diffusive term for the velocity are 
+The internal pair of boundary condition coefficient for the diffusive term for the velocity are
 \begin{equation}\label{eq:bndcnd:boundary_condition_wall_function}
 \left\lbrace
 \begin{array}{r c l}
@@ -617,7 +626,7 @@ The internal pair of boundary condition coefficient for the diffusive term for t
 \end{array}
 \right.
 \end{equation}
-where 
+where
 \begin{equation}
 h_{fluid} = \dfrac{\mu}{\overline{\centip \centf} } \dfrac{y^+}{u^+}.
 \end{equation}
@@ -625,7 +634,7 @@ h_{fluid} = \dfrac{\mu}{\overline{\centip \centf} } \dfrac{y^+}{u^+}.
 %-------------------------------------------------------------------------------
 \subsubsection{Velocity gradient boundary condition with wall functions}
 The gradient of the fluid velocity is of great importance for turbulence models
-as it appears in the production term. 
+as it appears in the production term.
 Moreover the profile of dissipation is even less linear than $u^+$ (it is
 hyperbolic) and would also require a wall function. A common correction in open literature is
 to directly modify these source term in the near wall cell volume integral. However this deeply
@@ -636,9 +645,9 @@ that the velocity gradient evaluated inside the cell by the
 standard Finite Volumes linear profile is more consistent with wall
 function.
 
-A dedicated boundary condition for the velocity gradient is therefore derived in presence of wall function. 
+A dedicated boundary condition for the velocity gradient is therefore derived in presence of wall function.
 
-To be consistent with the logarithmic law giving the ideal tangential 
+To be consistent with the logarithmic law giving the ideal tangential
 velocity profile. On the first hand, the theoretical gradient is:
 
 \begin{equation}\label{eq:bndcnd:vel_grad_wallf_theo}
@@ -646,9 +655,9 @@ velocity profile. On the first hand, the theoretical gradient is:
 \end{equation}
 
 On the other hand,
-the normal finite volumes gradient of the tangential velocity reduces in the case 
-of a regular orthogonal mesh  (see notations in \figurename~ 
-\ref{fig:bndcnd:boundary_cell_ortho_mesh}):  
+the normal finite volumes gradient of the tangential velocity reduces in the case
+of a regular orthogonal mesh  (see notations in \figurename~
+\ref{fig:bndcnd:boundary_cell_ortho_mesh}):
 \begin{equation}\label{eq:bndcnd:vel_grad_wallf_calc}
 \left( \dfrac{\partial u^r}{\partial y}\right)_{\centip}^\textrm{calc} = \dfrac{u_{G}^r - u_{F}^r}{2y} =
  \dfrac{\dfrac{u_{\centi}^r+u_{\centj}^r}{2} -  u_{\centf}^r}{2y}
@@ -662,20 +671,20 @@ of a regular orthogonal mesh  (see notations in \figurename~
 
 We then assume that $u_{\centj}^r$ can be obtained from $u_{\centi}^r$
 and from the gradient of $u^r$ calculated in $G$
-from the logarithmic law 
+from the logarithmic law
 $u_{\centj}^r = u_{\centi}^r +2y \displaystyle\dfrac{u^\star}{\kappa\, 2y}$ and we thus
 obtain equalizing \eqref{eq:bndcnd:vel_grad_wallf_theo} and \eqref{eq:bndcnd:vel_grad_wallf_calc}
- (the formula is extended without any precaution to non-orthogonal meshes):  
+ (the formula is extended without any precaution to non-orthogonal meshes):
 %
 \begin{equation}
 u_{\centf}^r = u_{\centip}^r -  \dfrac{3 u^\star}{2\kappa }
 \end{equation}
 The normal derivative at the wall is prescribed to zero.
-If the value obtained for $y^+$ at the wall is lower than $y^+_{lim}$, 
-a no-slip condition is prescribed. Finally, one can also 
+If the value obtained for $y^+$ at the wall is lower than $y^+_{lim}$,
+a no-slip condition is prescribed. Finally, one can also
 make explicit the velocity of the wall in the final expression:
 %
-The internal pair of boundary condition coefficient for the diffusive term for the velocity are 
+The internal pair of boundary condition coefficient for the diffusive term for the velocity are
 \begin{equation}
 \left\lbrace
 \begin{array}{r c l}
@@ -689,36 +698,36 @@ where $cofimp = 1 - \dfrac{3}{2 \kappa u^+}$ if $y^+ > y^+_{lim}$, and $cofimp =
 %-------------------------------------------------------------------------------
 \subsection{Scalar boundary condition for smooth walls}
 
-In this section, the wall functions applied to transported scalars $\varia$ (such as the temperature $T$ for instance) 
+In this section, the wall functions applied to transported scalars $\varia$ (such as the temperature $T$ for instance)
 are described.
 The reference "Convection Heat Transfer",
 Vedat S. Arpaci and Poul S. Larsen, Prentice-Hall, Inc was used.
 The approach is really similar to what is performed on the fluid velocity:
 \begin{itemize}
 \item if the wall value $\varia_{wall}$ is imposed, the Dirichlet boundary condition is
-substituted by a Robin-type one where the diffusive flux is function of the cell centre scalar value, 
+substituted by a Robin-type one where the diffusive flux is function of the cell centre scalar value,
 \item if a Neumann value is imposed (that is to say that the user has prescribed the flux of $\varia$), then the wall
-function is used to evaluate the corresponding wall value $\varia_{wall}$ which is displayed by the code. 
+function is used to evaluate the corresponding wall value $\varia_{wall}$ which is displayed by the code.
 \end{itemize}
 
- Let us recall that $q_\ib \left( K_\fib , \, \varia \right) $ is the wall diffusive flux for the scalar $\varia$, 
+ Let us recall that $q_\ib \left( K_\fib , \, \varia \right) $ is the wall diffusive flux for the scalar $\varia$,
  and the simplified scalar balance reads:
 \begin{equation}\label{eq:bndcnd:wall_diffuive_flux_balance}
-q_\ib \left( K_\fib , \, \varia \right)  = 
+q_\ib \left( K_\fib , \, \varia \right)  =
 -\left(K_\fib + C\,\frac{\mu_T}{\sigma_T}\right)
                   \dfrac{\partial \varia}{\partial y}
 \end{equation}
 
 \begin{remark}
-the flux is positive 
-if it enters the fluid domain, as shown by the orientation of the 
+the flux is positive
+if it enters the fluid domain, as shown by the orientation of the
 $y$ axis
 \end{remark}
 
 The following considerations are presented using the general notations.
-In particular, the Prandtl-Schmidt number writes 
+In particular, the Prandtl-Schmidt number writes
 $\sigma=\displaystyle\dfrac{\mu \,C}{K}$.
-When the considered scalar $\varia$ is the temperature $T$, 
+When the considered scalar $\varia$ is the temperature $T$,
 we have
 \begin{itemize}
 \item $C=C_p$ (specific heat capacity),
@@ -731,7 +740,7 @@ we have
 \end{itemize}
 
 
-In order to make \eqref{eq:bndcnd:wall_diffuive_flux_balance} dimensionless, 
+In order to make \eqref{eq:bndcnd:wall_diffuive_flux_balance} dimensionless,
 we introduce $\varia^\star$ defined using
 the flux at the boundary  $q_\ib$:
 \begin{equation}\label{eq:bndcnd:def_varia_star}
@@ -761,40 +770,40 @@ where
 %-------------------------------------------------------------------------------
 \subsection{The three layers wall function of Arpaci and Larsen}
 
-In order to compute the theoretical scalar profile, we integrate 
-equation \eqref{eq:bndcnd:scalar_flux_adim} to obtain 
-$\varia^+_{\centip}$. 
+In order to compute the theoretical scalar profile, we integrate
+equation \eqref{eq:bndcnd:scalar_flux_adim} to obtain
+$\varia^+_{\centip}$.
 The only difficulty then consists in prescribing a variation law of
 $\mathcal{K}=\displaystyle\frac{1}{\sigma}+ \displaystyle\frac{1}{\sigma_T}\frac{\nu_T}{\nu}$.
 
-In the fully developed turbulent region 
+In the fully developed turbulent region
 (far enough from the wall, for $y^+\geqslant y^+_2$),
-a mixing length hypothesis models the variations of 
+a mixing length hypothesis models the variations of
 $\nu_T$:
 \begin{equation}
 \nu_T = \kappa \,y\,u_k
 \end{equation}
 Additionally, the molecular diffusion of $\varia$
 (or the conduction when $\varia$ represents the temperature)
-is negligible compared to its turbulent diffusion: therefore 
-we neglect 
-$\displaystyle\frac{1}{\sigma}$ compared to  
-$\displaystyle\frac{1}{\sigma_T}\frac{\nu_T}{\nu}$. 
+is negligible compared to its turbulent diffusion: therefore
+we neglect
+$\displaystyle\frac{1}{\sigma}$ compared to
+$\displaystyle\frac{1}{\sigma_T}\frac{\nu_T}{\nu}$.
 Finally we have:
 \begin{equation}
 \mathcal{K}= \displaystyle\frac{\kappa \,y^+}{\sigma_T}
 \end{equation}
 
 On the contrary, in the near-wall region (for $y^+ < y^+_1$)
-the turbulent contribution becomes negligible 
-compared to the molecular contribution and we thus neglect 
-$\displaystyle\frac{1}{\sigma_T}\frac{\nu_T}{\nu}$ compared to  
+the turbulent contribution becomes negligible
+compared to the molecular contribution and we thus neglect
+$\displaystyle\frac{1}{\sigma_T}\frac{\nu_T}{\nu}$ compared to
 $\displaystyle\frac{1}{\sigma}$.
 
-It would be possible to restrict ourselves to these 
-two regions, but Arpaci and Larsen suggest the model 
-can be improved by introducing an intermediate 
-region ($y^+_1 \leqslant y^+ < y^+_2$) 
+It would be possible to restrict ourselves to these
+two regions, but Arpaci and Larsen suggest the model
+can be improved by introducing an intermediate
+region ($y^+_1 \leqslant y^+ < y^+_2$)
 in which the following hypothesis is made:
 \begin{equation}
 \frac{\nu_T}{\nu} = a_1 \left( y^+ \right)^3
@@ -805,7 +814,7 @@ experimental correlations:
 a_1 =\displaystyle\frac{\sigma_T}{1000}
 \end{equation}
 
-Thus the following model is used for $\mathcal{K}$ 
+Thus the following model is used for $\mathcal{K}$
 (see a sketch
 in \figurename~ \ref{fig:bndcnd:3layer_temperature_wall_function}):
 \begin{equation}
@@ -829,19 +838,19 @@ in \figurename~ \ref{fig:bndcnd:3layer_temperature_wall_function}):
  for $\sigma=1$ and $\sigma_T=1$. \label{fig:bndcnd:3layer_temperature_wall_function}}
 \end{figure}
 
-The values of $y^+_1$ and $y^+_2$ are obtained by calculating 
-the intersection points of the variations laws used 
+The values of $y^+_1$ and $y^+_2$ are obtained by calculating
+the intersection points of the variations laws used
 for $\mathcal{K}$.
 
-The existence of an intermediate region depends upon the 
+The existence of an intermediate region depends upon the
 values of $\sigma$.
-Let's first consider the case where $\sigma$ cannot be neglected 
-compared to $1$. In practise we consider  $\sigma > 0,1$ 
+Let's first consider the case where $\sigma$ cannot be neglected
+compared to $1$. In practise we consider  $\sigma > 0,1$
 (this is the common case when scalar $\varia$ represents
-the air or the water temperature in normal temperature 
-and pressure conditions). It is assumed that 
-$\displaystyle\dfrac{1}{\sigma}$ can be neglected compared to 
-$\displaystyle\dfrac{a_1 (y^+)^3}{\sigma_T}$ in the 
+the air or the water temperature in normal temperature
+and pressure conditions). It is assumed that
+$\displaystyle\dfrac{1}{\sigma}$ can be neglected compared to
+$\displaystyle\dfrac{a_1 (y^+)^3}{\sigma_T}$ in the
 intermediate region.
 We thus obtain:
 \begin{equation}
@@ -860,7 +869,7 @@ is integrated under the same hypothesis and we obtain the law of $\dfrac{y^+}{\v
 \right.
 \end{equation}
 where $a_2$ and $a_3$ are integration constants,
-which have been chosen to obtain 
+which have been chosen to obtain
 a continuous  profile of $\varia^+$:
 \begin{equation}
 a_2=15\sigma^{\frac{2}{3}}\qquad\qquad
@@ -869,19 +878,19 @@ a_3=15\sigma^{\frac{2}{3}}-\displaystyle\frac{\sigma_T}{2\kappa}
 \ln \left(\displaystyle\frac{1000\kappa}{\sigma_T}\right)\right)
 \end{equation}
 
-Let's now study the case where  $\sigma$ is much smaller than $1$. 
-In practise it is assumed that $\sigma \leqslant 0.1$ (this is for 
-instance the case for liquid metals whose thermal conductivity is very 
+Let's now study the case where  $\sigma$ is much smaller than $1$.
+In practise it is assumed that $\sigma \leqslant 0.1$ (this is for
+instance the case for liquid metals whose thermal conductivity is very
 large, and who have Prandtl number of values of the order of $0.01$).
-The intermediate region then disappears and the coordinate of the 
+The intermediate region then disappears and the coordinate of the
 interface between the law used in the near-wall region and the one
-used away from the wall is given by: 
+used away from the wall is given by:
 \begin{equation}
 y^+_0= \displaystyle\frac{\sigma_T}{\kappa\sigma}
 \end{equation}
 
 The dimensionless equation \eqref{eq:bndcnd:scalar_flux_adim}
-is then integrated under the same hypothesis, and the law of 
+is then integrated under the same hypothesis, and the law of
  $\varia^+$ is obtained:
 \begin{equation}\label{eq:bndcnd:wallfunctions_t_2layers}
 \left\{
@@ -896,7 +905,7 @@ is then integrated under the same hypothesis, and the law of
 
 %-------------------------------------------------------------------------------
 \subsubsection{Wall diffusive flux with wall functions}
-The previous sections can be summarized as follows: 
+The previous sections can be summarized as follows:
 
 \begin{equation}
 q_\ib = \dfrac{C \mu}{\overline{\centip \centf} } \dfrac{y^+}{\varia^+} \left(\varia_\centip - \varia_{wall} \right)
@@ -904,7 +913,7 @@ q_\ib = \dfrac{C \mu}{\overline{\centip \centf} } \dfrac{y^+}{\varia^+} \left(\v
 %
 where the rescaling factor $\frac{y^+}{\varia^+}$ depends on the wall function is given in \eqref{eq:bndcnd:wallfunctions_t_3layers} if $\sigma >0.1$ or \eqref{eq:bndcnd:wallfunctions_t_2layers} if $\sigma \leq 0.1$.
 
-The internal pair of boundary condition coefficient for the diffusive term for the variable $\varia $ are 
+The internal pair of boundary condition coefficient for the diffusive term for the variable $\varia $ are
 \begin{equation}
 \left\lbrace
 \begin{array}{r c l}
@@ -922,16 +931,16 @@ In this section the boundary condition on the pressure at the outlet is detailed
 assumptions are made to derive this boundary condition which consists of a Dirichlet
 (combined with a homogeneous Neumann on the velocity) based on the pressure field
 at the previous time step.
-On basic configurations such as a channel or a pipe where the outlet is orthogonal 
+On basic configurations such as a channel or a pipe where the outlet is orthogonal
 to the flow, the shape of the pressure profile in a surface parallel to the outlet is
-approximately the shape of the pressure profile at the outlet. This hypothesis 
+approximately the shape of the pressure profile at the outlet. This hypothesis
 is valid for established flows, far from any perturbation. In this configuration
 one can write:
 
 \begin{equation*}
 \displaystyle\frac{\partial^2 P}{\partial n \partial \tau } = 0,
 \end{equation*}
-where $\vect{n}$ is the outward normal vector and  $\vect{\tau}$ is any 
+where $\vect{n}$ is the outward normal vector and  $\vect{\tau}$ is any
 vector in the boundary face.
 
 Then remark that the value at the boundary face $\fib$ is linked
@@ -940,19 +949,19 @@ to the pressure value in $\centip$ by the relationship:
 P_\fib = P_{\centip} +  \grad_\celli P \cdot \vect{\centip\centf}.
 \end{equation*}
 If moreover we assume that the pressure gradient in the normal direction
-is uniform, and that all the $\centip$ related to the outlet faces are on 
+is uniform, and that all the $\centip$ related to the outlet faces are on
 a single plane parallel to the outlet, then the value of $ \grad_\celli P \cdot \vect{\centip\centf} $
-is constant for all the faces and denoted $R$. 
+is constant for all the faces and denoted $R$.
 
 Furthermore, the pressure is defined up to a constant, so the code
-chooses to fix the pressure at $P_0$ to a given outlet boundary face 
+chooses to fix the pressure at $P_0$ to a given outlet boundary face
 $\fib^{imp}$. Therefore the pressure field is shifted  by the constant
 $R_0=P_0- P_\fib^{imp} = P_0 - \left( P_{\centip}^{imp}+R \right)$.
 
 All that together gives
 \begin{equation}
 \begin{array}{rcl}
-P_\fib 
+P_\fib
    &=& P_{\centip}+R+R_0,\\
    &=& P_{\centip}+R+P_0- \left( P_{\centip}^{imp}+R \right),\\
    &=&P_{\centip} +\underbrace{P_0-P_{\centip}^{imp}}_{\text{constant denoted by $\widetilde{R}$}} ,\\
@@ -960,7 +969,7 @@ P_\fib
 \end{array}
 \end{equation}
 
-To conclude, the outlet boundary condition on the pressure is a Dirichlet based on 
+To conclude, the outlet boundary condition on the pressure is a Dirichlet based on
 the value in $\centip$ (at the previous time step) and shifted to imposed
 the value $P_0$ at a given face $\fib$.
 
@@ -977,7 +986,7 @@ P_\face - \rho_\face \vect{g} \cdot  \left( \vect{x}_\face - \vect{x}_0 \right) 
 - \vect{x}_0 \right)
 + \dfrac{1}{2}\rho_\infty \vect{u}_\infty \cdot \vect{u}_\infty,
 \end{equation}
-where $K$ is a possible head loss of the fluid between the infinity and the boundary face entrance 
+where $K$ is a possible head loss of the fluid between the infinity and the boundary face entrance
 (which the user may play with to model the non-computed domain).
 
 Assuming that the stream line is horizontal, that the density is constant over the stream line and that the fluid velocity is zero
@@ -991,11 +1000,11 @@ For stability reasons, the Equation \eqref{eq:bndcnd:benoulli_inlet_simple} is i
 \begin{equation}\label{eq:bndcnd:benoulli_inlet_time}
 P_\face^{\star, n+1} =- \dfrac{1+K}{2} \rho_\face \vect{u}^{n}_\face \cdot \vect{u}^{n+1}_\face.
 \end{equation}
-This implicitation is crucial to make the calculations stable. 
+This implicitation is crucial to make the calculations stable.
 
 The prediction-correction velocity-pressure coupling algorithm requires boundary conditions on the pressure increment
-(computed in the correction step), and therefore 
-relation \eqref{eq:bndcnd:benoulli_inlet_time} is derived to obtain boundary conditions on the pressure increment. Recall that the 
+(computed in the correction step), and therefore
+relation \eqref{eq:bndcnd:benoulli_inlet_time} is derived to obtain boundary conditions on the pressure increment. Recall that the
 correction step reads:
  \begin{equation}\label{eq:bndcnd:correction_step}
 \dfrac{\left( \rho \vect{u} \right)^{n+1} - \left( \rho^n \widetilde{\vect{u}} \right)}{\Delta t} = - \grad \delta P,
@@ -1009,8 +1018,8 @@ the pressure increment $ \delta P = P^{\star, n+1} - P^{\star, n}$ at the face i
 Neglecting the tangencial velocity component at the entering faces ($\left(\rho \vect{u} \right)^n_\face \simeq \left(\rho \vect{u} \right)^n_\face \cdot \vect{n} \, \vect{n} = \dfrac{ \dot{m}_\face }{\norm{S}_\face} \vect{n} $) and approximating $P^{\star, n}_\face$ with its cell-center value, Equation \ref{eq:bndcnd:pressure_increment} reads:
 %
  \begin{equation}\label{eq:bndcnd:pressure_increment_simple}
-\delta P_\face = -P^{\star, n}_\celli - \dfrac{1+K}{2} \dfrac{ \dot{m}_\face }{\norm{S}_\face} 
-\left( \widetilde{\vect{u}} \cdot \vect{n} 
+\delta P_\face = -P^{\star, n}_\celli - \dfrac{1+K}{2} \dfrac{ \dot{m}_\face }{\norm{S}_\face}
+\left( \widetilde{\vect{u}} \cdot \vect{n}
 - \dfrac{\Delta t}{\rho} \der{\delta P }{n} \right)_\face.
 \end{equation}
 Noting that $  \left. \der{\delta P }{n} \right|_{\face} = \dfrac{\delta P_\face -  \delta P_\celli }{\overline{\centip \centf}}$,  \eqref{eq:bndcnd:pressure_increment_simple} is rewritten as:
@@ -1021,18 +1030,18 @@ with:
 \begin{equation}\label{eq:bndcnd:pressure_increment_coefs_bernoulli_A_B}
 \begin{array}{r c l}
  A^g_{\delta P}  & = & \dfrac{1}{1 + CFL} \left( - P^{\star, n}_\celli - \dfrac{1+K}{2} \dfrac{ \dot{m}_\face }{\norm{S}_\face}
-\widetilde{\vect{u}}_\face \cdot \vect{n} 
+\widetilde{\vect{u}}_\face \cdot \vect{n}
   \right), \\
- B^g_{\delta P} & = & \dfrac{CFL}{1 + CFL} , 
+ B^g_{\delta P} & = & \dfrac{CFL}{1 + CFL} ,
 \end{array}
 \end{equation}
 where the $CFL$ is defined as:
 \begin{equation}\label{eq:bndcnd:pressure_increment_coefs_bernoulli_A_B}
-CFL = - \dfrac{1+K}{2} \dfrac{\Delta t \dot{m}_\face }{ \rho_\face \norm{S}_\face}. 
+CFL = - \dfrac{1+K}{2} \dfrac{\Delta t \dot{m}_\face }{ \rho_\face \norm{S}_\face}.
 \end{equation}
 %
 \begin{remark}
-$CFL$ is a positive quantity for ingoing flows, which ensures stability. 
+$CFL$ is a positive quantity for ingoing flows, which ensures stability.
 \end{remark}
 \begin{remark}
 The formulation \eqref{eq:bndcnd:pressure_increment_coefs_bernoulli_A_B} is nothing else but
@@ -1042,8 +1051,8 @@ a convective outlet on the pressure increment (see \S \ref{sec:bndcnd:convective
 %-------------------------------------------------------------------------------
 \subsubsection{Checking step}
 
- Before computing the pairs of boundary condition coefficients, a step of checking is performed. Basically, 
-the code checks that the user has given a boundary condition to all boundary faces, and that 
+ Before computing the pairs of boundary condition coefficients, a step of checking is performed. Basically,
+the code checks that the user has given a boundary condition to all boundary faces, and that
 the setting between all the variables is compatible (see \tablename~\ref{tab:ICODCLadm_condli}).
 
 
