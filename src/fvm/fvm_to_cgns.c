@@ -62,7 +62,10 @@
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
 
+#include "cs_block_dist.h"
+#include "cs_file.h"
 #include "cs_parall.h"
+#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -176,6 +179,8 @@ typedef struct {
 
 #if defined(HAVE_MPI)
   MPI_Comm     comm;               /* Associated MPI communicator */
+  cs_lnum_t    min_rank_step;      /* Minimum rank step size */
+  cs_lnum_t    min_block_size;     /* Minimum block size */
 #endif
 
 } fvm_to_cgns_writer_t;
@@ -189,6 +194,30 @@ static char _cgns_version_string[32] = "";
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Return datatype matching med_float
+ *
+ * returns:
+ *   datatype matching med_float
+ *----------------------------------------------------------------------------*/
+
+static cs_datatype_t
+_cgsize_datatype(void)
+{
+  cs_datatype_t  cs_datatype = CS_DATATYPE_NULL;
+
+  if (sizeof(cgsize_t) == sizeof(int32_t))
+    cs_datatype = CS_INT32;
+  else if (sizeof(cgsize_t) == sizeof(int64_t))
+    cs_datatype = CS_INT64;
+  else
+    bft_error(__FILE__, __LINE__, 0 ,
+              "Unexpected cgsize_t datatype size (%d).",
+              (int)(sizeof(cgsize_t)));
+
+  return cs_datatype;
+}
 
 /*----------------------------------------------------------------------------
  * Delete CGNS base structure included in CGNS writer structure.
@@ -305,7 +334,7 @@ _add_base(fvm_to_cgns_writer_t  *writer,
                            entity_dim,
                            mesh->dim,
                            &base_index);
-    if (retval != CG_OK )
+    if (retval != CG_OK)
       bft_error(__FILE__, __LINE__, 0,
                 _("cg_base_write() failed to create a new base:\n"
                   "Associated writer: \"%s\"\n"
@@ -1206,6 +1235,114 @@ _export_vertex_coords_l(const fvm_to_cgns_writer_t  *writer,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
+ * Write strided global connectivity block to a CGNS file
+ *
+ * parameters:
+ *   export_section <-- pointer to section to export
+ *   writer         <-- pointer to associated writer
+ *   base           <-- pointer to CGNS base structure
+ *   section_id     <-- section identificator number
+ *   global_counter <-- counter to update element shift after each section
+ *   num_start      <-- global number of first element for this block
+ *   num_end        <-- global number of past last element for this block
+ *   block_connect  <-> global connectivity block array
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_block_connect_g(const fvm_writer_section_t  *current_section,
+                       const fvm_to_cgns_writer_t  *writer,
+                       const fvm_to_cgns_base_t    *base,
+                       int                          section_id,
+                       cs_gnum_t                   *global_counter,
+                       cs_gnum_t                    num_start,
+                       cs_gnum_t                    num_end,
+                       cgsize_t                     block_connect[])
+{
+  char section_name[FVM_CGNS_NAME_SIZE + 1];
+  CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
+
+  int  section_index = -1;
+
+  const int  zone_index = 1; /* We always use zone index = 1 */
+  const int stride = fvm_nodal_n_vertices_element[current_section->type];
+
+  int  retval = CG_OK;
+
+  _define_section(current_section, section_id, section_name, &cgns_elt_type);
+
+  /* TODO add parallel version of the API */
+
+  /* For non-parallel IO, use serializer */
+
+  {
+    cgsize_t *_block_connect = NULL;
+
+    cs_file_serializer_t *s = cs_file_serializer_create(sizeof(cgsize_t),
+                                                        stride,
+                                                        num_start,
+                                                        num_end,
+                                                        0,
+                                                        block_connect,
+                                                        writer->comm);
+
+    do {
+      cs_gnum_t range[2] = {num_start, num_end};
+
+      _block_connect = cs_file_serializer_advance(s, range);
+
+      if (_block_connect != NULL) { /* only possible on rank 0 */
+
+        cgsize_t  s_start = *global_counter + range[0];
+        cgsize_t  s_end   = *global_counter + range[1] - 1;
+
+        if (s_start == 1) { /* First pass */
+          retval = cg_section_partial_write(writer->index,
+                                            base->index,
+                                            zone_index,
+                                            section_name,
+                                            cgns_elt_type,
+                                            s_start,
+                                            s_end,
+                                            0, /* unsorted boundary elements */
+                                            &section_index);
+          if (retval != CG_OK)
+            bft_error(__FILE__, __LINE__, 0,
+                      _("cg_section_partial_write() failed to write elements:\n"
+                        "Associated writer: \"%s\"\n"
+                        "Associated base: \"%s\"\n"
+                        "Associated section name: \"%s\"\n%s"),
+                      writer->name, base->name, section_name, cg_get_error());
+        }
+
+        if (retval == CG_OK)
+          retval = cg_elements_partial_write(writer->index,
+                                             base->index,
+                                             zone_index,
+                                             section_index,
+                                             s_start,
+                                             s_end,
+                                             _block_connect);
+        if (retval != CG_OK)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("cg_elements_partial_write() failed to write elements:\n"
+                      "Associated writer: \"%s\"\n"
+                      "Associated base: \"%s\"\n"
+                      "Associated section name: \"%s\"\n"
+                      "Associated range: [%llu, %llu]\n%s\n"),
+                    writer->name, base->name, section_name,
+                    (unsigned long long) s_start,
+                    (unsigned long long) s_end,
+                    cg_get_error());
+
+      }
+
+    } while (_block_connect != NULL);
+
+    cs_file_serializer_destroy(&s);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Write strided connectivity to a CGNS file in parallel mode
  *
  * parameters:
@@ -1349,7 +1486,7 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
  *
  * parameters:
  *   export_section   <-- pointer to sections list to export.
- *   writer           <-- pointer to associated writer.
+ *   w                <-- pointer to associated writer.
  *   base             <-- pointer to CGNS base structure.
  *   section_id       <-- section identificator number.
  *   global_counter   <-- counter to update the shift after each section export.
@@ -1357,7 +1494,7 @@ _export_connect_g(const fvm_writer_section_t  *export_section,
 
 static const fvm_writer_section_t *
 _export_connect_l(const fvm_writer_section_t  *export_section,
-                  const fvm_to_cgns_writer_t  *writer,
+                  const fvm_to_cgns_writer_t  *w,
                   const fvm_to_cgns_base_t    *base,
                   int                          section_id,
                   cs_gnum_t                   *global_counter)
@@ -1391,7 +1528,7 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
       for (i = 0; i < n; i++)
         _vertex_num[i] = section->vertex_num[i];
     }
-    retval = cg_section_write(writer->index,
+    retval = cg_section_write(w->index,
                               base->index,
                               zone_index,
                               section_name,
@@ -1411,7 +1548,7 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
                 "Associated writer: \"%s\"\n"
                 "Associated base: \"%s\"\n"
                 "Associated section name: \"%s\"\n%s"),
-              writer->name, base->name, section_name, cg_get_error());
+              w->name, base->name, section_name, cg_get_error());
 
   *global_counter += section->n_elements;
 
@@ -1421,245 +1558,164 @@ _export_connect_l(const fvm_writer_section_t  *export_section,
 }
 
 #if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Write strided connectivity from tesselated elements to a CGNS file
  * in parallel mode.
  *
  * parameters:
  *   export_section   <-- pointer to sections list to export.
- *   writer           <-- pointer to associated writer.
+ *   w                <-- pointer to associated writer.
  *   base             <-- pointer to CGNS base structure.
  *   section_id       <-- section identificator number.
  *   global_counter   <-- counter to update the shift after each section export.
- *   global_s_size    <-- maximum number of entities defined per slice.
- *   global_connect_s_size_call <-- buffer size to export connectivity
- *   global_connect_s <-- global connectivity array section for elements
- *                        slice global_num_start to global_num_end.
- *                        (output for rank 0, working array only for others)
  *----------------------------------------------------------------------------*/
 
 static const fvm_writer_section_t *
 _export_nodal_tesselated_g(const fvm_writer_section_t  *export_section,
-                           const fvm_to_cgns_writer_t  *writer,
-                           const fvm_nodal_t  *mesh,
-                           const fvm_to_cgns_base_t  *base,
-                           int  section_id,
-                           cs_gnum_t   *global_counter,
-                           cs_gnum_t   global_s_size,
-                           cs_gnum_t   global_connect_s_size_call,
-                           cs_gnum_t   global_connect_s_call[])
+                           const fvm_to_cgns_writer_t  *w,
+                           const fvm_nodal_t           *mesh,
+                           const fvm_to_cgns_base_t    *base,
+                           int                          section_id,
+                           cs_gnum_t                   *global_counter)
 {
-  char section_name[FVM_CGNS_NAME_SIZE + 1];
-  CGNS_ENUMT(ElementType_t) cgns_elt_type; /* Definition in cgnslib.h */
+  assert(export_section != NULL);
 
-  int  section_index = -1;
-  cs_lnum_t   n_sub_elements_max = 0;
-  cs_lnum_t   start_id = 0, end_id = 0;
-  cs_gnum_t   elt_start = 0, elt_end = 0;
-  cs_gnum_t   global_num_start = 0, global_num_end = 0;
-  cs_gnum_t   n_g_sub_elements = 0, local_connect_size = 0;
-  cs_gnum_t   global_connect_s_size_prev = global_connect_s_size_call;
-  cs_gnum_t   global_connect_s_size = global_connect_s_size_call;
+  cs_block_dist_info_t bi;
 
-  cs_lnum_t   *local_idx = NULL;
-  cs_gnum_t   *global_idx_s = NULL;
-  cs_gnum_t   *sub_elt_vertex_num = NULL;
-  cs_gnum_t   *global_connect_s = global_connect_s_call;
+  cs_lnum_t   part_size = 0;
 
-  fvm_gather_slice_t  *elements_slice = NULL;
+  cs_gnum_t   n_g_sub_elements = 0;
+  cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
 
-  const int  zone_index = 1; /* We always use zone index = 1 */
+  cs_part_to_block_t  *d = NULL;
+  cs_lnum_t   *part_index, *block_index = NULL;
+  cgsize_t    *part_vtx_num = NULL, *block_vtx_num = NULL;
+
+  size_t  min_block_size = w->min_block_size / sizeof(cgsize_t);
+
   const fvm_writer_section_t *current_section = export_section;
   const fvm_nodal_section_t *section = current_section->section;
   const fvm_tesselation_t *tesselation = section->tesselation;
   const cs_gnum_t extra_vertex_base = current_section->extra_vertex_base;
-  const cs_lnum_t n_elements = fvm_tesselation_n_elements(tesselation);
-  const int stride = fvm_nodal_n_vertices_element[current_section->type];
+  const fvm_element_t  type = current_section->type;
+  const int stride = fvm_nodal_n_vertices_element[type];
 
-  int  retval = CG_OK;
+  const cs_lnum_t   n_elements = fvm_tesselation_n_elements(tesselation);
+  const cs_gnum_t   n_g_elements
+    = fvm_io_num_get_global_count(section->global_element_num);
+  const cs_lnum_t   n_sub_elements
+    = fvm_tesselation_n_sub_elements(tesselation, type);
+  const cs_lnum_t   *sub_element_idx
+      = fvm_tesselation_sub_elt_index(tesselation, type);
+  const cs_gnum_t   *g_elt_num
+    = fvm_io_num_get_global_num(section->global_element_num);
 
-  assert(current_section != NULL);
-
-  _define_section(current_section, section_id, section_name, &cgns_elt_type);
+  /* Adjust min block size based on mean number of sub-elements */
 
   fvm_tesselation_get_global_size(tesselation,
-                                  current_section->type,
+                                  type,
                                   &n_g_sub_elements,
-                                  &n_sub_elements_max);
+                                  NULL);
+
+  min_block_size /= (n_g_sub_elements/n_g_elements) * stride;
+
+  /* Decode connectivity */
+
+  part_size = n_sub_elements * stride;
+  assert(sub_element_idx[n_elements]*stride == part_size);
+
+  if (n_elements > 0) {
+
+    cs_gnum_t   *part_vtx_gnum;
+
+    BFT_MALLOC(part_vtx_num, part_size, cgsize_t);
+    BFT_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
+
+    fvm_tesselation_decode_g(tesselation,
+                             type,
+                             mesh->global_vertex_num,
+                             extra_vertex_base,
+                             part_vtx_gnum);
+
+    /* Convert to write type */
+
+    if (n_elements > 0) {
+      for (cs_lnum_t i = 0; i < part_size; i++)
+        part_vtx_num[i] = part_vtx_gnum[i];
+      BFT_FREE(part_vtx_gnum);
+    }
+
+  }
 
   /* Allocate memory for additionnal indexes and decoded connectivity */
 
-  BFT_MALLOC(local_idx, n_elements + 1, cs_lnum_t);
-  BFT_MALLOC(global_idx_s, global_s_size + 1, cs_gnum_t);
+  bi = cs_block_dist_compute_sizes(w->rank,
+                                   w->n_ranks,
+                                   w->min_rank_step,
+                                   min_block_size,
+                                   n_g_elements);
 
-  local_connect_size = CS_MAX(global_s_size,
-                              (cs_gnum_t)n_sub_elements_max*10);
-  BFT_MALLOC(sub_elt_vertex_num, local_connect_size * stride, cs_gnum_t);
+  BFT_MALLOC(block_index, bi.gnum_range[1] - bi.gnum_range[0] + 1, cs_lnum_t);
+  BFT_MALLOC(part_index, n_elements + 1, cs_lnum_t);
 
-  /* Loop on slices */
-  /*----------------*/
+  d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
-  /* fvm_tesselation_dump(tesselation); */
+  part_index[0] = 0;
+  for (cs_lnum_t i = 0; i < n_elements; i++) {
+    part_index[i+1] = part_index[i] + (  sub_element_idx[i+1]
+                                       - sub_element_idx[i]) * stride;
+  }
 
-  elements_slice = fvm_gather_slice_create(section->global_element_num,
-                                           local_connect_size,
-                                           writer->comm);
+  /* Copy index */
 
-  while (fvm_gather_slice_advance(elements_slice,
-                                  &global_num_start,
-                                  &global_num_end) == 0) {
+  cs_part_to_block_copy_index(d,
+                              part_index,
+                              block_index);
 
-    /* Build element->vertices index */
+  block_size = (block_index[bi.gnum_range[1] - bi.gnum_range[0]]);
 
-    end_id
-      = fvm_tesselation_range_index_g(tesselation,
-                                      current_section->type,
-                                      stride,
-                                      start_id,
-                                      local_connect_size,
-                                      &global_num_end,
-                                      local_idx,
-                                      writer->comm);
+  /* Copy connectivity */
 
-    /* Check if the maximum id returned on some ranks leads to a
-       lower global_num_end than initially required (due to the
-       local buffer being too small) and adjust slice if necessary */
+  BFT_MALLOC(block_vtx_num, block_size, cgsize_t);
 
-    fvm_gather_slice_limit(elements_slice, &global_num_end);
+  cs_part_to_block_copy_indexed(d,
+                                _cgsize_datatype(),
+                                part_index,
+                                part_vtx_num,
+                                block_index,
+                                block_vtx_num);
 
-    /* Gather element->vertices index */
+  cs_part_to_block_destroy(&d);
 
-    fvm_gather_slice_index(local_idx,
-                           global_idx_s,
-                           section->global_element_num,
-                           writer->comm,
-                           elements_slice);
+  BFT_FREE(part_vtx_num);
+  BFT_FREE(part_index);
+  BFT_FREE(block_index);
 
-    /* Recompute maximum value of global_num_end for this slice */
+  /* Write to file */
 
-    fvm_gather_resize_indexed_slice(10,
-                                    &global_num_end,
-                                    &global_connect_s_size,
-                                    writer->comm,
-                                    global_idx_s,
-                                    elements_slice);
+  block_size /= stride;
 
-    /* If the buffer passed to this function is too small, allocate a
-       larger one; in this case, we may as well keep it for all slices */
+  MPI_Scan(&block_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, w->comm);
+  block_end += 1;
+  block_start = block_end - block_size;
 
-    if (global_connect_s_size_prev < global_connect_s_size) {
-      if (global_connect_s == global_connect_s_call)
-        global_connect_s = NULL;
-      BFT_REALLOC(global_connect_s, global_connect_s_size, cs_gnum_t);
-      global_connect_s_size_prev = global_connect_s_size;
-    }
+  _write_block_connect_g(current_section,
+                         w,
+                         base,
+                         section_id,
+                         global_counter,
+                         block_start,
+                         block_end,
+                         block_vtx_num);
 
-    /* Now decode tesselation */
+  /* Free remaining memory */
 
-    end_id = fvm_tesselation_decode_g(tesselation,
-                                      current_section->type,
-                                      start_id,
-                                      local_connect_size,
-                                      &global_num_end,
-                                      mesh->global_vertex_num,
-                                      extra_vertex_base,
-                                      sub_elt_vertex_num,
-                                      writer->comm);
-
-    /* No need to check if the maximum id returned on some ranks
-       leads to a lower global_num_end than initially required
-       (due to local buffer being full), as this was already done
-       above for the local index */
-
-    /* Now gather decoded element->vertices connectivity */
-
-    fvm_gather_indexed(sub_elt_vertex_num,
-                       global_connect_s,
-                       CS_MPI_GNUM,
-                       local_idx,
-                       section->global_element_num,
-                       writer->comm,
-                       global_idx_s,
-                       elements_slice);
-
-    /* Do all printing for cells on rank 0 */
-
-    if (writer->rank == 0) {
-
-      elt_start = *global_counter + 1 + global_idx_s[0] / stride;
-      elt_end   = *global_counter +
-        global_idx_s[(global_num_end - global_num_start)] / stride;
-
-      if (global_connect_s != NULL) {
-        cgsize_t *_global_connect_s = (cgsize_t *)global_connect_s;
-        if (sizeof(cgsize_t) != sizeof(cs_gnum_t)) {
-          int i = 0, n = (elt_end + 1 - elt_start)*stride;
-          if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
-            BFT_MALLOC(_global_connect_s, n, cgsize_t);
-          for (i = 0; i < n; i++)
-            _global_connect_s[i] = global_connect_s[i];
-        }
-
-        if (start_id == 0) { /* First pass */
-          retval = cg_section_partial_write(writer->index,
-                                            base->index,
-                                            zone_index,
-                                            section_name,
-                                            cgns_elt_type,
-                                            elt_start,
-                                            elt_end,
-                                            0, /* unsorted boundary elements */
-                                            &section_index);
-          if (retval != CG_OK)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("cg_section_partial_write() failed to write elements:\n"
-                        "Associated writer: \"%s\"\n"
-                        "Associated base: \"%s\"\n"
-                        "Associated section name: \"%s\"\n%s"),
-                      writer->name, base->name, section_name, cg_get_error());
-        }
-
-        if (retval == CG_OK)
-          retval = cg_elements_partial_write(writer->index,
-                                             base->index,
-                                             zone_index,
-                                             section_index,
-                                             elt_start,
-                                             elt_end,
-                                             _global_connect_s);
-        if (retval != CG_OK)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("cg_elements_partial_write() failed to write elements:\n"
-                      "Associated writer: \"%s\"\n"
-                      "Associated base: \"%s\"\n"
-                      "Associated section name: \"%s\"\n"
-                      "Associated range: [%llu, %llu]\n%s\n"),
-                    writer->name, base->name, section_name,
-                    (unsigned long long) elt_start,
-                    (unsigned long long) elt_end,
-                    cg_get_error());
-
-        if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
-          BFT_FREE(_global_connect_s);
-      }
-
-    } /* End if rank == 0 */
-
-    start_id = end_id;
-
-  } /* End of loop on slice advance */
+  BFT_FREE(block_vtx_num);
 
   *global_counter += n_g_sub_elements;
 
   current_section = current_section->next;
-
-  fvm_gather_slice_destroy(elements_slice);
-
-  BFT_FREE(local_idx);
-  BFT_FREE(global_idx_s);
-  BFT_FREE(sub_elt_vertex_num);
-  if (global_connect_s != global_connect_s_call)
-    BFT_FREE(global_connect_s);
 
   return current_section;
 }
@@ -2644,6 +2700,8 @@ fvm_to_cgns_init_writer(const char             *name,
       MPI_Comm_size(writer->comm, &n_ranks);
       writer->rank = rank;
       writer->n_ranks = n_ranks;
+      writer->min_rank_step = 1;
+      writer->min_block_size = 1024*1024*8;
     }
     else
       writer->comm = MPI_COMM_NULL;
@@ -2946,7 +3004,6 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
 
   const int   n_ranks = writer->n_ranks;
 
-
   /* Initialization */
   /*----------------*/
 
@@ -2960,7 +3017,7 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   base_index = _get_base_index(writer,
                                base_name);
 
-  if (base_index == 0 )
+  if (base_index == 0)
     base_index = _add_base(writer,
                            base_name,
                            mesh);
@@ -3084,10 +3141,7 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
                                                     mesh,
                                                     base,
                                                     section_id,
-                                                    &global_counter,
-                                                    global_s_size,
-                                                    global_connect_s_size,
-                                                    global_connect_s);
+                                                    &global_counter);
 #endif
 
       if (n_ranks == 1)
@@ -3267,7 +3321,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   base_index = _get_base_index(writer, base_name);
 
-  if (base_index == 0 )
+  if (base_index == 0)
     base_index = _add_base(writer,
                            base_name,
                            mesh);

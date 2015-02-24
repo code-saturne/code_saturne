@@ -33,6 +33,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_block_dist.h"
+#include "cs_part_to_block.h"
 #include "fvm_defs.h"
 #include "fvm_gather.h"
 #include "fvm_nodal.h"
@@ -120,6 +122,45 @@ fvm_writer_export_list(const fvm_nodal_t  *mesh,
                        _Bool               discard_polyhedra,
                        _Bool               divide_polygons,
                        _Bool               divide_polyhedra);
+
+/*----------------------------------------------------------------------------
+ * Count number of extra vertices when tesselations are present
+ *
+ * parameters:
+ *   mesh               <-- pointer to nodal mesh structure
+ *   divide_polyhedra   <-- true if polyhedra are tesselated
+ *   n_extra_vertices_g --> global number of extra vertices (optional)
+ *   n_extra_vertices   --> local number of extra vertices (optional)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_writer_count_extra_vertices(const fvm_nodal_t  *mesh,
+                                bool                divide_polyhedra,
+                                cs_gnum_t          *n_extra_vertices_g,
+                                cs_lnum_t          *n_extra_vertices);
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Build block info and part to block distribution helper for vertices.
+ *
+ * parameters:
+ *   w    <-- pointer to writer structure
+ *   mesh <-- pointer to nodal mesh structure
+ *   bi   --> block information structure
+ *   d    --> part to bloc distributor
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_writer_vertex_part_to_block_create(int                     min_rank_step,
+                                       cs_lnum_t               min_block_size,
+                                       bool                    divide_polyhedra,
+                                       const fvm_nodal_t      *mesh,
+                                       cs_block_dist_info_t   *bi,
+                                       cs_part_to_block_t    **d,
+                                       MPI_Comm                comm);
+
+#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Create field writer helper structure.
