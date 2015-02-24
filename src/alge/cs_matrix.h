@@ -562,7 +562,6 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
  *   CS_MATRIX_NATIVE  (all fill types)
  *     standard
  *     3_3_diag        (for CS_MATRIX_33_BLOCK_D or CS_MATRIX_33_BLOCK_D_SYM)
- *     bull            (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     omp             (for OpenMP with compatible numbering)
  *     vector          (For vector machine with compatible numbering)
  *

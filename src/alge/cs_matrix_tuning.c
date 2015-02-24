@@ -105,13 +105,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Variant default for Intel compiler and on Itanium (optimized by BULL)
-   (Use compile flag -DNO_BULL_OPTIM to switch default to general code) */
-
-#if (defined(__INTEL_COMPILER) && defined(__ia64__) && !defined(NO_BULL_OPTIM))
-#define IA64_OPTIM
-#endif
-
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/

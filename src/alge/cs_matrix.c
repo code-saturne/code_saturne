@@ -103,13 +103,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Variant default for Intel compiler and on Itanium (optimized by BULL)
-   (Use compile flag -DNO_BULL_OPTIM to switch default to general code) */
-
-#if (defined(__INTEL_COMPILER) && defined(__ia64__) && !defined(NO_BULL_OPTIM))
-#define IA64_OPTIM
-#endif
-
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -1441,130 +1434,6 @@ _b_mat_vec_p_l_native_omp_atomic(bool                exclude_diag,
 }
 
 #endif /* defined(HAVE_OPENMP) */
-
-static void
-_mat_vec_p_l_native_bull(bool                exclude_diag,
-                         const cs_matrix_t  *matrix,
-                         const cs_real_t    *restrict x,
-                         cs_real_t          *restrict y)
-{
-  cs_lnum_t  ii, ii_prev, kk, face_id, kk_max;
-  cs_real_t y_it, y_it_prev;
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const int ed_flag = (exclude_diag) ? 1 : 0;
-  const cs_real_t  *restrict xa = mc->xa;
-  const int l1_cache_size
-    = (matrix->loop_length[matrix->fill_type][ed_flag] > 0) ?
-        matrix->loop_length[matrix->fill_type][ed_flag] : 508;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _diag_vec_p_l(mc->da, x, y, ms->n_cells);
-    /* _zero_range(y, ms->n_cells, ms->n_cells_ext); */
-  }
-  else
-    _zero_range(y, 0, ms->n_cells_ext);
-
-  for (ii = ms->n_cells; ii < ms->n_cells_ext; y[ii++] = 0.0);
-
-  /* Note: parallel and periodic synchronization could be delayed to here */
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    /*
-     * 1/ Split y[ii] and y[jj] computation into 2 loops to remove compiler
-     *    data dependency assertion between y[ii] and y[jj].
-     * 2/ keep index (*face_cel_p) in L1 cache from y[ii] loop to y[jj] loop
-     *    and xa in L2 cache.
-     * 3/ break high frequency occurence of data dependency from one iteration
-     *    to another in y[ii] loop (nonzero matrix value on the same line ii).
-     */
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
-
-    if (mc->symmetric) {
-
-      for (face_id = 0;
-           face_id < ms->n_faces;
-           face_id += l1_cache_size) {
-
-        kk_max = CS_MIN((ms->n_faces - face_id), l1_cache_size);
-
-        /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
-
-        ii = face_cel_p[0][0];
-        ii_prev = ii;
-        y_it_prev = y[ii_prev] + xa[face_id] * x[face_cel_p[0][1]];
-
-        for (kk = 1; kk < kk_max; ++kk) {
-          ii = face_cel_p[kk][0];
-          /* y[ii] += xa[face_id+kk] * x[jj]; */
-          if (ii == ii_prev) {
-            y_it = y_it_prev;
-          }
-          else {
-            y_it = y[ii];
-            y[ii_prev] = y_it_prev;
-          }
-          ii_prev = ii;
-          y_it_prev = y_it + xa[face_id+kk] * x[face_cel_p[kk][1]];
-        }
-        y[ii] = y_it_prev;
-
-        /* sub-loop to compute y[ii] += xa[face_id] * x[jj] */
-
-        for (kk = 0; kk < kk_max; ++kk) {
-          y[face_cel_p[kk][1]] += xa[face_id+kk] * x[face_cel_p[kk][0]];
-        }
-        face_cel_p += l1_cache_size;
-      }
-
-    }
-    else {
-
-      for (face_id = 0;
-           face_id < ms->n_faces;
-           face_id+=l1_cache_size) {
-
-        kk_max = CS_MIN((ms->n_faces - face_id),
-                        l1_cache_size);
-
-        /* sub-loop to compute y[ii] += xa[2*face_id] * x[jj] */
-
-        ii = face_cel_p[0][0];
-        ii_prev = ii;
-        y_it_prev = y[ii_prev] + xa[2*face_id] * x[face_cel_p[0][1]];
-
-        for (kk = 1; kk < kk_max; ++kk) {
-          ii = face_cel_p[kk][0];
-          /* y[ii] += xa[2*(face_id+i)] * x[jj]; */
-          if (ii == ii_prev) {
-            y_it = y_it_prev;
-          }
-          else {
-            y_it = y[ii];
-            y[ii_prev] = y_it_prev;
-          }
-          ii_prev = ii;
-          y_it_prev = y_it + xa[2*(face_id+kk)] * x[face_cel_p[kk][1]];
-        }
-        y[ii] = y_it_prev;
-
-        /* sub-loop to compute y[ii] += xa[2*face_id + 1] * x[jj] */
-
-        for (kk = 0; kk < kk_max; ++kk) {
-          y[face_cel_p[kk][1]] += xa[2*(face_id+kk) + 1] * x[face_cel_p[kk][0]];
-        }
-        face_cel_p += l1_cache_size;
-      }
-
-    }
-  }
-}
 
 #if defined(SX) && defined(_SX) /* For vector machines */
 
@@ -3950,7 +3819,6 @@ _variant_add(const char                        *name,
  *     default
  *     standard
  *     3_3_diag        (for CS_MATRIX_33_BLOCK_D or CS_MATRIX_33_BLOCK_D_SYM)
- *     bull            (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     omp             (for OpenMP with compatible numbering)
  *     vector          (For vector machine with compatible numbering)
  *
@@ -4035,10 +3903,6 @@ _set_spmv_func(cs_matrix_type_t             m_type,
         switch(fill_type) {
         case CS_MATRIX_SCALAR:
         case CS_MATRIX_SCALAR_SYM:
-#if defined(IA64_OPTIM)
-          spmv[0] = _mat_vec_p_l_native_bull;
-          spmv[1] = _mat_vec_p_l_native_bull;
-#endif
           if (numbering != NULL) {
 #if defined(HAVE_OPENMP)
             if (numbering->type == CS_NUMBERING_THREADS) {
@@ -4078,20 +3942,6 @@ _set_spmv_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_33_BLOCK_D_SYM:
         spmv[0] = _3_3_mat_vec_p_l_native;
         spmv[1] = _3_3_mat_vec_p_l_native;
-        break;
-      default:
-        break;
-      }
-    }
-
-    else if (!strcmp(func_name, "bull")) {
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        l_length[0] = 508;
-        l_length[1] = 508;
-        spmv[0] = _mat_vec_p_l_native_bull;
-        spmv[1] = _mat_vec_p_l_native_bull;
         break;
       default:
         break;
@@ -5406,19 +5256,6 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-    _variant_add(_("Native, Bull algorithm"),
-                 CS_MATRIX_NATIVE,
-                 n_fill_types,
-                 fill_types,
-                 2, /* ed_flag */
-                 508, /* loop_length */
-                 _mat_vec_p_l_native_bull,
-                 NULL,
-                 NULL,
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
-
     if (numbering != NULL) {
 
 #if defined(HAVE_OPENMP)
@@ -5637,7 +5474,6 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv)
  *   CS_MATRIX_NATIVE  (all fill types)
  *     standard
  *     3_3_diag        (for CS_MATRIX_33_BLOCK_D or CS_MATRIX_33_BLOCK_D_SYM)
- *     bull            (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     omp             (for OpenMP with compatible numbering)
  *     vector          (For vector machine with compatible numbering)
  *
