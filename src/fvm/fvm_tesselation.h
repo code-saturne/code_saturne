@@ -342,21 +342,41 @@ fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
 /*----------------------------------------------------------------------------
  * Decode tesselation to a connectivity buffer.
  *
+ * To avoid requiring huge buffers and computing unneeded element
+ * connectivities when exporting data in slices, this function may decode
+ * a partial connectivity range, starting at polygon index start_id and ending
+ * either when the indicated buffer size is attained, or the global element
+ * number corresponding to a given polygon exceeds a given value.
+ * It returns the effective polygon index end.
+ *
  * parameters:
  *   this_tesselation   <-- tesselation structure
  *   connect_type       <-- destination element type
+ *   start_id           <-- start index of polygons subset in parent section
+ *   buffer_limit       <-- maximum number of sub-elements of destination
+ *                          element type allowable for vertex_num[] buffer
+ *   global_num_end     <-> past the end (maximum + 1) parent element
+ *                          global number (reduced on return if required
+ *                          by buffer_limit)
  *   extra_vertex_base  <-- starting number for added vertices
  *   global_vertex_num  <-- global vertex numbering
- *   extra_vertex_base  <-- starting number for added vertices
  *   vertex_num         --> sub-element (global) vertex connectivity
+ *   comm               <-- associated MPI communicator
+ *
+ * returns:
+ *   polygon index corresponding to end of decoded range
  *----------------------------------------------------------------------------*/
 
-void
+cs_lnum_t
 fvm_tesselation_decode_g(const fvm_tesselation_t  *this_tesselation,
                          fvm_element_t             connect_type,
+                         cs_lnum_t                 start_id,
+                         cs_lnum_t                 buffer_limit,
+                         cs_gnum_t                *global_num_end,
                          const fvm_io_num_t       *global_vertex_num,
                          cs_gnum_t                 extra_vertex_base,
-                         cs_gnum_t                 vertex_num[]);
+                         cs_gnum_t                 vertex_num[],
+                         MPI_Comm                  comm);
 
 #endif /* defined(HAVE_MPI) */
 

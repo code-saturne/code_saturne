@@ -85,15 +85,15 @@ typedef struct {
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
 
-  bool         text_mode;          /* true if using text output */
-  bool         swap_endian;        /* true if binary file endianness must
+  _Bool        text_mode;          /* true if using text output */
+  _Bool        swap_endian;        /* true if binary file endianness must
                                       be changed */
 
-  bool         discard_polygons;   /* Option to discard polygonal elements */
-  bool         discard_polyhedra;  /* Option to discard polyhedral elements */
+  _Bool        discard_polygons;   /* Option to discard polygonal elements */
+  _Bool        discard_polyhedra;  /* Option to discard polyhedral elements */
 
-  bool         divide_polygons;    /* Option to tesselate polygonal elements */
-  bool         divide_polyhedra;   /* Option to tesselate polyhedral elements */
+  _Bool        divide_polygons;    /* Option to tesselate polygonal elements */
+  _Bool        divide_polyhedra;   /* Option to tesselate polyhedral elements */
 
   fvm_to_ensight_case_t  *case_info;  /* Associated case structure */
 
@@ -152,7 +152,7 @@ static const int _ensight_c_order_6[6] = {0, 1, 2, 3, 5, 4};
 static _ensight_file_t
 _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
                    const char                     *filename,
-                   bool                            append)
+                   _Bool                           append)
 {
   _ensight_file_t f = {NULL, NULL};
 
@@ -218,6 +218,60 @@ _free_ensight_file(_ensight_file_t  *f)
 
   else if (f->bf != NULL)
     f->bf = cs_file_free(f->bf);
+}
+
+/*----------------------------------------------------------------------------
+ * Count number of extra vertices when tesselations are present
+ *
+ * parameters:
+ *   mesh               <-- pointer to nodal mesh structure
+ *   divide_polyhedra   <-- true if polyhedra are tesselated
+ *   n_extra_vertices_g --> global number of extra vertices (optional)
+ *   n_extra_vertices   --> local number of extra vertices (optional)
+ *----------------------------------------------------------------------------*/
+
+static void
+_count_extra_vertices(const fvm_nodal_t  *mesh,
+                      _Bool               divide_polyhedra,
+                      cs_gnum_t          *n_extra_vertices_g,
+                      cs_lnum_t          *n_extra_vertices)
+{
+  int  i;
+
+  const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
+
+  /* Initial count and allocation */
+
+  if (n_extra_vertices_g != NULL)
+    *n_extra_vertices_g = 0;
+  if (n_extra_vertices != NULL)
+    *n_extra_vertices   = 0;
+
+  if (divide_polyhedra) {
+
+    for (i = 0; i < mesh->n_sections; i++) {
+
+      const fvm_nodal_section_t  *section = mesh->sections[i];
+
+      /* Output if entity dimension equal to highest in mesh
+         (i.e. no output of faces if cells present, or edges
+         if cells or faces) */
+
+      if (   section->entity_dim == export_dim
+          && section->type == FVM_CELL_POLY
+          && section->tesselation != NULL) {
+
+        if (n_extra_vertices_g != NULL)
+          *n_extra_vertices_g
+            += fvm_tesselation_n_g_vertices_add(section->tesselation);
+
+        if (n_extra_vertices != NULL)
+          *n_extra_vertices
+            += fvm_tesselation_n_vertices_add(section->tesselation);
+
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -452,6 +506,139 @@ _extra_vertex_coords(const fvm_nodal_t  *mesh,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
+ * Get extra vertex global numbers when tesselations are present
+ *
+ * parameters:
+ *   mesh             <-- pointer to nodal mesh structure
+ *   n_extra_vertices <-- number of extra vertices
+ *   vtx_gnum         --> extra vertex global numbers (size: n_extra_vertices)
+ *----------------------------------------------------------------------------*/
+
+static void
+_extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
+                       cs_lnum_t           n_extra_vertices,
+                       cs_gnum_t           vtx_gnum[])
+{
+  int  i;
+  cs_lnum_t   j = 0;
+  cs_lnum_t   start_id = 0;
+  cs_gnum_t   gnum_shift
+    = fvm_io_num_get_global_count(mesh->global_vertex_num);
+
+  if (n_extra_vertices > 0) { /* Implies divide_polyhedra */
+
+    for (i = 0; i < mesh->n_sections; i++) {
+
+      const fvm_nodal_section_t  *const  section = mesh->sections[i];
+
+      if (   section->type == FVM_CELL_POLY
+          && section->tesselation != NULL) {
+
+        cs_lnum_t n_extra_vertices_section
+          = fvm_tesselation_n_vertices_add(section->tesselation);
+
+        if (n_extra_vertices_section > 0) {
+
+          const fvm_io_num_t *extra_vertex_num
+            = fvm_tesselation_global_vertex_num(section->tesselation);
+          const cs_gnum_t *extra_gnum
+            = fvm_io_num_get_global_num(extra_vertex_num);
+
+          for (j = 0; j < n_extra_vertices_section; j++)
+            vtx_gnum[start_id + j] = extra_gnum[j] + gnum_shift;
+
+          start_id += n_extra_vertices_section;
+
+        }
+
+        gnum_shift
+          = fvm_tesselation_n_g_vertices_add(section->tesselation);
+
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Build block info and part to block distribution helper for vertices.
+ *
+ * parameters:
+ *   w    <-- pointer to writer structure
+ *   mesh <-- pointer to nodal mesh structure
+ *   bi   --> block information structure
+ *   d    --> part to bloc distributor
+ *----------------------------------------------------------------------------*/
+
+static void
+_vertex_part_to_block_create(const fvm_to_ensight_writer_t   *w,
+                             const fvm_nodal_t               *mesh,
+                             cs_block_dist_info_t            *bi,
+                             cs_part_to_block_t             **d)
+{
+  cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
+  cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
+
+  cs_gnum_t   *_g_num = NULL;
+
+  cs_block_dist_info_t  _bi;
+  cs_part_to_block_t   *_d;
+
+  size_t min_block_size = w->min_block_size / sizeof(float);
+
+  const cs_lnum_t   n_vertices
+    = fvm_io_num_get_local_count(mesh->global_vertex_num);
+  cs_gnum_t   n_g_vertices
+    = fvm_io_num_get_global_count(mesh->global_vertex_num);
+  const cs_gnum_t   *g_num
+    = fvm_io_num_get_global_num(mesh->global_vertex_num);
+
+  /* Compute extra vertex coordinates if present */
+
+  _count_extra_vertices(mesh,
+                        w->divide_polyhedra,
+                        &n_g_extra_vertices,
+                        &n_extra_vertices);
+
+  n_vertices_tot = n_vertices + n_extra_vertices;
+  n_g_vertices_tot = n_g_vertices + n_g_extra_vertices;
+
+  _bi = cs_block_dist_compute_sizes(w->rank,
+                                    w->n_ranks,
+                                    w->min_rank_step,
+                                    min_block_size,
+                                    n_g_vertices_tot);
+
+  /* Global vertex numbers */
+
+
+  if (n_extra_vertices > 0) {
+
+    BFT_MALLOC(_g_num, n_vertices_tot, cs_gnum_t);
+
+    memcpy(_g_num, g_num, n_vertices*sizeof(cs_gnum_t));
+    _extra_vertex_get_gnum(mesh, n_extra_vertices, _g_num + n_vertices);
+
+    g_num = _g_num;
+
+  }
+
+  /* Build distribution structures */
+
+  _d = cs_part_to_block_create_by_gnum(w->comm, _bi, n_vertices_tot, g_num);
+
+  if (n_extra_vertices > 0)
+    cs_part_to_block_transfer_gnum(_d, _g_num);
+
+  /* Return initialized structures */
+
+  if (bi != NULL)
+    *bi = _bi;
+
+  if (d != NULL)
+    *d = _d;
+}
+
+/*----------------------------------------------------------------------------
  * Write vertex coordinates to an EnSight Gold file in parallel mode
  *
  * parameters:
@@ -486,25 +673,23 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
 
   /* Initialize distribution info */
 
-  fvm_writer_vertex_part_to_block_create(this_writer->min_rank_step,
-                                         this_writer->min_block_size,
-                                         this_writer->divide_polyhedra,
-                                         mesh,
-                                         &bi,
-                                         &d,
-                                         this_writer->comm);
+  _vertex_part_to_block_create(this_writer,
+                               mesh,
+                               &bi,
+                               &d);
 
   /* Compute extra vertex coordinates if present */
 
-  fvm_writer_count_extra_vertices(mesh,
-                                  this_writer->divide_polyhedra,
-                                  &n_g_extra_vertices,
-                                  &n_extra_vertices);
+  _count_extra_vertices(mesh,
+                        this_writer->divide_polyhedra,
+                        &n_g_extra_vertices,
+                        &n_extra_vertices);
 
   n_vertices_tot = n_vertices + n_extra_vertices;
   n_g_vertices_tot = n_g_vertices + n_g_extra_vertices;
 
-  extra_vertex_coords = _extra_vertex_coords(mesh, n_extra_vertices);
+  extra_vertex_coords = _extra_vertex_coords(mesh,
+                                             n_extra_vertices);
 
   /* Build arrays */
 
@@ -594,10 +779,10 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
   /* Compute extra vertex coordinates if present */
 
-  fvm_writer_count_extra_vertices(mesh,
-                                  this_writer->divide_polyhedra,
-                                  NULL,
-                                  &n_extra_vertices);
+  _count_extra_vertices(mesh,
+                        this_writer->divide_polyhedra,
+                        NULL,
+                        &n_extra_vertices);
 
   extra_vertex_coords = _extra_vertex_coords(mesh,
                                              n_extra_vertices);
@@ -1968,11 +2153,13 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
                             const cs_gnum_t                 extra_vertex_base,
                             _ensight_file_t                 f)
 {
+  cs_lnum_t   i;
   cs_block_dist_info_t bi;
 
   cs_lnum_t   part_size = 0;
 
-  cs_gnum_t   n_g_sub_elements = 0;
+  cs_lnum_t   end_id = 0;
+  cs_gnum_t   n_g_sub_elements = 0, global_num_end = 0;
   cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
 
   cs_part_to_block_t  *d = NULL;
@@ -2007,21 +2194,30 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   part_size = n_sub_elements * stride;
   assert(sub_element_idx[n_elements]*stride == part_size);
 
+  global_num_end = n_g_elements + 1;
+
   if (n_elements > 0) {
     BFT_MALLOC(part_vtx_num, part_size, int32_t);
     BFT_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
   }
 
-  fvm_tesselation_decode_g(tesselation,
-                           type,
-                           global_vertex_num,
-                           extra_vertex_base,
-                           part_vtx_gnum);
+  end_id = fvm_tesselation_decode_g(tesselation,
+                                    type,
+                                    0,
+                                    part_size,
+                                    &global_num_end,
+                                    global_vertex_num,
+                                    extra_vertex_base,
+                                    part_vtx_gnum,
+                                    w->comm);
+
+  assert(end_id == n_elements);
+  assert(global_num_end == n_g_elements + 1);
 
   /* Convert to write type */
 
   if (n_elements > 0) {
-    for (cs_lnum_t i = 0; i < part_size; i++)
+    for (i = 0; i < part_size; i++)
       part_vtx_num[i] = part_vtx_gnum[i];
     BFT_FREE(part_vtx_gnum);
   }
@@ -2040,7 +2236,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
   part_index[0] = 0;
-  for (cs_lnum_t i = 0; i < n_elements; i++) {
+  for (i = 0; i < n_elements; i++) {
     part_index[i+1] = part_index[i] + (  sub_element_idx[i+1]
                                        - sub_element_idx[i]) * stride;
   }
@@ -2373,13 +2569,10 @@ _export_field_values_ng(const fvm_to_ensight_writer_t  *w,
 
   /* Initialize distribution info */
 
-  fvm_writer_vertex_part_to_block_create(w->min_rank_step,
-                                         w->min_block_size,
-                                         w->divide_polyhedra,
-                                         mesh,
-                                         &bi,
-                                         &d,
-                                         w->comm);
+  _vertex_part_to_block_create(w,
+                               mesh,
+                               &bi,
+                               &d);
 
   part_size = cs_part_to_block_get_n_part_ents(d);
   block_size = bi.gnum_range[1] - bi.gnum_range[0];
@@ -2606,7 +2799,7 @@ _export_field_values_eg(const fvm_to_ensight_writer_t   *w,
   cs_part_to_block_t  *d = NULL;
 
   int         n_sections = 0;
-  bool        have_tesselation = false;
+  _Bool       have_tesselation = false;
   cs_lnum_t   part_size = 0, block_size = 0;
   cs_gnum_t   block_sub_size = 0, block_start = 0, block_end = 0;
   cs_gnum_t   n_g_elements = 0;
@@ -2929,7 +3122,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
   for (i = 0; i < output_dim; i++) {
 
-    bool loop_on_sections = true;
+    _Bool loop_on_sections = true;
 
     const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
 
