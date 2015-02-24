@@ -3144,7 +3144,7 @@ _local_propagation(void                           *particle,
         face_id = face_num - 1;
         vtx_start = mesh->i_face_vtx_idx[face_id];
         vtx_end = mesh->i_face_vtx_idx[face_id+1];
-        n_vertices = vtx_end - vtx_start + 1;
+        n_vertices = vtx_end - vtx_start;
 
         face_connect = mesh->i_face_vtx_lst + vtx_start;
 
@@ -3158,7 +3158,7 @@ _local_propagation(void                           *particle,
         face_id = -face_num - 1;
         vtx_start = mesh->b_face_vtx_idx[face_id];
         vtx_end = mesh->b_face_vtx_idx[face_id+1];
-        n_vertices = vtx_end - vtx_start + 1;
+        n_vertices = vtx_end - vtx_start;
 
         face_connect = mesh->b_face_vtx_lst + vtx_start;
 
