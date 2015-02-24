@@ -2571,6 +2571,79 @@ _export_connect_l(const fvm_writer_section_t  *export_sections,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
+ * Write indexed element lengths from a nodal mesh to an EnSight Gold
+ * file in parallel mode
+ *
+ * parameters:
+ *   w                  <-- pointer to writer structure
+ *   global_element_num <-- global element numbering
+ *   vertex_index       <-- pointer to element -> vertex index
+ *   n_ranks            <-- number of processes in communicator
+ *   f                  <-- associated file handle
+ *----------------------------------------------------------------------------*/
+
+static void
+_write_lengths_g(const fvm_to_ensight_writer_t  *w,
+                 const fvm_io_num_t             *global_element_num,
+                 const cs_lnum_t                 vertex_index[],
+                 _ensight_file_t                 f)
+{
+  cs_lnum_t   i;
+  cs_block_dist_info_t   bi;
+
+  int32_t  *part_lengths = NULL;
+  int32_t  *block_lengths = NULL;
+
+  cs_part_to_block_t  *d = NULL;
+
+  const size_t min_block_size = w->min_block_size / sizeof(int32_t);
+  const cs_lnum_t   n_elements
+    = fvm_io_num_get_local_count(global_element_num);
+  const cs_lnum_t   n_g_elements
+    = fvm_io_num_get_global_count(global_element_num);
+  const cs_gnum_t   *g_num
+    = fvm_io_num_get_global_num(global_element_num);
+
+  /* Allocate block buffer */
+
+  bi = cs_block_dist_compute_sizes(w->rank,
+                                   w->n_ranks,
+                                   w->min_rank_step,
+                                   min_block_size,
+                                   n_g_elements);
+
+  /* Build distribution structures */
+
+  BFT_MALLOC(block_lengths, bi.gnum_range[1] - bi.gnum_range[0], int);
+  BFT_MALLOC(part_lengths, n_elements, int32_t);
+
+  for (i = 0; i < n_elements; i++)
+    part_lengths[i] = vertex_index[i+1] - vertex_index[i];
+
+  d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_num);
+
+  cs_part_to_block_copy_array(d,
+                              CS_INT32,
+                              1,
+                              part_lengths,
+                              block_lengths);
+
+  cs_part_to_block_destroy(&d);
+  BFT_FREE(part_lengths);
+
+  /* Write to file */
+
+  _write_block_connect_g(1,
+                         bi.gnum_range[0],
+                         bi.gnum_range[1],
+                         block_lengths,
+                         w->comm,
+                         f);
+
+  BFT_FREE(block_lengths);
+}
+
+/*----------------------------------------------------------------------------
  * Write polygonal elements connectivity to a MED file in parallel mode
  *
  * parameters:
@@ -2588,15 +2661,119 @@ _export_nodal_polygons_g(const fvm_writer_section_t  *export_sections,
                          fvm_to_med_mesh_t           *med_mesh,
                          char                        *export_connect)
 {
+  const fvm_writer_section_t  *current_section;
+
+  /* Export number of vertices per polygon by blocks */
+  /*-------------------------------------------------*/
+
+  current_section = export_section;
+
+  do { /* loop on sections which should be appended */
+
+    const fvm_nodal_section_t  *section = current_section->section;
+
+    _write_lengths_g(w,
+                     section->global_element_num,
+                     section->vertex_index,
+                     f);
+
+    current_section = current_section->next;
+
+  } while (   current_section != NULL
+           && current_section->continues_previous == true);
+
+  /* Export face->vertex connectivity by blocks */
+  /*--------------------------------------------*/
+
+  current_section = export_section;
+
+  do { /* loop on sections which should be appended */
+
+    cs_lnum_t   i, j, k;
+    cs_lnum_t   *_part_vtx_idx = NULL;
+    const cs_lnum_t   *part_vtx_idx = NULL;
+    int32_t  *part_vtx_num = NULL;
+
+    const fvm_nodal_section_t  *section = current_section->section;
+    const cs_gnum_t   *g_vtx_num
+      = fvm_io_num_get_global_num(global_vertex_num);
+
+    if (f.bf != NULL) /* In binary mode, use existing index */
+      part_vtx_idx = section->vertex_index;
+
+    /* In text mode, add zeroes to cell vertex connectivity to mark face
+       bounds (so as to add newlines) */
+
+    else { /* we are in text mode if f.bf == NULL */
+
+      BFT_MALLOC(_part_vtx_idx, section->n_elements + 1, cs_lnum_t);
+
+      _part_vtx_idx[0] = 0;
+      for (i = 0; i < section->n_elements; i++)
+        _part_vtx_idx[i+1] = _part_vtx_idx[i] + (  section->vertex_index[i+1]
+                                                 - section->vertex_index[i]) + 1;
+
+      part_vtx_idx = _part_vtx_idx;
+    }
+
+    /* Build connectivity array */
+
+    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
+
+    if (f.bf != NULL) { /* binary mode */
+      for (i = 0, k = 0; i < section->n_elements; i++) {
+        for (j = section->vertex_index[i];
+             j < section->vertex_index[i+1];
+             j++)
+          part_vtx_num[k++] = g_vtx_num[section->vertex_num[j] - 1];
+      }
+    }
+
+    else { /* text mode */
+      for (i = 0, k = 0; i < section->n_elements; i++) {
+        for (j = section->vertex_index[i];
+             j < section->vertex_index[i+1];
+             j++)
+          part_vtx_num[k++] = g_vtx_num[section->vertex_num[j] - 1];
+        part_vtx_num[k++] = 0; /* mark face bounds in text mode */
+      }
+    }
+
+    /* Now distribute and write cell -> vertices connectivity */
+
+    _write_indexed_connect_g(w,
+                             section->global_element_num,
+                             part_vtx_idx,
+                             part_vtx_num,
+                             f);
+
+    BFT_FREE(part_vtx_num);
+    if (_part_vtx_idx != NULL)
+      BFT_FREE(_part_vtx_idx);
+
+    current_section = current_section->next;
+
+  } while (   current_section != NULL
+           && current_section->continues_previous == true);
+
+  return current_section;
+
+
+
+
+
+
+
+
   cs_gnum_t   i;
 
-  int   n_passes = 0;
+  int         n_passes = 0;
   cs_gnum_t   _n_connect_size = 0, n_g_connect_size = 0;
   cs_gnum_t   global_num_start = 0, global_num_end = 0;
   cs_gnum_t   n_export_connect = 0;
   cs_gnum_t   n_export_elements = 0;
 
-  char  *global_vtx_idx_buffer = NULL;
+  char      *global_vtx_idx_buffer = NULL;
   cs_gnum_t *fvm_global_vtx_idx = NULL;
   med_int    *med_global_vtx_idx = NULL;
 
