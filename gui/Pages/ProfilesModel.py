@@ -217,7 +217,6 @@ class ProfilesModel(Model):
         self.isInList(choice, ["end", "frequency", "time_value"])
         node = self.node_prof.xmlGetNode('profile', label = label)
         node.xmlSetData('output_type', choice)
-        # TODO si changement supprimer le 1.0
 
 
     @Variables.undoLocal
