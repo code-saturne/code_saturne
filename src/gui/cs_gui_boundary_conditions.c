@@ -530,15 +530,17 @@ _boundary_scalar(const char   *nature,
                                            ntcabs,
                                            2);
         }
-      }
-
-      if (cs_gui_strcmp(choice, "exchange_coefficient")) {
+      } else if (cs_gui_strcmp(choice, "exchange_coefficient")) {
         cs_xpath_add_element(&path2, "exchange_coefficient");
         cs_xpath_add_function_text(&path2);
         if (cs_gui_get_double(path2, &result)) {
           boundaries->type_code[f_id][izone] = EXCHANGE_COEFF;
           boundaries->values[f_id][izone * dim + i].val2 = result;
         }
+      } else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
+          boundaries->type_code[f_id][izone] = DIRICHLET_IMPLICIT;
+      } else if (cs_gui_strcmp(choice, "neumann_implicit")) {
+          boundaries->type_code[f_id][izone] = NEUMANN_IMPLICIT;
       }
     }
 
