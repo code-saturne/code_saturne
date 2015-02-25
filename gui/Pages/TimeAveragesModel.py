@@ -203,7 +203,7 @@ class TimeAveragesModel(Model):
         Public method.
         """
         self.isInList(old_label, self.getTimeAverageLabels())
-        node = self.node_mean.xmlInitNode('time_average', label=label)
+        node = self.node_mean.xmlInitNode('time_average', label=old_label)
         node['label'] = label
 
 
@@ -216,8 +216,6 @@ class TimeAveragesModel(Model):
         self.isInList(label, self.getTimeAverageLabels())
         node = self.node_mean.xmlInitNode('time_average', label=label)
         node.xmlSetData('time_start', start)
-        if start < 0:
-            self.setTimeStepStart(label, self.defaultValues()['start'])
 
 
     @Variables.noUndo
@@ -239,8 +237,6 @@ class TimeAveragesModel(Model):
         self.isInList(label, self.getTimeAverageLabels())
         node = self.node_mean.xmlInitNode('time_average', label=label)
         node.xmlSetData('time_step_start', start)
-        if start < 0:
-            self.setTimeStart(label, self.defaultValues()['timestart'])
 
 
     @Variables.noUndo
