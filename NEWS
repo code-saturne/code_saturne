@@ -11,6 +11,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix when using porous media and dilatable algorithm (iporos=1 and idilat=2)
+
 - Fix possibly uninitialized and incorrect values for optional arguments
   to postprocessing command in control_file.
 

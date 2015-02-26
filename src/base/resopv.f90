@@ -118,7 +118,7 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: itypfb
+use pointe, only: itypfb, porosi
 use albase
 use parall
 use period
@@ -209,6 +209,8 @@ double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
 double precision, allocatable, dimension(:) :: adxk, adxkm1, dpvarm1, rhs0
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
+double precision, allocatable, dimension(:), target :: xvolf
+double precision, dimension(:), pointer :: volf
 
 !===============================================================================
 
@@ -229,6 +231,27 @@ if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
 
 ! Boundary conditions for delta P
 allocate(cofafp(nfabor), coefbp(nfabor), cofbfp(nfabor))
+
+! Compute the Volume of fluid (in case of porosity)
+if (iporos.eq.0)  then
+  volf => volume(:)
+
+! With porosity
+else
+
+  allocate(xvolf(ncelet))
+
+  do iel = 1, ncel
+    xvolf(iel) = volume(iel) * porosi(iel)
+  enddo
+
+  if (irangp.ge.0.or.iperio.eq.1) then
+    call synsca(xvolf)
+  endif
+
+  volf => xvolf(:)
+
+endif
 
 ! --- Writing
 ipp    = ipprtp(ipr)
@@ -1238,7 +1261,7 @@ endif
 if (idilat.eq.2.or.idilat.eq.3) then
   do iel = 1, ncel
     drom = propce(iel,ipcrom) - propce(iel,ipcroa)
-    divu(iel) = divu(iel) + drom*volume(iel)/dt(iel)
+    divu(iel) = divu(iel) + drom*volf(iel)/dt(iel)
   enddo
 endif
 
@@ -2118,6 +2141,7 @@ deallocate(cofafp, coefbp, cofbfp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dpvarm1, rhs0)
+if (allocated(xvolf)) deallocate(xvolf)
 
 !--------
 ! Formats
