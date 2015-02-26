@@ -111,7 +111,7 @@ double precision rcodcx, rcodcy, rcodcz, rcodsn
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initializations
 !===============================================================================
 
 irkerr = -1
@@ -126,7 +126,7 @@ icoder(2) = -1
 icoder(3) = -1
 icoder(4) = -1
 
-! Mise a zero des RCODCL non specifies
+! Set to 0 non specified RCODCL arrays
 do ifac = 1, nfabor
   if (rcodcl(ifac,iuma,1).gt.rinfin*0.5d0)                        &
        rcodcl(ifac,iuma,1) = 0.d0
@@ -137,7 +137,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 2.  VERIFICATION DE LA CONSISTANCE DES IALTYB DONNES DANS USALCL
+! 2. Check the consistency of BC types (IALTYB) given in USALCL
 !===============================================================================
 !  (valeur 0 autorisee)
 
@@ -155,7 +155,7 @@ do ifac = 1, nfabor
 enddo
 
 if (irangp.ge.0) call parcmx(ierror(1))
-if(ierror(1).ne.0) then
+if (ierror(1).ne.0) then
   write(nfecra,1000)
   call cs_boundary_conditions_error(ialtyb)
 endif
@@ -196,9 +196,9 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-! --> Faces fixes
-!     On force alors les noeuds en question a etre fixes, pour eviter
-!       des problemes eventuels aux coins
+  ! --> Fixed faces
+  !     On force alors les noeuds en question a etre fixes, pour eviter
+  !       des problemes eventuels aux coins
 
   if (ialtyb(ifac).eq.ibfixe) then
     icpt = 0
@@ -217,9 +217,9 @@ do ifac = 1, nfabor
       icodcl(ifac,iwma) = 1
       rcodcl(ifac,iwma,1) = 0.d0
     endif
-!      Si on a fixe les trois composantes, alors on fixe les noeuds
-!        correspondants. Sinon c'est que l'utilisateur a modifie quelque
-!        chose     ... on le laisse seul maitre
+    ! Si on a fixe les trois composantes, alors on fixe les noeuds
+    !   correspondants. Sinon c'est que l'utilisateur a modifie quelque
+    !   chose     ... on le laisse seul maitre
     if (icpt.eq.3) then
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
@@ -232,23 +232,21 @@ do ifac = 1, nfabor
       enddo
     endif
 
-
-! --> Faces de glissement
+  ! --> Sliding face
   elseif (ialtyb(ifac).eq.igliss) then
 
     if (icodcl(ifac,iuma).eq.0) icodcl(ifac,iuma) = 4
     if (icodcl(ifac,ivma).eq.0) icodcl(ifac,ivma) = 4
     if (icodcl(ifac,iwma).eq.0) icodcl(ifac,iwma) = 4
 
-! --> Faces a vitesse imposee
+  ! --> Imposed mesh velocity face
   elseif (ialtyb(ifac).eq.ivimpo) then
 
     if (icodcl(ifac,iuma).eq.0) icodcl(ifac,iuma) = 1
     if (icodcl(ifac,ivma).eq.0) icodcl(ifac,ivma) = 1
     if (icodcl(ifac,iwma).eq.0) icodcl(ifac,iwma) = 1
 
-! --> Free surface face: the mesh velocity is imposed by the mass flux
-!TODO set default condition on the fluid velocity to homogenous Neumann
+  ! --> Free surface face: the mesh velocity is imposed by the mass flux
   elseif (ialtyb(ifac).eq.ifresf) then
 
     if (icodcl(ifac,iuma).eq.0) then
@@ -266,10 +264,10 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 4.  VERIFICATION DE LA CONSISTANCE DES ICODCL
+! 4. CHeck ICODCL consistency
 !===============================================================================
 
-!     IERROR a ete initialise plus haut
+! IERROR a ete initialise plus haut
 do ifac = 1, nfabor
 
   if (icodcl(ifac,iuma).ne.1 .and.                                &
@@ -347,7 +345,7 @@ if (ierror(1).gt.0) then
 endif
 
 !===============================================================================
-! 5.  VITESSE DE DEFILEMENT POUR LES PAROIS FLUIDES ET SYMETRIES
+! 5. Fluid velocity BCs for walls and symmeties (due to mesh movment)
 !===============================================================================
 
 ! Pour les symetries on rajoute toujours la vitesse de maillage, car on
@@ -362,14 +360,14 @@ do ifac = 1, nfabor
 
   if (ialtyb(ifac).eq.ivimpo) then
 
-    if ( itypfb(ifac).eq.isymet ) then
+    if (itypfb(ifac).eq.isymet) then
       rcodcl(ifac,iu,1) = rcodcl(ifac,iuma,1)
       rcodcl(ifac,iv,1) = rcodcl(ifac,ivma,1)
       rcodcl(ifac,iw,1) = rcodcl(ifac,iwma,1)
     endif
 
-    if ( itypfb(ifac).eq.iparoi .or.                        &
-         itypfb(ifac).eq.iparug ) then
+    if (itypfb(ifac).eq.iparoi .or.                        &
+        itypfb(ifac).eq.iparug) then
 ! Si une des composantes de vitesse de glissement a ete
 !    modifiee par l'utilisateur, on ne fixe que la vitesse
 !    normale
@@ -408,9 +406,9 @@ do ifac = 1, nfabor
 
 enddo
 
-!===============================================================================
-! FORMATS
-!===============================================================================
+!========
+! Formats
+!========
 
 #if defined(_CS_LANG_FR)
 
