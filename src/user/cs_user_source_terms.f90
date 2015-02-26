@@ -48,7 +48,7 @@
 !> The resulting equation solved by the code for a velocity is:
 !> \f[
 !>  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
-!>   = \tens{crvimp} \vect{u} + \vect{crvexp}
+!>   = \tens{crvimp} \cdot \vect{u} + \vect{crvexp}
 !> \f]
 !>
 !> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
@@ -59,6 +59,9 @@
 !> The \c crvexp and \c crvimp arrays are already initialized to 0
 !> before entering the
 !> the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> \remark The additional force on \f$ x_i \f$ direction is given by
+!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i).
 !>
 !> For stability reasons, Code_Saturne will not add -crvimp directly to the
 !> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
