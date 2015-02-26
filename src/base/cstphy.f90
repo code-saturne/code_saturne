@@ -351,9 +351,7 @@ module cstphy
 
   double precision, save :: cebmr1, cebmr2, cebmr3, cebmr4, cebmr5, cebmr6
 
-  !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
-  !> Useful if and only if \ref iturb=30
-  !> (\f$R_{ij}-\varepsilon\f$ LRR)
+  !> constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ models.
   double precision, save :: csrij
 
   !> constant of the Rij-epsilon EBRSM
