@@ -1483,7 +1483,7 @@ _empty_halo(cs_halo_t  *h)
  *   new_src_cell_id   <-> in: new halo sender cell id matching halo cell;
  *                         out: new list of cells the senders should provide
  *                              (same numbers, merged and possibly reordered)
- *   new_halo_cell_num --> new cell number for each halo cell
+ *   new_halo_cell_id --> new cell id for each halo cell
  *                         (< n_new_cells for cells that have become local,
  *                         >= n_new_cells for cells still in halo)
  *----------------------------------------------------------------------------*/
@@ -1493,7 +1493,7 @@ _merge_halo_data(cs_halo_t   *h,
                  int          loc_rank_id,
                  cs_lnum_t    n_new_cells,
                  cs_lnum_t    new_src_cell_id[],
-                 cs_lnum_t    new_halo_cell_num[])
+                 cs_lnum_t    new_halo_cell_id[])
 {
   int  rank_id, prev_rank_id, tr_id, prev_section_id;
   cs_lnum_t  ii, ii_0, ii_1, cur_id, section_id, src_id, prev_src_id;
@@ -1569,6 +1569,8 @@ _merge_halo_data(cs_halo_t   *h,
 
       if (rank_id != loc_rank_id) {
 
+        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0];
+
         if (rank_id != prev_rank_id) {
           h->c_domain_rank[h->n_c_domains] = rank_id;
           h->index[h->n_c_domains*2] = h->n_elts[0];
@@ -1583,14 +1585,14 @@ _merge_halo_data(cs_halo_t   *h,
           h->n_elts[0] += 1;
         }
 
-        new_halo_cell_num[cur_id] = n_new_cells + h->n_elts[0];
-
         prev_rank_id = rank_id;
         prev_src_id = src_id;
 
       }
-      else /* if (rank_id == loc_rank_id) */
-        new_halo_cell_num[cur_id] = tmp_num[cur_id*2 + 1] + 1;
+      else { /* if (rank_id == loc_rank_id) */
+        new_halo_cell_id[cur_id] = tmp_num[cur_id*2 + 1];
+        assert(new_halo_cell_id[cur_id] < n_new_cells);
+      }
     }
 
   }
@@ -1613,6 +1615,8 @@ _merge_halo_data(cs_halo_t   *h,
       src_id = tmp_num[cur_id*3 + 2];
 
       if (rank_id != loc_rank_id || tmp_num[cur_id*3 + 1] != 0) {
+
+        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0];
 
         if (rank_id != prev_rank_id) {
           h->c_domain_rank[h->n_c_domains] = rank_id;
@@ -1640,15 +1644,15 @@ _merge_halo_data(cs_halo_t   *h,
           section_idx[rank_idx*n_sections + section_id + 1] += 1;
         }
 
-        new_halo_cell_num[cur_id] = n_new_cells + h->n_elts[0];
-
         prev_rank_id = rank_id;
         prev_section_id = section_id;
         prev_src_id = src_id;
 
       }
-      else /* if (rank_id == loc_rank_id && tmp_num[cur_id*3 + 1] == 0) */
-        new_halo_cell_num[cur_id] = tmp_num[cur_id*3 + 2] + 1;
+      else { /* if (rank_id == loc_rank_id && tmp_num[cur_id*3 + 1] == 0) */
+        new_halo_cell_id[cur_id] = tmp_num[cur_id*3 + 2];
+        assert(new_halo_cell_id[cur_id] < n_new_cells);
+      }
 
     }
 
@@ -1700,22 +1704,22 @@ _merge_halo_data(cs_halo_t   *h,
  * Append halo info for grid grouping and merging.
  *
  * parameters:
- *   g           <-> pointer to grid structure being merged
- *   new_cel_num <-> new cell numbering for local cells
- *                   in: defined for local cells
- *                   out: updated also for halo cells
+ *   g          <-> pointer to grid structure being merged
+ *   new_cel_id <-> new cell ids for local cells
+ *                  in: defined for local cells
+ *                  out: updated also for halo cells
  *----------------------------------------------------------------------------*/
 
 static void
 _append_halos(cs_grid_t   *g,
-              cs_lnum_t   *new_cell_num)
+              cs_lnum_t   *new_cell_id)
 {
   cs_lnum_t ii, jj;
   int rank_id;
   int counts[3];
 
   int *recv_count = NULL;
-  cs_lnum_t *new_src_cell_id = NULL, *new_halo_cell_num = NULL;
+  cs_lnum_t *new_src_cell_id = NULL, *new_halo_cell_id = NULL;
 
   cs_halo_t *h = g->_halo;
 
@@ -1773,7 +1777,7 @@ _append_halos(cs_grid_t   *g,
 
     BFT_MALLOC(new_src_cell_id, counts[2], cs_lnum_t);
     for (ii = g->n_cells, jj = 0; ii < g->n_cells_ext; ii++, jj++)
-      new_src_cell_id[jj] = new_cell_num[ii] - 1;
+      new_src_cell_id[jj] = new_cell_id[ii];
 
     BFT_REALLOC(h->c_domain_rank, counts[0], int);
     BFT_REALLOC(h->index, counts[0]*2 + 1, cs_lnum_t);
@@ -1817,7 +1821,7 @@ _append_halos(cs_grid_t   *g,
 
     BFT_MALLOC(new_src_cell_id, h->n_elts[0], cs_lnum_t);
     for (ii = g->n_cells, jj = 0; ii < g->n_cells_ext; ii++, jj++)
-      new_src_cell_id[jj] = new_cell_num[ii] - 1;
+      new_src_cell_id[jj] = new_cell_id[ii];
 
     MPI_Send(h->c_domain_rank, h->n_c_domains, MPI_INT,
              g->merge_sub_root, tag, comm);
@@ -1837,13 +1841,13 @@ _append_halos(cs_grid_t   *g,
 
   if (h != NULL) {
 
-    BFT_MALLOC(new_halo_cell_num, h->n_elts[0], cs_lnum_t);
+    BFT_MALLOC(new_halo_cell_id, h->n_elts[0], cs_lnum_t);
 
     _merge_halo_data(h,
                      cs_glob_rank_id,
                      counts[1],
                      new_src_cell_id,
-                     new_halo_cell_num);
+                     new_halo_cell_id);
 
     _rebuild_halo_send_lists(h, new_src_cell_id);
 
@@ -1865,12 +1869,12 @@ _append_halos(cs_grid_t   *g,
     cs_lnum_t send_shift = n_send;
 
     for (ii = 0; ii < n_send; ii++)
-      new_cell_num[g->n_cells + ii] = new_halo_cell_num[ii];
+      new_cell_id[g->n_cells + ii] = new_halo_cell_id[ii];
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
       int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
       n_send = recv_count[rank_id*3 + 2];
-      MPI_Send(new_halo_cell_num + send_shift, n_send, CS_MPI_LNUM,
+      MPI_Send(new_halo_cell_id + send_shift, n_send, CS_MPI_LNUM,
                dist_rank, tag, comm);
       send_shift += n_send;
     }
@@ -1878,10 +1882,10 @@ _append_halos(cs_grid_t   *g,
     BFT_FREE(recv_count);
   }
   else if (g->merge_sub_size > 1)
-    MPI_Recv(new_cell_num + g->n_cells, g->n_cells_ext - g->n_cells,
+    MPI_Recv(new_cell_id + g->n_cells, g->n_cells_ext - g->n_cells,
              CS_MPI_LNUM, g->merge_sub_root, tag, comm, &status);
 
-  BFT_FREE(new_halo_cell_num);
+  BFT_FREE(new_halo_cell_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -2152,7 +2156,7 @@ _merge_grids(cs_grid_t  *g,
   int base_rank = cs_glob_rank_id;
   cs_lnum_t cell_shift = 0;
   cs_lnum_t n_faces = 0;
-  cs_lnum_t *new_cell_num = NULL, *face_list = NULL;
+  cs_lnum_t *new_cell_id = NULL, *face_list = NULL;
   bool  *halo_cell_flag = NULL;
   MPI_Comm comm = cs_glob_mpi_comm;
   MPI_Status status;
@@ -2245,16 +2249,16 @@ _merge_grids(cs_grid_t  *g,
 
   /* Compute and exchange new cell numbers */
 
-  BFT_MALLOC(new_cell_num, g->n_cells_ext, cs_lnum_t);
+  BFT_MALLOC(new_cell_id, g->n_cells_ext, cs_lnum_t);
   for (j = 0; j < g->n_cells; j++)
-    new_cell_num[j] = cell_shift + j + 1;
+    new_cell_id[j] = cell_shift + j;
   for (j = g->n_cells; j < g->n_cells; j++)
-    new_cell_num[j] = 0;
+    new_cell_id[j] = -1;
 
   cs_halo_sync_untyped(g->halo,
                        CS_HALO_STANDARD,
                        sizeof(cs_lnum_t),
-                       new_cell_num);
+                       new_cell_id);
 
   /* Now build face filter list (before halo is modified) */
 
@@ -2309,19 +2313,19 @@ _merge_grids(cs_grid_t  *g,
 
   /* Append and merge halos */
 
-  _append_halos(g, new_cell_num);
+  _append_halos(g, new_cell_id);
 
   /* Update face ->cells connectivity */
 
   for (face_id = 0; face_id < g->n_faces; face_id++) {
     cs_lnum_t ii = g->face_cell[face_id][0];
     cs_lnum_t jj = g->face_cell[face_id][1];
-    assert(ii != jj && new_cell_num[ii] != new_cell_num[jj]);
-    g->_face_cell[face_id][0] = new_cell_num[ii] - 1;
-    g->_face_cell[face_id][1] = new_cell_num[jj] - 1;
+    assert(ii != jj && new_cell_id[ii] != new_cell_id[jj]);
+    g->_face_cell[face_id][0] = new_cell_id[ii];
+    g->_face_cell[face_id][1] = new_cell_id[jj];
   }
 
-  BFT_FREE(new_cell_num);
+  BFT_FREE(new_cell_id);
 
   /* Merge cell and face data */
 
