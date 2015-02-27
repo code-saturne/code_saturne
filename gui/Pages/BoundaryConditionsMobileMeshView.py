@@ -119,11 +119,11 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
 
         if aleChoice == "fixed_velocity":
             if not exp:
-                exp = 'mesh_u ='
-            req = [('mesh_u', 'Fixed velocity of the mesh'),
-                   ('mesh_v', 'Fixed velocity of the mesh'),
-                   ('mesh_w', 'Fixed velocity of the mesh')]
-            exa = 'mesh_u = 1000;\nmesh_v = 1000;\nmesh_w = 1000;'
+                exp = 'mesh_velocity_U ='
+            req = [('mesh_velocity_U', 'Fixed velocity of the mesh'),
+                   ('mesh_velocity_V', 'Fixed velocity of the mesh'),
+                   ('mesh_velocity_W', 'Fixed velocity of the mesh')]
+            exa = 'mesh_velocity_U = 1000;\nmesh_velocity_V = 1000;\nmesh_velocity_W = 1000;'
         elif aleChoice == "fixed_displacement":
             if not exp:
                 exp = 'mesh_x ='

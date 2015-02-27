@@ -321,7 +321,7 @@ class MobileMeshTestCase(ModelTest):
         """Check whether the MobileMeshModel class could be set and get formula"""
         mdl = MobileMeshModel(self.case)
         mdl.setMethod('on')
-        mdl.setFormula('mesh_vi1 = 1000;')
+        mdl.setFormula('mesh_viscosity_1 = 1000;')
 
         doc = """<ale_method status="on">
                     <variable label="mesh_u" name="mesh_velocity_U"/>
@@ -329,11 +329,11 @@ class MobileMeshTestCase(ModelTest):
                     <variable label="mesh_w" name="mesh_velocity_W"/>
                     <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
-                    <formula>mesh_vi1 = 1000;</formula>
+                    <formula>mesh_viscosity_1 = 1000;</formula>
                     </ale_method> """
         assert mdl.node_ale == self.xmlNodeFromString(doc),\
             'Could not set formula'
-        assert mdl.getFormula() == 'mesh_vi1 = 1000;',\
+        assert mdl.getFormula() == 'mesh_viscosity_1 = 1000;',\
             'Could not get formula'
 
 
