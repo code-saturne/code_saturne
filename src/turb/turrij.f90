@@ -122,6 +122,7 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 double precision, dimension(:), pointer :: cvara_scalt
+double precision, dimension(:), pointer :: coefap, coefbp
 
 !===============================================================================
 
@@ -265,20 +266,33 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
 
   call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
-  iprev = 1
+  nswrgp = nswrgr(isca(iscalt))
+  imligp = imligr(isca(iscalt))
+  iwarnp = iwarni(isca(iscalt))
+  epsrgp = epsrgr(isca(iscalt))
+  climgp = climgr(isca(iscalt))
+  extrap = extrag(isca(iscalt))
+
   inc = 1
   iccocg = 1
+  iivar = 0
 
-  call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, &
-                             iccocg,                               &
-                             gradro)
+  call field_get_coefa_s(ivarfl(isca(iscalt)), coefap)
+  call field_get_coefb_s(ivarfl(isca(iscalt)), coefbp)
+
+  call grdcel &
+  !==========
+ ( iivar  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   iwarnp , nfecra , epsrgp , climgp , extrap ,                   &
+   cvara_scalt     , coefap , coefbp          ,                   &
+   gradro )
 
   ! gradro stores: rho grad(theta)/theta
   do iel = 1, ncel
     rhothe = cromo(iel)/cvara_scalt(iel)
-    gradro(1, iel) = rhothe*gradro(1, iel)
-    gradro(2, iel) = rhothe*gradro(2, iel)
-    gradro(3, iel) = rhothe*gradro(3, iel)
+    gradro(iel,1) = rhothe*gradro(iel,1)
+    gradro(iel,2) = rhothe*gradro(iel,2)
+    gradro(iel,3) = rhothe*gradro(iel,3)
   enddo
 
 else if (igrari.eq.1) then
@@ -302,6 +316,8 @@ else if (igrari.eq.1) then
   climgp = climgr(ir11)
   extrap = extrag(ir11)
 
+  inc = 1
+  iccocg = 1
   iivar = 0
 
   ! If we extrapolate the source terms and rho, we use cpdt rho^n
