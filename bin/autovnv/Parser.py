@@ -543,10 +543,15 @@ class Parser(object):
             filePath = node.attributes["path"].value
 
             if filePath == "":
-                for root, dirs, fs in os.walk(os.path.join(self.getRepository(), l)):
-                    if fileName in fs:
-                        filePath = root
-                        break
+              for root, dirs, fs in os.walk(os.path.join(self.getRepository(), l)):
+                  if fileName in fs:
+                      filePath = root
+                      break
+            else: # for Code_Saturne exp data are supposed to be in POST
+              for root, dirs, fs in os.walk(os.path.join(self.getRepository(), l, 'POST', filePath)):
+                  if fileName in fs:
+                      filePath = root
+                      break
 
             files.append(os.path.join(filePath, fileName))
 
