@@ -822,7 +822,7 @@ _setup_sles_it(cs_sles_it_t       *c,
     }
     else
       n_m_rows /= (cs_gnum_t)cs_glob_n_ranks;
-    if (c->comm != MPI_COMM_NULL && c->comm != cs_glob_mpi_comm)
+    if (cs_glob_n_ranks > 1 && c->comm != cs_glob_mpi_comm)
       MPI_Bcast(&n_m_rows, 1, CS_MPI_GNUM, 0, cs_glob_mpi_comm);
 
     if (n_m_rows < (cs_gnum_t)_pcg_sr_threshold)

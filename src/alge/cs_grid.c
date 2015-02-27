@@ -1530,7 +1530,7 @@ _merge_halo_data(cs_halo_t   *h,
   else { /* if (stride == 3) */
 
     for (ii = 0; ii < n_elts_ini; ii++) {
-      tmp_num[ii*3 + 2] = 0;
+      tmp_num[ii*3 + 1] = 0;
       tmp_num[ii*3 + 2] = new_src_cell_id[ii];
     }
 
@@ -1596,15 +1596,12 @@ _merge_halo_data(cs_halo_t   *h,
   }
   else { /* if (stride == 3) */
 
-    const cs_lnum_t section_idx_size = n_sections * h->n_c_domains + 1;
+    int   rank_idx = -1;
+    cs_lnum_t section_idx_size = 0;
 
     prev_section_id = -1;
 
-    /* Initialize index as count */
-
-    BFT_MALLOC(section_idx, section_idx_size, cs_lnum_t);
-    for (ii = 0; ii < section_idx_size; ii++)
-      section_idx[ii] = 0;
+    /* Index will be initialized as count */
 
     for (ii = 0; ii < n_elts_ini; ii++) {
 
@@ -1622,6 +1619,7 @@ _merge_halo_data(cs_halo_t   *h,
           h->index[h->n_c_domains*2] = h->n_elts[0];
           h->n_c_domains += 1;
           is_same = false;
+          rank_idx += 1;
         }
         if (section_id != prev_section_id)
           is_same = false;
@@ -1631,7 +1629,15 @@ _merge_halo_data(cs_halo_t   *h,
         if (is_same == false) {
           new_src_cell_id[h->n_elts[0]] = src_id;
           h->n_elts[0] += 1;
-          section_idx[h->n_c_domains*n_sections + section_id + 1] += 1;
+          while (rank_idx*n_sections + section_id + 1 >= section_idx_size) {
+            cs_lnum_t section_idx_size_prv = section_idx_size;
+            section_idx_size
+              = (section_idx_size_prv > 0) ? section_idx_size_prv*2 : 16;
+            BFT_REALLOC(section_idx, section_idx_size, cs_lnum_t);
+            for (ii = section_idx_size_prv; ii < section_idx_size; ii++)
+              section_idx[ii] = 0;
+          };
+          section_idx[rank_idx*n_sections + section_id + 1] += 1;
         }
 
         new_halo_cell_num[cur_id] = n_new_cells + h->n_elts[0];
@@ -1642,12 +1648,13 @@ _merge_halo_data(cs_halo_t   *h,
 
       }
       else /* if (rank_id == loc_rank_id && tmp_num[cur_id*3 + 1] == 0) */
-        new_halo_cell_num[cur_id] = tmp_num[cur_id*2 + 1];
+        new_halo_cell_num[cur_id] = tmp_num[cur_id*3 + 2] + 1;
 
     }
 
     /* Transform count to index */
 
+    section_idx_size = n_sections * h->n_c_domains + 1;
     for (ii = 1; ii < section_idx_size; ii++)
       section_idx[ii] += section_idx[ii - 1];
   }
@@ -2185,6 +2192,10 @@ _merge_grids(cs_grid_t  *g,
       g->n_ranks = (g->n_ranks/_grid_merge_stride) + 1;
     else
       g->n_ranks = (g->n_ranks/_grid_merge_stride);
+    g->comm_id = 0;
+    while (   _grid_ranks[g->comm_id] != g->n_ranks
+           && g->comm_id < _n_grid_comms)
+      g->comm_id++;
   }
 
   if (verbosity > 2) {
@@ -4682,6 +4693,8 @@ cs_grid_set_merge_options(int         rank_stride,
 {
 #if defined(HAVE_MPI)
   _grid_merge_stride = rank_stride;
+  if (_grid_merge_stride > cs_glob_n_ranks)
+    _grid_merge_stride = cs_glob_n_ranks;
   _grid_merge_mean_threshold = cells_mean_threshold;
   _grid_merge_glob_threshold = cells_glob_threshold;
   _grid_merge_min_ranks = min_ranks;
