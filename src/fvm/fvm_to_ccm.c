@@ -2358,9 +2358,11 @@ _write_face_vertices_perio_l(const cs_mesh_t        *b_mesh,
   /* Allocate array large enough for both periodic boundary + true interior
      faces to avoid counting loop */
 
-  BFT_MALLOC(face_connect,
-             b_mesh->i_face_vtx_connect_size + n_faces,
-             cs_ccm_num_t);
+  const cs_lnum_t n_max_faces
+    = CS_MAX(b_mesh->i_face_vtx_connect_size + b_mesh->n_i_faces,
+             b_mesh->b_face_vtx_connect_size + b_mesh->n_b_faces);
+
+  BFT_MALLOC(face_connect, n_max_faces, cs_ccm_num_t);
 
   /* Face -> vertex connectivity */
   /*-----------------------------*/
@@ -2592,7 +2594,8 @@ _write_faces_l(const cs_mesh_t       *b_mesh,
       /* Rebuild global face part to block distribution structures */
 
       BFT_FREE(face_order);
-      face_order = _build_order_by_gnum(n_faces, b_mesh->global_i_face_num);
+      face_order = _build_order_by_gnum(b_mesh->n_i_faces,
+                                        b_mesh->global_i_face_num);
 
       face_bi = cs_block_dist_compute_sizes(w->rank,
                                             w->n_ranks,
