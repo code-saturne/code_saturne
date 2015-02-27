@@ -388,7 +388,9 @@ uialcl_fixed_velocity(const char*   label,
                       const int     ntcabs)
 {
   mei_tree_t *ev;
-  const char*  variables[3] = { "mesh_u", "mesh_v", "mesh_w" };
+  const char*  variables[3] = { "mesh_velocity_U",
+                                "mesh_velocity_V",
+                                "mesh_velocity_W" };
 
   /* Get formula */
   char* formula =_get_ale_boundary_formula(label, "fixed_velocity");
@@ -404,9 +406,9 @@ uialcl_fixed_velocity(const char*   label,
   mei_evaluate(ev);
 
   /* Fill  rcodcl */
-  rcodcl[(iuma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_u");
-  rcodcl[(ivma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_v");
-  rcodcl[(iwma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_w");
+  rcodcl[(iuma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_velocity_U");
+  rcodcl[(ivma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_velocity_V");
+  rcodcl[(iwma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_velocity_W");
 
   BFT_FREE(formula);
   mei_tree_destroy(ev);

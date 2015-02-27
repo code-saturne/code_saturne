@@ -35,7 +35,7 @@ This module contains the following classe:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import sys, unittest
+import sys, unittest, re
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -928,7 +928,9 @@ class XMLinit(Variables):
                 if not(status) or status == "on":
                     content = node.xmlGetTextNode()
                     for n in self.case.xmlGetNodeList('variable', 'name', 'label'):
-                        content = content.replace(n['label'], n['name'])
+                        # Substitute only perfectly matching labels
+                        pattern = '\\b' + n['label'] + '\\b'
+                        content = re.sub(pattern, n['name'], content)
                     node.xmlSetTextNode(content)
 
         for node in self.case.xmlGetNodeList('variable'):
