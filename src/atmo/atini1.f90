@@ -185,6 +185,12 @@ if (nscal.gt.0) then
   enddo
 endif
 
+!===============================================================================
+! 7. Force RIJ Matrix stabilisation for all atmospheric models
+!===============================================================================
+
+if (itytur.eq.3) irijnu = 1
+
 !--------
 ! FORMATS
 !--------
