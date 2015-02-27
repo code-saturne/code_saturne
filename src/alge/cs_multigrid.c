@@ -1912,9 +1912,6 @@ cs_multigrid_create(void)
   for (ii = 0; ii < mg->n_levels_max; ii++)
     _multigrid_level_info_init(mg->lv_info + ii);
 
-  if (mg->post_cell_max > 0)
-    cs_post_add_time_dep_output(_cs_multigrid_post_function, (void *)mg);
-
   mg->post_cell_num = NULL;
   mg->post_cell_rank = NULL;
   mg->post_name = NULL;
@@ -2323,8 +2320,11 @@ cs_multigrid_setup(void               *context,
 
   /* Prepare preprocessing info if necessary */
 
-  if (mg->post_cell_max > 0)
+  if (mg->post_cell_max > 0) {
+    if (mg->info.n_calls[0] == 0)
+      cs_post_add_time_dep_output(_cs_multigrid_post_function, (void *)mg);
     _multigrid_add_post(mg, name, mesh->n_cells);
+  }
 
   /* Update info */
 
