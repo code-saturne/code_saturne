@@ -159,6 +159,7 @@ typedef struct {
 
   char         *name;                /* Writer name */
   char         *mesh_filename;       /* associated CCMIO geometry file name */
+  char         *mesh_basename;       /* base CCMIO geometry file name */
   char         *solution_filename;   /* associated CCMIO solution file name */
 
   CCMIOID       root_id;             /* Id of the root_node */
@@ -3632,7 +3633,7 @@ fvm_to_ccm_init_writer(const char             *name,
 #endif
 {
   int  i;
-  int  mesh_filename_length, name_length, path_length;
+  int  mesh_filename_length, mesh_basename_length, name_length, path_length;
 
   int writer_index = 0;
   fvm_to_ccm_writer_t  *writer = NULL;
@@ -3705,6 +3706,11 @@ fvm_to_ccm_init_writer(const char             *name,
   strcat(writer->mesh_filename, writer->name);
   strcat(writer->mesh_filename, ".ccmg");
 
+  mesh_basename_length = name_length + strlen(".ccmg") + 1;
+  BFT_MALLOC(writer->mesh_basename, mesh_basename_length, char);
+  strcpy(writer->mesh_basename, writer->name);
+  strcat(writer->mesh_basename, ".ccmg");
+
   BFT_MALLOC(writer->path, strlen(path)+1, char);
   strcpy(writer->path, path);
 
@@ -3771,6 +3777,7 @@ fvm_to_ccm_finalize_writer(void  *this_writer_p)
 
   BFT_FREE(w->path);
   BFT_FREE(w->solution_filename);
+  BFT_FREE(w->mesh_basename);
   BFT_FREE(w->mesh_filename);
   BFT_FREE(w->name);
   BFT_FREE(w->mesh_time.time_value);
@@ -3892,11 +3899,19 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
         BFT_REALLOC(w->mesh_filename, path_length, char);
         sprintf(w->mesh_filename, "%s%s-%s.ccmg",
                 w->path, w->name, s_time_step);
+        path_length =   strlen(w->name) + 1
+                      + strlen(s_time_step) + strlen(".ccmg") + 1;
+        BFT_REALLOC(w->mesh_basename, path_length, char);
+        sprintf(w->mesh_basename, "%s-%s.ccmg",
+                w->name, s_time_step);
       }
       else {
         int path_length = strlen(w->path) + strlen(w->name) + strlen(".ccmg") + 1;
         BFT_REALLOC(w->mesh_filename, path_length, char);
         sprintf(w->mesh_filename, "%s%s.ccmg", w->path, w->name);
+        path_length = strlen(w->name) + strlen(".ccmg") + 1;
+        BFT_REALLOC(w->mesh_basename, path_length, char);
+        sprintf(w->mesh_filename, "%s.ccmg", w->name);
       }
     }
 
@@ -4140,8 +4155,8 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 
       /* Link solution file to geometry file */
 
-      _finalize_processor(w->mesh_filename,
-                          w->mesh_filename,
+      _finalize_processor(w->mesh_basename,
+                          w->mesh_basename,
                           w);
     }
 
