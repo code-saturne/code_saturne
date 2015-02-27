@@ -86,9 +86,7 @@ class MobileMeshModel(Model):
         """
         Set variables and properties if ALE method is activated.
         """
-        self.node_ale.xmlInitChildNode('variable', name='mesh_velocity_U', label='mesh_u')
-        self.node_ale.xmlInitChildNode('variable', name='mesh_velocity_V', label='mesh_v')
-        self.node_ale.xmlInitChildNode('variable', name='mesh_velocity_W', label='mesh_w')
+        self.node_ale.xmlInitChildNode('variable', name='mesh_velocity', label='Mesh Velocity', dimension=3)
         self.node_ale.xmlInitChildNode('property', name='mesh_viscosity_1', label='mesh_vi1')
 
         # find node for property / choice and set to default value if require
@@ -264,9 +262,7 @@ class MobileMeshTestCase(ModelTest):
         mdl = MobileMeshModel(self.case)
         mdl.setMethod('on')
         doc = """<ale_method status="on">
-                    <variable label="mesh_u" name="mesh_velocity_U"/>
-                    <variable label="mesh_v" name="mesh_velocity_V"/>
-                    <variable label="mesh_w" name="mesh_velocity_W"/>
+                    <variable label="Mesh Velocity" name="mesh_velocity"/>
                     <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
                  </ale_method>"""
@@ -282,9 +278,7 @@ class MobileMeshTestCase(ModelTest):
         mdl.setSubIterations(12)
 ##
         doc = """<ale_method status="on">
-                    <variable label="mesh_u" name="mesh_velocity_U"/>
-                    <variable label="mesh_v" name="mesh_velocity_V"/>
-                    <variable label="mesh_w" name="mesh_velocity_W"/>
+                    <variable label="Mesh Velocity" name="mesh_velocity"/>
                     <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
                     <fluid_initialization_sub_iterations>12</fluid_initialization_sub_iterations>
@@ -303,9 +297,7 @@ class MobileMeshTestCase(ModelTest):
         mdl.setViscosity('orthotrop')
 
         doc = """<ale_method status="on">
-                    <variable label="mesh_u" name="mesh_velocity_U"/>
-                    <variable label="mesh_v" name="mesh_velocity_V"/>
-                    <variable label="mesh_w" name="mesh_velocity_W"/>
+                    <variable label="Mesh Velocity" name="mesh_velocity"/>
                     <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="orthotrop"/>
                     <property label="mesh_vi2" name="mesh_viscosity_2"/>
@@ -324,9 +316,7 @@ class MobileMeshTestCase(ModelTest):
         mdl.setFormula('mesh_viscosity_1 = 1000;')
 
         doc = """<ale_method status="on">
-                    <variable label="mesh_u" name="mesh_velocity_U"/>
-                    <variable label="mesh_v" name="mesh_velocity_V"/>
-                    <variable label="mesh_w" name="mesh_velocity_W"/>
+                    <variable label="Mesh Velocity" name="mesh_velocity"/>
                     <property label="mesh_vi1" name="mesh_viscosity_1"/>
                     <mesh_viscosity type="isotrop"/>
                     <formula>mesh_viscosity_1 = 1000;</formula>
