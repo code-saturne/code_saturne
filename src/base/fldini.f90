@@ -84,10 +84,10 @@ implicit none
 
 integer          ii, ivar
 integer          keycpl, iflid
-integer          kdiftn, kturt, kfturt
+integer          kdiftn, kturt, kfturt, keyvar
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv
-integer          f_id, kscavr, f_vis, f_log, f_dften
+integer          f_id, kscavr, f_vis, f_log, f_dften, f_type
 integer          kislts, ifctsl
 integer          iopchr
 integer          iscdri, icla, iclap
@@ -122,6 +122,7 @@ call field_get_key_id('log', keylog)
 call field_get_key_id('post_vis', keyvis)
 call field_get_key_id('label', keylbl)
 call field_get_key_id('coupled', keycpl)
+call field_get_key_id("variable_id", keyvar)
 
 ! If a scalar is a variance, store the id of the parent scalar
 call field_get_key_id("first_moment_id", kscavr)
@@ -471,9 +472,15 @@ enddo
 !===============================================================================
 
 ! Copy field calculation options into the field structure
-do ivar = 1, nvar
-  if (ivar.ne.iv.and.ivar.ne.iw) then
-    call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+do f_id = 0, nfld - 1
+
+  call field_get_type(f_id, f_type)
+
+  ! Is the field of type FIELD_VARIABLE?
+  if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+    call field_get_key_int(f_id, keyvar, ivar)
 
     vcopt%iwarni= iwarni(ivar)
     vcopt%iconv = iconv (ivar)
@@ -500,7 +507,7 @@ do ivar = 1, nvar
     vcopt%extrag= extrag(ivar)
     vcopt%relaxv= relaxv(ivar)
 
-    call field_set_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+    call field_set_key_struct_var_cal_opt(f_id, vcopt)
   endif
 enddo
 
