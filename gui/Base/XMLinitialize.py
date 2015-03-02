@@ -945,6 +945,25 @@ class XMLinit(Variables):
                         node.xmlSetData('variance', n['name'])
                         break
 
+        # update mesh velocity node
+        # Note: it is important to do this only after updating formulas and
+        #       not before, to apply updates in the order if code changes.
+        XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
+        XMLAleMethod = XMLThermoPhysicalModel.xmlGetChildNode('ale_method', 'status')
+        if XMLAleMethod:
+            nodeV = XMLAleMethod.xmlGetNode('variable', name="mesh_velocity_U")
+            if nodeV:
+                nodeV['name'] = 'mesh_velocity'
+                nodeV['label'] = 'Mesh Velocity'
+                nodeV['dimension'] = '3'
+
+                nodeTmp = XMLAleMethod.xmlGetNode('variable', name="mesh_velocity_V")
+                if nodeTmp:
+                    nodeTmp.xmlRemoveNode()
+                nodeTmp = XMLAleMethod.xmlGetNode('variable', name="mesh_velocity_W")
+                if nodeTmp:
+                    nodeTmp.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case

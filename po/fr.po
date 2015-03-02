@@ -10663,6 +10663,7 @@ msgid ""
 "For these faces, the weight is set to 0.5.\n"
 msgstr ""
 
+#, c-format
 msgid ""
 "The algorithm selection indicator for the cell center of gravity "
 "computation\n"
