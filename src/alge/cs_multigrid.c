@@ -687,24 +687,23 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       _multigrid_level_info_init(mg->lv_info + ii);
     }
 
-    if (mg->post_cell_num != NULL) {
-      BFT_REALLOC(mg->post_cell_num, mgd->n_levels_alloc, int *);
-      for (ii = mgd->n_levels; ii < mgd->n_levels_alloc; ii++)
-        mg->post_cell_num[ii] = NULL;
-      if (mgd->n_levels > 0)
-        mg->post_cell_num[mgd->n_levels - 1] = NULL;
-    }
-
-    if (mg->post_cell_rank != NULL) {
-      BFT_REALLOC(mg->post_cell_rank, mgd->n_levels_alloc, int *);
-      for (ii = mgd->n_levels; ii < mgd->n_levels_alloc; ii++)
-        mg->post_cell_rank[ii] = NULL;
-      if (mgd->n_levels > 0)
-        mg->post_cell_rank[mgd->n_levels - 1] = NULL;
-    }
   }
 
   mgd->grid_hierarchy[mgd->n_levels] = grid;
+
+  if (mg->post_cell_num != NULL) {
+    int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
+    BFT_REALLOC(mg->post_cell_num, mgd->n_levels_alloc, int *);
+    for (ii = n_max_post_levels + 1; ii < mgd->n_levels_alloc; ii++)
+      mg->post_cell_num[ii] = NULL;
+  }
+
+  if (mg->post_cell_rank != NULL) {
+    int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
+    BFT_REALLOC(mg->post_cell_rank, mgd->n_levels_alloc, int *);
+    for (ii = n_max_post_levels + 1; ii < mgd->n_levels_alloc; ii++)
+      mg->post_cell_rank[ii] = NULL;
+  }
 
   /* Update associated info */
 
@@ -820,8 +819,9 @@ _multigrid_add_post(cs_multigrid_t  *mg,
   mg->n_levels_post = mgd->n_levels - 1;
 
   BFT_REALLOC(mg->post_name, strlen(name) + 1, char);
+  strcpy(mg->post_name, name);
 
-  assert(mg->n_levels_post < mg->n_levels_max);
+  assert(mg->n_levels_post <= mg->n_levels_max);
 
   /* Reallocate arrays if necessary */
 
@@ -1938,15 +1938,17 @@ cs_multigrid_destroy(void  **context)
 
   BFT_FREE(mg->lv_info);
 
-  if (mg->post_cell_max > 0) {
-    for (int i = 0; i < mg->n_levels_max - 1; i++)
+  if (mg->post_cell_num != NULL) {
+    int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
+    for (int i = 0; i < n_max_post_levels; i++)
       if (mg->post_cell_num[i] != NULL)
         BFT_FREE(mg->post_cell_num[i]);
     BFT_FREE(mg->post_cell_num);
   }
 
   if (mg->post_cell_rank != NULL) {
-    for (int i = 0; i < mg->n_levels_max - 1; i++)
+    int n_max_post_levels = (int)(mg->info.n_levels[2]) - 1;
+    for (int i = 0; i < n_max_post_levels; i++)
       if (mg->post_cell_rank[i] != NULL)
         BFT_FREE(mg->post_cell_rank[i]);
     BFT_FREE(mg->post_cell_rank);
