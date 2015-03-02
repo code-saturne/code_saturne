@@ -490,7 +490,9 @@ class XMLinit(Variables):
                     status = nf["status"]
                     if not(status) or status == "on":
                         content = nf.xmlGetTextNode()
-                        content = content.replace(n['label'], n['name'])
+                        # Substitute only perfectly matching labels
+                        pattern = '\\b' + n['label'] + '\\b'
+                        content = re.sub(pattern, n['name'], content)
                         nf.xmlSetTextNode(content)
 
 
@@ -642,19 +644,28 @@ class XMLinit(Variables):
             status = node["status"]
             if not(status) or status == "on":
                 content = node.xmlGetTextNode()
-                content = content.replace("u =", "velocity[0] =")
-                content = content.replace("v =", "velocity[1] =")
-                content = content.replace("w =", "velocity[2] =")
-                content = content.replace("P =", "pressure =")
+                # Substitute only perfectly matching labels
+                pattern = '\\bu\\b'
+                content = re.sub(pattern, 'velocity[0]', content)
+                pattern = '\\bv\\b'
+                content = re.sub(pattern, 'velocity[1]', content)
+                pattern = '\\bw\\b'
+                content = re.sub(pattern, 'velocity[2]', content)
+                pattern = '\\bP\\b'
+                content = re.sub(pattern, 'pressure', content)
                 node.xmlSetTextNode(content)
 
         for node in nth.xmlGetNodeList('formula'):
             status = node["status"]
             if not(status) or status == "on":
                 content = node.xmlGetTextNode()
-                content = content.replace("T =", "temperature =")
-                content = content.replace("temperature_celsius =", "temperature =")
-                content = content.replace("temperature_kelvin =", "temperature =")
+                # Substitute only perfectly matching labels
+                pattern = '\\bT\\b'
+                content = re.sub(pattern, 'temperature', content)
+                pattern = '\\btemperature_celsius\\b'
+                content = re.sub(pattern, 'temperature', content)
+                pattern = '\\btemperature_kelvin\\b'
+                content = re.sub(pattern, 'temperature', content)
                 node.xmlSetTextNode(content)
 
         for node in XMLThermoPhysicalNode.xmlGetNodeList('formula'):
@@ -664,8 +675,9 @@ class XMLinit(Variables):
                 nodeas = self.case.xmlGetNode('additional_scalars')
                 nth = nodeas.xmlGetNode('scalar', type='thermal')
                 if nth:
-                    lab = nth['label'] + " ="
-                    content = content.replace(lab, nth['name'] + " =")
+                    # Substitute only perfectly matching labels
+                    pattern = '\\b' + nth['label'] + '\\b'
+                    content = re.sub(pattern, nth['name'], content)
                 node.xmlSetTextNode(content)
 
         for node in XMLPhysicalPropNode.xmlGetNodeList('formula'):
@@ -673,7 +685,9 @@ class XMLinit(Variables):
             nth = nodeas.xmlGetNode('scalar', type='thermal')
             if nth:
                 content = node.xmlGetTextNode()
-                content = content.replace(nth['label'], nth['name'])
+                # Substitute only perfectly matching labels
+                pattern = '\\b' + nth['label'] + '\\b'
+                content = re.sub(pattern, nth['name'], content)
                 node.xmlSetTextNode(content)
 
         XMLAddScalar = self.case.xmlGetNode('additional_scalars')
@@ -681,7 +695,9 @@ class XMLinit(Variables):
             nfor = node.xmlGetNode('formula')
             if nfor:
                 content = nfor.xmlGetTextNode()
-                content = content.replace(node['label'], node['name'])
+                # Substitute only perfectly matching labels
+                pattern = '\\b' + node['label'] + '\\b'
+                content = re.sub(pattern, node['name'], content)
                 nfor.xmlSetTextNode(content)
 
         for node in XMLBoundaryNode.xmlGetNodeList('turbulence'):
@@ -689,7 +705,9 @@ class XMLinit(Variables):
                 nf = node.xmlGetNode('formula')
                 if nf:
                     content = nf.xmlGetTextNode()
-                    content = content.replace("eps =", "epsilon =")
+                    # Substitute only perfectly matching labels
+                    pattern = '\\beps\\b'
+                    content = re.sub(pattern, 'epsilon', content)
                     nf.xmlSetTextNode(content)
 
         # TODO update formula BC for turbulence
@@ -809,11 +827,17 @@ class XMLinit(Variables):
             if n:
                 f = n.xmlGetTextNode()
                 if f != None:
-                    f = f.replace("rho =", "density =")
-                    f = f.replace("mu =", "molecular_viscosity =")
-                    f = f.replace("cp =", "specific_heat =")
-                    f = f.replace("lambda =", "thermal_conductivity =")
-                    f = f.replace("viscv =", "volume_viscosity =")
+                    # Substitute only perfectly matching labels
+                    pattern = '\\brho\\b'
+                    content = re.sub(pattern, 'density', content)
+                    pattern = '\\bmu\\b'
+                    content = re.sub(pattern, 'molecular_viscosity', content)
+                    pattern = '\\bcp\\b'
+                    content = re.sub(pattern, 'specific_heat', content)
+                    pattern = '\\blambda\\b'
+                    content = re.sub(pattern, 'thermal_conductivity', content)
+                    pattern = '\\bviscv\\b'
+                    content = re.sub(pattern, 'volume_viscosity', content)
                     n.xmlSetTextNode(f)
 
 
@@ -836,7 +860,9 @@ class XMLinit(Variables):
             for n in node.xmlGetNodeList('formula'):
                 if n:
                     content = n.xmlGetTextNode()
-                    content = content.replace(name, label)
+                    # Substitute only perfectly matching labels
+                    pattern = '\\b' + name + '\\b'
+                    content = re.sub(pattern, name, content)
                     n.xmlSetTextNode(content)
 
         XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
@@ -854,9 +880,13 @@ class XMLinit(Variables):
             for node in XMLAleMethod.xmlGetNodeList('formula'):
                 if node:
                     content = node.xmlGetTextNode()
-                    content = content.replace("mesh_vi1", "mesh_viscosity_1")
-                    content = content.replace("mesh_vi2", "mesh_viscosity_2")
-                    content = content.replace("mesh_vi3", "mesh_viscosity_3")
+                    # Substitute only perfectly matching labels
+                    pattern = '\\bmesh_vi1\\b'
+                    content = re.sub(pattern, "mesh_viscosity_1", content)
+                    pattern = '\\bmesh_vi2\\b'
+                    content = re.sub(pattern, "mesh_viscosity_2", content)
+                    pattern = '\\bmesh_vi3\\b'
+                    content = re.sub(pattern, "mesh_viscosity_3", content)
                     node.xmlSetTextNode(content)
 
         for node in self.case.xmlGetNodeList('time_average'):
