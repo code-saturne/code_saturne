@@ -1390,6 +1390,7 @@ _rebuild_halo_send_lists(cs_halo_t  *h,
       cs_lnum_t n_cur_vals = recv_buf[rank_id*n_sections];
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++)
         n_cur_vals -= recv_buf[rank_id*n_sections + 1 + tr_id];
+      n_cur_vals += h->send_index[rank_id*2];
       for (tr_id = 0; tr_id < h->n_transforms; tr_id++) {
         cs_lnum_t n_tr_vals = recv_buf[rank_id*n_sections + 1 + tr_id];
         h->send_perio_lst[h->n_c_domains*4*tr_id + 4*rank_id] = n_cur_vals;
@@ -1546,7 +1547,7 @@ _merge_halo_data(cs_halo_t   *h,
 
   order = cs_order_gnum_s(NULL, tmp_num, stride, n_elts_ini);
 
-  /* Rebuilt lists and build renumbering */
+  /* Rebuild lists and build renumbering */
 
   cur_id = order[0];
   h->n_c_domains = 0;
@@ -1638,8 +1639,10 @@ _merge_halo_data(cs_halo_t   *h,
             section_idx_size
               = (section_idx_size_prv > 0) ? section_idx_size_prv*2 : 16;
             BFT_REALLOC(section_idx, section_idx_size, cs_lnum_t);
-            for (ii = section_idx_size_prv; ii < section_idx_size; ii++)
-              section_idx[ii] = 0;
+            for (cs_lnum_t sid = section_idx_size_prv;
+                 sid < section_idx_size;
+                 sid++)
+              section_idx[sid] = 0;
           };
           section_idx[rank_idx*n_sections + section_id + 1] += 1;
         }
@@ -1659,8 +1662,8 @@ _merge_halo_data(cs_halo_t   *h,
     /* Transform count to index */
 
     section_idx_size = n_sections * h->n_c_domains + 1;
-    for (ii = 1; ii < section_idx_size; ii++)
-      section_idx[ii] += section_idx[ii - 1];
+    for (cs_lnum_t sid = 1; sid < section_idx_size; sid++)
+      section_idx[sid] += section_idx[sid - 1];
   }
 
   if (h->n_transforms > 0) {
@@ -1704,10 +1707,10 @@ _merge_halo_data(cs_halo_t   *h,
  * Append halo info for grid grouping and merging.
  *
  * parameters:
- *   g          <-> pointer to grid structure being merged
- *   new_cel_id <-> new cell ids for local cells
- *                  in: defined for local cells
- *                  out: updated also for halo cells
+ *   g           <-> pointer to grid structure being merged
+ *   new_cell_id <-> new cell ids for local cells
+ *                   in: defined for local cells
+ *                   out: updated also for halo cells
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1771,6 +1774,26 @@ _append_halos(cs_grid_t   *g,
   else
     MPI_Send(counts, 3, MPI_INT, g->merge_sub_root, tag, comm);
 
+  /* In case of periodic transforms, transpose perio list
+     so as to have blocs of fixed n_transforms size, easier
+     to work with for append + merge operations */
+
+  if (n_transforms > 0) {
+    cs_lnum_t *perio_list_tr;
+    BFT_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
+    for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+      for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
+        for (int k = 0; k < 4; k++)
+          perio_list_tr[n_transforms*4*rank_id + 4*tr_id + k]
+            = h->perio_lst[h->n_c_domains*4*tr_id + 4*rank_id + k];
+      }
+    }
+    memcpy(h->perio_lst,
+           perio_list_tr,
+           h->n_c_domains*n_transforms*4*sizeof(cs_lnum_t));
+    BFT_FREE(perio_list_tr);
+  }
+
   /* Reallocate arrays for receiving rank and append data */
 
   if (g->merge_sub_rank == 0) {
@@ -1803,10 +1826,15 @@ _append_halos(cs_grid_t   *g,
            ii++, jj++)
         h->index[jj] += index_shift;
 
-      if (n_transforms > 0)
+      if (n_transforms > 0) {
         MPI_Recv(h->perio_lst + h->n_c_domains*n_transforms*4,
                  n_c_domains_r*n_transforms*4,
                  CS_MPI_LNUM, dist_rank, tag, comm, &status);
+        for (ii = 0, jj = h->n_c_domains*n_transforms*4;
+             ii < n_c_domains_r*n_transforms*4;
+             ii+=2, jj+=2)
+          h->perio_lst[jj] += index_shift;
+      }
 
       /* Update halo sizes */
 
@@ -1840,6 +1868,27 @@ _append_halos(cs_grid_t   *g,
   /* Cleanup halo and set pointer for coarsening (sub_rooot) ranks*/
 
   if (h != NULL) {
+
+    /* In case of periodic transforms, transpose perio list back to its
+       standard order */
+
+    if (n_transforms > 0) {
+      cs_lnum_t *perio_list_tr;
+      BFT_MALLOC(perio_list_tr, h->n_c_domains*n_transforms*4, cs_lnum_t);
+      for (int tr_id = 0; tr_id < n_transforms; tr_id++) {
+        for (rank_id = 0; rank_id < h->n_c_domains; rank_id++) {
+          for (int k = 0; k < 4; k++)
+            perio_list_tr[h->n_c_domains*4*tr_id + 4*rank_id + k]
+              = h->perio_lst[n_transforms*4*rank_id + 4*tr_id + k];
+        }
+      }
+      memcpy(h->perio_lst,
+             perio_list_tr,
+             h->n_c_domains*n_transforms*4*sizeof(cs_lnum_t));
+      BFT_FREE(perio_list_tr);
+    }
+
+    /* Now merge data */
 
     BFT_MALLOC(new_halo_cell_id, h->n_elts[0], cs_lnum_t);
 
@@ -2252,7 +2301,7 @@ _merge_grids(cs_grid_t  *g,
   BFT_MALLOC(new_cell_id, g->n_cells_ext, cs_lnum_t);
   for (j = 0; j < g->n_cells; j++)
     new_cell_id[j] = cell_shift + j;
-  for (j = g->n_cells; j < g->n_cells; j++)
+  for (j = g->n_cells; j < g->n_cells_ext; j++)
     new_cell_id[j] = -1;
 
   cs_halo_sync_untyped(g->halo,
