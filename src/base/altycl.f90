@@ -182,7 +182,7 @@ do ifac = 1, nfabor
   enddo
   if (iecrw.eq.0) then
     iel = ifabor(ifac)
-    ialtyb(ifac) = ivimpo
+    if (ialtyb(ifac).ne.igliss) ialtyb(ifac) = ivimpo
     rcodcl(ifac,iuma,1) = ddepx/dt(iel)/icpt
     rcodcl(ifac,ivma,1) = ddepy/dt(iel)/icpt
     rcodcl(ifac,iwma,1) = ddepz/dt(iel)/icpt
