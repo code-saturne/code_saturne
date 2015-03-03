@@ -2039,7 +2039,7 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
     break;
   }
 
-  if (gradient_option > 0)
+  if (gradient_option < 0)
     _compute_cocg_s_it = true;
 
   _compute_cocg_it = _compute_cocg_s_it;
