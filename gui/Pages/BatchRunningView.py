@@ -113,7 +113,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
         self.modelCSOUT2.addItem(self.tr("no output"), 'null')
         self.modelCSOUT2.addItem(self.tr("to standard output"), 'stdout')
-        self.modelCSOUT2.addItem(self.tr("to listing_n<p>"), 'listing')
+        self.modelCSOUT2.addItem(self.tr("to listing_r<r>"), 'listing')
 
         # Connections
         self.connect(self.toolButton_2, SIGNAL("clicked()"), self.slotSearchFile)

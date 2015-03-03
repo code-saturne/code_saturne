@@ -261,7 +261,7 @@ _cs_base_err_vprintf(const char  *format,
                                                             is unusable. */
 #endif
       for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
-      sprintf(err_file_name, "error_n%0*d", n_dec, cs_glob_rank_id + 1);
+      sprintf(err_file_name, "error_r%0*d", n_dec, cs_glob_rank_id);
     }
 
     freopen(err_file_name, "w", stderr);
@@ -1382,7 +1382,7 @@ cs_base_mem_init(void)
           int n_dec = 1;
           for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
           file_name = malloc((strlen(base_name) + n_dec + 2) * sizeof (char));
-          sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id + 1);
+          sprintf(file_name, "%s.%0*d", base_name, n_dec, cs_glob_rank_id);
         }
         else {
           file_name = malloc((strlen(base_name) + 1) * sizeof (char));
@@ -1636,10 +1636,10 @@ cs_base_bft_printf_init(const char  *log_name,
       for (i = cs_glob_n_ranks; i >= 10; i /= 10, n_dec += 1);
       BFT_MALLOC(_bft_printf_file_name, strlen(log_name) + n_dec + 3, char);
       sprintf(_bft_printf_file_name,
-              "%s_n%0*d",
+              "%s_r%0*d",
               log_name,
               n_dec,
-              cs_glob_rank_id+1);
+              cs_glob_rank_id);
 
     }
 
