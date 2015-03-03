@@ -41,23 +41,20 @@
 !> variable diffusivity and cp variables (when there are defined) have no value
 !> excepted if they are read from a restart file.
 !>
-!> Physical quantities are defined in the following arrays:
-!> \code
-!>  propce ! physical quantities defined at cell center
-!> \endcode
-!>
-!> Examples:
-!> \code
-!>  propce(iel, ipproc(irom  )) ! means rom  (iel)
-!>  propce(iel, ipproc(iviscl)) ! means viscl(iel)
-!>  propce(iel, ipproc(icp   )) ! means cp   (iel)
-!> \endcode
-!>
 !> Modification of the behaviour law of physical quantities (rom, viscl,
 !> viscls, cp) is not done here. It is the purpose of the user subroutine
 !> \ref usphyv (in cs_user_physical_properties.f90)
 !>
 !> \section cs_user_initialization_cell_id Cells identification
+!>
+!> Cell value field ids
+!>
+!> - Density:                        \c iprpfl(irom)
+!> - Dynamic molecular viscosity:    \c iprpfl(iviscl)
+!> - Turbulent viscosity:            \c iprpfl(ivisct)
+!> - Specific heat:                  \c iprpfl(icp)
+!> - Diffusivity(lambda):            \c field_get_key_int(ivarfl(isca(iscal)),
+!>                                      kivisl, ...)
 !>
 !> Cells may be identified using the \ref getcel subroutine.
 !> The syntax of this subroutine is described in the

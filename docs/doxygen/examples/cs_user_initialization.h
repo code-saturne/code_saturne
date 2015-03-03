@@ -44,17 +44,6 @@
   - viscls and cp variables (when there are defined) have no value
   - excepted if they are read from a restart file.
 
-  Physical quantities are defined in the following arrays:
-   - propce (physical quantities defined at cell center),
-   - propfb (physical quantities defined at border face center).
-
-  Examples:
-   - propce(iel, ipproc(irom  )) means rom  (iel)
-   - propce(iel, ipproc(iviscl)) means viscl(iel)
-   - propce(iel, ipproc(icp   )) means cp   (iel)
-   - propce(iel, ipproc(ivisls(iscal))) means visls(iel, iscal)
-   - propfb(ifac, ipprob(irom )) means romb  (ifac)
-
   Modification of the behaviour law of physical quantities (rom, viscl,
   viscls, cp) is not done here. It is the purpose of the user subroutine
   usphyv.

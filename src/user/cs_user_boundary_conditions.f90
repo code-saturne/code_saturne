@@ -329,11 +329,12 @@
 !>
 !> Cell value field ids
 !>
-!> - Density:                          \c iprpfl(ipproc(irom))
-!> - Dynamic molecular viscosity:      \c iprpfl(ipproc(iviscl))
-!> - Turbulent viscosity:              \c iprpfl(ipproc(ivisct))
-!> - Specific heat:                    \c iprpfl(ipproc(icp)
-!> - Diffusivity(lambda):              \c field_get_key_int(ivarfl(isca(iscal)), kivisl, ...)
+!> - Density:                        \c iprpfl(irom)
+!> - Dynamic molecular viscosity:    \c iprpfl(iviscl)
+!> - Turbulent viscosity:            \c iprpfl(ivisct)
+!> - Specific heat:                  \c iprpfl(icp)
+!> - Diffusivity(lambda):            \c field_get_key_int(ivarfl(isca(iscal)), &
+!>                                      kivisl, ...)
 !>
 !>
 !> \subsubsection fac_id Faces identification
