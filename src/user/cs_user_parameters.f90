@@ -1183,6 +1183,13 @@ if (.false.) then
   call field_get_key_id("min_scalar_clipping", kscmin)
   call field_get_key_id("max_scalar_clipping", kscmax)
 
+  ! Thermal scalar:
+  if (iscalt.gt.0) then
+    ! We define the min and max bounds
+    call field_set_key_double(ivarfl(isca(iscalt)), kscmin, -grand)
+    call field_set_key_double(ivarfl(isca(iscalt)), kscmax, +grand)
+  endif
+
   ! Loop on user scalars:
   do jj = 1, nscaus
     ! For scalars which are not variances
@@ -1261,6 +1268,9 @@ endif
 
 if (.false.) then
 
+  ! For thermal scalar
+  if (iscalt.gt.0) call field_set_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
+
   do iscal = 1, nscaus
     if (iscavr(iscal).le.0) then
       ifcvsl = -1
@@ -1279,6 +1289,9 @@ endif
 !      30 DFM
 
 if (.false.) then
+
+  ! GGDH for thermal scalar:
+  if (iscalt.gt.0) iturt(iscalt) = 10
 
   ! GGDH for all the scalars:
   do jj = 1, nscaus
