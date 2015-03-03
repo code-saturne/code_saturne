@@ -1740,9 +1740,6 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 /*----------------------------------------------------------------------------
  * Test if all displacements are finished for all ranks.
  *
- * parameters:
- *   n_particles     <--  local number of particles
- *
  * returns:
  *   true if there is a need to move particles or false, otherwise
  *----------------------------------------------------------------------------*/
@@ -3147,7 +3144,7 @@ _local_propagation(void                           *particle,
   cs_real_t  *particle_yplus;
 
   cs_lnum_t  error = 0;
-  cs_lnum_t  n_loops = 0;
+  cs_lnum_t  n_loops = displacement_step_id;
   cs_lnum_t  move_particle = CS_LAGR_PART_MOVE_ON;
   cs_lnum_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -5572,7 +5569,7 @@ cs_lagr_destroy(void)
  * By default, the total number of particles is not limited. A global limit
  * may be set using \ref cs_lagr_set_n_g_particles_max.
  *
- * \param[in]  n_min_particles  minumum number of particles required
+ * \param[in]  n_min_particles  minimum number of particles required
  *
  * \return  1 if resizing was required, -1 if the global minimum number
  *          of particles would exceed the global limit, 0 otherwise.
