@@ -161,11 +161,11 @@ if (ierror(1).ne.0) then
 endif
 
 !===============================================================================
-! 3.  CONVERSION EN RCODCL ICODCL
+! 3. Conversion  into BC codes and values (ICODCL and RCODCL)
 !===============================================================================
 
-! Calcul ou ecrasement de RCODCL a partir du deplacement impose,
-!   si tous les noeuds d'une face sont a deplacement impose
+! If all the nodes of a face have an imposed displacement, RCODCL is computed or
+! overwritten, ALE BC type is therfore ivimpo
 
 do ifac = 1, nfabor
   iecrw = 0
@@ -267,7 +267,6 @@ enddo
 ! 4. CHeck ICODCL consistency
 !===============================================================================
 
-! IERROR a ete initialise plus haut
 do ifac = 1, nfabor
 
   if (icodcl(ifac,iuma).ne.1 .and.                                &
