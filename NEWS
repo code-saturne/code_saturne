@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Lagrangian module: ensure a particle may be dropped rather than loop
+  indefinitely near parallel domain boundary.
+
 - Fix when using porous media and dilatable algorithm (iporos=1 and idilat=2)
 
 - Fix possibly uninitialized and incorrect values for optional arguments

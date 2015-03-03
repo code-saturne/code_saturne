@@ -2223,11 +2223,12 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
  * parameters:
  *  p_prev_particle <->  pointer on a cs_lagr_particle_t structure
  *  p_particle      <->  pointer on a cs_lagr_particle_t structure
+ *  displacement_step_id     <-- id of displacement step
  *  scheme_order    -->  current order of the scheme used for the lagrangian
  *                       algorithm (1 or 2)
  *  failsafe_mode   -->  with (0) / without (1) failure capability
- *  p_n_failed_particles      <->  number of failed particles
- *  p_failed_particle_weight  <->  stat. weight of the failed particles
+ *  p_n_failed_particles     <->  number of failed particles
+ *  p_failed_particle_weight <->  stat. weight of the failed particles
  *
  * returns:
  *  a state associated to the status of the particle (treated, to be deleted,
@@ -2237,6 +2238,7 @@ _bdy_treatment(cs_lagr_particle_t   *p_prev_particle,
 static cs_lnum_t
 _local_propagation(cs_lagr_particle_t     *p_prev_particle,
                    cs_lagr_particle_t     *p_particle,
+                   int                     displacement_step_id,
                    cs_lnum_t               scheme_order,
                    cs_lnum_t               failsafe_mode,
                    cs_real_t               boundary_stat[],
@@ -2266,7 +2268,7 @@ _local_propagation(cs_lagr_particle_t     *p_prev_particle,
   cs_real_t  depl[3];
 
   cs_lnum_t  error = 0;
-  cs_lnum_t  n_loops = 0;
+  cs_lnum_t  n_loops = displacement_step_id;
   cs_lnum_t  move_particle = CS_LAGR_PART_MOVE_ON;
   cs_lnum_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -3997,6 +3999,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
+  int        n_displacement_steps = 0;
+
   cs_lnum_t  n_delete_particles = 0;
   cs_lnum_t  n_failed_particles = 0;
 
@@ -4037,6 +4041,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
       if (cur_part->state == CS_LAGR_PART_TO_SYNC)
         cur_part->state = _local_propagation(prev_part,
                                              cur_part,
+                                             n_displacement_steps,
                                              scheme_order,
                                              failsafe_mode,
                                              boundary_stat,
@@ -4123,6 +4128,8 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_n_particles,
 
       _lagr_halo_sync();
     }
+
+    n_displacement_steps++;
 
   } /* End of while (global displacement) */
 
