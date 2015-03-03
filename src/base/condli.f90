@@ -3473,8 +3473,6 @@ implicit none
 
 double precision coefa, cofaf, coefb, cofbf, pimp, qimp
 
-! BS test sur hext ? if (abs(hext).gt.rinfin*0.5d0) then
-
 ! Gradients BCs
 coefa = pimp
 coefb = 0.d0
@@ -3525,8 +3523,6 @@ integer          isou  , jsou
 !===============================================================================
 
 do isou = 1, 3
-
-  ! BS test sur hextv ? if (abs(hextv(isou)).gt.rinfin*0.5d0) then
 
   ! Gradient BCs
   coefa(isou) = pimpv(isou)
