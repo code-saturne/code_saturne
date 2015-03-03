@@ -5,6 +5,9 @@ Release 3.3.4 (unreleased)
 Bug fixes:
 ----------
 
+- Lagrangian module: ensure a particle may be dropped rather than loop
+  indefinitely near parallel domain boundary.
+
 - Fix possibly uninitialized and incorrect values for optional arguments
   to postprocessing command in control_file.
 

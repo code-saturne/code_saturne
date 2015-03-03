@@ -3075,7 +3075,7 @@ _local_propagation(void                           *particle,
   cs_real_t  *particle_yplus;
 
   cs_lnum_t  error = 0;
-  cs_lnum_t  n_loops = 0;
+  cs_lnum_t  n_loops = displacement_step_id;
   cs_lnum_t  move_particle = CS_LAGR_PART_MOVE_ON;
   cs_lnum_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
