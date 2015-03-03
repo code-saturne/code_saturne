@@ -413,7 +413,7 @@ void CS_PROCF(astfor, ASTFOR)
 
   cs_real_t  *g_forast = NULL;
 
-  if (cs_glob_rank_id == 0)
+  if (cs_glob_rank_id < 1)
     BFT_MALLOC(g_forast, 3*n_g_faces, cs_real_t);
 
 #if defined(HAVE_MPI)
@@ -433,7 +433,7 @@ void CS_PROCF(astfor, ASTFOR)
       g_forast[i] = forast[i];
   }
 
-  if (cs_glob_rank_id == 0) {
+  if (cs_glob_rank_id < 1) {
     cs_calcium_write_double(comp_id, time_dep, cur_time, *ntcast,
                             "FORSAT", 3*n_g_faces, g_forast);
     BFT_FREE(g_forast);
