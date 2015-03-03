@@ -870,6 +870,25 @@ do ifac = 1, nfabor
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , cflv            , hint )
 
+  ! Imposed value for the convection operator, imposed flux for diffusion
+  !----------------------------------------------------------------------
+
+  elseif (icodcl(ifac,iu).eq.13) then
+
+    pimpv(1) = rcodcl(ifac,iu,1)
+    pimpv(2) = rcodcl(ifac,iv,1)
+    pimpv(3) = rcodcl(ifac,iw,1)
+
+    qimpv(1) = rcodcl(ifac,iu,3)
+    qimpv(2) = rcodcl(ifac,iv,3)
+    qimpv(3) = rcodcl(ifac,iw,3)
+
+    call set_dirichlet_conv_neumann_diff_vector &
+         !=====================================
+       ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
+         coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
+         pimpv           , qimpv           )
+
   ! Convective Boundary For Marangoni Effects (generalized symmetry condition)
   !---------------------------------------------------------------------------
 
@@ -3454,6 +3473,8 @@ implicit none
 
 double precision coefa, cofaf, coefb, cofbf, pimp, qimp
 
+! BS test sur hext ? if (abs(hext).gt.rinfin*0.5d0) then
+
 ! Gradients BCs
 coefa = pimp
 coefb = 0.d0
@@ -3461,6 +3482,65 @@ coefb = 0.d0
 ! Flux BCs
 cofaf = qimp
 cofbf = 0.d0
+
+return
+end subroutine
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpv         Dirichlet value to impose
+!> \param[in]     qimpv         Flux value to impose
+!_______________________________________________________________________________
+
+subroutine set_dirichlet_conv_neumann_diff_vector &
+ ( coefa, cofaf, coefb, cofbf, pimpv, qimpv )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(3), cofaf(3)
+double precision coefb(3,3), cofbf(3,3)
+double precision pimpv(3), qimpv(3)
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 3
+
+  ! BS test sur hextv ? if (abs(hextv(isou)).gt.rinfin*0.5d0) then
+
+  ! Gradient BCs
+  coefa(isou) = pimpv(isou)
+  do jsou = 1, 3
+    coefb(isou,jsou) = 0.d0
+  enddo
+
+  ! Flux BCs
+  cofaf(isou) = qimpv(isou)
+  do jsou = 1, 3
+    cofbf(isou,jsou) = 0.d0
+  enddo
+
+enddo
 
 return
 end subroutine
