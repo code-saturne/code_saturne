@@ -221,6 +221,8 @@ def define_domain_parameters(domain):
     # is available. In this case, domain.valgrind should contain the matching
     # command-line arguments, such as:
     #   domain.valgrind = 'valgrind --tool=memcheck'
+    # or (with a debugger attached):
+    #   domain.valgrind = 'valgrind --tool=memcheck --db-attach=yes'
 
     if domain.param == None:
         domain.valgrind = None
