@@ -443,6 +443,55 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
                  / cs_turb_xkappa * (2. * rcprod - 1. / (2. * *yplus - *dplus));
 }
 
+/*----------------------------------------------------------------------------
+ * Compute u+ for a given yk+ between 0.1 and 200 according to the two
+ * scales wall functions using Van Driest mixing length.
+ * This function holds the coefficients of the polynome fitting log(u+).
+ *
+ * parameters:
+ *   yplus     <--  dimensionless distance
+ *
+ * returns:
+ *   the resulting dimensionless velocity.
+ *----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+_vdriest_dupdyp_integral(cs_real_t yplus)
+{
+  /* Coefficients of the polynome fitting log(u+) for yk < 200 */
+  static double aa[11] = {-0.0091921, 3.9577, 0.031578,
+                          -0.51013, -2.3254, -0.72665,
+                          2.969, 0.48506, -1.5944,
+                          0.087309, 0.1987 };
+
+  cs_real_t y1,y2,y3,y4,y5,y6,y7,y8,y9,y10, uplus;
+
+  y1  = 0.25 * log(yplus);
+  y2  = y1 * y1;
+  y3  = y2 * y1;
+  y4  = y3 * y1;
+  y5  = y4 * y1;
+  y6  = y5 * y1;
+  y7  = y6 * y1;
+  y8  = y7 * y1;
+  y9  = y8 * y1;
+  y10 = y9 * y1;
+
+  uplus =   aa[0]
+          + aa[1]  * y1
+          + aa[2]  * y2
+          + aa[3]  * y3
+          + aa[4]  * y4
+          + aa[5]  * y5
+          + aa[6]  * y6
+          + aa[7]  * y7
+          + aa[8]  * y8
+          + aa[9]  * y9
+          + aa[10] * y10;
+
+  return exp(uplus);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Two velocity scales wall function using Van Driest mixing length.
@@ -454,6 +503,9 @@ cs_wall_functions_2scales_scalable(cs_real_t   l_visc,
  *
  * A polynome fitting the integral is used for \f$ y_k^+ < 200 \f$,
  * and a log law is used for \f$ y_k^+ >= 200 \f$.
+ *
+ * A wall roughness can be taken into account in the mixing length as
+ * proposed by Rotta (1962) with Cebeci & Chang (1978) correlation.
  *
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     l_visc        kinematic viscosity
@@ -495,14 +547,8 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
                                   cs_real_t   kr,
                                   bool        wf)
 {
-  double y1,y2,y3,y4,y5,y6,y7,y8,y9,y10;
-  double uplus, lmk15;
+  double urplus, dup, lmk15;
 
-  /* Coefficients of the polynome fitting u+ for yk < 200 */
-  static double aa[11] = {-0.0091921, 3.9577, 0.031578,
-                          -0.51013, -2.3254, -0.72665,
-                          2.969, 0.48506, -1.5944,
-                          0.087309, 0.1987 };
   if (wf)
     *uk = sqrt(sqrt((1.-cs_turb_crij2)/cs_turb_crij1 * rnnb * kinetic_en));
 
@@ -517,9 +563,16 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
   cs_real_t dyrp = 0.9 * (sqrt(krp) - krp * exp(-krp / 6.));
   cs_real_t yrplus = *yplus + dyrp;
 
+  if (dyrp <= 1.e-1)
+    dup = dyrp;
+  else if (dyrp <= 200.)
+    dup = _vdriest_dupdyp_integral(dyrp);
+  else
+    dup = 16.088739022054590 + log(dyrp/200.) / cs_turb_xkappa;
+
   if (yrplus <= 1.e-1) {
 
-    uplus = *yplus;
+    urplus = yrplus;
 
     if (wf) {
       *iuntur = 0;
@@ -534,35 +587,12 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 
   } else if (yrplus <= 200.) {
 
-    y1 = 0.25 * log(yrplus);
-    y2 = y1 * y1;
-    y3 = y2 * y1;
-    y4 = y3 * y1;
-    y5 = y4 * y1;
-    y6 = y5 * y1;
-    y7 = y6 * y1;
-    y8 = y7 * y1;
-    y9 = y8 * y1;
-    y10= y9 * y1;
-
-    uplus =   aa[0]
-            + aa[1]  * y1
-            + aa[2]  * y2
-            + aa[3]  * y3
-            + aa[4]  * y4
-            + aa[5]  * y5
-            + aa[6]  * y6
-            + aa[7]  * y7
-            + aa[8]  * y8
-            + aa[9]  * y9
-            + aa[10] * y10;
-
-    uplus = exp(uplus);
+    urplus = _vdriest_dupdyp_integral(yrplus);
 
     if (wf) {
       *nlogla += 1;
 
-      *ypup = *yplus / uplus;
+      *ypup = *yplus / (urplus-dup);
 
       /* Mixing length in y+ */
       *lmk = cs_turb_xkappa * (*yplus) *(1-exp(- (*yplus) / cs_turb_vdriest));
@@ -576,12 +606,12 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 
   } else {
 
-    uplus = 16.088739022054590 + log((yrplus)/(200.+dyrp)) / cs_turb_xkappa;
+    urplus = 16.088739022054590 + log(yrplus/200) / cs_turb_xkappa;
 
     if (wf) {
       *nlogla += 1;
 
-      *ypup = *yplus / uplus;
+      *ypup = *yplus / (urplus-dup);
 
       /* Mixing length in y+ */
       *lmk = cs_turb_xkappa * (*yplus) *(1-exp(- (*yplus) / cs_turb_vdriest));
@@ -595,7 +625,7 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
 
   }
 
-  *ustar = vel / uplus;
+  *ustar = vel / (urplus-dup);
 }
 
 /*----------------------------------------------------------------------------*/
