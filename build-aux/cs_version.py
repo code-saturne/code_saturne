@@ -209,8 +209,10 @@ def svn_version_from_tag(tag):
         if len(v) >= 3:
             if v[2] > '-1':
                 release = v[2]
+            elif v[2][0:3] == '-rc':
+                extra += v[3]
         if len(v) >= 4:
-            extra = v[3]
+            extra += v[3]
 
     return major, minor, release, extra
 
