@@ -1341,6 +1341,11 @@ cs_sles_solve(cs_sles_t           *sles,
 
   const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
 
+#if 0
+  /* Dump linear system to file (for experimenting with external tools) */
+  cs_matrix_dump_linear_system(a, rhs, sles_name);
+#endif
+
   cs_sles_convergence_state_t state;
 
   if (! _needs_solving(sles_name,
