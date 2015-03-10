@@ -178,6 +178,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.mdl = TimeAveragesModel(self.case)
         self.entriesNumber = 0
 
+        self.label_select = None
+
         # Create the Page layout.
 
         # Models
@@ -262,8 +264,6 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
         self.groupBoxTimeAverage.hide()
 
-        self.label_select = None
-
         self.case.undoStartGlobal()
 
 
@@ -309,7 +309,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             restart = self.mdl.defaultValues()['restart']
             self.lineEditRestart.setDisabled(False)
             self.lineEditRestart.setText(str(restart))
-        self.mdl.setRestart(self.label_select, restart)
+        if self.label_select:
+            self.mdl.setRestart(self.label_select, restart)
         self.updateView()
 
 
@@ -348,7 +349,8 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
             restart = from_qvariant(text, int)
         else:
             restart = self.mdl.defaultValues()['restart']
-        self.mdl.setRestart(self.label_select, restart)
+        if self.label_select:
+            self.mdl.setRestart(self.label_select, restart)
         self.updateView()
 
 
@@ -491,13 +493,14 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
 
     def updateView(self):
         row = self.treeViewAverage.currentIndex().row()
-        lst = self.mdl.getVariable(self.label_select)
-        ntdmom = self.mdl.getTimeStepStart(self.label_select)
-        ttdmom = self.mdl.getTimeStart(self.label_select)
-        imoold = self.mdl.getRestart(self.label_select)
-        idfmom = "*".join(lst)
-        idfmom_view = "<" + idfmom +">"
-        self.modelAverage.replaceItem(row, self.label_select, ntdmom, ttdmom, imoold, idfmom_view)
+        if self.label_select:
+            lst = self.mdl.getVariable(self.label_select)
+            ntdmom = self.mdl.getTimeStepStart(self.label_select)
+            ttdmom = self.mdl.getTimeStart(self.label_select)
+            imoold = self.mdl.getRestart(self.label_select)
+            idfmom = "*".join(lst)
+            idfmom_view = "<" + idfmom +">"
+            self.modelAverage.replaceItem(row, self.label_select, ntdmom, ttdmom, imoold, idfmom_view)
 
 
     def __eraseEntries(self):
