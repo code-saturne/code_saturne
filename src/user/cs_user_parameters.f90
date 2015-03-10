@@ -1245,8 +1245,8 @@ if (.false.) then
 
 endif
 
-! --- Variable diffusivity field id (ifcsl>=0) or constant
-!     diffusivity (ifcvsl=1) for the thermal scalar and USER scalars.
+! --- Variable diffusivity field id (ifcvsl>=0) or constant
+!     diffusivity (ifcvsl=-1) for the thermal scalar and USER scalars.
 
 !     With ifcvsl = 0, the field will be added automatically, and later calls to
 !       field_get_key_int(ivarfl(isca(iscal)), kivisl, ifcvsl)
@@ -1263,8 +1263,8 @@ endif
 !       electric arcs: see usppmo) implicitly defined in the model,
 !       the diffusivity should not be modified here.
 
-!     Caution:    complete usphyv with the law defining the diffusivity
-!     =========   if and only if ifcvsl = 0 has been set here.
+!     Caution:   complete usphyv with the law defining the diffusivity
+!     ========   if and only if ifcvsl = 0 has been set here.
 
 if (.false.) then
 
