@@ -1819,8 +1819,7 @@ cs_file_open(const char        *name,
   strcpy(f->name, name);
 
   f->mode = mode;
-  f->method = method;
-  _access_method(method, (mode != CS_FILE_MODE_READ));
+  f->method = method = _access_method(method, (mode != CS_FILE_MODE_READ));
 
   f->rank = 0;
   f->n_ranks = 1;
