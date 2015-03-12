@@ -1,6 +1,8 @@
 
-Release 3.3.4 (unreleased)
-==========================
+Release 3.3.4 (12 Mar 2015)
+===========================
+
+This is the last release of the 3.3 series.
 
 Bug fixes:
 ----------
@@ -34,7 +36,7 @@ Release 3.3.3 (19 Dec 2014)
 Bug fixes:
 ----------
 
-- Fix occasional crash in Lagragian module postprocessing.
+- Fix occasional crash in Lagrangian module postprocessing.
 
 - Fix and incorrect info on lost particles in some cases.
 
