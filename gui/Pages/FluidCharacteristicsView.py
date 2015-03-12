@@ -955,6 +955,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         s = self.m_th.getThermalScalarName()
         mdl = self.m_th.getThermalScalarModel()
         if mdl == "temperature_celsius":
+            TempInContext = "("+s+" + 273.15)"
             exa = FluidCharacteristicsView.thermal_conductivity.replace("temperature", TempInContext)
         elif mdl == "enthalpy":
             exa = FluidCharacteristicsView.thermal_conductivity_h
