@@ -701,10 +701,10 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if (iturb.eq.50) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*prdv2f(iel)/cvara_k(iel)*thetap
+         + volume(iel)*max(prdv2f(iel),0.d0)/cvara_k(iel)*thetap
   elseif (iturb.eq.51) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
+         + volume(iel)*(max(prdv2f(iel),0.d0)+xrom*cvara_ep(iel)/2    &
                                     *(1.d0-cvara_al(iel)**3))         &
            /cvara_k(iel)*thetap
   endif
