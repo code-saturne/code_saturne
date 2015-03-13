@@ -803,7 +803,7 @@ _export_field_values_n(const fvm_nodal_t    *mesh,
 
   values = vtkDoubleArray::SafeDownCast
     (f->GetPointData()->GetArray(fieldname))
-    ->WritePointer(0, f->GetNumberOfPoints());
+    ->WritePointer(0, dest_dim*f->GetNumberOfPoints());
 
   fvm_convert_array(dim,
                     0,
@@ -874,7 +874,7 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
 
   values = vtkDoubleArray::SafeDownCast
     (f->GetCellData()->GetArray(fieldname))
-    ->WritePointer(0, dim*f->GetNumberOfCells());
+    ->WritePointer(0, dest_dim*f->GetNumberOfCells());
 
   assert(values != NULL);
 
@@ -896,7 +896,7 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
 
     fvm_convert_array(dim,
                       0,
-                      dim,
+                      dest_dim,
                       src_shift,
                       section->n_elements + src_shift,
                       interlace,
@@ -1021,6 +1021,8 @@ fvm_to_catalyst_init_writer(const char             *name,
         else
           w->ensight_names = false;
       }
+
+      for (i1 = i2 + 1; i1 < l_tot && options[i1] == ' '; i1++);
 
     }
 
