@@ -341,7 +341,9 @@ def svn_version_is_modified(srcdir):
     output = p.communicate()
 
     if p.returncode == 0:
-        if output[0].find('entry') > -1:
+        n_entries = output[0].count('<entry')
+        n_po_entries = output[0].count('.po"')
+        if n_entries - n_po_entries > 0:
             return True
 
     return False
@@ -456,7 +458,12 @@ def git_version_is_modified(srcdir):
     output = p.communicate()
     o0 = str(output[0])
     if p.returncode == 0:
-        if len(o0.split('\n')) > 1:
+        changes = o0.split('\n')
+        n_changes = len(changes) - 1
+        for c in changes:
+            if c[-3:] == '.po':
+                n_changes -= 1
+        if n_changes > 0:
             return True
 
     return False
