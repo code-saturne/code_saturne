@@ -728,6 +728,8 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   cs_lnum_t i;
   cs_gnum_t n_cells_tot, iwarning, ibad;
 
+  const int call_type_log = _call_type_compute;
+
   /* If bad cell data has been destroyed and this function is
      called, we have a call type 0, even if it was called before */
 
@@ -776,11 +778,13 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   /* Condition 1: Orthogonal Normal */
   /*--------------------------------*/
 
-  if (_type_flag_compute[call_type] & CS_BAD_CELL_ORTHO_NORM) {
-
+  if (_type_flag_compute[call_type] & CS_BAD_CELL_ORTHO_NORM)
     _compute_ortho_norm(mesh,
                         mesh_quantities,
                         bad_cell_flag);
+
+
+  if (_type_flag_compute[call_type_log] & CS_BAD_CELL_ORTHO_NORM) {
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
@@ -807,11 +811,13 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   /*---------------------------------*/
 
   if (   _type_flag_compute[call_type] & CS_BAD_CELL_OFFSET
-      && cs_glob_mesh_quantities->min_vol >= 0.) {
-
+      && cs_glob_mesh_quantities->min_vol >= 0.)
     _compute_offsetting(mesh,
                         mesh_quantities,
                         bad_cell_flag);
+
+  if (   _type_flag_compute[call_type_log] & CS_BAD_CELL_OFFSET
+      && cs_glob_mesh_quantities->min_vol >= 0.) {
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
@@ -837,11 +843,12 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   /* Condition 3: Least Squares Gradient */
   /*-------------------------------------*/
 
-  if (_type_flag_compute[call_type] & CS_BAD_CELL_LSQ_GRAD) {
-
+  if (_type_flag_compute[call_type] & CS_BAD_CELL_LSQ_GRAD)
     _compute_least_squares(mesh,
                            mesh_quantities,
                            bad_cell_flag);
+
+  if (_type_flag_compute[call_type_log] & CS_BAD_CELL_LSQ_GRAD) {
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
@@ -867,11 +874,12 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
   /* Condition 4: Volume Ratio */
   /*---------------------------*/
 
-  if (_type_flag_compute[call_type] & CS_BAD_CELL_RATIO) {
-
+  if (_type_flag_compute[call_type] & CS_BAD_CELL_RATIO)
     _compute_volume_ratio(mesh,
                           mesh_quantities,
                           bad_cell_flag);
+
+  if (_type_flag_compute[call_type_log] & CS_BAD_CELL_RATIO) {
 
     ibad = 0;
     for (i = 0; i < n_cells; i++) {
@@ -927,18 +935,22 @@ cs_mesh_bad_cells_detect(const cs_mesh_t       *mesh,
       }
     }
 
-    if (cs_glob_rank_id >= 0) {
-      cs_parall_counter(&ibad, 1);
-      cs_parall_counter(&iwarning, 1);
-    }
-
-    /* Display listing output */
-    bft_printf(_("\n  Criterion 5: Guilt by Association:\n"));
-    bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
-               (unsigned long long)ibad,
-               (double)ibad / (double)n_cells_tot * 100.0);
-
     BFT_FREE(bad_guilt_cells);
+
+    if (_type_flag_compute[call_type_log] & CS_BAD_CELL_GUILT) {
+
+      if (cs_glob_rank_id >= 0) {
+        cs_parall_counter(&ibad, 1);
+        cs_parall_counter(&iwarning, 1);
+      }
+
+      /* Display listing output */
+      bft_printf(_("\n  Criterion 5: Guilt by Association:\n"));
+      bft_printf(_("    Number of bad cells detected: %llu --> %3.0f %%\n"),
+                 (unsigned long long)ibad,
+                 (double)ibad / (double)n_cells_tot * 100.0);
+
+    }
 
   }
 

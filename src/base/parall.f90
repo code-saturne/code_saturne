@@ -465,11 +465,12 @@ contains
 
     err = 0
 
-    if (.not.allocated(iompli)) then
-      allocate(iompli(2, ngrpi, nthrdi), stat=err)
-    endif
+    if (allocated(iompli)) deallocate(iompli)
+    if (allocated(iomplb)) deallocate(iomplb)
 
-    if (err .eq. 0 .and. .not.allocated(iomplb)) then
+    allocate(iompli(2, ngrpi, nthrdi), stat=err)
+
+    if (err .eq. 0) then
       allocate(iomplb(2, ngrpb, nthrdb), stat=err)
     endif
 
