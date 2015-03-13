@@ -142,7 +142,7 @@ module parall
     !> \brief Compute the global sum of an integer in case of parellism.
 
     !> Note that for counters, on very large meshes, if the sum exceeds
-    !> 2**31, the resuly will be false on most machines. To avoid this,
+    !> 2**31, the result will be false on most machines. To avoid this,
     !> using the C API (with counters as cs_gnum_t) is preferred.
 
     !> \param[in, out]   sum  local sum in, global sum out
@@ -465,11 +465,12 @@ contains
 
     err = 0
 
-    if (.not.allocated(iompli)) then
-      allocate(iompli(2, ngrpi, nthrdi), stat=err)
-    endif
+    if (allocated(iompli)) deallocate(iompli)
+    if (allocated(iomplb)) deallocate(iomplb)
 
-    if (err .eq. 0 .and. .not.allocated(iomplb)) then
+    allocate(iompli(2, ngrpi, nthrdi), stat=err)
+
+    if (err .eq. 0) then
       allocate(iomplb(2, ngrpb, nthrdb), stat=err)
     endif
 
