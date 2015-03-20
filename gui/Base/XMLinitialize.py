@@ -990,6 +990,52 @@ class XMLinit(Variables):
                 if nodeTmp:
                     nodeTmp.xmlRemoveNode()
 
+        # replace bounce by part_symmetry for lagrangian model on
+        # symmetry
+        XMLBoundaryNode = self.case.xmlInitNode('boundary_conditions')
+        for node in XMLBoundaryNode.xmlGetNodeList('symmetry'):
+            nn = node.xmlGetNode("particles")
+            if nn:
+                if nn["choice"] == "bounce":
+                    nn["choice"] = "part_symmetry"
+
+        # add lagrangian writer if needed
+        XMLLagrangianModel = self.case.xmlGetNode('lagrangian')
+        if XMLLagrangianModel:
+            mdl = XMLLagrangianModel["model"]
+            if mdl != "off":
+                XMLAnaControl = self.case.xmlGetNode('analysis_control')
+                node_out = XMLAnaControl.xmlGetNode('output')
+                nn = node_out.xmlGetNode('writer', 'label', id = "-3")
+                if nn == None:
+                    nodeL = node_out.xmlInitNode('writer', id = "-3", label = 'particles')
+                    nodeL.xmlInitNode('frequency', period = 'none')
+                    nodeL.xmlInitNode('output_at_end', status = 'on')
+                    nodeL.xmlInitNode('format', name = 'ensight', options = 'binary')
+                    nodeL.xmlInitNode('directory', name = 'postprocessing')
+                    nodeL.xmlInitNode('time_dependency', choice = 'transient_connectivity')
+
+                nn = node_out.xmlGetNode('writer', 'label', id = "-4")
+                if nn == None:
+                    nodeT = node_out.xmlInitNode('writer', id = "-4", label = 'trajectories')
+                    nodeT.xmlInitNode('frequency', period = 'none')
+                    nodeT.xmlInitNode('output_at_end', status = 'on')
+                    nodeT.xmlInitNode('format', name = 'ensight', options = 'binary')
+                    nodeT.xmlInitNode('directory', name = 'postprocessing')
+                    nodeT.xmlInitNode('time_dependency', choice = 'fixed_mesh')
+
+                nn = node_out.xmlGetNode('mesh', id = "-3")
+                if nn == None:
+                    node1 = node_out.xmlInitNode('mesh', id = "-3",
+                                                 label = 'particles',
+                                                 type = 'particles')
+                    node1.xmlInitNode('all_variables', status = 'on')
+                    node1.xmlInitNode('location')
+                    node1.xmlSetData('location','all[]')
+                    node1.xmlInitNode('density')
+                    node1.xmlSetData('density', 1)
+                    node1.xmlInitNode('writer', id = '-3')
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
