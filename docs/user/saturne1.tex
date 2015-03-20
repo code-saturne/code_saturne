@@ -2059,54 +2059,52 @@ the internal faces}
 
 \variab{surfbn}{surfbn(nfabor)}{ra}{Norm of the surface vector of the boundary faces}
 
-%==================================
+%====================================
 \subsubsubsection{Physical variables}
-%==================================
+%====================================
 
-The main physical variables are available in the majority of the
-subroutines and brought together according to their type in the
-multidimensional arrays listed below. In some particular subroutines,
-some variables may be given a more explicit name, in order to ease the
-comprehension.
+Almost all physical variables\footnote{except some of the properties defined at
+the cell centers} can be accessed via the \texttt{cs\_field} API and are
+available in all the subroutines as fields (either through their name or their
+id). The previous system, which used multidimensional arrays, has been
+progressively replaced by the \texttt{cs\_field} API and this process is now
+still on-going only for the properties defined at cell centers. These
+properties are therefore the last ones to be additionally accessible through a
+deprecated multidimensional array:
 
 \variab{propce}{propce(ncelet,nproce)}{ra}{Properties defined at the
-cell centres. For instance: density, viscosity, ...}
+cell centres. For instance: viscosity, ...}
 
-\variab{rtp}{rtp(ncelet,nvar)}{ra}{Array storing the values of the solved
-variables at the current time step}
+For a thorough description of the user management of all physical
+variables as well as the corresponding syntaxes between the \texttt{cs\_field}
+API (both in C and Fortran) and the previous system, please refer to
+\doxygenfile{field.html}{the dedicated \texttt{doxygen} documentation}.
 
-\variab{rtpa}{rtpa(ncelet,nvar)}{ra}{Array storing the values of the solved
-variables at the previous time step}
+Note that local arrays of values of physical variables, retrieved via the
+\texttt{cs\_field} API, follow a naming convention, fully described at
+\doxygenfile{local.html}{this page} of the \texttt{doxygen} documentation. It
+is highly recommended to follow this convention to ease the comprehension.
 
-\bigskip
+\underline{About the solved variables}
 
-Progressively, this system is being replaced by the \variab{field} module,
-so some variables and properties are now only accessible as fields
-(either through their name or their id). This is the case for example
-for mass flux across interior and boundary faces.
-
-\underline{About \texttt{rtp} and \texttt{rtpa}}
-
-The indexes allowing marking out the different variables (from 1 to
+The indexes allowing marking out the different solved variables (from 1 to
 \texttt{nvar}) are integers available in a ``module'' called
 \texttt{numvar}.
 
-For example, \texttt{ipr} refers to the variable ``pressure'':
-the pressure in the cell \texttt{iel} at the current time step is
-therefore \texttt{rtp(iel,ipr)}.
+For example, \texttt{ipr} refers to the variable ``pressure''.
 
 The list of integers referring to solved variables is given below. These
-variable index-numbers are not only used for the \texttt{rtp} and
-\texttt{rtpa} arrays, but also for some arrays of variable associated options
-(for instance, \texttt{blencv(ik)} is the percentage of second-order
-convective scheme for the turbulent energy
-when a corresponding turbulent model is used).
+variable index-numbers can be used to retrieve the corresponding field indices
+(for instance, \texttt{ivarfl(ipr)} is the field index for the pressure),
+but also for some arrays of variable associated options (for instance,
+\texttt{blencv(ik)} is the percentage of second-order convective scheme for the
+turbulent energy when a corresponding turbulent model is used).
 
 \begin{list}{$\bullet$}{}
 \item \texttt{ipr}\index{\texttt{ipr}}: pressure
 \footnote{\texttt{ipr} corresponds to a
 reduced pressure, from which the standard hydrostatic pressure has been
-deducted. The total solved pressure is stored in the PROPCE array}.
+deducted. The total solved pressure is a field of type property.}.
 \item \texttt{iu}\index{\texttt{iu}}: velocity along the X axis.
 \item \texttt{iv}\index{\texttt{iv}}: velocity along the Y axis.
 \item \texttt{iw}\index{\texttt{iw}}: velocity along the Z axis.
@@ -2144,33 +2142,27 @@ $\overline{f}$, $\alpha$, $\nu_t$), the following is very important:
 \item The designation ``scalar'' refers to scalar variables which are
       solution of an advection equation, apart from the variables of the
       turbulence model  ($k$, $\varepsilon$, $R_{ij}$, $\omega$,
-      $\varphi$, $\overline{f}$, $\alpha$, $\nu_t$): for instance the temperature, scalars
-      which may be passive or not, ``user'' or not. The mean value of
-      the square of the fluctuations of a ``scalar'' is a
+      $\varphi$, $\overline{f}$, $\alpha$, $\nu_t$): for instance the
+      temperature, scalars which may be passive or not, ``user'' or not.
+      The mean value of the square of the fluctuations of a ``scalar'' is a
       ``scalar'', too. The scalars may be divided into two groups:
       \texttt{nscaus} ``user'' scalars and \texttt{nscapp}
-      ``specific physics'' scalars, with
-      \texttt{nscal=nscaus+nscapp}. \texttt{nscal} must be less than or
-       equal to \texttt{nscamx}.
+      ``specific physics'' scalars, with \texttt{nscal=nscaus+nscapp}.
+      \texttt{nscal} must be less than or equal to \texttt{nscamx}.
 \item The \texttt{j}$^{\text{th}}$ user scalar is, in
       the whole list of the \texttt{nscal} scalars, the scalar number
       \texttt{j}. In the list of the \texttt{nvar} solved variables, it
-      corresponds to the variable number \texttt{isca(j)},
-      its value in the cell \texttt{iel} at the current time step is given by
-      \texttt{rtp(iel,isca(j)}).
+      corresponds to the variable number \texttt{isca(j)}.
 \item The \texttt{j}$^{\text{th}}$ scalar related to a specific physics is, in
       the whole list of the \texttt{nscal} scalars, the scalar number
       \texttt{iscapp(j)}. In the list of the \texttt{nvar} solved variables, it
       corresponds to the variable number
-      \texttt{isca(iscapp(j)})\index{\texttt{iscapp}},
-      its value in the cell \texttt{iel} at the current time step is given by
-      \texttt{rtp(iel,isca(iscapp(j)))}.
+      \texttt{isca(iscapp(j)})\index{\texttt{iscapp}}.
 
-\item Apart from specific physics, the temperature (or the enthalpy) is the scalar number
-      \texttt{iscalt}\index{iscalt} in the list of the \texttt{nscal}
-      scalars. It corresponds to the variable number \texttt{isca(iscalt)}
-      and its value in the cell \texttt{iel} is
-      \texttt{rtp(iel,isca(iscalt))}. if there is no thermal scalar,
+\item Apart from specific physics, the temperature (or the enthalpy) is the
+      scalar number \texttt{iscalt}\index{iscalt} in the list of the
+      \texttt{nscal} scalars. It corresponds to the variable number
+      \texttt{isca(iscalt)}. if there is no thermal scalar,
       \texttt{iscalt} is equal to -1.
 \item A ``user'' scalar number \texttt{j} may represent the mean of the
       square of the fluctuations of a scalar \texttt{k} ({\em i.e.} the average
@@ -2189,7 +2181,7 @@ $\overline{f}$, $\alpha$, $\nu_t$), the following is very important:
 
 \bigskip
 
-\underline{About \texttt{propce}}\\
+\underline{About the physical properties at the cell centers}\\
 In \CS, the physical properties\footnote{Other variables are stored in the
 arrays \texttt{propce}. They are not, strictly speaking,
 ``physical properties'' but it is convenient to have them
@@ -2375,10 +2367,6 @@ The main numerical variables and ``pointers'' are displayed below.
 
 \minititre{Boundary conditions}
 
-\variab{iclrtp}{iclrtp(nvarmx,3)}{ia}{For each variable \texttt{ivar}
-(1$\leqslant$ivar$\leqslant$nvar$\leqslant$nvarmx), rank in \texttt{icodcl} and
-\texttt{rcodcl} of the boundary conditions. See note 2}
-
 \variab{ifmfbr}{ifmfbr(nfabor)}{ia}{Family number of the boundary
 faces. See note 1}
 
@@ -2498,10 +2486,7 @@ with the $k-\omega$ (SST) turbulence model}
 \variab{divukw}{divukw}{ia}{Divergence of the velocity. More precisely it is the trace of the velocity gradient (and not a finite volume divergence term). In the
 cell \texttt{iel},  $div(\vect{u})$ is given by \texttt{divukw(iel1)}.
 This array is defined only with the $k-\omega$ SST turbulence model
-(because in this case it may be calculated at the same time as $S^2$)}
-
-\variab{ra}{ra(ifinra)}{ra}{Real work array containing \texttt{dt}, \texttt{rtp},
-\texttt{rtpa}, \texttt{propce}, \texttt{tpucou}}
+(because in this case it may be calculated at the same time as $S^2$)}.
 
 \minititre{Note: boundary conditions}
 The \textbf{gradient} boundary conditions in \CS boil down to determine a value for the
@@ -4176,25 +4161,44 @@ The non-default variables initialisation is performed in the subroutine \texttt{
 automatically by the code. Velocities and scalars are set to 0 (or \texttt{scamax} or \texttt{scamin} if 0 is outside the acceptable
 scalar variation range), and the turbulent variables are estimated from
 \texttt{uref} and \texttt{almax}. \\
-For $k$ in the $k-\varepsilon$, $R_{ij}-\varepsilon$, v2f or $k-\omega$
-models:\\
-{\texttt{rtp(iel,ikiph) = 1.5*(0.02*uref)**2}
-(in $R_{ij}-\varepsilon$,  $R_{ij}=\frac{2}{3}k\delta_{ij}$)\\
-For $\varepsilon$ in the $k-\varepsilon$, $R_{ij}-\varepsilon$ or v2f models:\\
-\texttt{rtp(iel,ieiph) = rtp(iel,ikiph)**1.5*cmu/almax}\\
-For $\omega$ in the $k-\omega$ model:\\
-\texttt{rtp(iel,iomgip) = rtp(iel,ikiph)**0.5/almax}\\
-For $\varphi$ and $\overline{f}$ in the v2f models:\\
-\texttt{rtp(iel,iphiph) = 2/3}\\
-\texttt{rtp(iel,ifbiph) = 0}\\
-For $\alpha$ in the EBRSM and BL-v2/k models:\\
-\texttt{rtp(iel,ial) = 1}\\
-For $\tilde{\nu}_t$ in the Spalart-Allmaras model:\\
-\texttt{rtp(iel,inusa)=sqrt(1.5)*0.02*uref*almax}
+For $k$ (of variable index \texttt{ik}) in the $k-\varepsilon$,
+$R_{ij}-\varepsilon$, v2f or $k-\omega$ models:
+\begin{equation*}
+k = 1.5 \left(0.02 \textrm{ \texttt{uref}}\right)^2
+\end{equation*}
+and in $R_{ij}-\varepsilon$:
+\begin{equation*}
+R_{ij}=\frac{2}{3}k\delta_{ij}
+\end{equation*}
+For $\varepsilon$ (of variable index \texttt{iep}) in the $k-\varepsilon$,
+$R_{ij}-\varepsilon$ or v2f models:
+\begin{equation*}
+\varepsilon = k^{1.5} \frac{C_\mu}{\textrm{\texttt{almax}}}
+\end{equation*}
+For $\omega$ (of variable index \texttt{iomg}) in the $k-\omega$ model:
+\begin{equation*}
+\omega = k^{0.5} \frac{1}{\textrm{\texttt{almax}}}
+\end{equation*}
+For $\varphi$ and $\overline{f}$ (of variable indices \texttt{iphi} and
+\texttt{ifb}) in the v2f models:
+\begin{equation*}
+\left\{\begin{array}{ll}
+\varphi = & \frac{2}{3} \\
+\overline{f} = & 0
+\end{array}\right.
+\end{equation*}
+For $\alpha$ (of variable index \texttt{ial}) in the EBRSM and BL-v2/k models:
+\begin{equation*}
+\alpha = 1
+\end{equation*}
+For $\tilde{\nu}_t$ in the Spalart-Allmaras model:
+\begin{equation*}
+\tilde{\nu}_t = 0.02 \sqrt{\frac{3}{2}} (\textrm{\texttt{uref}}) (\textrm{\texttt{almax}})
+\end{equation*}
 
-The subroutine \texttt{cs\_user\_initialization} allows if necessary to initialise certain
-variables to values closer to their estimated final values, in order to
-obtain a faster convergence.
+The subroutine \texttt{cs\_user\_initialization} allows if necessary to
+initialise certain variables to values closer to their estimated final values,
+in order to obtain a faster convergence.
 
 This subroutine allows also the user to make a non-standard initialisation of
 physical parameters (density, viscosity, ...), to impose a local
@@ -4205,31 +4209,35 @@ variable specific heat, ...) in the case of a calculation restart.
 \begin{list}{-}{}
 \item For calculations with constant and uniform time step
       (\texttt{idtvar}=0), the value of the time step is \texttt{dtref},
-      given in the parametric file of the interface or in \texttt{cs\_user\_parameters.f90}.
+      given in the parametric file of the interface or in
+      \texttt{cs\_user\_parameters.f90}.
 \item For calculations with a non-constant time step
       (\texttt{idtvar}=1 or 2), which is not a calculation restart,
       the value of \texttt{dtref} given in the parametric file of the interface
-      or in \texttt{cs\_user\_parameters.f90} is used to initialise the time step.
+      or in \texttt{cs\_user\_parameters.f90} is used to initialise the time
+      step.
 \item For calculations with a non-constant time step
       (\texttt{idtvar}=1 or 2) which is a restart of a
       calculation whose time step type was different (for instance, restart
       using a variable time step of a calculation run using a constant time
       step), the value of \texttt{dtref}, given in the parametric file of the
-      interface or in \texttt{cs\_user\_parameters.f90}, is used to initialise the time step.
+      interface or in \texttt{cs\_user\_parameters.f90}, is used to initialise
+      the time step.
 \item For calculations with non-constant time step
       (\texttt{idtvar}=1 or 2) which is a restart of a
       calculation whose time step type was the same (for instance, restart with
       \texttt{idtvar}=1 of a calculation run with \texttt{idtvar}=1), the time
       step is read from the restart file and the value of \texttt{dtref} given
-      in the parametric file of the interface, or in \texttt{cs\_user\_parameters.f90}, is not used.
+      in the parametric file of the interface, or in
+      \texttt{cs\_user\_parameters.f90}, is not used.
 \end{list}
-It follows, that for a calculation with a non-constant time step (\texttt{idtvar}=1
-or 2) which is a restart of a calculation in which
+It follows, that for a calculation with a non-constant time step
+(\texttt{idtvar}=1 or 2) which is a restart of a calculation in which
 \texttt{idtvar} had the same value, \texttt{dtref} does not allow to modify the
-time step. The user subroutine \texttt{cs\_user\_initialization} allows modifying the array
-\texttt{dt} which contains the value of the time step read from the restart file
-(array whose size is \texttt{ncelet}, defined at the cell centres whatever the
-chosen time step type is).
+time step. The user subroutine \texttt{cs\_user\_initialization} allows
+modifying the array \texttt{dt} which contains the value of the time step read
+from the restart file (array whose size is \texttt{ncelet}, defined at the cell
+centres whatever the chosen time step type is).
 
 %==================================
 \subsection{Manage boundary conditions}
@@ -5967,8 +5975,7 @@ The output of a given variable is generated by means of a call to the subroutine
              ``interlaced'' or not:
         \begin{list}{$\rightarrow$}{}
                \item 0: not interlaced, in the form ${\{x_1, x_2, ..., x_n,
-                         y_1, y_2, ..., y_n, z_1, z_2, ..., z_n\}}$ \\
-                         (case of all variables defined in \texttt{rtp}).
+                         y_1, y_2, ..., y_n, z_1, z_2, ..., z_n\}}$
                \item 1: interlaced, in the form ${\{x_1, y_1, z_1, x_2, y_2, z_2, ..., x_n, y_n, z_n\}}$ \\
                          (case of the geometric parameters, like
                      \texttt{xyzcen}, \texttt{surfbo}, ...).
@@ -5989,7 +5996,7 @@ The output of a given variable is generated by means of a call to the subroutine
                      generate the appropriate post-processing variable.
                \item 1: variable already defined in the main mesh
                      (``parent'' mesh of the ``parts''), for example the
- variables in the rtp array. Instructions in the report which list \texttt
+ solved variables. Instructions in the report which list \texttt
 {lstcel}, \texttt{lstfac}, and \texttt{lstfbr}will be treated directly by
  the subroutine, thereby avoiding unused copies and simplifying the code
          \end{list}
@@ -6000,10 +6007,7 @@ The output of a given variable is generated by means of a call to the subroutine
        \item \texttt{ttcabs}: current physical time value. It is not taken
              into account if \texttt{ntcabs} $< 0$.
        \item \texttt{tracel}: array containing the values of the
-             variable at the cells. If \texttt{ivarpr} $= 1$, this
-             argument will be replaced by the position of the beginning
-             of the array on which the variable is defined, for instance
-             \texttt{rtp(1, iu(1))} for the velocity.
+             variable at the cells.
        \item \texttt{trafac}: equivalent of \texttt{tracel} for the
              internal faces.
        \item \texttt{trafbr}: equivalent of \texttt{tracel} for the
@@ -6600,6 +6604,12 @@ to the specific physics activated {\em via} \texttt{usppmo}. As usual,
 the user may have access to several geometric variables to discriminate
 between different initialisation zones if needed.
 
+It should be recalled again that the user can access the array of values of the
+variables as described in the \doxygenfile{field.html}{the \texttt{doxygen}
+documentation dedicated to the fields management}. In the following description,
+only variables indices \texttt{ivar} are given, but field indices can be
+retrieved easily by using \texttt{ivarfl(ivar)}.
+
 {\em WARNING: in the case of a specific physics modelling, all the
 variables will be initialised here, even the potential user scalars: {\em
 \texttt{cs\_user\_initialization}} is no longer used.}
@@ -6608,41 +6618,62 @@ variables will be initialised here, even the potential user scalars: {\em
 \begin{list}{$\bullet$}{}
        \item in the case of the EBU pre-mixed flame module, the user can
              initialise in every cell \texttt{iel}: the mixing rate
-             \texttt{rtp\index{rtp}(iel,isca(ifm))} in variable richness, the
+             \texttt{isca(ifm)} in variable richness, the
              fresh gas mass fraction \\
-             \texttt{rtp(iel,isca(iygfm\index{iygfm}))}
-             and the mixture enthalpy \texttt{rtp(iel,isca(ihm\index{ihm}))} in
+             \texttt{isca(iygfm\index{iygfm})}
+             and the mixture enthalpy \texttt{isca(iscalt)} in
              permeatic conditions
 
         \item in the case of the rapid complete chemistry diffusion flame
              module, the user can initialise in every cell \texttt{iel}: the
-             mixing rate \texttt{rtp(iel,isca(ifm\index{ifm}))}, its variance
-             \texttt{rtp(iel,isca(ifp2m\index{ifp2m}))} and the mixture mass
-             enthalpy \texttt{rtp(iel,isca(ihm))} in permeatic conditions
+             mixing rate \texttt{isca(ifm\index{ifm})}, its variance
+             \texttt{isca(ifp2m\index{ifp2m})} and the mixture mass
+             enthalpy \texttt{isca(iscalt)} in permeatic conditions
 
         \item in the case of the pulverised coal combustion module, the
              user can initialise in every cell \texttt{iel}:
               \begin{list}{$\rightarrow$}{}
                      \item the transport variables related to the solid phase
                            \begin{list}{}{}
-                                  \item \texttt{rtp(iel,isca(ixch\index{ixch}(icla)))} the reactive coal mass fraction related to the class \texttt{icla} (\texttt{icla} from 1 to \texttt{nclacp} which is the total number of classes, {\em i.e.} for all the coal type)
-                                  \item \texttt{rtp(iel,isca(ixck(\index{ixck}icla)))} the coke mass fraction related to the class \texttt{icla}
-                                  \item        \texttt{rtp(iel,isca(inp\index{inp}(icla)))} the number of particles related to class \texttt{icla} per kg of air-coal mixture
-                                  \item \texttt{rtp(iel,isca(ih2\index{ih2}(icla)))} the mass enthalpy related to the class \texttt{icla} in permeatic conditions
+                                  \item \texttt{isca(ixch\index{ixch}(icla))}
+                                  the reactive coal mass fraction related to the
+                                  class \texttt{icla} (\texttt{icla} from 1 to
+                                  \texttt{nclacp} which is the total number of
+                                  classes, {\em i.e.} for all the coal type)
+                                  \item \texttt{isca(ixck(\index{ixck}icla))}
+                                  the coke mass fraction related to the class
+                                  \texttt{icla}
+                                  \item \texttt{isca(inp\index{inp}(icla))} the
+                                  number of particles related to class
+                                  \texttt{icla} per kg of air-coal mixture
+                                  \item \texttt{isca(ih2\index{ih2}(icla))} the
+                                   mass enthalpy related to the class
+                                   \texttt{icla} in permeatic conditions
                            \end{list}
-                     \item \texttt{rtp(iel,isca(ihm))} the mixture enthalpy
+                     \item \texttt{isca(iscalt)} the mixture enthalpy
                      \item the transport variables related to the gas phase
                            \begin{list}{}{}
                                   \item
-                                       \texttt{rtp(iel,isca(if1m\index{if1m}(icha)))} the mean value of the tracer 1 representing the light volatile matters released by the coal \texttt{icha}
+                                       \texttt{isca(if1m\index{if1m}(icha))} the
+                                       mean value of the tracer 1 representing
+                                       the light volatile matters released by
+                                       the coal \texttt{icha}
                                   \item
-                                       \texttt{rtp(iel,isca(if2m\index{if2m}(icha)))} the mean value of the tracer 2 representing the heavy volatile matters released by the coal \texttt{icha}
-                                  \item \texttt{rtp(iel,isca(if3m\index{if3m}))}
+                                       \texttt{isca(if2m\index{if2m}(icha))} the
+                                        mean value of the tracer 2 representing
+                                        the heavy volatile matters released by
+                                        the coal \texttt{icha}
+                                  \item \texttt{isca(if3m\index{if3m})}
                                         the mean value of the tracer 3
                                         representing the carbon released
                                         as CO during coke burnout
-                                  \item \texttt{rtp(iel,isca(if4p2m\index{if4p2m}))} the variance associated with the tracer 4 representing the air (the mean value of this tracer is not transported, it can be deduced directly from the three others)
-                                  \item \texttt{rtp(iel,isca(ifp3m\index{ifp3m}))} the variance associated with the tracer 3
+                                  \item \texttt{isca(if4p2m\index{if4p2m})} the
+                                  variance associated with the tracer 4
+                                  representing the air (the mean value of this
+                                  tracer is not transported, it can be deduced
+                                  directly from the three others)
+                                  \item \texttt{isca(ifp3m\index{ifp3m})} the
+                                  variance associated with the tracer 3
                            \end{list}
               \end{list}
 \end{list}
@@ -6818,26 +6849,28 @@ In the case of coal combustion, time averages, chronological records and listing
 In this section, ``specific physics'' refers to gas combustion or
 pulverised coal combustion.
 
-For gas combustion or if the GUI is not used for coal combustion, the 3 subroutines \texttt{cs\_user\_combustion} can be used to complete \texttt{cs\_user\_parameters.f90} for the
-considered specific physics. These subroutines are called at the calculation start.
+For gas combustion or if the GUI is not used for coal combustion, the 3
+subroutines \texttt{cs\_user\_combustion} can be used to complete
+\texttt{cs\_user\_parameters.f90} for the considered specific physics. These
+subroutines are called at the calculation start.
 They allow to:
 \begin{list}{$\bullet$}{}
-\item activate, for the variables which are specific to the activated
-             specific physics module, chronological records at the probes defined in
-             \texttt{cs\_user\_parameters.f90} (indicators \texttt{ihisvr(ipp)}).\\
-Concerning the main variables (velocity, pressure, etc ...) the user
+\item activate, for the variables which are specific to the activated specific
+      physics module, chronological records at the probes defined in
+      \texttt{cs\_user\_parameters.f90} (indicators \texttt{ihisvr(ipp)}).\\
+      Concerning the main variables (velocity, pressure, etc ...) the user
       must still complete \texttt{cs\_user\_parameters.f90} if he wants to get
       chronological records, printings in the listing or chronological
       outputs.
-The variables which can be activated by the user for each specific
-      physics are listed below. The calculation variables \texttt{ivar} (defined
-      at the cell \texttt{iel} by \texttt{rtp(iel,ivar)}) and the properties
-      \texttt{iprop} (defined at the cell \texttt{iel} by
-      \texttt{propce(iel,ipproc(iprop))}) are listed now:
+      The variables which can be activated by the user for each specific
+      physics are listed below. The solved variables (of variable indices
+      \texttt{ivar}) and the properties of indices \texttt{iprop} (defined at
+      the cell \texttt{iel} by \texttt{propce(iel,ipproc(iprop))}) are listed
+      below:
       \begin{list}{$\rightarrow$}{}
        \item EBU pre-mixed flame modelling:
        \begin{list}{-}{}
-        \item Calculation variables \texttt{rtp(iel,ivar)}
+        \item Solved variables
               \begin{list}{\texttt{ivar} = }{}
                \item \texttt{isca(iygfm\index{iygfm})} fresh gas mass fraction
                \item \texttt{isca(ifm\index{ifm})} mixing rate
@@ -6861,22 +6894,24 @@ The variables which can be activated by the user for each specific
              \begin{list}{}{}
               \item  everything is identical to the ``EBU'' case, except
                      the fresh gas mass fraction which is replaced by the
-                     variance of the mixing rate \texttt{ivar=isca(ifp2m\index{ifp2m})}
+                     variance of the mixing rate
+                     \texttt{ivar=isca(ifp2m\index{ifp2m})}
              \end{list}
        \item pulverised coal modelling with 3 combustibles:
              \begin{list}{}{}
               \item {\em variables shared by the two phases}:
                     \begin{list}{-}{}
-                     \item Calculation variables \texttt{rtp(iel,ivar)}
+                     \item Solved variables
                            \begin{list}{\texttt{ivar} = }{}
-                            \item \texttt{isca(ihm\index{ihm})}: gas-coal mixture enthalpy
-                            \item \texttt{isca(immel\index{immel})}: molar mass of the
-                                  gas mixture
+                            \item \texttt{isca(ihm\index{ihm})}: gas-coal
+                                  mixture enthalpy
+                            \item \texttt{isca(immel\index{immel})}: molar mass
+                                  of the gas mixture
                            \end{list}
                     \end{list}
               \item {\em variables specific to the dispersed phase}:
               \begin{list}{-}{}
-               \item Calculation variables \texttt{rtp(iel,ivar)}
+               \item Solved variables
                      \begin{list}{\texttt{ivar} = }{}
                       \item \texttt{isca(ixck\index{ixck}(icla))}: coke mass
                             fraction related to the class \texttt{icla}
@@ -6885,13 +6920,14 @@ The variables which can be activated by the user for each specific
                       \item \texttt{isca(inp\index{inp}(icla))}: number of
                             particles of the class \texttt{icla} per kg of
                             air-coal mixture
-                      \item \texttt{isca(ih2\index{ih2}(icla))}: mass enthalpy of
-                            the coal of class \texttt{icla}, if we are in
+                      \item \texttt{isca(ih2\index{ih2}(icla))}: mass enthalpy
+                            of the coal of class \texttt{icla}, if we are in
                             permeatic conditions
                      \end{list}
                \item Properties \texttt{propce(iel,ipproc(iprop))}
                      \begin{list}{\texttt{iprop} = }{}
-                      \item \texttt{immel\index{immel}}: molar mass of the gas mixture
+                      \item \texttt{immel\index{immel}}: molar mass of the gas
+                            mixture
                       \item \texttt{itemp2\index{itemp2}(icla)}: temperature of
                             the particles of the class \texttt{icla}
                       \item \texttt{irom2\index{irom2}(icla)}: density of
@@ -6915,7 +6951,7 @@ The variables which can be activated by the user for each specific
               \end{list}
               \item {\em variables specific to the continuous phase}:
               \begin{list}{-}{}
-               \item Calculation variables \texttt{rtp(iel,ivar)}
+               \item Solved variables
                      \begin{list}{\texttt{ivar} = }{}
                       \item \texttt{isca(if1m\index{if1m}(icha))}: mean value of
                             the tracer 1 representing the light
@@ -6933,8 +6969,8 @@ The variables which can be activated by the user for each specific
                      \end{list}
                \item Properties \texttt{propce(iel,ipproc(iprop))}
                      \begin{list}{\texttt{iprop} = }{}
-                      \item \texttt{itemp1\index{itemp1}}: temperature of the gas
-                            mixture
+                      \item \texttt{itemp1\index{itemp1}}: temperature of the
+                            gas mixture
                       \item \texttt{iym1(1)\index{iym1(1)}}: mass fraction of
                             $CH_{X1m}$ (light volatiles) in the gas
                             mixture
@@ -8626,8 +8662,8 @@ by an arbitrary number \texttt{izone} chosen by the user. If a boundary conditio
 %following quantities may be initialized by  \texttt{cs\_user\_initialization} in
 %user selected zones in addition to the usual quantities:
 %\begin{list}{-}{}
-% \item the air temperature by filling the array \texttt{rtp(iel,isca(ihumid))},
-% \item the air humidity by filling the array \texttt{rtp(iel,isca(itemp4))},
+% \item the air temperature, variable of index \texttt{isca(ihumid)},
+% \item the air humidity, variable of index \texttt{isca(itemp4)},
 %\end{list}
 %where \texttt{iel} can be an element found in a list returned by the routine
 % '\texttt{getcel}'.
