@@ -515,6 +515,26 @@ be modified by the user}
 {number of user scalars solutions of an advection equation\\
 always useful}
 
+\motcleb{itherm}{ia}{0, 1, 2 or 3}{0}{O}{L1}
+{\hspace*{1.3cm}= 0: no thermal model\\
+\hspace*{1.3cm}= 1: temperature\\
+\hspace*{1.3cm}= 2: enthalpy\\
+\hspace*{1.3cm}= 3: total energy (only for compressible module).\\
+When a particular physics module is activated (gas combustion, pulverised coal,
+electricity or compressible), the user must not modify {\tt itherm} (the choice
+is made automatically: the solved variable is either the enthalpy or the total
+energy). The user is also reminded that, in the case of a coupling with
+\syrthes, the solved thermal variable should be the temperature
+({\tt itherm}=1).
+More precisely, everything is designed in the code to allow for the
+running of a calculation coupled with \syrthes with the enthalpy as thermal
+variable (the correspondence and conversion is then specified by the user in
+the subroutine \texttt{usthht}).
+However this case has never been used in practice and has therefore not been
+tested. With the compressible model, it is possible to carry out calculations
+coupled with \syrthes, although the thermal scalar represents the total
+energy and not the temperature.}
+
 \motcleb{iscalt}{ia}{-1 or integer $>$ 0}{-1}{O}{L1}
 {{\tt iscalt} is the index-number of the scalar
 representing the temperature or the enthalpy. If {\tt iscalt}=-1, neither
@@ -524,39 +544,22 @@ electricity or compressible),
 the user must not modify {\tt iscalt} (the choice is made
 automatically)\footnote{In the case of the compressible module, {\tt iscalt}
 does not correspond to the temperature nor enthalpy but to the total energy}.\\
-useful if and only if {\tt nscal} $\geqslant$ 1}
+useful if and only if {\tt nscal} $\geqslant$ 1.}
 
-\motcleb{iscsth}{ia}{-1, 0, 1, 2 or 3}{-10}{O}{L1}
-{type of scalar\\
-\hspace*{1.3cm}= -10: not specified. By default, the code chooses
-{\tt iscsth(iscal)}=0 for the scalars apart from {\tt iscalt}\\
-\hspace*{1.3cm}= -1: temperature in degrees Celsius (use only in case of
-radiation modelling)\\
-\hspace*{1.3cm}= 0: passive scalar\\
-\hspace*{1.3cm}= 1: temperature (in Kelvin if the radiation modelling is
-activated)\\
-\hspace*{1.3cm}= 2: enthalpy\\
-\hspace*{1.3cm}= 3: total energy (this value is automatically chosen by the code
-when using the compressible module, it must never be used otherwise and must
-never be specified by the user)\\
-useful if and only if {\tt nscal} $\geqslant$ 1. The distinction between
-{\tt iscsth(iscal)} = -1 or 1 (respectively degrees Celsius or Kelvin) is
-useful only in case of radiation modelling. For calculations without
-radiation modelling, use {\tt iscsth(iscal)}=1 for the temperature. When a
-particular physics module is activated (gas combustion, pulverised coal,
-electricity or compressible), the user must not modify {\tt iscsth} (the choice
-is made automatically: the solved variable is either the enthalpy or the total energy).\\
-The user is also reminded that, in the case of a coupling with
-\syrthes, the solved thermal variable should be the temperature
-({\tt iscsth(iscalt)}=1 or -1).
-More precisely, everything is designed in the code to allow for the
-running of a calculation coupled with \syrthes with the enthalpy as thermal
-variable (the correspondence and conversion is then specified by the user in
-the subroutine \texttt{usthht}).
-However this case has never been used in practice and has therefore not been
-tested. With the compressible model, it is possible to carry out calculations
-coupled with \syrthes, although the thermal scalar represents the total
-energy and not the temperature.}
+\motcleb{iscacp}{ia}{0 or 1}{0}{O}{L2}
+{\hspace*{1.3cm}= 0: scalar does not behave like a temperature\\
+\hspace*{1.3cm}= 1: scalar behaves like a temperature
+(use $C_p$ for wall law).\\
+useful if and only if {\tt nscal} $\geqslant$ 1.}
+
+\motcleb{itpscl}{ia}{0, 1 or 2}{0}{O}{L1}
+{\hspace*{1.3cm}= 0: none\\
+\hspace*{1.3cm}= 1: Kelvin\\
+\hspace*{1.3cm}= 2: Celsius\\
+The distinction between {\tt itpscl} = 1 or 2 is useful only in case of
+radiation modelling. For calculations without radiation modelling,
+use {\tt itpscl}=1 for the temperature.\\
+useful if and only if {\tt nscal} $\geqslant$ 1.}
 
 \motcle{iclvfl}{ia}{-1, 0, 1 or 2}{-1}{O}{L3}
 {for every scalar {\tt iscal} representing the average of the square of the
