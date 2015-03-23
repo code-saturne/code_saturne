@@ -171,7 +171,9 @@ class ElectricalModel(Variables, Model):
                 listP.append(name)
 
             if model == 'arc':
-                listV.append('vec_potential')
+                listV.append('vec_potential_01')
+                listV.append('vec_potential_02')
+                listV.append('vec_potential_03')
                 listP.append('laplace_force_')
                 if self.getRadiativeModel() == 'Coef_Abso':
                     listP.append('absorption_coeff')
