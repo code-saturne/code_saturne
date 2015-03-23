@@ -99,6 +99,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.connect(self.comboBoxTypePotElecIm, SIGNAL("activated(const QString&)"), self.slotPotElecImChoice)
         self.connect(self.comboBoxTypePotVector, SIGNAL("activated(const QString&)"), self.slotPotVectorChoice)
         self.connect(self.comboBoxSpecies,       SIGNAL("activated(const QString&)"), self.slotSpeciesChoice)
+        self.connect(self.comboBoxPotVector,     SIGNAL("activated(const QString&)"), self.slotPotVectorComponentChoice)
 
         ## Validators
         validatorPotElec      = DoubleValidator(self.lineEditValuePotElec)
@@ -159,9 +160,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotVector.addItem(self.tr("Implicit flux"), 'neumann_implicit')
         self.modelPotVector.disableItem(0)
 
-        self.potVect = 'vec_potential'
-        self.modelPotVectLabel = ComboModel(self.comboBoxPotVector,1,1)
-        self.modelPotVectLabel.addItem(self.tr(self.potVect),self.potVect)
+        self.potVect = 'vec_potential_01'
+        self.modelPotVectLabel = ComboModel(self.comboBoxPotVector, 3, 1)
+        self.modelPotVectLabel.addItem(self.tr('vec_potential_01'), 'vec_potential_01')
+        self.modelPotVectLabel.addItem(self.tr('vec_potential_02'), 'vec_potential_02')
+        self.modelPotVectLabel.addItem(self.tr('vec_potential_03'), 'vec_potential_03')
         self.modelPotVectLabel.setItem(str_model = self.potVect)
 
         if self.__model.getElectricalModel() == 'joule':
@@ -282,6 +285,15 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
 
 
     @pyqtSignature("const QString&")
+    def slotPotVectorComponentChoice(self, text):
+        """
+        INPUT potential vector component choice
+        """
+        self.potVect = self.modelPotVectLabel.dicoV2M[str(text)]
+        self.initializeVariables()
+
+
+    @pyqtSignature("const QString&")
     def slotPotElec(self, var):
         """
         """
@@ -316,10 +328,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         exa = """#example: """
 
         if not exp:
-            exp = "Ax = 0;\nAy = 0;\nAz = 0;"
-        req = [('Ax', 'vector potential X'),
-               ('Ay', 'vector potential Y'),
-               ('Az', 'vector potential Z')]
+            exp = self.potVect + " = 0;"
+        req = [(self.potVect, 'vector potential')]
 
         sym = [('x', "X cell's gravity center"),
                ('y', "Y cell's gravity center"),
