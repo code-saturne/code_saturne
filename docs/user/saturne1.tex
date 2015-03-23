@@ -7964,8 +7964,8 @@ activated, it is recommended to:
        or specified with the GUI.
  \item keep the convective numerical schemes proposed by default (\textit{i.e.}: upwind scheme).
 \end{list}
-With the compressible algorithm, the density and the specific total energy are two new solved variables
-(\texttt{isca(irho)} and \texttt{isca(ienerg)}). The temperature variable deduced from the specific
+With the compressible algorithm, the specific total energy is a new solved variable
+\texttt{isca(ienerg)}). The temperature variable deduced from the specific
 total energy variable is \texttt{isca(itempk)} for the compressible module.\\
 Initialisation of the options of the variables, boundary conditions, initialisation of the variables and
 management of variable physical properties can be done with the GUI. We describe below the subroutines
@@ -8015,7 +8015,7 @@ With the compressible module, the following types of boundary condition are aval
 
 \begin{list}{-}{}
   \item Inlet/outlet for which velocity and two thermodynamics variables are known.
-  \item Subsonic inlet with imposed density and velocity.
+  \item Subsonic inlet with imposed total pressure and total energy.
   \item Subsonic outlet with imposed static pressure.
   \item Supersonic outlet.
   \item Wall (adiabatic or not).
@@ -8039,7 +8039,7 @@ pressure, density, temperature and specific total energy, only 2 variables out
 of these 4 are independent. The user may then initialise the desired variable pair
 (apart from temperature-energy) and the two other variables will be
 calculated automatically by giving the right value to the variable
-\texttt{iccfth} used for the call to the subroutine \texttt{cfther}.
+\texttt{ithvar} used for the call to the subroutine \texttt{cfther}.
 
 %==================================
 \subsubsection{Management of variable physical properties}
