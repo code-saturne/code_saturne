@@ -489,13 +489,15 @@ z = -0.5*s+5;"""
     def slotBaseName(self, text):
         """
         """
-        if self.sender().validator().state == QValidator.Acceptable:
-            self.mdl.setLabel(self.label_select, str(text))
-            self.label_select = str(text)
+        lst = self.mdl.getProfilesLabelsList()
+        if text not in lst:
+            if self.sender().validator().state == QValidator.Acceptable:
+                self.mdl.setLabel(self.label_select, str(text))
+                self.label_select = str(text)
 
-            row = self.treeViewProfile.currentIndex().row()
-            liste = self.mdl.getVariable(self.label_select)
-            self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
+                row = self.treeViewProfile.currentIndex().row()
+                liste = self.mdl.getVariable(self.label_select)
+                self.modelProfile.replaceItem(row, self.label_select, " ; ".join(liste))
 
 
     @pyqtSignature("const QString&")
