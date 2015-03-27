@@ -135,9 +135,9 @@ class ProbesDelegate(QItemDelegate):
         return editor
 
 
-    def setEditorData(self, lineEdit, index):
-        value = str(index.model().data(index, Qt.DisplayRole))
-        lineEdit.setText(value)
+    def setEditorData(self, editor, index):
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
@@ -146,7 +146,8 @@ class ProbesDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, to_qvariant(value))
+                    model.setData(idx, to_qvariant(value), Qt.DisplayRole)
+
 
 #-------------------------------------------------------------------------------
 #
