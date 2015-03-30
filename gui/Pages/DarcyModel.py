@@ -105,6 +105,8 @@ class DarcyModel(Model):
             TurbulenceModel(self.case).setTurbulenceModel('off')
             FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
             FluidCharacteristicsModel(self.case).setInitialValue('density', 1.)
+        else:
+            TurbulenceModel(self.case).setTurbulenceModel("k-epsilon-PL")
 
 
     @Variables.noUndo
