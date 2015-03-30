@@ -241,11 +241,12 @@ class VolumicZone(Zone):
             self._natureDict['thermal_source_term']  = self.tr("Thermal source term")
         del ThermalScalarModel
 
-        from code_saturne.Pages.DarcyModel import DarcyModel
-        if DarcyModel(self.case).getDarcyModel() != 'off':
-            self._natureList.append('darcy_law')
-            self._natureDict['darcy_law']  = self.tr("Darcy volumic law")
-        del DarcyModel
+        self.node_models = self.case.xmlGetNode('thermophysical_models')
+        node_darcy = self.node_models.xmlGetNode('darcy_model')
+        if node_darcy:
+            if node_darcy['model'] != 'off':
+                self._natureList.append('darcy_law')
+                self._natureDict['darcy_law']  = self.tr("Darcy volumic law")
 
         node = self.case.xmlGetNode('additional_scalars')
         number = len(node.xmlGetNodeList('variable', type='user'))
