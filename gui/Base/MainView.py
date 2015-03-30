@@ -671,7 +671,7 @@ class MainView(object):
 
         create new Code_Saturne case
         """
-        if not hasattr(self, 'case'):
+        if not hasattr(self, 'case') or not self.case['xmlfile']:
             dialog = NewCaseDialogView(self, self.package)
             if dialog.exec_():
                 self.case = XMLengine.Case(package=self.package)
