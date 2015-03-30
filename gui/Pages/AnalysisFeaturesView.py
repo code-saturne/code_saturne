@@ -549,6 +549,10 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             title = self.tr("Warning")
             msg   = self.tr("Darcy module is under development")
             QMessageBox.information(self, title, msg)
+        else:
+            self.comboBoxCompressible.setEnabled(True)
+            self.comboBoxGasCombustionModel.setEnabled(True)
+            self.comboBoxPulverizedCoal.setEnabled(True)
 
         self.browser.configureTree(self.case)
 
