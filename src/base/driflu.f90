@@ -469,7 +469,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     call field_get_coefaf_v(ivarfl(iu), cofafv)
     call field_get_coefbf_v(ivarfl(iu), cofbfv)
 
-    ! Warning: bilsc adds "-( grad(u) . u)"
+    ! Warning: bilsc adds "-( grad(u) . rho u)"
     call bilscv &
     !==========
    ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &

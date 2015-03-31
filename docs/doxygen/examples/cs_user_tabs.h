@@ -30,7 +30,7 @@
 Here is a list of user examples. Thorougly documented snippets are provided.
 
    - \subpage cs_user_initialization "Physical fields user initialization"
-   - \subpage cs_user_boundary_conditions_examples "User boundary conditions definitions"
+   - \subpage cs_user_boundary_conditions_examples "User boundary condition definitions"
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage f_parameters
    - \subpage parameters
