@@ -106,6 +106,7 @@ integer          inc    , iccocg , iwarnp , imligp , nswrgp
 integer          mode   , icla   , ipcla  , f_id0
 integer          idverl
 integer          iflux(nozrdm)
+integer          ngg, i
 double precision epsrgp, climgp, extrap
 double precision aa, bb, ckmin, ckmax, unspi, xlimit, flunmn
 double precision flux(nozrdm)
@@ -122,13 +123,17 @@ double precision, allocatable, dimension(:,:,:) :: coefbq
 double precision, allocatable, dimension(:) :: coefap, coefbp
 double precision, allocatable, dimension(:) :: cofafp, cofbfp
 double precision, allocatable, dimension(:) :: flurds, flurdb
+double precision, allocatable, dimension(:,:) :: kgi,agi,agbi,iabparh2,iempexh2,iempimh2
+double precision, allocatable, dimension(:)   :: iqxpar,iqypar,iqzpar
+double precision, allocatable, dimension(:)   :: iabgaz,iabpar,iemgex,iempex,ilutot
+double precision, allocatable, dimension(:)   :: iqpato,iemgim,iempim
 
 double precision, dimension(:), pointer :: tparo, bqinci
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
-
 double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvara_yfol
 double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:,:), pointer :: bqinsp
 
 integer    ipadom
 data       ipadom /0/
@@ -149,18 +154,46 @@ allocate(cofafp(ndimfb), cofbfp(ndimfb))
 allocate(flurds(nfac), flurdb(ndimfb))
 
 ! Allocate work arrays
-allocate(ckmel(ncelet))
+allocate(ckmel(ncelet)) ! Absorption coeffcient of the bulk phase
+allocate(dcp(ncelet))   ! Specific heat capacity of the bulk phase
 
-! Mapa field arrays
-call field_get_val_s(itparo, tparo)
-call field_get_val_s(iqinci, bqinci)
-call field_get_val_s(ixlam, bxlam)
-call field_get_val_s(iepa, bepa)
-call field_get_val_s(ieps, beps)
-call field_get_val_s(ifnet, bfnet)
+! Map field arrays
+call field_get_val_s(itparo, tparo)     ! Wall temperature
+call field_get_val_s(iqinci, bqinci)    ! Irradiating flux density
+call field_get_val_s(ixlam, bxlam)      ! Heat conduction coeffcient of walls
+call field_get_val_s(iepa, bepa)        ! Thickness of walls
+call field_get_val_s(ieps, beps)        ! Emmisivity of walls
+call field_get_val_s(ifnet, bfnet)      ! Radiosity at walls
+
+if (icp.gt.0) then
+  call field_get_val_s(iprpfl(icp), cpro_cp)
+endif
+! ADF model parameters
+if (imoadf.ge.1) then
+  call field_get_val_v(iqinsp,bqinsp)   ! Irradiating spectral flux density
+endif
+
+allocate(kgi(ncelet,nwsgg),agi(ncelet,nwsgg))    ! Radiation coeffcient kgi and
+! the corresponding weight agi of the i-th grey gas
+allocate(iqxpar(ncelet),iqypar(ncelet),iqzpar(ncelet)) ! Flux density components
+allocate(iabgaz(ncelet),iabpar(ncelet)) ! Radiation absorbed by
+! the gasphase and the solid phase (all particles classes)
+allocate(iemgex(ncelet),iempex(ncelet)) ! Emmitted radtion of the gasphase and
+! the solid phase (all particle classes)
+allocate(iabparh2(ncelet,nclacp),iempexh2(ncelet,nclacp)) ! Absorbed and emmitted
+! radiation of a single size class (needed to calculate the source terms of the
+! particle enthalpy equation)
+allocate(iemgim(ncelet),iempim(ncelet)) ! Implicit source terms of the bulk phase
+! enthalpie equation
+allocate(iempimh2(ncelet,nclacp))       ! Implicit source term of the particle
+! enthalpie equation
+allocate(ilutot(ncelet))                ! Total emitted intensity
+allocate(iqpato(nfabor))                ! Irradiating  flux density at walls
+! Careful: Should not be mixed up with bqinci
+allocate(agbi(nfabor,nwsgg))            ! Weight of the i-th grey gas at walls
 
 !===============================================================================
-! 1. INITIALISATIONS GENERALES
+! 1. Initializations
 !===============================================================================
 
 !---> Number of passes
@@ -172,8 +205,131 @@ write(nfecra,1000)
 !---> Constants initialization
 unspi = 1.d0/pi
 
+!--> Working arrays
+do iel = 1, ncel
+  propce(iel,ipproc(icak(1)))  = 0.d0  ! Radiation coefficient k of the gas phase
+  propce(iel,ipproc(itsri(1))) = 0.d0  ! TS implicit due to emission
+  propce(iel,ipproc(itsre(1))) = 0.d0  ! TS explicit due to emission and absorption
+  propce(iel,ipproc(iabso(1)))  = 0.d0  ! Absortion: Sum,i((kg,i+kp) * Integral(Ii)dOmega)
+  propce(iel,ipproc(iemi(1)))  = 0.d0  ! Emission:  Sum,i((kg,i+kp) * stephn * T^4 *agi)
+!
+  propce(iel,ipproc(iqx)) = 0.d0 ! X-component of the radiative flux vector
+  propce(iel,ipproc(iqy)) = 0.d0 ! Y-compnent of the radiative flux vector
+  propce(iel,ipproc(iqz)) = 0.d0 ! Z-Component of the radiative flux vector
+
+  iabgaz(iel) = 0.d0 ! Absorption of the gas phase: kg,i * Integral(Ii) * dOmega
+  iabpar(iel) = 0.d0 ! Absortion of particles: kp * Integral(Ii) * dOmega
+  iemgex(iel) = 0.d0 ! Emission of the gas phase: kg,i * stephn * T^4 *agi
+  iempex(iel) = 0.d0 ! Emission of particles: kp * stephn * T^4 *agi
+  iemgim(iel) = 0.d0 ! Gas phase related implicit source term in the bulk phase enthalpy eqn.
+  iempim(iel) = 0.d0 ! Particle related implicit source term in the bulk phase enthalpy eqn.
+  ilutot(iel) = 0.d0 ! Total emitted intensity
+  ckmel(iel)  = 0.d0 ! Radiation coeffcient of the bulk phase
+
+  if (icp.gt.0) then
+    dcp(iel) = 1.d0/cpro_cp(iel)
+  else
+    dcp(iel) = 1.d0/cp0
+  endif
+
+  do i=1,nwsgg
+    kgi(iel,i)= 0.d0
+    agi(iel,i)= 1.d0 ! In case of grey gas radiation properties (kgi!=f(lambda))
+                     ! agi must be set to 1.
+  enddo
+enddo
+
+do ifac = 1, nfabor
+  iqpato(ifac) = 0.d0
+  do i = 1, nwsgg
+    agbi(ifac,i) = 1.d0 ! In case of grey gas radiation properties (kgi!=f(lambda))
+                        ! agbi must be set to 1.
+  enddo
+enddo
+
+do iel = 1,ncel
+  do icla = 1, nclacp
+    iabparh2(iel,icla) = 0.d0
+    iempexh2(iel,icla) = 0.d0
+    iempimh2(iel,icla) = 0.d0
+  enddo
+enddo
+
 !=============================================================================
-! 3.1 Absorption coefficient of environment semitransparent
+! 2. Temperature storing (in Kelvin) in tempk(iel, irphas)
+!=============================================================================
+
+!---> Temperature transport
+if (itherm.eq.1) then
+
+  call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
+
+  ! iscalt is in Celsius
+  if (itpscl.eq.2) then
+    do iel = 1, ncel
+      tempk(iel,1) = cvara_scalt(iel) + tkelvi
+    enddo
+  else
+    do iel = 1, ncel
+      tempk(iel,1) = cvara_scalt(iel)
+    enddo
+  endif
+
+!---> Enthalpy transport (flurdb is a temporary array)
+else if (itherm.eq.2) then
+
+  mode = 1
+
+  if (ippmod(iphpar).le.1) then
+
+    call usray4 &
+    !==========
+    ( nvar   , nscal  ,                                            &
+      mode   ,                                                     &
+      itypfb ,                                                     &
+      dt     ,                                                     &
+      tparo  , flurdb , tempk(1,1)  )
+
+  else
+
+    call ppray4 &
+    !==========
+  ( mode   ,                                                       &
+    itypfb ,                                                       &
+    propce ,                                                       &
+    tparo  , flurdb , tempk(1,1)  )
+
+  endif
+
+  if (ippmod(iccoal).ge.0) then
+
+    ! Particules' temperature
+    do icla = 1, nclacp
+      ipcla = 1+icla
+      do iel = 1, ncel
+        tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
+      enddo
+    enddo
+
+  ! Fuel
+  else if (ippmod(icfuel).ge.0) then
+
+    do icla = 1, nclafu
+      ipcla = 1+icla
+      do iel = 1, ncel
+        tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
+      enddo
+    enddo
+
+  endif
+
+else
+  write(nfecra,3500) itherm
+  call csexit (1)
+endif
+
+!=============================================================================
+! 3. Absorption coefficient
 !=============================================================================
 
 !--> Initialization to a non-admissible value for testing after usray3
@@ -188,44 +344,9 @@ enddo
 
 if (ippmod(iphpar).ge.2) then
 
-  call ppcabs(propce)
-
-  !---> ckmel is the absorbption coefficient
-  !     of gas-particle mixing
-
-  if (ippmod(iccoal).ge.0 .or. ippmod(icfuel).ge.0  ) then
-
-    ! Absoption coefficient of the gas
-    do iel = 1, ncel
-      ckmel(iel) = propce(iel,ipproc(icak(1)))
-    enddo
-
-    ! Absoption coefficient of the dispersed phase
-    if (ippmod(iccoal).ge.0 ) then
-      do icla = 1,nclacp
-        ipcla = 1+icla
-        do iel = 1, ncel
-          ckmel(iel) = ckmel(iel)                                   &
-                     + ( propce(iel,ipproc(ix2(icla)))              &
-                       * propce(iel,ipproc(icak(ipcla))) )
-        enddo
-      enddo
-    else
-      do icla = 1,nclafu
-        ipcla = 1+icla
-        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-        do iel = 1, ncel
-          ckmel(iel) = ckmel(iel)                                   &
-                     + ( cvara_yfol(iel)                            &
-                       * propce(iel,ipproc(icak(ipcla))) )
-        enddo
-      enddo
-    endif
-
-  endif
+  call ppcabs(propce, tempk, kgi, agi, agbi)
 
 else
-
 
   !---> Reading of User datas
 
@@ -234,7 +355,7 @@ else
 
   if (iihmpr.eq.1) then
 
-    call uiray3(propce(1,ipproc(icak(1))), ncel, imodak)
+    call uiray3(propce(1,ipproc(icak(1))), ncel, imodak) !FIXME for ADF
 
     if (iirayo.eq.2 .and. ippmod(iphpar).le.1 .and. ipadom.le.3) then
       sf = 0.d0
@@ -279,430 +400,459 @@ else
 
   endif
 
-  call usray3 &
-  !==========
-( nvar   , nscal  , iappel ,                                     &
-  itypfb ,                                                       &
-  izfrad ,                                                       &
-  dt     ,                                                       &
-  propce(1,ipproc(icak(1))))
+  ! Only necessary when grey gas radiation properties are applied.
+  ! In case of the ADF model this test doesnt make sence.
+
+  if (imoadf.eq.0) then
+    call usray3 &
+    !==========
+  ( nvar   , nscal  , iappel ,                                     &
+    itypfb ,                                                       &
+    izfrad ,                                                       &
+    dt     ,                                                       &
+    propce(1,ipproc(icak(1))))
+  endif
 
 endif
 
 !--> General checking
 
-!---> P-1: check that ck is strictly greater than 0
-if (iirayo.eq.2) then
+!--> Test if the radiation coeffcient has been assigned
+if (iirayo.ge.1) then
+  if (imoadf.eq.0) then
+    ckmin = propce(1,ipproc(icak(1)))
+    do iel = 1, ncel
+      ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
+    enddo
 
-  ckmin = propce(1,ipproc(icak(1)))
-  do iel = 1, ncel
-    ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
-  enddo
-  if (ckmin.lt.0.d0) then
-    write(nfecra,2020)
-    call csexit (1)
+    if (irangp.ge.0) then
+      call parmin(ckmin)
+    endif
+
+    if (ckmin.lt.0.d0) then
+      if (iirayo.eq.2) then
+        write(nfecra,2020)
+      else if (iirayo.eq.1) then
+        write(nfecra,2010)
+      endif
+      call csexit (1)
+    endif
+  else
+    ckmin = 0.d0
+    do iel = 1, ncel
+      do ngg = 1, nwsgg
+        ckmin = min(ckmin, kgi(iel,ngg))
+      enddo
+    enddo
+
+    if (irangp.ge.0) then
+      call parmin(ckmin)
+    endif
+
+    if (ckmin.lt.0.d0) then
+      if (iirayo.eq.2) then
+        write(nfecra,2020)
+      else if (iirayo.eq.1) then
+        write(nfecra,2010)
+      endif
+      call csexit (1)
+    endif
   endif
-
-!---> Dom:  check that ck is greater than 0
-else if (iirayo.eq.1) then
-
-  ckmin = propce(1,ipproc(icak(1)))
-  do iel = 1, ncel
-    ckmin = min(ckmin,propce(iel,ipproc(icak(1))))
-  enddo
-  if (ckmin.lt.0.d0) then
-    write(nfecra,2010) ckmin
-    call csexit (1)
-  endif
-
-endif
-
-!---> Check of a transparent case
-idverl = idiver
-
-ckmax = 0.d0
-do iel = 1, ncel
-  ckmax = max(ckmax, propce(iel,ipproc(icak(1))))
-enddo
-if (irangp.ge.0) then
-  call parmax(ckmax)
-endif
-if (ckmax.le.epzero) then
-  write(nfecra,1100)
-  idverl = -1
 endif
 
 !=============================================================================
-! 4. Temperature storing (in Kelvin) in tempk(iel, irphas)
+! 4. Solving the ETR
 !=============================================================================
+! Loop over all grey gases. Remember: In case of the basic radiation models of
+! Code_Saturne nwsgg=1
 
-if (idverl.ge.0) then
+do ngg = 1, nwsgg
+  !---> Check of a transparent case
+  idverl = idiver
 
-  !---> Temperature transport
-  if (itherm.eq.1) then
+  if (imoadf.ge.1) then
+    do iel = 1, ncel
+      propce(iel, ipproc(icak(1))) = kgi(iel, ngg) ! TODO merge the two arrays
+    enddo
 
-    call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
+  else
+    aa = 0.d0
+    do iel = 1, ncel
+      aa = max(aa, propce(iel,ipproc(icak(1))))
+    enddo
+    if (irangp.ge.0) then
+      call parmax(aa)
+    endif
+    if (aa.le.epzero) then
+      write(nfecra,1100)
+      idverl = -1
+    endif
+  endif
 
-    ! iscalt is in Celsius
-    if (itpscl.eq.2) then
-      do iel = 1, ncel
-        tempk(iel,1) = cvara_scalt(iel) + tkelvi
+!===============================================================================
+! 4.1 Radiative P-1 model
+!===============================================================================
+
+  if (iirayo.eq.2) then
+
+    !--> Gas phase: Explicit source term in the transport eqn. of theta4
+
+    do iel = 1, ncel
+      smbrs(iel) = 3.d0*propce(iel,ipproc(icak(1)))*(tempk(iel,1)**4)          &
+                 * agi(iel, ngg)*volume(iel)
+    enddo
+
+    !--> Solid phase:
+
+    ! Coal particles: Explicit source term in the transport eqn. of theta4
+    if (ippmod(iccoal).ge.0) then
+      do icla = 1, nclacp
+        ipcla = 1+icla
+        do iel = 1,ncel
+          smbrs(iel) = smbrs(iel)                               &
+                     + (3.d0*propce(iel,ipproc(ix2(icla)))      &
+                       *  propce(iel,ipproc(icak(ipcla)))       &
+                       * (tempk(iel,ipcla)**4)*agi(iel,ngg)     &
+                       *  volume(iel))
+        enddo
       enddo
-    else
-      do iel = 1, ncel
-        tempk(iel,1) = cvara_scalt(iel)
+
+    ! Fuel droplets: Explicit source term in the transport eqn. of theta4
+    else if (ippmod(icfuel).ge.0) then
+      do icla = 1, nclafu
+        ipcla = 1+icla
+        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        do iel = 1,ncel
+          smbrs(iel) =  smbrs(iel)                              &
+                     + (3.d0*cvara_yfol(iel)                    &
+                       *  propce(iel,ipproc(icak(ipcla)))       &
+                       * (tempk(iel,ipcla)**4)*agi(iel,ngg)     &
+                       *  volume(iel) )
+        enddo
       enddo
     endif
 
-  !---> Enthalpy transport (flurdb is a temporary array)
-  else if (itherm.eq.2) then
+    !--> Gas phase: Implicit source term in the transport eqn. of theta4
 
-    mode = 1
+    do iel = 1, ncel
+      rovsdt(iel) =  3.d0*propce(iel,ipproc(icak(1)))*volume(iel)
+    enddo
 
-    if (ippmod(iphpar).le.1) then
+    !--> Solid phase:
 
-      call usray4 &
-      !==========
-      ( nvar   , nscal  ,                                            &
-        mode   ,                                                     &
-        itypfb ,                                                     &
-        dt     ,                                                     &
-        tparo  , flurdb , tempk(1,1)  )
+    ! Coal particles: Implicit source term in the transport eqn. of theta4
+    if (ippmod(iccoal).ge.0) then
+      do icla = 1, nclacp
+        ipcla = 1+icla
+        do iel = 1,ncel
+          rovsdt(iel) = rovsdt(iel)                                      &
+                      + (3.d0*propce(iel,ipproc(ix2(icla)))              &
+                        * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
+        enddo
+      enddo
 
-    else
-
-      call ppray4 &
-      !==========
-    ( mode   ,                                                       &
-      itypfb ,                                                       &
-      propce ,                                                       &
-      tparo  , flurdb , tempk(1,1)  )
+    ! Fuel droplets: Implicit source term in the transport eqn. of theta4
+    else if (ippmod(icfuel).ge.0) then
+      do icla = 1, nclafu
+        ipcla = 1+icla
+        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        do iel = 1,ncel
+          rovsdt(iel) = rovsdt(iel)                                      &
+                      + (3.d0*cvara_yfol(iel)                            &
+                        * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
+        enddo
+      enddo
 
     endif
+
+    ! Radiation coeffcient of the bulk phase
+    ! Gas phase:
+    do iel = 1, ncel
+      ckmel(iel) = propce(iel,ipproc(icak(1)))
+    enddo
 
     if (ippmod(iccoal).ge.0) then
-
-      ! Particules' temperature
+      ! Solid phase:
+      ! Coal particles
       do icla = 1, nclacp
         ipcla = 1+icla
         do iel = 1, ncel
-          tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
+          ckmel(iel) = ckmel(iel)                                  &
+                     + ( propce(iel,ipproc(ix2(icla)))             &
+                       * propce(iel,ipproc(icak(ipcla))) )
         enddo
       enddo
-
-    ! Fuel
+    ! Fuel droplets
     else if (ippmod(icfuel).ge.0) then
-
       do icla = 1, nclafu
         ipcla = 1+icla
+        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
         do iel = 1, ncel
-          tempk(iel,ipcla) = propce(iel,ipproc(itemp2(icla)))
+          ckmel(iel) = ckmel(iel)                                  &
+                     + ( cvara_yfol(iel)                           &
+                       * propce(iel,ipproc(icak(ipcla))) )
         enddo
       enddo
-
     endif
 
-  else
-    write(nfecra,3500) itherm
-    call csexit (1)
-  endif
-
-  !---> on se sert de propce(iel,ipproc(itsri(1))) comme un auxiliaire pour
-  !       stocker stephn*ck*tempk**4 ici
-  !       plus bas on justifiera le nom.
-
-  if (ippmod(icod3p).eq.-1 .and. ippmod(icoebu).eq.-1) then
-
-    ! Rayonnement standard, flamme CP ou fuel
+    ! Test if ckmel is gt zero
     do iel = 1, ncel
-      propce(iel,ipproc(itsri(1))) = stephn  *             &
-       propce(iel,ipproc(icak(1)))*(tempk(iel,1)**4)
+      if (ckmel(iel).le.0.d0) then
+        write(nfecra,7000)
+        call csexit (1)
+      endif
     enddo
 
-  else
+    ! Update Boundary condiction coefficients
 
-    ! Flamme de diffusion ou flamme de premelange
+    call raycll &
+    !==========
+    ( itypfb ,                                                       &
+      izfrad ,                                                       &
+      coefap , coefbp ,                                              &
+      cofafp , cofbfp ,                                              &
+      tparo  , bqinci , beps   ,                                     &
+      ckmel, agbi, ngg )
+
+    ! Solving
+
+    call raypun &
+    !==========
+    ( itypfb ,                                                       &
+      coefap , coefbp ,                                              &
+      cofafp , cofbfp ,                                              &
+      flurds , flurdb ,                                              &
+      viscf  , viscb  ,                                              &
+      smbrs  , rovsdt ,                                              &
+      propce(1,ipproc(iabso(1))),propce(1,ipproc(iemi(1))),          &
+      propce(1,ipproc(itsre(1))) ,                                   &
+      iqxpar , iqypar , iqzpar ,                                     &
+      bqinci , beps   , tparo  ,                                     &
+      ckmel  , agbi   , ngg    )
+
+  !===============================================================================
+  ! 4.2 Solving of the radiative transfert equation (DOM)
+  !===============================================================================
+
+  else if (iirayo.eq.1) then
+
+    !--> Gas phase: Explicit source term of the ETR
     do iel = 1, ncel
-      propce(iel,ipproc(itsri(1))) = stephn  *             &
-       propce(iel,ipproc(icak(1)))*propce(iel,ipproc(it4m))
+      smbrs(iel) = stephn*propce(iel,ipproc(icak(1)))              &
+                 *(tempk(iel,1)**4)*agi(iel,ngg)*volume(iel)*unspi
     enddo
+
+    !--> Solid phase:
+    ! Coal particles: Explicit source term of the ETR
+    if (ippmod(iccoal).ge.0) then
+      do icla = 1, nclacp
+        ipcla = 1+icla
+        do iel = 1, ncel
+          smbrs(iel) = smbrs(iel)                                 &
+                     + propce(iel,ipproc(ix2(icla)))              &
+                       * agi(iel,ngg)*stephn                      &
+                       *propce(iel,ipproc(icak(ipcla)))           &
+                       *(tempk(iel,ipcla)**4)                     &
+                       * volume(iel)*unspi
+        enddo
+      enddo
+    ! Fuel droplets: Explicit source term of the ETR
+    elseif (ippmod(icfuel).ge.0) then
+      do icla = 1,nclafu
+        ipcla = 1+icla
+        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        do iel = 1,ncel
+          smbrs(iel) = smbrs(iel)                         &
+                     + cvara_yfol(iel)                    &
+                       *agi(iel,ngg)*stephn               &
+                       *propce(iel,ipproc(icak(ipcla)))   &
+                       *(tempk(iel,ipcla)**4)             &
+                       *volume(iel)* unspi
+        enddo
+      enddo
+    endif
+
+    !--> Gas phase: Implicit source term of the ETR
+    do iel = 1, ncel
+      rovsdt(iel) = propce(iel,ipproc(icak(1))) * volume(iel)
+    enddo
+
+    !--> Solid phase
+    ! Coal particles: Implicit source term of the ETR
+    if (ippmod(iccoal).ge.0) then
+      do icla = 1, nclacp
+        ipcla = 1+icla
+        do iel = 1, ncel
+          rovsdt(iel) = rovsdt(iel)                                      &
+                      + propce(iel,ipproc(ix2(icla)))                    &
+                        * propce(iel,ipproc(icak(ipcla))) * volume(iel)
+        enddo
+      enddo
+    ! Fuel droplets: Implicit source term of the ETR
+    elseif (ippmod(icfuel).ge.0) then
+      do icla = 1, nclafu
+        ipcla = 1+icla
+        call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+        do iel = 1, ncel
+          rovsdt(iel) = rovsdt(iel)                                      &
+                      + cvara_yfol(iel)                                  &
+                        * propce(iel,ipproc(icak(ipcla))) * volume(iel)
+        enddo
+      enddo
+    endif
+
+    ! Update Boundary condiction coefficients
+
+    call raycll &
+    !==========
+    ( itypfb ,                                                       &
+      izfrad ,                                                       &
+      coefap , coefbp ,                                              &
+      cofafp , cofbfp ,                                              &
+      tparo  , bqinci , beps   ,                                     &
+      ckmel, agbi, ngg )
+
+    ! Solving
+
+    call raysol &
+    !==========
+    ( coefap , coefbp ,                                              &
+      cofafp , cofbfp ,                                              &
+      flurds , flurdb ,                                              &
+      viscf  , viscb  ,                                              &
+      smbrs  , rovsdt ,                                              &
+      propce(1,ipproc(itsre(1))),                                    &
+      iqxpar , iqypar , iqzpar  ,                                    &
+      bqinci , bfnet  , ngg)
 
   endif
 
-  ! Coal
+  ! Summing up the quantities of each grey gas
+  do iel = 1, ncel
+
+    ! Absorption
+    iabgaz(iel) = iabgaz(iel)+(propce(iel,ipproc(icak(1))) *          &
+                               propce(iel,ipproc(itsre(1))))
+  enddo
+
   if (ippmod(iccoal).ge.0) then
     do icla = 1, nclacp
       ipcla = 1+icla
       do iel = 1, ncel
-        propce(iel,ipproc(itsri(ipcla))) =  stephn  *           &
-          propce(iel,ipproc(icak(ipcla)))*(tempk(iel,ipcla)**4)
+        iabpar(iel) = iabpar(iel) + (propce(iel,ipproc(ix2(icla)))  &
+                                  * propce(iel,ipproc(icak(ipcla))) &
+                                  * propce(iel,ipproc(itsre(1))))
+        iabparh2(iel,icla)        = iabparh2(iel,icla)              &
+                                  + propce(iel,ipproc(icak(ipcla))) &
+                                  * propce(iel,ipproc(itsre(1)))
       enddo
     enddo
-
-  ! Fuel
   else if (ippmod(icfuel).ge.0) then
     do icla = 1, nclafu
       ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
       do iel = 1, ncel
-        propce(iel,ipproc(itsri(ipcla))) =  stephn  *           &
-          propce(iel,ipproc(icak(ipcla)))*(tempk(iel,ipcla)**4)
+        iabpar(iel) = iabpar(iel) + (cvara_yfol(iel)                &
+                                  * propce(iel,ipproc(icak(ipcla))) &
+                                  * propce(iel,ipproc(itsre(1))))
+        iabparh2(iel,icla)        = iabparh2(iel,icla)              &
+                                  + propce(iel,ipproc(icak(ipcla))) &
+                                  * propce(iel,ipproc(itsre(1)))
       enddo
     enddo
   endif
 
-else
+  ! Emission
   do iel = 1, ncel
-    propce(iel,ipproc(itsri(1))) = zero
+    iemgex(iel)=iemgex(iel)-(propce(iel,ipproc(icak(1)))            &
+                           *agi(iel,ngg)*4.d0*stephn                &
+                           *(tempk(iel,1)**4))
+    iemgim(iel)=iemgim(iel)-(16.d0*dcp(iel)*propce(iel,ipproc(icak(1)))      &
+                           * agi(iel,ngg)*stephn*(tempk(iel,1)**3))
+
+  enddo
+  if (ippmod(iccoal).ge.0) then
+    do icla = 1, nclacp
+      ipcla = 1+icla
+      do iel = 1, ncel
+        iempex(iel) = iempex(iel) -(4.0d0*propce(iel,ipproc(ix2(icla)))      &
+                                  *stephn * propce(iel,ipproc(icak(ipcla)))  &
+                                  *(tempk(iel,ipcla)**4)*agi(iel,ngg))
+        iempexh2(iel,icla) = iempexh2(iel,icla)                              &
+                             -(4.0d0*stephn * propce(iel,ipproc(icak(ipcla)))&
+                             *(tempk(iel,ipcla)**4)*agi(iel,ngg))
+        iempim(iel) = iempim(iel) -16.d0*propce(iel,ipproc(icak(ipcla)))     &
+                                  *propce(iel,ipproc(ix2(icla)))             &
+                                  *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg) &
+                                  /cp2ch(ichcor(icla))
+        iempimh2(iel,icla) = iempimh2(iel,icla)                              &
+                             -16.d0*propce(iel,ipproc(icak(ipcla)))          &
+                             *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)      &
+                             /cp2ch(ichcor(icla))
+
+      enddo
+    enddo
+  else if (ippmod(icfuel).ge.0) then
+    do icla = 1, nclafu
+      ipcla = 1+icla
+      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
+      do iel = 1, ncel
+        iempex(iel) = iempex(iel)   -(4.0d0*cvara_yfol(iel)                   &
+                                    *stephn * propce(iel,ipproc(icak(ipcla))) &
+                                    *(tempk(iel,ipcla)**4)*agi(iel,ngg))
+        iempexh2(iel,icla) = iempexh2(iel,icla)                               &
+                             -(4.0d0*stephn * propce(iel,ipproc(icak(ipcla))) &
+                             *(tempk(iel,ipcla)**4)*agi(iel,ngg))
+        iempim(iel) = iempim(iel) -16.d0*propce(iel,ipproc(icak(ipcla)))      &
+                                  *cvara_yfol(iel)*stephn                     &
+                                  *(tempk(iel,ipcla)**3) *agi(iel,ngg)/cp2fol
+        iempimh2(iel,icla) = iempimh2(iel,icla)                               &
+                             -16.d0*propce(iel,ipproc(icak(ipcla)))           &
+                             *stephn*(tempk(iel,ipcla)**3)*agi(iel,ngg)/cp2fol
+      enddo
+    enddo
+  endif
+
+  do iel = 1, ncel
+    ! Emitted intensity
+    ilutot(iel)=ilutot(iel)+propce(iel,ipproc(itsre(1)))
+
+    ! Flux vector components
+    propce(iel,ipproc(iqx))=propce(iel,ipproc(iqx))+iqxpar(iel)
+    propce(iel,ipproc(iqy))=propce(iel,ipproc(iqy))+iqypar(iel)
+    propce(iel,ipproc(iqz))=propce(iel,ipproc(iqz))+iqzpar(iel)
+  enddo
+
+  ! If the ADF model is activated we have to sum up the spectral flux densities
+  if (imoadf.ge.1) then
+    do ifac =1, nfabor
+      iqpato(ifac)=iqpato(ifac)+bqinsp(ngg,ifac)
+    enddo
+  endif
+enddo
+
+!The total radiative flux is copied in bqinci
+!a) for post-processing reasons and
+!b) in order to calculate bfnet
+if (imoadf.ge.1) then
+  do ifac=1,nfabor
+    bqinci(ifac) = iqpato(ifac)
   enddo
 endif
 
 !===============================================================================
-! 5.1 Radiative P-1 model
+! 5.  Storing of the total emitted intensity
 !===============================================================================
+!                             /    ->  ->
+!                        SA= /  L( X , S ). DOMEGA
+!                           /4.PI
 
-if (iirayo.eq.2) then
-
-  !--> Terme source explicite de l'equation sur Theta4
-
-  do iel = 1, ncel
-    smbrs(iel) = 3.d0 * propce(iel,ipproc(icak(1))) *      &
-       ( tempk(iel,1) ** 4) * volume(iel)
-  enddo
-
-  ! Tenir compte de l'absorption des particules
-
-  ! Coal
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1, nclacp
-      ipcla = 1+icla
-      do iel = 1,ncel
-        smbrs(iel) = smbrs(iel)                               &
-                   + (3.d0*propce(iel,ipproc(ix2(icla)))      &
-                     * propce(iel,ipproc(icak(ipcla)))        &
-                     * (tempk(iel,ipcla)**4) * volume(iel) )
-      enddo
-    enddo
-
-  ! Fuel
-  else if (ippmod(icfuel).ge.0) then
-    do icla = 1, nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1,ncel
-        smbrs(iel) = smbrs(iel)                               &
-                   + (3.d0*cvara_yfol(iel)                    &
-                     * propce(iel,ipproc(icak(ipcla)))        &
-                     * (tempk(iel,ipcla)**4) * volume(iel) )
-      enddo
-    enddo
-  endif
-
-  !--> Terme source implicite de l'equation sur Theta4
-  do iel = 1, ncel
-    rovsdt(iel) =  3.d0*propce(iel,ipproc(icak(1)))*volume(iel)
-  enddo
-
-  ! Tenir compte de l'absorption des particules
-
-  ! Coal
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1, nclacp
-      ipcla = 1+icla
-      do iel = 1,ncel
-        rovsdt(iel) = rovsdt(iel)                                      &
-                    + (3.d0*propce(iel,ipproc(ix2(icla)))              &
-                      * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
-      enddo
-    enddo
-
-  ! Fuel
-  else if (ippmod(icfuel).ge.0) then
-    do icla = 1, nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1,ncel
-        rovsdt(iel) = rovsdt(iel)                                      &
-                    + (3.d0*cvara_yfol(iel)                            &
-                      * propce(iel,ipproc(icak(ipcla))) * volume(iel) )
-      enddo
-    enddo
-
-  endif
-
-  !--> Inverse du coefficient de diffusion de l'equation sur Theta4
-  !       A priori ckmel contient deja la bonne info, mais pour plus de
-  !       securite  on le re-remplit
-
-  do iel = 1, ncel
-    ckmel(iel) = propce(iel,ipproc(icak(1)))
-  enddo
-
-  ! Tenir compte de l'absorption des particules
-
-  ! Coal
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1, nclacp
-      ipcla = 1+icla
-      do iel = 1,ncel
-        ckmel(iel) = ckmel(iel)                                  &
-                   + ( propce(iel,ipproc(ix2(icla)))             &
-                     * propce(iel,ipproc(icak(ipcla))) )
-      enddo
-    enddo
-
-  ! Fuel
-  else if (ippmod(icfuel).ge.0) then
-    do icla = 1, nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1, ncel
-        ckmel(iel) = ckmel(iel)                                  &
-                   + ( cvara_yfol(iel)                           &
-                     * propce(iel,ipproc(icak(ipcla))) )
-      enddo
-    enddo
-  endif
-
-  ! Update Boundary condiction coefficients
-
-  call raycll &
-  !==========
-  ( itypfb ,                                                       &
-    izfrad ,                                                       &
-    coefap , coefbp ,                                              &
-    cofafp , cofbfp ,                                              &
-    tparo  , bqinci , beps   ,                                     &
-    ckmel )
-
-  ! Solving
-
-  call raypun &
-  !==========
-( itypfb ,                                                       &
-  coefap , coefbp ,                                              &
-  cofafp , cofbfp ,                                              &
-  flurds , flurdb ,                                              &
-  viscf  , viscb  ,                                              &
-  smbrs  , rovsdt ,                                              &
-  propce(1,ipproc(iabso(1))),propce(1,ipproc(iemi(1))),          &
-  propce(1,ipproc(itsre(1))) , propce(1,ipproc(iqx))  ,          &
-  propce(1,ipproc(iqy))   , propce(1,ipproc(iqz))  ,             &
-  bqinci, beps , tparo  ,                                        &
-  ckmel    )
-
-!===============================================================================
-! 5.2 Solving of the radiative transfert equation
-!===============================================================================
-
-else if (iirayo.eq.1) then
-
-  !--> Terme source explicite de l'equation sur la luminance
-  do iel = 1, ncel
-    smbrs(iel) = propce(iel,ipproc(itsri(1)))*volume(iel)*unspi
-  enddo
-
-  ! Coal
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1,nclacp
-      ipcla = 1+icla
-      do iel = 1,ncel
-        smbrs(iel) = smbrs(iel)                                 &
-                + propce(iel,ipproc(ix2(icla)))                 &
-                 *propce(iel,ipproc(itsri(ipcla)))*volume(iel)  &
-                 *unspi
-      enddo
-    enddo
-
-  ! Fuel
-  elseif (ippmod(icfuel).ge.0) then
-    do icla = 1,nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1,ncel
-        smbrs(iel) = smbrs(iel)                                 &
-                    + cvara_yfol(iel)                           &
-                 *propce(iel,ipproc(itsri(ipcla)))*volume(iel)  &
-                 *unspi
-      enddo
-    enddo
-
-  endif
-
-  !--> Terme source implicite de l'equation sur la luminance
-  !      KL + div(LS) = KL0 integre sur le volume de controle
-  do iel = 1, ncel
-    rovsdt(iel) = propce(iel,ipproc(icak(1))) * volume(iel)
-  enddo
-
-  ! Coal
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1,nclacp
-      ipcla = 1+icla
-      do iel = 1,ncel
-        rovsdt(iel) = rovsdt(iel)                                      &
-                    + propce(iel,ipproc(ix2(icla)))                    &
-                      * propce(iel,ipproc(icak(ipcla))) * volume(iel)
-      enddo
-    enddo
-
-  ! Fuel
-  elseif (ippmod(icfuel).ge.0) then
-    do icla = 1,nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1,ncel
-        rovsdt(iel) = rovsdt(iel)                                      &
-                    + cvara_yfol(iel)                                  &
-                      * propce(iel,ipproc(icak(ipcla))) * volume(iel)
-      enddo
-    enddo
-
-  endif
-
-  ! Update Boundary condiction coefficients
-
-  call raycll &
-  !==========
-  ( itypfb ,                                                       &
-    izfrad ,                                                       &
-    coefap , coefbp ,                                              &
-    cofafp , cofbfp ,                                              &
-    tparo  , bqinci , beps   ,                                     &
-    ckmel )
-
-  ! Solving
-
-  call raysol &
-  !==========
- ( coefap , coefbp ,                                              &
-   cofafp , cofbfp ,                                              &
-   flurds , flurdb ,                                              &
-   viscf  , viscb  ,                                              &
-   smbrs  , rovsdt ,                                              &
-   propce(1,ipproc(itsre(1))),propce(1,ipproc(iqx))         ,     &
-   propce(1,ipproc(iqy))    , propce(1,ipproc(iqz))   ,           &
-   bqinci , bfnet )
-
-endif
-
-!===============================================================================
-! 5.3 Storing of the integral of the luminance for the Lagrangian module
-!===============================================================================
-
-!  Si dans le module lagrangien on resout une equation de la temperature
-!    sur les particules (iphyla=1 et itpvar=1) ou si les particules
-!    sont des grains de charbon (iphyla=2), on a besoin de
-!                                     /    ->  ->
-!    l'integrale de la luminance SA= /  L( X , S ). DOMEGA
-!                                   /4.PI
-!  On stocke cette variable quelque soit le choix des options
-
-do iel = 1,ncel
-  propce(iel,ipproc(ilumin)) = propce(iel,ipproc(itsre(1)))
+do iel=1,ncel
+  propce(iel,ipproc(ilumin))  = ilutot(iel)
 enddo
 
 !===============================================================================
-! 6. Net radiative flux at walls: compuation and integration
+! 6. Net radiative flux at walls: computation and integration
 !===============================================================================
 
 !--> Initialization to a non-admissible value for testing after usray5
@@ -711,6 +861,12 @@ do ifac = 1,nfabor
 enddo
 
 !---> Reading of User datas
+!CAREFUL: The user has acces to the radiation coeffcient propce(1,ipproc(icak(1)))
+!in usray5. However, only when the standard radiation models of code_saturne are
+!applied, this table contains the true value given by the user. Thus, the usage
+!of the radiation coeffcient in usray5 must be done carefully. In its present
+!version usray5 does NOT use the radiation coeffcient, and thus, usray5 can still
+!be called here, even if the ADF model is activated.
 call usray5 &
 !==========
 ( nvar   , nscal  ,                                              &
@@ -728,10 +884,13 @@ iok = 0
 xlimit = -grand*0.1d0
 flunmn = grand
 
-do ifac = 1,nfabor
+do ifac = 1, nfabor
   if (bfnet(ifac).le.xlimit) then
     iok = iok + 1
     flunmn = min(flunmn,bfnet(ifac))
+    if (irangp.ge.0) then
+      call parmin(flunmn)
+    endif
     write(nfecra,4000)ifac,izfrad(ifac),itypfb(ifac)
   endif
 enddo
@@ -772,7 +931,7 @@ write(nfecra,5000)
 !--> Integration de la densite de flux net aux frontieres
 
 aa = 0.d0
-do ifac = 1, nfabor
+do ifac = 1,nfabor
   aa =  aa + bfnet(ifac) * surfbn(ifac)
 enddo
 if (irangp.ge.0) then
@@ -792,157 +951,60 @@ write(nfecra,5030) aa
 if (idverl.ge.0) then
 
   do iel = 1, ncel
-
-    !--> part d'absorption du terme source explicite
-    propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(icak(1))) &
-                                 * propce(iel,ipproc(itsre(1)))
-
-    !--> part d'emission du terme source explicite
-    propce(iel,ipproc(iemi(1))) = -4.d0*propce(iel,ipproc(itsri(1)))
-
+    ! Absoprtion of the gas is copied into iabso(1)
+    propce(iel,ipproc(iabso(1))) = iabgaz(iel)
+    ! Emission of the gas phase is copied into iemi(1)
+    propce(iel,ipproc(iemi(1))) = iemgex(iel)
   enddo
-
-  ! Combustion CP : On rajoute la contribution des particules
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1, nclacp
-      ipcla = 1+icla
-      do iel = 1, ncel
-        ! Fluid
-        propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(iabso(1)))            &
-                                     + propce(iel,ipproc(ix2(icla)))           &
-                                      * propce(iel,ipproc(icak(ipcla)))       &
-                                      * propce(iel,ipproc(itsre(1)))
-
-        propce(iel,ipproc(iemi(1))) = propce(iel,ipproc(iemi(1)))             &
-                                    - 4.0d0*propce(iel,ipproc(ix2(icla)))     &
-                                      * propce(iel,ipproc(itsri(ipcla)))
-        ! Particles
-        propce(iel,ipproc(iabso(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
-                                         * propce(iel,ipproc(itsre(1)))
-        propce(iel,ipproc(iemi(ipcla))) = - 4.0d0*propce(iel,ipproc(itsri(ipcla)))
-        propce(iel,ipproc(itsre(ipcla))) = propce(iel,ipproc(iabso(ipcla)))    &
-                                         + propce(iel,ipproc(iemi(ipcla)))
-      enddo
+  if (ippmod(iccoal).ge.0.or.ippmod(icfuel).ge.0) then
+    do iel = 1, ncel
+      ! Absoprtion of particles is added to iabso(1)
+      propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(iabso(1))) + iabpar(iel)
+      ! Emission of particles is added to iemi(1)
+      propce(iel,ipproc(iemi(1))) = propce(iel,ipproc(iemi(1))) + iempex(iel)
     enddo
-
-  ! Combustion Fuel : On rajoute la contribution des particules
-  elseif (ippmod(icfuel).ge.0) then
-    do icla = 1, nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1, ncel
-        ! Fluid
-        propce(iel,ipproc(iabso(1))) = propce(iel,ipproc(iabso(1)))            &
-                                     + cvara_yfol(iel)                         &
-                                      * propce(iel,ipproc(icak(ipcla)))       &
-                                      * propce(iel,ipproc(itsre(1)))
-
-        propce(iel,ipproc(iemi(1))) = propce(iel,ipproc(iemi(1)))             &
-                                    - 4.0d0*cvara_yfol(iel)                   &
-                                      * propce(iel,ipproc(itsri(ipcla)))
-        ! Particles
-        propce(iel,ipproc(iabso(ipcla))) = propce(iel,ipproc(icak(ipcla)))     &
-                                         * propce(iel,ipproc(itsre(1)))
-        propce(iel,ipproc(iemi(ipcla))) = - 4.0d0*propce(iel,ipproc(itsri(ipcla)))
-        propce(iel,ipproc(itsre(ipcla))) = propce(iel,ipproc(iabso(ipcla)))    &
-                                         + propce(iel,ipproc(iemi(ipcla)))
-      enddo
-    enddo
-
   endif
-
-  !--> Premiere methode pour le calcul du terme source explicite :
-  !    il est calcule comme la somme des termes d'absorption et d'emission
-  !    (il faudra multiplier ce terme par volume(iel) dans covofi->raysca)
   do iel = 1, ncel
+    ! Emission + Absorption of gas and particles --> TSexplicit
     propce(iel,ipproc(itsre(1))) = propce(iel,ipproc(iabso(1)))                &
                                  + propce(iel,ipproc(iemi(1)))
   enddo
 
-  ! Allocate work arrays
-  allocate(dcp(ncelet))
-
-  !--> 1/Cp is stored in dcp
-  if (icp.gt.0) then
-    call field_get_val_s(iprpfl(icp), cpro_cp)
-    do iel = 1,ncel
-      dcp(iel) = 1.d0/cpro_cp(iel)
-    enddo
-  else
-    do iel = 1,ncel
-      dcp(iel) = 1.d0/cp0
-    enddo
-  endif
-
-  !--> Terme source implicite,
-  !    (il faudra multiplier ce terme par VOLUME(IEL) dans COVOFI->RAYSCA)
-  if (ippmod(icod3p).eq.-1 .and. ippmod(icoebu).eq.-1) then
-    ! Rayonnement standard, flamme CP ou fuel
+  do iel = 1, ncel
+    ! TSimplicit of the gas phase
+    propce(iel,ipproc(itsri(1))) = iemgim(iel)
+  enddo
+  if (ippmod(iccoal).ge.0.or.ippmod(icfuel).ge.0) then
     do iel = 1, ncel
-      propce(iel,ipproc(itsri(1))) =                         &
-       -16.d0*propce(iel,ipproc(icak(1))) *stephn *          &
-         (tempk(iel,1)**3) * dcp(iel)
-    enddo
-
-  else
-
-    ! Flamme de diffusion ou flamme de premelange
-    do iel = 1, ncel
-      propce(iel,ipproc(itsri(1))) =                         &
-       -16.d0*stephn*propce(iel,ipproc(icak(1)))*            &
-           propce(iel,ipproc(it3m)) * dcp(iel)
-    enddo
-
-  endif
-
-  deallocate(dcp)
-
-  ! Combustion CP : On rajoute la contribution des particules
-  if (ippmod(iccoal).ge.0) then
-    do icla = 1, nclacp
-      ipcla = 1+icla
-      do iel = 1, ncel
-        propce(iel,ipproc(itsri(1))) = propce(iel,ipproc(itsri(1)))          &
-                                     - 16.d0*propce(iel,ipproc(icak(ipcla))) &
-                                       * propce(iel,ipproc(ix2(icla)))       &
-                                       * stephn * (tempk(iel,ipcla)**3)      &
-                                       / cp2ch(ichcor(icla))
-        propce(iel,ipproc(itsri(ipcla))) = -16.d0                            &
-                                         * propce(iel,ipproc(icak(ipcla)))   &
-                                         * stephn*(tempk(iel,ipcla)**3)      &
-                                         / cp2ch(ichcor(icla))
-      enddo
-    enddo
-
-  ! Combustion FUEL : On rajoute la contribution des particules
-  elseif (ippmod(icfuel).ge.0) then
-    do icla = 1, nclafu
-      ipcla = 1+icla
-      call field_get_val_prev_s(ivarfl(isca(iyfol(icla))), cvara_yfol)
-      do iel = 1, ncel
-        propce(iel,ipproc(itsri(1))) = propce(iel,ipproc(itsri(1)))           &
-                                     - 16.d0*propce(iel,ipproc(icak(ipcla)))  &
-                                       * cvara_yfol(iel) * stephn             &
-                                       * (tempk(iel,ipcla)**3) / cp2fol
-        propce(iel,ipproc(itsri(ipcla))) = -16.d0                             &
-                                         * propce(iel,ipproc(icak(ipcla)))    &
-                                         * stephn * (tempk(iel,ipcla)**3)     &
-                                         / cp2fol
-      enddo
+      ! TSimplicit of the solid phase is added to istri(1)
+      propce(iel,ipproc(itsri(1))) = propce(iel,ipproc(itsri(1))) + iempim(iel)
     enddo
   endif
 
+  ! In order to determine the source terms of the particle enthalpy tranport eqn.,
+  ! we have to copie the approriate determined aboce into the corressponding tables
+  if (ippmod(iccoal).ge.0.or.ippmod(icfuel).ge.0) then
+    do icla = 1,nclacp
+      ipcla = 1+icla
+        do iel = 1, ncel
+          propce(iel,ipproc(iabso(ipcla))) = iabparh2(iel,icla)
+          propce(iel,ipproc(iemi(ipcla))) = iempexh2(iel,icla)
+          propce(iel,ipproc(itsre(ipcla)))= iabparh2(iel,icla)+iempexh2(iel,icla)
+          propce(iel,ipproc(itsri(ipcla)))= iempimh2(iel,icla)
+        enddo
+    enddo
+  endif
 else
   do iel = 1, ncel
-    propce(iel,ipproc(iabso(1)))  = zero
-    propce(iel,ipproc(iemi(1)))  = zero
-    propce(iel,ipproc(itsre(1))) = zero
-    propce(iel,ipproc(itsri(1))) = zero
+    propce(iel,ipproc(iabso(1)))  = 0.d0
+    propce(iel,ipproc(iemi(1)))  = 0.d0
+    propce(iel,ipproc(itsre(1))) = 0.d0
+    propce(iel,ipproc(itsri(1))) = 0.d0
   enddo
 endif
 
 !===============================================================================
-! 7.2 Explicit conservative radiative source termes
+! 6.2 Explicit conservative radiative source terms
 !===============================================================================
 
 ! coefap and coefbp are NOW Boundary conditions on the divergence
@@ -1010,21 +1072,19 @@ if (idverl.eq.1 .or. idverl.eq.2) then
 ! Fin du calcul de la divergence
 endif
 
-
 !===============================================================================
 ! 7.3 Explicite radiative semi-analytical corrected source term
 !===============================================================================
 
-
 if (idverl.eq.2) then
 
-  !---> comparaison des termes sources semi-analytique et conservatif
-  aa = zero
+  !---> Comparison of the semi-analytical and conservative source terms
+  aa = 0.d0
   do iel = 1, ncel
     aa = aa + propce(iel,ipproc(itsre(1))) * volume(iel)
   enddo
 
-  bb = zero
+  bb = 0.d0
   do iel = 1,ncel
     bb = bb                                                                    &
        + (propce(iel,ipproc(iabso(1)))+propce(iel,ipproc(iemi(1))))*volume(iel)
@@ -1037,7 +1097,8 @@ if (idverl.eq.2) then
 
   aa = aa/bb
 
-  !---> correction du terme source semi-analytique par le conservatif
+  !---> Correction of the semi-analytical source term by the conservative source
+  ! term
   do iel = 1,ncel
     propce(iel,ipproc(itsre(1))) = ( propce(iel,ipproc(iabso(1)))              &
                                    + propce(iel,ipproc(iemi(1))))             &
@@ -1057,19 +1118,18 @@ if (idverl.ge.0) then
   !    surfacique de la densite de flux net radiatif faite plus haut
   !    si  IDVERL = 1 ou 2
 
-  aa = zero
+  aa = 0.d0
   do iel = 1, ncel
     aa = aa + propce(iel,ipproc(itsre(1))) * volume(iel)
   enddo
 
-  if(irangp.ge.0) then
+  if (irangp.ge.0) then
     call parsom(aa)
   endif
 
   write(nfecra,5040) aa
   write(nfecra,5050)
   write(nfecra,5000)
-
 !--> Correction du terme source explicite dans raysca pour permettre un
 !    post-processing correct du terme source explicite
 !    lorsque la variable transportee est la temperature
@@ -1087,6 +1147,11 @@ deallocate(tempk)
 deallocate(coefap, coefbp)
 deallocate(cofafp, cofbfp)
 deallocate(flurds, flurdb)
+deallocate(kgi,agi,agbi)
+deallocate(iqxpar,iqypar,iqzpar)
+deallocate(iabgaz,iabpar,iemgex,iempex,ilutot)
+deallocate(iemgim,iempim)
+deallocate(iabparh2,iempexh2,iempimh2)
 
 !--------
 ! Formats
@@ -1211,6 +1276,20 @@ deallocate(flurds, flurdb)
 '@    Verifier les valeurs du coefficient d''absorption CK    ',/,&
 '@      dans l''interface ou le modifier dans USRAY3.         ',/,&
 '@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 7000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : P-1 Radiation model (Subroutine RAYDOM)     ',/,&
+'@    =========                                               ',/,&
+'@                                                            ',/,&
+'@    The local radiation coeffcient of the bulk phase ckmel  ',/,&
+'@    takes the value 0 somewhere. This often occurs during   ',/,&
+'@    the very first iterations of the simulation.            ',/,&
+'@    Thus, make sure the coal and/or the char mass fraction  ',/,&
+'@    have been initialzed to values different from zero.     ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
 

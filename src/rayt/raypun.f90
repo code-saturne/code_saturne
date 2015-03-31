@@ -32,7 +32,7 @@ subroutine raypun &
    theta4 , thetaa , sa     ,                                     &
    qx     , qy     , qz     ,                                     &
    qincid , eps    , tparoi ,                                     &
-   ckmel  )
+   ckmel  , abo    , iband )
 
 !===============================================================================
 ! FONCTION :
@@ -68,6 +68,8 @@ subroutine raypun &
 ! tparoi(nfabor    ! tr ! <-- ! temperature de paroi en kelvin                 !
 ! ckmel(ncelet)    ! tr ! <-- ! coeff d'absorption du melange                  !
 !                  !    !     !   gaz-particules de charbon                    !
+! abo              ! ra ! <-- ! Weights of the i-th gray gas at boundaries     !
+! iband            ! i  ! <-- ! Number of the i-th grey gas                    !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -95,6 +97,7 @@ use parall
 use period
 use mesh
 use cs_c_bindings
+use field
 
 !===============================================================================
 
@@ -102,6 +105,7 @@ implicit none
 
 ! Arguments
 
+integer          iband
 integer          itypfb(nfabor)
 
 double precision coefap(nfabor), coefbp(nfabor)
@@ -118,6 +122,7 @@ double precision qx(ncelet), qy(ncelet), qz(ncelet)
 double precision qincid(nfabor), tparoi(nfabor), eps(nfabor)
 
 double precision ckmel(ncelet)
+double precision abo(nfabor,nwsgg)
 
 ! Local variables
 
@@ -138,9 +143,14 @@ double precision rvoid(1)
 
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: dpvar
+double precision, dimension(:,:), pointer     :: qinspe
 
 !===============================================================================
-
+if (imoadf.ge.1) then
+  ! Pointer to the table
+  ! which contains the spectral flux density
+  call field_get_val_v(iqinsp,qinspe)
+endif
 !===============================================================================
 ! 0. GESTION MEMOIRE
 !===============================================================================
@@ -304,28 +314,44 @@ do ifac = 1, nfabor
       itypfb(ifac).eq.iparug ) then
 
 !--> Premiere version plus chere et legerement plus precise
+! FIXME
+!   aaaa = tparoi(ifac)**4
 
-    aaaa = tparoi(ifac)**4
+!   aaa  = 1.5d0 * distb(ifac) / ckmel(iel)                 &
+!          * ( 2.d0 /(2.d0-eps(ifac)) -1.d0 )
+!   aa   = ( aaa * aaaa + theta4(iel) ) / (1.d0 + aaa)
 
-    aaa  = 1.5d0 * distb(ifac) / ckmel(iel)                 &
-           * ( 2.d0 /(2.d0-eps(ifac)) -1.d0 )
-    aa   = ( aaa * aaaa + theta4(iel) ) / (1.d0 + aaa)
-
-    qincid(ifac) = stephn * (2.d0 * aa - eps(ifac) * aaaa)        &
-                       / (2.d0 - eps(ifac))
+!   qincid(ifac) = stephn * (2.d0 * aa - eps(ifac) * aaaa)        &
+!                      / (2.d0 - eps(ifac))
 
 !--> Deuxieme version plus cheap mais moins precise
-
-!         QINCID(IFAC) = STEPHN *
-!    &    (2.D0 * THETA4(IFABOR(IFAC)) - EPS(IFAC) * TPAROI(IFAC)**4)
-!    &  / (2.D0 - EPS(IFAC))
+!    This expression can be found in the documentation of the P1 model
+!    written by S. DAL-SECCO, A. DOUCE, N. MECHITOUA.
+    if (imoadf.ge.1) then
+      qinspe(iband,ifac) = stephn                                              &
+                         * ((2.d0*theta4(iel))+(abo(ifac,iband)*eps(ifac)*(tparoi(ifac)**4)))  &
+                         / (2.d0-eps(ifac))
+    else
+      qincid(ifac) = stephn                                              &
+                   * ((2.d0*theta4(iel))+(eps(ifac)*(tparoi(ifac)**4)))  &
+                   / (2.d0-eps(ifac))
+    endif
 
   else
-    qincid(ifac) = stephn * theta4(iel)                           &
-               + ( qx(iel) * surfbo(1,ifac) +                     &
-                   qy(iel) * surfbo(2,ifac) +                     &
-                   qz(iel) * surfbo(3,ifac) ) /                   &
-                   (0.5d0 * surfbn(ifac) )
+
+    if (imoadf.ge.1) then
+      qinspe(iband,ifac) = stephn * theta4(iel)                           &
+                         + ( qx(iel) * surfbo(1,ifac) +                   &
+                             qy(iel) * surfbo(2,ifac) +                   &
+                             qz(iel) * surfbo(3,ifac) ) /                 &
+                             (0.5d0 * surfbn(ifac))
+    else
+      qincid(ifac) = stephn * theta4(iel)                           &
+                 + ( qx(iel) * surfbo(1,ifac) +                     &
+                     qy(iel) * surfbo(2,ifac) +                     &
+                     qz(iel) * surfbo(3,ifac) ) /                   &
+                     (0.5d0 * surfbn(ifac) )
+    endif
   endif
 
 enddo
@@ -336,11 +362,11 @@ enddo
 deallocate(dpvar)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
 !----
-! FIN
+! End
 !----
 
 return
