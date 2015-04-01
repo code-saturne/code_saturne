@@ -149,6 +149,11 @@ iimpar = 1
 
 iimlum = 0
 
+!--> Number of iterations used to solve the ETR. Must at least be one to make
+!    the stanard models work.
+
+nwsgg  = 1
+
 !   - Interface Code_Saturne
 !     ======================
 
