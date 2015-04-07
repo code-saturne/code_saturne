@@ -280,7 +280,7 @@ deallocate(indpdf)
 
 if (iirayo.gt.0) then
   do icg = 1, ngazg
-    call field_get_val_s(ibym(1), bsval)
+    call field_get_val_s(ibym(icg), bsval)
     ipcycg = ipproc(iym(icg))
     do ifac = 1, nfabor
       iel = ifabor(ifac)
