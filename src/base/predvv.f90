@@ -1381,7 +1381,7 @@ if (iterns.eq.1) then
     !==========
   endif
 
-  if (iphydr.eq.1) then
+  if (iphydr.eq.1.and.igpust.eq.1) then
 
     do iel = 1, ncel
       !FIXME when using porosity
@@ -1471,7 +1471,7 @@ else
 endif
 
 ! At the first PISO iteration, explicit source terms are added
-if (iterns.eq.1.and.iphydr.ne.1) then
+if (iterns.eq.1.and.iphydr.ne.1.and.igpust.ne.1) then
   ! If source terms are time-extrapolated, they are stored in propce
   if (isno2t.gt.0) then
     do iel = 1, ncel

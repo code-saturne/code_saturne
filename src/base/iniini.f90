@@ -846,11 +846,20 @@ icalhy = -1
 
 ! --- Take into account the balance or imbalance between the pressure
 !     gradient and source terms -div(rho R)
-!     (not activate by default igprij=0)
+!     (not activated by default igprij=0)
 !     igprij = 1: take -div(rho R) in the static pressure
 !                 treatment IF iphydr=1
 !              0: no treatment (default)
 igprij = 0
+
+! --- Take into account the balance or imbalance between the pressure
+!     gradient and user momemtum source terms
+!     (activated by default igpust=1)
+!     igpust = 1: take user momemtum source terms in the static pressure
+!                 treatment IF iphydr=1 (default)
+!              0: no treatment
+igpust = 1
+
 
 ! --- Cavitation module (not activated by default)
 !       -1: module not activated
