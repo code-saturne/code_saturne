@@ -526,10 +526,12 @@ if __name__ == '__main__':
                 i = v.find(e)
                 if i > -1:
                     j = v[i+1:].find('-')
+                    if j < 0:
+                        j = v[i+1:].find('_')
                     if j > -1:
                         extra = v[i:i+j+1]
                     else:
-                        extra = e
+                        extra = v[i:]
                     v = v.replace(extra, '')
             vl = v.split(".")
             l = len(vl)
