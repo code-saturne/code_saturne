@@ -410,7 +410,7 @@ class StandardItemModelMeshes(QStandardItemModel):
                 self.mdl.setMeshNumbers(mesh, v)
 
         elif col == 3 and role == Qt.CheckStateRole:
-            v = from_qvariant(value, int)
+            state = from_qvariant(value, int)
             if state == Qt.Unchecked:
                 self.dataMeshes[row][col] = False
             else:
