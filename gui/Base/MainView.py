@@ -1012,7 +1012,7 @@ class MainView(object):
                 self.statusbar.showMessage(msg, 2000)
 
 
-    def displayManual(self, manual, reader = None):
+    def displayManual(self, pkg, manual, reader = None):
         """
         private method
 
@@ -1020,7 +1020,7 @@ class MainView(object):
         """
         argv_info = ['--guide']
         argv_info.append(manual)
-        cs_info.main(argv_info, self.package)
+        cs_info.main(argv_info, pkg)
 
 
     def initializeBatchRunningWindow(self):
@@ -1309,8 +1309,25 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.connect(self.displayCSTutorialAction, SIGNAL("triggered()"), self.displayCSTutorial)
         self.connect(self.displayCSKernelAction,   SIGNAL("triggered()"), self.displayCSKernel)
         self.connect(self.displayCSRefcardAction,  SIGNAL("triggered()"), self.displayCSRefcard)
+        self.connect(self.displayCSDoxygenAction,  SIGNAL("triggered()"), self.displayCSDoxygen)
         self.connect(self.actionUndo,              SIGNAL("activated()"), self.slotUndo)
         self.connect(self.actionRedo,              SIGNAL("activated()"), self.slotRedo)
+
+        docdir = self.package.get_dir('docdir')
+        if os.path.isdir(docdir):
+            liste = os.listdir(docdir)
+        else:
+            liste = []
+
+        if 'user.pdf' not in liste:
+            self.displayCSManualAction.setEnabled(False)
+        if 'theory.pdf' not in liste:
+            self.displayCSKernelAction.setEnabled(False)
+        if 'refcard.pdf' not in liste:
+            self.displayCSRefcardAction.setEnabled(False)
+        if 'doxygen' not in liste:
+            self.displayCSDoxygenAction.setEnabled(False)
+        self.displayNCManualAction.setVisible(False)
 
 
     def initCase(self):
@@ -1350,7 +1367,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the user manual
         """
-        self.displayManual('user')
+        self.displayManual(self.package, 'user')
 
 
     @pyqtSignature("")
@@ -1371,7 +1388,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the theory and programmer's guide
         """
-        self.displayManual('theory')
+        self.displayManual(self.package, 'theory')
 
 
     @pyqtSignature("")
@@ -1381,7 +1398,17 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         open the quick reference card for Code_Saturne
         """
-        self.displayManual('refcard')
+        self.displayManual(self.package, 'refcard')
+
+
+    @pyqtSignature("")
+    def displayCSDoxygen(self):
+        """
+        public slot
+
+        open the quick doxygen for Code_Saturne
+        """
+        self.displayManual(self.package, 'Doxygen')
 
 
     @pyqtSignature("")
