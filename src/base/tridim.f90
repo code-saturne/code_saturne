@@ -117,7 +117,7 @@ integer          ntrela
 integer          icmst
 
 integer          isvhb
-integer          ii    , jj    , ientha, ippcv
+integer          ii    , ientha, ippcv
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
@@ -508,6 +508,12 @@ if (imobil.eq.1) then
 
   ! En turbomachine on connait la valeur exacte de la vitesse de maillage
   ! on modifie la geometrie en fonction de la geometrie initiale
+
+  do inod = 1, nnod
+    do ii = 1, 3
+      xyznod(ii,inod) = xyzno0(ii,inod)
+    enddo
+  enddo  
 
   call rotation_update_coords(nnod, ttcmob, xyznod)
 
