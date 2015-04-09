@@ -564,13 +564,8 @@ class Plotter(object):
             if curve.fmt:
                 lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
             else:
-                idx = p.curves.index(curve)
-                if idx < 8:
-                    lines = ax.plot(xspan, yspan, label=curve.legend)
-                elif idx < 15:
-                    lines = ax.plot(xspan, yspan, '--', label=curve.legend)
-                else:
-                    lines = ax.plot(xspan, yspan, ':', label=curve.legend)
+                lines = ax.plot(xspan, yspan, label=curve.legend)
+
 
         # additional matplotlib raw commands for line2D
         line = lines[0]
