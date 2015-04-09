@@ -111,7 +111,7 @@ double precision, pointer, dimension(:) :: prhyd
 
 logical          interleaved
 
-integer          iel   , ifac  , ivar  , iscal , iappel
+integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
@@ -509,6 +509,12 @@ if (imobil.eq.1) then
 
   ! En turbomachine on connait la valeur exacte de la vitesse de maillage
   ! on modifie la geometrie en fonction de la geometrie initiale
+
+  do inod = 1, nnod
+    do ii = 1, 3
+      xyznod(ii,inod) = xyzno0(ii,inod)
+    enddo
+  enddo
 
   call rotation_update_coords(nnod, ttcmob, xyznod)
 
