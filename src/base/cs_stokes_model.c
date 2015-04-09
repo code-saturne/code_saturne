@@ -111,14 +111,20 @@ BEGIN_C_DECLS
         parameter of diagonal pressure strengthening
   \var  cs_stokes_model_t::itbrrb
         accurate treatment of the wall temperature
+        (reconstruction of wall temperature)
         - 1: true
         - 0: false (default)
         (see \ref condli, useful in case of coupling with syrthes)
   \var  cs_stokes_model_t::iphydr
         improve static pressure algorithm
+        Take into account the balance or imbalance between the pressure
+        gradient and source terms (as gravity and head losses)
         - 1: impose the equilibrium of the hydrostaic part of the pressure with
           any external force, even head losses
         - 0: no treatment (default)
+        - 2: hydrostatic pressure computation with a apriori momentum equation
+             to obtain a hydrostatic pressure taking into account the imbalance
+             between the pressure gradient and the gravity source term
   \var  cs_stokes_model_t::igprij
         improve static pressure algorithm
         - 1: take -div(rho R) in the static pressure
@@ -155,10 +161,26 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/* main Stokes equation model descriptor structure and associated pointer */
+/* main Stokes equation model descriptor structure and associated pointer:
+ * Default Options */
 
-static cs_stokes_model_t  _stokes_model = { 1, 0, 1, 1, 0, 1.0, 0, 0, 1, 1.e-12,
-                                            0, 0, 0, 0,-1};
+static cs_stokes_model_t  _stokes_model = {
+  .ivisse = 1,
+  .irevmc = 0,
+  .iprco  = 1,
+  .irnpnw = 1,
+  .rnormp = 0,
+  .arak   = 1.0,
+  .ipucou = 0,
+  .iccvfg = 0,
+  .idilat = 1,
+  .epsdp  = 1.e-12,
+  .itbrrb = 0,
+  .iphydr = 0,
+  .igprij = 0,
+  .igpust = 1,
+  .iifren = 0,
+  .icalhy = -1};
 
 const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
 

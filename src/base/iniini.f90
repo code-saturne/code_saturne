@@ -790,75 +790,24 @@ itycor = -999
 !     Set to 1 (Daly and Harlow model) by default
 idirsm = 1
 
-! --- Viscosite secondaire
-
-ivisse = 1
-
 ! --- Stokes
-!     On suppose que l'on traite l'etape de Stokes
 
-iprco  = 1
-irevmc = 0
-arak   = 1.d0
-! indicateur developpeur temporaire sur le test de conv resopv
-irnpnw = 1
 
 ! --- Take porosity into account
 
 iporos = 0
 
-! --- Couplage U-P
-!       Non active par defaut
-
-ipucou = 0
-
 ! --- Algorithm to take into account the density variation in time
 
 !     by default:
 !     ----------
-!      - the dilatable steady algorithm is used (idilat= 1)
 !      - the thermodynamic pressure (pther) is initialized with p0 = p_atmos
 !      - the maximum thermodynamic pressure (pthermax) is initialized with -1
 !        (no maximum by default, this term is used to model a venting effect when
 !         a positive value is given by the user)
-!      - the parameter (epsdp) for diagonal pressure strengthening is equal to 1e-12
 
-idilat = 1
 pther  = 1.013d5
 pthermax= -1.d0
-epsdp  = 1.0d-12
-
-! --- Take into account the balance or imbalance between the pressure
-!     gradient and source terms (as gravity and head losses)
-!     (not activate by default iphydr=0)
-
-!     iphydr = 1 : hydrostatic pressure computation for the pressure
-!                  dirichlet conditions in outlet (will be modify in modini)
-!                  to take into account the balance between the pressure gradient
-!                  and source terms
-!
-!              2 : hydrostatic pressure computation with a apriori momentum equation
-!                  to obtain a hydrostatic pressure taking into account the imbalance
-!                  between the pressure gradient and the gravity source term
-
-iphydr = 0
-icalhy = -1
-
-! --- Take into account the balance or imbalance between the pressure
-!     gradient and source terms -div(rho R)
-!     (not activated by default igprij=0)
-!     igprij = 1: take -div(rho R) in the static pressure
-!                 treatment IF iphydr=1
-!              0: no treatment (default)
-igprij = 0
-
-! --- Take into account the balance or imbalance between the pressure
-!     gradient and user momemtum source terms
-!     (activated by default igpust=1)
-!     igpust = 1: take user momemtum source terms in the static pressure
-!                 treatment IF iphydr=1 (default)
-!              0: no treatment
-igpust = 1
 
 
 ! --- Cavitation module (not activated by default)
@@ -869,9 +818,6 @@ icavit = -1
 
 ! --- Radiative Transfert (not activated by default)
 iirayo = 0
-
-! --- No Bernoulli free entrance faces
-iifren = 0
 
 ! ---  Choice the way to compute the condensation exchange coefficient (hcond)
 !      associated to the condensation source term
@@ -898,11 +844,6 @@ itag1d = 0
 
 itagms = 0
 
-
-! --- Champ de vitesse fige (non fige par defaut)
-
-iccvfg = 0
-
 ! --- Interpolation face des viscosites
 !     = 0 ARITHMETIQUE
 !     = 1 HARMONIQUE
@@ -927,12 +868,6 @@ enddo
 
 ! --- Traitement de la temperature pour couplage SYRTHES
 
-!     TRAITEMENT PRECIS DE LA TEMPERATURE AU BORD, VOIR CONDLI
-!     (UTILISE POUR COUPLAGE SYRTHES et le RAYONNEMENT)
-!     Disons 0 pour eviter que des temperatures issues du traitement
-!       des flux aux parois ne viennent polluer le champ de T.
-
-itbrrb = 0
 do iscal = 1, nscamx
   icpsyr(iscal) = -999
 enddo
