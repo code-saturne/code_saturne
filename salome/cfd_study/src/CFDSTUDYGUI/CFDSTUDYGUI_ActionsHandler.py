@@ -145,6 +145,11 @@ SolverHelpUserGuide            = 261
 SolverHelpTutorial             = 262
 SolverHelpTheory               = 263
 SolverHelpRefcard              = 264
+SolverHelpDoxygen              = 265
+NCSolverHelpUserGuide          = 266
+NCSolverHelpTutorial           = 267
+NCSolverHelpTheory             = 268
+NCSolverHelpDoxygen            = 269
 
 # ObjectTR is a convenient object for traduction purpose
 
@@ -605,7 +610,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action = sgPyQt.createSeparator()
         sgPyQt.createMenu(action, helpId)
         #Info: Solver Help Menu created at the end of the Menu Help of Salome(when we did not indicate a number)
-        action_id = sgPyQt.createMenu("Code_Saturne NEPTUNE_CFD", helpId)
+        action_id = sgPyQt.createMenu("CFD module", helpId)
         self._SolverActionIdMap[SolverHelpMenu] = action_id
 
         m = "About CFD"
@@ -629,7 +634,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.createMenu("Code_Saturne and NEPTUNE_CFD Guides", self._SolverActionIdMap[SolverHelpMenu])
         self._HelpActionIdMap[SolverHelpGuidesMenu] = action_id
 
-        m = "User guide"
+        m = "Code_Saturne user guide"
         action = sgPyQt.createAction(SolverHelpUserGuide, m, m, m)
         sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
@@ -637,7 +642,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._HelpActionIdMap[SolverHelpUserGuide] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpUserGuide)
 
-        m = "Tutorial"
+        m = "Code_Saturne tutorial"
         action = sgPyQt.createAction(SolverHelpTutorial, m, m, m)
         sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
@@ -645,7 +650,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._HelpActionIdMap[SolverHelpTutorial] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpTutorial)
 
-        m = "Theoretical guide"
+        m = "Code_Saturne theoretical guide"
         action = sgPyQt.createAction(SolverHelpTheory, m, m, m)
         sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
         action_id = sgPyQt.actionId(action)
@@ -660,6 +665,48 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         self._ActionMap[action_id] = action
         self._HelpActionIdMap[SolverHelpRefcard] = action_id
         self.connect(action, SIGNAL("activated()"), self.slotHelpRefcard)
+
+        m = "Code_Saturne doxygen"
+        action = sgPyQt.createAction(SolverHelpDoxygen, m, m, m)
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._HelpActionIdMap[SolverHelpDoxygen] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpDoxygen)
+
+        m = "NEPTUNE_CFD user guide"
+        action = sgPyQt.createAction(NCSolverHelpUserGuide, m, m, m)
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._HelpActionIdMap[NCSolverHelpUserGuide] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpNCUserGuide)
+
+        m = "NEPTUNE_CFD tutorial"
+        action = sgPyQt.createAction(NCSolverHelpTutorial, m, m, m)
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._HelpActionIdMap[NCSolverHelpTutorial] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpNCTutorial)
+
+        m = "NEPTUNE_CFD theoretical guide"
+        action = sgPyQt.createAction(NCSolverHelpTheory, m, m, m)
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._HelpActionIdMap[NCSolverHelpTheory] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpNCTheory)
+
+        m = "NEPTUNE_CFD doxygen"
+        action = sgPyQt.createAction(NCSolverHelpDoxygen, m, m, m)
+        sgPyQt.createMenu(action, self._HelpActionIdMap[SolverHelpGuidesMenu])
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._HelpActionIdMap[NCSolverHelpDoxygen] = action_id
+        self.connect(action, SIGNAL("activated()"), self.slotHelpNCDoxygen)
+
+        self.updateActions()
 
 
     def updateActions(self):
@@ -710,11 +757,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             if a != SolverFileMenu and a != SolverToolsMenu and a != SolverHelpMenu:
                 self.solverAction(a).setEnabled(isActivatedView)
 
-        for a in self._HelpActionIdMap:
-            if a != SolverHelpGuidesMenu:
-                self.solverAction(a).setEnabled(isActivatedView)
-                if CFD_Code() == CFD_Neptune:
-                    self.solverAction(SolverHelpRefcard).setEnabled(False)
+        try:
+            from nc_package import package
+        except:
+            self.solverAction(NCSolverHelpUserGuide).setEnabled(False)
+            self.solverAction(NCSolverHelpTutorial).setEnabled(False)
+            self.solverAction(NCSolverHelpTheory).setEnabled(False)
+            self.solverAction(NCSolverHelpDoxygen).setEnabled(False)
 
         if sobj != None:
             if CFDSTUDYGUI_DataModel.checkType(sobj, CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]):
@@ -1967,6 +2016,26 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
     def slotHelpRefcard(self):
         self._SolverGUI.onSaturneHelpRefcard()
+
+
+    def slotHelpDoxygen(self):
+        self._SolverGUI.onSaturneHelpDoxygen()
+
+
+    def slotHelpNCUserGuide(self):
+        self._SolverGUI.onNeptuneHelpManual()
+
+
+    def slotHelpNCTutorial(self):
+        self._SolverGUI.onNeptuneHelpTutorial()
+
+
+    def slotHelpNCTheory(self):
+        self._SolverGUI.onNeptuneHelpKernel()
+
+
+    def slotHelpNCDoxygen(self):
+        self._SolverGUI.onNeptuneHelpDoxygen()
 
 
     def commonAction(self, theId):
