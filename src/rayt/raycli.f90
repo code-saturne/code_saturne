@@ -20,63 +20,68 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine raycli &
-!================
+!===============================================================================
+! Function :
+! --------
 
+!> \file raycli.f90
+!>
+!> \brief Compute wall temperature for radiative transfer, and update BCs
+!>
+!> 1) Compute wall temperature for radiative transfer
+!>
+!> 2) Update BCs for the energy computation
+!>
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in,out] icodcl        face boundary condition code:
+!>                               - 1 Dirichlet
+!>                               - 2 Radiative outlet
+!>                               - 3 Neumann
+!>                               - 4 sliding and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 5 smooth wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 6 rough wall and
+!>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
+!>                               - 9 free inlet/outlet
+!>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
+!> \param[in]     itypfb        face boundary condition type
+!> \param[in]     izfrad        zone index for boundary faces
+!>                               and reference face index
+!> \param[in]     dt            time step (per cell)
+!> \param[in]     propce        physical properties at cell centers
+!> \param[in,out] rcodcl        boundary condition values:
+!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(2) value of the exterior exchange
+!>                                 coefficient (infinite if no exchange)
+!>                               - rcodcl(3) value flux density
+!>                                 (negative if gain) in w/m2 or roughness
+!>                                 in m if icodcl=6
+!>                                 -# for the velocity \f$ (\mu+\mu_T)
+!>                                    \gradv \vect{u} \cdot \vect{n}  \f$
+!>                                 -# for the pressure \f$ \Delta t
+!>                                    \grad P \cdot \vect{n}  \f$
+!>                                 -# for a scalar \f$ cp \left( K +
+!>                                     \dfrac{K_T}{\sigma_T} \right)
+!>                                     \grad T \cdot \vect{n} \f$
+!_______________________________________________________________________________
+
+
+subroutine raycli &
  ( nvar   , nscal  ,                                              &
    icodcl , itypfb ,                                              &
    izfrad ,                                                       &
    dt     , propce , rcodcl )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-!   SOUS-PROGRAMME DU MODULE RAYONNEMENT :
-!   --------------------------------------
-
-!  1) Calcul des temperatures de paroi
-!  2) Mise a jours des conditions aux limites de la variable
-!     energetique
-
-!-------------------------------------------------------------------------------
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! icodcl           ! te ! --> ! code de condition limites aux faces            !
-!  (nfabor,nvar    !    !     !  de bord                                       !
-!                  !    !     ! = 1   -> dirichlet                             !
-!                  !    !     ! = 3   -> densite de flux                       !
-!                  !    !     ! = 4   -> glissemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 5   -> frottemt et u.n=0 (vitesse)           !
-!                  !    !     ! = 6   -> rugosite et u.n=0 (vitesse)           !
-!                  !    !     ! = 9   -> entree/sortie libre (vitesse          !
-!                  !    !     !  entrante eventuelle     bloquee               !
-! itypfb           ! ia ! --> ! boundary face types                            !
-! izfrad(nfabor    ! te ! <-- ! numero de zone des faces de bord               !
-! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
-! propce(ncelet, *)! ra ! <-- ! physical properties at cell centers            !
-! rcodcl           ! tr ! --> ! valeur des conditions aux limites              !
-!  (nfabor,nvar    !    !     !  aux faces de bord                             !
-!                  !    !     ! rcodcl(1) = valeur du dirichlet                !
-!                  !    !     ! rcodcl(2) = valeur du coef. d'echange          !
-!                  !    !     !  ext. (infinie si pas d'echange)               !
-!                  !    !     ! rcodcl(3) = valeur de la densite de            !
-!                  !    !     !  flux (negatif si gain) w/m2 ou                !
-!                  !    !     !  hauteur de rugosite (m) si icodcl=6           !
-!                  !    !     ! pour les vitesses (vistl+visct)*gradu          !
-!                  !    !     ! pour la pression             dt*gradp          !
-!                  !    !     ! pour les scalaires                             !
-!                  !    !     !        cp*(viscls+visct/sigmas)*gradt          !
-!__________________!____!_____!________________________________________________!
-
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -93,6 +98,7 @@ use ihmpre
 use ppppar
 use ppthch
 use ppincl
+use ppcpfu
 use radiat
 use dimens, only: ndimfb
 use mesh
@@ -119,6 +125,7 @@ double precision rcodcl(ndimfb,nvarcl,3)
 integer          iok, ifac, iel, ideb, ivart
 integer          mode, ifvu, ii, izonem, izone
 integer          nrferr(14), icoerr(15)
+integer          ivahg
 
 double precision tmin , tmax   , tx
 double precision xmtk
@@ -191,6 +198,7 @@ enddo
 
 ! Index of the thermal variable
 ivart = isca(iscalt)
+if (ihgas.ge.0) ivahg = isca(ihgas)
 
 ! Pointers to specific fields
 if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
@@ -617,15 +625,20 @@ endif
 do ifac = 1, nfabor
   if (isothm(ifac).eq.itpimp) then
     icodcl(ifac,ivart) = 5
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
   elseif (isothm(ifac).eq.ipgrno) then
     icodcl(ifac,ivart) = 5
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
   elseif (isothm(ifac).eq.iprefl) then
     icodcl(ifac,ivart) = 5
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
     beps(ifac) = 0.d0
   elseif (isothm(ifac).eq.ifgrno) then
     icodcl(ifac,ivart) = 5
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
   elseif (isothm(ifac).eq.ifrefl) then
     icodcl(ifac,ivart) = 3
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = 3
     beps(ifac) = 0.d0
   endif
 enddo
@@ -868,6 +881,11 @@ elseif (itherm.eq.2) then
       rcodcl(ifac,ivart,2) = rinfin
       rcodcl(ifac,ivart,3) = 0.d0
 
+      if (ihgas.ge.0) then
+        rcodcl(ifac,ivahg,1) = bfnet(ifac)
+        rcodcl(ifac,ivahg,2) = rinfin
+        rcodcl(ifac,ivahg,3) = 0.d0
+      endif
     elseif (isothm(ifac).eq.iprefl) then
 
       rcodcl(ifac,ivart,1) = thwall(ifac)
@@ -875,10 +893,21 @@ elseif (itherm.eq.2) then
       rcodcl(ifac,ivart,2) =  bxlam(ifac) / (bepa(ifac))
       rcodcl(ifac,ivart,3) = 0.d0
 
+      if (ihgas.ge.0) then
+        rcodcl(ifac,ivahg,1) = thwall(ifac)
+        rcodcl(ifac,ivahg,2) = bxlam(ifac) / bepa(ifac)
+        rcodcl(ifac,ivahg,3) = 0.d0
+      endif
     elseif (isothm(ifac).eq.ifrefl) then
       icodcl(ifac,ivart) = 3
       rcodcl(ifac,ivart,1) = 0.d0
       rcodcl(ifac,ivart,2) = rinfin
+
+      if (ihgas.ge.0) then
+        icodcl(ifac,ivahg) = 3
+        rcodcl(ifac,ivahg,1) = 0.d0
+        rcodcl(ifac,ivahg,2) = rinfin
+      endif
     endif
 
   enddo

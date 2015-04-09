@@ -48,6 +48,7 @@ use period
 use ihmpre
 use cplsat
 use ppincl
+use ppcpfu
 use mesh
 use field
 use cavitation
@@ -752,6 +753,9 @@ iptlro = 0
 itherm = 0
 itpscl = 0
 iscalt =-1
+
+! No enthalpy for the gas (combustion) by default
+ihgas = -1
 
 ! --- Turbulence
 !     Le modele de turbulence devra etre choisi par l'utilisateur
