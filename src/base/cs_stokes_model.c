@@ -270,6 +270,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *epsdp  = &(_stokes_model.epsdp );
   *itbrrb = &(_stokes_model.itbrrb);
   *iphydr = &(_stokes_model.iphydr);
+  *igprij = &(_stokes_model.igprij);
   *igpust = &(_stokes_model.igpust);
   *iifren = &(_stokes_model.iifren);
   *icalhy = &(_stokes_model.icalhy);
