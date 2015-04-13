@@ -32,7 +32,6 @@ intro.rst \
 tutorial/saturne.rst \
 tutorials.rst
 
-SPHINXBUILD = sphinx-build
 SPHINXOPTS = -d .doctrees $(srcdir)
 
 EXTRA_DIST = images tutorial conf.py index.rst intro.rst tutorials.rst

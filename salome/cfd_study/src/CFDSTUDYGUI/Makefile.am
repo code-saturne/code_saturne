@@ -86,17 +86,17 @@ ui_%.py: %.ui
 
 install-exec-local: $(PYUI_FILES)
 	for f in $^ ; do\
-		$(INSTALL) $$f $(salomepythondir)/$$f ; \
+		$(INSTALL) $$f "$(DESTDIR)$(salomepythondir)/$$f" ; \
 	done ;
 
 ## meta object implementation files generation (moc)
 #%_moc.cxx: %.h
 #	$(MOC) $< -o $@
 
-## translation (*.qm) files generation (lrelease)	
+## translation (*.qm) files generation (lrelease)
 %.qm: %.ts
 	$(LRELEASE) $< -qm $@
 
 mostlyclean-local:
 	rm -f @builddir@/*_moc.cxx
-	rm -f @builddir@/*.qm	
+	rm -f @builddir@/*.qm

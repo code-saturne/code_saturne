@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2013 EDF S.A.
+dnl Copyright (C) 1998-2015 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -135,32 +135,21 @@ if test "x$with_salome" != "xno" ; then
 
   OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
 
-  # SALOME prequisites root directory environment variable
-  salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUISITES_ROOT_DIR)
-  if test x"$salome_pre_rootdir" = x; then
-    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $PREREQUIS_ROOT_DIR)
-  fi
-  if test x"$salome_pre_rootdir" = x; then
-    salome_pre_rootdir=$(eval $SALOMEENVCMD ; echo $INST_ROOT)
-  fi
+  # Make sure omniidl will work by forcing PYTHONPATH
+  # Note that we must ensure we are using SALOME's python here, so use "python" with the sourced
+  # environment and PATH ratther than $PYTHON here.
 
-  # Make sure omniidl will correcly work by forcing PYTHONPATH
-  OMNIIDLPYTHONPATH=$(for d in `find $salome_pre_rootdir -name omniidl_be`
-do
-  dirname `ls $d/../_omniidlmodule.so 2>/dev/null` 2>/dev/null
-done)
-
-  # Make sure Python backend of omniidl will be found
-  OMNIIDLPYBE=$(for d in `find $salome_pre_rootdir -name omniidl_be`
-do
-  dirname `ls $d/python.py 2>/dev/null` 2>/dev/null
-done)
+  if test "x$OMNIIDLPYTHONPATH" = "x"; then
+   OMNIIDLPYTHONPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" pythonpath_filter _omniidlmodule.so _omniidlmodule.so)
+  fi
+  if test "x$OMNIIDLLDLIBPATH" = "x"; then
+    OMNIIDLLDLIBPATH=$(eval $SALOMEENVCMD ; python -B "$srcdir/build-aux/cs_config_test.py" ld_library_path_filter libpython*)
+  fi
 
 fi
 
-  unset salome_pre_root_dir
-
 AC_SUBST(OMNIIDLPYTHONPATH)
+AC_SUBST(OMNIIDLLDLIBPATH)
 
 AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
 AC_ARG_VAR([SALOMERUN], [SALOME main script (usually runSalome or runAppli)])
@@ -174,6 +163,11 @@ CS_AC_TEST_SALOME_YACS
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
       [CS_AC_TEST_OMNIORB
        CS_AC_TEST_CORBA])
+
+AM_CONDITIONAL(HAVE_SALOME,
+               test $cs_have_salome_kernel = yes \
+                 -a $cs_have_salome_gui = yes \
+                 -a $omniORB_ok = yes)
 
 ])dnl
 
@@ -204,6 +198,8 @@ AC_ARG_WITH(salome-kernel,
 
 if test "x$with_salome_kernel" != "xno" ; then
 
+  cs_have_salome_kernel=yes
+
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
@@ -217,26 +213,22 @@ if test "x$with_salome_kernel" != "xno" ; then
   SALOME_KERNEL_CPPFLAGS="-I$SALOME_KERNEL/include/salome"
   SALOME_KERNEL_IDL="-I$SALOME_KERNEL/idl/salome"
   SALOME_KERNEL_LDFLAGS="-L$SALOME_KERNEL/lib/salome"
-  SALOME_KERNEL_LIBS="-lCalciumC"
-  
+  CALCIUM_LIBS="-lCalciumC"
+
   CPPFLAGS="${CPPFLAGS} ${SALOME_KERNEL_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${SALOME_KERNEL_LDFLAGS}"
-  LIBS="${LIBS} ${SALOME_KERNEL_LIBS}"
+  LIBS="${CALCIUM_LIBS} ${LIBS}"
 
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <calcium.h>]],
   			             [[int iret = cp_fin(0, 0);]])],
-                    [cs_have_salome_kernel=yes
-                     AC_MSG_RESULT([compatible SALOME kernel found])],
-                    [cs_have_salome_kernel=no
-                     if test "x$with_salome_kernel" != "xcheck" ; then
-                       AC_MSG_FAILURE([SALOME support is requested, but test for SALOME failed!])
-                     else
-                       AC_MSG_WARN([no SALOME support])
-                     fi
+                    [cs_have_calcium=yes
+                     AC_MSG_RESULT([CALCIUM support])],
+                    [cs_have_calcium=no
+                     AC_MSG_WARN([no CALCIUM support])
                     ])
 
   if test "x$cs_have_salome_kernel" = "xno"; then
-    SALOME_KERNEL_LIBS=""
+    CALCIUM_LIBS=""
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
@@ -256,7 +248,11 @@ AC_SUBST(SALOME_KERNEL_IDL)
 AC_SUBST(SALOME_KERNEL_LDFLAGS)
 AC_SUBST(SALOME_KERNEL_LIBS)
 
+AC_SUBST(cs_have_calcium)
+AC_SUBST(CALCIUM_LIBS)
+
 AM_CONDITIONAL(HAVE_SALOME_KERNEL, test x$cs_have_salome_kernel = xyes)
+AM_CONDITIONAL(HAVE_CALCIUM, test x$cs_have_calcium = xyes)
 
 ])dnl
 
@@ -304,7 +300,7 @@ if test x"$with_salome_gui" != xno ; then
   SALOME_GUI_IDL="-I$SALOME_GUI/idl/salome"
   SALOME_GUI_LDFLAGS="-L$SALOME_GUI/lib/salome"
   SALOME_GUI_LIBS=
-  
+
 else
   cs_have_salome_gui=no
 fi
@@ -364,7 +360,7 @@ if test x"$with_salome_yacs" != xno ; then
   SALOME_YACS_IDL="-I$SALOME_YACS/idl/salome"
   SALOME_YACS_LDFLAGS="-L$SALOME_YACS/lib/salome"
   SALOME_YACS_LIBS=
-  
+
 else
   cs_have_salome_yacs=no
 fi
@@ -525,7 +521,7 @@ MEDCouplingUMesh *m = MEDCouplingUMesh::New();]])
                    ],
                    [ AC_DEFINE([HAVE_MEDCOUPLING], 1, [MEDCoupling support])
                      cs_have_medcoupling=yes
-                   ], 
+                   ],
                    [ AC_MSG_WARN([no MEDCoupling support]) ],
                   )
 
@@ -549,7 +545,7 @@ InterpKernelDEC *dec = new InterpKernelDEC(procs_source, procs_target);]])
                    ],
                    [ AC_DEFINE([HAVE_PARAMEDMEM], 1, [ParaMEDMEM support])
                      cs_have_paramedmem=yes
-                   ], 
+                   ],
                    [ AC_MSG_WARN([no ParaMEDMEM support]) ],
                   )
 

@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2015 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -43,24 +43,26 @@ nodist_libSalomeIDLCFDSTUDY_la_SOURCES = \
 nodist_salomeinclude_HEADERS = CFDSTUDY_Gen.hh
 
 libSalomeIDLCFDSTUDY_la_CXXFLAGS = $(SALOME_INCLUDES) $(SALOME_GUI_CPPFLAGS) \
-	@CORBA_CXXFLAGS@ \
-	@CORBA_INCLUDES@
+	$(CORBA_CXXFLAGS) \
+	$(CORBA_INCLUDES)
 
 libSalomeIDLCFDSTUDY_la_LIBADD  = \
 	$(SALOME_GUI_LDFLAGS) -lSalomeIDLGUI \
-	@CORBA_LIBS@
+	$(SALOME_KERNEL_LDFLAGS) -lSalomeIDLKernel \
+	$(CORBA_LIBS)
 
-libSalomeIDLCFDSTUDY_la_LDFLAGS = -no-undefined -version-info=0:0:0
+libSalomeIDLCFDSTUDY_la_LDFLAGS = -bindir $(bindir) -no-undefined -version-info=0:0:0
 
 SUFFIXES = .idl .hh SK.cc
 
 %SK.cc %.hh : %.idl
 	PYTHONPATH=$(OMNIIDLPYTHONPATH)$${PYTHONPATH:+:$$PYTHONPATH} \
-	$(OMNIIDL) -bcxx $(OMNIORB_IDLCXXFLAGS) $(IDL_INCLUDES) $<
+	LD_LIBRARY_PATH=$(OMNIIDLLDLIBPATH)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} \
+	$(PYTHON) $(OMNIIDL) -bcxx $(OMNIORB_IDLCXXFLAGS) $(IDL_INCLUDES) $<
 %_idl.py : %.idl
 	PYTHONPATH=$(OMNIIDLPYBE):$(OMNIIDLPYTHONPATH)$${PYTHONPATH:+:$$PYTHONPATH} \
-	$(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) $<
-
+	LD_LIBRARY_PATH=$(OMNIIDLLDLIBPATH)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} \
+	$(PYTHON) $(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) $<
 
 CLEANFILES = *.hh *SK.cc *.py *.hxx *.cxx
 
@@ -69,7 +71,7 @@ EXTRA_DIST = $(IDL_FILES)
 
 install-data-local: $(IDL_FILES)
 	$(INSTALL) -d  $(DESTDIR)$(salomepythondir)
-	export PYTHONPATH=$(OMNIIDLPYBE):$(OMNIIDLPYTHONPATH)$${PYTHONPATH:+:$$PYTHONPATH}; \
+	$(SALOMEENVCMD); \
 	ls $^ | while read file; do \
 	  $(OMNIIDL) $(OMNIORB_IDLPYFLAGS) $(IDL_INCLUDES) -C$(DESTDIR)$(salomepythondir) $$file; \
 	done

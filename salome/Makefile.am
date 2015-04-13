@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2013 EDF S.A.
+# Copyright (C) 1998-2015 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -26,4 +26,8 @@ if HAVE_SALOME_GUI
 CFDSTUDY = cfd_study
 endif
 
-SUBDIRS = $(CFDSTUDY) fsi_coupling
+if HAVE_CALCIUM
+FSICOUPLING = fsi_coupling
+endif
+
+SUBDIRS = $(CFDSTUDY) $(FSICOUPLING)
