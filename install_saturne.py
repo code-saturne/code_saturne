@@ -88,7 +88,6 @@ def check_directory():
     abscwd = os.path.abspath(os.getcwd())
 
     if abscwd.find(top_srcdir) == 0:
-            
         message = \
 """
 The '%(script_name)s' installer script should not be run from inside the
@@ -142,7 +141,7 @@ def find_executable(names, env_var=None):
     # Otherwise, use standard path.
 
     p = os.getenv('PATH').split(':')
-        
+
     for name in names:
         if os.path.isabs(name):
             if os.path.isfile(name):
@@ -601,9 +600,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.13",
-                    archive="hdf5-1.8.13.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10/src/%s")
+                    version="1.8.14",
+                    archive="hdf5-1.8.14.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -627,8 +626,8 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.7",
-                    archive="med-3.0.7.tar.gz",
+                    version="3.0.8",
+                    archive="med-3.0.8.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -663,8 +662,8 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.3",
-                    archive="scotch_6.0.3.tar.gz",
+                    version="6.0.4",
+                    archive="scotch_6.0.4.tar.gz",
                     url="https://gforge.inria.fr/frs/download.php/34099/%s")
 
     #---------------------------------------------------------------------------
@@ -921,7 +920,7 @@ Check the setup file and some utilities presence.
                                      "Please check your setup file.\n\n"
                                      % compiler)
                     sys.exit(1)
-        
+
         # Looking for Python executable provided by the user
         python = 'python'
         if self.python: python = self.python
@@ -1282,7 +1281,7 @@ salome    %(salome)s
 #   For Linux workstations, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems such as
-# IBM Blue Gene or Cray XT/XE/XK.
+# IBM Blue Gene or Cray XT/XE/XC/XK.
 #
 # Scotch and Pt-Scotch are available in some Linux
 # distributtions, but may be built with options
@@ -1301,7 +1300,7 @@ salome    %(salome)s
 #
 """
         setupLib= \
-"""%(lib)-9s  %(use)-4s  %(install)-3s      %(dir)s    
+"""%(lib)-9s  %(use)-4s  %(install)-3s      %(dir)s
 """
         setupEnd= \
 """#
