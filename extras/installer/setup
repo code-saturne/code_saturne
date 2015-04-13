@@ -106,7 +106,7 @@ scotch
 #   For Linux workstations, MPI, HDF5, CGNS, and even MED
 # packages may be available through the package manager.
 # HDF5 is also often available on large systems such as
-# IBM Blue Gene or Cray XT/XE/XK.
+# IBM Blue Gene or Cray XT/XE/XC/XK.
 #
 #   To install CGNS, the CMake configuration/installation
 # is required (it is available in most Linux
