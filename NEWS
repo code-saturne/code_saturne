@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix handling of polygons and input of some element types with CGNS 3.2
+  and above.
+
 - Lagrangian module: ensure a particle may be dropped rather than loop
   indefinitely near parallel domain boundary.
 

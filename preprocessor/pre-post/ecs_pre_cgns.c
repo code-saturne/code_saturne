@@ -2163,26 +2163,12 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         nbr_elt_loc   = ptr_section->num_elt_fin - ptr_section->num_elt_deb + 1;
         nbr_elt_zone += nbr_elt_loc;
 
-        if (ptr_section->type != CS_CG_ENUM(MIXED)) {
+        ecs_typ     = ecs_cgns_elt_liste_c[ptr_section->type].ecs_type;
+        nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
 
-          if (ptr_section->type < CS_CG_ENUM(NGON_n)) {
-            ecs_typ     = ecs_cgns_elt_liste_c[ptr_section->type].ecs_type;
-            nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
-          }
-          else {
-            ecs_typ     = ECS_ELT_TYP_FAC_POLY;
-            nbr_som_elt = ptr_section->type - CS_CG_ENUM(NGON_n);
-          }
+        ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
 
-          ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
-
-          if (ient != ECS_ENTMAIL_NONE) {
-            cpt_elt_ent[ient] += nbr_elt_loc;
-            cpt_val_ent[ient] += nbr_elt_loc * nbr_som_elt;
-          }
-
-        }
-        else { /* if (ptr_section->type == MIXED) */
+        if (ptr_section->type == CS_CG_ENUM(MIXED)) {
 
           cpt_elt_loc = 0;
           ptr_ele = ptr_section->elems;
@@ -2190,16 +2176,23 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
           while (cpt_elt_loc < nbr_elt_loc) {
 
             ind_type    = *ptr_ele;
+
+#if (CGNS_VERSION < 3200)
             if (ind_type < CS_CG_ENUM(NGON_n)) {
               ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
               nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
-              ptr_ele += ecs_cgns_elt_liste_c[*ptr_ele].nbr_som + 1;
+              ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som + 1;
             }
             else {
               ecs_typ     = ECS_ELT_TYP_FAC_POLY;
               nbr_som_elt = *ptr_ele - CS_CG_ENUM(NGON_n);
               ptr_ele += nbr_som_elt + 1;
             }
+#else
+            ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
+            nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
+            ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som + 1;
+#endif
 
             cpt_elt_loc++;
 
@@ -2228,8 +2221,61 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             }
 
           }
+        }
 
-        }  /* fin traitement selon si section de type "MIXED" ou non) */
+        else if (ptr_section->type == CS_CG_ENUM(NGON_n)) {
+
+          cpt_elt_loc = 0;
+          ptr_ele = ptr_section->elems;
+
+          while (cpt_elt_loc < nbr_elt_loc) {
+
+            nbr_som_elt = *ptr_ele;
+            ptr_ele += nbr_som_elt + 1;
+
+            cpt_elt_loc++;
+
+            cpt_elt_ent[ient] += 1;
+            cpt_val_ent[ient] += nbr_som_elt;
+
+          }
+
+        }
+
+#if CGNS_VERSION >= 3000
+
+        else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
+
+          cpt_elt_loc = 0;
+          ptr_ele = ptr_section->elems;
+
+          while (cpt_elt_loc < nbr_elt_loc) {
+
+            nbr_som_elt = *ptr_ele;
+            ptr_ele += nbr_som_elt + 1;
+
+            cpt_elt_loc++;
+
+            cpt_elt_ent[ient] += 1;
+            cpt_val_ent[ient] += 0;  /* TODO handle this */
+
+            ecs_error(__FILE__, __LINE__, 0,
+                      _("CGNS NFACE_n elements not handled yet."));
+
+          }
+
+        }
+
+#endif
+
+        else { /* Regular section */
+
+          if (ient != ECS_ENTMAIL_NONE) {
+            cpt_elt_ent[ient] += nbr_elt_loc;
+            cpt_val_ent[ient] += nbr_elt_loc * nbr_som_elt;
+          }
+
+        }
 
       } /* Fin boucle sur les sections */
 
@@ -2399,27 +2445,22 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         ptr_ele = ptr_section->elems;
 
-        if (ptr_section->type != CS_CG_ENUM(MIXED)) {
+        /* General data for section;
+           will be updated for MIXED, NGON_n, and NFACE_n */
 
-          ind_type    = ptr_section->type;
-          if (ind_type < CS_CG_ENUM(NGON_n)) {
-            ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
-            nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
-          }
-          else {
-            ecs_typ     = ECS_ELT_TYP_FAC_POLY;
-            nbr_som_elt = ptr_section->type - CS_CG_ENUM(NGON_n);
-          }
+        ind_type    = ptr_section->type;
+        ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
+        nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
 
-          ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
-
-        }
+        ient = ecs_maillage_pre__ret_typ_geo(ecs_typ);
 
         while (cpt_elt_loc < nbr_elt_loc) {
 
           if (ptr_section->type == CS_CG_ENUM(MIXED)) {
 
             ind_type    = *ptr_ele;
+
+#if (CGNS_VERSION < 3200)
             if (ind_type < CS_CG_ENUM(NGON_n)) {
               ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
               nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
@@ -2428,6 +2469,10 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               ecs_typ     = ECS_ELT_TYP_FAC_POLY;
               nbr_som_elt = *ptr_ele - CS_CG_ENUM(NGON_n);
             }
+#else
+            ecs_typ     = ecs_cgns_elt_liste_c[ind_type].ecs_type;
+            nbr_som_elt = ecs_fic_elt_typ_liste_c[ecs_typ].nbr_som;
+#endif
 
             ptr_ele += 1;
 
@@ -2450,9 +2495,44 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
             else
               ient = ECS_ENTMAIL_NONE;
 
+            if (ient != ECS_ENTMAIL_NONE) {
+
+              ind_pos = cpt_elt_ent[ient];
+              ind_val = elt_pos_som_ent[ient][ind_pos] - 1;
+              elt_pos_som_ent[ient][ind_pos + 1]
+                =  elt_pos_som_ent[ient][ind_pos] + nbr_som_elt;
+
+#if (CGNS_VERSION < 3200)
+              if (ind_type < CS_CG_ENUM(NGON_n)) {
+                for (ind_som = 0; ind_som < nbr_som_elt; ind_som++)
+                  elt_val_som_ent[ient][ind_val++]
+                    = *(ptr_ele
+                        + ecs_cgns_elt_liste_c[ind_type].num_som[ind_som] - 1)
+                        + num_som_deb - 1;
+                ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som;
+              }
+              else {
+                for (ind_som = 0; ind_som < nbr_som_elt; ind_som++)
+                  elt_val_som_ent[ient][ind_val++]
+                    = *(ptr_ele + ind_som) + num_som_deb - 1;
+                ptr_ele += nbr_som_elt;
+              }
+#else
+              for (ind_som = 0; ind_som < nbr_som_elt; ind_som++)
+                elt_val_som_ent[ient][ind_val++]
+                  = *(ptr_ele
+                      + ecs_cgns_elt_liste_c[ind_type].num_som[ind_som] - 1)
+                      + num_som_deb - 1;
+              ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som;
+#endif
+            }
+
           }
 
-          if (ient != ECS_ENTMAIL_NONE) {
+          else if (ptr_section->type == CS_CG_ENUM(NGON_n)) {
+
+            nbr_som_elt = *ptr_ele;
+            ptr_ele += 1;
 
             ind_pos = cpt_elt_ent[ient];
             ind_val = elt_pos_som_ent[ient][ind_pos] - 1;
@@ -2460,20 +2540,38 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               =  elt_pos_som_ent[ient][ind_pos] + nbr_som_elt;
 
             for (ind_som = 0; ind_som < nbr_som_elt; ind_som++) {
-              if (ind_type < CS_CG_ENUM(NGON_n))
-                elt_val_som_ent[ient][ind_val++]
-                  = *(ptr_ele
-                      + ecs_cgns_elt_liste_c[ind_type].num_som[ind_som] - 1)
-                      + num_som_deb - 1;
-              else
-                elt_val_som_ent[ient][ind_val++]
-                  = *(ptr_ele + ind_som) + num_som_deb - 1;
+              elt_val_som_ent[ient][ind_val++]
+                = *(ptr_ele + ind_som) + num_som_deb - 1;
             }
 
-            if (ind_type < CS_CG_ENUM(NGON_n))
-              ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som;
-            else
-              ptr_ele += nbr_som_elt;
+            ptr_ele += nbr_som_elt;
+
+          }
+
+          else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
+            ecs_error(__FILE__, __LINE__, 0,
+                      _("CGNS NFACE_n elements not handled yet."));
+          }
+
+          else if (ient != ECS_ENTMAIL_NONE) {
+
+            ind_pos = cpt_elt_ent[ient];
+            ind_val = elt_pos_som_ent[ient][ind_pos] - 1;
+            elt_pos_som_ent[ient][ind_pos + 1]
+              =  elt_pos_som_ent[ient][ind_pos] + nbr_som_elt;
+
+            for (ind_som = 0; ind_som < nbr_som_elt; ind_som++) {
+              elt_val_som_ent[ient][ind_val++]
+                = *(ptr_ele
+                    + ecs_cgns_elt_liste_c[ind_type].num_som[ind_som] - 1)
+                    + num_som_deb - 1;
+            }
+
+            ptr_ele += ecs_cgns_elt_liste_c[ind_type].nbr_som;
+
+          }
+
+          if (ient != ECS_ENTMAIL_NONE) {
 
             if (ptr_zone->trait_renum == true) {
               if (ient == ient_max - 1)
@@ -2491,6 +2589,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
               ind_section_ent[ient][cpt_elt_ent[ient]] = cpt_section;
 
             cpt_elt_ent[ient]++;
+
           }
 
           else if (ptr_zone->trait_renum == true)
