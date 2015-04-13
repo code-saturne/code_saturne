@@ -230,7 +230,7 @@ iroule = 0
 
 !     ORDRE D'INTEGRATION
 
-nordre = 2
+nordre = 1
 
 !     DISPERSION TURBULENTE
 
@@ -665,7 +665,7 @@ endif
 
 !     NORDRE
 
-if (nordre.ne.1 .and. nordre.ne.2) then
+if (nordre.ne.1) then
   write(nfecra,2000) nordre
   iok = iok + 1
 endif
@@ -2555,7 +2555,8 @@ endif
 '@       DES EQUATIONS DIFFERENTIELLES STOCHASTIQUES          ',/,&
 '@       A UNE VALEUR NON PERMISE (LAGOPT).                   ',/,&
 '@                                                            ',/,&
-'@    NORDRE DEVRAIT ETRE UN ENTIER EGAL A 1 OU 2             ',/,&
+'@    NORDRE DEVRAIT ETRE UN ENTIER EGAL A 1                  ',/,&
+'@    (L''ORDRE 2 ETANT INOPERANT DANS CETTE VERSION)         ',/,&
 '@       IL VAUT ICI NORDRE = ', I10                           ,/,&
 '@                                                            ',/,&
 '@  Le calcul ne sera pas execute.                            ',/,&

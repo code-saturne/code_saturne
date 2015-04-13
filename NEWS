@@ -1,5 +1,5 @@
 
-Release 3.0.7 (unreleased)
+Release 3.0.7 (Unreleased)
 ==========================
 
 Changes:
@@ -7,6 +7,9 @@ Changes:
 
 - GUI: add handling of SLURM "--account" and "--wckeys" options
   in batch handling dialog box.
+
+- Disable 2nd-order particle tracking integration scheme, as it is broken
+  beyond repair in this version (it is working again in version 4.0).
 
 Bug fixes:
 ----------

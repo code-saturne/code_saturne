@@ -89,6 +89,8 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.modelNORDRE = ComboModel(self.comboBoxNORDRE, 2, 1)
         self.modelNORDRE.addItem(self.tr("first-order scheme"),  "1")
         self.modelNORDRE.addItem(self.tr("second-order scheme"), "2")
+        self.comboBoxNORDRE.setDisabled(True)
+        #self.modelNORDRE.disableItem(str_model ="2)
 
         self.modelIDIRLA = ComboModel(self.comboBoxIDIRLA, 3, 1)
         self.modelIDIRLA.addItem(self.tr("X"), "1")
@@ -96,7 +98,6 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.modelIDIRLA.addItem(self.tr("Z"), "3")
 
         # Connections
-        self.connect(self.comboBoxNORDRE, SIGNAL("activated(const QString&)"),    self.slotNORDRE)
         self.connect(self.checkBoxIDISTU, SIGNAL("clicked()"),                    self.slotIDISTU)
         self.connect(self.checkBoxIDIFFL, SIGNAL("clicked()"),                    self.slotIDIFFL)
         self.connect(self.groupBoxModel,  SIGNAL("clicked(bool)"),                self.slotModel)
@@ -107,8 +108,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.lineEditMODCPL.setValidator(validatorMODCPL)
 
         # initialize Widgets
-        order = str(self.result['scheme_order'])
-        self.modelNORDRE.setItem(str_model=order)
+        self.modelNORDRE.setItem(str_model=str(1))
 
         if self.result['turbulent_dispertion'] == "on":
             self.checkBoxIDISTU.setChecked(True)
@@ -130,15 +130,6 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
             self.groupBoxModel.setChecked(False)
 
         self.case.undoStartGlobal()
-
-
-    @pyqtSignature("const QString&")
-    def slotNORDRE(self, text):
-        """
-        Input NORDRE.
-        """
-        value = self.modelNORDRE.dicoV2M[str(text)]
-        self.result['scheme_order'] = value
 
 
     @pyqtSignature("")
@@ -734,7 +725,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Ask one popup for advanced specifications
         """
         default = {}
-        default['scheme_order']                        = self.model.getSchemeOrder()
         default['turbulent_dispertion']                = self.model.getTurbulentDispersion()
         default['fluid_particles_turbulent_diffusion'] = self.model.getTurbulentDiffusion()
         default['complete_model_iteration']            = self.model.getCompleteModelStartIteration()
@@ -743,7 +733,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         dialog = LagrangianAdvancedOptionsDialogView(self, self.case, default)
         if dialog.exec_():
             result = dialog.get_result()
-            self.model.setSchemeOrder(int(result['scheme_order']))
             self.model.setTurbulentDispersion(result['turbulent_dispertion'])
             self.model.setTurbulentDiffusion(result['fluid_particles_turbulent_diffusion'])
             self.model.setCompleteModelStartIteration(result['complete_model_iteration'])

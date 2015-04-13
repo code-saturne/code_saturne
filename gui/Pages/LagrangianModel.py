@@ -97,7 +97,6 @@ class LagrangianModel(Model):
         default['thermal']                             = "off"
         default['dynamic']                             = "off"
         default['mass']                                = "off"
-        default['scheme_order']                        = 2
         default['turbulent_dispersion']                = "on"
         default['fluid_particles_turbulent_diffusion'] = "off"
         default['complete_model_iteration']            = 0
@@ -616,31 +615,6 @@ class LagrangianModel(Model):
 
 
     @Variables.undoLocal
-    def setSchemeOrder(self, value):
-        """
-        Update value for scheme order.
-        """
-        self.isInt(value)
-        self.isInList(value, (1,2))
-        node_order = self.node_lagr.xmlInitChildNode('scheme_order', 'choice')
-        node_order['choice'] = value
-
-
-    @Variables.noUndo
-    def getSchemeOrder(self):
-        """
-        Return value for scheme order.
-        """
-        node_order = self.node_lagr.xmlInitChildNode('scheme_order', 'choice')
-        if node_order:
-            val = node_order['choice']
-            if val == "":
-                val = self.defaultParticlesValues()['scheme_order']
-                self.setSchemeOrder(val)
-        return val
-
-
-    @Variables.undoLocal
     def setTurbulentDispersion(self, status):
         """
         Update the status markup for turbulent dispersion status from the XML document.
@@ -1093,23 +1067,6 @@ class LagrangianTestCase(ModelTest):
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
             'Could not get default values for 2 way coupling thermal'
-
-
-    def checkSchemeOrder(self):
-        """Check whether the scheme order could be set and get."""
-        mdl = LagrangianModel(self.case)
-        n = mdl.getSchemeOrder()
-
-        assert n == mdl.defaultParticlesValues()['scheme_order'], \
-            'Could not set default values for scheme order.'
-
-        mdl.setSchemeOrder(1)
-        doc = """<lagrangian model="off">
-                      <scheme_order choice="1"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-             'Could not get default values for scheme order.'
 
 
     def checkTurbulentDispersion(self):

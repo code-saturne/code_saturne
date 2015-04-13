@@ -506,13 +506,6 @@ iroule = 0
 ! 8. Options concerning the numerical treatment of the dispersed phase
 !===============================================================================
 
-! Integration order of the stochastic differential equations
-! (default 2; acceptable values 1 or 2)
-!
-
-nordre = 2
-
-
 ! Resolution of the Poisson equation for the particle mean velocity
 ! and correction of the particle instantaneous velocity
 !      = 0: not correction of the velocities (default values)

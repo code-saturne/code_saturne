@@ -982,11 +982,7 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
 
   /* Numerical modeling */
 
-  attr = _get_attr("choice", 2, "lagrangian", "scheme_order");
-  if (attr) {
-    *nordre = atoi(attr);
-    BFT_FREE(attr);
-  }
+  *nordre = 1;
   attr = _get_attr("choice", 2, "lagrangian", "complete_model_direction");
   if (attr) {
     *idirla = atoi(attr);
@@ -1226,7 +1222,6 @@ void CS_PROCF (uilag1, UILAG1) (int *const iilagr,
     bft_printf("--ltsthe = %i\n", *ltsthe);
   }
 
-  bft_printf("--nordre = %i\n", *nordre);
   bft_printf("--idistu = %i\n", *idistu);
   bft_printf("--idiffl = %i\n", *idiffl);
   bft_printf("--modcpl = %i\n", *modcpl);
