@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-03-13 18:46+0100\n"
+"POT-Creation-Date: 2015-04-11 00:39+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1262,6 +1262,9 @@ msgstr ""
 "Coordonnées cylindriques ou sphériques avec unité\n"
 "d'angle non définie ou inconnue (-> on suppose des radians)\n"
 
+msgid "CGNS NFACE_n elements not handled yet."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -2359,14 +2362,6 @@ msgstr ""
 "CGNS : échec à l'écriture des coordonnées\n"
 "Nom du maillage à écrire : \"%s\"\n"
 "%s"
-
-#, c-format
-msgid ""
-"CGNS: in mesh: \"%s\",\n"
-"%d polygonal faces are ignored.\n"
-msgstr ""
-"CGNS : dans le maillage : \"%s\",\n"
-"%d faces polygonales sont ignorées.\n"
 
 #, c-format
 msgid ""
@@ -11267,3 +11262,4 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
