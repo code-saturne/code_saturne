@@ -355,16 +355,24 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
     }
     else if (elt_typ_ref == ECS_ELT_TYP_FAC_POLY) { /* Cas des polygones */
 
-#if 0
-
+#if CGNS_VERSION < 3200
       type_cgns_loc = CS_CG_ENUM(MIXED);
+#else
+      type_cgns_loc = CS_CG_ENUM(NGON_n);
+#endif
 
       ECS_MALLOC(def_elt, nbr_val + cpt_elt_fin - cpt_elt, cgsize_t);
 
       for (ielt = cpt_elt; ielt < cpt_elt_fin; ielt++) {
 
+        size_t ival;
+
+#if CGNS_VERSION < 3200
         def_elt[ind++]
-          = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n);
+          = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n):
+#else
+        def_elt[ind++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
+#endif
 
         for (ival = def_pos_tab[ielt    ] - 1;
              ival < def_pos_tab[ielt + 1] - 1;
@@ -372,19 +380,6 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
           def_elt[ind++] = def_val_tab[ival];
 
       }
-
-#else
-
-      cpt_elt += nbr_elt_typ;
-
-      ecs_warn();
-      printf(_("CGNS: in mesh: \"%s\",\n"
-               "%d polygonal faces are ignored.\n"),
-             base_cgns->nom_maillage, (int)nbr_elt_typ);
-
-      break;
-
-#endif
 
     }
 

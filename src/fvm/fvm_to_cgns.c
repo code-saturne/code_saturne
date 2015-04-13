@@ -797,7 +797,11 @@ _define_section(const fvm_writer_section_t  *section,
 
   case FVM_FACE_POLY:
     sprintf(section_name, "Polygons_%d", section_id);
+#if CGNS_VERSION < 3200
     *cgns_elt_type = CGNS_ENUMV(MIXED);
+#else
+    *cgns_elt_type = CGNS_ENUMV(NGON_n);
+#endif
     break;
 
   case FVM_CELL_TETRA:
@@ -1877,9 +1881,12 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
   for (elt_id = 0; elt_id < n_elements; elt_id++) {
 
     connect_index[elt_id] = vertex_index[elt_id] + elt_id;
-    connect_num[connect_end++]
-      = CGNS_ENUMV(NGON_n) + vertex_index[elt_id + 1]
-                           - vertex_index[elt_id];
+#if CGNS_VERSION < 3200
+    connect_num[connect_end++] = CGNS_ENUMV(NGON_n) + vertex_index[elt_id+1]
+                                                    - vertex_index[elt_id];
+#else
+    connect_num[connect_end++] = vertex_index[elt_id+1] - vertex_index[elt_id];
+#endif
 
     for (vertex_id = vertex_index[elt_id];
          vertex_id < vertex_index[elt_id + 1];
@@ -1933,7 +1940,11 @@ _export_nodal_polygons_g(const fvm_writer_section_t   *export_section,
         if (sizeof(cgsize_t) != sizeof(cs_gnum_t)) {
           int i = 0, j = 0, n = elt_end + 1 - elt_start;
           for (i = 0; i < n; i++)
+#if CGNS_VERSION < 3200
             j += global_connect_s[j] - CGNS_ENUMV(NGON_n) + 1;
+#else
+            j += global_connect_s[j] + 1;
+#endif
           if (sizeof(cgsize_t) > sizeof(cs_gnum_t))
             BFT_MALLOC(_global_connect_s, j, cgsize_t);
           for (i = 0; i < j; i++)
@@ -2048,9 +2059,13 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
              cgsize_t);
 
   for (j = 0; j < section->n_elements; j++) {
-    connect[connect_size++]
-      = CGNS_ENUMV(NGON_n) + section->vertex_index[j+1]
-                           - section->vertex_index[j];
+#if CGNS_VERSION < 3200
+    connect[connect_size++] = CGNS_ENUMV(NGON_n) + section->vertex_index[j+1]
+                                                 - section->vertex_index[j];
+#else
+    connect[connect_size++] =    section->vertex_index[j+1]
+                               - section->vertex_index[j];
+#endif
 
     for (i = section->vertex_index[j]; i < section->vertex_index[j+1]; i++)
       connect[connect_size++] = section->vertex_num[i];
