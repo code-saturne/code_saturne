@@ -369,7 +369,7 @@ ecs_table_post_cgns__ecr_connect(const char            *nom_maillage,
 
 #if CGNS_VERSION < 3200
         def_elt[ind++]
-          = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n):
+          = def_pos_tab[ielt + 1] - def_pos_tab[ielt] + CS_CG_ENUM(NGON_n);
 #else
         def_elt[ind++] = def_pos_tab[ielt + 1] - def_pos_tab[ielt];
 #endif
