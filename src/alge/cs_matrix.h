@@ -452,6 +452,28 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
                          const cs_real_t    **x_val);
 
 /*----------------------------------------------------------------------------
+ * Get arrays describing a matrix in CSR format.
+ *
+ * This function only works for an CSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * parameters:
+ *   matrix    <-- Pointer to matrix structure
+ *   row_index --> CSR row index
+ *   col_id    --> CSR column id
+ *   val       --> values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
+                         const cs_lnum_t    **row_index,
+                         const cs_lnum_t    **col_id,
+                         const cs_real_t    **val);
+
+/*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x
  *
  * This function includes a halo update of x prior to multiplication by A.
