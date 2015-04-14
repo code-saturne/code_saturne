@@ -37,7 +37,7 @@ else
 PLE_CPPFLAGS_TMP = $(PLE_CPPFLAGS)
 endif
 
-if HAVE_SALOME_KERNEL
+if HAVE_SALOME
 SALOME = salome
 endif
 
