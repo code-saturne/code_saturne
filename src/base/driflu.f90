@@ -339,7 +339,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
         ! Correction by Omega
         omegaa = cpro_taup(iel)/cpro_taufpt(iel)
 
-        viscce(iel) = 2.d0*cpro_taup(iel)/(1.d0+omegaa)*cvar_k(iel)
+        viscce(iel) = 2.d0/3.d0*cpro_taup(iel)/(1.d0+omegaa)*cvar_k(iel)
       enddo
 
     else
