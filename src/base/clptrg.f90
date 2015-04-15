@@ -1934,7 +1934,7 @@ do ifac = 1, nfabor
         phit = 0.d0
       endif
 
-      tet = phit/(max(sqrt(uk*buet(ifac)),epzero))
+      tet = phit/(romc*cpp*max(buet(ifac)*bcfnns(ifac),epzero))
 
       if (itplus .ge. 0) tplusp(ifac) = tplus
       if (itstar .ge. 0) tstarp(ifac) = tet
