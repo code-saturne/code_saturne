@@ -640,7 +640,7 @@ enddo
 
 ! Method to compute interior mass flux due to ALE mesh velocity
 ! default: based on cell center mesh velocity
-iflxmw = 1
+iflxmw = 0
 
 ! --- Reconstruction des gradients
 !       On donne les valeurs par defaut

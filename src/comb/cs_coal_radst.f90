@@ -69,6 +69,7 @@ use ppthch
 use ppincl
 use radiat
 use cs_coal_incl
+use field
 
 !===============================================================================
 
@@ -86,12 +87,17 @@ double precision propce(ncelet,*)
 ! Local variables
 
 integer          iel , numcla , ipcl
+integer          keyccl
 
 !===============================================================================
-! 1. RECHERCHE DE LA ZONE MEMOIRE POUR TROUVER LES BONS TERMES SOURCES
+! 1. Initialization 
 !===============================================================================
 
-numcla = ivar-isca(ih2(1))+1
+! Key id of the coal scalar class
+call field_get_key_id("scalar_class", keyccl)
+
+! index of the coal particle class
+call field_get_key_int(ivarfl(ivar), keyccl, numcla)
 ipcl   = 1+numcla
 
 !===============================================================================
@@ -99,11 +105,11 @@ ipcl   = 1+numcla
 !===============================================================================
 
 
-do iel = 1,ncel
+do iel = 1, ncel
   propce(iel,ipproc(itsri(ipcl))) = max(-propce(iel,ipproc(itsri(ipcl))),zero)
 enddo
 
-do iel = 1,ncel
+do iel = 1, ncel
   if ( propce(iel,ipproc(ix2(numcla))) .gt. epzero ) then
 
 !--> PARTIE EXPLICITE
