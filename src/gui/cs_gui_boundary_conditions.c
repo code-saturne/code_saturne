@@ -1710,6 +1710,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
               ifbr = faces_list[ifac];
               for (i = 0; i < f->dim; i++) {
                 icodcl[(ivar + i) * (*nfabor) + ifbr] = 5;
+                if (boundaries->rough[izone] >= 0.0)
+                  icodcl[(ivar + i) * (*nfabor) + ifbr] = 6;
                 rcodcl[0 * (*nfabor) * (*nvarcl) + (ivar + i) * (*nfabor) + ifbr]
                   = boundaries->values[f->id][izone * f->dim + i].val1;
               }
