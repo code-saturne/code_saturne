@@ -101,6 +101,7 @@ use coincl
 use cpincl
 use cs_fuel_incl
 use ppincl
+use ppcpfu
 use lagpar
 use lagran
 use radiat
@@ -156,7 +157,7 @@ integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
-integer          delay_id
+integer          delay_id, icla
 
 integer          ivoid(1)
 
@@ -477,6 +478,19 @@ if (iirayo.ge.1) then
         cell_f_vol , propce , smbrs , rovsdt )
 
     endif
+
+    if (iscal .eq.ihgas) then
+
+      do iel = 1, ncel
+
+        smbrs(iel) = smbrs(iel)+volume(iel)*propce(iel,ipproc(itsre(1)))
+        do icla = 1, nclacp
+          smbrs(iel) = smbrs(iel)-volume(iel)*propce(iel,ipproc(itsre(icla+1))) &
+                                             *propce(iel,ipproc(ix2(icla)))
+        enddo
+      enddo
+    endif
+
   endif
 
   ! -> Fuel

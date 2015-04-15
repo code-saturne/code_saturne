@@ -503,11 +503,11 @@ module ppincl
   !> State variables of dispersed phase (particles class)
   integer, save :: igmsec(nclcpm)
 
-  ! TODO absent de la doc utilisateur
+  !> Used for bulk balance of Carbon
   integer, save :: ibcarbone
-  ! TODO absent de la doc utilisateur
+  !> Used for bulk balance of Oxygen
   integer, save :: iboxygen
-  ! TODO absent de la doc utilisateur
+  !> Used for bulk balance of Hydrogen
   integer, save :: ibhydrogen
 
   !> \}

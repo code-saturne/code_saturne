@@ -979,18 +979,6 @@ if (ivar .eq. isca(ihgas)) then
     rovsdt(iel) = rovsdt(iel) + rovsdth1(iel)
   enddo
 
-  ! terme source de rayonnement pour l'enthalpie du gaz
-  ! serait mieux dans ... raysca
-  if (iirayo.ge.1) then
-    do iel = 1,ncel
-
-      smbrs(iel) = smbrs(iel)+volume(iel)*propce(iel,ipproc(itsre(1)))
-      do icla = 1, nclacp
-        smbrs(iel) = smbrs(iel)-volume(iel)*propce(iel,ipproc(itsre(icla+1))) &
-                                           *propce(iel,ipproc(ix2(icla)))
-      enddo
-    enddo
-  endif
 endif
 
 ! --> Source term for light volatile materials
