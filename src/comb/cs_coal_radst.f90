@@ -90,7 +90,7 @@ integer          iel , numcla , ipcl
 integer          keyccl
 
 !===============================================================================
-! 1. Initialization 
+! 1. Initialization
 !===============================================================================
 
 ! Key id of the coal scalar class

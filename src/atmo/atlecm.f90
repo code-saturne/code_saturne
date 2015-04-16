@@ -83,7 +83,7 @@ double precision rap,rscp,tmoy, rhmoy
 double precision ztop, zzmax, tlkelv, pptop, dum
 double precision rhum,q0,q1
 
-character(len=80) :: ccomnt
+character(len=80) :: ccomnt,oneline
 character(len=1)  :: csaute
 
 !===============================================================================
@@ -136,20 +136,33 @@ backspace(impmet)
 ! 2. Read the time of the profile
 !===============================================================================
 
-! --> year, quant-day, hour, minute, second  of the profile (TU)
+! two formats possible :
+! --> year, month, day, hour, minute, second  of the profile (UTC)
+! --> year, quant-day, hour, minute, second  of the profile (UTC)
+! NB: second is real, all others are integers
 
 if (imode.eq.0) then
   read(impmet, *, err=999, end=906)
 else
-  read(impmet, '(5i10, f10.2)', err=907, end=906) year, month, day,  &
+  second = -9999.d0
+  read(impmet, '(a80)', err=999, end=906) oneline
+  read(oneline, *, err=907, end=907) year, month, day,  &
                                                   hour, minute, second
+! --> catch some read errors
+  if (month.gt.12.or.day.gt.31) then
+    write(nfecra,8005)
+    call csexit (1)
+  endif
   call comp_quantile(day, month, year, quant)
   goto 908
 907  continue
-  backspace(impmet)
-  read(impmet,*,err=999,end=906) year, quant, hour, minute, second
+  read(oneline, *, err=999, end=906) year, quant, hour, minute, second
 908 continue
-
+! --> catch some read errors
+  if (second.lt.0d0.or.quant.gt.366) then
+    write(nfecra,8005)
+    call csexit (1)
+  endif
 
   ! --> if the date and time are not completed in usati1.f90,
   !     the date and time of the first meteo profile are taken as the
@@ -594,13 +607,28 @@ call csexit (1)
      '@                                                            ',/,&
      '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
      '@                                                            ',/,&
-     '@ @@ATTENTION:VERIFICIATION A L''ENTREE DES DONNEES (atlecm)',/,&
+     '@ @@ATTENTION:VERIFICATION A L''ENTREE DES DONNEES (atlecm)' ,/,&
      '@   =========                                               ',/,&
      '@        PHYSIQUE PARTICULIERE ATMOSPHERIQUE                 ',/,&
      '@                                                            ',/,&
      '@  erreur a la lecture du fichier meteo                      ',/,&
      '@  nombre de gouttes lus <0                                  ',/,&
      '@  verifier le fichier meteo                                 ',/,&
+     '@                                                            ',/,&
+     '@  Le calcul ne sera pas execute.                            ',/,&
+     '@                                                            ',/,&
+     '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+     '@                                                             ',/)
+8005 format (                                                    &
+     '@                                                            ',/,&
+     '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+     '@                                                            ',/,&
+     '@ @@ATTENTION:VERIFICATION A L''ENTREE DES DONNEES (atlecm)  ',/,&
+     '@   =========                                                ',/,&
+     '@        PHYSIQUE PARTICULIERE ATMOSPHERIQUE                 ',/,&
+     '@                                                            ',/,&
+     '@  erreur a la lecture de la date du fichier meteo           ',/,&
+     '@  verifier le format (entiers, reel)                        ',/,&
      '@                                                            ',/,&
      '@  Le calcul ne sera pas execute.                            ',/,&
      '@                                                            ',/,&
@@ -725,7 +753,21 @@ call csexit (1)
      '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
      '@                                                            ',/,&
      '@              Error in the meteo profile file:              ',/,&
-     '@  Number of droplets readed  <  0                           ',/,&
+     '@  Number of droplets read  <  0                             ',/,&
+     '@  The computation will not be run                           ',/,&
+     '@                                                            ',/,&
+     '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+     '@                                                             ',/)
+8005 format (                                                    &
+     '@                                                            ',/,&
+     '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+     '@                                                            ',/,&
+     '@ @@  WARNING:   CHECKING INPUT DATA (atlecm)                ',/,&
+     '@     =======                                                ',/,&
+     '@      ATMOSPHERIC SPECIFIC PHYSICS                          ',/,&
+     '@                                                            ',/,&
+     '@              Error in the date of meteo profile file:      ',/,&
+     '@  Check the format (integers,real) for the date             ',/,&
      '@  The computation will not be run                           ',/,&
      '@                                                            ',/,&
      '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
