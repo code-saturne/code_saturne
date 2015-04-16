@@ -1775,8 +1775,8 @@ do ifac = 1, nfabor
       ! Neumann on the scalar, with wall function (for post-processing)
     else
       hflui = hint
-      ! T+ = (T_I - T_w) / Tet, we assume here rugt = rugd
-      tplus = buplus(ifac)
+      ! Tplus is chosen for post-processing
+      tplus = romc*cpp*max(buet(ifac)*bcfnns(ifac),epzero)/hint
     endif
 
     if (isvhbl.gt.0) hbord(ifac) = hflui
