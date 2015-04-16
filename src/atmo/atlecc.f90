@@ -76,7 +76,7 @@ integer itp, ii, ios, k
 integer sjday,minute
 double precision second
 integer year, month, quant, hour, day, jday
-character(len=80) :: ccomnt, label
+character(len=80) :: ccomnt, label, oneline
 character(len=1) :: csaute
 
 ! altitudes and concentrations of every nespgi species
@@ -117,27 +117,42 @@ itp = itp+1
 
  101  read (impmec,'(A80)',err=999,end=906) ccomnt
 
-if(ccomnt(1:1).eq.csaute) go to 101
+if (ccomnt(1:1).eq.csaute) go to 101
 backspace(impmec)
 
 !===============================================================================
 ! 2. reading the time of the profile
 !===============================================================================
 
-! --> year, month, day, hour (TU), minute, second
+! two formats possible :
+! --> year, month, day, hour, minute, second  of the profile (UTC)
+! --> year, quant-day, hour, minute, second  of the profile (UTC)
+! NB: second is real, all others are integers
 
 if (imode.eq.0) then
-  read(impmec,*,err=999,end=906)
+  read(impmec, *, err=999, end=906)
 else
-  read(impmec,*,err=907,end=906) year, month, day, hour, minute, second
-  call comp_quantile(day,month,year,quant)
+  second = -9999.d0
+  read(impmec, '(a80)', err=999, end=906) oneline
+  read(oneline,*,err=907,end=907) year, month, day, hour, minute, second
+  ! --> catch some read errors
+  if (month.gt.12.or.day.gt.31) then
+    write(nfecra,8005)
+    call csexit (1)
+  endif
+  call comp_quantile(day, month, year, quant)
   goto 908
 907  continue
-  backspace(impmec)
-  read(impmec,*,err=999,end=906) year, quant, hour, minute, second
+  read(oneline,*,err=999,end=906) year, quant, hour, minute, second
 908 continue
+! --> catch some read errors
+  if (second.lt.0d0.or.quant.gt.366) then
+    write(nfecra,8005)
+    call csexit (1)
+  endif
 
-  ! --> if the date and time are not completed in usati1.f90 nor and if no meteo file is given,
+  ! --> if the date and time are not completed in usati1.f90 nor and if no meteo
+  ! --> file is given,
   ! --> the date and time of the first concentration profile are taken as the
   !     starting time of the simulation
 
@@ -298,9 +313,9 @@ if (nespgi.ge.1) then
     read(impmec,*,err=999,end=999) idespgi(1:nespgi)
   endif
 
-!=================================================================================
+!===============================================================================
 ! 9. reading the concentration profiles
-!=================================================================================
+!===============================================================================
 
 109 read(impmec,'(a80)',err=999,end=999) ccomnt
 
@@ -337,9 +352,9 @@ if (nespgi.ge.1) then
 
 endif ! fin test nespgi
 
-!================================================================================
+!===============================================================================
 ! 10. logging
-!================================================================================
+!===============================================================================
 
 if (imode.eq.1) then
   if (itp.eq.1) then
@@ -458,6 +473,21 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8005 format (                                                    &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ATTENTION:VERIFICATION A L''ENTREE DES DONNEES (atlecc)  ',/,&
+'@   =========                                                ',/,&
+'@        PHYSIQUE PARTICULIERE ATMOSPHERIQUE                 ',/,&
+'@                                                            ',/,&
+'@  erreur a la lecture de la date du fichier meteo           ',/,&
+'@  verifier le format (entiers, reel)                        ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                             ',/)
  9998 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -560,6 +590,21 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8005 format (                                                    &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATA (atlecc)        ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC CHEMISTRY                                 ',/,&
+'@                                                            ',/,&
+'@  Error opening the chemistry profile file                  ',/,&
+'@  verify input format (integer, real)                       ',/,&
+'@                                                            ',/,&
+'@  The computation will not be run                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                             ',/)
  9998 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -568,8 +613,8 @@ call csexit (1)
 '@     =======                                                ',/,&
 '@      ATMOSPHERIC CHEMISTRY                                 ',/,&
 '@                                                            ',/,&
-'@  Error opening the chemistry profile file                     ',/,&
-'@  check the name of the chemistry file                         ',/,&
+'@  Error opening the chemistry profile file                  ',/,&
+'@  check the name of the chemistry file                      ',/,&
 '@                                                            ',/,&
 '@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
