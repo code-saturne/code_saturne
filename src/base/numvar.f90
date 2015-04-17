@@ -225,8 +225,9 @@ module numvar
   !> dynamic constant of Smagorinsky
   integer, save :: ismago
 
-  !> field id of the anisotropic turbulent viscosity
-  integer, save :: ivsten
+  !> field ids of the anisotropic viscosity
+  !> \remark turbulent or Darcy module anisotropic diffusion
+  integer, save :: ivsten, ivstes
 
   !> Courant number
   integer, save :: icour
