@@ -171,7 +171,7 @@ if (ipass.eq.1) then
             !==========
           endif
         enddo
-      else
+      else if (ihisvr(ipp,1) .lt. 0) then
         ncap = ncapt
         do ii = 1, ncap
           lsttmp(ii) = ii
@@ -186,6 +186,8 @@ if (ipass.eq.1) then
             !==========
           endif
         enddo
+      else
+        ncap = 0
       endif
 
       if (ncap .gt. 0) then
