@@ -182,8 +182,8 @@ _sliding_wall(const char  *label,
       boundaries->type_code[f->id][izone] = WALL_FUNCTION;
       boundaries->values[f->id][f->dim * izone + i].val1 = result;
     }
+    BFT_FREE(path);
   }
-  BFT_FREE(path);
   BFT_FREE(suf);
 }
 

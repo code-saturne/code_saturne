@@ -1147,6 +1147,8 @@ _sort_matrix_dump_data(cs_lnum_t   n_entries,
   memcpy(m_vals, _m_vals, n_entries*sizeof(double));
 
   BFT_FREE(_m_vals);
+
+  BFT_FREE(order);
 }
 
 /*----------------------------------------------------------------------------
@@ -1186,7 +1188,6 @@ _prepare_matrix_dump_data(const cs_matrix_t  *m,
     cs_gnum_t loc_shift = m->n_cells;
     MPI_Scan(&loc_shift, &coo_shift, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
     coo_shift = coo_shift + 1 - loc_shift;
-    BFT_MALLOC(g_coo_num, m->n_cells_ext, cs_gnum_t);
     local_max = m->n_cells + coo_shift - 1;
     MPI_Allreduce(&local_max, &n_g_rows, 1, CS_MPI_GNUM, MPI_MAX,
                   cs_glob_mpi_comm);
@@ -1375,6 +1376,9 @@ _write_matrix_g(const cs_matrix_t  *m,
                              1,
                              bi.gnum_range[0],
                              bi.gnum_range[1]);
+
+  BFT_FREE(c_coords);
+  BFT_FREE(r_coords);
 
   /* Distribute value blocks on ranks */
 
