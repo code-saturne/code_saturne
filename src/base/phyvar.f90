@@ -90,7 +90,7 @@ double precision propce(ncelet,*)
 
 character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
-integer          ii    , iok   , iok1  , iok2  , iisct, idfm
+integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm
 integer          nn
 integer          mbrom , ipcvst, ifcvsl
 integer          ipccp , ipcvis, ipcvma
@@ -105,7 +105,7 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: sval
-double precision, dimension(:,:), pointer :: visten
+double precision, dimension(:,:), pointer :: visten, vistes
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 
@@ -404,9 +404,13 @@ endif
 ! 5. Anisotropic turbulent viscosity (symmetric)
 !===============================================================================
 idfm = 0
+iggafm = 0
 
 do iscal = 1, nscal
   if (ityturt(iscal).eq.3) idfm = 1
+  ! GGDH or AFM on current scalar
+  ! and if DFM, GGDH on the scalar variance
+  if (ityturt(iscal).gt.0) iggafm = 1
 enddo
 
 if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
@@ -444,6 +448,22 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
         visten(5,iel) = rottke*cvar_r23(iel)
         visten(6,iel) = rottke*cvar_r13(iel)
       enddo
+
+      if (iggafm.eq.1) then
+        call field_get_val_v(ivstes, vistes)
+
+        do iel = 1, ncel
+          trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+
+          vistes(1,iel) = rottke*cvar_r11(iel)
+          vistes(2,iel) = rottke*cvar_r22(iel)
+          vistes(3,iel) = rottke*cvar_r33(iel)
+          vistes(4,iel) = rottke*cvar_r12(iel)
+          vistes(5,iel) = rottke*cvar_r23(iel)
+          vistes(6,iel) = rottke*cvar_r13(iel)
+        enddo
+      endif
 
     ! LRR or SSG
     else

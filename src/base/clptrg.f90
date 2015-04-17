@@ -1552,7 +1552,11 @@ if (ifcvsl .ge. 0) then
 endif
 
 if (idften(ivar).eq.6.or.ityturt(iscal).eq.3) then
-  call field_get_val_v(ivsten, visten)
+  if (iturb.ne.32.or.ityturt(iscal).eq.3) then
+    call field_get_val_v(ivsten, visten)
+  else ! EBRSM and (GGDH or AFM)
+    call field_get_val_v(ivstes, visten)
+  endif
 endif
 
 call field_get_coefa_s(f_id, coefap)

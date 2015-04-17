@@ -2048,7 +2048,11 @@ if (nscal.ge.1) then
     call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
     if (idften(ivar).eq.6.or.ityturt(ii).eq.3) then
-      call field_get_val_v(ivsten, visten)
+      if (iturb.ne.32.or.ityturt(ii).eq.3) then
+        call field_get_val_v(ivsten, visten)
+      else ! EBRSM and (GGDH or AFM)
+        call field_get_val_v(ivstes, visten)
+      endif
     endif
 
     do ifac = 1, nfabor

@@ -889,7 +889,11 @@ if (idiff(ivar).ge.1) then
     allocate(weighf(2,nfac))
     allocate(weighb(nfabor))
 
-    call field_get_val_v(ivsten, visten)
+    if (iturb.ne.32) then
+      call field_get_val_v(ivsten, visten)
+    else ! EBRSM and (GGDH or AFM)
+      call field_get_val_v(ivstes, visten)
+    endif
 
     if (ifcvsl.lt.0) then
       do iel = 1, ncel

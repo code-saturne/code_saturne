@@ -92,7 +92,7 @@ integer          kislts, ifctsl
 integer          iopchr
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
-integer          idfm, nfld
+integer          idfm, iggafm, nfld
 
 character(len=80) :: name, f_name
 
@@ -157,6 +157,7 @@ do ivar = 1, nvar
 enddo
 
 idfm = 0
+iggafm = 0
 
 do ii = 1, nscal
 
@@ -179,6 +180,11 @@ do ii = 1, nscal
       else
         itycat = FIELD_INTENSIVE + FIELD_PROPERTY  ! for properties
       endif
+
+      ! GGDH or AFM on current scalar
+      ! and if DFM, GGDH on the scalar variance
+      iggafm = 1
+
       call field_create(f_name, itycat, ityloc, idim3, .true., iprev, iflid)
       if (ityturt(ii).eq.3) then
         call field_set_key_int(iflid, keycpl, 1)
@@ -409,6 +415,10 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
     .or.darcy_anisotropic_diffusion.eq.1) then
   call field_create('anisotropic_turbulent_viscosity', itycat, ityloc, idim6, &
                     ilved, inoprv, ivsten)
+  if (iturb.eq.32.and.iggafm.eq.1) then
+    call field_create('anisotropic_turbulent_viscosity_scalar', itycat, &
+                      ityloc, idim6, ilved, inoprv, ivstes)
+ endif
 endif
 
 ! Additional fields
