@@ -85,15 +85,15 @@ typedef struct {
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
 
-  _Bool        text_mode;          /* true if using text output */
-  _Bool        swap_endian;        /* true if binary file endianness must
+  bool         text_mode;          /* true if using text output */
+  bool         swap_endian;        /* true if binary file endianness must
                                       be changed */
 
-  _Bool        discard_polygons;   /* Option to discard polygonal elements */
-  _Bool        discard_polyhedra;  /* Option to discard polyhedral elements */
+  bool         discard_polygons;   /* Option to discard polygonal elements */
+  bool         discard_polyhedra;  /* Option to discard polyhedral elements */
 
-  _Bool        divide_polygons;    /* Option to tesselate polygonal elements */
-  _Bool        divide_polyhedra;   /* Option to tesselate polyhedral elements */
+  bool         divide_polygons;    /* Option to tesselate polygonal elements */
+  bool         divide_polyhedra;   /* Option to tesselate polyhedral elements */
 
   fvm_to_ensight_case_t  *case_info;  /* Associated case structure */
 
@@ -116,6 +116,17 @@ typedef struct {
   cs_file_t   *bf;                 /* Binary file handling structure */
 
 } _ensight_file_t;
+
+/*----------------------------------------------------------------------------
+ * Context structure for fvm_writer_field_helper_output_* functions.
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  fvm_to_ensight_writer_t  *writer;    /* Pointer to writer structure */
+  _ensight_file_t          *file;      /* Pointer to file handler structure */
+
+} _ensight_context_t;
 
 /*============================================================================
  * Static global variables
@@ -152,7 +163,7 @@ static const int _ensight_c_order_6[6] = {0, 1, 2, 3, 5, 4};
 static _ensight_file_t
 _open_ensight_file(const fvm_to_ensight_writer_t  *this_writer,
                    const char                     *filename,
-                   _Bool                           append)
+                   bool                            append)
 {
   _ensight_file_t f = {NULL, NULL};
 
@@ -218,60 +229,6 @@ _free_ensight_file(_ensight_file_t  *f)
 
   else if (f->bf != NULL)
     f->bf = cs_file_free(f->bf);
-}
-
-/*----------------------------------------------------------------------------
- * Count number of extra vertices when tesselations are present
- *
- * parameters:
- *   mesh               <-- pointer to nodal mesh structure
- *   divide_polyhedra   <-- true if polyhedra are tesselated
- *   n_extra_vertices_g --> global number of extra vertices (optional)
- *   n_extra_vertices   --> local number of extra vertices (optional)
- *----------------------------------------------------------------------------*/
-
-static void
-_count_extra_vertices(const fvm_nodal_t  *mesh,
-                      _Bool               divide_polyhedra,
-                      cs_gnum_t          *n_extra_vertices_g,
-                      cs_lnum_t          *n_extra_vertices)
-{
-  int  i;
-
-  const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
-
-  /* Initial count and allocation */
-
-  if (n_extra_vertices_g != NULL)
-    *n_extra_vertices_g = 0;
-  if (n_extra_vertices != NULL)
-    *n_extra_vertices   = 0;
-
-  if (divide_polyhedra) {
-
-    for (i = 0; i < mesh->n_sections; i++) {
-
-      const fvm_nodal_section_t  *section = mesh->sections[i];
-
-      /* Output if entity dimension equal to highest in mesh
-         (i.e. no output of faces if cells present, or edges
-         if cells or faces) */
-
-      if (   section->entity_dim == export_dim
-          && section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
-
-        if (n_extra_vertices_g != NULL)
-          *n_extra_vertices_g
-            += fvm_tesselation_n_g_vertices_add(section->tesselation);
-
-        if (n_extra_vertices != NULL)
-          *n_extra_vertices
-            += fvm_tesselation_n_vertices_add(section->tesselation);
-
-      }
-    }
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -452,191 +409,7 @@ _write_block_floats_l(size_t           n_values,
     cs_file_write_global(f.bf, values, sizeof(float), n_values);
 }
 
-/*----------------------------------------------------------------------------
- * Return extra vertex coordinates when tesselations are present
- *
- * parameters:
- *   mesh             <-- pointer to nodal mesh structure
- *   n_extra_vertices <-- number of extra vertices
- *
- * returns:
- *   array containing all extra vertex coordinates
- *----------------------------------------------------------------------------*/
-
-static cs_coord_t *
-_extra_vertex_coords(const fvm_nodal_t  *mesh,
-                     cs_lnum_t           n_extra_vertices)
-{
-  int  i;
-  cs_lnum_t   n_extra_vertices_section;
-
-  size_t  coord_shift = 0;
-  cs_coord_t  *coords = NULL;
-
-  if (n_extra_vertices > 0) { /* This implies divide_polyhedra = true */
-
-    BFT_MALLOC(coords, n_extra_vertices * 3, cs_coord_t);
-
-    for (i = 0; i < mesh->n_sections; i++) {
-
-      const fvm_nodal_section_t  *const  section = mesh->sections[i];
-
-      if (   section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
-
-        n_extra_vertices_section
-          = fvm_tesselation_n_vertices_add(section->tesselation);
-
-        if (n_extra_vertices_section > 0) {
-
-          fvm_tesselation_vertex_coords(section->tesselation,
-                                        coords + coord_shift);
-
-          coord_shift += n_extra_vertices_section * 3;
-
-        }
-
-      }
-    }
-  }
-
-  return coords;
-}
-
 #if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Get extra vertex global numbers when tesselations are present
- *
- * parameters:
- *   mesh             <-- pointer to nodal mesh structure
- *   n_extra_vertices <-- number of extra vertices
- *   vtx_gnum         --> extra vertex global numbers (size: n_extra_vertices)
- *----------------------------------------------------------------------------*/
-
-static void
-_extra_vertex_get_gnum(const fvm_nodal_t  *mesh,
-                       cs_lnum_t           n_extra_vertices,
-                       cs_gnum_t           vtx_gnum[])
-{
-  int  i;
-  cs_lnum_t   j = 0;
-  cs_lnum_t   start_id = 0;
-  cs_gnum_t   gnum_shift
-    = fvm_io_num_get_global_count(mesh->global_vertex_num);
-
-  if (n_extra_vertices > 0) { /* Implies divide_polyhedra */
-
-    for (i = 0; i < mesh->n_sections; i++) {
-
-      const fvm_nodal_section_t  *const  section = mesh->sections[i];
-
-      if (   section->type == FVM_CELL_POLY
-          && section->tesselation != NULL) {
-
-        cs_lnum_t n_extra_vertices_section
-          = fvm_tesselation_n_vertices_add(section->tesselation);
-
-        if (n_extra_vertices_section > 0) {
-
-          const fvm_io_num_t *extra_vertex_num
-            = fvm_tesselation_global_vertex_num(section->tesselation);
-          const cs_gnum_t *extra_gnum
-            = fvm_io_num_get_global_num(extra_vertex_num);
-
-          for (j = 0; j < n_extra_vertices_section; j++)
-            vtx_gnum[start_id + j] = extra_gnum[j] + gnum_shift;
-
-          start_id += n_extra_vertices_section;
-
-        }
-
-        gnum_shift
-          = fvm_tesselation_n_g_vertices_add(section->tesselation);
-
-      }
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Build block info and part to block distribution helper for vertices.
- *
- * parameters:
- *   w    <-- pointer to writer structure
- *   mesh <-- pointer to nodal mesh structure
- *   bi   --> block information structure
- *   d    --> part to bloc distributor
- *----------------------------------------------------------------------------*/
-
-static void
-_vertex_part_to_block_create(const fvm_to_ensight_writer_t   *w,
-                             const fvm_nodal_t               *mesh,
-                             cs_block_dist_info_t            *bi,
-                             cs_part_to_block_t             **d)
-{
-  cs_gnum_t    n_g_extra_vertices = 0, n_g_vertices_tot = 0;
-  cs_lnum_t    n_extra_vertices = 0, n_vertices_tot = 0;
-
-  cs_gnum_t   *_g_num = NULL;
-
-  cs_block_dist_info_t  _bi;
-  cs_part_to_block_t   *_d;
-
-  size_t min_block_size = w->min_block_size / sizeof(float);
-
-  const cs_lnum_t   n_vertices
-    = fvm_io_num_get_local_count(mesh->global_vertex_num);
-  cs_gnum_t   n_g_vertices
-    = fvm_io_num_get_global_count(mesh->global_vertex_num);
-  const cs_gnum_t   *g_num
-    = fvm_io_num_get_global_num(mesh->global_vertex_num);
-
-  /* Compute extra vertex coordinates if present */
-
-  _count_extra_vertices(mesh,
-                        w->divide_polyhedra,
-                        &n_g_extra_vertices,
-                        &n_extra_vertices);
-
-  n_vertices_tot = n_vertices + n_extra_vertices;
-  n_g_vertices_tot = n_g_vertices + n_g_extra_vertices;
-
-  _bi = cs_block_dist_compute_sizes(w->rank,
-                                    w->n_ranks,
-                                    w->min_rank_step,
-                                    min_block_size,
-                                    n_g_vertices_tot);
-
-  /* Global vertex numbers */
-
-
-  if (n_extra_vertices > 0) {
-
-    BFT_MALLOC(_g_num, n_vertices_tot, cs_gnum_t);
-
-    memcpy(_g_num, g_num, n_vertices*sizeof(cs_gnum_t));
-    _extra_vertex_get_gnum(mesh, n_extra_vertices, _g_num + n_vertices);
-
-    g_num = _g_num;
-
-  }
-
-  /* Build distribution structures */
-
-  _d = cs_part_to_block_create_by_gnum(w->comm, _bi, n_vertices_tot, g_num);
-
-  if (n_extra_vertices > 0)
-    cs_part_to_block_transfer_gnum(_d, _g_num);
-
-  /* Return initialized structures */
-
-  if (bi != NULL)
-    *bi = _bi;
-
-  if (d != NULL)
-    *d = _d;
-}
 
 /*----------------------------------------------------------------------------
  * Write vertex coordinates to an EnSight Gold file in parallel mode
@@ -671,25 +444,30 @@ _export_vertex_coords_g(const fvm_to_ensight_writer_t  *this_writer,
   cs_gnum_t   n_g_vertices
       = fvm_io_num_get_global_count(mesh->global_vertex_num);
 
-  /* Initialize distribution info */
+  /* Check for extra vertex coordinates */
 
-  _vertex_part_to_block_create(this_writer,
-                               mesh,
-                               &bi,
-                               &d);
-
-  /* Compute extra vertex coordinates if present */
-
-  _count_extra_vertices(mesh,
-                        this_writer->divide_polyhedra,
-                        &n_g_extra_vertices,
-                        &n_extra_vertices);
+  fvm_writer_count_extra_vertices(mesh,
+                                  this_writer->divide_polyhedra,
+                                  &n_g_extra_vertices,
+                                  &n_extra_vertices);
 
   n_vertices_tot = n_vertices + n_extra_vertices;
   n_g_vertices_tot = n_g_vertices + n_g_extra_vertices;
 
-  extra_vertex_coords = _extra_vertex_coords(mesh,
-                                             n_extra_vertices);
+  /* Initialize distribution info */
+
+  fvm_writer_vertex_part_to_block_create(this_writer->min_rank_step,
+                                         this_writer->min_block_size,
+                                         n_g_extra_vertices,
+                                         n_extra_vertices,
+                                         mesh,
+                                         &bi,
+                                         &d,
+                                         this_writer->comm);
+
+  /* Compute extra vertex coordinates if present */
+
+  extra_vertex_coords = fvm_writer_extra_vertex_coords(mesh, n_extra_vertices);
 
   /* Build arrays */
 
@@ -779,13 +557,13 @@ _export_vertex_coords_l(const fvm_to_ensight_writer_t  *this_writer,
 
   /* Compute extra vertex coordinates if present */
 
-  _count_extra_vertices(mesh,
-                        this_writer->divide_polyhedra,
-                        NULL,
-                        &n_extra_vertices);
+  fvm_writer_count_extra_vertices(mesh,
+                                  this_writer->divide_polyhedra,
+                                  NULL,
+                                  &n_extra_vertices);
 
-  extra_vertex_coords = _extra_vertex_coords(mesh,
-                                             n_extra_vertices);
+  extra_vertex_coords = fvm_writer_extra_vertex_coords(mesh,
+                                                       n_extra_vertices);
 
   /* Vertex coordinates */
   /*--------------------*/
@@ -1108,6 +886,44 @@ _write_connect_l(int                stride,
 }
 
 #if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * Output function for field values.
+ *
+ * This function is passed to fvm_writer_field_helper_output_* functions.
+ *
+ * parameters:
+ *   context      <-> pointer to writer and field context
+ *   datatype     <-- output datatype
+ *   dimension    <-- output field dimension
+ *   component_id <-- output component id (if non-interleaved)
+ *   block_start  <-- start global number of element for current block
+ *   block_end    <-- past-the-end global number of element for current block
+ *   buffer       <-> associated output buffer
+ *----------------------------------------------------------------------------*/
+
+static void
+_field_output_g(void           *context,
+                cs_datatype_t   datatype,
+                int             dimension,
+                int             component_id,
+                cs_gnum_t       block_start,
+                cs_gnum_t       block_end,
+                void           *buffer)
+{
+  _ensight_context_t *c = context;
+
+  fvm_to_ensight_writer_t  *w = c->writer;
+  _ensight_file_t          *f = c->file;
+
+  assert(datatype == CS_FLOAT);
+
+  _write_block_floats_g(block_start,
+                        block_end,
+                        buffer,
+                        w->comm,
+                        *f);
+}
 
 /*----------------------------------------------------------------------------
  * Write "trivial" point elements to an EnSight Gold file in parallel mode
@@ -2153,13 +1969,11 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
                             const cs_gnum_t                 extra_vertex_base,
                             _ensight_file_t                 f)
 {
-  cs_lnum_t   i;
   cs_block_dist_info_t bi;
 
   cs_lnum_t   part_size = 0;
 
-  cs_lnum_t   end_id = 0;
-  cs_gnum_t   n_g_sub_elements = 0, global_num_end = 0;
+  cs_gnum_t   n_g_sub_elements = 0;
   cs_gnum_t   block_size = 0, block_start = 0, block_end = 0;
 
   cs_part_to_block_t  *d = NULL;
@@ -2194,30 +2008,21 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   part_size = n_sub_elements * stride;
   assert(sub_element_idx[n_elements]*stride == part_size);
 
-  global_num_end = n_g_elements + 1;
-
   if (n_elements > 0) {
     BFT_MALLOC(part_vtx_num, part_size, int32_t);
     BFT_MALLOC(part_vtx_gnum, part_size, cs_gnum_t);
   }
 
-  end_id = fvm_tesselation_decode_g(tesselation,
-                                    type,
-                                    0,
-                                    part_size,
-                                    &global_num_end,
-                                    global_vertex_num,
-                                    extra_vertex_base,
-                                    part_vtx_gnum,
-                                    w->comm);
-
-  assert(end_id == n_elements);
-  assert(global_num_end == n_g_elements + 1);
+  fvm_tesselation_decode_g(tesselation,
+                           type,
+                           global_vertex_num,
+                           extra_vertex_base,
+                           part_vtx_gnum);
 
   /* Convert to write type */
 
   if (n_elements > 0) {
-    for (i = 0; i < part_size; i++)
+    for (cs_lnum_t i = 0; i < part_size; i++)
       part_vtx_num[i] = part_vtx_gnum[i];
     BFT_FREE(part_vtx_gnum);
   }
@@ -2236,7 +2041,7 @@ _write_tesselated_connect_g(const fvm_to_ensight_writer_t  *w,
   d = cs_part_to_block_create_by_gnum(w->comm, bi, n_elements, g_elt_num);
 
   part_index[0] = 0;
-  for (i = 0; i < n_elements; i++) {
+  for (cs_lnum_t i = 0; i < n_elements; i++) {
     part_index[i+1] = part_index[i] + (  sub_element_idx[i+1]
                                        - sub_element_idx[i]) * stride;
   }
@@ -2523,159 +2328,6 @@ _export_nodal_strided_g(const fvm_to_ensight_writer_t  *w,
   return current_section;
 }
 
-/*----------------------------------------------------------------------------
- * Write field values associated with nodal values of a nodal mesh to
- * an EnSight Gold file in serial mode.
- *
- * Output fields ar either scalar or 3d vectors or scalars, and are
- * non interlaced. Input arrays may be less than 2d, in which case the z
- * values are set to 0, and may be interlaced or not.
- *
- * parameters:
- *   w                <-- pointer to writer structure
- *   mesh             <-- pointer to nodal mesh structure
- *   divide_polyhedra <-- true if polyhedra are tesselated
- *   input_dim        <-- input field dimension
- *   output_dim       <-- output field dimension
- *   interlace        <-- indicates if field in memory is interlaced
- *   n_parent_lists   <-- indicates if field values are to be obtained
- *                        directly through the local entity index (when 0) or
- *                        through the parent entity numbers (when 1 or more)
- *   parent_num_shift <-- parent list to common number index shifts;
- *                        size: n_parent_lists
- *   datatype         <-- input data type (output is real)
- *   field_values     <-- array of associated field value arrays
- *   f                <-- associated file handle
- *----------------------------------------------------------------------------*/
-
-static void
-_export_field_values_ng(const fvm_to_ensight_writer_t  *w,
-                        const fvm_nodal_t              *mesh,
-                        int                             input_dim,
-                        int                             output_dim,
-                        cs_interlace_t                  interlace,
-                        int                             n_parent_lists,
-                        const cs_lnum_t                 parent_num_shift[],
-                        cs_datatype_t                   datatype,
-                        const void               *const field_values[],
-                        _ensight_file_t                 f)
-{
-  int  i;
-  cs_block_dist_info_t  bi;
-
-  cs_lnum_t   part_size = 0, block_size = 0;
-  float  *part_values = NULL, *block_values = NULL;
-  cs_part_to_block_t  *d = NULL;
-
-  /* Initialize distribution info */
-
-  _vertex_part_to_block_create(w,
-                               mesh,
-                               &bi,
-                               &d);
-
-  part_size = cs_part_to_block_get_n_part_ents(d);
-  block_size = bi.gnum_range[1] - bi.gnum_range[0];
-
-  BFT_MALLOC(part_values, part_size, float);
-  BFT_MALLOC(block_values, block_size, float);
-
-  for (i = 0; i < output_dim; i++) {
-
-    cs_lnum_t   start_id = 0;
-    cs_lnum_t   end_id = mesh->n_vertices;
-
-    /* Distribute partition to block values */
-
-    if (i < input_dim) {
-
-      int j;
-      const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
-
-      /* Main vertices */
-
-      fvm_convert_array(input_dim,
-                        i_in,
-                        1, /* stride */
-                        start_id,
-                        end_id,
-                        interlace,
-                        datatype,
-                        CS_FLOAT,
-                        n_parent_lists,
-                        parent_num_shift,
-                        mesh->parent_vertex_num,
-                        field_values,
-                        part_values);
-
-      /* Additional vertices in case of tesselation
-         (end_id == part_size with no tesselation or if all tesselated
-         sections have been accounted for).*/
-
-      for (j = 0; end_id < part_size && j < mesh->n_sections; j++) {
-
-        const fvm_nodal_section_t  *section = mesh->sections[j];
-
-        assert(w->divide_polyhedra == true);
-
-        if (section->type == FVM_CELL_POLY && section->tesselation != NULL) {
-
-          cs_lnum_t   n_extra_vertices
-            = fvm_tesselation_n_vertices_add(section->tesselation);
-
-          start_id = end_id;
-          end_id = start_id + n_extra_vertices;
-
-          fvm_tesselation_vertex_values(section->tesselation,
-                                        input_dim,
-                                        i_in,
-                                        1, /* stride, */
-                                        0,
-                                        n_extra_vertices,
-                                        interlace,
-                                        datatype,
-                                        CS_FLOAT,
-                                        n_parent_lists,
-                                        parent_num_shift,
-                                        mesh->parent_vertex_num,
-                                        field_values,
-                                        part_values + start_id);
-
-        }
-
-      } /* End of loops on tesselated sections */
-
-      assert(end_id == part_size);
-
-      cs_part_to_block_copy_array(d,
-                                  CS_FLOAT,
-                                  1,
-                                  part_values,
-                                  block_values);
-
-    }
-
-    /* Zero extra dimensions */
-
-    else {
-      cs_lnum_t j;
-      for (j = 0; j < block_size; j++)
-        block_values[j] = 0.0;
-    }
-
-    _write_block_floats_g(bi.gnum_range[0],
-                          bi.gnum_range[1],
-                          block_values,
-                          w->comm,
-                          f);
-  }
-
-  BFT_FREE(block_values);
-  BFT_FREE(part_values);
-
-  cs_part_to_block_destroy(&d);
-}
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
@@ -2727,18 +2379,18 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
 
     const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
 
-    while (fvm_writer_field_helper_step_n(helper,
-                                          mesh,
-                                          input_dim,
-                                          i_in,
-                                          interlace,
-                                          n_parent_lists,
-                                          parent_num_shift,
-                                          datatype,
-                                          field_values,
-                                          output_buffer,
-                                          output_buffer_size,
-                                          &output_size) == 0) {
+    while (fvm_writer_field_helper_step_nl(helper,
+                                           mesh,
+                                           input_dim,
+                                           i_in,
+                                           interlace,
+                                           n_parent_lists,
+                                           parent_num_shift,
+                                           datatype,
+                                           field_values,
+                                           output_buffer,
+                                           output_buffer_size,
+                                           &output_size) == 0) {
 
       _write_block_floats_l(output_size,
                             output_buffer,
@@ -2749,311 +2401,6 @@ _export_field_values_nl(const fvm_nodal_t           *mesh,
 
   BFT_FREE(output_buffer);
 }
-
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Write field values associated with element values of a nodal mesh to
- * an EnSight Gold file.
- *
- * Output fields ar either scalar or 3d vectors or scalars, and are
- * non interlaced. Input arrays may be less than 2d, in which case the z
- * values are set to 0, and may be interlaced or not.
- *
- * parameters:
- *   w                <-- pointer to writer structure
- *   export_section   <-- pointer to EnSight section helper structure
- *   helper           <-- pointer to general writer helper structure
- *   input_dim        <-- input field dimension
- *   output_dim       <-- output field dimension
- *   interlace        <-- indicates if field in memory is interlaced
- *   n_parent_lists   <-- indicates if field values are to be obtained
- *                        directly through the local entity index (when 0) or
- *                        through the parent entity numbers (when 1 or more)
- *   parent_num_shift <-- parent list to common number index shifts;
- *                        size: n_parent_lists
- *   datatype         <-- indicates the data type of (source) field values
- *   field_values     <-- array of associated field value arrays
- *   f                <-- associated file handle
- *
- * returns:
- *  pointer to next EnSight section helper structure in list
- *----------------------------------------------------------------------------*/
-
-static const fvm_writer_section_t *
-_export_field_values_eg(const fvm_to_ensight_writer_t   *w,
-                        const fvm_writer_section_t      *export_section,
-                        int                              input_dim,
-                        int                              output_dim,
-                        cs_interlace_t                   interlace,
-                        int                              n_parent_lists,
-                        const cs_lnum_t                  parent_num_shift[],
-                        cs_datatype_t                    datatype,
-                        const void                *const field_values[],
-                        _ensight_file_t                  f)
-{
-  int  i;
-  cs_lnum_t   j, k;
-
-  cs_block_dist_info_t  bi;
-  cs_part_to_block_t  *d = NULL;
-
-  int         n_sections = 0;
-  _Bool       have_tesselation = false;
-  cs_lnum_t   part_size = 0, block_size = 0;
-  cs_gnum_t   block_sub_size = 0, block_start = 0, block_end = 0;
-  cs_gnum_t   n_g_elements = 0;
-
-  int  *part_n_sub = NULL, *block_n_sub = NULL;
-  float  *part_values = NULL, *block_values = NULL, *_block_values = NULL;
-
-  cs_gnum_t         *_g_elt_num = NULL;
-  const cs_gnum_t   *g_elt_num
-    = fvm_io_num_get_global_num(export_section->section->global_element_num);
-
-  const fvm_writer_section_t  *current_section = NULL;
-
-  size_t  min_block_size = w->min_block_size / sizeof(int32_t);
-
-  /* Loop on sections to count output size */
-
-  current_section = export_section;
-  do {
-
-    const fvm_nodal_section_t  *section = current_section->section;
-
-    n_sections += 1;
-    n_g_elements += fvm_io_num_get_global_count(section->global_element_num);
-    part_size += fvm_io_num_get_local_count(section->global_element_num);
-    if (current_section->type != section->type)
-      have_tesselation = true;
-
-    current_section = current_section->next;
-
-  } while (   current_section != NULL
-           && current_section->continues_previous == true);
-
-  /* Build global numbering if necessary */
-
-  if (n_sections > 1) {
-
-    cs_lnum_t start_id = 0;
-    cs_gnum_t gnum_shift = 0;
-
-    BFT_MALLOC(_g_elt_num, part_size, cs_gnum_t);
-    g_elt_num = _g_elt_num;
-
-    /* loop on sections which should be appended */
-
-    current_section = export_section;
-    do {
-
-      const fvm_nodal_section_t  *section = current_section->section;
-      const cs_lnum_t section_size
-        = fvm_io_num_get_local_count(section->global_element_num);
-
-      const cs_gnum_t * s_gnum
-        = fvm_io_num_get_global_num(section->global_element_num);
-
-      for (j = 0, k = start_id; j < section_size; j++, k++)
-        _g_elt_num[k] = s_gnum[j] + gnum_shift;
-
-      start_id += section_size;
-      gnum_shift += fvm_io_num_get_global_count(section->global_element_num);
-
-      current_section = current_section->next;
-
-
-    } while (   current_section != NULL
-             && current_section->continues_previous == true);
-  }
-
-  /* Build sub-element count if necessary */
-
-  if (have_tesselation) {
-
-    cs_lnum_t start_id = 0;
-
-    BFT_MALLOC(part_n_sub, part_size, int);
-
-    current_section = export_section;
-    do {
-
-      const fvm_nodal_section_t  *section = current_section->section;
-      const cs_lnum_t section_size
-        = fvm_io_num_get_local_count(section->global_element_num);
-
-      if (current_section->type != section->type) {
-        const cs_lnum_t   *sub_element_idx
-          = fvm_tesselation_sub_elt_index(section->tesselation,
-                                          current_section->type);
-        for (j = 0; j < section_size; j++)
-          part_n_sub[start_id + j] = sub_element_idx[j+1] - sub_element_idx[j];
-      }
-      else {
-        for (j = 0; j < section_size; j++)
-          part_n_sub[start_id + j] = 1;
-      }
-      start_id += section_size;
-
-      current_section = current_section->next;
-
-    } while (   current_section != NULL
-             && current_section->continues_previous == true);
-  }
-
-  /* Build distribution structures */
-
-  bi = cs_block_dist_compute_sizes(w->rank,
-                                   w->n_ranks,
-                                   w->min_rank_step,
-                                   min_block_size,
-                                   n_g_elements);
-
-  block_size = bi.gnum_range[1] - bi.gnum_range[0];
-
-  d = cs_part_to_block_create_by_gnum(w->comm, bi, part_size, g_elt_num);
-
-  if (_g_elt_num != NULL)
-    cs_part_to_block_transfer_gnum(d, _g_elt_num);
-
-  g_elt_num = NULL;
-  _g_elt_num = NULL;
-
-  /* Distribute sub-element info in case of tesselation */
-
-  if (have_tesselation) {
-
-    BFT_MALLOC(block_n_sub, block_size, int);
-
-    cs_part_to_block_copy_array(d,
-                                CS_INT32,
-                                1,
-                                part_n_sub,
-                                block_n_sub);
-    BFT_FREE(part_n_sub);
-
-    for (j = 0; j < block_size; j++)
-      block_sub_size += block_n_sub[j];
-
-  }
-  else
-    block_sub_size = block_size;
-
-  /* To save space, in case of tesselation, part_values and _block_n_sub
-     point to the same memory space, as they are not needed simultaneously.
-     Without tesselation, _block_n_sub simply points to block_n_sub */
-
-  BFT_MALLOC(part_values,
-             CS_MAX(part_size, (cs_lnum_t)block_sub_size),
-             float);
-  BFT_MALLOC(block_values, block_size, float);
-
-  if (have_tesselation) {
-    MPI_Scan(&block_sub_size, &block_end, 1, CS_MPI_GNUM, MPI_SUM, w->comm);
-    block_end += 1;
-    block_start = block_end - block_sub_size;
-    _block_values = part_values;
-  }
-  else {
-    block_start = bi.gnum_range[0];
-    block_end = bi.gnum_range[1];
-    _block_values = block_values;
-  }
-
-  /* Loop on dimension (de-interlace vectors, always 3D for EnSight) */
-
-  for (i = 0; i < output_dim; i++) {
-
-    /* Distribute partition to block values */
-
-    if (i < input_dim) {
-
-      cs_lnum_t start_id = 0;
-      cs_lnum_t src_shift = 0;
-
-      const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
-
-      /* loop on sections which should be appended */
-
-      current_section = export_section;
-      do {
-
-        const fvm_nodal_section_t  *section = current_section->section;
-
-        if (n_parent_lists == 0)
-          src_shift = export_section->num_shift;
-
-        fvm_convert_array(input_dim,
-                          i_in,
-                          1,
-                          src_shift,
-                          section->n_elements + src_shift,
-                          interlace,
-                          datatype,
-                          CS_FLOAT,
-                          n_parent_lists,
-                          parent_num_shift,
-                          section->parent_element_num,
-                          field_values,
-                          part_values + start_id);
-
-        start_id += fvm_io_num_get_local_count(section->global_element_num);
-
-        current_section = current_section->next;
-
-      } while (   current_section != NULL
-               && current_section->continues_previous == true);
-
-      /* Distribute part values */
-
-      cs_part_to_block_copy_array(d,
-                                  CS_FLOAT,
-                                  1,
-                                  part_values,
-                                  block_values);
-
-      /* Scatter values to sub-elements in case of tesselation */
-
-      if (have_tesselation) {
-        cs_lnum_t   l = 0;
-        for (j = 0; j < block_size; j++) {
-          for (k = 0; k < block_n_sub[j]; k++)
-            _block_values[l++] = block_values[j];
-        }
-      }
-
-    }
-
-    /* Zero extra dimensions */
-
-    else {
-      for (j = 0; j < (cs_lnum_t)block_sub_size; j++)
-        block_values[j] = 0.0;
-    }
-
-    /* Write block values */
-
-    _write_block_floats_g(block_start,
-                          block_end,
-                          _block_values,
-                          w->comm,
-                          f);
-
-  } /* end of loop on spatial dimension */
-
-  BFT_FREE(block_values);
-  BFT_FREE(part_values);
-
-  cs_part_to_block_destroy(&d);
-
-  if (block_n_sub != NULL)
-    BFT_FREE(block_n_sub);
-
-  return current_section;
-}
-
-#endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
  * Write field values associated with element values of a nodal mesh to
@@ -3103,12 +2450,11 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
   /* Blocking for arbitrary buffer size, but should be small enough
      to add little additional memory requirement (in proportion), large
-     enough to limit number of write and gather calls. */
+     enough to limit number of write calls. */
 
   fvm_writer_field_helper_get_size(helper,
                                    &input_size,
                                    &output_size,
-                                   NULL,
                                    &min_output_buffer_size);
 
   output_buffer_size = input_size / 4;
@@ -3122,7 +2468,7 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
   for (i = 0; i < output_dim; i++) {
 
-    _Bool loop_on_sections = true;
+    bool loop_on_sections = true;
 
     const int i_in = (input_dim == 6) ? _ensight_c_order_6[i] : i;
 
@@ -3130,18 +2476,18 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 
     while (loop_on_sections == true) {
 
-      while (fvm_writer_field_helper_step_e(helper,
-                                            current_section,
-                                            input_dim,
-                                            i_in,
-                                            interlace,
-                                            n_parent_lists,
-                                            parent_num_shift,
-                                            datatype,
-                                            field_values,
-                                            output_buffer,
-                                            output_buffer_size,
-                                            &output_size) == 0) {
+      while (fvm_writer_field_helper_step_el(helper,
+                                             current_section,
+                                             input_dim,
+                                             i_in,
+                                             interlace,
+                                             n_parent_lists,
+                                             parent_num_shift,
+                                             datatype,
+                                             field_values,
+                                             output_buffer,
+                                             output_buffer_size,
+                                             &output_size) == 0) {
 
         _write_block_floats_l(output_size,
                               output_buffer,
@@ -3471,6 +2817,7 @@ fvm_to_ensight_export_nodal(void               *this_writer_p,
   export_list = fvm_writer_export_list(mesh,
                                        fvm_nodal_get_max_entity_dim(mesh),
                                        true,
+                                       false,
                                        this_writer->discard_polygons,
                                        this_writer->discard_polyhedra,
                                        this_writer->divide_polygons,
@@ -3690,12 +3037,11 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
   const fvm_writer_section_t  *export_section = NULL;
   fvm_writer_field_helper_t  *helper = NULL;
   fvm_writer_section_t  *export_list = NULL;
-  fvm_to_ensight_writer_t  *this_writer
-                             = (fvm_to_ensight_writer_t *)this_writer_p;
+  fvm_to_ensight_writer_t  *w = (fvm_to_ensight_writer_t *)this_writer_p;
   _ensight_file_t  f = {NULL, NULL};
 
-  const int  rank = this_writer->rank;
-  const int  n_ranks = this_writer->n_ranks;
+  const int  rank = w->rank;
+  const int  n_ranks = w->n_ranks;
 
   /* Initialization */
   /*----------------*/
@@ -3709,24 +3055,26 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
     bft_error(__FILE__, __LINE__, 0,
               _("Data of dimension %d not handled"), dimension);
 
+  const int *comp_order = (dimension == 6) ? _ensight_c_order_6 : NULL;
+
   /* Get part number */
 
-  part_num = fvm_to_ensight_case_get_part_num(this_writer->case_info,
+  part_num = fvm_to_ensight_case_get_part_num(w->case_info,
                                               mesh->name);
   if (part_num == 0)
-    part_num = fvm_to_ensight_case_add_part(this_writer->case_info,
+    part_num = fvm_to_ensight_case_add_part(w->case_info,
                                             mesh->name);
 
   /* Open variable file */
 
-  file_info = fvm_to_ensight_case_get_var_file(this_writer->case_info,
+  file_info = fvm_to_ensight_case_get_var_file(w->case_info,
                                                name,
                                                output_dim,
                                                location,
                                                time_step,
                                                time_value);
 
-  f = _open_ensight_file(this_writer, file_info.name, file_info.queried);
+  f = _open_ensight_file(w, file_info.name, file_info.queried);
 
   if (file_info.queried == false) {
 
@@ -3754,18 +3102,28 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
   export_list = fvm_writer_export_list(mesh,
                                        fvm_nodal_get_max_entity_dim(mesh),
                                        true,
-                                       this_writer->discard_polygons,
-                                       this_writer->discard_polyhedra,
-                                       this_writer->divide_polygons,
-                                       this_writer->divide_polyhedra);
+                                       false,
+                                       w->discard_polygons,
+                                       w->discard_polyhedra,
+                                       w->divide_polygons,
+                                       w->divide_polyhedra);
 
-  if (n_ranks == 1)
-    helper = fvm_writer_field_helper_create(mesh,
-                                            export_list,
-                                            output_dim,
-                                            CS_NO_INTERLACE,
-                                            CS_FLOAT,
-                                            location);
+  helper = fvm_writer_field_helper_create(mesh,
+                                          export_list,
+                                          output_dim,
+                                          CS_NO_INTERLACE,
+                                          CS_FLOAT,
+                                          location);
+
+#if defined(HAVE_MPI)
+
+  if (n_ranks > 1)
+    fvm_writer_field_helper_init_g(helper,
+                                   w->min_rank_step,
+                                   w->min_block_size,
+                                   w->comm);
+
+#endif
 
   /* Part header */
 
@@ -3781,17 +3139,25 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 
 #if defined(HAVE_MPI)
 
-    if (n_ranks > 1)
-      _export_field_values_ng(this_writer,
-                              mesh,
-                              dimension,
-                              output_dim,
-                              interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              field_values,
-                              f);
+    if (n_ranks > 1) {
+
+        _ensight_context_t c;
+        c.writer = w;
+        c.file = &f;
+
+        fvm_writer_field_helper_output_n(helper,
+                                         &c,
+                                         mesh,
+                                         dimension,
+                                         interlace,
+                                         comp_order,
+                                         n_parent_lists,
+                                         parent_num_shift,
+                                         datatype,
+                                         field_values,
+                                         _field_output_g);
+
+    }
 
 #endif /* defined(HAVE_MPI) */
 
@@ -3825,17 +3191,25 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 
 #if defined(HAVE_MPI)
 
-      if (n_ranks > 1)
-        export_section = _export_field_values_eg(this_writer,
-                                                 export_section,
-                                                 dimension,
-                                                 output_dim,
-                                                 interlace,
-                                                 n_parent_lists,
-                                                 parent_num_shift,
-                                                 datatype,
-                                                 field_values,
-                                                 f);
+      if (n_ranks > 1) {
+
+        _ensight_context_t c;
+        c.writer = w;
+        c.file = &f;
+
+        export_section = fvm_writer_field_helper_output_e(helper,
+                                                          &c,
+                                                          export_section,
+                                                          dimension,
+                                                          interlace,
+                                                          comp_order,
+                                                          n_parent_lists,
+                                                          parent_num_shift,
+                                                          datatype,
+                                                          field_values,
+                                                          _field_output_g);
+
+      }
 
 #endif /* defined(HAVE_MPI) */
 
@@ -3857,8 +3231,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
   /* Free helper structures */
   /*------------------------*/
 
-  if (helper != NULL)
-    helper = fvm_writer_field_helper_destroy(helper);
+  fvm_writer_field_helper_destroy(&helper);
 
   BFT_FREE(export_list);
 
@@ -3867,7 +3240,7 @@ fvm_to_ensight_export_field(void                  *this_writer_p,
 
   _free_ensight_file(&f);
 
-  fvm_to_ensight_case_write_case(this_writer->case_info, rank);
+  fvm_to_ensight_case_write_case(w->case_info, rank);
 }
 
 /*----------------------------------------------------------------------------*/

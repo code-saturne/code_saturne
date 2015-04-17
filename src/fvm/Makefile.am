@@ -70,7 +70,6 @@ fvm_box.h \
 fvm_box_priv.h \
 fvm_box_tree.h \
 fvm_convert_array.h \
-fvm_gather.h \
 fvm_hilbert.h \
 fvm_morton.h \
 fvm_nodal_priv.h \
@@ -99,7 +98,6 @@ fvm_box.c \
 fvm_box_tree.c \
 fvm_convert_array.c \
 fvm_defs.c \
-fvm_gather.c \
 fvm_group.c \
 fvm_hilbert.c \
 fvm_io_num.c \

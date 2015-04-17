@@ -45,7 +45,6 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "fvm_gather.h"
 #include "fvm_writer.h"
 
 /*----------------------------------------------------------------------------

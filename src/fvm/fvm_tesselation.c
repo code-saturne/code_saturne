@@ -1436,68 +1436,40 @@ _expand_limit_g(const fvm_tesselation_t  *this_tesselation,
 /*----------------------------------------------------------------------------
  * Decode polygons tesselation to a connectivity buffer.
  *
- * To avoid requiring huge buffers and computing unneeded element
- * connectivities when exporting data in slices, this function may decode
- * a partial connectivity range, starting at polygon index start_id and ending
- * either when the indicated buffer size is attained, or the global element
- * number corresponding to a given polygon exceeds a given value.
- * It returns the effective polygon index end.
- *
  * parameters:
  *   this_tesselation   <-- tesselation structure
  *   connect_type       <-- destination element type
- *   start_id           <-- start index of polygons subset in parent section
- *   buffer_limit       <-- maximum number of sub-elements of destination
- *                          element type allowable for sub_element_idx[]
- *                          and vertex_num[] buffers
- *   global_num_end     <-- past the end (maximum + 1) parent element
- *                          global number
  *   global_vertex_num  <-- global vertex numbering
  *   vertex_num         --> sub-element (global) vertex connectivity
- *
- * returns:
- *   polygon index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-static cs_lnum_t
+static void
 _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
                                fvm_element_t             connect_type,
-                               cs_lnum_t                 start_id,
-                               cs_lnum_t                 buffer_limit,
-                               cs_gnum_t                 global_num_end,
                                const fvm_io_num_t       *global_vertex_num,
                                cs_gnum_t                 vertex_num[])
 {
   cs_lnum_t n_vertices;
-  cs_lnum_t i, j, k, l, vertex_id, encoding_id;
+  cs_lnum_t i, k, l, vertex_id, encoding_id;
   cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
   cs_lnum_t n_sub_tot = 0;
   const fvm_tesselation_t *ts = this_tesselation;
-  cs_lnum_t retval = start_id;
 
   const cs_gnum_t *_global_vertex_num
                       = fvm_io_num_get_global_num(global_vertex_num);
-  const cs_gnum_t *global_element_num
-    = fvm_io_num_get_global_num(ts->global_element_num);
 
   _init_decoding_mask(decoding_mask);
 
   /* Main loop on polygons */
   /*-----------------------*/
 
-  for (i = 0, j = start_id ;
-       j < this_tesselation->n_elements;
-       i++, j++) {
+  for (i = 0; i < this_tesselation->n_elements; i++) {
 
-    if (   global_element_num != NULL
-        && global_element_num[j] >= global_num_end)
-      break;
-
-    n_vertices = ts->vertex_index[j+1] - ts->vertex_index[j];
-    vertex_id = ts->vertex_index[j];
-    encoding_id = ts->vertex_index[j] - (j*2);
+    n_vertices = ts->vertex_index[i+1] - ts->vertex_index[i];
+    vertex_id = ts->vertex_index[i];
+    encoding_id = ts->vertex_index[i] - (i*2);
 
     /* Sub-elements (triangles) connectivity */
     /*---------------------------------------*/
@@ -1512,10 +1484,6 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
         if (ts->encoding[encoding_id + k] != 0) {
 
           /* Fill connectivity array */
-          /* Return previous element's end index if buffer size reached */
-
-          if (n_sub_tot >= buffer_limit)
-            return j;
 
           /* Fill connectivity array */
 
@@ -1559,11 +1527,6 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
       if (k == n_vertices - 2 || ts->encoding == NULL) {
 
-        /* Return previous element's end index if buffer size reached */
-
-        if (n_sub_tot >= buffer_limit)
-          return j;
-
         /* Fill connectivity array */
 
         if (_global_vertex_num != NULL) {
@@ -1583,11 +1546,7 @@ _decode_polygons_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
     } /* End of case where polygon is not tesselated */
 
-    retval = j+1; /* If end of buffer has not already been reached */
-
   } /* End of loop on polygons */
-
-  return retval;
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -1720,48 +1679,29 @@ _decode_polygons_tesselation_l(const fvm_tesselation_t  *this_tesselation,
 /*----------------------------------------------------------------------------
  * Decode polyhedra tesselation to a connectivity buffer.
  *
- * To avoid requiring huge buffers and computing unneeded element
- * connectivities when exporting data in slices, this function may decode a
- * partial connectivity range, starting at polyhedron index start_id and ending
- * either when the indicated buffer size is attained, or the global element
- * number corresponding to a given polyhedron exceeds a given value.
- * It returns the effective polyhedron index end.
- *
  * parameters:
  *   this_tesselation      <-- tesselation structure
  *   connect_type          <-- destination element type
- *   start_id              <-- start index of polyhedra subset in parent section
- *   buffer_limit          <-- maximum number of sub-elements of destination
- *                             element type allowable for vertex_num[] buffer
- *   global_num_end        <-- past the end (maximum + 1) parent element
- *                             global number
  *   extra_vertex_base     <-- starting number for added vertices
  *   global_vertex_num     <-- global vertex numbering
  *   vertex_num            --> sub-element (global) vertex connectivity
- *
- * returns:
- *   polyhedron index end corresponding to decoded range
  *----------------------------------------------------------------------------*/
 
-static cs_lnum_t
+static void
 _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
                                 fvm_element_t             connect_type,
-                                cs_lnum_t                 start_id,
-                                cs_lnum_t                 buffer_limit,
-                                cs_gnum_t                 global_num_end,
                                 cs_gnum_t                 extra_vertex_base_num,
                                 const fvm_io_num_t       *global_vertex_num,
                                 cs_gnum_t                 vertex_num[])
 {
   int orient;
   cs_lnum_t n_vertices;
-  cs_lnum_t i, j, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
+  cs_lnum_t i, k, l, m, base_dest_id, face_id, vertex_id, encoding_id;
   cs_lnum_t tv[3];
   fvm_tesselation_encoding_t decoding_mask[3] = {0, 0, 0};
 
   cs_lnum_t n_sub_tot = 0;
   const fvm_tesselation_t *ts = this_tesselation;
-  cs_lnum_t retval = start_id;
 
   const cs_gnum_t *_global_vertex_num
                       = fvm_io_num_get_global_num(global_vertex_num);
@@ -1773,16 +1713,10 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
   /* Main loop on polyhedra */
   /*------------------------*/
 
-  for (i = 0, j = start_id ;
-       j < this_tesselation->n_elements;
-       i++, j++) {
+  for (i = 0; i < this_tesselation->n_elements; i++) {
 
-    if (   global_element_num != NULL
-        && global_element_num[j] >= global_num_end)
-      break;
-
-    for (k = ts->face_index[j];     /* Loop on element faces */
-         k < ts->face_index[j+1];
+    for (k = ts->face_index[i];     /* Loop on element faces */
+         k < ts->face_index[i+1];
          k++) {
 
       face_id = CS_ABS(ts->face_num[k]) - 1;
@@ -1812,11 +1746,6 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
           if (ts->encoding[encoding_id + l] != 0) {
 
-            /* Return previous element's end index if buffer size reached */
-
-            if (n_sub_tot >= buffer_limit)
-              return j;
-
             if (orient == 1)
               base_dest_id = n_sub_tot*4;
             else
@@ -1843,9 +1772,9 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
             if (global_element_num != NULL)
               vertex_num[n_sub_tot*4 + 3] =   extra_vertex_base_num
-                                            + global_element_num[j] - 1;
+                                            + global_element_num[i] - 1;
             else
-              vertex_num[n_sub_tot*4 + 3] = extra_vertex_base_num + j;
+              vertex_num[n_sub_tot*4 + 3] = extra_vertex_base_num + i;
 
             n_sub_tot += 1;
 
@@ -1874,11 +1803,6 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
           cs_lnum_t stride = n_vertices + 1;
 
-          /* Return previous element's end index if buffer size reached */
-
-          if (n_sub_tot >= buffer_limit)
-            return j;
-
           if (orient == 1)
             base_dest_id = n_sub_tot*stride;
           else
@@ -1901,10 +1825,10 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
           if (global_element_num != NULL)
             vertex_num[n_sub_tot*stride + n_vertices]
-              =   extra_vertex_base_num + global_element_num[j] - 1;
+              =   extra_vertex_base_num + global_element_num[i] - 1;
           else
             vertex_num[n_sub_tot*stride + n_vertices]
-              = extra_vertex_base_num + j;
+              = extra_vertex_base_num + i;
 
           n_sub_tot += 1;
 
@@ -1914,11 +1838,7 @@ _decode_polyhedra_tesselation_g(const fvm_tesselation_t  *this_tesselation,
 
     } /* End of loop on element faces */
 
-    retval = j+1; /* If end of buffer has not already been reached */
-
   } /* End of main loop on polyhedra */
-
-  return retval;
 }
 
 #endif /* defined(HAVE_MPI) */
@@ -2715,83 +2635,42 @@ fvm_tesselation_range_index_g(const fvm_tesselation_t  *this_tesselation,
  * Decode tesselation to a parent element->sub elements index and
  * connectivity buffer.
  *
- * To avoid requiring huge buffers and computing unneeded element
- * connectivities when exporting data in slices, this function may decode
- * a partial connectivity range, starting at polygon index start_id and ending
- * either when the indicated buffer size is attained, or the global element
- * number corresponding to a given polygon exceeds a given value.
- * It returns the effective polygon index end.
- *
  * parameters:
  *   this_tesselation   <-- tesselation structure
  *   connect_type       <-- destination element type
- *   start_id           <-- start index of polygons subset in parent section
- *   buffer_limit       <-- maximum number of sub-elements of destination
- *                          element type allowable for sub_element_idx[]
- *                          and vertex_num[] buffers
- *   global_num_end     <-> past the end (maximum + 1) parent element
- *                          global number (reduced on return if required
- *                          by buffer_limit)
  *   extra_vertex_base  <-- starting number for added vertices
  *   global_vertex_num  <-- global vertex numbering
  *   vertex_num         --> sub-element (global) vertex connectivity
- *   comm               <-- associated MPI communicator
- *
- * returns:
- *   polygon index corresponding to end of decoded range
  *----------------------------------------------------------------------------*/
 
-cs_lnum_t
+void
 fvm_tesselation_decode_g(const fvm_tesselation_t  *this_tesselation,
                          fvm_element_t             connect_type,
-                         cs_lnum_t                 start_id,
-                         cs_lnum_t                 buffer_limit,
-                         cs_gnum_t                *global_num_end,
                          const fvm_io_num_t       *global_vertex_num,
                          cs_gnum_t                 extra_vertex_base,
-                         cs_gnum_t                 vertex_num[],
-                         MPI_Comm                  comm)
+                         cs_gnum_t                 vertex_num[])
 {
-  cs_lnum_t retval = 0;
-
   switch(this_tesselation->type) {
 
   case FVM_CELL_POLY:
-    retval = _decode_polyhedra_tesselation_g(this_tesselation,
-                                             connect_type,
-                                             start_id,
-                                             buffer_limit,
-                                             *global_num_end,
-                                             extra_vertex_base,
-                                             global_vertex_num,
-                                             vertex_num);
+    _decode_polyhedra_tesselation_g(this_tesselation,
+                                    connect_type,
+                                    extra_vertex_base,
+                                    global_vertex_num,
+                                    vertex_num);
     break;
 
   case FVM_FACE_POLY:
-    retval = _decode_polygons_tesselation_g(this_tesselation,
-                                            connect_type,
-                                            start_id,
-                                            buffer_limit,
-                                            *global_num_end,
-                                            global_vertex_num,
-                                            vertex_num);
+    _decode_polygons_tesselation_g(this_tesselation,
+                                   connect_type,
+                                   global_vertex_num,
+                                   vertex_num);
     break;
 
   default:
     assert(0);
 
   }
-
-  /* Check if the maximum id returned on some ranks leads to
-     a lower global_num_end than initially required
-     (due to local buffer being full) */
-
-  _expand_limit_g(this_tesselation,
-                  retval,
-                  global_num_end,
-                  comm);
-
-  return retval;
 }
 
 #endif /* defined(HAVE_MPI) */

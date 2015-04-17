@@ -178,58 +178,6 @@ struct _fvm_writer_t {
 
 };
 
-/*=============================================================================
- * Semi-private function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compute recommended buffer sizes to input or output a nodal mesh
- * definition by slices. This is especially useful when gathering the mesh for
- * output by slices using standard I/O in parallel mode.
- *
- * The global number of vertices and elements of each slice may also
- * be returned, if the pointers n_g_vertices and n_g_elements_section
- * are non-NULL respectively.
- *
- * The number of slices indicated is a minimum, and only a target;
- * computation is based primarily on cell and face connectivity, and the
- * target should be met for strided connectivities on those types of elements
- * only. Using an "optimistic" (i.e. small) mean number of vertices per
- * polyhedra or polygon will typically lead to requiring more slices, as
- * the connectivity slice size returned will be smaller than that truly
- * required for the corresponding slice size.
- * Slice sizes required for edges connectivity will meet the target only
- * when the global numbers of cells and faces given are zero, so as to
- * avoid generating too large connectivity slice sizes for cells should a mesh
- * contain both (as for example a hexahedral connectivity slice is 8 times
- * larger than the corresponding slice size, while an edges connectivity is
- * only 2 times as large).
- *
- * parameters:
- *   this_nodal                 <-- pointer to nodal mesh structure
- *   n_slices                   <-- target number of slices required
- *   n_polyhedron_vertices_mean <-- estimate of the mean number of vertices
- *                                  per polyhedron
- *   n_polygon_vertices_mean    <-- estimate of the mean number of vertices
- *                                  per polygon
- *   n_g_vertices               --> global number of vertices (or NULL)
- *   n_g_elements_section       --> array for global number of elements per
- *                                  section (or NULL)
- *   global_s_size              --> maximum number of entities defined per slice
- *   global_connect_s_size      --> maximum number of connectivity values
- *                                  per slice
- *----------------------------------------------------------------------------*/
-
-void
-fvm_writer_def_nodal_buf_size(const fvm_nodal_t  *this_nodal,
-                              int                 n_slices,
-                              int                 n_polyhedron_vertices_mean,
-                              int                 n_polygon_vertices_mean,
-                              cs_gnum_t          *n_g_vertices,
-                              cs_gnum_t           n_g_elements_section[],
-                              cs_gnum_t          *global_s_size,
-                              cs_gnum_t          *global_connect_s_size);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
