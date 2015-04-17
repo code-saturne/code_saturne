@@ -56,7 +56,7 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
-cs_rotation_t  *cs_glob_rotation;
+extern cs_rotation_t  *cs_glob_rotation;
 
 /*============================================================================
  * Public function prototypes
