@@ -1141,7 +1141,7 @@ class syrthes_domain(base_domain):
 
         # Try to base Syrthes version on path used to import the syrthes module,
         # for consistency with case creation parameters; it this is not enough,
-        # use existign environment or load one based on current configuration.
+        # use existing environment or load one based on current configuration.
 
         try:
             for p in sys.path:
@@ -1158,6 +1158,9 @@ class syrthes_domain(base_domain):
                              os.path.expanduser('~/.' + self.package.configfile)])
                 syr_profile = os.path.join(config.get('install', 'syrthes'),
                                            'bin', 'syrthes.profile')
+                syr_datapath = os.path.join(config.get('install', 'syrthes'),
+                                            os.path.join('share', 'syrthes'))
+                sys.path.insert(1, syr_datapath)
                 source_shell_script(syr_profile)
             import syrthes
         except Exception:
