@@ -610,8 +610,8 @@ Also, to build and install the documentation when building the code
 from a repository instead of a tarball, the following stages are required:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ make pdf\\
-\$ make install-pdf
+\$ make doc\\
+\$ make install-doc
 }\end{minipage}}
 
 \section{Configuration\label{sec:config}}
@@ -623,14 +623,14 @@ To obtain the full list of available configuration options,
 run: {\tt configure~--help}.
 
 Note that for all options starting with {\tt --enable-},
-there is a matching options with {\tt --disable-}. Similarly,
+there is a matching option with {\tt --disable-}. Similarly,
 for every {\tt --with-}, {\tt --without-} is also possible.
 
 Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/3.0/src/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/3.0/arch/prod
+\$ /home/user/Code\_Saturne/4.0/src/code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.0/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.0/bin/mpicc \textcolor{red}{FC}=gfortran
@@ -894,8 +894,8 @@ reflecting the \CS source path, installation path, and a path where optional
 libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/3.0 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/3.0 \\
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/4.0 \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/4.0 \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
