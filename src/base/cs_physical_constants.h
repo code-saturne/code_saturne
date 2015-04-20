@@ -50,8 +50,9 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  double        gx, gy, gz;                 /* gravity components */
-  int           icorio;                     /* Coriolis source terms indicator */
+  double        rr;                /* perfect gas constant in J/mol/K */
+  double        gx, gy, gz;        /* gravity components */
+  int           icorio;            /* Coriolis source terms indicator */
 
 } cs_physical_constants_t;
 
@@ -62,6 +63,11 @@ typedef struct {
 
   int           ixyzp0;       /* indicator for filling of reference point for
                                  total pressure */
+  int           ieos;         /* indicator of equation of state for the
+                                 compressible module */
+  int           icp;          /* property index of the isobaric specific heat */
+  int           icv;          /* property index of the isochoric specific
+                                 heat */
   double        ro0;          /* reference density */
   double        viscl0;       /* reference molecular dynamic viscosity */
   double        p0;           /* reference pressure for the total pressure */
@@ -70,6 +76,7 @@ typedef struct {
                                  pressure */
   double        t0;           /* reference temperature */
   double        cp0;          /* reference specific heat */
+  double        cv0;          /* reference specific heat */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach
@@ -91,7 +98,7 @@ extern const cs_physical_constants_t  *cs_glob_physical_constants;
 
 /* Pointer to main fluid properties structure */
 
-extern const cs_fluid_properties_t  *cs_glob_fluid_properties;
+extern cs_fluid_properties_t  * const cs_glob_fluid_properties;
 
 /*=============================================================================
  * Public function prototypes

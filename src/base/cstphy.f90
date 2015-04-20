@@ -61,6 +61,9 @@ module cstphy
   double precision :: rair
   parameter(rair = 287.d0)
 
+  !> Perfect gas constant in \f$J/mol/K\f$
+  real(c_double), pointer, save :: rr
+
   !> Gravity
   real(c_double), pointer, save :: gx, gy, gz
 
@@ -69,7 +72,19 @@ module cstphy
 
   !> Physical constants of the fluid
   !> filling \ref xyzp0 indicator
-  integer(c_int), pointer, save ::          ixyzp0
+  integer(c_int), pointer, save :: ixyzp0
+
+  !> indicates the equation of state for compressible module. Only perfect gas
+  !> with a constant adiabatic coefficient, \ref ieos=1 is available, but the
+  !> user can complete the file \ref cs_cf_thermo.h, which is not a user
+  !> source, to add new equations of state.
+  integer(c_int), pointer, save :: ieos
+
+  !> isobaric specific heat \f$ C_p \f$
+  integer(c_int), pointer, save :: icp
+
+  !> isochoric specific heat \f$ C_v \f$
+  integer(c_int), pointer, save :: icv
 
   !> reference density.
   !> Negative value: not initialized.
@@ -174,6 +189,11 @@ module cstphy
   !> based on their conductivity; it is therefore needed, unless the
   !> diffusivity is also specified in \ref usphyv.
   real(c_double), pointer, save :: cp0
+
+  !> reference isochoric specific heat.
+  !>
+  !> Useful for the compressible module
+  real(c_double), pointer, save :: cv0
 
   !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ppincl::ieos "ieos"=1)
   !>
@@ -665,25 +685,26 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! global physical constants structure
 
-    subroutine cs_f_physical_constants_get_pointers(gx, gy, gz, icorio) &
+    subroutine cs_f_physical_constants_get_pointers(rr, gx, gy, gz, icorio) &
       bind(C, name='cs_f_physical_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: gx, gy, gz, icorio
+      type(c_ptr), intent(out) :: rr, gx, gy, gz, icorio
     end subroutine cs_f_physical_constants_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global fluid properties structure
 
-    subroutine cs_f_fluid_properties_get_pointers(ixyzp0, ro0, viscl0, p0, &
-                                                  pred0, xyzp0, t0, cp0,   &
-                                                  xmasmr, pther, pthera,   &
-                                                  pthermax)                &
+    subroutine cs_f_fluid_properties_get_pointers(ixyzp0, ieos, icp, icv, ro0, &
+                                                  viscl0, p0, pred0, xyzp0, t0,&
+                                                  cp0, cv0, xmasmr, pther,     &
+                                                  pthera, pthermax)            &
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ixyzp0, ro0, viscl0, p0, pred0, xyzp0, t0, cp0
-      type(c_ptr), intent(out) :: xmasmr, pther, pthera, pthermax
+      type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, ro0, viscl0
+      type(c_ptr), intent(out) :: p0, pred0, xyzp0, t0, cp0, cv0, xmasmr
+      type(c_ptr), intent(out) :: pther, pthera, pthermax
     end subroutine cs_f_fluid_properties_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -740,10 +761,11 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_gx, c_gy, c_gz, c_icorio
+    type(c_ptr) :: c_rr, c_gx, c_gy, c_gz, c_icorio
 
-    call cs_f_physical_constants_get_pointers(c_gx, c_gy, c_gz, c_icorio)
+    call cs_f_physical_constants_get_pointers(c_rr, c_gx, c_gy, c_gz, c_icorio)
 
+    call c_f_pointer(c_rr, rr)
     call c_f_pointer(c_gx, gx)
     call c_f_pointer(c_gy, gy)
     call c_f_pointer(c_gz, gz)
@@ -761,15 +783,19 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ixyzp0, c_ro0, c_viscl0, c_p0, c_pred0, c_xyzp0, c_t0
-    type(c_ptr) :: c_cp0, c_xmasmr, c_pther, c_pthera, c_pthermax
-
-    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ro0, c_viscl0, c_p0, &
-                                            c_pred0, c_xyzp0, c_t0, c_cp0,   &
-                                            c_xmasmr, c_pther, c_pthera,     &
-                                            c_pthermax)
+    type(c_ptr) :: c_ixyzp0, c_ieos, c_icp, c_icv, c_ro0, c_viscl0, c_p0
+    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr, c_pther
+    type(c_ptr) :: c_pthera, c_pthermax
+    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ieos, c_icp, c_icv,   &
+                                            c_ro0, c_viscl0, c_p0,            &
+                                            c_pred0, c_xyzp0, c_t0,           &
+                                            c_cp0, c_cv0, c_xmasmr, c_pther,  &
+                                            c_pthera, c_pthermax)
 
     call c_f_pointer(c_ixyzp0, ixyzp0)
+    call c_f_pointer(c_ieos, ieos)
+    call c_f_pointer(c_icp, icp)
+    call c_f_pointer(c_icv, icv)
     call c_f_pointer(c_ro0, ro0)
     call c_f_pointer(c_viscl0, viscl0)
     call c_f_pointer(c_p0, p0)
@@ -777,6 +803,7 @@ contains
     call c_f_pointer(c_xyzp0, xyzp0, [3])
     call c_f_pointer(c_t0, t0)
     call c_f_pointer(c_cp0, cp0)
+    call c_f_pointer(c_cv0, cv0)
     call c_f_pointer(c_xmasmr, xmasmr)
     call c_f_pointer(c_pther, pther)
     call c_f_pointer(c_pthera, pthera)
@@ -796,7 +823,7 @@ contains
 
     type(c_ptr) :: c_almax , c_uref  , c_xlomlg
 
-    call cs_f_turb_reference_values( c_almax, c_uref, c_xlomlg)
+    call cs_f_turb_reference_values(c_almax, c_uref, c_xlomlg)
 
     call c_f_pointer(c_almax , almax )
     call c_f_pointer(c_uref  , uref  )

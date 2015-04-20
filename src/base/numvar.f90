@@ -189,9 +189,6 @@ module numvar
   !> dynamic turbulent viscosity at the previous time-step
   integer, save :: ivista
 
-  !> specific heat \f$ C_p \f$
-  integer, save :: icp
-
   !> specific heat \f$ C_p \f$ at the previous time-step
   integer, save :: icpa
 

@@ -107,7 +107,10 @@ BEGIN_C_DECLS
 
 /* main thermal model structure and associated pointer */
 
-static cs_thermal_model_t  _thermal_model = {-999, 1, -1};
+static cs_thermal_model_t  _thermal_model = {
+  .itherm = -999,
+  .itpscl = 1,
+  .iscalt = -1};
 
 const cs_thermal_model_t  *cs_glob_thermal_model = &_thermal_model;
 

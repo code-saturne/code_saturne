@@ -38,9 +38,6 @@ module ppthch
   !> \addtogroup thermophysical
   !> \{
 
-  !> perfect gas constant in \f$J/mol/K\f$
-  double precision rr
-
   !> reference temperature for the specific physics, in K
   double precision trefth
 
@@ -51,8 +48,7 @@ module ppthch
   !>  (1 atmosphere, 0 \f$\text{\degresC}\f$) in \f$m^{-3}\f$
   double precision volmol
 
-  parameter ( rr     = 8.31446d0      ,                             &
-              trefth = 25.d0 + tkelvi ,                             &
+  parameter ( trefth = 25.d0 + tkelvi ,                             &
               prefth = 1.01325d5      ,                             &
               volmol = 22.41d-3       )
 
@@ -141,5 +137,3 @@ module ppthch
   !> \}
 
 end module ppthch
-
-

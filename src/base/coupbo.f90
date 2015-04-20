@@ -63,6 +63,7 @@ use entsor
 use cstphy
 use mesh
 use field
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -209,12 +210,12 @@ do inbcou = 1, nbccou
       ! Compute e - CvT
 
       ! At cell centers
-      call cf_thermo_eps_sup(wa(iepsel), ncel)
-      !=====================
+      call cs_cf_thermo_eps_sup(wa(iepsel), ncel)
+      !========================
 
       ! At boundary faces centers
-      call cf_thermo_eps_sup(wa(iepsfa), nfabor)
-      !=====================
+      call cs_cf_thermo_eps_sup(wa(iepsfa), nfabor)
+      !========================
 
       do iloc = 1, nbfcou
         ifac  = lfcou(iloc)

@@ -96,7 +96,7 @@ double precision cofale(nfabor,11)
 integer          istr, ii, iel, ifac, ntab
 integer          iflmas, iflmab
 integer          indast
-integer          icvext, icvint, icv
+integer          icvext, icvint, icved
 integer          f_dim
 
 logical          interleaved
@@ -241,7 +241,7 @@ enddo
 
 icvext = 0
 icvint = 0
-icv    = 0
+icved  = 0
 
 delta = 0.d0
 do istr = 1, nbstru
@@ -257,26 +257,26 @@ endif
 if (nbaste.gt.0) call astcv1(ntcast, icvext)
 
 if (nbstru.gt.0.and.nbaste.gt.0) then
-   icv = icvext*icvint
+   icved = icvext*icvint
 elseif (nbstru.gt.0.and.nbaste.eq.0) then
-   icv = icvint
+   icved = icvint
 elseif (nbaste.gt.0.and.nbstru.eq.0) then
-   icv = icvext
+   icved = icvext
 endif
 
 if (iwarni(iuma).ge.2) write(nfecra,1000) italim, delta
 
 !     si convergence
-if (icv.eq.1) then
+if (icved.eq.1) then
   if (itrfin.eq.1) then
 !       si ITRFIN=1 on sort
     if (iwarni(iuma).ge.1) write(nfecra,1001) italim, delta
     itrfin = -1
   else
 !       sinon on refait une derniere iteration pour SYRTHES/T1D/rayonnement
-!        et on remet ICV a 0 pour que Code_Aster refasse une iteration aussi
+!        et on remet ICVED a 0 pour que Code_Aster refasse une iteration aussi
     itrfin = 1
-    icv = 0
+    icved = 0
   endif
 elseif (itrfin.eq.0 .and. italim.eq.nalimx-1) then
 !       ce sera la derniere iteration
@@ -285,12 +285,12 @@ elseif (italim.eq.nalimx) then
 !       on a forcement ITRFIN=1 et on sort
   if (nalimx.gt.1) write(nfecra,1100) italim, delta
   itrfin = -1
-!       On met ICV a 1 pour que Code_Aster s'arrete lui aussi
-  icv = 1
+!       On met ICVED a 1 pour que Code_Aster s'arrete lui aussi
+  icved = 1
 endif
 
 !     On renvoie l'indicateur de convergence final a Code_Aster
-call astcv2(ntcast, icv)
+call astcv2(ntcast, icved)
 !==========
 
 !===============================================================================

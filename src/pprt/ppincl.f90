@@ -658,9 +658,6 @@ module ppincl
   !> \addtogroup comp_properties
   !> \{
 
-  !> additional property
-  integer, save :: icv
-
   !> additional property:
   !>  - 0 indicates that the volume viscosity is constant and equal to
   !> the reference volume viscosity \ref viscv0.
@@ -676,11 +673,6 @@ module ppincl
   !> \f}
   !>
   integer, save :: iviscv
-
-  !> indicates the equation of state. Only perfect gas with a constant adiabatic
-  !>  coefficient, \ref ieos=1 is available, but the user can complete the file
-  !> \ref cfther.f90, which is not a user subroutine, to add new equations of state.
-  integer, save :: ieos
 
   !> \}
   !> \}
@@ -698,10 +690,6 @@ module ppincl
 
   !> alias for boundary conditions
   integer, save :: irunh
-
-  ! ---- Proprietes supplementaires par phase
-  !> additional property
-  double precision, save :: cv0
 
   !> reference volume viscosity (noted \f$\kappa\f$ in the equation
   !> expressing \f$\tens{\sigma}\f$ in the paragraph dedicated to \ref iviscv)

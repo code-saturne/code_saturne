@@ -107,6 +107,20 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/* Numerical constants */
+
+/*! epsilon \f$ 10^{-12}\f$ */
+const cs_real_t cs_defs_epzero = 1.e-12;
+
+/*! infinite \f$ 10^{+30}\f$ */
+const cs_real_t cs_defs_infinite_r = 1.e30;
+
+/*! big value \f$ 10^{+12}\f$ */
+const cs_real_t cs_defs_big_r = 1.e12;
+
+/*! \f$ \pi \f$ value with 16 digits */
+const cs_real_t cs_defs_pi = 3.141592653589793;
+
 /* Sizes associated with datatypes */
 
 const size_t  cs_datatype_size[] = {0,

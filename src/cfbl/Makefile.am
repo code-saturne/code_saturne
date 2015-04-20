@@ -24,6 +24,15 @@
 
 # Main part
 
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/alge \
@@ -45,7 +54,8 @@ AM_LDFLAGS =
 
 # Public header files (to be installed)
 
-pkginclude_HEADERS =
+pkginclude_HEADERS = \
+cs_cf_thermo.h
 
 # Library source files
 
@@ -60,12 +70,12 @@ cfphyv.f90 \
 cfprop.f90 \
 cfrusb.f90 \
 cffana.f90 \
-cfther.f90 \
 cfvarp.f90 \
 cfxtcl.f90 \
 cfmspr.f90 \
-cfmsfp.f90
+cfmsfp.f90 \
+cs_cf_thermo.c
 libcscfbl_la_LDFLAGS = -no-undefined
 
 clean-local:
-	-rm -f *__genmod.f90 *.mod
+	-rm -f *__genmod.f90 *__genmod.mod

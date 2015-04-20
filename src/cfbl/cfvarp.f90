@@ -51,6 +51,7 @@ use ppthch
 use ppincl
 use ihmpre
 use field
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -123,10 +124,9 @@ if (ippmod(icompf).ge.0) then
 
   ! Computation parameters
 
-  ! Variability of pecific heat at constant volume Cv (constant by default)
-  icv = 0
+  ! Variability of specific heat at constant volume Cv (constant by default)
   cv0 = 0.d0
-  call cf_set_thermo_options
+  call cs_cf_set_thermo_options
 
   ! Variability of volumetric molecular viscosity (gui setting)
   if (iihmpr.eq.1) then
@@ -142,4 +142,3 @@ endif
 
 return
 end subroutine
-

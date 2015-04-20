@@ -118,6 +118,7 @@ use ppthch
 use ppincl
 use field
 use mesh
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -321,7 +322,7 @@ enddo
 ! --- The isochoric specific heat is deduced from the isobaric specific heat
 
 call field_get_val_s(iprpfl(icv), cpro_cv)
-call cf_thermo_cv(cpro_cp, cpro_cv, ncel)
+call cs_cf_thermo_cv(cpro_cp, cpro_cv, ncel)
 !< [example_3]
 
 

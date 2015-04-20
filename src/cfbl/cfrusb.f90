@@ -23,10 +23,8 @@
 subroutine cfrusb &
 !================
 
- ( nvar   ,                                                       &
-   ifac   ,                                                       &
-   gammag ,                                                       &
-   bval   )
+ ( ifac   ,                                                       &
+   bc_en  , bc_pr  , bc_vel    )
 
 !===============================================================================
 ! FUNCTION :
@@ -43,9 +41,7 @@ subroutine cfrusb &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
 ! ifac             ! i  ! <-- ! face number                                    !
-! gammag           ! r  ! <-- ! gamma du gaz                                   !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -72,6 +68,7 @@ use ppincl
 use cfpoin
 use mesh
 use field
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -79,21 +76,18 @@ implicit none
 
 ! Arguments
 
-integer          nvar
 integer          ifac
 
-double precision gammag
-
-double precision bval(nfabor,nvar)
+double precision bc_en(nfabor), bc_pr(nfabor), bc_vel(3,nfabor)
 
 ! Local variables
 
-integer          iel
+integer          iel, l_size
 integer          ien
 integer          iflmab
 
-double precision und    , uni    , rund   , runi   , cd     , ci
-double precision rrus   , runb
+double precision und, uni, rund, runi, cd, ci, cd2(1), ci2(1)
+double precision rrus, runb
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:,:), pointer :: cofacv
 double precision, dimension(:), pointer :: coface
@@ -130,16 +124,21 @@ iel   = ifabor(ifac)
 ! 1. COMPUTE VALUES NEEDED FOR RUSANOV SCHEME
 !===============================================================================
 
-und   = (bval(ifac,iu)*surfbo(1,ifac)                          &
-       + bval(ifac,iv)*surfbo(2,ifac)                          &
-       + bval(ifac,iw)*surfbo(3,ifac))/surfbn(ifac)
+und   = (bc_vel(1,ifac)*surfbo(1,ifac)                          &
+       + bc_vel(2,ifac)*surfbo(2,ifac)                          &
+       + bc_vel(3,ifac)*surfbo(3,ifac))/surfbn(ifac)
 uni   = (vel(1,iel)*surfbo(1,ifac)                            &
        + vel(2,iel)*surfbo(2,ifac)                            &
        + vel(3,iel)*surfbo(3,ifac))/surfbn(ifac)
 rund  = brom(ifac)*und
 runi  = crom(iel)     *uni
-cd    = sqrt(gammag*bval(ifac,ipr)/brom(ifac))
-ci    = sqrt(gammag*cvar_pr(iel)/crom(iel))
+
+l_size = 1
+call cs_cf_thermo_c_square(bc_pr(ifac:ifac), brom(ifac:ifac), cd2, l_size)
+call cs_cf_thermo_c_square(cvar_pr(iel:iel), crom(iel:iel), ci2, l_size)
+
+cd    = sqrt(cd2(1))
+ci    = sqrt(ci2(1))
 rrus  = max(abs(und)+cd,abs(uni)+ci)
 
 runb  = 0.5d0*(brom(ifac)*und+crom(iel)*uni)          &
@@ -160,28 +159,28 @@ bmasfl(ifac) = runb*surfbn(ifac)
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)
 cofacv(1,ifac) = surfbn(ifac)*                                                  &
-                 0.5d0*( rund*bval(ifac,iu) + runi*vel(1,iel)                   &
-                         -rrus*(brom(ifac)*bval(ifac,iu)                        &
+                 0.5d0*( rund*bc_vel(1,ifac) + runi*vel(1,iel)                   &
+                         -rrus*(brom(ifac)*bc_vel(1,ifac)                        &
                          -crom(iel)*vel(1,iel)) )
 
 cofacv(2,ifac) = surfbn(ifac)*                                                  &
-                 0.5d0*( rund*bval(ifac,iv) + runi*vel(2,iel)                   &
-                         -rrus*( brom(ifac)*bval(ifac,iv)                       &
+                 0.5d0*( rund*bc_vel(2,ifac) + runi*vel(2,iel)                   &
+                         -rrus*( brom(ifac)*bc_vel(2,ifac)                       &
                          -crom(iel)*vel(2,iel)) )
 
 cofacv(3,ifac) = surfbn(ifac)*                                                  &
-                 0.5d0*( rund*bval(ifac,iw) + runi*vel(3,iel)                   &
-                         -rrus*(brom(ifac)*bval(ifac,iw)                        &
+                 0.5d0*( rund*bc_vel(3,ifac) + runi*vel(3,iel)                   &
+                         -rrus*(brom(ifac)*bc_vel(3,ifac)                        &
                          -crom(iel)*vel(3,iel)) )
 
 ! BC for the pressure gradient in the momentum balance
-bval(ifac,ipr) = 0.5d0 * (bval(ifac,ipr) + cvar_pr(iel))
+bc_pr(ifac) = 0.5d0 * (bc_pr(ifac) + cvar_pr(iel))
 
 ! Total energy flux
 coface(ifac) = surfbn(ifac)*                                                    &
-               0.5d0*( rund*bval(ifac,ien) + runi*cvar_en(iel)                  &
-                       +und*bval(ifac,ipr) + uni*cvar_pr(iel)                   &
-                       -rrus*(brom(ifac)*bval(ifac,ien)                         &
+               0.5d0*( rund*bc_en(ifac) + runi*cvar_en(iel)                  &
+                       +und*bc_pr(ifac) + uni*cvar_pr(iel)                   &
+                       -rrus*(brom(ifac)*bc_en(ifac)                         &
                        -crom(iel)*cvar_en(iel)) )
 
 return

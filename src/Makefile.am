@@ -73,6 +73,7 @@ $(top_srcdir)/src/atmo/atimbr.f90 \
 $(top_srcdir)/src/atmo/siream.f90 \
 $(top_srcdir)/src/atmo/spefun.f90 \
 $(top_srcdir)/src/cfbl/cfpoin.f90 \
+$(top_srcdir)/src/cfbl/cs_cf_bindings.f90 \
 $(top_srcdir)/src/comb/cs_coal_incl.f90 \
 $(top_srcdir)/src/comb/cs_fuel_incl.f90 \
 $(top_srcdir)/src/comb/cpincl.f90 \
@@ -167,4 +168,3 @@ uninstall-local:
 	echo " ( cd '$(DESTDIR)$(pkgincludedir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(pkgincludedir)" && rm -f $$files
 	rmdir $(pkgincludedir) || exit 0
-

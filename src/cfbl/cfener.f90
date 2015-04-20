@@ -79,6 +79,7 @@ use cfpoin
 use mesh
 use field
 use cs_c_bindings
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -451,12 +452,12 @@ if( idiff(ivar).ge. 1 ) then
   ! Compute e - CvT
 
   ! At cell centers
-  call cf_thermo_eps_sup(w9, ncel)
-  !=====================
+  call cs_cf_thermo_eps_sup(w9, ncel)
+  !========================
 
   ! At boundary faces centers
-  call cf_thermo_eps_sup(wb, nfabor)
-  !=====================
+  call cs_cf_thermo_eps_sup(wb, nfabor)
+  !========================
 
 ! Divergence computation with reconstruction
 
@@ -650,7 +651,7 @@ call clpsca(iscal)
 
 ! --- Traitement utilisateur pour gestion plus fine des bornes
 !       et actions correctives eventuelles.
-call cf_check_internal_energy(cvar_energ, ncel, vel)
+call cs_cf_check_internal_energy(cvar_energ, ncel, vel)
 
 ! Explicit balance (see codits : the increment is removed)
 
@@ -672,7 +673,7 @@ endif
 ! The state equation is used P   =P(RHO   ,H   )
 
 ! Computation of P and T at cell centers
-call cf_thermo_pt_from_de(crom, cvar_energ, cvar_pr, cvar_tempk, vel, ncel)
+call cs_cf_thermo_pt_from_de(crom, cvar_energ, cvar_pr, cvar_tempk, vel, ncel)
 
 !===============================================================================
 ! 7. COMMUNICATION OF PRESSURE, ENERGY AND TEMPERATURE

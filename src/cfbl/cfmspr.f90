@@ -77,6 +77,7 @@ use mesh
 use pointe, only: itypfb
 use field
 use cs_c_bindings
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -223,8 +224,8 @@ endif
 
 allocate(c2(ncelet))
 
-call cf_thermo_c_square(cvar_pr, crom, c2, ncel)
-!======================
+call cs_cf_thermo_c_square(cvar_pr, crom, c2, ncel)
+!=========================
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel) + istat(ivar)*(cell_f_vol(iel)/(dt(iel)*c2(iel)))
@@ -283,10 +284,10 @@ call divmas(init,wflmas,wflmab,smbrs)
 ! (Delta t)_ij is calculated as the "viscocity" associated to the pressure
 imvis1 = 1
 
-call viscfa                                                                     &
+call viscfa                                                                    &
 !==========
-( imvis1 ,                                                                      &
-  dt     ,                                                       &
+( imvis1 ,                                                                     &
+  dt     ,                                                                     &
   viscf  , viscb  )
 
 !===============================================================================
@@ -318,22 +319,22 @@ relaxp = relaxv(ivar)
 thetv  = thetav(ivar)
 icvflb = 0
 
-call codits                                                                     &
+call codits                                                                    &
 !==========
-( idtvar , ivar   , iconvp , idiffp , ndircp ,                                  &
-  imrgra , nswrsp , nswrgp , imligp , ircflp ,                                  &
-  ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                         &
-  iwarnp ,                                                                      &
-  blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                         &
-  relaxp , thetv  ,                                                             &
-  cvara_pr        , cvara_pr        ,                                           &
-  wbfa   , wbfb   ,                                                             &
-  coefaf_p        , coefbf_p        ,                                           &
-  wflmas          , wflmab          ,                                           &
-  viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,                         &
-  rvoid  , rvoid  ,                                                             &
-  icvflb , ivoid  ,                                                             &
-  rovsdt , smbrs  , cvar_pr         , dpvar  ,                                  &
+( idtvar , ivar   , iconvp , idiffp , ndircp ,                                 &
+  imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
+  ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
+  iwarnp ,                                                                     &
+  blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                        &
+  relaxp , thetv  ,                                                            &
+  cvara_pr        , cvara_pr        ,                                          &
+  wbfa   , wbfb   ,                                                            &
+  coefaf_p        , coefbf_p        ,                                          &
+  wflmas          , wflmab          ,                                          &
+  viscf  , viscb  , rvoid  , viscf  , viscb  , rvoid  ,                        &
+  rvoid  , rvoid  ,                                                            &
+  icvflb , ivoid  ,                                                            &
+  rovsdt , smbrs  , cvar_pr         , dpvar  ,                                 &
   rvoid  , rvoid  )
 
 !===============================================================================
@@ -343,8 +344,8 @@ call codits                                                                     
 ! --- User intervention for a finer management of the bounds and possible
 !       corrective treatement.
 
-call cf_check_pressure(cvar_pr, ncel)
-!=====================
+call cs_cf_check_pressure(cvar_pr, ncel)
+!========================
 
 ! --- Explicit balance (see codits : the increment is withdrawn)
 

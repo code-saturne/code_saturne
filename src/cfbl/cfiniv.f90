@@ -83,6 +83,7 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -133,8 +134,8 @@ else
 ! ----- Initialisations par defaut
 
     !     On initialise Cv
-    call cf_thermo_default_init(ncel, ncelet)
-    !==========================
+    call cs_cf_thermo_default_init(isuite, ncel)
+    !=============================
 
   endif
 

@@ -85,6 +85,7 @@ use ppincl
 use cfpoin
 use mesh
 use field
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -104,7 +105,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 integer          ivar  , ifac  , iel, l_size
 integer          ii    , iii   , iccfth
-integer          icalep, icalgm
+integer          icalep
 integer          iflmab
 integer          ien   , itk
 integer          nvarcf
@@ -113,13 +114,14 @@ integer          nvcfmx
 parameter       (nvcfmx=6)
 integer          ivarcf(nvcfmx)
 
-double precision hint  , gammag
+double precision hint
 
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: wbfb
-double precision, allocatable, dimension(:,:) :: bval
+double precision, allocatable, dimension(:) :: bc_en, bc_pr, bc_tk
+double precision, allocatable, dimension(:,:) :: bc_vel
 
 double precision, dimension(:), pointer :: bmasfl
 double precision, dimension(:), pointer :: coefbp
@@ -138,9 +140,11 @@ call field_get_val_v(ivarfl(iu), vel)
 ! Allocate temporary arrays
 allocate(w1(ncelet), w2(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-
 allocate(w7(nfabor), wbfb(nfabor))
-allocate(bval(nfabor,nvar))
+allocate(bc_en(nfabor))
+allocate(bc_pr(nfabor))
+allocate(bc_tk(nfabor))
+allocate(bc_vel(3,nfabor))
 
 ien = isca(ienerg)
 itk = isca(itempk)
@@ -180,35 +184,10 @@ do ifac = 1, nfabor
 enddo
 if(icalep.ne.0) then
   ! At cell centers
-  call cf_thermo_eps_sup(w5, ncel)
+  call cs_cf_thermo_eps_sup(w5, ncel)
 
   ! At boundary faces centers
-  call cf_thermo_eps_sup(w7, nfabor)
-endif
-
-! Computation of gamma (can be constant or variable)
-! Needed for to compute the Rusanov fluxes at imposed inlet.
-
-icalgm = 0
-do ifac = 1, nfabor
-  if ( ( itypfb(ifac).eq.iesicf ) .or.                    &
-       ( itypfb(ifac).eq.ieqhcf ) ) then
-    icalgm = 1
-  endif
-enddo
-if(icalgm.ne.0) then
-  if(ieos.eq.1) then
-    call cf_thermo_gamma(gammag)
-  else
-    ! TODO for thermodynamic with variable gamma
-    ! Gamma is used in cfrusb. If non uniform (ieos different from 1),
-    ! the cell values have to be passed and used as gammag(ifabor(ifac))
-    ! in the Rusanov flux computation.
-    ! For now, we stop here and an error message is printed out.
-    write(nfecra,7000)
-    call csexit (1)
-  endif
-
+  call cs_cf_thermo_eps_sup(w7, nfabor)
 endif
 
 ! Loop on all boundary faces and treatment of types of BCs given by itypfb
@@ -255,7 +234,7 @@ do ifac = 1, nfabor
       ! (Pboundary = COEFB*Pi)
       ! If rarefaction is too strong : homogeneous Dirichlet
 
-      call cf_thermo_wall_bc(wbfb, ifac)
+      call cs_cf_thermo_wall_bc(wbfb, ifac-1)
 
       ! In addition, a pre-correction has to be applied to cancel the
       ! treatment done afterward in condli.
@@ -419,17 +398,15 @@ do ifac = 1, nfabor
       endif
     enddo
 
-    ! missing thermo variables among P,rho,T,E are computed
-    do ivar = 1, nvar
-      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
-    enddo
+    ! missing thermo variables among P, rho, T, E are computed
+    bc_en(ifac) = rcodcl(ifac,ien,1)
+    bc_pr(ifac) = rcodcl(ifac,ipr,1)
+    bc_tk(ifac) = rcodcl(ifac,itk,1)
+    bc_vel(1,ifac) = rcodcl(ifac,iu,1)
+    bc_vel(2,ifac) = rcodcl(ifac,iv,1)
+    bc_vel(3,ifac) = rcodcl(ifac,iw,1)
 
-    call cfther &
-    !==========
- ( nvar   ,               &
-   iccfth , ifac   ,      &
-   w1     , w2     , bval )
-
+    call cs_cf_thermo(iccfth, ifac, bc_en, bc_pr, bc_tk, bc_vel)
 
     ! Rusanov fluxes, mass flux and boundary conditions types (icodcl) are
     ! dealt with further below
@@ -462,19 +439,17 @@ do ifac = 1, nfabor
 
     ! density, velocity and total energy values
     brom(ifac) = crom(iel) ! TODO: test without (already done in phyvar)
-    rcodcl(ifac,iu ,1) = vel(1,iel)
-    rcodcl(ifac,iv ,1) = vel(2,iel)
-    rcodcl(ifac,iw ,1) = vel(3,iel)
-    rcodcl(ifac,ien,1) = cvar_en(iel)
-
-    do ivar = 1, nvar
-      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
-    enddo
+    bc_en(ifac) = cvar_en(iel)
+    bc_pr(ifac) = rcodcl(ifac,ipr,1)
+    bc_tk(ifac) = rcodcl(ifac,itk,1)
+    bc_vel(1,ifac) = vel(1,iel)
+    bc_vel(2,ifac) = vel(2,iel)
+    bc_vel(3,ifac) = vel(3,iel)
 
     l_size = 1
-    call cf_thermo_pt_from_de_ni(brom(ifac:ifac), bval(ifac,ien), bval(ifac,ipr),  &
-                                 bval(ifac,itk), bval(ifac,iu), bval(ifac,iv),     &
-                                 bval(ifac,iw), l_size)
+    call cs_cf_thermo_pt_from_de(brom(ifac:ifac), bc_en(ifac:ifac),  &
+                                 bc_pr(ifac:ifac), bc_tk(ifac:ifac), &
+                                 bc_vel(:,ifac:ifac), l_size)
 
     ! mass fluxes and boundary conditions codes, see further below.
 
@@ -504,13 +479,14 @@ do ifac = 1, nfabor
       endif
     enddo
 
-    ! values of the density, the velocity and the total energy
-    do ivar = 1, nvar
-      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
-    enddo
+    bc_en(ifac) = rcodcl(ifac,ien,1)
+    bc_pr(ifac) = rcodcl(ifac,ipr,1)
+    bc_tk(ifac) = rcodcl(ifac,itk,1)
+    bc_vel(1,ifac) = rcodcl(ifac,iu,1)
+    bc_vel(2,ifac) = rcodcl(ifac,iv,1)
+    bc_vel(3,ifac) = rcodcl(ifac,iw,1)
 
-    call cf_thermo_subsonic_outlet_bc(bval, ifac)
-    !==============================
+    call cs_cf_thermo_subsonic_outlet_bc(bc_en, bc_pr, bc_vel, ifac-1)
 
     ! mass fluxes and boundary conditions codes, see further below.
 
@@ -543,12 +519,14 @@ do ifac = 1, nfabor
       endif
     enddo
 
-    do ivar = 1, nvar
-      bval(ifac,ivar) = rcodcl(ifac,ivar,1)
-    enddo
+    bc_en(ifac) = rcodcl(ifac,ien,1)
+    bc_pr(ifac) = rcodcl(ifac,ipr,1)
+    bc_tk(ifac) = rcodcl(ifac,itk,1)
+    bc_vel(1,ifac) = rcodcl(ifac,iu,1)
+    bc_vel(2,ifac) = rcodcl(ifac,iv,1)
+    bc_vel(3,ifac) = rcodcl(ifac,iw,1)
 
-    call cf_thermo_ph_inlet_bc(bval, ifac)
-    !=======================
+    call cs_cf_thermo_ph_inlet_bc(bc_en, bc_pr, bc_vel, ifac-1)
 
     ! mass fluxes and boundary conditions codes, see further below.
 
@@ -626,19 +604,18 @@ do ifac = 1, nfabor
 
       ! only the mass flux is computed
       bmasfl(ifac) = brom(ifac) *                                              &
-                     ( bval(ifac,iu)*surfbo(1,ifac)                            &
-                     + bval(ifac,iv)*surfbo(2,ifac)                            &
-                     + bval(ifac,iw)*surfbo(3,ifac) )
+                     (  bc_vel(1,ifac)*surfbo(1,ifac)                          &
+                      + bc_vel(2,ifac)*surfbo(2,ifac)                          &
+                      + bc_vel(3,ifac)*surfbo(3,ifac) )
 
     ! other inlets/outlets
     else
 
       ! Rusanov fluxes are computed only for the imposed inlet for stability
       ! reasons (the mass flux computation is concluded)
-      if ( itypfb(ifac).eq.iesicf ) then
+      if (itypfb(ifac).eq.iesicf) then
 
-        call cfrusb(nvar, ifac, gammag, bval)
-        !==========
+        call cfrusb(ifac, bc_en, bc_pr, bc_vel)
 
       ! For the other types of inlets/outlets (subsonic outlet, QH inlet,
       ! PH inlet), analytical fluxes are computed
@@ -646,8 +623,7 @@ do ifac = 1, nfabor
 
         ! the pressure part of the boundary analytical flux is not added here,
         ! but set through the pressure gradient boundary conditions (Dirichlet)
-        call cffana(nvar, ifac, bval)
-        !==========
+        call cffana(ifac, bc_en, bc_pr, bc_vel)
 
       endif
 
@@ -657,9 +633,12 @@ do ifac = 1, nfabor
 ! 6.2 Copy of boundary values into the Dirichlet values array
 !===============================================================================
 
-    do ivar = 1, nvar
-      rcodcl(ifac,ivar,1) = bval(ifac,ivar)
-    enddo
+    rcodcl(ifac,ien,1) = bc_en(ifac)
+    rcodcl(ifac,ipr,1) = bc_pr(ifac)
+    rcodcl(ifac,itk,1) = bc_tk(ifac)
+    rcodcl(ifac,iu,1)  = bc_vel(1,ifac)
+    rcodcl(ifac,iv,1)  = bc_vel(2,ifac)
+    rcodcl(ifac,iw,1)  = bc_vel(3,ifac)
 
 !===============================================================================
 ! 6.3 Boundary conditions codes (Dirichlet or Neumann)
@@ -833,7 +812,7 @@ do ifac = 1, nfabor
 deallocate(w1, w2)
 deallocate(w4, w5, w6)
 deallocate(w7)
-deallocate(bval)
+deallocate(bc_en, bc_pr, bc_tk, bc_vel)
 
 !----
 ! FORMATS
@@ -932,22 +911,6 @@ deallocate(bval)
 '@                                                            ',/,&
 '@    Check the boundary conditions in                        ',/,&
 '@    cs_user_boundary_conditions                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : Error during execution,                       ',/,&
-'@    =========                                               ',/,&
-'@    cfxtcl should be modified to take into account a state  ',/,&
-'@    law with a variable gamma. Only ieos = 1 is available   ',/,&
-'@    for now.                                                ',/,&
-'@                                                            ',/,&
-'@  The computation will stop.                                ',/,&
-'@                                                            ',/,&
-'@  Check ieos in routine uscfx1.                             ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)

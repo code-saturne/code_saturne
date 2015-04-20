@@ -77,6 +77,8 @@ BEGIN_C_DECLS
   Members of these physical constants are publicly accessible, to allow for
   concise syntax, as they are expected to be used in many places.
 
+  \var  cs_physical_constants_t::rr
+        perfect gas constant in \f$J/mol/K\f$
   \var  cs_physical_constants_t::gx
         x component of the gravity vector
   \var  cs_physical_constants_t::gy
@@ -98,6 +100,19 @@ BEGIN_C_DECLS
 
   \var  cs_fluid_properties_t::ixyzp0
         filling \ref xyzp0 indicator
+  \var  cs_fluid_properties_t::ieos
+        indicator of equation of state
+
+        useful only for the compressible module. Only perfect gas with a
+        constant adiabatic coefficient, \ref ieos=1 is available, but the
+        user can complete the file \ref cs_cf_thermo.h, which is not a user
+        source, to add new equations of state.
+  \var  cs_fluid_properties_t::icp
+        property index of the isobaric specific heat
+        - 0: uniform isobaric specific heat (no property field defined)
+  \var  cs_fluid_properties_t::icv
+        property index of the isochoric specific heat
+        - 0: uniform isochoric specific heat (no property field defined)
   \var  cs_fluid_properties_t::ro0
         reference density
 
@@ -201,6 +216,10 @@ BEGIN_C_DECLS
         calculate the diffusivity of the thermal scalars, based on their
         conductivity; it is therefore needed, unless the diffusivity is also
         specified in \ref usphyv.
+  \var  cs_fluid_properties_t::cv0
+        reference isochoric specific heat
+
+        Useful for the compressible module
   \var  cs_fluid_properties_t::xmasmr
         molar mass of the perfect gas in \f$ kg/mol \f$
         (if \ref ppincl::ieos "ieos"=1)
@@ -233,19 +252,27 @@ BEGIN_C_DECLS
 
 /* main physical constants structure and associated pointer */
 
-static cs_physical_constants_t  _physical_constants = {0., 0., 0., 0};
-
-const
-cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
+static cs_physical_constants_t  _physical_constants = {8.31446, 0., 0., 0., 0};
 
 /* main fluid properties structure and associated pointer */
 
-static cs_fluid_properties_t  _fluid_properties = {-1, 1.17862, 1.83337e-5,
-                                                   1.01325e5, 0., {-999., -999.,
-                                                                   -999.},
-                                                   293.15,
-                                                   1017.24, 0., 1.013e5, 0.,
-                                                   -1.};
+static cs_fluid_properties_t  _fluid_properties = {
+  .ixyzp0   = -1,
+  .ieos     = -1,
+  .icp      = 0,
+  .icv      = 0,
+  .ro0      = 1.17862,
+  .viscl0   = 1.83337e-5,
+  .p0       =   1.01325e5,
+  .pred0    = 0.,
+  .xyzp0    = {-999., -999.,-999.},
+  .t0       = 293.15,
+  .cp0      = 1017.24,
+  .cv0      = 0.,
+  .xmasmr   = 0.,
+  .pther    = 1.013e5,
+  .pthera   = 0.,
+  .pthermax = -1.};
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -254,7 +281,9 @@ static cs_fluid_properties_t  _fluid_properties = {-1, 1.17862, 1.83337e-5,
  *============================================================================*/
 
 const
-cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
+cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
+
+cs_fluid_properties_t  * const cs_glob_fluid_properties = &_fluid_properties;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -264,13 +293,17 @@ cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
  *============================================================================*/
 
 void
-cs_f_physical_constants_get_pointers(double  **gx,
+cs_f_physical_constants_get_pointers(double  **rr,
+                                     double  **gx,
                                      double  **gy,
                                      double  **gz,
                                      int     **icorio);
 
 void
 cs_f_fluid_properties_get_pointers(int     **ixyzp0,
+                                   int     **ieos,
+                                   int     **icp,
+                                   int     **icv,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
@@ -278,6 +311,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **xyzp0,
                                    double  **t0,
                                    double  **cp0,
+                                   double  **cv0,
                                    double  **xmasmr,
                                    double  **pther,
                                    double  **pthera,
@@ -298,6 +332,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
+ *   rr     --> pointer to cs_glob_physical_constants->rr
  *   gx     --> pointer to cs_glob_physical_constants->gx
  *   gy     --> pointer to cs_glob_physical_constants->gy
  *   gz     --> pointer to cs_glob_physical_constants->gz
@@ -305,11 +340,13 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_physical_constants_get_pointers(double  **gx,
+cs_f_physical_constants_get_pointers(double  **rr,
+                                     double  **gx,
                                      double  **gy,
                                      double  **gz,
                                      int     **icorio)
 {
+  *rr = &(_physical_constants.rr);
   *gx = &(_physical_constants.gx);
   *gy = &(_physical_constants.gy);
   *gz = &(_physical_constants.gz);
@@ -324,13 +361,17 @@ cs_f_physical_constants_get_pointers(double  **gx,
  *
  * parameters:
  *   ixyzp0   --> pointer to cs_glob_fluid_properties->ixyzp0
+ *   ieos     --> pointer to cs_glob_fluid_properties->ieos
+ *   icp      --> pointer to cs_glob_fluid_properties->icp
+ *   icv      --> pointer to cs_glob_fluid_properties->icv
  *   ro0      --> pointer to cs_glob_fluid_properties->ro0
  *   viscl0   --> pointer to cs_glob_fluid_properties->viscl0
  *   p0       --> pointer to cs_glob_fluid_properties->p0
  *   pred0    --> pointer to cs_glob_fluid_properties->pred0
- *   ixyzp0   --> pointer to cs_glob_fluid_properties->xyzp0
+ *   xyzp0    --> pointer to cs_glob_fluid_properties->xyzp0
  *   t0       --> pointer to cs_glob_fluid_properties->t0
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
+ *   cv0      --> pointer to cs_glob_fluid_properties->cv0
  *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
  *   pther    --> pointer to cs_glob_fluid_properties->pther
  *   pthera   --> pointer to cs_glob_fluid_properties->pthera
@@ -339,6 +380,9 @@ cs_f_physical_constants_get_pointers(double  **gx,
 
 void
 cs_f_fluid_properties_get_pointers(int     **ixyzp0,
+                                   int     **ieos,
+                                   int     **icp,
+                                   int     **icv,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
@@ -346,12 +390,16 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **xyzp0,
                                    double  **t0,
                                    double  **cp0,
+                                   double  **cv0,
                                    double  **xmasmr,
                                    double  **pther,
                                    double  **pthera,
                                    double  **pthermax)
 {
   *ixyzp0   = &(_fluid_properties.ixyzp0);
+  *ieos     = &(_fluid_properties.ieos);
+  *icp      = &(_fluid_properties.icp);
+  *icv      = &(_fluid_properties.icv);
   *ro0      = &(_fluid_properties.ro0);
   *viscl0   = &(_fluid_properties.viscl0);
   *p0       = &(_fluid_properties.p0);
@@ -359,6 +407,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *xyzp0    =  (_fluid_properties.xyzp0);
   *t0       = &(_fluid_properties.t0);
   *cp0      = &(_fluid_properties.cp0);
+  *cv0      = &(_fluid_properties.cv0);
   *xmasmr   = &(_fluid_properties.xmasmr);
   *pther    = &(_fluid_properties.pther);
   *pthera   = &(_fluid_properties.pthera);

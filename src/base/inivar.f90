@@ -63,6 +63,7 @@ use mesh
 use field
 use cfpoin, only:ithvar
 use cs_c_bindings
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -98,6 +99,7 @@ double precision xalmin, xalmax
 double precision scmaxp, scminp
 
 double precision rvoid(1)
+double precision vvoid(3)
 double precision, allocatable, dimension(:) :: w1, w2
 
 double precision, dimension(:), pointer :: field_s_v
@@ -146,8 +148,8 @@ if  (ippmod(icompf).ge.0) then
     cvar_tempk(iel) = t0
   enddo
 
-  call cf_thermo_default_init(ncel, ncelet)
-  !==========================
+  call cs_cf_thermo_default_init(isuite, ncel)
+  !=============================
 
   ! On initialise la diffusivite thermique
   visls0(ienerg) = visls0(itempk)/cv0
@@ -258,16 +260,10 @@ else
 
   if (ippmod(icompf).ge.0) then
 
-    allocate(w1(ncelet), w2(ncelet))
     imodif = 1
 
-    call cfther                                                                 &
-    !==========
-   ( nvar   ,                                                                   &
-     ithvar , imodif ,                                                          &
-     w1     , w2     , rvoid )
-
-    deallocate(w1, w2)
+    call cs_cf_thermo(ithvar, imodif,  rvoid, rvoid, rvoid, vvoid)
+    !================
 
   endif
 

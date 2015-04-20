@@ -462,6 +462,13 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
+/* Numerical constants */
+
+extern const cs_real_t cs_defs_epzero;
+extern const cs_real_t cs_defs_infinite_r;
+extern const cs_real_t cs_defs_big_r;
+extern const cs_real_t cs_defs_pi;
+
 /* Sizes and names associated with datatypes */
 
 extern const size_t   cs_datatype_size[];

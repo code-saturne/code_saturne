@@ -59,7 +59,6 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
-!bug Ba
 use ihmpre
 use field
 
@@ -371,6 +370,3 @@ endif
 
 return
 end subroutine
-
-
-

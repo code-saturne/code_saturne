@@ -84,6 +84,7 @@ use ppthch
 use ppincl
 use mesh
 use field
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -183,8 +184,8 @@ call matrdt &
 
 allocate(c2(ncelet))
 
-call cf_thermo_c_square( cvar_pr, crom, c2, ncel)
-!======================
+call cs_cf_thermo_c_square(cvar_pr, crom, c2, ncel)
+!=========================
 
 ! Compute the coefficient CFL/dt
 

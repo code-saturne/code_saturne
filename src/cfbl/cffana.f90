@@ -42,14 +42,13 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
 !> \param[in]     imodif        indicator of what is computed
 !> \param[in,out] bval          dirichlet value for all variables
 !_______________________________________________________________________________
 
 
 subroutine cffana &
- ( nvar   , imodif , bval   )
+ ( imodif , bc_en  , bc_pr  , bc_vel )
 
 !===============================================================================
 
@@ -78,10 +77,9 @@ implicit none
 
 ! Arguments
 
-integer          nvar
 integer          imodif
 
-double precision bval(nfabor,nvar)
+double precision bc_en(nfabor), bc_pr(nfabor), bc_vel(3,nfabor)
 
 ! Local variables
 
@@ -117,9 +115,9 @@ iel   = ifabor(ifac)
 ! 1. COMPUTE VALUES NEEDED FOR ANALYTICAL FLUX
 !===============================================================================
 
-und   = (bval(ifac,iu)*surfbo(1,ifac)                          &
-       + bval(ifac,iv)*surfbo(2,ifac)                          &
-       + bval(ifac,iw)*surfbo(3,ifac))/surfbn(ifac)
+und   = (bc_vel(1,ifac)*surfbo(1,ifac)                          &
+       + bc_vel(2,ifac)*surfbo(2,ifac)                          &
+       + bc_vel(3,ifac)*surfbo(3,ifac))/surfbn(ifac)
 rund  = brom(ifac)*und
 
 !===============================================================================
@@ -136,15 +134,15 @@ bmasfl(ifac) = rund * surfbn(ifac)
 
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)
-cofacv(1,ifac) = surfbn(ifac) * rund * bval(ifac,iu)
+cofacv(1,ifac) = surfbn(ifac) * rund * bc_vel(1,ifac)
 
-cofacv(2,ifac) = surfbn(ifac) * rund * bval(ifac,iv)
+cofacv(2,ifac) = surfbn(ifac) * rund * bc_vel(2,ifac)
 
-cofacv(3,ifac) = surfbn(ifac) * rund * bval(ifac,iw)
+cofacv(3,ifac) = surfbn(ifac) * rund * bc_vel(3,ifac)
 
 ! Total energy flux
-coface(ifac) = surfbn(ifac) * (rund * bval(ifac,ien) +              &
-                               und  * bval(ifac,ipr))
+coface(ifac) = surfbn(ifac) * (rund * bc_en(ifac) +  &
+                               und  * bc_pr(ifac))
 
 return
 
