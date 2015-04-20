@@ -406,7 +406,7 @@ do ifac = 1, nfabor
     bc_vel(2,ifac) = rcodcl(ifac,iv,1)
     bc_vel(3,ifac) = rcodcl(ifac,iw,1)
 
-    call cs_cf_thermo(iccfth, ifac, bc_en, bc_pr, bc_tk, bc_vel)
+    call cs_cf_thermo(iccfth, ifac-1, bc_en, bc_pr, bc_tk, bc_vel)
 
     ! Rusanov fluxes, mass flux and boundary conditions types (icodcl) are
     ! dealt with further below
