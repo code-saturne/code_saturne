@@ -1115,6 +1115,9 @@ class syrthes_domain(base_domain):
                 config.read(self.package.get_configfiles())
                 syr_profile = os.path.join(config.get('install', 'syrthes'),
                                            'bin', 'syrthes.profile')
+                syr_datapath = os.path.join(config.get('install', 'syrthes'),
+                                            os.path.join('share', 'syrthes'))
+                sys.path.insert(1, syr_datapath)
                 source_shell_script(syr_profile)
             import syrthes
         except Exception:
