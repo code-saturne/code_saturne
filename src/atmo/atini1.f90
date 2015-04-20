@@ -164,19 +164,7 @@ if (ippmod(iatmos).eq.2) then
 endif
 
 !===============================================================================
-! 5. One scale turbulent model for k-eps closure for IPPMOD(IATMOS) = 1 or 2
-!===============================================================================
-
-if (ippmod(iatmos).eq.1 .or. ippmod(iatmos).eq.2) then
-
-  if (itytur.eq.2) then
-    iwallf = 2
-  endif
-
-endif
-
-!===============================================================================
-! 6. Turbulent Schmidt and Prandtl number for atmospheric flows
+! 5. Turbulent Schmidt and Prandtl number for atmospheric flows
 !===============================================================================
 
 if (nscal.gt.0) then
@@ -186,7 +174,7 @@ if (nscal.gt.0) then
 endif
 
 !===============================================================================
-! 7. Force RIJ Matrix stabilisation for all atmospheric models
+! 6. Force RIJ Matrix stabilisation for all atmospheric models
 !===============================================================================
 
 if (itytur.eq.3) irijnu = 1
