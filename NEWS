@@ -7,6 +7,11 @@ Changes:
 
 - Add ADF models for radiative transfers.
 
+- Convergence of linear solvers may now be plotted using CSV files.
+  When solver verbosity is high, residues are not printed anymore
+  (except in case of non-convergence), as plotting provides the same
+  info in a more usable manner.
+
 Architectural changes
 ---------------------
 

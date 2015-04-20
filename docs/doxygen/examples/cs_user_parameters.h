@@ -127,6 +127,16 @@
 
   \snippet cs_user_parameters-linear_solvers.c sles_rad_dom_1
 
+  \subsection cs_user_parameters_h_sles_plot Plotting solver convergence
+
+  The following example shows how to activate convergence plotting
+  for built-in iterative or multigrid solvers.
+
+  Plots will appear as CSV (comma-separated value) files in the
+  monitoring subdirectory.
+
+  \snippet cs_user_parameters-linear_solvers.c sles_plot_1
+
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
   Code_Saturne allows the calculation of temporal means or variances,

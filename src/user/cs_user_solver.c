@@ -161,7 +161,8 @@ cs_user_solver(const cs_mesh_t             *mesh,
                                       0,                 /* buffer size */
                                       1,                 /* number of probes */
                                       NULL,              /* probes list */
-                                      NULL);             /* probes coord. */
+                                      NULL,              /* probes coord. */
+                                      NULL);             /* probes names */
 
   /* ----------- */
   /* Calculation */

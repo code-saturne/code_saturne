@@ -149,15 +149,21 @@ cs_user_linear_solvers(void)
   /*! [sles_user_1] */
 
   /* Example: increase verbosity parameters for pressure */
+  /*-----------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
 
   /*! [sles_verbosity_1] */
 
   cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
   cs_sles_set_verbosity(sles_p, 4);
 
+  END_EXAMPLE_SCOPE
+
   /*! [sles_verbosity_1] */
 
   /* Example: change multigrid parameters for pressure */
+  /*---------------------------------------------------*/
 
   /*! [sles_mgp_1] */
   cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id, NULL);
@@ -188,6 +194,7 @@ cs_user_linear_solvers(void)
   /*! [sles_mgp_1] */
 
   /* Set parallel grid merging options for all multigrid solvers */
+  /*-------------------------------------------------------------*/
 
   /*! [sles_mg_parall] */
   cs_grid_set_merge_options(4,   /* # of ranks merged at a time */
@@ -196,8 +203,10 @@ cs_user_linear_solvers(void)
                             1);  /* # of ranks under which we do not merge */
   /*! [sles_mg_parall] */
 
-  /* Set a non-default linear solver for DOM radiation.
-     The solver must be set for each direction; here, we assume
+  /* Set a non-default linear solver for DOM radiation. */
+  /*----------------------------------------------------*/
+
+  /* The solver must be set for each direction; here, we assume
      a quadrature with 32 directions is used */
 
   /*! [sles_rad_dom_1] */
@@ -212,6 +221,33 @@ cs_user_linear_solvers(void)
 
   }
   /*! [sles_rad_dom_1] */
+
+  /* Example: activate convergence plot for pressure */
+  /*-----------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_plot_1] */
+
+  const cs_field_t *f = CS_F_(p);
+  cs_sles_t *sles_p = cs_sles_find_or_add(f->id, NULL);
+
+  cs_sles_set_verbosity(sles_p, 4);
+
+  bool use_iteration = true; /* use iteration or wall clock time for axis */
+
+  if (strcmp(cs_sles_get_type(sles_p), "cs_sles_it_t") == 0) {
+    cs_sles_it_t *c = cs_sles_get_context(sles_p);
+    cs_sles_it_set_plot_options(c, f->name, use_iteration);
+  }
+  else if (strcmp(cs_sles_get_type(sles_p), "cs_multigrid_t") == 0) {
+    cs_multigrid_t *c = cs_sles_get_context(sles_p);
+    cs_multigrid_set_plot_options(c, f->name, use_iteration);
+  }
+
+  /*! [sles_plot_1] */
+
+  END_EXAMPLE_SCOPE
 }
 
 /*----------------------------------------------------------------------------*/

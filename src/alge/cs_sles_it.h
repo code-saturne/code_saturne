@@ -34,6 +34,7 @@
 #include "cs_base.h"
 #include "cs_halo_perio.h"
 #include "cs_matrix.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -411,6 +412,38 @@ cs_sles_it_error_post_and_abort(void                         *context,
                                 cs_halo_rotation_t            rotation_mode,
                                 const cs_real_t              *rhs,
                                 cs_real_t                    *vx);
+
+/*----------------------------------------------------------------------------
+ * Set plotting options for an iterative sparse linear equation solver.
+ *
+ * parameters:
+ *   context       <-> pointer to iterative solver info and context
+ *   base_name     <-- base plot name to activate, NULL otherwise
+ *   use_iteration <-- if true, use iteration as time stamp
+ *                     otherwise, use wall clock time
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_plot_options(cs_sles_it_t  *context,
+                            const char    *base_name,
+                            bool           use_iteration);
+
+/*----------------------------------------------------------------------------
+ * Assign existing time plot to iterative sparse linear equation solver.
+ *
+ * This is useful mainly when a time plot has a longer lifecycle than
+ * the linear solver context, such as inside a multigrid solver.
+ *
+ * parameters:
+ *   context    <-> pointer to iterative solver info and context
+ *   time_plot  <-- pointer to time plot structure
+ *   time_stamp <-- associated time stamp
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_assign_plot(cs_sles_it_t    *context,
+                       cs_time_plot_t  *time_plot,
+                       int              time_stamp);
 
 /*----------------------------------------------------------------------------*/
 

@@ -243,6 +243,7 @@ void CS_PROCF (tplnbr, TPLNBR)
  *   n_probes         <-- number of probes associated with this plot
  *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
  *   probe_coords     <-- probe coordinates, or NULL
+ *   probe_names      <-- probe names, or NULL
  *
  * returns:
  *   pointer to new time plot writer
@@ -257,7 +258,8 @@ cs_time_plot_init_probe(const char             *plot_name,
                         int                     n_buffer_steps,
                         int                     n_probes,
                         const int              *probe_list,
-                        const cs_real_t         probe_coords[]);
+                        const cs_real_t         probe_coords[],
+                        const char             *probe_names[]);
 
 /*----------------------------------------------------------------------------
  * Initialize a plot file writer for structure-type plots

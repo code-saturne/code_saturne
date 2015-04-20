@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-04-11 01:03+0200\n"
+"POT-Creation-Date: 2015-04-18 01:32+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3547,19 +3547,6 @@ msgstr ""
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
 
-msgid "  Multigrid cycle: descent\n"
-msgstr "  Cycle multigrille : descente\n"
-
-#, c-format
-msgid "    level %3d: smoother\n"
-msgstr "    niveau %3d : lisseur\n"
-
-msgid "  Resolution on coarsest level\n"
-msgstr "  Résolution sur le niveau le plus grossier\n"
-
-msgid "  Multigrid cycle: ascent\n"
-msgstr "  Cycle multigrille : remontée\n"
-
 #, c-format
 msgid ""
 "\n"
@@ -3607,10 +3594,6 @@ msgstr ""
 #, c-format
 msgid "Multigrid [%s]:\n"
 msgstr "Multigrille [%s]:\n"
-
-#, c-format
-msgid "Multigrid [%s]: cycle %4d\n"
-msgstr "Multigrille [%s] : cycle %4d\n"
 
 msgid "divergence"
 msgstr ""
@@ -3732,9 +3715,6 @@ msgstr ""
 
 msgid "Block Gauss-Seidel"
 msgstr ""
-
-msgid "  n_iter     res_abs     res_nor\n"
-msgstr "  n_iter     res_abs     res_nor\n"
 
 #, c-format
 msgid "  n_iter : %5d, res_abs : %11.4e, res_nor : %11.4e\n"
@@ -7278,6 +7258,10 @@ msgid "# Monitoring point coordinates:\n"
 msgstr "# Cordonnées des sondes :\n"
 
 #, c-format
+msgid "# Monitoring points:\n"
+msgstr "# Sondes :\n"
+
+#, c-format
 msgid "# Columns:\n"
 msgstr "# Colonnes :\n"
 
@@ -8333,24 +8317,16 @@ msgstr ""
 
 #, c-format
 msgid ""
-"cg_coord_partial_write() failed to write extra vertices coords:\n"
+"%s() failed to write field values:\n"
+"\"%s\"\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
-"CGNS error:%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"cg_coord_partial write() failed to write coords:\n"
-"Associated writer: \"%s\"\n"
-"Associated base: \"%s\"\n"
-"Associated zone index: \"%i\"\n"
 "%s"
 msgstr ""
 
 #, c-format
 msgid ""
-"cg_coord_partial_write() failed to write extra vertices coords:\n"
+"%s() failed to write coords:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 "Associated zone index: \"%i\"\n"
@@ -8396,28 +8372,10 @@ msgstr ""
 
 #, c-format
 msgid ""
-"cg_section_partial_write() failed to write polygonal elements:\n"
-"Associated writer: \"%s\"\n"
-"Associated base: \"%s\"\n"
-"Associated section name: \"%s\"\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
 "cg_section_write() failed to write polygonal elements:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 "Associated section name: \"%s\"\n"
-"%s"
-msgstr ""
-
-#, c-format
-msgid ""
-"cg_field_partial_write() failed to write field values:\n"
-"\"%s\"\n"
-"Associated writer: \"%s\"\n"
-"Associated base: \"%s\"\n"
 "%s"
 msgstr ""
 

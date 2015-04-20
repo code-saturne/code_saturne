@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_file.h"
 #include "cs_grid.h"
 #include "cs_halo.h"
 #include "cs_log.h"
@@ -63,6 +64,7 @@
 #include "cs_sles.h"
 #include "cs_sles_it.h"
 #include "cs_timer.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -257,6 +259,13 @@ struct _cs_multigrid_t {
 
   cs_multigrid_setup_data_t  *setup_data;   /* setup data */
 
+  char                       *plot_base_name;   /* base plot name, or NULL */
+  cs_time_plot_t             *cycle_plot;       /* plotting of cycles */
+  cs_time_plot_t            **sles_it_plot;     /* plotting if smoothers */
+  int                         plot_time_stamp;  /* plotting time stamp;
+                                                   if < 0, use wall clock */
+
+  int                         verbosity;
 };
 
 /*============================================================================
@@ -669,6 +678,11 @@ _multigrid_add_level(cs_multigrid_t  *mg,
 
     if (mgd->n_levels_alloc == 0) {
       mgd->n_levels_alloc = n_lv_max_prev;
+      if (mg->plot_base_name != NULL) {
+        BFT_REALLOC(mg->sles_it_plot, mgd->n_levels_alloc, cs_time_plot_t *);
+        if (n_lv_max_prev < 2)
+          mg->sles_it_plot[0] = NULL;
+      }
       if (mgd->n_levels_alloc == 0)
         mgd->n_levels_alloc = 10;
     }
@@ -682,12 +696,47 @@ _multigrid_add_level(cs_multigrid_t  *mg,
       mgd->grid_hierarchy[ii] = NULL;
 
     if (n_lv_max_prev < mgd->n_levels_alloc) {
+
       BFT_REALLOC(mg->lv_info, mgd->n_levels_alloc, cs_multigrid_level_info_t);
       for (ii = n_lv_max_prev; ii < mgd->n_levels_alloc; ii++)
-      _multigrid_level_info_init(mg->lv_info + ii);
+        _multigrid_level_info_init(mg->lv_info + ii);
+
+      if (mg->plot_base_name != NULL) {
+        BFT_REALLOC(mg->sles_it_plot, mgd->n_levels_alloc, cs_time_plot_t *);
+        for (ii = n_lv_max_prev; ii < mgd->n_levels_alloc; ii++)
+          mg->sles_it_plot[ii] = NULL;
+      }
+
     }
 
   }
+
+  /* Add plotting info if level is new */
+
+  if (mg->plot_base_name != NULL) {
+    int lv = mgd->n_levels;
+    if (mg->sles_it_plot[lv] == NULL) {
+      char *base_name;
+      bool use_iter_num = mg->plot_time_stamp > -1 ? true : false;
+      BFT_MALLOC(base_name, strlen(mg->plot_base_name) + 32, char);
+      sprintf(base_name, "%s_%02d", mg->plot_base_name, lv);
+      const char *probe_names[] = {base_name};
+      mg->sles_it_plot[lv]
+        = cs_time_plot_init_probe(base_name,
+                                  "monitoring/residue_",
+                                  CS_TIME_PLOT_CSV,  /* file format */
+                                  use_iter_num,
+                                  -1.,               /* force flush */
+                                  0,                 /* buffer size */
+                                  1,                 /* number of probes */
+                                  NULL,              /* probes list */
+                                  NULL,              /* probes coord. */
+                                  probe_names);
+      BFT_FREE(base_name);
+    }
+  }
+
+  /* Add new grid to hierarchy */
 
   mgd->grid_hierarchy[mgd->n_levels] = grid;
 
@@ -1216,18 +1265,17 @@ _convergence_test(const char         *var_name,
                    "    ********\n"
                    "    Maximum number of cycles (%d) reached.\n"),
                  var_name, n_max_cycles);
-
     }
     return CS_SLES_MAX_ITERATION;
   }
 
   else {
 
-    if (verbosity > 2)
-      bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
-
-    if (*residue > initial_residue * 10000.0 && *residue > 100.)
+    if (*residue > initial_residue * 10000.0 && *residue > 100.) {
+      if (verbosity > 2)
+        bft_printf(_(cycle_fmt), cycle_id, n_iters, *residue/r_norm);
       return CS_SLES_DIVERGED;
+    }
 
 #if (__STDC_VERSION__ >= 199901L)
     if (isnan(*residue) || isinf(*residue))
@@ -1466,9 +1514,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
   /* Descent */
   /*---------*/
 
-  if (verbosity > 2)
-    bft_printf(_("  Multigrid cycle: descent\n"));
-
   for (level = 0; level < coarsest_level; level++) {
 
     lv_info = mg->lv_info + level;
@@ -1481,15 +1526,17 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
     /* Smoother pass */
 
-    if (verbosity > 2)
-      bft_printf(_("    level %3d: smoother\n"), level);
-
     _matrix = cs_grid_get_matrix(f);
+
+    if (mg->sles_it_plot != NULL)
+      cs_sles_it_assign_plot(mgd->sles_hierarchy[level*2],
+                             mg->sles_it_plot[level],
+                             mg->plot_time_stamp);
 
     c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
                              lv_names[level*2],
                              _matrix,
-                             verbosity - 2,
+                             0, /* verbosity */
                              rotation_mode,
                              precision*mg->info.precision_mult[0],
                              r_norm_l,
@@ -1499,6 +1546,9 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                              vx_lv,
                              _aux_r_size*sizeof(cs_real_t),
                              _aux_vectors);
+
+    if (mg->plot_time_stamp > -1)
+      mg->plot_time_stamp += n_iter+1;
 
     _initial_residue
       = cs_sles_it_get_last_initial_residue(mgd->sles_hierarchy[level*2]);
@@ -1561,7 +1611,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
         cs_timer_counter_add_diff(&(lv_info->t_tot[2]), &t0, &t1);
         lv_info->n_calls[2] += 1;
         _lv_info_update_stage_iter(lv_info->n_it_ds_smoothe, n_iter);
-
         *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
         break;
       }
@@ -1572,7 +1621,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     cs_timer_counter_add_diff(&(lv_info->t_tot[2]), &t0, &t1);
     lv_info->n_calls[2] += 1;
     _lv_info_update_stage_iter(lv_info->n_it_ds_smoothe, n_iter);
-
     *n_equiv_iter += n_iter * n_g_cells * denom_n_g_cells_0;
 
     /* Prepare for next level */
@@ -1612,15 +1660,21 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     cs_timer_counter_add_diff(&(lv_info->t_tot[4]), &t1, &t0);
     lv_info->n_calls[4] += 1;
 
+    if (level == 0 && mg->cycle_plot != NULL) {
+      double wall_time = cs_timer_wtime();
+      cs_time_plot_vals_write(mg->cycle_plot,
+                              mg->plot_time_stamp,
+                              wall_time,
+                              1,
+                              residue);
+    }
+
   } /* End of loop on levels (descent) */
 
   if (end_cycle == false) {
 
     /* Resolve coarsest level to convergence */
     /*---------------------------------------*/
-
-    if (verbosity > 2)
-      bft_printf(_("  Resolution on coarsest level\n"));
 
     assert(level == coarsest_level);
     assert(c == mgd->grid_hierarchy[coarsest_level]);
@@ -1634,6 +1688,12 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     _initial_residue = _residue;
 
     lv_info = mg->lv_info + level;
+
+    if (mg->sles_it_plot != NULL)
+      cs_sles_it_assign_plot(mgd->sles_hierarchy[level*2],
+                             mg->sles_it_plot[level],
+                             mg->plot_time_stamp);
+
     t0 = cs_timer_time();
 
     c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2],
@@ -1655,6 +1715,9 @@ _multigrid_cycle(cs_multigrid_t       *mg,
     lv_info->n_calls[1] += 1;
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
+    if (mg->plot_time_stamp > -1)
+      mg->plot_time_stamp += n_iter + 1;
+
     _initial_residue
       = cs_sles_it_get_last_initial_residue(mgd->sles_hierarchy[level*2]);
 
@@ -1669,9 +1732,6 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
     /* Ascent */
     /*--------*/
-
-    if (verbosity > 2)
-      bft_printf(_("  Multigrid cycle: ascent\n"));
 
     for (level = coarsest_level - 1; level > -1; level--) {
 
@@ -1723,17 +1783,19 @@ _multigrid_cycle(cs_multigrid_t       *mg,
 
       if (level > 0) {
 
-        if (verbosity > 2)
-          bft_printf(_("    level %3d: smoother\n"), level);
-
         _matrix = cs_grid_get_matrix(f);
 
         rhs_lv = mgd->rhs_vx[level*2];
 
+        if (mg->sles_it_plot != NULL)
+          cs_sles_it_assign_plot(mgd->sles_hierarchy[level*2+1],
+                                 mg->sles_it_plot[level],
+                                 mg->plot_time_stamp);
+
         c_cvg = cs_sles_it_solve(mgd->sles_hierarchy[level*2+1],
                                  lv_names[level*2+1],
                                  _matrix,
-                                 verbosity - 2,
+                                 0, /* verbosity */
                                  rotation_mode,
                                  precision*mg->info.precision_mult[1],
                                  r_norm_l,
@@ -1748,6 +1810,9 @@ _multigrid_cycle(cs_multigrid_t       *mg,
         cs_timer_counter_add_diff(&(lv_info->t_tot[3]), &t1, &t0);
         lv_info->n_calls[3] += 1;
         _lv_info_update_stage_iter(lv_info->n_it_as_smoothe, n_iter);
+
+        if (mg->plot_time_stamp > -1)
+          mg->plot_time_stamp += n_iter + 1;
 
         _initial_residue
           = cs_sles_it_get_last_initial_residue(mgd->sles_hierarchy[level*2+1]);
@@ -1916,6 +1981,11 @@ cs_multigrid_create(void)
   mg->post_cell_rank = NULL;
   mg->post_name = NULL;
 
+  mg->plot_base_name = NULL;
+  mg->cycle_plot = NULL;
+  mg->sles_it_plot = NULL;
+  mg->plot_time_stamp = -1;
+
   return mg;
 }
 
@@ -1955,6 +2025,17 @@ cs_multigrid_destroy(void  **context)
   }
 
   BFT_FREE(mg->post_name);
+
+  if (mg->plot_base_name != NULL) {
+    BFT_FREE(mg->plot_base_name);
+    if (mg->cycle_plot != NULL)
+      cs_time_plot_finalize(&(mg->cycle_plot));
+    for (size_t i = 0; i <= mg->info.n_levels[2]; i++) {
+      if (mg->sles_it_plot[i] != NULL)
+        cs_time_plot_finalize(&(mg->sles_it_plot[i]));
+    }
+    BFT_FREE(mg->sles_it_plot);
+  }
 
   BFT_FREE(mg);
   *context = (void *)mg;
@@ -2376,6 +2457,7 @@ cs_multigrid_setup(void               *context,
 
   mg->info.n_levels[0] = grid_lv;
 
+
   if (mg->info.n_calls[0] > 0) {
     if (mg->info.n_levels[0] < mg->info.n_levels[1])
       mg->info.n_levels[1] = mg->info.n_levels[0];
@@ -2500,9 +2582,6 @@ cs_multigrid_solve(void                *context,
   while (cvg == CS_SLES_ITERATING) {
 
     int cycle_id = n_cycles + 1;
-
-    if (verbosity > 2)
-      bft_printf(_("Multigrid [%s]: cycle %4d\n"), name, cycle_id);
 
     cvg = _multigrid_cycle(mg,
                            lv_names,
@@ -2790,6 +2869,67 @@ cs_multigrid_error_post_and_abort(void                         *context,
               name, _(error_type[err_id]),
               mgd->exit_cycle_id, level,
               mgd->exit_initial_residue, mgd->exit_residue);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the verbosity for multigrid.
+ *
+ * \param[in, out]  mg         pointer to multigrid info and context
+ * \param[in]       verbosity  verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_verbosity(cs_multigrid_t   *mg,
+                           int              verbosity)
+{
+  mg->verbosity = verbosity;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set plotting options for multigrid.
+ *
+ * \param[in, out]  mg             pointer to multigrid info and context
+ * \param[in]       base_name      base plot name to activate, NULL otherwise
+ * \param[in]       use_iteration  if true, use iteration as time stamp
+ *                                 otherwise, use wall clock time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_plot_options(cs_multigrid_t  *mg,
+                              const char      *base_name,
+                              bool             use_iteration)
+{
+  if (mg != NULL) {
+    if (cs_glob_rank_id < 1 && base_name != NULL) {
+
+      /* Destroy previous plot if options reset */
+      if (mg->cycle_plot != NULL)
+        cs_time_plot_finalize(&(mg->cycle_plot));
+
+      /* Create new plot */
+      cs_file_mkdir_default("monitoring");
+      const char *probe_names[] = {base_name};
+      mg->cycle_plot = cs_time_plot_init_probe(base_name,
+                                               "monitoring/residue_",
+                                               CS_TIME_PLOT_CSV,
+                                               use_iteration,
+                                               -1.,      /* force flush */
+                                               0,        /* no buffer */
+                                               1,        /* n_probes */
+                                               NULL,     /* probe_list */
+                                               NULL,     /* probe_coords */
+                                               probe_names);
+
+      if (use_iteration)
+        mg->plot_time_stamp = 0;
+      BFT_MALLOC(mg->plot_base_name, strlen(base_name)+1, char);
+      strcpy(mg->plot_base_name, base_name);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

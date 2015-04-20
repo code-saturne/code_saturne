@@ -146,13 +146,15 @@ _ensure_buffer_size(cs_time_plot_t  *p,
  *   n_probes         <-- number of probes associated with this variable ?
  *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
  *   probe_coords     <-- probe coordinates
+ *   probe_names      <-- probe names, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
 _write_probe_header_dat(cs_time_plot_t    *p,
                         int                n_probes,
                         const int         *probe_list,
-                        const cs_real_t    probe_coords[])
+                        const cs_real_t    probe_coords[],
+                        const char        *probe_names[])
 {
   int i, probe_id;
   int col_id = 0;
@@ -179,13 +181,25 @@ _write_probe_header_dat(cs_time_plot_t    *p,
       probe_id = i;
       if (probe_list != NULL)
         probe_id = probe_list[i] - 1;
-      fprintf(_f, "#   %6i [%14.7e, %14.7e, %14.7e]\n",
-              probe_id + 1,
-              probe_coords[probe_id*3],
-              probe_coords[probe_id*3 + 1],
-              probe_coords[probe_id*3 + 2]);
+      if (probe_names != NULL)
+        fprintf(_f, "%16s [%14.7e, %14.7e, %14.7e]\n",
+                probe_names[i],
+                probe_coords[probe_id*3],
+                probe_coords[probe_id*3 + 1],
+                probe_coords[probe_id*3 + 2]);
+      else
+        fprintf(_f, "#   %6i [%14.7e, %14.7e, %14.7e]\n",
+                probe_id + 1,
+                probe_coords[probe_id*3],
+                probe_coords[probe_id*3 + 1],
+                probe_coords[probe_id*3 + 2]);
     }
     fprintf(_f, "#\n");
+  }
+  else if (probe_names != NULL) {
+    fprintf(_f, _("# Monitoring points:\n"));
+    for (i = 0; i < n_probes; i++)
+      fprintf(_f, "%s\n", probe_names[i]);
   }
 
   fprintf(_f, _("# Columns:\n"));
@@ -227,7 +241,7 @@ _write_probe_header_dat(cs_time_plot_t    *p,
     fprintf(_f, " -");
   fprintf(_f, "\n#\n");
 
-  /* Close file or assign it ot handler depending on options */
+  /* Close file or assign it to handler depending on options */
 
   if (p->buffer_steps[0] > 0) {
     if (fclose(_f) != 0)
@@ -264,31 +278,34 @@ _write_probe_coords_csv(const char        *file_prefix,
              strlen(file_prefix) + strlen(plot_name) + strlen("_coords") + 4 + 1,
              char);
 
-  sprintf(file_name, "%s%s%s.csv", file_prefix, plot_name, "_coords");
+  if (probe_coords != NULL) {
+    sprintf(file_name, "%s%s%s.csv", file_prefix, plot_name, "_coords");
 
-  _f = fopen(file_name, "w");
-  if (_f == NULL) {
-    bft_error(__FILE__, __LINE__, errno,
-              _("Error opening file: \"%s\""), file_name);
-    return;
+    _f = fopen(file_name, "w");
+    if (_f == NULL) {
+      bft_error(__FILE__, __LINE__, errno,
+          _("Error opening file: \"%s\""), file_name);
+      return;
+    }
+
+    fprintf(_f, "x, y, z\n");
+    for (i = 0; i < n_probes; i++) {
+      probe_id = i;
+      if (probe_list != NULL)
+        probe_id = probe_list[i] - 1;
+      fprintf(_f, "%14.7e, %14.7e, %14.7e\n",
+          probe_coords[probe_id*3],
+          probe_coords[probe_id*3 + 1],
+          probe_coords[probe_id*3 + 2]);
+    }
+
+    /* Close file or assign it ot handler depending on options */
+
+    if (fclose(_f) != 0)
+      bft_error(__FILE__, __LINE__, errno,
+          _("Error closing file: \"%s\""), file_name);
+
   }
-
-  fprintf(_f, "x, y, z\n");
-  for (i = 0; i < n_probes; i++) {
-    probe_id = i;
-    if (probe_list != NULL)
-      probe_id = probe_list[i] - 1;
-    fprintf(_f, "%14.7e, %14.7e, %14.7e\n",
-            probe_coords[probe_id*3],
-            probe_coords[probe_id*3 + 1],
-            probe_coords[probe_id*3 + 2]);
-  }
-
-  /* Close file or assign it ot handler depending on options */
-
-  if (fclose(_f) != 0)
-    bft_error(__FILE__, __LINE__, errno,
-              _("Error closing file: \"%s\""), file_name);
 
   BFT_FREE(file_name);
 }
@@ -301,13 +318,15 @@ _write_probe_coords_csv(const char        *file_prefix,
  *   n_probes         <-- number of probes associated with this variable ?
  *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
  *   probe_coords     <-- probe coordinates
+ *   probe_names      <-- probe names, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
 _write_probe_header_csv(cs_time_plot_t    *p,
                         int                n_probes,
                         const int         *probe_list,
-                        const cs_real_t    probe_coords[])
+                        const cs_real_t    probe_coords[],
+                        const char        *probe_names[])
 {
   int i, probe_id;
   FILE *_f = p->f;
@@ -332,14 +351,24 @@ _write_probe_header_csv(cs_time_plot_t    *p,
     probe_id = i;
     if (probe_list != NULL)
       probe_id = probe_list[i] - 1;
-    if (probe_coords != NULL)
-      fprintf(_f, ",%d [%9.5e; %9.5e; %9.5e]",
-              probe_id + 1,
-              probe_coords[probe_id*3],
-              probe_coords[probe_id*3 + 1],
-              probe_coords[probe_id*3 + 2]);
+    if (probe_coords != NULL) {
+      if (probe_names != NULL)
+        fprintf(_f, ", %s [%9.5e; %9.5e; %9.5e]",
+                probe_names[i],
+                probe_coords[probe_id*3],
+                probe_coords[probe_id*3 + 1],
+                probe_coords[probe_id*3 + 2]);
+      else
+        fprintf(_f, ", %d [%9.5e; %9.5e; %9.5e]",
+                probe_id + 1,
+                probe_coords[probe_id*3],
+                probe_coords[probe_id*3 + 1],
+                probe_coords[probe_id*3 + 2]);
+    }
+    else if (probe_names != NULL)
+      fprintf(_f, ", %s", probe_names[i]);
     else
-      fprintf(_f, ",%d", probe_id + 1);
+      fprintf(_f, ", %d", probe_id + 1);
   }
   fprintf(_f, "\n");
 
@@ -768,7 +797,8 @@ void CS_PROCF (tppini, TPPINI)
                                                               *ntflsh,
                                                               *nprb,
                                                               lstprb,
-                                                              xyzprb);
+                                                              xyzprb,
+                                                              NULL);
     }
 
   }
@@ -984,7 +1014,7 @@ void CS_PROCF (tplnbr, TPLNBR)
   *ntpl = 0;
 
   for (fmt = CS_TIME_PLOT_DAT; fmt <= CS_TIME_PLOT_CSV; fmt++) {
-    if (_n_files_max[fmt] > *ntpl)
+    if (_n_files_max[fmt] > (size_t)(*ntpl))
       *ntpl = _n_files_max[fmt];
   }
 }
@@ -1011,6 +1041,7 @@ void CS_PROCF (tplnbr, TPLNBR)
  *   n_probes         <-- number of probes associated with this plot
  *   probe_list       <-- numbers (1 to n) of probes if filtered, or NULL
  *   probe_coords     <-- probe coordinates, or NULL
+ *   probe_names      <-- probe names, or NULL
  *
  * returns:
  *   pointer to new time plot writer
@@ -1025,7 +1056,8 @@ cs_time_plot_init_probe(const char             *plot_name,
                         int                     n_buffer_steps,
                         int                     n_probes,
                         const int              *probe_list,
-                        const cs_real_t         probe_coords[])
+                        const cs_real_t         probe_coords[],
+                        const char             *probe_names[])
 {
   cs_time_plot_t  *p = _plot_file_create(plot_name,
                                          file_prefix,
@@ -1036,7 +1068,7 @@ cs_time_plot_init_probe(const char             *plot_name,
 
   switch (format) {
   case CS_TIME_PLOT_DAT:
-    _write_probe_header_dat(p, n_probes, probe_list, probe_coords);
+    _write_probe_header_dat(p, n_probes, probe_list, probe_coords, probe_names);
     break;
   case CS_TIME_PLOT_CSV:
     _write_probe_coords_csv(file_prefix,
@@ -1044,7 +1076,7 @@ cs_time_plot_init_probe(const char             *plot_name,
                             n_probes,
                             probe_list,
                             probe_coords);
-    _write_probe_header_csv(p, n_probes, probe_list, probe_coords);
+    _write_probe_header_csv(p, n_probes, probe_list, probe_coords, probe_names);
     break;
   default:
     break;

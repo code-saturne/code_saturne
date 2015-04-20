@@ -51,6 +51,7 @@
 
 #include "cs_base.h"
 #include "cs_blas.h"
+#include "cs_file.h"
 #include "cs_log.h"
 #include "cs_halo.h"
 #include "cs_mesh.h"
@@ -60,6 +61,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_timer.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -205,6 +207,13 @@ struct _cs_sles_it_t {
   cs_timer_counter_t   t_setup;            /* Total setup */
   cs_timer_counter_t   t_solve;            /* Total time used */
 
+  /* Plot info */
+
+  int                  plot_time_stamp;    /* Plot time stamp */
+  cs_time_plot_t      *plot;               /* Pointer to plot structure,
+                                              which may be owned or shared */
+  cs_time_plot_t      *_plot;              /* Pointer to own plot structure */
+
   /* Communicator used for reduction operations
      (if left at NULL, main communicator will be used) */
 
@@ -269,7 +278,6 @@ const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
  *
  * parameters:
  *   solver_name <-- solver name
- *   var_name    <-- variable name
  *   convergence <-> Convergence info structure
  *   verbosity   <-- Verbosity level
  *   n_iter_max  <-- Maximum number of iterations
@@ -281,7 +289,6 @@ const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
 static void
 _convergence_init(cs_sles_it_convergence_t  *convergence,
                   const char                *solver_name,
-                  const char                *var_name,
                   int                        verbosity,
                   unsigned                   n_iter_max,
                   double                     precision,
@@ -299,12 +306,6 @@ _convergence_init(cs_sles_it_convergence_t  *convergence,
   convergence->precision = precision;
   convergence->r_norm = r_norm;
   convergence->residue = *residue;
-
-  if (verbosity > 1) {
-    bft_printf("%s [%s]:\n", solver_name, var_name);
-    if (verbosity > 2)
-      bft_printf(_("  n_iter     res_abs     res_nor\n"));
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -337,11 +338,19 @@ _convergence_test(cs_sles_it_t              *c,
   convergence->n_iterations = n_iter;
   convergence->residue = residue;
 
-  /* Print convergence values if high verbosity */
+  /* Plot convergence if requested */
 
-  if (verbosity > 2)
-    bft_printf("   %5u %11.4e %11.4e\n",
-               n_iter, residue, residue/convergence->r_norm);
+  if (c->plot != NULL) {
+    double vals = residue;
+    double wall_time = cs_timer_wtime();
+    c->plot_time_stamp += 1;
+    cs_time_plot_vals_write(c->plot,                /* time plot structure */
+                            c->plot_time_stamp,     /* current iteration number */
+                            wall_time,              /* current time */
+                            1,                      /* number of values */
+                            &vals);                 /* values */
+
+  }
 
   /* If not converged */
 
@@ -1899,7 +1908,6 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
   if (_aux_vectors != aux_vectors)
     BFT_FREE(_aux_vectors);
-
   return cvg;
 }
 
@@ -2821,8 +2829,6 @@ _gmres(cs_sles_it_t              *c,
  *   convergence     <-- convergence information structure
  *   rhs             <-- right hand side
  *   vx              <-> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (allocation otherwise)
  *
  * returns:
  *   convergence state
@@ -2835,9 +2841,7 @@ _b_gauss_seidel(cs_sles_it_t              *c,
                 cs_halo_rotation_t         rotation_mode,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
-                cs_real_t                 *restrict vx,
-                size_t                     aux_size,
-                void                      *aux_vectors)
+                cs_real_t                 *restrict vx)
 {
   cs_sles_convergence_state_t cvg;
   double  res2, residue;
@@ -3195,6 +3199,10 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   CS_TIMER_COUNTER_INIT(c->t_setup);
   CS_TIMER_COUNTER_INIT(c->t_solve);
 
+  c->plot_time_stamp = 0;
+  c->plot = NULL;
+  c->_plot = NULL;
+
 #if defined(HAVE_MPI)
   c->comm = cs_glob_mpi_comm;
 #endif
@@ -3221,6 +3229,10 @@ cs_sles_it_destroy(void **context)
   cs_sles_it_t *c = (cs_sles_it_t *)(*context);
   if (c != NULL) {
     cs_sles_it_free(c);
+    if (c->_plot != NULL) {
+      cs_time_plot_finalize(&(c->_plot));
+      c->plot = NULL;
+    }
     if (c->add_data != NULL) {
       BFT_FREE(c->add_data->order);
       BFT_FREE(c->add_data);
@@ -3436,7 +3448,6 @@ cs_sles_it_solve(void                *context,
   /* Solve sparse linear system */
 
   _convergence_init(&convergence,
-                    _(cs_sles_it_type_name[c->type]),
                     name,
                     verbosity,
                     c->n_max_iter,
@@ -3565,9 +3576,7 @@ cs_sles_it_solve(void                *context,
                             rotation_mode,
                             &convergence,
                             rhs,
-                            vx,
-                            aux_size,
-                            aux_vectors);
+                            vx);
       break;
     default:
       bft_error
@@ -3935,6 +3944,78 @@ cs_sles_it_error_post_and_abort(void                         *context,
             _(cs_sles_it_type_name[c->type]),
             _(error_type[err_id]),
             name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set plotting options for an iterative sparse linear equation solver.
+ *
+ * \param[in, out]  context        pointer to iterative solver info and context
+ * \param[in]       base_name      base plot name to activate, NULL otherwise
+ * \param[in]       use_iteration  if true, use iteration as time stamp
+ *                                 otherwise, use wall clock time
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_plot_options(cs_sles_it_t  *context,
+                            const char    *base_name,
+                            bool           use_iteration)
+{
+  if (context != NULL) {
+    if (cs_glob_rank_id < 1 && base_name != NULL) {
+
+      /* Destroy previous plot if options reset */
+      if (context->_plot != NULL)
+        cs_time_plot_finalize(&(context->_plot));
+
+      /* Create new plot */
+      cs_file_mkdir_default("monitoring");
+      const char *probe_names[] = {base_name};
+      context->_plot = cs_time_plot_init_probe(base_name,
+                                               "monitoring/residue_",
+                                               CS_TIME_PLOT_CSV,
+                                               use_iteration,
+                                               -1.0,  /* force flush */
+                                               0,     /* no buffer */
+                                               1,     /* n_probes */
+                                               NULL,  /* probe_list */
+                                               NULL,  /* probe_coords */
+                                               probe_names);
+      context->plot = context->_plot;
+      context->plot_time_stamp = 0;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign existing time plot to iterative sparse linear equation solver.
+ *
+ * This is useful mainly when a time plot has a longer lifecycle than
+ * the linear solver context, such as inside a multigrid solver.
+ *
+ * \param[in, out]  context     pointer to iterative solver info and context
+ * \param[in]       time_plot   pointer to time plot structure
+ * \param[in]       time_stamp  associated time stamp
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_assign_plot(cs_sles_it_t    *context,
+                       cs_time_plot_t  *time_plot,
+                       int              time_stamp)
+{
+  if (context != NULL) {
+
+    /* Destroy previous plot if present */
+    if (context->_plot != NULL)
+      cs_time_plot_finalize(&(context->_plot));
+
+    context->plot = time_plot;
+    context->plot_time_stamp = time_stamp;
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

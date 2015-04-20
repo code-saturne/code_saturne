@@ -34,6 +34,7 @@
 #include "cs_base.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -319,8 +320,7 @@ cs_multigrid_log(const void  *context,
  *   rotation_mode <-- halo update option for rotational periodicity
  *   rhs           <-- right hand side
  *   vx            <-> system solution
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_multigrid_error_post_and_abort(void                         *context,
@@ -330,6 +330,33 @@ cs_multigrid_error_post_and_abort(void                         *context,
                                   cs_halo_rotation_t            rotation_mode,
                                   const cs_real_t              *rhs,
                                   cs_real_t                    *vx);
+
+/*----------------------------------------------------------------------------
+ * Set the verbosity for multigrid.
+ *
+ * parameters:
+ *   mg        <-> pointer to multigrid info and context
+ *   verbosity <-- verbosity level
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_verbosity(cs_multigrid_t   *mg,
+                           int              verbosity);
+
+/*----------------------------------------------------------------------------
+ * Set plotting options for multigrid.
+ *
+ * parameters:
+ *   mg            <-> pointer to multigrid info and context
+ *   base_name     <-- base plot name to activate, NULL otherwise
+ *   use_iteration <-- if true, use iteration as time stamp
+ *                     otherwise, use wall clock time
+ *----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_plot_options(cs_multigrid_t  *mg,
+                              const char      *base_name,
+                              bool             use_iteration);
 
 /*----------------------------------------------------------------------------*/
 
