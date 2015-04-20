@@ -8325,7 +8325,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"cg_coord_partial_write() failed to write coords:\n"
+"%s() failed to write coords:\n"
 "Associated writer: \"%s\"\n"
 "Associated base: \"%s\"\n"
 "CGNS error:%s"
