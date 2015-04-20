@@ -98,6 +98,7 @@ class DarcyModel(Model):
         Put the darcy model
         """
         self.isInList(choice, ['off', 'darcy'])
+        old_choice = self.node_darcy['model']
         self.node_darcy['model'] = choice
 
         ### TODO remove node when set off
@@ -105,7 +106,7 @@ class DarcyModel(Model):
             TurbulenceModel(self.case).setTurbulenceModel('off')
             FluidCharacteristicsModel(self.case).setPropertyMode('density', 'constant')
             FluidCharacteristicsModel(self.case).setInitialValue('density', 1.)
-        else:
+        elif old_choice and old_choice != "off":
             TurbulenceModel(self.case).setTurbulenceModel("k-epsilon-PL")
 
 
