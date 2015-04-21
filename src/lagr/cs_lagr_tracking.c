@@ -4680,7 +4680,8 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
   *jvf = *juf + 1;
   *jwf = *jvf + 1;
 
-  *jtaux = p_am->displ[0][CS_LAGR_TAUP_AUX]/sizeof(cs_real_t) + 1;
+  if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)
+    *jtaux = p_am->displ[0][CS_LAGR_TAUP_AUX]/sizeof(cs_real_t) + 1;
 
   if (p_am->count[0][CS_LAGR_TURB_STATE_1] > 0) {
     for (int id = 0; id < 3; id++)
