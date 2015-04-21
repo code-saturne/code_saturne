@@ -384,7 +384,7 @@ def process_cmd_line(argv):
                       help="pyrcc4 tool for PyQt4 support")
 
     parser.add_option("--have", dest="have", metavar="<lib>",
-                      help="supported feature or librarie")
+                      help="supported feature or library")
 
     parser.add_option("--cppflags", dest="cppflags", metavar="<lib>",
                       help="C preprocessor flags (e.g. -D<macro>, ...)")
@@ -394,6 +394,16 @@ def process_cmd_line(argv):
 
     parser.add_option("--libs", dest="libs", metavar="<lib>",
                       help="librairies used (e.g. -l<libname>, ...)")
+
+    parser.add_option("--pythondir", dest="print_pythondir",
+                      action="store_true",
+                      help="directory for the 'site-packages' subdirectory" \
+                          " of the standard Python install tree")
+
+    parser.add_option("--datarootdir", dest="print_datarootdir",
+                      action="store_true",
+                      help="directory where architecture-independent" \
+                          + " files are installed (e.g. <prefix>/share)")
 
     parser.set_defaults(print_cc=False)
     parser.set_defaults(print_cxx=False)
@@ -413,6 +423,9 @@ def process_cmd_line(argv):
     parser.set_defaults(cppflags=None)
     parser.set_defaults(ldflags=None)
     parser.set_defaults(libs=None)
+
+    parser.set_defaults(print_pythondir=False)
+    parser.set_defaults(print_datarootdir=False)
 
     (options, args) = parser.parse_args(argv)
 
@@ -507,6 +520,9 @@ def main(argv, pkg):
 
     if opts.libs is not None:
         print(cfg.libs[opts.libs].flags['libs'])
+
+    if opts.print_pythondir: print(pkg.get_dir("pythondir"))
+    if opts.print_datarootdir: print(pkg.get_dir("datarootdir"))
 
 if __name__ == '__main__':
     import sys
