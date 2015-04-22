@@ -78,12 +78,12 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 integer ::         inc, iccocg
 integer ::         ifac, iloc, ivar
 integer ::         iel
-integer ::         ifcvsl, iflmab
+integer ::         ifccp, iflmab
 
-double precision :: xvsl  , srfbn
-double precision :: visct , flumab, diipbx, diipby, diipbz, tcel
+double precision :: cpp   , srfbn
+double precision :: flumab, diipbx, diipby, diipbz, tcel
 
-double precision, dimension(:), pointer :: cvisct, cviscl
+double precision, dimension(:), pointer :: cpro_cp
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -111,12 +111,10 @@ if (iscalt.gt.0) then
 
   call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
-  call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
-  if (ifcvsl .ge. 0) then
-    call field_get_val_s(ifcvsl, cviscl)
+  if (iscacp(iscalt).eq.1 .and. icp.gt.0) then
+    call field_get_val_s(ifccp, cpro_cp)
   endif
 
-  call field_get_val_s(iprpfl(ivisct), cvisct)
   call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
   call field_get_val_s(iflmab, bmasfl)
 
@@ -151,17 +149,21 @@ if (iscalt.gt.0) then
       tcel =   tscalp(iel)                                                  &
              + diipbx*grad(1,iel) + diipby*grad(2,iel) + diipbz*grad(3,iel)
 
-      if (ifcvsl.ge.0) then
-        xvsl = cviscl(iel)
+      if (iscacp(iscalt).eq.1) then
+        if (ifccp.ge.0) then
+          cpp = cpro_cp(iel)
+        else
+          cpp = cp0
+        endif
       else
-        xvsl = visls0(iscalt)
+        cpp = 1.d0
       endif
+
       srfbn = max(surfbn(ifac), epzero**2)
-      visct  = cvisct(iel)
       flumab = bmasfl(ifac)
 
-      bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
-                    - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
+      bflux(iloc) =                    (cofafp(ifac) + cofbfp(ifac)*tcel)   &
+                    - flumab*cpp/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
 
     enddo
 
@@ -178,17 +180,21 @@ if (iscalt.gt.0) then
 
       tcel = tscalp(iel)
 
-      if (ifcvsl.ge.0) then
-        xvsl = cviscl(iel)
+      if (iscacp(iscalt).eq.1) then
+        if (ifccp.ge.0) then
+          cpp = cpro_cp(iel)
+        else
+          cpp = cp0
+        endif
       else
-        xvsl = visls0(iscalt)
+        cpp = 1.d0
       endif
+
       srfbn = max(surfbn(ifac), epzero**2)
-      visct  = cvisct(iel)
       flumab = bmasfl(ifac)
 
-      bflux(iloc) =                (cofafp(ifac) + cofbfp(ifac)*tcel)   &
-                    - flumab/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
+      bflux(iloc) =                    (cofafp(ifac) + cofbfp(ifac)*tcel)   &
+                    - flumab*cpp/srfbn*(coefap(ifac) + coefbp(ifac)*tcel)
 
     enddo
 
@@ -419,10 +425,10 @@ integer ::         iel, ifac, iloc, ivar
 integer ::         ifcvsl, itplus, itstar
 
 double precision :: xvsl  , srfbn
-double precision :: visct , diipbx, diipby, diipbz
+double precision :: diipbx, diipby, diipbz
 double precision :: numer, denom, tcel
 
-double precision, dimension(:), pointer :: cvisct, cviscl
+double precision, dimension(:), pointer :: cviscl
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -456,8 +462,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   if (ifcvsl .ge. 0) then
     call field_get_val_s(ifcvsl, cviscl)
   endif
-
-  call field_get_val_s(iprpfl(ivisct), cvisct)
 
   ! Compute variable values at boundary faces
 
@@ -499,7 +503,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct = cvisct(iel)
 
       numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
       denom = xvsl * tplusp(ifac)*tstarp(ifac)
@@ -531,7 +534,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct = cvisct(iel)
 
       numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
       denom = xvsl * tplusp(ifac)*tstarp(ifac)
