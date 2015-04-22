@@ -95,19 +95,10 @@ double precision dt(ncelet)
 
 ! Local variables
 
-
-! NOMBRE DE PASSAGES DANS LA ROUTINE
-
-integer          ipass
-data             ipass /0/
-save             ipass
-
 !===============================================================================
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
 !===============================================================================
-
-ipass = ipass + 1
 
 !===============================================================================
 ! 2. INITIALISATION DES INCONNUES :
@@ -116,28 +107,20 @@ ipass = ipass + 1
 
 if ( isuite.eq.0 ) then
 
-  if ( ipass.eq.1 ) then
-
 ! ----- On donne la main a l'utilisateur
 
-    call cs_user_initialization &
-    !==========================
-  ( nvar   , nscal  ,                                            &
-    dt     )
-
-  endif
+  call cs_user_initialization &
+  !==========================
+( nvar   , nscal  ,                                            &
+  dt     )
 
 else
 
-  if ( ipass.eq.1 ) then
-
 ! ----- Initialisations par defaut
 
-    !     On initialise Cv
-    call cs_cf_thermo_default_init(isuite, ncel)
-    !=============================
-
-  endif
+  !     On initialise Cv
+  call cs_cf_thermo_default_init(isuite, ncel)
+  !=============================
 
 endif
 
