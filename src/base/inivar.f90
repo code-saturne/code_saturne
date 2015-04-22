@@ -100,7 +100,6 @@ double precision scmaxp, scminp
 
 double precision rvoid(1)
 double precision vvoid(3)
-double precision, allocatable, dimension(:) :: w1, w2
 
 double precision, dimension(:), pointer :: field_s_v
 double precision, dimension(:,:), pointer :: field_v_v
