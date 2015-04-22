@@ -111,8 +111,6 @@ integer          iii, ivarl1 , ivarlm , iflu   , ilpd1  , icla
 integer          fldid, fldprv, keycpl, iflcpl
 integer          ifcsii, iflpst, itplus, iprev
 
-double precision pcentr
-
 double precision rbid(1)
 double precision vr(3)
 
@@ -709,17 +707,17 @@ if (numtyp.eq.-2) then
 
     enddo
 
-    !do iloc = 1, nfbrps
-    !  ifac = lstfbr(iloc)
-    !  trafbr(iloc) = ia(iifrla+ifac-1) !! TODO: ifrlag (cf caltri)
-    !enddo
+    do iloc = 1, nfbrps
+      ifac = lstfbr(iloc)
+      trafbr(iloc) = ifrlag(ifac)
+    enddo
 
-    !idimt  = 1
-    !ientla = .true.
-    !ivarpr = .false.
+    idimt  = 1
+    ientla = .true.
+    ivarpr = .false.
 
-    !call post_write_var(nummai, 'lagrangian_boundary_zones', idimt,          &
-    !                    ientla, ivarpr, ntcabs, ttcabs, rbid, rbid, trafbr)
+    call post_write_var(nummai, 'lagrangian_boundary_zones', idimt,          &
+                        ientla, ivarpr, -1, 0.d0, rbid, rbid,trafbr)
 
   endif
 endif
