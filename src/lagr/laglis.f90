@@ -82,23 +82,27 @@ double precision parbor(nfabor,nvisbr)
 ! Local variables
 
 integer          ifac , iel , ivf
-integer          ivff , iflu , icla , ii , nb, nbrcel
+integer          ivff , iflu , icla , ii , nb, nbfr, nbrcel
 double precision aa , gmax , gmin
 character        chcond*16
 
 double precision, allocatable, dimension(:) :: tabvr,tabvrfou
 
 integer nbpartall, nbpoutall, nbperrall, nbpdepall, npencrall
-integer nbpresall
+integer nbpresall, nbptotall, npclonall, npcsupall, nbpertall
+integer npkillall
 
 double precision dnbparall, dnbperall, dnbpouall
 double precision dnbdepall, dnpencall, dnbpnwall, dnbresall
+double precision dnpcloall, dnpcsuall, dnpkilall
+double precision debloc(2)
 
 integer          ipass
 data             ipass /0/
 save             ipass
 
 !===============================================================================
+
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
@@ -108,20 +112,6 @@ ipass = ipass + 1
 ! Initialize variables to avoid compiler warnings
 
 nbrcel = 0
-
-
-! FIXME
-! The Lagrangian information display in the main listing
-! is currently disabled during a parallel calculation
-
-if (irangp.ge.0) then
-   if (ipass.eq.1) then
-      write(nfecra,1000)
-      write(nfecra, 901)
-   endif
-   return
-endif
-
 
 if (nbpart.ne.0) then
   aa = 100.d0 / dble(nbpart)
@@ -135,7 +125,6 @@ endif
 
 write (nfecra,1000)
 
-
 ! Parallelism management
 
 nbpartall = nbpart
@@ -144,6 +133,8 @@ nbperrall = nbperr
 nbpdepall = nbpdep
 npencrall = npencr
 nbpresall = nbpres
+nbptotall = nbptot
+nbpertall = nbpert
 
 dnbparall = dnbpar
 dnbpouall = dnbpou
@@ -161,6 +152,8 @@ if (irangp.ge.0) then
    call parcpt(nbpdepall)
    call parcpt(npencrall)
    call parcpt(nbpresall)
+   call parcpt(nbptotall)
+   call parcpt(nbpertall)
 
    call parsom(dnbparall)
    call parsom(dnbpouall)
@@ -181,9 +174,23 @@ write(nfecra,1020)
 write(nfecra,1003)
 write(nfecra,1031) nbpnew, dnbpnwall
 if (iroule.ge.1) then
-  write(nfecra,1037) npcsup, dnpcsu
-  write(nfecra,1032) npclon, dnpclo
-  write(nfecra,1034) npkill, dnpkil
+  npcsupall = npcsup
+  dnpcsuall = dnpcsu
+  npclonall = npclon
+  dnpcloall = dnpclo
+  npkillall = npkill
+  dnpkilall = dnpkil
+  if (irangp.ge.0) then
+    call parcpt(npcsupall)
+    call parcpt(npclonall)
+    call parcpt(npkillall)
+    call parsom(dnpcsuall)
+    call parsom(dnpcloall)
+    call parsom(dnpkilall)
+  endif
+  write(nfecra,1037) npcsupall, dnpcsuall
+  write(nfecra,1032) npclonall, dnpcloall
+  write(nfecra,1034) npkillall, dnpkilall
 endif
 if (iphyla.eq.2 .and. iencra.eq.1) then
   write(nfecra,1038) npencrall, dnpencall
@@ -197,8 +204,8 @@ endif
 
 write(nfecra,1035) nbperrall, dnbperall
 write(nfecra,1036) nbpartall, dnbparall
-if (nbptot.gt.0) then
-  write(nfecra,1050) (nbpert*100.d0)/dble(nbptot)
+if (nbptotall.gt.0) then
+  write(nfecra,1050) (nbpertall*100.d0)/dble(nbptotall)
   write(nfecra,1001)
 endif
 
@@ -206,33 +213,48 @@ endif
 
 write(nfecra,7000)
 
+nbfr = 0
 do ii = 1,nfrlag
-   nb = ilflag(ii)
-    if ( iusclb(nb) .eq. ientrl) then
-     chcond = 'INLET'
-  else if ( iusclb(nb) .eq. irebol) then
-     chcond = 'REBOUND'
-  else if ( iusclb(nb) .eq. isortl) then
-     chcond = 'OUTLET'
-  else if ( iusclb(nb) .eq. idepo1 .or.                           &
-       iusclb(nb) .eq. idepo2    ) then
-    chcond = 'DEPOSITION'
-  else if ( iusclb(nb) .eq. iencrl) then
-    chcond = 'FOULING'
-  else if ( iusclb(nb) .eq. idepfa) then
-    chcond = 'DLVO CONDITIONS'
-  else if ( iusclb(nb) .eq. isymtl) then
-    chcond = 'DLVO CONDITIONS'
-  else
-    chcond = 'USER'
-  endif
-
-  if (irangp.ge.0) then
-     call parsom(deblag(nb))
-  endif
-
-  write(nfecra,7001) nb,deblag(nb)/dtp,chcond
+  if (ilflag(ii) .gt. nbfr) nbfr = ilflag(ii)
 enddo
+if (irangp.ge.0) then
+  call parcmx(nbfr)
+endif
+
+do nb = 1,nbfr
+  debloc(1) = 0.d0
+  debloc(2) = 0.d0
+  do ii = 1, nfrlag
+    if (ilflag(ii) .eq. nb) then
+      debloc(1) = 1.d0
+      debloc(2) = deblag(nb)
+    endif
+  enddo
+  if (irangp.ge.0) then
+    call parrsm(2,debloc)
+  endif
+  if (debloc(1) > 0.5d0) then
+    if (iusclb(nb) .eq. ientrl) then
+      chcond = 'INLET'
+    else if (iusclb(nb) .eq. irebol) then
+      chcond = 'REBOUND'
+    else if (iusclb(nb) .eq. isortl) then
+      chcond = 'OUTLET'
+    else if (iusclb(nb) .eq. idepo1 .or. iusclb(nb) .eq. idepo2) then
+      chcond = 'DEPOSITION'
+    else if (iusclb(nb) .eq. iencrl) then
+      chcond = 'FOULING'
+    else if (iusclb(nb) .eq. idepfa) then
+      chcond = 'DLVO CONDITIONS'
+    else if (iusclb(nb) .eq. isymtl) then
+      chcond = 'DLVO CONDITIONS'
+    else
+      chcond = 'USER'
+    endif
+    write(nfecra,7001) nb,debloc(2)/dtp,chcond
+  endif
+enddo
+
 write(nfecra,1001)
 
 ! Volumic statistics
@@ -258,11 +280,14 @@ if (istala.eq.1) then
 
       ! Allocate a work array
       allocate(tabvr(ncelet))
+
       ! Calculation of the averages
       do ivf = 1, nvlsta
+
         ivff = ivf
         icla = 0
         iflu = 0
+
         gmin = grand
         gmax = -grand
 
@@ -274,36 +299,39 @@ if (istala.eq.1) then
 
         if ((ivf.ne.ilfv).and.(ivf.ne.ilpd)) then
 
+          nbrcel = 0
+
           do iel = 1,ncel
             if (statis(iel,ivf).gt.seuil) then
               gmax = max (gmax, tabvr(iel))
               gmin = min (gmin, tabvr(iel))
               nbrcel = nbrcel + 1
-             endif
-
+            endif
           enddo
+          if (irangp.ge.0) then
+            call parcpt(nbrcel)
+          endif
 
           if (nbrcel.eq.0) then
             gmax =  0.d0
             gmin =  0.d0
           endif
 
-          else
+        else
 
-            do iel = 1,ncel
-              gmax = max (gmax, tabvr(iel))
-              gmin = min (gmin, tabvr(iel))
-            enddo
+          do iel = 1,ncel
+            gmax = max (gmax, tabvr(iel))
+            gmin = min (gmin, tabvr(iel))
+          enddo
 
-         endif
+        endif
 
-         if (irangp.ge.0) then
-            call parmin(gmin)
-            call parmax(gmax)
-         endif
+        if (irangp.ge.0) then
+          call parmin(gmin)
+          call parmax(gmax)
+        endif
 
-         write(nfecra,3020) nomlag(ivf),  gmin, gmax
-
+        write(nfecra,3020) nomlag(ivf),  gmin, gmax
 
       enddo
 
@@ -421,15 +449,6 @@ endif
 1000 format(3X,'** INFORMATION ON THE LAGRANGIAN CALCULATION',/3X,         &
           '   ------------------------------------------')
 
-901  format(/,                                                              &
-'==================================================================     ',/,&
-' WARNING: The listing information on the Lagrangian calculation        ',/,&
-' is not available in parallel mode in this version of Code_Saturne.    ' /,&
-' The calculation continues..                                           ' /,&
-'==================================================================     ',/,&
-                                                                /)
-
-
 1001 format('-----------------------------------------------------',   &
           '----------')
 
@@ -499,7 +518,7 @@ endif
 
 7000 format(3X,'Zone     Mass flow rate(kg/s)      Boundary type    ')
 
-7001 format(2x, i3, 10x, e12.5, 9x, a16)
+7001 format(2x, i3, 10x, e12.5, 9x, a)
 
 !====
 ! FIN
