@@ -139,48 +139,6 @@ ithvar = 0
 
 iusini = 1
 
-if  (ippmod(icompf).ge.0) then
-
-  call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
-
-  do iel = 1, ncel
-    cvar_tempk(iel) = t0
-  enddo
-
-  call cs_cf_thermo_default_init(isuite, ncel)
-  !=============================
-
-  ! On initialise la diffusivite thermique
-  visls0(ienerg) = visls0(itempk)/cv0
-
-  call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifcven)
-  if (ifcven.ge.0) then
-
-    call field_get_val_s(ifcven, cpro_venerg)
-
-    call field_get_key_int (ivarfl(isca(ienerg)), kivisl, ifclam)
-    if (ifclam.ge.0) then
-
-      call field_get_val_s(ifclam, cpro_lambda)
-
-      if(icv.gt.0) then
-        do iel = 1, ncel
-          cpro_venerg(iel) = cpro_lambda(iel) / propce(iel,ipproc(icv))
-        enddo
-      else
-        do iel = 1, ncel
-          cpro_venerg(iel) = cpro_lambda(iel) / cv0
-        enddo
-      endif
-    else
-      do iel = 1, ncel
-        cpro_venerg(iel) =  visls0(itempk) / propce(iel,ipproc(icv))
-      enddo
-    endif
-  endif
-
-endif
-
 iflidp = -1
 
 do ivar = 1, nvar
