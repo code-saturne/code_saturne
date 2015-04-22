@@ -20,52 +20,44 @@
 
 !-------------------------------------------------------------------------------
 
+!> \file cfxtcl.f90
+!> \brief Initialisation of the variables if the compressible flow model is
+!> enabled.
+!>
+!> This subroutine is called at the beginning of a computation (or when a
+!> computation is resumed) before the start of the time loop.
+!>
+!> It allows to initialise or modify (for resumed computations) the variables
+!> and the time step values.
+!>
+!> Before this subroutine call, the density and the molecular viscosity have
+!> been initialised at ro0 and viscl0 respectively or they have been read in
+!> a checkpoint file in the case of a resumed computation.
+!> If the scalar diffusivities (visls) and the isobaric specific heat (cp) were
+!> defined (i.e. variable), their values are here at hand only if a computation
+!> is resumed.
+!>
+!> Any modification of a physical property (density, molecular viscosity,
+!> scalar diffusivity, isobaric specific heat) shall be performed in the ppphyv
+!> subroutine and never here.
+!>
+!-------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     dt            time step (per cell)
+!______________________________________________________________________________
+
 subroutine cfiniv &
 !================
 
  ( nvar   , nscal  ,                                              &
    dt     )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! INITIALISATION DES VARIABLES DE CALCUL
-!    POUR LA PHYSIQUE PARTICULIERE : COMPRESSIBLE SANS CHOC
-!    PENDANT DE USINIV.F
-
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
-
-
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -96,32 +88,16 @@ double precision dt(ncelet)
 ! Local variables
 
 !===============================================================================
-!===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
-!===============================================================================
 
 !===============================================================================
-! 2. INITIALISATION DES INCONNUES :
-!      UNIQUEMENT SI ON NE FAIT PAS UNE SUITE
+! Initialisation of the variables only if this not a resumed computation
 !===============================================================================
 
-if ( isuite.eq.0 ) then
-
-! ----- On donne la main a l'utilisateur
-
-  call cs_user_initialization &
-  !==========================
-( nvar   , nscal  ,                                            &
-  dt     )
-
+if (isuite.eq.0) then
+  call cs_user_initialization(nvar, nscal, dt)
 else
-
-! ----- Initialisations par defaut
-
-  !     On initialise Cv
+  ! Initialisation of the isochoric specific heat
   call cs_cf_thermo_default_init(isuite, ncel)
-  !=============================
-
 endif
 
 !----
@@ -130,7 +106,7 @@ endif
 
 
 !----
-! FIN
+! END
 !----
 
 return
