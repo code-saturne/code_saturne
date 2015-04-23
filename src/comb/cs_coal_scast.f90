@@ -959,8 +959,8 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
         aux = 0.d0
       endif
 
-      smbrs(iel)   = smbrs(iel)   - aux*volume(iel)
-      smbrsh1(iel) = smbrsh1(iel) + aux*volume(iel)
+      smbrs(iel)   = smbrs(iel)   + aux*volume(iel)
+      smbrsh1(iel) = smbrsh1(iel) - aux*volume(iel)
 
     enddo
 
