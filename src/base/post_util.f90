@@ -112,7 +112,10 @@ if (iscalt.gt.0) then
   call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
   if (iscacp(iscalt).eq.1 .and. icp.gt.0) then
+    ifccp  = iprpfl(icp)
     call field_get_val_s(ifccp, cpro_cp)
+  else
+    ifccp = -1
   endif
 
   call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
@@ -425,10 +428,10 @@ integer ::         iel, ifac, iloc, ivar
 integer ::         ifcvsl, itplus, itstar
 
 double precision :: xvsl  , srfbn
-double precision :: visct , diipbx, diipby, diipbz
+double precision :: diipbx, diipby, diipbz
 double precision :: numer, denom, tcel
 
-double precision, dimension(:), pointer :: cvisct, cviscl
+double precision, dimension(:), pointer :: cviscl
 
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, allocatable, dimension(:,:) :: grad
@@ -462,8 +465,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
   if (ifcvsl .ge. 0) then
     call field_get_val_s(ifcvsl, cviscl)
   endif
-
-  call field_get_val_s(iprpfl(ivisct), cvisct)
 
   ! Compute variable values at boundary faces
 
@@ -505,7 +506,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct = cvisct(iel)
 
       numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
       denom = xvsl * tplusp(ifac)*tstarp(ifac)
@@ -537,7 +537,6 @@ if (itstar.ge.0 .and. itplus.ge.0) then
         xvsl = visls0(iscalt)
       endif
       srfbn = max(surfbn(ifac), epzero**2)
-      visct = cvisct(iel)
 
       numer = (cofafp(ifac) + cofbfp(ifac)*tcel) * distb(ifac)
       denom = xvsl * tplusp(ifac)*tstarp(ifac)
