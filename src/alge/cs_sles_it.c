@@ -2235,7 +2235,7 @@ _bicgstab2(cs_sles_it_t              *c,
     size_t  n_wa = 9;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
-    if (aux_vectors == NULL || aux_size < (wa_size * n_wa))
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
       BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
     else
       _aux_vectors = aux_vectors;
