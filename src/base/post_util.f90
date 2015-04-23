@@ -112,7 +112,10 @@ if (iscalt.gt.0) then
   call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
   if (iscacp(iscalt).eq.1 .and. icp.gt.0) then
+    ifccp  = iprpfl(icp)
     call field_get_val_s(ifccp, cpro_cp)
+  else
+    ifccp = -1
   endif
 
   call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
