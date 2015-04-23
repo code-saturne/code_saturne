@@ -2192,7 +2192,7 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
 
   info->type[0] = descent_smoother_type;
   info->type[1] = ascent_smoother_type;
-  info->type[0] = coarse_solver_type;
+  info->type[2] = coarse_solver_type;
 
   info->n_max_cycles = n_max_cycles;
 
