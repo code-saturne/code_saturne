@@ -357,13 +357,13 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     if (ifcvsl.ge.0) then
 
       do iel = 1, ncel
-        viscce(iel) = viscce(iel) + cpro_viscls(iel)
+        viscce(iel) = viscce(iel) + cpro_viscls(iel)/crom(iel)
       enddo
 
     else
 
       do iel = 1, ncel
-        viscce(iel) = viscce(iel) + visls0(iscal)
+        viscce(iel) = viscce(iel) + visls0(iscal)/crom(iel)
       enddo
 
     endif
@@ -383,10 +383,14 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     climgp = climgr(ivar)
     extrap = extrag(ivar)
 
-    ! Face diffusivity of 1. to compute (Grad K . n)_face
-    do iel = 1, ncelet
-      w1(iel) = 1.d0
+    ! Face diffusivity of rho to compute rho*(Grad K . n)_face
+    do iel = 1, ncel
+      w1(iel) = crom(iel)
     enddo
+
+    if (irangp.ge.0.or.iperio.eq.1) then
+      call synsca(w1)
+    endif
 
     call viscfa &
     ( imvisf ,            &
@@ -405,6 +409,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     init   = 0
 
+    ! The computed convective flux has the dimension of rho*velocity
     call itrmas &
     !==========
    ( f_id0  , init , inc , imrgra , iccocg , nswrgp , imligp , iphydp ,      &
