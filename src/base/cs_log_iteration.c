@@ -507,7 +507,10 @@ _log_fields(void)
   const int label_key_id = cs_field_key_id("label");
 
   const cs_mesh_location_type_t m_l[] = {CS_MESH_LOCATION_CELLS,
-                                         CS_MESH_LOCATION_BOUNDARY_FACES};
+                                         CS_MESH_LOCATION_INTERIOR_FACES,
+                                         CS_MESH_LOCATION_BOUNDARY_FACES,
+                                         CS_MESH_LOCATION_VERTICES
+                                         };
 
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -535,7 +538,7 @@ _log_fields(void)
 
   /* Loop on locations */
 
-  for (li = 0; li < 2; li++) {
+  for (li = 0; li < 4; li++) {
 
     size_t max_name_width = cs_log_strlen(_("field"));
     int loc_id = m_l[li];
@@ -554,12 +557,23 @@ _log_fields(void)
         have_weight = 1;
         total_weight = mq->tot_vol;
         break;
+      case CS_MESH_LOCATION_INTERIOR_FACES:
+        n_g_elts = m->n_g_i_faces;
+        weight = mq->i_face_surf;
+        cs_array_reduce_sum_l(_n_elts, 1, NULL, weight, &total_weight);
+        cs_parall_sum(1, CS_DOUBLE, &total_weight);
+        have_weight = 1;
+        break;
       case CS_MESH_LOCATION_BOUNDARY_FACES:
         n_g_elts = m->n_g_b_faces;
         weight = mq->b_face_surf;
         cs_array_reduce_sum_l(_n_elts, 1, NULL, weight, &total_weight);
         cs_parall_sum(1, CS_DOUBLE, &total_weight);
         have_weight = 1;
+        break;
+      case CS_MESH_LOCATION_VERTICES:
+        n_g_elts = m->n_g_vertices;
+        have_weight = 0;
         break;
       default:
         n_g_elts = _n_elts;
@@ -808,6 +822,7 @@ _log_sstats(void)
 {
   int     stat_id;
   double _boundary_surf = -1;
+  double _interior_surf = -1;
   double  *vmin = NULL, *vmax = NULL, *vsum = NULL, *wsum = NULL;
 
   char tmp_s[5][64] =  {"", "", "", "", ""};
@@ -896,6 +911,17 @@ _log_sstats(void)
           have_weight = 1;
           total_weight = mq->tot_vol;
           break;
+        case CS_MESH_LOCATION_INTERIOR_FACES:
+          n_g_elts = m->n_g_i_faces;
+          weight = mq->i_face_surf;
+          if (_interior_surf < 0) {
+            cs_array_reduce_sum_l(_n_elts, 1, NULL, weight, &_interior_surf);
+            cs_parall_sum(1, CS_DOUBLE, &_interior_surf);
+            if (_interior_surf < 0) _interior_surf = 0; /* just to be safe */
+          }
+          total_weight = _interior_surf;
+          have_weight = 1;
+          break;
         case CS_MESH_LOCATION_BOUNDARY_FACES:
           n_g_elts = m->n_g_b_faces;
           weight = mq->b_face_surf;
@@ -906,6 +932,10 @@ _log_sstats(void)
           }
           total_weight = _boundary_surf;
           have_weight = 1;
+          break;
+        case CS_MESH_LOCATION_VERTICES:
+          n_g_elts = m->n_g_vertices;
+          have_weight = 0;
           break;
         default:
           n_g_elts = _n_elts;
@@ -1443,9 +1473,16 @@ cs_log_iteration_add_array(const char                     *name,
       weight = mq->cell_vol;
       have_weight = true;
       break;
+    case CS_MESH_LOCATION_INTERIOR_FACES:
+      weight = mq->i_face_surf;
+      have_weight = true;
+      break;
     case CS_MESH_LOCATION_BOUNDARY_FACES:
       weight = mq->b_face_surf;
       have_weight = true;
+      break;
+    case CS_MESH_LOCATION_VERTICES:
+      have_weight = false;
       break;
     default:
       break;
