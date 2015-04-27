@@ -167,6 +167,7 @@ cs_cf_thermo_gamma(cs_real_t *gamma)
  * \brief Initialize density, total energy and isochoric specific heat
  * according to the chosen thermodynamic law using the default parameters.
  *
+ * \param[in]     isuite    indicator of resumed calculation
  * \param[in]     l_size    local size
  */
 /*----------------------------------------------------------------------------*/
@@ -1411,10 +1412,7 @@ cs_cf_thermo_eps_sup(cs_real_t *eps_sup,
  *     - pressure and temperature from density and energy: iccfth = 210900
  *
  * \param[in]     iccfth        id of computation
- * \param[in]     imodif        modification indicator
- *                              - 0 variables and properties not modified
- *                              - > 0 variables and properties modified for a
- *                                bulk computation / face number for a B.C.
+ * \param[in]     face_id       face index if the computation is for a B.C.
  * \param[in,out] bc_en         total energy values at boundary faces
  * \param[in,out] bc_pr         pressure values at boundary faces
  * \param[in,out] bc_tk         temperature values at boundary faces

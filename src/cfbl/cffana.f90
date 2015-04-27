@@ -43,7 +43,9 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     imodif        indicator of what is computed
-!> \param[in,out] bval          dirichlet value for all variables
+!> \param[in,out] bc_en         dirichlet value for the total energy
+!> \param[in,out] bc_pr         dirichlet value for the pressure
+!> \param[in,out] bc_vel        dirichlet value for the velocity
 !_______________________________________________________________________________
 
 

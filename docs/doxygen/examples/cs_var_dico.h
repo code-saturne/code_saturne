@@ -134,7 +134,7 @@
       <tt>call \ref field::field_get_val_s "field_get_val_s"(iprpfl(icp), cpro_cp) \n
           cpro_cp(iel)</tt>, \n\n
        where \ref numvar::ipr "ipr", \ref numvar::iu "iu" are variable indexes
-       and \ref numvar::icp "icp" is a property index.
+       and \ref cstphy::icp "icp" is a property index.
   - In C:
     - Both variables and properties are accessed as: \n
       <tt>CS_F_(name)->val[cell_id]</tt>, \n
@@ -205,7 +205,7 @@
   propce(iel,ivisct)       | call field_get_val_s(iprpfl(\ref numvar::ivisct "ivisct"), cpro_visct)    |CS_F_(mu_t)->val[cell_id]          | Turbulent dynamic viscosity
   propce(iel,ivisla)       | call field_get_val_s(iprpfl(\ref numvar::ivisla "ivisla"), cpro_romaa)    |CS_F_(mu)->val_pre[cell_id]        | Dynamic molecular viscosity (in kg/(m.s)) \n at the previous time-step
   propce(iel,ivista)       | call field_get_val_s(iprpfl(\ref numvar::ivista "ivista"), cpro_viscta)   |CS_F_(mu_t)->val_pre[cell_id]      | Dynamic turbulent viscosity \n at the previous time-step
-  propce(iel,icp)          | call field_get_val_s(iprpfl(\ref numvar::icp "icp"), cpro_cp)             |CS_F_(cp)->val[cell_id]            | Specific heat
+  propce(iel,icp)          | call field_get_val_s(iprpfl(\ref cstphy::icp "icp"), cpro_cp)             |CS_F_(cp)->val[cell_id]            | Specific heat
   propce(iel,icpa)         | call field_get_val_s(iprpfl(\ref numvar::icpa "icpa"), cpro_cpa)          |CS_F_(cp)->val_pre[cell_id]        | specific heat at the previous time-step
   propce(iel,icrom)        | call field_get_val_s(iprpfl(\ref numvar::icrom "icrom"), cpro_crom)       |CS_F_(rho)->val[cell_id]           | Density (at cells)
   propce(iel,ibrom)        | call field_get_val_s(iprpfl(\ref numvar::ibrom "ibrom"), bpro_rho)        |CS_F_(rho_b)->val[cell_id]         | Density (at boundary faces)

@@ -181,7 +181,7 @@ module cstphy
   !> so that \ref optcal::iscalt "iscalt" = n and \ref optcal::itherm "itherm" = 1
   !> (there is a "temperature" scalar),
   !> unless the user specifies the specific heat in the user subroutine
-  !> \ref usphyv (\ref numvar::icp "icp" > 0) with the compressible module or
+  !> \ref usphyv (\ref cstphy::icp "icp" > 0) with the compressible module or
   !>  coal combustion, \ref cp0 is also needed even when there is no user scalar.
   !> \note None of the scalars from the specific physics is a temperature.
   !> \note When using the Graphical Interface, \ref cp0 is also used to
@@ -195,7 +195,7 @@ module cstphy
   !> Useful for the compressible module
   real(c_double), pointer, save :: cv0
 
-  !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref ppincl::ieos "ieos"=1)
+  !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref cstphy::ieos "ieos"=1)
   !>
   !> Always useful
   real(c_double), pointer, save :: xmasmr

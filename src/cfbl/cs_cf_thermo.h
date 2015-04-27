@@ -79,6 +79,7 @@ cs_cf_thermo_gamma(cs_real_t *gamma);
  * according to the chosen thermodynamic law using the default parameters.
  *
  * parameters:
+ *   isuite <-- indicator of resumed computation
  *   l_size <-- local size
  *----------------------------------------------------------------------------*/
 
@@ -397,15 +398,12 @@ cs_cf_thermo_eps_sup(cs_real_t *eps_sup,
  *     - pressure and temperature from density and energy: iccfth = 210900
  *
  * parameters:
- *   iccfth --> id of computation
- *   imodif --> modification indicator
- *              - 0 variables and properties not modified
- *              - > 0 variables and properties modified for a
- *                bulk computation / face number for a B.C.
- *   bc_en  <-- total energy values at boundary faces
- *   bc_pr  <-- pressure values at boundary faces
- *   bc_tk  <-- temperature values at boundary faces
- *   bc_vel <-- velocity values at boundary faces
+ *   iccfth  --> id of computation
+ *   face_id --> face index if the computation is for a B.C.
+ *   bc_en   <-- total energy values at boundary faces
+ *   bc_pr   <-- pressure values at boundary faces
+ *   bc_tk   <-- temperature values at boundary faces
+ *   bc_vel  <-- velocity values at boundary faces
  *----------------------------------------------------------------------------*/
 
 void

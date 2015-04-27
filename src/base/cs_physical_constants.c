@@ -209,7 +209,7 @@ BEGIN_C_DECLS
         and \ref cs_thermal_model_t::itherm "cs_glob_thermal_model->itherm" =  1
        (there is a scalar "temperature"), unless the
         user specifies the specific heat in the user subroutine \ref usphyv
-        (\ref numvar::icp "icp" > 0) with the compressible module or coal combustion,
+        (\ref cstphy::icp "icp" > 0) with the compressible module or coal combustion,
         \ref cp0 is also needed even when there is no user scalar. \note
         None of the scalars from the specific physics is a temperature. \note
         When using the Graphical Interface, \ref cp0 is also used to
@@ -222,7 +222,7 @@ BEGIN_C_DECLS
         Useful for the compressible module
   \var  cs_fluid_properties_t::xmasmr
         molar mass of the perfect gas in \f$ kg/mol \f$
-        (if \ref ppincl::ieos "ieos"=1)
+        (if \ref cstphy::ieos "ieos"=1)
 
         Always useful.
   \var  cs_fluid_properties_t::pther

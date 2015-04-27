@@ -81,11 +81,12 @@ character(len=80) :: chaine
 integer          ivar  , iscal
 integer          iel
 integer          iclip , iok   , ii
-integer          imodif, ifcven, ifclam
+integer          ifcven, ifclam
 integer          kscmin, kscmax, keyvar, n_fields
 integer          f_id, f_id_prv, c_id, f_dim
 integer          iflid, iflidp
 integer          idimf
+integer          ivoid
 
 logical          interleaved
 
@@ -217,9 +218,8 @@ else
 
   if (ippmod(icompf).ge.0) then
 
-    imodif = 1
-
-    call cs_cf_thermo(ithvar, imodif,  rvoid, rvoid, rvoid, vvoid)
+    ivoid = -1
+    call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
     !================
 
   endif
