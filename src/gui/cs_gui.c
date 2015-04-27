@@ -3288,8 +3288,8 @@ void CS_PROCF (uiporo, UIPORO) (const cs_lnum_t  *ncelet,
                                    "porosity[YY]",
                                    "porosity[ZZ]",
                                    "porosity[XY]",
-                                   "porosity[XZ]",
-                                   "porosity[YZ]"};
+                                   "porosity[YZ]",
+                                   "porosity[XZ]"};
           if (mei_tree_find_symbols(ev_formula, 7, symbols))
             bft_error(__FILE__, __LINE__, 0,
                       _("Error: can not find the required symbol: %s\n %s\n"),
@@ -3317,8 +3317,8 @@ void CS_PROCF (uiporo, UIPORO) (const cs_lnum_t  *ncelet,
               porosf[iel][1] = mei_tree_lookup(ev_formula,"porosity[YY]");
               porosf[iel][2] = mei_tree_lookup(ev_formula,"porosity[ZZ]");
               porosf[iel][3] = mei_tree_lookup(ev_formula,"porosity[XY]");
-              porosf[iel][4] = mei_tree_lookup(ev_formula,"porosity[XZ]");
-              porosf[iel][5] = mei_tree_lookup(ev_formula,"porosity[YZ]");
+              porosf[iel][4] = mei_tree_lookup(ev_formula,"porosity[YZ]");
+              porosf[iel][5] = mei_tree_lookup(ev_formula,"porosity[XZ]");
           }
         }
 
