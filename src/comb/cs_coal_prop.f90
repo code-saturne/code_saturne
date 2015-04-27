@@ -192,6 +192,13 @@ do icla = 1, nclacp
   call add_property_field(f_name, f_label, igmhet(icla))
 enddo
 
+do icla = 1, nclacp
+  write(f_name,  '(a,i2.2)') 'imp_m_transfer_to_g_p_', icla
+  write(f_label, '(a,i2.2)') 'Implicit_Mass_transfer', icla
+  call add_property_field(f_name, f_label, igmtr(icla))
+enddo
+
+
 if (i_comb_drift.ge.1) then
   do icla = 1, nclacp
 

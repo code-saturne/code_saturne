@@ -122,7 +122,6 @@ integer          keyccl, f_id
 
 double precision xnuss
 double precision aux
-double precision TauThp
 double precision coefe(ngazem)
 double precision t1, t2, hh2ov
 double precision f1mc(ncharm), f2mc(ncharm)
@@ -153,12 +152,14 @@ double precision, dimension(:), pointer :: vp_x, vp_y, vp_z
 double precision, dimension(:,:), pointer :: vdc
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cpro_cp, cpro_viscls
+double precision, dimension(:), pointer :: cpro_rovsdt2
 double precision, dimension(:), pointer :: cvara_k, cvara_ep
 double precision, dimension(:), pointer :: cvara_coke
 double precision, dimension(:), pointer :: taup
 double precision, dimension(:), pointer :: smbrsh1, rovsdth1
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer ::  vg_lim_pi
+double precision, dimension(:), pointer :: cvar_x2h2, cvara_x2h2
 double precision, dimension(:), pointer :: cvar_xchcl
 double precision, dimension(:), pointer :: cvar_xckcl, cvara_xckcl
 double precision, dimension(:), pointer :: cvar_xnpcl
@@ -625,25 +626,25 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
   ! ------ Contribution to the explicit and implicit balance
   !        exchanges by molecular distribution
   !      Remark: We use propce(iel,IPCX2C) because we want X2 at the iteration n
+  call field_get_val_s(iprpfl(igmtr(numcla)), cpro_rovsdt2)
   do iel = 1, ncel
     ! ------ Calculation of diameter of the particles
     !        d20 = (A0.D0**2+(1-A0)*DCK**2)**0.5
     diam2 =  xashch(numcha)*diam20(numcla)**2 +                &
              (1.d0-xashch(numcha))*propce(iel,ipcdia)**2
 
-    ! IMPORTANT remark about the time stepping to ensure the maximum principle:
-    ! d(x2h2)/dt = Cp2/TauThp * x2 * (T1-T2)
-    !  We do a "pseudo" implicitation, which is conservative (in term of x1h1 and x2h2)
-    ! x2h2(t(n+1)) = x2h2(t(n)) + (x2h2(T1(t(n))-x2h2(T2(n))) * (1 - exp(dt/Tauthp))
-    ! x2h2(t(n+1)) =//= x2h2(t(n)) + Cp2 * x2 * (T1(t(n)) - T2(t(n))*dt/(Tauthp+dt)
-    ! Smbr(x2h2) = Cp2 * x2 *(T1(t(n))-T2(t(n)))/(Tauthp+dt)
-    TauThp = diam2*propce(iel,ipcro2)*cp2ch(numcha)/(6.d0*w1(iel)*xnuss)
-    smbrs(iel) =  smbrs(iel)  + crom(iel)*volume(iel) * propce(iel,ipcx2c) * &
-                 cp2ch(numcha)*(propce(iel,ipcte1)-propce(iel,ipcte2))/      &
-                 (TauThp+dt(iel))
-    smbrsh1(iel) = smbrsh1(iel) + crom(iel)*volume(iel) * propce(iel,ipcx2c) * &
-                 cp2ch(numcha)*(propce(iel,ipcte2)-propce(iel,ipcte1))/        &
-                 (TauThp+dt(iel))
+    aux = 6.d0 * w1(iel) * xnuss / diam2       &
+        / propce(iel,ipcro2) * crom(iel)       &
+        * volume(iel)
+
+    smbrs(iel)  = smbrs(iel)-aux*(propce(iel,ipcte2)-propce(iel,ipcte1))*propce(iel,ipcx2c)
+    smbrsh1(iel) = smbrsh1(iel)+aux*(propce(iel,ipcte2)-propce(iel,ipcte1))*propce(iel,ipcx2c)
+
+    ! Store the implicite part of the exchange so that we can compute a
+    ! conservative exhcange term when computing the gas enthalpy
+    cpro_rovsdt2(iel) = aux / cp2ch(numcha)
+    rovsdt(iel) = rovsdt(iel) + cpro_rovsdt2(iel)
+
   enddo
 
 
@@ -974,9 +975,21 @@ endif    ! enthalpies des particules
 if (ivar .eq. isca(ihgas)) then
 
   ! source terms from particles (convection and enthalpy drived by mass fluxes)
-  do iel = 1,ncel
+  do iel = 1, ncel
     smbrs(iel) = smbrs(iel) + smbrsh1(iel)
     rovsdt(iel) = rovsdt(iel) + rovsdth1(iel)
+  enddo
+
+  ! Explicit contribution due to implicit source term on particle class enthalpy
+  ! TODO adapt it to other classes (fuel..)
+  do icla = 1, nclacp
+    call field_get_val_s(iprpfl(igmtr(icla)), cpro_rovsdt2)
+    call field_get_val_s(ivarfl(isca(ih2(icla))), cvar_x2h2)
+    call field_get_val_prev_s(ivarfl(isca(ih2(icla))), cvara_x2h2)
+    do iel = 1, ncel
+      smbrs(iel) = smbrs(iel)  &
+                 + cpro_rovsdt2(iel)*(cvar_x2h2(iel)-cvara_x2h2(iel))
+    enddo
   enddo
 
 endif
