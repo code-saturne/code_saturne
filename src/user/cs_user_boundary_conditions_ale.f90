@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 4.0-alpha
-!                      --------------------------
+!VERS
+
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2015 EDF S.A.
@@ -26,14 +26,14 @@
 ! Function:
 ! ---------
 
-!> \file usalcl.f90
+!> \file cs_user_boundary_conditions_ale.f90
 !>
 !> \brief User subroutine dedicated the use of ALE (Arbitrary Lagrangian
 !> Eulerian) Method:
 !>  - Fills boundary conditions (ialtyb, icodcl, rcodcl) for mesh velocity.
 !>  - This subroutine also enables one to fix displacement on nodes.
 !>
-!> \section intro Introduction
+!> \section intro_usa Introduction
 !>
 !> Here one defines boundary conditions on a per-face basis.
 !>
@@ -48,12 +48,12 @@
 !>
 !> Detailed explanation will be found in the theory guide.
 !>
-!> \section bc_types Boundary condition types
+!> \section bc_types_usa Boundary condition types
 !>
 !> Boundary conditions may be assigned in two ways.
 !>
 !>
-!> \subsection std_bcs For "standard" boundary conditions
+!> \subsection std_bcs_usa For "standard" boundary conditions
 !>
 !> One defines a code in the \c ialtyb array (of dimensions number of
 !> boundary faces). The available codes are:
@@ -62,10 +62,11 @@
 !>           A zero Dirichlet boundary condition is automatically imposed on mesh
 !>           velocity. Moreover the displacement of corresponding nodes will
 !>           automatically be set to 0 (for further information please
-!>           read the paragraph dedicated to the description of \c impale array in the
-!>           usalcl.f90 subroutine), unless the USER has modified the condition of
-!>           at least one  component of mesh velocity (modification of \c icodcl array,
-!>           please read the following paragraph \ref non_std_bc_usa)
+!>           read the paragraph dedicated to the description of \c impale array
+!>           in the usalcl.f90 subroutine), unless the USER has modified the
+!>           condition of at least one mesh velocity component (modification of
+!>           \c icodcl array, please read the following paragraph
+!>           \ref non_std_bc_usa).
 !>
 !>  - \c ialtyb(ifac) = \c igliss: The mesh slides on corresponding face \c ifac.
 !>           The normal component of mesh velocity is automatically set to 0.
@@ -84,7 +85,7 @@
 !>           non zero mesh velocity components.
 !>
 !>
-!> \subsection non_std_bc For "non-standard" conditions
+!> \subsection non_std_bc_usa For "non-standard" conditions
 !>
 !> Other than (fixed boundary, sliding mesh boundary, fixed velocity), one
 !> defines for each face and each component \c IVAR = IUMA, IVMA, IWMA:
@@ -147,7 +148,7 @@
 !> in the code.
 !>
 !>
-!> \subsection cons_rul Consistency rules
+!> \subsection cons_rul_usa Consistency rules
 !>
 !> A consistency rules between \c icodcl codes for variables with
 !> non-standard boundary conditions:
@@ -156,14 +157,14 @@
 !>    velocity components.
 !>
 !>
-!> \subsection fix_nod Fixed displacement on nodes
+!> \subsection fix_nod_usa Fixed displacement on nodes
 !>
 !> For a better precision concerning mesh displacement, one can also assign values
 !> of displacement to certain internal and/or boundary nodes. Thus, one
 !> need to fill \c DEPALE and \c impale arrays :
-!>  - \c depale(1,inod) = displacement of node inod in 'x' direction
-!>  - \c depale(2,inod) = displacement of node inod in 'y' direction
-!>  - \c depale(3,inod) = displacement of node inod in 'z' direction
+!>  - \c disale(1,inod) = displacement of node inod in 'x' direction
+!>  - \c disale(2,inod) = displacement of node inod in 'y' direction
+!>  - \c disale(3,inod) = displacement of node inod in 'z' direction
 !> This array is defined as the total displacement of the node compared
 !> its initial position in initial mesh.
 !> \c impale(inod) = 1 indicates that the displacement of node inod is imposed
@@ -185,10 +186,10 @@
 !>
 !> If a fixed boundary condition (\c ialtyb(ifac)=ibfixe) is imposed to the face
 !> \c ifac, the displacement of each node inod belonging to ifac is considered
-!> to be fixed, meaning that \c impale(inod) = 1 and \c depale(.,inod) = 0.d0.
+!> to be fixed, meaning that \c impale(inod) = 1 and \c disale(.,inod) = 0.d0.
 !>
 !>
-!> \subsubsection nod_des Description of nodes
+!> \subsubsection nod_des_usa Description of nodes
 !>
 !> \c nnod gives the total (internal and boundary) number of nodes.
 !> Vertices coordinates are given by \c xyznod(3, nnod) array. This table is
@@ -264,7 +265,7 @@
 !> specified in this subroutine.)
 !>
 !>
-!>\subsubsection cell_id Cells identification
+!>\subsubsection cell_id_usa Cells identification
 !>
 !> Cells may be identified using the getcel subroutine.
 !> The syntax of this subroutine is described in the
@@ -272,7 +273,7 @@
 !> but a more thorough description can be found in the user guide.
 !>
 !>
-!> \subsubsection fac_id Faces identification
+!> \subsubsection fac_id_usa Faces identification
 !>
 !> Faces may be identified using the \ref getfbr subroutine.
 !> The syntax of this subroutine is described in the
@@ -284,7 +285,7 @@
 !-------------------------------------------------------------------------------
 ! Arguments
 !______________________________________________________________________________.
-!  mode           name          role
+!  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itrale        number of iterations for ALE method
 !> \param[in]     nvar          total number of variables
@@ -316,10 +317,10 @@
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
 !>                                    \grad P \cdot \vect{n}  \f$
-!>                                 -# for a scalar \f$ C_p \left( K +
+!>                                 -# for a scalar \f$ cp \left( K +
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
-!> \param[in,out] depale        nodes displacement
+!> \param[in,out] disale        nodes displacement
 !> \param[in]     xyzno0        vertex coordinates of initial mesh
 !_______________________________________________________________________________
 
@@ -328,7 +329,7 @@ subroutine usalcl &
    nvar   , nscal  ,                                              &
    icodcl , itypfb , ialtyb , impale ,                            &
    dt     ,                                                       &
-   rcodcl , xyzno0 , depale )
+   rcodcl , xyzno0 , disale )
 
 !===============================================================================
 
@@ -350,7 +351,7 @@ use mesh
 !===============================================================================
 
 implicit none
-!< [arg]
+
 ! Arguments
 
 integer          itrale
@@ -362,9 +363,8 @@ integer          impale(nnod)
 
 double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision depale(3,nnod), xyzno0(3,nnod)
-!< [arg]
-!< [loc_var]
+double precision disale(3,nnod), xyzno0(3,nnod)
+
 ! Local variables
 
 integer          ifac, iel, ii
@@ -374,113 +374,41 @@ integer          ilelt, nlelt
 double precision delta, deltaa
 
 integer, allocatable, dimension(:) :: lstelt
-!< [loc_var]
-!===============================================================================
-
 
 !===============================================================================
-! 1.  Initialization
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
 !===============================================================================
-!< [allocate_ale]
-! Allocate a temporary array for boundary faces selection
-allocate(lstelt(nfabor))
-!< [allocate_ale]
+! 0.  This test allows the user to ensure that the version of this subroutine
+!       used is that from his case definition, and not that from the library.
+!     If a file from the GUI is used, this subroutine may not be mandatory,
+!       thus the default (library reference) version returns immediately.
 !===============================================================================
-! 2.  Assign boundary conditions to boundary faces here
-
-!     One may use selection criteria to filter boundary case subsets
-!       Loop on faces from a subset
-!         Set the boundary condition for each face
-!===============================================================================
-
-
-! Calculation of displacement at current time step
-!< [calcul]
-deltaa = sin(3.141596d0*(ntcabs-1)/50.d0)
-delta  = sin(3.141596d0*ntcabs/50.d0)
-!< [calcul]
-
-! Example: For boundary faces of color 4 assign a fixed velocity
-!< [example_1]
-if (.false.) then
-
-  call getfbr('4', nlelt, lstelt)
-  !==========
-
-  do ilelt = 1, nlelt
-
-    ifac = lstelt(ilelt)
-    ! Element adjacent a la face de bord
-    iel = ifabor(ifac)
-
-    ialtyb(ifac) = ivimpo
-    rcodcl(ifac,iuma,1) = 0.d0
-    rcodcl(ifac,ivma,1) = 0.d0
-    rcodcl(ifac,iwma,1) = (delta-deltaa)/dt(iel)
-
-  enddo
-
+if(iihmpr.eq.1) then
+  return
+else
+  write(nfecra,9000)
+  call csexit (1)
 endif
-!< [example_1]
-! Example: For boundary faces of color 5 assign a fixed displacement on nodes
-!< [example_2]
-if (.false.) then
 
-  call getfbr('5', nlelt, lstelt)
-  !==========
+ 9000 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : stop in definition of boundary conditions   ',/,&
+'@    =========                                               ',/,&
+'@     ALE Method has been activated                          ',/,&
+'@     User subroutine ''usalcl'' must be completed           ',/,&
+'@                                                            ',/,&
+'@  The calculation will not be run                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
-  do ilelt = 1, nlelt
 
-    ifac = lstelt(ilelt)
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
-    do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
-      inod = nodfbr(ii)
-      if (impale(inod).eq.0) then
-        depale(1,inod) = 0.d0
-        depale(2,inod) = 0.d0
-        depale(3,inod) = delta
-        impale(inod) = 1
-      endif
-    enddo
 
-  enddo
-
-endif
-!< [example_2]
-! Example: For boundary faces of color 6 assign a sliding boundary
-!< [example_3]
-if (.false.) then
-
-  call getfbr('6', nlelt, lstelt)
-  !==========
-
-  do ilelt = 1, nlelt
-
-    ifac = lstelt(ilelt)
-
-    ialtyb(ifac) = igliss
-
-  enddo
-
-endif
-!< [example_3]
-! Example: prescribe elsewhere a fixed boundary
-!< [example_4]
-if (.false.) then
-
-  call getfbr('not (4 or 5 or 6)', nlelt, lstelt)
-  !==========
-
-  do ilelt = 1, nlelt
-
-    ifac = lstelt(ilelt)
-
-    ialtyb(ifac) = ibfixe
-
-  enddo
-
-endif
-!< [example_4]
 !--------
 ! Formats
 !--------
@@ -488,10 +416,7 @@ endif
 !----
 ! End
 !----
-!< [deallocate_ale]
-! Deallocate the temporary array
-deallocate(lstelt)
 
-!< [deallocate_ale]
+
 return
 end subroutine usalcl

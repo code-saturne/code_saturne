@@ -24,7 +24,7 @@
 
 /*-----------------------------------------------------------------------------*/
 
-  
+
 
 /*!
 
@@ -66,7 +66,7 @@
            velocity. Moreover the displacement of corresponding nodes will
            automatically be set to 0 (for further information please
            read the paragraph dedicated to the description of \c impale array in the
-           usalcl.f90 subroutine), unless the USER has modified the condition of
+           cs_user_boundary_conditions-ale.f90 subroutine), unless the USER has modified the condition of
            at least one mesh velocity component (modification of \c icodcl array,
            please read the following paragraph \ref non_std_bc_ale)
 
@@ -116,7 +116,7 @@
           the mesh viscosity)
 
 
- \remark 
+ \remark
   - The definition of \c rcodcl(.,.,2) is based on the manner
             other standard variables are managed in the same case.
             This type of boundary condition appears nonsense
@@ -168,10 +168,10 @@
 
  For a better precision concerning mesh displacement, one can also assign values
  of displacement to certain internal and/or boundary nodes. Thus, one
- need to fill \c depale and \c impale arrays :
-  - \c depale(1,inod) = displacement of node inod in 'x' direction
-  - \c depale(2,inod) = displacement of node inod in 'y' direction
-  - \c depale(3,inod) = displacement of node inod in 'z' direction
+ need to fill \c disale and \c impale arrays :
+  - \c disale(1,inod) = displacement of node inod in 'x' direction
+  - \c disale(2,inod) = displacement of node inod in 'y' direction
+  - \c disale(3,inod) = displacement of node inod in 'z' direction
  This array is defined as the total displacement of the node compared
  its initial position in initial mesh.
  \c impale(inod) = 1 indicates that the displacement of node inod is imposed.
@@ -184,7 +184,7 @@
  During mesh's geometry re-calculation at each time step, the position of the
  nodes, which displacement is fixed (\c i.e. \c impale=1), is not calculated
  using the value of mesh velocity at the center of corresponding cell, but
- directly filled using the values of \c depale.
+ directly filled using the values of \c disale.
 
  If the displacement is fixed for all nodes of a boundary face it's not
  necessary to prescribe boundary conditions at this face on mesh velocity.
@@ -195,7 +195,7 @@
 
  If a fixed boundary condition (\c ialtyb(ifac)=ibfixe) is imposed to the face
  \c ifac, the displacement of each node \c inod belonging to \c ifac is considered
- to be fixed, meaning that \c impale(inod) = 1 and \c depale(.,inod) = 0.d0.
+ to be fixed, meaning that \c impale(inod) = 1 and \c disale(.,inod) = 0.d0.
 
 
  \subsubsection nod_des_ale Description of nodes
@@ -305,12 +305,12 @@ Here is the list of examples:
 
   \section init_fin_ale Initialization and finalization
 
-  The following initialization block needs to be added for the following examples:   
+  The following initialization block needs to be added for the following examples:
    \snippet cs_user_boundary_conditions-ale.f90 allocate_ale
- 
+
 At the end of the subroutine, it is recommended to deallocate the work array:
    \snippet cs_user_boundary_conditions-ale.f90 deallocate_ale
- 
+
 In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their allocation is good pratice, and avoids using a different logic C and Fortran.
 
   \section assign_ale Assign boundary conditions to boundary faces
@@ -327,19 +327,19 @@ One may use selection criteria to filter boundary case subsets.\n Loop on faces 
    \snippet  cs_user_boundary_conditions-ale.f90 example_1
 
    \subsection example2_ale Example 2
-Example: For boundary face of color 5 assign a fixed displacement on nodes 
+Example: For boundary face of color 5 assign a fixed displacement on nodes
 
-   \snippet  cs_user_boundary_conditions-ale.f90 example_2 
+   \snippet  cs_user_boundary_conditions-ale.f90 example_2
 
    \subsection  example3_ale Example 3
-Example : For boundary faces of color 6 assign a sliding boundary 
+Example : For boundary faces of color 6 assign a sliding boundary
 
-   \snippet  cs_user_boundary_conditions-ale.f90  example_3 
+   \snippet  cs_user_boundary_conditions-ale.f90  example_3
 
    \subsection  example4_ale Example 4
 Example : Prescribe elsewhere a fixed boundary
 
-   \snippet  cs_user_boundary_conditions-ale.f90 example_4 
-    
-   
+   \snippet  cs_user_boundary_conditions-ale.f90 example_4
+
+
 */

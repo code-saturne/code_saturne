@@ -67,8 +67,8 @@ EXTRA_DIST =
 # Library source files
 
 examplefiles = \
+cs_user_boundary_conditions_ale-base.f90 \
 cs_user_boundary_conditions-advanced.f90 \
-cs_user_boundary_conditions-ale.f90 \
 cs_user_boundary_conditions-atmospheric.f90 \
 cs_user_boundary_conditions-auto_inlet_profile.f90 \
 cs_user_boundary_conditions-mapped_inlet.f90 \
