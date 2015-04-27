@@ -2474,11 +2474,8 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
   }
 
   /*        ! --> Lecture rayonnement */
-  char *modelrt = NULL;
-  modelrt = cs_gui_get_thermophysical_model("radiative_transfer");
-
   /*  ! ---- Coefficient d'absorption du melange gazeux */
-  if (modelrt != NULL && !cs_gui_strcmp(modelrt, "off"))
+  if (*iirayo>0)
     *ckabs1 = _get_absorption_coefficient();
 
   /* --> Lecture caracteristiques Oxydants */
@@ -2531,7 +2528,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
   }
 
   BFT_FREE(model);
-  BFT_FREE(modelrt);
 }
 
 /*----------------------------------------------------------------------------
