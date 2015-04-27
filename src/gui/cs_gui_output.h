@@ -62,6 +62,12 @@ void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
 
 
 /*----------------------------------------------------------------------------
+ * Determine output boundary fields
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv);
+
+/*----------------------------------------------------------------------------
  * Determine output options
  *----------------------------------------------------------------------------*/
 
@@ -71,7 +77,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 cs_real_t       *frhist,
                                 cs_int_t        *ntlist,
                                 cs_int_t        *iecaux,
-                                cs_int_t        *ipstdv,
                                 cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
                                 cs_real_t       *xyzcap);

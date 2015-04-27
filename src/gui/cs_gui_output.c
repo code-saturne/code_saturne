@@ -1101,6 +1101,39 @@ void CS_PROCF (uinpst, UINPST) (const cs_int_t  *ntcabs,
 }
 
 /*----------------------------------------------------------------------------
+ * Determine output boundary fields
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
+{
+  if (!cs_gui_file_is_loaded())
+    return;
+
+  /* Surfacic variables output */
+
+  for (int i = 0; i < 6; i++)
+    ipstdv[i] = 0;
+
+  if (_surfacic_variable_post("effort", true))
+    ipstdv[0] += 1;
+  if (_surfacic_variable_post("effort_tangential", false))
+    ipstdv[0] += 2;
+  if (_surfacic_variable_post("effort_normal", false))
+    ipstdv[0] += 4;
+
+  if (_surfacic_variable_post("yplus", true))
+    ipstdv[1] = 1;
+  if (_surfacic_variable_post("tplus", true))
+    ipstdv[2] = 1;
+  if (_surfacic_variable_post("thermal_flux", true))
+    ipstdv[3] = 1;
+  if (_surfacic_variable_post("boundary_temperature", true))
+    ipstdv[4] = 1;
+  if (_surfacic_variable_post("boundary_layer_nusselt", true))
+    ipstdv[5] = 1;
+}
+
+/*----------------------------------------------------------------------------
  * Determine output options.
  *----------------------------------------------------------------------------*/
 
@@ -1110,7 +1143,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
                                 cs_real_t       *frhist,
                                 cs_int_t        *ntlist,
                                 cs_int_t        *iecaux,
-                                cs_int_t        *ipstdv,
                                 cs_int_t        *ihisvr,
                                 cs_int_t        *tplfmt,
                                 cs_real_t       *xyzcap)
@@ -1156,29 +1188,6 @@ void CS_PROCF (csenso, CSENSO) (const cs_int_t  *nvppmx,
     *tplfmt = 1;
   else if (!strcmp(fmtprb, "CSV"))
     *tplfmt = 2;
-
-  /* Surfacic variables output */
-
-  for (i = 0; i < 6; i++)
-    ipstdv[i] = 0;
-
-  if (_surfacic_variable_post("effort", true))
-    ipstdv[0] += 1;
-  if (_surfacic_variable_post("effort_tangential", false))
-    ipstdv[0] += 2;
-  if (_surfacic_variable_post("effort_normal", false))
-    ipstdv[0] += 4;
-
-  if (_surfacic_variable_post("yplus", true))
-    ipstdv[1] = 1;
-  if (_surfacic_variable_post("tplus", true))
-    ipstdv[2] = 1;
-  if (_surfacic_variable_post("thermal_flux", true))
-    ipstdv[3] = 1;
-  if (_surfacic_variable_post("boundary_temperature", true))
-    ipstdv[4] = 1;
-  if (_surfacic_variable_post("boundary_layer_nusselt", true))
-    ipstdv[5] = 1;
 
   *ncapt = cs_gui_get_tag_number("/analysis_control/output/probe", 1);
   for (i = 0; i < *ncapt; i++) {

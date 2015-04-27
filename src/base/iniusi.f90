@@ -281,6 +281,11 @@ if (iihmpr.eq.1) then
   call csiphy(iphydr)
   !==========
 
+  ! Postprocessing
+
+  call cspstb(ipstdv)
+  !==========
+
 endif
 
 ! Define main properties (pointers, checks, ipp)
