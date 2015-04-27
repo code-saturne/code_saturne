@@ -443,7 +443,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
                  +wmole(ih2o)*oxyh2o(ioxy)                        &
                  +wmole(ico2)*oxyco2(ioxy) )
 
-        unsro1 = (wmolme*rr*timpat(izone)) / p0
+        unsro1 = (wmolme*cs_physical_constants_r*timpat(izone)) / p0
         x1sro1 = (1.d0-x2tot) * unsro1
         brom(ifac) = 1.d0 / (x1sro1+x2sro2)
       endif

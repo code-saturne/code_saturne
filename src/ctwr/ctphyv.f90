@@ -160,7 +160,7 @@ t00  = 273.15d0
 p00  = 101325.d0
 del  = 0.622d0
 t1   = 273.15d0
-r    = rr
+r    = cs_physical_constants_r
 
 
 !   Masse volumique au centre des cellules

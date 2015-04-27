@@ -106,7 +106,8 @@ do ifac = 1, nfabor
 
   !Calculation of the Debye length
 
-  ldebye = ((2.d3 * cstfar**2 * fion) / (epseau * epsvid * rr * tempf))**(-0.5d0)
+  ldebye = (  (2.d3 * cstfar**2 * fion)                                       &
+            / (  epseau * epsvid * cs_physical_constants_r * tempf))**(-0.5d0)
 
   !Height of the energy barrier
 

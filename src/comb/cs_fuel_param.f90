@@ -161,7 +161,7 @@ enddo
 wmolme = ( wmole(io2) *oxyo2(1) +wmole(in2) *oxyn2(1)             &
           +wmole(ih2o)*oxyh2o(1)+wmole(ico2)*oxyco2(1))           &
         /(oxyo2(1)+oxyn2(1)+oxyh2o(1)+oxyco2(1))
-ro0 = p0*wmolme / (rr*t0)
+ro0 = p0*wmolme / (cs_physical_constants_r*t0)
 
 ! ---- Initialisation pour la masse volumique du coke
 !    Maintenant c'est fait dans FULECD

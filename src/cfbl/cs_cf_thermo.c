@@ -134,7 +134,7 @@ void
 cs_cf_thermo_gamma(cs_real_t *gamma)
 {
   /*  Local variables */
-  cs_real_t rr = cs_glob_physical_constants->rr;
+  cs_real_t r_pg = cs_glob_physical_constants->r;
   cs_real_t cp0 = cs_glob_fluid_properties->cp0;
   cs_real_t gamagp, xmasml;
   cs_cf_get_molar_mass(&xmasml);
@@ -145,7 +145,7 @@ cs_cf_thermo_gamma(cs_real_t *gamma)
       constant is not saved. A ''save'' instruction and a test would
       be sufficient to avoid computing gamagp at each call if necessary. */
   if (cs_glob_fluid_properties->ieos == 1) {
-    gamagp = 1. + rr/(xmasml*cp0-rr);
+    gamagp = 1. + r_pg/(xmasml*cp0-r_pg);
 
     if (gamagp < 1.)
       bft_error(__FILE__, __LINE__, 0,
@@ -176,7 +176,7 @@ cs_cf_thermo_default_init(int isuite, cs_lnum_t l_size)
 {
   /* Local variables */
   cs_real_t xmasml;
-  cs_real_t  rr  = cs_glob_physical_constants->rr;
+  cs_real_t  r_pg  = cs_glob_physical_constants->r;
   cs_real_t  p0  = cs_glob_fluid_properties->p0;
   cs_real_t  t0  = cs_glob_fluid_properties->t0;
   cs_real_t  cp0 = cs_glob_fluid_properties->cp0;
@@ -190,11 +190,11 @@ cs_cf_thermo_default_init(int isuite, cs_lnum_t l_size)
   cs_cf_get_molar_mass(&xmasml);
 
   if (cs_glob_fluid_properties->ieos == 1) {
-    *cv0 = cp0 - rr/xmasml;
+    *cv0 = cp0 - r_pg/xmasml;
 
     if (isuite == 0) {
       for (cs_lnum_t cell_id = 0; cell_id < l_size; cell_id++) {
-        crom[cell_id] = p0 * xmasml/(rr*t0);
+        crom[cell_id] = p0 * xmasml/(r_pg*t0);
         cvar_en[cell_id] = *cv0 * t0;
       }
     }
@@ -382,7 +382,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *pres,
 {
   /* local variables */
   cs_real_t xmasml;
-  cs_real_t rr = cs_glob_physical_constants->rr;
+  cs_real_t r_pg = cs_glob_physical_constants->r;
 
   /*  calculation of temperature and energy from pressure and density */
   cs_cf_get_molar_mass(&xmasml);
@@ -392,7 +392,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *pres,
 
     for (cs_lnum_t ii = 0; ii < l_size; ii++) {
       /*  temperature */
-      temp[ii] = xmasml * pres[ii] / (rr*dens[ii]);
+      temp[ii] = xmasml * pres[ii] / (r_pg*dens[ii]);
       /*  total energy */
       cs_real_t v2 = cs_math_3_square_norm(vel[ii]);
       ener[ii] =  cv0*temp[ii] + 0.5*v2;
@@ -427,7 +427,7 @@ cs_cf_thermo_de_from_pt(cs_real_t   *pres,
 {
   /* Local variables */
   cs_real_t xmasml;
-  cs_real_t rr = cs_glob_physical_constants->rr;
+  cs_real_t r_pg = cs_glob_physical_constants->r;
 
   /*  Calculation of density and energy from pressure and temperature */
   cs_cf_get_molar_mass(&xmasml);
@@ -437,7 +437,7 @@ cs_cf_thermo_de_from_pt(cs_real_t   *pres,
 
     for (cs_lnum_t cell_id = 0; cell_id < l_size; cell_id++) {
       /*  Temperature */
-      dens[cell_id] = xmasml * pres[cell_id] / (rr*temp[cell_id]);
+      dens[cell_id] = xmasml * pres[cell_id] / (r_pg*temp[cell_id]);
       /*  Total energy */
       cs_real_t v2 = cs_math_3_square_norm(vel[cell_id]);
       ener[cell_id] =  cv0*temp[cell_id] + 0.5*v2;
@@ -472,7 +472,7 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *pres,
 {
   /* Local variables */
   cs_real_t enint, gamagp, xmasml;
-  cs_real_t rr = cs_glob_physical_constants->rr;
+  cs_real_t r_pg = cs_glob_physical_constants->r;
 
   /*  Calculation of density and temperature from pressure and energy */
   cs_cf_get_molar_mass(&xmasml);
@@ -489,7 +489,7 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *pres,
       /*  Density */
       dens[cell_id] = pres[cell_id] / ( (gamagp-1.) * enint );
       /*  Temperature */
-      temp[cell_id] = xmasml * (gamagp-1.) * enint / rr;
+      temp[cell_id] = xmasml * (gamagp-1.) * enint / r_pg;
     }
   }
 }
@@ -519,7 +519,7 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *dens,
 {
   /* Local variables */
   cs_real_t xmasml;
-  cs_real_t rr = cs_glob_physical_constants->rr;
+  cs_real_t r_pg = cs_glob_physical_constants->r;
 
   /* Calculation of pressure and energy from density and temperature */
   cs_cf_get_molar_mass(&xmasml);
@@ -529,7 +529,7 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *dens,
 
     for (cs_lnum_t cell_id = 0; cell_id < l_size; cell_id++) {
       /*  Pressure */
-      pres[cell_id] = dens[cell_id]*temp[cell_id]*rr/xmasml;
+      pres[cell_id] = dens[cell_id]*temp[cell_id]*r_pg/xmasml;
       /*  Total energy */
       cs_real_t v2 = cs_math_3_square_norm(vel[cell_id]);
       ener[cell_id] =  cv0*temp[cell_id] + 0.5*v2;
@@ -562,7 +562,7 @@ cs_cf_thermo_pt_from_de(cs_real_t   *dens,
 {
   /*  Local variables */
   cs_real_t enint, gamagp, xmasml;
-  cs_real_t rr = cs_glob_physical_constants->rr;
+  cs_real_t r_pg = cs_glob_physical_constants->r;
 
   /*  Calculation of pressure and temperature from density and energy */
   cs_cf_get_molar_mass(&xmasml);
@@ -579,7 +579,7 @@ cs_cf_thermo_pt_from_de(cs_real_t   *dens,
       /*  Pressure */
       pres[cell_id] = (gamagp-1.) * dens[cell_id] * enint;
       /*  Temperature */
-      temp[cell_id] = xmasml * (gamagp-1.) * enint / rr;
+      temp[cell_id] = xmasml * (gamagp-1.) * enint / r_pg;
     }
   }
 }

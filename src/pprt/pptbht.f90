@@ -250,8 +250,8 @@ do nt = 1,npo
 
 !      Calcul du CP et du H pour chaque espece
 
-    ehcoel(ne,nt) = ehcoel(ne,nt) * rr / wmolce(ne)
-    cpcoel(ne)    = cpcoel(ne)    * rr / wmolce(ne)
+    ehcoel(ne,nt) = ehcoel(ne,nt) * cs_physical_constants_r / wmolce(ne)
+    cpcoel(ne)    = cpcoel(ne)    * cs_physical_constants_r / wmolce(ne)
   enddo
 
 enddo

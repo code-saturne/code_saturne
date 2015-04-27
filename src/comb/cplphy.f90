@@ -310,7 +310,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
       if ( ientat(izone).eq.1 ) then
         wmolme = (1.d0+xsi) / (wmole(io2)+xsi*wmole(in2))
         brom(ifac) = p0                           &
-                             /(wmolme*rr*timpat(izone))
+                             /(wmolme*cs_physical_constants_r*timpat(izone))
       endif
     endif
 

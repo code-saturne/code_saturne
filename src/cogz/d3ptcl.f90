@@ -232,7 +232,7 @@ do ifac = 1, nfabor
       endif
 
       ! Density
-      brom(ifac) = p0/(rr*tinfue/wmolg(1))
+      brom(ifac) = p0/(cs_physical_constants_r*tinfue/wmolg(1))
 
     ! Oxydant inlet at TINOXY
     elseif (ientox(izone).eq.1) then
@@ -255,7 +255,7 @@ do ifac = 1, nfabor
       endif
 
       ! Density
-      brom(ifac) = p0/(rr*tinoxy/wmolg(2))
+      brom(ifac) = p0/(cs_physical_constants_r*tinoxy/wmolg(2))
 
     endif
 

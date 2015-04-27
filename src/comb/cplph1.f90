@@ -332,7 +332,7 @@ do iel = 1, ncel
 ! ---- On ne met pas la pression mecanique IPR
 !      mais P0
 
-  rom1(iel) = p0/(wmolme*rr*propce(iel,ipcte1))
+  rom1(iel) = p0/(wmolme*cs_physical_constants_r*propce(iel,ipcte1))
 enddo
 
 ! Free memory

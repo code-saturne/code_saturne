@@ -111,7 +111,7 @@ precis = 1.d-15
 lv = 2.263d+6
 tebl = 100.d0 + tkelvi
 tlimit = 302.24d0
-tmini = tlimit*(1.d0-tlimit*rr/(lv*wmole(ih2o)))
+tmini = tlimit*(1.d0-tlimit*cs_physical_constants_r/(lv*wmole(ih2o)))
 
 if (associated(ptsvar)) then
   jtshp0 = jhp(1) - 1
@@ -145,13 +145,16 @@ tpk = eptp(jhp(ilayer_wat),npt)
 if (tpk.ge.tmini) then
   if (tpk.ge.tlimit) then
     aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
-    aux2 = aux1 * exp( lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tpk) / rr )
+    aux2 = aux1 * exp(  lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tpk) &
+                      / cs_physical_constants_r )
   else
     ! On linearise la fraction massique d'eau saturante entre tmini et Tlimit
     ! En Tlimit, la fraction massique d'eau saturante est nulle
     aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
-    aux2 = aux1 * exp( lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tlimit) / rr )   &
-           * (lv*wmole(ih2o) / (rr*tlimit**2)) * (tpk - tmini)
+    aux2 =  aux1 * exp(  lv * wmole(ih2o) * (1.0d0/tebl - 1.0d0/tlimit) &
+                       / cs_physical_constants_r )                      &
+          * (lv*wmole(ih2o) / (cs_physical_constants_r*tlimit**2))      &
+          * (tpk - tmini)
   endif
   ! --- Calcul du terme source d eau diffusee
   aux3 = max(1.0d0 - aux2, precis)
@@ -206,12 +209,15 @@ endif
 ! Calcul de tsat, temperature saturante à la fraction partielle de l'air
 if (propce(iel,ipproc(iym1(ih2o))) .gt. precis) then
   aux1 = wmole(ih2o) / propce(iel,ipproc(immel))
-  tsat = 1 / (1/tebl - rr*log(propce(iel,ipproc(iym1(ih2o)))/aux1)             &
-             /(lv * wmole(ih2o)) )
+  tsat = 1 / (  1/tebl                                    &
+              - cs_physical_constants_r                   &
+               *log(propce(iel,ipproc(iym1(ih2o)))/aux1)  &
+               /(lv * wmole(ih2o)) )
   if (tsat .lt. tlimit) then
-    tsat = tmini + propce(iel,ipproc(iym1(ih2o))) / (aux1 *                    &
-                   exp( lv*wmole(ih2o)*(1.0d0/tebl-1.0d0/tlimit)/rr) *         &
-                   (lv*wmole(ih2o)/(rr*tlimit**2)) )
+    tsat = tmini + propce(iel,ipproc(iym1(ih2o))) / (aux1                  &
+                   *exp( lv*wmole(ih2o)*(1.0d0/tebl-1.0d0/tlimit)          &
+                        /cs_physical_constants_r)                          &
+                   *(lv*wmole(ih2o)/(cs_physical_constants_r*tlimit**2)) )
   endif
 else
   tsat = tmini

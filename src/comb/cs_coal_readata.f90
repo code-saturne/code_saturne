@@ -1887,8 +1887,10 @@ pflue   = 1.d-4
 do ii = 1, 7
 
   ! Chi2 est calculé selon la cinetique donnee dans le manual de FLUENT.
-  chi2(ii) = (4.52e5*(teno(ii)**1.6d0)*exp(-80815.d0/rr/teno(ii)))            &
-           / (1.02e5*(teno(ii)**1.6d0)*exp(-13802.d0/rr/teno(ii)))
+  chi2(ii) = (4.52e5*(teno(ii)**1.6d0)                          &
+              *exp(-80815.d0/cs_physical_constants_r/teno(ii))) &
+            /(1.02e5*(teno(ii)**1.6d0)                          &
+              *exp(-13802.d0/cs_physical_constants_r/teno(ii)))
 
   ! JJ indique le rapport H/C du combustible (4=CH4;3=CH3,etc.)
   do jj = 1,4

@@ -171,7 +171,7 @@ enddo
       ippmod(icoebu).ne.-1 .or.                                   &
       ippmod(icolwc).ne.-1     ) then
    wmolme = wmolg(2)
-   ro0 = p0*wmolme / (rr*t0)
+   ro0 = p0*wmolme / (cs_physical_constants_r*t0)
  endif
 
 ! On met les constantes a -GRAND pour obliger l'utilisateur a les definir

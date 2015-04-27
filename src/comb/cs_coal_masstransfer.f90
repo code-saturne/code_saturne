@@ -194,19 +194,19 @@ do icla = 1, nclacp
   ! --- Mass transfert due to degagement of light mass density (s-1) < 0
 
     propce(iel,ipcgd1) = -y1ch(ichcor(icla))*a1ch(ichcor(icla))   &
-      * exp(-e1ch(ichcor(icla))/(rr*propce(iel,ipctem)))
+      * exp(-e1ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem)))
 
   ! --- Mass transfert due to degagement of heavy mass density (s-1) < 0
 
     propce(iel,ipcgd2) = -y2ch(ichcor(icla))*a2ch(ichcor(icla))   &
-      * exp(-e2ch(ichcor(icla))/(rr*propce(iel,ipctem)))
+      * exp(-e2ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem)))
 
   ! --- Rate of disappearance of reactive coal (s-1) < 0
 
-    propce(iel,ipcgch) = - a1ch(ichcor(icla))                     &
-      * exp(-e1ch(ichcor(icla))/(rr*propce(iel,ipctem)))          &
-                         - a2ch(ichcor(icla))                     &
-      * exp(-e2ch(ichcor(icla))/(rr*propce(iel,ipctem)))
+    propce(iel,ipcgch) = - a1ch(ichcor(icla))                                 &
+      * exp(-e1ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem))) &
+                         - a2ch(ichcor(icla))                                 &
+      * exp(-e2ch(ichcor(icla))/(cs_physical_constants_r*propce(iel,ipctem)))
 
   enddo
 
@@ -281,9 +281,10 @@ do icla = 1, nclacp
 
     ! --- Calculation of the partial pressure of oxygen [atm]
     !                                                 ---
-    !       PO2 = RHO1*RR*T*YO2/MO2
+    !       PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
 
-    pparo2 = rho1(iel)*rr*propce(iel,ipcte1)*propce(iel,ipcyox)/wmole(io2)
+    pparo2 = rho1(iel)*cs_physical_constants_r*propce(iel,ipcte1) &
+            *propce(iel,ipcyox)/wmole(io2)
     pparo2 = pparo2 / prefth
 
     ! --- Coefficient of chemical kinetics of formation of CO
@@ -291,7 +292,7 @@ do icla = 1, nclacp
 
     xdfchi = ahetch(ichcor(icla))                                 &
       * exp(-ehetch(ichcor(icla))*4185.d0                         &
-             / (rr * propce(iel,ipctem)) )
+             / (cs_physical_constants_r * propce(iel,ipctem)) )
 
     ! --- Diffusion coefficient  in kg/m2/s/[atm] : XDFEXT
     !     Global coefficient for n=0.5 in kg/m2/s : XDFTOT0
@@ -357,9 +358,9 @@ if ( ihtco2 .eq. 1) then
 
       ! --- Calculation of partial pressure of CO2 [atm]
       !                                                 ---
-      !       PCO2 = RHO1*RR*T*YCO2/MCO2
+      !       PCO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YCO2/MCO2
 
-      pprco2 = rho1(iel)*rr*propce(iel,ipcte1)                    &
+      pprco2 = rho1(iel)*cs_physical_constants_r*propce(iel,ipcte1)  &
                            *propce(iel,ipyco2)/wmole(ico2)
       pprco2 = pprco2 / prefth
 
@@ -368,7 +369,7 @@ if ( ihtco2 .eq. 1) then
 
       xdfchi = ahetc2(ichcor(icla))                               &
         * exp(-ehetc2(ichcor(icla))*4185.d0                       &
-               / (rr * propce(iel,ipctem)) )
+               / (cs_physical_constants_r * propce(iel,ipctem)) )
 
       ! --- Diffusion coefficient in kg/m2/s/[atm] : XDFEXT
       !     Global coefficient for n=0.5 in kg/m2/s : XDFTOT0
@@ -436,9 +437,10 @@ if ( ihth2o .eq. 1) then
 
       ! --- Calculation of partial pressure of H2O [atm]
       !                                                 ---
-      !       PH2O = RHO1*RR*T*YH2O/MH2O
+      !       PH2O = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YH2O/MH2O
 
-      pprh2o = rho1(iel)*rr*propce(iel,ipcte1)*propce(iel,ipyh2o)/wmole(ih2o)
+      pprh2o = rho1(iel)*cs_physical_constants_r*propce(iel,ipcte1) &
+              *propce(iel,ipyh2o)/wmole(ih2o)
       pprh2o = pprh2o/ prefth
 
       ! --- Coefficient of chemical kinetics of formation of CO
@@ -446,7 +448,7 @@ if ( ihth2o .eq. 1) then
 
       xdfchi = ahetwt(ichcor(icla))                               &
         * exp(-ehetwt(ichcor(icla))*4185.d0                       &
-               / (rr * propce(iel,ipctem)) )
+               / (cs_physical_constants_r * propce(iel,ipctem)) )
 
       ! --- Diffusion coefficient in kg/m2/s/[atm]: XDFEXT
       !     Global coefficient for n=0.5 in kg/m2/s: XDFTOT0
@@ -593,14 +595,14 @@ if ( ippmod(iccoal) .ge. 1 ) then
           yvs   = xmeau/xmgaz                                   &
                  *exp( lv*xmeau                                 &
                       *(1.d0/tebl-1.d0/propce(iel,ipcte2))      &
-                      /rr )
+                      /cs_physical_constants_r )
 
         else
           xmgaz = propce(iel,ipproc(immel))
           yvs   = xmeau/xmgaz                                   &
                  *exp( lv*xmeau                                 &
                       *(1.d0/tebl-1.d0/tlimit)                  &
-                      /rr )                                     &
+                      /cs_physical_constants_r )                                     &
                  *(lv*xmeau*(propce(iel,ipcte2)-tmini))         &
                  /(tlimit*tlimit)
         endif

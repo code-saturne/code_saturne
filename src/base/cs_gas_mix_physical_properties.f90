@@ -242,32 +242,32 @@ do iel = 1, ncel
   cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 enddo
 
-!===========================================================
+!==================================================================
 ! gas mixture density function of the temperature, pressure
 ! and the species scalars with taking into account the
 ! dilatable effects, as below:
 !             ----------------------
 ! - with inlet/outlet conditions:
-!   [idilat=2]: rho= p0/(rr. temp(1/sum[y_i/M_i]))
+!   [idilat=2]: rho= p0/(R. temp(1/sum[y_i/M_i]))
 ! - with only wall conditions:
-!   [idilat=3]: rho= pther/(rr. temp(1/sum[y_i/M_i]))
+!   [idilat=3]: rho= pther/(R. temp(1/sum[y_i/M_i]))
 !             ----------------------
-!         i ={1, .. ,N} species scalar number
-!         y_i  : mass fraction of each species
-!         M_i  : molar fraction [kg/mole]
-!         rr   : prefect gas constant [J/mole/K]
-!         p0   : atmos. pressure (Pa)
-!         pther: pressure (Pa) integrated on the
-!                fluid domain
-!===========================================================
+!         i ={1, .. ,N} : species scalar number
+!         y_i           : mass fraction of each species
+!         M_i           : molar fraction [kg/mole]
+!         R             : ideal gas constant [J/mole/K]
+!         p0            : atmos. pressure (Pa)
+!         pther         : pressure (Pa) integrated on the
+!                         fluid domain
+!==================================================================
 
 do iel = 1, ncel
   ! Evaluate the temperature thanks to the enthalpy
   tk = cvar_enth(iel)/ cpro_cp(iel)
   if (idilat.eq.3) then
-    cpro_rho(iel) = pther*mix_mol_mas(iel)/(rr*tk)
+    cpro_rho(iel) = pther*mix_mol_mas(iel)/(cs_physical_constants_r*tk)
   else
-    cpro_rho(iel) = p0*mix_mol_mas(iel)/(rr*tk)
+    cpro_rho(iel) = p0*mix_mol_mas(iel)/(cs_physical_constants_r*tk)
   endif
 enddo
 

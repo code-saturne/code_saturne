@@ -283,7 +283,7 @@ do iel = 1, ncel
       if ( ipass.gt.1.or.                                         &
           (isuite.eq.1.and.initro.eq.1) ) then
         rhol(idirac) = p0 * maml(idirac)                   &
-                     / (rr*teml(idirac))
+                     / (cs_physical_constants_r*teml(idirac))
       else
         rhol(idirac) = ro0
       endif
@@ -346,7 +346,7 @@ do iel = 1, ncel
     if ( ipass.gt.1 .or.                                          &
         (isuite.eq.1.and.initro.eq.1) ) then
       crom(iel) = srrom * crom(iel)             &
-                         + (1.d0-srrom) * (p0/(rr*temsmm))
+                         + (1.d0-srrom) * (p0/(cs_physical_constants_r*temsmm))
     endif
 
   else
@@ -689,7 +689,7 @@ do iel = 1, ncel
       if ( ipass.gt.1 .or.                                        &
           (isuite.eq.1.and.initro.eq.1) ) then
         rhol(idirac) = p0 * maml(idirac)                   &
-                     / (rr*teml(idirac))
+                     / (cs_physical_constants_r*teml(idirac))
       else
         rhol(idirac) = ro0
       endif
@@ -757,7 +757,7 @@ do iel = 1, ncel
 
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
       crom(iel) = srrom * crom(iel)             &
-                       + (1.d0-srrom) * (p0/(rr*temsmm))
+                       + (1.d0-srrom) * (p0/(cs_physical_constants_r*temsmm))
     endif
 
   endif

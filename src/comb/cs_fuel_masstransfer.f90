@@ -243,16 +243,17 @@ do icla = 1, nclafu
                *6.d0/pi )**(1.d0/3.d0)
 
       ! Calculation of the partial pressure of oxygene [atm]                                                 ---
-      !   PO2 = RHO1*RR*T*YO2/MO2
+      !   PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
 
-      pparo2 = propce(iel,ipproc(irom1))*rr*propce(iel,ipcte1)             &
+      pparo2 = propce(iel,ipproc(irom1))*cs_physical_constants_r  &
+              *propce(iel,ipcte1)                                 &
               *propce(iel,ipcyox)/wmole(io2)
       pparo2 = pparo2 / prefth
 
       ! Chemical kinetic coefficient of CO forming
       !   in [kg.m-2.s-1.atm(-n)]
       xdffli = ahetfl*exp(-ehetfl*4185.d0                                  &
-              /(rr*propce(iel,ipcte1)))
+              /(cs_physical_constants_r*propce(iel,ipcte1)))
 
       ! Coefficient of diffusion in kg/m2/s/[atm]: XDFEXT
       ! Global coefficient for n=0.5 in kg/m2/s: XDFTOT0

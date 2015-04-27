@@ -2208,11 +2208,13 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           ipctem = ipproc(itemp2(icla))
           ipcght = ipproc(igmhet(icla))
 
-          mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
-                   *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
+          mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)               &
+                   *exp(-e1ch(icha)/( cs_physical_constants_r &
+                                     *propce(iel,ipctem)))
 
-          mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)                                &
-                   *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
+          mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)               &
+                   *exp(-e2ch(icha)/( cs_physical_constants_r &
+                                     *propce(iel,ipctem)))
 
           !  Forming rate of the first pyrolisis reaction
           gmdev1(icha) = gmdev1(icha)                                          &
@@ -2611,11 +2613,13 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           icha   = ichcor(icla)
           ipctem = ipproc(itemp2(icla))
 
-          mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)                                &
-                   *exp(-e1ch(icha)/(rr*propce(iel,ipctem)))
+          mckcl1 = (1.d0-y1ch(icha))*a1ch(icha)               &
+                   *exp(-e1ch(icha)/( cs_physical_constants_r &
+                                     *propce(iel,ipctem)))
 
-          mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)                                &
-                   *exp(-e2ch(icha)/(rr*propce(iel,ipctem)))
+          mckcl2 = (1.d0-y2ch(icha))*a2ch(icha)               &
+                   *exp(-e2ch(icha)/( cs_physical_constants_r &
+                                     *propce(iel,ipctem)))
 
           !  Reaction rate of the heterogeneous combustion
           if ( cvara_xck(icla)%p(iel) .gt. epsicp ) then

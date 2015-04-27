@@ -435,8 +435,8 @@ double precision ldebye, tempf ,  lphi1, lphi2
 
 charge = 1.6d-19
 
-ldebye = ((2.d3 * cstfar**2 * fion)                            &
-           /(epseau * epsvid * rr * tempf))**(-0.5)
+ldebye = ((2.d3 * cstfar**2 * fion)                                     &
+           /(epseau * epsvid * cs_physical_constants_r * tempf))**(-0.5)
 
 
 ! Reduced zeta potential
@@ -493,8 +493,8 @@ double precision ldebye, tempf , lphi1, lphi2
 
 charge = 1.6e-19
 
-ldebye = ((2.d3 * cstfar**2 * fion)                            &
-           /(epseau * epsvid * rr * tempf))**(-0.5)
+ldebye = ((2.d3 * cstfar**2 * fion)                                     &
+           /(epseau * epsvid * cs_physical_constants_r * tempf))**(-0.5)
 
 
 ! Reduced zeta potential

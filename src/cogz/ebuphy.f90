@@ -310,7 +310,7 @@ do iel = 1, ncel
   if (ipass.gt.1.or.(isuite.eq.1.and.initro.eq.1)) then
     crom(iel) = srrom*crom(iel)                 &
                        + (1.d0-srrom)*                            &
-                         ( p0/(rr*temsmm) )
+                         ( p0/(cs_physical_constants_r*temsmm) )
   endif
 
 ! ---> Fractions massiques des especes globales
@@ -384,7 +384,7 @@ if ( ipass.gt.1 .or. isuite.eq.1 ) then
         enddo
        masmg = 1.d0/nbmol
        temsmm = tkent(izone)/masmg
-       brom(ifac) = p0/(rr*temsmm)
+       brom(ifac) = p0/(cs_physical_constants_r*temsmm)
       endif
     endif
   enddo

@@ -116,7 +116,7 @@ tebl = 100.d0 + tkelvi            ! Temperature d'ebulition de l'eau
 tlimit = 302.24d0                 ! Temperature limite
 
 ! Temperature mini (apres, la fraction massique d'eau saturante est nulle)
-tmini = tlimit*(1.d0-tlimit*rr/(lv*wmole(ih2o)))
+tmini = tlimit*(1.d0-tlimit*cs_physical_constants_r/(lv*wmole(ih2o)))
 
 !===============================================================================
 
@@ -249,10 +249,10 @@ do npt = 1,nbpart
 !    de masse par devolatilisation avec des lois d'Arrhenius
 !===============================================================================
 
-    !     RR --> Constante des gaz parfaits en J/mol/K
+    !     CS_PHYSICAL_CONSTANTS_R --> Constante des gaz parfaits en J/mol/K
     do ilayer = 1, nlayer
 
-      aux1 = 1.d0 / (rr*eptp(jhp(ilayer),npt))
+      aux1 = 1.d0 / (cs_physical_constants_r*eptp(jhp(ilayer),npt))
       skp1(ilayer) = a1ch(icha) * exp( -e1ch(icha) * aux1)
       skp2(ilayer) = a2ch(icha) * exp( -e2ch(icha) * aux1)
 
@@ -293,7 +293,7 @@ do npt = 1,nbpart
     ! Conversion (kcal/mol -> J/mol)
     aux1 = ehetch(icha) * 1.0d3 * xcal2j
     aux2 = ahetch(icha)                                                      &
-      * exp(- aux1 / (rr*eptp(jhp(ilayer_het),npt)) )
+      * exp(- aux1 / (cs_physical_constants_r*eptp(jhp(ilayer_het),npt)) )
 
     ! --- Coefficient de diffusion en  (Kg/m2/s/atm) et constante
     !     globale de reaction
@@ -314,8 +314,8 @@ do npt = 1,nbpart
 
     ! --- Calcul de la pression partielle en oxygene (atm)
     !                                                 ---
-    !       PO2 = RHO1*RR*T*YO2/MO2
-    aux1 = cromf(iel) * rr * propce(iel,ipproc(itemp1))                 &
+    !       PO2 = RHO1*CS_PHYSICAL_CONSTANTS_R*T*YO2/MO2
+    aux1 = cromf(iel) * cs_physical_constants_r * propce(iel,ipproc(itemp1))  &
          * propce(iel,ipproc(iym1(io2))) / wmole(io2) / prefth
 
     ! --- Calcul de surface efficace : SE

@@ -77,7 +77,7 @@ BEGIN_C_DECLS
   Members of these physical constants are publicly accessible, to allow for
   concise syntax, as they are expected to be used in many places.
 
-  \var  cs_physical_constants_t::rr
+  \var  cs_physical_constants_t::r
         perfect gas constant in \f$J/mol/K\f$
   \var  cs_physical_constants_t::gx
         x component of the gravity vector
@@ -293,7 +293,7 @@ cs_fluid_properties_t  * const cs_glob_fluid_properties = &_fluid_properties;
  *============================================================================*/
 
 void
-cs_f_physical_constants_get_pointers(double  **rr,
+cs_f_physical_constants_get_pointers(double  **r,
                                      double  **gx,
                                      double  **gy,
                                      double  **gz,
@@ -332,7 +332,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   rr     --> pointer to cs_glob_physical_constants->rr
+ *   r      --> pointer to cs_glob_physical_constants->r
  *   gx     --> pointer to cs_glob_physical_constants->gx
  *   gy     --> pointer to cs_glob_physical_constants->gy
  *   gz     --> pointer to cs_glob_physical_constants->gz
@@ -340,16 +340,16 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_physical_constants_get_pointers(double  **rr,
+cs_f_physical_constants_get_pointers(double  **r,
                                      double  **gx,
                                      double  **gy,
                                      double  **gz,
                                      int     **icorio)
 {
-  *rr = &(_physical_constants.rr);
-  *gx = &(_physical_constants.gx);
-  *gy = &(_physical_constants.gy);
-  *gz = &(_physical_constants.gz);
+  *r      = &(_physical_constants.r);
+  *gx     = &(_physical_constants.gx);
+  *gy     = &(_physical_constants.gy);
+  *gz     = &(_physical_constants.gz);
   *icorio = &(_physical_constants.icorio);
 }
 

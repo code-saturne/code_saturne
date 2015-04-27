@@ -50,7 +50,7 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  double        rr;                /* perfect gas constant in J/mol/K */
+  double        r;                 /* perfect gas constant in J/mol/K */
   double        gx, gy, gz;        /* gravity components */
   int           icorio;            /* Coriolis source terms indicator */
 

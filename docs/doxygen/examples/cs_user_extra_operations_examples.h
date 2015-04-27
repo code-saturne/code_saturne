@@ -141,7 +141,7 @@
   \f[
   \rho^{n-1}_\celli = P_0 / \left( R T_\celli^{n-1} + T_0 \right)
   \f]
-  where \f$ R\f$ is \c rr and \f$ T_0 \f$ is \c tkelv.
+  where \f$ R\f$ is \c cs_physical_constants_r and \f$ T_0 \f$ is \c tkelv.
 
 
   \f$ C_p \f$ and \f$ \lambda/C_p \f$ may vary.

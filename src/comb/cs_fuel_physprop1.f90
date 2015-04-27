@@ -336,7 +336,7 @@ do iel = 1, ncel
   ! ---- We do not include the mecanical pressure IPR
   !      but P0
 
-  rom1(iel) = p0 / (wmolme*rr*propce(iel,ipcte1))
+  rom1(iel) = p0 / (wmolme*cs_physical_constants_r*propce(iel,ipcte1))
 enddo
 
 !===============================================================================

@@ -185,7 +185,7 @@ icof2   = is
 !        (loi des gaz parfaits appliquee a l'air)
 
 wmolme = (wmole(io2)+xsi*wmole(in2)) / (1.d0+xsi)
-ro0 = p0*wmolme / (rr*t0)
+ro0 = p0*wmolme / (cs_physical_constants_r*t0)
 
 ! ---- Initialisation pour la masse volumique du coke
 
