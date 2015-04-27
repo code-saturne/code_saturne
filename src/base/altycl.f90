@@ -62,14 +62,13 @@
 !>                                 -# for a scalar \f$ cp \left( K +
 !>                                     \dfrac{K_T}{\sigma_T} \right)
 !>                                     \grad T \cdot \vect{n} \f$
-!> \param[in,out] depale        nodes displacement
 !> \param[in]     xyzno0        initial mesh nodes coordinates
 !______________________________________________________________________________
 
 subroutine altycl &
  ( itypfb , ialtyb , icodcl , impale ,                            &
    dt     ,                                                      &
-   rcodcl , xyzno0 , depale )
+   rcodcl , xyzno0)
 
 !===============================================================================
 ! Module files
@@ -83,6 +82,9 @@ use cstphy
 use entsor
 use parall
 use mesh
+use field
+use albase, only: fdiale
+use cs_c_bindings
 
 !===============================================================================
 
@@ -96,7 +98,7 @@ integer          impale(nnod)
 
 double precision dt(ncelet)
 double precision rcodcl(nfabor,nvarcl,3)
-double precision depale(3,nnod), xyzno0(3,nnod)
+double precision xyzno0(3,nnod)
 
 ! Local variables
 
@@ -106,6 +108,7 @@ double precision ddepx, ddepy, ddepz
 double precision srfbnf, rnx, rny, rnz
 double precision rcodcx, rcodcy, rcodcz, rcodsn
 
+double precision, dimension(:,:), pointer :: disale
 
 !===============================================================================
 
@@ -125,7 +128,9 @@ icoder(2) = -1
 icoder(3) = -1
 icoder(4) = -1
 
-! Mise a zero des RCODCL non specifies
+call field_get_val_v(fdiale, disale)
+
+! Set to 0 non specified RCODCL arrays
 do ifac = 1, nfabor
   if (rcodcl(ifac,iuma,1).gt.rinfin*0.5d0)                        &
        rcodcl(ifac,iuma,1) = 0.d0
@@ -176,13 +181,14 @@ do ifac = 1, nfabor
     inod = nodfbr(ii)
     if (impale(inod).eq.0) iecrw = iecrw + 1
     icpt = icpt + 1
-    ddepx = ddepx + depale(1,inod)+xyzno0(1,inod)-xyznod(1,inod)
-    ddepy = ddepy + depale(2,inod)+xyzno0(2,inod)-xyznod(2,inod)
-    ddepz = ddepz + depale(3,inod)+xyzno0(3,inod)-xyznod(3,inod)
+    ddepx = ddepx + disale(1,inod)+xyzno0(1,inod)-xyznod(1,inod)
+    ddepy = ddepy + disale(2,inod)+xyzno0(2,inod)-xyznod(2,inod)
+    ddepz = ddepz + disale(3,inod)+xyzno0(3,inod)-xyznod(3,inod)
   enddo
-  if (iecrw.eq.0) then
+  ! For Slinding walls, no imposed velocity
+  if (iecrw.eq.0.and.ialtyb(ifac).ne.igliss) then
     iel = ifabor(ifac)
-    if (ialtyb(ifac).ne.igliss) ialtyb(ifac) = ivimpo
+    ialtyb(ifac) = ivimpo
     rcodcl(ifac,iuma,1) = ddepx/dt(iel)/icpt
     rcodcl(ifac,ivma,1) = ddepy/dt(iel)/icpt
     rcodcl(ifac,iwma,1) = ddepz/dt(iel)/icpt
@@ -223,9 +229,9 @@ do ifac = 1, nfabor
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
         if (impale(inod).eq.0) then
-          depale(1,inod) = 0.d0
-          depale(2,inod) = 0.d0
-          depale(3,inod) = 0.d0
+          disale(1,inod) = 0.d0
+          disale(2,inod) = 0.d0
+          disale(3,inod) = 0.d0
           impale(inod) = 1
         endif
       enddo

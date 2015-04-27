@@ -152,6 +152,7 @@ double precision, dimension(:), pointer :: crom, crom_prev, crom_prev2
 double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
 double precision, pointer, dimension(:,:,:) :: ximpav
+double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: cvar_vec
 double precision, dimension(:), pointer :: cvar_sca
@@ -1035,11 +1036,10 @@ do while (iterns.le.nterup)
 
   if (iale.eq.1) then
 
+    call field_get_val_v(fdiale, disale)
+
     do ii = 1, nnod
       impale(ii) = 0
-      disala(1,ii) = depale(1,ii)
-      disala(2,ii) = depale(2,ii)
-      disala(3,ii) = depale(3,ii)
     enddo
 
     ! - Interface Code_Saturne
@@ -1053,7 +1053,7 @@ do while (iterns.le.nterup)
       ibfixe, igliss, ivimpo, ifresf,    &
       ialtyb,                            &
       impale,                            &
-      depale,                            &
+      disale,                            &
       dtref, ttcabs, ntcabs,             &
       iuma, ivma, iwma,                  &
       rcodcl)
@@ -1067,15 +1067,15 @@ do while (iterns.le.nterup)
     icodcl , itypfb , ialtyb ,                                     &
     impale ,                                                       &
     dt     ,                                                       &
-    rcodcl , xyzno0 , depale )
+    rcodcl , xyzno0 , disale )
 
     !     Au cas ou l'utilisateur aurait touche DEPALE sans mettre IMPALE=1, on
     !       remet le deplacement initial
     do ii  = 1, nnod
       if (impale(ii).eq.0) then
-        depale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
-        depale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
-        depale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
+        disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
+        disale(2,ii) = xyznod(2,ii)-xyzno0(2,ii)
+        disale(3,ii) = xyznod(3,ii)-xyzno0(3,ii)
       endif
     enddo
 
@@ -1086,7 +1086,7 @@ do while (iterns.le.nterup)
       !==========
     ( itrale , italim , ineefl ,                                     &
       impale ,                                                       &
-      flmalf , flmalb , xprale , cofale , depale )
+      flmalf , flmalb , xprale , cofale )
 
     endif
 

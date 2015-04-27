@@ -109,7 +109,7 @@ void CS_PROCF(astfor, ASTFOR)
 void CS_PROCF(astcin, ASTCIN)
 (
  cs_int_t    *ntcast,
- cs_real_3_t *depale
+ cs_real_3_t *disale
 );
 
 /*----------------------------------------------------------------------------

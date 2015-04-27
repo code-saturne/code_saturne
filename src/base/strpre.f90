@@ -25,7 +25,7 @@ subroutine strpre &
 
  ( itrale , italim , ineefl ,                                     &
    impale ,                                                       &
-   flmalf , flmalb , xprale , cofale , depale )
+   flmalf , flmalb , xprale , cofale )
 
 !===============================================================================
 ! FONCTION :
@@ -49,7 +49,6 @@ subroutine strpre &
 !    (nfabor,8)    !    !     !                                                !
 ! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
-! depale(3,nnod)   ! tr ! <-- ! deplacement aux noeuds                         !
 !__________________!____!_____!________________________________________________!
 
 !     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
@@ -72,6 +71,7 @@ use alaste
 use parall
 use period
 use entsor
+use albase, only: fdiale
 use mesh
 use field
 
@@ -87,7 +87,6 @@ integer          impale(nnod)
 
 double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
 double precision cofale(nfabor,11)
-double precision depale(3,nnod)
 
 ! Local variables
 
@@ -96,6 +95,7 @@ integer          iflmas, iflmab
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:,:), pointer :: coefau
+double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: coefap, coefbp
 
@@ -106,6 +106,8 @@ double precision, dimension(:), pointer :: cvara_pr
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
+
+call field_get_val_v(fdiale, disale)
 
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
@@ -179,9 +181,9 @@ if (nbstru.gt.0) then
       do ii = ipnfbr(ifac), ipnfbr(ifac+1)-1
         inod = nodfbr(ii)
         impale(inod) = 1
-        depale(1,inod) = xstp(1,istr)
-        depale(2,inod) = xstp(2,istr)
-        depale(3,inod) = xstp(3,istr)
+        disale(1,inod) = xstp(1,istr)
+        disale(2,inod) = xstp(2,istr)
+        disale(3,inod) = xstp(3,istr)
       enddo
     endif
   enddo
@@ -209,9 +211,9 @@ if (nbaste.gt.0) then
 
     ntcast = ntcast + 1
 
-    ! Reception des deplacements predits et remplissage de depale
+    ! Reception des deplacements predits et remplissage de disale
 
-    call astcin(ntcast, depale)
+    call astcin(ntcast, disale)
     !==========
 
   endif

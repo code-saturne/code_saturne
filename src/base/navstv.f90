@@ -166,6 +166,7 @@ double precision, dimension(:), pointer :: ivoifl, bvoifl
 double precision, dimension(:), pointer :: coavoi, cobvoi
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
+double precision, dimension(:,:), pointer :: disala
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
@@ -498,6 +499,8 @@ if (iprco.le.0) then
 
     call field_get_val_v(ivarfl(iuma), mshvel)
 
+    call field_get_val_prev_v(fdiale, disala)
+
     ! One temporary array needed for internal faces, in case some internal vertices
     !  are moved directly by the user
     allocate(intflx(nfac), bouflx(ndimfb))
@@ -542,9 +545,9 @@ if (iprco.le.0) then
       do ii = ipnfac(ifac),ipnfac(ifac+1)-1
         inod = nodfac(ii)
         icpt = icpt + 1
-        ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
-        ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
-        ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
+        ddepx = ddepx + xyznod(1,inod)-xyzno0(1,inod) - disala(1,inod)
+        ddepy = ddepy + xyznod(2,inod)-xyzno0(2,inod) - disala(2,inod)
+        ddepz = ddepz + xyznod(3,inod)-xyzno0(3,inod) - disala(3,inod)
       enddo
       ! Compute the mass flux using the nodes displacement
       if (iflxmw.eq.0) then
@@ -1056,6 +1059,8 @@ if (iale.eq.1) then
 
   call field_get_val_v(ivarfl(iuma), mshvel)
 
+  call field_get_val_prev_v(fdiale, disala)
+
   ! One temporary array needed for internal faces, in case some internal vertices
   !  are moved directly by the user
   allocate(intflx(nfac), bouflx(ndimfb))
@@ -1100,9 +1105,9 @@ if (iale.eq.1) then
     do ii = ipnfac(ifac),ipnfac(ifac+1)-1
       inod = nodfac(ii)
       icpt = icpt + 1
-      ddepx = ddepx + disala(1,inod) + xyzno0(1,inod)-xyznod(1,inod)
-      ddepy = ddepy + disala(2,inod) + xyzno0(2,inod)-xyznod(2,inod)
-      ddepz = ddepz + disala(3,inod) + xyzno0(3,inod)-xyznod(3,inod)
+      ddepx = ddepx + xyznod(1,inod)-xyzno0(1,inod) - disala(1,inod)
+      ddepy = ddepy + xyznod(2,inod)-xyzno0(2,inod) - disala(2,inod)
+      ddepz = ddepz + xyznod(3,inod)-xyzno0(3,inod) - disala(3,inod)
     enddo
     ! Compute the mass flux using the nodes displacement
     if (iflxmw.eq.0) then

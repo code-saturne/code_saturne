@@ -109,6 +109,7 @@ type(c_ptr) :: rp
 
 double precision, allocatable, dimension(:) :: w1
 double precision, pointer, dimension(:) :: dt_s
+double precision, pointer, dimension(:,:) :: disale
 
 !===============================================================================
 !     A noter :
@@ -584,8 +585,10 @@ if (iecaux.eq.1) then
     itysup = 4
     nbval  = 3
 
+    call field_get_val_v(fdiale, disale)
+
     rubriq = 'vertex_displacement'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,depale)
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
 
 !     Viscosite de maillage (elle est souvent definie geometriquement sur le
 !       maillage initial ... il est donc plus facile de la relire ensuite)

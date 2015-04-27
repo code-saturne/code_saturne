@@ -447,7 +447,7 @@ void CS_PROCF(astfor, ASTFOR)
 void CS_PROCF(astcin, ASTCIN)
 (
  cs_int_t    *ntcast,
- cs_real_3_t *depale
+ cs_real_3_t *disale
 )
 {
   cs_lnum_t  i;
@@ -503,9 +503,9 @@ void CS_PROCF(astcin, ASTCIN)
 
     cs_lnum_t parent_vtx_id = ast_coupling->s_vtx_num[i] - 1;
 
-    depale[parent_vtx_id][0] = xast[3*i];
-    depale[parent_vtx_id][1] = xast[3*i + 1];
-    depale[parent_vtx_id][2] = xast[3*i + 2];
+    disale[parent_vtx_id][0] = xast[3*i];
+    disale[parent_vtx_id][1] = xast[3*i + 1];
+    disale[parent_vtx_id][2] = xast[3*i + 2];
 
   }
 

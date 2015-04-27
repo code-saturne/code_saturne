@@ -325,7 +325,7 @@ if (iale.eq.1) then
   !==========
  ( itypfb , ialtyb , icodcl , impale ,                            &
    dt     ,                                                       &
-   rcodcl , xyzno0 , depale )
+   rcodcl , xyzno0 )
 endif
 
 if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then

@@ -2896,7 +2896,7 @@ endif
 ! --- Activation de la methode ALE
 
 write(nfecra,8210)
-write(nfecra,8220) iale, nalinf
+write(nfecra,8220) iale, nalinf, iflxmw
 
 write(nfecra,9900)
 
@@ -2910,7 +2910,10 @@ write(nfecra,9900)
  8220 format(                                                     &
 '       IALE   = ',4x,i10,    ' (1 : activee                 )',/ &
 '       NALINF = ',4x,i10,    ' (Iterations d''initialisation', / &
-'                                                   du fluide)',/)
+'                                                   du fluide)',/ &
+'       IFLXMW = ',4x,i10,    ' (Calcul du flux de masse ALE',  / &
+'                                0 : déplacement des sommets',  / &
+'                                1 : vitesse ALE)',/)
 
 #else
 
@@ -2921,7 +2924,10 @@ write(nfecra,9900)
  8220 format(                                                     &
 '       IALE   = ',4x,i10,    ' (1: activated                )',/ &
 '       NALINF = ',4x,i10,    ' (Fluid initialization',         / &
-'                                                  iterations)',/)
+'                                                  iterations)',/ &
+'       IFLXMW = ',4x,i10,    ' (ALE mass flux computation',    / &
+'                                0: thanks to vertices',        / &
+'                                1: thanks to mesh velocity)',/)
 
 #endif
 
