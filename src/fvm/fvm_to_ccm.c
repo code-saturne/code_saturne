@@ -3249,12 +3249,13 @@ _write_multidimensional_field_data(const char              *name,
     /* Star-ccm+ will import properly the vector fields only if the short
        names of the components are SU, SV and SW */
     if (dimension == 3) {
-      if (tolower(name[0]) != 'e')         /* efforts */
-        strcpy(vect_short_name, "S");
-      else if (tolower(name[0]) != 'm')    /* mesh velocity */
-        strcpy(vect_short_name, "M");      /* velocity */
+      if (tolower(name[0]) == 'e')
+        strcpy(vect_short_name, "E");      /* efforts */
+      else if (tolower(name[0]) == 'm')
+        strcpy(vect_short_name, "M");      /* mesh velocity */
       else
-        strcpy(vect_short_name, "E");
+        strcpy(vect_short_name, "S");      /* velocity */
+
       switch (i) {
       case(0):
         strcat(vect_short_name, "U");
