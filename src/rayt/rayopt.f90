@@ -345,7 +345,7 @@ if (iihmpr.eq.1) then
   call csenso                                                     &
   !==========
      ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
-       ipstdv, ihisvr, tplfmt, xyzcap )
+       ihisvr, tplfmt, xyzcap )
 
   ! take into acount user modifications
   call usipes(nmodpp)

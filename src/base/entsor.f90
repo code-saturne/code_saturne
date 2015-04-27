@@ -156,7 +156,7 @@ module entsor
   !> by the user. Useful if and only if the subroutine \ref ushist is used
   character(len=13), save :: ficush(nushmx)
 
-  !> sytock file and mobile structure varibles output unit
+  !> stock file and mobile structure variables output unit
   integer, save :: impsth(2)
 
   !> maximum number of probes
@@ -363,23 +363,18 @@ module entsor
   !> \{
 
   !> indicates the data to post-process on the boundary mesh (the boundary mesh must
-  !> be associated with an active writer). Its value is
-  !> the product of the following integers, depending on the variables
-  !> that should be post-processed:
-  !> \ref ipstyp "ipstyp": \f$ y^+ \f$ at the boundary
-  !> \ref ipstft}: thermal flux at the boundary
-  !> ( \f$ W\,m^{-2} \f$ ), if a thermal scalar has been defined (\ref optcal::iscalt "iscalt")
-  !> With \ref ipstdv=1, none of these data are post-processed at the boundaries.
-  !> always useful
+  !> be associated with an active writer). \ref ipstdv "ipstdv"(key) indicates which
+  !> fields should be created and output on the boundary, with \c key in
+  !> \ref ipstfo, \ref ipstyp, \ref ipsttp, \ref ipstft, \ref ipsttb, \ref ipstnu.
   integer, save :: ipstdv(6)
 
-  !> post-processed property: Efforts (1: all; 2: tangent; 4: normal)
+  !> post-processed property: Efforts (0: none 1: all; 2: tangent; 4: normal)
   integer    ipstfo
-  !> post-processed property: yplus
+  !> post-processed property: \f$ y^+ \f$ at the boundary
   integer    ipstyp
-  !> post-processed property: Tplus
+  !> post-processed property :\f$ T^+ \f$ at the boundary
   integer    ipsttp
-  !> post-processed property: thermal flux rebuilt
+  !> post-processed property: thermal flux at the boundary (in  \f$ W\,m^{-2} \f$),
   integer    ipstft
   !> post-processed property: boundary temperature
   integer    ipsttb
