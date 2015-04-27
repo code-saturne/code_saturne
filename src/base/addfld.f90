@@ -218,8 +218,24 @@ ityloc = 3 ! boundary faces
 
 ! If postprocessing of boundary temperature or boundary layer Nusselt required
 if (iscalt.ge.0 .and. (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0)) then
-  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
-  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
+  call field_get_id_try('tplus', f_id)
+  ! If it already exists with a different location, EXIT
+  if (f_id.ge.0) then
+    call field_get_location(f_id, f_loc)
+    if (ityloc.ne.f_loc) call csexit(1)
+  else
+    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
+  endif
+
+  call field_get_id_try('tstar', f_id)
+  ! If it already exists with a different location, EXIT
+  if (f_id.ge.0) then
+    call field_get_location(f_id, f_loc)
+    if (ityloc.ne.f_loc) call csexit(1)
+  else
+    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
+  endif
+
 endif
 
 ilved = .true.
