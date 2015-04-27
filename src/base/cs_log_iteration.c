@@ -390,7 +390,7 @@ _log_array_info(const char        *prefix,
       cs_log_printf(CS_LOG_DEFAULT,
                     "%s%s  %14.5g  %14.5g  %14.5g\n",
                     prefix,
-                    tmp_s[c_id],
+                    tmp_s[0],
                     vmin[c_id],
                     vmax[c_id],
                     vsum[c_id] / n_g_elts);
