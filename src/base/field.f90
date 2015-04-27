@@ -160,6 +160,18 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function obtaining a field's location
+
+    function cs_f_field_location(f) result(f_loc) &
+      bind(C, name='cs_f_field_location')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value    :: f
+      integer(c_int)        :: f_loc
+    end function cs_f_field_location
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function obtaining a field's id by its name
 
     function cs_f_field_id_by_name_try(name) result(id) &
@@ -626,6 +638,37 @@ contains
     return
 
   end subroutine field_get_id
+
+  !=============================================================================
+
+  !> \brief  Return  the location of a given field.
+
+  !> \param[in]  f_id           field id
+  !> \param[out] f_loc          location of the field
+
+  subroutine field_get_location(f_id, f_loc)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in)         :: f_id
+    integer, intent(out)        :: f_loc
+
+    ! Local variables
+
+    integer(c_int) :: cf_id
+    type(c_ptr)    :: f
+
+    cf_id = f_id
+    f = cs_field_by_id(cf_id)
+
+    f_loc = cs_f_field_location(f)
+
+    return
+
+  end subroutine field_get_location
 
   !=============================================================================
 
