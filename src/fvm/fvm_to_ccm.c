@@ -3271,7 +3271,7 @@ _write_multidimensional_field_data(const char              *name,
       }
     }
 
-    /* For the other fields dimensions it's OK */
+    /* For the other field dimensions it's OK */
     else {
       strcpy(vect_short_name, short_name);
       if (i >= 3 || dimension >= 6)
@@ -3420,6 +3420,7 @@ _write_field(const char                 *name,
   default: /* Unknown */
     bft_error(__FILE__, __LINE__, 0,
               _("Unhandled field data format"));
+    dimensionality = kCCMIODimNull;
     break;
 
   }
@@ -3911,7 +3912,7 @@ fvm_to_ccm_export_nodal(void               *this_writer_p,
         sprintf(w->mesh_filename, "%s%s.ccmg", w->path, w->name);
         path_length = strlen(w->name) + strlen(".ccmg") + 1;
         BFT_REALLOC(w->mesh_basename, path_length, char);
-        sprintf(w->mesh_filename, "%s.ccmg", w->name);
+        sprintf(w->mesh_basename, "%s.ccmg", w->name);
       }
     }
 
