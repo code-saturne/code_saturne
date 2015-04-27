@@ -405,7 +405,7 @@ module field
     ! Interface to C function locking a key value
 
     subroutine cs_field_lock_key(f, k_id) &
-      bind(C, name='cs_field_locked_key')
+      bind(C, name='cs_field_lock_key')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), value    :: f
@@ -836,6 +836,36 @@ contains
     return
 
   end subroutine field_have_previous
+
+  !=============================================================================
+
+  !> \brief Interface to C function locking a key value
+
+  !> \param[in]   f_id        field id
+  !> \param[in]   k_id        key id
+
+  subroutine field_lock_key(f_id, k_id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer, intent(in) :: f_id           ! Id of defined field
+    integer, intent(in) :: k_id
+
+    ! Local variables
+
+    integer(c_int) :: cf_id, ck_id
+    type(c_ptr)    :: f
+
+    cf_id = f_id
+    ck_id = k_id
+    f = cs_field_by_id(cf_id)
+
+    call cs_field_lock_key(f, ck_id)
+
+  end subroutine field_lock_key
 
   !=============================================================================
 
