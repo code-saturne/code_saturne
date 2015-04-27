@@ -302,7 +302,7 @@ _get_ale_boundary_formula(const char *const label,
  *   nnod           <-> number of nodes
  *   b_face_vtx_lst <-- nodfbr
  *   impale         --> impale
- *   depale         --> depale
+ *   disale         --> disale
  *   dtref          <-- time step
  *   ttcabs         <-- current time
  *   ntcabs         <-- current iteration number
@@ -314,7 +314,7 @@ _uialcl_fixed_displacement(const char       *label,
                            const cs_lnum_t   end,
                            const cs_lnum_t   b_face_vtx_lst[],
                            int              *impale,
-                           cs_real_3_t      *depale,
+                           cs_real_3_t      *disale,
                            const double      dtref,
                            const double      ttcabs,
                            const int         ntcabs)
@@ -347,13 +347,13 @@ _uialcl_fixed_displacement(const char       *label,
   BFT_FREE(formula);
   mei_tree_destroy(ev);
 
-  /* Set depale and impale */
+  /* Set disale and impale */
   for (ii = begin; ii < end; ++ii) {
     cs_lnum_t inod = b_face_vtx_lst[ii];
     if (impale[inod] == 0) {
-      depale[inod][0] = X_mesh;
-      depale[inod][1] = Y_mesh;
-      depale[inod][2] = Z_mesh;
+      disale[inod][0] = X_mesh;
+      disale[inod][1] = Y_mesh;
+      disale[inod][2] = Z_mesh;
       impale[inod] = 1;
     }
   }
@@ -903,7 +903,7 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  *   nozppm       --> Max number of boundary conditions zone
  *   ialtyb       --> ialtyb
  *   impale       --> uialcl_fixed_displacement
- *   depale       --> See uialcl_fixed_displacement
+ *   disale       --> See uialcl_fixed_displacement
  *   dtref        --> time step
  *   ttcabs       --> current time
  *   ntcabs       --> current iteration number
@@ -920,7 +920,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
                                 const int *const    ifresf,
                                 int       *const    ialtyb,
                                 int       *const    impale,
-                                cs_real_3_t        *depale,
+                                cs_real_3_t        *disale,
                                 double    *const    dtref,
                                 double    *const    ttcabs,
                                 const int *const    ntcabs,
@@ -969,7 +969,7 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    nozppm,
         _uialcl_fixed_displacement(label,
                                    m->b_face_vtx_idx[ifbr],
                                    m->b_face_vtx_idx[ifbr+1],
-                                   m->b_face_vtx_lst, impale, depale,
+                                   m->b_face_vtx_lst, impale, disale,
                                    *dtref, *ttcabs, *ntcabs);
       }
       cs_gui_add_mei_time(cs_timer_wtime() - t0);

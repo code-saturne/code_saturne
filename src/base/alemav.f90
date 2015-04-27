@@ -36,10 +36,9 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[in]     itrale        number of the current ALE iteration
-!> \param[in]     dt            time step (per cell)
 !> \param[in]     impale        indicator of node displacement
 !> \param[in]     ialtyb        ALE Boundary type
-!> \param[in,out] depale        nodes displacements
+!> \param[in]     dt            time step (per cell)
 !> \param[in,out] xyzno0        nodes coordinates of the initial mesh
 !_______________________________________________________________________________
 
@@ -47,7 +46,7 @@ subroutine alemav &
  ( itrale ,                                                       &
    impale , ialtyb ,                                              &
    dt     ,                                                       &
-   depale , xyzno0 )
+   xyzno0 )
 
 !===============================================================================
 
@@ -66,6 +65,7 @@ use pointe
 use parall
 use period
 use mesh
+use albase, only:fdiale
 use field
 use field_operator
 
@@ -80,7 +80,7 @@ integer          itrale
 integer          impale(nnod), ialtyb(nfabor)
 
 double precision dt(ncelet)
-double precision depale(3,nnod), xyzno0(3,nnod)
+double precision xyzno0(3,nnod)
 
 ! Local variables
 
@@ -95,6 +95,7 @@ double precision, dimension(:,:,:), pointer :: clbale
 double precision, allocatable, dimension(:,:) :: dproj
 double precision, allocatable, dimension(:,:,:) :: gradm
 double precision, dimension(:,:), pointer :: mshvel, mshvela
+double precision, dimension(:,:), pointer :: disale, disala
 
 !===============================================================================
 
@@ -109,6 +110,8 @@ endif
 call field_get_val_v(ivarfl(iuma), mshvel)
 call field_get_val_prev_v(ivarfl(iuma), mshvela)
 
+call field_get_val_v(fdiale, disale)
+call field_get_val_prev_v(fdiale, disala)
 !===============================================================================
 ! 2.  MISE A JOUR DE LA GEOMETRIE
 !===============================================================================
@@ -137,12 +140,12 @@ call aledis &
    dt     , dproj  )
 
 ! Mise a jour du deplacement sur les noeuds ou on ne l'a pas impose
-!  (DEPALE a alors la valeur du deplacement au pas de temps precedent)
+!  (disale a alors la valeur du deplacement au pas de temps precedent)
 
 do inod = 1, nnod
   if (impale(inod).eq.0) then
     do idim = 1, 3
-      depale(idim,inod) = depale(idim,inod) + dproj(idim,inod)
+      disale(idim,inod) = disale(idim,inod) + dproj(idim,inod)
     enddo
   endif
 enddo
@@ -155,7 +158,8 @@ deallocate(gradm)
 
 do inod = 1, nnod
   do idim = 1, ndim
-    xyznod(idim,inod) = xyzno0(idim,inod) + depale(idim,inod)
+    disala(idim,inod) = xyznod(idim,inod) - xyzno0(idim,inod)
+    xyznod(idim,inod) = xyzno0(idim,inod) + disale(idim,inod)
   enddo
 enddo
 

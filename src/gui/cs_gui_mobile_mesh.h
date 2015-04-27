@@ -110,7 +110,7 @@ void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
  * nozppm       <-- Max number of boundary conditions zone
  * ialtyb       --> ialtyb
  * impale       --> uialcl_fixed_displacement
- * depale       --> See uialcl_fixed_displacement
+ * disale       --> See uialcl_fixed_displacement
  * dtref        <-- time step
  * ttcabs       <-- current time
  * ntcabs       <-- current iteration number
@@ -127,7 +127,7 @@ void CS_PROCF (uialcl, UIALCL) ( const int *const    nozppm,
                                  const int *const    ifresf,
                                  int       *const    ialtyb,
                                        int *const    impale,
-                                 cs_real_3_t        *depale,
+                                 cs_real_3_t        *disale,
                                  double *const       dtref,
                                  double *const       ttcabs,
                                  const    int *const ntcabs,

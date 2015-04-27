@@ -125,6 +125,7 @@ type(c_ptr) :: rp
 
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:), pointer :: voidfl
+double precision, dimension(:,:), pointer :: disale
 
 double precision, dimension(:), pointer :: cpro_vism1, cpro_vism2, cpro_vism3
 
@@ -786,10 +787,12 @@ if (iale.eq.1 .and. jale.eq.1) then
 
   itysup = 4
 
+  call field_get_val_v(fdiale, disale)
+
   call restart_read_real_3_t_compat                       &
          (rp, 'vertex_displacement',                      &
          'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
-         itysup, depale, ierror)
+         itysup, disale, ierror)
 
   nberro=nberro+ierror
 

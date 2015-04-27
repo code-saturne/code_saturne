@@ -121,6 +121,7 @@ integer, allocatable, dimension(:) :: isostd
 double precision, pointer, dimension(:)   :: dt => null()
 double precision, pointer, dimension(:)   :: porosi => null()
 double precision, pointer, dimension(:,:) :: propce => null()
+double precision, pointer, dimension(:,:) :: disale => null()
 
 double precision, pointer, dimension(:,:) :: frcxt => null()
 double precision, pointer, dimension(:)   :: prhyd => null()
@@ -540,9 +541,11 @@ if (isuite.eq.1) then
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
 
+    call field_get_val_v(fdiale, disale)
+
     do inod = 1, nnod
       do idim = 1, ndim
-        xyznod(idim,inod) = xyzno0(idim,inod) + depale(idim,inod)
+        xyznod(idim,inod) = xyzno0(idim,inod) + disale(idim,inod)
       enddo
     enddo
 
@@ -1012,7 +1015,7 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
   ( itrale ,                                               &
     impale , ialtyb ,                                      &
     dt     ,                                               &
-    depale , xyzno0 )
+    xyzno0 )
 
   endif
 

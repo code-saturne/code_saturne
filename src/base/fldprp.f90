@@ -74,8 +74,9 @@ implicit none
 character(len=80) :: f_label, f_name, s_name
 integer           :: ii
 integer           :: ippok
-integer           :: ipropp, idim1, idim6, iflid
-logical           :: has_previous
+integer           :: ipropp, idim1, idim3, idim6, iflid
+integer           :: type_flag, location_id, ipp
+logical           :: has_previous, interleaved
 
 !===============================================================================
 ! Interfaces
@@ -232,6 +233,31 @@ if (ippmod(idarcy).eq.1) then
   enddo
 
 endif
+
+! --- Mesh displacement for ALE
+
+if (iale.eq.1) then
+
+  has_previous = .true.
+  interleaved = .true.
+  idim3 = 3
+  f_name = 'disale'
+  f_label = 'Mesh displacement'
+  type_flag = FIELD_PROPERTY
+  location_id = 4 ! variables defined on vertices
+
+  call field_create(f_name, type_flag, location_id, idim3, interleaved, has_previous, &
+                  fdiale)
+  call field_set_key_int(fdiale, keyvis, 1)
+  call field_set_key_int(fdiale, keylog, 1)
+
+  ipp = field_post_id(fdiale)
+  call field_set_key_int(fdiale, keyipp, ipp)
+
+  call field_set_key_str(fdiale, keylbl, trim(f_label))
+
+endif
+
 
 ! User-defined properties
 

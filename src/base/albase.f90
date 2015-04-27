@@ -58,10 +58,8 @@ module albase
   integer, allocatable, dimension(:) :: ialtyb
   !> initial mesh coordinates
   double precision, allocatable, dimension(:,:) :: xyzno0
-  !> mesh displacement
-  double precision, allocatable, dimension(:,:) :: depale
-  !> mesh displacement of the previous time-step
-  double precision, allocatable, dimension(:,:) :: disala
+  !> Pointer to field over vertices: mesh displacement
+  integer, save :: fdiale
   !> \}
 
 contains
@@ -77,6 +75,7 @@ contains
 
     integer, intent(in) :: nfabor, nnod
 
+    integer inod
     if (iale.eq.1.or.imobil.eq.1) then
       allocate(xyzno0(3,nnod))
     endif
@@ -84,8 +83,6 @@ contains
     if (iale.eq.1) then
       allocate(impale(nnod))
       allocate(ialtyb(nfabor))
-      allocate(depale(3,nnod))
-      allocate(disala(3,nnod))
     endif
 
   end subroutine init_ale
@@ -102,8 +99,6 @@ contains
 
     if (iale.eq.1) then
       deallocate(impale)
-      deallocate(depale)
-      if (allocated(disala)) deallocate(disala)
       deallocate(ialtyb)
     endif
 

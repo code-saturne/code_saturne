@@ -642,9 +642,6 @@ endif
 if (iale.eq.1) then
   do ii = 1, nnod
     impale(ii) = 0
-    do idim = 1, 3
-      depale(idim,ii) = 0.d0
-    enddo
   enddo
 endif
 
