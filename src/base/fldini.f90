@@ -87,8 +87,7 @@ integer          keycpl, iflid
 integer          kdiftn, kturt, kfturt, keyvar
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv
-integer          f_id, kscavr, f_vis, f_log, f_dften, f_type, f_loc
-integer          kislts, ifctsl
+integer          f_id, kscavr, f_vis, f_log, f_dften, f_type
 integer          iopchr
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
@@ -420,71 +419,6 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1 &
                       ityloc, idim6, ilved, inoprv, ivstes)
  endif
 endif
-
-! Additional fields
-!------------------
-
-! Fields used to save postprocessing data
-
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
-ityloc = 3 ! boundary faces
-
-! If postprocessing of boundary temperature or boundary layer Nusselt required
-if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
-  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
-  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
-endif
-
-ilved = .true.
-
-if (ineedf.eq.1) then
-  call field_create('boundary_forces', itycat, ityloc, idim3, ilved, inoprv, &
-                    iforbr)
-endif
-
-if (ipstdv(ipstyp).ne.0) then
-  call field_get_id_try('yplus', f_id)
-
-  ! If it already exists with a different location, EXIT
-  if (f_id.ge.0) then
-    call field_get_location(f_id,f_loc)
-
-    if (ityloc.ne.f_loc) call csexit(1)
-    iyplbr = f_id
-  else
-    call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
-    call field_set_key_str(iyplbr, keylbl,'Yplus')
-  endif
-  ! yplus postreated and in the log
-  call field_set_key_int(iyplbr, keyvis, 1)
-  call field_set_key_int(iyplbr, keylog, 1)
-endif
-
-! Postprocessing of slope tests
-
-call field_get_key_id("slope_test_upwind_id", kislts)
-
-itycat = FIELD_POSTPROCESS
-ityloc = 1 ! cells
-ilved = .true.
-
-do ii = 1, nvar
-  f_id = ivarfl(ii)
-  call field_get_key_int(f_id, kislts, ifctsl)
-  if (ifctsl.eq.0) then
-    ! Now create matching field
-    if (iconv(ii).gt.0 .and. blencv(ii).gt.0 .and. isstpc(ii).eq.0) then
-      ! Build name and label
-      call field_get_name(f_id, f_name)
-      name  = trim(f_name) // '_slope_upwind'
-      call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
-      call field_set_key_int(ifctsl, keyvis, 1)
-    else
-      ifctsl = -1
-    endif
-    call field_set_key_int(f_id, kislts, ifctsl)
-  endif
-enddo
 
 !===============================================================================
 ! 3. Set some field keys

@@ -81,11 +81,11 @@ implicit none
 ! Local variables
 
 integer          ii
-integer          ifcvsl
+integer          ifcvsl, kislts, ifctsl
 integer          iflid, iflidp, iopchr, ivar
 integer          itycat, ityloc, idim1, idim3, idimf
 logical          ilved, iprev, inoprv, is_set
-integer          f_id
+integer          f_id, f_loc
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 
@@ -142,7 +142,7 @@ do ivar = 1, nvar
 enddo
 
 !===============================================================================
-! 1. Additional property fields
+! 2. Additional property fields
 !===============================================================================
 
 ! Add a scalar diffusivity when defined as variable.
@@ -207,6 +207,73 @@ enddo
 
 return
 
+!===============================================================================
+! 3. Additional postprocessing fields
+!===============================================================================
+
+! Fields used to save postprocessing data
+
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+ityloc = 3 ! boundary faces
+
+! If postprocessing of boundary temperature or boundary layer Nusselt required
+if (iscalt.ge.0 .and. (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0)) then
+  call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
+  call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
+endif
+
+ilved = .true.
+
+if (ineedf.eq.1) then
+  call field_create('boundary_forces', itycat, ityloc, idim3, ilved, inoprv, &
+                    iforbr)
+endif
+
+if (ipstdv(ipstyp).ne.0) then
+  call field_get_id_try('yplus', f_id)
+  ! If it already exists with a different location, exit
+  if (f_id.ge.0) then
+    call field_get_location(f_id,f_loc)
+    if (ityloc.ne.f_loc) then
+      write(nfecra,7050) ityloc
+      call csexit(1)
+    endif
+    iyplbr = f_id
+  else
+    call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
+    call field_set_key_str(iyplbr, keylbl,'Yplus')
+  endif
+  ! yplus postreated and in the log
+  call field_set_key_int(iyplbr, keyvis, 1)
+  call field_set_key_int(iyplbr, keylog, 1)
+endif
+
+! Postprocessing of slope tests
+
+call field_get_key_id("slope_test_upwind_id", kislts)
+
+itycat = FIELD_POSTPROCESS
+ityloc = 1 ! cells
+ilved = .true.
+
+do ii = 1, nvar
+  f_id = ivarfl(ii)
+  call field_get_key_int(f_id, kislts, ifctsl)
+  if (ifctsl.eq.0) then
+    ! Now create matching field
+    if (iconv(ii).gt.0 .and. blencv(ii).gt.0 .and. isstpc(ii).eq.0) then
+      ! Build name and label
+      call field_get_name(f_id, f_name)
+      name  = trim(f_name) // '_slope_upwind'
+      call field_create(name, itycat, ityloc, idim1, ilved, inoprv, ifctsl)
+      call field_set_key_int(ifctsl, keyvis, 1)
+    else
+      ifctsl = -1
+    endif
+    call field_set_key_int(f_id, kislts, ifctsl)
+  endif
+enddo
+
 !---
 ! Formats
 !---
@@ -222,16 +289,31 @@ return
 '@'                                                            ,/,&
 '@  Le champ ', i10, ' represente la variance'                 ,/,&
 '@    des fluctuations du champ ', i10                         ,/,&
-'@    d''apres la valeur du mot cle first_moment_id           ',/,&
-'@                                                            ',/,&
-'@  Le mot cle scalar_diffusivity_id                          ',/,&
-'@    ne doit pas etre renseigne.                             ',/,&
-'@  Il sera pris automatiquement egal a celui du scalaire     ',/,&
+'@    d''apres la valeur du mot cle first_moment_id'           ,/,&
+'@'                                                            ,/,&
+'@  Le mot cle scalar_diffusivity_id'                          ,/,&
+'@    ne doit pas etre renseigne.'                             ,/,&
+'@  Il sera pris automatiquement egal a celui du scalaire'     ,/,&
 '@    associe, soit ',i10                                      ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
+'@'                                                            ,/,&
+'@  Le calcul ne sera pas execute.'                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
+
+ 7050 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
+'@    ========='                                               ,/,&
+'@'                                                            ,/,&
+'@  Le champ yplus (reserve) ne peut etre cree sur'            ,/,&
+'@    les faces de bord, car il a deja ete cree sur'           ,/,&
+'@    le support ', i10                                        ,/,&
+'@'                                                            ,/,&
+'@  Le calcul ne sera pas execute.'                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
 
 #else
 
@@ -247,12 +329,27 @@ return
 '@    according to value of keyword first_moment_id'           ,/,&
 '@'                                                            ,/,&
 '@  The scalar_diffusivity_id keyword must not be set'         ,/,&
-'@  It will be automatically set equal to that of the         ',/,&
+'@  It will be automatically set equal to that of the'         ,/,&
 '@    associated scalar ',i10                                  ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed.                       ',/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be executed.'                       ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
+
+ 7050 format(                                                     &
+'@'                                                            ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
+'@    ======='                                                 ,/,&
+'@'                                                            ,/,&
+'@  Field yplus (reserved) cannot be created on'               ,/,&
+'@    boundary faces, as it has already been created on'       ,/,&
+'@    location ', i10                                          ,/,&
+'@'                                                            ,/,&
+'@  The calculation cannot be executed.'                       ,/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@'                                                            ,/)
 
 #endif
 
