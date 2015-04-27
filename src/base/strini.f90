@@ -330,9 +330,9 @@ else if (nbstru.gt.0) then
 endif
 write(nfecra,3000)
 
-!----
-! FORMATS
-!----
+!--------
+! Formats
+!--------
 
 #if defined(_CS_LANG_FR)
 
@@ -352,16 +352,16 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2000 format(                                                           &
-    /,'TTES PHASES  : MODE COUPLAGE DE STRUCTURES NON ACTIVE  ',/,&
+ 2000 format( &
+    /,'MODE COUPLAGE DE STRUCTURES NON ACTIVE  ',/,&
       '                 NBSTRU = ',I10                         ,/)
- 2001 format(                                                           &
+ 2001 format( &
       '               NALIMX INUTILE ET POSITIONNE A 1        ',/)
- 2002 format(                                                           &
-    /,'TTES PHASES  : MODE COUPLAGE CODE_ASTER NON ACTIVE     ',/,&
+ 2002 format( &
+    /,'MODE COUPLAGE CODE_ASTER NON ACTIVE     ',/,&
       '                 NBASTE = ',I10                         ,/)
- 2010 format(                                                           &
-    /,'TTES PHASES  : MODE COUPLAGE DE STRUCTURES ACTIVE      ',/,&
+ 2010 format( &
+    /,'MODE COUPLAGE DE STRUCTURES ACTIVE      ',/,&
       '                 AVEC NBSTRU = ',I10   ,' STRUCTURE(S) ',/,&
       '                                                       ',/,&
       '               COEFFICIENTS DE NEWMARK :               ',/,&
@@ -371,25 +371,25 @@ write(nfecra,3000)
       '                                                       ',/,&
       '               FICHIERS HISTORIQUES DES STRUCTURES :   ',/,&
       '                 IHISTR = ',I4,' ( 1 : active)         ',/)
- 2012 format(                                                           &
-    /,'TTES PHASES  : MODE COUPLAGE CODE_ASTER ACTIVE         ',/,&
+ 2012 format( &
+    /,'MODE COUPLAGE CODE_ASTER ACTIVE         ',/,&
       '                 AVEC NBASTE = ',I10   ,' STRUCTURE(S) ',/)
- 2020 format(                                                           &
-    /,'TTES PHASES  : SCHEMA DE COUPLAGE EXPLICITE ACTIVE     ',/,&
+ 2020 format( &
+    /,'SCHEMA DE COUPLAGE EXPLICITE ACTIVE     ',/,&
       '                                                       ',/,&
       '               COEFFICIENTS DU SCHEMA :                ',/,&
       '                 AEXXST = ',E12.4                       ,/,&
       '                 BEXXST = ',E12.4                       ,/,&
       '                 CFOPRE = ',E12.4                       ,/)
- 2030 format(                                                           &
-    /,'TTES PHASES  : SCHEMA DE COUPLAGE IMPLICITE ACTIVE     ',/,&
+ 2030 format( &
+    /,'SCHEMA DE COUPLAGE IMPLICITE ACTIVE     ',/,&
       '                                                       ',/,&
       '               NB DE SOUS-ITERATIONS MAX. : ',I10       ,/,&
       '               SEUIL DE CONVERGENCE       : ',E12.4     ,/)
 
- 3000 format(                                                           &
+ 3000 format( &
 '-------------------------------------------------------------',/)
- 4000 format(                                                           &
+ 4000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -407,7 +407,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4001 format(                                                           &
+ 4001 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -426,7 +426,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4002 format(                                                           &
+ 4002 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -444,7 +444,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4003 format(                                                           &
+ 4003 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -466,7 +466,7 @@ write(nfecra,3000)
 
 #else
 
- 1000 format(                                                           &
+ 1000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -482,16 +482,16 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 2000 format(                                                           &
-    /,'ALL PHASES: COUPLING MODE FOR STRUCTURES NOT ACTIVATED ',/,&
+ 2000 format( &
+    /,'COUPLING MODE FOR STRUCTURES NOT ACTIVATED ',/,&
       '              NBSTRU = ',I10                            ,/)
- 2001 format(                                                           &
+ 2001 format( &
       '            NALIMX USELESS AND SET TO 1                ',/)
- 2002 format(                                                           &
-    /,'ALL PHASES: CODE_ASTER COUPLING MODE NOT ACTIVATED     ',/,&
+ 2002 format( &
+    /,'CODE_ASTER COUPLING MODE NOT ACTIVATED     ',/,&
       '              NBASTE = ',I10                            ,/)
- 2010 format(                                                           &
-    /,'ALL PHASES: COUPLING MODE FOR STRUCTURES ACTIVATED     ',/,&
+ 2010 format( &
+    /,'COUPLING MODE FOR STRUCTURES ACTIVATED     ',/,&
       '              WITH NBSTRU = ',I10   ,' STRUCTURE(S)    ',/,&
       '                                                       ',/,&
       '            NEWMARK COEFFICIENTS:                      ',/,&
@@ -501,25 +501,25 @@ write(nfecra,3000)
       '                                                       ',/,&
       '            MONITORING FILES FOR STRUCTURES:           ',/,&
       '                 IHISTR = ',I4,' ( 1 : activated)      ',/)
- 2012 format(                                                           &
-    /,'ALL PHASES: CPDE_ASTER COUPLING MODE ACTIVATED         ',/,&
+ 2012 format( &
+    /,'CODE_ASTER COUPLING MODE ACTIVATED         ',/,&
       '              WITH NBASTE = ',I10   ,' STRUCTURE(S)    ',/)
- 2020 format(                                                           &
-    /,'ALL PHASES: EXPLICIT SCHEME FOR COUPLING ACTIVATED     ',/,&
+ 2020 format( &
+    /,'EXPLICIT SCHEME FOR COUPLING ACTIVATED     ',/,&
       '                                                       ',/,&
       '            SCHEME COEFFICIENTS:                       ',/,&
       '              AEXXST = ',E12.4                          ,/,&
       '              BEXXST = ',E12.4                          ,/,&
       '              CFOPRE = ',E12.4                          ,/)
  2030 format(                                                           &
-    /,'ALL PHASES: IMPLICIT SCHEME FOR COUPING ACTIVATED      ',/,&
+    /,'IMPLICIT SCHEME FOR COUPING ACTIVATED      ',/,&
       '                                                       ',/,&
       '            NB OF MAX INNER ITERATIONS : ',I10          ,/,&
       '            CONVERGENCE THRESHOLD      : ',E12.4        ,/)
 
- 3000 format(                                                           &
+ 3000 format( &
 '-------------------------------------------------------------',/)
- 4000 format(                                                           &
+ 4000 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -536,7 +536,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4001 format(                                                           &
+ 4001 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -555,7 +555,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4002 format(                                                           &
+ 4002 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -573,7 +573,7 @@ write(nfecra,3000)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 4003 format(                                                           &
+ 4003 format( &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -596,7 +596,7 @@ write(nfecra,3000)
 #endif
 
 !----
-! FIN
+! End
 !----
 
 end subroutine
