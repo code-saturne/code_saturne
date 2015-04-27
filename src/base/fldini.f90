@@ -87,7 +87,7 @@ integer          keycpl, iflid
 integer          kdiftn, kturt, kfturt, keyvar
 integer          itycat, ityloc, idim1, idim3, idim6
 logical          ilved, iprev, inoprv
-integer          f_id, kscavr, f_vis, f_log, f_dften, f_type
+integer          f_id, kscavr, f_vis, f_log, f_dften, f_type, f_loc
 integer          kislts, ifctsl
 integer          iopchr
 integer          iscdri, icla, iclap
@@ -443,12 +443,21 @@ if (ineedf.eq.1) then
 endif
 
 if (ipstdv(ipstyp).ne.0) then
-  call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
+  call field_get_id_try('yplus', f_id)
+
+  ! If it already exists with a different location, EXIT
+  if (f_id.ge.0) then
+    call field_get_location(f_id,f_loc)
+
+    if (ityloc.ne.f_loc) call csexit(1)
+    iyplbr = f_id
+  else
+    call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
+    call field_set_key_str(iyplbr, keylbl,'Yplus')
+  endif
   ! yplus postreated and in the log
-  call field_set_key_str(iyplbr, keylbl,'Yplus')
   call field_set_key_int(iyplbr, keyvis, 1)
-!FIXME adapt the log before
-!  call field_set_key_int(iyplbr, keylog, 1)
+  call field_set_key_int(iyplbr, keylog, 1)
 endif
 
 ! Postprocessing of slope tests
