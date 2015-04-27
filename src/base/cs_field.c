@@ -260,6 +260,9 @@ int
 cs_f_field_id_by_name(const char *name);
 
 int
+cs_f_field_location(const cs_field_t *f);
+
+int
 cs_f_field_id_by_name_try(const char *name);
 
 void
@@ -738,6 +741,28 @@ cs_f_field_id_by_name(const char *name)
   cs_field_t  *f = cs_field_by_name(name);
 
   retval = f->id;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the location of a field.
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   f <-- field
+ *
+ * returns:
+ *   location
+ *----------------------------------------------------------------------------*/
+
+int
+cs_f_field_location(const cs_field_t *f)
+{
+  int retval;
+
+  retval = f->location_id;
 
   return retval;
 }
