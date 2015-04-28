@@ -690,7 +690,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.scalar = str(text)
         self.lineEditDiff.setText(str(self.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
 
-        self.modelDiff.setItem(str_model=self.m_sca.getScalarDiffusivityChoice(self.scalar))
+        mdl = self.m_sca.getScalarDiffusivityChoice(self.scalar)
+
+        self.modelDiff.setItem(str_model=mdl)
+
+        if  mdl!= 'variable':
+            self.pushButtonDiff.setEnabled(False)
+            setGreenColor(self.pushButtonDiff, False)
+        else:
+            self.pushButtonDiff.setEnabled(True)
+            setGreenColor(self.pushButtonDiff, True)
 
 
     def __changeChoice(self, text, sym, tag):
