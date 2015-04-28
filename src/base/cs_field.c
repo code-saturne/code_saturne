@@ -376,7 +376,7 @@ _field_create(const char   *name,
 
   /* Check this name was not already used */
 
-  if (cs_map_name_to_id_try(_field_map, name) != -1)
+  if (f != NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("Error creating field:\n"
                 "  name:        \"%s\"\n"
