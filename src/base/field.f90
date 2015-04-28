@@ -137,6 +137,23 @@ module field
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning or creating a field descriptor
+
+    function cs_field_find_or_create(name, type_flag, location_id, dim,      &
+                                     interleaved) result(f) &
+      bind(C, name='cs_field_find_or_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      integer(c_int), value                                    :: type_flag
+      integer(c_int), value                                    :: location_id
+      integer(c_int), value                                    :: dim
+      logical(c_bool), value                                   :: interleaved
+      type(c_ptr)                                              :: f
+    end function cs_field_find_or_create
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function obtaining the number of fields
 
     function cs_f_field_n_fields() result(id) &
@@ -588,6 +605,69 @@ contains
     return
 
   end subroutine field_create
+
+  !=============================================================================
+
+  !> \brief  Return the id of a field matching a given name and attributes,
+  !>         creating it if necessary.
+
+  !> If a field with the same name but different attributes is present,
+  !> this is considered an error.
+
+  !> The default number of time values associated with a field created through
+  !> this function is 1. To modify it, use \ref cs_field_set_n_time_vals.
+
+  !> \param[in]  name           field name
+  !> \param[in]  type_flag      field categories (may be added)
+  !> \param[in]  location_id    field location type:
+  !>                              0: none
+  !>                              1: cells
+  !>                              2: interior faces
+  !>                              3: interior faces
+  !>                              4: vertices
+  !> \param[in]  dim            field dimension
+  !> \param[in]  interleaved    .true. if values interleaved
+  !>                            (ignored if < 2 components)
+  !> \param[out] id             id of defined field
+
+  subroutine field_find_or_create(name, type_flag, location_id, dim,   &
+                                  interleaved,                         &
+                                  id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+    integer, intent(in)          :: type_flag
+    integer, intent(in)          :: location_id
+    integer, intent(in)          :: dim
+    logical, intent(in)          :: interleaved
+    integer, intent(out)         :: id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: c_type_flag
+    integer(c_int) :: c_location_id
+    integer(c_int) :: c_dim
+    logical(c_bool) :: c_interleaved
+    type(c_ptr)     :: f
+
+    c_name = trim(name)//c_null_char
+    c_type_flag = type_flag
+    c_location_id = location_id
+    c_dim = dim
+    c_interleaved = interleaved
+
+    f = cs_field_find_or_create(c_name, c_type_flag, c_location_id, c_dim, &
+                                c_interleaved)
+    id = cs_f_field_id_by_name(c_name)
+
+    return
+
+  end subroutine field_find_or_create
 
   !=============================================================================
 

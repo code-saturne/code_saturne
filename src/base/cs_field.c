@@ -372,9 +372,21 @@ _field_create(const char   *name,
   size_t l = strlen(name);
   const char *addr_0 = NULL, *addr_1 = NULL;
 
-  cs_field_t *f =  NULL;
+  cs_field_t *f = cs_field_by_name_try(name);
 
-  cs_base_check_bool(&interleaved);
+  /* Check this name was not already used */
+
+  if (cs_map_name_to_id_try(_field_map, name) != -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error creating field:\n"
+                "  name:        \"%s\"\n"
+                "  location_id: %d\n"
+                "  dimension:   %d\n\n"
+                "A field with that name has already been defined:\n"
+                "  id:          %d\n"
+                "  location_id: %d\n"
+                "  dimension:   %d"),
+              name, location_id, dim, f->id, f->location_id, f->dim);
 
   /* Initialize if necessary */
 
@@ -395,7 +407,7 @@ _field_create(const char   *name,
                 name);
   }
 
-  /* Find or insert entry in map */
+  /* Insert entry in map */
 
   field_id = cs_map_name_to_id(_field_map, name);
 
@@ -1373,7 +1385,7 @@ cs_field_n_fields(void)
  * \param[in]  type_flag     mask of field property and category values
  * \param[in]  location_id   id of associated location
  * \param[in]  dim           field dimension (number of components)
- * \param[in]  interleaved   indicate if values ar interleaved
+ * \param[in]  interleaved   indicate if values are interleaved
  *                           (ignored if number of components < 2)
  * \param[in]  has_previous  maintain values at the previous time step ?
  *
@@ -1389,6 +1401,8 @@ cs_field_create(const char   *name,
                 bool          interleaved,
                 bool          has_previous)
 {
+  cs_base_check_bool(&interleaved);
+
   cs_field_t  *f =  _field_create(name,
                                   type_flag,
                                   location_id,
@@ -1402,6 +1416,81 @@ cs_field_create(const char   *name,
   BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
   for (int i = 0; i < f->n_time_vals; i++)
     f->vals[i] = NULL;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a field matching a given name and attributes,
+ *        creating it if necessary.
+ *
+ * If a field with the same name but different attributes is present,
+ * this is considered an error.
+ *
+ * The default number of time values associated with a field created through
+ * this function is 1. To modify it, use \ref cs_field_set_n_time_vals.
+ *
+ * \param[in]  name          field name
+ * \param[in]  type_flag     mask of field property and category values
+ * \param[in]  location_id   id of associated location
+ * \param[in]  dim           field dimension (number of components)
+ * \param[in]  interleaved   indicate if values ar interleaved
+ *                           (ignored if number of components < 2)
+ *
+ * \return  pointer to field
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_find_or_create(const char   *name,
+                        int           type_flag,
+                        int           location_id,
+                        int           dim,
+                        bool          interleaved)
+{
+  cs_base_check_bool(&interleaved);
+
+  cs_field_t *f = cs_field_by_name_try(name);
+
+  if (f != NULL) {
+
+    if (   type_flag != f->type || location_id != f->location_id
+        || dim != f->dim || interleaved != f->interleaved) {
+      char ci[] = {'t', 't'};
+      if (! interleaved)    ci[0] = 'f';
+      if (! f->interleaved) ci[1] = 'f';
+      bft_error(__FILE__, __LINE__, 0,
+                _("Mismatch in field definitions:\n"
+                  "  name:        \"%s\"\n"
+                  "  type_flag:   %d\n"
+                  "  location_id: %d\n"
+                  "  dimension:   %d\n\n"
+                  "  interleaved  %c\n\n"
+                  "A previous definition for that has attributes:\n"
+                  "  id:          %d\n"
+                  "  type_flag:   %d\n"
+                  "  location_id: %d\n"
+                  "  dimension:   %d\n\n"
+                  "  interleaved: %c"),
+                name, type_flag, location_id, dim, ci[0],
+                f->id, f->type, f->location_id, f->dim, ci[1]);
+    }
+
+  }
+  else {
+
+    f =  _field_create(name,
+                       type_flag,
+                       location_id,
+                       dim,
+                       interleaved);
+
+    BFT_MALLOC(f->vals, f->n_time_vals, cs_real_t *);
+    for (int i = 0; i < f->n_time_vals; i++)
+      f->vals[i] = NULL;
+
+  }
 
   return f;
 }

@@ -223,31 +223,8 @@ if (iscalt.le.0) then
 endif
 
 if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
-
-  call field_get_id_try('tplus', f_id)
-  ! If it already exists with a different location, EXIT
-  if (f_id.ge.0) then
-    call field_get_location(f_id, f_loc)
-    if (ityloc.ne.f_loc) then
-      write(nfecra,7050) 'tplus', ityloc
-      call csexit(1)
-    endif
-  else
-    call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
-  endif
-
-  call field_get_id_try('tstar', f_id)
-  ! If it already exists with a different location, EXIT
-  if (f_id.ge.0) then
-    call field_get_location(f_id, f_loc)
-    if (ityloc.ne.f_loc) then
-      write(nfecra,7050) 'tstar', ityloc
-      call csexit(1)
-    endif
-  else
-    call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
-  endif
-
+  call field_find_or_create('tplus', itycat, ityloc, idim1, ilved, iflid)
+  call field_find_or_create('tstar', itycat, ityloc, idim1, ilved, iflid)
 endif
 
 ilved = .true.
@@ -262,22 +239,14 @@ endif
 ! In case of condensation or y+ postprocessing, create appropriate field
 
 if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
-  call field_get_id_try('yplus', f_id)
-  ! If it already exists with a different location, exit
-  if (f_id.ge.0) then
-    call field_get_location(f_id,f_loc)
-    if (ityloc.ne.f_loc) then
-      write(nfecra,7050) 'yplus', ityloc
-      call csexit(1)
-    endif
-    iyplbr = f_id
-  else
-    call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
+  call field_get_id_try('yplus', f_id) ! Test if pre-existing
+  call field_find_or_create('yplus', itycat, ityloc, idim1, ilved, iyplbr)
+  if (f_id .lt. 0) then                ! Set some properties if new)
     call field_set_key_str(iyplbr, keylbl, 'Yplus')
+    call field_set_key_int(iyplbr, keylog, 1)
   endif
-  ! yplus postprocessed if required, logged always
+  ! yplus postprocessed if required
   if (ipstdv(ipstyp).ne.0) call field_set_key_int(iyplbr, keyvis, 1)
-  call field_set_key_int(iyplbr, keylog, 1)
 endif
 
 ! Postprocessing of slope tests
@@ -332,21 +301,6 @@ enddo
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
 
- 7050 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@'                                                            ,/,&
-'@  Le champ ', a, '(reserve) ne peut etre cree sur'           ,/,&
-'@    les faces de bord, car il a deja ete cree sur'           ,/,&
-'@    le support ', i10                                        ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne sera pas execute.'                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
 #else
 
  7040 format(                                                     &
@@ -363,21 +317,6 @@ enddo
 '@  The scalar_diffusivity_id keyword must not be set'         ,/,&
 '@  It will be automatically set equal to that of the'         ,/,&
 '@    associated scalar ',i10                                  ,/,&
-'@'                                                            ,/,&
-'@  The calculation cannot be executed.'                       ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
- 7050 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
-'@    ======='                                                 ,/,&
-'@'                                                            ,/,&
-'@  Field ', a, ' (reserved) cannot be created on'             ,/,&
-'@    boundary faces, as it has already been created on'       ,/,&
-'@    location ', i10                                          ,/,&
 '@'                                                            ,/,&
 '@  The calculation cannot be executed.'                       ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
