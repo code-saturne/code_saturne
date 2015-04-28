@@ -102,7 +102,7 @@ integer, allocatable, dimension(:) :: lstelt
 ! Initialization
 !===============================================================================
 
-if (ineedf.eq.1) call field_get_val_v(iforbr, bfprp_for)
+if (iforbr.ge.0) call field_get_val_v(iforbr, bfprp_for)
 
 ! Allocate a temporary array for cells or interior/boundary faces selection
 allocate(lstelt(max(ncel,nfac,nfabor)))
@@ -114,7 +114,7 @@ allocate(lstelt(max(ncel,nfac,nfabor)))
 ! If efforts have been calculated correctly:
 
 !< [example_1]
-if (ineedf.eq.1) then
+if (iforbr.ge.0) then
 
   do ii = 1, ndim
     xfor(ii) = 0.d0

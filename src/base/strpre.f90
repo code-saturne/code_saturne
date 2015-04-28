@@ -40,7 +40,7 @@ subroutine strpre &
 !__________________!____!_____!________________________________________________!
 ! itrale           ! e  ! <-- ! numero d'iteration pour l'ale                  !
 ! italim           ! e  ! <-- ! numero d'iteration couplage implicite          !
-! ineedf           ! e  ! <-- ! indicateur de sauvegarde des flux              !
+! ineefl           ! e  ! <-- ! indicateur de sauvegarde des flux              !
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
 ! flmalf(nfac)     ! tr ! --> ! sauvegarde du flux de masse faces int          !

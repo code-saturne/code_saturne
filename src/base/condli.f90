@@ -299,7 +299,7 @@ if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
 if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
-if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
+if (iforbr.ge.0 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
 ! Pointers to velcocity BC coefficients
 call field_get_coefa_v(ivarfl(iu), coefau)
@@ -545,7 +545,7 @@ endif
 
 ! ---> Compute the velocity in I' for boundary cells
 
-if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.ineedf.eq.1) then
+if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
 
   if (ntcabs.gt.1) then
 
@@ -2539,7 +2539,7 @@ endif
 ! 15. Compute stresses at boundary (step 1 over 5)
 !===============================================================================
 
-if (ineedf.eq.1 .and. iterns.eq.1) then
+if (iforbr.ge.0 .and. iterns.eq.1) then
 
   ! Coupled solving of the velocity components
   do ifac = 1, nfabor

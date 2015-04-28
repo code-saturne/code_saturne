@@ -279,10 +279,10 @@ if (iroext.gt.0.or.idilat.gt.1) then
 endif
 
 if (iappel.eq.2) then
-  if (ineedf.eq.1 .and. iterns.eq.1 .or. icavit.ge.0) then
+  if (iforbr.ge.0 .and. iterns.eq.1 .or. icavit.ge.0) then
     call field_get_val_s(ivarfl(ipr), cvara_pr)
   endif
-  if(ineedf.eq.1 .and. iterns.eq.1                                          &
+  if(iforbr.ge.0 .and. iterns.eq.1                                          &
      .and. (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
     call field_get_val_s(ivarfl(ik), cvara_k)
   endif
@@ -295,10 +295,10 @@ if (iappel.eq.2) then
     call field_get_val_s(ivarfl(ir13), cvara_r13)
   endif
 else
-  if (ineedf.eq.1 .and. iterns.eq.1 .or. icavit.ge.0) then
+  if (iforbr.ge.0 .and. iterns.eq.1 .or. icavit.ge.0) then
     call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
   endif
-  if(ineedf.eq.1 .and. iterns.eq.1                                          &
+  if(iforbr.ge.0 .and. iterns.eq.1                                          &
      .and. (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) .and. igrhok.eq.1) then
       call field_get_val_prev_s(ivarfl(ik), cvara_k)
   endif
@@ -312,7 +312,7 @@ else
   endif
 endif
 
-if (ineedf.eq.1 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
+if (iforbr.ge.0 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
 ! Theta relatif aux termes sources explicites
 thets  = thetsn
@@ -398,7 +398,7 @@ endif
 !    et on la transforme en pression totale
 !    On se limite a la premiere iteration (pour faire simple par
 !      rapport a la partie issue de condli, hors boucle)
-if (ineedf.eq.1 .and. iterns.eq.1) then
+if (iforbr.ge.0 .and. iterns.eq.1) then
   call field_get_coefa_s (ivarfl(ipr), coefa_p)
   call field_get_coefb_s (ivarfl(ipr), coefb_p)
   do ifac = 1, nfabor
@@ -789,7 +789,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   endif
 
   ! Calcul des efforts aux parois (partie 3/5), si demande
-  if (ineedf.eq.1) then
+  if (iforbr.ge.0) then
     call field_get_coefa_s (ivarfl(ik), coefa_k)
     call field_get_coefb_s (ivarfl(ik), coefb_k)
     do ifac = 1, nfabor
@@ -1039,7 +1039,7 @@ if(itytur.eq.3.and.iterns.eq.1) then
 
   !     Calcul des efforts aux bords (partie 5/5), si necessaire
 
-  if (ineedf.eq.1) then
+  if (iforbr.ge.0) then
     do ifac = 1, nfabor
       do isou = 1, 3
         forbr(isou,ifac) = forbr(isou,ifac) + tflmab(isou,ifac)

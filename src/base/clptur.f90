@@ -156,7 +156,6 @@ integer          modntl
 integer          iuntur
 integer          nlogla, nsubla, iuiptn
 integer          ifccp
-integer          yplus_id
 
 double precision rnx, rny, rnz, rxnn
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -245,8 +244,7 @@ sqrcmu = sqrt(cmu)
 
 yplbr => null()
 
-call field_get_id_try('yplus', yplus_id)
-if (yplus_id.ge.0) call field_get_val_s(yplus_id, yplbr)
+if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
 ! --- Gradient and flux boundary conditions
@@ -734,7 +732,7 @@ do ifac = 1, nfabor
     endif
 
     ! Save yplus if post-processed or condensation modelling
-    if (yplus_id.ge.0) then
+    if (iyplbr.ge.0) then
       yplbr(ifac) = yplus-dplus
     endif
 

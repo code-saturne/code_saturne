@@ -985,29 +985,6 @@ if (idtvar.lt.0) then
   arak = arak/max(relaxv(iu),epzero)
 endif
 
-! ---> INEEDF
-!     Si on a demande un posttraitement des efforts aux bords, on
-!     les calcule !
-if (ipstdv(ipstfo).ne.0) then
-  ineedf = 1
-endif
-!     Si on est en ALE, par defaut on calcule les efforts aux bords
-!     (un test eventuel sur la presence de structures viendrait trop
-!     tard)
-if (iale.eq.1) ineedf = 1
-
-! If no thermal variable is present, do not try to
-! postprocess boundary temperature or Nusselt
-if (iscalt.le.0) then
-  ipstdv(ipsttb) = 0
-  ipstdv(ipstnu) = 0
-endif
-
-! If condensation, yplus is needed
-if (icond.ge.0) then
-  ipstdv(ipstyp) = 1
-endif
-
 !===============================================================================
 ! 4. TABLEAUX DE cstphy
 !===============================================================================

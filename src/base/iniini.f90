@@ -456,6 +456,9 @@ iprtot = 0
 
 ibeta  = 0
 
+iforbr = -1
+iyplbr = -1
+
 ! --- Ici tout numvar est initialise.
 
 !===============================================================================
@@ -971,9 +974,6 @@ yplmxy = 200.d0
 
 ! --- Methode des vortex
 ivrtex = 0
-
-! --- Calcul des efforts aux parois
-ineedf = 0
 
 ! --- Ici tout optcal.f90 est initialise
 

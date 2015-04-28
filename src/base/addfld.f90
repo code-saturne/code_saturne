@@ -216,13 +216,24 @@ return
 itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces
 
-! If postprocessing of boundary temperature or boundary layer Nusselt required
-if (iscalt.ge.0 .and. (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0)) then
+! If postprocessing of boundary temperature or boundary layer Nusselt required,
+! create appropriate fields; check that a thermal variable is present first
+
+if (iscalt.le.0) then
+  ipstdv(ipsttb) = 0
+  ipstdv(ipstnu) = 0
+endif
+
+if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
+
   call field_get_id_try('tplus', f_id)
   ! If it already exists with a different location, EXIT
   if (f_id.ge.0) then
     call field_get_location(f_id, f_loc)
-    if (ityloc.ne.f_loc) call csexit(1)
+    if (ityloc.ne.f_loc) then
+      write(nfecra,7050) 'tplus', ityloc
+      call csexit(1)
+    endif
   else
     call field_create('tplus', itycat, ityloc, idim1, ilved, inoprv, iflid)
   endif
@@ -231,7 +242,10 @@ if (iscalt.ge.0 .and. (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0)) then
   ! If it already exists with a different location, EXIT
   if (f_id.ge.0) then
     call field_get_location(f_id, f_loc)
-    if (ityloc.ne.f_loc) call csexit(1)
+    if (ityloc.ne.f_loc) then
+      write(nfecra,7050) 'tstar', ityloc
+      call csexit(1)
+    endif
   else
     call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, iflid)
   endif
@@ -240,24 +254,28 @@ endif
 
 ilved = .true.
 
-if (ineedf.eq.1) then
+! In case of ALE or boundary efforts postprocessing, create appropriate field
+
+if (iale.eq.1 .or. ipstdv(ipstfo).ne.0) then
   call field_create('boundary_forces', itycat, ityloc, idim3, ilved, inoprv, &
                     iforbr)
 endif
 
-if (ipstdv(ipstyp).ne.0) then
+! In case of condensation or y+ postprocessing, create appropriate field
+
+if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
   call field_get_id_try('yplus', f_id)
   ! If it already exists with a different location, exit
   if (f_id.ge.0) then
     call field_get_location(f_id,f_loc)
     if (ityloc.ne.f_loc) then
-      write(nfecra,7050) ityloc
+      write(nfecra,7050) 'yplus', ityloc
       call csexit(1)
     endif
     iyplbr = f_id
   else
     call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
-    call field_set_key_str(iyplbr, keylbl,'Yplus')
+    call field_set_key_str(iyplbr, keylbl, 'Yplus')
   endif
   ! yplus postreated and in the log
   call field_set_key_int(iyplbr, keyvis, 1)
@@ -323,7 +341,7 @@ enddo
 '@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
 '@    ========='                                               ,/,&
 '@'                                                            ,/,&
-'@  Le champ yplus (reserve) ne peut etre cree sur'            ,/,&
+'@  Le champ ', a, '(reserve) ne peut etre cree sur'           ,/,&
 '@    les faces de bord, car il a deja ete cree sur'           ,/,&
 '@    le support ', i10                                        ,/,&
 '@'                                                            ,/,&
@@ -359,7 +377,7 @@ enddo
 '@ @@ WARNING: STOP AT THE INITIAL DATA VERIFICATION'          ,/,&
 '@    ======='                                                 ,/,&
 '@'                                                            ,/,&
-'@  Field yplus (reserved) cannot be created on'               ,/,&
+'@  Field ', a, ' (reserved) cannot be created on'             ,/,&
 '@    boundary faces, as it has already been created on'       ,/,&
 '@    location ', i10                                          ,/,&
 '@'                                                            ,/,&

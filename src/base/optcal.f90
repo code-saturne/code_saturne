@@ -935,13 +935,6 @@ module optcal
   !          yplus moins precis est suffisant
   double precision, save :: yplmxy
 
-  !TODO move it elsewhere?
-  ! Parametres numeriques pour le calcul des efforts aux bords
-
-  !> ineedf : = 1 on calcule les efforts aux parois
-  !>          = 0 on ne calcule pas les efforts aux parois
-  integer, save :: ineedf
-
   !> \}
 
   !----------------------------------------------------------------------------
