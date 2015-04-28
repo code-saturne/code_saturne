@@ -1184,13 +1184,9 @@ _prepare_matrix_dump_data(const cs_matrix_t  *m,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_gnum_t local_max;
     cs_gnum_t loc_shift = m->n_cells;
     MPI_Scan(&loc_shift, &coo_shift, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
     coo_shift = coo_shift + 1 - loc_shift;
-    local_max = m->n_cells + coo_shift - 1;
-    MPI_Allreduce(&local_max, &n_g_rows, 1, CS_MPI_GNUM, MPI_MAX,
-                  cs_glob_mpi_comm);
   }
 #endif
 

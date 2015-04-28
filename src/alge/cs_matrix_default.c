@@ -121,6 +121,10 @@ static cs_matrix_t *_matrix_msr = NULL;
 static double _t_measure = 0.5;
 static int _n_min_products = 10;
 
+/* Pointer to global (block-based) numbering, if used */
+
+static cs_gnum_t  *_global_row_num = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -143,6 +147,41 @@ _initialize_api(void)
     _matrix_msr = NULL;
     _initialized = true;
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Build a global block row numbering.
+ *
+ * parameters:
+ *   n_rows <-- associated number of local rows
+ *   halo   <-- associated halo, or NULL
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_block_row_num(cs_lnum_t         n_rows,
+                     const cs_halo_t  *halo)
+{
+  cs_lnum_t _n_rows = n_rows;
+  cs_gnum_t row_start = 1;
+
+  if (halo != NULL) {
+    assert(n_rows == halo->n_local_elts);
+    _n_rows += halo->n_elts[CS_HALO_STANDARD];
+  }
+
+  BFT_REALLOC(_global_row_num, _n_rows, cs_gnum_t);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    cs_gnum_t loc_shift = _n_rows;
+    MPI_Scan(&loc_shift, &row_start, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
+    row_start = row_start + 1 - loc_shift;
+  }
+#endif
+
+# pragma omp parallel for  if(_n_rows > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < _n_rows; i++)
+    _global_row_num[i] =  (cs_gnum_t)i + row_start;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -351,6 +390,8 @@ cs_matrix_initialize(void)
 void
 cs_matrix_finalize(void)
 {
+  BFT_FREE(_global_row_num);
+
   for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
     _tuned_matrix_id[mft] = -1;
 
@@ -381,6 +422,9 @@ void
 cs_matrix_update_mesh(void)
 {
   cs_mesh_t  *mesh = cs_glob_mesh;
+
+  if (_global_row_num != NULL)
+    _build_block_row_num(mesh->n_cells, mesh->halo);
 
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
 
@@ -669,6 +713,36 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
 
   if (t_measure != NULL)
     *t_measure = _t_measure;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a global block row numbering.
+ *
+ * The numbering is built if not previously present, and returned otherwise.
+ *
+ * Currently, the function only handles one n_rows/halo combination, and does
+ * not check for consistency.
+ *
+ * parameters:
+ *   n_rows <-- associated number of local rows
+ *   halo   <-- associated halo, or NULL
+ *
+ * returns:
+ *   pointer to requested global numbering
+ *----------------------------------------------------------------------------*/
+
+const cs_gnum_t *
+cs_matrix_get_block_row_gnum(cs_lnum_t         n_rows,
+                             const cs_halo_t  *halo)
+{
+  const cs_gnum_t  *g_row_num = _global_row_num;
+
+  if (_global_row_num == NULL) {
+    _build_block_row_num(n_rows, halo);
+    g_row_num = _global_row_num;
+  }
+
+  return g_row_num;
 }
 
 /*----------------------------------------------------------------------------*/
