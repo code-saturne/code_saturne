@@ -205,8 +205,6 @@ do ii = 1, nscal
   endif
 enddo
 
-return
-
 !===============================================================================
 ! 3. Additional postprocessing fields
 !===============================================================================
@@ -387,4 +385,5 @@ enddo
 
 #endif
 
+return
 end subroutine addfld
