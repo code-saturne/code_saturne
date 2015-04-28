@@ -27,7 +27,7 @@
 /*!
   \page cs_var_dico Fortran-C naming reference
 
-  \section cs_var_dico_intro
+  \section cs_var_dico_intro Introduction
 
   This page provides cross-reference tables containing the names of Fortran
   variables and their C counterparts.
