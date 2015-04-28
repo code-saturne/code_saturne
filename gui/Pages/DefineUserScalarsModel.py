@@ -616,7 +616,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         name = scalar
 
-        formula = str(name) + " ="
+        formula = str(name) + "_diffusivity = 1.e-5;"
 
         return formula
 

@@ -4552,6 +4552,8 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                               const cs_real_t *visls0,
                               const cs_real_t *viscv0)
 {
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
   char *path = NULL;
   char *law = NULL;
   double time0;
@@ -4644,10 +4646,17 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
 
       if (   cs_field_get_key_int(f, kscavr) < 0
           && cs_field_get_key_int(f, kivisl) >= 0) {
-        char *prop_choice = _properties_choice("name");
+
+        char *tmp = NULL;
+        BFT_MALLOC(tmp, strlen(f->name) + 13, char);
+        strcpy(tmp, f->name);
+        strcat(tmp, "_diffusivity");
+
+        char *prop_choice = _properties_choice(tmp);
         if (cs_gui_strcmp(prop_choice, "variable"))
           user_law = 1;
         BFT_FREE(prop_choice);
+        BFT_FREE(tmp);
       }
 
       if (user_law) {
@@ -4673,6 +4682,17 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
 
           ev_law = mei_tree_new(law);
           BFT_FREE(law);
+
+          char *tmp2 = NULL;
+          BFT_MALLOC(tmp2, strlen(f->name) + 17, char);
+          strcpy(tmp2, f->name);
+          strcat(tmp2, "_diffusivity_ref");
+
+          mei_tree_insert(ev_law,"x",0.0);
+          mei_tree_insert(ev_law,"y",0.0);
+          mei_tree_insert(ev_law,"z",0.0);
+          mei_tree_insert(ev_law,tmp2,*visls0);
+          BFT_FREE(tmp2);
 
           for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
             const cs_field_t  *f2 = cs_field_by_id(f_id2);
@@ -4708,6 +4728,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                                   f2->name,
                                   f2->val[iel]);
               }
+              mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
+              mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
+              mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
 
               mei_evaluate(ev_law);
               c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * c_rho->val[iel];
@@ -4722,6 +4745,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
                                   f2->name,
                                   f2->val[iel]);
               }
+              mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
+              mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
+              mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
 
               mei_evaluate(ev_law);
               c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * (*ro0);
