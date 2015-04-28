@@ -277,8 +277,8 @@ if (icond.ge.0 .or. ipstdv(ipstyp).ne.0) then
     call field_create('yplus', itycat, ityloc, idim1, ilved, inoprv, iyplbr)
     call field_set_key_str(iyplbr, keylbl, 'Yplus')
   endif
-  ! yplus postreated and in the log
-  call field_set_key_int(iyplbr, keyvis, 1)
+  ! yplus postprocessed if required, logged always
+  if (ipstdv(ipstyp).ne.0) call field_set_key_int(iyplbr, keyvis, 1)
   call field_set_key_int(iyplbr, keylog, 1)
 endif
 
