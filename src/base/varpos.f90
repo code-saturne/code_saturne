@@ -93,6 +93,12 @@ interface
     implicit none
   end subroutine cs_field_pointer_map_base
 
+  subroutine cs_turbulence_model_init_bc_ids()  &
+    bind(C, name='cs_turbulence_model_init_bc_ids')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_model_init_bc_ids
+
 end interface
 
 !===============================================================================
@@ -598,6 +604,7 @@ endif
 !===============================================================================
 
 call cs_field_pointer_map_base()
+call cs_turbulence_model_init_bc_ids()
 
 return
 

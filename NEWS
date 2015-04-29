@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add higher level functions for turbulent boundary condition settings.
+  This allows moving tests on the current turbulence model inside
+  the user-callable functions, for more concise and safer programming.
+
 - Add ADF models for radiative transfers.
 
 - Convergence of linear solvers may now be plotted using CSV files.

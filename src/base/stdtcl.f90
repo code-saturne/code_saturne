@@ -82,6 +82,8 @@ use entsor
 use parall
 use mesh
 use field
+use cs_c_bindings
+
 !===============================================================================
 
 implicit none
@@ -104,8 +106,7 @@ double precision qcalc(nozfmx)
 integer          ifac, izone, ifvu, izonem
 integer          nozapm, nzfppp
 integer          icke, ii, iel, iok
-double precision qisqc, viscla, d2s3, uref2, rhomoy, dhy, xiturb
-double precision ustar2, xkent, xeent
+double precision qisqc, viscla, uref2, rhomoy, dhy, xiturb
 double precision, dimension(:), pointer :: brom
 double precision, dimension(:), pointer :: viscl
 
@@ -122,8 +123,6 @@ save             ipass
 
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(iprpfl(iviscl), viscl)
-
-d2s3 = 2.d0/3.d0
 
 ! --> On construit une liste des numeros des zones frontieres.
 !           (liste locale au processeur, en parallele)
@@ -407,58 +406,14 @@ do ifac = 1, nfabor
         icke   = icalke(izone)
         dhy    = dh(izone)
         xiturb = xintur(izone)
-        ustar2 = 0.d0
-        xkent = epzero
-        xeent = epzero
         if (icke.eq.1) then
-          call keendb                                             &
-          !==========
-        ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
-          ustar2, xkent, xeent )
+          call turbulence_bc_inlet_hyd_diam(ifac,                            &
+                                            uref2, dhy, rhomoy, viscla,      &
+                                            rcodcl)
         else if (icke.eq.2) then
-          call keenin                                             &
-          !==========
-        ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
-        endif
-
-        if (itytur.eq.2) then
-
-          rcodcl(ifac,ik,1)  = xkent
-          rcodcl(ifac,iep,1) = xeent
-
-        elseif (itytur.eq.3) then
-
-          rcodcl(ifac,ir11,1) = d2s3*xkent
-          rcodcl(ifac,ir22,1) = d2s3*xkent
-          rcodcl(ifac,ir33,1) = d2s3*xkent
-          rcodcl(ifac,ir12,1) = 0.d0
-          rcodcl(ifac,ir13,1) = 0.d0
-          rcodcl(ifac,ir23,1) = 0.d0
-          rcodcl(ifac,iep,1)  = xeent
-          if (iturb.eq.32) then
-            rcodcl(ifac,ial,1)  = 1.d0
-          endif
-
-        elseif (itytur.eq.5) then
-
-          rcodcl(ifac,ik,1)   = xkent
-          rcodcl(ifac,iep,1)  = xeent
-          rcodcl(ifac,iphi,1) = d2s3
-          if(iturb.eq.50) then
-            rcodcl(ifac,ifb,1)  = 0.d0
-          elseif(iturb.eq.51) then
-            rcodcl(ifac,ial,1)  = 0.d0
-          endif
-
-        elseif (iturb.eq.60) then
-
-          rcodcl(ifac,ik,1)   = xkent
-          rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-        elseif (iturb.eq.70) then
-
-          rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
+          call turbulence_bc_inlet_turb_intensity(ifac,                      &
+                                                  uref2, xiturb, dhy,        &
+                                                  rcodcl)
         endif
 
       endif

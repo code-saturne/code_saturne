@@ -109,6 +109,7 @@ use cs_fuel_incl
 use mesh
 use field
 use turbomachinery
+use cs_c_bindings
 
 !===============================================================================
 
@@ -128,11 +129,9 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac, iel, ii, ivar, irangv, iun, ilelt, nlelt
-double precision xkent, xeent, xphi, xfb
+integer          ifac, iel, ii, ilelt, nlelt
 
-integer          ibc, ix, ny, ios
-double precision uent, vent, went, xustar2, xdh, d2s3, rhomoy
+double precision xustar2, xdh, d2s3, rhomoy
 double precision acc(2), fmprsc, fmul, uref2, vnrm
 
 integer, allocatable, dimension(:) :: lstelt, mrkcel
@@ -288,60 +287,14 @@ if (ntcabs.eq.1) then
     !     Hydraulic diameter
     xdh     = 1.d0
 
-    !   Calculation of friction velocity squared (ustar2)
-    !     and of k and epsilon at the inlet (xkent and xeent) using
-    !     standard laws for a circular pipe
-    !     (their initialization is not needed here but is good practice).
+    ! Calculation of turbulent inlet conditions using
+    !   the turbulence intensity and standard laws for a circular pipe
+    !   (their initialization is not needed here but is good practice)
+
     rhomoy  = bfpro_rom(ifac)
-    xustar2 = 0.d0
-    xkent   = epzero
-    xeent   = epzero
 
-    call keendb &
-    !==========
-  ( uref2, xdh, rhomoy, viscl0, cmu, xkappa,   &
-    xustar2, xkent, xeent )
-
-    ! itytur is a flag equal to iturb/10
-    if (itytur.eq.2) then
-
-      rcodcl(ifac,ik,1)  = xkent
-      rcodcl(ifac,iep,1) = xeent
-
-    elseif (itytur.eq.3) then
-
-      rcodcl(ifac,ir11,1) = d2s3*xkent
-      rcodcl(ifac,ir22,1) = d2s3*xkent
-      rcodcl(ifac,ir33,1) = d2s3*xkent
-      rcodcl(ifac,ir12,1) = 0.d0
-      rcodcl(ifac,ir13,1) = 0.d0
-      rcodcl(ifac,ir23,1) = 0.d0
-      rcodcl(ifac,iep,1)  = xeent
-      if (iturb.eq.32) then
-        rcodcl(ifac,ial,1)  = 1.d0
-      endif
-
-    elseif (itytur.eq.5) then
-
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iep,1)  = xeent
-      rcodcl(ifac,iphi,1) = d2s3
-      if (iturb.eq.50) then
-        rcodcl(ifac,ifb,1)  = 0.d0
-      elseif (iturb.eq.51) then
-        rcodcl(ifac,ial,1)  = 0.d0
-      endif
-
-    elseif (iturb.eq.60) then
-
-      rcodcl(ifac,ik,1)   = xkent
-      rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-    elseif (iturb.eq.70) then
-
-      rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-    endif
+    call turbulence_bc_inlet_hyd_diam(ifac, uref2, xdh, rhomoy, viscl0,  &
+                                      rcodcl)
 
     ! Handle scalars
     if (nscal.gt.0) then

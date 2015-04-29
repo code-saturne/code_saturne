@@ -102,6 +102,7 @@ use elincl
 use cs_fuel_incl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -121,13 +122,11 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 !< [loc_var_dec]
-integer          ifac, iel, ii, ivar
-integer          izone
+integer          ifac, iel, ii
 integer          ilelt, nlelt
-double precision uref2, d2s3
-double precision rhomoy, xdh, xustar2
+double precision uref2
+double precision rhomoy, xdh
 double precision xitur
-double precision xkent, xeent
 
 integer, allocatable, dimension(:) :: lstelt
 double precision, dimension(:), pointer :: bfpro_rom
@@ -141,8 +140,6 @@ double precision, dimension(:), pointer :: bfpro_rom
 
 !< [init]
 allocate(lstelt(nfabor))  ! temporary array for boundary faces selection
-
-d2s3 = 2.d0/3.d0
 
 call field_get_val_s(ibrom, bfpro_rom)
 !< [init]
@@ -195,60 +192,13 @@ do ilelt = 1, nlelt
   !     Hydraulic diameter
   xdh     = 0.075d0
 
-  !   Calculation of friction velocity squared (ustar2)
-  !     and of k and epsilon at the inlet (xkent and xeent) using
+  !   Calculation of turbulent inlet conditions using
   !     standard laws for a circular pipe
   !     (their initialization is not needed here but is good practice).
   rhomoy  = bfpro_rom(ifac)
-  xustar2 = 0.d0
-  xkent   = epzero
-  xeent   = epzero
 
-  call keendb &
-  !==========
-( uref2, xdh, rhomoy, viscl0, cmu, xkappa,   &
-  xustar2, xkent, xeent )
-
-  ! itytur is a flag equal to iturb/10
-  if    (itytur.eq.2) then
-
-    rcodcl(ifac,ik,1)  = xkent
-    rcodcl(ifac,iep,1) = xeent
-
-  elseif (itytur.eq.3) then
-
-    rcodcl(ifac,ir11,1) = d2s3*xkent
-    rcodcl(ifac,ir22,1) = d2s3*xkent
-    rcodcl(ifac,ir33,1) = d2s3*xkent
-    rcodcl(ifac,ir12,1) = 0.d0
-    rcodcl(ifac,ir13,1) = 0.d0
-    rcodcl(ifac,ir23,1) = 0.d0
-    rcodcl(ifac,iep,1)  = xeent
-    if (iturb.eq.32) then
-      rcodcl(ifac,ial,1)  = 1.d0
-    endif
-
-  elseif (itytur.eq.5) then
-
-    rcodcl(ifac,ik,1)   = xkent
-    rcodcl(ifac,iep,1)  = xeent
-    rcodcl(ifac,iphi,1) = d2s3
-    if (iturb.eq.50) then
-      rcodcl(ifac,ifb,1)  = 0.d0
-    elseif (iturb.eq.51) then
-      rcodcl(ifac,ial,1)  = 0.d0
-    endif
-
-  elseif (iturb.eq.60) then
-
-    rcodcl(ifac,ik,1)   = xkent
-    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-  elseif (iturb.eq.70) then
-
-    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-  endif
+  call turbulence_bc_inlet_hyd_diam(ifac, uref2, xdh, rhomoy, viscl0,  &
+                                    rcodcl)
 
   ! Handle scalars
   if (nscal.gt.0) then
@@ -292,56 +242,12 @@ do ilelt = 1, nlelt
   ! Turbulence intensity
   xitur = 0.02d0
 
-  ! Calculation of k and epsilon at the inlet (xkent and xeent) using
+  ! Calculation of turbulent inlet conditions using
   !   the turbulence intensity and standard laws for a circular pipe
   !   (their initialization is not needed here but is good practice)
-  xkent  = epzero
-  xeent  = epzero
 
-  call keenin &
-  !==========
-( uref2, xitur, xdh, cmu, xkappa, xkent, xeent )
-
-  ! itytur is a flag equal to iturb/10
-  if    (itytur.eq.2) then
-
-    rcodcl(ifac,ik,1)  = xkent
-    rcodcl(ifac,iep,1) = xeent
-
-  elseif (itytur.eq.3) then
-
-    rcodcl(ifac,ir11,1) = d2s3*xkent
-    rcodcl(ifac,ir22,1) = d2s3*xkent
-    rcodcl(ifac,ir33,1) = d2s3*xkent
-    rcodcl(ifac,ir12,1) = 0.d0
-    rcodcl(ifac,ir13,1) = 0.d0
-    rcodcl(ifac,ir23,1) = 0.d0
-    rcodcl(ifac,iep,1)  = xeent
-    if (iturb.eq.32) then
-      rcodcl(ifac,ial,1)  = 1.d0
-    endif
-
-  elseif (itytur.eq.5) then
-
-    rcodcl(ifac,ik,1)   = xkent
-    rcodcl(ifac,iep,1)  = xeent
-    rcodcl(ifac,iphi,1) = d2s3
-    if (iturb.eq.50) then
-      rcodcl(ifac,ifb,1)  = 0.d0
-    elseif (iturb.eq.51) then
-      rcodcl(ifac,ial,1)  = 0.d0
-    endif
-
-  elseif (iturb.eq.60) then
-
-    rcodcl(ifac,ik,1)   = xkent
-    rcodcl(ifac,iomg,1) = xeent/cmu/xkent
-
-  elseif (iturb.eq.70) then
-
-    rcodcl(ifac,inusa,1) = cmu*xkent**2/xeent
-
-  endif
+  call turbulence_bc_inlet_turb_intensity(ifac, uref2, xitur, xdh,  &
+                                          rcodcl)
 
   ! --- Handle scalars
   if (nscal.gt.0) then
