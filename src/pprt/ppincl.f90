@@ -489,6 +489,9 @@ module ppincl
   !> coke disappearance rate of the coke burnout of the class \c icla
   integer, save :: igmhet(nclcpm)
 
+  !> Implicite part of the exchanges to the gas by molecular distribution
+  integer, save :: igmtr(nclcpm)
+
   ! TODO absent de la doc utilisateur
   !> State variables of dispersed phase (particles class)
   integer, save :: ighco2(nclcpm)
