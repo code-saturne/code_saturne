@@ -139,11 +139,8 @@ end subroutine
 !>        for a circular duct flow with smooth wall
 !>        (use for inlet boundary conditions).
 !>
-!> \f$ u^\star = I U_{ref} \f$
-!> Then we estimate \f$ k \f$ and \f$ \varepsilon \f$ from classic formulae of
-!> developped turbulence
-!> \f[ k = \dfrac{u^{\star 2}}{\sqrt{C_\mu}} \f]
-!> \f[ \varepsilon = \dfrac{u^{\star 3}}{ \kappa D_H / 10} \f]
+!> \f[ k = 1.5 I {U_{ref}}^2 \f]
+!> \f[ \varepsilon = 10 \dfrac{{C_\mu}^{0.75} k^{1.5}}{ \kappa D_H} \f]
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -156,7 +153,7 @@ end subroutine
 !> \param[in]     dh            hydraulic diameter \f$ D_H \f$
 !> \param[in]     cmu           constant \f$ C_\mu \f$
 !> \param[in]     xkappa        constant \f$ \kappa \f$
-!> \param[in,out] xk            calculated turbulent intensity \f$ k \f$
+!> \param[out]    xk            calculated turbulent intensity \f$ k \f$
 !> \param[out]    xeps          calculated turbulent disspation
 !>                              \f$ \varepsilon \f$
 !______________________________________________________________________________!
