@@ -182,6 +182,12 @@ _build_block_row_num(cs_lnum_t         n_rows,
 # pragma omp parallel for  if(_n_rows > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < _n_rows; i++)
     _global_row_num[i] =  (cs_gnum_t)i + row_start;
+
+  if (halo != NULL)
+    cs_halo_sync_untyped(halo,
+                         CS_HALO_STANDARD,
+                         sizeof(cs_gnum_t),
+                         _global_row_num);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
