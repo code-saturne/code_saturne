@@ -2229,22 +2229,6 @@ void CS_PROCF (uisofu, UISOFU) (const int    *const ippmod,
   if (*iihmpr != 1)
     cs_gui_load_file("dp_FCP.xml");
 
-  else {
-    if (ippmod[*iccoal - 1] == 0)
-    {
-      BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel")+1, char);
-      strcpy(vars->model_value, "homogeneous_fuel");
-    } else if (ippmod[*iccoal - 1] == 1) {
-      if (ippmod[*icpl3c - 1] > 0) {
-        BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel_moisture_lagr")+1, char);
-        strcpy(vars->model_value, "homogeneous_fuel_moisture_lagr");
-      } else {
-        BFT_MALLOC(vars->model_value, strlen("homogeneous_fuel_moisture")+1, char);
-        strcpy(vars->model_value, "homogeneous_fuel_moisture");
-      }
-    }
-  }
-
   /* ---- Nb de charbons */
   *ncharb = cs_gui_get_tag_number("/solid_fuels/solid_fuel", 1);
   if (*ncharb > *ncharm)
