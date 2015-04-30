@@ -57,15 +57,15 @@ form; the mass equation ($\frac{\partial \rho } {\partial t}+ \dive(\rho
 \vect{u}) = \Gamma$ see Equation (\ref{eq:mass})) has been used to split the time derivative:
 %
 \begin{equation}\label{eq:transport_eq_scalar}
-\rho \der{\varia}{t} + \grad \varia \cdot \left(\rho \vect{u} \right) 
+\rho \der{\varia}{t} + \grad \varia \cdot \left(\rho \vect{u} \right)
 - \dive \left(\rho \vect{u} \right) \varia
-- \dive \left(K \grad \varia \right) = S_{i}\left(\Phi, \, \varphi\right) \varia + S_{e}\left(\Phi,\varphi \right) 
+- \dive \left(K \grad \varia \right) = S_{i}\left(\Phi, \, \varphi\right) \varia + S_{e}\left(\Phi,\varphi \right)
 + \Gamma \left( \varia - \varia^{in} \right).
 \end{equation}
 In Equation~\ref{eq:transport_eq_scalar}, $\Phi$ represents the physical properties such as $(\rho,K,\mu_{t},...)$,
 $\varphi$ represents the variables of the problem such as $(\vect{u},k,\epsilon,...)$,
 $S_{i}\left(\Phi, \, \varphi \right) \varia$ is the linear part of the source terms
-and 
+and
 $S_{e} \left(\Phi, \, \varphi \right)$  includes all other source terms.
 
 Therefore, four different time steppings are used, they all define the time at which the quantities are evaluated:
@@ -120,15 +120,15 @@ and scalars (standard scheme).
 also for the equations for turbulence and scalars.
 
 \item taken at $n+\theta_{F}$ (second order if $\theta_{F}=1/2$). To
-solve the momentum equations, $\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}$ and 
-$\left(\rho\,\vect{u}\right)^{n-1+\theta_{F}}$ are known. Hence, the value at 
+solve the momentum equations, $\left(\rho\,\vect{u}\right)^{n-2+\theta_{F}}$ and
+$\left(\rho\,\vect{u}\right)^{n-1+\theta_{F}}$ are known. Hence, the value at
 $n+\theta_{F}$ is obtained as a result of the following extrapolation:
 \begin{equation}
 \left(\rho\vect{u}\right)^{n+\theta_{F}}
-= 2 \left(\rho \vect{u}\right)^{n-1+\theta_{F}} 
+= 2 \left(\rho \vect{u}\right)^{n-1+\theta_{F}}
 - \left(\rho \vect{u}\right)^{n-2+\theta_{F}}.
 \end{equation}
-At the end of this phase (after the pressure correction step), 
+At the end of this phase (after the pressure correction step),
 $\left(\rho\,\vect{u}\right)^{n+1}$ is known and the following interpolation is used to
 determine the mass flux at $n+\theta_{F}$ that will be adopted for the
 equations for turbulence and scalars:
@@ -158,7 +158,7 @@ S_{e}\left(\Phi^{n}, \, \varphi^{n}\right)-\theta _{S}\,S_{e} \left(\Phi ^{n-1} 
 
 By default, to be consistent and preserve the order of convergence in time,
 the implicit source terms are discretized with the same scheme as that is used
-for convection-diffusion of the unknown considered, \emph{i.e.} taken at 
+for convection-diffusion of the unknown considered, \emph{i.e.} taken at
 $n+\theta $:
 \begin{equation}
 \left[ S_{i} \left(\Phi , \, \varphi \right) \varia \right]^{n+\theta }
@@ -193,29 +193,29 @@ Using the standard $\theta$-scheme $\varia^{n+\theta}=\theta \varia^{n+1}+\left(
 \begin{equation}
 \begin{array}{r @{\,} c @{\,} l}
 \displaystyle \dfrac{\rho}{\Delta t} \left( \varia^{n+1}-\varia^{n} \right)
-+ \theta \left[ 
-\grad \varia^{n+1} \cdot \left( \rho \vect{u} \right) 
++ \theta \left[
+\grad \varia^{n+1} \cdot \left( \rho \vect{u} \right)
 - \dive \left( K \grad \varia^{n+1} \right)   \right]
-&=& 
-- \left(1-\theta\right) \left[ 
-\grad \varia^{n} \cdot \left( \rho \vect{u} \right) 
-- \dive \left( K \grad \varia^{n}\right) 
+&=&
+- \left(1-\theta\right) \left[
+\grad \varia^{n} \cdot \left( \rho \vect{u} \right)
+- \dive \left( K \grad \varia^{n}\right)
 \right]
  \\
-&+& S_{i}\left(\Phi , \,\varphi^n\right)\left[\theta \varia^{n+1}+ \left(1-\theta \right) \varia^{n}\right] 
+&+& S_{i}\left(\Phi , \,\varphi^n\right)\left[\theta \varia^{n+1}+ \left(1-\theta \right) \varia^{n}\right]
 + \left[ S_{e}(\Phi, \, \varphi)\right]^{n+\theta}.
 \end{array}
 \end{equation}
 
 For numerical reasons, the system is solved in an iterative and incremental
-manner, with the help of the series $\delta \varia^{n+1}_{k+1}=\varia^{n+1}_{k+1}-\varia^{n+1}_{k}$ 
+manner, with the help of the series $\delta \varia^{n+1}_{k+1}=\varia^{n+1}_{k+1}-\varia^{n+1}_{k}$
 (with, by definition, $\varia^{n+1}_0=\varia^{n}$).
 More theoretical details of such an iterative process are given in \S \ref{sec:algebrea_iterative_process}.
 
 %-------------------------------------------------------------------------------
 \section{Pressure-based velocity-pressure solver}
-The aim of this section is to describe how Navier Stokes equations are solved for an incompressible 
-or weakly compressible (dilatable or Low Mach algorithm) combined with a 
+The aim of this section is to describe how Navier Stokes equations are solved for an incompressible
+or weakly compressible (dilatable or Low Mach algorithm) combined with a
 implicit Euler time stepping or a second order Crank Nicolson time stepping.
 
 The set of equations to be solved is
@@ -245,21 +245,21 @@ $\tens{S}$ is called the strain rate and  $\Gamma$ is an eventual mass source te
 %-------------------------------------------------------------------------------
 \subsection{Segregated solver: SIMPLEC}
 A fractional step scheme is used to solve the mass and momentum equations
-(see Chorin \cite{Chorin:1968}). 
+(see Chorin \cite{Chorin:1968}).
 
 The first step (predictor step) provides predicted velocity
-components: they are determined in a coupled way solving a $3 \ncell \times 3 \ncell $ system. 
+components: they are determined in a coupled way solving a $3 \ncell \times 3 \ncell $ system.
 The mass equation is taken into account during the second step
 (corrector step): a pressure Poisson equation is solved and the mass fluxes
 at the cell faces are updated.
 
 \subsubsection{Prediction step}
-In this section, a predicted velocity field $ \widetilde{\vect{u}} $ is obtained by solving 
+In this section, a predicted velocity field $ \widetilde{\vect{u}} $ is obtained by solving
 the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 
 \begin{equation}
 \begin{array}{rcl}
-\displaystyle \rho \der{ \vect {u} } { t} 
+\displaystyle \rho \der{ \vect {u} } { t}
 +
 \underbrace {
 \gradt \,  \underline{u} \cdot \left( \rho\vect{u} \right)
@@ -271,13 +271,13 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 }_{
 \text{diffusion}
 }%end underbrace
- + 
+ +
 \underbrace{
 \divv \left( \mu \transpose{\gradt \, \vect{u}} \right)
 }_{
 \text{transpose of the velocity gradient term}
 }% end underbrace
-\underbrace{ 
+\underbrace{
 -  \frac{2}{3} \grad \left( \mu\ \trace \left( \gradt \, \vect{u}  \right) \right)
 }_{
 \text{secondary viscosity}
@@ -292,14 +292,14 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 }_{
 \text{Mass source term}
 }%end underbrace
-- 
+-
 \underbrace{
 \rho \tens{K} \, \vect{u}
 }_{
 \text{Head loss}
 }%end underbrace
- + 
-\underbrace{ 
+ +
+\underbrace{
 \vect{ST}_{u}^{exp}+ \tens{ST}_{u}^{imp}\, \vect{u}
 }_{
 \text{user source terms}
@@ -307,10 +307,37 @@ the momentum equation of \eqref{eq:time_stepping_navier_stokes}
 \end{array}
 \end{equation}
 
-For more details, see \S~ \ref{ap:navstv} and \ref{ap:predvv}. 
+For more details, see \S~ \ref{ap:navstv} and \ref{ap:predvv}.
 \subsubsection{Correction step}
+The predicted velocity has \emph{a priori} non-zero divergence. The second step
+corrects the pressure by imposing the nullity\footnote{or the density time-variation
+is the corresponding algorithm is chosen.}
+of the stationary constraint for
+the velocity computed at time instant ${t^{n+1}}$.
+We then solve:
+\begin{equation}\label{eq:timstp:c0_correction_step}
+\left\{\begin{array}{ r c l}
+\displaystyle \dfrac{(\rho\vect{u})^{n+1}-(\rho\vect{\widetilde{u}})^{n+1}}{\Delta t} &=&
+-\grad{\delta P^{n+\theta}} ,\\
+\displaystyle
+\dive(\rho\vect{u})^{n+1} = \Gamma ,\\
+\end{array}\right.
+\end{equation}
 
-For more details, see \S~ \ref{ap:navstv} and \ref{ap:resopv}. 
+where the pressure increment $\delta P^{n+\theta}$ is defined as:
+\begin{equation}
+\delta P^{n+\theta}=P^{n+\theta}-P^{n-1+\theta} .
+\end{equation}
+
+\begin{remark}
+The  $\rho$ and $\mu$ quantities remain constant over the course of both
+steps. If there has been any variation in the interval, their values will be
+modified at the start of the next time step, after the scalars
+(temperature, mass fraction,...) have been updated.
+\end{remark}
+
+
+For more details, see \S~ \ref{ap:navstv} and \ref{ap:resopv}.
 
 %-------------------------------------------------------------------------------
 %\subsection{Pseudo-coupled solver}
