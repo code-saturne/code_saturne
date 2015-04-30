@@ -49,7 +49,8 @@ salomeres_DATA = $(QMFILES) ${ICONS}
 
 nodist_salomeres_DATA = \
 CFDSTUDY_images.qm \
-CFDSTUDY_msg_en.qm
+CFDSTUDY_msg_en.qm \
+CFDSTUDY_msg_fr.qm
 
 # PyQt User Interface files
 
@@ -76,7 +77,8 @@ ui_SetTreeLocationDialog.py
 EXTRA_DIST = \
 $(UIFILES) \
 CFDSTUDY_images.ts \
-CFDSTUDY_msg_en.ts
+CFDSTUDY_msg_en.ts \
+CFDSTUDY_msg_fr.ts
 
 
 ui_%.py: %.ui
