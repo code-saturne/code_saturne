@@ -54,12 +54,14 @@ Fabien Huvelin           (EDF, Chatou, France)
 François Jusserand       (EDF, Chatou, France)
 Sylvestre Ledru          (INRIA, Rocquencourt, France)
 Emmanuel Lemoine         (INCKA, Boulogne-Billancourt, France)
+Louis Le Tarnec          (EDF, Chatou, France)
 Jérôme Lucas             (INCKA, Boulogne-Billancourt, France)
 Maya Milliez             (EDF, Chatou, France)
 Vincent Robin            (ENSMA, Poitiers, France)
 Isabelle Rupp            (EDF, Chatou, France)
 Bertrand Sapa            (EDF, Chatou, France)
 Ugo Schuck               (EDF, Chatou, France)
+Vincent Stobiac          (EDF, Chatou, France)
 Michaël Tartar           (INCKA, Boulogne-Billancourt, France)
 Juan Uribe               (University of Manchester, United Kingdom)
 
@@ -76,7 +78,7 @@ Part of the work of the Mathematical Expression Interpreter library
 is based in part on previous work by Tom Niemann (http://epaperpress.com/)
 with the following autorization: "Source code, when part of a software
 project, may be used freely without reference to the author.";
-and the hashtable implementation is based on 
+and the hashtable implementation is based on
 http://www.liafa.jussieu.fr/~carton/Enseignement/C/Licence/LicenceInfo/Td09/hachage.c
 from olivier.carton@liafa.jussieu.fr
 
