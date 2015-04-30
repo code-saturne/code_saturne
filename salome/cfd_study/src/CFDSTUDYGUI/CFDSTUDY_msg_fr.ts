@@ -3,11 +3,11 @@
         <name>@default</name>
         <message>
             <source>CFDSTUDY_INVALID_ENV</source>
-            <translation>CFD code environment not found!</translation>
+            <translation>code de CFD non trouves!</translation>
         </message>
         <message>
             <source>CFDSTUDY_INVALID_SOLVER_NAME</source>
-            <translation>%1 is an invalid name of solver ! It must be %2 or %3 !</translation>
+            <translation>%1 n'est pas un nom de solveur valide ! La liste valide est %2 ou %3 !</translation>
         </message>
         <message>
             <source>CFDSTUDY_MENU</source>
@@ -19,99 +19,99 @@
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TEXT</source>
-            <translation>Set CFD study Location</translation>
+            <translation>Positionnement du repertoire d'etude CFD</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_TIP</source>
-            <translation>Set location for new CFD study</translation>
+            <translation>Positionnement du repertoire d'une nouvelle etude CFD</translation>
         </message>
         <message>
             <source>SET_CFDSTUDY_STUDY_SB</source>
-            <translation>Set location for new CFD study</translation>
+            <translation>Positionnement du repertoire d'une nouvelle etude CFD</translation>
         </message>
         <message>
             <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choose CFD study location</translation>
+            <translation>Choix du repertoire de l'etude CFD</translation>
         </message>
         <message>
             <source>SET_CASE_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choose CFD case location</translation>
+            <translation>Choix du repertoire du cas d'etude CFD</translation>
         </message>
         <message>
             <source>ADD_CFDSTUDY_CASE_TEXT</source>
-            <translation>Add Case</translation>
+            <translation>Ajout d'un cas</translation>
         </message>
         <message>
             <source>ADD_CFDSTUDY_CASE_TIP</source>
-            <translation>Adding Case</translation>
+            <translation>Ajout d'un cas</translation>
         </message>
         <message>
             <source>ADD_CFDSTUDY_CASE_SB</source>
-            <translation>Adding Case</translation>
+            <translation>Ajout d'un csa</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_CASE_TEXT</source>
-            <translation>Run Case</translation>
+            <translation>Ouverture du cas</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_CASE_TIP</source>
-            <translation>Run Case</translation>
+            <translation>Ouverture du cas</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_CASE_SB</source>
-            <translation>Run Case</translation>
+            <translation>Ouverture du cas</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_GUI_TEXT</source>
-            <translation>Launch GUI</translation>
+            <translation>Execution du GUI</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_GUI_TIP</source>
-            <translation>Launching of CFD code interface</translation>
+            <translation>Execution de l'interface du code CFD</translation>
         </message>
         <message>
             <source>LAUNCH_CFDSTUDY_GUI_SB</source>
-            <translation>Launching of CFD code interface</translation>
+            <translation>Execution de l'interface du code CFD</translation>
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TEXT</source>
-            <translation>Update Object Browser</translation>
+            <translation>Mise a jour de l'Object Browser</translation>
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_TIP</source>
-            <translation>Updating Object Browser (reread root directory)</translation>
+            <translation>Mise a jour de l'Object Browser (relecture du repertoire racine)</translation>
         </message>
         <message>
             <source>UPDATE_CFDSTUDY_OBJBROWSER_SB</source>
-            <translation>Updating Object Browser (reread root directory)</translation>
+            <translation>Mise a jour de l'Object Browser (relecture du repertoire racine)</translation>
         </message>
         <message>
             <source>INFO_CFDSTUDY_TEXT</source>
-            <translation>CFDSTUDY Information</translation>
+            <translation>Informations sur CFDSTUDY</translation>
         </message>
         <message>
             <source>INFO_CFDSTUDY_TIP</source>
-            <translation>Showing main CFDSTUDY Information</translation>
+            <translation>Informations sur CFDSTUDY</translation>
         </message>
         <message>
             <source>INFO_CFDSTUDY_SB</source>
-            <translation>Showing main CFDSTUDY Information</translation>
+            <translation>Informations sur CFDSTUDY</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_TEXT</source>
-            <translation>Run script...</translation>
+            <translation>Execution du script...</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_TIP</source>
-            <translation>Run script...</translation>
+            <translation>Execution du script...</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_SB</source>
-            <translation>Run script...</translation>
+            <translation>Execution du script...</translation>
         </message>
         <message>
             <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
-            <translation>You have not access rights for this script execution!</translation>
+            <translation>Vous n'avez pas les droits d'acces pour le script d'execution!</translation>
         </message>
         <message>
             <source>SOLVER_FILE_MENU_TEXT</source>
@@ -119,211 +119,211 @@
         </message>
         <message>
             <source>SOLVER_SAVE_ACTION_TEXT</source>
-            <translation>Save CFD Data File</translation>
+            <translation>Sauver le fichier de parametres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVE_ACTION_TIP</source>
-            <translation>Save CFD Data File</translation>
+            <translation>Sauver le fichier de parametres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVE_ACTION_SB</source>
-            <translation>Save CFD Data File</translation>
+            <translation>Sauver le fichier de parametres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_TEXT</source>
-            <translation>Save as CFD Data File</translation>
+            <translation>Sauver comme un fichier de parametres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_TIP</source>
-            <translation>Save as CFD Data File</translation>
+            <translation>Sauver comme un fichier de parametres CFD</translation>
         </message>
         <message>
             <source>SOLVER_SAVEAS_ACTION_SB</source>
-            <translation>Save as CFD Data File</translation>
+            <translation>Sauver comme un fichier de parametres CFD</translation>
         </message>
         <message>
             <source>XML_DATA_FILE</source>
-            <translation>Error into the XML Data File %1</translation>
+            <translation>Erreur dans le fichier XML %1</translation>
         </message>
         <message>
             <source>SOLVER_TOOLS_MENU_TEXT</source>
-            <translation>Tools</translation>
+            <translation>Outils</translation>
         </message>
         <message>
             <source>SOLVER_OPENSHELL_ACTION_TEXT</source>
-            <translation>Open Shell</translation>
+            <translation>Ouvrir un terminal</translation>
         </message>
         <message>
             <source>SOLVER_OPENSHELL_ACTION_TIP</source>
-            <translation>Open Shell</translation>
+            <translation>Ouvrir un terminal</translation>
         </message>
         <message>
             <source>SOLVER_OPENSHELL_ACTION_SB</source>
-            <translation>Open Shell</translation>
+            <translation>Ouvrir un terminal</translation>
         </message>
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_TEXT</source>
-            <translation>Case display</translation>
+            <translation>Affichier le contenu du XML</translation>
         </message>
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_TIP</source>
-            <translation>Case display</translation>
+            <translation>Affichier le contenu du XML</translation>
         </message>
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_SB</source>
-            <translation>Case display</translation>
+            <translation>Affichier le contenu du XML</translation>
         </message>
         <message>
             <source>REMOVE_ACTION_TEXT</source>
-            <translation>Remove</translation>
+            <translation>Supprimer</translation>
         </message>
         <message>
             <source>REMOVE_ACTION_TIP</source>
-            <translation>Remove</translation>
+            <translation>Supprimer</translation>
         </message>
         <message>
             <source>REMOVE_ACTION_SB</source>
-            <translation>Remove</translation>
+            <translation>Supprimer</translation>
         </message>
         <message>
             <source>REMOVE_ACTION_CONFIRM_MESS</source>
-            <translation>Do You want to remove of %1 from this study?</translation>
+            <translation>Voulez-vous supprimer %1 de cette etude?</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_TIP</source>
-            <translation>Close CFD GUI</translation>
+            <translation>Fermeture du GUI</translation>
         </message>
         <message>
             <source>CLOSE_CFD_GUI_ACTION_SB</source>
-            <translation>Close CFD GUI</translation>
+            <translation>Fermeture du GUI</translation>
         </message>
         <message>
             <source>VIEW_ACTION_TEXT</source>
-            <translation>View</translation>
+            <translation>Vue</translation>
         </message>
         <message>
             <source>VIEW_ACTION_TIP</source>
-            <translation>View</translation>
+            <translation>Vue</translation>
         </message>
         <message>
             <source>VIEW_ACTION_SB</source>
-            <translation>View</translation>
+            <translation>Vue</translation>
         </message>
         <message>
             <source>EDIT_ACTION_TEXT</source>
-            <translation>Edit</translation>
+            <translation>Editer</translation>
         </message>
         <message>
             <source>EDIT_ACTION_TIP</source>
-            <translation>Edit</translation>
+            <translation>Editer</translation>
         </message>
         <message>
             <source>EDIT_ACTION_SB</source>
-            <translation>Edit</translation>
+            <translation>Editer</translation>
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_TEXT</source>
-            <translation>Move to DRAFT</translation>
+            <translation>Deplacer dans DRAFT</translation>
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_TIP</source>
-            <translation>Move to DRAFT</translation>
+            <translation>Deplacer dans DRAFT</translation>
         </message>
         <message>
             <source>MOVE_TO_DRAFT_ACTION_SB</source>
-            <translation>Move to DRAFT</translation>
+            <translation>Deplacer dans DRAFT</translation>
         </message>
         <message>
             <source>OVERWRITE_CONFIRM_MESS</source>
-            <translation>Target file already exists. Do You want to overwrite it?</translation>
+            <translation>Le fichier cible existe deja. Voulez vous l'ecraser?</translation>
         </message>
         <message>
             <source>COPY_IN_DATA_ACTION_TEXT</source>
-            <translation>Copy in DATA</translation>
+            <translation>Copier dans DATA</translation>
         </message>
         <message>
             <source>COPY_IN_DATA_ACTION_TIP</source>
-            <translation>Copy in DATA</translation>
+            <translation>Copier dans DATA</translation>
         </message>
         <message>
             <source>COPY_IN_DATA_ACTION_SB</source>
-            <translation>Copy in DATA</translation>
+            <translation>Copier dans DATA</translation>
         </message>
         <message>
             <source>COPY_IN_SRC_ACTION_TEXT</source>
-            <translation>Copy in SRC</translation>
+            <translation>Copier dans SRC</translation>
         </message>
         <message>
             <source>COPY_IN_SRC_ACTION_TIP</source>
-            <translation>Copy in SRC</translation>
+            <translation>Copier dans SRC</translation>
         </message>
         <message>
             <source>COPY_IN_SRC_ACTION_SB</source>
-            <translation>Copy in SRC</translation>
+            <translation>Copier dans SRC</translation>
         </message>
         <message>
             <source>COPY_CASE_FILE_ACTION_TEXT</source>
-            <translation>Copy into another Case</translation>
+            <translation>Copier dans un autre cas</translation>
         </message>
         <message>
             <source>COPY_CASE_FILE_ACTION_TIP</source>
-            <translation>Copy into an other Case</translation>
+            <translation>Copier dans un autre cas</translation>
         </message>
         <message>
             <source>COPY_CASE_FILE_ACTION_SB</source>
-            <translation>Copy into an other Case</translation>
+            <translation>Copier dans un autre cas</translation>
         </message>
         <message>
             <source>EXPORT_IN_PARAVIS_ACTION_TEXT</source>
-            <translation>Export In ParaViS</translation>
+            <translation>Exporter dans ParaViS</translation>
         </message>
         <message>
             <source>EXPORT_IN_PARAVIS_ACTION_TIP</source>
-            <translation>Export In ParaViS</translation>
+            <translation>Exporter dans ParaViS</translation>
         </message>
         <message>
             <source>EXPORT_IN_PARAVIS_ACTION_SB</source>
-            <translation>Export In ParaViS</translation>
+            <translation>Exporter dans ParaViS</translation>
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_TEXT</source>
-            <translation>Export in SMESH</translation>
+            <translation>Exporter dans SMESH</translation>
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_TIP</source>
-            <translation>Export in SMESH</translation>
+            <translation>Exporter dans SMESH</translation>
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_SB</source>
-            <translation>Export in SMESH</translation>
+            <translation>Exporter dans SMESH</translation>
         </message>
         <message>
             <source>EXPORT_IN_SMESH_ACTION_WARNING</source>
-            <translation>Some errors occored during EXPORT operation!</translation>
+            <translation>Erreurs durant l'operation EXPORT!</translation>
         </message>
         <message>
             <source>ECS_CONVERT_ACTION_TEXT</source>
-            <translation>Convert to MED</translation>
+            <translation>Convertir en MED</translation>
         </message>
         <message>
             <source>ECS_CONVERT_ACTION_TIP</source>
-            <translation>Convert to MED</translation>
+            <translation>Convertir en MED</translation>
         </message>
         <message>
             <source>ECS_CONVERT_ACTION_SB</source>
-            <translation>Convert to MED</translation>
+            <translation>Convertir en MED</translation>
         </message>
         <message>
             <source>CHECK_COMPILATION_ACTION_TEXT</source>
-            <translation>Check compilation</translation>
+            <translation>Controle de la compilation</translation>
         </message>
         <message>
             <source>CHECK_COMPILATION_ACTION_TIP</source>
-            <translation>Check compilation</translation>
+            <translation>Controle de la compilation</translation>
         </message>
         <message>
             <source>CHECK_COMPILATION_ACTION_SB</source>
-            <translation>Check compilation</translation>
+            <translation>Controle de la compilation</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_TAB</source>
@@ -335,31 +335,31 @@
         </message>
         <message>
             <source>CFDSTUDY_PREF_KERNEL</source>
-            <translation>Home Kernel CFDSTUDY</translation>
+            <translation>Repertoire noyau CFDSTUDY</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_EDITOR</source>
-            <translation>editor</translation>
+            <translation>editeur</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_READER</source>
-            <translation>editor</translation>
+            <translation>editeur</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DIFF</source>
-            <translation>Diff tool</translation>
+            <translation>Outils de Diff</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_DISPLAY</source>
-            <translation>Display</translation>
+            <translation>Ecran</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_ENV_GROUP</source>
-            <translation>Environment</translation>
+            <translation>Environnement</translation>
         </message>
         <message>
             <source>CFDSTUDY_PREF_SHOW_INFO_DLG</source>
-            <translation>Don't show Information Dialog on first module activation</translation>
+            <translation>Ne pas voir les informations lors de la premiere activation</translation>
         </message>
 
         <message>
@@ -368,47 +368,47 @@
         </message>
         <message>
             <source>STMSG_SET_STUDY_LOCATION</source>
-            <translation>Setting study location...</translation>
+            <translation>Reglagedu repertoire d'etude...</translation>
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY</source>
-            <translation>Updating study structure...</translation>
+            <translation>Mise a jour de la structure d'etude...</translation>
         </message>
         <message>
             <source>STMSG_ADD_CASE</source>
-            <translation>Adding CFD cases...</translation>
+            <translation>Ajout de cas CFD...</translation>
         </message>
         <message>
             <source>STMSG_ECS_CONVERT</source>
-            <translation>Convertion to MED format</translation>
+            <translation>Conversion au format MED</translation>
         </message>
         <message>
             <source>STMSG_RUN_SCRIPT</source>
-            <translation>Running Code_Saturne</translation>
+            <translation>Executer Code_Saturne</translation>
         </message>
         <message>
             <source>STMSG_CHECK_COMPILATION</source>
-            <translation>Check compilation</translation>
+            <translation>Controler la compilation</translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_DIRECTORY</source>
-            <translation>Directory %1 does not exists!!! </translation>
+            <translation>Le repertoire %1 n'existe pas!!! </translation>
         </message>
         <message>
             <source>ENV_DLG_INVALID_FILE</source>
-            <translation>%1 : File %2  does not exists!!! </translation>
+            <translation>%1 : le fichier %2  n'existe pas!!! </translation>
         </message>
         <message>
             <source>INFO_DLG_INVALID_ENV</source>
-            <translation>Invalid environment for %1 ! </translation>
+            <translation>Environnement invalide pour %1 ! </translation>
         </message>
         <message>
             <source>STMSG_UPDATE_STUDY_INCOMING</source>
-            <translation> ...Study structure updating NOW ! </translation>
+            <translation> ...mise a jour de la structure de l'etude MAINTENANT ! </translation>
         </message>
         <message>
             <source>INFO_DLG_CASE</source>
-            <translation> Study Case %1 already exists ! </translation>
+            <translation> Le cas d'etdue %1 existe deja ! </translation>
         </message>
 
     </context>
@@ -420,19 +420,19 @@
         </message>
         <message>
             <source>INFO_DLG_NOT_INSTALLED</source>
-            <translation>Not Installed!!!</translation>
+            <translation>Non Installe!!!</translation>
         </message>
         <message>
             <source>INFO_DLG_ENV_GROUP</source>
-            <translation>Environment Variables</translation>
+            <translation>Variables d'environnement</translation>
         </message>
         <message>
             <source>INFO_DLG_ENV_REQUIRED</source>
-            <translation>%1 (required)</translation>
+            <translation>%1 (requis)</translation>
         </message>
         <message>
             <source>INFO_DLG_ENV_OPTIONAL</source>
-            <translation>%1(optional)</translation>
+            <translation>%1(option)</translation>
         </message>
         <message>
             <source>INFO_DLG_CHECKBOX_TEXT</source>
@@ -448,61 +448,61 @@
         </message>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
-            <translation>OK</translation>
+            <translation>Valider</translation>
         </message>
     </context>
     <context>
         <name>SetTreeLocationDialogHandler</name>
         <message>
             <source>DLG_OK_BUTTON_TEXT</source>
-            <translation>OK</translation>
+            <translation>Valider</translation>
         </message>
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
+            <translation>Annuler</translation>
         </message>
         <message>
             <source>LOCATION_DLG_CAPTION</source>
-            <translation>Location of CFDSTUDY study</translation>
+            <translation>Emplacement de l'etude CFDSTUDY</translation>
         </message>
         <message>
             <source>LOCATION_DLG_CASE_NAME</source>
-            <translation>Cases</translation>
+            <translation>Cas</translation>
         </message>
         <message>
             <source>LOCATION_DLG_STUDY_DIR_LABEL</source>
-            <translation>Study location</translation>
+            <translation>Emplacement de l'etude</translation>
         </message>
         <message>
             <source>SET_STUDY_LOCATION_BROWSE_CAPTION</source>
-            <translation>Choose CFDSTUDY Study location</translation>
+            <translation>Choisir l'emplacement de l'etude</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_OPEN_MESS</source>
-            <translation>The Directory %1 is already opened! Please, choose another directory.</translation>
+            <translation>Le repertoire %1 est deja ouvert! Choisissez-en un autre.</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS</source>
-            <translation>The Directory %1 already exists. Do You want to use that study?</translation>
+            <translation>Le repertoire %1 existe deja. Voulez-vous utiliser cette etude?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_WARN_MESS1</source>
-            <translation>The Directory %1 already exists. Do You want to create a new study?</translation>
+            <translation>Le repertoire %1 existe deja. Voulez-vous creer une autre etude?</translation>
         </message>
         <message>
             <source>LOCATION_DLG_ERROR_MESS</source>
-            <translation>The Directory %1 does not exist or Study Name is empty! Please, choose another directory.</translation>
+            <translation>Le repertoire %1 n'existe pas ou le nom de l'tude est vide! Choisissez une autre repertoire.</translation>
         </message>
     </context>
     <context>
         <name>RunCaseDialogHandler</name>
         <message>
             <source>RUNCASE_DLG_RUN_BUTTON_TEXT</source>
-            <translation>Run Case</translation>
+            <translation>Executer le cas</translation>
         </message>
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
+            <translation>Annuler</translation>
         </message>
         <message>
             <source>RUNCASE_DLG_MODE_TITLE</source>
@@ -510,38 +510,38 @@
         </message>
         <message>
             <source>RUNCASE_DLG_RUN_MODE_BTN_TEXT</source>
-            <translation>Run</translation>
+            <translation>Executer</translation>
         </message>
         <message>
             <source>RUNCASE_DLG_MAIN_GROUP_TITLE</source>
-            <translation>Location of run script</translation>
+            <translation>Emplacement du script run</translation>
         </message>
         <message>
             <source>RUNCASE_DLG_STUDY_LABEL_TEXT</source>
-            <translation>Study</translation>
+            <translation>Etude</translation>
         </message>
         <message>
             <source>RUNCASE_DLG_CASE_LABEL_TEXT</source>
-            <translation>Case</translation>
+            <translation>Cas</translation>
         </message>
         <message>
             <source>RUNCASE_DLG_CAPTION</source>
-            <translation>Run Case</translation>
+            <translation>Executer le cas</translation>
         </message>
         <message>
             <source>RUNCASE_DLG_COMPILE_MODE_BTN_TEXT</source>
-            <translation>Compile only</translation>
+            <translation>Compilation uniquement</translation>
         </message>
     </context>
     <context>
         <name>ECSConversionDialogHandler</name>
         <message>
             <source>ECSCONVERT_DLG_CONVERT_BUTTON</source>
-            <translation>Convert</translation>
+            <translation>Convertir</translation>
         </message>
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
+            <translation>Annuler</translation>
         </message>
         <message>
             <source>ECSCONVERT_DLG_OPTIONS_TITLE</source>
@@ -549,65 +549,65 @@
         </message>
         <message>
             <source>ECSCONVERT_DLG_RESULT_LABEL_TEXT</source>
-            <translation>Result med file</translation>
+            <translation>Fichier med resultat</translation>
         </message>
         <message>
             <source>ECSCONVERT_DLG_CAPTION</source>
-            <translation>Conversion to MED</translation>
+            <translation>Convertir en MED</translation>
         </message>
     </context>
     <context>
         <name>CopyDialogHandler</name>
         <message>
             <source>COPY_DLG_COPY_BUTTON</source>
-            <translation>Copy</translation>
+            <translation>Copier</translation>
         </message>
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
+            <translation>Annuler</translation>
         </message>
         <message>
             <source>COPY_DLG_DEST_FILE_LABEL</source>
-            <translation>File</translation>
+            <translation>Fichier</translation>
         </message>
         <message>
             <source>COPY_DLG_DEST_CASE_LABEL</source>
-            <translation>Case</translation>
+            <translation>Cas</translation>
         </message>
         <message>
             <source>COPY_DLG_DEST_STUDY_LABEL</source>
-            <translation>Study</translation>
+            <translation>Etude</translation>
         </message>
         <message>
             <source>COPY_DLG_SOURCE_CASE_LABEL</source>
-            <translation>Case</translation>
+            <translation>Cas</translation>
         </message>
         <message>
             <source>COPY_DLG_FILE_NAME_LABEL</source>
-            <translation>File</translation>
+            <translation>Fichier</translation>
         </message>
         <message>
             <source>COPY_DLG_CAPTION</source>
-            <translation>Copy file of parameters</translation>
+            <translation>Copier le fichier de parametres</translation>
         </message>
         <message>
             <source>COPY_DLG_EXISTS_ERROR_CAPTION</source>
-            <translation>Error</translation>
+            <translation>Erreur</translation>
         </message>
         <message>
             <source>COPY_DLG_EXISTS_ERROR_TEXT</source>
-            <translation>Destinate file already exists!</translation>
+            <translation>Le fichier destination existe deja!</translation>
         </message>
     </context>
     <context>
         <name>GUIActivationDialogHandler</name>
         <message>
             <source>GUIACTIVATE_DLG_ACTIVATE_BTN</source>
-            <translation>Activate</translation>
+            <translation>Activer</translation>
         </message>
         <message>
             <source>DLG_CANCEL_BUTTON_TEXT</source>
-            <translation>Cancel</translation>
+            <translation>Annuler</translation>
         </message>
         <message>
             <source>GUIACTIVATE_DLG_OPTIONS_TITLE</source>
@@ -615,31 +615,31 @@
         </message>
         <message>
             <source>GUIACTIVATE_DLG_NEW_CASE</source>
-            <translation>New Case</translation>
+            <translation>Nouveau Cas</translation>
         </message>
         <message>
             <source>ICSACTIVATE_DLG_CAPTION</source>
-            <translation>Code_Saturne GUI activation</translation>
+            <translation>Activer le GUI Code_Saturne</translation>
         </message>
         <message>
             <source>ICSACTIVATE_DLG_CASE_LABEL</source>
-            <translation>Case selection:</translation>
+            <translation>Selection du cas:</translation>
         </message>
         <message>
             <source>IPBACTIVATE_DLG_CAPTION</source>
-            <translation>NEPTUNE_CFD GUI activation</translation>
+            <translation>Activer le GUI NEPTUNE_CFD</translation>
         </message>
         <message>
             <source>IPBACTIVATE_DLG_CASE_LABEL</source>
-            <translation>Case for NEPTUNE_CFD GUI activation</translation>
+            <translation>Selection du cas:</translation>
         </message>
         <message>
             <source>ICSACTIVATE_DLG_BAD_CASE_MESS</source>
-            <translation>File SaturneGUI is absent. You can't activate the GUI on this Case!</translation>
+            <translation>Le fichier SaturneGUI est absent. Vous ne pouvez pas activater le GUI!</translation>
         </message>
         <message>
             <source>IPBACTIVATE_DLG_BAD_CASE_MESS</source>
-            <translation>File NeptuneGUI is absent. You can't activate the GUI on this Case!</translation>
+            <translation>Le fichier NeptuneGUI est absent. Vous ne pouvez pas activater le GUI!</translation>
         </message>
     </context>
 </TS>
