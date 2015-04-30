@@ -31,15 +31,15 @@ This consists of solving the momentum equation by treating the pressure explicit
 Once the pressure correction step has been performed in the subroutine \fort{resopv},
 the velocity-pressure solution is obtained using the mass conservation law:
 \begin{equation}
-\frac{\partial \rho } {\partial t}+ \dive(\rho \underline{u}) = \Gamma,
+\frac{\partial \rho } {\partial t}+ \dive(\rho \vect{u}) = \Gamma,
 \end{equation}
 where $\Gamma$ is the mass source term\footnote{In $kg.m^{-3}.s^{-1}$ }.\\
 The Reynolds-averaged momentum conservation equation obtained by applying
 the fundamental theorem of dynamics is:
 \begin{equation}
-\frac {\partial (\rho \underline {u})} {\partial t }+
-\dive(\rho \underline{u} \otimes \underline{u}) =
-\dive(\underline{\underline{\sigma}}) + \underline{S} - \dive{(\rho\,\tens{R})}\end{equation}
+\frac {\partial (\rho \vect {u})} {\partial t }+
+\dive(\rho \vect{u} \otimes \vect{u}) =
+\dive(\underline{\underline{\sigma}}) + \vect{S} - \dive{(\rho\,\tens{R})}\end{equation}
 where:
 \begin{equation}
 \underline{\underline{\sigma}} = - p \underline{\underline{Id}} + \underline{\underline{\tau }}
@@ -51,7 +51,7 @@ with the following linear relationship for the Newtonian flows:
 +\,
  \lambda\ tr(\underline{\underline{D }})\ \underline{\underline{Id}} &\\
 &\displaystyle \underline{\underline{D}}=\frac{1}{2}\ (\ggrad \underline
-{u} +\ ^t\ggrad \underline {u})
+{u} +\ ^t\ggrad \vect {u})
 \end{array}
 \end{equation}
 
@@ -61,7 +61,7 @@ $\mu$ the dynamic viscosity (molecular and potentially turbulent),$\tens{D}$
 the rate of deformation tensor\footnote{Not to be confused, despite the same
 notation $D$, with the diffusive fluxes described in the subroutine
 \fort{navstv}}, $\tens{R}$ the Reynolds which appears when applying the
-average operator to the simultaneous equation, $\underline{S}$ the source
+average operator to the simultaneous equation, $\vect{S}$ the source
 terms.\\
 $\lambda$ is the second coefficient of viscosity. It is related to the volume viscosity
  $\kappa$ via the expression
@@ -77,22 +77,22 @@ The equation for the conservation of momentum is finally written as:
 \begin{equation}
 \begin{array}{lcl}
 &\displaystyle \rho\,
-\frac{\partial \underline {u} } {\partial t} = -\
-\underbrace {\dive(\rho \underline{u} \otimes \underline{u})}_{\text{
-convection}} +\ \underbrace {\dive (\mu\ \ggrad \underline {u})}_{\text{
+\frac{\partial \vect {u} } {\partial t} = -\
+\underbrace {\dive(\rho \vect{u} \otimes \vect{u})}_{\text{
+convection}} +\ \underbrace {\dive (\mu\ \ggrad \vect {u})}_{\text{
 diffusion}} &\\
-&\displaystyle \underbrace { +\ \dive (\mu \,^t\ggrad \underline {u}) }_{\text{
+&\displaystyle \underbrace { +\ \dive (\mu \,^t\ggrad \vect {u}) }_{\text{
 transpose of the velocity gradient term}}
-\underbrace { - \ \frac {2} {3}\ \grad (\mu\ \dive \underline {u})}_{\text{
+\underbrace { - \ \frac {2} {3}\ \grad (\mu\ \dive \vect {u})}_{\text{
 secondary viscosity}}\ \ - \dive{(\rho \tens{R})}
- -\ \grad(p) + (\rho -\rho_0)\,\underline {g} +
-\underline{u}\,\dive (\rho\,\underline {u})&\\
+ -\ \grad(p) + (\rho -\rho_0)\,\vect {g} +
+\vect{u}\,\dive (\rho\,\vect {u})&\\
 &\displaystyle +\underbrace {\Gamma
-(\underline{u}_{\,i}-\underline{u})}_{\text{mass source term}}-
+(\vect{u}_{\,i}-\vect{u})}_{\text{mass source term}}-
 \underbrace {\rho\
-\tens{K}_{\,pdc} \underline {u}}_{\text{head loss}} +
-\underbrace { \underline{T}_{\,s}^{\,exp}+
-T_{s}^{\,imp}\ \underline{u}}_{\text{other source terms}}
+\tens{K}_{\,pdc} \vect {u}}_{\text{head loss}} +
+\underbrace { \vect{T}_{\,s}^{\,exp}+
+T_{s}^{\,imp}\ \vect{u}}_{\text{other source terms}}
 \label{Base_Predvv_eqqdm}
 
 \end{array}
@@ -101,10 +101,10 @@ with $p$ denoting the difference in pressure relative to the reference hydrostat
 pressure (the real hydrostatic pressure being calculated with the density
 $\rho$ and not with $\rho_{\,0}$):
 \begin{equation}
-p=p^*-\rho_{\,0}\ \underline{g}\,.\,\underline{X}
+p=p^*-\rho_{\,0}\ \vect{g}\cdot\vect{X}
 \end{equation}
-(\underline{X} being the vector of components $x$, $y$ and $z$).\\
-$\mu_t$, $\tens{K}_{\,pdc}$, $\underline{u}_{\,i}$ represent respectively
+(\vect{X} being the vector of components $x$, $y$ and $z$).\\
+$\mu_t$, $\tens{K}_{\,pdc}$, $\vect{u}_{\,i}$ represent respectively
 the turbulent dynamic viscosity, the tensor related to head losses and the value of the
 variable associated with the mass source.\\
 The divergence of the Reynolds stress tensor is expressed by:
@@ -112,19 +112,19 @@ The divergence of the Reynolds stress tensor is expressed by:
 -\dive{(\rho\,\tens{R})}=
 \begin{cases}
 \vect{0} & \text{in laminar}, \\
- -\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u}))-\frac {2}{3}\,\grad (\rho\, k) & \text{for turbulent}\\
+ -\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \vect {u})+\dive (\mu_t\ (\ggrad \vect {u}+ \,^t\ggrad \vect {u}))-\frac {2}{3}\,\grad (\rho\, k) & \text{for turbulent}\\
  & \text{viscosity}, \\
  -\dive(\rho\,\tens{R})& \text{for second-order}\\
  & \text{models},\\
--\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \underline {u})+\dive (\mu_t\ (\ggrad \underline {u}+ \,^t\ggrad \underline {u})) & \text{in  LES}\\
+-\displaystyle\frac {2} {3}\, \grad (\mu_t\ \dive \vect {u})+\dive (\mu_t\ (\ggrad \vect {u}+ \,^t\ggrad \vect {u})) & \text{in  LES}\\
 \end{cases}
 \end{equation}
 The mass source term involves terms corresponding to the local velocity field
-$\underline {u}$ as well as a velocity field $\underline {u}_{\,i}$
+$\vect {u}$ as well as a velocity field $\vect {u}_{\,i}$
 associated with the mass injected (or extracted). When $\Gamma<0$, we remove mass from the system thereby
-obtaining $\underline{u}_{\,i} = \underline{u}$. The mass term is zero (\emph{i.e.} $\Gamma
-(\underline{u}_{\,i}-\underline{u})= \underline{0} $). When $\Gamma>0$, a non-zero
-mass term if $\underline{u}_{\,i} \ne \underline{u}$.
+obtaining $\vect{u}_{\,i} = \vect{u}$. The mass term is zero (\emph{i.e.} $\Gamma
+(\vect{u}_{\,i}-\vect{u})= \vect{0} $). When $\Gamma>0$, a non-zero
+mass term if $\vect{u}_{\,i} \ne \vect{u}$.
 All terms appearing in the conservation of momentum equation, apart from
 the convection and diffusion terms, are computed in this subroutine and
 transmitted to the
@@ -136,7 +136,7 @@ subroutine \fort{codits} which solves the full equation (convection-diffusion wi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The convective term in $\dive(\underline{u} \otimes \rho\,\underline{u})$
+The convective term in $\dive(\vect{u} \otimes \rho\,\vect{u})$
 introduces a nonlinearity and coupling of the components of the velocity
 $\vect{u}$ in the equation (\ref{Base_Predvv_eqqdm}). The three velocity
 components are linearized and decoupled during discretization of the momentum
@@ -172,25 +172,25 @@ $\bullet$ The pressure is assumed to be known at the point in time $n-1+\theta$
 (pressure/velocity time lag) and the gradient evidently calculated at this instant.\\
 $\bullet$ The secondary viscosity and the gradient transpose source terms,
 those coming from the turbulence model\footnote{with the exception of $\dive (\mu_t\ (\ggrad
-\underline {u}))$}, $\rho\,\tens{K}_{\,e}\ \underline{u}$, $(\rho -\rho_0)
-\underline {g}$ as well as $\underline{T}_{s}^{\,exp}$ and
-$\Gamma\,\underline{u}_{\,i}$ are evaluated explicitly at time $n$ or else
+\vect {u}))$}, $\rho\,\tens{K}_{\,e}\ \vect{u}$, $(\rho -\rho_0)
+\vect {g}$ as well as $\vect{T}_{s}^{\,exp}$ and
+$\Gamma\,\vect{u}_{\,i}$ are evaluated explicitly at time $n$ or else
 extrapolated according to the time scheme selected for the physical properties and the
 source terms.\\
-$\bullet$ The source terms $\underline{u}\,\,\dive (\rho\,\underline {u})$,
-$\Gamma\,\,\underline{u}$, $T_{s}^{\,imp}\,\,\underline{u}$ and
-$-\rho\,\tens{K}_{\,d}\,\,\underline{u}$ are implicit and calculated at
+$\bullet$ The source terms $\vect{u}\,\,\dive (\rho\,\vect {u})$,
+$\Gamma\,\,\vect{u}$, $T_{s}^{\,imp}\,\,\vect{u}$ and
+$-\rho\,\tens{K}_{\,d}\,\,\vect{u}$ are implicit and calculated at
 instant $n+\theta$.\\
-$\bullet$ The diffusion term  $\dive (\mu_{\,tot}\,\ggrad \underline{u})$ is implicitized: the velocity is taken at the instant $n+\theta$ and the viscosity either explicitized or extrapolated.\\
-$\bullet$ Lastly, the convection term in $\dive(\,\underline{u} \otimes
-(\rho\underline{u})\,)$ is treated implicitly: the resolved velocity
+$\bullet$ The diffusion term  $\dive (\mu_{\,tot}\,\ggrad \vect{u})$ is implicitized: the velocity is taken at the instant $n+\theta$ and the viscosity either explicitized or extrapolated.\\
+$\bullet$ Lastly, the convection term in $\dive(\,\vect{u} \otimes
+(\rho\vect{u})\,)$ is treated implicitly: the resolved velocity
 component is
 taken at $n+\theta$ and the mass flux determined explicitly or extrapolated
 at
 $n+\theta_F$.
 
 For clarification, unless explicitly stated otherwise the physical properties
-$\Phi$ ($\rho,\,\mu_{tot},\,...$) and the mass flux $(\rho\underline{u})$
+$\Phi$ ($\rho,\,\mu_{tot},\,...$) and the mass flux $(\rho\vect{u})$
 are  to be evaluated respectively at time steps $n+\theta_\Phi$ and
 $n+\theta_F$, with $\theta_\Phi$ and $\theta_F$ dependent upon the specific
 time schemes selected for these quantities\footnote{cf. \fort{introd}}.
@@ -199,20 +199,20 @@ The time-discrete form of the momentum equation (\ref{Base_Predvv_eqqdm}) then r
 
 \begin{equation}\label{Base_Predvv_eq_di1}
  \begin{array}{c}
-\displaystyle \rho\,\ \frac{ \underline {\widetilde{u}}^{n+1} -\underline {u}^{n} }
-{\Delta t} + \dive(\,\underline{\widetilde{u}}^{n+\theta} \otimes (\rho\underline{u})\,) -\dive
-(\mu_{\,tot}\,\ggrad \underline{\widetilde{u}}^{n+\theta}) =
+\displaystyle \rho\,\ \frac{ \vect {\widetilde{u}}^{n+1} -\vect {u}^{n} }
+{\Delta t} + \dive(\,\vect{\widetilde{u}}^{n+\theta} \otimes (\rho\vect{u})\,) -\dive
+(\mu_{\,tot}\,\ggrad \vect{\widetilde{u}}^{n+\theta}) =
 \\
 \displaystyle
- - \grad p^{n-1+\theta} + \dive (\rho\,\underline {u})\,\underline{\widetilde{u}}^{n+\theta} +(\Gamma\,\underline{u}_{\,i})^{n+\theta_S}-\Gamma^n\,\,\underline{\widetilde{u}}^{n+\theta}
+ - \grad p^{n-1+\theta} + \dive (\rho\,\vect {u})\,\vect{\widetilde{u}}^{n+\theta} +(\Gamma\,\vect{u}_{\,i})^{n+\theta_S}-\Gamma^n\,\,\vect{\widetilde{u}}^{n+\theta}
 \\
 \begin{array}{c}
 \displaystyle
-- \rho\,\tens{K}_{\,d}^{n}\,\,\underline{\widetilde{u}}^{n+\theta} - (\rho\,\tens{K}_{\,e}\ \underline{u})^{n+\theta_S} + (\underline{T}_{s}^{\,exp})^{\,n+\theta_S} + T_{s}^{\,imp}\,\,\underline{\widetilde{u}}^{n+\theta}
+- \rho\,\tens{K}_{\,d}^{n}\,\,\vect{\widetilde{u}}^{n+\theta} - (\rho\,\tens{K}_{\,e}\ \vect{u})^{n+\theta_S} + (\vect{T}_{s}^{\,exp})^{\,n+\theta_S} + T_{s}^{\,imp}\,\,\vect{\widetilde{u}}^{n+\theta}
 \\
 \displaystyle
-+[\dive (\mu_{\,tot}\,^t\ggrad \underline {u})]^{n+\theta_S}-\frac {2} {3}[\,\grad (\mu_{\,tot}\,\dive \underline {u})]^{n+\theta_S} + (\rho -\rho_0) \underline {g}
- - (\underline{turb})^{n+\theta_S}
++[\dive (\mu_{\,tot}\,^t\ggrad \vect {u})]^{n+\theta_S}-\frac {2} {3}[\,\grad (\mu_{\,tot}\,\dive \vect {u})]^{n+\theta_S} + (\rho -\rho_0) \vect {g}
+ - (\vect{turb})^{n+\theta_S}
 \end{array}
 \end{array}
 \end{equation}
@@ -227,7 +227,7 @@ where, for simplification, the following definitions have been set:
 \\
 and:
 \begin{equation}
-\underline{turb}^{n}=
+\vect{turb}^{n}=
 \begin{cases}
 \displaystyle\frac {2}{3}\grad (\rho^{n}\,k^{n}) & \text{for turbulent viscosity models}, \\
 \dive(\rho^{n}\,\tens{R}^n) & \text{for second order models},\\
@@ -235,12 +235,12 @@ and:
 \end{cases}
 \end{equation}
 By analogy with the $\theta$-scheme equation for a scalar variable, $\,
-\underline {\widetilde{u}}^{n+\theta}$ is interpolated from the predicted velocity
-$\underline {\widetilde{u}}^{n+1}$ in the following manner\footnote{if
+\vect {\widetilde{u}}^{n+\theta}$ is interpolated from the predicted velocity
+$\vect {\widetilde{u}}^{n+1}$ in the following manner\footnote{if
 $\theta=1/2$, or a time extrapolation is used, second-order is only obtained provided the time step $\Delta t$ is constant and spatially uniform.}~:
 \begin{equation}
-\underline {\widetilde{u}}^{n+\theta}=\theta\, \underline
-{\widetilde{u}}^{n+1}+(1-\theta)\, \underline {u}^{n}\\
+\vect {\widetilde{u}}^{n+\theta}=\theta\, \vect
+{\widetilde{u}}^{n+1}+(1-\theta)\, \vect {u}^{n}\\
 \end{equation}
 With:
 \begin{equation}
@@ -256,23 +256,23 @@ Using the above interpolation function, (\ref{Base_Predvv_eq_di1}) is then rewri
 
 \begin{equation}\label{Base_Predvv_eq_di2}
 \begin{array}{c}
-\displaystyle \underbrace{\left(\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\theta \,\, \Gamma^n +
-\theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \right)}_{\displaystyle f_s^{imp}}\, (\underline {\,\widetilde{u}}^{n+1} -\underline {u}^{n})
+\displaystyle \underbrace{\left(\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\vect {u}) +\theta \,\, \Gamma^n +
+\theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \right)}_{\displaystyle f_s^{imp}}\, (\vect {\,\widetilde{u}}^{n+1} -\vect {u}^{n})
 \\
- +\, \theta\, \dive(\underline {\widetilde{u}}^{n+1} \otimes (\rho\underline{u}))-\, \theta\,\dive (\mu_{\,tot}\,\ggrad \underline {\widetilde{u}}^{n+1}) =
+ +\, \theta\, \dive(\vect {\widetilde{u}}^{n+1} \otimes (\rho\vect{u}))-\, \theta\,\dive (\mu_{\,tot}\,\ggrad \vect {\widetilde{u}}^{n+1}) =
 \\
--\,(1-\theta)\, \dive(\underline {u}^{n} \otimes (\rho\underline{u})) +\,(1-\theta)\,\dive (\mu_{\,tot}\,\ggrad \underline {u}^{n})
+-\,(1-\theta)\, \dive(\vect {u}^{n} \otimes (\rho\vect{u})) +\,(1-\theta)\,\dive (\mu_{\,tot}\,\ggrad \vect {u}^{n})
 \\
 f_s^{exp}\left\{
 \begin{array}{c}
 \displaystyle
-- \grad p^{n-1+\theta} + \dive (\rho\,\underline {u})\,\underline{u}^{n} +\,(\,\Gamma^{n}\,\underline{u}_{\,i}\,)^{n+\theta_S}- \Gamma^n\,\,\underline{u}^{n}
+- \grad p^{n-1+\theta} + \dive (\rho\,\vect {u})\,\vect{u}^{n} +\,(\,\Gamma^{n}\,\vect{u}_{\,i}\,)^{n+\theta_S}- \Gamma^n\,\,\vect{u}^{n}
 \\
 \displaystyle
--(\,\rho\,\tens{K}_{\,e}\ \underline{u}\,)^{n+\theta_S} -\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n}+ (\underline{T}_{s}^{\,exp})^{\,n+\theta_S} + T_s^{\,imp}\,\,\underline {u}^{n}
+-(\,\rho\,\tens{K}_{\,e}\ \vect{u}\,)^{n+\theta_S} -\rho\,\tens{K}_{\,d}^n\ \vect{u}^{n}+ (\vect{T}_{s}^{\,exp})^{\,n+\theta_S} + T_s^{\,imp}\,\,\vect {u}^{n}
 \\
 \displaystyle
-+[\dive (\mu_{\,tot}\,^t\ggrad \underline {u}\,)]^{n+\theta_S}-\frac {2} {3}[\,\grad (\mu_{\,tot}\,\dive \underline {u}\,)]^{n+\theta_S} + (\rho -\rho_0) \underline {g}-(\underline{turb})^{n+\theta_S}
++[\dive (\mu_{\,tot}\,^t\ggrad \vect {u}\,)]^{n+\theta_S}-\frac {2} {3}[\,\grad (\mu_{\,tot}\,\dive \vect {u}\,)]^{n+\theta_S} + (\rho -\rho_0) \vect {g}-(\vect{turb})^{n+\theta_S}
 \end{array}
 \right.
 \end{array}
@@ -281,12 +281,12 @@ f_s^{exp}\left\{
 from which the equation solved by the subroutine \fort{codits} is obtained:
 \begin{equation}\begin{array}{c}
 \displaystyle
-f_s^{\,imp}(\underline {\widetilde{u}}^{n+1}-\underline {u}^{n}) + \theta\, \dive(\underline{\widetilde{u}}^{n+1} \otimes (\rho
-\underline{u})) - \theta\,\dive (\,\mu_{\,tot}\,\ggrad \underline{\widetilde{u}}^{n+1}) =
+f_s^{\,imp}(\vect {\widetilde{u}}^{n+1}-\vect {u}^{n}) + \theta\, \dive(\vect{\widetilde{u}}^{n+1} \otimes (\rho
+\vect{u})) - \theta\,\dive (\,\mu_{\,tot}\,\ggrad \vect{\widetilde{u}}^{n+1}) =
 \\\\
 \displaystyle
--(1-\theta)\,\dive(\underline{u}^{n} \otimes (\rho \underline{u}))+(1-\theta)\,\dive (\,\mu_{\,tot}\,\ggrad \underline{u}^{n})
-+ \underline{f}_{\,s}^{\,exp}
+-(1-\theta)\,\dive(\vect{u}^{n} \otimes (\rho \vect{u}))+(1-\theta)\,\dive (\,\mu_{\,tot}\,\ggrad \vect{u}^{n})
++ \vect{f}_{\,s}^{\,exp}
 \end{array}
 \end{equation}
 The spatial discretization scheme is elaborated further in the section relating to the subroutine \fort{codits}.\\
@@ -302,16 +302,16 @@ $\,T_s^{\,imp}$ is added to $f_s^{\,imp}$ whatever its sign. In effect, the intu
 \begin{equation}
 \begin{cases}
 \displaystyle
-(\underline{T}_{s}^{\,exp} + T_{s}^{\,imp}\,\underline {u})^{\,n+\theta_S} &
+(\vect{T}_{s}^{\,exp} + T_{s}^{\,imp}\,\vect {u})^{\,n+\theta_S} &
 \text{if } T_{s}^{\,imp} > 0\\
 \displaystyle
-(\underline{T}_{s}^{\,exp})^{\,n+\theta_S} + T_{s}^{\,imp}\,\underline{u}^{n+\theta} &\text{if not}\\
+(\vect{T}_{s}^{\,exp})^{\,n+\theta_S} + T_{s}^{\,imp}\,\vect{u}^{n+\theta} &\text{if not}\\
 \end{cases}
 \end{equation}
 leads to inconsistency (loss of coherence) in the numerical treatment of the problem should $T_s^{imp}$ changes sign between two time steps.\\
 {\tiny$\blacksquare$} The diagonal part $\tens{K}_{\,d}$ of the head loss tensor term is used in $f_s^{\,imp}$. Strictly speaking, only the positive contributions should in fact be retained (as pointed out in the associated user subroutine \fort{uskpdc}). The  approach currently in use requires improvement.\\
 {\tiny$\blacksquare$} The term $\theta\,\Gamma^{n}-\theta\,\dive
-(\rho\,\underline {u})$ is not problematic for the diagonal dominance of the matrix as it is exactly counterbalanced by the convection term (cf. \fort{covofi}).
+(\rho\,\vect {u})$ is not problematic for the diagonal dominance of the matrix as it is exactly counterbalanced by the convection term (cf. \fort{covofi}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -362,15 +362,15 @@ This operation is carried out by successively implementing \fort{inimas}
 (calculation at the faces in \var{VISCF} and \var{VISCB} of $\Delta t\,\grad{P^{n-1+\theta}}$ using the contents of the working array \var{TRAV}=$\frac{\Delta t}{\rho} \grad{P^{n-1+\theta}}$ together with homogeneous velocity boundary conditions and without reconstruction) followed by \fort{divmas} (computation in \var{XNORMP} of the integral over the cells).  With a simple loop, we then add the mass source term contribution $\Gamma$.
 This calculation is completed at the end of \fort{predvv}.\\
 
-\etape{Partial calculation of the term $\underline{f}_s^{\,exp}$}
+\etape{Partial calculation of the term $\vect{f}_s^{\,exp}$}
 
 To represent the second member corresponding to each component of the velocity, we use the arrays \var{TRAV}(\var{IEL},\var{DIR}), \var{TRAVA}(\var{IEL},\var{DIR}) and \var{PROPCE}, with \var{IEL} being the number of the cell and \var{DIR} the direction (x, y, z). Four cases need to be considered depending on whether or not the source terms are extrapolated at $n+\theta_S$ and whether or not a fixed-point iteration is implemented on the velocity-pressure system (\var{NTERUP}$>1$).
 \\
 $\bullet$ If the source terms are extrapolated and we iterate over \fort{navstv}\\
 \begin{itemize}
 \item [-]\var{TRAV} receives the source terms which are recomputed during each iteration over \fort{navstv} but are not extrapolated
-($\grad{P^{n-1+\theta}}$ and $(\rho -\rho_0) \underline {g}$\footnote{In reality, the value of
-$(\rho -\rho_0) \underline {g}$ doesn't change, however this is a computation and it avoids the need for additional treatment of this term.}).\\
+($\grad{P^{n-1+\theta}}$ and $(\rho -\rho_0) \vect {g}$\footnote{In reality, the value of
+$(\rho -\rho_0) \vect {g}$ doesn't change, however this is a computation and it avoids the need for additional treatment of this term.}).\\
 \item [-]\var{TRAVA} receives the source terms whose values do not change during the course of the iterations over \fort{navstv} nor are they extrapolated
 ($T_s^{imp}\,u^n\,,-\rho\,\tens{K}_{d}\,u^n\,,\,-\Gamma^n\,u^n,...$).\\
 \item [-]\var{PROPCE} receives the source terms that have to be extrapolated.\\
@@ -389,8 +389,8 @@ Therefore, when there is neither source term extrapolation nor iteration over \f
 \end{equation}
 
 \item If source term extrapolation is used, at the first iteration over \fort{navstv}, the vector \var{TRAV} (or \var{TRAVA}) receives $-\theta_S$ times the contribution at time $n-1$ of the source terms to be extrapolated\footnote{Because
-$(\underline{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\underline{T}_s^{exp})^n
--\,\theta_S\, (\underline{T}_s^{exp})^{n-1}$} (stored in \var{PROPCE}). \var{PROPCE} is then reinitialised to zero so as to be able to receive afterwards the contribution at the current time step of the extrapolated source terms.
+$(\vect{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\vect{T}_s^{exp})^n
+-\,\theta_S\, (\vect{T}_s^{exp})^{n-1}$} (stored in \var{PROPCE}). \var{PROPCE} is then reinitialised to zero so as to be able to receive afterwards the contribution at the current time step of the extrapolated source terms.
 
 \item The value of the term corresponding to the turbulence model is only calculated during the first iteration over \fort{navstv} then added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated, and/or whether we iterate over \fort{navstv}.\\
 
@@ -400,15 +400,15 @@ $-\displaystyle \frac{2}{3}\grad (\rho k)$) by way of simplification
 (cf. paragraph~\ref{Base_Predvv_section4}). The gradient of the turbulent kinetic energy $k$ is computed on the cell by the subroutine \fort{grdcel}. \\
 If $\var{IGRHOK}=0$, this term is expected to be implicitly taken into account in the pressure.\\
 {\tiny$\blacksquare$} Second order models:\\
-Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A call is first made to the subroutine \fort{divrij}, which projects the vector $\tens{R}.\underline{e}_{\var{DIR}}$ onto the cell faces along the direction \var{DIR}, following which we then call the subroutine \fort{divmas} to compute the divergence.\\
+Computation of the term $-\dive(\rho \tens{R})$ is implemented in two steps. A call is first made to the subroutine \fort{divrij}, which projects the vector $\tens{R}.\vect{e}_{\var{DIR}}$ onto the cell faces along the direction \var{DIR}, following which we then call the subroutine \fort{divmas} to compute the divergence.\\
 \linebreak
-\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \underline\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \underline {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{navstv}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
+\item The secondary viscosity $- \displaystyle \frac {2} {3}\grad (\mu_{\,tot} \dive \vect\,{u})$ and transposed gradient $ \dive (\mu_{\,tot} \,^t\ggrad \vect {u})$ terms, when these taken into account (\emph{i.e.} \var{IVISSE}\,(\var{IPHAS})\ = 1, where \var{IPHAS} is the number of the phase treated) are computed by the subroutine \fort{visecv}. They are only calculated at the first iteration over \fort{navstv}. During this step, the array \var{TRAV} serves as a working array when the subroutine  \fort{visecv} is being called. It reverts to its normal value at the end of the call during which its contents are stored temporarily in the vectors \var{W7} to \var{W9}.
 \\
 \item The terms corresponding to the velocity head losses ($\rho \tens{K}_{\,pdc}
 {u}$), if there are any (\ $\var{NCEPDP}> 0$\ ), are calculated by the subroutine \fort{tspdcv} at the first iteration over \fort{navstv}. They are decomposed into two parts:\\
-{\tiny$\blacksquare$} The first part, corresponding to the contribution of the diagonal terms ($-\rho\,\tens{K}_{\,d}\underline{u}$), is not extrapolated.\\
+{\tiny$\blacksquare$} The first part, corresponding to the contribution of the diagonal terms ($-\rho\,\tens{K}_{\,d}\vect{u}$), is not extrapolated.\\
 {\tiny$\blacksquare$} The second, which corresponds to the extra diagonal terms
-($-\rho\,\tens{K}_{\,e}\underline{u}$), may or may not be extrapolated.\\
+($-\rho\,\tens{K}_{\,e}\vect{u}$), may or may not be extrapolated.\\
 During this step, the array \var{TRAV} is used as a working array while the call is being made to the subroutine \fort{tspdcv}. It reverts to its normal value at the end of this call, its contents having been meanwhile stored in the vectors \var{W7} to \var{W9}.
 
 \end{itemize}
@@ -430,11 +430,11 @@ For each of these components:\\
 
 \begin{itemize}
 \item During the first iteration over the subroutine \fort{navstv}, the implicit and explicit parts of the user-prescribed source terms are computed by a call to the subroutine \fort{ustsns}.\\
-{\tiny$\blacksquare$} The implicit part ($T_s^{imp}$) is saved in the vector \var{XIMPA} for subsequent iterations if the fixed-point method is used on the velocity-pressure system, with the contribution resulting from the same implicit terms ($T_s^{imp}\,\underline{u}^n$) being added either to \var{TRAVA} or to \var{TRAV}.\\
+{\tiny$\blacksquare$} The implicit part ($T_s^{imp}$) is saved in the vector \var{XIMPA} for subsequent iterations if the fixed-point method is used on the velocity-pressure system, with the contribution resulting from the same implicit terms ($T_s^{imp}\,\vect{u}^n$) being added either to \var{TRAVA} or to \var{TRAV}.\\
 {\tiny$\blacksquare$} The explicit part ($T_s^{exp}$) is added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated or not, and whether we iterate over \fort{navstv}.\\
 
-\item The mass accumulation term ($\dive(\rho \underline {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{navstv},
-the term corresponding to the explicit contribution of the mass accumulation ($\underline{u}^{n}\ \dive(\rho \underline{u})$) is added to \var{TRAVA} or to \var{TRAV}. The vector \var{ROVSDT} is initialized by $\theta\,\dive(\rho \underline{u})$ (to remain coherent with the approach implemented in the subroutine
+\item The mass accumulation term ($\dive(\rho \vect {u})$) is calculated by calling the subroutine \fort{divmas} with the mass flux as argument. During the first iteration of the subroutine \fort{navstv},
+the term corresponding to the explicit contribution of the mass accumulation ($\vect{u}^{n}\ \dive(\rho \vect{u})$) is added to \var{TRAVA} or to \var{TRAV}. The vector \var{ROVSDT} is initialized by $\theta\,\dive(\rho \vect{u})$ (to remain coherent with the approach implemented in the subroutine
 \fort{bilsc2}) after which the contribution of the non-stationary term ($\displaystyle
 \frac{\rho}{\Delta t}$) is added to the latter.\\
 
@@ -442,7 +442,7 @@ the term corresponding to the explicit contribution of the mass accumulation ($\
 {\tiny$\blacksquare$} When there is no source term extrapolation, the implicit part of the user source terms is  only added to \var{ROVSDT} if it is negative so as not to weaken the diagonal of the system.\\
 {\tiny$\blacksquare$} When the source terms are extrapolated however, it is taken into account whatever its sign may be.\\
 
-\item The implicit and explicit mass source terms, if any (~$\var{NCESMP}>0$~), are computed at the first iteration by the subroutine  \fort{catsma} over \fort{navstv}. $\Gamma\,\underline{u}_i$ is added to \var{TRAV}, \var{TRAVA} or \var{PROPCE} for potential extrapolation. $\Gamma\,\underline{u}^n$ is added to \var{TRAV} or \var{TRAVA} and
+\item The implicit and explicit mass source terms, if any (~$\var{NCESMP}>0$~), are computed at the first iteration by the subroutine  \fort{catsma} over \fort{navstv}. $\Gamma\,\vect{u}_i$ is added to \var{TRAV}, \var{TRAVA} or \var{PROPCE} for potential extrapolation. $\Gamma\,\vect{u}^n$ is added to \var{TRAV} or \var{TRAVA} and
 $-\Gamma$ to \var{ROVSDT}.
 \\
 \item The second member is then assembled taking account of all of the
@@ -460,20 +460,20 @@ $$\var{SMBR}=\var{TRAVA}+\var{TRAV}$$
 
 \item When strengthened transient velocity-pressure coupling ($\ \var{IPUCOU} = 1\ $) (only available with a first-order scheme, where there is neither source term extrapolation nor iteration over \fort{navstv}) is implemented, \fort{codits} solves the following equation:
 \begin{equation}\label{Base_Predvv_Eq_Tdir}
-\tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}} =
+\tens{EM}_{\,\var{DIR}}\,.\, (\tens{RHO}^{\,n})^{-1}\,.\,\vect{T}_{\,\var{DIR}} =
 \tens{\Omega}\,.\,\vect{1}
 \end{equation}
 with $\tens{RHO}^n$ the diagonal tensor of element $\rho^{n}_{IEL}$,
 $\tens{\Omega}$ the diagonal tensor of element $|\Omega_{IEL}|$ and $\vect{1}$ denoting the
 vector whose components are all equal to one.\\
 Inversion of the system by \fort{codits} yields
-$(\tens{RHO}^{\,n})^{-1}\,.\,\underline{T}_{\,\var{DIR}}$, which is subsequently multiplied by $\tens{RHO}^{\,n}$
-to obtain $\underline{T}_{\,\var{DIR}}$.
-This process is repeated for each component \var{DIR} of the velocity. $\underline{T}_{\,\var{DIR}}$
+$(\tens{RHO}^{\,n})^{-1}\,.\,\vect{T}_{\,\var{DIR}}$, which is subsequently multiplied by $\tens{RHO}^{\,n}$
+to obtain $\vect{T}_{\,\var{DIR}}$.
+This process is repeated for each component \var{DIR} of the velocity. $\vect{T}_{\,\var{DIR}}$
 is therefore a diagonal matrix approximation of
 $\tens{RHO}^{\,n}\,.\,\tens{EM}_{\,\var{DIR}}^{-1}$, with
 $\tens{EM}_{\,\var{DIR}}$ representing the implicit part of the solution to the discrete momentum equation (\emph{i.e.} \var{ROVSDT} + contribution of the convection-diffusion terms accounted for in the subroutine
-\fort{matrix}). $\underline{T}_{\,\var{DIR}}$ is also involved in the correction step (cf. subroutine \fort{resopv}).\\
+\fort{matrix}). $\vect{T}_{\,\var{DIR}}$ is also involved in the correction step (cf. subroutine \fort{resopv}).\\
 \end{itemize}
 This terminates the loop over the velocity components.\\
 
@@ -500,7 +500,7 @@ Lastly, the normalized residual is determined and then stored in \var{RNORMP(IIP
 The different contributions (excluding convection-diffusion) assigned to each of the vectors \var{TRAV}, \var{TRAVA}, \var{PROPCE} and \var{ROVSDT} at iteration $n$ are summarized in tables (\ref{Base_Predvv_tab_ext0}), (\ref{Base_Predvv_tab_ext1}), (\ref{Base_Predvv_tab_exp0}) and (\ref{Base_Predvv_tab_exp1}). We differentiate two cases for each of the time-stepping schemes applied to the source terms, depending on whether or not a fixed-point algorithm is used to solve the velocity-pressure system (iteration over \fort{navstv} for
 \var{NTERUP}$>1$). Unless otherwise specified, the physical properties $\Phi$
 ($\rho$,$\mu$,etc...) are assumed to be evaluated at the time level $n+\theta_\Phi$, and the mass flux
- $(\,\rho \underline{u})$ at $n+\theta_F$, where $\theta_\Phi$ and $\theta_F$ are dependent on the specific time-stepping schemes selected for these quantities (cf. \fort{introd}).
+ $(\,\rho \vect{u})$ at $n+\theta_F$, where $\theta_\Phi$ and $\theta_F$ are dependent on the specific time-stepping schemes selected for these quantities (cf. \fort{introd}).
 \\\\
 The terms appearing in these tables are written as they have been implemented in the code, this being the source of some differences in relation to the form adopted in equation (\ref{Base_Predvv_eq_di2}).
 \\\\
@@ -515,7 +515,7 @@ In order to simplify the problem, we pose:
 
 \minititre{With extrapolation of source terms}
 \begin{equation}\notag
-\underline{turb}^{n}=
+\vect{turb}^{n}=
 \begin{cases}
 \displaystyle\frac {2}{3}\,\rho^{n}\,\grad (\,k^{n}) &
 \text{for turbulent viscosity models}, \\
@@ -529,20 +529,20 @@ $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=(1-\theta_S)\,\var{PROPCE}^n+\var{T
 \hline
 \var{ROVSDT}^{n}
 & \displaystyle
-\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\theta \,\, \Gamma^n + \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \\
+\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\vect {u}) +\theta \,\, \Gamma^n + \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \\
 \hline
 \var{PROPCE}^{n}
 & \displaystyle
-\underline{T}_{s}^{\,exp,\,n}-\,\rho^{n}\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+\vect{T}_{s}^{\,exp,\,n}-\,\rho^{n}\,\tens{K}_{\,e}^{n}\ \vect{u}^{n} + \,\Gamma^{n}\,\vect{u}_{\,i}^{n}\\
 & \displaystyle
--\underline{turb}^{n}+ \dive (\mu_{\,tot}^{n}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}^{n}\,\dive \frac{(\rho \underline {u})}{\rho^{n}}\,)\\
+-\vect{turb}^{n}+ \dive (\mu_{\,tot}^{n}\,^t\ggrad \vect {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}^{n}\,\dive \frac{(\rho \vect {u})}{\rho^{n}}\,)\\
 \hline
 \var{TRAV}^{n} & \displaystyle
-- \grad p^{n-1+\theta} + (\rho -\rho_0) \underline {g} \\
+- \grad p^{n-1+\theta} + (\rho -\rho_0) \vect {g} \\
 & \displaystyle
--\theta_S\,\var{PROPCE}^{n-1} -\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n} \\
+-\theta_S\,\var{PROPCE}^{n-1} -\rho\,\tens{K}_{\,d}^n\ \vect{u}^{n} \\
 & \displaystyle
-+ T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \Gamma^n\,\,\underline{u}^{n}\\
++ T_s^{\,imp}\,\,\vect {u}^{n} + \dive (\rho\,\vect {u})\,\vect{u}^{n} - \Gamma^n\,\,\vect{u}^{n}\\
 \hline
 \end{array}
 \end{equation}
@@ -553,21 +553,21 @@ $\bullet$ \var{NTERUP} $>$ 1 (sub-iteration $k$) : $\var{SMBR}^n=(1-\theta_S)\,\
 \hline
 \var{ROVSDT}^{n}
 & \displaystyle
-\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\theta \,\, \Gamma^n + \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \\
+\frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\vect {u}) +\theta \,\, \Gamma^n + \theta \,\, \rho\,\tens{K}_{\,d}^n-\theta \,T_s^{\,imp} \\
 \hline
 \var{PROPCE}^{n}
 & \displaystyle
-\underline{T}_{s}^{\,exp,\,n}-\,\rho^{n}\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+\vect{T}_{s}^{\,exp,\,n}-\,\rho^{n}\,\tens{K}_{\,e}^{n}\ \vect{u}^{n} + \,\Gamma^{n}\,\vect{u}_{\,i}^{n}\\
 & \displaystyle
--\underline{turb}^{n}+ \dive (\mu_{\,tot}^{n}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}^{n}\,\dive \frac{(\rho \underline {u})}{\rho^{n}}\,)\\
+-\vect{turb}^{n}+ \dive (\mu_{\,tot}^{n}\,^t\ggrad \vect {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}^{n}\,\dive \frac{(\rho \vect {u})}{\rho^{n}}\,)\\
 \hline
 \var{TRAVA}^{n} &
 \displaystyle
--\theta_S\,\var{PROPCE}^{n-1} -\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n} + T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \Gamma^n\,\,\underline{u}^{n}\\
+-\theta_S\,\var{PROPCE}^{n-1} -\rho\,\tens{K}_{\,d}^n\ \vect{u}^{n} + T_s^{\,imp}\,\,\vect {u}^{n} + \dive (\rho\,\vect {u})\,\vect{u}^{n} - \Gamma^n\,\,\vect{u}^{n}\\
 \hline
 \var{TRAV}^{n}
 & \displaystyle
-- \grad (p^{n+\theta})^{(k-1)} + (\rho -\rho_0) \underline {g} \\
+- \grad (p^{n+\theta})^{(k-1)} + (\rho -\rho_0) \vect {g} \\
 \hline
 \end{array}
 \end{equation}
@@ -575,7 +575,7 @@ $\bullet$ \var{NTERUP} $>$ 1 (sub-iteration $k$) : $\var{SMBR}^n=(1-\theta_S)\,\
 \minititre{Without source term extrapolation}
 
 \begin{equation}\notag
-\underline{turb}^{n}=
+\vect{turb}^{n}=
 \begin{cases}
 \displaystyle\frac {2}{3}\,\rho\,\grad (\,k^{n}) &
 \text{for turbulent viscosity models}, \\
@@ -589,17 +589,17 @@ $\bullet$ \var{NTERUP} $=$ 1 : $\var{SMBR}^n=\var{TRAV}^n$
 \begin{array}{|l|c|}
 \hline
 \var{ROVSDT}^{n} &
-\displaystyle \frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\, \Gamma^n + \, \rho\,\tens{K}_{\,d}^n+Max(-\,T_s^{\,imp},0)\\
+\displaystyle \frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\vect {u}) +\, \Gamma^n + \, \rho\,\tens{K}_{\,d}^n+Max(-\,T_s^{\,imp},0)\\
 \hline
 \var{TRAV}^{n}
 & \displaystyle
-- \grad p^{n-1+\theta} + (\rho -\rho_0) \underline {g} \\
+- \grad p^{n-1+\theta} + (\rho -\rho_0) \vect {g} \\
 & \displaystyle
-+ \underline{T}_{s}^{\,exp}-\,\rho\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
++ \vect{T}_{s}^{\,exp}-\,\rho\,\tens{K}_{\,e}^{n}\ \vect{u}^{n} + \,\Gamma^{n}\,\vect{u}_{\,i}^{n}\\
 & \displaystyle
--\underline{turb}^{n}+ \dive (\mu_{\,tot}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}\,\dive \frac{(\rho \underline {u})}{\rho}\,)\\
+-\vect{turb}^{n}+ \dive (\mu_{\,tot}\,^t\ggrad \vect {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}\,\dive \frac{(\rho \vect {u})}{\rho}\,)\\
 & \displaystyle
--\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n}+ T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \,\Gamma^{n}\,\underline{u}^{n}\\
+-\rho\,\tens{K}_{\,d}^n\ \vect{u}^{n}+ T_s^{\,imp}\,\,\vect {u}^{n} + \dive (\rho\,\vect {u})\,\vect{u}^{n} - \,\Gamma^{n}\,\vect{u}^{n}\\
 \hline
 \end{array}
 \end{equation}
@@ -609,19 +609,19 @@ $\bullet$ \var{NTERUP} $>$ 1 (sub-iteration $k$) : $\var{SMBR}^n=\var{TRAVA}^n+\
 \begin{array}{|l|c|}
 \hline
 \var{ROVSDT}^{n} &
-\displaystyle \frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\underline {u}) +\, \Gamma^n + \, \rho\,\tens{K}_{\,d}^n+Max(-\,T_s^{\,imp},0)\\
+\displaystyle \frac{\rho}{\Delta t} -\theta \,\dive (\rho\,\vect {u}) +\, \Gamma^n + \, \rho\,\tens{K}_{\,d}^n+Max(-\,T_s^{\,imp},0)\\
 \hline
 \var{TRAVA}^{n} &
 \displaystyle
-\underline{T}_{s}^{\,exp}-\,\rho\,\tens{K}_{\,e}^{n}\ \underline{u}^{n} + \,\Gamma^{n}\,\underline{u}_{\,i}^{n}\\
+\vect{T}_{s}^{\,exp}-\,\rho\,\tens{K}_{\,e}^{n}\ \vect{u}^{n} + \,\Gamma^{n}\,\vect{u}_{\,i}^{n}\\
 & \displaystyle
--\underline{turb}^{n}+ \dive (\mu_{\,tot}\,^t\ggrad \underline {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}\,\dive \frac{(\rho \underline {u})}{\rho}\,)\\
+-\vect{turb}^{n}+ \dive (\mu_{\,tot}\,^t\ggrad \vect {u}^{n}\,)+ \frac {2} {3}\,\grad (\mu_{\,tot}\,\dive \frac{(\rho \vect {u})}{\rho}\,)\\
 & \displaystyle
--\rho\,\tens{K}_{\,d}^n\ \underline{u}^{n}+ T_s^{\,imp}\,\,\underline {u}^{n} + \dive (\rho\,\underline {u})\,\underline{u}^{n} - \Gamma^n\,\,\underline{u}^{n}\\
+-\rho\,\tens{K}_{\,d}^n\ \vect{u}^{n}+ T_s^{\,imp}\,\,\vect {u}^{n} + \dive (\rho\,\vect {u})\,\vect{u}^{n} - \Gamma^n\,\,\vect{u}^{n}\\
 \hline
 \var{TRAV}^{n} &
 \displaystyle
-- \grad (p^{n+\theta})^{(k-1)} + (\rho -\rho_0) \underline {g} \\
+- \grad (p^{n+\theta})^{(k-1)} + (\rho -\rho_0) \vect {g} \\
 \hline
 \end{array}
 \end{equation}
@@ -655,9 +655,9 @@ We could check the normalized residual computation and in particular the use of 
 \etape{Calculation of the head losses}
 When the source terms are extrapolated in time, we now obtain:
 \begin{equation}\notag
-(\tens{K}_{\,e}\underline{u})^{n+\theta_S} + \tens{K}_{\,d}^{n}\ \underline{u}^{n+\theta}
+(\tens{K}_{\,e}\vect{u})^{n+\theta_S} + \tens{K}_{\,d}^{n}\ \vect{u}^{n+\theta}
 \end{equation}
 It would also be possible to envisage using:
 \begin{equation}\notag
-(\tens{K}_{\,e}\underline{u})^{n+\theta_S} + \tens{K}_{\,d}^{n+\theta_S}\ \underline{u}^{n+\theta}
+(\tens{K}_{\,e}\vect{u})^{n+\theta_S} + \tens{K}_{\,d}^{n+\theta_S}\ \vect{u}^{n+\theta}
 \end{equation}
