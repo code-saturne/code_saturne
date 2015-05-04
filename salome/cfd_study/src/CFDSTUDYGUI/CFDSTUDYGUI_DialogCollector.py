@@ -496,7 +496,7 @@ class RunCaseDialogHandler(RunCaseDialog):
         aStudyList = CFDSTUDYGUI_DataModel.GetStudyList()
         aStudyIndex = self.StudyCB.currentIndex()
         if aStudyIndex > len(aStudyList)-1:
-            print "Error: not correct index of study"
+            print("Error: incorrect study index")
             return
         #obtain study object
         aStudyObj = aStudyList[aStudyIndex]
@@ -505,7 +505,7 @@ class RunCaseDialogHandler(RunCaseDialog):
         aCaseList =  CFDSTUDYGUI_DataModel.GetCaseList(aStudyObj)
 
         if newCaseIndex > len(aCaseList)-1:
-            print "Error: not correct index of case"
+            print("Error: incorrect case index")
             return
         #obtain study object
         aCaseObj = aCaseList[newCaseIndex]

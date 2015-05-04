@@ -74,7 +74,7 @@ log = logging.getLogger("FluidStructureInteractionView")
 #log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
-# Constantes
+# Constants
 #-------------------------------------------------------------------------------
 
 displacement_prediction_alpha          = 'displacement_prediction_alpha'

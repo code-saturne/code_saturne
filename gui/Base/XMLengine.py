@@ -29,24 +29,16 @@ It provides a management of the XML document, which reflets the treated case.
 This module defines the following classes:
 - Dico
 - XMLElement
-- _Document (obsolete since Python 2.3)
 - XMLDocument
 - Case
 - XMLDocumentTestCase
 """
 
 #-------------------------------------------------------------------------------
-# String for the root node of the xml document from the case
-#-------------------------------------------------------------------------------
-
-rootNode = None
-
-#-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
 
 import os, sys, string, unittest, logging
-from types import UnicodeType
 from xml.dom.minidom import Document, parse, parseString, Node
 from xml.sax.handler import ContentHandler
 from xml.sax import make_parser
@@ -172,7 +164,7 @@ class Dico:
 
     def printDico(self):
         """
-        Simple tool wich print on the current terminal the contents of the dico.
+        Simple tool wich prints the dictionary contents on the current terminal.
         """
         if hasattr(self, 'data'):
             for i in list(self.data.keys()):
@@ -184,17 +176,26 @@ class Dico:
 #-------------------------------------------------------------------------------
 
 
-enc = "utf-8"
+if sys.version[0] == '2':
 
+    from types import UnicodeType
 
-def _encode(v):
-    """
-    return a byte string. This function handles the Unicode encoding.
-    minidom handles only byte strings, see: http://evanjones.ca/python-utf8.html
-    """
-    if isinstance(v, UnicodeType):
-        v = v.encode(enc)
-    return v
+    def _encode(v):
+        """
+        return a byte string. This function handles the Unicode encoding.
+        minidom handles only byte strings, see: http://evanjones.ca/python-utf8.html
+        """
+        if isinstance(v, UnicodeType):
+            v = v.encode("utf-8")
+        return v
+
+else:
+
+    def _encode(v):
+        """
+        return an utf-8 byte string. In Python 3, this is a No-op.
+        """
+        return v
 
 
 class XMLElement:
@@ -216,40 +217,83 @@ class XMLElement:
         raise ValueError(msg)
 
 
-    def toString(self):
-        """
-        Print the XMLElement node to a simple string (without \n and \t).
-        Unicode characters are encoded.
-        """
-        return self.el.toxml(enc)
+    if sys.version[0] == '2':
+        def toString(self):
+            """
+            Print the XMLElement node to a simple string (without \n and \t).
+            Unicode characters are encoded.
+            """
+            return self.el.toxml("utf-8")
+    else:
+        def toString(self):
+            """
+            Print the XMLElement node to a simple string (without \n and \t).
+            Unicode characters are encoded.
+            """
+            # self.el.toxml() would be enough, except for the root node,
+            # where the encoding type is written only where specified.
+            return self.el.toxml("utf-8").decode()
 
 
-    def toUnicodeString(self):
-        """
-        Print the XMLElement node to an unicode string (without \n and \t).
-        Unicode string are decoded if it's possible by the standard output,
-        if not unicode characters are replaced by '?' character.
-        Warning: do not use this method for comparison purpose!
-        """
-        unicode_obj = self.el.toxml()
-        try:
-            return unicode_obj.encode("utf-8", 'replace')
-        except:
-            return unicode_obj.encode(sys.stdout.encoding, 'replace')
+    if sys.version[0] == '2':
+        def toUnicodeString(self):
+            """
+            Print the XMLElement node to an unicode string (without \n and \t).
+            Unicode string are decoded if it's possible by the standard output,
+            if not unicode characters are replaced by '?' character.
+            Warning: do not use this method for comparison purposes!
+            """
+            unicode_obj = self.el.toxml()
+            try:
+                return unicode_obj.encode("utf-8", 'replace')
+            except:
+                return unicode_obj.encode(sys.stdout.encoding, 'replace')
+    else:
+        def toUnicodeString(self):
+            """
+            Print the XMLElement node to an unicode string (without \n and \t).
+            Unicode string are decoded if it's possible by the standard output,
+            if not unicode characters are replaced by '?' character.
+            Warning: do not use this method for comparison purposes!
+            """
+            try:
+                # self.el.toxml() would be enough, except for the root node,
+                # where the encoding type is written only where specified.
+                return self.el.toxml("utf-8").decode()
+            except:
+                unicode_obj = self.toxml(encoding=sys.stdout.encoding)
+                return unicode_obj.decode()
 
 
-    def __str__(self):
-        """
-        Print the XMLElement node with \n and \t.
-        Unicode string are decoded if it's possible by the standard output,
-        if not unicode characters are replaced by '?' character.
-        Warning: do not use this method for comparison purpose!
-        """
-        unicode_obj = self.el.toprettyxml()
-        try:
-            return unicode_obj.encode("utf-8", 'replace')
-        except:
-            return unicode_obj.encode(sys.stdout.encoding, 'replace')
+    if sys.version[0] == '2':
+        def __str__(self):
+            """
+            Print the XMLElement node with \n and \t.
+            Unicode string are decoded if it's possible by the standard output,
+            if not unicode characters are replaced by '?' character.
+            Warning: do not use this method for comparison purpose!
+            """
+            unicode_obj = self.el.toprettyxml()
+            try:
+                return unicode_obj.encode("utf-8", 'replace')
+            except:
+                return unicode_obj.encode(sys.stdout.encoding, 'replace')
+
+    else:
+        def __str__(self):
+            """
+            Print the XMLElement node with \n and \t.
+            Unicode string are decoded if it's possible by the standard output,
+            if not unicode characters are replaced by '?' character.
+            Warning: do not use this method for comparison purpose!
+            """
+            try:
+                # self.el.toprettyxml() would be enough, except for the root,
+                # where the encoding type is written only where specified.
+                return self.el.toprettyxml("utf-8").decode()
+            except:
+                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding)
+                return unicode_obj.decode()
 
 
     def __xmlLog(self):
@@ -428,6 +472,26 @@ class XMLElement:
         return 0
 
 
+    if sys.version[0] > '2':
+        def __eq__(self, other):
+            """
+            Compare two XMLDocument nodes equivalence.
+            """
+            if self.__cmp__(other) == 1:
+                return False
+            else:
+                return True
+
+        def __ne__(self, other):
+            """
+            Compare two XMLDocument nodes equivalence.
+            """
+            if self.__cmp__(other) == 1:
+                return True
+            else:
+                return False
+
+
     def _nodeList(self, tag, *attrList, **kwargs):
         """
         Return a list of Element (and not XMLElement)!
@@ -604,7 +668,7 @@ class XMLElement:
             for node in self.el.childNodes:
                 if node.nodeType == node.TEXT_NODE:
                     rc.append(node.data)
-            return _encode(string.join(rc, sep))
+            return _encode(sep.join(rc))
         else:
             return None
 
@@ -965,18 +1029,7 @@ class XMLElement:
         # element content; otherwise the comparison might produce a wrong
         # result due to the content of two elements having different amounts of
         # whitespace.
-        return string.join(text.split(), ' ')
-
-
-##class _Document(Document):
-##    """
-##    """
-##    def writexml(self, writer, indent="", addindent="", newl=""):
-##        """
-##        """
-##        writer.write('<?xml version="2.0" encoding="%s" ?>\n' % enc)
-##        for node in self.childNodes:
-##            node.writexml(writer, indent, addindent, newl)
+        return " ".join(text.split())
 
 
 class XMLDocument(XMLElement):
@@ -985,7 +1038,6 @@ class XMLDocument(XMLElement):
     def __init__(self, case=None, tag=None, *attrList, **kwargs):
         """
         """
-##        self.doc  = _Document()
         self.doc  = Document()
         self.case = case
 
@@ -1003,50 +1055,51 @@ class XMLDocument(XMLElement):
         return self._inst(self.doc.documentElement)
 
 
-    def toString(self):
-        """
-        Return the XMLDocument to a byte string (without \n and \t).
-        Unicode characters are encoded.
-        """
-        return self.el.toxml(enc)
+    if sys.version[0] == '2':
+        def toPrettyString(self):
+            """
+            Return the XMLDocument to a byte string with \n and \t.
+            Unicode characters are encoded.
+            """
+            return self.doc.toprettyxml(encoding = "utf-8")
+    else:
+        def toPrettyString(self):
+            """
+            Return the XMLDocument to a string with \n and \t.
+            """
+            return self.doc.toprettyxml(encoding = "utf-8").decode()
 
 
-    def toUnicodeString(self):
-        """
-        Return the XMLDocument node to a byte string (without \n and \t).
-        Unicode string are decoded if it's possible by the standard output,
-        if not unicode characters are replaced by '?' character.
-        Warning: do not use this method for comparison purpose!
-        """
-        unicode_obj = self.el.toxml()
-        try:
-            return unicode_obj.encode("iso-8859-1",'replace')
-        except:
-            return unicode_obj.encode(sys.stdout.encoding,'replace')
-
-
-    def toPrettyString(self):
-        """
-        Return the XMLDocument to a byte string with \n and \t.
-        Unicode characters are encoded.
-        """
-        return self.doc.toprettyxml(encoding = enc)
-
-
-    def toPrettyUnicodeString(self):
-        """
-        Return the XMLDocument node to a byte string with \n and \t.
-        Unicode string are decoded if it's possible by the standard output,
-        if not unicode characters are replaced by '?' character.
-        Warning: the returned XMLDocument do not show the encoding in the
-        header, because it is already encoded!
-        Warning: do not use this method for comparison purpose!
-        """
-        unicode_obj = self.el.toprettyxml()
-        try:
-            return unicode_obj.encode("iso-8859-1",'replace')
-        except:
-            return unicode_obj.encode(sys.stdout.encoding,'replace')
+    if sys.version[0] == '2':
+        def toPrettyUnicodeString(self):
+            """
+            Return the XMLDocument node to a byte string with \n and \t.
+            Unicode string are decoded if it's possible by the standard output,
+            if not unicode characters are replaced by '?' character.
+            Warning: the returned XMLDocument do not show the encoding in the
+            header, because it is already encoded!
+            Warning: do not use this method for comparison purpose!
+            """
+            unicode_obj = self.el.toprettyxml()
+            try:
+                return unicode_obj.encode("utf-8",'replace')
+            except:
+                return unicode_obj.encode(sys.stdout.encoding,'replace')
+    else:
+        def toPrettyUnicodeString(self):
+            """
+            Return the XMLDocument node to a byte string with \n and \t.
+            Unicode string are decoded if it's possible by the standard output,
+            if not unicode characters are replaced by '?' character.
+            Warning: the returned XMLDocument do not show the encoding in the
+            header, because it is already encoded!
+            Warning: do not use this method for comparison purposes!
+            """
+            try:
+                return self.el.toprettyxml("utf-8").decode()
+            except:
+                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding)
+                return unicode_obj.decode()
 
 
     def __str__(self):
@@ -1151,8 +1204,11 @@ class Case(Dico, XMLDocument, QObject):
         XMLDocument.__init__(self, case=self)
         QObject.__init__(self)
 
-        self['package'] = package
-        rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
+        if package:
+            self['package'] = package
+            rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
+        else:
+            rootNode = '<' + '_GUI study="" case="" version="2.0"/>'
 
         if file_name:
             self.parse(file_name)
@@ -1563,32 +1619,33 @@ class XMLengineTestCase(unittest.TestCase):
     def checkXMLDocumentUnicodeParseString(self):
         """Check whether a XMLDocument with unicode string could be created."""
         d = XMLDocument()
-        d.parseString(u'<français a="àùè">tâché</français>')
+        d.parseString(u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>')
 
-        t = u'<?xml version="2.0" encoding="utf-8"?>\n' \
-            u'<français a="àùè">tâché</français>'
-        t = t.encode(enc)
+        t = u'<?xml version="1.0" encoding="utf-8"?>' \
+            u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>'
+        if sys.version[0] == '2':
+            t = t.encode("utf-8")
         assert d.toString() == t, 'Could not use the parseString method with utf-8 encoding'
 
-        t = u'<?xml version="2.0" encoding="utf-8"?>\n' \
-            u'<français a="àùè">\n\ttâché\n</français>\n'
-        t = t.encode(enc)
+        t = u'<?xml version="1.0" encoding="utf-8"?>\n' \
+            u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>\n'
+        if sys.version[0] == '2':
+            t = t.encode("utf-8")
         assert d.toPrettyString() == t, 'Could not use the parseString method with utf-8 encoding'
 
-        t = self.xmlNodeFromString(u'<français a="àùè">tâché</français>')
+        t = self.xmlNodeFromString(u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>')
         assert d.root() == t, 'Could not use the parseString method with utf-8 encoding'
 
 
     def checkXmlNodeFromString(self):
         """"Check whether two XML nodes could be compared."""
-        print('\n')
         n1 = self.xmlNodeFromString(u'<fruits taste="ok" color="red"><a>toto</a><c a="2é"/></fruits>')
         n2 = XMLDocument().parseString(u'<fruits color="red" taste="ok"><c a="2é"/><a>toto</a></fruits>').root()
-        assert n1 == n2, 'This two node are not identical'
+        assert n1 == n2, 'These two nodes are not identical'
 
         n3 = self.xmlNodeFromString(u'<fruits><b/><a>123.0</a></fruits>')
         n4 = XMLDocument().parseString(u'<fruits><a>123</a><b/></fruits>').root()
-        assert n3 == n4, 'This two node are not identical'
+        assert n3 == n4, 'These two nodes are not identical'
 
         d1 = '<fruits><apple from="W" name="P"/><apple from="P"/></fruits>'
         d2 = '<fruits><apple from="P"/><apple from="W" name="P"/></fruits>'
@@ -1633,6 +1690,7 @@ class XMLengineTestCase(unittest.TestCase):
 
     def checkCaseParseString(self):
         """Check whether a Case could be created."""
+        rootNode = '<' + '_GUI study="" case="" version="2.0"/>'
         case = Case()
         assert case.root() == self.xmlNodeFromString(rootNode), \
                'Could not use the parseString method'

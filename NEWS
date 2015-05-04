@@ -19,12 +19,15 @@ Changes:
 Architectural changes
 ---------------------
 
+- Complete Python 3 compatibility, except for builds with SALOME support
+  (as the SALOME platform is not yet Python-3 copatible).
+
 - Refactor EnSight, MED and CGNS output, replacing slice by block logic.
   The fvm_gather_...(*) API is now removed, and using parallel APIs
   for MED and CGNS should now be relatively straightforward.
 
-Release 4.0.0 (unreleased)
-==========================
+Release 4.0.0 (April 30, 2015)
+==============================
 
 Changes:
 --------

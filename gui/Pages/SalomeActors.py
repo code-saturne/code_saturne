@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 #-------------------------------------------------------------------------------
 
@@ -563,12 +563,12 @@ class ProfilActors(Actors):
 
 #def getMesh(label):
     #for aStudy in CFDSTUDYGUI_DataModel.GetStudyList():
-        #print "study = ", aStudy, aStudy.GetName()
+        #print("study = " +  aStudy + " " + aStudy.GetName())
         #aChildList = CFDSTUDYGUI_DataModel.ScanChildren(aStudy, label)
 
-    #print "tototototo = ", aChildList
-    #aDataObj =  aChildList[0]
-    #print aDataObj.GetName()
+    #print("tototototo = " + " ".join(aChildList))
+    #aDataObj = aChildList[0]
+    #print(aDataObj.GetName())
 
 
 #def BoundingBox(my_mesh):

@@ -254,7 +254,7 @@ class VolumicOutputStandardItemModel(QStandardItemModel):
 
             listProbe = self.mdl.getProbesList(label)
             if listProbe:
-                probes = string.join(listProbe," ")
+                probes = " ".join(listProbe)
             else:
                 probes = ""
 

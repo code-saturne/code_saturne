@@ -1938,7 +1938,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             if opt_polyhed != 'display':
                 line.append(opt_polyhed)
 
-            l = string.join(line, ',')
+            l = ','.join(line)
             log.debug("slotOutputOptions-> %s" % l)
             self.mdl.setWriterOptions(writer_id, l)
 

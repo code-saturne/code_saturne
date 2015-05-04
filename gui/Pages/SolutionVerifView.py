@@ -481,7 +481,7 @@ class SolutionVerifView(QWidget, Ui_SolutionVerifForm):
         if opt_polygon != 'display': line.append(opt_polygon)
         if opt_polyhed != 'display': line.append(opt_polyhed)
 
-        l = string.join(line, ',')
+        l = ','.join(line)
         log.debug("slotOutputOptions-> OPTCHR = %s" % l)
         self.out.setWriterOptions("-1",l)
         self.out2.setWriterOptions("-1",l)

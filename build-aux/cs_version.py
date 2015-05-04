@@ -407,13 +407,18 @@ def git_version(srcdir, defaults):
     url = None
     revision = ''
     head_is_svn = False
+    newline_failed = False
 
     cmd = ['git', '--no-pager', '--git-dir='+os.path.join(srcdir, '.git'),
            '--work-tree='+srcdir, 'log', '-n', '200']
+
+    # Universal newlines options may fail in some cases with
+    # Python 3, so check for newlines using '\n' and '\\n' later.
+
     p = subprocess.Popen(cmd,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         universal_newlines=True)
+                         universal_newlines=False)
     output = p.communicate()
     if p.returncode != 0:
         return major, minor, release, extra
@@ -435,6 +440,7 @@ def git_version(srcdir, defaults):
     if not head_is_svn:
         commit_id = o0.find('commit')
         commit_rev = o0[commit_id:].split(' ', 2)[1].split('\n')[0]
+        commit_rev = commit_rev.split('\\n')[0] # newline detection robustness
         revision += '-git' + commit_rev
 
     return major, minor, release, extra, revision

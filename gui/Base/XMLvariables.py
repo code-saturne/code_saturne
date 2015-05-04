@@ -68,7 +68,7 @@ class Model:
     def isList(self, liste):
         """This method verifies that list is not empty"""
         if type(liste) != list:
-            msg = "There is an error: " + string.join(liste) + " is not a list\n"
+            msg = "There is an error: " + " ".join(liste) + " is not a list\n"
             raise ValueError(msg)
         return True
 

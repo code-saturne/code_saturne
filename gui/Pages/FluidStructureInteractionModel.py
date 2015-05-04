@@ -43,20 +43,20 @@ from code_saturne.Base.XMLmodel     import  ModelTest
 
 
 #-------------------------------------------------------------------------------
-# Constante class
+# Constants class
 #-------------------------------------------------------------------------------
-class Constantes:
+class Constants:
     """
-    Define class that manage constantes
+    Define class that manages constants
 
-    This class is especially useful when we need constante string identifier.
-    Indeed, if the constante value must be changed, the changes is done at
+    This class is especially useful when we need constant string identifier.
+    Indeed, if the constant value must be changed, the changes is done at
     one place
 
     ### example
-    const = Constantes()
+    const = Constants()
 
-    # define constante 'a'
+    # define constant 'a'
     const.a = 10
 
     # raise Exception, "Cannot reassign constant a"
@@ -83,9 +83,9 @@ class Constantes:
 
 
 #-------------------------------------------------------------------------------
-# Constante class
+# Constant class
 #-------------------------------------------------------------------------------
-const = Constantes()
+const = Constants()
 
 const.max_iterations_implicitation           = 'max_iterations_implicitation'
 const.implicitation_precision                = 'implicitation_precision'

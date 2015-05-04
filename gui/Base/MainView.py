@@ -1232,8 +1232,8 @@ class MainView(object):
             if self.palette_default:
                 app.setPalette(self.palette_default)
             if self.font_default:
-                print self.font_default
-                print self.font()
+                print(self.font_default)
+                print(self.font())
                 self.setFont(self.font_default)
                 app.setFont(self.font_default)
             settings = QSettings()

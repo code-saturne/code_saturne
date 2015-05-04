@@ -180,7 +180,7 @@ class XMLHighlighter(QSyntaxHighlighter):
 
 
 #-------------------------------------------------------------------------------
-# Dialog for mathematical expression interpretor
+# Dialog to show current XML status
 #-------------------------------------------------------------------------------
 
 class XMLEditorView(QDialog, Ui_XMLEditor):
@@ -201,7 +201,7 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
         # Syntax highlighting
         self.h1 = XMLHighlighter(self.textEditContent, self.symbols)
 
-        # Required symbols of the mathematical expression
+        # Current XML
 
         expression = self.case.toPrettyString()
 

@@ -577,7 +577,7 @@ class case:
             s.write(hline)
 
         s.write('  Environment variables\n')
-        ek = os.environ.keys()
+        ek = list(os.environ.keys())
         ek.sort()
         for k in ek:
             s.write('    ' + k + '=' + os.environ[k] + '\n')

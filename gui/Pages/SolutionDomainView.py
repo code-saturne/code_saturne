@@ -526,7 +526,7 @@ class MeshInputDialog(QFileDialog):
             QFileDialog.__init__(self,
                                  parent = parent,
                                  directory = directory)
-        except AttributeError, TypeError:
+        except (AttributeError, TypeError):
             QFileDialog.__init__(self)  # for older PyQt versions
 
         # Self.tr is only available once the parent class __init__ has been called,

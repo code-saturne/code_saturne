@@ -359,7 +359,7 @@ class Case(object):
                              stderr=subprocess.PIPE,
                              universal_newlines=True)
         i = p.communicate()[0]
-        run_id = string.join(i.split())
+        run_id = " ".join(i.split())
 
         return run_id, os.path.join(self.__dest, self.label, self.resu, run_id)
 
@@ -404,10 +404,10 @@ class Case(object):
                     content = line.split()
                     if re.search(r'^\\' + self.exe, line):
                         content[0] = self.exe
-                    run_cmd = string.join(content)
+                    run_cmd = " ".join(content)
             else:
                 if re.search(r'^\\' + self.exe, line):
-                    run_cmd = string.join(line.split())
+                    run_cmd = " ".join(line.split())
         f.close()
 
         # Write the new runcase
@@ -802,7 +802,7 @@ class Study(object):
                 list_cases.append(case.label)
                 list_dir.append(case.run_dir)
 
-        return string.join(list_cases), string.join(list_dir)
+        return " ".join(list_cases), " ".join(list_dir)
 
 #-------------------------------------------------------------------------------
 

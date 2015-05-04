@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 #
 #-------------------------------------------------------------------------------
 #
@@ -301,7 +301,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         if len(killList) <= 0:
             return
 
-        cmd = "kill -9 %s" % string.join(list(map(str, killList)), ' ')
+        cmd = "kill -9 %s" % " ".join(list(map(str, killList)))
         subprocess.Popen(cmd,
                          shell=True,
                          stdout=subprocess.PIPE,
@@ -340,7 +340,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         #if len(killList) <= 0:
             #return
 
-        #cmd = "kill %s" % string.join(map(str, killList[1:-1]), ' ')
+        #cmd = "kill %s" % " ".join(map(str, killList[1:-1]))
         #subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
 

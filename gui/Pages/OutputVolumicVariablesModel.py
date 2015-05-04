@@ -478,7 +478,7 @@ class OutputVolumicVariablesModel(Model):
             return label
         else :
             msg = "This variable " + name + " doesn't exist"
-            raise ValueError, msg
+            raise ValueError(msg)
 
 
     @Variables.undoLocal

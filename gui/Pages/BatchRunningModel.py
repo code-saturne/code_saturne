@@ -33,6 +33,9 @@ This module modify the batch file
 import sys, unittest
 import os, os.path, shutil, sys, string, types, re
 
+if sys.version[0] == '2':
+    from __futures__ import print_function
+
 #-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
@@ -802,8 +805,8 @@ class BatchRunningModelTestCase(unittest.TestCase):
         for k in list(dico_PBS.keys()):
             if mdl.dictValues[k] != dico_PBS[k] :
                 print("\nwarning for key: ", k)
-                print("  read value in the batch description:", mdl.dictValues[k])
-                print("  reference value:", dico_PBS[k])
+                print("  read value in the batch description: ", mdl.dictValues[k]))
+                print("  reference value: ", dico_PBS[k])
             assert  mdl.dictValues[k] == dico_PBS[k], 'could not read the batch file'
 
 

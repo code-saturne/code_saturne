@@ -938,7 +938,7 @@ Check the setup file and some utilities presence.
                                  "Please check your setup file.\n\n")
             sys.exit(1)
         else:
-            cmd = python + " -c \'import sys; print sys.version[:3]\'"
+            cmd = python + " -c \'import sys; print(sys.version[:3])\'"
             if verbose == 'yes':
                 sys.stdout.write("     Python version is ")
             p = subprocess.Popen(cmd,

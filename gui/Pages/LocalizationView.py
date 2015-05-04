@@ -303,7 +303,7 @@ class StandardItemVolumeNature(QStandardItemModel):
         for k, v in list(self.dicoNature.items()):
             if v == "on":
                 s.append(k)
-        return string.join(s, ";")
+        return ";".join(s)
 
 #-------------------------------------------------------------------------------
 # FlagBox: new QComboBox to construct Delegate for the volume nature
@@ -439,7 +439,7 @@ class StandardItemModelLocalization(QStandardItemModel):
             elif col == 2:
                 if self.zoneType == "VolumicZone":
                     data = self._data[row][col]
-                    item = string.join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"], "\n")
+                    item = "\n".join([self.dicoM2V[key] for key in list(self.dicoM2V.keys()) if data[key] == "on"])
 
                     return to_qvariant(item)
 

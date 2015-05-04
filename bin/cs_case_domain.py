@@ -122,6 +122,8 @@ class base_domain:
         # Execution and debugging options
 
         self.n_procs = n_procs_weight
+        if not n_procs_min:
+            n_procs_min = 1
         self.n_procs_min = max(1, n_procs_min)
         self.n_procs_max = n_procs_max
 
