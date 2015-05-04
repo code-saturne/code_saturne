@@ -1,4 +1,18 @@
 
+Release 4.0.1 (unreleased)
+==========================
+
+Changes:
+--------
+
+- Added handling of SLURM srun MPMD mode in execution script.
+
+Bug fixes:
+----------
+
+- Fix for full version information (such as 'code_saturne info --version')
+  for builds from release tarballs.
+
 Release 4.0.0 (30 Apr 2015)
 ===========================
 
