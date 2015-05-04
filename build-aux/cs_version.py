@@ -519,6 +519,7 @@ if __name__ == '__main__':
         release = ''
         modified = ''
         revision = ''
+        extra = ''
 
         if os.path.isdir(os.path.join(srcdir, ".svn")):
             major, minor, release, extra, revision \
