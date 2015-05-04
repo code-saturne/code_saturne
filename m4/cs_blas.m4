@@ -104,7 +104,7 @@ if test "x$with_blas" != "xno" ; then
     if test "$cs_have_essl_h" = "yes"; then
 
       AC_LANG_PUSH([Fortran])
-    
+
       if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
         if test "x$cs_ibm_bg_type" = "xQ"; then
@@ -151,7 +151,7 @@ if test "x$with_blas" != "xno" ; then
       fi
 
       AC_LANG_POP([Fortran])
-    
+
     fi
 
   fi
@@ -355,7 +355,7 @@ if test "x$with_blas" != "xno" ; then
     if test "x$cs_tmp_have_cblas" = "xyes"; then
       cs_have_blas=yes
     fi
-    
+
   fi
 
   # Cleanup if no BLAS found

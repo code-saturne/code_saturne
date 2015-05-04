@@ -21,9 +21,9 @@ dnl
 dnl--------------------------------------------------------------------------------
 
 # CS_AC_TEST_FREESTEAM
-#---------------
-# modifies or sets cs_have_freesteam, FREESTEAM_CPPFLAGS, FREESTEAM_LDFLAGS, and FREESTEAM_LIBS
-# depending on libraries found
+#---------------------
+# modifies or sets cs_have_freesteam, FREESTEAM_CPPFLAGS, FREESTEAM_LDFLAGS,
+# and FREESTEAM_LIBS depending on libraries found
 
 AC_DEFUN([CS_AC_TEST_FREESTEAM], [
 
@@ -32,7 +32,7 @@ cs_have_freesteam_headers=no
 
 AC_ARG_WITH(freesteam,
             [AS_HELP_STRING([--with-freesteam=DIR],
-                            [specify prefix directory for FREESTEAM])],
+                            [specify prefix directory for Freesteam])],
             [if test "x$withval" = "x"; then
                with_freesteam=yes
              fi],
@@ -40,7 +40,7 @@ AC_ARG_WITH(freesteam,
 
 AC_ARG_WITH(freesteam-include,
             [AS_HELP_STRING([--with-freesteam-include=DIR],
-                            [specify directory for FREESTEAM include files])],
+                            [specify directory for freesteam include files])],
             [if test "x$with_freesteam" = "xcheck"; then
                with_freesteam=yes
              fi
@@ -52,17 +52,17 @@ AC_ARG_WITH(freesteam-include,
 
 AC_ARG_WITH(freesteam-lib,
             [AS_HELP_STRING([--with-freesteam-lib=DIR],
-                            [specify directory for FREESTEAM library])],
+                            [specify directory for freesteam library])],
             [if test "x$with_freesteam" = "xcheck"; then
                with_freesteam=yes
              fi
              FREESTEAM_LDFLAGS="-L$with_freesteam_lib"
-             # Add the libdir to the runpath as FREESTEAM is not libtoolized
+             # Add the libdir to the runpath as freesteam is not libtoolized
              FREESTEAMRUNPATH="-R$with_freesteam_lib"],
             [if test "x$with_freesteam" != "xno" -a "x$with_freesteam" != "xyes" \
 	          -a "x$with_freesteam" != "xcheck"; then
                FREESTEAM_LDFLAGS="-L$with_freesteam/lib"
-               # Add the libdir to the runpath as FREESTEAM is not libtoolized
+               # Add the libdir to the runpath as freesteam is not libtoolized
                FREESTEAMRUNPATH="-R$with_freesteam/lib"
              fi])
 
@@ -80,7 +80,7 @@ if test "x$with_freesteam" != "xno" ; then
 
   # Check for steam.h header
   AC_CHECK_HEADERS([freesteam/steam.h],
-                   [AC_DEFINE([HAVE_FREESTEAM], 1, [FREESTEAM support])
+                   [AC_DEFINE([HAVE_FREESTEAM], 1, [freesteam support])
                     cs_have_freesteam=yes],
                    [cs_have_freesteam=no],
                    [])
