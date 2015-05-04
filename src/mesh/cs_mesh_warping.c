@@ -1234,7 +1234,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
                       &n_i_sub_elt_lst,
                       &mesh->n_i_faces,
                       &mesh->i_face_vtx_connect_size,
-                      (cs_lnum_t *)(&mesh->i_face_cells),
+                      (cs_lnum_t **)(&mesh->i_face_cells),
                       &mesh->i_face_family,
                       &mesh->i_face_vtx_idx,
                       &mesh->i_face_vtx_lst);

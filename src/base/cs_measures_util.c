@@ -246,7 +246,7 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
 {
   cs_lnum_t ii;
   cs_lnum_t jj;
-  cs_lnum_t n_elts;
+  cs_lnum_t n_elts = 0;
   cs_real_t interpolated_value;
   cs_real_t dist_x;
   cs_real_t dist_y;
@@ -267,7 +267,7 @@ cs_cressman_interpol(cs_measures_set_t         *ms,
     xyz_cen = mesh_quantities->b_face_cog;
   }
 
-#   pragma omp parallel for private(jj)
+# pragma omp parallel for private(jj)
   for (ii = 0; ii < n_elts; ii++) {
     total_weight = 0.;
     interpolated_value = 0.;

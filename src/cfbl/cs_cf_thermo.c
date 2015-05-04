@@ -136,7 +136,8 @@ cs_cf_thermo_gamma(cs_real_t *gamma)
   /*  Local variables */
   cs_real_t r_pg = cs_glob_physical_constants->r;
   cs_real_t cp0 = cs_glob_fluid_properties->cp0;
-  cs_real_t gamagp, xmasml;
+  cs_real_t gamagp = 0;
+  cs_real_t xmasml;
   cs_cf_get_molar_mass(&xmasml);
 
   /*  Gamagp is supposed to be superior or equal to 1.
