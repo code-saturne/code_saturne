@@ -864,6 +864,48 @@ export SALOME_INSTANCE=$3
 
     #---------------------------------------------------------------------------
 
+    def generate_solver_mpmd_configfile_srun(self, n_procs, mpi_env):
+        """
+        Generate MPMD mpiexec config file for SLURM's srun.
+        """
+
+        e_path = os.path.join(self.exec_dir, 'mpmd_configfile')
+        e = open(e_path, 'w')
+
+        e.write('# srun multiple program configuration file\n#\n')
+        e.write('# > srun -n ' + str(n_procs) \
+                + ' --multi-prog mpmd_configfile\n#\n')
+
+        rank_id = 0
+
+        for d in self.syr_domains:
+            s_args = d.solver_command()
+            if s_args[1][0:2] == './':
+                s_path = os.path.relpath(os.path.join(s_args[0], s_args[1]),
+                                         self.exec_dir)
+            else:
+                s_path = s_args[1]
+            rank_id += d.n_procs
+
+        for d in self.domains:
+            s_args = d.solver_command()
+            if s_args[1][0:2] == './':
+                s_path = os.path.relpath(os.path.join(s_args[0], s_args[1]),
+                                         self.exec_dir)
+            else:
+                s_path = s_args[1]
+            cmd = '%d-%d\n' % (rank_id, rank_id + d.n_procs - 1) \
+                   + s_path + s_args[2] \
+                   + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
+            e.write(cmd)
+            rank_id += d.n_procs
+
+        e.close()
+
+        return e_path
+
+    #---------------------------------------------------------------------------
+
     def generate_solver_mpmd_configfile_bgq(self, n_procs, mpi_env):
         """
         Generate MPMD mpiexec config file fo BG/Q.
@@ -1052,6 +1094,11 @@ export SALOME_INSTANCE=$3
                     if mpi_env.mpiexec_separator != None:
                         mpi_cmd += mpi_env.mpiexec_separator + ' '
                     mpi_cmd += self.package_compute.get_solver()
+
+                elif mpi_env.mpiexec == 'srun':
+                    e_path = self.generate_solver_mpmd_configfile_srun(n_procs,
+                                                                       mpi_env)
+                    mpi_cmd += '--multi-prog ' + e_path
 
                 else:
                     e_path = self.generate_solver_mpmd_configfile(n_procs,
