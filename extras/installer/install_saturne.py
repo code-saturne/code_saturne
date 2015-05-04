@@ -341,8 +341,8 @@ class Setup:
             Package(name="FVM",
                     description="Finite Volume Mesh",
                     package="fvm",
-                    version="0.15.4",
-                    archive="fvm-0.15.4.tar.gz",
+                    version="0.15.5",
+                    archive="fvm-0.15.5.tar.gz",
                     url=url_cs)
 
         p = self.packages['fvm']
@@ -364,8 +364,8 @@ class Setup:
             Package(name="ECS",
                     description="Code_Saturne Preprocessor",
                     package="ecs",
-                    version="2.0.3",
-                    archive="ecs-2.0.3.tar.gz",
+                    version="2.0.4",
+                    archive="ecs-2.0.4.tar.gz",
                     url=url_cs)
 
         # Code_Saturne Kernel
@@ -387,9 +387,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.8.10",
-                    archive="hdf5-1.8.10.tar.gz",
-                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.10/src/%s")
+                    version="1.8.14",
+                    archive="hdf5-1.8.14.tar.gz",
+                    url="http://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.14/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-production"
@@ -400,12 +400,12 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgnslib",
-                    version="3.1.4",
-                    archive="cgnslib_3.1.4-2.tar.gz",
-                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.1/%s/download")
+                    version="3.2.1",
+                    archive="cgnslib_3.2.1.tar.gz",
+                    url="http://sourceforge.net/projects/cgns/files/cgnslib_3.2/%s/download")
 
         p = self.packages['cgns']
-        p.config_opts = "-DENABLE_64BIT=ON -DENABLE_SCOPING=ON"
+        p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
         p.vpath_support = True
         p.create_install_dirs = True
 
@@ -415,12 +415,12 @@ class Setup:
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="3.0.7",
-                    archive="med-3.0.7.tar.gz",
+                    version="3.0.8",
+                    archive="med-3.0.8.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
-        p.config_opts = "--with-med_int=int"
+        p.config_opts = "--with-med_int=int --disable-fortran"
 
         # MPI library
 
@@ -428,8 +428,8 @@ class Setup:
             Package(name="MPI",
                     description="Message Passing Interface",
                     package="openmpi",
-                    version="1.6.5",
-                    archive="openmpi-1.6.5.tar.gz",
+                    version="1.8.4",
+                    archive="openmpi-1.8.4.tar.gz",
                     url="http://www.open-mpi.org/software/ompi/v1.6/downloads/%s")
 
         # Libxml2 library (possible mirror at "ftp://fr.rpmfind.net/pub/libxml/%s")
@@ -438,8 +438,8 @@ class Setup:
             Package(name="libxml2",
                     description="XML library",
                     package="libxml2",
-                    version="2.7.8",
-                    archive="libxml2-sources-2.7.8.tar.gz",
+                    version="2.9.2",
+                    archive="libxml2-sources-2.9.2.tar.gz",
                     url="ftp://xmlsoft.org/libxml2/%s")
 
         p = self.packages['libxml2']
@@ -626,7 +626,7 @@ Check the setup file and some utilities presence.
                                      "Please check your setup file.\n\n"
                                      % compiler)
                     sys.exit(1)
-        
+
         # Looking for Python executable provided by the user
         if self.python is not None:
             python_exe = os.path.join(self.python, 'python')

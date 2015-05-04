@@ -1,8 +1,13 @@
-Release 2.0.8 (next release)
-============================
+Release 2.0.8 (4 May 2015)
+==========================
+
+This is the last release of the 2.0 series.
 
 Changes:
 --------
+
+- Update installer to use Preprocessor 2.0.4 and FVM 0.15.5,
+  with CGNS 3.2 support.
 
 - Change passing of arguments to remove pointer target attributes in turrij.f90
   so as to allow compilation with Intel Fortran 14 compiler, which has stricter

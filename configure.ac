@@ -4,7 +4,7 @@
 #   This file is part of the Code_Saturne Kernel, element of the
 #   Code_Saturne CFD tool.
 #
-#   Copyright (C) 2009-2013 EDF S.A., France
+#   Copyright (C) 2009-2015 EDF S.A., France
 #
 #   The Code_Saturne Kernel is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ m4_define([cs_licence_c_comment],
    This file is part of the Code_Saturne Kernel, element of the
    Code_Saturne CFD tool.
 
-   Copyright (C) 2009-2013 EDF S.A., France
+   Copyright (C) 2009-2015 EDF S.A., France
 
    The Code_Saturne Kernel is free software; you can redistribute it
    and/or modify it under the terms of the GNU General Public License
