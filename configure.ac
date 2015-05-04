@@ -596,6 +596,7 @@ CS_AC_TEST_MED
 CS_AC_TEST_CCM
 CS_AC_TEST_EOS
 CS_AC_TEST_FREESTEAM
+CS_AC_TEST_COOLPROP
 CS_AC_TEST_ZLIB
 CS_AC_TEST_SALOME
 CS_AC_TEST_MEDCOUPLING
@@ -610,6 +611,8 @@ if test x$cs_have_med_link_cxx = xyes ; then
 elif test x$cs_have_medcoupling = xyes -o x$cs_have_paramedmem = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_eos = xyes ; then
+  cs_have_link_cxx=yes
+elif test x$cs_have_coolprop = xyes ; then
   cs_have_link_cxx=yes
 elif test x$cs_have_catalyst = xyes -a x$enable_shared = xno ; then
   cs_have_link_cxx=yes
@@ -1074,6 +1077,7 @@ fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
+echo " CoolProp support: "$cs_have_coolprop""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""

@@ -336,6 +336,14 @@ The list of third-party software usable with \CS is provided here:
       Association for the Properties of Water and Steam} (IAPWS).
       Version 2.0 or above may be used.
 
+\item CoolProp (\url{http://www.coolprop.org}) is a quite recent library
+      open source library, which provides pure and pseudo-pure fluid
+      equations of state and transport properties for 114 components
+      (as of version 5.1), mixture properties using high-accuracy Helmholtz
+      energy formulations (or cubic EOS), and correlations of properties
+      of incompressible fluids and brines. Its validation is based at least
+      in part on comparisons with REFPROP.
+
 \end{itemize}
 
 For developers, the GNU Autotools (Autoconf, Automake, Libtool) as
@@ -529,6 +537,33 @@ with an alternative, user-installed Python library outside
 the default linker search path. In this case, editing the
 \texttt{SConstruct} file to change the default paths is
 an ugly, but simple solution.
+
+\subsubsection{CoolProp\label{sec:ext:coolprop}}
+
+This library's build system is based on CMake, and building it
+is straightforward, but some versions seem to have build
+issues (the 5.1.0 release is missing a file, while the git trunk
+as of May 2 2015 builds fine).
+
+\sloppy
+
+It may be cleanly built out of source, but forcing its install path
+seems less straightforward, as \texttt{-DCOOLPROP\_INSTALL\_PREFIX}
+needs to be defined on the \texttt{cmake} or \texttt{ccmake}
+command line, not under the interactive \texttt{ccmake} configuration.
+
+In addition, its install structure is specific, and some header
+files may be missing upon installation, so although \CS does its
+best to find the appropriate files, separately specifying
+\texttt{--with-coolprop-include} and \texttt{--with-coolprop-lib}
+may be necessary. Using a post-install script to copy CoolProp's
+headers from its source directory to the install directory
+may be an alternative solution.
+
+\fussy
+
+As CoolProp seems to be an active project, things may become
+simpler in the future.
 
 \subsubsection{libxml2\label{sec:ext:libxml2}}
 
