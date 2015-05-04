@@ -5,7 +5,7 @@ is aligned with the rate of strain $\tens{S}$:
 %
 \begin{equation}
 \rho  \tens{R} = \dfrac{2}{3} \rho k \tens{1} - 2 \mu_T \deviator{\tens{S}}
-\end{equation} 
+\end{equation}
 
 %-------------------------------------------------------------------------------
 \subsection{Equations for the variables $k$ and $\varepsilon$ (standard $k-\varepsilon$ model)}
@@ -14,13 +14,13 @@ is aligned with the rate of strain $\tens{S}$:
 \left\{
 \begin{array}{r c l}
 \displaystyle
-\rho \der{k }{t} + \grad k \cdot \left( \rho \vect{u} \right) 
-- \divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{k}} \right)\grad{k}\right] 
+\rho \der{k }{t} + \grad k \cdot \left( \rho \vect{u} \right)
+- \divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{k}} \right)\grad{k}\right]
 &=&\displaystyle
 \mathcal{P}+\mathcal{G}-\rho \varepsilon +\Gamma k^{in}+ST_{k}, \\
 \displaystyle
 \rho \der{ \varepsilon }{t} + \grad \varepsilon \cdot \left(\rho \vect{u} \right)
--\divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{\varepsilon }} \right) \grad{\varepsilon}\right] 
+-\divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{\varepsilon }} \right) \grad{\varepsilon}\right]
 &=& \displaystyle
 C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[
 \mathcal{P}+(1-C_{\varepsilon _{3}})\mathcal{G}\right] -\rho C_{\varepsilon
@@ -39,19 +39,19 @@ where $\mathcal{P}$ is the production term created by mean shear:
 = -\left[-2 \mu_t \deviator{\tens{S}}
 + \frac{2}{3}\rho k \tens{1}\right] : \tens{S}, \\
 & = & \displaystyle
-2 \mu_t  \deviator{\tens{S}}: \deviator{\tens{S}} 
+2 \mu_t  \deviator{\tens{S}}: \deviator{\tens{S}}
 -\dfrac{2}{3}
 \rho k \trace \left( \gradt \,\vect{u} \right),
 \end{array}
 \end{equation}
 \nomenclature[rbuoyancy]{$\mathcal{G}$}{turbulent kinetic energy buoyancy term \nomunit{$kg.m^{-1}.s^{-3}$}}
 and
-$\mathcal{G}$ is the production term created by gravity effects: 
+$\mathcal{G}$ is the production term created by gravity effects:
 \begin{equation}
 \displaystyle \mathcal{G}= \frac{1}{\rho}\frac{\mu_t}{\sigma_t} \grad \rho \cdot \vect{g}.
 \end{equation}
 
-The dynamic turbulent viscosity reads: 
+The dynamic turbulent viscosity reads:
 \begin{equation}
 \displaystyle \mu_t=\rho C_\mu\frac{k^2}{%
 \varepsilon}.
@@ -67,7 +67,7 @@ The constants of the model are given in the Table (\ref{tab:k_epsilon_constants}
 \begin{tabular}{p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}|p{0,8cm}}
 $C_\mu$ & $C_{\varepsilon_1}$ & $C_{\varepsilon_2}$ & $\sigma_k$ & $%
 \sigma_\varepsilon$ \\ \hline
-$0.09$ & $1.44$ & $1.92$ & $1.0$ & $1.3$ 
+$0.09$ & $1.44$ & $1.92$ & $1.0$ & $1.3$
 \end{tabular}%
 \caption{Standard $k-\varepsilon$ model constants \cite{Launder:1974}.\label{tab:k_epsilon_constants}}
 \end{table}
@@ -88,52 +88,52 @@ and $C_{\varepsilon_3}=1$ if $\mathcal{G}\leqslant0$ (stable stratification).
 %-------------------------------------------------------------------------------
 \subsection{$k-\epsilon-\overline{v^2}/k$ elliptic blending turbulence model}
 
-The BL-$\overline{v^2}/k$~ \cite{Billard:2012} is a  elliptic-blending based $\overline{v^2}-f$ model. 
-It is a low Reynolds number model and as such the wall distance of the first off-wall cell centre must be of order of unity when expressed in viscous unit. 
+The BL-$\overline{v^2}/k$~ \cite{Billard:2012} is a  elliptic-blending based $\overline{v^2}-f$ model.
+It is a low Reynolds number model and as such the wall distance of the first off-wall cell centre must be of order of unity when expressed in viscous unit.
 
-The following gives details about the model followed by some description of its implementation into \CS. 
+The following gives details about the model followed by some description of its implementation into \CS.
 
 \subsubsection{Model description}
 
-This eddy viscosity model solves for $k$ and $\varepsilon$ as turbulence variables, 
-representing respectively the turbulent kinetic energy and its dissipation rate, 
-as well as two non-dimensional variables, $\varphi=\overline{v^2}/k$ and $\alpha$. 
-The first of these latter two represents the ratio of wall normal Reynolds stress 
-to turbulent kinetic energy (thus being a measure of the near-wall turbulence anisotropy) 
-and the second is a wall proximity sensitive quantity (\emph{i.e.} it takes the value $0$ at a wall and $1$ in the far field). 
-The coefficient $\alpha$ is solved for via an elliptic equation 
-($L$ representing the turbulence length-scale): 
+This eddy viscosity model solves for $k$ and $\varepsilon$ as turbulence variables,
+representing respectively the turbulent kinetic energy and its dissipation rate,
+as well as two non-dimensional variables, $\varphi=\overline{v^2}/k$ and $\alpha$.
+The first of these latter two represents the ratio of wall normal Reynolds stress
+to turbulent kinetic energy (thus being a measure of the near-wall turbulence anisotropy)
+and the second is a wall proximity sensitive quantity (\emph{i.e.} it takes the value $0$ at a wall and $1$ in the far field).
+The coefficient $\alpha$ is solved for via an elliptic equation
+($L$ representing the turbulence length-scale):
 \begin{equation}
 		\alpha - L^2 \Delta \alpha = 1
 		\label{eq:turbul:blv2kalpha}
 \end{equation}
 %
-The $\varphi$ transport equation reads: 
+The $\varphi$ transport equation reads:
 %
 \begin{equation}\label{eq:turbul:blv2kphi}
-\DP{\varphi}  =   
+\DP{\varphi}  =
    \left( 1-\alpha^3 \right) f_w
- + \alpha^3 f_h - P \frac{\varphi}{k} 
+ + \alpha^3 f_h - P \frac{\varphi}{k}
 +  \frac{2}{k} \frac{\nu_t}{\sigma_k} \grad \varphi  \cdot \grad k + \divs \left[ \left( \frac{\nu}{2} + \frac{\nu_t}{\sigma_\varphi}  \right) \grad \varphi \right]
 \end{equation}
 
-The aim of the BL-$\overline{v^2}/k$~ model is to stand as a code-friendly version 
-of the $\overline{v^2}-f$ model of \cite{Durbin:1991}. In both the wall normal stress 
-$\overline{v^2}$ is used in the $\nu_T$ definition to correctly represent the near-wall turbulence 
+The aim of the BL-$\overline{v^2}/k$~ model is to stand as a code-friendly version
+of the $\overline{v^2}-f$ model of \cite{Durbin:1991}. In both the wall normal stress
+$\overline{v^2}$ is used in the $\nu_T$ definition to correctly represent the near-wall turbulence
 damping ($T$ is the turbulence time-scale and $C_\mu=0.22$ is calibrated in the logarithmic layer of a channel flow):
 %
 \begin{equation}
 	\nu_T= C_\mu \varphi k ~ T
 \end{equation}
 
-The elliptic blending approach mainly allows for an improved robustness. 
-Indeed, the original $\overline{v^2}-f$ approach solves for the quantity 
-$\overline{v^2}$ and a variable $f$ derived from the wall normal 
+The elliptic blending approach mainly allows for an improved robustness.
+Indeed, the original $\overline{v^2}-f$ approach solves for the quantity
+$\overline{v^2}$ and a variable $f$ derived from the wall normal
 pressure term\footnote{the pressure term $\phi_{22}^*$ is not decomposed but modelled as a whole}
  and defined as:
 %
 \begin{equation}
-	f= \dfrac{1}{k} \left[ \underbrace{-\dfrac{2}{\rho}\overline{v \partial_y p}}_{\phi_{22}^*}-2 \nu\overline{\grad v \cdot \grad v}+\varepsilon \dfrac{\overline{v^2}}{k} \right] 
+	f= \dfrac{1}{k} \left[ \underbrace{-\dfrac{2}{\rho}\overline{v \partial_y p}}_{\phi_{22}^*}-2 \nu\overline{\grad v \cdot \grad v}+\varepsilon \dfrac{\overline{v^2}}{k} \right]
 \end{equation}
 %
 with $f$ being solved using an elliptic equation:
@@ -145,7 +145,7 @@ with $f$ being solved using an elliptic equation:
 Similarly to the $\alpha$ equation, this elliptic operator allows
  to represent the non-local effects induced by the
  incompressibility of turbulence. The quantity $f_h$ is obtained by
- considering homogeneous modelling (\emph{i.e.} $\Delta f=0$) of $f$ using 
+ considering homogeneous modelling (\emph{i.e.} $\Delta f=0$) of $f$ using
 for pressure strain-rate term the model of \cite{Launder:1975}. The correct
  asymptotic behaviour of the variable $\overline{v^2}$ is ensured
  by the following boundary condition:
@@ -157,46 +157,46 @@ for pressure strain-rate term the model of \cite{Launder:1975}. The correct
 %
 This requires a balance between $O(y^4)$ terms which proves to be numerically problematic.
  In the \mbox{BL-$\overline{v^2}/k$~} model the elliptic equation is simply solved
- for a non-dimensional quantity with an homogeneous Dirichlet boundary condition, 
-therefore alleviating the stiffness associated to the boundary condition of the 
-elliptic variable. The inclusion of $\alpha$ in the definition of $f$ allows a blending 
-between the near-wall and the homogeneous form $f=(1-\alpha^3) f_w+\alpha^3 f_h$ in the 
-$\varphi$ equation. For the $f_h$ model the proposal of \cite{Speziale:1991} is preferred 
-for its better reproduction of the pressure term in a boundary layer. 
+ for a non-dimensional quantity with an homogeneous Dirichlet boundary condition,
+therefore alleviating the stiffness associated to the boundary condition of the
+elliptic variable. The inclusion of $\alpha$ in the definition of $f$ allows a blending
+between the near-wall and the homogeneous form $f=(1-\alpha^3) f_w+\alpha^3 f_h$ in the
+$\varphi$ equation. For the $f_h$ model the proposal of \cite{Speziale:1991} is preferred
+for its better reproduction of the pressure term in a boundary layer.
 
-The model also solves a $k$-$\varepsilon$ system somewhat modified compared to the one 
-generally adopted by $\overline{v^2}-f$ models. The $k$ and $\varepsilon$ equations 
+The model also solves a $k$-$\varepsilon$ system somewhat modified compared to the one
+generally adopted by $\overline{v^2}-f$ models. The $k$ and $\varepsilon$ equations
 adopted by the BL-$\overline{v^2}/k$~ model read:
 %
 % K equation
 \begin{equation} \label{eq:turbul:blv2kk}
-   \DP{ k} = P -  \varepsilon 
-           + \divs \left[ \left( \frac{\nu}{2}  + \frac{\nu_t}{\sigma_k}  \right) \grad k \right] 
+   \DP{ k} = P -  \varepsilon
+           + \divs \left[ \left( \frac{\nu}{2}  + \frac{\nu_t}{\sigma_k}  \right) \grad k \right]
     - C_{\varepsilon 3} (1-\alpha)^3 \frac{k}{\varepsilon} 2 \nu  \nu_t \left( \partial_k \partial_j U_i \right)\left( \partial_k \partial_j  U_i \right)
  \end{equation}
  % Epsilon equation
 \begin{equation}  \label{eq:turbul:blv2kep}
-	\DP{\varepsilon} = \frac{C_{\varepsilon 1} P - C_{\varepsilon 2}^* \varepsilon }{T} 
-          + \divs \left[ \left( \frac{\nu}{2}  + \frac{\nu_t}{\sigma_{\varepsilon}}  \right) \grad \varepsilon \right]  
+	\DP{\varepsilon} = \frac{C_{\varepsilon 1} P - C_{\varepsilon 2}^* \varepsilon }{T}
+          + \divs \left[ \left( \frac{\nu}{2}  + \frac{\nu_t}{\sigma_{\varepsilon}}  \right) \grad \varepsilon \right]
 \end{equation}
 
-The $k$ equation includes the so-called ``E term'' dependent on the second velocity 
-derivatives squared, similar to that introduced into the $\varepsilon$ equation 
-by \cite{Jones:1972}, and the homogeneous part of the dissipation rate is 
-independently accounted for (following the suggested formulation of \cite{Jakirlic:2002}). 
-This implies that the quantity $\varepsilon$ resolved by the model has a different definition 
-to that conventionally employed in $k$-$\varepsilon$ schemes (\emph{i.e.} a change of 
-variable $\varepsilon \to \varepsilon + (1-\alpha)^3\frac{k}{\varepsilon}E+\frac{1}{2}\nu\partial_{jj}k$). 
-This has the beneficial effect of reducing the Reynolds number dependence of the near-wall 
-value of the turbulence variables and of the time and length scales, $T$ and $L$ respectively, 
-yielding better near-wall prediction of the blending variable and the turbulent viscosity, 
-and hence mean flow quantities, for both low and high Reynolds numbers. 
- 
-A further feature is that the coefficient $C_{\varepsilon_2}^*$ is taken as a function 
+The $k$ equation includes the so-called ``E term'' dependent on the second velocity
+derivatives squared, similar to that introduced into the $\varepsilon$ equation
+by \cite{Jones:1972}, and the homogeneous part of the dissipation rate is
+independently accounted for (following the suggested formulation of \cite{Jakirlic:2002}).
+This implies that the quantity $\varepsilon$ resolved by the model has a different definition
+to that conventionally employed in $k$-$\varepsilon$ schemes (\emph{i.e.} a change of
+variable $\varepsilon \to \varepsilon + (1-\alpha)^3\frac{k}{\varepsilon}E+\frac{1}{2}\nu\partial_{jj}k$).
+This has the beneficial effect of reducing the Reynolds number dependence of the near-wall
+value of the turbulence variables and of the time and length scales, $T$ and $L$ respectively,
+yielding better near-wall prediction of the blending variable and the turbulent viscosity,
+and hence mean flow quantities, for both low and high Reynolds numbers.
+
+A further feature is that the coefficient $C_{\varepsilon_2}^*$ is taken as a function
 of the turbulent transport of $k$ to $\varepsilon$ ratio  (as proposed by \cite{parneix1996second}):
 
 \begin{equation}
-  C_{\varepsilon 2}^* = C_{\varepsilon 2} 
+  C_{\varepsilon 2}^* = C_{\varepsilon 2}
 - \alpha^3 (0.4-C_{\varepsilon 2}) \tanh \left( \left|  \frac{\divs (\nu_t / \sigma_k \grad k)}{\varepsilon}   \right| ^{3/2}  \right)
 \end{equation}
 
@@ -206,32 +206,32 @@ This improves the predictions of the dissipation rate in the defect layer of a c
 \subsubsection{\emph{in extenso} definition}
 
 \paragraph{Equations:}
-Equations for the turbulence kinetic energy $k$, the turbulence dissipation rate $\varepsilon$, 
-the non-dimensionnal wall-normal Reynolds stress component $\varphi=\overline{v^2}/k$ and 
-the elliptic blending parameter $\alpha$ are given in Eq.~\eqref{eq:turbul:blv2kk}, 
-Eq.~\eqref{eq:turbul:blv2kep},  Eq.~\eqref{eq:turbul:blv2kphi} and Eq.~\eqref{eq:turbul:blv2kalpha} respectively. 
+Equations for the turbulence kinetic energy $k$, the turbulence dissipation rate $\varepsilon$,
+the non-dimensionnal wall-normal Reynolds stress component $\varphi=\overline{v^2}/k$ and
+the elliptic blending parameter $\alpha$ are given in Eq.~\eqref{eq:turbul:blv2kk},
+Eq.~\eqref{eq:turbul:blv2kep},  Eq.~\eqref{eq:turbul:blv2kphi} and Eq.~\eqref{eq:turbul:blv2kalpha} respectively.
 
 %-------------------------------
 \paragraph{Scales and constants:}
 
-The definition of the turbulent viscosity is given in Eq.~\eqref{eq:turbul:blv2knut}. 
-The near-wall and far field models, $f_w$ and $f_h$ for the $\varphi$ source term, $f$ are 
-expressed in Eq.~\eqref{eq:turbul:blv2kfw} and Eq.~\eqref{eq:turbul:blv2kfh}. 
+The definition of the turbulent viscosity is given in Eq.~\eqref{eq:turbul:blv2knut}.
+The near-wall and far field models, $f_w$ and $f_h$ for the $\varphi$ source term, $f$ are
+expressed in Eq.~\eqref{eq:turbul:blv2kfw} and Eq.~\eqref{eq:turbul:blv2kfh}.
 The definition of the variable coefficient $C_{\varepsilon_2}^*$ is given in Eq.~\eqref{eq:turbul:blv2kcep2}
 
-Finally the time and length scales entering the definition of $\nu_t$, the equation of 
-$\varepsilon$ and the definition of $f_h$ as well as the equation of $\alpha$ are given in 
-Eq.~\eqref{eq:turbul:blv2kscales}. The viscous limiter used as lower bound of the time scale 
-has a finite wall value and therefore enables avoid the singularity consecutive to the definition 
-of the $\varepsilon$ sink term if the term $-C_{\varepsilon 2}^* \dfrac{\varepsilon^2}{k}$ were 
-used in place of $-C_{\varepsilon 2}^* \dfrac{\varepsilon}{T}$. 
-Similarly a viscous (Kolmogorov) limiter is used for the length-scale definition $L$ to 
-avoid numerical problems which would raise in the $\alpha$ equation numerical resolution 
-if the length-scale were to tend to zero at wall. The upper limiter $T_{lim}$ is used to 
-enforce the Bradshaw hypothesis (proportionality between shear stress and turbulent 
-kinetic energy in a boundary layer $\overline{uv}/k=C (=0.6/\sqrt{3}$ with the present approach)), 
-and corrects, in a wider range of cases, the excessive production rate returned by 
-the eddy viscosity formulation (\emph{i.e.} allowing a linear rather than a quadratic 
+Finally the time and length scales entering the definition of $\nu_t$, the equation of
+$\varepsilon$ and the definition of $f_h$ as well as the equation of $\alpha$ are given in
+Eq.~\eqref{eq:turbul:blv2kscales}. The viscous limiter used as lower bound of the time scale
+has a finite wall value and therefore enables avoid the singularity consecutive to the definition
+of the $\varepsilon$ sink term if the term $-C_{\varepsilon 2}^* \dfrac{\varepsilon^2}{k}$ were
+used in place of $-C_{\varepsilon 2}^* \dfrac{\varepsilon}{T}$.
+Similarly a viscous (Kolmogorov) limiter is used for the length-scale definition $L$ to
+avoid numerical problems which would raise in the $\alpha$ equation numerical resolution
+if the length-scale were to tend to zero at wall. The upper limiter $T_{lim}$ is used to
+enforce the Bradshaw hypothesis (proportionality between shear stress and turbulent
+kinetic energy in a boundary layer $\overline{uv}/k=C (=0.6/\sqrt{3}$ with the present approach)),
+and corrects, in a wider range of cases, the excessive production rate returned by
+the eddy viscosity formulation (\emph{i.e.} allowing a linear rather than a quadratic
 dependance on $S$ for large strain rate).
 
 \begin{equation}
@@ -269,7 +269,7 @@ f_h = - \dfrac{1}{T} \left(  C_1 -1 +C_2 \dfrac{P}{\varepsilon}   \right) \left(
 \begin{table}[!htp]
 \centering
 \begin{tabular}{ccccccc}
-	\hline 
+	\hline
 	$C_{\varepsilon 1}$ & $C_{\varepsilon 2}$ & $C_{\varepsilon 3} $ & $C_{\varepsilon 4}$ & $\sigma_k$ & $\sigma_{\varepsilon}$\\
 	\hline
 	$ 1.44 $ & $1.83$ & $2.3$ & $0.4$ & $1$ & $1.5$ \\
@@ -277,7 +277,7 @@ f_h = - \dfrac{1}{T} \left(  C_1 -1 +C_2 \dfrac{P}{\varepsilon}   \right) \left(
 \end{tabular}
 
 \begin{tabular}{cccccccc}
-	\hline 
+	\hline
 	 $C_\mu$ & $C_T$ & $C_{L}$ & $C_{\eta}$ & $C_1$ & $C_2$ & $\sigma_\varphi$\\
 	\hline
 	 $0.22$ & $4$ & $0.164$ & $75$ & $1.7$ & $0.9$  &  $1$ \\
@@ -289,9 +289,9 @@ f_h = - \dfrac{1}{T} \left(  C_1 -1 +C_2 \dfrac{P}{\varepsilon}   \right) \left(
 %----------------------------------
 \subsubsection{Boundary conditions}
 
-The turbulent variables wall boundary conditions are given in Eq.~\eqref{eq:turbul:bcblv2k} 
-($y$ being the wall-distance)\footnote{Note that the $\varepsilon$ wall boundary condition 
-is halved compared to what is used in the $\varphi-\overline{f}$ model (\texttt{iturb=50}) consequently to the change of variable described above}: 
+The turbulent variables wall boundary conditions are given in Eq.~\eqref{eq:turbul:bcblv2k}
+($y$ being the wall-distance)\footnote{Note that the $\varepsilon$ wall boundary condition
+is halved compared to what is used in the $\varphi-\overline{f}$ model (\texttt{iturb=50}) consequently to the change of variable described above}:
 
 \begin{equation}
 		\begin{cases}
@@ -306,8 +306,8 @@ is halved compared to what is used in the $\varphi-\overline{f}$ model (\texttt{
 %-------------------------------
 \subsubsection{Remaining issues}
 \begin{itemize}
-  \item The actual source term $\left( \partial_k \partial_j U_i \right)\left( \partial_k \partial_j  U_i \right)$ should be written as 
-  $\displaystyle{\sum_{i=1}^3 \sum_{j=1}^3 \sum_{k=1}^3  \left( \partial_k \partial_j  U_i \right)^2}$ and not $\displaystyle{\sum_{i=1}^3 \left(\sum_{j=1}^3 \sum_{k=1}^3  (\partial_k \partial_j  U_i )\right)^2}$ as it is, incorrectly, in the present implementation. 
+  \item The actual source term $\left( \partial_k \partial_j U_i \right)\left( \partial_k \partial_j  U_i \right)$ should be written as
+  $\displaystyle{\sum_{i=1}^3 \sum_{j=1}^3 \sum_{k=1}^3  \left( \partial_k \partial_j  U_i \right)^2}$ and not $\displaystyle{\sum_{i=1}^3 \left(\sum_{j=1}^3 \sum_{k=1}^3  (\partial_k \partial_j  U_i )\right)^2}$ as it is, incorrectly, in the present implementation.
   \item Issues regarding grid/code dependancy of this term have already been raised \cite{Iaccarino:2001}. Alternatives may be worth investigating, such as $\left( \partial_{jj}  U_i \right)^2$.
 \end{itemize}
 
@@ -319,9 +319,9 @@ for studying a flow around an air-plane wing for instance.
 
 %--------------------------------
 \subsubsection{Model description}
-It consists of a transport equation of a scalar $\tilde{nu}$ dirctly linked to the turbulent viscosity $\mu_T$. 
+It consists of a transport equation of a scalar $\tilde{nu}$ dirctly linked to the turbulent viscosity $\mu_T$.
 
-More recently, this model has been extended by Aupoix \cite{Aupoix:2003} to rough wall for studying atmospheric flows. It was also successfully applied to flow in turbo-machinery where variants of this model has been developed. 
+More recently, this model has been extended by Aupoix \cite{Aupoix:2003} to rough wall for studying atmospheric flows. It was also successfully applied to flow in turbo-machinery where variants of this model has been developed.
 
 The transport equation of $\tilde{\nu}$ (pseudo turbulent viscosity, which tends to it far from walls) reads\footnote{
 the present formulation is a simplified one presented by Aupoix \cite{Aupoix:2003} where transition terms have been neglected.
@@ -331,12 +331,12 @@ the present formulation is a simplified one presented by Aupoix \cite{Aupoix:200
 = c_{b1} \rho  \tilde{S} \tilde{\nu}
 - c_{w1}f_{w} \rho \left( \dfrac{\tilde{\nu}}{d} \right)^2
 + \dfrac{1}{ \sigma} \left[ \divs \left( (\mu + \rho \tilde{\nu}) \grad \tilde{\nu} \right)
-+ c_{b2} \rho \left| \grad \tilde{\nu} \right| ^2 
++ c_{b2} \rho \left| \grad \tilde{\nu} \right| ^2
   \right]
   + \Gamma \left( \tilde{\nu}^{in} - \tilde{\nu}^n \right) +ST^{imp} \tilde{\nu} +ST^{exp}
 \end{equation}
 %
-where $\tilde{\nu}^{in}$ is the injection value of $\tilde{\nu}$ in case of any mass source term, and $ST^{imp}_{\tilde{\nu}}$ and $ST^{exp}_{\tilde{\nu}}$ 
+where $\tilde{\nu}^{in}$ is the injection value of $\tilde{\nu}$ in case of any mass source term, and $ST^{imp}_{\tilde{\nu}}$ and $ST^{exp}_{\tilde{\nu}}$
 are respectively the implicit and explicit additional user source terms and
 where
 %
@@ -361,7 +361,7 @@ $
 \begin{array}{c | c | c | c | c | c | c | c }
 \sigma      & c_{b1} & c_{b2} & \kappa & c_{w2} & c_{w3} & c_{v1} & c_{w1} \\
 \hline
-\frac{2}{3} & 0.1355 & 0.622  & 0.41   & 0.3    & 2      & 7.1    & \dfrac{c_{b1}}{ \kappa^2}+ \dfrac{1+c_{b2}}{ \sigma}  
+\frac{2}{3} & 0.1355 & 0.622  & 0.41   & 0.3    & 2      & 7.1    & \dfrac{c_{b1}}{ \kappa^2}+ \dfrac{1+c_{b2}}{ \sigma}
 \end{array}
 $
 \caption{Constants of the Spalart Allmaras model.\label{tab:const_SA}}
@@ -375,7 +375,7 @@ Equation \eqref{eq:turbul:SA_used} can be rewritten with the $\theta$-scheme pre
 \begin{equation}\label{eq:turbul:SA_time}
 \begin{array}{c}
 \overbrace{
-\left[ \dfrac{\rho}{\Delta t} + \max \left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} , \, 0 \right) - \theta T_s^{imp} + \theta \Gamma^n \right] 
+\left[ \dfrac{\rho}{\Delta t} + \max \left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} , \, 0 \right) - \theta T_s^{imp} + \theta \Gamma^n \right]
 }^{\texttt{implicit term}}
 \delta \tilde{\nu}^{n+1}
 %
@@ -383,37 +383,37 @@ Equation \eqref{eq:turbul:SA_used} can be rewritten with the $\theta$-scheme pre
 + \theta
 \left(
 \underbrace{
- \grad \delta \tilde{\nu}^{n+1} \cdot \left( \rho \vect{u} \right) 
+ \grad \delta \tilde{\nu}^{n+1} \cdot \left( \rho \vect{u} \right)
 }_{
 \texttt{implicit part of the convection}
 }
-- 
+-
 \underbrace{
-\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \delta \tilde{\nu}^{n+1} \right] 
+\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \delta \tilde{\nu}^{n+1} \right]
 }_{
 \texttt{implicit part of the diffusion}
 }
-\right) 
+\right)
 \\
-= 
+=
 \\
-- \grad \tilde{\nu}^{n} \cdot \left( \rho \vect{u} \right) 
-+ 
-\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \tilde{\nu}^{n} \right] 
+- \grad \tilde{\nu}^{n} \cdot \left( \rho \vect{u} \right)
++
+\divs \left[ \dfrac{\mu + \rho \tilde{\nu}}{\sigma} \grad \tilde{\nu}^{n} \right]
 \\
 +
 c_{b1} \rho \tilde{S} \tilde{\nu}^n
 - c_{w1}f_{w}\rho \left( \dfrac{\tilde{\nu}}{d} \right)^2
-+ \dfrac{c_{b2}\rho}{ \sigma} 
- \left| \grad \tilde{\nu} \right| ^2 
++ \dfrac{c_{b2}\rho}{ \sigma}
+ \left| \grad \tilde{\nu} \right| ^2
  + \Gamma \left( \tilde{\nu}^{in} - \tilde{\nu}^n \right) +ST^{imp} \tilde{\nu}^n +ST^{exp}
 \end{array}
 \end{equation}
 where $\delta \tilde{\nu}^{n+1} \equiv \tilde{\nu}^{n+1} - \tilde{\nu}^{n}$.
 
 \begin{remark}
-The term $\left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} \right)$ is implicit 
-so that $\tilde{\nu} $ does not require any clipping to remain positive if an \emph{upwind} convective scheme and no flux 
+The term $\left( c_{w1} f_{w} \rho  \dfrac{\tilde{\nu}^n}{d^2} - c_{b1}\rho \tilde{S} \right)$ is implicit
+so that $\tilde{\nu} $ does not require any clipping to remain positive if an \emph{upwind} convective scheme and no flux
 reconstruction are chosen.
 \end{remark}
 
@@ -422,14 +422,14 @@ reconstruction are chosen.
 \subsubsection{Boundary conditions}
 
 \paragraph{Smooth walls:}
-the boundary condition on $\tilde{\nu}$ is a standard zero Dirichlet boundary condition on the walls 
+the boundary condition on $\tilde{\nu}$ is a standard zero Dirichlet boundary condition on the walls
 (see \chaptername~\ref{chapter:bndcnd} for the encoding of standard Dirichlet conditions).
 
 Note that the model gives a log law outside of the viscous sub-layer, \emph{i.e.}:
 \begin{equation}
 \begin{array}{r c l}
 \tilde{\nu} & \simeq & \kappa u^\star d \\
-\tilde{S} & \simeq & \dfrac{u^\star}{ \kappa d} 
+\tilde{S} & \simeq & \dfrac{u^\star}{ \kappa d}
 \end{array}
 \end{equation}
 
@@ -443,7 +443,7 @@ d_0     & = & \exp \left( -8.5 \kappa \right) h_s \simeq 0.03 h_s
 \end{array}
 \end{equation}
 %
-where $h_s$ is the roughness size. The Dirichlet boundary conditions 
+where $h_s$ is the roughness size. The Dirichlet boundary conditions
 is replaced by the following Neumann boundary condition:
 %
 \begin{equation}\label{eq:eq_neumann_nu}
@@ -452,7 +452,7 @@ is replaced by the following Neumann boundary condition:
 %
 A development in series in then written:
 \begin{equation}\label{eq:eq_neumann_nu_vf}
- \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot \vect{\centip \centf} 
+ \tilde{\nu}_\fib = \tilde{\nu}_{\centip} -   \grad_\fib \tilde{ \nu} \cdot \vect{\centip \centf}
 \end{equation}
 Finally, that is a Robbin type boundary condition formulated as follows in \CS:
 which reads as follows in \CS:
@@ -462,11 +462,11 @@ which reads as follows in \CS:
 with $A^g_\fib=0$ and
 %
 \begin{equation}\label{eq:eq_neumann_nu_coefb}
- B^g_\fib = \dfrac{d_0}{d_0 + \overline{\centip \centf} } 
+ B^g_\fib = \dfrac{d_0}{d_0 + \overline{\centip \centf} }
 \end{equation}
 
-\paragraph{Inlet:} 
-the profile of $\tilde{\nu}$ is imposed, the value is deduced from the profiles imposed on $k$ and $\varepsilon$ for a $k-\varepsilon$turbulence 
+\paragraph{Inlet:}
+the profile of $\tilde{\nu}$ is imposed, the value is deduced from the profiles imposed on $k$ and $\varepsilon$ for a $k-\varepsilon$turbulence
 model assuming $\tilde{\nu } \simeq \nu_T$.
 
 
@@ -476,7 +476,7 @@ model assuming $\tilde{\nu } \simeq \nu_T$.
 In this section, the presented models solve a differential transport equation
 on the Reynolds' stresses tensor.
 %-------------------------------------------------------------------------------
-\subsection{Equations for the Reynolds stress tensor components $R_{ij}$ 
+\subsection{Equations for the Reynolds stress tensor components $R_{ij}$
 and $\varepsilon$ (\emph{LRR} model)}
 %
 \nomenclature[rrt2]{$\tens{R}$}{Reynolds stress tensor \nomunit{$m^{2}.s^{-2}$}}
@@ -486,22 +486,22 @@ and $\varepsilon$ (\emph{LRR} model)}
 \left\{
 \begin{array}{rcll}
 \displaystyle
- \rho \der{\tens{R}}{t} 
+ \rho \der{\tens{R}}{t}
 + \gradtt \, \tens{R} \cdot \left( \rho \vect{u} \right)
-- \divt \left( \mu \gradtt \,\tens{R} \right) 
-& = & 
+- \divt \left( \mu \gradtt \,\tens{R} \right)
+& = &
 \displaystyle
 \tens{\mathit{d}} +
-\tens{\mathcal{P}} + \tens{G}+ \tens{\Phi} 
+\tens{\mathcal{P}} + \tens{G}+ \tens{\Phi}
 -\rho \tens{\varepsilon} & \displaystyle+\Gamma \tens{R}^{in}+\tens{ST}_{R_{ij}},
 \\
 \displaystyle
 \rho \der{\varepsilon }{t}
 + \grad \varepsilon \cdot \left( \rho \vect{u} \right)
-- \dive\left(\mu \grad{\varepsilon}\right) 
-& = & \displaystyle 
+- \dive\left(\mu \grad{\varepsilon}\right)
+& = & \displaystyle
 \mathit{{d}+C_{\varepsilon _{1}}\frac{\varepsilon }{k}\left[ \mathcal{P}%
-+G_{\varepsilon }\right] -\rho C_{\varepsilon _{2}}\frac{\varepsilon ^{2}}{k}} 
++G_{\varepsilon }\right] -\rho C_{\varepsilon _{2}}\frac{\varepsilon ^{2}}{k}}
 & \displaystyle+\Gamma \varepsilon ^{in}+ST_{\varepsilon },
 \end{array}%
 \right.
@@ -521,7 +521,7 @@ production- tensor associated with buoyancy effects:
 \end{array}
 \end{equation}
 where $ \vect{r} \equiv \overline{\rho^\prime \vect{u}^\prime}$ is modelled through a Generalized Gradient Diffusion Hypothesis (GGDH):
-\mbox{$\vect{r} \simeq \frac{3}{2}\frac{C_{\mu }}{\sigma_{t}} \frac{k}{\varepsilon } \tens{R} \cdot \grad  \rho$} and 
+\mbox{$\vect{r} \simeq \frac{3}{2}\frac{C_{\mu }}{\sigma_{t}} \frac{k}{\varepsilon } \tens{R} \cdot \grad  \rho$} and
 $G_{\varepsilon }= \Max \left(0, \, \frac{1}{2}\trace \tens{\mathcal{G}}\right)$.
 \nomenclature[rrt1]{$\vect{r}$}{velocity density correlation vector $\overline{\rho^\prime \vect{u}^\prime}$, generally modelled by a Generalized Gradient Diffusion Hypothesis (GGDH): $\frac{3}{2}\frac{C_{\mu }}{\sigma _{t}} \frac{k}{\varepsilon } \tens{R} \cdot \grad  \rho$ }
 \nomenclature[rbuoyancyepsilon]{$G_{\varepsilon }$}{turbulent buoyancy term for dissipation}
@@ -567,7 +567,7 @@ The turbulent diffusion terms are:
 \begin{array}{r c l}
 \tens{d} & = & C_{S} \displaystyle \divt \left( \rho \frac{k}{\varepsilon }%
 \tens{R} \cdot \gradtt \, \tens{R} \right), \\
-d & = & C_{\varepsilon }\displaystyle \dive \left( \rho \frac{k}{\varepsilon} 
+d & = & C_{\varepsilon }\displaystyle \dive \left( \rho \frac{k}{\varepsilon}
 \tens{R} \cdot \grad \varepsilon \right).
 \end{array}
 \end{equation}
@@ -583,7 +583,7 @@ prescribed by the user.
 $C_\mu$ & $C_{\varepsilon}$ & $C_{\varepsilon_1}$ & $C_{\varepsilon_2}$ & $%
 C_1$ & $C_2$ & $C_3$ & $C_S$ & $C^{\prime}_1$ & $C^{\prime}_2$ \\ \hline
 $0.09$ & $0.18$ & $1.44$ & $1.92$ & $1.8$ & $0.6$ & $0.55$ & $0.22$ & $0.5$
-& $0.3$ 
+& $0.3$
 \end{tabular}
 \end{center}
 \caption{Model constants of the \emph{LRR} $R_{ij}-\varepsilon$ model \cite{Launder:1975}.}
@@ -618,11 +618,11 @@ spectral low pass filter: only the structures larger that twice the size of
 the cells are accounted for. Those structures are called ''the resolved
 scales'', whereas the rest, $u_{i}-\overline{u_{i}}$, is referred to as
 ''unresolved scales'' or ''sub-grid scales''. The influence of the
-unresolved scales on the resolved scales have to be modelled.}. 
+unresolved scales on the resolved scales have to be modelled.}.
 
 $C$ is the Smagorinsky constant. Its theoretical value is $0.18$ for
 homogeneous isotropic turbulence, but the value $0.065$ is classic for
-channel flow. 
+channel flow.
 
 $\overline{\Delta }$ is the filter width associated with the finite volume
 formulation (implicit filtering which corresponds to the integration over a
@@ -664,12 +664,12 @@ T_{ij}-\frac{1}{3}\trace \tens{T} \delta_{ij} &=& -2 C \widetilde{\Delta}^2 |\wi
 \overline{D_{ij}}| \overline{D_{ij}} ,
 \end{array}
 \end{equation}
-where 
+where
 $\overline{u}$ stands for the \emph{implicit-filtered} value of a variable $u$
 defined at the centres of the cells and $\overline{u}$ represents the
 \emph{explicit-filtered} value associated with the variable $u$. It follows that
 the numerical computation of $L_{ij}$ is possible, since it requires the
-explicit filtering to be applied to implicitly filtered variables only 
+explicit filtering to be applied to implicitly filtered variables only
 (\emph{i.e.} to the variables explicitly computed).
 
 On the following assumption:

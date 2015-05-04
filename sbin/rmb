@@ -29,5 +29,17 @@ do
   fi
 done
 
+for file in docs/*/*.tex
+do
+  tmpfile=`basename $file`
+  sed -e 's/ *$//' $file > $RMBDIR/$tmpfile
+  diff $file $RMBDIR/$tmpfile > /dev/null 2>&1
+  if [ $? = 1 ]
+  then
+    echo $file
+    mv $RMBDIR/$tmpfile $file
+  fi
+done
+
 \rm -rf $RMBDIR
 

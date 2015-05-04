@@ -27,7 +27,7 @@
 %===============================================
 \subsection{Introductrion}
 %===============================================
- 
+
 The description of the thermodynamical of gaseous mixture is as close as
 possible to the JANAF standard. The gases mixture is, often, considered as
 composed of some {\textit{global} species (\emph{e.g.} oxidizer, products, fuel) each of
@@ -44,12 +44,12 @@ combustion with air (formation enthalpy of which is zero valued as O2 and N2
 are reference state) and the lower heating value. The heat capacity of
 condensed phase is assumed constant and it is a data the user has to enter (in
 the corresponding data file dp\_FCP or dp\_FUE).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %===============================================
 \subsection{Gases enthalpy discretisation}
 %===============================================
- 
+
 A table of gases (both elementary species and global ones) enthalpy for some
 temperatures (the user choses number of points, temperature in dp\_*** file) is
 computed (enthalpy of elementary species is computed using JANAF polynomia;
@@ -62,11 +62,11 @@ determine the enthalpy of a mixture of gases (for inlet conditions it is more
 useful to indicate temperature and mass fractions) or to determine temperature
 from enthalpy of the mixture and mass fractions of global species (common use in
 every fluid particle, at every time step).
- 
+
 %===============================================
 \subsection{Particles enthalpy discretisation}
 %===============================================
- 
+
 Enthalpy of condensed material is rarely known. Usually, only the low heating
 value and ultimate analysis are determined. So, using simple assumptions and the
 enthalpy of known released species (after burning with air) the formation

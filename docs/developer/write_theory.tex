@@ -24,33 +24,33 @@
 
 \subsection{General rules}
 
-Theses general rules should be seen as basic golden rules helping the whole 
+Theses general rules should be seen as basic golden rules helping the whole
 documentation to be consistent. They are strongly recommended:
 
 \begin{itemize}
-\item Respect a plan where you first present a general overview of the theory 
-      (what is it about, what is the main goal), then you present the equations 
+\item Respect a plan where you first present a general overview of the theory
+      (what is it about, what is the main goal), then you present the equations
       in general, and finally the specific choices you have made.
 \item Use the macros described in \S~\ref{sec:macros} (\emph{i.e} \verb1\usepackage{csmacros}1).
 \item Use the notations defined in the nomenclature of the theory guide
       as much as possible.
-\item Focus on your specificities and cite the generalities (external to EDF!), which you should add to the \texttt{biblio.bib} file 
+\item Focus on your specificities and cite the generalities (external to EDF!), which you should add to the \texttt{biblio.bib} file
       located in the \texttt{/doc/style/} directory.
 \item Write in English (UK).
-\item Use the existing style of \CS, that is to say use the class \texttt{csdoc.csl} (for long documents as a report) 
+\item Use the existing style of \CS, that is to say use the class \texttt{csdoc.csl} (for long documents as a report)
       or the class \texttt{csshortdoc.cls} (for short documents as an article).
-\item Respect \LaTeX~philosophy, as it is designed to make sensible spacing decisions 
-      by itself, do not use explicit horizontal or vertical spacing commands, except in 
+\item Respect \LaTeX~philosophy, as it is designed to make sensible spacing decisions
+      by itself, do not use explicit horizontal or vertical spacing commands, except in
       a few accepted (mostly mathematical) situation.
 \item keep your own macros to an absolute minimum.
 \end{itemize}
 
 \subsection{Macros and typos}\label{sec:macros}
-This section does not pretend to discibe how to write a \LaTeX document, but is to 
+This section does not pretend to discibe how to write a \LaTeX document, but is to
 present the macros defined in \texttt{csmacro.sty} and give some typographic pieces of advice.
 
 \subsubsection{Macros}
-The available macros located in the \texttt{csmacros} and \texttt{csvers.tex} package are displayed 
+The available macros located in the \texttt{csmacros} and \texttt{csvers.tex} package are displayed
 in \tablename~\ref{tab:macros_soft} and \tablename~\ref{tab:macros_math}.
 
 \begin{table}[!htbcp]
@@ -77,13 +77,13 @@ in \tablename~\ref{tab:macros_soft} and \tablename~\ref{tab:macros_math}.
 \verb1\paraview1 & \paraview \\
 \verb1\pcs1 & \pcs \\
 \verb1\salome1  & \salome   \\
-\verb1\scotch1  & \scotch   \\ 
-\verb1\ptscotch1& \ptscotch \\ 
+\verb1\scotch1  & \scotch   \\
+\verb1\ptscotch1& \ptscotch \\
 \verb1\simail1  & \simail   \\
 \verb1\starcd1  & \starcd   \\
-\verb1\starccmp1& \starccmp \\ 
+\verb1\starccmp1& \starccmp \\
 \verb1\syrthes1 & \syrthes  \\
-\verb1\vtk1     & \vtk 
+\verb1\vtk1     & \vtk
 \end{tabular}
 \caption{Macros of softwares  defined in \texttt{csmacros.sty}.\label{tab:macros_soft}}
 \end{table}
@@ -91,18 +91,18 @@ in \tablename~\ref{tab:macros_soft} and \tablename~\ref{tab:macros_math}.
 \begin{table}[!htbpc]
 \begin{tabular}{p{0.5 \textwidth} | p{0.5 \textwidth} }
 \LaTeX code & preview \\
-\hline 
-\verb1$\divs$1   &  $ \divs    $\\ 
-\verb1$\divv$1   &  $ \divv    $\\ 
-\verb1$\divt$1   &  $ \divt    $\\ 
-\verb1$\grad$1   &  $ \grad    $\\ 
-\verb1$\gradv$1  &  $ \gradv   $\\  
-\verb1$\gradt$1  &  $ \gradt   $\\  
-\verb1$\rot$1    &  $ \rot     $\\ 
-\verb1$\vect{V}$1   &  $ \vect{V}    $\\ 
-\verb1$\tens{T}$1   &  $ \tens{T}    $\\ 
+\hline
+\verb1$\divs$1   &  $ \divs    $\\
+\verb1$\divv$1   &  $ \divv    $\\
+\verb1$\divt$1   &  $ \divt    $\\
+\verb1$\grad$1   &  $ \grad    $\\
+\verb1$\gradv$1  &  $ \gradv   $\\
+\verb1$\gradt$1  &  $ \gradt   $\\
+\verb1$\rot$1    &  $ \rot     $\\
+\verb1$\vect{V}$1   &  $ \vect{V}    $\\
+\verb1$\tens{T}$1   &  $ \tens{T}    $\\
 \verb1\degresC1   &   \degresC \\
-\verb1$\Max$1    &  $ \Max     $\\ 
+\verb1$\Max$1    &  $ \Max     $\\
 \verb1$\Min$1    &  $ \Min     $\\
 \verb1$\trace$1    &  $ \trace     $\\
 \verb1$\transpose{M}$1    &  $ \transpose{M} $\\
@@ -117,17 +117,17 @@ in \tablename~\ref{tab:macros_soft} and \tablename~\ref{tab:macros_math}.
 \begin{table}[!htbpc]
 \begin{tabular}{p{0.5 \textwidth} | p{0.5 \textwidth} }
 \LaTeX code & preview \\
-\hline 
-\verb1$\Facei{\celli}$1   &  $ \Facei{\celli}    $\\ 
-\verb1$\Faceb{\cellj}$1   &  $ \Faceb{\cellj}    $\\ 
-\verb1$\Face{\celli}$1   &  $ \Face{\celli}    $\\ 
-\verb1$\fij$1   &  $ \fij    $\\ 
-\verb1$\fib$1  &  $ \fib   $\\  
-\verb1$\ij$1  &  $ \ij   $\\  
-\verb1$\ib$1    &  $ \ib     $\\ 
-\verb1$\celli$1   &  $ \celli    $\\ 
-\verb1$\cellj$1   &  $ \cellj    $\\ 
-\verb1$\ipf$1    &  $ \ipf     $\\ 
+\hline
+\verb1$\Facei{\celli}$1   &  $ \Facei{\celli}    $\\
+\verb1$\Faceb{\cellj}$1   &  $ \Faceb{\cellj}    $\\
+\verb1$\Face{\celli}$1   &  $ \Face{\celli}    $\\
+\verb1$\fij$1   &  $ \fij    $\\
+\verb1$\fib$1  &  $ \fib   $\\
+\verb1$\ij$1  &  $ \ij   $\\
+\verb1$\ib$1    &  $ \ib     $\\
+\verb1$\celli$1   &  $ \celli    $\\
+\verb1$\cellj$1   &  $ \cellj    $\\
+\verb1$\ipf$1    &  $ \ipf     $\\
 \verb1$\jpf$1    &  $ \jpf     $\\
 \verb1$\centi$1    &  $ \centi $\\
 \verb1$\centj$1    &  $ \centj $\\
@@ -143,8 +143,8 @@ in \tablename~\ref{tab:macros_soft} and \tablename~\ref{tab:macros_math}.
 Here are some usefull tricks:
 \begin{itemize}
 \item If you want to make a description many topics, use the \verb1\begin{itemize} \item \end{itemize}1 environment.
-\item You can use blue and orange EDF colours with the blue \verb1\textcolor{blueedf}{text}1, its the darkened version 
-\verb1\textcolor{bluededf}{text}1, or the orange \verb1\textcolor{orangeedf}{text}1 and its the darkened version 
+\item You can use blue and orange EDF colours with the blue \verb1\textcolor{blueedf}{text}1, its the darkened version
+\verb1\textcolor{bluededf}{text}1, or the orange \verb1\textcolor{orangeedf}{text}1 and its the darkened version
 \verb1\textcolor{orangededf}{text}1.
 \item Use label and references, and dissociate equations with sections and appendices and figures and tables using \verb1\label{eq:label}1, \verb1\label{sec:label}1, \verb1\label{ap:label}1,
 \verb1\label{fig:label}1 and \verb1\label{tab:label}1 prefixes.
@@ -165,7 +165,7 @@ Here are some usefull tricks:
 \item $1^{st}$ item
 \item $2^{nd}$ item
 \end{enumerate}
-\item Use the remarks \verb1\begin{remark} \end{remark}1 
+\item Use the remarks \verb1\begin{remark} \end{remark}1
 and example \verb1\begin{example} \end{example}1 environments defined in \texttt{csdoc.csl}:
 \begin{remark}
 A remark

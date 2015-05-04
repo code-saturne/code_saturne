@@ -142,7 +142,7 @@ $a_{\,{b}_{ik}}$ is the boundary value directly computed from the prescribed bou
 
 \minititre{Remark 1}
 
-When a centered scheme is used, we actually write (to ensure first order discretization in space for $a$) 
+When a centered scheme is used, we actually write (to ensure first order discretization in space for $a$)
 
 \begin{equation}\notag
 a_{\,f,ij} = \alpha_{ij} a_I +  (1-\alpha_{ij}) a_J  + \displaystyle
@@ -152,7 +152,7 @@ a_{\,f,ij} = \alpha_{ij} a_I +  (1-\alpha_{ij}) a_J  + \displaystyle
 A factor $\displaystyle \frac{1}{2}$ is used for numerical stability reasons.
 
 \minititre{Remark 2}
-A slope test (which may introduce non-linearities in the convection operator) allows to switch from 
+A slope test (which may introduce non-linearities in the convection operator) allows to switch from
 the centered or SOLU scheme to the first order upwind scheme (without blending). Additionally, in standard mode $a_{\,f,ij}$ is computed as a weighted average between the upstream value and the centered value (blending), according to users' choice (variable $\var{BLENCV}$ in the subroutine  \fort{usini1}).
 
 
@@ -175,7 +175,7 @@ and :
 D_{\,b_{ik}}(\,\beta, a) = \beta_{\,b_{ik}}
 \frac{a_{\,b_{ik}}-a_{\,I'}}{\overline{I'F}} S_{\,b_{ik}}
 \end{equation}
-using the same notations as before, and with $S_{\,ij}$ and $S_{\,b_{ik}}$ being the norms of  vectors 
+using the same notations as before, and with $S_{\,ij}$ and $S_{\,b_{ik}}$ being the norms of  vectors
 $\vect{S}_{\,ij}$, and $\vect{S}_{\,b_{ik}}$ respectively.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -185,21 +185,21 @@ $\vect{S}_{\,ij}$, and $\vect{S}_{\,b_{ik}}$ respectively.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 In the following, the reader is reminded of the role of the variables used in the different tests:
-$\bullet \ $ \var{IRCFLP}, from array \var{IRCFLU} ; indicates for the considered variables wether 
-or not the convective and diffusive fluxes are reconstructed \\ 
+$\bullet \ $ \var{IRCFLP}, from array \var{IRCFLU} ; indicates for the considered variables wether
+or not the convective and diffusive fluxes are reconstructed \\
 \hspace*{1cm}$ = 0$ : no reconstruction\\
 \hspace*{1cm}$ = 1$ : reconstruction\\
 $\bullet \ $ \var{ICONVP}, from array \var{ICONV} ; indicates if the considered variables is convected or not.\\
 \hspace*{1cm}$ = 0$ : no convection\\
 \hspace*{1cm}$ = 1$ : convection\\
-$\bullet \ $ \var{IDIFFP}, from array \var{IDIFF} ; indicates if the diffusion of the considered variables is 
+$\bullet \ $ \var{IDIFFP}, from array \var{IDIFF} ; indicates if the diffusion of the considered variables is
 taken into account or not.\\
 \hspace*{1cm}$ = 0$ : no diffusion\\
 \hspace*{1cm}$ = 1$ : diffusion\\
  $\bullet \ $ \var{IUPWIN} indicates locally, in \fort{bilsc2} (to avoid unnecessary calculations) whether a pure upwind scheme is chosen  or not for the considered variables to be convected. \\
 \hspace*{1cm}$ = 0$ : no pure upwind\\
 \hspace*{1cm}$ = 1$ : pure upwind is used\\
-$\bullet \ $ \var{ISCHCP}, from array \var{ISCHCV} ; indicates which type of second order convection scheme is used on orthogonal meshes for the considered variable to convect  (only useful if $\var{BLENCP}>0\ $).\\ 
+$\bullet \ $ \var{ISCHCP}, from array \var{ISCHCV} ; indicates which type of second order convection scheme is used on orthogonal meshes for the considered variable to convect  (only useful if $\var{BLENCP}>0\ $).\\
 \hspace*{1cm}$ = 0$ : we use the  SOLU scheme (Second Order Linear
 Upwind ) \\
 \hspace*{1cm}$ = 1$ : we use a centered scheme\\
@@ -209,8 +209,8 @@ $\bullet \ $ \var{ISSTPP}, from array \var{ISSTPC} ; indicates if one wants to r
 \hspace*{1cm}$ = 0$ : a slope test is systematically used\\
 \hspace*{1cm}$ = 1$ : no slope test
 \subsection*{\bf Computation of the gradient $\vect{G}_{\,c,i}$ of variable $a$}
-The computation of the gradient of variable $a$ is necessary for the computation of the explicit budget.   \fort{grdcel} is called everytime this gradient is needed, and it is stored in the array (\var{DPDX}, \var{DPDY}, \var{DPDZ}). The computation of the gradient is necessary in the following situations: 
-\hspace*{0.5cm}$\bullet \ $ if the convection is activated with a non pure upwind scheme 
+The computation of the gradient of variable $a$ is necessary for the computation of the explicit budget.   \fort{grdcel} is called everytime this gradient is needed, and it is stored in the array (\var{DPDX}, \var{DPDY}, \var{DPDZ}). The computation of the gradient is necessary in the following situations:
+\hspace*{0.5cm}$\bullet \ $ if the convection is activated with a non pure upwind scheme
  ($\var{ICONVP} \ne {0}$ and $\var{IUPWIN} =~0$) {\bf and},\\
 \hspace*{1cm} if we want to reconstruct the fluxes  ($\var{IRCFLP} = {1}$),\\
 \hspace*{1cm}{\bf or} if we want to use the SOLU scheme
@@ -222,7 +222,7 @@ In all other cases, the array (\var{DPDX}, \var{DPDY}, \var{DPDZ}) is set to zer
 
 \subsection*{\bf Computation of the upwind gradient $\vect{G}^{\,amont}_{\,c,i}$ of variable $a$}
 
-$\vect{G}^{\,amont}_{\,c,i}$ refers to the upwind gradient of variable $a$, for cell $\Omega_i$. 
+$\vect{G}^{\,amont}_{\,c,i}$ refers to the upwind gradient of variable $a$, for cell $\Omega_i$.
 It is stored in the array ($\var{DPDXA}, \var{DPDYA}, \var{DPDZA}$).\\
 We also define the scalars $a^{\,amont}_{\,ij}$
 and $a^{\,amont}_{\,b_{ik}}$ as:
@@ -273,11 +273,11 @@ B_{\,b,ik})_{k\in {\gamma_b(i)}}$ are stored in the arrays (\var{COEFAP}, \var{C
 \subsection*{\bf Summation of the numerical convective and diffusive fluxes}
 The contributions to the explicit budget $[-\dive(\,(\rho \vect{u})^{n}a)
 +\dive(\,\beta\,\grad a)]$ are computed and added to the right-hand side array \var{SMBR},
-which has already been initialized before the call to 
+which has already been initialized before the call to
 \fort{BILSC2} (with the explicit source terms for instance, etc.).\\
-The variable \var{FLUX} gathers the convective and diffusive parts of the numerical fluxes. It is computed in a classic manner, first on the internal faces, and then on the boundary faces.    
+The variable \var{FLUX} gathers the convective and diffusive parts of the numerical fluxes. It is computed in a classic manner, first on the internal faces, and then on the boundary faces.
 The indices $i$ and $j$ are represented by \var{II} and \var{JJ}, respectively.\\
-In order to take into account (when necessary) the sign $s^n_{ij}$ of 
+In order to take into account (when necessary) the sign $s^n_{ij}$ of
 the mass flux $(\rho\vect{u})_{\,ij}^n.\ \vect{S}_{\,ij}$, the following equations are used :
 
 For any real $b$, we have :
@@ -290,7 +290,7 @@ b^{-}& =\displaystyle\frac{1}{2}\,[\ b - |\,b\ |\ ]\\
 \end{array}\right.
 \end{equation}
 In this subroutine, $b$ represents the mass flux $\var{FLUMAS(IFAC)}$
-on an internal face $\var{IFAC}$ ($\var{FLUMAB(IFAC)}$ for a boundary face \var{IFAC}) 
+on an internal face $\var{IFAC}$ ($\var{FLUMAB(IFAC)}$ for a boundary face \var{IFAC})
 ; $b^{+}$ is stored in $\var{FLUI}$ and $b^{-}$ in $\var{FLUJ}$.\\\\
 \hspace*{1cm}{\tiny$\blacksquare$}\, for an internal face $ij$ (\var{IFAC})\\
 We calculate :
@@ -333,7 +333,7 @@ a_{\,b_{ik}}& = \var{INC}\,A^{diff}_{\,b,ik} + B^{diff}_{\,b,ik}\,a_{I'}\\
 \end{equation}
 The coefficients $( A_{\,b,ik}, B_{\,b,ik} )_{k\in {\gamma_b(i)}}$ $\left(\ \text{resp.} ( A^{diff}_{\,b,ik}, B^{diff}_{\,b,ik} )_{k\in
 {\gamma_b(i)}}\ \right)$ represent the boundary conditions associated with
-$a$ (resp. the diffusive fluxes \footnote { see 
+$a$ (resp. the diffusive fluxes \footnote { see
 \var{clptur} for more details. The difference is actually only effective when the $k-\epsilon$ model is used, and for the velocity only.} of $a$).\\
 The above sum corresponds to the numerical operation:
 \begin{equation}\label{Base_Bilsc2_eq_flux_bord}
@@ -347,9 +347,9 @@ $ \beta_{\,b_{ik}} \displaystyle\frac{S_{\,b_{ik}}}{\overline{I'F}} $.\\
 This treatment is common to all schemes, because boundary values only depend on boundary conditions, and because a very simplified expression of $F_{\,{b}_{ik}}$ is used (upwind)
 \footnote{Actually, ${a_f}_{\,{b}_{ik}}$ is $a_I$ if  ${(\rho
 \vect{u})_{\,{b}_{ik}}^n} \text{.}\, \vect{S}_{\,{b}_{ik}}\,\geqslant \,0$, $a_{\,{b1}_{ik}}$ otherwise.}.\\\\
-We still have to compute, when the convection option is activated ($\var{ICONVP} = 1$), 
+We still have to compute, when the convection option is activated ($\var{ICONVP} = 1$),
 the values of variables \var{PIF} and
-\var{PJF}, for any internal face \var{IFAC} between cell 
+\var{PJF}, for any internal face \var{IFAC} between cell
 $\Omega_i$  and $\Omega_j$.
 \subsubsection*{\bf Calculation of the flux in pure upwind $\var{IUPWIN} = 1$}
 
@@ -361,8 +361,8 @@ the values \var{PVAR(II)} and \var{PVAR(JJ)} at the cell centres are needed.
 \var{PJF} &= \var{PVAR(JJ)} \\
 \end{array}
 \end{equation}
-The variable \var{INFAC} counts the number of calculations in pure upwind, 
-in order to be printed in the listing file.  
+The variable \var{INFAC} counts the number of calculations in pure upwind,
+in order to be printed in the listing file.
 In order to obtain the global numerical flux \var{FLUX} (convective + diffusive)
 associated, the following operations are performed :\\
 $\bullet$ calculation of vectors \vect{II'} and \vect{JJ'},\\
@@ -394,7 +394,7 @@ $\bullet$ calculation of \var{FLUI} and \var{FLUJ}.\\\\
 %\hspace*{2.5cm}{\tiny$\clubsuit$} en centr\'e ($\var{ISCHCP} = 1$)\\
 \hspace*{2cm}{\tiny$\blacksquare$} \underline{ without slope test ($\var{ISSTPP} = 1$)}\\\\
 \hspace*{2.5cm}{\tiny$\bigstar$} with a centered scheme ($\var{ISCHCP} = 1$)\\
-The values of the variables  \var{PIF} and \var{PJF} are equal, and calculated 
+The values of the variables  \var{PIF} and \var{PJF} are equal, and calculated
 using the weighting coefficient $\displaystyle\alpha_{ij}$ as follows:
 \begin{equation}
 \begin{array}{ll}
@@ -411,12 +411,12 @@ P_{JF} &= P_J + \vect{JF}\,.\,\vect{G}_{\,c,j}\\
 \end{array}
 \end{equation}
  \var{PIF} and \var{PJF} are systematically reconstructed in order to avoid
-using pure upwind, {\it i.e.} this formulae is applied even when the user 
+using pure upwind, {\it i.e.} this formulae is applied even when the user
 chooses not to reconstruct ($\var{IRCFLP} = 0$).\\\\
 \hspace*{2cm}{\tiny$\blacksquare$} \underline{ with slope test ($\var{ISSTPP}
 = 0$)}\\\\
-The procedure is quite similar to the one described in the previous paragraph. 
-There is, in addition to hte previous procedure, a slope test that makes under 
+The procedure is quite similar to the one described in the previous paragraph.
+There is, in addition to hte previous procedure, a slope test that makes under
 certain conditions the scheme switch locally (but systematically) from the chosen
  centered or SOLU scheme to a pure upwind scheme. \\\\
 \hspace*{2.5cm}$\rightsquigarrow$\ \ calculation of the slope test\\
@@ -436,7 +436,7 @@ $ s^n_{ij} = sgn \left[(\rho\vect{u})_{\,ij}^n\,.\,\vect{S}_{\,ij}\right]$ :\\
 +\displaystyle\frac{1}{2}\ \left.(\ s^n_{ij} - 1\ )\,(\ a_I + \vect{JF}\,.\,(\grad a)_{\,J}\ )\right]\ \vect{S}_{\,ij}
 \end{array}
 \end{equation}\\
-On a cell $\Omega_i$ with neighbours $(\Omega_j)_{j\in \Neigh{i}}$, the classic slope test 
+On a cell $\Omega_i$ with neighbours $(\Omega_j)_{j\in \Neigh{i}}$, the classic slope test
 consists in locating where a variable $a$ is non-monotonic by studying the sign of
 the scalar product of the cell gradients of $\vect{G}_{\,c,i}$
 and $\vect{G}_{\,c,j}$. If this product is negative, we switch to an upwind scheme, if it is
@@ -446,18 +446,18 @@ to apply this criterion to the upwind gradients
 $\,\vect{G}^{\,amont}_{\,c,k}\,$ or to their normal projection on
 face $(\,\vect{G}^{\,amont}_{\,c,k}\,.\,\vect{S}_{\,kl}\,)$.\\
 We then study the sign of the product
-$\,\vect{G}^{\,amont}_{\,c,i}\,.\,\vect{G}^{\,amont}_{\,c,j}\,$ or of the product 
+$\,\vect{G}^{\,amont}_{\,c,i}\,.\,\vect{G}^{\,amont}_{\,c,j}\,$ or of the product
 $(\,\vect{G}^{\,amont}_{\,c,i}\,.\,\vect{S}_{\,ij}\,)\,.\,(\,\vect{G}^{\,amont}_{\,c,j}\,.\,\vect{S}_{\,ij}\,)\,$.
 The slope test implemented is based on the first quantity,
 $\,\vect{G}^{\,amont}_{\,c,i}\,.\,\vect{G}^{\,amont}_{\,c,j}\,$
 (the second one was abandonned because it was found to be less general). The
-choice of a slope test based on 
+choice of a slope test based on
 $\,\vect{G}^{\,amont}_{\,c,i}\,.\,\vect{G}^{\,amont}_{\,c,j}\,$
-comes from the following line of argument in one-dimension \footnote{Information 
-on the second derivative would permit to study more finely the behaviour and the strong 
+comes from the following line of argument in one-dimension \footnote{Information
+on the second derivative would permit to study more finely the behaviour and the strong
 variations of $a$.}:
 
-Let's take  $p$ a second order in $x$ polynomial function. Its value at points $I-1$, $I$, $I+1$ of coordinates  $x_{I-1}$, $x_I$ and $x_{I+1}$ are $p_{I-1}$, $p_I$, and 
+Let's take  $p$ a second order in $x$ polynomial function. Its value at points $I-1$, $I$, $I+1$ of coordinates  $x_{I-1}$, $x_I$ and $x_{I+1}$ are $p_{I-1}$, $p_I$, and
 $p_{I+1}$, respectively. To simplify, we
 suppose that $I$ is the origin $O$ (~$x_I = 0$~), and that the grid spacing $h$ is constant,
 which results in $ x_{I+1} = - x_{I-1} = h $. Additionally, we suppose that the
@@ -465,7 +465,7 @@ velocity is orientated from point $I$ towards point $I+1$, {\it i.e.} $s^n_{ij} 
 1$. Therefore we consider the points $I-1$, $I$ and $I+1$ for  the face
 $ij$ which is located between $I$ and $I+1$.\\
 The sign of the product $ p'(x_{I-1})\,.\,p'(x_{I+1}) $ inidicates the monotonicity
-of function $p$. If this product it positive, the function is monotonic and 
+of function $p$. If this product it positive, the function is monotonic and
 we use a centered or a SOLU scheme, otherwise, we switch to an upwind scheme. By identifying
 the polynomial coefficients using the equations $\  p\,(x_{I-1}) = p_{I-1}\
 $, $\ p\,(x_I) = p_I\ $,  $\ p\,(x_{I+1}) = p_{I+1}\ $, we obtain :\\
@@ -555,7 +555,7 @@ a_{\,I}}{\overline{I'J'}} S_{\,ij})^2}_{\var{TESQCK}} < 0 \text{ or }
 \hspace*{1.5cm}{\tiny$\diamond$} otherwise :\\
 \hspace*{1.5cm} the centered or the SOLU scheme values values are used as before :\\\\
 \hspace*{2.5cm}{\tiny$\bigstar$} with a centered scheme ($\var{ISCHCP} = 1$)\\
-\hspace*{1.5cm} The values of the variables  \var{PIF} and \var{PJF} are equal and calculated 
+\hspace*{1.5cm} The values of the variables  \var{PIF} and \var{PJF} are equal and calculated
 using the weighting coefficient $\displaystyle\alpha_{ij}$ :
 \begin{equation}
 \begin{array}{ll}
@@ -572,7 +572,7 @@ P_{JF} &= P_J + \vect{JF}\,.\,\vect{G}_{\,c,j}\\
 \end{array}
 \end{equation}
 \hspace*{1.5cm} \var{PIF} and \var{PJF} are systematically reconstructed in order to avoid
-using pure upwind, {\it i.e.} this formulae is applied even when the user 
+using pure upwind, {\it i.e.} this formulae is applied even when the user
 chooses not to reconstruct ($\var{IRCFLP} = 0$).\\\\
 
 Wether the slope test is activated or not, when the centered or the SOLU schemes are activated,
@@ -585,7 +585,7 @@ P_{JF} &= \var{BLENCP} P^{\,\it (centre\  ou\  SOLU) }_{\,JF} + (1 - \var{BLENCP
 \end{equation}
 $\bullet$ calculation of \var{FLUI} and \var{FLUJ},\\
 $\bullet$ calculation of the flux \var{FLUX} using equation (\ref{Base_Bilsc2_eq_flux_interne}).\\
-The computation of the sum in \var{SMBR} is straight-forward, following (\ref{Base_Bilsc2_eq_continue})\footnote{ taking into account the negative sign of $\mathcal{B_{\mathcal{\beta}}}$.} 
+The computation of the sum in \var{SMBR} is straight-forward, following (\ref{Base_Bilsc2_eq_continue})\footnote{ taking into account the negative sign of $\mathcal{B_{\mathcal{\beta}}}$.}
 
 \noindent\minititre{Remark}
 For more information on the convection schemes and the slope test in \CS
@@ -604,7 +604,7 @@ As all first-order schemes, it is robust, but introduces severe numerical diffus
 \hspace*{1cm}$\rightsquigarrow$\ \underline {Centered or SOLU scheme}\\
 This type of schemes can generate numerical oscillations, that can cause the calculation
 to blow up. It can also lead to physical scalars taking unphysical values.\\
-Considering these limitations, other schemes are currently being tested and implemented 
+Considering these limitations, other schemes are currently being tested and implemented
 in order to improve the quality of the schemes  available to the users.\\\\
 \etape{Diffusion scheme}
 The formulae :
@@ -617,11 +617,11 @@ A possible correction may be to write :\\
 \vect{G}_{\,f,ij}\,.\,\vect{S}_{\,ij} = (\grad a)_{\,ij} = \frac{a_{\,J'}- a_{\,I'}}{\overline{I'J'}}\,.\,\vect{S}_{\,ij} + (\displaystyle\frac{1}{2} -
 \alpha_{ij}\ )\left[(\grad a)_{I'} - (\grad a)_{J'}\right]\,.\,\vect{S}_{\,ij}
 \end{equation}
-with a gradient limiter and a computation of $\beta_{ij}$ which does not 
+with a gradient limiter and a computation of $\beta_{ij}$ which does not
 alter the order of accuracy.\\\\
 \etape{Implementation}
-In order to improve the CPU time, an effort on loops can be done. 
-More particularly, there is a test \var{IF} inside of a loop on variable \var{IFAC} that needs 
+In order to improve the CPU time, an effort on loops can be done.
+More particularly, there is a test \var{IF} inside of a loop on variable \var{IFAC} that needs
 to be checked.\\\\
 \etape{Calculation of the gradient used during the reconstruction of the diffusive fluxes}
 Why do we use $\displaystyle\frac{1}{2}\,(\,\vect{G}_{\,c,i}\,+\,\vect{G}_{\,c,j}\,)$ instead of $\,\vect{G}_{\,c,k}\,$, for $k=i$ or for $k=j$ in the reconstructed values  $a_{I'}$ or $a_{J'}$ of (\ref{Base_Bilsc2_Eq_Rec_Dif1}) and (\ref{Base_Bilsc2_Eq_Rec_Dif2})?
