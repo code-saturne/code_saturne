@@ -96,8 +96,8 @@ BEGIN_C_DECLS
        Preconditioned BiCGstab (biconjugate gradient stabilized)
   \var CS_SLES_GMRES
        Preconditioned GMRES (generalized minimum residual)
-  \var CS_SLES_B_GAUSS_SEIDEL
-       Block Gauss-Seidel
+  \var CS_SLES_P_GAUSS_SEIDEL
+       Process-local Gauss-Seidel
 
  \page sles_it Iterative linear solvers.
 
@@ -1209,7 +1209,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                                  gk,
                                  sk); /* sk used as work array here */
 
-    cs_matrix_vector_multiply(rotation_mode, a, gk, sk);  /* sk = A.zk */
+    cs_matrix_vector_multiply(rotation_mode, a, gk, sk);  /* sk = A.gk */
 
     /* compute residue and prepare descent parameter */
 
@@ -2835,7 +2835,7 @@ _gmres(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_b_gauss_seidel(cs_sles_it_t              *c,
+_p_gauss_seidel(cs_sles_it_t              *c,
                 const cs_matrix_t         *a,
                 int                        diag_block_size,
                 cs_halo_rotation_t         rotation_mode,
@@ -3569,8 +3569,8 @@ cs_sles_it_solve(void                *context,
           (__FILE__, __LINE__, 0,
            _("GMRES not supported with block_size > 1 (velocity coupling)."));
       break;
-    case CS_SLES_B_GAUSS_SEIDEL:
-      cvg = _b_gauss_seidel(c,
+    case CS_SLES_P_GAUSS_SEIDEL:
+      cvg = _p_gauss_seidel(c,
                             a,
                             _diag_block_size,
                             rotation_mode,
@@ -3789,7 +3789,7 @@ cs_sles_it_set_mpi_reduce_comm(cs_sles_it_t  *context,
  * The solver context takes ownership of the order array (i.e. it will
  * handle its later deallocation).
  *
- * This is useful only for Block Gauss-Seidel.
+ * This is useful only for Process-local Gauss-Seidel.
  *
  * \param[in, out]  context  pointer to iterative solver info and context
  * \param[in, out]  order    pointer to ordering array
@@ -3800,7 +3800,7 @@ void
 cs_sles_it_assign_order(cs_sles_it_t   *context,
                         cs_lnum_t     **order)
 {
-  if (context->type != CS_SLES_B_GAUSS_SEIDEL)
+  if (context->type != CS_SLES_P_GAUSS_SEIDEL)
     BFT_FREE(*order);
 
   else {

@@ -236,7 +236,7 @@ void CS_PROCF (rayord, RAYORD)
           if (sles == NULL) {
             (void)cs_sles_it_define(-1,
                                     name,
-                                    CS_SLES_B_GAUSS_SEIDEL,
+                                    CS_SLES_P_GAUSS_SEIDEL,
                                     0,      /* poly_degree */
                                     1000);  /* n_max_iter */
             sles = cs_sles_find(-1, name);

@@ -396,7 +396,7 @@ cs_sles_solve_native(int                  f_id,
 
     if (strcmp(cs_sles_get_type(sc), "cs_sles_it_t") == 0) {
       cs_sles_it_t *c = cs_sles_get_context(sc);
-      if (cs_sles_it_get_type(c) == CS_SLES_B_GAUSS_SEIDEL)
+      if (cs_sles_it_get_type(c) == CS_SLES_P_GAUSS_SEIDEL)
         a = cs_matrix_msr(symmetric,
                           diag_block_size,
                           extra_diag_block_size);

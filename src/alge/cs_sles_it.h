@@ -59,7 +59,7 @@ typedef enum {
   CS_SLES_BICGSTAB,        /* Bi-conjugate gradient stabilized */
   CS_SLES_BICGSTAB2,       /* Bi-conjugate gradient stabilized - 2*/
   CS_SLES_GMRES,           /* Generalized minimal residual */
-  CS_SLES_B_GAUSS_SEIDEL,  /* Block Gauss-Seidel */
+  CS_SLES_P_GAUSS_SEIDEL,  /* Process-local Gauss-Seidel */
   CS_SLES_N_IT_TYPES       /* Number of resolution algorithms */
 
 } cs_sles_it_type_t;
