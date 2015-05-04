@@ -137,37 +137,39 @@ and post-installation options.
 
 \section{Compilers and interpreters{sec:compiler}}
 
-For a minimal build of \CS, a Linux or Posix system with C and Fortran compilers
-(C99 and ),
-a Python (2.6 or later) interpreter and a {\tt make} tool should be sufficient.
+For a minimal build of \CS on a Linux or Posix system, the requirements are:
+\begin{itemize}
+\item A C compiler, conforming at least to the C99 standard.
+\item A Fortran compiler, conforming at least to the Fortran 95 standard
+      and supporting the ISO\_C\_BINDING Fortran 2003 module.
+\item A Python interpreter, with Python version 2.6 or above.
+\end{itemize}
+
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
 To build an use the GUI, Libxml2 and PyQt4 (which in turn requires
 Qt4 and SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in \S\ref{sec:list_ext_lib}.
-\begin{itemize}
-\item A C compiler, conforming to the C99 standard.
-\item A Fortran compiler, conforming at least to the Fortran 95 standard
-      and supporting at least the ISO\_C\_BINDING Fortran 2003 module.
-\item A Python interpreter, with Python version 2.6 or above.
-      The SALOME platform is currently only compatible with Python 2,
-      so Python 3 is only possible when not building with SALOME support.
-\end{itemize}
 
 For some external libraries, such as Catalyst (see \ref{sec:{sec:list_ext_lib}}),
 a C++ compiler is also required.
 
+The SALOME platform is currently only compatible with Python 2,
+so Python 3 should only be used when not building with SALOME support.
+
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 4.9 at this date), Intel compilers 11 and
-above (up to 14 at this date), IBM XL Fortran 14 and C 12 compilers.
+GNU compilers 4.4 and above (up to 5.1 at this date), Intel compilers 11 and
+above (up to 15 at this date), IBM XL Fortran 14 and C 12 compilers.
 
 Note also that While \CS makes heavy use of Python, this is for scripts and
 for the GUI only; The solver only uses compiled code, so we may for example use
 a 32-bit version of Python with 64-bit \CS libraries and executables.
 On supercomputers with separate front-end and compute node architectures,
 Python is not required on the compute nodes (except as a dependency for
-the optional Paraview/Catalyst support).
+the optional Paraview/Catalyst support). Also, the version of Python
+used by ParaView/Catalyst may be independent from the one used for
+building \CS.
 
 \section{Third-Party libraries\label{sec:ext_lib}}
 
@@ -175,8 +177,8 @@ For a minimal build of \CS, a Linux or Posix system with C and Fortran compilers
 (C99 and Fortran 95 with Fortran 2003 ISO C bindings conforming respectively),
 a Python (2.6 or later) interpreter and a {\tt make} tool should be sufficient.
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build an use the GUI, Libxml2 and PyQt4 (which in turn requires
-Qt4 and SIP) are required.
+To build an use the GUI, Libxml2 and Qt4 with PyQt4 Python bindings (which in
+turn requires SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in \S\ref{sec:list_ext_lib}.
@@ -276,6 +278,10 @@ The list of third-party software usable with \CS is provided here:
       although XML files generated with another install of \CS
       may be used if Libxml2 is available.
 
+      If desired, Using PySide instead of PyQt4/SIP should require a relatively
+      small porting effort, as most of the preparatory work has been done.
+      The development team should be contacted in this case.
+
 \item Libxml2 is required to read XML files edited with the GUI.
       If this library is not available, only user subroutines may
       be used to setup data.
@@ -311,16 +317,24 @@ The list of third-party software usable with \CS is provided here:
 
       Though broadly available, the \parmetis license is quite restrictive,
       so \ptscotch may be preferred (\CS may be built with both
-      \metis and \scotch libraries). Also, the \metis licence was changed
+      \metis and \scotch libraries). Also, the \metis license was changed
       in March 2013 to the Apache 2 license, so it would not be surprising
       for future \parmetis versions to follow. \metis 5.0 or above and
       \parmetis 4.0 or above are supported.
 
 \item Catalyst (\url{http://www.paraview.org/in-situ/}) or full ParaView
       may be used for co-visualization or in-situ visualization.
-      This requires ParaView 4.2.
+      This requires ParaView 4.2 or above.
 
 \item \texttt{eos-1.2} may be used for thermodynamic properties of fluids.
+      it is not currently free, so usually available only to users at EDF,
+      CEA, or organisms participating in projects with those entities.
+
+\item \textbf{freesteam} (\url{http://freesteam.sourceforge.net}) is a
+      free software thermodynamic properties library, implementing the
+      IAPWS-IF97 steam tables, from the \href{http://www.iapws.org}{International
+      Association for the Properties of Water and Steam} (IAPWS).
+      Version 2.0 or above may be used.
 
 \end{itemize}
 
@@ -499,6 +513,23 @@ may be converted to HDF5 using the \texttt{adf2hdf} utility
 (from the CGNS tools). By default, CGNS post-processing output
 files use HDF5, so this issue is rarer on output.
 
+\subsubsection{freesteam\label{sec:ext:freesteam}}
+
+This library's build instructions mention bindings with ascend,
+but those are not necessary in the context of \CS, so building
+without them is simplest. Its build system is based on scons,
+and builds on relatively recent systems with Python 2.7 should
+be straightforward.
+
+With Python versions lower than 2.6, the command-line arguments
+allowing to choose the installation prefix (so as to place it
+in a user directory) are ignored, and its \texttt{SConstruct}
+file is not complete enough to allow setting flags for linking
+with an alternative, user-installed Python library outside
+the default linker search path. In this case, editing the
+\texttt{SConstruct} file to change the default paths is
+an ugly, but simple solution.
+
 \subsubsection{libxml2\label{sec:ext:libxml2}}
 
 This library is usually available on all general purpose Linux
@@ -628,8 +659,8 @@ for every {\tt --with-}, {\tt --without-} is also possible.
 Select configuration options, then run {\tt configure}, for example:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ /home/user/Code\_Saturne/4.0/src/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.0/arch/prod
+\$ /home/user/Code\_Saturne/\verscs/src/code\_saturne-\verscs/configure \textbackslash \\
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.1/arch/prod
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{red}{CC}=/home/user/opt/mpich-3.0/bin/mpicc \textcolor{red}{FC}=gfortran
@@ -661,7 +692,7 @@ For a side-by-side debug build for the example above, we simply replace \texttt{
 \$ mkdir dbg\\
 \$ cd dbg\\
 \$ ../../code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/3.0/arch/\textcolor{Magenta}{dbg}
+\textcolor{Violet}{--prefix}=/home/user/Code\_Saturne/4.1/arch/\textcolor{Magenta}{dbg}
 \textbackslash \\
 \textcolor{Violet}{--with-med}=/home/user/opt/med-3.0 \textbackslash \\
 \textcolor{Magenta}{--enable-debug} \textbackslash \\
@@ -775,22 +806,9 @@ is tested for, so using MPI compiler wrappers is the simplest and safest
 solution. Simply use a \texttt{CC=mpicc} or similar option instead
 of \texttt{--with-mpi}.
 
-\emph{Never} use an \texttt{FC=mpif90} or equivalent option:
+There is no need to use an \texttt{FC=mpif90} or equivalent option:
 in \CS, MPI is never called directly from Fortran code,
-so Fortran MPI bindings are not necessary, but they can lead to
-build failures, especially in cross-compilation
-configurations.\footnote{\texttt{configure} determines which libraries are
-necessary to link the Fortran runtime using a C or C++ compiler as a linker.
-This avoids conflicts between linking with a C++ compiler and linking with a
-Fortran compiler when both runtimes are necessary,
-for example when using the MED library.
-When using an MPI Fortran wrapper, extra libraries that are not normally
-necessary will be added to those we link with, and the Libtool script
-that is part of the build system will often try to add further dependencies,
-mixing-up front-end and compute node compiler options and
-libraries (Libtool may be very practical when it works, but in complex
-situations where is guesses incorrectly at the commands it should run, it always
-acts as if it knows best, and is very difficult to work around).}
+so Fortran MPI bindings are not necessary.
 
 \subsection{Environment Modules\label{sec:config:envmode}}
 
@@ -893,8 +911,8 @@ reflecting the \CS source path, installation path, and a path where optional
 libraries are installed:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/4.0 \\
-\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/4.0 \\
+\$ \textcolor{OliveGreen}{SRC\_PATH}=/home/projects/Code\_Saturne/\verscs \\
+\$ \textcolor{OliveGreen}{INSTALL\_PATH}=/home/projects/Code\_Saturne/4.1 \\
 \$ \textcolor{OliveGreen}{CS\_OPT}=/home/projects/opt
 }\end{minipage}}
 
@@ -1122,7 +1140,7 @@ options such as in the following example are recommended:
 
 In case the automated environment modules handling causes issues,
 adding the \texttt{--without-modules} option may be necessary.
-In that case, caution must be exerciced so that the user will load
+In that case, caution must be exercised so that the user will load
 the same modules as those used for installation. This is not an issue
 if modules for \CS is also built, and the right dependencies
 handled at that level.
@@ -1180,7 +1198,7 @@ Once the code is installed, a post-install step may
 be necessary for computing environments using a batch system,
 for separate front-end and compute systems (such as Blue Gene
 systems), or for coupling with \syrthes 4 or Code\_Aster.
-The global default MPI execution commands and options may also be overriden.
+The global default MPI execution commands and options may also be overridden.
 
 Copy or rename the \texttt{<install-prefix>/etc/code\_saturne.cfg.template} to \\
 \texttt{<install-prefix>/etc/code\_saturne.cfg},
@@ -1209,7 +1227,7 @@ the associated compute build.
 
 All default MPI execution commands and options may be overriden using the
 \texttt{mpi} section. Note that only the options defined in this section
-are overriden; defaults continue to apply for all others.
+are overridden; defaults continue to apply for all others.
 
 \section{Installing for \syrthes coupling\label{sec:syrthes}}
 
@@ -1268,7 +1286,7 @@ versions are available, there is a strong risk of not using
 the correct library. In addition, the scripts will not work
 unless paths in the installed scripts are updated.
 
-To build a relocatable installation, see sectioon
+To build a relocatable installation, see section
 \ref{sec:config:relocatable}.
 
 If you are packaging the code and need both fine-grained control of

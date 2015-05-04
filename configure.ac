@@ -501,7 +501,7 @@ AC_SUBST(cs_have_openmp)
 #------------------------------------------------------------------------------
 
 AC_ARG_VAR([PYTHON], [the Python interpreter])
-AM_PATH_PYTHON(["2.4"])
+AM_PATH_PYTHON(["2.6"])
 
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,
@@ -578,7 +578,7 @@ AC_SUBST(cs_version_short)
 # determine which Fortran libraries are necessary to link.
 AC_FC_LIBRARY_LDFLAGS
 
-CS_AC_TEST_PLE(["1.0.0"])
+CS_AC_TEST_PLE(["2.0.0"])
 
 AM_CONDITIONAL(HAVE_INTERNAL_PLE, test x$cs_have_internal_ple = xyes)
 if test "x$cs_have_internal_ple" = xyes; then
@@ -667,14 +667,14 @@ fi
 # Test for PyQt4
 if test "x$cs_have_gui" = "xyes" ; then
 
-  AC_MSG_CHECKING([for PyQt4 version >= 4.3])
+  AC_MSG_CHECKING([for PyQt4 version >= 4.5])
 
   prog="[import sys, string
 try: import PyQt4
 except ImportError: sys.exit(1)
 from PyQt4.QtCore import *
-if list(map(int, QT_VERSION_STR.split('.'))) < [4,3,0]: sys.exit(1)
-if list(map(int, PYQT_VERSION_STR.split('.'))) < [4,3,0]: sys.exit(1)
+if list(map(int, QT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
+if list(map(int, PYQT_VERSION_STR.split('.'))) < [4,5,0]: sys.exit(1)
 sys.exit(0)]"
 
   ${PYTHON} -c "${prog}"
@@ -682,7 +682,7 @@ sys.exit(0)]"
 
   if test $retval -ne 0 ; then
     AC_MSG_RESULT([no])
-    AC_MSG_FAILURE([cannot find PyQt4 support (>= 4.3), Graphical User Interface cannot be installed])
+    AC_MSG_FAILURE([cannot find PyQt4 support (>= 4.5), Graphical User Interface cannot be installed])
     cs_have_gui=no
   else
     AC_MSG_RESULT([yes])
