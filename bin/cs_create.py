@@ -52,7 +52,7 @@ import cs_exec_environment
 import cs_runcase
 
 if sys.version[0] == '2':
-    from __futures__ import print_function
+    from __future__ import print_function
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments

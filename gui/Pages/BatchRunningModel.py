@@ -34,7 +34,7 @@ import sys, unittest
 import os, os.path, shutil, sys, string, types, re
 
 if sys.version[0] == '2':
-    from __futures__ import print_function
+    from __future__ import print_function
 
 #-------------------------------------------------------------------------------
 # Library modules import
