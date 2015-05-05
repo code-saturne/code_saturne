@@ -764,7 +764,7 @@ if (iphydr.eq.2) then
   itysup = 1
   nbval  = 1
 
-  rubriq = 'prhyd_pre_phase01'
+  rubriq = 'Prhyd_pre_phase01'
   call restart_read_section_real_t(rp,rubriq,itysup,nbval,prhyd,ierror)
   nberro=nberro+ierror
 
