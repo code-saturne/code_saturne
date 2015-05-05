@@ -14,6 +14,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix read error of hydrostatic pressure from restart file.
+
 - Fix handling of polygons and input of some element types with CGNS 3.2
   and above.
 

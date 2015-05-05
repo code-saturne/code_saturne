@@ -1845,7 +1845,7 @@ if(iphydr.eq.2) then
   nbval  = 1
   irtyp  = 2
 
-  RUBRIQ = 'prhyd_pre_phase'//CPHASE
+  RUBRIQ = 'Prhyd_pre_phase'//CPHASE
   call lecsui(impamx,rubriq,len(rubriq),itysup,nbval,irtyp,     &
        prhyd(1),ierror)
   nberro=nberro+ierror
