@@ -205,7 +205,7 @@ endif
 !     On se sert de irovar (ivivar) pour ecrire et lire
 !       rho (visc) dans le fichier suite
 
-if (ntcabs.eq.ntpabs+1) then
+if (ntcabs.eq.ntpabs+1 .and. icavit.lt.0) then
 
   ! Masse volumique aux cellules et aux faces de bord
   iok1 = 0
