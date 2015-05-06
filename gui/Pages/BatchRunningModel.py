@@ -30,11 +30,10 @@ This module modify the batch file
 # Standard modules import
 #-------------------------------------------------------------------------------
 
+from __future__ import print_function
+
 import sys, unittest
 import os, os.path, shutil, sys, string, types, re
-
-if sys.version[0] == '2':
-    from __future__ import print_function
 
 #-------------------------------------------------------------------------------
 # Library modules import

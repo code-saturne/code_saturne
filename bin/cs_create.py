@@ -39,6 +39,8 @@ and the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
+from __future__ import print_function
+
 import os, sys, shutil, stat
 import types, string, re, fnmatch
 from optparse import OptionParser
@@ -50,9 +52,6 @@ except Exception:
 
 import cs_exec_environment
 import cs_runcase
-
-if sys.version[0] == '2':
-    from __future__ import print_function
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments
