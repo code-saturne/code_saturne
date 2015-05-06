@@ -422,7 +422,9 @@ endif
 
 if (icavit.ge.0) then
 
-  call cavitation_compute_source_term (cvara_pr, cvara_voidf)
+  call field_get_val_s(iprpfl(iprtot), cpro_prtot)
+
+  call cavitation_compute_source_term (cpro_prtot, cvara_voidf)
   !==================================
 
 endif

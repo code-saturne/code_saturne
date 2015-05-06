@@ -10,6 +10,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix bug in cavitation module mass transfer term.
+
 - Fix read error of hydrostatic pressure from restart file.
 
 - Fix for full version information (such as 'code_saturne info --version')
