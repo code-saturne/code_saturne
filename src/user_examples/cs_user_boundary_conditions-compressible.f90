@@ -376,6 +376,11 @@ do ilelt = 1, nlelt
   ! Total enthalpy
   rcodcl(ifac,isca(ienerg),1) = 294465.d0
 
+  ! Direction of the velocity: normal to inlet faces
+  rcodcl(ifac,iu,1) = -surfbo(1,ifac)
+  rcodcl(ifac,iv,1) = -surfbo(2,ifac)
+  rcodcl(ifac,iw,1) = -surfbo(3,ifac)
+
   ! Turbulence (no turbulence)
 
   ! Handle scalars
