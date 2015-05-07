@@ -804,7 +804,7 @@ class BatchRunningModelTestCase(unittest.TestCase):
         for k in list(dico_PBS.keys()):
             if mdl.dictValues[k] != dico_PBS[k] :
                 print("\nwarning for key: ", k)
-                print("  read value in the batch description: ", mdl.dictValues[k]))
+                print("  read value in the batch description: ", mdl.dictValues[k])
                 print("  reference value: ", dico_PBS[k])
             assert  mdl.dictValues[k] == dico_PBS[k], 'could not read the batch file'
 
