@@ -79,7 +79,7 @@ implicit none
 ! Local variables
 
 integer          iel   , iscal, ifcvsl, iesp, jesp, ierror
-integer          f_id  , ii
+integer          f_id
 
 character(len=80) :: name_i, name_j, name_d
 
@@ -359,20 +359,16 @@ enddo
 ! the physical properties filled for the gas mixture
 !=====================================================
 ! Same diffusivity for all the scalars except the enthalpy
-do ii = 1, nscapp
+do iesp = 1, nscasp
 
-  iscal = iscapp(ii)
+  iscal = iscasp(iesp)
 
-  if (iscal.ne.iscalt) then
+  call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+  call field_get_val_s(ifcvsl, cpro_vyk)
 
-    call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
-    call field_get_val_s(ifcvsl, cpro_vyk)
-
-    do iel = 1, ncel
-      cpro_vyk(iel)= cpro_viscl(iel)
-    enddo
-
-  endif
+  do iel = 1, ncel
+    cpro_vyk(iel)= cpro_viscl(iel)
+  enddo
 
 enddo
 
