@@ -5,6 +5,11 @@ Release 4.0.1 (unreleased)
 Changes:
 --------
 
+- Use floating-point speculation safe option for Intel Fortran compiler.
+  This might lead to a very slight performance penalty, but avoids crashes
+  due to trapped floating-point exceptions in intermediate (speculative)
+  computations.
+
 - Added handling of SLURM srun MPMD mode in execution script.
 
 Bug fixes:
