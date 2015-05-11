@@ -6,8 +6,8 @@
 
 import sys
 
-if sys.version_info[:2] < (2,4):
-    sys.stderr.write("This script needs Python 2.4 at least\n")
+if sys.version_info[:2] < (2,6):
+    sys.stderr.write("This script needs Python 2.6 at least\n")
 
 import platform
 
@@ -99,7 +99,7 @@ We recommend running for example:
   cd %(top_srcdir)s/..
   mkdir saturne_build
   cd saturne_build
-  ../%(rel_script_path)s
+  ../%(rel_dir_name)s/%(rel_script_path)s
 
 or (using absolute paths):
 
@@ -109,10 +109,12 @@ or (using absolute paths):
 
 """
         rel_script_path = os.path.basename(script_path)
+        rel_dir_name = os.path.basename(top_srcdir)
         build_path = top_srcdir + '_build'
 
         sys.stdout.write(message % {'script_name': script_name,
                                     'top_srcdir': top_srcdir,
+                                    'rel_dir_name': rel_dir_name,
                                     'rel_script_path': rel_script_path,
                                     'build_path': build_path,
                                     'script_path': script_path})
