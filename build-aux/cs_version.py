@@ -290,7 +290,8 @@ def svn_version(srcdir, defaults):
                 svn_info = minidom.parseString(output[0]).documentElement
                 for tag in svn_info.getElementsByTagName("name"):
                     name = tag.firstChild.data
-                    if name[0:tag_ref_l] == tag_ref and name > name_max:
+                    if (name[0:tag_ref_l] == tag_ref and name > name_max
+                        and name.find(name_max) < 0):
                         rev_node = tag.parentNode.getElementsByTagName("commit")[0]
                         tag_rev = rev_node.getAttribute("revision")
                         if (tag_rev == revision):
