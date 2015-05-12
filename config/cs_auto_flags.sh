@@ -451,41 +451,9 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 
   case "$host_os" in
 
-    SUPER-UX* | superux*)
-
-     # Native NEC SX vectorizing C compiler (sxmpicc)
-     #-------------------------------------
-
-     $CC -V conftest.c 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
-     if test "$?" = "0" ; then
-
-       echo "compiler '$CC' is NEC SX compiler"
-
-       # Version strings for logging purposes and known compiler flag
-       $CC -V conftest.c > $outfile 2>&1
-       cs_ac_cc_version=`grep ccom $outfile`
-       cs_cc_compiler_known=yes
-       cs_linker_set=yes
-
-       # Default compiler flags
-       cflags_default="-Kc99 -pvctl,loopcnt=2147483647"
-       cflags_default_opt=""
-       cflags_default_dbg=""
-       cflags_default_prf=""
-       cflags_default_omp=""
-
-       # Default linker flags
-       ldflags_default=""
-       ldflags_default_opt="-O"
-       ldflags_default_dbg="-g"
-       ldflags_default_prf="-pg"
-
-     fi
-     ;;
-
     *)
 
-      # Unknown
+      # Generic
       #--------
 
       cflags_default=""
@@ -629,14 +597,6 @@ elif test "x$cs_gxx" = "xicc"; then
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"
   cxxflags_default_omp="-openmp"
-
-  # Modify default flags on certain systems
-
-  case "$host-os-$host_cpu" in
-    *ia64)
-      cxxflags_default_opt="-O2 -mcpu=itanium2-p9000"
-      ;;
-  esac
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -813,35 +773,9 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
 
   case "$host_os" in
 
-    SUPER-UX*)
-
-      # Native NEC SX vectorizing C compiler (sxmpicc)
-      #-------------------------------------
-
-      $CXX -V conftest.c 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$CXX' is NEC SX compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $CXX -V conftest.c > $outfile 2>&1
-        cs_ac_cxx_version=`grep ccom $outfile`
-        cs_cxx_compiler_known=yes
-        cs_linker_set=yes
-
-        # Default compiler flags
-        cxxflags_default="-ftrace --pvctl,loopcnt=2147483647"
-        cxxflags_default_opt=""
-        cxxflags_default_dbg=""
-        cxxflags_default_prf=""
-        cxxflags_default_omp=""
-
-      fi
-      ;;
-
     *)
 
-      # Unknown
+      # Generic
       #--------
 
       cxxflags_default=""
@@ -961,15 +895,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_hot="-O3"
     fcflags_default_prf="-p"
     fcflags_default_omp="-openmp"
-
-    # Modify default flags on certain systems
-
-    case "$host-os-$host_cpu" in
-      *ia64)
-        fcflags_default_opt="-O2 -mcpu=itanium2-p9000"
-        fcflags_default_hot="-O3 -mcpu=itanium2-p9000"
-        ;;
-    esac
 
   fi
 fi
@@ -1121,35 +1046,9 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
   case "$host_os" in
 
-    SUPER-UX* | superux*)
-
-      # Native NEC SX vectorizing Fortran compiler (sxmpif90)
-      #-------------------------------------------
-
-      $FC -V conftest.f 2>&1 | grep 'NEC' | grep 'SX' > /dev/null
-      if test "$?" = "0" ; then
-
-        echo "compiler '$FC' is NEC SX compiler"
-
-        # Version strings for logging purposes and known compiler flag
-        $FC -V conftest.f > $outfile 2>&1
-        cs_ac_fc_version=`grep ccom $outfile`
-        cs_fc_compiler_known=yes
-
-        # Default compiler flags
-        fcflags_default="-Ep -C hopt -I. -Wf,-pvctl,loopcnt=2147483647"
-        fcflags_default_opt=""
-        fcflags_default_hot=""
-        fcflags_default_dbg=""
-        fcflags_default_prf=""
-        fcflags_default_omp=""
-
-      fi
-      ;;
-
     *)
 
-      # Unknown
+      # Generic
       #--------
 
       fcflags_default=""
