@@ -187,12 +187,12 @@ contains
   !> \f$ \Gamma_V \left(\alpha, p\right) = m^+ + m^- \f$ using the
   !> Merkle model:
   !> \f[
-  !> m^+ = -\dfrac{C_{prod} \rho_l \min \left( p-p_V,0 \right)\aplha(1-\alpha)}
-  !>              {0.5\rho_lu_\infty^2t_\infty}
+  !> m^+ = -\dfrac{C_{prod} \rho_l \min \left( p-p_V,0 \right)\alpha(1-\alpha)}
+  !>              {0.5\rho_lu_\infty^2t_\infty},
   !> \f]
   !> \f[
-  !> m^- = -\dfrac{C_{dest} \rho_v \max \left( p-p_V,0 \right)\aplha(1-\alpha)}
-  !>              {0.5\rho_lu_\infty^2t_\infty}
+  !> m^- = -\dfrac{C_{dest} \rho_v \max \left( p-p_V,0 \right)\alpha(1-\alpha)}
+  !>              {0.5\rho_lu_\infty^2t_\infty},
   !> \f]
   !> with \f$ C_{prod}, C_{dest} \f$ empirical constants,
   !> \f$ t_\infty=l_\infty/u_\infty \f$ a reference time scale and \f$p_V\f$
