@@ -139,8 +139,12 @@ def make_executable(filename):
     """
 
     st   = os.stat(filename)
-    mode = st[stat.ST_MODE]
-    os.chmod(filename, mode | stat.S_IEXEC)
+    mode = st[stat.ST_MODE] | stat.S_IXUSR
+    if mode & stat.S_IRGRP:
+        mode = mode | stat.S_IXGRP
+    if mode & stat.S_IROTH:
+        mode = mode | stat.S_IXOTH
+    os.chmod(filename, mode)
 
     return
 
