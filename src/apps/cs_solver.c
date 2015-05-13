@@ -473,10 +473,9 @@ main(int    argc,
   cs_fp_exception_enable_trap();
 #endif
 
-  /* Initialize memory management and signals */
+  /* Initialize memory management */
 
   cs_base_mem_init();
-  cs_base_error_init(opts.sig_defaults);
 
   /* Initialize internationalization */
 
@@ -488,6 +487,10 @@ main(int    argc,
   /* Parse command line */
 
   cs_opts_define(argc, argv, &opts);
+
+  /* Initialize error handling */
+
+  cs_base_error_init(opts.sig_defaults);
 
   /* Open 'listing' (log) files */
 
