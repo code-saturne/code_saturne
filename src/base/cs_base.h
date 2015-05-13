@@ -152,10 +152,13 @@ cs_exit(int  status);
 
 /*----------------------------------------------------------------------------
  * Initialize error and signal handlers.
+ *
+ * parameters:
+ *   signal_defaults <-- leave default signal handlers in place if true.
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_error_init(void);
+cs_base_error_init(bool  signal_defaults);
 
 /*----------------------------------------------------------------------------
  * Initialize management of memory allocated through BFT.

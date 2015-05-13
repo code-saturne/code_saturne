@@ -129,7 +129,7 @@ _arg_env_help(const char  *name)
           "                    -1: remove output (default)\n"
           "                     0: no redirection (if independant\n"
           "                        terminals, debugger type)\n"
-          "                     1: output in \"listing_n<rang>\"\n"));
+          "                     1: output in \"listing_n<rank>\"\n"));
   fprintf
     (e, _(" -p, --param       <file_name> parameter file\n"));
 
@@ -138,6 +138,10 @@ _arg_env_help(const char  *name)
 
   fprintf
     (e, _(" -q, --quality     mesh quality verification mode\n"));
+
+  fprintf
+    (e, _(" --sig-defaults    use default runtime behavior when signals\n"
+          "                   are received\n"));
 
   fprintf
     (e, _(" --version         print version number\n"));
@@ -236,6 +240,8 @@ cs_opts_define(int         argc,
 
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
+
+  opts->sig_defaults = true;
 
   opts->preprocess = false;
   opts->verif = false;
@@ -361,6 +367,11 @@ cs_opts_define(int         argc,
       cs_exit(EXIT_FAILURE);
 #endif /* defined(HAVE_DLOPEN) */
     }
+
+    /* signal handling */
+
+    else if (strcmp(s, "--sig-defaults") == 0)
+      opts->sig_defaults = true;
 
     /* Version number */
 

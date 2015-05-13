@@ -469,12 +469,14 @@ main(int    argc,
 
   /* Trap floating-point exceptions on most systems */
 
+#if defined(DEBUG)
   cs_fp_exception_enable_trap();
+#endif
 
   /* Initialize memory management and signals */
 
   cs_base_mem_init();
-  cs_base_error_init();
+  cs_base_error_init(opts.sig_defaults);
 
   /* Initialize internationalization */
 

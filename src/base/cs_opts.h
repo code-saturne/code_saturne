@@ -63,6 +63,10 @@ typedef struct {
                                    1: redirected to "listing_n*" file;
                                    2: redirected to "/dev/null", suppressed) */
 
+  /* Signal handling */
+
+  bool           sig_defaults;  /* use default signal handlers */
+
   /* Other options */
 
   bool           preprocess;    /* Mesh preprocessing mode */

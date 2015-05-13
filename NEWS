@@ -5,6 +5,14 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Only trap floating-point exceptions by default for code compiled in
+  debug mode, to avoid interfering with optimizer speculation.
+  Exception trapping can be enabled or disabled locally using the
+  cs_fp_exception_...() functions.
+
+- Add --sig-defaults option to cs_solver executable to allow use of
+  default signal handlers.
+
 - Add higher level functions for turbulent boundary condition settings.
   This allows moving tests on the current turbulence model inside
   the user-callable functions, for more concise and safer programming.

@@ -1299,10 +1299,13 @@ cs_exit(int  status)
 
 /*----------------------------------------------------------------------------
  * Initialize error and signal handlers.
+ *
+ * parameters:
+ *   signal_defaults <-- leave default signal handlers in place if true
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_error_init(void)
+cs_base_error_init(bool  signal_defaults)
 {
   /* Error handler */
 
@@ -1312,30 +1315,34 @@ cs_base_error_init(void)
 
   /* Signal handlers */
 
-  bft_backtrace_print_set(_cs_base_backtrace_print);
+  if (signal_defaults == false) {
+
+    bft_backtrace_print_set(_cs_base_backtrace_print);
 
 #if defined(SIGHUP)
-  if (cs_glob_rank_id <= 0)
-    cs_glob_base_sighup_save  = signal(SIGHUP, _cs_base_sig_fatal);
+    if (cs_glob_rank_id <= 0)
+      cs_glob_base_sighup_save  = signal(SIGHUP, _cs_base_sig_fatal);
 #endif
 
-  if (cs_glob_rank_id <= 0) {
-    cs_glob_base_sigint_save  = signal(SIGINT, _cs_base_sig_fatal);
-    cs_glob_base_sigterm_save = signal(SIGTERM, _cs_base_sig_fatal);
-  }
+    if (cs_glob_rank_id <= 0) {
+      cs_glob_base_sigint_save  = signal(SIGINT, _cs_base_sig_fatal);
+      cs_glob_base_sigterm_save = signal(SIGTERM, _cs_base_sig_fatal);
+    }
 
-  cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
-  cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);
+    cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
+    cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);
 
 #if defined(__bgq__)
-  cs_glob_base_sigabrt_save  = signal(SIGABRT, _cs_base_sig_fatal);
-  cs_glob_base_sigtrap_save  = signal(SIGTRAP, _cs_base_sig_fatal);
+    cs_glob_base_sigabrt_save  = signal(SIGABRT, _cs_base_sig_fatal);
+    cs_glob_base_sigtrap_save  = signal(SIGTRAP, _cs_base_sig_fatal);
 #endif
 
 #if defined(SIGXCPU)
-  if (cs_glob_rank_id <= 0)
-    cs_glob_base_sigcpu_save = signal(SIGXCPU, _cs_base_sig_fatal);
+    if (cs_glob_rank_id <= 0)
+      cs_glob_base_sigcpu_save = signal(SIGXCPU, _cs_base_sig_fatal);
 #endif
+
+  }
 }
 
 /*----------------------------------------------------------------------------
