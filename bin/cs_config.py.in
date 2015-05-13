@@ -85,19 +85,18 @@ class config:
         # List of mandatory and optionnal libraries to link with
         # The order is important so as to have a coherent link command
 
-        self.deplibs = ['saturne',                    # Code_Saturne
-                        'ple',                        # PLE
-                        'latex', 'doxygen', 'sphinx', # docs
-                        'eos',                        # Equations of state
-                        'freesteam',                  # Freesteam
-                        'ccm', 'cgns', 'med', 'hdf5', # Mesh filters
-                        'catalyst',                   # co-processing library
-                        'medcoupling', 'paramedmem',  # MED coupling
-                        'metis', 'scotch',            # Partionning libraries
-                        'mpi',                        # MPI
-                        'libxml2',                    # XML reader
-                        'blas',                       # BLAS (benchmark use)
-                        'system']                     # User & system libraries
+        self.deplibs = ['saturne',                      # Code_Saturne
+                        'ple',                          # PLE
+                        'latex', 'doxygen', 'sphinx',   # docs
+                        'eos', 'freesteam', 'coolprop', # Equations of state
+                        'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
+                        'catalyst',                     # co-processing library
+                        'medcoupling', 'paramedmem',    # MED coupling
+                        'metis', 'scotch',              # Partionning libraries
+                        'mpi',                          # MPI
+                        'libxml2',                      # XML reader
+                        'blas',                         # BLAS (benchmark use)
+                        'system']                       # User & system libraries
 
         # Compilers, flags and special commands
 
@@ -297,6 +296,14 @@ class config:
                          flags = {'cppflags': "@FREESTEAM_CPPFLAGS@",
                                   'ldflags': "@FREESTEAM_LDFLAGS@",
                                   'libs': "@FREESTEAM_LIBS@"})
+
+        self.libs['coolprop'] = \
+            prerequisite("COOLPROP",
+                         have = "@cs_have_coolprop@",
+                         prefix="@coolprop_prefix@",
+                         flags = {'cppflags': "@COOLPROP_CPPFLAGS@",
+                                  'ldflags': "@COOLPROP_LDFLAGS@",
+                                  'libs': "@COOLPROP_LIBS@"})
 
         self.libs['metis'] = \
             prerequisite("METIS",
