@@ -969,7 +969,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     # (temporarily disable "unused variable" remark -- 7712)
     fcflags_default="-cpp -fpic -warn -diag-disable 7712"
     fcflags_default_dbg="-g -O0 -traceback -check all -check nopointer -fpe0 -ftrapuv"
-    fcflags_default_opt="-O2 -fp-speculation safe"
+    fcflags_default_opt="-O2"
     fcflags_default_hot="-O3"
     fcflags_default_prf="-p"
     fcflags_default_omp="-openmp"

@@ -25,16 +25,16 @@
 /*----------------------------------------------------------------------------*/
 
 /* On glibc-based systems, define _GNU_SOURCE so as to enable floating-point
-   error exceptions; on Itanium, optimized code may raise such exceptions
-   due to speculative execution, so we only enable raising of such exceptions
-   for code compiled in debug mode, where reduced optimization should not lead
-   to such exceptions, and locating the "true" origin of floating-point
-   exceptions is helpful.
+   error exceptions; With Intel compilers, optimized code may raise such
+   exceptions due to speculative execution, so we only enable raising of such
+   exceptions for code compiled in debug mode, where reduced optimization
+   should not lead to such exceptions, and locating the "true" origin of
+   floating-point exceptions is helpful.
    _GNU_SOURCE must be defined before including any headers, to ensure
    the correct feature macros are defined first. */
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
-#if    (!defined(__ia64__) && !defined(__blrts__) && !defined(__bg__)) \
+#if    (!defined(__INTEL_COMPILER) && !defined(__blrts__) && !defined(__bg__)) \
     || defined(DEBUG)
 #define CS_FPE_TRAP
 #define _GNU_SOURCE
