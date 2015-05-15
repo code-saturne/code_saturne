@@ -1454,7 +1454,7 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
                                 int              iusclb[])
 {
   int izone, zones;
-  int iclas, ilayer, icoal;
+  int iclas, ilayer;
   cs_lnum_t ielt, nelt = 0;
   char *interaction = NULL;
   char sclass[10];
@@ -1652,7 +1652,6 @@ void CS_PROCF (uilag2, UILAG2) (const int *const nfabor,
           if (*iphyla == 2) {
             /* Read the coal number */
             _get_int(&(i_cz_params[*inuchl -1]), 2, path2, "coal_number");
-            icoal = i_cz_params[*inuchl -1];
 
             // Fresh coal or user defined
             choice  = _get_attr("choice", 2, path2, "coal_composition");
