@@ -50,6 +50,7 @@ endif
 SUBDIRS = $(PLE) $(PREPRO) src $(SALOME) po docs $(GUI) tests
 
 AUX_DIST = \
+build-aux/cs_config_test.py \
 m4/codeset.m4 \
 m4/fcntl-o.m4 \
 m4/gettext.m4 \

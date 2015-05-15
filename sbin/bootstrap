@@ -9,7 +9,13 @@ fi
 
 for d in . libple
 do
-  rm -rf build-aux/* $d/m4/codeset.m4 $d/m4/fcntl-o.m4 $d/m4/gettext.m4 \
+  for f in `ls $d/build-aux` ; do
+    case $f in
+      *.py) ;;
+      *) rm -rf $d/build-aux/*$ ;;
+    esac
+  done
+  rm -rf $d/m4/codeset.m4 $d/m4/fcntl-o.m4 $d/m4/gettext.m4 \
          $d/m4/glibc2.m4 $d/m4/glibc21.m4 $d/m4/iconv.m4 $d/m4/intdiv0.m4 \
          $d/m4/intl.m4 $d/m4/intldir.m4 $d/m4/intlmacosx.m4 $d/m4/intmax.m4 \
          $d/m4/inttypes-pri.m4 $d/m4/inttypes_h.m4 $d/m4/lcmessage.m4 \
