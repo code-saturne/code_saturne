@@ -98,7 +98,7 @@ class LagrangianModel(Model):
         default['thermal']                             = "off"
         default['dynamic']                             = "off"
         default['mass']                                = "off"
-        default['scheme_order']                        = 2
+        default['scheme_order']                        = 1
         default['turbulent_dispersion']                = "on"
         default['fluid_particles_turbulent_diffusion'] = "off"
         default['complete_model_iteration']            = 0
