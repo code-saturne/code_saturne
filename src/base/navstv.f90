@@ -457,7 +457,7 @@ call predvv &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
   icepdc , icetsm , ifbpcd , ltmast ,                            &
-  itypsm , itypcd ,                                              &
+  itypsm ,                                                       &
   dt     , vel    , vela   ,                                     &
   propce ,                                                       &
   imasfl , bmasfl ,                                              &
@@ -1336,7 +1336,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm , nfbpcd , ncmast ,                            &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
-   itypsm , itypcd ,                                              &
+   itypsm ,                                                       &
    dt     , vel    , vel    ,                                     &
    propce ,                                                       &
    esflum , esflub ,                                              &

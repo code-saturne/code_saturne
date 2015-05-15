@@ -56,7 +56,6 @@
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     ltmast        index of cells with condensation source terms
 !> \param[in]     itypsm        type of mass source term for the variables
-!> \param[in]     itypcd        type of condensation source terms for the variables
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     vel           velocity
 !> \param[in]     vela          velocity at the previous time step
@@ -112,7 +111,7 @@ subroutine predvv &
    nvar   , nscal  , iterns ,                                     &
    ncepdp , ncesmp , nfbpcd , ncmast ,                            &
    icepdc , icetsm , ifbpcd , ltmast ,                            &
-   itypsm , itypcd ,                                              &
+   itypsm ,                                                       &
    dt     , vel    , vela   ,                                     &
    propce ,                                                       &
    flumas , flumab ,                                              &
@@ -168,7 +167,7 @@ integer          ncepdp , ncesmp , nfbpcd , ncmast
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
+integer          ifbpcd(nfbpcd)
 integer          ltmast(ncelet)
 
 double precision dt(ncelet)
