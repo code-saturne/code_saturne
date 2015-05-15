@@ -876,9 +876,9 @@ itrfup = 1
 
 if (nterup.gt.1.or.isno2t.gt.0) then
 
-  if (.not.associated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
-  if (.not.associated(uvwk)) allocate(uvwk(ndim,ncelet))
-  if (.not.associated(trava)) allocate(trava(ndim,ncelet))
+  allocate(ximpav(ndim,ndim,ncelet))
+  allocate(uvwk(ndim,ncelet))
+  allocate(trava(ndim,ncelet))
 
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 

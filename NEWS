@@ -14,6 +14,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix allocation of arrays required for PISO and double backward implicit
+  Euler time schemes on production builds with Intel compiler.
+
 - GUI: fix handling of free inlet/outlet boundary condition by reader.
 
 - Add missing library link flags for builds with the freesteam library.
