@@ -241,7 +241,7 @@ cs_opts_define(int         argc,
   opts->ilisr0 = 1;
   opts->ilisrp = 2;
 
-  opts->sig_defaults = true;
+  opts->sig_defaults = false;
 
   opts->preprocess = false;
   opts->verif = false;
