@@ -140,13 +140,14 @@ endif
 ! 1 - Initialization of the 1D temperature field for the thermal model
 !     which is coupled with the condensation model
 !===============================================================================
-
-do ilelt = 1, nfbpcd
-  do ii=1, nmur
-    ifac = ifbpcd(ilelt)
-    tmur(ilelt,ii) = tpar0
+if (isuite.eq.0) then
+  do ilelt = 1, nfbpcd
+    do ii=1, nmur
+      ifac = ifbpcd(ilelt)
+      tmur(ilelt,ii) = tpar0
+    enddo
   enddo
-enddo
+endif
 
 !--------
 ! Formats
