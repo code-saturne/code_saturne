@@ -109,7 +109,7 @@ double precision, pointer, dimension(:) :: prhyd
 
 ! Local variables
 
-logical          interleaved
+logical          interleaved, must_return
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel
 integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
@@ -237,6 +237,8 @@ call field_get_n_fields(nfld)
 !===============================================================================
 ! 1.  INITIALISATION
 !===============================================================================
+
+must_return = .false.
 
 if (iwarni(iu).ge.1) then
   write(nfecra,1000)
@@ -493,7 +495,7 @@ endif
 !  on ne touche pas au flux de masse non plus
 
 
-if(inpdt0.eq.1.and.isuite.eq.1) goto 200
+if (inpdt0.eq.1.and.isuite.eq.1) return
 
 if (itrale.gt.0) then
   iappel = 1
@@ -875,21 +877,21 @@ endif
 !     pour Syrthes, T1D ou rayonnement.
 itrfup = 1
 
-if (nterup.gt.1.or.isno2t.gt.0) then
-
-  if (.not.associated(ximpav)) allocate(ximpav(ndim,ndim,ncelet))
-  if (.not.associated(uvwk)) allocate(uvwk(ndim,ncelet))
-  if (.not.associated(trava)) allocate(trava(ndim,ncelet))
-
-  if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
-
+if (nterup.gt.1) then
+  allocate(ximpav(ndim,ndim,ncelet))
+  allocate(uvwk(ndim,ncelet))
 else
-
-  uvwk => rvoid2
-  trava => rvoid2
   ximpav => rvoid3
-
+  uvwk => rvoid2
 endif
+
+if (nterup.gt.1.or.isno2t.gt.0) then
+  allocate(trava(ndim,ncelet))
+  if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
+else
+  trava => rvoid2
+endif
+
 ! Compute the number of variable plus the number of turbulent fluxes
 nvarcl = nvar
 do iscal = 1, nscal
@@ -1383,9 +1385,9 @@ do while (iterns.le.nterup)
 !      ON SORT ICI
 !===============================================================================
 
-  if (inpdt0.eq.1.and.isuite.eq.0) goto 200
+  if (inpdt0.eq.1.and.isuite.eq.0) must_return = .true.
 
-  if (iilagr.eq.3) goto 200
+  if (iilagr.eq.3) must_return = .true.
 
 !===============================================================================
 ! 11. RESOLUTION DE LA VITESSE DE MAILLAGE EN ALE
@@ -1397,11 +1399,38 @@ do while (iterns.le.nterup)
     if (itrale.eq.0) then
 
       call alelav(propce)
-      goto 200
+      must_return = .true.
 
     endif
 
   endif
+
+!===============================================================================
+! Return now if required
+!===============================================================================
+
+  if (must_return) then
+
+    if (allocated(hbord)) deallocate(hbord)
+    if (allocated(theipb)) deallocate(theipb)
+    if (allocated(visvdr)) deallocate(visvdr)
+
+    if (nterup.gt.1) then
+      deallocate(ximpav)
+    endif
+    if (nterup.gt.1.or.isno2t.gt.0) then
+      deallocate(uvwk, trava)
+    endif
+
+    deallocate(icodcl, rcodcl)
+
+    if (allocated(delay_id)) deallocate(delay_id)
+
+    return
+
+  endif
+
+!===============================================================================
 
 !===============================================================================
 ! 11. CALCUL A CHAMP DE VITESSE NON FIGE :
@@ -1596,9 +1625,11 @@ if (allocated(hbord)) deallocate(hbord)
 if (allocated(theipb)) deallocate(theipb)
 if (allocated(visvdr)) deallocate(visvdr)
 
+if (nterup.gt.1) then
+  deallocate(ximpav, uvwk)
+endif
 if (nterup.gt.1.or.isno2t.gt.0) then
-  deallocate(uvwk, trava)
-  deallocate(ximpav)
+  deallocate(trava)
 endif
 
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)
@@ -1837,13 +1868,6 @@ if (allocated(delay_id)) deallocate(delay_id)
 iappel = 5
 call schtmp(nscal, iappel, propce)
 !==========
-
-!===============================================================================
-! 17.  SORTIE DANS LE CAS DE "zero pas de temps" ET INIT ALE
-!===============================================================================
-
- 200  continue
-
 
 !===============================================================================
 
