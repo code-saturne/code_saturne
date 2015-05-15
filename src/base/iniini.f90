@@ -810,7 +810,7 @@ iporos = 0
 !        (no maximum by default, this term is used to model a venting effect when
 !         a positive value is given by the user)
 
-pther  = 1.013d5
+pther  = -1.d0
 pthermax= -1.d0
 
 
@@ -1014,6 +1014,8 @@ ivivar = 0
 ro0    = 1.17862d0
 viscl0 = 1.83337d-5
 p0     = 1.01325d5
+! Reset pther to p0
+pther = p0
 pred0  = 0.d0
 xyzp0(1)= -rinfin
 xyzp0(2)= -rinfin

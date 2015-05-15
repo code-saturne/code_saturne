@@ -136,74 +136,77 @@ call cs_user_initialization &
 !    the noncondensable gases transported
 !===============================================================================
 
-! Initialization
-volgas = 0.d0
-vol_d  = 0.d0
-
-do iel = 1, ncel
-  y_d(iel) = 1.d0
-
-  ! Mixture specific Heat
-  cpro_cp(iel) = 0.d0
-
-  ! Mixture molar mass
-  mix_mol_mas(iel) = 0.d0
-enddo
-
-do iesp = 1, nscasp
-  ! Mass fraction array of the different species
-  call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
-
-  call field_get_key_struct_gas_mix_species_prop( &
-       ivarfl(isca(iscasp(iesp))), s_k)
+if (isuite.eq.0) then
+  ! Initialization
+  volgas = 0.d0
+  vol_d  = 0.d0
 
   do iel = 1, ncel
-    if (cvar_yk(iel).gt.1.d0.or.cvar_yk(iel).lt.0.d0) then
+    y_d(iel) = 1.d0
+
+    ! Mixture specific Heat
+    cpro_cp(iel) = 0.d0
+
+    ! Mixture molar mass
+    mix_mol_mas(iel) = 0.d0
+  enddo
+
+  do iesp = 1, nscasp
+    ! Mass fraction array of the different species
+    call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
+
+    call field_get_key_struct_gas_mix_species_prop( &
+         ivarfl(isca(iscasp(iesp))), s_k)
+
+    do iel = 1, ncel
+      if (cvar_yk(iel).gt.1.d0.or.cvar_yk(iel).lt.0.d0) then
+        iok = iok + 1
+      endif
+      y_d(iel) = y_d(iel)-cvar_yk(iel)
+
+      ! Mixture specific heat (Cp_m0)
+      cpro_cp(iel) = cpro_cp(iel) + cvar_yk(iel)*s_k%cp
+
+      mix_mol_mas(iel) = mix_mol_mas(iel) + cvar_yk(iel)/s_k%mol_mas
+    enddo
+  enddo
+
+  ! Finalization and check
+  do iel = 1, ncel
+    if (y_d(iel).gt.1.d0.or.y_d(iel).lt.0.d0) then
       iok = iok + 1
     endif
-    y_d(iel) = y_d(iel)-cvar_yk(iel)
+    y_d(iel) = min(max(y_d(iel), 0.d0), 1.d0)
 
-    ! Mixture specific heat (Cp_m0)
-    cpro_cp(iel) = cpro_cp(iel) + cvar_yk(iel)*s_k%cp
+    ! specific heat (Cp_m0) of the gas mixture
+    cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 
-    mix_mol_mas(iel) = mix_mol_mas(iel) + cvar_yk(iel)/s_k%mol_mas
+    ! Enthalpy initialization
+    cvar_enth(iel) = cpro_cp(iel)*t0
+
+    mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
+    mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
+
+    ! Gas deduced and Total gas volumes injected
+    vol_d = vol_d + volume(iel)*    &
+            (y_d(iel)/s_d%mol_mas)*mix_mol_mas(iel)
+    volgas = volgas +volume(iel)
+
   enddo
-enddo
 
-! Finalization and check
-do iel = 1, ncel
-  if (y_d(iel).gt.1.d0.or.y_d(iel).lt.0.d0) then
-    iok = iok + 1
+  if (irangp.ge.0) then
+   call parsom(volgas)
+   call parsom(vol_d)
   endif
-  y_d(iel) = min(max(y_d(iel), 0.d0), 1.d0)
 
-  ! specific heat (Cp_m0) of the gas mixture
-  cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
+  !===============================================================================
+  ! 4. Print to the listing to check the variables intialization
+  !===============================================================================
 
-  ! Enthalpy initialization
-  cvar_enth(iel) = cpro_cp(iel)*t0
+  write(nfecra, 200)
+  write(nfecra, 203) volgas , vol_d
 
-  mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
-  mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
-
-  ! Gas deduced and Total gas volumes injected
-  vol_d = vol_d + volume(iel)*    &
-          (y_d(iel)/s_d%mol_mas)*mix_mol_mas(iel)
-  volgas = volgas +volume(iel)
-
-enddo
-
-if (irangp.ge.0) then
- call parsom(volgas)
- call parsom(vol_d)
 endif
-
-!===============================================================================
-! 4. Print to the listing to check the variables intialization
-!===============================================================================
-
-write(nfecra, 200)
-write(nfecra, 203) volgas , vol_d
 
 !===============================================================================
 ! 5. Stop if problem
