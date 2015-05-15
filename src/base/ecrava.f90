@@ -77,6 +77,7 @@ use atchem, only: ichemistry
 use siream, only: iaerosol
 use mesh
 use cs_c_bindings
+use cs_tagmr, only: nmur, tmur
 
 !===============================================================================
 
@@ -102,12 +103,14 @@ integer          nfmtst
 integer          ilecec, iecr
 integer          ngbstr(2)
 integer          ifac, iel, istr
+integer          kk
 integer          ival(1)
 double precision rval(1), tmpstr(27)
 
 type(c_ptr) :: rp
 
 double precision, allocatable, dimension(:) :: w1
+double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, pointer, dimension(:) :: dt_s
 double precision, pointer, dimension(:,:) :: disale
 
@@ -575,6 +578,38 @@ if (iecaux.eq.1) then
     car54=' End writing the predicted hydrostatic pressure       '
 #endif
     write(nfecra,1110)car54
+
+  endif
+
+!----------------------------------------------------------------
+! ---> Wall temperature associated to the condensation model
+!      with or wihtout the 1D thermal model tag1D
+!----------------------------------------------------------------
+
+  if (icond.eq.0.) then
+
+    if (itag1d.eq.1) then
+      ! Wall temperature array in the thickness for the 1D thermal model
+      allocate(tmurbf(nfabor,nmur))
+
+      tmurbf(:,:) = 0.d0
+
+      rubriq = 'tmur_bf_prev'
+      itysup = 3
+      nbval  = nmur
+
+      do ii = 1, nfbpcd
+        ifac= ifbpcd(ii)
+        do kk = 1, nmur
+          tmurbf(ifac, kk) = tmur(ii,kk)
+        enddo
+      enddo
+
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,tmurbf)
+
+      ! Free memory
+      deallocate(tmurbf)
+    endif
 
   endif
 

@@ -517,6 +517,53 @@ if (iporos.ge.1) then
   call usporo
 endif
 
+!==============================================================================
+! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
+! au moins des cellules avec terme source de condensation.
+! On ne fait que remplir le tableau d'indirection des cellules
+! On appelle cependant cs_user_condensation avec tous les processeurs,
+! au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
+!==============================================================================
+
+if (nftcdt.gt.0) then
+
+  iappel = 2
+
+  call cs_user_boundary_mass_source_terms &
+  !======================================
+( nvar   , nscal  ,                                              &
+  nfbpcd , iappel ,                                              &
+  ifbpcd , itypcd , izftcd ,                                     &
+  spcond , rvoid(1) )
+
+  ! the Condensation model coupled with a 1-D thermal model
+  ! requires the 1-D mesh generation and temperature initialization
+  if(itag1d.eq.1) then
+
+    call init_tagmr
+    !==============
+
+    !if (isuit1.eq.1) then
+    !  !TODO : Read the restart files "suite"
+    !else
+      !1-D mesh generated and temperature initialization
+      call cs_mesh_tagmr &
+      !=================
+    ( nfbpcd , ifbpcd )
+    !endif
+
+  endif
+
+  ! the Condensation model coupled with a 0-D thermal model
+  ! to take into account the metal mass structures effects.
+  if(itagms.eq.1) then
+
+    call init_tagms
+    !==============
+  endif
+
+endif
+
 !===============================================================================
 ! Possible restart
 !===============================================================================
@@ -619,6 +666,7 @@ endif
 !===============================================================================
 ! Initializations for the 1D thermal wall module
 !===============================================================================
+
 ! On suppose que toutes les phases voient la meme temperature de paroi
 ! USPT1D a un fonctionnement similaire a USKPDC et USTSMA, mais comme
 ! on ecrit des infos dans un fichier suite, on a besoin d'une partie de
@@ -749,50 +797,7 @@ if(nctsmt.gt.0) then
 
 endif
 
-! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
-! au moins des cellules avec terme source de condensation.
-! On ne fait que remplir le tableau d'indirection des cellules
-! On appelle cependant cs_user_condensation avec tous les processeurs,
-! au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 
-if (nftcdt.gt.0) then
-
-  iappel = 2
-
-  call cs_user_boundary_mass_source_terms &
-  !======================================
-( nvar   , nscal  ,                                              &
-  nfbpcd , iappel ,                                              &
-  ifbpcd , itypcd , izftcd ,                                     &
-  spcond , rvoid(1) )
-
-  ! the Condensation model coupled with a 1-D thermal model
-  ! requires the 1-D mesh generation and temperature initialization
-  if(itag1d.eq.1) then
-
-    call init_tagmr
-    !==============
-
-    !if (isuit1.eq.1) then
-    !  !TODO : Read the restart files "suite"
-    !else
-      !1-D mesh generated and temperature initialization
-      call cs_mesh_tagmr &
-      !=================
-    ( nfbpcd , ifbpcd )
-    !endif
-
-  endif
-
-  ! the Condensation model coupled with a 0-D thermal model
-  ! to take into account the metal mass structures effects.
-  if(itagms.eq.1) then
-
-    call init_tagms
-    !==============
-  endif
-
-endif
 
 
 ! -- Methode des vortex pour la L.E.S.

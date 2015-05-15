@@ -85,6 +85,7 @@ use mesh
 use field
 use cavitation
 use cs_c_bindings
+use cs_tagmr, only: nmur, tmur
 
 !===============================================================================
 
@@ -106,6 +107,7 @@ character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 logical          lprev
 integer          iel   , ifac, ii, istr, nlfld, iscal
+integer          kk
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
 integer          jortvm
@@ -129,6 +131,7 @@ double precision, dimension(:,:), pointer :: disale
 
 double precision, dimension(:), pointer :: cpro_vism1, cpro_vism2, cpro_vism3
 
+double precision, allocatable, dimension(:,:) :: tmurbf
 !===============================================================================
 
 !===============================================================================
@@ -779,7 +782,39 @@ if (iphydr.eq.2) then
 endif
 
 !===============================================================================
-! 12.  DEPLACEMENT AUX NOEUDS EN ALE
+! 12.  Wall temperature associated to the condensation model
+!      with or wihtout the 1D thermal model tag1D
+!===============================================================================
+
+if (icond.eq.0) then
+
+  if(itag1d.eq.1) then
+    !tmur array associated at each boundary face in the wall tickness
+    nberro = 0
+    itysup = 3
+    nbval  = nmur
+    rubriq = 'tmur_bf_prev'
+
+    allocate(tmurbf(nfabor,nmur))
+
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,tmurbf,ierror)
+    nberro=nberro+ierror
+
+    do ii = 1, nfbpcd
+      ifac= ifbpcd(ii)
+      do kk = 1, nmur
+        tmur(ii,kk) =  tmurbf(ifac,kk)
+      enddo
+    enddo
+
+    ! Free memory
+    deallocate(tmurbf)
+  endif
+
+endif
+
+!===============================================================================
+! 13.  DEPLACEMENT AUX NOEUDS EN ALE
 !===============================================================================
 
 if (iale.eq.1 .and. jale.eq.1) then
@@ -891,7 +926,7 @@ if (iale.eq.1 .and. jale.eq.1) then
 endif
 
 !===============================================================================
-! 13. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET FUEL
+! 14. LECTURE DES INFORMATIONS COMPLEMENTAIRES COMBUSTION GAZ, CP ET FUEL
 !===============================================================================
 
 nberro = 0
@@ -1401,7 +1436,7 @@ if (ilu.ne.0) then
 endif
 
 !===============================================================================
-! 14. LECTURE DES INFORMATIONS COMPLEMENTAIRES ELECTRIQUES
+! 15. LECTURE DES INFORMATIONS COMPLEMENTAIRES ELECTRIQUES
 !===============================================================================
 
 nberro=0
@@ -1473,7 +1508,7 @@ if (ilu.ne.0) then
 endif
 
 !===============================================================================
-! 15.  FERMETURE DU FICHIER SUITE AUXILAIRE
+! 16.  FERMETURE DU FICHIER SUITE AUXILAIRE
 !===============================================================================
 
 !     Fermeture du fichier suite auxilaire
@@ -1482,13 +1517,13 @@ call restart_destroy(rp)
 write(nfecra,1200)
 
 !===============================================================================
-! 16. SORTIE
+! 17. SORTIE
 !===============================================================================
 
 return
 
 !===============================================================================
-! 17. FORMATS
+! 18. FORMATS
 !===============================================================================
 
 ! --- ETAPES
