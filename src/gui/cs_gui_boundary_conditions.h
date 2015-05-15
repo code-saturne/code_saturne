@@ -191,22 +191,24 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * SUBROUTINE UICLVE
  * *****************
  *
- * INTEGER          NFABOR  --> number of boundary faces
- * INTEGER          NOZPPM  --> max number of boundary conditions zone
- * INTEGER          IINDEF  --> type of boundary: not defined
- * INTEGER          IENTRE  --> type of boundary: inlet
- * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
- * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
- * INTEGER          IEPHCF  --> type of boundary: subsonic inlet imposed total pressure and total enthalpy (compressible)
- * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
- * INTEGER          IPAROI  --> type of boundary: wall
- * INTEGER          IPARUG  --> type of boundary: wall with rugosity
- * INTEGER          ISYMET  --> type of boundary: symmetry
- * INTEGER          ISOLIB  --> type of boundary: outlet
- * INTEGER          IFRESF  <-- type of boundary: free surface
- * INTEGER          IALE    <-- ALE module activated
- * INTEGER          ITYPFB  --> type of boundary for each face
- * INTEGER          IZFPPP  --> zone number
+ * integer          nfabor  <-- number of boundary faces
+ * integer          nozppm  <-- max number of boundary conditions zone
+ * integer          iindef  <-- type of boundary: not defined
+ * integer          ientre  <-- type of boundary: inlet
+ * integer          iesicf  --> type of boundary: imposed inlet (compressible)
+ * integer          isspcf  --> type of boundary: supersonic outlet (compressible)
+ * integer          iephcf  --> type of boundary: subsonic inlet at imposed
+ *                              total pressure and enthalpy (compressible)
+ * integer          isopcf  --> type of boundary: subsonic outlet (compressible)
+ * integer          iparoi  <-- type of boundary: smooth wall
+ * integer          iparug  <-- type of boundary: rough wall
+ * integer          isymet  <-- type of boundary: symetry
+ * integer          isolib  <-- type of boundary: outlet
+ * integer          ifrent  <-- type of boundary: free inlet outlet
+ * integer          ifresf  <-- type of boundary: free surface
+ * integer          iale    <-- ale module activated
+ * integer          itypfb  <-- type of boundary for each face
+ * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
@@ -221,6 +223,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
+                               const int  *ifrent,
                                const int  *ifresf,
                                const int  *iale,
                                int        *itypfb,

@@ -14,6 +14,8 @@ Changes:
 Bug fixes:
 ----------
 
+- GUI: fix handling of free inlet/outlet boundary condition by reader.
+
 - Add missing library link flags for builds with the freesteam library.
 
 - Fix bug in cavitation module mass transfer term.

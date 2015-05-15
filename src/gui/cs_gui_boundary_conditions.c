@@ -304,15 +304,15 @@ _inlet_formula(const char  *label,
  *----------------------------------------------------------------------------*/
 
 static char*
-_headLoss_formula(const char  *label)
+_head_loss_formula(const char  *label)
 {
   char *path = NULL;
   char *form = NULL;
 
   path = cs_xpath_init_path();
-  cs_xpath_add_elements(&path, 2, "boundary_conditions", "inlet");
+  cs_xpath_add_elements(&path, 2, "boundary_conditions", "free_inlet_outlet");
   cs_xpath_add_test_attribute(&path, "label", label);
-  cs_xpath_add_element(&path, "headLoss");
+  cs_xpath_add_elements(&path, 2, "headLoss", "formula");
   cs_xpath_add_function_text(&path);
 
   form = cs_gui_get_text_value(path);
@@ -1310,10 +1310,11 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     }
     else if (cs_gui_strcmp(nature, "outlet")) {
       /* Outlet: data for ATMOSPHERIC FLOWS */
-      if (cs_gui_strcmp(vars->model, "atmospheric_flows"))
-      {
-        _boundary_status("outlet", label, "meteo_data", &boundaries->meteo[izone].read_data);
-        _boundary_status("outlet", label, "meteo_automatic", &boundaries->meteo[izone].automatic);
+      if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
+        _boundary_status("outlet", label, "meteo_data",
+                         &boundaries->meteo[izone].read_data);
+        _boundary_status("outlet", label, "meteo_automatic",
+                         &boundaries->meteo[izone].automatic);
       }
 
       /* Outlet: data for COMPRESSIBLE MODEL */
@@ -1327,7 +1328,7 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
       const char *sym[] = {"K"};
       boundaries->headLoss[izone] =
-          _boundary_init_mei_tree(_headLoss_formula(label), sym, 1);
+          _boundary_init_mei_tree(_head_loss_formula(label), sym, 1);
     }
 
     /* for each zone */
@@ -2741,23 +2742,24 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
  * SUBROUTINE UICLVE
  * *****************
  *
- * INTEGER          NFABOR  <-- number of boundary faces
- * INTEGER          NOZPPM  <-- max number of boundary conditions zone
- * INTEGER          IINDEF  <-- type of boundary: not defined
- * INTEGER          IENTRE  <-- type of boundary: inlet
- * INTEGER          IESICF  --> type of boundary: imposed inlet (compressible)
- * INTEGER          ISSPCF  --> type of boundary: supersonic outlet (compressible)
- * INTEGER          IEPHCF  --> type of boundary: subsonic inlet at imposed
+ * integer          nfabor  <-- number of boundary faces
+ * integer          nozppm  <-- max number of boundary conditions zone
+ * integer          iindef  <-- type of boundary: not defined
+ * integer          ientre  <-- type of boundary: inlet
+ * integer          iesicf  --> type of boundary: imposed inlet (compressible)
+ * integer          isspcf  --> type of boundary: supersonic outlet (compressible)
+ * integer          iephcf  --> type of boundary: subsonic inlet at imposed
  *                              total pressure and enthalpy (compressible)
- * INTEGER          ISOPCF  --> type of boundary: subsonic outlet (compressible)
- * INTEGER          IPAROI  <-- type of boundary: smooth wall
- * INTEGER          IPARUG  <-- type of boundary: rough wall
- * INTEGER          ISYMET  <-- type of boundary: symetry
- * INTEGER          ISOLIB  <-- type of boundary: outlet
- * INTEGER          IFRESF  <-- type of boundary: free surface
- * INTEGER          IALE    <-- ALE module activated
- * INTEGER          ITYPFB  <-- type of boundary for each face
- * INTEGER          IZFPPP  <-- zone number
+ * integer          isopcf  --> type of boundary: subsonic outlet (compressible)
+ * integer          iparoi  <-- type of boundary: smooth wall
+ * integer          iparug  <-- type of boundary: rough wall
+ * integer          isymet  <-- type of boundary: symetry
+ * integer          isolib  <-- type of boundary: outlet
+ * integer          ifrent  <-- type of boundary: free inlet outlet
+ * integer          ifresf  <-- type of boundary: free surface
+ * integer          iale    <-- ale module activated
+ * integer          itypfb  <-- type of boundary for each face
+ * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
@@ -2772,6 +2774,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
                                const int  *iparug,
                                const int  *isymet,
                                const int  *isolib,
+                               const int  *ifrent,
                                const int  *ifresf,
                                const int  *iale,
                                      int  *itypfb,
@@ -2800,6 +2803,9 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nfabor,
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
       inature = *isymet;
+    }
+    else if (cs_gui_strcmp(boundaries->nature[izone], "free_inlet_outlet")) {
+      inature = *ifrent;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "free_surface") && *iale) {
       inature = *ifresf;
