@@ -997,7 +997,7 @@ do while (iterns.le.nterup)
     !==========
   ( nfabor, nozppm,                                                &
     iindef, ientre, iesicf, iephcf, isspcf, isopcf,                &
-    iparoi, iparug, isymet, isolib, ifresf, iale  ,                &
+    iparoi, iparug, isymet, isolib, ifrent, ifresf, iale  ,        &
     itypfb, izfppp )
 
   endif
