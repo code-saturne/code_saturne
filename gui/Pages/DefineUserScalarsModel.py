@@ -103,7 +103,7 @@ class DefineUserScalarsModel(Variables, Model):
         """
         for nature in ('inlet', 'outlet', 'wall'):
             for node in self.node_bc.xmlGetChildNodeList(nature):
-                for n in node.xmlGetChildNodeList('variable'):
+                for n in node.xmlGetChildNodeList('scalar'):
                     if n['name'] == name:
                         n.xmlRemoveNode()
 
@@ -366,7 +366,7 @@ class DefineUserScalarsModel(Variables, Model):
 
         for nature in ('inlet', 'outlet', 'wall'):
             for node in self.node_bc.xmlGetChildNodeList(nature):
-                for n in node.xmlGetChildNodeList('variable'):
+                for n in node.xmlGetChildNodeList('scalar'):
                     if n['name'] == old_name:
                         n['label'] = new_name
                         n['name']  = new_name
