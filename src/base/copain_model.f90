@@ -289,7 +289,11 @@ do iesp = 1, nscasp
 
     x_k = cvar_yk(iel)*mix_mol_mas(iel)/s_k%mol_mas
 
-    ratio_tkpr = ((cvar_enth(iel)/cpro_cp(iel))**1.75d0)/pther
+    if (idilat.eq.3) then
+      ratio_tkpr = ((cvar_enth(iel)/cpro_cp(iel))**1.75d0)/pther
+    else
+      ratio_tkpr = ((cvar_enth(iel)/cpro_cp(iel))**1.75d0)/p0
+    endif
 
     xmab = sqrt(2.d0/( 1.d0/(s_h2o_g%mol_mas*1000.d0) &
                       +1.d0/(    s_k%mol_mas*1000.d0) ) )
@@ -379,7 +383,11 @@ do ii = 1, nfbpcd
   !-- Molar fraction of the interface vapor
   !-------------------------------------------------
 
-  x_vapint = psat/pther
+  if (idilat.eq.3) then
+    x_vapint = psat/pther
+  else
+    x_vapint = psat/p0
+  endif
 
   ! if (Xv > Xi,v) we have condensation  -----------
   if (x_h2o_g(iel).gt.x_vapint) then

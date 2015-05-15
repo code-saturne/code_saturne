@@ -14,6 +14,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix pressure in condensation model when idilat < 3.
+
 - Fix initialization for gas mix model.
 
 - Fix allocation of arrays required for PISO and double backward implicit
