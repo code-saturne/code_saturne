@@ -880,16 +880,15 @@ itrfup = 1
 if (nterup.gt.1) then
   allocate(ximpav(ndim,ndim,ncelet))
   allocate(uvwk(ndim,ncelet))
+  allocate(trava(ndim,ncelet))
 else
   ximpav => rvoid3
   uvwk => rvoid2
+  trava => rvoid2
 endif
 
 if (nterup.gt.1.or.isno2t.gt.0) then
-  allocate(trava(ndim,ncelet))
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
-else
-  trava => rvoid2
 endif
 
 ! Compute the number of variable plus the number of turbulent fluxes
@@ -1416,10 +1415,7 @@ do while (iterns.le.nterup)
     if (allocated(visvdr)) deallocate(visvdr)
 
     if (nterup.gt.1) then
-      deallocate(ximpav)
-    endif
-    if (nterup.gt.1.or.isno2t.gt.0) then
-      deallocate(uvwk, trava)
+      deallocate(ximpav, uvwk, trava)
     endif
 
     deallocate(icodcl, rcodcl)
