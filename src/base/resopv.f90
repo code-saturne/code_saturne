@@ -407,7 +407,7 @@ if (irnpnw.ne.1) then
       trav(3,iel) = trav(3,iel)*unsvom + frcxt(3 ,iel) + dfrcxt(3 ,iel)
     enddo
   else
-    if(isno2t.gt.0) then
+    if (isno2t.gt.0 .and. nterup.gt.1) then
       do iel = 1, ncel
         unsvom = -1.d0/volume(iel)
         romro0 = crom(iel)-ro0
