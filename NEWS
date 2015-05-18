@@ -21,8 +21,8 @@ Bug fixes:
 
 - Fix initialization for gas mix model.
 
-- Fix allocation of arrays required for PISO and double backward implicit
-  Euler time schemes on production builds with Intel compiler.
+- Fix allocation of arrays required for PISO on production builds with
+  Intel compiler.
 
 - GUI: fix handling of free inlet/outlet boundary condition by reader.
 
