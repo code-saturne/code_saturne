@@ -3128,7 +3128,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 
     /* Possible P1 matrix / P0 matrix relaxation defined
-       by the user in usini.f90 */
+       by the user in cs_user_parameters.c
+       (using cs_multigrid_set_coarsening_options) */
 
     if (isym == 1) {
       for (c_face = 0; c_face < c_n_faces; c_face++)
