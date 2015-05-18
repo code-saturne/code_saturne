@@ -431,7 +431,7 @@ do ii = 1, nfbpcd
     dplus = 0.d0
     yplus = yplbr(ifac)
     sigmat = 0.9d0
-    call hturbp (iwalfs,schdt, sigmat, xkappa,yplus,dplus,hflui,ypth)
+    call hturbp(iwalfs,schdt,sigmat,yplus,dplus,hflui,ypth)
 
     hcdt =  cpro_viscl(iel)/distbf*hflui
 
@@ -526,7 +526,7 @@ do ii = 1, nfbpcd
   sigmat = 0.9d0
   Prdtl = cpro_viscl(iel)/cpro_venth(iel)
 
-  call hturbp (iwalfs,Prdtl, sigmat, xkappa,yplus,dplus,hpflui,ypth)
+  call hturbp(iwalfs,Prdtl,sigmat,yplus,dplus,hpflui,ypth)
   hw_enth = cpro_venth(iel)/distbf*hpflui
 
   h1max = max(h1max,hw_enth)
