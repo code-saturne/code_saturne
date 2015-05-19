@@ -157,19 +157,18 @@ cs_multigrid_copy(const void  *context);
  * Set multigrid coarsening parameters.
  *
  * parameters:
- *   mg                <-> pointer to multigrid info and context
- *   aggregation_limit <-- maximum allowed fine cells per coarse cell
- *   coarsening_type   <-- coarsening type:
- *                          0: algebraic, natural face traversal;
- *                          1: algebraic, face traveral by criteria;
- *                          2: algebraic, Hilbert face traversal;
- *   n_max_levels      <-- maximum number of grid levels
- *   min_g_cells       <-- global number of cells on coarse grids
- *                         under which no coarsening occurs
- *   p0p1_relax        <-- p0/p1 relaxation_parameter
- *   verbosity         <-- verbosity level
- *   postprocess       <-- if > 0, postprocess coarsening
- *                         (using coarse cell numbers modulo this value)
+ *   mg                     <-> pointer to multigrid info and context
+ *   aggregation_limit      <-- maximum allowed fine cells per coarse cell
+ *   coarsening_type        <-- coarsening type:
+ *                              0: algebraic, natural face traversal;
+ *                              1: algebraic, face traveral by criteria;
+ *                              2: algebraic, Hilbert face traversal;
+ *   n_max_levels           <-- maximum number of grid levels
+ *   min_g_cells            <-- global number of cells on coarse grids
+ *                              under which no coarsening occurs
+ *   p0p1_relax             <-- p0/p1 relaxation_parameter
+ *   postprocess_block_size <-- if > 0, postprocess coarsening
+ *                              (using coarse cell numbers modulo this value)
  *----------------------------------------------------------------------------*/
 
 void
