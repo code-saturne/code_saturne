@@ -1622,10 +1622,7 @@ if (allocated(theipb)) deallocate(theipb)
 if (allocated(visvdr)) deallocate(visvdr)
 
 if (nterup.gt.1) then
-  deallocate(ximpav, uvwk)
-endif
-if (nterup.gt.1.or.isno2t.gt.0) then
-  deallocate(trava)
+  deallocate(ximpav, uvwk, trava)
 endif
 
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)
