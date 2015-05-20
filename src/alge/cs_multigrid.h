@@ -331,18 +331,6 @@ cs_multigrid_error_post_and_abort(void                         *context,
                                   cs_real_t                    *vx);
 
 /*----------------------------------------------------------------------------
- * Set the verbosity for multigrid.
- *
- * parameters:
- *   mg        <-> pointer to multigrid info and context
- *   verbosity <-- verbosity level
- *----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_set_verbosity(cs_multigrid_t   *mg,
-                           int              verbosity);
-
-/*----------------------------------------------------------------------------
  * Set plotting options for multigrid.
  *
  * parameters:

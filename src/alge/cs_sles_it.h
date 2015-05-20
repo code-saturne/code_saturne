@@ -93,7 +93,7 @@ extern const char *cs_sles_it_type_name[];
  *
  * Note that this function returns a pointer directly to the iterative solver
  * management structure. This may be used to set further options,
- * for example using cs_sles_it_set_verbosity(). If needed, cs_sles_find()
+ * for example using cs_sles_set_plot_options(). If needed, cs_sles_find()
  * may be used to obtain a pointer to the matching cs_sles_t container.
  *
  * parameters:

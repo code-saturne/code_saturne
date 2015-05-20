@@ -264,8 +264,6 @@ struct _cs_multigrid_t {
   cs_time_plot_t            **sles_it_plot;     /* plotting if smoothers */
   int                         plot_time_stamp;  /* plotting time stamp;
                                                    if < 0, use wall clock */
-
-  int                         verbosity;
 };
 
 /*============================================================================
@@ -2869,22 +2867,6 @@ cs_multigrid_error_post_and_abort(void                         *context,
               name, _(error_type[err_id]),
               mgd->exit_cycle_id, level,
               mgd->exit_initial_residue, mgd->exit_residue);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the verbosity for multigrid.
- *
- * \param[in, out]  mg         pointer to multigrid info and context
- * \param[in]       verbosity  verbosity level
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_multigrid_set_verbosity(cs_multigrid_t   *mg,
-                           int              verbosity)
-{
-  mg->verbosity = verbosity;
 }
 
 /*----------------------------------------------------------------------------*/

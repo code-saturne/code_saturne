@@ -3108,7 +3108,7 @@ _p_gauss_seidel(cs_sles_it_t              *c,
  *
  * Note that this function returns a pointer directly to the iterative solver
  * management structure. This may be used to set further options,
- * for example using \ref cs_sles_set_verbosity. If needed,
+ * for example using \ref cs_sles_it_set_plot_options. If needed,
  * \ref cs_sles_find may be used to obtain a pointer to the matching
  * \ref cs_sles_t container.
  *
