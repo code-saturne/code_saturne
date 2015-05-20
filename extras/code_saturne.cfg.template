@@ -49,7 +49,7 @@
 [mpi]
 
 ### Path to mpi binaries
-# mpi_bindir =
+# bindir =
 ### mpiexec, mpirun, or equivalent command
 # mpiexec = mpiexec
 ### mpiexec command options
