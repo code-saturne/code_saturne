@@ -14,6 +14,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix in Syrthes coupling for neighbor search extension, when the
+  "allow_nonmatching" option is set to true.
+
 - Add missing checkpoint and restart info for condensation model
   wall temperature.
 

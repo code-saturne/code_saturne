@@ -105,10 +105,9 @@ cs_user_coupling(void)
  *   projection_axis   <-- ' ' : standard 3D coupling
  *                         'x', 'y', or 'z': projection axis for coupling
  *                                           with 2D SYRTHES.
- *   allow_nonmatching <-- if true, allow nearest-neighbor search to match
+ *   allow_nonmatching <-- if true, allow extending search to match
  *                         faces beyond mapping tolerance distance (useful
- *                         when meshes have a different level of detail,
- *                         but may lead to a much slower initialization stage)
+ *                         when meshes have a different level of detail)
  *   tolerance         <-- addition to local extents of each element
  *                         extent = base_extent * (1 + tolerance)
  *   verbosity         <-- verbosity level
