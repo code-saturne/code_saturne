@@ -811,6 +811,9 @@ _transfer_location_distant(ple_locator_t  *this_locator,
 
   double comm_timing[4] = {0., 0., 0., 0.};
 
+  const ple_lnum_t idb = this_locator->point_id_base;
+  const ple_lnum_t *_interior_list = this_locator->interior_list;
+
   /* Initialize locations */
 
   for (j = 0; j < n_points; j++) {
@@ -855,7 +858,7 @@ _transfer_location_distant(ple_locator_t  *this_locator,
     _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
 
     for (k = 0; k < n_points_loc; k++) {
-      ple_lnum_t pt_id = _local_point_ids[k];
+      ple_lnum_t pt_id = _interior_list[_local_point_ids[k]] - idb;
       location[pt_id] = loc_v_buf[k];
       location_rank_id[pt_id] = dist_rank;
     }
@@ -1445,11 +1448,14 @@ _transfer_location_local(ple_locator_t  *this_locator,
     const ple_lnum_t _n_points =    this_locator->local_points_idx[1]
                                   - this_locator->local_points_idx[0];
 
+    const ple_lnum_t idb = this_locator->point_id_base;
+    const ple_lnum_t *_interior_list = this_locator->interior_list;
+
     const ple_lnum_t *_local_point_ids = this_locator->local_point_ids;
     const ple_lnum_t *dist_v_ptr = this_locator->distant_point_location;
 
     for (j = 0; j < _n_points; j++) {
-      ple_lnum_t k = _local_point_ids[j];
+      ple_lnum_t k = _interior_list[_local_point_ids[j] - idb];
       location[k] = dist_v_ptr[j];
     }
 
