@@ -479,7 +479,17 @@ else if (numtyp .eq. -2) then
       ientla = .true.  ! interleaved values
       ivarpr = .true.  ! defined on parent array
 
-      call post_write_var(nummai, 'Tplus', idimt, ientla, ivarpr,  &
+      if (itherm .eq. 1) then
+        name80 = 'Tplus'
+      else if (itherm .eq. 2) then
+        name80 = 'Hplus'
+      else if (itherm .eq. 3) then
+        name80 = 'Eplus'
+      else
+        return
+      endif
+
+      call post_write_var(nummai, name80, idimt, ientla, ivarpr,  &
                           ntcabs, ttcabs, rbid, rbid, tplusp)
 
     endif ! end of test on presence ot T+
@@ -519,8 +529,18 @@ else if (numtyp .eq. -2) then
     ! Compute variable on boundary faces
 
     call post_boundary_temperature(nfbrps, lstfbr, trafbr)
+    
+    if (itherm .eq. 1) then
+      name80 = 'Boundary temperature'
+    else if (itherm .eq. 2) then
+      name80 = 'Boundary enthalpy'
+    else if (itherm .eq. 3) then
+      name80 = 'Boundary energy'
+    else
+      return
+    endif
 
-    call post_write_var(nummai, 'Wall temperature', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, name80, idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif ! end of test on output of wall temperature
