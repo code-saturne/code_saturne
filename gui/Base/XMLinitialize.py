@@ -285,17 +285,18 @@ class XMLinit(Variables):
                 nodeP.xmlRemoveChild('reference_pressure')
 
         nodeTurb = XMLThermoPhysicalNode.xmlInitNode('turbulence', 'model')
-        nodeInit = nodeTurb.xmlGetNode('initialization')
-        if nodeInit:
-            value = nodeInit.xmlGetDouble('reference_velocity')
-            if value:
-                self.__RefValuesNode.xmlSetData('velocity', value)
-                nodeInit.xmlRemoveChild('reference_velocity')
 
-            value = nodeInit.xmlGetDouble('reference_length')
-            if value:
-                self.__RefValuesNode.xmlSetData('length', value)
-                nodeInit.xmlRemoveChild('reference_length')
+        for nodeInit in nodeTurb.xmlGetNodeList('initialization'):
+            if nodeInit:
+                value = nodeInit.xmlGetDouble('reference_velocity')
+                if value:
+                    self.__RefValuesNode.xmlSetData('velocity', value)
+                    nodeInit.xmlRemoveChild('reference_velocity')
+
+                value = nodeInit.xmlGetDouble('reference_length')
+                if value:
+                    self.__RefValuesNode.xmlSetData('length', value)
+                    nodeInit.xmlRemoveChild('reference_length')
 
         for node in self.case.xmlGetNodeList('scalar'):
             value = node.xmlGetDouble('initial_value', zone_id="1")
