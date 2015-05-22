@@ -79,7 +79,7 @@ _code_saturne() {
             ;;
         autovnv)
             case ${prev} in
-                -f|--file) _filedir -d; return 0;;
+                -f|--file) _filedir; return 0;;
                 -m|--mail) COMPREPLY=( ); return 0;;
                 *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
             esac
