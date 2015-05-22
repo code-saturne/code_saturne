@@ -334,6 +334,13 @@ class XMLinit(Variables):
             print("Profiles have been removed from your files due to  incompatibility")
             print("You must re-create them")
 
+        # restart
+        nodeR = self.case.xmlGetNode("start_restart")
+        if nodeR:
+            n = nodeR.xmlGetNode("restart", "status")
+            if n:
+                n.xmlRemoveNode()
+
 
     def __backwardCompatibilityFrom_3_0(self):
         """
