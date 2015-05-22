@@ -27,6 +27,9 @@ Changes:
 Architectural changes
 ---------------------
 
+- Remove support for some older MPI libraries or process managers
+  (which can still be used if needed using post-install settings).
+
 - Complete Python 3 compatibility, except for builds with SALOME support
   (as the SALOME platform is not yet Python-3 copatible).
 
