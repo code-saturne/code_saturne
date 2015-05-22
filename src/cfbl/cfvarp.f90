@@ -90,7 +90,7 @@ if (ippmod(icompf).ge.0) then
 
   ! Total energy
   itherm = 3
-  call add_model_scalar_field('total_energy', 'EnergieT', ienerg)
+  call add_model_scalar_field('total_energy', 'TotEner', ienerg)
   iscalt = ienerg
 
   ! Alias for B.C.
