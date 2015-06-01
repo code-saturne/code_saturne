@@ -229,6 +229,9 @@ if (ivar.eq.0) then
 else
   f_id = ivarfl(ivar)
   call field_get_key_struct_var_cal_opt(f_id, vcopt)
+  ! Warning: vcopt is a copy of variable calculation options
+  ! and could be locally modified here for explicit time stepping.
+  vcopt%thetav = thetap
 endif
 
 ! Scalar diffusivity
