@@ -1570,8 +1570,6 @@ _merge_halo_data(cs_halo_t   *h,
 
       if (rank_id != loc_rank_id) {
 
-        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0];
-
         if (rank_id != prev_rank_id) {
           h->c_domain_rank[h->n_c_domains] = rank_id;
           h->index[h->n_c_domains*2] = h->n_elts[0];
@@ -1585,6 +1583,8 @@ _merge_halo_data(cs_halo_t   *h,
           new_src_cell_id[h->n_elts[0]] = src_id;
           h->n_elts[0] += 1;
         }
+
+        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0] - 1;
 
         prev_rank_id = rank_id;
         prev_src_id = src_id;
@@ -1617,8 +1617,6 @@ _merge_halo_data(cs_halo_t   *h,
 
       if (rank_id != loc_rank_id || tmp_num[cur_id*3 + 1] != 0) {
 
-        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0];
-
         if (rank_id != prev_rank_id) {
           h->c_domain_rank[h->n_c_domains] = rank_id;
           h->index[h->n_c_domains*2] = h->n_elts[0];
@@ -1646,6 +1644,8 @@ _merge_halo_data(cs_halo_t   *h,
           };
           section_idx[rank_idx*n_sections + section_id + 1] += 1;
         }
+
+        new_halo_cell_id[cur_id] = n_new_cells + h->n_elts[0] - 1;
 
         prev_rank_id = rank_id;
         prev_section_id = section_id;
@@ -2771,7 +2771,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
     }
 
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-    if (fine_grid->n_ranks > 1) {
+    if (comm != MPI_COMM_NULL) {
       MPI_Allreduce(MPI_IN_PLACE, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, comm);
       MPI_Allreduce(MPI_IN_PLACE, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, comm);
       MPI_Allreduce(MPI_IN_PLACE, &c_n_cells_g, 1, CS_MPI_GNUM, MPI_SUM, comm);
@@ -2797,14 +2797,16 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
         }
       }
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-      if (fine_grid->n_ranks > 1)
+      if (comm != MPI_COMM_NULL)
         MPI_Allreduce(MPI_IN_PLACE, histogram, aggr_count, CS_MPI_LNUM, MPI_SUM,
                       comm);
 #endif
-      for (i = 0; i < aggr_count; i++) {
-        double epsp = 100. * histogram[i] / c_n_cells_g;
-        bft_printf("         aggregation %10ld = %12.5f %%\n",
-                   (long)(aggr_min + i), epsp);
+      if (c_n_cells_g > 0) {
+        for (i = 0; i < aggr_count; i++) {
+          double epsp = 100. * histogram[i] / c_n_cells_g;
+          bft_printf("         aggregation %10ld = %12.5f %%\n",
+                     (long)(aggr_min + i), epsp);
+        }
       }
       BFT_FREE(histogram);
     }
@@ -2826,7 +2828,7 @@ _automatic_aggregation(const cs_grid_t  *fine_grid,
     }
 
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-    if (fine_grid->n_ranks > 1) {
+    if (comm != MPI_COMM_NULL) {
       MPI_Allreduce(MPI_IN_PLACE, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, comm);
       MPI_Allreduce(MPI_IN_PLACE, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, comm);
     }
@@ -3113,7 +3115,8 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
       if (fine_grid->n_ranks > 1) {
         if (_grid_ranks != NULL)
           comm = _grid_comm[fine_grid->comm_id];
-        MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
+        if (comm != MPI_COMM_NULL)
+          MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
         n_clips_min = n_clips[0];
         n_clips_max = n_clips[0];
       }
@@ -3252,7 +3255,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     }
 
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-    if (fine_grid->n_ranks > 1) {
+    if (comm != MPI_COMM_NULL) {
       MPI_Allreduce(MPI_IN_PLACE, anmin, 2, MPI_DOUBLE, MPI_MIN, comm);
       MPI_Allreduce(MPI_IN_PLACE, anmax, 2, MPI_DOUBLE, MPI_MAX, comm);
     }
@@ -3274,7 +3277,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
         rmax = CS_MAX(rmax, c_xa[c_face*isym] / c_xa0[c_face]);
       }
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-      if (fine_grid->n_ranks > 1) {
+      if (comm != MPI_COMM_NULL) {
         MPI_Allreduce(MPI_IN_PLACE, &rmin, 1, MPI_DOUBLE, MPI_MIN, comm);
         MPI_Allreduce(MPI_IN_PLACE, &rmax, 1, MPI_DOUBLE, MPI_MAX, comm);
       }
@@ -3362,7 +3365,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
     BFT_FREE(w3);
 
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-    if (fine_grid->n_ranks > 1) {
+    if (comm != MPI_COMM_NULL) {
       MPI_Allreduce(MPI_IN_PLACE, anmin, 2, MPI_DOUBLE, MPI_MIN, comm);
       MPI_Allreduce(MPI_IN_PLACE, anmax, 2, MPI_DOUBLE, MPI_MAX, comm);
     }

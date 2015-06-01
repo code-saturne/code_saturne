@@ -19,6 +19,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix crashes using multigrid parallel rank merging.
+
 - Fix crash in combustion using no soot and absorption coefficient
   by modak.
 
