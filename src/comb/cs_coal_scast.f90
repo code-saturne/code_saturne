@@ -273,7 +273,7 @@ if ( ivar.ge.isca(ixch(1)) .and. ivar.le.isca(ixch(nclacp)) ) then
 
     ! ---- Calculation of W1 = - rho.GMDCH > 0
 
-    xw1 = - crom(iel)*propce(iel,ipcgch)*volume(iel)
+    xw1 = - crom(iel)*propce(iel,ipcgch)*cell_f_vol(iel)
 
     ! ---- Calculation of explicit and implicit parts of source terms
 
@@ -317,7 +317,7 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
     ! (Coke formation in French)
     ! NB: we take values at current and not previous time step
     !     to be conservative in mass
-    char_formation = crom(iel)*cvar_xchcl(iel)*volume(iel)                     &
+    char_formation = crom(iel)*cvar_xchcl(iel)*cell_f_vol(iel)                     &
                    *(propce(iel,ipcgd1)+propce(iel,ipcgd2)-propce(iel,ipcgch))
 
     ! Compute the implict part of the Source term
@@ -332,7 +332,7 @@ if ( ivar.ge.isca(ixck(1)) .and. ivar.le.isca(ixck(nclacp)) ) then
       ! Reaction C(s) + H2O ---> CO + H2
       if (ihth2o .eq. 1) exp_st = exp_st + propce(iel,ipghh2o)
 
-      exp_st = -2.d0/3.d0 * crom(iel) * exp_st * volume(iel) / cvara_xckcl(iel)**(1.d0/3.d0)
+      exp_st = -2.d0/3.d0 * crom(iel) * exp_st * cell_f_vol(iel) / cvara_xckcl(iel)**(1.d0/3.d0)
     endif
 
     ! Compute the explicit part of the Source term
@@ -372,7 +372,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
 
      if ( cvara_var(iel).gt. epsicp .and.                         &
           xwatch(numcha).gt. epsicp       ) then
-       xw1 = crom(iel)*propce(iel,ipcsec)*volume(iel)                         &
+       xw1 = crom(iel)*propce(iel,ipcsec)*cell_f_vol(iel)                         &
             *(1.d0/propce(iel,ipcx2c))*(1.d0/xwatch(numcha))
 
        rovsdt(iel) = rovsdt(iel) + max(xw1,zero)
@@ -402,7 +402,7 @@ if (i_comb_drift.ge.1) then
     call field_get_val_s(ivarfl(isca(inp(icla))), cvar_xnpcl)
 
     do iel = 1, ncel
-      smbrs(iel) = smbrs(iel) + crom(iel) * volume(iel)*cvar_xnpcl(iel)
+      smbrs(iel) = smbrs(iel) + crom(iel) * cell_f_vol(iel)*cvar_xnpcl(iel)
     enddo
 
   endif
@@ -411,7 +411,7 @@ if (i_comb_drift.ge.1) then
   if (fname(1:3).eq.'age') then
 
     do iel = 1, ncel
-      smbrs(iel) =  smbrs(iel) + crom(iel) * volume(iel)
+      smbrs(iel) =  smbrs(iel) + crom(iel) * cell_f_vol(iel)
     enddo
 
   endif
@@ -476,11 +476,11 @@ if (i_comb_drift.eq.1) then
         endif
 
         ! relaxation to drop velocity
-        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
+        smbrs1 = crom(iel)*cell_f_vol(iel)*(1.d0/taup(iel)+smbrs1)                &
                *(vel(1,iel)+vdc(1,iel)+vg_lim_pi(1, iel)-vp_x(iel))
 
         smbrs(iel) = smbrs(iel) + smbrs1
-        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*cell_f_vol(iel)/taup(iel)
 
       enddo !sur iel
 
@@ -506,10 +506,10 @@ if (i_comb_drift.eq.1) then
         endif
 
         ! relaxation to drop velocity
-        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
+        smbrs1 = crom(iel)*cell_f_vol(iel)*(1.d0/taup(iel)+smbrs1)                &
                *(vel(2,iel)+vdc(2, iel)+vg_lim_pi(2, iel)-vp_y(iel))
         smbrs(iel) = smbrs(iel) + smbrs1
-        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*cell_f_vol(iel)/taup(iel)
 
       enddo !sur iel
 
@@ -536,11 +536,11 @@ if (i_comb_drift.eq.1) then
         endif
 
         ! relaxation to drop velocity
-        smbrs1 = crom(iel)*volume(iel)*(1.d0/taup(iel)+smbrs1)                &
+        smbrs1 = crom(iel)*cell_f_vol(iel)*(1.d0/taup(iel)+smbrs1)                &
                *(vel(3,iel)+vdc(3, iel)+vg_lim_pi(3, iel)-vp_z(iel))
 
         smbrs(iel) = smbrs(iel) + smbrs1
-        rovsdt(iel) = rovsdt(iel) + crom(iel)*volume(iel)/taup(iel)
+        rovsdt(iel) = rovsdt(iel) + crom(iel)*cell_f_vol(iel)/taup(iel)
 
       enddo !on iel
 
@@ -635,7 +635,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
     aux = 6.d0 * w1(iel) * xnuss / diam2       &
         / propce(iel,ipcro2) * crom(iel)       &
-        * volume(iel)
+        * cell_f_vol(iel)
 
     smbrs(iel)  = smbrs(iel)-aux*(propce(iel,ipcte2)-propce(iel,ipcte1))*propce(iel,ipcx2c)
     smbrsh1(iel) = smbrsh1(iel)+aux*(propce(iel,ipcte2)-propce(iel,ipcte1))*propce(iel,ipcx2c)
@@ -718,8 +718,8 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
     !         Contribution to explicit and implicit balances
 
-     smbrs(iel)   = smbrs(iel)   + (gamdv1*xhdev1+gamdv2*xhdev2)*volume(iel)
-     smbrsh1(iel) = smbrsh1(iel) - (gamdv1*xhdev1+gamdv2*xhdev2)*volume(iel)
+     smbrs(iel)   = smbrs(iel)   + (gamdv1*xhdev1+gamdv2*xhdev2)*cell_f_vol(iel)
+     smbrsh1(iel) = smbrsh1(iel) - (gamdv1*xhdev1+gamdv2*xhdev2)*cell_f_vol(iel)
   enddo
 
   ! ------ Heterogeneous combustion: C(s) + 02 ---> 0.5 C0
@@ -772,7 +772,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
       gamhet = 0.d0
     endif
 
-    gamhet = gamhet *(wmole(ico)*xhco-wmolat(iato)*xho2)/wmolat(iatc) * volume(iel)
+    gamhet = gamhet *(wmole(ico)*xhco-wmolat(iato)*xho2)/wmolat(iatc) * cell_f_vol(iel)
 
     smbrs(iel) = smbrs(iel)     + gamhet
     smbrsh1(iel) = smbrsh1(iel) - gamhet
@@ -830,7 +830,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
         gamhet = 0.d0
       endif
 
-      gamhet = gamhet*(2.d0*wmole(ico)*xhco-wmole(ico2)*xhco2)/wmolat(iatc) * volume(iel)
+      gamhet = gamhet*(2.d0*wmole(ico)*xhco-wmole(ico2)*xhco2)/wmolat(iatc) * cell_f_vol(iel)
 
       smbrs(iel)   = smbrs(iel)   + gamhet
       smbrsh1(iel) = smbrsh1(iel) - gamhet
@@ -906,7 +906,7 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
 
       gamhet = gamhet * (wmole(ico)*xhco+wmole(ihy)*xhh2   &
                         -wmole(ih2o)*xhh2o)/wmolat(iatc)   &
-                      *volume(iel)
+                      *cell_f_vol(iel)
 
       smbrs(iel)   = smbrs(iel)   + gamhet
       smbrsh1(iel) = smbrsh1(iel) - gamhet
@@ -960,8 +960,8 @@ if ((ivar.ge.isca(ih2(1)) .and. ivar.le.isca(ih2(nclacp)))) then
         aux = 0.d0
       endif
 
-      smbrs(iel)   = smbrs(iel)   + aux*volume(iel)
-      smbrsh1(iel) = smbrsh1(iel) - aux*volume(iel)
+      smbrs(iel)   = smbrs(iel)   + aux*cell_f_vol(iel)
+      smbrsh1(iel) = smbrsh1(iel) - aux*cell_f_vol(iel)
 
     enddo
 
@@ -1022,7 +1022,7 @@ if ( ivar.ge.isca(if1m(1)) .and. ivar.le.isca(if1m(ncharb)) ) then
 ! ---- Contribution of interfacial source term to explicit and implicit balances
 
   do iel = 1, ncel
-    smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
+    smbrs(iel)  = smbrs(iel)  + cell_f_vol(iel) * w1(iel)
   enddo
 
 endif
@@ -1056,7 +1056,7 @@ if ( ivar.ge.isca(if2m(1)) .and. ivar.le.isca(if2m(ncharb)) ) then
 ! ---- Contribution of interfacial source term to explicite balance
 
   do iel = 1, ncel
-    smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
+    smbrs(iel)  = smbrs(iel)  + cell_f_vol(iel) * w1(iel)
   enddo
 
 endif
@@ -1095,7 +1095,7 @@ if ( ivar.eq.isca(if7m) ) then
   ! ---- Contribution of interfacial source term to explicit and implicit balances
 
   do iel = 1, ncel
-    smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
+    smbrs(iel)  = smbrs(iel)  + cell_f_vol(iel) * w1(iel)
   enddo
 
 endif
@@ -1135,7 +1135,7 @@ if ( ihtco2 .eq. 1 ) then
     ! ---- Contribution of interfacial source term to explicit and implicit balances
 
     do iel = 1, ncel
-      smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
+      smbrs(iel)  = smbrs(iel)  + cell_f_vol(iel) * w1(iel)
     enddo
 
   endif
@@ -1176,7 +1176,7 @@ if ( ihth2o .eq. 1 ) then
     ! ---- Contribution of interfacial source term to explicit and implicit balances
 
     do iel = 1, ncel
-      smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
+      smbrs(iel)  = smbrs(iel)  + cell_f_vol(iel) * w1(iel)
     enddo
 
   endif
@@ -1243,7 +1243,7 @@ if ( ippmod(iccoal) .eq. 1 ) then
     enddo
 
     do iel = 1, ncel
-      smbrs(iel)  = smbrs(iel)  + volume(iel) * w1(iel)
+      smbrs(iel)  = smbrs(iel)  + cell_f_vol(iel) * w1(iel)
     enddo
 
   endif
@@ -1443,7 +1443,7 @@ if ( ieqco2 .eq. 1 ) then
                     +wmole(ico2)/propce(iel,ipproc(irom1))        &
          * (xco2eq-xxco2)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
-         * volume(iel) * crom(iel)
+         * cell_f_vol(iel) * crom(iel)
 
        else if ( ieqco2 .eq. 2 ) then
        !    We transport CO
@@ -1452,10 +1452,10 @@ if ( ieqco2 .eq. 1 ) then
                     +wmole(ico)/propce(iel,ipproc(irom1))        &
          * (xco2eq-xxco)/(tauchi+tautur)                         &
          * (1.d0-x2)                                              &
-         * volume(iel) * crom(iel)
+         * cell_f_vol(iel) * crom(iel)
        endif
 
-       w1(iel) = volume(iel)*crom(iel)/(tauchi+tautur)
+       w1(iel) = cell_f_vol(iel)*crom(iel)/(tauchi+tautur)
        rovsdt(iel) = rovsdt(iel) +   max(w1(iel),zero)
 
      else
@@ -1498,7 +1498,7 @@ if ( ieqco2 .eq. 1 ) then
 
          aux = aux                                                &
               + crom(iel)*propce(iel,ipghc2)             &
-               *(cvara_xck(icla)%p(iel))**(2.d0/3.d0)*volume(iel)
+               *(cvara_xck(icla)%p(iel))**(2.d0/3.d0)*cell_f_vol(iel)
 
        enddo
 
@@ -1638,7 +1638,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
         endif
         smbrs(iel) = smbrs(iel)                                        &
                     -gamhet                                            &
-                     *(wmole(ico)*xhco-wmolat(iato)*xho2)/wmolat(iatc)*volume(iel)
+                     *(wmole(ico)*xhco-wmolat(iato)*xho2)/wmolat(iatc)*cell_f_vol(iel)
 !
       enddo
 
@@ -1695,7 +1695,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           endif
           smbrs(iel) = smbrs(iel)                                          &
                       -gamhet                                              &
-                       *(2.d0*wmole(ico)*xhco-wmole(ico2)*xhco2)/wmolat(iatc) *volume(iel)
+                       *(2.d0*wmole(ico)*xhco-wmole(ico2)*xhco2)/wmolat(iatc) *cell_f_vol(iel)
 
         enddo
 
@@ -1771,7 +1771,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
           smbrs(iel) = smbrs(iel)                                           &
                       -gamhet                                               &
                        *(wmole(ico)*xhco+ wmole(ihy)*xhh2                  &
-                                         -wmole(ih2o)*xhh2o )/wmolat(iatc) *volume(iel)
+                                         -wmole(ih2o)*xhh2o )/wmolat(iatc) *cell_f_vol(iel)
 
         enddo
 
@@ -1825,7 +1825,7 @@ if ( ieqnox .eq. 1 .and. ntcabs .gt. 1) then
             aux = 0.d0
           endif
 
-          smbrs(iel) = smbrs(iel) - aux*volume(iel)
+          smbrs(iel) = smbrs(iel) - aux*cell_f_vol(iel)
 
         enddo
 
@@ -1879,7 +1879,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
         wmel=propce(iel,ipproc(immel))
         xo2= propce(iel,ipproc(iym1(io2)))*wmel/wmo2
 
-        aux = volume(iel)*crom(iel)                      &
+        aux = cell_f_vol(iel)*crom(iel)                      &
              *(propce(iel,iexp2)+propce(iel,iexp1)                &
              *cvara_yno(iel)                             &
              *propce(iel,ipproc(immel))                           &
@@ -1916,10 +1916,10 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
         do icha=1,ncharb
           !  % of pure nitrogen in the coal
 
-          aux = -volume(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)        &
+          aux = -cell_f_vol(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)        &
                             *(qpr(icha)*(gmdev1(icha)+gmdev2(icha)))
           if(xo2.gt.0.03d0) then
-            aux=aux-volume(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)     &
+            aux=aux-cell_f_vol(iel)*fn(icha)*wmhcn/(wmole(in2)/2.d0)     &
                                * (1.d0-qpr(icha)*y2ch(icha))         &
                                 / (1-y2ch(icha))*gmhet(icha)         &
                                 * (1.d0-xashch(icha))
@@ -1945,13 +1945,13 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.0 .and. ntcabs .gt. 1) then
 
         wmel=propce(iel,ipproc(immel))
 
-        aux1 = volume(iel)*crom(iel)                     &
+        aux1 = cell_f_vol(iel)*crom(iel)                 &
               *propce(iel,iexp1)*cvara_yhcn(iel)         &
               *propce(iel,ipproc(immel))/wmhcn
-        aux2 = volume(iel)*crom(iel)                     &
+        aux2 = cell_f_vol(iel)*crom(iel)                 &
               *propce(iel,iexp2)*cvara_yhcn(iel)         &
               *wmno/wmhcn
-        aux3 = volume(iel)*crom(iel)**1.5d0              &
+        aux3 = cell_f_vol(iel)*crom(iel)**1.5d0                   &
               *propce(iel,iexp3)                                  &
               *propce(iel,ipproc(iym1(in2)))
 
@@ -2024,8 +2024,8 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
 
         !  Coefficient of reactions HCN + O2 et HCN + NO
-        aux = volume(iel)*crom(iel)                                   &
-             *(propce(iel,iexp2)+propce(iel,iexp1)                             &
+        aux = cell_f_vol(iel)*crom(iel)                               &
+             *(propce(iel,iexp2)+propce(iel,iexp1)                    &
              *cvara_yno(iel)                                          &
              *wmel/wmno)
 
@@ -2041,7 +2041,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
              ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
                   + ( propce(iel,ipcyf2) * wmel/wmchx2 )
 
-             aux = volume(iel)*wmhcn*propce(iel,iexprb)                        &
+             aux = cell_f_vol(iel)*wmhcn*propce(iel,iexprb)           &
                  * cvara_yno(iel)*wmel/wmno                           &
                  * ychx
 
@@ -2109,14 +2109,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               if(chx1(icha).ge.3.d0) then
 
-              aux = ( volume(iel)*wmhcn )                                      &
+              aux = ( cell_f_vol(iel)*wmhcn )                                  &
                   * ( (core1 + core2) * para2 )                                &
                   * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               else
 
-              aux = ( volume(iel)*wmhcn )                                      &
+              aux = ( cell_f_vol(iel)*wmhcn )                                  &
                   * ( core1 + core2 )                                          &
                   * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
@@ -2182,14 +2182,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               if(chx2(icha).ge.3.d0) then
 
-              aux = ( volume(iel)*wmhcn )                                      &
+              aux = ( cell_f_vol(iel)*wmhcn )                                  &
                   * ( (core1 + core2) * para2 )                                &
                   * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               else
 
-              aux = ( volume(iel)*wmhcn )                                      &
+              aux = ( cell_f_vol(iel)*wmhcn )                                      &
                   * ( core1 + core2 )                                          &
                   * ( cvar_yno(iel)*crom(iel)/wmno )                           &
                   * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
@@ -2257,22 +2257,22 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         do icha=1,ncharb
 
            !  Release of HCN during devolatilization
-           aux = -volume(iel)*(gmdev1(icha)*yhcnle(icha)                       &
+           aux = -cell_f_vol(iel)*(gmdev1(icha)*yhcnle(icha)                       &
                  +gmdev2(icha)*yhcnlo(icha))
 
            !   Release of HCN during the heterogeneous combustion according
            !   to the value repnck(icha)
 
-           aux = aux-volume(iel)*gmhet(icha)
+           aux = aux-cell_f_vol(iel)*gmhet(icha)
 
            smbrs(iel)  = smbrs(iel) + aux
 
            !  Source terms displaying
            propce(iel,ipproc(ifhcnd)) = propce(iel,ipproc(ifhcnd))             &
-           -volume(iel)*(gmdev1(icha)*yhcnle(icha)+gmdev2(icha)*yhcnlo(icha))
+           -cell_f_vol(iel)*(gmdev1(icha)*yhcnle(icha)+gmdev2(icha)*yhcnlo(icha))
 
            propce(iel,ipproc(ifhcnc))= propce(iel,ipproc(ifhcnc))              &
-           -volume(iel)*gmhet(icha)
+           -cell_f_vol(iel)*gmhet(icha)
 
         enddo
 
@@ -2303,7 +2303,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         wmel = propce(iel,ipproc(immel))
 
         !  Coefficient of reactions NH3 + O2 and NH3 + NO
-        aux  =   volume(iel)*crom(iel)                                &
+        aux  =   cell_f_vol(iel)*crom(iel)                                &
              * ( propce(iel,iexp4) + propce(iel,iexp5)                         &
              *   cvara_yno(iel)*wmel/wmno )
 
@@ -2340,14 +2340,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         do icha=1,ncharb
 
            !  Release of NH3 during the devolatization.
-           aux = -volume(iel)*(gmdev1(icha)*ynh3le(icha)                       &
+           aux = -cell_f_vol(iel)*(gmdev1(icha)*ynh3le(icha)                       &
                  +gmdev2(icha)*ynh3lo(icha))
 
            smbrs(iel)  = smbrs(iel) + aux
 
            !  Source terms displaying
            propce(iel,ipproc(ifnh3d)) = propce(iel,ipproc(ifnh3d))             &
-           -volume(iel)*(gmdev1(icha)*ynh3le(icha)+gmdev2(icha)*ynh3lo(icha))
+           -cell_f_vol(iel)*(gmdev1(icha)*ynh3le(icha)+gmdev2(icha)*ynh3lo(icha))
 
            propce(iel,ipproc(ifnh3c)) = zero
 
@@ -2380,21 +2380,21 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         wmel=propce(iel,ipproc(immel))
 
         !  Coefficient of reaction HCN + NO
-        aux1 = volume(iel)*crom(iel)                                  &
+        aux1 = cell_f_vol(iel)*crom(iel)                              &
               *propce(iel,iexp1)*cvara_yhcn(iel)                      &
               *wmel/wmhcn
 
         propce(iel,ipproc(icnohc)) = aux1*cvara_var(iel)
 
         !  Coefficient of reaction HCN + O2
-        aux2 = volume(iel)*crom(iel)                                  &
+        aux2 = cell_f_vol(iel)*crom(iel)                              &
               *propce(iel,iexp2)*cvara_yhcn(iel)                      &
               *wmno/wmhcn
 
         propce(iel,ipproc(ifnohc)) = aux2
 
         !  Coefficient of thermal NO
-        aux3 = volume(iel)*crom(iel)**1.5d0                           &
+        aux3 = cell_f_vol(iel)*crom(iel)**1.5d0                           &
               *propce(iel,iexp3)                                               &
 !       Pourquoi la fraction massique d'azote n'a ete pas transforme dans une
 !       fraction molaire ?
@@ -2403,14 +2403,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         propce(iel,ipproc(ifnoth)) = aux3
 
         !  Coefficient of reaction NH3 + O2 --> NO + ...
-        aux4 = volume(iel)*crom(iel)                                  &
+        aux4 = cell_f_vol(iel)*crom(iel)                               &
               *propce(iel,iexp4)*cvara_ynh3(iel)                       &
               *wmno/wmnh3
 
         propce(iel,ipproc(ifnonh)) = aux4
 
         !  Coefficient of reaction NH3 + NO --> N2 + ...
-        aux5 = volume(iel)*crom(iel)                                  &
+        aux5 = cell_f_vol(iel)*crom(iel)                               &
               *propce(iel,iexp5)*cvara_ynh3(iel)                       &
               *wmel/wmnh3
 
@@ -2425,7 +2425,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
              ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
                   + ( propce(iel,ipcyf2) * wmel/wmchx2 )
 
-             aux = volume(iel)*wmhcn*propce(iel,iexprb)                        &
+             aux = cell_f_vol(iel)*wmhcn*propce(iel,iexprb)                        &
                  * cvara_yno(iel) * wmel/wmno  * ychx
 
              smbrs(iel)  = smbrs(iel)  - aux
@@ -2503,14 +2503,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               if(chx1(icha).ge.3.d0) then
 
-              auxrb1 = ( volume(iel)*wmno )                                    &
+              auxrb1 = ( cell_f_vol(iel)*wmno )                                &
                      * ( (core1 + core2 + core3) * para2 )                     &
                      * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
                      * ( cvar_yno(iel) * crom(iel)/wmno )
 
               else
 
-              auxrb1 = ( volume(iel)*wmno )                                    &
+              auxrb1 = ( cell_f_vol(iel)*wmno )                                &
                      * ( core1 + core2 + core3 )                               &
                      * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
                      * ( cvar_yno(iel) * crom(iel)/wmno )
@@ -2589,14 +2589,14 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               if(chx2(icha).ge.3.d0) then
 
-              auxrb2 = ( volume(iel)*wmno )                                    &
+              auxrb2 = ( cell_f_vol(iel)*wmno )                                &
                      * ( (core1 + core2 + core3) * para2 )                     &
                      * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
                      * ( cvar_yno(iel) * crom(iel)/wmno )
 
               else
 
-              auxrb2 = ( volume(iel)*wmno )                                    &
+              auxrb2 = ( cell_f_vol(iel)*wmno )                                &
                      * ( core1 + core2 + core3 )                               &
                      * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
                      * ( cvar_yno(iel) * crom(iel)/wmno )
@@ -2649,7 +2649,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         do icha=1,ncharb
 
-          auxhet = -volume(iel)*gmhet(icha)
+          auxhet = -cell_f_vol(iel)*gmhet(icha)
           propce(iel,ipproc(ifnoch)) = propce(iel,ipproc(ifnoch)) + auxhet
 
 

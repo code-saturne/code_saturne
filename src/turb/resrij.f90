@@ -304,7 +304,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , cvara_var       , smacel(:,ivar)   , smacel(:,ipr) ,  &
+   cell_f_vol , cvara_var   , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
 !       If we extrapolate the source terms we put Gamma Pinj in propce
@@ -327,7 +327,7 @@ endif
 
 do iel=1,ncel
   rovsdt(iel) = rovsdt(iel)                                          &
-              + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
+              + istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 
@@ -377,7 +377,7 @@ if (st_prv_id.ge.0) then
     !       In propce:
     !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
     !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
-    c_st_prv(iel) = c_st_prv(iel) + cromo(iel) * volume(iel)      &
+    c_st_prv(iel) = c_st_prv(iel) + cromo(iel) * cell_f_vol(iel)  &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
             +(crij1-1.d0)* cvara_ep(iel)  )                       &
@@ -385,12 +385,12 @@ if (st_prv_id.ge.0) then
     !       In smbr
     !       =       -C1rho eps/k(Rij         )
     !       = rho{                                     -C1eps/kRij}
-    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
+    smbr(iel) = smbr(iel) + crom(iel) * cell_f_vol(iel)               &
       *( -crij1*cvara_ep(iel)/trrij * cvara_var(iel) )
 
     !     Calculation of the implicit part coming from Phil
     !       = C1rho eps/k(1        )
-    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)           &
+    rovsdt(iel) = rovsdt(iel) + crom(iel) * cell_f_vol(iel)           &
                             *crij1*cvara_ep(iel)/trrij*thetv
 
   enddo
@@ -404,16 +404,16 @@ if (st_prv_id.ge.0) then
 
      !    We remove of cromo
      !       =       -C1rho eps/k(   -1/3Rij dij)
-      c_st_prv(iel) = c_st_prv(iel) - cromo(iel) * volume(iel)    &
+      c_st_prv(iel) = c_st_prv(iel) - cromo(iel) * cell_f_vol(iel)    &
       *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(iel))
       !    We add to smbr (with crom)
       !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
-                          + crom(iel) * volume(iel)               &
+                          + crom(iel) * cell_f_vol(iel)           &
       *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(iel))
       !    We add to rovsdt (woth crom)
       !       =        C1rho eps/k(   -1/3    dij)
-      rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)         &
+      rovsdt(iel) = rovsdt(iel) + crom(iel) * cell_f_vol(iel)         &
       *(deltij*d1s3*crij1*cvara_ep(iel)/trrij                 )
     enddo
 
@@ -431,7 +431,7 @@ else
     !     Calculation of Prod+Phi1+Phi2-Eps
     !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
     !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij-C1eps/kRij}
-    smbr(iel) = smbr(iel) + crom(iel) * volume(iel)               &
+    smbr(iel) = smbr(iel) + crom(iel) * cell_f_vol(iel)           &
       *(   deltij*d2s3*                                           &
            (  crij2*trprod                                        &
             +(crij1-1.d0)* cvara_ep(iel)  )                           &
@@ -440,7 +440,7 @@ else
 
     !     Calculation of the implicit part coming from Phi1
     !       = C1rho eps/k(1-1/3 dij)
-    rovsdt(iel) = rovsdt(iel) + crom(iel) * volume(iel)           &
+    rovsdt(iel) = rovsdt(iel) + crom(iel) * cell_f_vol(iel)           &
          *(1.d0-d1s3*deltij)*crij1*cvara_ep(iel)/trrij
   enddo
 
@@ -503,7 +503,7 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   ! Coriolis contribution in the Phi1 term: (1-C2/2)Gij
   if (icorio.eq.1) then
     do iel = 1, ncel
-      w7(iel) = crom(iel)*volume(iel)*(1.d0 - 0.5d0*crij2)*w7(iel)
+      w7(iel) = crom(iel)*cell_f_vol(iel)*(1.d0 - 0.5d0*crij2)*w7(iel)
     enddo
   endif
 

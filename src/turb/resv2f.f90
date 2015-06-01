@@ -417,12 +417,12 @@ do iel = 1, ncel
     xk = cvara_k(iel)
     xe = cvara_ep(iel)
     if (iturb.eq.50) then
-      w5(iel) = - volume(iel)*                                    &
+      w5(iel) = - cell_f_vol(iel)*                                    &
            ( (cv2fc1-1.d0)*(cvara_phi(iel)-d2s3)/w3(iel)              &
              -cv2fc2*prdv2f(iel)/xrom/xk                          &
              -2.0d0*xnu/xe/w3(iel)*w1(iel) ) - xnu*w2(iel)
     elseif (iturb.eq.51) then
-      w5(iel) = volume(iel)
+      w5(iel) = cell_f_vol(iel)
     endif
 enddo
 !     If we extrapolate the source term: propce
@@ -442,9 +442,9 @@ endif
 !     Implicit term
 do iel = 1, ncel
   if (iturb.eq.50) then
-    smbr(iel) = ( - volume(iel)*cvara_fb(iel) + smbr(iel) ) / w4(iel)
+    smbr(iel) = ( - cell_f_vol(iel)*cvara_fb(iel) + smbr(iel) ) / w4(iel)
   elseif (iturb.eq.51) then
-    smbr(iel) = ( - volume(iel)*cvara_al(iel) + smbr(iel) ) / w4(iel)
+    smbr(iel) = ( - cell_f_vol(iel)*cvara_al(iel) + smbr(iel) ) / w4(iel)
   endif
 enddo
 
@@ -456,7 +456,7 @@ else
   thetap = 1.d0
 endif
 do iel = 1, ncel
-  rovsdt(iel) = (rovsdt(iel) + volume(iel)*thetap)/w4(iel)
+  rovsdt(iel) = (rovsdt(iel) + cell_f_vol(iel)*thetap)/w4(iel)
 enddo
 
 
@@ -590,7 +590,7 @@ if (ncesmp.gt.0) then
   !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , cvara_var    , smacel(1,ivar) , smacel(1,ipr) ,       &
+   cell_f_vol , cvara_var  , smacel(1,ivar) , smacel(1,ipr) ,     &
    smbr   ,  rovsdt , w2 )
 
   ! If we extrapolate the source term we put Gamma Pinj in the prev. TS
@@ -617,7 +617,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-           + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
+           + istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 !===============================================================================
@@ -646,7 +646,7 @@ do iel = 1, ncel
     ! Remark: if we keep this choice, we have to modify the case
     !         of the second-order (which need the previous value time step
     !         for extrapolation).
-    w2(iel)   =  volume(iel)*                                       &
+    w2(iel)   =  cell_f_vol(iel)*                                   &
          ( xrom*cvar_fb(iel)                                        &
            +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
   elseif (iturb.eq.51) then
@@ -655,7 +655,7 @@ do iel = 1, ncel
     tt = sqrt(ttke**2 + ttmin**2)
     fhomog = -1.d0/tt*(cpalc1-1.d0+cpalc2*prdv2f(iel)/xe/xrom)*     &
              (cvara_phi(iel)-d2s3)
-    w2(iel)   = volume(iel)*                                        &
+    w2(iel)   = cell_f_vol(iel)*                                    &
          ( cvara_al(iel)**3*fhomog*xrom                             &
            +2.d0/xk*cpro_pcvto(iel)/sigmak*w1(iel) )
   endif
@@ -681,11 +681,11 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if (iturb.eq.50) then
     smbr(iel) = smbr(iel)                                         &
-         - volume(iel)*prdv2f(iel)*cvara_phi(iel)/cvara_k(iel)
+         - cell_f_vol(iel)*prdv2f(iel)*cvara_phi(iel)/cvara_k(iel)
   elseif (iturb.eq.51) then
     smbr(iel) = smbr(iel)                                         &
-         - volume(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2              &
-                                    *(1.d0-cvara_al(iel)**3))         &
+              - cell_f_vol(iel)*(prdv2f(iel)+xrom*cvara_ep(iel)/2 &
+                                    *(1.d0-cvara_al(iel)**3))     &
          *cvara_phi(iel)/cvara_k(iel)
   endif
 enddo
@@ -701,10 +701,10 @@ do iel = 1, ncel
   xrom = cromo(iel)
   if (iturb.eq.50) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*max(prdv2f(iel),0.d0)/cvara_k(iel)*thetap
+         + cell_f_vol(iel)*max(prdv2f(iel),0.d0)/cvara_k(iel)*thetap
   elseif (iturb.eq.51) then
     rovsdt(iel) = rovsdt(iel)                                     &
-         + volume(iel)*(max(prdv2f(iel),0.d0)+xrom*cvara_ep(iel)/2    &
+         + cell_f_vol(iel)*(max(prdv2f(iel),0.d0)+xrom*cvara_ep(iel)/2    &
                                     *(1.d0-cvara_al(iel)**3))         &
            /cvara_k(iel)*thetap
   endif

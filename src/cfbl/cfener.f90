@@ -242,7 +242,7 @@ if (ncesmp.gt.0) then
   call catsma ( ncelet , ncel , ncesmp , iterns ,                              &
                 isno2t, thetav(ivar),                                          &
                 icetsm , itypsm(1,ivar),                                       &
-                volume , cvara_energ   , smacel(1,ivar),                       &
+                cell_f_vol    , cvara_energ   , smacel(1,ivar),                &
                 smacel(1,ipr) , smbrs , rovsdt , w1    )
 endif
 
@@ -253,7 +253,7 @@ endif
 
 do iel = 1, ncel
   rovsdt(iel) = rovsdt(iel)                                                    &
-                + istat(ivar)*(cromo(iel)/dt(iel))*volume(iel)
+                + istat(ivar)*(cromo(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 !                                       __        v
@@ -387,7 +387,7 @@ call divmas(init, viscf, viscb, smbrs)
 ! ======================
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + w9(iel)*volume(iel)                                &
+  smbrs(iel) = smbrs(iel) + w9(iel)*cell_f_vol(iel)                            &
                            *( gx*vel(1,iel)                                    &
                             + gy*vel(2,iel)                                    &
                             + gz*vel(3,iel) )
@@ -658,7 +658,7 @@ call cs_cf_check_internal_energy(cvar_energ, ncel, vel)
 if (iwarni(ivar).ge.2) then
   do iel = 1, ncel
     smbrs(iel) = smbrs(iel)                                                    &
-            - istat(ivar)*(crom(iel)/dt(iel))*volume(iel)                      &
+            - istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)                  &
                 *(cvar_energ(iel)-cvara_energ(iel))                            &
                 * max(0,min(nswrsm(ivar)-2,1))
   enddo
