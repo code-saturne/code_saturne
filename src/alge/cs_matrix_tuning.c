@@ -172,6 +172,7 @@ _matrix_tune_test(double                 t_measure,
   cs_lnum_t  ii;
   int  n_runs, run_id, v_id, f_id, ed_flag;
   double  wt0, wt1, wtu;
+  double wti, wtf;
   cs_matrix_type_t  type, type_prev;
 
   double test_sum = 0.0;
@@ -317,22 +318,33 @@ _matrix_tune_test(double                 t_measure,
         if (vector_multiply != NULL) {
           wt0 = cs_timer_wtime(), wt1 = wt0;
           run_id = 0, n_runs = 8;
+
+          double mean = 0.0;
+          double m2 = 0.0;
+          double delta = 0.0;
+
           while (run_id < n_runs) {
             while (run_id < n_runs) {
               if (run_id % 8)
                 test_sum = 0;
+              wti = cs_timer_wtime(), wtf = wti;
               vector_multiply(ed_flag, m, x, y);
+              wtf = cs_timer_wtime();
               test_sum += y[n_cells-1];
               run_id++;
+              delta = (wtf - wti) - mean;
+              mean = mean + delta/run_id;
+              m2 = m2 + delta * (wtf - wti - mean);
             }
             wt1 = cs_timer_wtime();
             if (wt1 - wt0 < t_measure)
               n_runs *= 2;
           }
           wtu = (wt1 - wt0) / n_runs;
-          v->matrix_vector_cost[f_id][ed_flag] = wtu;
+          m2 = sqrt(m2 / (n_runs - 1));
+          v->matrix_vector_cost[f_id][ed_flag][0] = wtu;
+          v->matrix_vector_cost[f_id][ed_flag][1] = m2;
         }
-
       } /* end of loop on ed_flag */
 
       cs_matrix_release_coefficients(m);
@@ -518,7 +530,7 @@ _matrix_tune_spmv_title(cs_matrix_fill_type_t  fill_type,
 
   if (cs_glob_n_ranks > 1) {
 
-    char tmp_s[8][24] =  {"", "", "", "", "", "", "", ""};
+    char tmp_s[12][24] =  {"", "", "", "", "", "", "", "", "", "", "", ""};
 
     cs_log_strpadl(tmp_s[0], _("time (s)"), 16, 24);
     cs_log_strpadl(tmp_s[1], _("speedup"), 16, 24);
@@ -528,27 +540,33 @@ _matrix_tune_spmv_title(cs_matrix_fill_type_t  fill_type,
     cs_log_strpadl(tmp_s[5], _(" mean"), 8, 24);
     cs_log_strpadl(tmp_s[6], _("min"), 8, 24);
     cs_log_strpadl(tmp_s[7], _("max"), 8, 24);
+    cs_log_strpadl(tmp_s[8], _("std. dev"), 16, 24);
+    cs_log_strpadl(tmp_s[9], _(" mean"), 9, 24);
+    cs_log_strpadl(tmp_s[10], _("min"), 9, 24);
+    cs_log_strpadl(tmp_s[11], _("max"), 9, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %21s %s %9s %s\n"
-                  "  %24s %s %s %s %s %s %s\n",
-                  " ", " ", tmp_s[0], " ", tmp_s[1],
+                  "  %24s %21s %s %9s %s %12s %s\n"
+                  "  %24s %s %s %s %s %s %s %s %s %s\n",
+                  " ", " ", tmp_s[0], " ", tmp_s[1], " ", tmp_s[8],
                   " ", tmp_s[2], tmp_s[3], tmp_s[4],
-                  tmp_s[5], tmp_s[6], tmp_s[7]);
+                  tmp_s[5], tmp_s[6], tmp_s[7],
+                  tmp_s[9], tmp_s[10], tmp_s[11]);
   }
 
 #endif
 
   if (cs_glob_n_ranks == 1) {
 
-    char tmp_s[2][24] =  {"", ""};
+    char tmp_s[3][24] =  {"", "", ""};
 
     cs_log_strpadl(tmp_s[0], _("time (s)"), 12, 24);
     cs_log_strpadl(tmp_s[1], _("speedup"), 8, 24);
+    cs_log_strpadl(tmp_s[2], _("s.d."), 9, 24);
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %24s %s %s\n",
-                  " ", tmp_s[0], tmp_s[1]);
+                  "  %24s %s %s %s\n",
+                  " ", tmp_s[0], tmp_s[1], tmp_s[2]);
 
   }
 }
@@ -571,7 +589,7 @@ _matrix_tune_spmv_stats(const cs_matrix_variant_t  *m_variant,
 {
   char title[32];
 
-  double v_loc[2] = {-1, -1};
+  double v_loc[3] = {-1, -1, 0};
 
   const cs_matrix_variant_t  *r = m_variant;
   const cs_matrix_variant_t  *v = m_variant + variant_id;
@@ -580,8 +598,9 @@ _matrix_tune_spmv_stats(const cs_matrix_variant_t  *m_variant,
 
   /* Get timing info */
 
-  v_loc[0] = v->matrix_vector_cost[fill_type][ed_flag];
-  v_loc[1] = r->matrix_vector_cost[fill_type][ed_flag] / v_loc[0];
+  v_loc[0] = v->matrix_vector_cost[fill_type][ed_flag][0];
+  v_loc[1] = r->matrix_vector_cost[fill_type][ed_flag][0] / v_loc[0];
+  v_loc[2] = v->matrix_vector_cost[fill_type][ed_flag][1];
 
   if (v_loc[0] < 0)
     return;
@@ -591,24 +610,25 @@ _matrix_tune_spmv_stats(const cs_matrix_variant_t  *m_variant,
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-    double v_max[2], v_min[2], v_sum[2];
-    MPI_Allreduce(v_loc, v_sum, 2, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
-    MPI_Allreduce(v_loc, v_min, 2, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
-    MPI_Allreduce(v_loc, v_max, 2, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+    double v_max[3], v_min[3], v_sum[3];
+    MPI_Allreduce(v_loc, v_sum, 3, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
+    MPI_Allreduce(v_loc, v_min, 3, MPI_DOUBLE, MPI_MIN, cs_glob_mpi_comm);
+    MPI_Allreduce(v_loc, v_max, 3, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %s %12.5e %12.5e %12.5e %8.4f %8.4f %8.4f\n",
+                  "  %s %12.5e %12.5e %12.5e %8.4f %8.4f %8.4f %9.2e %9.2e %9.2e\n",
                   title,
                   v_sum[0]/cs_glob_n_ranks, v_min[0], v_max[0],
-                  (v_sum[1]/cs_glob_n_ranks), v_min[1], v_max[1]);
+                  (v_sum[1]/cs_glob_n_ranks), v_min[1], v_max[1],
+                 ( v_sum[2]/cs_glob_n_ranks), v_min[2], v_max[2]);
   }
 
 #endif
 
   if (cs_glob_n_ranks == 1)
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  "  %s %12.5e %8.4f\n",
+                  "  %s %12.5e %8.4f %9.2e\n",
                   title,
-                  v_loc[0], v_loc[1]);
+                  v_loc[0], v_loc[1], v_loc[2]);
 }
 
 /*----------------------------------------------------------------------------
@@ -626,7 +646,7 @@ _variant_init(cs_matrix_variant_t  *v)
     for (int j = 0; j < 2; j++) {
       v->vector_multiply[i][j] = NULL;
       v->loop_length[i][j] = 0;
-      v->matrix_vector_cost[i][j] = -1.;
+      v->matrix_vector_cost[i][j][0] = -1.;
     }
     v->matrix_assign_cost[i] = -1.;
   }
@@ -809,9 +829,9 @@ cs_matrix_variant_tuned(double                 t_measure,
           && (n_min_products > 0 && n_min_products < 10000))
         t_overhead[v->type][fill_type]
           = v->matrix_assign_cost[fill_type] / n_min_products;
-      speedup = (  (  m_variant->matrix_vector_cost[fill_type][0]
+      speedup = (  (  m_variant->matrix_vector_cost[fill_type][0][0]
                     + t_overhead[m_variant->type][fill_type])
-                 / (  v->matrix_vector_cost[fill_type][0]
+                 / (  v->matrix_vector_cost[fill_type][0][0]
                     + t_overhead[v->type][fill_type]));
       if (t_speedup[v->type][fill_type] < speedup)
         t_speedup[v->type][fill_type] = speedup;
@@ -879,8 +899,8 @@ cs_matrix_variant_tuned(double                 t_measure,
               || r->matrix_vector_cost[fill_type][ed_flag] < 0) {
             r->vector_multiply[fill_type][ed_flag]
               = v->vector_multiply[fill_type][ed_flag];
-            r->matrix_vector_cost[fill_type][ed_flag]
-              = v->matrix_vector_cost[fill_type][ed_flag];
+            r->matrix_vector_cost[fill_type][ed_flag][0]
+              = v->matrix_vector_cost[fill_type][ed_flag][0];
             r->loop_length[fill_type][ed_flag]
               = v->loop_length[fill_type][ed_flag];
             cur_select[f_id][ed_flag] = v_id;

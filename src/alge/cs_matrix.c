@@ -3709,7 +3709,8 @@ _variant_init(cs_matrix_variant_t  *v)
     for (int j = 0; j < 2; j++) {
       v->vector_multiply[i][j] = NULL;
       v->loop_length[i][j] = 0;
-      v->matrix_vector_cost[i][j] = -1.;
+      v->matrix_vector_cost[i][j][0] = -1.;
+      v->matrix_vector_cost[i][j][1] = -1.;
     }
     v->matrix_assign_cost[i] = -1.;
   }
@@ -5591,8 +5592,10 @@ cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
     for (int i = 0; i < 2; i++) {
       mv->vector_multiply[fill_type][i]
         = mv_merge->vector_multiply[fill_type][i];
-      mv->matrix_vector_cost[fill_type][i]
-        = mv_merge->matrix_vector_cost[fill_type][i];
+      mv->matrix_vector_cost[fill_type][i][0]
+        = mv_merge->matrix_vector_cost[fill_type][i][0];
+      mv->matrix_vector_cost[fill_type][i][1]
+        = mv_merge->matrix_vector_cost[fill_type][i][1];
     }
     mv->matrix_assign_cost[fill_type] = mv_merge->matrix_assign_cost[fill_type];
   }
