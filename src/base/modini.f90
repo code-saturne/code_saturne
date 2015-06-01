@@ -321,17 +321,12 @@ do iscal = 1, nscal
   endif
 enddo
 
-!     Ici on interdit que l'utilisateur fixe lui meme THETAV, par securite
-!       mais on pourrait le laisser faire
-!       (enlever le IOK, modifier le message et les tests dans verini)
-
-!     Vitesse pression (la pression est prise sans interp)
+! Velocity and Pressure (thetav for the pressure is taken without worring)
 if (abs(thetav(iu)+999.d0).gt.epzero.or.                 &
-     abs(thetav(iv)+999.d0).gt.epzero.or.                 &
-     abs(thetav(iw)+999.d0).gt.epzero.or.                 &
-     abs(thetav(ipr)+999.d0).gt.epzero) then
-  write(nfecra,1031) 'VITESSE-PRESSION ','THETAV'
-  iok = iok + 1
+    abs(thetav(iv)+999.d0).gt.epzero.or.                 &
+    abs(thetav(iw)+999.d0).gt.epzero.or.                 &
+    abs(thetav(ipr)+999.d0).gt.epzero) then
+  write(nfecra,1131) 'VITESSE-PRESSION ','THETAV'
 elseif (ischtp.eq.1) then
   thetav(iu) = 1.d0
   thetav(iv) = 1.d0
@@ -495,12 +490,11 @@ elseif (iturb.eq.70) then
   endif
 endif
 
-!     Scalaires
+! Scalares
 do iscal = 1, nscal
   ivar  = isca(iscal)
   if (abs(thetav(ivar)+999.d0).gt.epzero) then
     write(nfecra,1041) 'SCALAIRE',ISCAL,'THETAV'
-    iok = iok + 1
   elseif (ischtp.eq.1) then
     thetav(ivar) = 1.d0
   elseif (ischtp.eq.2) then
@@ -508,7 +502,7 @@ do iscal = 1, nscal
   endif
 enddo
 
-!     Vitesse de maillage en ALE
+! Mesh velocity for ALE
 if (iale.eq.1) then
   if (abs(thetav(iuma)+999.d0).gt.epzero.or.                       &
       abs(thetav(ivma)+999.d0).gt.epzero.or.                       &
@@ -1267,6 +1261,17 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 1131 format( &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ATTENTION : MODIFICATION AVANCEE POUR',                   /,&
+'@    =========,'                                               /,&
+'@    ',a17,' DE LA VARIABLE'                                   /,&
+'@    ',a6,'.'                                                  /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
  1032 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1287,15 +1292,10 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@ @@ ATTENTION : MODIFICATION AVANCEE DE ',                    /,&
 '@    =========,'                                               /,&
 '@    ',a8,' ',i10,                                             /,&
-'@    ',a6,' SERA INITIALISE AUTOMATIQUEMENT.,'                 /,&
-'@    NE PAS LE MODIFIER.,'                                     /,&
-'@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  Verifier cs_user_parameters.f90,'                           /,&
+'@    ',a6,'.'                                                  /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
@@ -1472,6 +1472,18 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
+ 1131 format( &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING: ADVANCED MODIFICATION FOR',                      /,&
+'@    ========,'                                                /,&
+'@    ',a17,' OF THE VARIABLE'                                  /,&
+'@    ',a6,'.'                                                  /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
+
  1032 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1492,15 +1504,10 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@ WARNING: ABORT IN THE DATA SPECIFICATION',                /,&
+'@ @@ WARNING: ADVANCED MODIFICATION OF',                       /,&
 '@    ========',                                                /,&
 '@    ',a8,' ',i10,                                             /,&
-'@    ',a6,' WILL BE INITIALIZED AUTOMATICALLY',                /,&
-'@    DO NOT MODIFY IT.,'                                       /,&
-'@',                                                            /,&
-'@  The calculation will not be run.',                          /,&
-'@',                                                            /,&
-'@  Check cs_user_parameters.f90',                              /,&
+'@    ',a6,'.',                                                 /,&
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
