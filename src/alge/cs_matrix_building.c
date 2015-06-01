@@ -430,14 +430,14 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 #   pragma omp parallel for
     for (int t_id = 0; t_id < n_i_threads; t_id++) {
       for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-     face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-     face_id++) {
+          face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+          face_id++) {
 
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
 
-      da[ii] -= xa[face_id];
-      da[jj] -= xa[face_id];
+        da[ii] -= xa[face_id];
+        da[jj] -= xa[face_id];
 
       }
     }
@@ -600,17 +600,17 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-  for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-       face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-       face_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+            face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0];
-    cs_lnum_t jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-    da[ii] -= xa[face_id][0];
-    da[jj] -= xa[face_id][1];
+          da[ii] -= xa[face_id][0];
+          da[jj] -= xa[face_id][1];
 
-  }
+        }
       }
     }
 
@@ -658,17 +658,17 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     for (int g_id = 0; g_id < n_i_groups; g_id++) {
 #     pragma omp parallel for
       for (int t_id = 0; t_id < n_i_threads; t_id++) {
-  for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-       face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-       face_id++) {
+        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+            face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+            face_id++) {
 
-    cs_lnum_t ii = i_face_cells[face_id][0];
-    cs_lnum_t jj = i_face_cells[face_id][1];
+          cs_lnum_t ii = i_face_cells[face_id][0];
+          cs_lnum_t jj = i_face_cells[face_id][1];
 
-    da[ii] -= xa[face_id][0];
-    da[jj] -= xa[face_id][1];
+          da[ii] -= xa[face_id][0];
+          da[jj] -= xa[face_id][1];
 
-  }
+        }
       }
     }
 
