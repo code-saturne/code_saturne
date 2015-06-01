@@ -277,7 +277,6 @@ data/thch/dp_C4P \
 data/thch/dp_ELE \
 data/thch/dp_FCP.xml \
 data/thch/dp_FUE \
-data/thch/dp_FUE_new \
 data/thch/dp_transfo \
 data/thch/JANAF \
 data/thch/meteo
