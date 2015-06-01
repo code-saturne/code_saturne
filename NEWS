@@ -23,6 +23,7 @@ Bug fixes:
   by modak.
 
 - Fix crash in fuel combustion due to incorrect indexing.
+  Also remove obsolete fuel properties file.
 
 - Fix in Syrthes coupling for neighbor search extension, when the
   "allow_nonmatching" option is set to true.
