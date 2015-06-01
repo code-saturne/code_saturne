@@ -456,9 +456,6 @@ do ilelt = 1, nlelt
 enddo
 !< [example_5]
 
-! Deallocate the temporary array
-deallocate(lstelt)
-
 !--------
 ! Formats
 !--------
