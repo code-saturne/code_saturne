@@ -128,8 +128,7 @@ double precision, allocatable, dimension(:) :: wb
 double precision, allocatable, dimension(:) :: dpvar, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:) :: w4, w5, w6
-double precision, allocatable, dimension(:) :: w7, w8, w9
+double precision, allocatable, dimension(:) :: w7, w9
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
@@ -155,7 +154,7 @@ call field_get_val_s(ivarfl(isca(itempk)), cvar_tempk)
 call field_get_val_v(ivarfl(iu), vel)
 
 !===============================================================================
-! 1. INITIALIZATION
+! 1. Initialization
 !===============================================================================
 
 ! Allocate a temporary array
@@ -165,8 +164,7 @@ allocate(smbrs(ncelet), rovsdt(ncelet))
 ! Allocate work arrays
 allocate(grad(3,ncelet))
 allocate(w1(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(ncelet), w8(ncelet), w9(ncelet))
+allocate(w7(ncelet), w9(ncelet))
 allocate(dpvar(ncelet))
 
 ! Physical property numbers
@@ -196,7 +194,7 @@ if(iwarni(ivar).ge.1) then
 endif
 
 !===============================================================================
-! 2. SOURCE TERMS
+! 2. Source terms
 !===============================================================================
 
 ! Theta-scheme:
@@ -268,16 +266,12 @@ endif
 ! PRESSURE TRANSPORT TERM  : - >  (---)  *(Q    .n)  *S
 ! =======================      --  RHO ij   pr     ij  ij
 
-do iel = 1, ncel
-  w9(iel) = crom(iel)
-enddo
-
 !     Avec Reconstruction : ca pose probleme pour l'instant
 
 !   Calcul du gradient de P/RHO
 
 !      do iel = 1, ncel
-!        w7(iel) = cvar_pr(iel)/w9(iel)
+!        w7(iel) = cvar_pr(iel)/crom(iel)
 !      enddo
 
 ! Rq : A defaut de connaitre les parametres pour P/RHO on prend ceux de P
@@ -348,7 +342,7 @@ enddo
 !     En periodique et parallele, echange avant utilisation
 !       des valeurs aux faces
 if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(w9)
+  call synsca(crom)
   !==========
 endif
 
@@ -357,8 +351,8 @@ do ifac = 1, nfac
   iel1 = ifacel(1,ifac)
   iel2 = ifacel(2,ifac)
   viscf(ifac) =                                                                 &
-     - cvar_pr(iel1)/w9(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))             &
-     - cvar_pr(iel2)/w9(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
+     - cvar_pr(iel1)/crom(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))             &
+     - cvar_pr(iel2)/crom(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
 enddo
 
 ! Boundary faces: for the faces where a flux (Rusanov or analytical) has been
@@ -387,7 +381,7 @@ call divmas(init, viscf, viscb, smbrs)
 ! ======================
 
 do iel = 1, ncel
-  smbrs(iel) = smbrs(iel) + w9(iel)*cell_f_vol(iel)                            &
+  smbrs(iel) = smbrs(iel) + crom(iel)*cell_f_vol(iel)                          &
                            *( gx*vel(1,iel)                                    &
                             + gy*vel(2,iel)                                    &
                             + gz*vel(3,iel) )
@@ -644,7 +638,7 @@ call codits                                                      &
 
 
 !===============================================================================
-! 5. PRINTINGS AND CLIPPINGS
+! 5. Printings and clippings
 !===============================================================================
 
 call clpsca(iscal)
@@ -667,7 +661,7 @@ if (iwarni(ivar).ge.2) then
 endif
 
 !===============================================================================
-! 6. FINAL UPDATING OF THE PRESSURE (AND TEMPERATURE)
+! 6. Final updating of the pressure (and temperature)
 !===============================================================================
 !                             n+1      n+1  n+1
 ! The state equation is used P   =P(RHO   ,H   )
@@ -676,7 +670,7 @@ endif
 call cs_cf_thermo_pt_from_de(crom, cvar_energ, cvar_pr, cvar_tempk, vel, ncel)
 
 !===============================================================================
-! 7. COMMUNICATION OF PRESSURE, ENERGY AND TEMPERATURE
+! 7. Communication of pressure, energy and temperature
 !===============================================================================
 
 if (irangp.ge.0.or.iperio.eq.1) then
@@ -693,11 +687,10 @@ deallocate(wb)
 deallocate(smbrs, rovsdt)
 deallocate(grad)
 deallocate(w1)
-deallocate(w4, w5, w6)
-deallocate(w7, w8, w9)
+deallocate(w7, w9)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
  1000 format(/,                                                   &
@@ -706,7 +699,7 @@ deallocate(w7, w8, w9)
  1200 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
 
 !----
-! FIN
+! End
 !----
 
 return
