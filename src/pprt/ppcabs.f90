@@ -110,7 +110,7 @@ if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0 ) then
 
   if (imodak.eq.1) then
 
-    call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
+    if (isoot.ge.1) call field_get_val_s(ivarfl(isca(ifsm)), cvar_fsm)
 
     do iel = 1, ncel
       xm = 1.d0/ (  propce(iel,ipproc(iym(1)))/wmolg(1)                 &

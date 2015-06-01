@@ -19,6 +19,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix crash in combustion using no soot and absorption coefficient
+  by modak.
+
 - Fix crash in fuel combustion due to incorrect indexing.
 
 - Fix in Syrthes coupling for neighbor search extension, when the
