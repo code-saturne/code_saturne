@@ -19,6 +19,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix crash in fuel combustion due to incorrect indexing.
+
 - Fix in Syrthes coupling for neighbor search extension, when the
   "allow_nonmatching" option is set to true.
 

@@ -103,7 +103,7 @@ do icla = 1, nclafu
   write(f_name,'(a8,i2.2)') 'nd_fuel_', icla
   write(f_label,'(a6,i2.2)') 'NG_FOL', icla
   call add_model_scalar_field(f_name, f_label, ing(icla))
-  f_id = ivarfl(isca(inp(icla)))
+  f_id = ivarfl(isca(ing(icla)))
 
   ! Set the index of the scalar class in the field structure
   call field_set_key_int(f_id, keyccl, icla)

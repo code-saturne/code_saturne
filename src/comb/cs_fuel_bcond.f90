@@ -234,7 +234,7 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING: Specific physics modul                         ',/,&
+'@ @@ WARNING: Specific physics module                        ',/,&
 '@    =========                       fuel                    ',/,&
 '@    issue in boundary conditions                            ',/,&
 '@                                                            ',/,&
@@ -247,7 +247,7 @@ endif
 '@                                                            ',/,&
 '@  The calcultaion can not run.                              ',/,&
 '@                                                            ',/,&
-'@  Check user_fuel_bconds, and in particular that            ',/,&
+'@  Check boundary condition definitions, in particular that  ',/,&
 '@    - the vector rcodcl(ifac,IU,1),                         ',/,&
 '@                 rcodcl(ifac,IV,1),                         ',/,&
 '@                 rcodcl(ifac,IW,1) which determines         ',/,&
