@@ -1018,6 +1018,11 @@ class XMLinit(Variables):
                     node1.xmlSetData('density', 1)
                     node1.xmlInitNode('writer', id = '-3')
 
+        lst = self.case.xmlGetNodeList('external_coupling')
+        if len(lst) > 1:
+            for i in range(len(lst)):
+                lst[i].xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
