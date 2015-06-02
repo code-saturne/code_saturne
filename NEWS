@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add "--import-only" option to "code_saturne create" command so as to
+  rebuild SaturneGUI and runcase scripts for a case which was copied
+  from a different system.
+
 - Only trap floating-point exceptions by default for code compiled in
   debug mode, to avoid interfering with optimizer speculation.
   Exception trapping can be enabled or disabled locally using the

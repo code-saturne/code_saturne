@@ -81,6 +81,10 @@ def process_cmd_line(argv, pkg):
                       metavar="<case>",
                       help="create a case from another one")
 
+    parser.add_option("--import-only", dest="import_only",
+                      action="store_true",
+                      help="rebuild scripts of existing case")
+
     parser.add_option("--noref", dest="use_ref",
                       action="store_false",
                       help="don't copy references")
@@ -106,6 +110,7 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(case_names=[])
     parser.set_defaults(copy=None)
     parser.set_defaults(verbose=1)
+    parser.set_defaults(import_only=False)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
     parser.set_defaults(ast_case_name=None)
@@ -124,9 +129,9 @@ def process_cmd_line(argv, pkg):
                  options.syr_case_names,
                  options.ast_case_name,
                  options.copy,
+                 options.import_only,
                  options.use_ref,
                  options.verbose)
-
 
 #-------------------------------------------------------------------------------
 # Assign executable mode (chmod +x) to a file
@@ -147,7 +152,6 @@ def make_executable(filename):
     os.chmod(filename, mode)
 
     return
-
 
 #-------------------------------------------------------------------------------
 # Build lines necessary to import SYRTHES packages
@@ -177,7 +181,7 @@ def syrthes_path_line(pkg):
 class Study:
 
     def __init__(self, package, name, cases, syr_case_names, ast_case_name,
-                 copy, use_ref, verbose):
+                 copy, import_only, use_ref, verbose):
         """
         Initialize the structure for a study.
         """
@@ -190,6 +194,7 @@ class Study:
         self.copy = copy
         if self.copy is not None:
             self.copy = os.path.abspath(self.copy)
+        self.import_only = import_only
         self.use_ref = use_ref
         self.verbose = verbose
 
@@ -204,6 +209,9 @@ class Study:
 
         self.ast_case_name = ast_case_name
 
+        if self.import_only:
+            self.use_ref = False
+            self.copy = None
 
     def get_syrthes_version(self):
         """
@@ -226,13 +234,18 @@ class Study:
 
         if self.name != os.path.basename(os.getcwd()):
 
-            if self.verbose > 0:
-                sys.stdout.write("  o Creating study '%s'...\n" % self.name)
+            if not self.import_only:
+                if self.verbose > 0:
+                    sys.stdout.write("  o Creating study '%s'...\n" % self.name)
+                os.mkdir(self.name)
+                os.chdir(self.name)
+                os.mkdir('MESH')
+                os.mkdir('POST')
 
-            os.mkdir(self.name)
-            os.chdir(self.name)
-            os.mkdir('MESH')
-            os.mkdir('POST')
+            else:
+                if self.verbose > 0:
+                    sys.stdout.write("  o Importing study '%s'...\n" % self.name)
+                os.chdir(self.name)
 
         # Creating Code_Saturne cases
         repbase = os.getcwd()
@@ -287,7 +300,10 @@ class Study:
 
         for s in self.syr_case_names:
             os.chdir(repbase)
-            retval = syrthes.create_syrcase(s)
+            if not self.import_only:
+                retval = syrthes.create_syrcase(s)
+            else:
+                retval = 0
             if retval > 0:
                 sys.stderr.write("Cannot create SYRTHES case: '%s'\n" % s)
                 sys.exit(1)
@@ -303,7 +319,9 @@ class Study:
                              self.ast_case_name)
 
         c = os.path.join(repbase, self.ast_case_name)
-        os.mkdir(c)
+
+        if not self.import_only:
+            os.mkdir(c)
 
         datadir = self.package.get_dir("pkgdatadir")
         try:
@@ -452,7 +470,10 @@ domains = [
         """
 
         if self.verbose > 0:
-            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
+            if not self.import_only:
+                sys.stdout.write("  o Creating case  '%s'...\n" % casename)
+            else:
+                sys.stdout.write("  o Importing case  '%s'...\n" % casename)
 
         datadir = self.package.get_dir("pkgdatadir")
         data_distpath  = os.path.join(datadir, 'data')
@@ -460,17 +481,20 @@ domains = [
         if self.package.name == 'code_saturne' :
             user_examples_distpath = os.path.join(datadir, 'user_examples')
 
-        try:
-            os.mkdir(casename)
-        except:
-            sys.exit(1)
+        if not self.import_only:
+            try:
+                os.mkdir(casename)
+            except:
+                sys.exit(1)
 
         os.chdir(casename)
 
         # Data directory
 
         data = 'DATA'
-        os.mkdir(data)
+
+        if not self.import_only:
+            os.mkdir(data)
 
         if self.use_ref:
 
@@ -511,8 +535,9 @@ domains = [
 
         # User source files directory
 
-        src = 'SRC'
-        os.mkdir(src)
+        if not self.import_only:
+            src = 'SRC'
+            os.mkdir(src)
 
         if self.use_ref:
 
@@ -558,12 +583,14 @@ domains = [
         # Results directory (only one for all instances)
 
         resu = 'RESU'
-        os.mkdir(resu)
+        if not os.path.isdir(resu):
+            os.mkdir(resu)
 
         # Script directory (only one for all instances)
 
         scripts = 'SCRIPTS'
-        os.mkdir(scripts)
+        if not os.path.isdir(scripts):
+            os.mkdir(scripts)
 
         self.build_batch_file(distrep = os.path.join(os.getcwd(), scripts),
                               casename = casename)
@@ -575,10 +602,20 @@ domains = [
         Update batch file for the study
         """
 
-
         batch_file = os.path.join(distrep, 'runcase')
         if sys.platform.startswith('win'):
             batch_file = batch_file + '.bat'
+
+        if self.copy is not None:
+            ref_runcase_path = os.path.join(self.copy, 'SCRIPTS', 'runcase')
+            if sys.platform.startswith('win'):
+                ref_runcase_path += '.bat'
+            try:
+                shutil.copy(ref_runcase_path, batch_file)
+            except Exception:
+                pass
+            
+        # Add info from parent in case of copy
 
         runcase = cs_runcase.runcase(batch_file,
                                      package=self.package,
@@ -589,21 +626,8 @@ domains = [
         if coupling:
             runcase.set_coupling(coupling)
 
-        # Add info from parent in case of copy
-        # TODO: complete this for n_procs and batch info
-
-        if self.copy is not None:
-            ref_runcase_path = os.path.join(self.copy, 'SCRIPTS', 'runcase')
-            if sys.platform.startswith('win'):
-                ref_runcase_path += '.bat'
-            try:
-                ref_runcase = cs_runcase.runcase(ref_runcase_path)
-                params = ref_runcase.get_parameters()
-                runcase.set_parameters(params)
-            except Exception:
-                pass
-
         runcase.save()
+
 
     def dump(self):
         """
