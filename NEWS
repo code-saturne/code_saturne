@@ -19,6 +19,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix compatibity for restart files produced with old Code_Saturne versions
+  when ALE is used.
+
 - Fix crashes using multigrid parallel rank merging.
 
 - Fix crash in combustion using no soot and absorption coefficient

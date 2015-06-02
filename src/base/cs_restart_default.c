@@ -526,9 +526,16 @@ _read_field_vals_legacy(cs_restart_t  *r,
 
   else if (f->dim == 3 && retcode == CS_RESTART_ERR_EXISTS) {
 
-    snprintf(old_name_x, 127, "%s_u_ce_phase01", old_name);
-    snprintf(old_name_y, 127, "%s_v_ce_phase01", old_name);
-    snprintf(old_name_z, 127, "%s_w_ce_phase01", old_name);
+    if (strcmp(old_name, "vit_maillage") == 0) {
+      snprintf(old_name_x, 127, "%s_u_ce", old_name);
+      snprintf(old_name_y, 127, "%s_v_ce", old_name);
+      snprintf(old_name_z, 127, "%s_w_ce", old_name);
+    }
+    else {
+      snprintf(old_name_x, 127, "%s_u_ce_phase01", old_name);
+      snprintf(old_name_y, 127, "%s_v_ce_phase01", old_name);
+      snprintf(old_name_z, 127, "%s_w_ce_phase01", old_name);
+    }
 
     retcode = cs_restart_check_section(r,
                                        old_name_x,
