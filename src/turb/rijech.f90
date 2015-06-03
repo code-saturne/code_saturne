@@ -283,11 +283,11 @@ do kk = 1, 3
     elseif ((kk*mm).eq.2) then
       call field_get_val_prev_s(ivarfl(ir12), cvara_rkm)
       iskm = 4
-    elseif ((kk*mm).eq.3) then
-      call field_get_val_prev_s(ivarfl(ir13), cvara_rkm)
-      iskm = 5
     elseif ((kk*mm).eq.6) then
       call field_get_val_prev_s(ivarfl(ir23), cvara_rkm)
+      iskm = 5
+    elseif ((kk*mm).eq.3) then
+      call field_get_val_prev_s(ivarfl(ir13), cvara_rkm)
       iskm = 6
     endif
 
@@ -336,11 +336,11 @@ do kk = 1, 3
   elseif ((kk*ii).eq.2) then
     call field_get_val_prev_s(ivarfl(ir12), cvara_rki)
     iski = 4
-  elseif ((kk*ii).eq.3) then
-    call field_get_val_prev_s(ivarfl(ir13), cvara_rki)
-    iski = 5
   elseif ((kk*ii).eq.6) then
     call field_get_val_prev_s(ivarfl(ir23), cvara_rki)
+    iski = 5
+  elseif ((kk*ii).eq.3) then
+    call field_get_val_prev_s(ivarfl(ir13), cvara_rki)
     iski = 6
   endif
 
@@ -358,11 +358,11 @@ do kk = 1, 3
   elseif ((kk*jj).eq.2) then
     call field_get_val_prev_s(ivarfl(ir12), cvara_rkj)
     iskj = 4
-  elseif ((kk*jj).eq.3) then
-    call field_get_val_prev_s(ivarfl(ir13), cvara_rkj)
-    iskj = 5
   elseif ((kk*jj).eq.6) then
     call field_get_val_prev_s(ivarfl(ir23), cvara_rkj)
+    iskj = 5
+  elseif ((kk*jj).eq.3) then
+    call field_get_val_prev_s(ivarfl(ir13), cvara_rkj)
     iskj = 6
   endif
 

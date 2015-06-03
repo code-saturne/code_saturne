@@ -332,10 +332,10 @@ do ifac = 1, nfabor
              rcodcl(ifac,ir33,1) = d2s3*xkent
         if (rcodcl(ifac,ir12,1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir12,1) = 0.d0
-        if (rcodcl(ifac,ir13,1).gt.rinfin*0.5d0)         &
-             rcodcl(ifac,ir13,1) = 0.d0
         if (rcodcl(ifac,ir23,1).gt.rinfin*0.5d0)         &
              rcodcl(ifac,ir23,1) = 0.d0
+        if (rcodcl(ifac,ir13,1).gt.rinfin*0.5d0)         &
+             rcodcl(ifac,ir13,1) = 0.d0
         if (rcodcl(ifac,iep,1).gt.rinfin*0.5d0)          &
              rcodcl(ifac,iep,1) = xeent
 

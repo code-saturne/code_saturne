@@ -121,9 +121,9 @@ do isou = 1, 7
   elseif(isou.eq.4) then
     cvar_var => cvar_r12
   elseif(isou.eq.5) then
-    cvar_var => cvar_r13
-  elseif(isou.eq.6) then
     cvar_var => cvar_r23
+  elseif(isou.eq.6) then
+    cvar_var => cvar_r13
   elseif(isou.eq.7) then
     cvar_var => cvar_ep
   endif
@@ -224,12 +224,12 @@ do isou = 4, 6
     cvar_var1 => cvar_r11
     cvar_var2 => cvar_r22
   elseif(isou.eq.5) then
-    cvar_var  => cvar_r13
-    cvar_var1 => cvar_r11
-    cvar_var2 => cvar_r33
-  elseif(isou.eq.6) then
     cvar_var  => cvar_r23
     cvar_var1 => cvar_r22
+    cvar_var2 => cvar_r33
+  elseif(isou.eq.6) then
+    cvar_var  => cvar_r13
+    cvar_var1 => cvar_r11
     cvar_var2 => cvar_r33
   endif
   und0 = 1.d0
@@ -255,9 +255,9 @@ do isou = 1, 7
   elseif(isou.eq.4) then
     ivar = ir12
   elseif(isou.eq.5) then
-    ivar = ir13
-  elseif(isou.eq.6) then
     ivar = ir23
+  elseif(isou.eq.6) then
+    ivar = ir13
   elseif(isou.eq.7) then
     ivar = iep
   endif

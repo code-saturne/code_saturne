@@ -466,9 +466,9 @@ do ifac = 1, nfabor
         elseif (isou.eq.4) then
           ivar = ir12
         elseif (isou.eq.5) then
-          ivar = ir13
-        elseif (isou.eq.6) then
           ivar = ir23
+        elseif (isou.eq.6) then
+          ivar = ir13
         endif
 
         ! IMPLICITATION PARTIELLE EVENTUELLE DES CL
@@ -574,19 +574,19 @@ do ifac = 1, nfabor
           coefad_r12(ifac) = fcofad(isou)
           coefbd_r12(ifac) = fcofbd(isou)
         else if (isou.eq.5) then
-          coefa_r13(ifac) = fcoefa(isou)
-          coefb_r13(ifac) = fcoefb(isou)
-          coefaf_r13(ifac) = fcofaf(isou)
-          coefbf_r13(ifac) = fcofbf(isou)
-          coefad_r13(ifac) = fcofad(isou)
-          coefbd_r13(ifac) = fcofbd(isou)
-        else if (isou.eq.6) then
           coefa_r23(ifac) = fcoefa(isou)
           coefb_r23(ifac) = fcoefb(isou)
           coefaf_r23(ifac) = fcofaf(isou)
           coefbf_r23(ifac) = fcofbf(isou)
           coefad_r23(ifac) = fcofad(isou)
           coefbd_r23(ifac) = fcofbd(isou)
+        else if (isou.eq.6) then
+          coefa_r13(ifac) = fcoefa(isou)
+          coefb_r13(ifac) = fcoefb(isou)
+          coefaf_r13(ifac) = fcofaf(isou)
+          coefbf_r13(ifac) = fcofbf(isou)
+          coefad_r13(ifac) = fcofad(isou)
+          coefbd_r13(ifac) = fcofbd(isou)
         endif
 
       enddo

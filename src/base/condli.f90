@@ -600,8 +600,8 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
     if (isou.eq.2) ivar = ir22
     if (isou.eq.3) ivar = ir33
     if (isou.eq.4) ivar = ir12
-    if (isou.eq.5) ivar = ir13
-    if (isou.eq.6) ivar = ir23
+    if (isou.eq.5) ivar = ir23
+    if (isou.eq.6) ivar = ir13
 
 
     if (ntcabs.gt.1.and.irijrb.eq.1) then
@@ -1271,9 +1271,9 @@ elseif (itytur.eq.3) then
     elseif(isou.eq.4) then
       ivar   = ir12
     elseif(isou.eq.5) then
-      ivar   = ir13
-    elseif(isou.eq.6) then
       ivar   = ir23
+    elseif(isou.eq.6) then
+      ivar   = ir13
     endif
 
     call field_get_coefa_s(ivarfl(ivar), coefap)

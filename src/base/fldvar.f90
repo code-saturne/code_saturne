@@ -205,8 +205,8 @@ else if (itytur.eq.3) then
   call add_variable_field('r22', 'R22', 1, ir22)
   call add_variable_field('r33', 'R33', 1, ir33)
   call add_variable_field('r12', 'R12', 1, ir12)
-  call add_variable_field('r13', 'R13', 1, ir13)
   call add_variable_field('r23', 'R23', 1, ir23)
+  call add_variable_field('r13', 'R13', 1, ir13)
   call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
   if (iturb.eq.32) then
     call add_variable_field('alpha', 'Alphap', 1, ial)

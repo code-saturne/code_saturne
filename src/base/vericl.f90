@@ -394,7 +394,7 @@ elseif(itytur.eq.3) then
     endif
   enddo
 
-  ivar = ir13
+  ivar = ir23
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &
@@ -408,7 +408,7 @@ elseif(itytur.eq.3) then
     endif
   enddo
 
-  ivar = ir23
+  ivar = ir13
   do ifac = 1, nfabor
     icode = icodcl(ifac,ivar)
     if (icode.ne. 1.and.icode.ne. 2.and. icode.ne. 3.and.         &

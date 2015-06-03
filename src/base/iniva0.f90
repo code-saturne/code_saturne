@@ -415,8 +415,8 @@ elseif(itytur.eq.3) then
   call field_get_val_s(ivarfl(ir22), cvar_r22)
   call field_get_val_s(ivarfl(ir33), cvar_r33)
   call field_get_val_s(ivarfl(ir12), cvar_r12)
-  call field_get_val_s(ivarfl(ir13), cvar_r13)
   call field_get_val_s(ivarfl(ir23), cvar_r23)
+  call field_get_val_s(ivarfl(ir13), cvar_r13)
 
   if (uref.ge.0.d0) then
 

@@ -398,10 +398,10 @@ elseif (isou.eq.4)then
   iii = 1
   jjj = 2
 elseif (isou.eq.5)then
-  iii = 1
+  iii = 2
   jjj = 3
 elseif (isou.eq.6)then
-  iii = 2
+  iii = 1
   jjj = 3
 endif
 

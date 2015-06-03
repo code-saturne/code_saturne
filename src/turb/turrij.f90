@@ -204,7 +204,7 @@ if (iturb.eq.30) then
                      cvara_r22(iel)*gradv(2, 1, iel) +                 &
                      cvara_r23(iel)*gradv(3, 1, iel) )
 
-    produc(5,iel) = produc(5,iel)                                  &
+    produc(6,iel) = produc(6,iel)                                  &
                   - (cvara_r13(iel)*gradv(1, 1, iel) +                 &
                      cvara_r23(iel)*gradv(2, 1, iel) +                 &
                      cvara_r33(iel)*gradv(3, 1, iel) )
@@ -221,7 +221,7 @@ if (iturb.eq.30) then
                      cvara_r12(iel)*gradv(2, 2, iel) +                 &
                      cvara_r13(iel)*gradv(3, 2, iel) )
 
-    produc(6,iel) = produc(6,iel)                                  &
+    produc(5,iel) = produc(5,iel)                                  &
                   - (cvara_r13(iel)*gradv(1, 2, iel) +                 &
                      cvara_r23(iel)*gradv(2, 2, iel) +                 &
                      cvara_r33(iel)*gradv(3, 2, iel) )
@@ -233,12 +233,12 @@ if (iturb.eq.30) then
                            cvara_r23(iel)*gradv(2, 3, iel) +           &
                            cvara_r33(iel)*gradv(3, 3, iel) )
 
-    produc(5,iel) = produc(5,iel)                                  &
+    produc(6,iel) = produc(6,iel)                                  &
                   - (cvara_r11(iel)*gradv(1, 3, iel) +                 &
                      cvara_r12(iel)*gradv(2, 3, iel) +                 &
                      cvara_r13(iel)*gradv(3, 3, iel) )
 
-    produc(6,iel) = produc(6,iel)                                  &
+    produc(5,iel) = produc(5,iel)                                  &
                   - (cvara_r12(iel)*gradv(1, 3, iel) +                 &
                      cvara_r22(iel)*gradv(2, 3, iel) +                 &
                      cvara_r23(iel)*gradv(3, 3, iel) )
@@ -339,9 +339,9 @@ do isou = 1, 6
   elseif(isou.eq.4) then
     ivar   = ir12
   elseif(isou.eq.5) then
-    ivar   = ir13
-  elseif(isou.eq.6) then
     ivar   = ir23
+  elseif(isou.eq.6) then
+    ivar   = ir13
   endif
 
   if (iilagr.eq.2) then

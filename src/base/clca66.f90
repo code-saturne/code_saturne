@@ -98,10 +98,10 @@ jj2 = 0
        kk=1
        pp=2
      else if (jj.eq.2) then
-       kk=1
+       kk=2
        pp=3
      else if (jj.eq.3) then
-       kk=2
+       kk=1
        pp=3
      endif
 
@@ -126,10 +126,10 @@ jj2 = 0
        kk=1
        pp=2
      else if (ii.eq.2) then
-       kk=1
+       kk=2
        pp=3
      else if (ii.eq.3) then
-       kk=2
+       kk=1
        pp=3
      endif
      alpha(ii+3,jj) =                                             &
@@ -154,20 +154,20 @@ jj2 = 0
        kk=1
        pp=2
      else if (ii.eq.2) then
-       kk=1
+       kk=2
        pp=3
      else if (ii.eq.3) then
-       kk=2
+       kk=1
        pp=3
      endif
      if (jj.eq.1) then
        jj1=1
        jj2=2
      else if (jj.eq.2) then
-       jj1=1
+       jj1=2
        jj2=3
      else if (jj.eq.3) then
-       jj1=2
+       jj1=1
        jj2=3
      endif
      alpha(ii+3,jj+3)=                                            &

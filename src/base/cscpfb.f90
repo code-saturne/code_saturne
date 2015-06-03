@@ -644,8 +644,8 @@ elseif (itytur.eq.3) then
     if (isou.eq.2) ivar = ir22
     if (isou.eq.3) ivar = ir33
     if (isou.eq.4) ivar = ir12
-    if (isou.eq.5) ivar = ir13
-    if (isou.eq.6) ivar = ir23
+    if (isou.eq.5) ivar = ir23
+    if (isou.eq.6) ivar = ir13
 
     call field_get_val_s(ivarfl(ivar), cvar_var)
 
