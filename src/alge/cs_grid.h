@@ -91,9 +91,7 @@ extern const char *cs_grid_coarsening_type_name[];
  *   cell_cen              <-- Cell center (size: 3.n_cells_ext)
  *   cell_vol              <-- Cell volume (size: n_cells_ext)
  *   face_normal           <-- Internal face normals (size: 3.n_faces)
- *   da                    <-- Matrix diagonal (size: n_cell_ext)
- *   xa                    <-- Matrix extra-diagonal terms
- *                             (size: n_faces if symmetric, 2.n_faces otherwise)
+ *   a                     <-- Associated matrix
  *
  * returns:
  *   base grid structure
@@ -112,8 +110,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,
                            const cs_real_t       *face_normal,
-                           const cs_real_t       *da,
-                           const cs_real_t       *xa);
+                           const cs_matrix_t     *a);
 
 /*----------------------------------------------------------------------------
  * Destroy a grid structure.

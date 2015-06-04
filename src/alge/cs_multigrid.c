@@ -1593,7 +1593,7 @@ _multigrid_cycle(cs_multigrid_t       *mg,
                               mg->info.n_max_cycles,
                               cycle_id,
                               verbosity,
-                              lv_info->n_it_ds_smoothe[0],
+                              lv_info->n_it_ds_smoothe[3],
                               precision,
                               r_norm,
                               *initial_residue,
@@ -2267,9 +2267,6 @@ cs_multigrid_setup(void               *context,
   const int *diag_block_size = cs_matrix_get_diag_block_size(a);
   const int *extra_diag_block_size = cs_matrix_get_extra_diag_block_size(a);
 
-  const cs_real_t *da = cs_matrix_get_diagonal(a);
-  const cs_real_t *xa = cs_matrix_get_extra_diagonal(a);
-
   g = cs_grid_create_from_shared(mesh->n_cells,
                                  mesh->n_cells_with_ghosts,
                                  mesh->n_i_faces,
@@ -2282,8 +2279,7 @@ cs_multigrid_setup(void               *context,
                                  mq->cell_cen,
                                  mq->cell_vol,
                                  mq->i_face_normal,
-                                 da,
-                                 xa);
+                                 a);
 
   _multigrid_add_level(mg, g); /* Assign to hierarchy */
 

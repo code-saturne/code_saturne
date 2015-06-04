@@ -179,7 +179,8 @@ struct _cs_grid_t {
   cs_real_t        *xa0ij;
 
   cs_matrix_structure_t   *matrix_struct;  /* Associated matrix structure */
-  cs_matrix_t             *matrix;         /* Associated matrix */
+  const cs_matrix_t       *matrix;         /* Associated matrix (shared) */
+  cs_matrix_t             *_matrix;        /* Associated matrix (private) */
 
 #if defined(HAVE_MPI)
 
@@ -3443,9 +3444,7 @@ _compute_coarse_quantities(const cs_grid_t  *fine_grid,
  *   cell_cen              <-- Cell center (size: 3.n_cells_ext)
  *   cell_vol              <-- Cell volume (size: n_cells_ext)
  *   face_normal           <-- Internal face normals (size: 3.n_faces)
- *   da                    <-- Matrix diagonal (size: n_cell_ext)
- *   xa                    <-- Matrix extra-diagonal terms
- *                             (size: n_faces if symmetric, 2.n_faces otherwise)
+ *   a                     <-- Associated matrix
  *
  * returns:
  *   base grid structure
@@ -3464,12 +3463,14 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,
                            const cs_real_t       *face_normal,
-                           const cs_real_t       *da,
-                           const cs_real_t       *xa)
+                           const cs_matrix_t     *a)
 {
   cs_lnum_t ii, jj, kk, face_id;
 
   cs_grid_t *g = NULL;
+
+  const cs_real_t *da = cs_matrix_get_diagonal(a);
+  const cs_real_t *xa = cs_matrix_get_extra_diagonal(a);
 
   /* Create empty structure and map base data */
 
@@ -3553,24 +3554,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
                                                     - cell_cen[ii*3 + kk]);
   }
 
-  g->matrix_struct = cs_matrix_structure_create(CS_MATRIX_NATIVE,
-                                                true,
-                                                n_cells,
-                                                n_cells_ext,
-                                                n_faces,
-                                                NULL,
-                                                face_cell,
-                                                halo,
-                                                numbering);
-
-
-  g->matrix = cs_matrix_create(g->matrix_struct);
-  cs_matrix_set_coefficients(g->matrix,
-                             symmetric,
-                             diag_block_size,
-                             extra_diag_block_size,
-                             g->da,
-                             g->xa);
+  g->matrix_struct = NULL;
+  g->matrix = a;
 
   return g;
 }
@@ -3613,7 +3598,7 @@ cs_grid_destroy(cs_grid_t **grid)
 
     BFT_FREE(g->xa0ij);
 
-    cs_matrix_destroy(&(g->matrix));
+    cs_matrix_destroy(&(g->_matrix));
     cs_matrix_structure_destroy(&(g->matrix_struct));
 
 #if defined(HAVE_MPI)
@@ -4018,16 +4003,18 @@ cs_grid_coarsen(const cs_grid_t   *f,
                                                 NULL);
 
   if (coarse_mv != NULL)
-    c->matrix = cs_matrix_create_by_variant(c->matrix_struct, coarse_mv);
+    c->_matrix = cs_matrix_create_by_variant(c->matrix_struct, coarse_mv);
   else
-    c->matrix = cs_matrix_create(c->matrix_struct);
+    c->_matrix = cs_matrix_create(c->matrix_struct);
 
-  cs_matrix_set_coefficients(c->matrix,
+  cs_matrix_set_coefficients(c->_matrix,
                              c->symmetric,
                              c->diag_block_size,
                              c->extra_diag_block_size,
                              c->da,
                              c->xa);
+
+  c->matrix = c->_matrix;
 
   /* Return new (coarse) grid */
 
