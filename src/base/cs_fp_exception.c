@@ -94,7 +94,7 @@ BEGIN_C_DECLS
 #if defined(__linux__) || defined(__linux) || defined(linux)
 #if    (!defined(__ia64__) && !defined(__blrts__) && !defined(__bg__)) \
     || defined(DEBUG)
-#define CS_FPE_TRAP_MOVE
+#define CS_FPE_TRAP
 #define _GNU_SOURCE
 #endif
 #endif

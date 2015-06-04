@@ -19,6 +19,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fixes for handling of floating-point exceptions by Catalyst plugin.
+
 - Fix compatibity for restart files produced with old Code_Saturne versions
   when ALE is used.
 

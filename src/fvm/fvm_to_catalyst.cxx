@@ -50,9 +50,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(CS_FPE_TRAP)
-#include <fenv.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * Catalyst and VTK library headers
@@ -1101,16 +1098,6 @@ fvm_to_catalyst_init_writer(const char             *name,
   w->datadesc->AddInput("input");
 
   w->modified = true;
-
-#if defined(CS_FPE_TRAP) && !defined(HAVE_CATALYST)
-  if (_fenv_set == 0) {
-    if (fegetenv(&_fenv_old) == 0) {
-      feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-      _fenv_set = 1;
-      /* To revert to initial behavior: fesetenv(&_fenv_old); */
-    }
-  }
-#endif
 
   return w;
 }
