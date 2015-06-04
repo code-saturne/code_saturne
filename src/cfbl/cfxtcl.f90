@@ -320,9 +320,9 @@ do ifac = 1, nfabor
       ! since they are already accounted for in the energy diffusion term
       ifbet(ifac) = 1
 
-      ! zero flux for the possible temperature reconstruction
-      icodcl(ifac,itk) = 3
-      rcodcl(ifac,itk,3) = 0.d0
+      ! Dirichlet condition on the temperature for gradient reconstruction
+      ! used only in post-processing (typically Nusselt computation)
+      icodcl(ifac,itk) = 1
 
     ! imposed flux
     elseif(icodcl(ifac,itk).eq.3) then
