@@ -662,6 +662,57 @@ def source_rcfile(pkg):
 
 #-------------------------------------------------------------------------------
 
+def source_syrthes_env(pkg):
+    """
+    Source SYRTHES environment
+    """
+
+    # Determine SYRTHES home
+
+    syrthes_home = None
+    env_syrthes_home = os.getenv('SYRTHES4_HOME')
+
+    config = configparser.ConfigParser()
+    config.read(pkg.get_configfiles())
+    if config.has_option('install', 'syrthes'):
+        syrthes_home = os.path.join(config.get('install', 'syrthes'))
+        if not os.path.isdir(syrthes_home):
+            sys.stderr.write("\nIncorrect install/syrthes entry "
+                         + "specified in one of:\n")
+            for f in pkg.get_configfiles():
+                sys.stderr.write("  " + f + "\n")
+            sys.stderr.write("Directory: '"
+                             + syrthes_home + "' does not exist.\n")
+            sys.exit(1)
+    else:
+        syrthes_home = env_syrthes_home
+
+    if not syrthes_home:
+        sys.stderr.write("\nCannot locate SYRTHES installation.\n"
+                         + "  Either the install/syrthes entry must be "
+                         + "specified in one of:\n")
+        for f in pkg.get_configfiles():
+            sys.stderr.write("    " + f + "\n")
+        sys.stderr.write("  or a syrthes.profile file must be sourced.\n")
+        sys.exit(1)
+
+    # Now source environment if not done already or different
+
+    if syrthes_home != env_syrthes_home:
+        syr_profile = os.path.join(config.get('install', 'syrthes'),
+                                   'bin', 'syrthes.profile')
+        source_shell_script(syr_profile)
+
+    # Finally, ensure module can be imported
+
+    syr_datapath = os.path.join(syrthes_home,
+                                os.path.join('share', 'syrthes'))
+    if sys.path.count(syr_datapath) > 0:
+        sys.path.remove(syr_datapath)
+    sys.path.insert(0, syr_datapath)
+
+#-------------------------------------------------------------------------------
+
 class batch_info:
 
     #---------------------------------------------------------------------------
