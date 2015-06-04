@@ -3556,6 +3556,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_cells,
 
   g->matrix_struct = NULL;
   g->matrix = a;
+  g->_matrix = NULL;
 
   return g;
 }
