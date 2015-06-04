@@ -92,7 +92,7 @@ BEGIN_C_DECLS
    the correct feature macros are defined first. */
 
 #if defined(__linux__) || defined(__linux) || defined(linux)
-#  define CS_FPE_TRAP_MOVE
+#  define CS_FPE_TRAP
 #  define _GNU_SOURCE
 #endif
 
