@@ -103,6 +103,7 @@ typedef struct {
                                     for least square gradients */
 
   cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
+  cs_int_t      *c_solid_flag;   /* Is the fluid volume 0 flag */
   unsigned      *bad_cell_flag;  /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;

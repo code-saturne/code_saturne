@@ -513,6 +513,12 @@ call iniva0(nvar, nscal, dt, propce, frcxt, prhyd)
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then
+
+  ! All cells are fluid, let the user change that if needed in usporo
+  do iel = 1, ncelet
+    isolid(iel) = 0
+  enddo
+
   if (iihmpr.eq.1) then
     call uiporo(ncelet, iporos)
   endif

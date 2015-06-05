@@ -2121,6 +2121,7 @@ cs_mesh_quantities_create(void)
   mesh_quantities->cocg_it = NULL;
   mesh_quantities->cocg_lsq = NULL;
   mesh_quantities->b_sym_flag = NULL;
+  mesh_quantities->c_solid_flag = NULL;
   mesh_quantities->bad_cell_flag = NULL;
 
   return (mesh_quantities);
@@ -2172,6 +2173,7 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
   BFT_FREE(mesh_quantities->cocg_it);
   BFT_FREE(mesh_quantities->cocg_lsq);
   BFT_FREE(mesh_quantities->b_sym_flag);
+  BFT_FREE(mesh_quantities->c_solid_flag);
   BFT_FREE(mesh_quantities->bad_cell_flag);
 
   BFT_FREE(mesh_quantities);
@@ -2239,9 +2241,16 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   if (cs_glob_porous_model > 0) {
     if (mesh_quantities->cell_f_vol == NULL)
       BFT_MALLOC(mesh_quantities->cell_f_vol, n_cells_with_ghosts, cs_real_t);
+
+    if (mesh_quantities->c_solid_flag == NULL)
+      BFT_MALLOC(mesh_quantities->c_solid_flag, n_cells_with_ghosts, cs_int_t);
   }
-  else
+  else {
     mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
+
+    if (mesh_quantities->c_solid_flag == NULL)
+      BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
+  }
 
   if (mesh_quantities->i_face_surf == NULL)
     BFT_MALLOC(mesh_quantities->i_face_surf, n_i_faces, cs_real_t);
@@ -2257,7 +2266,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
     if (mesh_quantities->b_f_face_surf == NULL)
       BFT_MALLOC(mesh_quantities->b_f_face_surf, n_b_faces, cs_real_t);
-
   }
   else {
     mesh_quantities->i_f_face_surf = mesh_quantities->i_face_surf;

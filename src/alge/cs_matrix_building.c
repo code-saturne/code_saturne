@@ -127,7 +127,9 @@ void CS_PROCF (matrix, MATRIX)
  cs_real_t                xa[]
 )
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
 
   if (*isym != 1 && *isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -138,7 +140,6 @@ void CS_PROCF (matrix, MATRIX)
   if (*isym == 1) {
     cs_sym_matrix_scalar(m,
                          *idiffp,
-                         *ndircp,
                          *thetap,
                          cofbfp,
                          rovsdt,
@@ -152,7 +153,6 @@ void CS_PROCF (matrix, MATRIX)
     cs_matrix_scalar(m,
                      *iconvp,
                      *idiffp,
-                     *ndircp,
                      *thetap,
                      *imucpp,
                      coefbp,
@@ -165,6 +165,27 @@ void CS_PROCF (matrix, MATRIX)
                      xcpp,
                      da,
                      (cs_real_2_t*) xa);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
+     least 1 in order not to shift the diagonal). */
+
+  if (ndircp <= 0) {
+    const double epsi = 1.e-7;
+
+#   pragma omp parallel for
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      da[cell_id] = (1.+epsi)*da[cell_id];
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    da[cell_id] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
   }
 
 }
@@ -193,6 +214,8 @@ void CS_PROCF (matrxv, MATRXV)
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
 
   if (*isym != 1 && *isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -203,7 +226,6 @@ void CS_PROCF (matrxv, MATRXV)
   if (*isym == 1) {
     cs_sym_matrix_vector(m,
                          *idiffp,
-                         *ndircp,
                          *thetap,
                          cofbfu,
                          fimp,
@@ -217,7 +239,6 @@ void CS_PROCF (matrxv, MATRXV)
     cs_matrix_vector(m,
                      *iconvp,
                      *idiffp,
-                     *ndircp,
                      *thetap,
                      coefbu,
                      cofbfu,
@@ -229,6 +250,28 @@ void CS_PROCF (matrxv, MATRXV)
                      da,
                      (cs_real_2_t*) xa);
   }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum. */
+
+  if (ndircp <= 0) {
+    const double epsi = 1.e-7;
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (int isou = 0; isou < 3; isou++)
+      da[cell_id][isou][isou] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -288,6 +331,9 @@ void CS_PROCF (matrvv, MATRVV)
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells = m->n_cells;
+
 
   if (*isym != 1 && *isym != 2) {
     bft_error(__FILE__, __LINE__, 0,
@@ -298,7 +344,6 @@ void CS_PROCF (matrvv, MATRVV)
   if (*isym == 1) {
     cs_sym_matrix_anisotropic_diffusion(m,
                                         *idiffp,
-                                        *ndircp,
                                         *thetap,
                                         cofbfu,
                                         fimp,
@@ -312,7 +357,6 @@ void CS_PROCF (matrvv, MATRVV)
     cs_matrix_anisotropic_diffusion(m,
                                     *iconvp,
                                     *idiffp,
-                                    *ndircp,
                                     *thetap,
                                     coefbu,
                                     cofbfu,
@@ -323,6 +367,27 @@ void CS_PROCF (matrvv, MATRVV)
                                     b_visc,
                                     da,
                                     (cs_real_332_t*) xa);
+  }
+
+  /* Penalization if non invertible matrix */
+
+  /* If no Dirichlet condition, the diagonal is slightly increased in order
+     to shift the eigenvalues spectrum. */
+
+  if (ndircp <= 0) {
+    const double epsi = 1.e-7;
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      for (int isou = 0; isou < 3; isou++) {
+        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
+      }
+    }
+  }
+
+  /* If a whole line of the matrix is 0, the diagonal is set to 1 */
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    for (int isou = 0; isou < 3; isou++)
+      da[cell_id][isou][isou] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
   }
 
 }
@@ -345,8 +410,6 @@ void CS_PROCF (matrvv, MATRVV)
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -367,15 +430,14 @@ void CS_PROCF (matrvv, MATRVV)
 
 void
 cs_sym_matrix_scalar(const cs_mesh_t          *m,
-         int                       idiffp,
-         int                       ndircp,
-         double                    thetap,
-         const cs_real_t           cofbfp[],
-         const cs_real_t           rovsdt[],
-         const cs_real_t           i_visc[],
-         const cs_real_t           b_visc[],
-         cs_real_t       *restrict da,
-         cs_real_t       *restrict xa)
+                     int                       idiffp,
+                     double                    thetap,
+                     const cs_real_t           cofbfp[],
+                     const cs_real_t           rovsdt[],
+                     const cs_real_t           i_visc[],
+                     const cs_real_t           b_visc[],
+                     cs_real_t       *restrict da,
+                     cs_real_t       *restrict xa)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -392,8 +454,6 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /*===============================================================================*/
 
@@ -461,17 +521,6 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
     }
   }
 
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-#   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      da[cell_id] = (1.+epsi)*da[cell_id];
-    }
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -491,8 +540,6 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -523,7 +570,6 @@ void
 cs_matrix_scalar(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
-                 int                       ndircp,
                  double                    thetap,
                  int                       imucpp,
                  const cs_real_t           coefbp[],
@@ -552,8 +598,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /*===============================================================================*/
 
@@ -692,17 +736,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
   }
 
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-#   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      da[cell_id] = (1.+epsi)*da[cell_id];
-    }
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -719,8 +752,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -742,7 +773,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 void
 cs_sym_matrix_vector(const cs_mesh_t          *m,
                      int                       idiffp,
-                     int                       ndircp,
                      double                    thetap,
                      const cs_real_33_t        cofbfu[],
                      const cs_real_33_t        fimp[],
@@ -760,8 +790,6 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -833,21 +861,6 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
 
   }
 
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-
-    }
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -867,8 +880,6 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -895,7 +906,6 @@ void
 cs_matrix_vector(const cs_mesh_t          *m,
                  int                       iconvp,
                  int                       idiffp,
-                 int                       ndircp,
                  double                    thetap,
                  const cs_real_33_t        coefbu[],
                  const cs_real_33_t        cofbfu[],
@@ -916,8 +926,6 @@ cs_matrix_vector(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -996,21 +1004,6 @@ cs_matrix_vector(const cs_mesh_t          *m,
       }
     }
 
-  }
-
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
-     least 1 in order not to shift the diagonal). */
-
-  if (ndircp <= 0) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-
-      for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-
-    }
   }
 
 }
@@ -1181,8 +1174,6 @@ cs_matrix_time_step(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -1209,7 +1200,6 @@ void
 cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
                                 int                       iconvp,
                                 int                       idiffp,
-                                int                       ndircp,
                                 double                    thetap,
                                 const cs_real_33_t        coefbu[],
                                 const cs_real_33_t        cofbfu[],
@@ -1230,8 +1220,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -1320,18 +1308,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
   }
 
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum. */
-
-  if ( ndircp <= 0 ) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1348,8 +1324,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
- * \param[in]     ndircp        indicator
- *                               - 0 if the diagonal stepped aside
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -1371,7 +1345,6 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 void
 cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
                                     int                       idiffp,
-                                    int                       ndircp,
                                     double                    thetap,
                                     const cs_real_33_t        cofbfu[],
                                     const cs_real_33_t        fimp[],
@@ -1389,8 +1362,6 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  const double epsi = 1.e-7;
 
   /* 1. Initialization */
 
@@ -1464,18 +1435,6 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
       }
     }
 
-  }
-
-
-  /* 5. If no Dirichlet condition, the diagonal is slightly increased in order
-     to shift the eigenvalues spectrum. */
-
-  if ( ndircp <= 0 ) {
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      for (int isou = 0; isou < 3; isou++) {
-        da[cell_id][isou][isou] = (1.+epsi)*da[cell_id][isou][isou];
-      }
-    }
   }
 
 }

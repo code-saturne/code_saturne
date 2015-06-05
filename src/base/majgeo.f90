@@ -27,7 +27,7 @@ subroutine majgeo &
    lndfa2 , lndfb2 , ncelg2 , nfacg2 , nfbrg2 , nsomg2 ,          &
    nfml2  , nthdi2 , nthdb2 , ngrpi2 , ngrpb2 , idxfi  , idxfb  , &
    iface2 , ifabo2 , ifmfb2 , ifmce2 ,                            &
-   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 ,                   &
+   ipnfa2 , nodfa2 , ipnfb2 , nodfb2 , isymp2 , isoli2 ,          &
    volmn2 , volmx2 , voltt2 ,                                     &
    xyzce2 , surfa2 , surfb2 , suffa2 , suffb2 ,                   &
    cdgfa2 , cdgfb2 , xyzno2 ,                                     &
@@ -72,6 +72,7 @@ subroutine majgeo &
 ! ifmfb2           ! ia ! <-- ! boundary face family number                    !
 ! ifmce2           ! ia ! <-- ! cell family number                             !
 ! isymp2           ! ia ! <-- ! boundary face symmetry flag                    !
+! isoli2           ! ia ! <-- ! solid cell flag                                !
 ! volmn2           ! r  ! <-- ! Minimum control volume                         !
 ! volmx2           ! r  ! <-- ! Maximum control volume                         !
 ! voltt2           ! r  ! <-- ! Total   control volume                         !
@@ -111,6 +112,7 @@ use entsor
 use parall
 use cstphy
 use mesh
+use optcal, only:iporos
 
 !===============================================================================
 
@@ -135,6 +137,7 @@ integer, dimension(lndfa2), target :: nodfa2
 integer, dimension(nfabo2+1), target :: ipnfb2
 integer, dimension(lndfb2), target :: nodfb2
 integer, dimension(nfabo2), target :: isymp2
+integer, dimension(*), target :: isoli2
 
 double precision :: volmn2, volmx2, voltt2
 
@@ -215,6 +218,11 @@ xyzcen => xyzce2(1:3,1:ncelet)
 !===============================================================================
 
 isympa => isymp2(1:nfabor)
+if (iporos.eq.0) then
+  isolid_0 => isoli2(1:1)
+else
+  isolid_0 => isoli2(1:ncelet)
+endif
 
 surfac => surfa2(1:3,1:nfac)
 surfbo => surfb2(1:3,1:nfabor)
