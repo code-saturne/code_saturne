@@ -5,6 +5,10 @@ Release 4.0.1 (unreleased)
 Changes:
 --------
 
+- Add "--import-only" option to "code_saturne create" command so as to
+  rebuild SaturneGUI and runcase scripts for a case which was copied
+  from a different system.
+
 - Use names consistent with thermal variable when postprocessing
   boundary thermal variable (which is not always a temperature).
   The name remains unchanged in the GUI, but consistent with the variable
