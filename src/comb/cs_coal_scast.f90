@@ -2001,14 +2001,12 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
     if ( ivar.eq.isca(iyhcn) ) then
 
-    aux = 0.d0
+      aux = 0.d0
 
-      do iel = 1,ncel
-
-         propce(iel,ipproc(ifhcnr))  = zero
-         propce(iel,ipproc(ifhcnd))  = zero
-         propce(iel,ipproc(ifhcnc)) = zero
-
+      do iel = 1, ncel
+        propce(iel,ipproc(ifhcnr)) = zero
+        propce(iel,ipproc(ifhcnd)) = zero
+        propce(iel,ipproc(ifhcnc)) = zero
       enddo
 
       !  Source term HCN
@@ -2017,7 +2015,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
-      do iel=1,ncel
+      do iel = 1, ncel
 
         !  Mass molar of the gas mixture
         wmel=propce(iel,ipproc(immel))
@@ -2036,18 +2034,18 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         !  Chen's model
         if(irb.eq.1) then
 
-          do icha = 1,ncharb
+          do icha = 1, ncharb
 
-             ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
-                  + ( propce(iel,ipcyf2) * wmel/wmchx2 )
+            ychx = ( propce(iel,ipcyf1) * wmel/wmchx1 )                       &
+                 + ( propce(iel,ipcyf2) * wmel/wmchx2 )
 
-             aux = cell_f_vol(iel)*wmhcn*propce(iel,iexprb)           &
-                 * cvara_yno(iel)*wmel/wmno                           &
-                 * ychx
+            aux = cell_f_vol(iel)*wmhcn*propce(iel,iexprb)           &
+                * cvara_yno(iel)*wmel/wmno                           &
+                * ychx
 
-             smbrs(iel)  = smbrs(iel)  + aux
+            smbrs(iel)  = smbrs(iel)  + aux
 
-             propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
+            propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
 
           enddo
 
@@ -2107,19 +2105,19 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               enddo
 
-              if(chx1(icha).ge.3.d0) then
+              if (chx1(icha).ge.3.d0) then
 
-              aux = ( cell_f_vol(iel)*wmhcn )                                  &
-                  * ( (core1 + core2) * para2 )                                &
-                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
-                  * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
+                aux = ( cell_f_vol(iel)*wmhcn )                                  &
+                    * ( (core1 + core2) * para2 )                                &
+                    * ( cvar_yno(iel)*crom(iel)/wmno )                           &
+                    * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               else
 
-              aux = ( cell_f_vol(iel)*wmhcn )                                  &
-                  * ( core1 + core2 )                                          &
-                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
-                  * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
+                aux = ( cell_f_vol(iel)*wmhcn )                                  &
+                    * ( core1 + core2 )                                          &
+                    * ( cvar_yno(iel)*crom(iel)/wmno )                           &
+                    * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )
 
               endif
 
@@ -2127,7 +2125,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               propce(iel,ipproc(ifhcnr)) = propce(iel,ipproc(ifhcnr)) + aux
 
-            elseif(propce(iel,ipcyf2).gt.0.d0) then
+            elseif (propce(iel,ipcyf2).gt.0.d0) then
 
               !  Reburning by CHx2
 
@@ -2135,7 +2133,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
               do ii = 1,7
 
                 !  We look for the interval teno(ii) < Tgaz < teno(ii+1)
-                if(propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
+                if (propce(iel,ipcte1).ge.teno(ii).and.propce(iel,ipcte1).lt.   &
                    teno(ii+1)) then
 
                   !  JJ indicates the quotient H/C of
@@ -2145,32 +2143,32 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx2(icha).ge.4.d0) then
 
-                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
 
                     elseif(chx2(icha).le.1.d0) then
 
-                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
 
                     elseif (chx2(icha).ge.jj.and.chx2(icha).lt.jj+1) then
 
-                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
 
                     endif
 
@@ -2182,17 +2180,17 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               if(chx2(icha).ge.3.d0) then
 
-              aux = ( cell_f_vol(iel)*wmhcn )                                  &
-                  * ( (core1 + core2) * para2 )                                &
-                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
-                  * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
+                aux = ( cell_f_vol(iel)*wmhcn )                                  &
+                    * ( (core1 + core2) * para2 )                                &
+                    * ( cvar_yno(iel)*crom(iel)/wmno )                           &
+                    * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               else
 
-              aux = ( cell_f_vol(iel)*wmhcn )                                      &
-                  * ( core1 + core2 )                                          &
-                  * ( cvar_yno(iel)*crom(iel)/wmno )                           &
-                  * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
+                aux = ( cell_f_vol(iel)*wmhcn )                                      &
+                    * ( core1 + core2 )                                          &
+                    * ( cvar_yno(iel)*crom(iel)/wmno )                           &
+                    * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )
 
               endif
 
@@ -2207,7 +2205,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         endif
 
         !  Initialization of variables
-        do icha=1,ncharb
+        do icha = 1, ncharb
 
           gmdev1(icha)=0.d0
           gmdev2(icha)=0.d0
@@ -2215,7 +2213,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         enddo
 
-        do icla=1,nclacp
+        do icla = 1, nclacp
 
           icha   = ichcor(icla)
           ipctem = ipproc(itemp2(icla))
@@ -2254,25 +2252,25 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         !  Modified source term (new model of NOx)
 
-        do icha=1,ncharb
+        do icha = 1, ncharb
 
-           !  Release of HCN during devolatilization
-           aux = -cell_f_vol(iel)*(gmdev1(icha)*yhcnle(icha)                       &
-                 +gmdev2(icha)*yhcnlo(icha))
+          !  Release of HCN during devolatilization
+          aux = -cell_f_vol(iel)*(gmdev1(icha)*yhcnle(icha)                       &
+                +gmdev2(icha)*yhcnlo(icha))
 
-           !   Release of HCN during the heterogeneous combustion according
-           !   to the value repnck(icha)
+          !   Release of HCN during the heterogeneous combustion according
+          !   to the value repnck(icha)
 
-           aux = aux-cell_f_vol(iel)*gmhet(icha)
+          aux = aux-cell_f_vol(iel)*gmhet(icha)
 
-           smbrs(iel)  = smbrs(iel) + aux
+          smbrs(iel)  = smbrs(iel) + aux
 
-           !  Source terms displaying
-           propce(iel,ipproc(ifhcnd)) = propce(iel,ipproc(ifhcnd))             &
-           -cell_f_vol(iel)*(gmdev1(icha)*yhcnle(icha)+gmdev2(icha)*yhcnlo(icha))
+          !  Source terms displaying
+          propce(iel,ipproc(ifhcnd)) = propce(iel,ipproc(ifhcnd))             &
+          -cell_f_vol(iel)*(gmdev1(icha)*yhcnle(icha)+gmdev2(icha)*yhcnlo(icha))
 
-           propce(iel,ipproc(ifhcnc))= propce(iel,ipproc(ifhcnc))              &
-           -cell_f_vol(iel)*gmhet(icha)
+          propce(iel,ipproc(ifhcnc))= propce(iel,ipproc(ifhcnc))              &
+          -cell_f_vol(iel)*gmhet(icha)
 
         enddo
 
@@ -2281,14 +2279,12 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
     endif
 
 
-    if ( ivar.eq.isca(iynh3)) then
+    if (ivar.eq.isca(iynh3)) then
 
-       aux = 0.d0
+      aux = 0.d0
 
       do iel = 1, ncel
-
-         propce(iel,ipproc(ifnh3d)) = zero
-
+        propce(iel,ipproc(ifnh3d)) = zero
       enddo
 
       !  Source term NH3
@@ -2297,7 +2293,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
-      do iel=1,ncel
+      do iel = 1, ncel
 
         !  Mass molar of the gaseous mixture
         wmel = propce(iel,ipproc(immel))
@@ -2311,7 +2307,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         rovsdt(iel) = rovsdt(iel) + aux
 
         !  Initialization of variables
-        do icha=1,ncharb
+        do icha = 1, ncharb
 
           gmdev1(icha)=0.d0
           gmdev2(icha)=0.d0
@@ -2319,7 +2315,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         enddo
 
-        do icla=1,nclacp
+        do icla = 1, nclacp
 
           icha = ichcor(icla)
 
@@ -2337,31 +2333,29 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         enddo
 
-        do icha=1,ncharb
+        do icha = 1, ncharb
 
-           !  Release of NH3 during the devolatization.
-           aux = -cell_f_vol(iel)*(gmdev1(icha)*ynh3le(icha)                       &
-                 +gmdev2(icha)*ynh3lo(icha))
+          !  Release of NH3 during the devolatization.
+          aux = -cell_f_vol(iel)*(gmdev1(icha)*ynh3le(icha)                       &
+                +gmdev2(icha)*ynh3lo(icha))
 
-           smbrs(iel)  = smbrs(iel) + aux
+          smbrs(iel)  = smbrs(iel) + aux
 
-           !  Source terms displaying
-           propce(iel,ipproc(ifnh3d)) = propce(iel,ipproc(ifnh3d))             &
-           -cell_f_vol(iel)*(gmdev1(icha)*ynh3le(icha)+gmdev2(icha)*ynh3lo(icha))
+          !  Source terms displaying
+          propce(iel,ipproc(ifnh3d)) = propce(iel,ipproc(ifnh3d))             &
+          -cell_f_vol(iel)*(gmdev1(icha)*ynh3le(icha)+gmdev2(icha)*ynh3lo(icha))
 
-           propce(iel,ipproc(ifnh3c)) = zero
+          propce(iel,ipproc(ifnh3c)) = zero
 
         enddo
-
-
 
       enddo
 
     endif
 
-    if ( ivar.eq.isca(iyno) ) then
+    if (ivar.eq.isca(iyno)) then
 
-      do iel = 1 ,ncel
+      do iel = 1, ncel
 
         propce(iel,ipproc(icnorb)) = zero
         propce(iel,ipproc(ifnoch)) = zero
@@ -2374,7 +2368,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         write(nfecra,1000) chaine(1:8)
       endif
 
-      do iel=1,ncel
+      do iel = 1, ncel
 
         !  Mass molar of the gaseous mixture
         wmel=propce(iel,ipproc(immel))
@@ -2396,7 +2390,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
         !  Coefficient of thermal NO
         aux3 = cell_f_vol(iel)*crom(iel)**1.5d0                           &
               *propce(iel,iexp3)                                               &
-!       Pourquoi la fraction massique d'azote n'a ete pas transforme dans une
+!FIXME       Pourquoi la fraction massique d'azote n'a ete pas transforme dans une
 !       fraction molaire ?
               *propce(iel,ipproc(iym1(in2)))
 
@@ -2418,7 +2412,7 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
         !  Reburning ?
         !  Chen's model
-        if(irb.eq.1) then
+        if (irb.eq.1) then
 
           do icha = 1,ncharb
 
@@ -2435,9 +2429,9 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
           enddo
 
         !  Dimitiou's model
-        elseif(irb.eq.2) then
+        else if (irb.eq.2) then
 
-          do icha = 1,ncharb
+          do icha = 1, ncharb
 
             !  Reburning by CHx1
             if (propce(iel,ipcyf1).gt.0.d0) then
@@ -2455,43 +2449,43 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx1(icha).ge.4.d0) then
 
-                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/(teno(ii+1) -   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
 
                     elseif(chx1(icha).le.1.d0) then
 
-                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1)  -   &
-                            teno(ii))
-                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
-                    core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
-                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
-                            teno(ii))
+                      core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1)  -   &
+                              teno(ii))
+                      core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) - teno(ii))
+                      core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
+                              (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                              teno(ii))
 
                     elseif (chx1(icha).ge.jj.and.chx1(icha).lt.jj+1) then
 
-                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
-                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
-                            teno(ii))
+                      core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
+                              (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                              teno(ii))
 
                     endif
 
@@ -2501,19 +2495,19 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               enddo
 
-              if(chx1(icha).ge.3.d0) then
+              if (chx1(icha).ge.3.d0) then
 
-              auxrb1 = ( cell_f_vol(iel)*wmno )                                &
-                     * ( (core1 + core2 + core3) * para2 )                     &
-                     * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
-                     * ( cvar_yno(iel) * crom(iel)/wmno )
+                auxrb1 = ( cell_f_vol(iel)*wmno )                                &
+                       * ( (core1 + core2 + core3) * para2 )                     &
+                       * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
+                       * ( cvar_yno(iel) * crom(iel)/wmno )
 
               else
 
-              auxrb1 = ( cell_f_vol(iel)*wmno )                                &
-                     * ( core1 + core2 + core3 )                               &
-                     * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
-                     * ( cvar_yno(iel) * crom(iel)/wmno )
+                auxrb1 = ( cell_f_vol(iel)*wmno )                                &
+                       * ( core1 + core2 + core3 )                               &
+                       * ( propce(iel,ipcyf1)*propce(iel,idgaz)/wmchx1 )         &
+                       * ( cvar_yno(iel) * crom(iel)/wmno )
 
               endif
 
@@ -2537,47 +2531,47 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
                     !  We look for the interval jj < chx1(icha) < jj + 1
                     if(chx2(icha).ge.4.d0) then
 
-                    core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
-                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
-                            teno(ii))
+                      core1 = ka(4,ii) + ( (ka(4,ii+1)- ka(4,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core2 = kb(4,ii) + ( (kb(4,ii+1)- kb(4,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core3 = kc(4,ii) + ( (kc(4,ii+1)- kc(4,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
+                              (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                              teno(ii))
 
                     elseif(chx2(icha).le.1.d0) then
 
-                    core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
-                            teno(ii)) ) * (propce(iel,ipcte1) -                &
-                            teno(ii))
-                    core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
-                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
-                            teno(ii))
+                      core1 = ka(1,ii) + ( (ka(1,ii+1)- ka(1,ii))/(teno(ii+1)-   &
+                              teno(ii)) ) * (propce(iel,ipcte1) -                &
+                              teno(ii))
+                      core2 = kb(1,ii) + ( (kb(1,ii+1)- kb(1,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core3 = kc(1,ii) + ( (kc(1,ii+1)- kc(1,ii))/               &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii)) /               &
+                              (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                              teno(ii))
                     elseif (chx2(icha).ge.jj.and.chx2(icha).lt.jj+1) then
 
-                    core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
-                            (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
-                            teno(ii))
-                    para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
-                            (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
-                            teno(ii))
+                      core1 = ka(jj,ii) + ( (ka(jj+1,ii+1)- ka(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core2 = kb(jj,ii) + ( (kb(jj+1,ii+1)- kb(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      core3 = kc(jj,ii) + ( (kc(jj+1,ii+1)- kc(jj,ii))/          &
+                              (teno(ii+1)-teno(ii)) ) * (propce(iel,ipcte1) -    &
+                              teno(ii))
+                      para2 = chi2(ii) + ( (chi2(ii+1)-chi2(ii))/                &
+                              (teno(ii+1) - teno(ii)) ) * (propce(iel,ipcte1) -  &
+                              teno(ii))
 
                     endif
 
@@ -2589,17 +2583,17 @@ if ( ieqnox .eq. 1 .and. imdnox.eq.1 .and. ntcabs .gt. 1) then
 
               if(chx2(icha).ge.3.d0) then
 
-              auxrb2 = ( cell_f_vol(iel)*wmno )                                &
-                     * ( (core1 + core2 + core3) * para2 )                     &
-                     * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
-                     * ( cvar_yno(iel) * crom(iel)/wmno )
+                auxrb2 = ( cell_f_vol(iel)*wmno )                                &
+                       * ( (core1 + core2 + core3) * para2 )                     &
+                       * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
+                       * ( cvar_yno(iel) * crom(iel)/wmno )
 
               else
 
-              auxrb2 = ( cell_f_vol(iel)*wmno )                                &
-                     * ( core1 + core2 + core3 )                               &
-                     * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
-                     * ( cvar_yno(iel) * crom(iel)/wmno )
+                auxrb2 = ( cell_f_vol(iel)*wmno )                                &
+                       * ( core1 + core2 + core3 )                               &
+                       * ( propce(iel,ipcyf2)*propce(iel,idgaz)/wmchx2 )         &
+                       * ( cvar_yno(iel) * crom(iel)/wmno )
 
               endif
 
