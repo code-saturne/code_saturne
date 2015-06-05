@@ -121,7 +121,7 @@ double precision, dimension(:), pointer :: cvar_f7m, cvar_f8m, cvar_f9m
 double precision, dimension(:), pointer :: cvar_fvp2m
 double precision, dimension(:), pointer :: cvar_yco2, cvar_yhcn, cvar_ynh3
 double precision, dimension(:), pointer :: cvar_yno, cvar_hox
-double precision, dimension(:), pointer :: x1, b_x1
+double precision, dimension(:), pointer :: cpro_x1, bpro_x1
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
 
@@ -134,8 +134,8 @@ save             ipass
 !===============================================================================
 
 ! Massic fraction of gas
-call field_get_val_s_by_name("x_c", x1)
-call field_get_val_s_by_name("b_x_c", b_x1)
+call field_get_val_s_by_name("x_c", cpro_x1)
+call field_get_val_s_by_name("b_x_c", bpro_x1)
 
 ipass = ipass + 1
 
@@ -367,23 +367,25 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
       cvar_hox(iel) = h1init
     endif
 
-    ! Initialization of the continuous mass fraction
-    x1(iel) = 1.d0
-
-  enddo
-
-  ! Initialization of the continuous mass fraction AT the BCs
-  do ifac = 1, nfabor
-    b_x1(ifac) = 1.d0
   enddo
 
 endif
 
+if (ipass.eq.1) then
+
+  do iel = 1, ncel
+    ! Initialization of the continuous mass fraction
+    cpro_x1(iel) = 1.d0
+  enddo
+
+  ! Initialization of the continuous mass fraction AT the BCs
+  do ifac = 1, nfabor
+    bpro_x1(ifac) = 1.d0
+  enddo
+
 !===============================================================================
 ! 3. User initialization
 !===============================================================================
-
-if (ipass.eq.1) then
 
   call cs_user_initialization &
   !==========================
