@@ -207,19 +207,6 @@ class Study:
             self.use_ref = False
             self.copy = None
 
-    def get_syrthes_version(self):
-        """
-        Get available SYRTHES version.
-        """
-        syrthes_version = None
-
-        config = configparser.ConfigParser()
-        config.read(self.package.get_configfiles())
-        if config.has_option('install', 'syrthes'):
-            syrthes_version = 4
-
-        return syrthes_version
-
 
     def create(self):
         """
@@ -249,12 +236,7 @@ class Study:
 
         # Creating SYRTHES cases
         if len(self.syr_case_names) > 0:
-            syrthes_version = self.get_syrthes_version()
-            if syrthes_version == 4:
-                self.create_syrthes_cases(repbase)
-            else:
-                sys.stderr.write("Cannot locate SYRTHES installation.")
-                sys.exit(1)
+            self.create_syrthes_cases(repbase)
 
         # Creating Code_Aster case
         if self.ast_case_name is not None:
@@ -277,20 +259,8 @@ class Study:
         Create and initialize SYRTHES case directories.
         """
 
-        try:
-            config = configparser.ConfigParser()
-            config.read(self.package.get_configfiles())
-            syr_datapath = os.path.join(config.get('install', 'syrthes'),
-                                        os.path.join('share', 'syrthes'))
-            sys.path.insert(0, syr_datapath)
-            if not os.getenv('SYRTHES4_HOME'):
-                syr_profile = os.path.join(config.get('install', 'syrthes'),
-                                           'bin', 'syrthes.profile')
-                cs_exec_environment.source_shell_script(syr_profile)
-            import syrthes
-        except Exception:
-            sys.stderr.write("SYRTHES create case: Cannot locate SYRTHES installation.\n")
-            sys.exit(1)
+        cs_exec_environment.source_syrthes_env(self.package)
+        import syrthes
 
         for s in self.syr_case_names:
             os.chdir(repbase)

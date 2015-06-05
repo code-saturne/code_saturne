@@ -5,6 +5,8 @@ Release 4.0.1 (unreleased)
 Changes:
 --------
 
+- Make handling of Syrthes location more robust, with better diagnostics.
+
 - Add "--import-only" option to "code_saturne create" command so as to
   rebuild SaturneGUI and runcase scripts for a case which was copied
   from a different system.

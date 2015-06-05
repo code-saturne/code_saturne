@@ -1109,20 +1109,9 @@ class syrthes_domain(base_domain):
                         source_shell_script(syr_profile)
         except Exception:
             pass
-        try:
-            if not os.getenv('SYRTHES4_HOME'):
-                config = configparser.ConfigParser()
-                config.read(self.package.get_configfiles())
-                syr_profile = os.path.join(config.get('install', 'syrthes'),
-                                           'bin', 'syrthes.profile')
-                syr_datapath = os.path.join(config.get('install', 'syrthes'),
-                                            os.path.join('share', 'syrthes'))
-                sys.path.insert(1, syr_datapath)
-                source_shell_script(syr_profile)
-            import syrthes
-        except Exception:
-            raise RunCaseError("Cannot locate SYRTHES installation.\n")
-            sys.exit(1)
+
+        cs_exec_environment.source_syrthes_env(self.package)
+        import syrthes
 
         self.syrthes_case = syrthes.process_cmd_line(args.split())
 
