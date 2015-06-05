@@ -413,7 +413,8 @@ domains = [
         # Result directory for coupling execution
 
         resu = os.path.join(repbase, 'RESU_COUPLING')
-        os.mkdir(resu)
+        if not self.import_only:
+            os.mkdir(resu)
 
         coupling_base = 'coupling_parameters.py'
         coupling = os.path.join(repbase, coupling_base)
