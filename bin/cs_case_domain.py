@@ -41,6 +41,7 @@ import cs_xml_reader
 
 from cs_exec_environment import run_command, source_shell_script
 from cs_exec_environment import enquote_arg, separate_args
+from cs_exec_environment import source_syrthes_env
 
 #===============================================================================
 # Utility functions
@@ -1112,7 +1113,7 @@ class syrthes_domain(base_domain):
         except Exception:
             pass
 
-        cs_exec_environment.source_syrthes_env(self.package)
+        source_syrthes_env(self.package)
         import syrthes
 
         self.syrthes_case = syrthes.process_cmd_line(args.split())
