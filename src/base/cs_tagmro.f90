@@ -42,11 +42,13 @@
 !______________________________________________________________________________!
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ifbpcd        index of faces with condensation source terms
+!> \param[in]     izzftcd        faces zone with condensation source terms imposed
+!>                              (at previous and current time steps)
 !> \param[in]     dt            time step of the 1D thermal model
 !_______________________________________________________________________________
 
 subroutine cs_tagmro &
- ( nfbpcd , ifbpcd ,                          &
+ ( nfbpcd , ifbpcd , izzftcd ,                    &
    dt     )
 
 !===============================================================================
@@ -68,7 +70,8 @@ use parall
 use mesh
 use field
 use pointe, only:flthr, dflthr
-use cs_tagmr
+use cs_nz_condensation, only:nzones,iztag1d
+use cs_nz_tagmr
 
 !===============================================================================
 
@@ -76,20 +79,20 @@ implicit none
 
 ! Arguments
 
-integer          nfbpcd, ifbpcd(nfbpcd)
+integer          nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
 
 double precision dt(ncelet)
 
 ! Local variables
 
-integer          ilelt, iel, ifac
-integer          ii, jj
+integer          ii, iel, ifac
+integer          kk, iz
 
 double precision dx,dx2
 double precision phi,dphi
-double precision da(nmur),xa(2,nmur),xsm(nmur)
-double precision dtmur(nmur)
-double precision tpminf,tpmaxf,tpminp,tpmaxp
+double precision da(znmurx),xa(2,znmurx),xsm(znmurx)
+double precision dtmur(znmurx)
+double precision tpminf(nzones),tpmaxf(nzones),tpminp(nzones),tpmaxp(nzones)
 double precision dxv, rocp
 
 !===============================================================================
@@ -98,98 +101,111 @@ double precision dxv, rocp
 ! Resolution of the 1-D thermal problem coupled with condensation
 !===============================================================================
 
-rocp = rob*cpb
 
-do ilelt = 1, nfbpcd
+do ii = 1, nfbpcd
 
-  ifac = ifbpcd(ilelt)
-  iel = ifabor(ifac)
+  ifac = ifbpcd(ii)
+  iel  = ifabor(ifac)
 
-  ! Cote fluide, on recupere le flux et la derivee du flux (implicitation)
-  phi = flthr(ilelt)
-  dphi= dflthr(ilelt)
+  iz = izzftcd(ii)
 
-  do ii=2, nmur-1
+  if(iztag1d(iz).eq.1) then
 
-    dx  = dxp(ii)
-    dxv = 0.5d0*(dxp(ii-1)+dxp(ii))
+    rocp = zrob(iz)*zcpb(iz)
+    ! Cote fluide, on recupere le flux et la derivee du flux (implicitation)
+    phi = flthr(ii)
+    dphi= dflthr(ii)
 
-    da (ii) = rocp/dt(iel)+theta*condb/(dxp(ii-1)*dxv)            &
-                          +theta*condb/(dxp(ii)  *dxv)
-    xa(1,ii) =  -theta*condb/(dxp(ii-1)*dxv)
-    xa(2,ii) =  -theta*condb/(dxp(ii  )*dxv)
-    xsm(ii) = condb*(  tmur(ilelt,ii+1)/(dxp(ii)  *dxv)            &
-                     - tmur(ilelt,ii)  /(dxp(ii)  *dxv)            &
-                     - tmur(ilelt,ii)  /(dxp(ii-1)*dxv)            &
-                     + tmur(ilelt,ii-1)/(dxp(ii-1)*dxv))
-  enddo
+    do kk=2, znmur(iz)-1
 
-  ! cote fluide
-  ii = 1
-  dx  = dxp(ii)
-  dx2 = dxp(ii)*dxp(ii)
-  da (ii) = rocp/dt(iel)+theta*2.d0*condb/dx2+2.d0*dphi/dx
-  xa(1,ii) = 0.d0
-  xa(2,ii) = -theta*2.d0*condb/dx2
-  xsm(ii) =  2.d0*condb/dx2*(tmur(ilelt,ii+1)-tmur(ilelt,ii))      &
-           +(2.d0/dx)*phi
+      dx  = zdxp(iz,kk)
+      dxv = 0.5d0*(zdxp(iz,kk-1)+zdxp(iz,kk))
 
-  ! cote externe
-  ii = nmur
-  dx  = dxp(ii-1)
-  dx2 = dxp(ii-1)*dxp(ii-1)
-  da (ii) = rocp/dt(iel)+theta*2.d0*condb/dx2+2.d0*hext/dx
-  xa(1,ii) = -theta*2.d0*condb/dx2
-  xa(2,ii) = 0.d0
-  xsm(ii) = 2.d0*condb/dx2*(tmur(ilelt,ii-1)-tmur(ilelt,ii))       &
-           -(2.d0/dx)*hext*(tmur(ilelt,ii)-text)
-
-  ! Resolution sur l'increment
-  do ii = 1, nmur
-    dtmur(ii) = 0.d0
-  enddo
-
-  do jj = 1, nmur
-    ii = 1
-    dtmur(ii) = (xsm(ii)+xa(2,ii)*dtmur(ii+1))/da(ii)
-    do ii = 2, nmur-1
-      dtmur(ii)= (xsm(ii)+xa(1,ii)*dtmur(ii-1)+xa(2,ii)*dtmur(ii+1)) / da(ii)
+      da (kk) = rocp/dt(iel)+ztheta(iz)*zcondb(iz)/(zdxp(iz,kk-1)*dxv)      &
+                            +ztheta(iz)*zcondb(iz)/(zdxp(iz,kk)  *dxv)
+      xa(1,kk) =  -ztheta(iz)*zcondb(iz)/(zdxp(iz,kk-1)*dxv)
+      xa(2,kk) =  -ztheta(iz)*zcondb(iz)/(zdxp(iz,kk  )*dxv)
+      xsm(kk) = zcondb(iz)*( ztmur(ii,kk+1)/(zdxp(iz,kk)  *dxv)            &
+                       - ztmur(ii,kk)  /(zdxp(iz,kk)  *dxv)                &
+                       - ztmur(ii,kk)  /(zdxp(iz,kk-1)*dxv)                &
+                       + ztmur(ii,kk-1)/(zdxp(iz,kk-1)*dxv))
     enddo
-    ii = nmur
-    dtmur(ii) = (xsm(ii)+xa(1,ii)*dtmur(ii-1))/da(ii)
-  enddo
 
-  ! Actualisation de la temperature
+    ! cote fluide
+    kk = 1
+    dx  = zdxp(iz,kk)
+    dx2 = zdxp(iz,kk)*zdxp(iz,kk)
+    da (kk)  = rocp/dt(iel)+ztheta(iz)*2.d0*zcondb(iz)/dx2+2.d0*dphi/dx
+    xa(1,kk) = 0.d0
+    xa(2,kk) = -ztheta(iz)*2.d0*zcondb(iz)/dx2
+    xsm(kk)  =  2.d0*zcondb(iz)/dx2*(ztmur(ii,kk+1)-ztmur(ii,kk))      &
+             +(2.d0/dx)*phi
 
-  do ii = 1, nmur
-    tmur(ilelt,ii) = tmur(ilelt,ii)+dtmur(ii)
-  enddo
+    ! cote externe
+    kk = znmur(iz)
+    dx  = zdxp(iz,kk-1)
+    dx2 = zdxp(iz,kk-1)*zdxp(iz,kk-1)
+    da (kk)  = rocp/dt(iel)+ztheta(iz)*2.d0*zcondb(iz)/dx2+2.d0*zhext(iz)/dx
+    xa(1,kk) = -ztheta(iz)*2.d0*zcondb(iz)/dx2
+    xa(2,kk) = 0.d0
+    xsm(kk)  = 2.d0*zcondb(iz)/dx2*(ztmur(ii,kk-1)-ztmur(ii,kk))       &
+             -(2.d0/dx)*zhext(iz)*(ztmur(ii,kk)-ztext(iz))
 
+    ! Resolution sur l'increment
+    do kk = 1, znmur(iz)
+      dtmur(kk) = 0.d0
+    enddo
+
+    kk = 1
+    dtmur(kk) = (xsm(kk)+xa(2,kk)*dtmur(kk+1))/da(kk)
+    do kk = 2, znmur(iz)-1
+      dtmur(kk)= (xsm(kk)+xa(1,kk)*dtmur(kk-1)+xa(2,kk)*dtmur(kk+1)) / da(kk)
+    enddo
+    kk = znmur(iz)
+    dtmur(kk) = (xsm(kk)+xa(1,kk)*dtmur(kk-1))/da(kk)
+
+    ! Actualisation de la temperature
+
+    do kk = 1, znmur(iz)
+      ztmur(ii,kk) = ztmur(ii,kk)+dtmur(kk)
+    enddo
+
+  endif
 enddo
 
 if (mod(ntcabs,ntlist).eq.0) then
 
-  tpminf = +1.d20
-  tpmaxf = -1.d20
-  tpminp = +1.d20
-  tpmaxp = -1.d20
-  do ilelt = 1, nfbpcd
-    tpminf = min(tpminf,tmur(ilelt,1))
-    tpmaxf = max(tpmaxf,tmur(ilelt,1))
-    tpminp = min(tpminp,tmur(ilelt,nmur))
-    tpmaxp = max(tpmaxp,tmur(ilelt,nmur))
+  do iz = 1, nzones
+    tpminf(iz) = +1.d20
+    tpmaxf(iz) = -1.d20
+    tpminp(iz) = +1.d20
+    tpmaxp(iz) = -1.d20
   enddo
 
-  if (irangp .ge. 0) then
-    call parmin(tpminf)
-    call parmin(tpminp)
-    call parmax(tpmaxf)
-    call parmax(tpmaxp)
-  endif
+  do ii = 1, nfbpcd
+    iz = izzftcd(ii)
+    if(iztag1d(iz).eq.1) then
+      tpminf(iz) = min(tpminf(iz),ztmur(ii,1))
+      tpmaxf(iz) = max(tpmaxf(iz),ztmur(ii,1))
+      tpminp(iz) = min(tpminp(iz),ztmur(ii,znmur(iz)))
+      tpmaxp(iz) = max(tpmaxp(iz),ztmur(ii,znmur(iz)))
+    endif
+  enddo
 
-  write(nfecra,1000)
-  write(nfecra,1001) ttcabs,tpminf,tpmaxf,tpminp,tpmaxp
-  write(nfecra,1002)
+  do iz = 1, nzones
+    if (irangp.ge.0) then
+      call parmin(tpminf(iz))
+      call parmin(tpminp(iz))
+      call parmax(tpmaxf(iz))
+      call parmax(tpmaxp(iz))
+    endif
+
+    if (irangp.le.0) then
+      write(nfecra,1000)
+      write(nfecra,1001) ttcabs,iz,tpminf(iz),tpmaxf(iz),tpminp(iz),tpmaxp(iz)
+      write(nfecra,1002)
+    endif
+  enddo
 
 endif
 
@@ -204,17 +220,19 @@ endif
          3x,'===================================== ',/, &
               /,&
   3x,'------------------------------------------'   ,   &
-     '------------------------------------'         ,/, &
-  3x,' time', 8x,'Tp_f   (min) ',5x,'Tp_f   (max)',6x,  &
+     '----------------------------------------------',/,&
+  3x,' time', 8x, ' izones', 5x,&
+                  'Tp_f  (min) ',5x,'Tp_f   (max)',6x,  &
                   'Tp_ext(min) ',5x,'Tp_ext (max)'  ,/, &
-  3x,'  (s) ',8x, ' (C)       ' ,5x,' (C)        ',6x,  &
+  3x,'  (s) ',8x, '       ', 5x,&
+                  ' (C)       ' ,5x,' (C)        ',6x,  &
                   ' (C)       ' ,5x,' (C)        '  ,/, &
   3x,'------------------------------------------',      &
-     '------------------------------------' )
- 1001 format( 3x, 5(g15.7,1x) )
+     '----------------------------------------------' )
+ 1001 format( 3x, g15.7, 1x, i4, 3x, 4(g15.7,1x) )
  1002 format(&
   3X,'------------------------------------------'   ,   &
-     '------------------------------------' )
+     '----------------------------------------------' )
 
 !----
 ! End

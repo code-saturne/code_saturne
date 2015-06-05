@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Allow condensation model to use zone-based definitions. The examples
+  are updated so as to recommend the zone-based setup, though previous
+  single-zone setups definitions remain compatible.
+
 - Add "--import-only" option to "code_saturne create" command so as to
   rebuild SaturneGUI and runcase scripts for a case which was copied
   from a different system.

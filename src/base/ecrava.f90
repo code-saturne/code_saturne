@@ -77,7 +77,8 @@ use atchem, only: ichemistry
 use siream, only: iaerosol
 use mesh
 use cs_c_bindings
-use cs_tagmr, only: nmur, tmur
+use cs_nz_condensation, only:izzftcd, nztag1d, ztpar
+use cs_nz_tagmr, only:znmurx, znmur, ztmur
 
 !===============================================================================
 
@@ -103,7 +104,7 @@ integer          nfmtst
 integer          ilecec, iecr
 integer          ngbstr(2)
 integer          ifac, iel, istr
-integer          kk
+integer          iz, kk
 integer          ival(1)
 double precision rval(1), tmpstr(27)
 
@@ -111,6 +112,7 @@ type(c_ptr) :: rp
 
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: tmurbf
+double precision, allocatable, dimension(:) :: tparbf
 double precision, pointer, dimension(:) :: dt_s
 double precision, pointer, dimension(:,:) :: disale
 
@@ -586,22 +588,24 @@ if (iecaux.eq.1) then
 !      with or wihtout the 1D thermal model tag1D
 !----------------------------------------------------------------
 
-  if (icond.eq.0.) then
+  if (icond.eq.0) then
 
-    if (itag1d.eq.1) then
+    if (nztag1d.eq.1) then
+
       ! Wall temperature array in the thickness for the 1D thermal model
-      allocate(tmurbf(nfabor,nmur))
+      allocate(tmurbf(nfabor,znmurx))
 
       tmurbf(:,:) = 0.d0
 
       rubriq = 'tmur_bf_prev'
       itysup = 3
-      nbval  = nmur
+      nbval  = znmurx
 
       do ii = 1, nfbpcd
         ifac= ifbpcd(ii)
-        do kk = 1, nmur
-          tmurbf(ifac, kk) = tmur(ii,kk)
+        iz  = izzftcd(ii)
+        do kk = 1, znmur(iz)
+          tmurbf(ifac, kk) = ztmur(ii,kk)
         enddo
       enddo
 
@@ -609,6 +613,25 @@ if (iecaux.eq.1) then
 
       ! Free memory
       deallocate(tmurbf)
+    else
+      ! Wall temperature array in the thickness for the 1D thermal model
+      allocate(tparbf(nfabor))
+
+      tparbf(:) = 0.d0
+
+      rubriq = 'tpar_bf_prev'
+      itysup = 3
+      nbval  = 1
+
+      do ii = 1, nfbpcd
+        ifac= ifbpcd(ii)
+        iz  = izzftcd(ii)
+        tparbf(ifac) = ztpar(iz)
+      enddo
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,tparbf)
+
+      ! Free memory
+      deallocate(tparbf)
     endif
 
   endif
