@@ -41,6 +41,7 @@ import cs_xml_reader
 
 from cs_exec_environment import run_command, source_shell_script
 from cs_exec_environment import enquote_arg, separate_args
+from cs_exec_environment import source_syrthes_env
 
 #===============================================================================
 # Utility functions
@@ -122,6 +123,8 @@ class base_domain:
         # Execution and debugging options
 
         self.n_procs = n_procs_weight
+        if not n_procs_min:
+            n_procs_min = 1
         self.n_procs_min = max(1, n_procs_min)
         self.n_procs_max = n_procs_max
 
@@ -1110,7 +1113,7 @@ class syrthes_domain(base_domain):
         except Exception:
             pass
 
-        cs_exec_environment.source_syrthes_env(self.package)
+        source_syrthes_env(self.package)
         import syrthes
 
         self.syrthes_case = syrthes.process_cmd_line(args.split())
