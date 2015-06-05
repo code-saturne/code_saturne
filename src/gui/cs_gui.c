@@ -2075,7 +2075,7 @@ _c_head_losses(const char* zone_id, const char* c)
  *   name        <--  name of the property
  *----------------------------------------------------------------------------*/
 
-static int
+static double
 _rotor_option(int          rotor_id,
               const char  *name)
 {
