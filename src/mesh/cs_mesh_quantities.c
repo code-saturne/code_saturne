@@ -2242,14 +2242,20 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
     if (mesh_quantities->cell_f_vol == NULL)
       BFT_MALLOC(mesh_quantities->cell_f_vol, n_cells_with_ghosts, cs_real_t);
 
-    if (mesh_quantities->c_solid_flag == NULL)
+    if (mesh_quantities->c_solid_flag == NULL) {
       BFT_MALLOC(mesh_quantities->c_solid_flag, n_cells_with_ghosts, cs_int_t);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
+        mesh_quantities->c_solid_flag[cell_id] = 0;
+    }
+
   }
   else {
     mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
 
-    if (mesh_quantities->c_solid_flag == NULL)
+    if (mesh_quantities->c_solid_flag == NULL) {
       BFT_MALLOC(mesh_quantities->c_solid_flag, 1, cs_int_t);
+      mesh_quantities->c_solid_flag[0] = 0;
+    }
   }
 
   if (mesh_quantities->i_face_surf == NULL)
