@@ -165,7 +165,7 @@ both $CH_{x1}$ and $CH_{x2}$), and so on.
 %========================================
 \begin{figure}[!htpb]
 \centerline{\includegraphics[width=0.8\textwidth]{Yf0}}
-\caption{Condensed Fuels before any gas combustion.} 
+\caption{Condensed Fuels before any gas combustion.}
 \end{figure}
 %========================================
 Before reaction between gases, only exist species coming from
@@ -193,10 +193,10 @@ CH_{x1} + \dfrac{x1-x2}{4} O_{2}  \Rightarrow  CH_{x2} + \dfrac{x1-x2}{2} H_{2}O
 %========================================
 \begin{figure}[!htpb]
 \centerline{\includegraphics[width=0.8\textwidth]{Yf1}}
-\caption{Condensed Fuels after hydrocarbons conversion.} 
+\caption{Condensed Fuels after hydrocarbons conversion.}
 \end{figure}
 %========================================
- 
+
 The oxygen and the hydrocarbon vapor have linear concentrations in $f(1+2)$ on [0,
 1]. As long as the stoechiometry of the reaction is known, a simple equation
 allows to determine $f_{s2}$ the stoechiometric point for the second reaction
@@ -204,7 +204,7 @@ allows to determine $f_{s2}$ the stoechiometric point for the second reaction
 conversion of some hydrocarbon vapor to carbon monixide and water vapor ({\small
   not plotted in an optimistic attempt to lighten the sketch}).
 \begin{equation*}
-CH_{x2} + \displaystyle \frac{2+x2}{4} O_{2} \Rightarrow CO + \frac{x}{2} H_{2}O. 
+CH_{x2} + \displaystyle \frac{2+x2}{4} O_{2} \Rightarrow CO + \frac{x}{2} H_{2}O.
 \end{equation*}
 %========================================
 \begin{figure}[!htpb]
@@ -249,7 +249,7 @@ f_{\displaystyle s4}, f_{\displaystyle s3},$ $f_{\displaystyle s2},
 f_{\displaystyle s1}, 1]$ allows a simple integration: 1) Dirac's peak
 intensity are used to weight composition at boundaries, 2) the piece linear part
 is integrated with analytical formulae on each band:
- 
+
 %==================
 \begin{enumerate}
 \item rich range, here existing species with the higher calorific value: \\
@@ -271,7 +271,7 @@ is integrated with analytical formulae on each band:
 \end{enumerate}
 %==================
 For each band (eg. [$f_{\displaystyle si} , f_{\displaystyle sj}$])
-concentrations can be written :
+concentrations can be written:
 \begin{equation*}
   Y_e = Y_{e}(f_{si}) + \dfrac{f-f_{si}}{f_{sj}-f_{si}} .~ \left( Y_{e}(f_{sj})-Y_{e}(f_{si}) \right).
 \end{equation*}
@@ -333,7 +333,7 @@ Three ways are available:
 \end{enumerate}
 %==================
 
-\paragraph{Detail of computation:} 
+\paragraph{Detail of computation:}
 From ultimate analysis of coal (or heavy fuel oil) and char (if ultimate
 analysis of char is lacking, the pure carbon assumption is welcome), global
 formulae for the "monomer" (refering to one carbon, so ch...cs and kh...ks are
@@ -345,7 +345,7 @@ residual char can be summarized as:
 CH_{ch}O_{co}N_{cn}S_{cs} & \Rightarrow & a . CH_{x} + b . CO + c . H_{2}O + d . H_{2}S + e . HCN + f . NH_{3} \\
                           &             & + (1-a-b-e) . CH_{kh}O_{ko}N_{kn}S_{ks}.
 %---------------
-\end{eqnarray*} 
+\end{eqnarray*}
 
 The stoechiometric coefficient for char monomer beeing deducted from Carbon
 conservation, five equation can be written: four for the conservation of
@@ -383,7 +383,7 @@ auxiliary unknown instead of $x$):
 \end{enumerate}
 %==================
 Then a 8 times 8 linear system is defined and can be solved by regular algorithm.
- 
+
 %===============================================
 \subsection{Specification of granulometry}
 %===============================================
@@ -398,13 +398,13 @@ flamme and the biggest ones are responsible for unburnt carbon in ash. So two
 common descritions are ten classes, each of them with a tenth of the flow, or
 five classes with (0.1 , 0.2 , 0.4 , 0.2 , 0.1) of the flow. The second way is
 nearly two times cheaper (in computer time) but includes the same extreme
-diameters. 
+diameters.
 
 By definition of the Rossin-Ramler law as used in granulometry, the mass
 fraction associated with particles finer than a diameter obeys:
 \begin{equation*}
   P(\mbox{\small d}_i) = 1-\exp{\left[-\dfrac{\mbox{\small d}_i}{D_m} ^n \right]},
-\end{equation*} 
+\end{equation*}
 where, surprinsgly, $n$ is not an integer (but a real) and $D_m$ is the median
 diameter. When only two data are available (pass through two sieves, extreme
 deciles or quartiles) the determination of Rossin-Ramler law parameters is
@@ -417,7 +417,7 @@ The logarithm forms of (Eqs.~\ref{eq:combustion:log_001}-\ref{eq:combustion:log_
 following expressions:
 \begin{eqnarray}
   \displaystyle \left(\frac{\mbox{\small d}_1}{D_m} \right)^n &=& - \log(1-P_1), \label{eq:combustion:log_003} \\
-  \displaystyle \left(\frac{\mbox{\small d}_2}{D_m} \right)^n &=& - \log(1-P_2). \label{eq:combustion:log_004} 
+  \displaystyle \left(\frac{\mbox{\small d}_2}{D_m} \right)^n &=& - \log(1-P_2). \label{eq:combustion:log_004}
 \end{eqnarray}
 The logarithm forms of (Eqs. ~\ref{eq:combustion:log_003}-\ref{eq:combustion:log_004})
 are:
@@ -427,7 +427,7 @@ are:
 \end{eqnarray}
 Using the expressions (Eqs.~\ref{eq:combustion:log_005}-\ref{eq:combustion:log_006}) we obtain:
 \begin{eqnarray}
-n &=& \frac{\log \left[\displaystyle\frac{ \log(1-P_1)}{\log(1-P_2)}\right]}{\displaystyle\log\left[\frac{\mbox{\small d}_1}{\mbox{\small d}_2} \right]} 
+n &=& \frac{\log \left[\displaystyle\frac{ \log(1-P_1)}{\log(1-P_2)}\right]}{\displaystyle\log\left[\frac{\mbox{\small d}_1}{\mbox{\small d}_2} \right]}
 \end{eqnarray}
 and~ $D_m$ is easily deduced.
 
@@ -445,21 +445,21 @@ a = \frac{N \displaystyle \sum_{i=1}^N x_i.y_i - \sum_{i=1}^N x_i . \sum_{i=1}^N
 \end{equation}
 where $N$ is the number of data.
 \begin{eqnarray*}
-n &=& 
+n &=&
 \dfrac{
   N \displaystyle \sum_{i=1}^N \log[\mbox{\small d}_i].\log[~-\log(1-P_i)~] - \sum_{i=1}^N \log(\mbox{\small d}_i) . \sum_{i=1}^N \log[~-\log(1-P_i)~]
 }{
   N\displaystyle \sum_{i=1}^N \log(\mbox{\small d}_i)^2 - \left( \sum_{i=1}^N \log(\mbox{\small d}_i)\right)^2
 },  \\
-b &=& 
-\dfrac{ 
-  \displaystyle \sum_{i=1}^N y_i . \sum_{i=1}^N x_i^2 - \sum_{i=1}^N x_i . \sum_{i=1}^N x_i.y_i 
+b &=&
+\dfrac{
+  \displaystyle \sum_{i=1}^N y_i . \sum_{i=1}^N x_i^2 - \sum_{i=1}^N x_i . \sum_{i=1}^N x_i.y_i
 }{
   N \displaystyle \sum_{i=1}^N x_i^2 - \left( \sum_{i=1}^N x_i\right)^2
-},  \\ 
--n.\log(D_m) &=& 
+},  \\
+-n.\log(D_m) &=&
 \dfrac{
-  \displaystyle \sum_{i=1}^N \log[~-\log(1-P_i)~] . \sum_{i=1}^N \log(\mbox{\small d}_i)^2 - \sum_{i=1}^N \log(\mbox{\small d}_i) . \sum_{i=1}^N \log(\mbox{\small d}_i).\log[~-\log(1-P_i)~] 
+  \displaystyle \sum_{i=1}^N \log[~-\log(1-P_i)~] . \sum_{i=1}^N \log(\mbox{\small d}_i)^2 - \sum_{i=1}^N \log(\mbox{\small d}_i) . \sum_{i=1}^N \log(\mbox{\small d}_i).\log[~-\log(1-P_i)~]
 }{
   N \displaystyle \sum_{i=1}^N \log(\mbox{\small d}_i)^2 - \left( \sum_{i=1}^N \log(\mbox{\small d}_i)\right)^2
 }.
@@ -469,21 +469,21 @@ determination of the mean diameter of each mass class is obtained from the
 definition of the rossin-Ramler law:
 \begin{equation}
  \mbox{\small d}_i = D_m ~ \left[-\log(1-P_i) \right]^{\left(\frac{1}{n} \right)}. \label{eq:combustion:log_012}
-\end{equation} 
+\end{equation}
 As an example, if the user chooses the (recommended) sharing out $\left[0.1 , 0.2 , 0.4 , 0.2, 0.1 \right]$, the corresponding diameter are deduced from the \textit{mean cumulated mass} as:
 \begin{equation*}
 \begin{array}{r c l c l c l c l}
 \Delta_{1} = 0.1 &;& \Sigma_{1} = 0.1 &;& 1-MCM_{1}= &1-\dfrac{0.1}{2}&=0.95 &\Rightarrow&
            \mbox{\small d}_1 = Dm ~ \left[~ -\log(0.95) ~\right]^{\left(\frac{1}{n}\right)}, \\
-\Delta_{2} = 0.2 &;& \Sigma_{2} = 0.3 &;& 1-MCM_{2}= &1-\dfrac{0.1+0.3}{2}&= 0.80 &\Rightarrow& 
+\Delta_{2} = 0.2 &;& \Sigma_{2} = 0.3 &;& 1-MCM_{2}= &1-\dfrac{0.1+0.3}{2}&= 0.80 &\Rightarrow&
            \mbox{\small d}_2 = Dm ~ \left[~ -\log(0.80) ~\right]^{\left(\frac{1}{n}\right)}, \\
-\Delta_{3} = 0.4 &;& \Sigma_{3} = 0.7 &;& 1-MCM_{3}= &1-\dfrac{0.3+0.7}{2}&= 0.50 &\Rightarrow& 
+\Delta_{3} = 0.4 &;& \Sigma_{3} = 0.7 &;& 1-MCM_{3}= &1-\dfrac{0.3+0.7}{2}&= 0.50 &\Rightarrow&
            \mbox{\small d}_3 = Dm ~ \left[~ -\log(0.50) ~\right]^{\left(\frac{1}{n}\right)}, \\
-\Delta_{4} = 0.2 &;& \Sigma_{4} = 0.9 &;& 1-MCM_{4}= &1-\dfrac{0.7+0.9}{2}&= 0.20 &\Rightarrow& 
+\Delta_{4} = 0.2 &;& \Sigma_{4} = 0.9 &;& 1-MCM_{4}= &1-\dfrac{0.7+0.9}{2}&= 0.20 &\Rightarrow&
            \mbox{\small d}_4 = Dm ~ \left[~ -\log(0.20) ~\right]^{\left( \frac{1}{n}\right)}, \\
-\Delta_{5} = 0.1 &;& \Sigma_{5} = 1.0 &;& 1-MCM_{5}= &1-\dfrac{0.9+1.0}{2}&= 0.05 &\Rightarrow& 
+\Delta_{5} = 0.1 &;& \Sigma_{5} = 1.0 &;& 1-MCM_{5}= &1-\dfrac{0.9+1.0}{2}&= 0.05 &\Rightarrow&
            \mbox{\small d}_5 = Dm ~ \left[~ -\log(0.05) ~\right]^{\left(\frac{1}{n}\right)} .
-\end{array} 
+\end{array}
 \end{equation*}
 With such a symetrical mass distribution, the diameter of the central class is the median diameter of the Rossin-Ramler (\emph{i.e.} half of the mass is contained in more tiny particles).
 
@@ -535,14 +535,14 @@ With an assumption of laminar diffusion around each particle able to transport
 the mass flux:
 \begin{equation*}
 \displaystyle f_{\mbox{\scriptsize\textsc{cl}}} =  1 - (1-\tilde f)\exp \left[\displaystyle \frac{\Gamma}{2 \pi D d \rho}\right].
-\end{equation*} 
+\end{equation*}
 When mass flux is huge, the diffusion can't stay regular around each inclusion:
 if the variance is maximal (intermittency assumption), the boundary layer can't
 be no more distinguished from the mean, if the variance vanish, the boundary
 layer is quiet and made of outing gases:
 \begin{equation*}
 \displaystyle f_{\mbox{\scriptsize\textsc{cl}}} = f_{\Gamma} + (\tilde f  - f_{\Gamma}) ~ \frac{\widetilde f^{''2}}{\tilde f .(1-\tilde f)}.
-\end{equation*} 
+\end{equation*}
 This special assumption allows a term source for variance easy to implicit in order to avoid overshoot (the variance have a maximal value related to the mean):
 \begin{equation*}
 \displaystyle S_{\widetilde ''^{2}} = \Gamma .\left( f_{\Gamma}-\tilde f\right)^{2} ~ \left\{ 1-\left[~ \frac{\widetilde f^{''2}}{\tilde f ~(1-\tilde f)}~\right]^{\textstyle2}\right\} .
@@ -573,8 +573,8 @@ equilibrium applied on oxygen dissociation, leading to:
 \begin{eqnarray*}
  N_{2} + O_{2} &\Rightarrow& 2 ~NO , \\
  W1_{NO}&=& 3.4\medspace10^{12}  .   \exp \left[\frac{-66\medspace900}{RT}\right].\left[ N_{2} \right] . \left[O_{2}\right]^{1/2} .
-\end{eqnarray*} 
- 
+\end{eqnarray*}
+
 This production term has to be evaluated in each fluid particle because it is not
 only non linear (with respect to mixture fraction) but submitted to segregation:
 the hottest particles are near the stoechiometric point ... where oxygen is
@@ -603,7 +603,7 @@ local mean oxidizer are auxilliary unknowns the value of which is determinated
 by equalizing the transported value for the carbon monoxide (which involves the
 effect of relaxation to equilibrium) and its integrated value (taking in account
 the local pdf).
-   
+
 
 %========================================
 \begin{figure}[!htpb]
@@ -636,7 +636,7 @@ b = \left\{
 \begin{array}{r c l }
 1 &\text{if}&\left[O_{2}\right] < 0.0025, \\
 \dfrac{0.018-\left[O_{2}\right]}{0.018-0.0025} & \text{if} &0.0025 < \left[O_{2}\right] < 0.018, \\
-0 & \text{if} &0.018 < \left[O_{2}\right]. 
+0 & \text{if} &0.018 < \left[O_{2}\right].
 \end{array}
 \right.
 \end{equation*}
@@ -645,7 +645,7 @@ In the last case, $NO$ is reduced to nitrogen: the fuel nitrogen contributes to 
 \begin{eqnarray*}
  HCN + NO + \dfrac{1}{4}~ O_{2} &\Rightarrow& N_{2} + \dfrac{1}{2}~ H_{2}O + CO ,  \\
  W3_{NO} &=& 1.2 \medspace 10^{10}  .  \exp \left[\frac{-33\medspace500}{RT}\right].\left[ HCN \right] . \left[NO\right] .
-\end{eqnarray*} 
+\end{eqnarray*}
 \
 
 %=================================
@@ -654,42 +654,40 @@ In the last case, $NO$ is reduced to nitrogen: the fuel nitrogen contributes to 
 \subsection[Conservation Equations]{Conservation Equations for two phase flow combustion}
 %=================================
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
-The bulk, made of gases and particles, is assumed to be modeled with only one pressure and velocity. The slipping velocitiy between particles 
-and gases is supposed negligible compared to this mean velocity, that is to say that the velocity of the continuous phase (gas phase) $\vect{u}_1$ and the velocities of the particle classes $\vect{u}_{2, \, i}$ are equal to the bulk velocity $\vect{u}_m$.
+The bulk, made of gases and particles, is assumed to be modelled with only one pressure and velocity.
 Scalars for the bulk are:
 %==================
 \begin{itemize}
-  \item Bulk density 
-     \begin{equation} 
+  \item Bulk density
+     \begin{equation}
      %---------------
-        \rho_{m} = \alpha_{1}\rho_{1} + \alpha_{2}\rho_{2}.
+        \rho_{m} = \alpha_{1}\rho_{1} + \displaystyle \sum_{i=1}^{N_{classes}}\alpha_{2, \, i}\rho_{2}.
      %---------------
-     \end{equation} 
+     \end{equation}
      \nomenclature[grhom]{$\rho _m$}{bulk density \nomunit{$kg/m^3$}}
      \nomenclature[galpha1]{$\alpha_1$}{mass fraction of the continuous phase}
      \nomenclature[galpha2i]{$\alpha_{2, \, i}$}{mass fraction of the particle class $i$}
 
-  \item Bulk velocity 
-     \begin{equation} 
+  \item Bulk velocity
+     \begin{equation}
      %---------------
-       \vect{u}_{m} = \dfrac{ \alpha_{1}\rho_{1} \vect{u}_{1} 
+       \vect{u}_{m} = \dfrac{ \alpha_{1}\rho_{1} \vect{u}_{1}
                     + \displaystyle \sum_{i=1}^{N_{classes}}\alpha_{2, \, i}\rho_{2} \vect{u}_{2, \, i} }{\rho_{m}}.
      %---------------
      \end{equation}
      \nomenclature[rumt1]{$\vect{u}_m$}{bulk velocity \nomunit{$m/s$}}
 
-  \item Bulk enthalpy 
-     \begin{equation} 
+  \item Bulk enthalpy
+     \begin{equation}
      %---------------
-        H_{m} = \dfrac{ \alpha_{1}\rho_{1}.H_{1} 
+        H_{m} = \dfrac{ \alpha_{1}\rho_{1}.H_{1}
                      + \displaystyle \sum_{i=1}^{N_{classes}}\alpha_{2, \, i} \,\rho_{2}.H_{2, \, i} }{\rho_{m}}.
      %---------------
-     \end{equation} 
+     \end{equation}
      \nomenclature[rhm]{$H_m$}{bulk enthalpy \nomunit{$J/kg$}}
 
-  \item Bulk pressure 
-     \begin{equation} 
+  \item Bulk pressure
+     \begin{equation}
      %---------------
        P_{m} = P_{1}.
      %---------------
@@ -698,27 +696,33 @@ Scalars for the bulk are:
 \end{itemize}
 %===========
 
-Mass fractions of gaseous medium ($Y_{1}^{*}$) and of particles are defined by:
+Mass fractions of gaseous medium ($x_{1}^{*}$) and of particles ($x_{2}^{*}$) are defined by:
 \begin{eqnarray*}
 %---------------
-  Y_{1}^{*} &=& \dfrac{\alpha_{1}\rho_{1}}{\rho_{m}} , \\
-  Y_{2}^{*} &=& \dfrac{\displaystyle \sum_{i=1}^{N_{classes}} \alpha_{2, \,i} \, \rho_{2}}{\rho_{m}}. 
+  x_{1}^{*} &=& \dfrac{\alpha_{1}\rho_{1}}{\rho_{m}} , \\
+  x_{2}^{*} &=& \dfrac{\displaystyle \sum_{i=1}^{N_{classes}} \alpha_{2, \,i} \, \rho_{2}}{\rho_{m}}.
 %---------------
 \end{eqnarray*}
-\nomenclature[ryi]{$Y_i$}{mass fraction of constituant $i$}
+\nomenclature[rx1]{$x_1$}{mass fraction of continuous phase}
+\nomenclature[rx2]{$x_2$}{mass fraction of the particle phase}
+\nomenclature[rx2i]{$x_{2, \, i}$}{mass fraction of the particle class $i$}
 
-So budget equations for the bulk can be written as following:
+By default, the slipping velocitiy between particles
+and gases is supposed negligible compared to this mean velocity, that is to say that the velocity of
+the continuous phase (gas phase) $\vect{u}_1$ and the velocities of the particle classes
+$\vect{u}_{2, \, i}$ are equal to the bulk velocity $\vect{u}_m$, then
+budget equations for the bulk can be written as following:
 (\ref{eq:combustion:budget_001}-\ref{eq:combustion:budget_003}):
 
 \begin{eqnarray}
 %---------------
 \der{}{t} \rho_{m}
-+\divs \left( \rho_{m} \vect{u}_{m} \right) & = & 0 ,  \label{eq:combustion:budget_001} \\ 
++\divs \left( \rho_{m} \vect{u}_{m} \right) & = & 0 ,  \label{eq:combustion:budget_001} \\
 \der{}{t} \left( \rho_{m} \vect{u}_{m} \right)
 +\divv \left( \vect{u}_{m}\otimes \rho_m \vect{u}_{m} \right)
-& = &  \divv \left[ 
-\mu_T \deviator{\left( \gradt \, \vect{u}_m + \transpose{\gradt \, \vect{u}_m} \right)} - \dfrac{2}{3} q_m^2\tens{1} 
-\right]          
+& = &  \divv \left[
+\mu_T \deviator{\left( \gradt \, \vect{u}_m + \transpose{\gradt \, \vect{u}_m} \right)} - \dfrac{2}{3} q_m^2\tens{1}
+\right]
 -\grad P_{m} + \rho_{m} \vect{g} ,  \label{eq:combustion:budget_002} \\
 \der{}{t} \left( \rho_{m} H_{m} \right)
 +\divs \left( \rho_{m} \vect{u}_{m}H_{m} \right)
@@ -728,41 +732,37 @@ So budget equations for the bulk can be written as following:
 \nomenclature[rt]{$t$}{time [s]}
 where the tubulent dynamic viscosity of the bulk is $\mu_T =  \rho_m D_m^T$.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 With the (velocity) homogeneity assumption, mainly budget equation for bulk
-caracteristic are pertinent. So transport equation for the scalar $\Phi_{k}$,
-where k is the phase, can be written:
+caracteristic are pertinent. So transport equation for the scalar $\varia_{k}$,
+where $k$ is the phase, can be written:
 
-\begin{equation}
-  \der{}{t} \left( \rho_{m} Y_{k}^{*}\Phi_{k} \right)
- +\divs \left( \rho_{m} \vect{u}_{m} Y_{k}^{*} \Phi_{k} \right)
-              = \divs \left( \mu_T \grad \left( Y_{k}^{*} \Phi_{k} \right) \right)
-               +S_{\Phi_{k}}+\Gamma_{\Phi_{k}}.
+\begin{equation}\label{eq:combustion:transport_no_drift}
+  \der{}{t} \left( \rho_{m} x_{k}^{*}\varia_{k} \right)
+ +\divs \left( \rho_{m} \vect{u}_{m} x_{k}^{*} \varia_{k} \right)
+              = \divs \left( \mu_T \grad \left( x_{k}^{*} \varia_{k} \right) \right)
+               +S_{\varia_{k}}+\Gamma_{\varia_{k}}.
 \end{equation}
 
-
-\subsubsection{Bulk enthalpy: $H_{m}$ }
-%=======================================
-
-Budget equation for the specific enthalpy of the mixture (gas + particles)
-admits only one source term for radiative effects
-$S_{m,\mbox{\scriptsize\textsc{r}}}$:
-\begin{equation}
-%---------------
-    S_{m,\mbox{\scriptsize\textsc{r}}}= S_{1,\mbox{\scriptsize\textsc{r}}}+ S_{2,\mbox{\scriptsize\textsc{r}}},
-%---------------
+If drift of the particle class to the bulk is taken into account, equation \eqref{eq:combustion:transport_no_drift}
+reads:
+\begin{equation}\label{eq:combustion:transport_drift}
+  \der{}{t} \left( \rho_{m} x_{k}^{*}\varia_{k} \right)
+ +\divs \left( \rho_{m} \vect{u}_{k} x_{k}^{*} \varia_{k} \right)
+              = \divs \left( \mu_T \grad \left( x_{k}^{*} \varia_{k} \right) \right)
+               +S_{\varia_{k}}+\Gamma_{\varia_{k}},
 \end{equation}
-with contributions of each phase liable to be described by different models (\emph{e.g.} wide band for gases, black body for particles).
+with $\vect{u}_{k}$ to be either modelled with the drop velocity or transported.
 
-\subsubsection{Particles enthalpy: $Y_{2}^{*}H_{2}$ }
+
+\subsubsection{Particles enthalpy: $x_{2}^{*}H_{2}$ }
 %=====================================================
 
-Enthalpy of droplets (J in particles/kg bulk) is the product of solid phase mass
-fraction (kg liq/kg bulk) by the specific enthalpy of solid (kg solid/kg
-bulk). So the budget equation for liquid enthalpy has six source terms :
+Enthalpy of droplets ($J$ in particles/$kg$ bulk) is the product of solid phase mass
+fraction ($kg$ $liq/kg$ bulk) by the specific enthalpy of solid ($kg$ solid/$kg$
+bulk). So the budget equation for liquid enthalpy has six source terms:
 \begin{eqnarray*}
 \Pi_{2}^{'}+S_{2,\mbox{\scriptsize\textsc{r}}}-\Gamma_{\mbox{\small evap}}H_{\mbox{\small $H_{2}O$,\, vap}}(T_{2}) & - & \Gamma_{\mbox{\small devol}_1}H_{\mbox{\scriptsize MV1}}(T_{2})\quad-\quad \Gamma_{\mbox{\small devol}_2}H_{\mbox{\scriptsize MV2}}(T_{2}) \\
-                                                   & + &\Gamma_{\mbox{\small het}}\left( \dfrac{M_{\mbox{\small O}}}{M_{\mbox{\small C}}}H_{\mbox{\small O}_{2}}(T_{1})~ - ~\dfrac{M_{\mbox{\small CO}}}{M_{\mbox{\small C}}}H_{\mbox{\small CO}}(T_{2})\right), 
+                                                   & + &\Gamma_{\mbox{\small het}}\left( \dfrac{M_{\mbox{\small O}}}{M_{\mbox{\small C}}}H_{\mbox{\small O}_{2}}(T_{1})~ - ~\dfrac{M_{\mbox{\small CO}}}{M_{\mbox{\small C}}}H_{\mbox{\small CO}}(T_{2})\right),
 \end{eqnarray*}
 with
 %==================
@@ -784,10 +784,29 @@ with
 \end{itemize}
 %==================
 
-\subsubsection{Dispersed phase mass fraction: $Y_{2}^{*}$}
+\subsubsection{Continuous phase enthalpy $x_1 H_{1}$ and bulk enthalpy $H_{m}$ }
+%=======================================
+
+Budget equation for the specific enthalpy of the mixture (gas + particles)
+admits only one source term for radiative effects
+$S_{m,\mbox{\scriptsize\textsc{r}}}$:
+\begin{equation}
+%---------------
+    S_{m,\mbox{\scriptsize\textsc{r}}}= S_{1,\mbox{\scriptsize\textsc{r}}}+ S_{2,\mbox{\scriptsize\textsc{r}}},
+%---------------
+\end{equation}
+with contributions of each phase liable to be described by different models (\emph{e.g.} wide band for gases, black body for particles).
+
+In order to be conservative even with drift is taken into account, $x_1 H_1$ is transported
+rather than $H_m$, which is deduced from the identity $H_m = x_1 H_1 + x_2 H_2$.
+
+Therefore, source terms on $x_1 H_1$ are computed using $ S_{1,\mbox{\scriptsize\textsc{r}}} - S_{x_2 H_2}$,
+with a specific care on the opposite source terms of $x_2 H_2$ so that it is exact even with the time stepping.
+
+\subsubsection{Dispersed phase mass fraction: $x_{2}^{*}$}
 %==========================================================
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 In budget equation for the mass fraction of the dispersed phase (first droplets,
 then char particles, at last ashes) the source terms are interfacial mass fluxes
 (first evaporation, then net flux for heterogeneous combustion):
@@ -813,25 +832,25 @@ The coal or biomass particles are described by three mass component: water
 computed with respect to the number of particles, initial size and initial
 amount of ashes. The sum of these four component is the amount of each class
 (initial diameter and kind of coal).
-          
+
 \subsubsection{Number of particles: $N_{p}^{*}$}
 %================================================
 No source term in the budget equation for number of droplets or solid particles: a droplet became a particle (eventually a tiny flying ash) but never vanish
 (all particles have to get out).
 
-                                
-\subsubsection{Mean of the passive scalar for light volatile: $F_{1}$}  
+
+\subsubsection{Mean of the passive scalar for light volatile: $F_{1}$}
 %======================================================================
 
 This scalar represents the amount of matter released by the first (low
 activation energy) pyrolisis reaction. It is a mass fraction of gaseous matter
 (in hydrocarbon form or carbon oxide one). So the source term in its budget is
 only the pyrolisis mass flux:
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{equation}
     \Gamma _{\mbox{\small pyrol}}.
 \end{equation}
-\subsubsection{Mean of the passive scalar for heavy volatile: $F_{2}$}  
+\subsubsection{Mean of the passive scalar for heavy volatile: $F_{2}$}
 %======================================================================
 
 This scalar represents the amount of matter which has leaved the droplet as fuel
@@ -839,33 +858,33 @@ vapour or the particle by the second (high activation energy reaction), whatever
 it happens after. It's a mass fraction of gaseous matter (in hydrocarbon form or
 carbon oxide ones). So the source term in its budget is only evaporation or
 pyrolisis mass flux:
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{equation}
 %---------------
     \Gamma_{\mbox{\small pyrol1}} \quad \text{or} \quad \Gamma_{\mbox{\small evap}}.
 %---------------
-\end{equation}     
+\end{equation}
 
-\subsubsection{Mean of the passive scalar for oxidizers: $F_{3}$ to $F_{5}$}  
+\subsubsection{Mean of the passive scalar for oxidizers: $F_{3}$ to $F_{5}$}
 %========================================================================
 
 Budget equation for the three different oxidizers taken in account don't have
 any source term.
-\subsubsection{Mean of the passive scalar for steam from drying: $F_{6}$}  
+\subsubsection{Mean of the passive scalar for steam from drying: $F_{6}$}
 %========================================================================
- 
+
 Budget equation for the water steam issued from drying of coal or biomass has
 one source term:
 \begin{equation}
 %---------------
-    \Gamma_{\mbox{\small dry}}. 
+    \Gamma_{\mbox{\small dry}}.
 %---------------
-\end{equation} 
+\end{equation}
 
-                                              
-\subsubsection{Mean of the passive scalar for carbon from char oxidation: $F_{7}$}  
+
+\subsubsection{Mean of the passive scalar for carbon from char oxidation: $F_{7}$}
 %========================================================================
-  
+
 Budget equation for $F_{7}$ hase for source term the mass flux due to
 heterogeneous combustion (mass flux of carbon monoxide minus oxygene mass
 flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this {\em
@@ -875,41 +894,41 @@ flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this {\em
 %---------------
    \Gamma_{\mbox{\small het}}.
 %---------------
-\end{equation}   
-         
-\subsubsection{Mean of the passive scalar for gasification by the carbon dioxide: $F_{8}$}  
- 
+\end{equation}
+
+\subsubsection{Mean of the passive scalar for gasification by the carbon dioxide: $F_{8}$}
+
  Budget equation for $F_{8}$ has for source term the mass flux due to
  heterogeneous combustion (mass flux of carbon monoxide minus oxygene mass
  flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this
  {\em passive} scalar:
-  
+
 \begin{equation}
 %---------------
    \Gamma_{\mbox{\small gas, $CO_2$}}.
 %---------------
-\end{equation}                         
+\end{equation}
 
-\subsubsection{Mean of the passive scalar for gasification by steam: $F_{9}$}  
- 
+\subsubsection{Mean of the passive scalar for gasification by steam: $F_{9}$}
+
  Budget equation for $F_{9}$ have for one source term the mass flux due to
  heterogeneous combustion (mass flux of carbon monoxide minus oxygene mass
  flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this
  {\em passive} scalar:
- 
+
 \begin{equation}
 %---------------
    \Gamma_{\mbox{\small gas, $H_{2}O$}}.
 %---------------
-\end{equation}                         
+\end{equation}
 
- 
+
 
 %\clearpage
 
 
-\subsubsection{Droplets enthalpy: $Y_{2}^{*}H_{2}$ }
- 
+\subsubsection{Droplets enthalpy: $x_{2}^{*}H_{2}$ }
+
 Enthalpy of droplets (J in droplets/kg bulk) is the product of liquid phase mass
 fraction (kg liq/kg bulk) by the specific enthalpy of liquid (kg liq/kg
 bulk). So the budget equation for liquid enthalpy has four source terms:
@@ -917,7 +936,7 @@ bulk). So the budget equation for liquid enthalpy has four source terms:
 %---------------
      \Pi_{2}^{'}+S_{2,\mbox{\scriptsize\textsc{r}}}-\Gamma_{\mbox{\small evap}}H_{\mbox{\small vap}}(T_{2})
                         +\Gamma_{\mbox{\small het}}\left( \dfrac{M_{\mbox{\small O}}}{M_{\mbox{\small C}}}H_{\mbox{\small O}_{2}}(T_{1})
-                                      -\dfrac{M_{\mbox{\small CO}   }}{M_{\mbox{\small C}}}H_{\mbox{\small CO}   }(T_{2})\right) 
+                                      -\dfrac{M_{\mbox{\small CO}   }}{M_{\mbox{\small C}}}H_{\mbox{\small CO}   }(T_{2})\right)
 %---------------
 \end{equation}
 with
@@ -926,11 +945,11 @@ with
 \item $\Pi_{2}^{'}$: heat flux between phases
 \item $S_{2,\mbox{\scriptsize\textsc{r}}}$: radiative source term for droplets
 \item $\Gamma_{\mbox{\small evap}}H_{\mbox{\small vap}}(T_{2})$ the vapor flux leaves at droplet temperature ($H_{\mbox{\small vap}}$ includes latent heat)
-\item $\Gamma_{\mbox{\small het}}(...)$ heterogenous combustion induces reciprocal mass flux: oxygen arriving at gas temperature and carbone monoxide leaving 
+\item $\Gamma_{\mbox{\small het}}(...)$ heterogenous combustion induces reciprocal mass flux: oxygen arriving at gas temperature and carbone monoxide leaving
 at char particle one.
 \end{itemize}
 
-\subsubsection{Dispersed phase mass fraction: $Y_{2}^{*}$}
+\subsubsection{Dispersed phase mass fraction: $x_{2}^{*}$}
 
 In budget equation for the mass fraction of the dispersed phase (first droplets,
 then char particles, at last ashes) the source terms are interfacial mass fluxes
