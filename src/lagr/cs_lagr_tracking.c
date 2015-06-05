@@ -3974,7 +3974,7 @@ _update_particle_set(cs_lnum_t                n_recv_particles,
       particles->first_free_id = particles->used_id[new_id].next_id;
     }
     else {
-      particles->first_free_id = new_id + 1 ;
+      particles->first_free_id = new_id + 1;
       particles->used_id[particles->first_free_id].next_id = -1;
     }
 
@@ -4248,6 +4248,12 @@ _lagr_halo_sync(void)
 
   delta_particles = n_recv_particles - n_send_particles;
 
+  /* Particle set should be large enough for set plus at least one
+     free position (to handle linked list logic) */
+
+  _resize_particle_set(particles,
+                       particles->n_particles + delta_particles + 1);
+
   lag_halo->send_shift[0] = 0;
   lag_halo->recv_shift[0] = 0;
 
@@ -4282,10 +4288,6 @@ _lagr_halo_sync(void)
   bft_printf("\n Particle set after sync\n");
   cs_lagr_particle_set_dump(particles);
 #endif
-
-  if (delta_particles > particles->n_particles_max - particles->n_particles)
-    _resize_particle_set(particles,
-                         particles->n_particles + delta_particles);
 }
 
 /*----------------------------------------------------------------------------
