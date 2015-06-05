@@ -23,6 +23,9 @@ Changes:
 Bug fixes:
 ----------
 
+- GUI: fix incorrect reading of rotation axis and invariant point for
+  turbomachinery module when they are different from {0,0,1} and {0,0;0}.
+
 - Fixes for handling of floating-point exceptions by Catalyst plugin.
 
 - Fix compatibity for restart files produced with old Code_Saturne versions
