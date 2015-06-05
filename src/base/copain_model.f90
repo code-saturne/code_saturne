@@ -41,8 +41,11 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ifbpcd        index of faces with condensation source terms
+!> \param[in]     izzftcd       faces zone with condensation source terms imposed
+!>                              (at previous and current time steps)
 !> \param[in]     tpar          temperature imposed at the cold wall
 !>                              as constant or variable in time
 !>                              with a 1D thermal model
@@ -54,7 +57,7 @@
 !_______________________________________________________________________________
 
 subroutine condensation_copain_model &
- ( nfbpcd , ifbpcd ,                     &
+ ( nvar   , nfbpcd , ifbpcd , izzftcd ,  &
    tpar   ,                              &
    gam_s  , hpcond )
 
@@ -70,30 +73,31 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: thermal_condensation_flux, flthr, dflthr
+use pointe,only:thermal_condensation_flux,flthr,dflthr
 use parall
 use period
 use field
 use mesh
 use cs_c_bindings
 use cs_f_interfaces
-use cs_tagmr, only: tmur, tpar0
 
+use cs_nz_condensation, only:nzones,izcophc,izcophg,iztag1d,ztpar
+use cs_nz_tagmr, only: ztpar0, ztmur
 !===============================================================================
 
 implicit none
 
 ! Arguments
 
-integer          nfbpcd, ifbpcd(nfbpcd)
+integer          nvar , nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
 
 double precision tpar
-double precision gam_s(nfbpcd)
+double precision gam_s(nfbpcd, nvar)
 double precision hpcond(nfbpcd)
 
 ! Local variables
 
-integer          ii, iel, ifac, iesp
+integer          ii, iz, iel, ifac, iesp
 integer          ivar, f_id, ifcvsl, yplus_id
 
 double precision flux
@@ -327,20 +331,22 @@ do ii = 1, nfbpcd
 
   ifac= ifbpcd(ii)
   iel = ifabor(ifac)
+
+  iz  = izzftcd(ii)
   !-- Geometric quantities -------------------------
   distbf = distb(ifac)
 
   !-- If the 1D thermal conduction model is activated,
   !-- the wall temperature is in unit (Celsius °C)
   !---------------------------------------------------
-  if(itag1d.eq.1) then
+  if(iztag1d(iz).eq.1) then
     if(isuite.eq.0.and.ntcabs.eq.1) then
-      t_wall = tpar0
+      t_wall = ztpar0(iz)
     else
-      t_wall = tmur(ii,1)
+      t_wall = ztmur(ii,1)
     endif
   else
-    t_wall = tpar
+    t_wall = ztpar(iz)
   endif
 
   !-- kinematic viscosity --------------------------
@@ -452,17 +458,17 @@ do ii = 1, nfbpcd
     !-- coefficient of condensation function of the
     !-- the user parameter choice (icophc).
     !-------------------------------------------------
-    if (icophc .eq. 1) then
+    if (izcophc(iz).eq.1) then
 
       !-- [1]. Choose the (hcdt) turbulent exch. coeff
       !-----------------------------------------------
       hcond = hcdt
-    else if (icophc .eq. 2) then
+    else if (izcophc(iz).eq.2) then
 
       !-- [2]. Choose the (hcdcop) COPAIN  exch. coeff
       !-----------------------------------------------
       hcond = hcdcop
-    else if (icophc .eq. 3) then
+    else if (izcophc(iz).eq.3) then
 
       !-- [3]. Choose the maximum value between the
       !--    compute turbulent coefficient and the
@@ -480,7 +486,7 @@ do ii = 1, nfbpcd
 
     sink_term = cpro_rho(iel)*hcond   &
               *((y_ncond_int-y_ncond)/y_ncond_int)
-    gam_s(ii) = gam_s(ii) - sink_term
+    gam_s(ii,ipr) = gam_s(ii, ipr) - sink_term
 
   else
 
@@ -533,12 +539,12 @@ do ii = 1, nfbpcd
   h1max = max(h1max,hw_enth)
   h1min = min(h1min,hw_enth)
 
-  if (icophg .eq. 2) then
+  if (izcophg(iz).eq.2) then
 
     !-- [2]. Choose the (hp_cop) exch. coeff
     !-----------------------------------------------
     hpcond(ii) = hw_cop
-  else if (icophg .eq. 3) then
+  else if (izcophg(iz).eq.3) then
 
     !-- [3]. Choose the maximal value of
     !--         (hp_cop) exch. coeff
@@ -564,7 +570,7 @@ do ii = 1, nfbpcd
   !==       (iagt1d:=1), we stored the flux         ==
   !==         and its derivative.                   ==
   !===================================================
-  if(itag1d.eq.1) then
+  if(iztag1d(iz).eq.1) then
     flthr(ii) = flux
    dflthr(ii) = 0.d0
   endif
@@ -583,7 +589,7 @@ deallocate(x_h2o_g, diff_m)
 gamma_cond = 0.d0
 do ii = 1, nfbpcd
   ifac = ifbpcd(ii)
-  gamma_cond = gamma_cond + gam_s(ii)
+  gamma_cond = gamma_cond + gam_s(ii, ipr)
 enddo
 
 if (irangp.ge.0) then

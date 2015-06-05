@@ -89,7 +89,8 @@ use entsor
 use pointe
 use field
 use mesh,     only:ifabor
-use cs_tagmr, only:tmur, tpar0
+use cs_nz_condensation, only:izzftcd,iztag1d, ztpar
+use cs_nz_tagmr, only: ztmur
 
 !===============================================================================
 
@@ -104,7 +105,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 ! Local variables
 
 
-integer          ii,   ivar
+integer          ii, iz, ivar
 integer          ifac, iel
 integer          icldef
 double precision temper, enthal
@@ -123,12 +124,18 @@ ivar = isca(isvtb)
 do ii = 1, nfbpcd
 
   ifac = ifbpcd(ii)
-
-   icodcl(ifac,ivar)   = 1
-   rcodcl(ifac,ivar,1) = tmur(ii,1)
-   rcodcl(ifac,ivar,2) = rinfin
-   rcodcl(ifac,ivar,3) = 0.d0
-
+  iz = izzftcd(ii)
+  if(iztag1d(iz).eq.1) then
+    icodcl(ifac,ivar)   = 1
+    rcodcl(ifac,ivar,1) = ztmur(ii,1)
+    rcodcl(ifac,ivar,2) = rinfin
+    rcodcl(ifac,ivar,3) = 0.d0
+  else
+    icodcl(ifac,ivar)   = 1
+    rcodcl(ifac,ivar,1) = ztpar(iz)
+    rcodcl(ifac,ivar,2) = rinfin
+    rcodcl(ifac,ivar,3) = 0.d0
+  endif
 enddo
 
 ! Conversion eventuelle temperature -> enthalpie

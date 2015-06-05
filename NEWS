@@ -5,6 +5,10 @@ Release 4.0.1 (unreleased)
 Changes:
 --------
 
+- Allow condensation model to use zone-based definitions. The examples
+  are updated so as to recommend the zone-based setup, though previous
+  single-zone setups definitions remain compatible.
+
 - Make handling of Syrthes location more robust, with better diagnostics.
 
 - Add "--import-only" option to "code_saturne create" command so as to

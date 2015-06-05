@@ -85,6 +85,8 @@ use, intrinsic :: iso_c_binding
 
 use cs_tagmr
 use cs_tagms
+use cs_nz_condensation
+use cs_nz_tagmr
 
 !===============================================================================
 
@@ -95,7 +97,7 @@ implicit none
 
 ! Local variables
 
-integer          iiii
+integer          iiii, iz
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
 integer          ivar
@@ -230,7 +232,7 @@ iappel = 1
 ! Allocate temporary arrays for zones definition
 allocate(izcpdc(ncel))
 allocate(izctsm(ncel))
-allocate(izftcd(ncel))
+allocate(izftcd(ncel)) ! should be in init_pcond only
 allocate(izft1d(nfabor))
 
 ! ---------
@@ -296,7 +298,6 @@ if (nctsmt.gt.0) then
   write(nfecra,2002) nctsmt
   write(nfecra,3000)
 endif
-
 
 ! Condensation mass source terms
 ! ------------------------------
@@ -466,13 +467,14 @@ endif
 if (nftcdt.gt.0) then
   call init_pcond ( nvar )
   !=============
+  call init_nz_pcond
+  !=================
 endif
 
 if (icond.eq.1) then
   call init_vcond ( nvar, ncelet )
   !=============
 endif
-
 
 if (nfpt1t.gt.0) then
   call init_pt1d
@@ -529,6 +531,12 @@ if (nftcdt.gt.0) then
 
   iappel = 2
 
+  call init_tagmr
+  !==============
+
+  call init_nz_tagmr
+  !=================
+
   call cs_user_boundary_mass_source_terms &
   !======================================
 ( nvar   , nscal  ,                                              &
@@ -536,23 +544,8 @@ if (nftcdt.gt.0) then
   ifbpcd , itypcd , izftcd ,                                     &
   spcond , rvoid(1) )
 
-  ! the Condensation model coupled with a 1-D thermal model
-  ! requires the 1-D mesh generation and temperature initialization
-  if(itag1d.eq.1) then
-
-    call init_tagmr
-    !==============
-
-    !if (isuit1.eq.1) then
-    !  !TODO : Read the restart files "suite"
-    !else
-      !1-D mesh generated and temperature initialization
-      call cs_mesh_tagmr &
-      !=================
-    ( nfbpcd , ifbpcd )
-    !endif
-
-  endif
+  call init_nz_mesh_tagmr
+  !======================
 
   ! the Condensation model coupled with a 0-D thermal model
   ! to take into account the metal mass structures effects.
@@ -754,7 +747,6 @@ endif
 ! Arrays for time block, to discard afterwards
 !===============================================================================
 
-!  En fin de bloc en temps on doit retrouver IFNIA1 et IFNRA1
 ! On appelle cs_user_head_losses lorqu'il y a sur un processeur au moins des
 !     cellules avec terme source de masse.
 !     On ne fait que remplir le tableau d'indirection des cellules
@@ -778,11 +770,11 @@ if(ncpdct.gt.0) then
 
 endif
 
-! On appelle cs_user_mass_source_terms lorqu'il y a sur un processeur au moins des cellules
-!     avec terme source de masse.
+! On appelle cs_user_mass_source_terms lorqu'il y a sur un processeur au moins
+!     des cellules avec terme source de masse.
 !     On ne fait que remplir le tableau d'indirection des cellules
-!     On appelle cependant cs_user_mass_source_terms avec tous les processeurs, au cas ou
-!     l'utilisateur aurait mis en oeuvre des operations globales.
+!     On appelle cependant cs_user_mass_source_terms avec tous les processeurs,
+!     au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 
 if(nctsmt.gt.0) then
 
@@ -1332,9 +1324,11 @@ endif
 
 if(nftcdt.gt.0) then
   call finalize_pcond
-  if(itag1d.eq.1) then
+  call finalize_nz_pcond
+  if (nztag1d.eq.1) then
+    call finalize_nz_mesh_tagmr
+    call finalize_nz_tagmr
     call finalize_tagmr
-    !==================
   endif
 endif
 

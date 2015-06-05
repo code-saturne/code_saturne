@@ -57,6 +57,8 @@ $(top_srcdir)/src/base/entsor.f90 \
 $(top_srcdir)/src/base/ihmpre.f90 \
 $(top_srcdir)/src/base/cs_c_bindings.f90 \
 $(top_srcdir)/src/base/cs_f_interfaces.f90 \
+$(top_srcdir)/src/base/cs_nz_condensation.f90 \
+$(top_srcdir)/src/base/cs_nz_tagmr.f90 \
 $(top_srcdir)/src/base/cs_tagmr.f90 \
 $(top_srcdir)/src/base/cs_tagms.f90 \
 $(top_srcdir)/src/base/numvar.f90 \
@@ -102,6 +104,8 @@ $(top_srcdir)/src/base/cplsat.f90: paramx.lo
 $(top_srcdir)/src/base/cstphy.f90: paramx.lo
 $(top_srcdir)/src/base/cs_c_bindings.f90: paramx.lo field.lo field_operator.lo
 $(top_srcdir)/src/base/cs_f_interfaces.f90: cs_c_bindings.lo paramx.lo dimens.lo mesh.lo optcal.lo field.lo lagdim.lo
+$(top_srcdir)/src/base/cs_nz_condensation.f90: pointe.lo
+$(top_srcdir)/src/base/cs_nz_tagmr.f90: optcal.lo pointe.lo parall.lo cs_nz_condensation.lo cs_tagmr.lo
 $(top_srcdir)/src/base/cs_tagmr.f90: pointe.lo
 $(top_srcdir)/src/base/cs_tagms.f90: mesh.lo
 $(top_srcdir)/src/base/cs_field_operator.f90: paramx.lo dimens.lo mesh.lo optcal.lo field.lo

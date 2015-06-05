@@ -86,7 +86,10 @@ use field
 use rotation
 use darcy_module
 use cs_f_interfaces
+use cs_tagmr, only:rob, condb,cpb,hext,text,tpar0
 use cs_tagms, only: t_metal, tmet0
+use cs_nz_tagmr
+use cs_nz_condensation
 
 ! les " use pp* " ne servent que pour recuperer le pointeur IIZFPP
 
@@ -116,7 +119,7 @@ integer          nbccou
 integer          ntrela
 integer          icmst
 
-integer          isvhb
+integer          isvhb, iz
 integer          ii    , ientha, ippcv
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
@@ -514,7 +517,7 @@ if (imobil.eq.1) then
     do ii = 1, 3
       xyznod(ii,inod) = xyzno0(ii,inod)
     enddo
-  enddo  
+  enddo
 
   call rotation_update_coords(nnod, ttcmob, xyznod)
 
@@ -617,6 +620,7 @@ endif
 !-- and hpcond the thermal exchange coefficient associated to the phase
 !-- change (gas phase to liquid phase)
 !------------------------------------------------------------------------
+
 if (nftcdt.gt.0) then
 
   iappel = 3
@@ -637,6 +641,18 @@ if (nftcdt.gt.0) then
   ifbpcd , itypcd , izftcd ,                                     &
   spcond , tpar)
 
+  if (nzones.eq.1) then
+    do ii = 1, nfbpcd
+      iz = izzftcd(ii)
+      zrob  (iz) = rob
+      zcondb(iz) = condb
+      zcpb  (iz) = cpb
+      zhext (iz) = hext
+      ztext (iz) = text
+      ztpar (iz) = tpar
+    enddo
+  endif
+
   ! Empiric laws used by COPAIN condensation model to
   ! the computation of the condensation source term and
   ! exchange coefficient of the heat transfer imposed
@@ -644,9 +660,9 @@ if (nftcdt.gt.0) then
 
   call condensation_copain_model &
   !=============================
-( nfbpcd , ifbpcd ,                                              &
+( nvar   , nfbpcd , ifbpcd , izzftcd ,                           &
   tpar   ,                                                       &
-  spcond(:, ipr)  , hpcond )
+  spcond , hpcond )
 
 endif
 
@@ -656,6 +672,7 @@ endif
 !-- variable solved associated to the metal structures
 !-- condensation modelling.
 !----------------------------------------------------------
+
 if (icond.eq.1) then
 
   !-- Condensation source terms arrays initialized
@@ -835,7 +852,6 @@ if (ivrtex.eq.1) then
 ! -- Fin de zone Methode des vortex
 
 endif
-
 
 ! --- Methode ALE : debut de boucle d'implicitation du deplacement des
 !       structures. ITRFIN=0 indique qu'on a besoin de refaire une iteration
@@ -1117,7 +1133,7 @@ do while (iterns.le.nterup)
 
     ! coupling 1D thermal model with condensation modelling
     ! to take into account the solid temperature evolution over time
-    if (nftcdt.gt.0.and.itag1d.eq.1) then
+    if (nftcdt.gt.0) then
       call cs_tagmri(nfabor, iscalt, icodcl, rcodcl)
       !=============
     endif
@@ -1250,10 +1266,10 @@ do while (iterns.le.nterup)
 
     ! 1-D thermal model coupling with condensation
     ! on a surface region
-    if (nftcdt.gt.0.and.itag1d.eq.1) then
+    if (nftcdt.gt.0.and.nztag1d.eq.1) then
       call cs_tagmro &
       !=============
-     ( nfbpcd , ifbpcd ,                          &
+     ( nfbpcd , ifbpcd , izzftcd ,                  &
        dt     )
     endif
 

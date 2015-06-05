@@ -85,8 +85,8 @@ use mesh
 use field
 use cavitation
 use cs_c_bindings
-use cs_tagmr, only: nmur, tmur
-
+use cs_nz_condensation, only: izzftcd, nztag1d, ztpar
+use cs_nz_tagmr, only: znmurx, znmur, ztmur
 !===============================================================================
 
 implicit none
@@ -107,7 +107,7 @@ character        cstruc(nstrmx)*2, cindst*2
 character        ficsui*32
 logical          lprev
 integer          iel   , ifac, ii, istr, nlfld, iscal
-integer          kk
+integer          iz, kk
 integer          idecal, iclapc, icha  , icla
 integer          jdtvar
 integer          jortvm
@@ -132,6 +132,7 @@ double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:), pointer :: cpro_vism1, cpro_vism2, cpro_vism3
 
 double precision, allocatable, dimension(:,:) :: tmurbf
+double precision, allocatable, dimension(:) :: tparbf
 !===============================================================================
 
 !===============================================================================
@@ -788,27 +789,51 @@ endif
 
 if (icond.eq.0) then
 
-  if(itag1d.eq.1) then
+  if (nztag1d.eq.1) then
+
     !tmur array associated at each boundary face in the wall tickness
     nberro = 0
     itysup = 3
-    nbval  = nmur
+    nbval  = znmurx
     rubriq = 'tmur_bf_prev'
 
-    allocate(tmurbf(nfabor,nmur))
+    allocate(tmurbf(nfabor,znmurx))
 
     call restart_read_section_real_t(rp,rubriq,itysup,nbval,tmurbf,ierror)
     nberro=nberro+ierror
 
     do ii = 1, nfbpcd
       ifac= ifbpcd(ii)
-      do kk = 1, nmur
-        tmur(ii,kk) =  tmurbf(ifac,kk)
+      iz  = izzftcd(ii)
+      do kk = 1, znmur(iz)
+        ztmur(ii,kk) =  tmurbf(ifac,kk)
+      enddo
+    enddo
+    ! Free memory
+    deallocate(tmurbf)
+  else
+    !tmur array associated at each boundary face without 1D thermal model
+    nberro = 0
+    itysup = 3
+    nbval  = 1
+    rubriq = 'tpar_bf_prev'
+
+    allocate(tparbf(nfabor))
+
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,tparbf,ierror)
+    nberro=nberro+ierror
+
+    do ii = 1, nfbpcd
+      ifac= ifbpcd(ii)
+      iz  = izzftcd(ii)
+      do kk = 1, znmur(iz)
+        ztpar(iz) =  tparbf(ifac)
       enddo
     enddo
 
     ! Free memory
-    deallocate(tmurbf)
+    deallocate(tparbf)
+
   endif
 
 endif

@@ -164,10 +164,12 @@ use period
 use ppincl
 use mesh
 use field
+use cs_tagmr
+use cs_nz_condensation
+use cs_nz_tagmr
 use cs_c_bindings
 use cs_f_interfaces
 
-use cs_tagmr
 !===============================================================================
 
 implicit none

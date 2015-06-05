@@ -54,6 +54,7 @@ use field
 use cavitation
 use darcy_module
 use radiat
+use cs_nz_condensation, only: nzones
 
 !===============================================================================
 
@@ -840,6 +841,9 @@ icophg = 0
 !      ( not activated by default itag1d =0)
 
 itag1d = 0
+
+! --- Initialize the zones number for the condensation modelling
+nzones = -1
 
 ! ---  Choice the way to compute to compute the wall temperature at
 !      the solid/fluid interface coupled with condensation to the
