@@ -938,6 +938,7 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
+  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -1162,7 +1163,13 @@ _initialize_scalar_gradient_old(const cs_mesh_t             *m,
 
 # pragma omp parallel for
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
-    cs_real_t dvol = 1.0 / cell_f_vol[cell_id];
+    cs_real_t dvol;
+    /* Is the cell fully solid? */
+    if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
+      dvol = 1./cell_f_vol[cell_id];
+    else
+      dvol = 0.;
+
     grad[cell_id][0] = rhsv[cell_id][0] * dvol;
     grad[cell_id][1] = rhsv[cell_id][1] * dvol;
     grad[cell_id][2] = rhsv[cell_id][2] * dvol;
@@ -2691,6 +2698,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
+  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -2802,7 +2810,13 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-    cs_real_t dvol = 1./cell_f_vol[cell_id];
+    cs_real_t dvol;
+    /* Is the cell fully solid? */
+    if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
+      dvol = 1./cell_f_vol[cell_id];
+    else
+      dvol = 0.;
+
     for (int i = 0; i < 3; i++) {
       for (int j = 0; j < 3; j++)
         gradv[cell_id][i][j] *= dvol;
@@ -2873,6 +2887,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
+  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -3017,7 +3032,12 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
 
 #     pragma omp parallel for
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        cs_real_t dvol = 1./cell_f_vol[cell_id];
+        cs_real_t dvol;
+        if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
+          dvol = 1./cell_f_vol[cell_id];
+        else
+          dvol = 0.;
+
         for (int j = 0; j < 3; j++) {
           for (int i = 0; i < 3; i++)
             rhs[cell_id][i][j] *= dvol;
@@ -3325,6 +3345,7 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
+  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -3574,7 +3595,13 @@ _initialize_scalar_gradient(const cs_mesh_t             *m,
 
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    cs_real_t dvol = 1./cell_f_vol[cell_id];
+    cs_real_t dvol;
+    /* Is the cell fully solid? */
+    if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
+      dvol = 1./cell_f_vol[cell_id];
+    else
+      dvol = 0.;
+
     grad[cell_id][0] *= dvol;
     grad[cell_id][1] *= dvol;
     grad[cell_id][2] *= dvol;
@@ -3645,6 +3672,7 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
+  const cs_int_t *restrict c_solid_flag = fvq->c_solid_flag;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -3919,7 +3947,12 @@ _iterative_scalar_gradient(const cs_mesh_t             *m,
 
 #   pragma omp parallel for
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      cs_real_t dvol = 1./cell_f_vol[cell_id];
+      cs_real_t dvol;
+      /* Is the cell fully solid? */
+      if (c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id] == 0)
+        dvol = 1./cell_f_vol[cell_id];
+      else
+        dvol = 0.;
 
       rhs[cell_id][0] *= dvol;
       rhs[cell_id][1] *= dvol;
