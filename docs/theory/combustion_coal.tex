@@ -271,7 +271,7 @@ is integrated with analytical formulae on each band:
 \end{enumerate}
 %==================
 For each band (eg. [$f_{\displaystyle si} , f_{\displaystyle sj}$])
-concentrations can be written :
+concentrations can be written:
 \begin{equation*}
   Y_e = Y_{e}(f_{si}) + \dfrac{f-f_{si}}{f_{sj}-f_{si}} .~ \left( Y_{e}(f_{sj})-Y_{e}(f_{si}) \right).
 \end{equation*}
@@ -654,16 +654,14 @@ In the last case, $NO$ is reduced to nitrogen: the fuel nitrogen contributes to 
 \subsection[Conservation Equations]{Conservation Equations for two phase flow combustion}
 %=================================
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The bulk, made of gases and particles, is assumed to be modeled with only one pressure and velocity. The slipping velocitiy between particles
-and gases is supposed negligible compared to this mean velocity, that is to say that the velocity of the continuous phase (gas phase) $\vect{u}_1$ and the velocities of the particle classes $\vect{u}_{2, \, i}$ are equal to the bulk velocity $\vect{u}_m$.
+The bulk, made of gases and particles, is assumed to be modelled with only one pressure and velocity.
 Scalars for the bulk are:
 %==================
 \begin{itemize}
   \item Bulk density
      \begin{equation}
      %---------------
-        \rho_{m} = \alpha_{1}\rho_{1} + \alpha_{2}\rho_{2}.
+        \rho_{m} = \alpha_{1}\rho_{1} + \displaystyle \sum_{i=1}^{N_{classes}}\alpha_{2, \, i}\rho_{2}.
      %---------------
      \end{equation}
      \nomenclature[grhom]{$\rho _m$}{bulk density \nomunit{$kg/m^3$}}
@@ -698,16 +696,22 @@ Scalars for the bulk are:
 \end{itemize}
 %===========
 
-Mass fractions of gaseous medium ($Y_{1}^{*}$) and of particles are defined by:
+Mass fractions of gaseous medium ($x_{1}^{*}$) and of particles ($x_{2}^{*}$) are defined by:
 \begin{eqnarray*}
 %---------------
-  Y_{1}^{*} &=& \dfrac{\alpha_{1}\rho_{1}}{\rho_{m}} , \\
-  Y_{2}^{*} &=& \dfrac{\displaystyle \sum_{i=1}^{N_{classes}} \alpha_{2, \,i} \, \rho_{2}}{\rho_{m}}.
+  x_{1}^{*} &=& \dfrac{\alpha_{1}\rho_{1}}{\rho_{m}} , \\
+  x_{2}^{*} &=& \dfrac{\displaystyle \sum_{i=1}^{N_{classes}} \alpha_{2, \,i} \, \rho_{2}}{\rho_{m}}.
 %---------------
 \end{eqnarray*}
-\nomenclature[ryi]{$Y_i$}{mass fraction of constituant $i$}
+\nomenclature[rx1]{$x_1$}{mass fraction of continuous phase}
+\nomenclature[rx2]{$x_2$}{mass fraction of the particle phase}
+\nomenclature[rx2i]{$x_{2, \, i}$}{mass fraction of the particle class $i$}
 
-So budget equations for the bulk can be written as following:
+By default, the slipping velocitiy between particles
+and gases is supposed negligible compared to this mean velocity, that is to say that the velocity of
+the continuous phase (gas phase) $\vect{u}_1$ and the velocities of the particle classes
+$\vect{u}_{2, \, i}$ are equal to the bulk velocity $\vect{u}_m$, then
+budget equations for the bulk can be written as following:
 (\ref{eq:combustion:budget_001}-\ref{eq:combustion:budget_003}):
 
 \begin{eqnarray}
@@ -728,38 +732,34 @@ So budget equations for the bulk can be written as following:
 \nomenclature[rt]{$t$}{time [s]}
 where the tubulent dynamic viscosity of the bulk is $\mu_T =  \rho_m D_m^T$.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 With the (velocity) homogeneity assumption, mainly budget equation for bulk
-caracteristic are pertinent. So transport equation for the scalar $\Phi_{k}$,
-where k is the phase, can be written:
+caracteristic are pertinent. So transport equation for the scalar $\varia_{k}$,
+where $k$ is the phase, can be written:
 
-\begin{equation}
-  \der{}{t} \left( \rho_{m} Y_{k}^{*}\Phi_{k} \right)
- +\divs \left( \rho_{m} \vect{u}_{m} Y_{k}^{*} \Phi_{k} \right)
-              = \divs \left( \mu_T \grad \left( Y_{k}^{*} \Phi_{k} \right) \right)
-               +S_{\Phi_{k}}+\Gamma_{\Phi_{k}}.
+\begin{equation}\label{eq:combustion:transport_no_drift}
+  \der{}{t} \left( \rho_{m} x_{k}^{*}\varia_{k} \right)
+ +\divs \left( \rho_{m} \vect{u}_{m} x_{k}^{*} \varia_{k} \right)
+              = \divs \left( \mu_T \grad \left( x_{k}^{*} \varia_{k} \right) \right)
+               +S_{\varia_{k}}+\Gamma_{\varia_{k}}.
 \end{equation}
 
-
-\subsubsection{Bulk enthalpy: $H_{m}$ }
-%=======================================
-
-Budget equation for the specific enthalpy of the mixture (gas + particles)
-admits only one source term for radiative effects
-$S_{m,\mbox{\scriptsize\textsc{r}}}$:
-\begin{equation}
-%---------------
-    S_{m,\mbox{\scriptsize\textsc{r}}}= S_{1,\mbox{\scriptsize\textsc{r}}}+ S_{2,\mbox{\scriptsize\textsc{r}}},
-%---------------
+If drift of the particle class to the bulk is taken into account, equation \eqref{eq:combustion:transport_no_drift}
+reads:
+\begin{equation}\label{eq:combustion:transport_drift}
+  \der{}{t} \left( \rho_{m} x_{k}^{*}\varia_{k} \right)
+ +\divs \left( \rho_{m} \vect{u}_{k} x_{k}^{*} \varia_{k} \right)
+              = \divs \left( \mu_T \grad \left( x_{k}^{*} \varia_{k} \right) \right)
+               +S_{\varia_{k}}+\Gamma_{\varia_{k}},
 \end{equation}
-with contributions of each phase liable to be described by different models (\emph{e.g.} wide band for gases, black body for particles).
+with $\vect{u}_{k}$ to be either modelled with the drop velocity or transported.
 
-\subsubsection{Particles enthalpy: $Y_{2}^{*}H_{2}$ }
+
+\subsubsection{Particles enthalpy: $x_{2}^{*}H_{2}$ }
 %=====================================================
 
-Enthalpy of droplets (J in particles/kg bulk) is the product of solid phase mass
-fraction (kg liq/kg bulk) by the specific enthalpy of solid (kg solid/kg
-bulk). So the budget equation for liquid enthalpy has six source terms :
+Enthalpy of droplets ($J$ in particles/$kg$ bulk) is the product of solid phase mass
+fraction ($kg$ $liq/kg$ bulk) by the specific enthalpy of solid ($kg$ solid/$kg$
+bulk). So the budget equation for liquid enthalpy has six source terms:
 \begin{eqnarray*}
 \Pi_{2}^{'}+S_{2,\mbox{\scriptsize\textsc{r}}}-\Gamma_{\mbox{\small evap}}H_{\mbox{\small $H_{2}O$,\, vap}}(T_{2}) & - & \Gamma_{\mbox{\small devol}_1}H_{\mbox{\scriptsize MV1}}(T_{2})\quad-\quad \Gamma_{\mbox{\small devol}_2}H_{\mbox{\scriptsize MV2}}(T_{2}) \\
                                                    & + &\Gamma_{\mbox{\small het}}\left( \dfrac{M_{\mbox{\small O}}}{M_{\mbox{\small C}}}H_{\mbox{\small O}_{2}}(T_{1})~ - ~\dfrac{M_{\mbox{\small CO}}}{M_{\mbox{\small C}}}H_{\mbox{\small CO}}(T_{2})\right),
@@ -784,7 +784,26 @@ with
 \end{itemize}
 %==================
 
-\subsubsection{Dispersed phase mass fraction: $Y_{2}^{*}$}
+\subsubsection{Continuous phase enthalpy $x_1 H_{1}$ and bulk enthalpy $H_{m}$ }
+%=======================================
+
+Budget equation for the specific enthalpy of the mixture (gas + particles)
+admits only one source term for radiative effects
+$S_{m,\mbox{\scriptsize\textsc{r}}}$:
+\begin{equation}
+%---------------
+    S_{m,\mbox{\scriptsize\textsc{r}}}= S_{1,\mbox{\scriptsize\textsc{r}}}+ S_{2,\mbox{\scriptsize\textsc{r}}},
+%---------------
+\end{equation}
+with contributions of each phase liable to be described by different models (\emph{e.g.} wide band for gases, black body for particles).
+
+In order to be conservative even with drift is taken into account, $x_1 H_1$ is transported
+rather than $H_m$, which is deduced from the identity $H_m = x_1 H_1 + x_2 H_2$.
+
+Therefore, source terms on $x_1 H_1$ are computed using $ S_{1,\mbox{\scriptsize\textsc{r}}} - S_{x_2 H_2}$,
+with a specific care on the opposite source terms of $x_2 H_2$ so that it is exact even with the time stepping.
+
+\subsubsection{Dispersed phase mass fraction: $x_{2}^{*}$}
 %==========================================================
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -908,7 +927,7 @@ flux). As for $F_{1}$, oxidation in the gaseous phase does not modifiy this {\em
 %\clearpage
 
 
-\subsubsection{Droplets enthalpy: $Y_{2}^{*}H_{2}$ }
+\subsubsection{Droplets enthalpy: $x_{2}^{*}H_{2}$ }
 
 Enthalpy of droplets (J in droplets/kg bulk) is the product of liquid phase mass
 fraction (kg liq/kg bulk) by the specific enthalpy of liquid (kg liq/kg
@@ -930,7 +949,7 @@ with
 at char particle one.
 \end{itemize}
 
-\subsubsection{Dispersed phase mass fraction: $Y_{2}^{*}$}
+\subsubsection{Dispersed phase mass fraction: $x_{2}^{*}$}
 
 In budget equation for the mass fraction of the dispersed phase (first droplets,
 then char particles, at last ashes) the source terms are interfacial mass fluxes
