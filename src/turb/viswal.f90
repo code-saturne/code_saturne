@@ -68,9 +68,9 @@ integer          iprev
 integer          i, j, k
 
 double precision coef, delta, third
-double precision sij, sijd, s, sd, sinv
-double precision con
-double precision dudx(ndim,ndim), kdelta(ndim,ndim)
+double precision sijd, s, sd, sinv
+double precision con, trace_g2
+double precision dudx(ndim,ndim), kdelta(ndim,ndim), g2(ndim,ndim)
 
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:), pointer :: crom
@@ -129,29 +129,40 @@ do iel = 1, ncel
   dudx(3,3) = gradv(3,3,iel)
 
   s  = 0.d0
-  sd = 0.d0
+
+  trace_g2 = 0.d0
 
   do i = 1, ndim
     do j = 1, ndim
 
-      ! Sij = 0.5 * (dUi/dXj + dUj/dXi)
+      ! s = 1/4 * (dUi/dXj + dUj/dXi) * (dUi/dXj + dUj/dXi)
 
-      sij = 0.5d0*(dudx(i,j)+dudx(j,i))
+      s = s + 0.25d0*(dudx(i,j)+dudx(j,i))**2
 
-      s = s + sij**2
 
+      ! g2 is the square tensor of the velocity gradient
+      g2(i,j) = 0.d0
       do k = 1, ndim
-
-        ! traceless symmetric part of the square of the velocity gradient tensor
-        !   Sijd = 0.5*( dUi/dXk dUk/dXj + dUj/dXk dUk/dXi)
-        !        - 1/3 Dij dUk/dXk dUk/dXk
-
-        sijd = 0.5d0*(dudx(i,k)*dudx(k,j)+ dudx(j,k)*dudx(k,i)) &
-              -third*kdelta(i,j)*dudx(k,k)**2
-
-        sd = sd + sijd**2
-
+        g2(i,j) = g2(i,j) + dudx(i,k)*dudx(k,j)
       enddo
+
+    enddo
+
+    trace_g2 = trace_g2 + g2(i,i)
+
+  enddo
+
+  sd = 0.d0
+
+  do i = 1, ndim
+    do j = 1, ndim
+      ! traceless symmetric part of the square of the velocity gradient tensor
+      !   Sijd = 0.5*( dUi/dXk dUk/dXj + dUj/dXk dUk/dXi)
+      !        - 1/3 Dij dUk/dXl dUl/dXk
+
+      sijd = 0.5d0*(g2(i,j)+g2(j,i))-third*kdelta(i,j)*trace_g2
+
+      sd = sd + sijd**2
     enddo
   enddo
 
