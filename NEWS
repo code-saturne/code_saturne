@@ -1,4 +1,13 @@
 
+Version 4.0.2 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- LES model WALE was uncorrect (it was not referenceframe invariant).
+  The bug was introduced with the model itself.
+
 Release 4.0.1 (5 Jun 2015)
 ==========================
 
