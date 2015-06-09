@@ -216,7 +216,8 @@ else
   call ppiniv(nvar, nscal, dt, propce)
   !==========
 
-  if (ippmod(icompf).ge.0) then
+  if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
+                               .or.isuite.eq.1.and.ileaux.eq.0)) then
 
     ivoid = -1
     call cs_cf_thermo(ithvar, ivoid,  rvoid, rvoid, rvoid, vvoid)
