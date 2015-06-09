@@ -256,7 +256,8 @@ else
   call ppiniv(nvar, nscal, dt, propce)
   !==========
 
-  if (ippmod(icompf).ge.0) then
+  if (ippmod(icompf).ge.0.and.(    isuite.eq.0                 &
+                               .or.isuite.eq.1.and.ileaux.eq.0)) then
 
     allocate(w1(ncelet), w2(ncelet))
     imodif = 1
