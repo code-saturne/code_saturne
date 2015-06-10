@@ -2,8 +2,17 @@
 Version 4.0.2 (unreleased)
 ==========================
 
+Changes:
+--------
+
+- Add MS-MPI setup for Windows installer. This allows for more consistent
+  setups than the previous bundling method when other tools using MPI are
+  also installed.
+
 Bug fixes:
 ----------
+
+- Fix for handling of restart with compressible module.
 
 - LES model WALE was uncorrect (it was not referenceframe invariant).
   The bug was introduced with the model itself.

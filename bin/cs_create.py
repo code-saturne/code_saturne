@@ -579,7 +579,7 @@ domains = [
                 shutil.copy(ref_runcase_path, batch_file)
             except Exception:
                 pass
-            
+
         # Add info from parent in case of copy
 
         runcase = cs_runcase.runcase(batch_file,

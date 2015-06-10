@@ -529,7 +529,7 @@ else if (numtyp .eq. -2) then
     ! Compute variable on boundary faces
 
     call post_boundary_temperature(nfbrps, lstfbr, trafbr)
-    
+
     if (itherm .eq. 1) then
       name80 = 'Boundary temperature'
     else if (itherm .eq. 2) then
