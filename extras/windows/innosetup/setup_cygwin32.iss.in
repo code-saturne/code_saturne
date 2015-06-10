@@ -265,12 +265,8 @@ Source: "{#METISPATH}\include\metis.h"; DestDir: "{app}\include"; Flags: ignorev
 Source: "{#METISPATH}\lib\libmetis.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\metis
 #endif
 #if HAVE_MPI == "yes"
-Source: "{#MPIPATH}\bin\mpicsync.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#MPIPATH}\bin\mpiexec.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#MPIPATH}\lib\msmpi.dll"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
-Source: "{#MPIPATH}\bin\smpd.exe"; DestDir: "{app}\bin"; Flags: ignoreversion; Components: core
 Source: "{#MPIPATH}\include\mpi.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\mpi
-Source: "{#MPIPATH}\lib\libmsmpi.dll"; DestDir: "{app}\lib\gcc\i686-w64-mingw32\{#GCC_VERSION}"; Flags: ignoreversion; Components: dev\mpi
+Source: "products\MSMpiSetup.exe"; DestDir: {tmp}; Flags: deleteafterinstall
 #endif
 #if HAVE_SCOTCH == "yes"
 Source: "{#SCOTCHPATH}\include\scotch.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\scotch
@@ -356,4 +352,19 @@ Name: "{group}\doxygen"; Filename: "{app}\share\doc\code_saturne\doxygen\src\ind
 ;-------------------------------------------------------------------------------
 
 [Run]
+Filename: "{tmp}\MSMpiSetup.exe"; Parameters: " -full -unattend"; StatusMsg: "Installing MSMpi..."; Check: MyProgCheck
 Filename: "{app}\bin\{#MyAppExeName}"; WorkingDir: "{userdesktop}"; Flags: nowait postinstall skipifsilent; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"
+
+;-------------------------------------------------------------------------------
+
+[Code]
+function MyProgCheck(): Boolean;
+begin
+  Result := True;
+  //vérif si besoin d'installer en cherchant dans le registre
+  if RegKeyExists(HKEY_CURRENT_USER, 'SOFTWARE\Microsoft\MPI') then
+  begin
+     Result := False;
+  end;
+end;
+
