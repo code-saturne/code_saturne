@@ -265,6 +265,7 @@ Source: "{#METISPATH}\include\metis.h"; DestDir: "{app}\include"; Flags: ignorev
 Source: "{#METISPATH}\lib\libmetis.dll.a"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: dev\metis
 #endif
 #if HAVE_MPI == "yes"
+Source: "{#MPIPATH}\lib\msmpi.dll"; DestDir: "{app}\lib"; Flags: ignoreversion; Components: core
 Source: "{#MPIPATH}\include\mpi.h"; DestDir: "{app}\include"; Flags: ignoreversion; Components: dev\mpi
 Source: "products\MSMpiSetup.exe"; DestDir: {tmp}; Flags: deleteafterinstall
 #endif
