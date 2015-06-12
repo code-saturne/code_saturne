@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-05-31 18:59+0200\n"
+"POT-Creation-Date: 2015-06-12 17:42+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -7415,6 +7415,18 @@ msgid "Posix times() function"
 msgstr ""
 
 msgid "Iso C clock() function"
+msgstr ""
+
+#, c-format
+msgid ""
+"Timer statistics \"%s\"\n"
+" parent \"%s\" not defined."
+msgstr ""
+
+#, c-format
+msgid ""
+"Timer statistics \"%s\"\n"
+" is already defined, with id %d and parent %d."
 msgstr ""
 
 #, c-format

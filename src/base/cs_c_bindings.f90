@@ -42,6 +42,8 @@ module cs_c_bindings
 
   integer :: RESTART_VAL_TYPE_INT_T, RESTART_VAL_TYPE_REAL_T
 
+  integer :: TIMER_STATS_STAGE, TIMER_STATS_CATEGORY
+
   parameter (MESH_LOCATION_NONE=0)
   parameter (MESH_LOCATION_CELLS=1)
   parameter (MESH_LOCATION_INTERIOR_FACES=2)
@@ -53,7 +55,7 @@ module cs_c_bindings
   parameter (RESTART_VAL_TYPE_INT_T=1)
   parameter (RESTART_VAL_TYPE_REAL_T=3)
 
-    !---------------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
 
   type, bind(c)  :: var_cal_opt
     integer(c_int) :: iwarni
@@ -392,6 +394,59 @@ module cs_c_bindings
       implicit none
       type(c_ptr), value :: r
     end subroutine time_moment_restart_write
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Increment time step for timer statistics.
+
+    !> \param[in]   id    id of statistic
+
+    subroutine timer_stats_increment_time_step()  &
+      bind(C, name='cs_timer_stats_increment_time_step')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine timer_stats_increment_time_step
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Start a timer for a given statistic.
+
+    !> \param[in]   id    id of statistic
+
+    subroutine timer_stats_start(id)  &
+      bind(C, name='cs_timer_stats_start')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: id
+    end subroutine timer_stats_start
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Stop a timer for a given statistic.
+
+    !> \param[in]   id    id of statistic
+
+    subroutine timer_stats_stop(id)  &
+      bind(C, name='cs_timer_stats_stop')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: id
+    end subroutine timer_stats_stop
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Start a timer for a given statistic, stopping previous timers
+    !>         of the same type which are not a parent, and starting inactive
+    !>         parent timers if necessary.
+
+    !> \param[in]   id    id of statistic
+
+    subroutine timer_stats_switch(id)  &
+      bind(C, name='cs_timer_stats_switch')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: id
+    end subroutine timer_stats_switch
 
     !---------------------------------------------------------------------------
 
@@ -999,6 +1054,31 @@ module cs_c_bindings
       implicit none
       integer(c_int), value :: f_id
     end subroutine cs_sles_pop
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function defining statistic based on its name.
+
+    function cs_timer_stats_create(parent_name, name, label) result(id) &
+      bind(C, name='cs_timer_stats_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: parent_name
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name, label
+      integer(c_int)        :: id
+    end function cs_timer_stats_create
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function obtaining a defined statistic based on its name.
+
+    function cs_timer_stats_id_by_name(name) result(id) &
+      bind(C, name='cs_timer_stats_id_by_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in)  :: name
+      integer(c_int)                                           :: id
+    end function cs_timer_stats_id_by_name
 
     !---------------------------------------------------------------------------
 
@@ -2517,6 +2597,70 @@ contains
     return
 
   end subroutine sles_pop
+
+  !=============================================================================
+
+  !> \brief Create a timer statistics structure.
+
+  !> If no timer with the given name exists, -1 is returned.
+
+  !> \param[in]  parent_name  name of parent statistic (may be empty)
+  !> \param[in]  name         associated canonical name
+  !> \param[in]  label        associated label (may be empty)
+
+  function timer_stats_create (parent_name, name, label) result(id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: parent_name, name, label
+    integer :: id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_p_name, c_name, c_label
+    integer(c_int) :: c_id
+
+    c_p_name = trim(parent_name)//c_null_char
+    c_name = trim(name)//c_null_char
+    c_label = trim(label)//c_null_char
+
+    c_id = cs_timer_stats_create(c_p_name, c_name, c_label)
+    id = c_id
+
+  end function timer_stats_create
+
+  !=============================================================================
+
+  !> \brief Return the id of a defined statistic based on its name.
+
+  !> If no timer with the given name exists, -1 is returned.
+
+  !> \param[in]   name   statistic name
+
+  function timer_stats_id_by_name(name) result(id)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+    integer :: id
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    integer(c_int) :: c_id
+
+    c_name = trim(name)//c_null_char
+
+    c_id = cs_timer_stats_id_by_name(c_name)
+    id = c_id
+
+  end function timer_stats_id_by_name
 
   !=============================================================================
 

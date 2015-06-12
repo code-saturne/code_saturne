@@ -62,6 +62,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -349,6 +350,10 @@ static int _cs_sles_n_max_systems[3] = {0, 0};
 
 /* Arrays of settings and status for linear systems */
 static cs_sles_t **_cs_sles_systems[3] = {NULL, NULL, NULL};
+
+/* Timer statistics */
+
+static int _sles_stat_id = -1;
 
 /*============================================================================
  * Private function definitions
@@ -776,6 +781,13 @@ _value_type(size_t     n_vals,
 void
 cs_sles_initialize(void)
 {
+  int stats_root = cs_timer_stats_id_by_name("root_operation");
+
+  if (stats_root > -1) {
+    _sles_stat_id = cs_timer_stats_create("root_operation",
+                                          "linear_solvers",
+                                          "linear solvers");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1278,12 +1290,18 @@ cs_sles_setup(cs_sles_t          *sles,
   if (sles->context == NULL)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
+  if (_sles_stat_id > -1)
+    cs_timer_stats_start(_sles_stat_id);
+
   sles->n_calls += 1;
 
   if (sles->setup_func != NULL) {
     const char  *sles_name = cs_sles_base_name(sles->f_id, sles->name);
     sles->setup_func(sles->context, sles_name, a, sles->verbosity);
   }
+
+  if (_sles_stat_id > -1)
+    cs_timer_stats_stop(_sles_stat_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1335,6 +1353,9 @@ cs_sles_solve(cs_sles_t           *sles,
   if (sles->context == NULL)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
+  if (_sles_stat_id > -1)
+    cs_timer_stats_start(_sles_stat_id);
+
   sles->n_calls += 1;
 
   assert(sles->solve_func != NULL);
@@ -1384,6 +1405,9 @@ cs_sles_solve(cs_sles_t           *sles,
                      rotation_mode,
                      rhs,
                      vx);
+
+  if (_sles_stat_id > -1)
+    cs_timer_stats_stop(_sles_stat_id);
 
   return state;
 }

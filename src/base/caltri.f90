@@ -97,7 +97,7 @@ implicit none
 
 ! Local variables
 
-integer          iiii, iz
+integer          iiii
 
 integer          modhis, iappel, modntl, iisuit, iwarn0
 integer          ivar
@@ -107,6 +107,8 @@ integer          inod   , idim
 integer          itrale , ntmsav
 
 integer          nent
+
+integer          restart_stats_id
 
 double precision titer1, titer2
 double precision tecrf1, tecrf2
@@ -575,9 +577,18 @@ endif
 ! Possible restart
 !===============================================================================
 
+/* Timer statistics */
+
+restart_stats_id = timer_stats_create ("root_stage", "checkpoint_restart", &
+                                       "checkpoint/restart")
+
 if (isuite.eq.1) then
 
+  call timer_stats_start(restart_stats_id)
+
   call lecamo(frcxt, prhyd)
+
+  call timer_stats_stop(restart_stats_id)
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
@@ -911,6 +922,7 @@ endif
 
 if (inpdt0.eq.0 .and. itrale.gt.0) then
   ntcabs = ntcabs + 1
+  call timer_stats_increment_time_step
   if(idtvar.eq.0.or.idtvar.eq.1) then
     ttcabs = ttcabs + dt(1)
   else
@@ -1064,7 +1076,11 @@ if (iisuit.eq.1) then
   call dmtmps(tecrf1)
   !==========
 
+  call timer_stats_start(restart_stats_id)
+
   call ecrava(frcxt, prhyd)
+
+  call timer_stats_stop(restart_stats_id)
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'

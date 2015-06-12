@@ -90,6 +90,7 @@
 #include "cs_system_info.h"
 #include "cs_time_moment.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 #include "cs_les_inflow.h"
 #include "cs_turbomachinery.h"
 #include "cs_physical_properties.h"
@@ -170,6 +171,8 @@ cs_run(void)
 #else
   cs_system_info();
 #endif
+
+  cs_timer_stats_initialize();
 
   cs_gui_parallel_io();
   cs_user_parallel_io();
@@ -422,6 +425,8 @@ cs_run(void)
   cs_all_to_all_log_finalize();
   cs_io_log_finalize();
 
+  cs_timer_stats_finalize();
+
   cs_base_time_summary();
   cs_base_mem_finalize();
 }
@@ -434,6 +439,10 @@ int
 main(int    argc,
      char  *argv[])
 {
+  /* Initialize wall clock timer */
+
+  (void)cs_timer_wtime();
+
   /* First analysis of the command line to determine if MPI is required,
      and MPI initialization if it is. */
 
@@ -464,8 +473,6 @@ main(int    argc,
   setlocale(LC_NUMERIC, "C");
 
 #endif
-
-  (void)cs_timer_wtime();
 
   /* Trap floating-point exceptions on most systems */
 

@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add timer statistics and plots for different stages and operators.
+
 - Allow condensation model to use zone-based definitions. The examples
   are updated so as to recommend the zone-based setup, though previous
   single-zone setups definitions remain compatible.

@@ -131,6 +131,7 @@ cs_time_moment.h \
 cs_time_plot.h \
 cs_time_step.h \
 cs_timer.h \
+cs_timer_stats.h \
 cs_tpar1d.h \
 cs_turbomachinery.h \
 cs_wall_functions.h
@@ -262,6 +263,7 @@ cs_tagmro.f90 \
 cs_time_moment.c \
 cs_time_plot.c \
 cs_time_step.c \
+cs_timer_stats.c \
 cs_tpar1d.c \
 cs_turbomachinery.c \
 cs_wall_functions.c \

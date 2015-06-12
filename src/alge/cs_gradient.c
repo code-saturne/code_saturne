@@ -61,6 +61,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -119,6 +120,10 @@ const char *cs_gradient_type_name[] = {N_("Iterative reconstruction"),
                                        N_("Least-squares (extended)"),
                                        N_("Least-squares (partially extended)"),
                                        N_("Least-squares then iterative")};
+
+/* Timer statistics */
+
+static int _gradient_stat_id = -1;
 
 /*============================================================================
  * Private function definitions
@@ -4153,6 +4158,13 @@ void
 cs_gradient_initialize(void)
 {
   assert(cs_glob_mesh != NULL);
+
+  int stats_root = cs_timer_stats_id_by_name("root_operation");
+  if (stats_root > -1) {
+    _gradient_stat_id = cs_timer_stats_create("root_operation",
+                                              "gradients",
+                                              "gradients reconstruction");
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4261,10 +4273,10 @@ cs_gradient_scalar(const char                *var_name,
 
   /* Choose gradient type */
 
-  if (update_stats == true) {
-    t0 = cs_timer_time();
+  t0 = cs_timer_time();
+
+  if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
-  }
 
   /* Synchronize variable */
 
@@ -4425,11 +4437,15 @@ cs_gradient_scalar(const char                *var_name,
   _scalar_gradient_clipping(halo_type, clip_mode, verbosity, tr_dim, clip_coeff,
                             var, grad);
 
+  t1 = cs_timer_time();
+
   if (update_stats == true) {
     gradient_info->n_calls += 1;
-    t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
+
+  if (_gradient_stat_id > -1)
+    cs_timer_stats_add_diff(_gradient_stat_id, &t0, &t1);
 
   BFT_FREE(rhsv);
 }

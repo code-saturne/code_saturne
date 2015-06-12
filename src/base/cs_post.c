@@ -381,6 +381,10 @@ static void                            **_cs_post_i_output_mtp = NULL;
 
 static const char  _cs_post_dirname[] = "postprocessing";
 
+/* Timer statistics */
+
+static int  _post_stat_id = -1;
+
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
@@ -2842,6 +2846,17 @@ cs_post_define_writer(int                     writer_id,
   cs_post_writer_t  *w = NULL;
   cs_post_writer_def_t  *wd = NULL;
 
+  /* Initialize timer statistics if necessary */
+
+  if (_post_stat_id < 0) {
+
+    int stats_root = cs_timer_stats_id_by_name("root_operation");
+    if (stats_root > -1)
+      _post_stat_id = cs_timer_stats_create("root_operation",
+                                            "postprocessing_output",
+                                            "post-processing output");
+  }
+
   /* Check if the required writer already exists */
 
   if (writer_id == 0)
@@ -4151,6 +4166,14 @@ cs_post_write_meshes(const cs_time_step_t  *ts)
   int  i;
   cs_post_mesh_t  *post_mesh;
 
+  int t_active = 0;
+
+  if (_post_stat_id > -1) {
+    t_active = cs_timer_stats_is_active(_post_stat_id);
+    if (t_active == 0)
+      cs_timer_stats_start(_post_stat_id);
+  }
+
   /* Loops on meshes and writers for output */
 
   for (i = 0; i < _cs_post_n_meshes; i++) {
@@ -4168,6 +4191,8 @@ cs_post_write_meshes(const cs_time_step_t  *ts)
       fvm_nodal_reduce(post_mesh->_exp_mesh, 0);
   }
 
+  if (t_active == 0 &&_post_stat_id > -1)
+    cs_timer_stats_stop(_post_stat_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5118,6 +5143,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
   cs_lnum_t  *num_ent_parent = NULL;
 
+  int t_active = 0;
+
   /* Loop on writers to check if something must be done */
   /*----------------------------------------------------*/
 
@@ -5128,6 +5155,12 @@ cs_post_write_vars(const cs_time_step_t  *ts)
   }
   if (j == _cs_post_n_writers)
     return;
+
+  if (_post_stat_id > -1) {
+    t_active = cs_timer_stats_is_active(_post_stat_id);
+    if (t_active == 0)
+      cs_timer_stats_start(_post_stat_id);
+  }
 
   const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
   const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
@@ -5369,6 +5402,8 @@ cs_post_write_vars(const cs_time_step_t  *ts)
     }
   }
 
+  if (t_active == 0 &&_post_stat_id > -1)
+    cs_timer_stats_stop(_post_stat_id);
 }
 
 /*----------------------------------------------------------------------------*/
