@@ -191,7 +191,7 @@ call cs_cf_thermo_c_square(cvar_pr, crom, c2, ncel)
 
 do iel = 1, ncel
   wcf(iel) = w1(iel) * c2(iel) * crom(iel)                        &
-             / (cvar_pr(iel) * volume(iel))
+             / (cvar_pr(iel) * cell_f_vol(iel))
 enddo
 
 ! Free memory

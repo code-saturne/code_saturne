@@ -132,18 +132,18 @@ rund  = brom(ifac)*und
 icvfli(ifac) = 1
 
 ! Mass flux
-bmasfl(ifac) = rund * surfbn(ifac)
+bmasfl(ifac) = rund * suffbn(ifac)
 
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)
-cofacv(1,ifac) = surfbn(ifac) * rund * bc_vel(1,ifac)
+cofacv(1,ifac) = suffbn(ifac) * rund * bc_vel(1,ifac)
 
-cofacv(2,ifac) = surfbn(ifac) * rund * bc_vel(2,ifac)
+cofacv(2,ifac) = suffbn(ifac) * rund * bc_vel(2,ifac)
 
-cofacv(3,ifac) = surfbn(ifac) * rund * bc_vel(3,ifac)
+cofacv(3,ifac) = suffbn(ifac) * rund * bc_vel(3,ifac)
 
 ! Total energy flux
-coface(ifac) = surfbn(ifac) * (rund * bc_en(ifac) +  &
+coface(ifac) = suffbn(ifac) * (rund * bc_en(ifac) +  &
                                und  * bc_pr(ifac))
 
 return

@@ -154,21 +154,21 @@ runb  = 0.5d0*(brom(ifac)*und+crom(iel)*uni)          &
 icvfli(ifac) = 1
 
 ! Mass flux
-bmasfl(ifac) = runb*surfbn(ifac)
+bmasfl(ifac) = runb*suffbn(ifac)
 
 ! Momentum flux (the centered pressure contribution is directly taken into account
 ! in the pressure BC)
-cofacv(1,ifac) = surfbn(ifac)*                                                  &
+cofacv(1,ifac) = suffbn(ifac)*                                                  &
                  0.5d0*( rund*bc_vel(1,ifac) + runi*vel(1,iel)                   &
                          -rrus*(brom(ifac)*bc_vel(1,ifac)                        &
                          -crom(iel)*vel(1,iel)) )
 
-cofacv(2,ifac) = surfbn(ifac)*                                                  &
+cofacv(2,ifac) = suffbn(ifac)*                                                  &
                  0.5d0*( rund*bc_vel(2,ifac) + runi*vel(2,iel)                   &
                          -rrus*( brom(ifac)*bc_vel(2,ifac)                       &
                          -crom(iel)*vel(2,iel)) )
 
-cofacv(3,ifac) = surfbn(ifac)*                                                  &
+cofacv(3,ifac) = suffbn(ifac)*                                                  &
                  0.5d0*( rund*bc_vel(3,ifac) + runi*vel(3,iel)                   &
                          -rrus*(brom(ifac)*bc_vel(3,ifac)                        &
                          -crom(iel)*vel(3,iel)) )
@@ -177,7 +177,7 @@ cofacv(3,ifac) = surfbn(ifac)*                                                  
 bc_pr(ifac) = 0.5d0 * (bc_pr(ifac) + cvar_pr(iel))
 
 ! Total energy flux
-coface(ifac) = surfbn(ifac)*                                                    &
+coface(ifac) = suffbn(ifac)*                                                    &
                0.5d0*( rund*bc_en(ifac) + runi*cvar_en(iel)                  &
                        +und*bc_pr(ifac) + uni*cvar_pr(iel)                   &
                        -rrus*(brom(ifac)*bc_en(ifac)                         &

@@ -245,9 +245,9 @@ endif
 do ifac = 1, nfac
   ii = ifacel(1,ifac)
   jj = ifacel(2,ifac)
-  vecfac = surfac(1,ifac)*(tempv(1, ii)+tempv(1, jj))*0.5d0               &
-         + surfac(2,ifac)*(tempv(2, ii)+tempv(2, jj))*0.5d0               &
-         + surfac(3,ifac)*(tempv(3, ii)+tempv(3, jj))*0.5d0
+  vecfac = suffac(1,ifac)*(tempv(1, ii)+tempv(1, jj))*0.5d0               &
+         + suffac(2,ifac)*(tempv(2, ii)+tempv(2, jj))*0.5d0               &
+         + suffac(3,ifac)*(tempv(3, ii)+tempv(3, jj))*0.5d0
   diverg(ii) = diverg(ii) + vecfac
   diverg(jj) = diverg(jj) - vecfac
 enddo
@@ -256,9 +256,9 @@ enddo
 
 do ifac = 1, nfabor
   ii = ifabor(ifac)
-  vecfac = surfbo(1,ifac)*tempv(1, ii)                                    &
-         + surfbo(2,ifac)*tempv(2, ii)                                    &
-         + surfbo(3,ifac)*tempv(3, ii)
+  vecfac = suffbo(1,ifac)*tempv(1, ii)                                    &
+         + suffbo(2,ifac)*tempv(2, ii)                                    &
+         + suffbo(3,ifac)*tempv(3, ii)
   diverg(ii) = diverg(ii) + vecfac
 enddo
 
