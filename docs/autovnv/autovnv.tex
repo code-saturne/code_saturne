@@ -729,6 +729,10 @@ zorder & any number \\
 
 The attributes \texttt{fig} and \texttt{ycol} are mandatory.
 
+In case a column should undergo a transformation specified by the attributes
+\texttt{xfois},\texttt{yfois},\texttt{xplus},\texttt{yplus}, scale operations
+take precedence over translation operations.
+
 Details on 2D lines properties can be found in the \texttt{matplotlib}
 documentation. For more advanced options see section \ref{sec:raw}.
 
@@ -979,8 +983,8 @@ are \texttt{line} and \texttt{lines} (with \texttt{line = lines[0]}).
 The post-processing is activated if the option \texttt{-p, --post} is present
 in the command line.
 
-\textsc{Autovnv} is able to draw colored maps, with optional contours, from
-results on cut planes of the computational domain. The results must be a set of
+\textsc{Autovnv} is able to draw colored maps, with optional contours, based on
+results on cut planes of the computational domain. The results have to be a set of
 ensight files. The following example shows the drawing of a scalar map using the
 master file of result \texttt{RESULTS.case}. The figure will be saved on the
 disk in a \textbf{png} format, in the \texttt{POST} directory of the related
@@ -1031,7 +1035,8 @@ The attribute \texttt{file} is mandatory, and either \texttt{repo} or
 \item \texttt{<scalar>}: child of markup \texttt{<resu>}, defines a scalar map;
 \begin{list}{$\rightarrow$}{}
 \item \texttt{name}: name of the image file on the disk
-\item \texttt{variable}: name of the variable to draw (must be present in the master ensight file)
+\item \texttt{variable}: name of the variable to draw (must be present in the master ensight file).
+If the chosen variable is a vector, the scalar map will be based on the vector euclidean norm values.
 \item \texttt{normal}: tuple to set the normal of the cut plane of the computational domain
 \item \texttt{center}: tuple to set the center of the cut plane of the computational domain
 \item \texttt{stretch}: tuple to stretch the view of the cut plane
@@ -1039,6 +1044,7 @@ The attribute \texttt{file} is mandatory, and either \texttt{repo} or
 \item \texttt{size}: size of the png image
 \item \texttt{zoom}: adjust the zoom for the point of view of the cut plane
 \item \texttt{wireframe}: switch on or off the mapping on the grid\footnote{But the view might not be the true computational grid.}
+\item \texttt{smult}: multiply the variable (scalar or vector) by the given real value.
 \end{list}
 
 See default values for these attributes in the table \ref{table:scalar}.
@@ -1056,6 +1062,7 @@ time-step & -1 \textit{i.e. the last record} \\
 size & (500,400) \\
 zoom & 1.0 \\
 wireframe & \texttt{off} \\
+smult & 1.0 \\
 \hline
 \end{tabular}
 \end{center}

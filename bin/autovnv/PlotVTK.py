@@ -82,6 +82,7 @@ class Scalar(object):
         self.size = map(int, parser.getAttributeTuple(node, "size", (500, 400)))
         self.zoom = float(parser.getAttribute(node, "zoom", 1.))
         self.wireframe = parser.getAttribute(node, "wireframe", "off")
+        self.smult = float(parser.getAttribute(node, "smult", 1.))
 
         # color scale and color legend
         #-----------------------------
@@ -262,6 +263,28 @@ class Builder(object):
         dim = cellData.GetArray(self.opt.variable).GetNumberOfComponents()
 
         convert = self.convertCell2Point(ds)
+
+        # Multiply given variable by a real number using vtk array calculator
+        calc = vtk.vtkArrayCalculator()
+        calc.SetInputConnection(convert.GetOutputPort())
+        if dim == 1:
+            calc.AddScalarVariable("var", self.opt.variable, 0)
+            attribute = "SCALARS"
+        else:
+            calc.AddVectorVariable("var", self.opt.variable, 0 , 1, 2)
+            attribute = "VECTORS"
+
+        calc.SetFunction("var*%f"%self.opt.smult)
+        resultName = self.opt.variable+"transf"
+        calc.SetResultArrayName(resultName)
+
+        aa = vtk.vtkAssignAttribute()
+        aa.SetInputConnection(calc.GetOutputPort())
+        aa.Assign(resultName, attribute, "POINT_DATA")
+        aa.Update()
+
+        convert = aa
+        self.opt.variable = resultName
 
         self.ren = vtk.vtkRenderer()
         self.ren.SetBackground(1., 1., 1.)
