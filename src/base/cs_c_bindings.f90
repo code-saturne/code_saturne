@@ -42,8 +42,6 @@ module cs_c_bindings
 
   integer :: RESTART_VAL_TYPE_INT_T, RESTART_VAL_TYPE_REAL_T
 
-  integer :: TIMER_STATS_STAGE, TIMER_STATS_CATEGORY
-
   parameter (MESH_LOCATION_NONE=0)
   parameter (MESH_LOCATION_CELLS=1)
   parameter (MESH_LOCATION_INTERIOR_FACES=2)
@@ -406,6 +404,20 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine timer_stats_increment_time_step
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  Enable or disable plotting for a timer statistic.
+
+    !> \param[in]  id    id of statistic
+    !> \param[in]  plot  0 to disable, 1 to enable
+
+    subroutine timer_stats_set_plot(id, plot)  &
+      bind(C, name='cs_timer_stats_set_plot')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: id, plot
+    end subroutine timer_stats_set_plot
 
     !---------------------------------------------------------------------------
 
@@ -2620,7 +2632,9 @@ contains
 
     ! Local variables
 
-    character(len=len_trim(name)+1, kind=c_char) :: c_p_name, c_name, c_label
+    character(len=len_trim(parent_name)+1, kind=c_char) :: c_p_name
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+    character(len=len_trim(label)+1, kind=c_char) :: c_label
     integer(c_int) :: c_id
 
     c_p_name = trim(parent_name)//c_null_char

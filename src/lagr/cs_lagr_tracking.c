@@ -64,6 +64,7 @@
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_search.h"
+#include "cs_timer_stats.h"
 
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -4975,6 +4976,11 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
   cs_real_t *part_b_mass_flux = NULL;
 
+  int t_stat_id = cs_timer_stats_id_by_name("particle_displacement_stage");
+
+  if (t_stat_id >= 0)
+    cs_timer_stats_start(t_stat_id);
+
   if (*iflmbd) {
     assert(*iflm > 0);
     part_b_mass_flux = boundary_stat + ((*iflm -1) * mesh->n_b_faces);
@@ -5197,6 +5203,9 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
   }
 
   _finalize_displacement(particles);
+
+  if (t_stat_id >= 0)
+    cs_timer_stats_stop(t_stat_id);
 }
 
 /*============================================================================

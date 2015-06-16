@@ -173,6 +173,7 @@ cs_run(void)
 #endif
 
   cs_timer_stats_initialize();
+  cs_timer_stats_define_defaults();
 
   cs_gui_parallel_io();
   cs_user_parallel_io();

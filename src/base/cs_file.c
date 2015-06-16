@@ -84,6 +84,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
+#include "cs_log.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -3154,6 +3155,9 @@ cs_file_defaults_info(void)
 {
 #if defined(HAVE_MPI)
 
+  int             log_id;
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
   const char *fmt[4] = {N_("  I/O read method:     %s\n"),
                         N_("  I/O write method:    %s\n"),
                         N_("  I/O read method:     %s (%s)\n"),
@@ -3170,13 +3174,18 @@ cs_file_defaults_info(void)
 
 #if defined(HAVE_MPI_IO)
     if (method > CS_FILE_STDIO_PARALLEL) {
-      bft_printf(_(fmt[mode + 2]),
-                 _(cs_file_access_name[method]),
-                 _(cs_file_mpi_positionning_name[_mpi_io_positionning]));
+      for (log_id = 0; log_id < 2; log_id++)
+        cs_log_printf(logs[log_id],
+                      _(fmt[mode + 2]),
+                      _(cs_file_access_name[method]),
+                      _(cs_file_mpi_positionning_name[_mpi_io_positionning]));
     }
 #endif
-    if (method <= CS_FILE_STDIO_PARALLEL)
-      bft_printf(_(fmt[mode]), _(cs_file_access_name[method]));
+    if (method <= CS_FILE_STDIO_PARALLEL) {
+      for (log_id = 0; log_id < 2; log_id++)
+        cs_log_printf(logs[log_id],
+                      _(fmt[mode]), _(cs_file_access_name[method]));
+    }
 
 #if MPI_VERSION > 1
 
@@ -3193,7 +3202,9 @@ cs_file_defaults_info(void)
         MPI_Info_get(hints, key, MPI_MAX_INFO_VAL, val, &flag);
         if (flag) {
           val[MPI_MAX_INFO_VAL] = '\0';
-          bft_printf(_("      %s: %s\n"), key, val);
+          for (log_id = 0; log_id < 2; log_id++)
+            cs_log_printf(logs[log_id],
+                          _("      %s: %s\n"), key, val);
         }
       }
       BFT_FREE(val);
@@ -3206,8 +3217,13 @@ cs_file_defaults_info(void)
   if (cs_glob_n_ranks > 1) {
     int block_rank_step;
     cs_file_get_default_comm(&block_rank_step, NULL, NULL, NULL);
-    bft_printf(_("  I/O rank step:        %d\n"), block_rank_step);
+    for (log_id = 0; log_id < 2; log_id++)
+      cs_log_printf(logs[log_id],
+                    _("  I/O rank step:        %d\n"), block_rank_step);
   }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
 #endif
 }

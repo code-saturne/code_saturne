@@ -6,6 +6,10 @@ Changes:
 --------
 
 - Add timer statistics and plots for different stages and operators.
+  * Base timers for each time step (with initialization as time step 0)
+    are now available in the timer_stats.csv file (or timer_stats.dat
+    if the default format is changed).
+  * Final performance data is also moved from listing to performance.log.
 
 - Allow condensation model to use zone-based definitions. The examples
   are updated so as to recommend the zone-based setup, though previous

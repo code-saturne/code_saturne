@@ -62,6 +62,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_printf.h"
+#include "cs_log.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -171,11 +172,13 @@ cs_system_info(void)
 {
   time_t          date;
   size_t          ram;
+  int             log_id;
+
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
 
 #if defined(HAVE_UNAME)
   struct utsname  sys_config;
 #endif
-
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
   struct passwd   *pwd_user = NULL;
 #endif
@@ -213,24 +216,35 @@ cs_system_info(void)
   /* Print local configuration */
   /*---------------------------*/
 
-  bft_printf("\n%s\n", _("Local case configuration:\n"));
+  for (log_id = 0; log_id < 2; log_id++)
+    cs_log_printf(logs[log_id],
+                  "\n%s\n", _("Local case configuration:\n"));
 
-  bft_printf("  %s%s\n", _("Date:                "), str_date);
+  for (log_id = 0; log_id < 2; log_id++)
+    cs_log_printf(logs[log_id],
+                  "  %s%s\n", _("Date:                "), str_date);
 
   /* System and machine */
 
 #if defined(HAVE_UNAME)
 
   if (uname(&sys_config) != -1) {
-    bft_printf("  %s%s %s\n", _("System:              "),
-               sys_config.sysname, sys_config.release);
-    bft_printf("  %s%s\n", _("Machine:             "),  sys_config.nodename);
+    for (log_id = 0; log_id < 2; log_id++) {
+      cs_log_printf(logs[log_id],
+                    "  %s%s %s\n", _("System:              "),
+                    sys_config.sysname, sys_config.release);
+      cs_log_printf(logs[log_id],
+                    "  %s%s\n", _("Machine:             "),
+                    sys_config.nodename);
+    }
   }
 #endif
 
   _sys_info_cpu(str_cpu, 81);
 
-  bft_printf("  %s%s\n", _("Processor:           "), str_cpu);
+  for (log_id = 0; log_id < 2; log_id++)
+    cs_log_printf(logs[log_id],
+                  "  %s%s\n", _("Processor:           "), str_cpu);
 
   /* Available memory */
 
@@ -247,9 +261,12 @@ cs_system_info(void)
   ram = 0; /* TODO: complete for Windows systems */
 #endif
 
-  if (ram > 0)
-    bft_printf("  %s%llu %s\n", _("Memory:              "),
-               (unsigned long long)ram, _("MB"));
+  if (ram > 0) {
+    for (log_id = 0; log_id < 2; log_id++)
+      cs_log_printf(logs[log_id],
+                    "  %s%llu %s\n", _("Memory:              "),
+                    (unsigned long long)ram, _("MB"));
+  }
 
   /* User info */
 
@@ -268,7 +285,8 @@ cs_system_info(void)
 
     size_t l_info = 0;
 
-    bft_printf("  %s%s", _("User:                "), pwd_user->pw_name);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "  %s%s", _("User:                "), pwd_user->pw_name);
 
     if (pwd_user->pw_gecos != NULL) {
       for (l_info = 0;
@@ -277,17 +295,20 @@ cs_system_info(void)
            l_info++);
       if (pwd_user->pw_gecos[l_info] == ',')
         pwd_user->pw_gecos[l_info] = '\0';
-      bft_printf(" (%s)", pwd_user->pw_gecos);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " (%s)", pwd_user->pw_gecos);
     }
 
-    bft_printf("\n");
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
 #endif /* defined(HAVE_GETPWUID) && defined(HAVE_GETEUID) */
 
   /* Directory info */
 
-  bft_printf("  %s%s\n", _("Directory:           "), str_directory);
+  for (log_id = 0; log_id < 2; log_id++)
+    cs_log_printf(logs[log_id],
+                  "  %s%s\n", _("Directory:           "), str_directory);
 
   /* MPI Info */
 
@@ -309,26 +330,35 @@ cs_system_info(void)
       int n_flags = personality.Network_Config.NetFlags;
       int n_hw_threads = Kernel_ProcessorCount();
 
-      bft_printf("  %s%d\n", _("MPI ranks:           "), n_ranks);
-      if (n_world_ranks > n_ranks)
-        bft_printf("  %s%d\n", _("MPI_COMM_WORLD size: "),
-                   n_world_ranks);
-      bft_printf("  %s%d\n", _("Hardware threads:    "), n_hw_threads);
+      for (log_id = 0; log_id < 2; log_id++) {
+        cs_log_printf(logs[log_id],
+                      "  %s%d\n", _("MPI ranks:           "), n_ranks);
+        if (n_world_ranks > n_ranks)
+          cs_log_printf(logs[log_id],
+                        "  %s%d\n", _("MPI_COMM_WORLD size: "),
+                        n_world_ranks);
+        cs_log_printf(logs[log_id],
+                      "  %s%d\n", _("Hardware threads:    "), n_hw_threads);
+      }
+
       if (n_flags & ND_ENABLE_TORUS_DIM_A) a_torus = 1; else a_torus = 0;
       if (n_flags & ND_ENABLE_TORUS_DIM_B) b_torus = 1; else b_torus = 0;
       if (n_flags & ND_ENABLE_TORUS_DIM_C) c_torus = 1; else c_torus = 0;
       if (n_flags & ND_ENABLE_TORUS_DIM_D) d_torus = 1; else d_torus = 0;
       if (n_flags & ND_ENABLE_TORUS_DIM_E) e_torus = 1; else e_torus = 0;
 
-      bft_printf("  %s<%d,%d,%d,%d,%d>\n", _("Block shape:         "),
-                 personality.Network_Config.Anodes,
-                 personality.Network_Config.Bnodes,
-                 personality.Network_Config.Cnodes,
-                 personality.Network_Config.Dnodes,
-                 personality.Network_Config.Enodes);
-
-      bft_printf("  %s<%d,%d,%d,%d,%d>\n", _("Torus links enabled: "),
-                 a_torus, b_torus, c_torus, d_torus, e_torus);
+      for (log_id = 0; log_id < 2; log_id++) {
+        cs_log_printf(logs[log_id],
+                      "  %s<%d,%d,%d,%d,%d>\n", _("Block shape:         "),
+                      personality.Network_Config.Anodes,
+                      personality.Network_Config.Bnodes,
+                      personality.Network_Config.Cnodes,
+                      personality.Network_Config.Dnodes,
+                      personality.Network_Config.Enodes);
+        cs_log_printf(logs[log_id],
+                      "  %s<%d,%d,%d,%d,%d>\n", _("Torus links enabled: "),
+                      a_torus, b_torus, c_torus, d_torus, e_torus);
+      }
     }
 
 #   else
@@ -344,16 +374,21 @@ cs_system_info(void)
         appnum = *(int *)attp;
 #     endif
 
-      if (appnum > -1)
-        bft_printf("  %s%d (%s %d)\n",
-                   _("MPI ranks:           "), n_ranks,
-                   _("appnum attribute:"), appnum);
-      else
-        bft_printf("  %s%d\n", _("MPI ranks:           "), n_ranks);
+      for (log_id = 0; log_id < 2; log_id++) {
+        if (appnum > -1 && log_id == 0)
+          cs_log_printf(logs[log_id],
+                        "  %s%d (%s %d)\n",
+                        _("MPI ranks:           "), n_ranks,
+                        _("appnum attribute:"), appnum);
+        else
+          cs_log_printf(logs[log_id],
+                        "  %s%d\n", _("MPI ranks:           "), n_ranks);
 
-      if (n_world_ranks > n_ranks)
-        bft_printf("  %s%d\n", _("MPI_COMM_WORLD size: "),
-                   n_world_ranks);
+        if (n_world_ranks > n_ranks)
+          cs_log_printf(logs[log_id],
+                        "  %s%d\n", _("MPI_COMM_WORLD size: "),
+                        n_world_ranks);
+      }
     }
 
 #   endif /* defined(HAVE_MPI) */
@@ -366,12 +401,17 @@ cs_system_info(void)
   {
     int t_id = omp_get_thread_num();
     if (t_id == 0) {
-      bft_printf("  %s%d\n", _("OpenMP threads:      "),
-                 omp_get_max_threads());
-      if (omp_get_dynamic())
-        bft_printf("  %s\n", _("Dynamic scheduling allowed"));
-      bft_printf("  %s%d\n", _("Processors/node:     "),
-                 omp_get_num_procs());
+      for (log_id = 0; log_id < 2; log_id++) {
+        cs_log_printf(logs[log_id],
+                      "  %s%d\n", _("OpenMP threads:      "),
+                      omp_get_max_threads());
+        if (omp_get_dynamic())
+          cs_log_printf(logs[log_id],
+                        "  %s\n", _("Dynamic scheduling allowed"));
+        cs_log_printf(logs[log_id],
+                      "  %s%d\n", _("Processors/node:     "),
+                      omp_get_num_procs());
+      }
     }
   }
 #endif

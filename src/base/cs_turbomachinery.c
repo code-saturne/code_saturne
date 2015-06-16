@@ -70,6 +70,7 @@
 #include "cs_rotation.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -828,6 +829,10 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   cs_halo_type_t halo_type = cs_glob_mesh->halo_type;
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
+  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
+  if (t_stat_id > -1)
+    cs_timer_stats_start(t_stat_id);
+
   t_start = cs_timer_wtime();
 
   /* Indicates we are in the framework of turbomachinery */
@@ -1008,6 +1013,9 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   t_end = cs_timer_wtime();
 
   *t_elapsed = t_end - t_start;
+
+  if (t_stat_id > -1)
+    cs_timer_stats_stop(t_stat_id);
 }
 
 /*----------------------------------------------------------------------------*/

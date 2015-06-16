@@ -61,6 +61,7 @@
 #include "bft_printf.h"
 
 #include "cs_prototypes.h"
+#include "cs_log.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -1439,7 +1440,8 @@ cs_base_mem_finalize(void)
 
   /* Memory summary */
 
-  bft_printf(_("\nMemory use summary:\n\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nMemory use summary:\n\n"));
 
   valreal[0] = (double)bft_mem_usage_max_pr_size();
   valreal[1] = (double)bft_mem_size_max();
@@ -1502,22 +1504,28 @@ cs_base_mem_finalize(void)
 
       /* Print to log file */
 
-      bft_printf(_("  %s %12.3f %ciB\n"),
-                 _(type_bil[ind_bil]), valreal[ind_bil], unit[itot]);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  %s %12.3f %ciB\n"),
+                    _(type_bil[ind_bil]), valreal[ind_bil], unit[itot]);
 
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1 && cs_glob_rank_id == 0) {
-        bft_printf(_("                             "
-                     "local minimum: %12.3f %ciB  (rank %d)\n"),
-                   val_min[ind_bil].val, unit[imin], val_min[ind_bil].rank);
-        bft_printf(_("                             "
-                     "local maximum: %12.3f %ciB  (rank %d)\n"),
-                   val_max[ind_bil].val, unit[imax], val_max[ind_bil].rank);
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("                             "
+                        "local minimum: %12.3f %ciB  (rank %d)\n"),
+                      val_min[ind_bil].val, unit[imin], val_min[ind_bil].rank);
+        cs_log_printf(CS_LOG_PERFORMANCE,
+                      _("                             "
+                        "local maximum: %12.3f %ciB  (rank %d)\n"),
+                      val_max[ind_bil].val, unit[imax], val_max[ind_bil].rank);
       }
 #endif
     }
 
   }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   /* Finalize memory handling */
 
@@ -1551,7 +1559,8 @@ cs_base_time_summary(void)
 
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
-  bft_printf(_("\nCalculation time summary:\n"));
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nCalculation time summary:\n"));
 
   cs_timer_cpu_times(&utime, &stime);
 
@@ -1564,15 +1573,18 @@ cs_base_time_summary(void)
   /* CPU time */
 
   if (utime > 0. || stime > 0.) {
-    bft_printf (_("\n  User CPU time:       %12.3f s\n"),
-                (float)utime);
-    bft_printf (_("  System CPU time:     %12.3f s\n"),
-                (float)stime);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n  User CPU time:       %12.3f s\n"),
+                  (float)utime);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  System CPU time:     %12.3f s\n"),
+                  (float)stime);
   }
 
   else if (time_cpu > 0.)
-    bft_printf (_("\n  CPU time:            %12.3f s\n"),
-                (float)time_cpu);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n  CPU time:            %12.3f s\n"),
+                  (float)time_cpu);
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
@@ -1580,8 +1592,9 @@ cs_base_time_summary(void)
     MPI_Reduce (&time_cpu, &time_cumul, 1, MPI_DOUBLE, MPI_SUM,
                 0, cs_glob_mpi_comm);
     if (cs_glob_rank_id == 0)
-      bft_printf (_("  Total CPU time:      %12.3f s\n"),
-                  time_cumul);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("  Total CPU time:      %12.3f s\n"),
+                    time_cumul);
   }
 #endif
 
@@ -1591,14 +1604,18 @@ cs_base_time_summary(void)
 
   if (time_tot > 0.) {
 
-    bft_printf (_("\n  Elapsed time:        %12.3f s\n"),
-                time_tot);
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n  Elapsed time:        %12.3f s\n"),
+                  time_tot);
 
-    bft_printf (_("  CPU / elapsed time   %12.3f\n"),
-                (float)(time_cpu/time_tot));
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("  CPU / elapsed time   %12.3f\n"),
+                  (float)(time_cpu/time_tot));
 
   }
 
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
 }
 
 /*----------------------------------------------------------------------------

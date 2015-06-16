@@ -108,7 +108,7 @@ integer          itrale , ntmsav
 
 integer          nent
 
-integer          restart_stats_id
+integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
 double precision titer1, titer2
 double precision tecrf1, tecrf2
@@ -200,6 +200,17 @@ call cs_control_check_file
 if (idtvar.eq.1 .and. ntmsav.gt.ntmabs .and. ntmabs.eq.ntcabs) then
   call cplact(ivoid(1))
   if (ivoid(1).gt.0) ntmabs = ntmabs+1
+endif
+
+! Define timer stats based on options
+
+if (iilagr.gt.0) then
+  lagr_stats_id = timer_stats_create("stages", &
+                                     "lagrangian_stage", &
+                                     "Lagrangian Module")
+  stats_id = timer_stats_create("lagrangian_stage", &
+                                "particle_displacement_stage", &
+                                "particle displacement")
 endif
 
 !===============================================================================
@@ -577,18 +588,16 @@ endif
 ! Possible restart
 !===============================================================================
 
-/* Timer statistics */
+! Timer statistics
 
-restart_stats_id = timer_stats_create ("root_stage", "checkpoint_restart", &
-                                       "checkpoint/restart")
+restart_stats_id = timer_stats_id_by_name("checkpoint_restart_stage")
+post_stats_id = timer_stats_id_by_name("postprocessing_stage")
 
 if (isuite.eq.1) then
 
   call timer_stats_start(restart_stats_id)
 
   call lecamo(frcxt, prhyd)
-
-  call timer_stats_stop(restart_stats_id)
 
   ! Using ALE, geometric parameters must be recalculated
   if (iale.eq.1) then
@@ -647,6 +656,8 @@ if (isuite.eq.1) then
     endif
 
   endif
+
+  call timer_stats_stop(restart_stats_id)
 
 endif
 
@@ -815,8 +826,6 @@ if(nctsmt.gt.0) then
 endif
 
 
-
-
 ! -- Methode des vortex pour la L.E.S.
 !    (dans verini on s'est deja assure que ITYTUR=4 si IVRTEX=1)
 
@@ -928,7 +937,7 @@ if (inpdt0.eq.0 .and. itrale.gt.0) then
   else
     ttcabs = ttcabs + dtref
   endif
-  if(iwarn0.gt.0) then
+  if (iwarn0.gt.0) then
     write(nfecra,3001) ttcabs,ntcabs
   endif
   if (imobil.eq.1 .or. iturbo.eq.2) then
@@ -979,11 +988,15 @@ endif
 
 if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
 
+  call timer_stats_start(lagr_stats_id)
+
   call lagune                                                     &
   !==========
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    dt     , propce )
+
+  call timer_stats_stop(lagr_stats_id)
 
 endif
 
@@ -992,6 +1005,8 @@ endif
 !===============================================================================
 
 if (itrale.gt.0) then
+
+  call timer_stats_start(post_stats_id)
 
   ! Sortie postprocessing de profils 1D
 
@@ -1009,6 +1024,8 @@ if (itrale.gt.0) then
    dt     )
 
   call cs_user_extra_operations()
+
+  call timer_stats_stop(post_stats_id)
 
 endif
 
@@ -1067,20 +1084,15 @@ if(ntcabs.lt.ntmabs .and.itrale.eq.0) iisuit = 0
 
 if (iisuit.eq.1) then
 
+  call timer_stats_start(restart_stats_id)
+
   if(ntcabs.lt.ntmabs) then
     if (iwarn0.gt.0) write(nfecra,3020) ntcabs, ttcabs
   else if(ntcabs.eq.ntmabs) then
     if(iwarn0.gt.0) write(nfecra,3021)ntcabs,ttcabs
   endif
 
-  call dmtmps(tecrf1)
-  !==========
-
-  call timer_stats_start(restart_stats_id)
-
   call ecrava(frcxt, prhyd)
-
-  call timer_stats_stop(restart_stats_id)
 
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'
@@ -1114,13 +1126,10 @@ if (iisuit.eq.1) then
     !==========
   endif
 
-  call dmtmps(tecrf2)
-  !==========
-
-  if(iwarn0.gt.0) write(nfecra,3022) tecrf2-tecrf1
-
   call stusui
   !==========
+
+  call timer_stats_stop(restart_stats_id)
 
 endif ! iisuit = 1
 
@@ -1146,6 +1155,8 @@ call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
 if (itrale.eq.0) then
   call post_activate_writer(0, .false.)
 endif
+
+call timer_stats_start(post_stats_id)
 
 call pstvar                                                       &
 !==========
@@ -1221,17 +1232,14 @@ if (modntl.eq.0) then
 
 endif
 
+call timer_stats_stop(post_stats_id)
+
 call dmtmps(titer2)
 !==========
 
-if(iwarn0.gt.0) then
-  if (itrale.gt.0) then
-    write(nfecra,3010)ntcabs,titer2-titer1
-  else
-    write(nfecra,3012)titer2-titer1
-  endif
+if (iwarn0.gt.0 .and. itrale.le.0) then
+  write(nfecra,3012)titer2-titer1
 endif
-
 
 !===============================================================================
 ! End of time loop
@@ -1239,7 +1247,7 @@ endif
 
 itrale = itrale + 1
 
-if(ntcabs.lt.ntmabs) goto 100
+if (ntcabs.lt.ntmabs) goto 100
 
 ! Final synchronization for variable time step
 
@@ -1258,10 +1266,9 @@ if(iwarn0.gt.0) then
   write(nfecra,4000)
 endif
 
-call dmtmps(tecrf1)
-!==========
-
 ! Ici on sauve les historiques (si on en a stocke)
+
+call timer_stats_start(post_stats_id)
 
 modhis = 2
 call ecrhis(modhis)
@@ -1276,6 +1283,8 @@ if (ihistr.eq.1) then
   call strhis(modhis)
   !==========
 endif
+
+call timer_stats_stop(post_stats_id)
 
 !     LE CAS ECHEANT, ON LIBERE LES STRUCTURES C DU MODULE THERMIQUE 1D
 !     ET/OU ON FERME LE LISTING LAGRANGIEN
@@ -1383,13 +1392,6 @@ if (ivrtex.eq.1) then
   call finalize_vortex
 endif
 
-call dmtmps(tecrf2)
-!==========
-
-if(iwarn0.gt.0) then
-  write(nfecra,4010)tecrf2-tecrf1
-endif
-
 !===============================================================================
 ! Memory usage
 !===============================================================================
@@ -1435,9 +1437,6 @@ write(nfecra,7000)
  3002 format(/,' INSTANT ',E18.9,        '   INITIALISATION ALE ',/,    &
 ' ============================================================= ',&
  /,/)
- 3010 format(/,' TEMPS POUR L''ITERATION ',I15,' :    ',E14.5,/,/,      &
-'===============================================================',&
- /)
  3012 format(/,' TEMPS POUR L''INITIALISATION ALE :    ',E14.5,/,/,     &
 '===============================================================',&
  /)
@@ -1447,8 +1446,6 @@ write(nfecra,7000)
  3021 format(/,/,                                                 &
  ' Sortie finale de fichiers suite',/,                     &
  '   Sauvegarde a l''iteration ', I10, ', Temps physique ',E14.5,/,/)
- 3022 format(/,/,                                                 &
- ' Temps pour les fichiers suite : ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1462,9 +1459,6 @@ write(nfecra,7000)
 ' =========================================================== ',/,&
                                                                 /,&
                                                                 /)
- 4010 format(                                                   /,&
- 3X,'** TEMPS POUR LES SORTIES FINALES : ',E14.5               ,/,&
- 3X,'   ------------------------------                        ',/)
  7000 format(/,/,                                                 &
 ' =========================================================== ',/,&
                                                               /,/,&
@@ -1499,9 +1493,6 @@ write(nfecra,7000)
  3002 format(/,' INSTANT ',E18.9,        '   ALE INITIALIZATION ',/,    &
 ' ============================================================= ',&
  /,/)
- 3010 format(/,' TIME FOR THE TIME STEP  ',I15,':     ',E14.5,/,/,  &
-'===============================================================',&
- /)
  3012 format(/,' TIME FOR ALE INITIALIZATION:        ',E14.5,/,/, &
 '===============================================================',&
  /)
@@ -1511,8 +1502,6 @@ write(nfecra,7000)
  3021 format(/,/,                                                 &
  ' Write final restart files',/,                                  &
  '   checkpoint at iteration ',    I10,  ', Physical time ',E14.5,/,/)
- 3022 format(/,/,                                                 &
- ' Time for restart files: ',E14.5,/,/)
 
  4000 format(/,/,                                                 &
 '===============================================================',&
@@ -1526,9 +1515,6 @@ write(nfecra,7000)
 ' =========================================================== ',/,&
                                                                 /,&
                                                                 /)
- 4010 format(                                                   /,&
- 3X,'** TIME FOR FINAL WRITING: ',E14.5                        ,/,&
- 3X,'   -----------------------                                ',/)
  7000 format(/,/,                                                 &
 ' =========================================================== ',/,&
                                                               /,/,&

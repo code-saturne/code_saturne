@@ -74,6 +74,16 @@ BEGIN_C_DECLS
 /*!
   \file cs_timer_stats.c
         Application timer statistics and graphs.
+
+  These statistics are intended to provide a synthetic view of the relative
+  costs of various operations and stages, and are defined as sets of trees
+  so as to allow a form of grouping.
+
+  This logic does not replace having specific timers for operators,
+  which allow for more detail, but more difficult to provide an overview for.
+  Timer statistics also allow for incrementing results from base timers
+  (in addition to starting/stopping their own timers), so they may be used
+  to assist logging and plotting of other timers.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -111,7 +121,7 @@ typedef struct {
 /* timer options */
 
 static int                    _plot_frequency = 1;
-static int                    _plot_buffer_steps = 0;
+static int                    _plot_buffer_steps = -1;
 static double                 _plot_flush_wtime = 3600;
 static cs_time_plot_format_t  _plot_format = CS_TIME_PLOT_CSV;
 
@@ -295,10 +305,10 @@ cs_timer_stats_initialize(void)
 
   _name_map = cs_map_name_to_id_create();
 
-  id = cs_timer_stats_create(NULL, "root_operation", "total");
+  id = cs_timer_stats_create(NULL, "operations", "total");
   cs_timer_stats_start(id);
 
-  id = cs_timer_stats_create(NULL, "root_stage", "total");
+  id = cs_timer_stats_create(NULL, "stages", "total");
   cs_timer_stats_start(id);
   cs_timer_stats_set_plot(id, 0);
 
@@ -452,9 +462,6 @@ cs_timer_stats_create(const char  *parent_name,
   }
 
   cs_timer_stats_t  *s;
-
-  if (_name_map == NULL)
-    _name_map = cs_map_name_to_id_create();
 
   /* Insert entry in map */
 
@@ -733,6 +740,48 @@ cs_timer_stats_add_diff(int  id,
 
   if (s->active == false)
     cs_timer_counter_add_diff(&(s->t_cur), t0, t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define default timer statistics
+ *
+ * This creates 2 statistic timer trees, whose roots ids are:
+ * - 0 for computational operations
+ * - 1 for computational stages
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_timer_stats_define_defaults(void)
+{
+  int id;
+
+  /* Operations */
+
+  cs_timer_stats_create("operations",
+                        "mesh_processing",
+                        "mesh processing");
+
+  id = cs_timer_stats_create("mesh_processing",
+                             "mesh_io",
+                             "mesh io");
+  cs_timer_stats_set_plot(id, 0);
+
+  id = cs_timer_stats_create("operations",
+                             "postprocessing_output",
+                             "post-processing output");
+  cs_timer_stats_set_plot(id, 0);
+
+  /* Stages */
+
+  id = cs_timer_stats_create ("stages",
+                              "checkpoint_restart_stage",
+                              "checkpoint/restart");
+
+  id = cs_timer_stats_create("stages",
+                             "postprocessing_stage",
+                             "post-processing");
 }
 
 /*-----------------------------------------------------------------------------*/

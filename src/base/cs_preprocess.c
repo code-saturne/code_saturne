@@ -63,6 +63,7 @@
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_preprocessor_data.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -206,6 +207,11 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 {
   double  t1, t2;
 
+  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
+
+  if (t_stat_id >= 0)
+    cs_timer_stats_start(t_stat_id);
+
   /* Set partitioning options */
 
   {
@@ -338,6 +344,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_dump(cs_glob_mesh);
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
+
+  if (t_stat_id >= 0)
+    cs_timer_stats_stop(t_stat_id);
 }
 
 /*----------------------------------------------------------------------------*/

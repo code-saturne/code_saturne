@@ -59,6 +59,7 @@
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -2848,14 +2849,8 @@ cs_post_define_writer(int                     writer_id,
 
   /* Initialize timer statistics if necessary */
 
-  if (_post_stat_id < 0) {
-
-    int stats_root = cs_timer_stats_id_by_name("root_operation");
-    if (stats_root > -1)
-      _post_stat_id = cs_timer_stats_create("root_operation",
-                                            "postprocessing_output",
-                                            "post-processing output");
-  }
+  if (_post_stat_id < 0)
+    _post_stat_id =  cs_timer_stats_id_by_name("postprocessing_output");
 
   /* Check if the required writer already exists */
 

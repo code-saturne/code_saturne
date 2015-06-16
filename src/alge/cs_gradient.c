@@ -4159,9 +4159,9 @@ cs_gradient_initialize(void)
 {
   assert(cs_glob_mesh != NULL);
 
-  int stats_root = cs_timer_stats_id_by_name("root_operation");
+  int stats_root = cs_timer_stats_id_by_name("operations");
   if (stats_root > -1) {
-    _gradient_stat_id = cs_timer_stats_create("root_operation",
+    _gradient_stat_id = cs_timer_stats_create("operations",
                                               "gradients",
                                               "gradients reconstruction");
   }

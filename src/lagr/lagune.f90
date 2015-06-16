@@ -78,6 +78,7 @@ use field
 use ppppar
 use ppthch
 use ppincl
+use cs_c_bindings
 
 !===============================================================================
 

@@ -781,10 +781,10 @@ _value_type(size_t     n_vals,
 void
 cs_sles_initialize(void)
 {
-  int stats_root = cs_timer_stats_id_by_name("root_operation");
+  int stats_root = cs_timer_stats_id_by_name("operations");
 
   if (stats_root > -1) {
-    _sles_stat_id = cs_timer_stats_create("root_operation",
+    _sles_stat_id = cs_timer_stats_create("operations",
                                           "linear_solvers",
                                           "linear solvers");
   }
