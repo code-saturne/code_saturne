@@ -252,10 +252,14 @@ class Builder(object):
         self.opt  = options
 
         ds = self.readData(self.opt.time_step)
+        cellData = ds.GetCellData()
 
-        if not ds.GetCellData().HasArray(self.opt.variable):
+        if not cellData.HasArray(self.opt.variable):
             print("Error: variable %s not found." % self.opt.variable)
             sys.exit(1)
+
+        # get dimension of data field
+        dim = cellData.GetArray(self.opt.variable).GetNumberOfComponents()
 
         convert = self.convertCell2Point(ds)
 
@@ -291,6 +295,9 @@ class Builder(object):
         else:
             lut = eval("self." + self.opt.color_map + "()")
 
+        # scalar map of the magnitude of vector fields
+        lut.SetVectorModeToMagnitude()
+
         self.colorDataSetByArray(convert.GetOutput(), lut, self.cutMapper)
         grid = vtk.vtkLODActor()
 
@@ -305,7 +312,7 @@ class Builder(object):
             # mapper for the contours
             self.contoursMapper = vtk.vtkPolyDataMapper()
             # define contours on cut plane
-            contours = self.contoursFilterOnCutPlane(convert, cut)
+            contours = self.contoursFilterOnCutPlane(convert, cut, dim)
 
             # apply same transformation as to the cut
             if self.opt.stretch:
@@ -457,14 +464,24 @@ class Builder(object):
         #cut.SetSortByToSortByCell()
         return cut
 
-    def contoursFilterOnCutPlane(self, convert, cut):
+    def contoursFilterOnCutPlane(self, convert, cut, dim):
         """Create contours on a slice from the 3D computational domain."""
         # create the contour filter
         contours = vtk.vtkContourFilter()
-        # set the plane as input
-        contours.SetInputConnection(cut.GetOutputPort())
-        # select the variable
-        contours.SetInputArrayToProcess(0,0,0,0,self.opt.variable)
+
+        # scalar field
+        if dim == 1:
+            # set the plane as input
+            contours.SetInputConnection(cut.GetOutputPort())
+            # select the variable
+            contours.SetInputArrayToProcess(0,0,0,0,self.opt.variable)
+        # contours of the magnitude of vector fields
+        elif dim > 1:
+            vectorNorm = vtk.vtkVectorNorm()
+            vectorNorm.SetInputConnection(cut.GetOutputPort())
+            vectorNorm.SetInputArrayToProcess(0,0,0,0,self.opt.variable)
+            contours.SetInputConnection(vectorNorm.GetOutputPort())
+
         # define the iso values
         self.isoValuesByArray(convert.GetOutput(), contours)
 
@@ -605,7 +622,8 @@ class Builder(object):
                 mapper.SetScalarRange(self.opt.color_srange[0],
                                       self.opt.color_srange[1])
             else:
-                mapper.SetScalarRange(array.GetRange())
+                comp = -1
+                mapper.SetScalarRange(array.GetRange(comp))
             mapper.SetInterpolateScalarsBeforeMapping(1)
             mapper.SelectColorArray(array.GetName())
 
@@ -627,7 +645,8 @@ class Builder(object):
         if self.opt.cont_range:
             contours.GenerateValues(self.opt.cont_nval, self.opt.cont_range)
         else:
-            contours.GenerateValues(self.opt.cont_nval, array.GetRange())
+            comp = -1
+            contours.GenerateValues(self.opt.cont_nval, array.GetRange(comp))
 
 
     def screenshot(self, f, mode = "PNG"):
