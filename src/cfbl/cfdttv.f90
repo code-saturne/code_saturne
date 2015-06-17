@@ -189,10 +189,21 @@ call cs_cf_thermo_c_square(cvar_pr, crom, c2, ncel)
 
 ! Compute the coefficient CFL/dt
 
-do iel = 1, ncel
-  wcf(iel) = w1(iel) * c2(iel) * crom(iel)                        &
-             / (cvar_pr(iel) * cell_f_vol(iel))
-enddo
+if (iporos.ge.1) then
+  do iel = 1, ncel
+    if (isolid_0(iel).eq.1) then
+      wcf(iel) = epzero
+    else
+      wcf(iel) =  w1(iel) * c2(iel) * crom(iel)                      &
+                / (cvar_pr(iel)*cell_f_vol(iel))
+    endif
+  enddo
+else
+  do iel = 1, ncel
+    wcf(iel) =  w1(iel) * c2(iel) * crom(iel)                        &
+              / (cvar_pr(iel)*cell_f_vol(iel))
+  enddo
+endif
 
 ! Free memory
 deallocate(viscf)
