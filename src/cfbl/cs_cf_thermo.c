@@ -854,8 +854,10 @@ cs_cf_thermo_subsonic_outlet_bc(cs_real_t   *bc_en,
     uni = cs_math_3_dot_product(vel[cell_id],b_face_normal[face_id])
          /b_face_surf[face_id];
 
+    cs_real_t deltap = pinf-pri;
+    cs_real_t res = CS_ABS(deltap/pinf);
     /*  Rarefaction case */
-    if (pinf <= pri) {
+    if (deltap < 0. || res < cs_defs_epzero) {
 
       /* Computation of the velocity in state 1 using Riemann invariants
          of the 1-rarefaction */
