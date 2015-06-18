@@ -876,6 +876,11 @@ do ii = 1,nfrtot
   enddo
 enddo
 
+if (lagr_resize_particle_set(nbpart+nlocnew) .lt. 0) then
+  write(nfecra,3000) ntcabs
+  return
+endif
+
 ! Allocate a work array
 allocate(iwork(nbpart+nlocnew))
 
