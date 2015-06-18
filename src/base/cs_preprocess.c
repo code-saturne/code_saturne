@@ -209,8 +209,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
 
-  if (t_stat_id >= 0)
-    cs_timer_stats_start(t_stat_id);
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
 
   /* Set partitioning options */
 
@@ -345,8 +344,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
 #endif
 
-  if (t_stat_id >= 0)
-    cs_timer_stats_stop(t_stat_id);
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------*/

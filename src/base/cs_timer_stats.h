@@ -170,6 +170,10 @@ cs_timer_stats_is_active(int  id);
  *
  * Parents of the current statistic are also started, if not active.
  *
+ * If a timer with the same root but different parents is active, we assume
+ * the current operation is a subset of the active timer, so the timer is
+ * not started, so as to avoid having a sum of parts larger thn the total.
+ *
  * \param[in]  id  id of statistic
  */
 /*----------------------------------------------------------------------------*/
@@ -197,10 +201,12 @@ cs_timer_stats_stop(int  id);
  *        parent timers if necessary.
  *
  * \param[in]  id  id of statistic
+ *
+ * \return  id of previously active statistic, or -1 in case of error
  */
 /*----------------------------------------------------------------------------*/
 
-void
+int
 cs_timer_stats_switch(int  id);
 
 /*----------------------------------------------------------------------------*/

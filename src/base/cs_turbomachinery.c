@@ -830,8 +830,7 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
   cs_turbomachinery_t *tbm = cs_glob_turbomachinery;
 
   int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
-  if (t_stat_id > -1)
-    cs_timer_stats_start(t_stat_id);
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
 
   t_start = cs_timer_wtime();
 
@@ -1014,8 +1013,7 @@ cs_turbomachinery_update_mesh(double   t_cur_mob,
 
   *t_elapsed = t_end - t_start;
 
-  if (t_stat_id > -1)
-    cs_timer_stats_stop(t_stat_id);
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------*/

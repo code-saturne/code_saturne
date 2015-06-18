@@ -590,6 +590,10 @@ cs_timer_stats_is_active(int  id)
  *
  * Parents of the current statistic are also started, if not active.
  *
+ * If a timer with the same root but different parents is active, we assume
+ * the current operation is a subset of the active timer, so the timer is
+ * not started, so as to avoid having a sum of parts larger thn the total.
+ *
  * \param[in]  id  id of statistic
  */
 /*----------------------------------------------------------------------------*/
@@ -603,10 +607,17 @@ cs_timer_stats_start(int  id)
 
   cs_timer_t t_start = cs_timer_time();
 
-  /* Start timer and inactive parents */
-
   const int root_id = s->root_id;
+
+  /* If a timer with the same root but different parents is active,
+     simply return */
+
+  if (! _is_parent(_active_id[root_id], id))
+    return;
+
   int parent_id = _common_parent_id(id, _active_id[root_id]);
+
+  /* Start timer and inactive parents */
 
   for (int p_id = id; p_id > parent_id; p_id = (_stats + id)->parent_id) {
 
@@ -664,14 +675,18 @@ cs_timer_stats_stop(int  id)
  *        of the same type which are not a parent, and starting inactive
  *        parent timers if necessary.
  *
- * \param[in]  id  id of statistic
+ * \param[in]  id  id of statistic with same root
+ *
+ * \return  id of previously active statistic, or -1 in case of error
  */
 /*----------------------------------------------------------------------------*/
 
-void
+int
 cs_timer_stats_switch(int  id)
 {
-  if (id < 0 || id > _n_stats) return;
+  int retval = -1;
+
+  if (id < 0 || id > _n_stats) return retval;
 
   cs_timer_stats_t  *s = _stats + id;
 
@@ -679,8 +694,10 @@ cs_timer_stats_switch(int  id)
 
   const int root_id = s->root_id;
 
+  retval = _active_id[root_id];
+
   if (_active_id[root_id] == id)
-    return; /* Nothing to do, already current */
+    return retval; /* Nothing to do, already current */
 
   int parent_id = _common_parent_id(id, _active_id[root_id]);
 
@@ -714,6 +731,8 @@ cs_timer_stats_switch(int  id)
   }
 
   _active_id[root_id] = id;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/

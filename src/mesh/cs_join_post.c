@@ -49,6 +49,7 @@
 #include "cs_file.h"
 #include "cs_mesh_connect.h"
 #include "cs_post.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -87,6 +88,7 @@ typedef struct {
 static  cs_join_post_t  _cs_join_post_param;
 
 static  bool            _cs_join_post_initialized = false;
+static  int             _post_stage_stat_id = -1;
 
 /*============================================================================
  * Private function definitions
@@ -244,9 +246,9 @@ cs_join_post_init(void)
   if (_cs_join_post_initialized == true)
     return;
 
-  int  writer_num;
+  _post_stage_stat_id = cs_timer_stats_id_by_name("postprocessing_stage");
 
-  writer_num = _init_join_writer();
+  int  writer_num = _init_join_writer();
 
   if (writer_num != 0) {
 
@@ -274,6 +276,8 @@ cs_join_post_mesh(const char            *mesh_name,
 {
   if (_cs_join_post_initialized == true)
     return;
+
+  int t_top_id = cs_timer_stats_switch(_post_stage_stat_id);
 
   int  i, j;
   cs_lnum_t  n_vertices;
@@ -401,6 +405,8 @@ cs_join_post_faces_subset(const char            *mesh_name,
   if (_cs_join_post_initialized == true)
     return;
 
+  int t_top_id = cs_timer_stats_switch(_post_stage_stat_id);
+
   cs_join_mesh_t  *subset_mesh = NULL;
 
   assert(parent_mesh != NULL);
@@ -413,6 +419,8 @@ cs_join_post_faces_subset(const char            *mesh_name,
   cs_join_post_mesh(subset_mesh->name, subset_mesh);
 
   cs_join_mesh_destroy(&subset_mesh);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -429,6 +437,8 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
 {
   if (_cs_join_post_initialized == true)
     return;
+
+  int t_top_id = cs_timer_stats_switch(_post_stage_stat_id);
 
   int  adj_mesh_id, sel_mesh_id;
 
@@ -487,6 +497,8 @@ cs_join_post_after_merge(cs_join_param_t          join_param,
   cs_post_free_mesh(adj_mesh_id);
 
   BFT_FREE(mesh_name);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -511,6 +523,8 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
 {
   if (join_param.visualization < 1 || _cs_join_post_initialized == false)
     return;
+
+  int t_top_id = cs_timer_stats_switch(_post_stage_stat_id);
 
   cs_lnum_t  i, j;
 
@@ -592,6 +606,8 @@ cs_join_post_after_split(cs_lnum_t         n_old_i_faces,
   BFT_FREE(post_i_faces);
   BFT_FREE(post_b_faces);
   BFT_FREE(mesh_name);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------
@@ -614,6 +630,8 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
 {
   if (_cs_join_post_initialized == false)
     return;
+
+  int t_top_id = cs_timer_stats_switch(_post_stage_stat_id);
 
   int  writer_ids[] = {_cs_join_post_param.writer_num};
   int  post_mesh_id = cs_post_get_free_mesh_id();
@@ -647,6 +665,8 @@ cs_join_post_cleaned_faces(cs_lnum_t        n_i_clean_faces,
   cs_post_free_mesh(post_mesh_id);
 
   BFT_FREE(name);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------

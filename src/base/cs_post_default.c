@@ -54,6 +54,7 @@
 #include "cs_prototypes.h"
 #include "cs_selector.h"
 #include "cs_time_step.h"
+#include "cs_timer_stats.h"
 
 #include "cs_post.h"
 
@@ -305,7 +306,12 @@ void CS_PROCF (pstgeo, PSTGEO)
  void
 )
 {
+  int t_top_id
+    = cs_timer_stats_switch(cs_timer_stats_id_by_name("postprocessing_stage"));
+
   cs_post_write_meshes(cs_glob_time_step);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------

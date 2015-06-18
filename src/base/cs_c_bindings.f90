@@ -423,6 +423,12 @@ module cs_c_bindings
 
     !> \brief  Start a timer for a given statistic.
 
+    !> Parents of the current statistic are also started, if not active.
+
+    !> If a timer with the same root but different parents is active, we assume
+    !> the current operation is a subset of the active timer, so the timer is
+    !> not started, so as to avoid having a sum of parts larger thn the total.
+
     !> \param[in]   id    id of statistic
 
     subroutine timer_stats_start(id)  &
@@ -453,12 +459,15 @@ module cs_c_bindings
 
     !> \param[in]   id    id of statistic
 
-    subroutine timer_stats_switch(id)  &
+    !> \return  id of previously active statistic, or -1 in case of error
+
+    function timer_stats_switch(id)  result(old_id)  &
       bind(C, name='cs_timer_stats_switch')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: id
-    end subroutine timer_stats_switch
+      integer(c_int)        :: old_id
+    end function timer_stats_switch
 
     !---------------------------------------------------------------------------
 

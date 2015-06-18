@@ -384,7 +384,7 @@ static const char  _cs_post_dirname[] = "postprocessing";
 
 /* Timer statistics */
 
-static int  _post_stat_id = -1;
+static int  _post_out_stat_id = -1;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -2849,8 +2849,8 @@ cs_post_define_writer(int                     writer_id,
 
   /* Initialize timer statistics if necessary */
 
-  if (_post_stat_id < 0)
-    _post_stat_id =  cs_timer_stats_id_by_name("postprocessing_output");
+  if (_post_out_stat_id < 0)
+    _post_out_stat_id =  cs_timer_stats_id_by_name("postprocessing_output");
 
   /* Check if the required writer already exists */
 
@@ -4161,13 +4161,7 @@ cs_post_write_meshes(const cs_time_step_t  *ts)
   int  i;
   cs_post_mesh_t  *post_mesh;
 
-  int t_active = 0;
-
-  if (_post_stat_id > -1) {
-    t_active = cs_timer_stats_is_active(_post_stat_id);
-    if (t_active == 0)
-      cs_timer_stats_start(_post_stat_id);
-  }
+  int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
   /* Loops on meshes and writers for output */
 
@@ -4186,8 +4180,7 @@ cs_post_write_meshes(const cs_time_step_t  *ts)
       fvm_nodal_reduce(post_mesh->_exp_mesh, 0);
   }
 
-  if (t_active == 0 &&_post_stat_id > -1)
-    cs_timer_stats_stop(_post_stat_id);
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5138,8 +5131,6 @@ cs_post_write_vars(const cs_time_step_t  *ts)
 
   cs_lnum_t  *num_ent_parent = NULL;
 
-  int t_active = 0;
-
   /* Loop on writers to check if something must be done */
   /*----------------------------------------------------*/
 
@@ -5151,11 +5142,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
   if (j == _cs_post_n_writers)
     return;
 
-  if (_post_stat_id > -1) {
-    t_active = cs_timer_stats_is_active(_post_stat_id);
-    if (t_active == 0)
-      cs_timer_stats_start(_post_stat_id);
-  }
+  int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
   const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
   const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
@@ -5397,8 +5384,7 @@ cs_post_write_vars(const cs_time_step_t  *ts)
     }
   }
 
-  if (t_active == 0 &&_post_stat_id > -1)
-    cs_timer_stats_stop(_post_stat_id);
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------*/

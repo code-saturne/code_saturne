@@ -1290,8 +1290,7 @@ cs_sles_setup(cs_sles_t          *sles,
   if (sles->context == NULL)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
-  if (_sles_stat_id > -1)
-    cs_timer_stats_start(_sles_stat_id);
+  int t_top_id = cs_timer_stats_switch(_sles_stat_id);
 
   sles->n_calls += 1;
 
@@ -1300,8 +1299,7 @@ cs_sles_setup(cs_sles_t          *sles,
     sles->setup_func(sles->context, sles_name, a, sles->verbosity);
   }
 
-  if (_sles_stat_id > -1)
-    cs_timer_stats_stop(_sles_stat_id);
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1353,8 +1351,7 @@ cs_sles_solve(cs_sles_t           *sles,
   if (sles->context == NULL)
     _cs_sles_define_default(sles->f_id, sles->name, a);
 
-  if (_sles_stat_id > -1)
-    cs_timer_stats_start(_sles_stat_id);
+  int t_top_id = cs_timer_stats_switch(_sles_stat_id);
 
   sles->n_calls += 1;
 
@@ -1406,8 +1403,7 @@ cs_sles_solve(cs_sles_t           *sles,
                      rhs,
                      vx);
 
-  if (_sles_stat_id > -1)
-    cs_timer_stats_stop(_sles_stat_id);
+  cs_timer_stats_switch(t_top_id);
 
   return state;
 }

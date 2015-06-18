@@ -71,6 +71,7 @@
 #include "cs_post.h"
 #include "cs_selector.h"
 #include "cs_time_step.h"
+#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -403,6 +404,9 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
   if (cs_post_writer_exists(writer_id) != true)
     return;
 
+  int t_top_id
+    = cs_timer_stats_switch(cs_timer_stats_id_by_name("postprocessing_stage"));
+
   /* Initialize post processing flag */
 
   coupling_ent->post_mesh_id = cs_post_get_free_mesh_id();
@@ -444,6 +448,8 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
     cs_glob_syr4_post_mesh_ext[0] = coupling_ent->post_mesh_id;
 
   cs_glob_syr4_post_mesh_ext[1] = coupling_ent->post_mesh_id;
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------

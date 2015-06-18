@@ -4978,8 +4978,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
   int t_stat_id = cs_timer_stats_id_by_name("particle_displacement_stage");
 
-  if (t_stat_id >= 0)
-    cs_timer_stats_start(t_stat_id);
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
 
   if (*iflmbd) {
     assert(*iflm > 0);
@@ -5204,8 +5203,7 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
   _finalize_displacement(particles);
 
-  if (t_stat_id >= 0)
-    cs_timer_stats_stop(t_stat_id);
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*============================================================================
