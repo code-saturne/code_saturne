@@ -604,9 +604,9 @@ do ifac = 1, nfabor
 
       ! only the mass flux is computed
       bmasfl(ifac) = brom(ifac) *                                              &
-                     (  bc_vel(1,ifac)*surfbo(1,ifac)                          &
-                      + bc_vel(2,ifac)*surfbo(2,ifac)                          &
-                      + bc_vel(3,ifac)*surfbo(3,ifac) )
+                     (  bc_vel(1,ifac)*suffbo(1,ifac)                          &
+                      + bc_vel(2,ifac)*suffbo(2,ifac)                          &
+                      + bc_vel(3,ifac)*suffbo(3,ifac) )
 
     ! other inlets/outlets
     else
