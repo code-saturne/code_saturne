@@ -788,7 +788,7 @@ cs_cf_thermo_wall_bc(cs_real_t *wbfb,
 
       wbfb[face_id] = 1. + gamagp*xmach
                           *((gamagp+1.)/4.*xmach
-                            + sqrt(1. + pow(gamagp+1.,2)/16.*xmach*xmach)));
+                            + sqrt(1. + pow(gamagp+1.,2)/16.*xmach*xmach));
     }
     /*  Oscillation between rarefaction and shock or zero Mach number */
     else {
