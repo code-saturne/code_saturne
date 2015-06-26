@@ -190,12 +190,20 @@ module cstphy
   !> diffusivity is also specified in \ref usphyv.
   real(c_double), pointer, save :: cp0
 
-  !> reference isochoric specific heat.
+  !> Reference isochoric specific heat.
   !>
-  !> Useful for the compressible module
+  !> Useful for the compressible module (J/kg/K)
   real(c_double), pointer, save :: cv0
 
-  !> molar mass of the perfect gas in \f$ kg/mol \f$ (if \ref cstphy::ieos "ieos"=1)
+  !> Stiffened gas (ieos=2) limit pressure (Pa)
+  !> Equal to zero in perfect gas
+  real(c_double), pointer, save :: psginf
+
+  !> Stiffened gas (ieos=2) polytropic coefficient (dimensionless)
+  real(c_double), pointer, save :: gammasg
+
+  !> Molar mass of the perfect gas in \f$ kg/mol \f$
+  !> (if \ref cstphy::ieos "ieos"=1)
   !>
   !> Always useful
   real(c_double), pointer, save :: xmasmr
@@ -699,13 +707,14 @@ module cstphy
 
     subroutine cs_f_fluid_properties_get_pointers(ixyzp0, ieos, icp, icv, ro0, &
                                                   viscl0, p0, pred0, xyzp0, t0,&
-                                                  cp0, cv0, xmasmr, pther,     &
-                                                  pthera, pthermax)            &
+                                                  cp0, cv0, xmasmr, psginf,    &
+                                                  gammasg, pther, pthera,      &
+                                                  pthermax)                    &
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, ro0, viscl0
-      type(c_ptr), intent(out) :: p0, pred0, xyzp0, t0, cp0, cv0, xmasmr
+      type(c_ptr), intent(out) :: ixyzp0, ieos, icp, icv, ro0, viscl0, p0, pred0
+      type(c_ptr), intent(out) :: xyzp0, t0, cp0, cv0, xmasmr, psginf, gammasg
       type(c_ptr), intent(out) :: pther, pthera, pthermax
     end subroutine cs_f_fluid_properties_get_pointers
 
@@ -787,13 +796,15 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ixyzp0, c_ieos, c_icp, c_icv, c_ro0, c_viscl0, c_p0
-    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr, c_pther
-    type(c_ptr) :: c_pthera, c_pthermax
-    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ieos, c_icp, c_icv,   &
-                                            c_ro0, c_viscl0, c_p0,            &
-                                            c_pred0, c_xyzp0, c_t0,           &
-                                            c_cp0, c_cv0, c_xmasmr, c_pther,  &
-                                            c_pthera, c_pthermax)
+    type(c_ptr) :: c_pred0, c_xyzp0, c_t0, c_cp0, c_cv0, c_xmasmr, c_psginf
+    type(c_ptr) :: c_gammasg, c_pther, c_pthera, c_pthermax
+
+    call cs_f_fluid_properties_get_pointers(c_ixyzp0, c_ieos, c_icp, c_icv, &
+                                            c_ro0, c_viscl0, c_p0, c_pred0, &
+                                            c_xyzp0, c_t0, c_cp0, c_cv0,    &
+                                            c_xmasmr, c_psginf, c_gammasg,  &
+                                            c_pther, c_pthera, c_pthermax)
+
 
     call c_f_pointer(c_ixyzp0, ixyzp0)
     call c_f_pointer(c_ieos, ieos)
@@ -808,6 +819,8 @@ contains
     call c_f_pointer(c_cp0, cp0)
     call c_f_pointer(c_cv0, cv0)
     call c_f_pointer(c_xmasmr, xmasmr)
+    call c_f_pointer(c_psginf, psginf)
+    call c_f_pointer(c_gammasg, gammasg)
     call c_f_pointer(c_pther, pther)
     call c_f_pointer(c_pthera, pthera)
     call c_f_pointer(c_pthermax, pthermax)

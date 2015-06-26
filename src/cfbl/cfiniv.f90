@@ -94,7 +94,7 @@ if (isuite.eq.0) then
   call cs_user_initialization(nvar, nscal, dt)
 else
   ! Initialisation of the isochoric specific heat
-  call cs_cf_thermo_default_init(isuite, ncel)
+  call cs_cf_thermo_default_init(isuite)
 endif
 
 !----

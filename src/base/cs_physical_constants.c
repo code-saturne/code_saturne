@@ -217,7 +217,7 @@ BEGIN_C_DECLS
         conductivity; it is therefore needed, unless the diffusivity is also
         specified in \ref usphyv.
   \var  cs_fluid_properties_t::cv0
-        reference isochoric specific heat
+        reference isochoric specific heat (J/kg/K)
 
         Useful for the compressible module
   \var  cs_fluid_properties_t::xmasmr
@@ -225,6 +225,12 @@ BEGIN_C_DECLS
         (if \ref cstphy::ieos "ieos"=1)
 
         Always useful.
+  \var  cs_fluid_properties_t::psginf
+        stiffened gas (\ref ppincl::ieos "ieos"=2) limit pressure
+        (zero in perfect gas)
+  \var  cs_fluid_properties_t::gammasg
+        stiffened gas (\ref ppincl::ieos "ieos"=2) polytropic coefficient
+        (dimensionless)
   \var  cs_fluid_properties_t::pther
         uniform thermodynamic pressure for the low-Mach algorithm
 
@@ -263,13 +269,15 @@ static cs_fluid_properties_t  _fluid_properties = {
   .icv      = 0,
   .ro0      = 1.17862,
   .viscl0   = 1.83337e-5,
-  .p0       =   1.01325e5,
+  .p0       = 1.01325e5,
   .pred0    = 0.,
   .xyzp0    = {-999., -999.,-999.},
   .t0       = 293.15,
   .cp0      = 1017.24,
   .cv0      = 0.,
   .xmasmr   = 0.,
+  .psginf   = 0.,
+  .gammasg  = 1.4,
   .pther    = 1.013e5,
   .pthera   = 0.,
   .pthermax = -1.};
@@ -313,6 +321,8 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **cp0,
                                    double  **cv0,
                                    double  **xmasmr,
+                                   double  **psginf,
+                                   double  **gammasg,
                                    double  **pther,
                                    double  **pthera,
                                    double  **pthermax);
@@ -373,6 +383,8 @@ cs_f_physical_constants_get_pointers(double  **r,
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
  *   cv0      --> pointer to cs_glob_fluid_properties->cv0
  *   xmasmr   --> pointer to cs_glob_fluid_properties->xmasmr
+ *   psginf   --> pointer to cs_glob_fluid_properties->psginf
+ *   gammasg  --> pointer to cs_glob_fluid_properties->gammasg
  *   pther    --> pointer to cs_glob_fluid_properties->pther
  *   pthera   --> pointer to cs_glob_fluid_properties->pthera
  *   pthermax --> pointer to cs_glob_fluid_properties->pthermax
@@ -392,6 +404,8 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **cp0,
                                    double  **cv0,
                                    double  **xmasmr,
+                                   double  **psginf,
+                                   double  **gammasg,
                                    double  **pther,
                                    double  **pthera,
                                    double  **pthermax)
@@ -409,6 +423,8 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *cp0      = &(_fluid_properties.cp0);
   *cv0      = &(_fluid_properties.cv0);
   *xmasmr   = &(_fluid_properties.xmasmr);
+  *psginf   = &(_fluid_properties.psginf);
+  *gammasg  = &(_fluid_properties.gammasg);
   *pther    = &(_fluid_properties.pther);
   *pthera   = &(_fluid_properties.pthera);
   *pthermax = &(_fluid_properties.pthermax);

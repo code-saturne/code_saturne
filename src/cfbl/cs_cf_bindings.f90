@@ -90,11 +90,11 @@ module cs_cf_bindings
     ! Interface to C function initializing density, total energy and isochoric
     ! specific heat.
 
-    subroutine cs_cf_thermo_default_init(isuite, l_size) &
+    subroutine cs_cf_thermo_default_init(isuite) &
       bind(C, name='cs_cf_thermo_default_init')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: isuite, l_size
+      integer(c_int), value :: isuite
     end subroutine cs_cf_thermo_default_init
 
     !---------------------------------------------------------------------------
@@ -269,12 +269,12 @@ module cs_cf_bindings
 
     ! Interface to C function computing the wall boundary condition values.
 
-    subroutine cs_cf_thermo_wall_bc(wbfb, face_id) &
+    subroutine cs_cf_thermo_wall_bc(wbfa, wbfb, face_id) &
       bind(C, name='cs_cf_thermo_wall_bc')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: face_id
-      real(kind=c_double), dimension(*) :: wbfb
+      real(kind=c_double), dimension(*) :: wbfa, wbfb
     end subroutine cs_cf_thermo_wall_bc
 
     !---------------------------------------------------------------------------

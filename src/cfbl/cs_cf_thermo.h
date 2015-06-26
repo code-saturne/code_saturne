@@ -84,7 +84,7 @@ cs_cf_thermo_gamma(cs_real_t *gamma);
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_default_init(int isuite, cs_lnum_t l_size);
+cs_cf_thermo_default_init(int isuite);
 
 // TODO: the check function should be generalized (pass the name as argument).
 
@@ -302,12 +302,14 @@ cs_cf_thermo_s_from_dp(cs_real_t *dens,
  * Compute wall boundary condition values.
  *
  * parameters:
+ *   wbfa    --> output work array
  *   wbfb    --> output work array
  *   face_id <-- boundary face index
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_wall_bc(cs_real_t *wbfb,
+cs_cf_thermo_wall_bc(cs_real_t *wbfa,
+                     cs_real_t *wbfb,
                      cs_lnum_t  face_id);
 
 /*----------------------------------------------------------------------------

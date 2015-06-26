@@ -5,6 +5,14 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add stiffened gas thermodynamic law for the compressible module (ieos=2).
+  Two new parameters are accessible in the user subroutine uscfx2:
+  gammasg ("pseudo" specific heat ratio) and psginf (infinite pressure).
+
+- Add a code icodcl=11, allowing to easily impose a boundary value
+  consisting in an affine function of the next cell value
+  (used at wall faces in the compressible module).
+
 - Add timer statistics and plots for different stages and operators.
   * Base timers for each time step (with initialization as time step 0)
     are now available in the timer_stats.csv file (or timer_stats.dat

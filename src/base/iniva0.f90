@@ -270,7 +270,7 @@ if (ippmod(icompf).ge.0) then
 
   ! Default isochoric specific heat (cv0),
   ! total energy and density
-  call cs_cf_thermo_default_init(isuite, ncel)
+  call cs_cf_thermo_default_init(isuite)
 
   ! Default diffusivity for total energy
   visls0(ienerg) = visls0(itempk)/cv0

@@ -79,6 +79,10 @@ typedef struct {
   double        cv0;          /* reference specific heat */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */
+  double        psginf;       /* stiffened gas (ieos=2) limit pressure (zero in
+                                 perfect gas) (Pa) */
+  double        gammasg;      /* stiffened gas (ieos=2) polytropic coefficient,
+                                 (dimensionless) */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach
                                  algorithm */
   double        pthera;       /* thermodynamic pressure for the previous time

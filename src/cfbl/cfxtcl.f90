@@ -119,7 +119,7 @@ double precision hint
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w4, w5, w6
 double precision, allocatable, dimension(:) :: w7
-double precision, allocatable, dimension(:) :: wbfb
+double precision, allocatable, dimension(:) :: wbfb, wbfa
 double precision, allocatable, dimension(:) :: bc_en, bc_pr, bc_tk
 double precision, allocatable, dimension(:,:) :: bc_vel
 
@@ -140,7 +140,7 @@ call field_get_val_v(ivarfl(iu), vel)
 ! Allocate temporary arrays
 allocate(w1(ncelet), w2(ncelet))
 allocate(w4(ncelet), w5(ncelet), w6(ncelet))
-allocate(w7(nfabor), wbfb(nfabor))
+allocate(w7(nfabor), wbfa(nfabor), wbfb(nfabor))
 allocate(bc_en(nfabor))
 allocate(bc_pr(nfabor))
 allocate(bc_tk(nfabor))
@@ -232,23 +232,16 @@ do ifac = 1, nfabor
 
       ! generally proportional to the bulk value
       ! (Pboundary = COEFB*Pi)
-      ! If rarefaction is too strong : homogeneous Dirichlet
+      ! The part deriving from pinf in stiffened gas is set in explicit for now
+      call cs_cf_thermo_wall_bc(wbfa, wbfb, ifac-1)
 
-      call cs_cf_thermo_wall_bc(wbfb, ifac-1)
-
-      ! In addition, a pre-correction has to be applied to cancel the
-      ! treatment done afterward in condli.
-      ! TODO see if coefa, coefb could be directly set. In this case,
-      ! a test on ippmod in condli would be necessary.
-
-      !FIXME with the new cofaf
-      icodcl(ifac,ipr) = 1
-      if(wbfb(ifac).lt.rinfin*0.5d0.and.                  &
-         wbfb(ifac).gt.0.d0  ) then
-        hint = dt(iel)/distb(ifac)
-        rcodcl(ifac,ipr,1) = 0.d0
-        rcodcl(ifac,ipr,2) = hint*(1.d0/wbfb(ifac)-1.d0)
+      if (wbfb(ifac).lt.rinfin*0.5d0.and.wbfb(ifac).gt.0.d0) then
+        icodcl(ifac,ipr) = 11
+        rcodcl(ifac,ipr,1) = wbfa(ifac)
+        rcodcl(ifac,ipr,2) = wbfb(ifac)
       else
+        ! If rarefaction is too strong : homogeneous Dirichlet
+        icodcl(ifac,ipr) = 1
         rcodcl(ifac,ipr,1) = 0.d0
       endif
 
@@ -541,11 +534,11 @@ do ifac = 1, nfabor
     call csexit (1)
 
     !     On utilise un scenario dans lequel on a un 2-contact et une
-    !       3-détente entrant dans le domaine. On détermine les conditions
+    !       3-dÃ©tente entrant dans le domaine. On dÃ©termine les conditions
     !       sur l'interface selon la thermo et on passe dans Rusanov
     !       ensuite pour lisser.
 
-    !     Si rho et u ne sont pas donnés, erreur
+    !     Si rho et u ne sont pas donnÃ©s, erreur
     if(rcodcl(ifac,irunh,1).lt.-rinfin*0.5d0) then
       write(nfecra,1300)
       call csexit (1)
@@ -570,12 +563,11 @@ do ifac = 1, nfabor
 ! 5. Unexpected boundary condition type
 !===============================================================================
 
-  else
+  elseif ( itypfb(ifac).ne.iindef ) then
 
     ! The computation stops.
     write(nfecra,1400)
     call csexit (1)
-
 
   endif ! end of test on boundary condition types
 
@@ -811,7 +803,7 @@ do ifac = 1, nfabor
 ! Free memory
 deallocate(w1, w2)
 deallocate(w4, w5, w6)
-deallocate(w7)
+deallocate(w7, wbfb, wbfa)
 deallocate(bc_en, bc_pr, bc_tk, bc_vel)
 
 !----

@@ -381,7 +381,7 @@ call indsui(isuite)
 
 if (ippmod(icompf).ge.0) then
 !      For compressible model, call to uscfx2 to get visls0(itempk), viscv0,
-!      xmasmr and ivivar
+!      xmasmr, ivivar and  psginf, gammasg, cv0 in stiffened gas thermodynamic
 !      With GUI, visls0(itempk), viscv0, xmasmr and ivivar have been read
 !      below in the call to csphys.
   call uscfx2

@@ -89,8 +89,10 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
+!>                               - 11 Boundary value related to the next cell
+!>                                 value by an affine function
 !>                               - 13 Dirichlet for the advection operator and
-!>                                    Neumann for the diffusion operator
+!>                                 Neumann for the diffusion operator
 !> \param[in,out] isostd        indicator for standard outlet
 !>                               and reference face index
 !> \param[in]     dt            time step (per cell)
@@ -182,6 +184,7 @@ integer          f_id  ,  iut  , ivt   , iwt, iflmab
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis, qimp, cfl
+double precision pinf  , ratio
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision xxp0, xyp0, xzp0
@@ -1062,6 +1065,20 @@ do ifac = 1, nfabor
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , cfl               , hint )
+
+  ! Boundary value proportional to boundary cell value
+  !---------------------------------------------------
+
+  elseif (icodcl(ifac,ipr).eq.11) then
+
+    pinf = rcodcl(ifac,ipr,1)
+    ratio = rcodcl(ifac,ipr,2)
+
+    call set_affine_function_scalar &
+         !=========================
+       ( coefap(ifac), cofafp(ifac),                         &
+         coefbp(ifac), cofbfp(ifac),                         &
+         pinf        , ratio       , hint                    )
 
   ! Imposed value for the convection operator, imposed flux for diffusion
   !----------------------------------------------------------------------
@@ -3443,6 +3460,52 @@ cofbf(2,3) = hint(5)*(1.d0 - coefb(2,2))
 cofbf(3,2) = hint(5)*(1.d0 - coefb(2,2))
 cofbf(1,3) = hint(6)*(1.d0 - coefb(3,3))
 cofbf(3,1) = hint(6)*(1.d0 - coefb(3,3))
+
+return
+end subroutine
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pinf          affine part
+!> \param[in]     ratio         linear part
+!> \param[in]     hint          internal exchange coefficient
+!_______________________________________________________________________________
+
+subroutine set_affine_function_scalar &
+ ( coefa , cofaf, coefb, cofbf, pinf , ratio, hint  )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa, cofaf, coefb, cofbf, pinf, ratio, hint
+
+! Local variables
+
+!===============================================================================
+
+! Gradient BCs
+coefb = ratio
+coefa = pinf
+
+! Flux BCs
+cofaf = -hint*coefa
+cofbf =  hint*(1.d0 - coefb)
 
 return
 end subroutine
