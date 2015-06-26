@@ -210,7 +210,7 @@ enddo
 if (ncesmp.gt.0) then
   do ii = 1, ncesmp
     iel = icetsm(ii)
-    smbrs(iel) = smbrs(iel) + smacel(iel,ipr)*cell_f_vol(iel)
+    smbrs(iel) = smbrs(iel) + smacel(ii,ipr)*cell_f_vol(iel)
   enddo
 endif
 
