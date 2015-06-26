@@ -156,7 +156,7 @@ if test "x$with_blas" != "xno" ; then
 
   fi
 
-  # Test for Intel MKL BLAS
+  # Test for Intel MKL libraries
 
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xMKL" ; then
 
@@ -183,41 +183,49 @@ if test "x$with_blas" != "xno" ; then
       fi
     fi
 
-    if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
-
-      if test "`uname -m`" = "ia64" ; then
-        BLAS_LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lguide -lpthread"
-      elif test `uname -m` = x86_64 ; then
-        BLAS_LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lguide -lpthread"
-      else
-        BLAS_LIBS="-lmkl_intel -lmkl_intel_thread -lmkl_core -lguide -lpthread"
-      fi
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}${mkl_sub_lib}"
-      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
-
-      AC_MSG_CHECKING([for threaded MKL BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_cblas.h>]],
-                     [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_MKL], 1, [MKL BLAS support])
-                       cs_have_blas=yes; with_blas_type=MKL ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
-
-    if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
-                                          # or explicitely specified libs second
+    if test "x$with_blas_libs" = "x"; then
 
       if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xMKL"; then
         BLAS_LIBS="$with_blas_libs"
-      else
-        if test "`uname -m`" = "ia64" ; then
-          BLAS_LIBS="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
-        elif test `uname -m` = x86_64 ; then
-          BLAS_LIBS="-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
+      elif  test "x$enable_shared" = xyes ; then
+        if test "$1" = "yes" ; then # Threaded version ?
+          case `uname -m` in
+            *64)
+              BLAS_LIBS="-lmkl_intel_lp64 -lmkl_core -lmkl_intel_thread -lpthread -lm"
+              ;;
+            *)
+              BLAS_LIBS="-lmkl_intel -lmkl_core -lmkl_intel_thread -lpthread -lm"
+              ;;
+          esac
         else
-          BLAS_LIBS="-lmkl_intel -lmkl_sequential -lmkl_core"
+          case `uname -m` in
+            *64)
+              BLAS_LIBS="-lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lpthread -lm"
+              ;;
+            *)
+              BLAS_LIBS="-lmkl_intel -lmkl_core -lmkl_sequential -lpthread -lm"
+              ;;
+          esac
+        fi
+      else
+        if test "$1" = "yes" ; then # Threaded version ?
+          case `uname -m` in
+            *64)
+              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel_lp64.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_intel_thread.a -Wl,--end-group -lpthread -lm"
+              ;;
+            *)
+              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_intel_thread.a -Wl,--end-group -lpthread -lm"
+              ;;
+          esac
+        else
+          case `uname -m` in
+            *64)
+              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel_lp64.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_sequential.a -Wl,--end-group -lpthread -lm"
+              ;;
+            *)
+              BLAS_LIBS="-Wl,--start-group ${mkl_lib}${mkl_sub_lib}/libmkl_intel.a ${mkl_lib}${mkl_sub_lib}/libmkl_core.a ${mkl_lib}${mkl_sub_lib}/libmkl_sequential.a -Wl,--end-group -lpthread -lm"
+              ;;
+          esac
         fi
       fi
 
@@ -225,13 +233,14 @@ if test "x$with_blas" != "xno" ; then
       LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}${mkl_sub_lib}"
       LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
 
-      AC_MSG_CHECKING([for MKL BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_blas.h>]],
+      AC_MSG_CHECKING([for MKL libraries])
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mkl_cblas.h>]],
                      [[ cblas_ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_MKL], 1, [MKL BLAS support])
+                     [ AC_DEFINE([HAVE_MKL], 1, [MKL libraries support])
                        cs_have_blas=yes; with_blas_type=MKL ],
                      [cs_have_blas=no])
       AC_MSG_RESULT($cs_have_blas)
+
     fi
 
     if test "x$with_blas_type" = "xMKL" ; then
