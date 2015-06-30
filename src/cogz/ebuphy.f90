@@ -249,7 +249,6 @@ do iel = 1, ncel
 
   mode    = -1
   call cothht                                                     &
-  !==========
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hgf    , tgf    )
@@ -287,7 +286,6 @@ do iel = 1, ncel
 
   mode = 1
   call cothht                                                     &
-  !==========
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hgb    , tgb    )

@@ -254,7 +254,6 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
     !---> NUMERO DU SCALAIRE ET DE LA VARIABLE THERMIQUE
 
     call uiray2 &
-    !==========
    ( itypfb, iparoi, iparug, ivart , izfrad,                  &
      isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,          &
      nozppm, nfabor, nvar,                                    &
@@ -265,7 +264,6 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
   endif
 
   call cs_user_radiative_transfer_bcs &
-  !==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
@@ -311,7 +309,6 @@ enddo
 if (iihmpr.eq.1) then
 
   call uiray2 &
-  !==========
 ( itypfb, iparoi, iparug, ivart , izfrad,                       &
   isothm, itpimp, ipgrno, iprefl, ifgrno, ifrefl,               &
   nozppm, nfabor, nvar,                                         &
@@ -321,7 +318,6 @@ if (iihmpr.eq.1) then
 endif
 
 call cs_user_radiative_transfer_bcs &
-!==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   icodcl , izfrad , isothm ,                                     &
@@ -672,7 +668,6 @@ elseif (itherm.eq.2) then
   if (ippmod(iphpar).le.1) then
 
     call usray4 &
-    !==========
  ( nvar   , nscal  ,                                              &
    mode   ,                                                       &
    itypfb ,                                                       &
@@ -683,7 +678,6 @@ elseif (itherm.eq.2) then
   else
 
     call ppray4 &
-    !==========
  ( mode   ,                                                       &
    itypfb ,                                                       &
    propce ,                                                       &
@@ -739,7 +733,6 @@ endif
 if (ideb.eq.0) then
 
   call raypar &
-  !==========
  ( isothm , izfrad ,                                              &
    tmin   , tmax   , tx     ,                                     &
    rcodcl ,                                                       &
@@ -813,7 +806,6 @@ elseif (itherm.eq.2) then
     if (ippmod(iphpar).le.1) then
 
       call usray4 &
-      !==========
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
@@ -825,7 +817,6 @@ elseif (itherm.eq.2) then
     else
 
       call ppray4 &
-      !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
       propce ,                                                       &
@@ -850,7 +841,6 @@ elseif (itherm.eq.2) then
     if (ippmod(iphpar).le.1) then
 
       call usray4 &
-      !==========
     ( nvar   , nscal  ,                                              &
       mode   ,                                                       &
       itypfb ,                                                       &
@@ -861,7 +851,6 @@ elseif (itherm.eq.2) then
     else
 
       call ppray4 &
-      !==========
     ( mode   ,                                                       &
       itypfb ,                                                       &
       propce ,                                                       &

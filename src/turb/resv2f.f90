@@ -276,7 +276,6 @@ enddo
 !===============================================================================
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -331,7 +330,6 @@ do iel = 1, ncel
   w3(iel) = 1.d0
 enddo
 call viscfa                                                       &
-!==========
  ( imvisf ,                                                       &
    w3     ,                                                       &
    viscf  , viscb  )
@@ -368,7 +366,6 @@ extrap = extrag(iphi)
 iphydp = 0
 
 call itrgrp &
-!==========
  ( ivarfl(iphi)    , init   , inc    , imrgra ,                      &
    iccocg , nswrgp , imligp , iphydp ,                               &
    iwarnp ,                                                          &
@@ -494,7 +491,6 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -547,7 +543,6 @@ enddo
 !===============================================================================
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -587,7 +582,6 @@ if (ncesmp.gt.0) then
 
   !       We increment smbr by -Gamma.var_prev and rovsdt by Gamma (*theta)
   call catsma                                                     &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
    icetsm , itypsm(1,ivar) ,                                      &
    cell_f_vol , cvara_var  , smacel(1,ivar) , smacel(1,ipr) ,     &
@@ -739,7 +733,6 @@ if (idiff(ivar).ge.1) then
   enddo
 
   call viscfa &
- !==========
 ( imvisf ,                                                       &
   w2     ,                                                       &
   viscf  , viscb  )
@@ -813,7 +806,6 @@ call field_get_coefaf_s(ivarfl(ivar), cofafp)
 call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -834,7 +826,6 @@ call codits &
 !===============================================================================
 
    call clpv2f(ncel, iwarni(iphi))
-   !==========
 
 ! Free memory
 deallocate(viscf, viscb)

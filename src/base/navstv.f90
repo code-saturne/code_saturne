@@ -335,7 +335,6 @@ if (nterup.gt.1) then
     xnrmu0 = xnrtmp
     if (irangp.ge.0) then
       call parsom (xnrmu0)
-      !==========
     endif
     ! En cas de couplage entre deux instances de Code_Saturne, on calcule
     ! la norme totale de la vitesse
@@ -343,7 +342,6 @@ if (nterup.gt.1) then
     ! (il faudrait quand meme verifier les options numeriques, ...)
     do numcpl = 1, nbrcpl
       call tbrcpl ( numcpl, 1, 1, xnrmu0, xnrdis )
-      !==========
       xnrmu0 = xnrmu0 + xnrdis
     enddo
     xnrmu0 = sqrt(xnrmu0)
@@ -354,9 +352,7 @@ if (nterup.gt.1) then
   if (iterns.gt.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
       call synvin(uvwk(1,1))
-      !==========
       call synsca(cvara_pr)
-      !==========
     endif
   endif
 
@@ -380,7 +376,6 @@ if ((idilat.eq.2.or.idilat.eq.3).and. &
     (ntcabs.gt.1.or.isuite.gt.0)) then
 
   call predfl(nvar, ncetsm, icetsm, dt, smacel)
-  !==========
 
 endif
 
@@ -391,7 +386,6 @@ endif
 if (iphydr.eq.2) then
 
   call prehyd(prhyd, grdphd)
-  !==========
 
 endif
 
@@ -406,7 +400,6 @@ if ( ippmod(icompf).ge.0 ) then
   endif
 
   call cfmspr &
-  !==========
   ( nvar   , nscal  , iterns ,                                     &
     ncepdc , ncetsm , icepdc , icetsm , itypsm ,                   &
     dt     , propce , vela   ,                                     &
@@ -423,7 +416,6 @@ if (icavit.ge.0) then
   call field_get_val_s(iprpfl(iprtot), cpro_prtot)
 
   call cavitation_compute_source_term (cpro_prtot, cvara_voidf)
-  !==================================
 
 endif
 
@@ -452,7 +444,6 @@ call field_get_coefaf_v(ivarfl(iu), cofafu)
 call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 call predvv &
-!==========
 ( iappel ,                                                       &
   nvar   , nscal  , iterns ,                                     &
   ncepdc , ncetsm , nfbpcd , ncmast ,                            &
@@ -484,7 +475,6 @@ if (iprco.le.0) then
   climgp = climgr(iu)
 
   call inimav                                                     &
-  !==========
  ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
@@ -519,7 +509,6 @@ if (iprco.le.0) then
     call field_get_coefb_v(ivarfl(iuma), clbale)
 
     call inimav &
-    !==========
   ( ivarfl(iuma)    , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
     iwarnp ,                                                       &
@@ -624,10 +613,8 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
   ! Update mesh
 
   call turbomachinery_update_mesh (ttcmob, rs_ell(1))
-  !==============================
 
   call dmtmps(t1)
-  !==========
 
   do ifac = 1, nfabor
     isympa(ifac) = 1
@@ -686,22 +673,18 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
     ! Resize auxiliary arrays (pointe module)
 
     call resize_aux_arrays
-    !=====================
 
     ! Resize main real array
 
     call resize_main_real_array ( dt , propce )
-    !==========================
 
     ! Update turbomachinery module
 
     call turbomachinery_update
-    !=========================
 
     ! Update field mappings ("owner" fields handled by turbomachinery_update)
 
     call fldtri(nproce, dt, propce)
-    !==========
 
     ! Resize other arrays related to the velocity-pressure resolution
 
@@ -798,7 +781,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
   enddo
 
   call dmtmps(t2)
-  !==========
 
   rs_ell(2) = t2-t1
 
@@ -818,7 +800,6 @@ allocate(dpvar(ncelet))
 if (ippmod(icompf).lt.0) then
 
   call resopv &
-  !==========
 ( nvar   , ncetsm , nfbpcd , ncmast ,                            &
   icetsm , ifbpcd , ltmast , isostd ,                            &
   dt     , vel    ,                                              &
@@ -886,7 +867,6 @@ if (ippmod(icompf).lt.0) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(dpvar)
-      !==========
     endif
 
     iccocg = 1
@@ -990,7 +970,6 @@ if (ippmod(icompf).lt.0) then
       enddo
       if (irangp.ge.0.or.iperio.eq.1) then
         call synvin(frcxt)
-        !==========
       endif
       ! Update of the Dirichlet boundary conditions on the
       ! pressure for the outlet
@@ -1076,7 +1055,6 @@ if (iale.eq.1) then
   call field_get_coefb_v(ivarfl(iuma), clbale)
 
   call inimav &
-  !==========
 ( ivarfl(iuma)    , itypfl ,                                     &
   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
   iwarnp ,                                                       &
@@ -1135,7 +1113,6 @@ endif
 if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
 
   if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t3)
-                                  !==========
 
   !$omp parallel do private(iel1, iel2, dtfac, rhofac)
   do ifac = 1, nfac
@@ -1168,7 +1145,6 @@ if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
   enddo
 
   if (iturbo.eq.1.or.iturbo.eq.2) call dmtmps(t4)
-                                  !==========
 
   rs_ell(2) = rs_ell(2) + t4-t3
 
@@ -1184,12 +1160,10 @@ if (icavit.ge.0) then
   ! Void fraction solving
 
   call resvoi(dt)
-  !==========
 
   ! Halo synchronization
 
   call synsca(cvar_voidf)
-  !==========
 
   ! Get the void fraction boundary conditions
 
@@ -1206,7 +1180,6 @@ if (icavit.ge.0) then
   ! Update mixture density/viscosity and mass flux
 
   call cavitation_update_phys_prop &
-  !===============================
  ( cvar_voidf, coavoi, cobvoi, ivoifl, bvoifl, &
    crom, brom, propce(:,ipproc(iviscl)), imasfl, bmasfl )
 
@@ -1217,7 +1190,6 @@ if (icavit.ge.0) then
     call field_get_val_prev_s(icrom, croma)
 
     call cavitation_print_mass_budget &
-    !================================
    ( crom, croma, dt, imasfl, bmasfl )
 
   endif
@@ -1247,7 +1219,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(vel)
-    !==========
   endif
 
   !  -- Pression
@@ -1256,7 +1227,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(cvar_pr)
-      !==========
     endif
 
   endif
@@ -1275,7 +1245,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   climgp = climgr(iu)
 
   call inimav                                                     &
-  !==========
  ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
@@ -1334,7 +1303,6 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
     !                  AVEC LE FLUX DE MASSE RECALCULE
     iappel = 2
     call predvv &
-    !==========
  ( iappel ,                                                       &
    nvar   , nscal  , iterns ,                                     &
    ncepdc , ncetsm , nfbpcd , ncmast ,                            &
@@ -1376,11 +1344,10 @@ if (nterup.gt.1) then
   ! --->    TRAITEMENT DU PARALLELISME
 
   if (irangp.ge.0) call parsom (xnrmu)
-                   !==========
+
   ! -- >    TRAITEMENT DU COUPLAGE ENTRE DEUX INSTANCES DE CODE_SATURNE
   do numcpl = 1, nbrcpl
     call tbrcpl ( numcpl, 1, 1, xnrmu, xnrdis )
-    !==========
     xnrmu = xnrmu + xnrdis
   enddo
   xnrmu = sqrt(xnrmu)
@@ -1402,7 +1369,6 @@ else
 endif
 if (ndircp.le.0) then
   call prmoy0 &
-  !==========
 ( ncelet , ncel   , cell_f_vol , cvar_pr )
 endif
 
@@ -1436,7 +1402,7 @@ if (iwarni(iu).ge.1) then
     rnorm  = max(rnorm,abs(cvar_pr(iel)))
   enddo
   if (irangp.ge.0) call parmax (rnorm)
-                   !==========
+
   write(nfecra,2100)rnorm
 
   rnorm = -1.d0
@@ -1461,7 +1427,6 @@ if (iwarni(iu).ge.1) then
   if (irangp.ge.0) then
     nbrval = 3
     call parmxl (nbrval, rnorm, xyzmax)
-    !==========
   endif
 
   write(nfecra,2200) rnorm,xyzmax(1),xyzmax(2),xyzmax(3)
@@ -1519,9 +1484,7 @@ if (iwarni(iu).ge.1) then
   enddo
   if (irangp.ge.0) then
     call parmax (rnorma)
-    !==========
     call parmin (rnormi)
-    !==========
   endif
   write(nfecra,2400)rnorma, rnormi
 
@@ -1532,7 +1495,6 @@ if (iwarni(iu).ge.1) then
   enddo
 
   if (irangp.ge.0) call parsom (rnorm)
-                   !==========
 
   write(nfecra,2500)rnorm
 

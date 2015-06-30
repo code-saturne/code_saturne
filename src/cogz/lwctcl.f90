@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine lwctcl &
-!================
-
  ( itypfb , izfppp ,                                              &
    rcodcl )
 
@@ -106,7 +104,6 @@ double precision, dimension(:), pointer ::  brom
 double precision, dimension(:), pointer :: viscl
 
 !===============================================================================
-!===============================================================================
 ! 1.  INITIALISATIONS
 !===============================================================================
 
@@ -137,17 +134,11 @@ enddo
 
 if(irangp.ge.0) then
   call parrmx(nozapm,qimp  )
-  !==========
   call parrmx(nozapm,fment )
-  !==========
   call parrmx(nozapm,tkent )
-  !==========
   call parimx(nozapm,iqimp )
-  !==========
   call parimx(nozapm,ientgf)
-  !==========
   call parimx(nozapm,ientgb)
-  !==========
 endif
 
 !===============================================================================
@@ -195,7 +186,6 @@ do ii = 1, nzfppp
 enddo
 if(iok.ne.0) then
   call csexit (1)
-  !==========
 endif
 do ifac = 1, nfabor
   izone = izfppp(ifac)
@@ -280,12 +270,10 @@ do ifac = 1, nfabor
       xeent = epzero
       if (icke.eq.1) then
         call keendb                                               &
-        !==========
         ( uref2, dhy, rhomoy, viscla, cmu, xkappa,                &
           ustar2, xkent, xeent )
       else if (icke.eq.2) then
         call keenin                                               &
-        !==========
         ( uref2, xiturb, dhy, cmu, xkappa, xkent, xeent )
       endif
 
@@ -401,7 +389,6 @@ do ii = 1, nzfppp
     coefg(3) = zero
     mode    = -1
     call cothht                                                   &
-    !==========
      ( mode   , ngazg  , ngazgm , coefg  ,                        &
        npo    , npot   , th     , ehgazg ,                        &
        hgazf  , tgazf  )
@@ -414,7 +401,6 @@ do ii = 1, nzfppp
     coefg(3) = zero
     mode    = -1
     call cothht                                                   &
-    !==========
      ( mode   , ngazg , ngazgm  , coefg  ,                        &
        npo    , npot   , th     , ehgazg ,                        &
        hgazb , tgazb )

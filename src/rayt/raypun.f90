@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine raypun &
-!================
-
  ( itypfb ,                                                       &
    coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
@@ -223,10 +221,7 @@ do iel = 1,ncel
   ckmel(iel) = 1.d0 / ckmel(iel)
 enddo
 
-call viscfa                                                       &
-!==========
-   ( imvisf ,                                                     &
-     ckmel  , viscf  , viscb  )
+call viscfa(imvisf, ckmel, viscf, viscb)
 
 !===============================================================================
 ! 3.  RESOLUTION
@@ -241,7 +236,6 @@ write(cnom,'(a)') 'radiation_p1'
 nomva0 = cnom
 
 call codits &
-!==========
  ( idtva0 , ivar0  , iconv1 , idiff1 , ndirc1 ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &

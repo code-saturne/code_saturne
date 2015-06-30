@@ -233,7 +233,6 @@ enddo
 !===============================================================================
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ivar)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -296,7 +295,6 @@ if (ncesmp.gt.0) then
 
   ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma (*theta)
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv ,           &
    icetsm , itypsm(:,ivar)  ,                                     &
    volume , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
@@ -431,7 +429,6 @@ if (igrari.eq.1) then
   enddo
 
   call rijthe(nscal, ivar, gradro, w7)
-  !==========
 
   ! Extrapolation of source terms (2nd order in time)
   if (st_prv_id.ge.0) then
@@ -470,7 +467,6 @@ if (idften(ivar).eq.6) then
   iwarnp = iwarni(ivar)
 
   call vitens &
-  !==========
  ( viscce , iwarnp ,             &
    weighf , weighb ,             &
    viscf  , viscb  )
@@ -483,7 +479,6 @@ else
   enddo
 
   call viscfa                    &
-  !==========
  ( imvisf ,                      &
    w1     ,                      &
    viscf  , viscb  )
@@ -526,7 +521,6 @@ relaxp = relaxv(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &

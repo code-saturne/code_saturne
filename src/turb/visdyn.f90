@@ -356,9 +356,7 @@ deallocate(xmij)
 
 if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(w1)
-  !==========
   call synsca(w2)
-  !==========
 endif
 
 ! By default we make a local average of numerator and of
@@ -378,7 +376,6 @@ do iel = 1, ncel
 enddo
 
 call ussmag                                                       &
-!==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
@@ -421,13 +418,9 @@ if (iwarni(iu).ge.1) then
   enddo
   if (irangp.ge.0) then
     call parmax(smagma)
-    !==========
     call parmin(smagmn)
-    !==========
     call parsom(smagmy)
-    !==========
     call parcpt(iclipc)
-    !==========
   endif
   smagmy = smagmy / voltot
   write(nfecra,1000) iclipc

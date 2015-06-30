@@ -21,7 +21,6 @@
 !-------------------------------------------------------------------------------
 
 !                   LIBRAIRIE DE SOUS-PROGRAMMES RMODAK
-!==========================================
 
 
 !===============================================================================
@@ -47,12 +46,8 @@
 !==============================================================================
 
 subroutine absorb &
-!================
-
  ( ts    , te     , path   , sootk  ,                             &
    pco2  , ph2o   , alpha  )
-
-
 
 !===============================================================================
 ! FONCTION :
@@ -147,9 +142,7 @@ if (pcl.gt.5.98d0 .or. pwl.gt.5.98d0) goto 4
 
 as = 0.d0
 if (sootk.le.0.d0) goto 51
-call tasoot                                                       &
-!==========
- ( sootk , path , ts , taus )
+call tasoot(sootk, path, ts, taus)
 
 as = 1.d0-taus
 
@@ -195,9 +188,9 @@ write(nfecra,1003)
 alpha= 1.d-8
 
 
-!========
-! FORMATS
-!========
+!--------
+! Formats
+!--------
 
  1000 format(                                                           &
 '@                                                            ',/,&
@@ -258,8 +251,6 @@ end subroutine
 !==============================================================================
 
 subroutine chebyc &
-!================
-
  ( norpol , argpol , valpol )
 
 
@@ -337,8 +328,6 @@ end subroutine
 !==============================================================================
 
 subroutine asympt &
-!================
-
  ( zz    , zzv    )
 
 
@@ -401,8 +390,6 @@ end subroutine
 !==============================================================================
 
 subroutine tasoot &
-!================
-
  ( zkled  , pathl  , tblack , taus   )
 
 
@@ -455,9 +442,7 @@ if ( zkled.le.0.d0 ) goto 1
 
 arg = 1.d0 + zkled*pathl*tblack*6.5333d-5
 
-call pentag                                                       &
-!==========
- ( arg    , val )
+call pentag(arg, val)
 
 taus = val*.1539897336d0
 return
@@ -470,8 +455,6 @@ end subroutine
 !==============================================================================
 
 subroutine pentag &
-!================
-
  ( argfpe , valfpe )
 
 
@@ -525,26 +508,20 @@ if (argfpe.ge.2.d0) goto 3
 zs = ( 1.d0/(argfpe+2.d0)**4 + 1.d0/(argfpe+1.d0)**4              &
                              + 1.d0/argfpe**4          )*6.d0
 zz = argfpe+3.d0
-call asympt                                                       &
-!==========
- ( zz, zzv )
+call asympt(zz, zzv)
 
 goto 4
 
  3    continue
 zs = (1.d0/(argfpe+1.d0)**4+1.d0/argfpe**4)*6.d0
 zz = argfpe+2.d0
-call asympt                                                       &
-!==========
- ( zz, zzv )
+call asympt(zz, zzv)
 goto 4
 
  2    continue
 zs= 6.d0/argfpe**4
 zz= argfpe+1.d0
-call asympt                                                       &
-!==========
- ( zz, zzv )
+call asympt(zz, zzv)
 
 goto 4
 
@@ -556,9 +533,7 @@ zs = 0.d0
 !    de rmodak est bloquee en amont).
 zz= argfpe
 
-call asympt                                                       &
-!==========
- ( zz, zzv )
+call asympt(zz, zzv)
 
  4    continue
 valfpe = zzv+zs
@@ -569,8 +544,6 @@ end subroutine
 !==============================================================================
 
 function fdleck &
-!==============
-
  ( val    , pl     , te     )
 
 
@@ -643,10 +616,7 @@ end function
 !==============================================================================
 
 function emigas &
-!==============
-!      -------------------------------------------------------------
  ( pathl  , pc     , pw     , te     )
-!      -------------------------------------------------------------
 
 !===============================================================================
 ! FONCTION :
@@ -706,9 +676,7 @@ pcl = pc*pathl
 
 if ( pcl.lt.0.0011d0 .or. pcl.gt.5.98d0 ) goto 1
 
-call scrtch                                                       &
-!==========
- ( pc , pcl , te , 1 , ec)
+call scrtch(pc, pcl, te, 1, ec)
 
  1    continue
 
@@ -718,9 +686,7 @@ pwl = pw*pathl
 
 if ( pwl.lt.0.0011d0 .or. pwl.gt.5.98d0 ) goto 2
 
-call scrtch                                                       &
-!==========
- ( pw , pwl , te , 2 , ew )
+call scrtch(pw, pwl, te, 2, ew)
 
 emigas = ec + ew
 
@@ -747,8 +713,6 @@ end function
 !==============================================================================
 
 subroutine scrtch &
-!================
-
  ( pp     , pl     , te     , index  , val    )
 
 
@@ -916,23 +880,17 @@ val = 0.d0
 
 do ii =1, 3
   iii = ii-1
-  call chebyc                                                     &
-  !==========
-  ( iii , xx , tix )
+  call chebyc(iii, xx, tix)
 
   v6 = 0.d0
   do jj = 1, 4
     jjj = jj-1
-    call chebyc                                                   &
-    !==========
-    ( jjj, yy , tjy )
+    call chebyc(jjj, yy, tjy)
 
     v7 = 0.d0
     do kk = 1, 4
       kkk = kk-1
-      call chebyc                                                 &
-      !==========
-      ( kkk , zz , tkz )
+      call chebyc(kkk, zz, tkz)
 
       if (index.eq.1) sc(ii,jj,kk) = cc(ii,jj,kk)
       if (index.eq.2) sc(ii,jj,kk) = cw(ii,jj,kk)

@@ -308,7 +308,6 @@ if (ityturt(iscal).ne.3) then
   enddo
 
   call inimav &
-  !==========
   ( f_id0  , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp ,                                              &
@@ -330,7 +329,6 @@ else
   call field_get_val_prev_v(f_id, xuta)
 
   call resrit &
-  !==========
 ( nscal  ,                                               &
   iscal  , xcpp   , xut    , xuta   ,                    &
   dt     ,                                               &
@@ -367,7 +365,6 @@ else
   call field_get_coefbd_v(f_id,cofbrut)
 
   call inimav &
-  !==========
   ( f_id0  , itypfl ,                                     &
     iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
     iwarnp ,                                              &

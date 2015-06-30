@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine vordep &
-!================
-
  ( ncevor , nvor   , ient   , dtref  ,                            &
    ivocel , yzc    , xv     , xw     ,                            &
    yzv    , yzva   , xsignv , xtps   , xtpsli )

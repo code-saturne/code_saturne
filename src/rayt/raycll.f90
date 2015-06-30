@@ -24,8 +24,6 @@
 
 
 subroutine raycll &
-!================
-
  ( itypfb ,                                                       &
    izfrdp ,                                                       &
    coefap , coefbp ,                                              &
@@ -219,7 +217,6 @@ if (iirayo.eq.1) then
     endif
 
     call set_dirichlet_scalar &
-         !====================
        ( coefap(ifac), cofafp(ifac),             &
          coefbp(ifac), cofbfp(ifac),             &
          pimp        , hint        , rinfin )
@@ -252,7 +249,6 @@ else if (iirayo.eq.2) then
       qimp = 0.d0
 
       call set_neumann_scalar &
-           !==================
          ( coefap(ifac), cofafp(ifac),             &
            coefbp(ifac), cofbfp(ifac),             &
            qimp        , hint )
@@ -273,7 +269,6 @@ else if (iirayo.eq.2) then
       qimp = 0.d0
 
       call set_neumann_scalar &
-           !==================
          ( coefap(ifac), cofafp(ifac),             &
            coefbp(ifac), cofbfp(ifac),             &
            qimp        , hint )
@@ -295,7 +290,6 @@ else if (iirayo.eq.2) then
       pimp = (tparoi(ifac)**4)*abo(ifac,iband)
 
       call set_convective_outlet_scalar &
-           !===========================
          ( coefap(ifac), cofafp(ifac),             &
            coefbp(ifac), cofbfp(ifac),             &
            pimp        , cfl         , hint )

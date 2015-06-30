@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine raypar &
-!================
-
  ( isothp , izfrap ,                                              &
    tmin   , tmax   , tx     ,                                     &
    rcodcl ,                                                       &
@@ -523,7 +521,6 @@ enddo
 
 if (irangp.ge.0) then
   call parimx(nozarm,indtp )
-  !==========
 endif
 
 indtpm = 0
@@ -566,13 +563,9 @@ if(indtpm.gt.0) then
 
     if(irangp.ge.0) then
       call parrsm(nozarm,tzomoy)
-      !==========
       call parrsm(nozarm,flunet)
-      !==========
       call parrsm(nozarm,radios)
-      !==========
       call parrsm(nozarm,surft )
-      !==========
     endif
 
     do izone = 1, nozrdm
@@ -613,7 +606,6 @@ if(indtpm.gt.0) then
       rdptmp(5) = qrmax
       nbrval = nbrrdp
       call parmxl(nbrval,tpmax,rdptmp)
-      !==========
       xtpmax =  rdptmp(1)
       ytpmax =  rdptmp(2)
       ztpmax =  rdptmp(3)
@@ -627,7 +619,6 @@ if(indtpm.gt.0) then
       rdptmp(5) = qrmin
       nbrval = nbrrdp
       call parmnl(nbrval,tpmin,rdptmp)
-      !==========
       xtpmin =  rdptmp(1)
       ytpmin =  rdptmp(2)
       ztpmin =  rdptmp(3)
@@ -642,7 +633,6 @@ if(indtpm.gt.0) then
     if(irangp.ge.0) then
 
       call parmax(rapmax)
-      !==========
 
       inttm2(1) = nmoins
       inttm2(2) = nplus
@@ -651,7 +641,6 @@ if(indtpm.gt.0) then
       inttm2(5) = nrelax
       nbrval = nb2int
       call parism(nbrval,inttm2)
-      !==========
       nmoins = inttm2(1)
       nplus  = inttm2(2)
       n1min  = inttm2(3)
@@ -659,9 +648,7 @@ if(indtpm.gt.0) then
       nrelax = inttm2(5)
 
       call parrmx(nozarm,tzomax)
-      !==========
       call parrmn(nozarm,tzomin)
-      !==========
 
       inttm1(1) = iitpim
       inttm1(2) = iipgrn
@@ -670,7 +657,6 @@ if(indtpm.gt.0) then
       inttm1(5) = iifref
       nbrval    = nb1int
       call parimx(nbrval,inttm1)
-      !==========
       iitpim = inttm1(1)
       iipgrn = inttm1(2)
       iipref = inttm1(3)

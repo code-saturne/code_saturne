@@ -21,7 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine cregeo
-!================
 
 !===============================================================================
 ! Purpose:
@@ -77,11 +76,9 @@ integer          nbrsyr , nbzech, imrgrl
 !     NOMBRE DE COUPLAGES SYRTHES DEFINIS
 
 call nbcsyr(nbrsyr)
-!==========
 
 if (nbrsyr .gt. 0) then
   call geosyr
-  !==========
 endif
 
 !===============================================================================
@@ -91,23 +88,18 @@ endif
 if (ippmod(iaeros).ge.0) then
 
   call usctdz
-  !==========
 
   call nbzect(nbzech)
-  !==========
 
   if (nbzech .gt. 0) then
     call geoct
-    !=========
     if (ichrze.gt.0) then
       call pstict
-      !==========
     endif
   endif
 
   if (ippmod(iaeros).ge.0.and.isuict.eq.1) then
      call lecctw ('cooling_towers'//c_null_char)
-     !==========
   endif
 
 endif
@@ -127,7 +119,6 @@ imrgrl = modulo(imrgrl,10)
 
 if (imrgrl.eq.3 .or. imrgrl.eq.6) then
   call redvse (anomax)
-  !==========
 endif
 
 

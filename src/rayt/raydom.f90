@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine raydom &
-!================
-
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
@@ -283,7 +281,6 @@ else if (itherm.eq.2) then
   if (ippmod(iphpar).le.1) then
 
     call usray4 &
-    !==========
     ( nvar   , nscal  ,                                            &
       mode   ,                                                     &
       itypfb ,                                                     &
@@ -293,7 +290,6 @@ else if (itherm.eq.2) then
   else
 
     call ppray4 &
-    !==========
   ( mode   ,                                                       &
     itypfb ,                                                       &
     propce ,                                                       &
@@ -405,7 +401,6 @@ else
 
   if (imoadf.eq.0) then
     call usray3 &
-    !==========
   ( nvar   , nscal  , iappel ,                                     &
     itypfb ,                                                       &
     izfrad ,                                                       &
@@ -606,7 +601,6 @@ do ngg = 1, nwsgg
     ! Update Boundary condiction coefficients
 
     call raycll &
-    !==========
     ( itypfb ,                                                       &
       izfrad ,                                                       &
       coefap , coefbp ,                                              &
@@ -617,7 +611,6 @@ do ngg = 1, nwsgg
     ! Solving
 
     call raypun &
-    !==========
     ( itypfb ,                                                       &
       coefap , coefbp ,                                              &
       cofafp , cofbfp ,                                              &
@@ -704,7 +697,6 @@ do ngg = 1, nwsgg
     ! Update Boundary condiction coefficients
 
     call raycll &
-    !==========
     ( itypfb ,                                                       &
       izfrad ,                                                       &
       coefap , coefbp ,                                              &
@@ -715,7 +707,6 @@ do ngg = 1, nwsgg
     ! Solving
 
     call raysol &
-    !==========
     ( coefap , coefbp ,                                              &
       cofafp , cofbfp ,                                              &
       flurds , flurdb ,                                              &
@@ -867,8 +858,8 @@ enddo
 !of the radiation coeffcient in usray5 must be done carefully. In its present
 !version usray5 does NOT use the radiation coeffcient, and thus, usray5 can still
 !be called here, even if the ADF model is activated.
+
 call usray5 &
-!==========
 ( nvar   , nscal  ,                                              &
   itypfb ,                                                       &
   izfrad ,                                                       &

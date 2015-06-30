@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine vor2cl &
-!================
-
  ( itypfb ,                                                       &
    rcodcl )
 
@@ -100,11 +98,8 @@ ipass = ipass + 1
 if(irangp.ge.0.and.ipass.eq.1) then
   do ii = 1, nnent
     call parbcr(0,3,dir1(1,ii))
-    !==========
     call parbcr(0,3,dir2(1,ii))
-    !==========
     call parbcr(0,3,dir3(1,ii))
-    !==========
   enddo
 endif
 
@@ -114,11 +109,8 @@ endif
 if(irangp.ge.0) then
   do ient = 1, nnent
     call parbcr(0,icvmax,uvort(1,ient))
-    !==========
     call parbcr(0,icvmax,vvort(1,ient))
-    !==========
     call parbcr(0,icvmax,wvort(1,ient))
-    !==========
   enddo
 endif
 

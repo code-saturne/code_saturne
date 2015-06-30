@@ -339,7 +339,6 @@ do iel = 1, ncel
 enddo
 
 call vistnv &
-!==========
  ( imvisf ,                                                       &
    viscce ,                                                       &
    viscf  , viscb  )
@@ -395,7 +394,6 @@ ivisep = 0
 icvflb = 0
 
 call coditv &
-!==========
 (idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
  imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
  ischcp , isstpp , iescap , idftnp , iswdyp ,                   &

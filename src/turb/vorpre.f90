@@ -111,7 +111,6 @@ if(irangp.ge.0) then
   do ient = 1, nnent
     icvor(ient) = icvor2(ient)
     call parcpt(icvor(ient))
-    !==========
     icvmax = max(icvmax,icvor(ient))
   enddo
 else
@@ -160,7 +159,6 @@ enddo
 if(irangp.ge.0) then
   do ient = 1, nnent
     call parsom(xsurfv(ient))
-    !==========
   enddo
 endif
 
@@ -170,19 +168,15 @@ endif
 if(irangp.ge.0) then
   do ient = 1, nnent
     call paragv &
-    !==========
  ( icvor2(ient) , icvor(ient)    ,  &
    w1x(1,ient)  , xyzv(1,1,ient) )
     call paragv &
-    !==========
  ( icvor2(ient) , icvor(ient)    ,  &
    w1y(1,ient)  , xyzv(1,2,ient) )
     call paragv &
-    !==========
  ( icvor2(ient) , icvor(ient)    ,  &
    w1z(1,ient)  , xyzv(1,3,ient) )
     call paragv &
-    !==========
  ( icvor2(ient) , icvor(ient)  ,  &
    w1v(1,ient)  , visv(1,ient) )
   enddo

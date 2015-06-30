@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine d3pini &
-!================
-
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -140,8 +138,7 @@ if ( isuite.eq.0 ) then
   coefg(2) = 1.d0
   coefg(3) = zero
   mode     = -1
-  call cothht                                                   &
-  !==========
+  call cothht                                                     &
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hair   , tinitk )
@@ -172,8 +169,7 @@ if ( isuite.eq.0 ) then
   coefg(2) = 1.d0
   coefg(3) = zero
   mode     = -1
-  call cothht                                                   &
-  !==========
+  call cothht                                                     &
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hinoxy , tinoxy )
@@ -183,8 +179,7 @@ if ( isuite.eq.0 ) then
   coefg(2) = zero
   coefg(3) = zero
   mode     = -1
-  call cothht                                                   &
-  !==========
+  call cothht                                                     &
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hinfue , tinfue )

@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine vorvit &
-!================
-
  ( ncevor , nvor   , ient   , ivocel , visco  ,                   &
    yzc    , xv     , xw     ,                                     &
    yzv    , xsignv , xsigma , xgamma )

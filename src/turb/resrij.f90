@@ -301,7 +301,6 @@ if (ncesmp.gt.0) then
 
 !       We increment smbr with -Gamma.var_prev. and rocsdt with Gamma (*theta)
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
    icetsm , itypsm(:,ivar)  ,                                     &
    cell_f_vol , cvara_var   , smacel(:,ivar)   , smacel(:,ipr) ,  &
@@ -532,7 +531,6 @@ if (irijec.eq.1) then
   enddo
 
   call rijech(isou, produc, w7)
-  !==========
 
   ! If we extrapolate the source terms: propce
   if (st_prv_id.ge.0) then
@@ -560,7 +558,6 @@ if (igrari.eq.1) then
   enddo
 
   call rijthe(nscal, ivar, gradro, w7)
-  !==========
 
   ! If source terms are extrapolated
   if (st_prv_id.ge.0) then
@@ -596,7 +593,6 @@ if (idften(ivar).eq.6) then
   iwarnp = iwarni(ivar)
 
   call vitens &
-  !==========
  ( viscce , iwarnp ,             &
    weighf , weighb ,             &
    viscf  , viscb  )
@@ -611,7 +607,6 @@ else
   enddo
 
   call viscfa                    &
-  !==========
  ( imvisf ,                      &
    w1     ,                      &
    viscf  , viscb  )
@@ -654,7 +649,6 @@ relaxp = relaxv(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &

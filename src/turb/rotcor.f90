@@ -295,7 +295,6 @@ do ii = 1, 3
     f_id = -1
 
     call gradient_s                                                &
-    !==========
   ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
     iwarnp , epsrgp , climgp , extrap ,                            &
     strain(1,istrai(ii,jj))  , coeas  , coebs ,                    &

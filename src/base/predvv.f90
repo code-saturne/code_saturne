@@ -454,7 +454,6 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synvin(trav)
-    !==========
   endif
 
 !     Calcul de rho dt/rho*grad P.n aux faces
@@ -473,7 +472,6 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   climgp = climgr(iu )
 
   call inimav                                                     &
-  !==========
  ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp ,                                                       &
@@ -1023,7 +1021,6 @@ if(itytur.eq.3.and.iterns.eq.1) then
   allocate(tflmab(3,nfabor))
 
   call divrij &
-  !==========
  ( f_id   , itypfl ,                                              &
    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
    iwarnp ,                                                       &
@@ -1109,7 +1106,6 @@ if (idiff(iu).ge. 1) then
   if (idften(iu).eq.1) then
 
     call viscfa &
-    !==========
    ( imvisf ,                                                       &
      w1     ,                                                       &
      viscf  , viscb  )
@@ -1123,7 +1119,6 @@ if (idiff(iu).ge. 1) then
       enddo
 
       call viscfa &
-      !==========
    ( imvisf ,                                                       &
      w1     ,                                                       &
      viscfi , viscbi )
@@ -1142,7 +1137,6 @@ if (idiff(iu).ge. 1) then
     enddo
 
     call vistnv &
-    !==========
      ( imvisf ,                                                       &
        viscce ,                                                       &
        viscf  , viscb  )
@@ -1165,7 +1159,6 @@ if (idiff(iu).ge. 1) then
       enddo
 
       call vistnv &
-      !==========
        ( imvisf ,                                                       &
          viscce ,                                                       &
          viscfi , viscbi )
@@ -1313,7 +1306,6 @@ if (iterns.eq.1) then
   endif
 
   call ustsnv &
-  !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    iu   ,                                                         &
    icepdc , icetsm , itypsm ,                                     &
@@ -1334,7 +1326,6 @@ if (iterns.eq.1) then
   if (nbrcpl.gt.0) then
     !vectorial interleaved exchange
     call csccel(iu, vela, coefav, coefbv, tsexp)
-    !==========
   endif
 
   if (iphydr.eq.1.and.igpust.eq.1) then
@@ -1478,14 +1469,12 @@ if (ncesmp.gt.0) then
   allocate(gavinj(3,ncelet))
   if (nterup.eq.1) then
     call catsmv &
-    !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
     cell_f_vol    , vela , smacel(1,iu) , smacel(1,ipr) ,       &
     trav   , fimp , gavinj )
   else
     call catsmv &
-    !==========
   ( ncelet , ncel , ncesmp , iterns , isno2t, thetav(iu),       &
     icetsm , itypsm(1,iu),                                      &
     cell_f_vol    , vela , smacel(1,iu) , smacel(1,ipr) ,       &
@@ -1641,7 +1630,6 @@ if (iappel.eq.1) then
     ! Warning: in case of convergence estimators, eswork give the estimator
     ! of the predicted velocity
     call coditv &
-    !==========
  ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
@@ -1661,7 +1649,6 @@ if (iappel.eq.1) then
   elseif(iterns.gt.1) then
 
     call coditv &
-    !==========
  ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
@@ -1707,7 +1694,6 @@ if (iappel.eq.1) then
     ivisep = 0
 
     call coditv &
-    !==========
  ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
@@ -1759,7 +1745,6 @@ elseif (iappel.eq.2) then
   idtva0 = 0
 
   call bilscv &
-  !==========
  ( idtva0 , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , ivisse ,                   &
    iwarnp , idftnp ,                                              &
@@ -1805,7 +1790,6 @@ if (iappel.eq.1.and.irnpnw.eq.1) then
   climgp = climgr(iu )
 
   call inimav &
-  !==========
  ( ivarfl(iu)      , itypfl ,                                     &
    iflmb0 , init   , inc    , imrgra , nswrp  , imligp ,          &
    iwarnp ,                                                       &

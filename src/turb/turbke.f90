@@ -333,7 +333,6 @@ if (irccor.eq.1) then
   ! Compute the modified Ceps2 coefficient (w1 array not used)
 
   call rotcor(dt, w1, ce2rc)
-  !==========
 
 else
 
@@ -368,11 +367,7 @@ endif
 ! (function of the potential temperature)
 if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 
-  call atprke &
-  !==========
- ( nscal  ,                                                       &
-   tinstk ,                                                       &
-   smbrk  , smbre  )
+  call atprke(nscal, tinstk, smbrk, smbre)
 
 ! --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
 !     Here is computed  G =-g.grad(rho)/prdtur/rho
@@ -463,11 +458,7 @@ if (iturb.eq.51) then
     w3(iel) = visct/rho/sigmak
   enddo
 
-  call viscfa &
-  !==========
-( imvisf ,        &
-  w3     ,        &
-  viscf  , viscb  )
+  call viscfa(imvisf, w3, viscf, viscb)
 
   ivar = ik
   call field_get_coefa_s(ivarfl(ivar), coefap)
@@ -501,7 +492,6 @@ if (iturb.eq.51) then
   iphydp = 0
 
   call itrgrp &
-  !==========
 ( ivarfl(ivar), init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
   iwarnp ,                                                                     &
   epsrgp , climgp , extrap ,                                                   &
@@ -525,7 +515,6 @@ if (iturb.eq.51) then
   allocate(w12(ncelet))
 
   call tsepls(w12)
-  !==========
 
   do iel = 1, ncel
 
@@ -560,7 +549,6 @@ endif
 
 !===============================================================================
 ! 8. Finalization of explicit and implicit source terms
-
 !===============================================================================
 
 ! smbre = ceps1 epsilon/k (prod + g ) - rho0 volume epsilon epsilon/k
@@ -715,7 +703,6 @@ do iel = 1, ncel
 enddo
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ik)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -723,7 +710,6 @@ call cs_user_turbulence_source_terms &
    w7     , usimpk )
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(iep)     ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -820,7 +806,6 @@ if (ncesmp.gt.0) then
   ivar = ik
 
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar)    ,                                     &
    icetsm , itypsm(:,ivar)  ,                                     &
@@ -830,7 +815,6 @@ if (ncesmp.gt.0) then
   ivar = iep
 
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar)    ,                                     &
    icetsm , itypsm(:,ivar)  ,                                     &
@@ -889,15 +873,10 @@ if (ikecou.eq.1) then
   if (idiff(ivar).ge. 1) then
 
     do iel = 1, ncel
-      w4(iel) = viscl(iel)                                        &
-              + idifft(ivar)*cvisct(iel)/sigmak
+      w4(iel) = viscl(iel) + idifft(ivar)*cvisct(iel)/sigmak
     enddo
 
-    call viscfa &
-    !==========
- ( imvisf ,                                                       &
-   w4     ,                                                       &
-   viscf  , viscb  )
+    call viscfa(imvisf, w4, viscf, viscb)
 
   else
 
@@ -932,7 +911,6 @@ if (ikecou.eq.1) then
   icvflb = 0
 
   call bilsca &
-  !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
@@ -966,11 +944,7 @@ if (ikecou.eq.1) then
               + idifft(ivar)*cvisct(iel)/sigmae
     enddo
 
-    call viscfa &
-    !==========
- ( imvisf ,                                                       &
-   w4     ,                                                       &
-   viscf  , viscb  )
+    call viscfa(imvisf, w4, viscf, viscb)
 
   else
 
@@ -1005,7 +979,6 @@ if (ikecou.eq.1) then
   icvflb = 0
 
   call bilsca &
-  !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
@@ -1131,11 +1104,7 @@ if (idiff(ivar).ge.1) then
     endif
   enddo
 
-  call viscfa &
-  !==========
- ( imvisf ,                                                       &
-   w1     ,                                                       &
-   viscf  , viscb  )
+  call viscfa(imvisf, w1, viscf, viscb)
 
 else
 
@@ -1175,7 +1144,6 @@ thetap = thetav(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -1211,11 +1179,7 @@ if (idiff(ivar).ge.1) then
     endif
   enddo
 
-  call viscfa &
-  !==========
- ( imvisf ,                                                       &
-   w1     ,                                                       &
-   viscf  , viscb  )
+  call viscfa(imvisf, w1, viscf, viscb)
 
 else
 
@@ -1255,7 +1219,6 @@ thetap = thetav(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -1277,10 +1240,7 @@ call codits &
 
 iclip = 1
 iwarnp = iwarni(ik)
-call clipke &
-!==========
- ( ncelet , ncel   , nvar   ,                                     &
-   iclip  , iwarnp )
+call clipke(ncelet, ncel, nvar, iclip, iwarnp)
 
 ! Free memory
 deallocate(viscf, viscb)

@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine clpv2f &
-!================
-
  ( ncel   ,                                                       &
    iwaphi )
 
@@ -110,8 +108,7 @@ if (iwaphi.ge.2) then
   do iel = 1, ncel
     if (cvar_phi(iel).gt.2.d0) nclpmx = nclpmx+1
   enddo
-  if(irangp.ge.0) call parcpt(nclpmx)
-                  !==========
+  if (irangp.ge.0) call parcpt(nclpmx)
   if (nclpmx.gt.0) write(nfecra,1000) nclpmx
 endif
 

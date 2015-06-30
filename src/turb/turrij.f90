@@ -353,7 +353,6 @@ do isou = 1, 6
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then
     call resrij &
-    !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -368,7 +367,6 @@ do isou = 1, 6
   elseif (iturb.eq.31.or.iturb.eq.32) then
 
     call resssg &
-    !==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -387,7 +385,6 @@ enddo
 !===============================================================================
 
 call reseps &
-!==========
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
@@ -408,7 +405,6 @@ else
 endif
 
 call clprij &
-!==========
  ( ncelet , ncel   , nvar   ,                                     &
    iclip  )
 

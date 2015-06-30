@@ -185,7 +185,6 @@ elseif(abs(icdpar).eq.1) then
 
   if (irangp.ge.0.or.iperio.eq.1) then
     call synsca(dispar)
-    !==========
   endif
 
   inc    = 1

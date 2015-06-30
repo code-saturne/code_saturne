@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine lwcini &
-!================
-
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -191,7 +189,6 @@ if ( isuite.eq.0 ) then
       coefg(3) = zero
       mode     = -1
       call cothht                                                 &
-      !==========
         ( mode   , ngazg , ngazgm  , coefg  ,                     &
           npo    , npot   , th     , ehgazg ,                     &
           hair   , tinitk )
@@ -299,7 +296,6 @@ if ( isuite.eq.0 ) then
       coefg(3) = zero
       mode     = -1
       call cothht                                                 &
-      !==========
         ( mode   , ngazg , ngazgm  , coefg  ,                     &
           npo    , npot   , th     , ehgazg ,                     &
           hinit  , tentm )
@@ -309,7 +305,6 @@ if ( isuite.eq.0 ) then
 ! ----- On donne la main a l'utilisateur
 
     call cs_user_initialization &
-    !==========================
   ( nvar   , nscal  ,                                            &
     dt     )
 
@@ -318,23 +313,17 @@ if ( isuite.eq.0 ) then
 
     if (irangp.ge.0.or.iperio.eq.1) then
       call synsca(cvar_yfm)
-      !==========
       call synsca(cvar_yfp2m)
-        !==========
       call synsca(cvar_fm)
-      !==========
       call synsca(cvar_fp2m)
-      !==========
 
       if ( ippmod(icolwc).ge.2) then
         call synsca(cvar_coyfp)
-        !==========
       endif
 
       if (ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.       &
           ippmod(icolwc).eq.5 ) then
         call synsca(cvar_scalt)
-        !==========
       endif
 
     endif
@@ -357,9 +346,7 @@ if ( isuite.eq.0 ) then
       call field_get_label(ivarfl(ivar), chaine)
       if (irangp.ge.0) then
         call parmin(valmin)
-        !==========
         call parmax(valmax)
-        !==========
       endif
       write(nfecra,2010)chaine(1:8),valmin,valmax
     enddo

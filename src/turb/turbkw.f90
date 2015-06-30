@@ -345,7 +345,6 @@ if (irccor.eq.1) then
 
   ! Compute the rotation function (gdkgdw array not used)
   call rotcor(dt, rotfct, gdkgdw)
-  !==========
 
   do iel = 1, ncel
     prodk(iel) = prodk(iel)*rotfct(iel)
@@ -390,7 +389,6 @@ if (igrake.eq.1) then
   f_id = -1
 
   call gradient_s                                                 &
-  !==========
  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , epsrgp , climgp , extrap ,                            &
    cromo  , bromo  , viscb  ,                                     &
@@ -442,7 +440,6 @@ do iel = 1, ncel
 enddo
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(ik)      ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -450,7 +447,6 @@ call cs_user_turbulence_source_terms &
    smbrk  , usimpk )
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(iomg)    ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -591,7 +587,6 @@ if (ncesmp.gt.0) then
   ivar = ik
 
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar) ,                                        &
    icetsm , itypsm(1,ivar) ,                                      &
@@ -601,7 +596,6 @@ if (ncesmp.gt.0) then
   ivar = iomg
 
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetav(ivar) ,                                        &
    icetsm , itypsm(1,ivar) ,                                      &
@@ -705,7 +699,6 @@ if (ikecou.eq.1) then
               + idifft(ivar)*cvisct(iel)/sigma
     enddo
     call viscfa &
-    !==========
  ( imvisf ,                                                       &
    w7     ,                                                       &
    viscf  , viscb  )
@@ -743,7 +736,6 @@ if (ikecou.eq.1) then
   icvflb = 0
 
   call bilsca &
-  !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
@@ -774,7 +766,6 @@ if (ikecou.eq.1) then
               + idifft(ivar)*cvisct(iel)/sigma
     enddo
     call viscfa &
-    !==========
  ( imvisf ,                                                       &
    w7     ,                                                       &
    viscf  , viscb  )
@@ -812,7 +803,6 @@ if (ikecou.eq.1) then
   icvflb = 0
 
   call bilsca &
-  !==========
  ( idtvar , ivar   , iconvp , idiffp , nswrgp , imligp , ircflp , &
    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
    iwarnp , imucpp , idftnp ,                                     &
@@ -925,7 +915,6 @@ if (idiff(ivar).ge. 1) then
              + idifft(ivar)*cvisct(iel)/sigma
   enddo
   call viscfa &
-  !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
@@ -968,7 +957,6 @@ thetap = thetav(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -996,7 +984,6 @@ if (idiff(ivar).ge. 1) then
                         + idifft(ivar)*cvisct(iel)/sigma
   enddo
   call viscfa &
-  !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
@@ -1039,7 +1026,6 @@ thetap = thetav(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &

@@ -186,8 +186,6 @@ double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
 interface
 
   subroutine navstv &
-  !================
-
   ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
     isostd ,                                                       &
     dt     , propce ,                                              &
@@ -213,8 +211,6 @@ interface
   end subroutine navstv
 
   subroutine richards &
-  !================
-
  (icvrge, dt)
 
     use dimens, only: ndimfb
@@ -258,7 +254,6 @@ ipass = ipass + 1
 !     couplage Syrthes), sinon on stocke le scalaire thermique de la phase 1.
 
 call nbcsyr (nbccou)
-!==========
 isvhb = 0
 if (nbccou .ge. 1) then
   do iscal = 1, nscal
@@ -398,7 +393,6 @@ if (iperio.eq.1) then
     call field_get_val_s(ivarfl(ir23), cvar_r23)
 
     call perrte &
-    !==========
   ( cvar_r11, cvar_r12, cvar_r13,           &
     cvar_r12, cvar_r22, cvar_r23,           &
     cvar_r13, cvar_r23, cvar_r33 )
@@ -433,7 +427,6 @@ if (ipass.eq.1) then
     call field_get_val_s(icrom, crom)
     if (irangp.ge.0 .or. iperio.eq.1) then
       call synsce (crom)
-      !==========
     endif
 
   endif
@@ -443,7 +436,6 @@ if (ipass.eq.1) then
 
     if (irangp.ge.0 .or. iperio.eq.1) then
       call synsce (prhyd(1))
-      !==========
     endif
 
   endif
@@ -503,7 +495,6 @@ if (inpdt0.eq.1.and.isuite.eq.1) return
 if (itrale.gt.0) then
   iappel = 1
   call schtmp(nscal, iappel, propce)
-  !==========
 endif
 
 
@@ -525,7 +516,6 @@ if (imobil.eq.1) then
   call rotation_update_coords(nnod, ttcmob, xyznod)
 
   call algrma(volmin, volmax, voltot)
-  !==========
 
   ! Abort at the end of the current time-step if there is a negative volume
   if (volmin.le.0.d0) ntmabs = ntcabs
@@ -544,7 +534,6 @@ endif
 !   - soit a un deplacement impose (cf ci-dessus)
 
 if (nbrcpl.gt.0) call cscloc
-                 !==========
 
 !===============================================================================
 ! 7.  CALCUL DES PROPRIETES PHYSIQUES VARIABLES
@@ -558,12 +547,10 @@ if (iwarni(iu).ge.1) then
 endif
 
 call phyvar(nvar, nscal, dt, propce)
-!==========
 
 if (itrale.gt.0) then
   iappel = 2
   call schtmp(nscal, iappel, propce)
-  !==========
 endif
 
 
@@ -579,7 +566,6 @@ if (ncpdct.gt.0) then
 
   if (iihmpr.eq.1) then
     call uikpdc &
-    !==========
   ( iappel, ncelet, ncepdc,             &
     icepdc, ckupdc)
   endif
@@ -638,7 +624,6 @@ if (nftcdt.gt.0) then
   enddo
 
   call cs_user_boundary_mass_source_terms &
-  !======================================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
@@ -662,7 +647,6 @@ if (nftcdt.gt.0) then
   ! as boundary condition.
 
   call condensation_copain_model &
-  !=============================
 ( nvar   , nfbpcd , ifbpcd , izzftcd ,                           &
   tpar   ,                                                       &
   spcond , hpcond )
@@ -687,7 +671,6 @@ if (icond.eq.1) then
   enddo
 
   call cs_user_metal_structures_source_terms &
-  !=========================================
 ( nvar   , nscal  ,                                              &
   ncmast , ltmast,                                               &
   itypst , izmast ,                                              &
@@ -699,7 +682,6 @@ if (icond.eq.1) then
   ! volume where this phenomenon occurs.
 
   call metal_structures_copain_model &
-  !=================================
 ( ncmast , ltmast ,                                          &
   tmet   ,                                                   &
   svcond(:, ipr)  , flxmst )
@@ -762,7 +744,6 @@ if(iwarni(iu).ge.1) then
 endif
 
 call dttvar &
-!==========
  ( nvar   , nscal  , ncepdc , ncetsm ,                            &
    iwarni(iu)   ,                                                 &
    icepdc , icetsm , itypsm ,                                     &
@@ -772,7 +753,6 @@ call dttvar &
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
   call astpdt(dt, ncelet, ntrela)
-  !==========
 endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving
@@ -813,7 +793,6 @@ endif
 
 if (idilat.eq.3) then
   call pthrbm &
-  !==========
  ( nvar   , ncetsm , nfbpcd , ncmast,                             &
    dt     , smacel , spcond , svcond )
 
@@ -835,7 +814,6 @@ if (ivrtex.eq.1) then
 
   iappel = 2
   call usvort &
-  !==========
  ( nvar   , nscal  ,                                              &
    iappel ,                                                       &
    dt     )
@@ -844,12 +822,10 @@ if (ivrtex.eq.1) then
 !       (au premier passage seulement)
   if (ipass.eq.1) then
     call vorver ( nfabor , iappel )
-    !==========
   endif
 
   if(irangp.le.0) then
     call vortex
-    !==========
   endif
 
 ! -- Fin de zone Methode des vortex
@@ -942,7 +918,6 @@ endif
 do while (iterns.le.nterup)
 
   call precli(nvar, nscal, icodcl, rcodcl)
-  !==========
 
   !     - Interface Code_Saturne
   !       ======================
@@ -954,7 +929,6 @@ do while (iterns.le.nterup)
   !    -> sera modifie lors de la restructuration des zones de bord
 
     call uiclim &
-    !==========
   ( ntcabs, nfabor, ippmod(idarcy),                                &
     darcy_gravity, darcy_gravity_x, darcy_gravity_y,               &
     darcy_gravity_z,                                               &
@@ -979,7 +953,6 @@ do while (iterns.le.nterup)
       allocate(qcalc(nozfmx))
 
       call stdtcl &
-      !==========
     ( nbzfmx , nozfmx ,                                              &
       iqimp  , icalke , qimp   , dh , xintur,                        &
       itypfb , izfppp , ilzfbr ,                                     &
@@ -997,7 +970,6 @@ do while (iterns.le.nterup)
   !       ==========================
 
   call cs_user_boundary_conditions &
-  !===============================
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
     dt     ,                                                       &
@@ -1009,7 +981,6 @@ do while (iterns.le.nterup)
   if(iihmpr.eq.1) then
 
     call uiclve &
-    !==========
   ( nfabor, nozppm,                                                &
     iindef, ientre, iesicf, iephcf, isspcf, isopcf,                &
     iparoi, iparug, isymet, isolib, ifrent, ifresf, iale  ,        &
@@ -1022,7 +993,6 @@ do while (iterns.le.nterup)
 
   if (ivrtex.eq.1) then
     call vor2cl(itypfb, rcodcl)
-    !==========
   endif
 
   ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
@@ -1032,7 +1002,6 @@ do while (iterns.le.nterup)
   if (nbrcpl.gt.0) then
 
     call cscfbr &
-    !==========
   ( nscal  ,                                                       &
     icodcl , itypfb ,                                              &
     dt     ,                                                       &
@@ -1044,7 +1013,6 @@ do while (iterns.le.nterup)
 !    (Transfert des structures dans les tableaux rcodcl)
 
     call synthe &
-    !==========
   ( nvar   , nscal  ,                                              &
     iu     , iv     , iw     ,                                     &
     ttcabs , dt     ,                                              &
@@ -1066,7 +1034,6 @@ do while (iterns.le.nterup)
     if (iihmpr.eq.1) then
 
       call uialcl &
-      !==========
     ( nozppm,                            &
       ibfixe, igliss, ivimpo, ifresf,    &
       ialtyb,                            &
@@ -1079,7 +1046,6 @@ do while (iterns.le.nterup)
     endif
 
     call usalcl &
-    !==========
   ( itrale ,                                                       &
     nvar   , nscal  ,                                              &
     icodcl , itypfb , ialtyb ,                                     &
@@ -1101,7 +1067,6 @@ do while (iterns.le.nterup)
     if (nbstru.gt.0.or.nbaste.gt.0) then
 
       call strpre &
-      !==========
     ( itrale , italim , ineefl ,                                     &
       impale ,                                                       &
       flmalf , flmalb , xprale , cofale )
@@ -1123,21 +1088,17 @@ do while (iterns.le.nterup)
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
     call cpvosy(iscalt, dt)
-    !==========
 
     call coupbi(nfabor, nscal, icodcl, rcodcl)
-    !==========
 
     if (nfpt1t.gt.0) then
       call cou1di(nfabor, iscalt, icodcl, rcodcl)
-      !==========
     endif
 
     ! coupling 1D thermal model with condensation modelling
     ! to take into account the solid temperature evolution over time
     if (nftcdt.gt.0) then
       call cs_tagmri(nfabor, iscalt, icodcl, rcodcl)
-      !=============
     endif
 
   endif
@@ -1146,7 +1107,6 @@ do while (iterns.le.nterup)
   if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
 
     call raycli &
-    !==========
   ( nvar   , nscal  ,                                              &
     icodcl , itypfb ,                                              &
     izfrad ,                                                       &
@@ -1157,7 +1117,6 @@ do while (iterns.le.nterup)
   !     ON CALCULE LES COEFFICIENTS ASSOCIES AUX CONDITIONS LIMITES
 
   call condli &
-  !==========
 ( nvar   , nscal  , iterns ,                                     &
   isvhb  ,                                                       &
   icodcl , isostd ,                                              &
@@ -1251,14 +1210,12 @@ do while (iterns.le.nterup)
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
     call coupbo &
-    !==========
   ( ncv    , ientha ,                                              &
     cvcst  , propce(:,ippcv),                                      &
     hbord  , theipb )
 
     if (nfpt1t.gt.0) then
       call cou1do &
-      !==========
     ( nvar   , nscal  , nfpt1d ,                                   &
       ientha , ifpt1d , iclt1d ,                                   &
       tppt1d , tept1d , hept1d , fept1d ,                          &
@@ -1270,7 +1227,6 @@ do while (iterns.le.nterup)
     ! on a surface region
     if (nftcdt.gt.0.and.nztag1d.eq.1) then
       call cs_tagmro &
-      !=============
      ( nfbpcd , ifbpcd , izzftcd ,                  &
        dt     )
     endif
@@ -1279,7 +1235,6 @@ do while (iterns.le.nterup)
      ! on a volume region associated to metal structures
     if (icond.eq.1.and.itagms.eq.1) then
       call cs_metal_structures_tag &
-      !===========================
      ( ncmast , ltmast ,                          &
        dt     )
     endif
@@ -1346,7 +1301,6 @@ do while (iterns.le.nterup)
         !       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
 
         call distpr(itypfb, dispar)
-        !==========
 
         !     La distance n'a plus a etre mise a jour sauf en ALE
         if (iale.eq.0) imajdy = 1
@@ -1374,7 +1328,6 @@ do while (iterns.le.nterup)
       !       dans DISTYP
 
       call distyp(itypfb, dispar, yplpar)
-      !==========
 
     endif
 
@@ -1452,7 +1405,6 @@ do while (iterns.le.nterup)
 
   ! En cas de champ de vitesse fige, on ne boucle pas sur U/P
   if (iccvfg.eq.0) then
-  !===============
 
 !===============================================================================
 ! 12. RESOLUTION QUANTITE DE MOUVEMENT ET MASSE
@@ -1467,7 +1419,6 @@ do while (iterns.le.nterup)
     if (ippmod(idarcy).eq.-1) then
 
       call navstv &
-      !==========
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &
         isostd ,                                                       &
         dt     , propce ,                                              &
@@ -1480,7 +1431,6 @@ do while (iterns.le.nterup)
 
       if (iihmpr.eq.1) then
         call uidapp                                                    &
-        !==========
          ( darcy_anisotropic_permeability,                             &
            darcy_anisotropic_diffusion,                                &
            darcy_gravity,                                              &
@@ -1541,7 +1491,6 @@ do while (iterns.le.nterup)
       if ((istmpf.eq.0.and.inslst.eq.0) .or. istmpf.ne.0) then
         iappel = 3
         call schtmp(nscal, iappel, propce)
-        !==========
       endif
 
       if (inslst.eq.1) goto 100
@@ -1568,7 +1517,6 @@ enddo
 if (ippmod(idarcy).eq.1) then
 
   call precli(nvar, nscal, icodcl, rcodcl)
-  !==========
 
   if (iihmpr.eq.1) then
 
@@ -1577,7 +1525,6 @@ if (ippmod(idarcy).eq.1) then
   !    -> sera modifie lors de la restructuration des zones de bord
 
     call uiclim &
-    !==========
   ( ntcabs, nfabor, ippmod(idarcy),                                &
     darcy_gravity, darcy_gravity_x, darcy_gravity_y,               &
     darcy_gravity_z,                                               &
@@ -1602,7 +1549,6 @@ if (ippmod(idarcy).eq.1) then
       allocate(qcalc(nozfmx))
 
       call stdtcl &
-      !==========
     ( nbzfmx , nozfmx ,                                              &
       iqimp  , icalke , qimp   , dh , xintur,                        &
       itypfb , izfppp , ilzfbr ,                                     &
@@ -1617,7 +1563,6 @@ if (ippmod(idarcy).eq.1) then
   endif
 
   call cs_user_boundary_conditions &
-  !===============================
   ( nvar   , nscal  ,                                              &
     icodcl , itrifb , itypfb , izfppp ,                            &
     dt     ,                                                       &
@@ -1643,7 +1588,6 @@ endif
 
 ! Calcul sur champ de vitesse fige SUITE (a cause de la boucle U/P)
 if (iccvfg.eq.0) then
-!===============
 
 !===============================================================================
 ! 13.  DEPLACEMENT DES STRUCTURES EN ALE ET TEST DE BOUCLAGE IMPLICITE
@@ -1652,7 +1596,6 @@ if (iccvfg.eq.0) then
   if (nbstru.gt.0.or.nbaste.gt.0) then
 
     call strdep &
-    !==========
   ( itrale , italim , itrfin ,                                     &
     nvar   ,                                                       &
     dt     ,                                                       &
@@ -1680,7 +1623,6 @@ if (iccvfg.eq.0) then
   if (istmpf.eq.0) then
     iappel = 4
     call schtmp(nscal, iappel, propce)
-    !==========
   endif
 
 !===============================================================================
@@ -1708,7 +1650,6 @@ if (iccvfg.eq.0) then
   if ((itytur.eq.2) .or. (itytur.eq.5)) then
 
     call turbke &
-    !==========
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
@@ -1720,7 +1661,6 @@ if (iccvfg.eq.0) then
     if( itytur.eq.5 )  then
 
       call resv2f &
-      !==========
     ( nvar   , nscal  ,                                              &
       ncepdc , ncetsm ,                                              &
       icepdc , icetsm , itypsm ,                                     &
@@ -1754,12 +1694,10 @@ if (iccvfg.eq.0) then
     if (iturb.eq.32) then
 
       call resalp(nvar)
-      !==========
 
     endif
 
     call turrij &
-    !==========
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
@@ -1770,7 +1708,6 @@ if (iccvfg.eq.0) then
   else if (iturb.eq.60) then
 
     call turbkw &
-    !==========
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
@@ -1796,7 +1733,6 @@ if (iccvfg.eq.0) then
   else if( iturb.eq.70 ) then
 
     call turbsa &
-    !==========
   ( nvar   , nscal  ,                                              &
     ncepdc , ncetsm ,                                              &
     icepdc , icetsm , itypsm ,                                     &
@@ -1833,7 +1769,6 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
   endif
 
   call raydom &
-  !==========
  ( nvar   , nscal  ,                                              &
    itypfb ,                                                       &
    izfrad ,                                                       &
@@ -1848,7 +1783,6 @@ if (nscal.ge.1) then
   endif
 
   call scalai                                                     &
-  !==========
  ( nvar   , nscal  ,                                              &
    dt     , propce )
 
@@ -1876,7 +1810,6 @@ if (allocated(delay_id)) deallocate(delay_id)
 
 iappel = 5
 call schtmp(nscal, iappel, propce)
-!==========
 
 !===============================================================================
 

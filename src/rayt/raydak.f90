@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine raydak &
-!================
-
  ( ncel   , ncelet ,                                              &
    ck     , pco2   , ph2o   , fv     , temp   )
 
@@ -123,7 +121,6 @@ do iel = 1, ncel
 ! --- Calcul de l'absorptivite du fluide
 
   call absorb                                                     &
-  !==========
   ( ts , te , path , sootk , pco2(iel) , ph2o(iel) , alpha )
 
 ! --- Test d'erreur
@@ -140,9 +137,9 @@ do iel = 1, ncel
 
 enddo
 
-!========
-! FORMATS
-!========
+!--------
+! Formats
+!--------
 
  1000 format(                                                           &
 '@                                                            ',/,&

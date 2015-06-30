@@ -112,7 +112,6 @@ else
 endif
 
 call cgdvec &
-!==========
 ( f_id   , imrgra , inc    , nswrgp , iwarnp , imligp ,          &
   epsrgp , climgp ,                                              &
   coefav , coefbv , vela   ,                                     &

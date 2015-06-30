@@ -411,7 +411,6 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     ! The computed convective flux has the dimension of rho*velocity
     call itrmas &
-    !==========
    ( f_id0  , init , inc , imrgra , iccocg , nswrgp , imligp , iphydp ,      &
      iwarnp ,                                                                &
      epsrgp , climgp , extrap ,                                              &
@@ -476,7 +475,6 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     ! Warning: bilsc adds "-( grad(u) . rho u)"
     call bilscv &
-    !==========
    ( idtvar , iu     , iconvp , idiffp , nswrgp , imligp , ircflp , &
      ischcp , isstpp , inc    , imrgra , ivisep ,                   &
      iwarnp , idftnp ,                                              &
@@ -541,7 +539,6 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     extrap = extrag(ivar)
 
     call inimav &
-    !==========
      ( f_id0  , itypfl ,                                              &
        iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
        iwarnp ,                                                       &

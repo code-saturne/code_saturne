@@ -301,7 +301,6 @@ if (irccor.eq.1) then
 
   ! Compute the rotation function (w1 array not used)
   call rotcor(dt, rotfct, w1)
-  !==========
 
   do iel = 1, ncel
     csab1r(iel) = csab1*rotfct(iel)
@@ -390,7 +389,6 @@ do iel = 1, ncel
 enddo
 
 call cs_user_turbulence_source_terms &
-!===================================
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivarfl(inusa)   ,                                              &
    icepdc , icetsm , itypsm ,                                     &
@@ -471,7 +469,6 @@ if (ncesmp.gt.0) then
   ivar = inusa
 
   call catsma &
-  !==========
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t , thetv  ,                                              &
    icetsm , itypsm(1,ivar) ,                                      &
@@ -524,7 +521,6 @@ if (idiff(ivar).ge.1) then
   enddo
 
   call viscfa                                                     &
-  !==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
@@ -568,7 +564,6 @@ thetap = thetav(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -589,7 +584,6 @@ call codits &
 !===============================================================================
 
 call clipsa(ncel)
-!==========
 
 ! Free memory
 deallocate(viscf, viscb)

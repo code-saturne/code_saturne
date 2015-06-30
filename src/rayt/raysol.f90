@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine raysol &
-!================
-
  ( coefap , coefbp ,                                              &
    cofafp , cofbfp ,                                              &
    flurds , flurdb ,                                              &
@@ -369,7 +367,6 @@ do ii = -1,1,2
         icvflb = 0
 
         call codits &
-        !==========
  ( idtva0 , ivar0  , iconv1 , idiff1 , ndirc1 ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &

@@ -21,7 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine iniusi
-!================
 
 !===============================================================================
 !  FONCTION  :
@@ -109,7 +108,6 @@ call parameters_read_restart_info
 !     IIHMPR a ete initialise a 0 juste avant (INIINI)
 
 call csihmp(iihmpr)
-!==========
 
 if (iihmpr.eq.1) then
   call cs_gui_init
@@ -128,13 +126,10 @@ endif
 if (iihmpr.eq.1) then
 
   call csther(itherm, itpscl)
-  !==========
 
   call csturb(iturb, iwallf, igrake, igrari, xlomlg)
-  !==========
 
   call cscpva(icp)
-  !==========
 
 endif
 
@@ -175,14 +170,12 @@ call cs_user_model
 if (iihmpr.eq.1) then
 
   call uippmo                                                     &
-  !==========
  ( ippmod, icod3p, icodeq, icoebu, icobml,                        &
    icolwc, iccoal, icpl3c, icfuel,                                &
    ieljou, ielarc, ielion, icompf, iatmos,                        &
    iaeros, ieos  , ieqco2, idarcy)
 
   call cfnmtd(ficfpp, len(ficfpp))
-  !==========
 
 endif
 
@@ -213,16 +206,13 @@ ippmod(ielion) = -1  ! ionic mobility
 
 iihmpu = iihmpr
 call usppmo(iihmpu)
-!==========
 
 ! Define fields for variables, check and build iscapp
 
 call fldvar(nmodpp)
-!==========
 
 if (iihmpr.eq.1) then
   call csivis
-  !==========
 endif
 
 nscmax = nscamx
@@ -237,7 +227,6 @@ if (ippmod(icompf).ge.0) then
   ! iviscv has been read below in the call to fldvar (csvvva).
 
   call uscfx1
-  !==========
   ! Dynamic viscosity of reference of the scalar total energy (ienerg).
   call field_get_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
   if (ifcvsl.ge.0 .or. icv.gt.0) then
@@ -252,7 +241,6 @@ endif
 
 if (ippmod(idarcy).ge.0) then
   call daini1
-  !==========
 endif
 
 !===============================================================================
@@ -273,22 +261,18 @@ endif
 if (iihmpr.eq.1) then
 
   call csidtv(idtvar)
-  !==========
 
   call csiphy(iphydr)
-  !==========
 
   ! Postprocessing
 
   call cspstb(ipstdv)
-  !==========
 
 endif
 
 ! Define main properties (pointers, checks, ipp)
 
 call fldprp
-!==========
 
 !===============================================================================
 ! 4. INITIALISATION DE PARAMETRES UTILISATEUR SUPPLEMENTAIRES
@@ -307,18 +291,15 @@ if (iihmpr.eq.1) then
 !     Suite de calcul, relecture fichier auxiliaire, champ de vitesse figé
 
   call csisui(ntsuit, ileaux, iccvfg)
-  !==========
 
 !     Pas de temps (seulement NTMABS, DTREF, INPDT0)
   call cstime                                                     &
-  !==========
              (inpdt0, iptlro, ntmabs, idtvar, dtref, dtmin,       &
               dtmax, coumax, foumax, varrdt, relxst)
 
 !      Options numériques locales
 
   call uinum1                                                     &
-  !==========
         (blencv, ischcv, isstpc, ircflu,                          &
          cdtvar, epsilo, nswrsm)
 
@@ -326,13 +307,11 @@ if (iihmpr.eq.1) then
   relaxp = -999.d0
   extrap = 0.d0
   call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, nterup)
-  !==========
   extrag(ipr) = extrap
   if (idtvar.ge.0) relaxv(ipr) = relaxp
 
 !     Gravite, prop. phys
   call csphys                                                         &
-  !==========
              (nmodpp,                                                 &
               irovar, ivivar, icorio,                                 &
               gx, gy, gz,                                             &
@@ -341,22 +320,18 @@ if (iihmpr.eq.1) then
 
 !     Scamin, scamax, turbulent flux model
   call cssca2(itytur, iturt)
-  !==========
 
   ! Diffusivites
   call cssca3(visls0, t0, p0, cp0)
-  !==========
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
   if (itytur.eq.2 .or. itytur.eq.3 .or.             &
       itytur.eq.5 .or. itytur.eq.6 .or.             &
       itytur.eq.7) then
     call cstini(uref, almax)
-    !==========
   endif
 
   call uiipsu(iporos)
-  !==========
 
 endif
 
@@ -364,7 +339,6 @@ endif
 !     ==========================
 
 call usipsu(nmodpp)
-!==========
 
 ! If time step is local or variable, pass information to C layer, as it
 ! may be needed for some field (or moment) definitions.
@@ -376,8 +350,6 @@ if (idtvar.eq.2.or.idtvar.eq.-1) then
 endif
 
 call indsui(isuite)
-!==========
-
 
 if (ippmod(icompf).ge.0) then
 !      For compressible model, call to uscfx2 to get visls0(itempk), viscv0,
@@ -385,7 +357,6 @@ if (ippmod(icompf).ge.0) then
 !      With GUI, visls0(itempk), viscv0, xmasmr and ivivar have been read
 !      below in the call to csphys.
   call uscfx2
-  !==========
 endif
 
 ! Choose which 3x3 cocg matrixes are computed for gradient algorithms.
@@ -396,7 +367,6 @@ call compor(iporos)
 
 ! --- Varpos
 call varpos
-!==========
 
 !----
 ! Formats

@@ -137,7 +137,6 @@ double precision, pointer, dimension(:)   :: prhyd => null()
 interface
 
   subroutine tridim &
-  !================
   ( itrale , nvar   , nscal  ,                                     &
     isostd ,                                                       &
     dt     , propce ,                                              &
@@ -177,10 +176,8 @@ end interface
 
 if ((iilagr.gt.0).and.(irangp.ge.0)) then
   call zufalli(irangp + 1)
-  !===========
 else
   call zufalli(1)
-  !===========
 endif
 
 !---> Stop test set to 1 if P-1 radiative module "sees" too many cells
@@ -218,21 +215,18 @@ endif
 !===============================================================================
 
 call cregeo
-!==========
 
 !===============================================================================
 ! End of modules initialization
 !===============================================================================
 
 call initi2
-!==========
 
 if (iilagr.gt.0) then
 
   !--> Compute "lndnod" (lagran.f90)
 
   call lagini(lndnod)
-  !==========
 
 endif
 
@@ -256,7 +250,6 @@ allocate(izft1d(nfabor))
 
 if (iihmpr.eq.1) then
   call uikpdc &
-  !==========
 ( iappel ,          &
   ncelet , ncepdc , &
   ivoid  ,          &
@@ -273,7 +266,6 @@ call cs_user_head_losses &
 ncpdct = ncepdc
 if (irangp.ge.0) then
   call parcpt(ncpdct)
-  !==========
 endif
 
 if (ncpdct.gt.0) then
@@ -306,7 +298,6 @@ call cs_user_mass_source_terms &
 nctsmt = ncetsm
 if (irangp.ge.0) then
   call parcpt(nctsmt)
-  !==========
 endif
 
 if (nctsmt.gt.0) then
@@ -318,7 +309,6 @@ endif
 ! ------------------------------
 
 call cs_user_boundary_mass_source_terms &
-!======================================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ivoid  , ivoid  , izftcd ,                                     &
@@ -328,7 +318,6 @@ call cs_user_boundary_mass_source_terms &
 nftcdt = nfbpcd
 if (irangp.ge.0) then
   call parcpt(nftcdt)
-  !==========
 endif
 
 if (nftcdt.gt.0) then
@@ -341,7 +330,6 @@ endif
 ! --------------
 
 call uspt1d &
-!==========
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ivoid  , izft1d , ivoid  , ivoid  ,                            &
    rvoid  , rvoid  , rvoid  ,                                     &
@@ -352,7 +340,6 @@ call uspt1d &
 nfpt1t = nfpt1d
 if (irangp.ge.0) then
   call parcpt(nfpt1t)
-  !==========
 endif
 
 if (nfpt1t.gt.0) then
@@ -361,7 +348,6 @@ if (nfpt1t.gt.0) then
 endif
 
 call vert1d &
-!==========
 ( nfabor , nfpt1d , iappel ,                                      &
   ivoid  , ivoid  , ivoid  ,                                      &
   rvoid  , rvoid  ,                                               &
@@ -430,15 +416,12 @@ else
 endif
 
 call init_aux_arrays(ncelet, nfabor)
-!===================
 
 call turbomachinery_init
-!=======================
 
 if (ippmod(iatmos).ge.0) then
 
   call init_meteo
-  !==============
 
   if (imbrication_flag) then
     call activate_imbrication
@@ -456,44 +439,35 @@ endif
 
 if (ippmod(icompf).ge.0) then
   call init_compf (nfabor)
-  !==============
 endif
 
 if (iale.eq.1.or.imobil.eq.1) then
   call init_ale (nfabor, nnod)
-  !============
 endif
 
 if (ippmod(ielarc).gt.0) then
   call init_elec
-  !==============
 endif
 
 if (ncpdct.gt.0) then
   call init_kpdc
-  !=============
 endif
 
 if (nctsmt.gt.0) then
   call init_tsma ( nvar )
-  !=============
 endif
 
 if (nftcdt.gt.0) then
   call init_pcond ( nvar )
-  !=============
   call init_nz_pcond
-  !=================
 endif
 
 if (icond.eq.1) then
   call init_vcond ( nvar, ncelet )
-  !=============
 endif
 
 if (nfpt1t.gt.0) then
   call init_pt1d
-  !=============
 endif
 
 ! Memory reservation for Lagrangian module
@@ -518,13 +492,10 @@ endif
 !===============================================================================
 
 call fldtri(nproce, dt, propce)
-!==========
 
 call field_allocate_or_map_all
-!=============================
 
 call iniva0(nvar, nscal, dt, propce, frcxt, prhyd)
-!==========
 
 ! Compute the porosity if needed
 if (iporos.ge.1) then
@@ -559,27 +530,22 @@ if (nftcdt.gt.0) then
   iappel = 2
 
   call init_tagmr
-  !==============
 
   call init_nz_tagmr
-  !=================
 
   call cs_user_boundary_mass_source_terms &
-  !======================================
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
   ifbpcd , itypcd , izftcd ,                                     &
   spcond , rvoid(1) )
 
   call init_nz_mesh_tagmr
-  !======================
 
   ! the Condensation model coupled with a 0-D thermal model
   ! to take into account the metal mass structures effects.
   if(itagms.eq.1) then
 
     call init_tagms
-    !==============
   endif
 
 endif
@@ -611,7 +577,6 @@ if (isuite.eq.1) then
     enddo
 
     call algrma(volmin, volmax, voltot)
-    !==========
 
     ! Abort at the end of the current time-step if there is a negative volume
     if (volmin.le.0.d0) ntmabs = ntcabs
@@ -624,7 +589,6 @@ if (isuite.eq.1) then
     ! Update mesh
 
     call turbomachinery_update_mesh(ttpmob, rvoid(1))
-    !==============================
 
     ! Update arrays whose size could have changed (nfac, ncelet)
 
@@ -667,7 +631,6 @@ endif
 !===============================================================================
 
 call inivar(nvar, nscal, dt, propce)
-!==========
 
 !===============================================================================
 ! Radiative transfer: possible restart
@@ -675,7 +638,6 @@ call inivar(nvar, nscal, dt, propce)
 
 if (iirayo.gt.0 .and. isuird.eq.1) then
   call raylec
-  !==========
 endif
 
 !===============================================================================
@@ -685,7 +647,6 @@ endif
 if (iilagr.gt.0) then
 
   call laglec_m                                                   &
-  !============
  ( ncelet , ncel   , nfabor ,                                     &
    ntersl , nvlsta , nvisbr ,                                     &
    statis , stativ , parbor , tslagr )
@@ -710,7 +671,6 @@ if (nfpt1t.gt.0) then
 !            et de l'initialisation (IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
   iappel = 2
   call  uspt1d &
-  !===========
  ( nvar   , nscal  , nfpt1d , iappel ,                            &
    ifpt1d , izft1d , nppt1d , iclt1d ,                            &
    tppt1d , rgpt1d , eppt1d ,                                     &
@@ -720,7 +680,6 @@ if (nfpt1t.gt.0) then
 
   iappel = 2
   call vert1d &
-  !==========
 ( nfabor , nfpt1d , iappel ,                                      &
   ifpt1d , nppt1d , iclt1d ,                                      &
   rgpt1d , eppt1d ,                                               &
@@ -732,13 +691,11 @@ if (nfpt1t.gt.0) then
     nmxt1d = max(nppt1d(iiii),nmxt1d)
   enddo
   if (irangp.ge.0) call parcmx(nmxt1d)
-                   !==========
 
   if (isuit1.eq.1) then
 
     ficsui = '1dwall_module'
     call lect1d &
-    !==========
  ( ficsui , len(ficsui), nfpt1d , nfpt1t ,           &
    nmxt1d , nfabor     , nppt1d , ifpt1d , eppt1d , &
    rgpt1d , tppt1d )
@@ -747,7 +704,6 @@ if (nfpt1t.gt.0) then
 !     Creation du maillage, initialisation de la temperature.
 
     call mait1d &
-    !==========
  ( nfpt1d, nppt1d, eppt1d, rgpt1d, tppt1d )
 
   endif
@@ -776,7 +732,6 @@ endif
 
 if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
   call atmsol()
-  !============
 endif
 
 !===============================================================================
@@ -795,7 +750,6 @@ if(ncpdct.gt.0) then
 
   if (iihmpr.eq.1) then
     call uikpdc(iappel, ncelet, ncepdc, icepdc, ckupdc)
-    !==========
   endif
 
   call cs_user_head_losses &
@@ -834,23 +788,18 @@ if (ivrtex.eq.1) then
   allocate(irepvo(nfabor))
 
   call vorin0(nfabor)
-  !==========
 
   iappel = 1
 
   call usvort &
-  !==========
  ( nvar   , nscal  , iappel ,                                     &
    dt     )
 
   call vorver (nfabor, iappel)
-  !==========
 
   call init_vortex
-  !===============
 
   call vorpre
-  !==========
 
 endif
 
@@ -860,7 +809,6 @@ endif
 
 if (iale.eq.1) then
   call strini(dt)
-  !==========
 endif
 
 ! -- Fin de zone Structures mobiles en ALE
@@ -868,7 +816,6 @@ endif
 ! -- Couplage Code_Saturne/Code_Saturne
 
 call cscini(nvar)
-!==========
 
 !===============================================================================
 ! Start of time loop
@@ -914,15 +861,12 @@ if (itrale.gt.0) then
 
   if (idtvar.eq.0) then
     call cplsyn (ntmabs, ntcabs, dt(1))
-    !==========
   else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
     call cplsyn (ntmabs, ntcabs, dtref)
-    !==========
   endif
 
   if (ntmabs .eq. ntcabs .and. inpdt0.eq.0) then
     call csexit (1)
-    !==========
   endif
 
 endif
@@ -963,10 +907,8 @@ if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
 endif
 
 call dmtmps(titer1)
-!==========
 
 call tridim                                                       &
-!==========
  ( itrale ,                                                       &
    nvar   , nscal  ,                                              &
    isostd ,                                                       &
@@ -991,7 +933,6 @@ if (iilagr.gt.0 .and. inpdt0.eq.0 .and. itrale.gt.0) then
   call timer_stats_start(lagr_stats_id)
 
   call lagune                                                     &
-  !==========
  ( lndnod ,                                                       &
    nvar   , nscal  ,                                              &
    dt     , propce )
@@ -1012,14 +953,12 @@ if (itrale.gt.0) then
 
   if (iihmpr.eq.1) then
     call uiprof                                                   &
-    !==========
   ( ncelet , ncel,                                                &
     ntmabs, ntcabs, ttcabs, ttmabs, ttpabs,                       &
     xyzcen)
   endif
 
   call cs_f_user_extra_operations &
-  !==============================
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -1038,7 +977,6 @@ if (iale.eq.1 .and. inpdt0.eq.0) then
   if (itrale.eq.0 .or. itrale.gt.nalinf) then
 
     call alemav &
-    !==========
   ( itrale ,                                               &
     impale , ialtyb ,                                      &
     dt     ,                                               &
@@ -1055,7 +993,6 @@ endif
 ! Test for lack of remaining time
 
 call armtps(ntcabs,ntmabs)
-!==========
 
 ! Stop test from P-1 radiative model
 
@@ -1067,10 +1004,8 @@ endif
 
 if (idtvar.eq.0) then
   call cplsyn (ntmabs, ntcabs, dt(1))
-  !==========
 else if (idtvar.ne.1) then ! synchronization in dttvar if idtvar = 1
   call cplsyn (ntmabs, ntcabs, dtref)
-  !==========
 endif
 
 !===============================================================================
@@ -1078,7 +1013,6 @@ endif
 !===============================================================================
 
 call reqsui(iisuit)
-!==========
 
 if(ntcabs.lt.ntmabs .and.itrale.eq.0) iisuit = 0
 
@@ -1097,25 +1031,21 @@ if (iisuit.eq.1) then
   if (nfpt1t.gt.0) then
     ficsui = '1dwall_module'
     call ecrt1d                                                   &
-    !==========
  ( ficsui   , len(ficsui), nfpt1d   ,  nmxt1d  ,                  &
    nfabor   , tppt1d     , ifpt1d )
   endif
 
   if (nent.gt.0) then
     call ecrsyn('les_inflow'//c_null_char)
-    !==========
   endif
 
   if (ippmod(iaeros).ge.0) then
      call ecrctw ('cooling_towers'//c_null_char)
-     !==========
   endif
 
   if (iilagr.gt.0) then
 
     call lagout                                                      &
-    !==========
     ( ntersl , nvlsta , nvisbr ,                                     &
       propce )
 
@@ -1123,11 +1053,9 @@ if (iisuit.eq.1) then
 
   if (iirayo.gt.0) then
     call rayout
-    !==========
   endif
 
   call stusui
-  !==========
 
   call timer_stats_stop(restart_stats_id)
 
@@ -1141,7 +1069,6 @@ call post_activate_by_time_step
 
 if (iihmpr.eq.1) then
   call uinpst(ntcabs, ttcabs)
-  !==========
 endif
 
 call cs_user_postprocess_activate(ntmabs, ntcabs, ttcabs)
@@ -1159,7 +1086,6 @@ endif
 call timer_stats_start(post_stats_id)
 
 call pstvar                                                       &
-!==========
  ( ntcabs ,                                                       &
    nvar   , nscal  , nvlsta , nvisbr )
 
@@ -1183,17 +1109,14 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
     ttchis = ttcabs
 
     call ecrhis(modhis)
-    !==========
 
     if (iilagr.gt.0) then
       call laghis(ndim, ncelet, ncel, modhis, nvlsta,             &
-      !==========
                   xyzcen, volume, statis, stativ)
     endif
 
     if (ihistr.eq.1) then
       call strhis(modhis)
-      !==========
     endif
 
   endif
@@ -1201,7 +1124,6 @@ if ((nthist.gt.0 .or.frhist.gt.0.d0) .and. itrale.gt.0) then
 endif
 
 call ushist(nvar, nscal, dt)
-!==========
 
 !===============================================================================
 ! Write to "listing" every ntlist iterations
@@ -1217,7 +1139,6 @@ endif
 if (modntl.eq.0) then
 
   call ecrlis &
-  !==========
   ( ncelet , ncel   ,                                    &
     dt     , volume )
 
@@ -1225,7 +1146,6 @@ if (modntl.eq.0) then
 
   if (iilagr.gt.0) then
     call laglis                                                   &
-    !==========
     ( nvlsta , nvisbr ,                                           &
       statis , parbor )
   endif
@@ -1235,7 +1155,6 @@ endif
 call timer_stats_stop(post_stats_id)
 
 call dmtmps(titer2)
-!==========
 
 if (iwarn0.gt.0 .and. itrale.le.0) then
   write(nfecra,3012)titer2-titer1
@@ -1253,7 +1172,6 @@ if (ntcabs.lt.ntmabs) goto 100
 
 if (idtvar.eq.1) then
   call cplsyn (ntmabs, ntcabs, dtref)
-  !==========
 endif
 
 ! LIBERATION DES TABLEAUX INTERMEDIAIRES (PDC+TSM)
@@ -1272,16 +1190,13 @@ call timer_stats_start(post_stats_id)
 
 modhis = 2
 call ecrhis(modhis)
-!==========
 
 if (iilagr.gt.0) then
   call laghis(ndim, ncelet, ncel, modhis , nvlsta,                &
-  !==========
               xyzcen, volume, statis, stativ)
 endif
 if (ihistr.eq.1) then
   call strhis(modhis)
-  !==========
 endif
 
 call timer_stats_stop(post_stats_id)
@@ -1291,7 +1206,6 @@ call timer_stats_stop(post_stats_id)
 
 if (nfpt1d.gt.0) then
   call lbrt1d
-  !==========
 endif
 
 ! Free main arrays
@@ -1380,7 +1294,6 @@ if (icond.eq.1) then
   call finalize_vcond
   if (itagms.eq.1) then
     call finalize_tagms
-    !==================
   endif
 endif
 
@@ -1399,14 +1312,9 @@ endif
 !     Liberation des structures liees a la lecture du fichier xml
 
 if (iihmpr.eq.1) then
-
   call memui2
-  !==========
-
   call memui1(ncharb)
-  !==========
 endif
-
 
 write(nfecra,7000)
 

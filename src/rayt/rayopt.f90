@@ -21,7 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine rayopt
-!================
 
 !===============================================================================
 !  FONCTION  :
@@ -258,7 +257,6 @@ if (iirayo.gt.0) then
 ! Positionnement des pointeurs
 
   call rayprp
-  !==========
 
 ! --> ISUIRD
 
@@ -340,16 +338,13 @@ call raydir
 if (iihmpr.eq.1) then
 
   call uiray4(iirayo)
-  !==========
 
   call csenso                                                     &
-  !==========
      ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,            &
        ihisvr, tplfmt, xyzcap )
 
   ! take into acount user modifications
   call usipes(nmodpp)
-  !==========
 
 endif
 

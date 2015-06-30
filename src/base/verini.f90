@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine verini &
-!================
-
  ( iok    )
 
 !===============================================================================
@@ -1173,7 +1171,6 @@ endif
 ! On regarde s'il y a du couplage
 
 call nbcsyr (nbccou)
-!==========
 
 ! S'il n'y a pas de couplage
 if (nbccou.eq.0) then
@@ -1580,7 +1577,6 @@ endif
 !===============================================================================
 ! 5. TABLEAUX DE parall : formats 6000 (limitations)
 !===============================================================================
-
 
 ! --- parallelisme incompatible avec le mode de calcul
 !       direct de la distance a la paroi

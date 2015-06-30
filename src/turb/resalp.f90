@@ -211,7 +211,6 @@ do iel = 1, ncel
 enddo
 
 call viscfa                                                       &
-!==========
  ( imvisf ,                                                       &
    w1     ,                                                       &
    viscf  , viscb  )
@@ -245,7 +244,6 @@ relaxp = relaxv(ivar)
 icvflb = 0
 
 call codits &
-!==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
@@ -266,7 +264,6 @@ call codits &
 !===============================================================================
 
 call clpalp(ncelet, ncel, nvar)
-!==========
 
 ! Free memory
 deallocate(smbr, rovsdt, w1)
