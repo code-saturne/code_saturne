@@ -48,7 +48,8 @@
 
   \section mainpage_sublibs Sub-libraries
 
-  See \ref bft_page and \ref fvm_page
+  See \ref mainpage_ple "PLE" (Parallel Location and Exchange),
+  \ref bft_page and \ref fvm_page
 
   \section mainpage_user_sources User sources, functions, and subroutines
 

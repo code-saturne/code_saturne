@@ -63,6 +63,15 @@ AC_ARG_WITH(ple-lib,
                PLE_LDFLAGS="-L$with_ple/lib"
              fi])
 
+AC_ARG_WITH(ple-doc,
+            [AS_HELP_STRING([--with-ple-doc=PATH],
+                            [specify directory for PLE documentation])],
+            [ple_docdir="$with_ple_doc"],
+            [if test "x$with_ple" = "xno" ; then
+               ple_docdir="$datarootdir/doc/ple"
+             elif test "x$with_ple" != "xyes"; then
+               ple_docdir="$with_ple/share/doc/ple"
+             fi])
 
 PLE_LIBS="-lple"
 
@@ -167,8 +176,8 @@ else
 
 fi
 
-
 AC_SUBST(ple_type)
+AC_SUBST(ple_docdir)
 AC_SUBST(PLE_CPPFLAGS)
 AC_SUBST(PLE_LDFLAGS)
 AC_SUBST(PLE_LIBS)

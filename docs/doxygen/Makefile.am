@@ -23,19 +23,25 @@
 #-------------------------------------------------------------------------------
 
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
-DoxygenLayout.xml doxypypy.py mainpage.h images examples 
+DoxygenLayout.xml doxypypy.py mainpage.h images examples
 
 # Overload doxygen executable
 
 if HAVE_DOXYGEN
 
 DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)"; \
-  srcdir="$(top_srcdir)" builddir="$(top_builddir)" "$(DOXYGEN)"
+  srcdir="$(top_srcdir)" builddir="$(top_builddir)" ple_docdir="$(ple_docdir)" \
+  "$(DOXYGEN)"
 
 doxygen-pre:
 	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-pre
 
 doxygen-src:
+	if test "$(ple_type)" = "internal" ; then \
+	  cp $(top_builddir)/libple/doc/doxygen/html/ple.tag . ;\
+	else \
+	  cp $(ple_docdir)/doxygen/ple.tag . ;\
+	fi ;\
 	$(DOXYGENCMD) $(top_srcdir)/docs/doxygen/Doxyfile-src
 
 doxygen-ui:
@@ -52,7 +58,8 @@ clean-local:
 	  then \
 	    (cd $$d && rm -rf html latex man index.bt) ;\
           fi ;\
-	done
+	done ;\
+	rm -f *.tag
 
 endif
 
