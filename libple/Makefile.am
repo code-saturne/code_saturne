@@ -34,7 +34,7 @@ AUX_DIST = build-aux/compile \
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
-SUBDIRS = src tests doc
+SUBDIRS = src tests doc po
 
 EXTRA_DIST = m4/ple_config_info.m4 \
              m4/ple_config_publ.m4 \
@@ -63,12 +63,27 @@ nodist_configinclude_HEADERS = ple_config.h
 
 nodist_noinst_HEADERS = ple_config_priv.h
 
-uninstall-local:
-	rmdir $(configincludedir) || exit 0
-
 DISTCLEANFILES = ple-config ple_config.h ple_config_priv.h
 
 ACLOCAL_AMFLAGS = -I m4
+
+uninstall-local:
+	rmdir $(configincludedir) || exit 0
+
+# Update gettext dictionnaries
+
+update-po:
+	cd po && $(MAKE) $(AM_MAKEFLAGS) update-po
+
+# Generate and install documentation
+
+.PHONY: doc
+doc:
+	cd doc && $(MAKE) $(AM_MAKEFLAGS) doc
+
+.PHONY: install-doc
+install-doc:
+	cd doc && $(MAKE) $(AM_MAKEFLAGS) install-doc
 
 install-tests:
 	@cd tests ; $(MAKE) install-tests
@@ -78,3 +93,4 @@ uninstall-tests:
 
 dist-hook:
 	-rm -rf `find $(distdir)/examples -name .svn`
+

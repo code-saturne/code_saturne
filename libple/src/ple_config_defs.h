@@ -48,7 +48,7 @@ extern "C" {
  * Internationalization (future)
  *============================================================================*/
 
-#ifdef PLE_HAVE_GETTEXT
+#if defined(ENABLE_NLS) && defined(HAVE_GETTEXT)
 #  include <libintl.h>
 #  define _(String) dgettext(PACKAGE,String)
 #  ifdef gettext_noop
@@ -64,7 +64,7 @@ extern "C" {
 #  define dgettext(Domain,String) (String)
 #  define dcgettext(Domain,String,Type) (String)
 #  define bindtextdomain(Domain,Directory) (Domain)
-#endif /* PLE_HAVE_GETTEXT */
+#endif /* ENABLE_NLS && HAVE_GETTEXT */
 
 /*============================================================================
  * C99 Qualifiers

@@ -5,6 +5,11 @@ if [ ! -d sbin ]; then
   exit 1
 fi
 
+# update POTFILES.in
+
+echo "Generating po/POTFILES.in"
+ls src/*.c* | grep -v user_examples > po/POTFILES.in
+
 # Remove unversioned files added by previous bootstrap
 
 rm -rf build-aux/* m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 m4/glibc2.m4 \
@@ -16,8 +21,23 @@ rm -rf build-aux/* m4/codeset.m4 m4/fcntl-o.m4 m4/gettext.m4 m4/glibc2.m4 \
        m4/progtest.m4 m4/size_max.m4 m4/stdint_h.m4 m4/threadlib.m4 \
        m4/uintmax_t.m4 m4/visibility.m4 m4/wchar_t.m4 m4/wint_t.m4 m4/xsize.m4
 
-# Simply run autoreconf
-autoreconf -vi $@
+# Simply run autoreconf.
+
+# If only gettext 0.17 is available, allow it by modifying configure.ac temporarily,
+# but otherwise prefer 0.18.
+
+cs_gettext_version=`gettext --version | head -1 | sed -e s/gettext.*0/0/`
+case $cs_gettext_version in
+  0.17*)
+    cp -p configure.ac configure.ac.tmp
+    sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g ./configure.ac.tmp > configure.ac
+    autoreconf -vif $@
+    \mv configure.ac.tmp configure.ac
+    ;;
+  *)
+    autoreconf -vif $@
+    ;;
+esac
 
 # Remove cache directory
 \rm -rf autom4te.cache

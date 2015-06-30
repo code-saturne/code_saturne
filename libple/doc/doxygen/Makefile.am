@@ -22,24 +22,42 @@
 # The name of the module.
 DOC_MODULE=saturne
 
-docdir = $(datadir)/doc/@PACKAGE@-@VERSION@/doxygen
+docdir = $(datadir)/doc/@PACKAGE@
 EXTRA_DIST = Doxyfile mainpage.h
 
-doxygen:
-	srcdir="$(top_srcdir)" builddir="$(top_builddir)" doxygen $(top_srcdir)/doc/doxygen/Doxyfile
+if HAVE_DOXYGEN
 
-doxygen-install: doxygen
-	cp -r html $(docdir)
+doxygen:
+	srcdir="$(top_srcdir)" builddir="$(top_builddir)" "$(DOXYGEN)" $(top_srcdir)/doc/doxygen/Doxyfile
+
+doxygen-install: install-html-local
+
+html-local: doxygen
 
 clean-local:
 	rm -rf index.bt
+
+endif
 
 distclean-local:
 	rm -rf *~
 	rm -rf html latex man index.bt
 	rm -rf Makefile
 
-uninstall-local:
-	rm -rf $(docdir)
+# Generate the documentation at dist stage so that the user do not need
+# to have Doxygen (and mandatory tools).
 
+if HAVE_DOXYGEN
+
+dist-hook: html
+	\cp -R html $(distdir)/
+
+install-html-local:
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)/doxygen"
+	\cp -R html/* $(DESTDIR)$(htmldir)/doxygen/
+
+endif
+
+uninstall-local:
+	-rm -rf $(htmldir)/doxygen
 

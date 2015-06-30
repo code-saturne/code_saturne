@@ -26,7 +26,9 @@
 
 /*!
   \mainpage PLE (Parallel Location and Exchange) documentation
- 
+
+  \anchor mainpage_ple
+
   \section intro Introduction
 
   PLE is a libary designed to simplify coupling of distributed parallel

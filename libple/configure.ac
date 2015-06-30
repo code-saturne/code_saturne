@@ -1,24 +1,24 @@
 # Process this file with autoconf to produce a configure script.
 
 #------------------------------------------------------------------------------
-#   This file is part of the "Parallel Location and Exchange" library,
-#   intended to provide mesh or particle-based code coupling services.
+# This file is part of the "Parallel Location and Exchange" library,
+# intended to provide mesh or particle-based code coupling services.
 #
-#   Copyright (C) 2005-2015  EDF
+# Copyright (C) 2005-2015 EDF S.A.
 #
-#   This library is free software; you can redistribute it and/or
-#   modify it under the terms of the GNU Lesser General Public
-#   License as published by the Free Software Foundation; either
-#   version 2.1 of the License, or (at your option) any later version.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
 #
-#   This library is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#   Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#   You should have received a copy of the GNU Lesser General Public
-#   License along with this library; if not, write to the Free Software
-#   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
@@ -44,12 +44,12 @@ m4_define([ple_licence_c_comment],
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
 */])
 
 m4_define([ple_major_version], [2])
 m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [1])
+m4_define([ple_release_version], [2])
 m4_define([ple_version_extra], [])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
@@ -64,7 +64,13 @@ AC_CONFIG_MACRO_DIR(m4)
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([ple_config_priv.h:ple_config_priv.h.in])
 
-AM_INIT_AUTOMAKE([-Wall])
+AM_GNU_GETTEXT_VERSION([0.18.1])
+
+# Initialize automake with the following options:
+# - foreign, so as to handle the possible absence of ChangeLog
+# - tar-pax, so as to handle long lines (> 99 characters) in tar archives
+# Warnings can be activated at bootstrap with 'autoreconf -vi --warnings=all'
+AM_INIT_AUTOMAKE([foreign tar-pax])
 
 AH_TOP([#ifndef __PLE_CONFIG_PRIV_H__
 #define __PLE_CONFIG_PRIV_H__
@@ -231,7 +237,7 @@ if test "x$debug" = "xyes"; then
 else
   CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 fi
- 
+
 #------------------------------------------------------------------------------
 
 # We may only turn on processing for libtool now that the basic compiler
@@ -243,8 +249,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$ple_ibm_bg_type" = "xP" \
-   -o "$host_os" = mingw32 ; then
+if test "$host_os" = mingw32 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
@@ -387,6 +392,35 @@ PLE_AC_CONFIG_PUBL_SET(PLE_HAVE_MPI, $ple_have_mpi,
 # Internationalization
 #------------------------------------------------------------------------------
 
+AM_GNU_GETTEXT([external])
+
+#------------------------------------------------------------------------------
+# Documentation
+#------------------------------------------------------------------------------
+
+ple_have_doxygen=yes
+
+AC_ARG_VAR([DOXYGEN], [source code documentation generator])
+
+dnl where is doxygen ?
+AC_PATH_PROG(DOXYGEN, [doxygen])
+if test "x$DOXYGEN" = "x"; then
+  AC_MSG_WARN(doxygen not found)
+  ple_have_doxygen=no
+fi
+
+AC_ARG_VAR([DOT], [graphs generator])
+
+dnl where is dot ?
+AC_PATH_PROG(DOT, [dot])
+if test "x$DOT" = "x"; then
+  AC_MSG_WARN(dot not found; Doxygen documentation will not be built)
+  ple_have_doxygen=no
+fi
+
+AM_CONDITIONAL(HAVE_DOXYGEN, [test $ple_have_doxygen = yes])
+AC_SUBST(ple_have_doxygen)
+
 #------------------------------------------------------------------------------
 # Compiler options and system characteristics
 #------------------------------------------------------------------------------
@@ -450,7 +484,8 @@ PLE_AC_CONFIG_INFO_FINALIZE
 # If we use GNU gettext, we need to add po/Makefile.
 
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile
-                 doc/Makefile doc/doxygen/Makefile])
+                 doc/Makefile doc/doxygen/Makefile
+                 po/Makefile.in])
 
 #------------------------------------------------------------------------------
 

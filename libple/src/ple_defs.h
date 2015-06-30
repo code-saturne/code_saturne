@@ -9,7 +9,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2014  EDF
+  Copyright (C) 2005-2015  EDF
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -162,14 +162,15 @@ typedef enum {
 typedef int      ple_lnum_t;     /* Local integer index or number */
 typedef double   ple_coord_t;    /* Real number (coordinate value) */
 
-/* Set associated data types here */
+/* Mappings to PLE datatypes */
+/*---------------------------*/
 
 #define PLE_COORD  PLE_DOUBLE
 
 #if (PLE_SIZEOF_INT == 4)
-  #define PLE_LNUM  PLE_INT_32
+  #define PLE_LNUM  PLE_INT32
 #elif (PLE_SIZEOF_INT == 8)
-  #define PLE_LNUM  PLE_INT_64
+  #define PLE_LNUM  PLE_INT64
 #else
   #error
 #endif
@@ -186,6 +187,31 @@ typedef double   ple_coord_t;    /* Real number (coordinate value) */
 #define PLE_MPI_COORD    MPI_DOUBLE      /* MPI type for ple_coord_t type */
 
 #endif
+
+/*----------------------------------------------------------------------------
+ * Macros for compilation with a C++ compiler
+ *----------------------------------------------------------------------------*/
+
+#undef PLE_BEGIN_C_DECLS
+#undef   PLE_END_C_DECLS
+
+#if defined(__cplusplus)
+#  define PLE_BEGIN_C_DECLS  extern "C" {
+#  define   PLE_END_C_DECLS  }
+#else
+#  define PLE_BEGIN_C_DECLS
+#  define   PLE_END_C_DECLS
+#endif
+
+/*----------------------------------------------------------------------------
+ * Macros for scoping of examples
+ *----------------------------------------------------------------------------*/
+
+#undef PLE_BEGIN_EXAMPLE_SCOPE
+#undef PLE_END_EXAMPLE_SCOPE
+
+#define PLE_BEGIN_EXAMPLE_SCOPE  {
+#define   PLE_END_EXAMPLE_SCOPE  }
 
 /*----------------------------------------------------------------------------
  * Function pointer types

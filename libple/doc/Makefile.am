@@ -26,3 +26,7 @@ DIST_SUBDIRS = $(SUBDIRS)
 
 EXTRA_DIST =
 
+# Macro-rules so as to compile/install different output types
+
+doc: html
+install-doc: install-html
