@@ -308,8 +308,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "x$cs_ibm_bg_type" = "xP" \
-   -o "$host_os" = mingw32 ; then
+if test "$host_os" = mingw32 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
@@ -410,7 +409,7 @@ AC_ARG_ENABLE(long-gnum,
 )
 
 if test "x$cs_have_long_gnum" = "xyes"; then
-  AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for fvm_gnum_t.])
+  AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for cs_gnum_t.])
 fi
 AC_SUBST(cs_have_long_gnum)
 
@@ -1045,7 +1044,7 @@ if test x$cs_have_frontend = xno ; then
 else
   echo " use graphical user interface: "$cs_have_gui""
 fi
-echo " use long integers: "$cs_have_long_gnum""
+echo " use long global numbers: "$cs_have_long_gnum""
 echo " Zlib (gzipped file) support: "$cs_have_zlib""
 echo " MPI (Message Passing Interface) support: "$cs_have_mpi""
 if (test x$cs_have_mpi = xyes) ; then
