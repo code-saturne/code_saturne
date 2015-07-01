@@ -324,11 +324,19 @@ update-po:
 
 # Generate and install documentation
 
+doc_dirs = $(PLE) docs
+
 doc:
-	cd docs && $(MAKE) $(AM_MAKEFLAGS) doc
+	for p in $(doc_dirs); do \
+	  cd $$p && $(MAKE) $(AM_MAKEFLAGS) doc ;\
+	  cd $(abs_top_builddir) ;\
+	done
 
 install-doc:
-	cd docs && $(MAKE) $(AM_MAKEFLAGS) install-doc
+	for p in $(doc_dirs); do \
+	  cd $$p && $(MAKE) $(AM_MAKEFLAGS) install-doc ;\
+	  cd $(abs_top_builddir) ;\
+	done
 
 # Generate ChangeLog
 
