@@ -4119,8 +4119,9 @@ _set_spmv_func(cs_matrix_type_t             m_type,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Create a matrix Structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix Structure.
  *
  * Note that the structure created maps to the given existing
  * cell global number, face -> cell connectivity arrays, and cell halo
@@ -4133,20 +4134,21 @@ _set_spmv_func(cs_matrix_type_t             m_type,
  * matrix format that does not exploit ths symmetry). If the face_cell
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
- * parameters:
- *   type        <-- Type of matrix considered
- *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
- *   n_cells     <-- Local number of cells
- *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
- *   n_faces     <-- Local number of internal faces
- *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
- *   face_cell   <-- Face -> cells connectivity (1 to n)
- *   halo        <-- Halo structure associated with cells, or NULL
- *   numbering   <-- vectorization or thread-related numbering info, or NULL
+ * \param[in]  type        type of matrix considered
+ * \param[in]  have_diag   indicates if the diagonal structure
+ *                         contains nonzeroes
+ * \param[in]  n_cells     local number of cells
+ * \param[in]  n_cells_ext local number of cells + ghost cells sharing a face
+ * \param[in]  n_faces     local number of internal faces
+ * \param[in]  cell_num    optional global cell numbers (1 to n), or NULL
+ * \param[in]  face_cell   face -> cells connectivity (1 to n)
+ * \param[in]  halo        halo structure associated with cells, or NULL
+ * \param[in]  numbering   vectorization or thread-related numbering info,
+ *                         or NULL
  *
- * returns:
- *   pointer to created matrix structure;
- *----------------------------------------------------------------------------*/
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_structure_t *
 cs_matrix_structure_create(cs_matrix_type_t       type,
@@ -4217,12 +4219,13 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
   return ms;
 }
 
-/*----------------------------------------------------------------------------
- * Destroy a matrix structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a matrix structure.
  *
- * parameters:
- *   ms <-> Pointer to matrix structure pointer
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  ms  pointer to matrix structure pointer
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
@@ -4268,18 +4271,18 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
   }
 }
 
-/*----------------------------------------------------------------------------
- * Create a matrix container using a given structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix container using a given structure.
  *
  * Note that the matrix container maps to the assigned structure,
  * so it must be destroyed before that structure.
  *
- * parameters:
- *   ms <-- Associated matrix structure
+ * \param[in]  ms  associated matrix structure
  *
- * returns:
- *   pointer to created matrix structure;
- *----------------------------------------------------------------------------*/
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_t *
 cs_matrix_create(const cs_matrix_structure_t  *ms)
@@ -4398,19 +4401,19 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
   return m;
 }
 
-/*----------------------------------------------------------------------------
- * Create a matrix container using a given variant.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a matrix container using a given variant.
  *
  * If the matrix variant is incompatible with the structure, it is ignored,
  * and defaults for that structure are used instead.
  *
- * parameters:
- *   ms <-- Associated matrix structure
- *   mv <-- Associated matrix variant
+ * \param[in]  ms  associated matrix structure
+ * \param[in]  mv  associated matrix variant
  *
- * returns:
- *   pointer to created matrix structure;
- *----------------------------------------------------------------------------*/
+ * \return  pointer to created matrix structure;
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_t *
 cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
@@ -4434,12 +4437,6 @@ cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
   return m;
 }
 
-/*----------------------------------------------------------------------------
- * Destroy a matrix structure.
- *
- * parameters:
- *   matrix <-> Pointer to matrix structure pointer
- *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_destroy(cs_matrix_t **matrix)
@@ -4489,12 +4486,13 @@ cs_matrix_destroy(cs_matrix_t **matrix)
   }
 }
 
-/*----------------------------------------------------------------------------
- * Return number of columns in matrix.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of columns in matrix.
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *----------------------------------------------------------------------------*/
+ * \param[in]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_n_columns(const cs_matrix_t  *matrix)
@@ -4505,12 +4503,13 @@ cs_matrix_get_n_columns(const cs_matrix_t  *matrix)
   return matrix->n_cells_ext;
 }
 
-/*----------------------------------------------------------------------------
- * Return number of rows in matrix.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of rows in matrix.
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *----------------------------------------------------------------------------*/
+ * \param[in]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lnum_t
 cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
@@ -4521,19 +4520,19 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix)
   return matrix->n_cells;
 }
 
-/*----------------------------------------------------------------------------
- * Return matrix diagonal block sizes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matrix diagonal block sizes.
  *
  * Block sizes are defined by a array of 4 values:
  *   0: useful block size, 1: vector block extents,
  *   2: matrix line extents,  3: matrix line*column extents
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
- * returns:
- *   pointer to block sizes
- *----------------------------------------------------------------------------*/
+ * \return  pointer to block sizes
+ */
+/*----------------------------------------------------------------------------*/
 
 const int *
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
@@ -4545,19 +4544,19 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix)
   return matrix->db_size;
 }
 
-/*----------------------------------------------------------------------------
- * Return matrix extra-diagonal block sizes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matrix extra-diagonal block sizes.
  *
  * Block sizes are defined by a array of 4 values:
  *   0: useful block size, 1: vector block extents,
  *   2: matrix line extents,  3: matrix line*column extents
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
- * returns:
- *   pointer to block sizes
- *----------------------------------------------------------------------------*/
+ * \return  pointer to block sizes
+ */
+/*----------------------------------------------------------------------------*/
 
 const int *
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
@@ -4569,15 +4568,15 @@ cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix)
   return matrix->eb_size;
 }
 
-/*----------------------------------------------------------------------------
- * Return pointer to matrix halo structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to matrix halo structure.
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
- * returns:
- *   pointer to halo strucuture
- *----------------------------------------------------------------------------*/
+ * \return  pointer to halo strucuture
+ */
+/*----------------------------------------------------------------------------*/
 
 const cs_halo_t *
 cs_matrix_get_halo(const cs_matrix_t  *matrix)
@@ -4589,21 +4588,22 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix)
   return matrix->halo;
 }
 
-/*----------------------------------------------------------------------------
- * Get matrix fill type, depending on block sizes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get matrix fill type, depending on block sizes.
  *
  * Block sizes are defined by an optional array of 4 values:
  *   0: useful block size, 1: vector block extents,
  *   2: matrix line extents,  3: matrix line*column extents
  *
- * parameters:
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ * \param[in]  symmetric              indicates if matrix coefficients
+ *                                    are symmetric
+ * \param[in]  diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or NULL
  *
- * returns:
- *   matrix fill type
- *----------------------------------------------------------------------------*/
+ * \return  matrix fill type
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_fill_type_t
 cs_matrix_get_fill_type(bool        symmetric,
@@ -4638,8 +4638,9 @@ cs_matrix_get_fill_type(bool        symmetric,
   return fill_type;
 }
 
-/*----------------------------------------------------------------------------
- * Set matrix coefficients, sharing arrays with the caller when possible.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set matrix coefficients, sharing arrays with the caller when possible.
  *
  * With shared arrays, the matrix becomes unusable if the arrays passed as
  * arguments are not be modified (its coefficients should be unset first
@@ -4652,14 +4653,16 @@ cs_matrix_get_fill_type(bool        symmetric,
  *   0: useful block size, 1: vector block extents,
  *   2: matrix line extents,  3: matrix line*column extents
  *
- * parameters:
- *   matrix                 <-> Pointer to matrix structure
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
- *   da                     <-- Diagonal values (NULL if zero)
- *   xa                     <-- Extradiagonal values (NULL if zero)
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  matrix                 pointer to matrix structure
+ * \param[in]       symmetric              indicates if matrix coefficients
+ *                                         are symmetric
+ * \param[in]       diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
+ *                                         or NULL
+ * \param[in]       da                     diagonal values (NULL if zero)
+ * \param[in]       xa                     extradiagonal values (NULL if zero)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_set_coefficients(cs_matrix_t      *matrix,
@@ -4718,8 +4721,9 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Set matrix coefficients, copying values to private arrays.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set matrix coefficients, copying values to private arrays.
  *
  * With private arrays, the matrix becomes independant from the
  * arrays passed as arguments.
@@ -4728,14 +4732,16 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
  *   0: useful block size, 1: vector block extents,
  *   2: matrix line extents,  3: matrix line*column extents
  *
- * parameters:
- *   matrix                 <-> Pointer to matrix structure
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
- *   da                     <-- Diagonal values (NULL if zero)
- *   xa                     <-- Extradiagonal values (NULL if zero)
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  matrix                 pointer to matrix structure
+ * \param[in]       symmetric              indicates if matrix coefficients
+ *                                         are symmetric
+ * \param[in]       diag_block_size        block sizes for diagonal, or NULL
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
+ *                                         or NULL
+ * \param[in]       da                     diagonal values (NULL if zero)
+ * \param[in]       xa                     extradiagonal values (NULL if zero)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
@@ -4790,8 +4796,9 @@ cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Release shared matrix coefficients.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Release shared matrix coefficients.
  *
  * Pointers to mapped coefficients are set to NULL, while
  * coefficient copies owned by the matrix are not modified.
@@ -4799,9 +4806,9 @@ cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
  * This simply ensures the matrix does not maintain pointers
  * to nonexistant data.
  *
- * parameters:
- *   matrix <-> Pointer to matrix structure
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_release_coefficients(cs_matrix_t  *matrix)
@@ -4822,16 +4829,17 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
   matrix->fill_type = CS_MATRIX_N_FILL_TYPES;
 }
 
-/*----------------------------------------------------------------------------
- * Copy matrix diagonal values.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy matrix diagonal values.
  *
  * In case of matrixes with block diagonal coefficients, only the true
  * diagonal values are copied.
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   da     --> Diagonal (pre-allocated, size: n_cells)
- *----------------------------------------------------------------------------*/
+ * \param[in]   matrix  pointer to matrix structure
+ * \param[out]  da      diagonal (pre-allocated, size: n_cells*block_size)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
@@ -4847,15 +4855,15 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
     matrix->copy_diagonal(matrix, da);
 }
 
-/*----------------------------------------------------------------------------
- * Query matrix coefficients symmetry
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query matrix coefficients symmetry
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
- * returns:
- *   true if coefficients are symmetric, false otherwise
- *----------------------------------------------------------------------------*/
+ * \return  true if coefficients are symmetric, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
 
 bool
 cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
@@ -4873,18 +4881,18 @@ cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
   return symmetric;
 }
 
-/*----------------------------------------------------------------------------
- * Get matrix diagonal values.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get matrix diagonal values.
  *
  * In case of matrixes with block diagonal coefficients, a pointer to
  * the complete block diagonal is returned.
  *
- * parameters:
- *   matrix --> Pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
- * returns:
- *   pointer to matrix diagonal array
- *----------------------------------------------------------------------------*/
+ * \return  pointer to matrix diagonal array
+ */
+/*----------------------------------------------------------------------------*/
 
 const cs_real_t *
 cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
@@ -4967,20 +4975,20 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix)
   return diag;
 }
 
-/*----------------------------------------------------------------------------
- * Get pointer to matrix extra-diagonal values in "native" format
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get pointer to matrix extra-diagonal values in "native" format
  *
  * This function currently only functions if the matrix is in "native"
  * format or the coefficients were mapped from native coefficients using
  * cs_matrix_set_coefficients(), in which case the pointer returned is the
  * same as the one passed to that function.
  *
- * parameters:
- *   matrix --> Pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
- * returns:
- *   pointer to matrix diagonal array
- *----------------------------------------------------------------------------*/
+ * \return  pointer to matrix diagonal array
+ */
+/*----------------------------------------------------------------------------*/
 
 const cs_real_t *
 cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
@@ -5016,8 +5024,9 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
   return exdiag;
 }
 
-/*----------------------------------------------------------------------------
- * Get arrays describing a matrix in MSR format.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get arrays describing a matrix in MSR format.
  *
  * This function only works for an MSR matrix (i.e. there is
  * no automatic conversion from another matrix type).
@@ -5025,13 +5034,13 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
  * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
  * and cs_matrix_get_extra_diag_block_size().
  *
- * parameters:
- *   matrix    <-- Pointer to matrix structure
- *   row_index --> MSR row index
- *   col_id    --> MSR column id
- *   d_val     --> diagonal values
- *   x_val     --> extra-diagonal values
- *----------------------------------------------------------------------------*/
+ * \param[in]  matrix     pointer to matrix structure
+ * \param[in]  row_index  MSR row index
+ * \param[in]  col_id     MSR column id
+ * \param[in]  d_val      diagonal values
+ * \param[in]  x_val      extra-diagonal values
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
@@ -5057,8 +5066,9 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Get arrays describing a matrix in CSR format.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get arrays describing a matrix in CSR format.
  *
  * This function only works for an CSR matrix (i.e. there is
  * no automatic conversion from another matrix type).
@@ -5066,12 +5076,12 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
  * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
  * and cs_matrix_get_extra_diag_block_size().
  *
- * parameters:
- *   matrix    <-- Pointer to matrix structure
- *   row_index --> CSR row index
- *   col_id    --> CSR column id
- *   val       --> values
- *----------------------------------------------------------------------------*/
+ * \param[in]  matrix     pointer to matrix structure
+ * \param[in]  row_index  CSR row index
+ * \param[in]  col_id     CSR column id
+ * \param[in]  val        values
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
@@ -5094,17 +5104,20 @@ cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = A.x
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x
  *
  * This function includes a halo update of x prior to multiplication by A.
  *
- * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   matrix        <-- Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
+ * \param[in]       rotation_mode  halo update option for
+ *                                 rotational periodicity
+ * \param[in]       matrix         pointer to matrix structure
+ * \param[in, out]  x              multipliying vector values
+ *                                 (ghost values updated)
+ * \param[out]      y              resulting vector
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
@@ -5129,19 +5142,20 @@ cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
        cs_matrix_fill_type_name[matrix->fill_type]);
 }
 
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = A.x with no prior halo update of x.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with no prior halo update of x.
  *
  * This function does not include a halo update of x prior to multiplication
  * by A, so it should be called only when the halo of x is known to already
  * be up to date (in which case we avoid the performance penalty of a
  * redundant update by using this variant of the matrix.vector product).
  *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   x      <-- Multipliying vector values
- *   y      --> Resulting vector
- *----------------------------------------------------------------------------*/
+ * \param[in]   matrix         pointer to matrix structure
+ * \param[in]   x              multipliying vector values
+ * \param[out]  y              resulting vector
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
@@ -5159,17 +5173,20 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
        cs_matrix_fill_type_name[matrix->fill_type]);
 }
 
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = (A-D).x
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = (A-D).x
  *
  * This function includes a halo update of x prior to multiplication by A.
  *
- * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   matrix        <-- Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
- *----------------------------------------------------------------------------*/
+ * \param[in]       rotation_mode  halo update option for
+ *                                 rotational periodicity
+ * \param[in]       matrix         pointer to matrix structure
+ * \param[in, out]  x              multipliying vector values
+ *                                 (ghost values updated)
+ * \param[out]      y              resulting vector
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
@@ -5194,17 +5211,18 @@ cs_matrix_exdiag_vector_multiply(cs_halo_rotation_t   rotation_mode,
        cs_matrix_fill_type_name[matrix->fill_type]);
 }
 
-/*----------------------------------------------------------------------------
- * Build matrix variant
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build matrix variant
  *
  * The variant will initially use default matrix-vector functions,
  * which can be later modified using cs_matrix_variant_set_func().
  *
- * parameters:
- *   type         <-- Type of matrix considered
- *   numbering    <-- vectorization or thread-related numbering info,
- *                    or NULL
- *----------------------------------------------------------------------------*/
+ * \param[in]  type       type of matrix considered
+ * \param[in]  numbering  vectorization or thread-related numbering info,
+ *                        or NULL
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_variant_t *
 cs_matrix_variant_create(cs_matrix_type_t         type,
@@ -5236,18 +5254,19 @@ cs_matrix_variant_create(cs_matrix_type_t         type,
   return mv;
 }
 
-/*----------------------------------------------------------------------------
- * Build list of variants for tuning or testing.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build list of variants for tuning or testing.
  *
- * parameters:
- *   n_fill_types <-- number of fill types tuned for
- *   fill_types   <-- array of fill types tuned for
- *   type_filter  <-- true for matrix types tuned for, false for others
- *   numbering    <-- vectorization or thread-related numbering info,
- *                    or NULL
- *   n_variants   --> number of variants
- *   m_variant    --> array of matrix variants
- *----------------------------------------------------------------------------*/
+ * \param[in]   n_fill_types  number of fill types tuned for
+ * \param[in]   fill_types    array of fill types tuned for
+ * \param[in]   type_filter   true for matrix types tuned for, false for others
+ * \param[in]   numbering     vectorization or thread-related numbering info,
+ *                            or NULL
+ * \param[out]  n_variants    number of variants
+ * \param[out]  m_variant     array of matrix variants
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_build_list(int                      n_fill_types,
@@ -5489,12 +5508,13 @@ cs_matrix_variant_build_list(int                      n_fill_types,
   BFT_REALLOC(*m_variant, *n_variants, cs_matrix_variant_t);
 }
 
-/*----------------------------------------------------------------------------
- * Destroy a matrix variant structure.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy a matrix variant structure.
  *
- * parameters:
- *   mv <-> Pointer to matrix variant pointer
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  mv  pointer to matrix variant pointer
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_destroy(cs_matrix_variant_t  **mv)
@@ -5503,8 +5523,9 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv)
     BFT_FREE(*mv);
 }
 
-/*----------------------------------------------------------------------------
- * Select the sparse matrix-vector product function to be used by a
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Select the sparse matrix-vector product function to be used by a
  * matrix variant for a given fill type.
  *
  * Currently, possible variant functions are:
@@ -5535,7 +5556,8 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv)
  *   fill type <-- matrix fill type to merge from
  *   ed_flag   <-- 0: with diagonal only, 1 exclude only; 2; both
  *   func_name <-- function type name
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
@@ -5567,8 +5589,9 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
        func_name);
 }
 
-/*----------------------------------------------------------------------------
- * Merge a functions to a matrix variant from another variant sharing
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Merge a functions to a matrix variant from another variant sharing
  * the same structure.
  *
  * Functions from the structure to merge for the selected fill type are
@@ -5577,11 +5600,11 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
  * This can be useful when tuning has been done separately for different fill
  * types, and the resulting selected structure is identical.
  *
- * parameters:
- *   mv        <-> Pointer to matrix variant
- *   mv_merge  <-- Pointer to matrix variant to merge
- *   fill type <-- matrix fill type to merge from
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  mv         pointer to matrix variant
+ * \param[in]       mv_merge   pointer to matrix variant to merge
+ * \param[in]       fill type  matrix fill type to merge from
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
@@ -5601,12 +5624,13 @@ cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
   }
 }
 
-/*----------------------------------------------------------------------------
- * Get the type associated with a matrix variant.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the type associated with a matrix variant.
  *
- * parameters:
- *   mv <-- Pointer to matrix variant structure
- *----------------------------------------------------------------------------*/
+ * \param[in]  mv  pointer to matrix variant structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_matrix_type_t
 cs_matrix_variant_type(const cs_matrix_variant_t  *mv)
@@ -5614,21 +5638,22 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv)
   return mv->type;
 }
 
-/*----------------------------------------------------------------------------
- * Test local matrix.vector product operations.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Test local matrix.vector product operations.
  *
- * parameters:
- *   n_cells        <-- number of local cells
- *   n_cells_ext    <-- number of cells including ghost cells (array size)
- *   n_faces        <-- local number of internal faces
- *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
- *   face_cell      <-- face -> cells connectivity (1 to n)
- *   halo           <-- cell halo structure
- *   numbering      <-- vectorization or thread-related numbering info, or NULL
+ * \param[in]  n_cells      number of local cells
+ * \param[in]  n_cells_ext  number of cells including ghost cells (array size)
+ * \param[in]  n_faces      local number of internal faces
+ * \param[in]  cell_num     optional global cell numbers (1 to n), or NULL
+ * \param[in]  face_cell    face -> cells connectivity (1 to n)
+ * \param[in]  halo         cell halo structure
+ * \param[in]  numbering    vectorization or thread-related numbering info,
+ *                          or NULL
  *
- * returns:
- *   pointer to tuning results structure
- *----------------------------------------------------------------------------*/
+ * \return  pointer to tuning results structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_test(cs_lnum_t              n_cells,

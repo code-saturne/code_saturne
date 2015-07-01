@@ -124,14 +124,14 @@ extern const char  *cs_matrix_fill_type_name[];
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * parameters:
- *   type        <-- Type of matrix considered
- *   have_diag   <-- Indicates if the diagonal structure contains nonzeroes
- *   n_cells     <-- Local number of cells
- *   n_cells_ext <-- Local number of cells + ghost cells sharing a face
- *   n_faces     <-- Local number of internal faces
- *   cell_num    <-- Optional global cell numbers (1 to n), or NULL
- *   face_cell   <-- Face -> cells connectivity
- *   halo        <-- Halo structure associated with cells, or NULL
+ *   type        <-- type of matrix considered
+ *   have_diag   <-- indicates if the diagonal structure contains nonzeroes
+ *   n_cells     <-- local number of cells
+ *   n_cells_ext <-- local number of cells + ghost cells sharing a face
+ *   n_faces     <-- local number of internal faces
+ *   cell_num    <-- optional global cell numbers (1 to n), or NULL
+ *   face_cell   <-- face -> cells connectivity
+ *   halo        <-- halo structure associated with cells, or NULL
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
  *
  * returns:
@@ -150,28 +150,10 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
                            const cs_numbering_t  *numbering);
 
 /*----------------------------------------------------------------------------
- * Create a matrix container using a given variant.
- *
- * If the matrix variant is incompatible with the structure, it is ignored,
- * and defaults for that structure are used instead.
- *
- * parameters:
- *   ms <-- Associated matrix structure
- *   mv <-- Associated matrix variant
- *
- * returns:
- *   pointer to created matrix structure;
- *----------------------------------------------------------------------------*/
-
-cs_matrix_t *
-cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
-                            const cs_matrix_variant_t    *mv);
-
-/*----------------------------------------------------------------------------
  * Destroy a matrix structure.
  *
  * parameters:
- *   ms <-> Pointer to matrix structure pointer
+ *   ms <-> pointer to matrix structure pointer
  *----------------------------------------------------------------------------*/
 
 void
@@ -184,7 +166,7 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms);
  * so it must be destroyed before that structure.
  *
  * parameters:
- *   ms <-- Associated matrix structure
+ *   ms <-- associated matrix structure
  *
  * returns:
  *   pointer to created matrix structure;
@@ -194,10 +176,30 @@ cs_matrix_t *
 cs_matrix_create(const cs_matrix_structure_t  *ms);
 
 /*----------------------------------------------------------------------------
- * Destroy a matrix structure.
+ * Create a matrix container using a given variant.
+ *
+ * If the matrix variant is incompatible with the structure, it is ignored,
+ * and defaults for that structure are used instead.
  *
  * parameters:
- *   matrix <-> Pointer to matrix structure pointer
+ *   ms <-- associated matrix structure
+ *   mv <-- associated matrix variant
+ *
+ * returns:
+ *   pointer to created matrix structure;
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_t *
+cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
+                            const cs_matrix_variant_t    *mv);
+
+/*----------------------------------------------------------------------------
+ * Destroy a matrix structure.
+ *
+ * In the case of a compoud matrix, sub-matrices are not destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure pointer
  *----------------------------------------------------------------------------*/
 
 void
@@ -207,7 +209,7 @@ cs_matrix_destroy(cs_matrix_t **matrix);
  * Return number of columns in matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix --> pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 cs_lnum_t
@@ -217,7 +219,7 @@ cs_matrix_get_n_columns(const cs_matrix_t  *matrix);
  * Return number of rows in matrix.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix --> pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 cs_lnum_t
@@ -231,7 +233,7 @@ cs_matrix_get_n_rows(const cs_matrix_t  *matrix);
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix <-- Pointer to matrix structure
+ *   matrix <-- pointer to matrix structure
  *
  * returns:
  *   pointer to block sizes
@@ -248,7 +250,7 @@ cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix <-- Pointer to matrix structure
+ *   matrix <-- pointer to matrix structure
  *
  * returns:
  *   pointer to block sizes
@@ -261,7 +263,7 @@ cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
  * Return pointer to matrix halo structure.
  *
  * parameters:
- *   matrix <-- Pointer to matrix structure
+ *   matrix <-- pointer to matrix structure
  *
  * returns:
  *   pointer to halo strucuture
@@ -278,9 +280,9 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix);
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
  *
  * returns:
  *   matrix fill type
@@ -306,12 +308,12 @@ cs_matrix_get_fill_type(bool        symmetric,
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix                 <-> Pointer to matrix structure
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
- *   da                     <-- Diagonal values (NULL if zero)
- *   xa                     <-- Extradiagonal values (NULL if zero)
+ *   matrix                 <-> pointer to matrix structure
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   da                     <-- diagonal values (NULL if zero)
+ *   xa                     <-- extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
@@ -333,12 +335,12 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
  *   2: matrix line extents,  3: matrix line*column extents
  *
  * parameters:
- *   matrix                 <-> Pointer to matrix structure
- *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
- *   da                     <-- Diagonal values (NULL if zero)
- *   xa                     <-- Extradiagonal values (NULL if zero)
+ *   matrix                 <-> pointer to matrix structure
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   da                     <-- diagonal values (NULL if zero)
+ *   xa                     <-- extradiagonal values (NULL if zero)
  *----------------------------------------------------------------------------*/
 
 void
@@ -359,7 +361,7 @@ cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
  * to nonexistant data.
  *
  * parameters:
- *   matrix <-> Pointer to matrix structure
+ *   matrix <-> pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -372,8 +374,8 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix);
  * diagonal values are copied.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   da     --> Diagonal (pre-allocated, size: n_cells)
+ *   matrix --> pointer to matrix structure
+ *   da     --> diagonal (pre-allocated, size: n_cells*block_size
  *----------------------------------------------------------------------------*/
 
 void
@@ -384,7 +386,7 @@ cs_matrix_copy_diagonal(const cs_matrix_t  *matrix,
  * Query matrix coefficients symmetry
  *
  * parameters:
- *   matrix <-- Pointer to matrix structure
+ *   matrix <-- pointer to matrix structure
  *
  * returns:
  *   true if coefficients are symmetric, false otherwise
@@ -400,7 +402,7 @@ cs_matrix_is_symmetric(const cs_matrix_t  *matrix);
  * the complete block diagonal is returned.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix --> pointer to matrix structure
  *
  * returns:
  *   pointer to matrix diagonal array
@@ -418,7 +420,7 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
  * the same as the one passed to that function.
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
+ *   matrix --> pointer to matrix structure
  *
  * returns:
  *   pointer to matrix diagonal array
@@ -437,7 +439,7 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix);
  * and cs_matrix_get_extra_diag_block_size().
  *
  * parameters:
- *   matrix    <-- Pointer to matrix structure
+ *   matrix    <-- pointer to matrix structure
  *   row_index --> MSR row index
  *   col_id    --> MSR column id
  *   d_val     --> diagonal values
@@ -461,7 +463,7 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
  * and cs_matrix_get_extra_diag_block_size().
  *
  * parameters:
- *   matrix    <-- Pointer to matrix structure
+ *   matrix    <-- pointer to matrix structure
  *   row_index --> CSR row index
  *   col_id    --> CSR column id
  *   val       --> values
@@ -479,10 +481,10 @@ cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * parameters:
- *   rotation_mode --> Halo update option for rotational periodicity
- *   matrix        --> Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
+ *   rotation_mode --> halo update option for rotational periodicity
+ *   matrix        --> pointer to matrix structure
+ *   x             <-> multipliying vector values (ghost values updated)
+ *   y             --> resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -500,9 +502,9 @@ cs_matrix_vector_multiply(cs_halo_rotation_t   rotation_mode,
  * redundant update by using this variant of the matrix.vector product).
  *
  * parameters:
- *   matrix --> Pointer to matrix structure
- *   x      --> Multipliying vector values
- *   y      --> Resulting vector
+ *   matrix --> pointer to matrix structure
+ *   x      --> multipliying vector values
+ *   y      --> resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -516,10 +518,10 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
  * This function includes a halo update of x prior to multiplication by A.
  *
  * parameters:
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   matrix        <-- Pointer to matrix structure
- *   x             <-> Multipliying vector values (ghost values updated)
- *   y             --> Resulting vector
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   matrix        <-- pointer to matrix structure
+ *   x             <-> multipliying vector values (ghost values updated)
+ *   y             --> resulting vector
  *----------------------------------------------------------------------------*/
 
 void
@@ -556,7 +558,7 @@ cs_matrix_variant_build_list(int                      n_fill_types,
  * which can be later modified using cs_matrix_variant_set_func().
  *
  * parameters:
- *   type         <-- Type of matrix considered
+ *   type         <-- type of matrix considered
  *   numbering    <-- vectorization or thread-related numbering info,
  *                    or NULL
  *----------------------------------------------------------------------------*/
@@ -602,7 +604,7 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *
  * parameters:
- *   mv        <-> Pointer to matrix variant
+ *   mv        <-> pointer to matrix variant
  *   numbering <-- mesh numbering info, or NULL
  *   fill type <-- matrix fill type to merge from
  *   ed_flag   <-- 0: with diagonal only, 1 exclude only; 2; both
@@ -627,8 +629,8 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
  * types, and the resulting selected structure is identical.
  *
  * parameters:
- *   mv        <-> Pointer to matrix variant
- *   mv_merge  <-- Pointer to matrix variant to merge
+ *   mv        <-> pointer to matrix variant
+ *   mv_merge  <-- pointer to matrix variant to merge
  *   fill type <-- matrix fill type to merge from
  *----------------------------------------------------------------------------*/
 
@@ -641,7 +643,7 @@ cs_matrix_variant_merge(cs_matrix_variant_t        *mv,
  * Get the type associated with a matrix variant.
  *
  * parameters:
- *   mv <-- Pointer to matrix variant structure
+ *   mv <-- pointer to matrix variant structure
  *----------------------------------------------------------------------------*/
 
 cs_matrix_type_t
@@ -654,7 +656,7 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
  *   n_cells        <-- number of local cells
  *   n_cells_ext    <-- number of cells including ghost cells (array size)
  *   n_faces        <-- local number of internal faces
- *   cell_num       <-- Optional global cell numbers (1 to n), or NULL
+ *   cell_num       <-- optional global cell numbers (1 to n), or NULL
  *   face_cell      <-- face -> cells connectivity
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
