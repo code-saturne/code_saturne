@@ -6411,11 +6411,16 @@ cs_diffusion_potential(const int                 f_id,
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_3_t *restrict diipf
+    = (const cs_real_3_t *restrict)fvq->diipf;
+  const cs_real_3_t *restrict djjpf
+    = (const cs_real_3_t *restrict)fvq->djjpf;
 
   /* Local variables */
 
   char var_name[32];
   int tr_dim = 0;
+  int mass_flux_rec_type = 0;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -6523,7 +6528,6 @@ cs_diffusion_potential(const int                 f_id,
 
   }
 
-
   /*==========================================================================
     3. Update mass flux with reconstruction technics if the mesh is non
        orthogonal
@@ -6541,6 +6545,7 @@ cs_diffusion_potential(const int                 f_id,
       cs_var_cal_opt_t var_cal_opt;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+        mass_flux_rec_type = 1;
         if (var_cal_opt.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
@@ -6592,25 +6597,37 @@ cs_diffusion_potential(const int                 f_id,
           cs_lnum_t ii = i_face_cells[face_id][0];
           cs_lnum_t jj = i_face_cells[face_id][1];
 
-          double dijpfx = dijpf[face_id][0];
-          double dijpfy = dijpf[face_id][1];
-          double dijpfz = dijpf[face_id][2];
+          double i_massflux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
 
-          /*---> Dij = IJ - (IJ.N) N */
-          double dijx = (cell_cen[jj][0]-cell_cen[ii][0])-dijpfx;
-          double dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
-          double dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
+          if (mass_flux_rec_type == 0) {
+            double dijpfx = dijpf[face_id][0];
+            double dijpfy = dijpf[face_id][1];
+            double dijpfz = dijpf[face_id][2];
 
-          double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
-                             + visel[jj][0]*grad[jj][0]);
-          double dpyf = 0.5*(  visel[ii][1]*grad[ii][1]
-                             + visel[jj][1]*grad[jj][1]);
-          double dpzf = 0.5*(  visel[ii][2]*grad[ii][2]
-                             + visel[jj][2]*grad[jj][2]);
+            /*---> Dij = IJ - (IJ.N) N */
+            double dijx = (cell_cen[jj][0]-cell_cen[ii][0])-dijpfx;
+            double dijy = (cell_cen[jj][1]-cell_cen[ii][1])-dijpfy;
+            double dijz = (cell_cen[jj][2]-cell_cen[ii][2])-dijpfz;
 
-          double i_massflux =   i_visc[face_id]*(pvar[ii] -pvar[jj])
-                              +  (dpxf*dijx + dpyf*dijy + dpzf*dijz)
-                                *i_f_face_surf[face_id]/i_dist[face_id];
+            double dpxf = 0.5*(  visel[ii][0]*grad[ii][0]
+                               + visel[jj][0]*grad[jj][0]);
+            double dpyf = 0.5*(  visel[ii][1]*grad[ii][1]
+                               + visel[jj][1]*grad[jj][1]);
+            double dpzf = 0.5*(  visel[ii][2]*grad[ii][2]
+                               + visel[jj][2]*grad[jj][2]);
+
+            i_massflux += (dpxf*dijx + dpyf*dijy + dpzf*dijz)
+                          *i_f_face_surf[face_id]/i_dist[face_id];
+          }
+          else {
+            i_massflux += i_visc[face_id]*
+                          ( grad[ii][0]*diipf[face_id][0]
+                          + grad[ii][1]*diipf[face_id][1]
+                          + grad[ii][2]*diipf[face_id][2]
+                          - grad[jj][0]*djjpf[face_id][0]
+                          - grad[jj][1]*djjpf[face_id][1]
+                          - grad[jj][2]*djjpf[face_id][2] );
+          }
 
           diverg[ii] += i_massflux;
           diverg[jj] -= i_massflux;
