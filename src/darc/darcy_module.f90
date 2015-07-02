@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file darcy_module.f90
-!> Module for Darcy calculation options
+!> \brief Module for Darcy calculation options
 
 module darcy_module
 
@@ -35,13 +35,57 @@ module darcy_module
 
   !=============================================================================
 
-  ! Darcy
+  !> \defgroup darcy_module Module for variable numbering
+
+  !> \addtogroup darcy_module
+  !> \{
+
+  !-----------------------------------------------------------------------------
+  ! Darcy module variables
+  !-----------------------------------------------------------------------------
+
+  !> \anchor darcy_anisotropic_permeability
+  !> Set permeability to isotropic (0) or anisotropic (1) for all soils
   integer :: darcy_anisotropic_permeability
-  integer :: darcy_unsteady, darcy_anisotropic_diffusion
+
+  !> \anchor darcy_anisotropic_diffusion
+  !> Set dispersion to isotropic (0) or anisotropic (1) for all solutes
+  integer :: darcy_anisotropic_diffusion
+
+  !> \anchor darcy_unsteady
+  !> Set if the transport part is based on a steady (0) or unsteady (1)
+  !> flow field
+  integer :: darcy_unsteady
+
+  !> \anchor darcy_convergence_criterion
+  !> Set convergence criteron of the Newton scheme
+  !> - 0: over pressure (recommanded)
+  !> - 1: over velocity
   integer :: darcy_convergence_criterion
+
+  !> \anchor darcy_gravity
+  !> Set gravity to pass from pressure head \f$ h \f$ to hydraulic i
+  !> head \f$ H \f$
   integer :: darcy_gravity
-  double  precision :: darcy_gravity_x
-  double  precision :: darcy_gravity_y
-  double  precision :: darcy_gravity_z
+
+  !> \anchor darcy_gravity_x
+  !> Set direction \f$ x \f$ to pass from pressure head \f$ h \f$ to hydraulic
+  !> head
+  !> then \f$ H = h + x \f$
+  double precision :: darcy_gravity_x
+
+  !> \anchor darcy_gravity_y
+  !> Set direction \f$ y \f$ to pass from pressure head \f$ h \f$ to hydraulic
+  !> head
+  !> then \f$ H = h + y \f$
+  double precision :: darcy_gravity_y
+
+  !> \anchor darcy_gravity_z
+  !> Set direction \f$ z \f$ to pass from pressure head \f$ h \f$ to hydraulic
+  !> head
+  !> then \f$ H = h + z \f$
+  double precision :: darcy_gravity_z
+
+  !> \}
 
 end module darcy_module

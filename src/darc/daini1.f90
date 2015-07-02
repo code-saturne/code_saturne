@@ -20,15 +20,17 @@
 
 !-------------------------------------------------------------------------------
 
+!===============================================================================
+! Function:
+! ---------
+
+!> \file daini1.f90
+!>
+!> \brief Initialize global settings for darcy module.
+!>
+
 subroutine daini1
 !================
-
-
-!===============================================================================
-! Purpose:
-! --------
-
-! Initialize global settings for darcy module.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -68,20 +70,29 @@ implicit none
 !===============================================================================
 
 !===============================================================================
-! 1. Transported variables
+! 1. Set options
 !===============================================================================
 
+! Standard gradient calculation option
 iwgrec(ipr) = 0
 imrgra = 1
 imvisf = 1
 
+! Reference density and pressure
 ro0 = 1.
 p0 = 0
 
+! Set permeability and dispersion to isotropic
 darcy_anisotropic_permeability = 0
 darcy_anisotropic_diffusion = 0
+
+! Steady flow
 darcy_unsteady = 0
+
+! Convergence criteron of the Newton scheme over pressure
 darcy_convergence_criterion = 0
+
+! No gravitational effects
 darcy_gravity = 0
 darcy_gravity_x = 0.
 darcy_gravity_y = 0.
