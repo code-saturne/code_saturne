@@ -384,6 +384,8 @@ cs_join_post_mesh(const char            *mesh_name,
   BFT_FREE(dfield);
 
   post_mesh = fvm_nodal_destroy(post_mesh);
+
+  cs_timer_stats_switch(t_top_id);
 }
 
 /*----------------------------------------------------------------------------
