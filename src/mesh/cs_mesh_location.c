@@ -100,18 +100,20 @@ struct _cs_mesh_location_t {
 
   cs_mesh_location_type_t     type;         /* Location type */
 
+  _Bool                       is_built;     /* True if a location has been
+                                               built */
+
   char                       *select_str;   /* String */
   cs_mesh_location_select_t  *select_fp;    /* Function pointer */
 
-  cs_lnum_t                 n_elts[3];    /* Number of associated elements:
-                                             0: local,
-                                             1: with standard ghost elements,
-                                             2: with extended ghost elements */
+  cs_lnum_t                   n_elts[3];    /* Number of associated elements:
+                                               0: local,
+                                               1: with standard ghost elements,
+                                               2: with extended ghost elements */
 
-  cs_lnum_t                *elt_list;     /* List of associated elements,
-                                             (0 to n-1 numbering) if non
-                                             trivial (i.e. a subset) */
-
+  cs_lnum_t                  *elt_list;     /* List of associated elements,
+                                               (0 to n-1 numbering) if non
+                                               trivial (i.e. a subset) */
 };
 
 /*============================================================================
@@ -128,6 +130,8 @@ const char  *cs_mesh_location_type_name[] = {N_("none"),
                                              N_("cells"),
                                              N_("interior faces"),
                                              N_("boundary faces"),
+                                             N_("faces"),
+                                             N_("edges"),
                                              N_("vertices"),
                                              N_("particles"),
                                              N_("other")};
@@ -138,24 +142,24 @@ static int                  _n_mesh_locations_max = 0;
 static int                  _n_mesh_locations = 0;
 static cs_mesh_location_t  *_mesh_location = NULL;
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get a a pointer to a mesh location by its id.
+ * \brief Get a pointer to a mesh location by its id.
  *
- * parameters:
- *   id            <-- id of mesh location
+ * \param[in]  id         id of mesh location
  *
- * returns:
- *   pointer to associated mesh location
+ * \return  a pointer to the associated mesh location
  *----------------------------------------------------------------------------*/
 
 static const cs_mesh_location_t *
-_const_mesh_location_by_id(int id)
+_const_mesh_location_by_id(int  id)
 {
-  const cs_mesh_location_t *retval = NULL;
+  const cs_mesh_location_t  *retval = NULL;
 
   if (id < 0 || id > _n_mesh_locations)
     bft_error(__FILE__, __LINE__, 0,
@@ -168,32 +172,27 @@ _const_mesh_location_by_id(int id)
 }
 
 /*----------------------------------------------------------------------------
- * Define a new mesh location.
+ * \brief Define a new mesh location.
  *
  * If a list of associated elements is given (defining a subset of a main
  * location), its ownership is transferred to the mesh location.
  *
- * parameters:
- *   name      name of location to define
- *   type      type of location to define
+ * \param[in]  name      name of location to define
+ * \param[in]  type      type of location to define
  *
- * returns:
- *   id of newly defined created mesh location
+ * \return   id of the newly defined mesh location
  *----------------------------------------------------------------------------*/
 
 static int
 _mesh_location_define(const char               *name,
                       cs_mesh_location_type_t   type)
 {
-  /* local variables */
+  int  i;
 
-  int    i;
-  cs_mesh_location_t  *ml;
-
+  cs_mesh_location_t  *ml = NULL;
   int id = _n_mesh_locations;
 
   /* Allocate new locations if necessary */
-
   if (_n_mesh_locations >= _n_mesh_locations_max) {
     if (_n_mesh_locations_max == 0)
       _n_mesh_locations_max = 4;
@@ -203,14 +202,13 @@ _mesh_location_define(const char               *name,
                 _n_mesh_locations_max,
                 cs_mesh_location_t);
   }
-
   _n_mesh_locations++;
 
   /* Define mesh location */
-
   ml = _mesh_location + id;
 
   ml->mesh = NULL;
+  ml->is_built = false;
 
   strncpy(ml->name, name, 31);
   ml->name[31] = '\0';
@@ -222,13 +220,10 @@ _mesh_location_define(const char               *name,
 
   for (i = 0; i < 3; i++)
     ml->n_elts[i] = 0;
-
   ml->elt_list = NULL;
 
   return id;
 }
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions
@@ -266,21 +261,21 @@ cs_mesh_location_n_locations(void)
 void
 cs_mesh_location_initialize(void)
 {
-  cs_mesh_location_define(N_("global"),
-                          CS_MESH_LOCATION_NONE,
-                          NULL);
-  cs_mesh_location_define(N_("cells"),
-                          CS_MESH_LOCATION_CELLS,
-                          NULL);
-  cs_mesh_location_define(N_("interior_faces"),
-                          CS_MESH_LOCATION_INTERIOR_FACES,
-                          NULL);
-  cs_mesh_location_define(N_("boundary_faces"),
-                          CS_MESH_LOCATION_BOUNDARY_FACES,
-                          NULL);
-  cs_mesh_location_define(N_("vertices"),
-                          CS_MESH_LOCATION_VERTICES,
-                          NULL);
+  cs_mesh_location_add(N_("global"),
+                       CS_MESH_LOCATION_NONE,
+                       NULL);
+  cs_mesh_location_add(N_("cells"),
+                       CS_MESH_LOCATION_CELLS,
+                       NULL);
+  cs_mesh_location_add(N_("interior_faces"),
+                       CS_MESH_LOCATION_INTERIOR_FACES,
+                       NULL);
+  cs_mesh_location_add(N_("boundary_faces"),
+                       CS_MESH_LOCATION_BOUNDARY_FACES,
+                       NULL);
+  cs_mesh_location_add(N_("vertices"),
+                       CS_MESH_LOCATION_VERTICES,
+                       NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -295,7 +290,7 @@ cs_mesh_location_finalize(void)
   int  i;
 
   for (i = 0; i < _n_mesh_locations; i++) {
-    cs_mesh_location_t  *ml = _mesh_location;
+    cs_mesh_location_t  *ml = _mesh_location + i;
     BFT_FREE(ml->elt_list);
     BFT_FREE(ml->select_str);
   }
@@ -327,7 +322,7 @@ void
 cs_mesh_location_build(cs_mesh_t  *mesh,
                        int         id)
 {
-  int  i;
+  int  ml_id;
   int id_start = 0, id_end = _n_mesh_locations;
 
   assert(mesh != NULL);
@@ -340,86 +335,93 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
       id_end = id + 1;
   }
 
-  for (i = id_start; i < id_end; i++) {
+  for (ml_id = id_start; ml_id < id_end; ml_id++) {
 
     int n_elts_max = 0;
     fvm_selector_t *selector = NULL;
-    cs_mesh_location_t  *ml = _mesh_location + i;
+    cs_mesh_location_t  *ml = _mesh_location + ml_id;
 
     ml->mesh = mesh;
+    if (ml->is_built == false) {
 
-    if (ml->elt_list != NULL)
-      BFT_FREE(ml->elt_list);
+      if (ml->elt_list != NULL)
+        BFT_FREE(ml->elt_list);
 
-    switch(ml->type) {
-    case CS_MESH_LOCATION_CELLS:
-      selector = mesh->select_cells;
-      n_elts_max = ml->mesh->n_cells;
-      break;
-    case CS_MESH_LOCATION_INTERIOR_FACES:
-      selector = mesh->select_i_faces;
-      n_elts_max = ml->mesh->n_i_faces;
-      break;
-    case CS_MESH_LOCATION_BOUNDARY_FACES:
-      selector = mesh->select_b_faces;
-      n_elts_max = ml->mesh->n_b_faces;
-      break;
-    case CS_MESH_LOCATION_VERTICES:
-      n_elts_max = mesh->n_vertices;
-      break;
-    default:
-      break;
-    }
+      switch(ml->type) {
+      case CS_MESH_LOCATION_CELLS:
+        selector = mesh->select_cells;
+        n_elts_max = ml->mesh->n_cells;
+        break;
+      case CS_MESH_LOCATION_INTERIOR_FACES:
+        selector = mesh->select_i_faces;
+        n_elts_max = ml->mesh->n_i_faces;
+        break;
+      case CS_MESH_LOCATION_BOUNDARY_FACES:
+        selector = mesh->select_b_faces;
+        n_elts_max = ml->mesh->n_b_faces;
+        break;
+      case CS_MESH_LOCATION_FACES:
+        n_elts_max = ml->mesh->n_i_faces + ml->mesh->n_b_faces;
+        break;
+      case CS_MESH_LOCATION_VERTICES:
+        n_elts_max = mesh->n_vertices;
+        break;
+      default:
+        break;
+      }
 
-    if (ml->select_str != NULL) {
-      if (selector != NULL) {
-        BFT_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
-        int c_id = fvm_selector_get_list(selector,
-                                         ml->select_str,
-                                         0,
-                                         ml->n_elts,
-                                         ml->elt_list);
-        if (ml->n_elts[0] == n_elts_max && ml->elt_list != NULL)
-          BFT_FREE(ml->elt_list);
+      if (ml->select_str != NULL) {
+        if (selector != NULL) {
+          BFT_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
+          int c_id = fvm_selector_get_list(selector,
+                                           ml->select_str,
+                                           0,
+                                           ml->n_elts,
+                                           ml->elt_list);
+          if (ml->n_elts[0] == n_elts_max && ml->elt_list != NULL)
+            BFT_FREE(ml->elt_list);
+          else
+            BFT_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+          if (fvm_selector_n_missing(selector, c_id) > 0) {
+            const char *missing
+              = fvm_selector_get_missing(selector, c_id, 0);
+            cs_base_warn(__FILE__, __LINE__);
+            bft_printf(_("The group \"%s\" in the selection criteria:\n"
+                         "\"%s\"\n"
+                         " does not correspond to any boundary face.\n"),
+                       missing, ml->select_str);
+          }
+        }
         else
-          BFT_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
-        if (fvm_selector_n_missing(selector, c_id) > 0) {
-          const char *missing
-            = fvm_selector_get_missing(selector, c_id, 0);
-          cs_base_warn(__FILE__, __LINE__);
-          bft_printf(_("The group \"%s\" in the selection criteria:\n"
-                       "\"%s\"\n"
-                       " does not correspond to any boundary face.\n"),
-                     missing, ml->select_str);
+          bft_error(__FILE__, __LINE__, 0,
+                  _("A selection criteria is given but no associated selector\n"
+                    "is available for mesh location %d of type %d."),
+                    ml_id, (int)ml->type);
+      }
+      else if (ml->select_fp != NULL)
+        ml->select_fp(ml->mesh,
+                      ml_id,
+                      ml->n_elts,
+                      &(ml->elt_list));
+      else
+        ml->n_elts[0] = n_elts_max;
+
+      ml->n_elts[1] = ml->n_elts[0];
+      ml->n_elts[2] = ml->n_elts[0];
+
+      if (ml->type == CS_MESH_LOCATION_CELLS && ml->n_elts[0] == mesh->n_cells) {
+        if (mesh->halo != NULL) {
+          assert(mesh->halo->n_local_elts == ml->n_elts[0]);
+          ml->n_elts[1] += mesh->halo->n_elts[0];
+          ml->n_elts[2] += mesh->halo->n_elts[1];
         }
       }
-      else
-        bft_error
-          (__FILE__, __LINE__, 0,
-           _("A selection criteria is given but no associated selector\n"
-             "is available for mesh location %d of type %d."),
-           i, (int)ml->type);
-    }
-    else if (ml->select_fp != NULL)
-      ml->select_fp(ml->mesh,
-                    i,
-                    ml->n_elts,
-                    &(ml->elt_list));
-    else
-      ml->n_elts[0] = n_elts_max;
 
-    ml->n_elts[1] = ml->n_elts[0];
-    ml->n_elts[2] = ml->n_elts[0];
+      ml->is_built = true;
 
-    if (ml->type == CS_MESH_LOCATION_CELLS && ml->n_elts[0] == mesh->n_cells) {
-      if (mesh->halo != NULL) {
-        assert(mesh->halo->n_local_elts == ml->n_elts[0]);
-        ml->n_elts[1] += mesh->halo->n_elts[0];
-        ml->n_elts[2] += mesh->halo->n_elts[1];
-      }
-    }
+    } /* mesh location is already built */
 
-  }
+  } /* Loop on mesh locations */
 
 }
 
@@ -440,25 +442,24 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_location_define(const char               *name,
-                        cs_mesh_location_type_t   type,
-                        const char               *criteria)
+cs_mesh_location_add(const char                *name,
+                     cs_mesh_location_type_t    type,
+                     const char                *criteria)
 {
-  int m_id = _mesh_location_define(name, type);
-
-  cs_mesh_location_t *ml = _mesh_location + m_id;
+  int  ml_id = _mesh_location_define(name, type);
+  cs_mesh_location_t  *ml = _mesh_location + ml_id;
 
   if (criteria != NULL) {
     BFT_MALLOC(ml->select_str, strlen(criteria) + 1, char);
     strcpy(ml->select_str, criteria);
   }
 
-  return m_id;
+  return ml_id;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a new mesh location with a associated selection function.
+ * \brief Define a new mesh location with an associated selection function.
  *
  * So as to define a subset of mesh entities of a given type, a pointer
  * to a selection function may be given.
@@ -476,17 +477,50 @@ cs_mesh_location_define(const char               *name,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_mesh_location_define_by_func(const char                 *name,
-                                cs_mesh_location_type_t     type,
-                                cs_mesh_location_select_t  *func)
+cs_mesh_location_add_by_func(const char                 *name,
+                             cs_mesh_location_type_t     type,
+                             cs_mesh_location_select_t  *func)
 {
-  int m_id = _mesh_location_define(name, type);
-
-  cs_mesh_location_t *ml = _mesh_location + m_id;
+  int  ml_id = _mesh_location_define(name, type);
+  cs_mesh_location_t  *ml = _mesh_location + ml_id;
 
   ml->select_fp = func;
 
-  return m_id;
+  return ml_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find the related location id from the location name
+ *
+ * \param[in]  ref_name    name of the location to find
+ *
+ * \return -1 if not found otherwise the associated id
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_location_get_id_by_name(const char  *ref_name)
+{
+  int  i, ml_id = -1;
+
+  int  reflen = strlen(ref_name);
+
+  for (i = 0; i < _n_mesh_locations; i++) {
+
+    cs_mesh_location_t  *ml = _mesh_location + i;
+    int len = strlen(ml->name);
+
+    if (reflen == len) {
+      if (strcmp(ref_name, ml->name) == 0) {
+        ml_id = i;
+        break;
+      }
+    }
+
+  } /* Loops on mesh locations */
+
+  return ml_id;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -500,7 +534,7 @@ cs_mesh_location_define_by_func(const char                 *name,
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_mesh_location_get_name(int id)
+cs_mesh_location_get_name(int  id)
 {
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 
@@ -518,7 +552,7 @@ cs_mesh_location_get_name(int id)
 /*----------------------------------------------------------------------------*/
 
 cs_mesh_location_type_t
-cs_mesh_location_get_type(int id)
+cs_mesh_location_get_type(int  id)
 {
   const cs_mesh_location_t  *ml = _const_mesh_location_by_id(id);
 

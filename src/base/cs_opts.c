@@ -245,6 +245,7 @@ cs_opts_define(int         argc,
 
   opts->preprocess = false;
   opts->verif = false;
+  opts->cdo = false;
   opts->benchmark = 0;
 
   opts->yacs_module = NULL;
@@ -348,6 +349,9 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "--preprocess") == 0)
       opts->preprocess = true;
+
+    else if (strcmp(s, "--cdo") == 0)
+      opts->cdo = true;
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;

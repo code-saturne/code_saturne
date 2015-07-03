@@ -1,0 +1,99 @@
+## Process this file with automake to produce Makefile.in
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
+#
+# Copyright (C) 1998-2015 EDF S.A.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+#-------------------------------------------------------------------------------
+
+# Main part
+
+AM_CPPFLAGS = \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+$(MPI_CPPFLAGS)
+
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+
+# AM_FCFLAGS = \
+# $(FCMODINCLUDE)$(top_builddir)/src \
+# $(FCMODINCLUDE)$(top_builddir)/src/alge \
+# $(FCMODINCLUDE)$(top_builddir)/src/base \
+# $(FCMODINCLUDE)$(top_builddir)/src/atmo \
+# $(FCMODINCLUDE)$(top_builddir)/src/cdo  \
+# $(FCMODINCLUDE)$(top_builddir)/src/cfbl \
+# $(FCMODINCLUDE)$(top_builddir)/src/cogz \
+# $(FCMODINCLUDE)$(top_builddir)/src/comb \
+# $(FCMODINCLUDE)$(top_builddir)/src/ctwr \
+# $(FCMODINCLUDE)$(top_builddir)/src/elec \
+# $(FCMODINCLUDE)$(top_builddir)/src/lagr \
+# $(FCMODINCLUDE)$(top_builddir)/src/pprt \
+# $(FCMODINCLUDE)$(top_builddir)/src/rayt \
+# $(FCMODINCLUDE)$(top_builddir)/src/turb \
+# $(FCMODINCLUDE)$(top_builddir)/src/user \
+# $(FCFLAGS_DBG) $(FCFLAGS_OPT)
+
+AM_LDFLAGS =
+
+# Public header files (to be installed)
+
+pkginclude_HEADERS = \
+cs_cdo.h \
+cs_cdo_bc.h \
+cs_cdo_connect.h \
+cs_cdo_main.h \
+cs_cdo_quantities.h \
+cs_cdo_toolbox.h \
+cs_cdofb_codits.h \
+cs_cdovb_codits.h \
+cs_evaluate.h \
+cs_hodge.h \
+cs_param.h \
+cs_param_eq.h \
+cs_quadrature.h \
+cs_reco.h \
+cs_sla.h
+
+# Library source files
+
+noinst_LTLIBRARIES = libcscdo.la
+libcscdo_la_SOURCES = \
+cs_cdo.c \
+cs_cdo_bc.c \
+cs_cdo_connect.c \
+cs_cdo_main.c \
+cs_cdo_quantities.c \
+cs_cdo_toolbox.c \
+cs_cdofb_codits.c \
+cs_cdovb_codits.c \
+cs_evaluate.c \
+cs_hodge.c \
+cs_param.c \
+cs_param_eq.c \
+cs_quadrature.c \
+cs_reco.c \
+cs_sla_itsol.c \
+cs_sla_matrix.c
+
+libcscdo_la_LDFLAGS = -no-undefined
+
+clean-local:
+	-rm -f *__genmod.f90 *.mod

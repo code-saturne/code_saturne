@@ -976,12 +976,12 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
-                 src/base/Makefile src/atmo/Makefile src/cfbl/Makefile
-                 src/cogz/Makefile src/ctwr/Makefile src/darc/Makefile
-                 src/elec/Makefile src/comb/Makefile src/pprt/Makefile
-                 src/lagr/Makefile src/rayt/Makefile src/turb/Makefile
-                 src/alge/Makefile src/mesh/Makefile src/user/Makefile
-                 src/user_examples/Makefile
+                 src/base/Makefile src/atmo/Makefile src/cdo/Makefile
+                 src/cfbl/Makefile src/cogz/Makefile src/ctwr/Makefile
+                 src/darc/Makefile src/elec/Makefile src/comb/Makefile
+                 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+                 src/turb/Makefile src/alge/Makefile src/mesh/Makefile
+                 src/user/Makefile src/user_examples/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  salome/fsi_coupling/Makefile
                  salome/fsi_coupling/idl/Makefile

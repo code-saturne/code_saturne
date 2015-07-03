@@ -58,6 +58,24 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Sort an array "a" between its left bound "l" and its right bound "r"
  * thanks to a shell sort (Knuth algorithm).
+ * Index location of the sorted array are stored in loc. a is unchanged.
+ *
+ * parameters:
+ *   l    <-- left bound
+ *   r    <-- right bound
+ *   a    <-> array to sort (not modified)
+ *   loc  <-> position by increasing order (size = r-l)
+ *---------------------------------------------------------------------------*/
+
+void
+cs_sort_shell_inplace(cs_lnum_t        l,
+                      cs_lnum_t        r,
+                      const cs_lnum_t  a[],
+                      cs_lnum_t        loc[]);
+
+/*----------------------------------------------------------------------------
+ * Sort an array "a" between its left bound "l" and its right bound "r"
+ * thanks to a shell sort (Knuth algorithm).
  *
  * parameters:
  *   l <-- left bound
@@ -102,6 +120,42 @@ cs_sort_coupled_shell(cs_lnum_t  l,
                       cs_lnum_t  r,
                       cs_lnum_t  a[],
                       cs_lnum_t  b[]);
+
+/*----------------------------------------------------------------------------
+ * Sort an array "a" and apply the sort to its associated array "b" (local
+ * numbering)
+ * Sort is realized thanks to a shell sort (Knuth algorithm).
+ *
+ * parameters:
+ *   l     -->   left bound
+ *   r     -->   right bound
+ *   a     <->   array to sort
+ *   b     <->   associated array
+ *---------------------------------------------------------------------------*/
+
+void
+cs_sort_dcoupled_shell(int     l,
+                       int     r,
+                       int     a[],
+                       double  b[]);
+
+/*----------------------------------------------------------------------------
+ * Sort an array "a" and apply the sort to its associated array "b" (local
+ * numbering)
+ * Sort is realized thanks to a shell sort (Knuth algorithm).
+ *
+ * parameters:
+ *   l     -->   left bound
+ *   r     -->   right bound
+ *   a     <->   array to sort
+ *   b     <->   associated array
+ *---------------------------------------------------------------------------*/
+
+void
+cs_sort_sicoupled_shell(int        l,
+                        int        r,
+                        int        a[],
+                        short int  b[]);
 
 /*----------------------------------------------------------------------------
  * Sort an array "a" and apply the sort to its associated array "b" (local

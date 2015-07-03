@@ -476,7 +476,7 @@ cs_parameters_add_variable(const char  *name,
   strcpy((_user_variable_defs + _n_user_variables)->name, name);
 
   (_user_variable_defs + _n_user_variables)->dim = dim;
-  (_user_variable_defs + _n_user_variables)->is_variance = 0;
+  (_user_variable_defs + _n_user_variables)->is_variance = false;
 
   if (dim != 1)
     bft_error(__FILE__, __LINE__, 0,

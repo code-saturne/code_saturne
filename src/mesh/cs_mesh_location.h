@@ -63,6 +63,8 @@ typedef enum {
   CS_MESH_LOCATION_CELLS,
   CS_MESH_LOCATION_INTERIOR_FACES,
   CS_MESH_LOCATION_BOUNDARY_FACES,
+  CS_MESH_LOCATION_FACES,
+  CS_MESH_LOCATION_EDGES,
   CS_MESH_LOCATION_VERTICES,
   CS_MESH_LOCATION_PARTICLES,
   CS_MESH_LOCATION_OTHER
@@ -136,6 +138,19 @@ cs_mesh_location_initialize(void);
 void
 cs_mesh_location_finalize(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find the related location id from the location name
+ *
+ * \param[in]  ref_name    name of the location to find
+ *
+ * \return -1 if not found otherwise the associated id
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_location_get_id_by_name(const char  *ref_name);
+
 /*----------------------------------------------------------------------------
  * Associate mesh locations with a mesh.
  *
@@ -172,9 +187,9 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 int
-cs_mesh_location_define(const char               *name,
-                        cs_mesh_location_type_t   type,
-                        const char               *criteria);
+cs_mesh_location_add(const char               *name,
+                     cs_mesh_location_type_t   type,
+                     const char               *criteria);
 
 /*----------------------------------------------------------------------------
  * Define a new mesh location.
@@ -195,9 +210,9 @@ cs_mesh_location_define(const char               *name,
  *----------------------------------------------------------------------------*/
 
 int
-cs_mesh_location_define_by_func(const char                 *name,
-                                cs_mesh_location_type_t     type,
-                                cs_mesh_location_select_t  *func);
+cs_mesh_location_add_by_func(const char                 *name,
+                             cs_mesh_location_type_t     type,
+                             cs_mesh_location_select_t  *func);
 
 /*----------------------------------------------------------------------------
  * Get a mesh location's name.

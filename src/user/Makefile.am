@@ -35,6 +35,7 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
@@ -73,6 +74,9 @@ userfiles = \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.f90 \
 cs_user_boundary_mass_source_terms.f90 \
+cs_user_cdo.c \
+cs_user_cdo_numerics.c \
+cs_user_cdo_extra_op.c \
 cs_user_coupling.c \
 cs_user_extra_operations.c \
 cs_user_fluid_structure_interaction.f90 \

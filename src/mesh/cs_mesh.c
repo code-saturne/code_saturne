@@ -2263,7 +2263,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------
- * Remove arrays and structures that mey be rebuilt.
+ * Remove arrays and structures that may be rebuilt.
  *
  * mesh       <-> pointer to a mesh structure
  * free_halos <-- if true, free halos and parallel/periodic interface

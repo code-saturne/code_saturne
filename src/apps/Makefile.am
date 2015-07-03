@@ -68,6 +68,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/darc \
 -I$(top_srcdir)/src/lagr \
@@ -99,6 +100,7 @@ $(top_builddir)/src/mesh/libcsmesh.la \
 $(top_builddir)/src/mesh/libcspartition.la \
 $(top_builddir)/src/turb/libcsturb.la \
 $(top_builddir)/src/atmo/libcsatmo.la \
+$(top_builddir)/src/cdo/libcscdo.la \
 $(top_builddir)/src/cfbl/libcscfbl.la \
 $(top_builddir)/src/cogz/libcscogz.la \
 $(top_builddir)/src/comb/libcscomb.la \

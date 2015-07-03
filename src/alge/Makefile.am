@@ -30,6 +30,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/cdo \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)

@@ -24,7 +24,7 @@
 
 SUBDIRS = \
 . bft fvm mei gui \
-base pprt alge mesh turb darc \
+base cdo pprt alge mesh turb darc \
 atmo cfbl cogz comb ctwr elec lagr rayt \
 user user_examples apps
 

@@ -5,6 +5,11 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
+  for diffusion problems. This is a first step, and does not handle
+  parallelism yet. Integration with the rest of the code will be improved
+  progressively.
+
 - Add stiffened gas thermodynamic law for the compressible module (ieos=2).
   Two new parameters are accessible in the user subroutine uscfx2:
   gammasg ("pseudo" specific heat ratio) and psginf (infinite pressure).

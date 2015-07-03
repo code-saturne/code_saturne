@@ -50,6 +50,7 @@
 #include "cs_base_fortran.h"
 #include "cs_benchmark.h"
 #include "cs_calcium.h"
+#include "cs_cdo_main.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_field.h"
@@ -207,7 +208,10 @@ cs_run(void)
 
   /* Initialize Fortran API and calculation setup */
 
-  if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
+  if (opts.cdo)
+    halo_type = CS_HALO_STANDARD; // temporary
+
+  else if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
     cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
@@ -303,7 +307,13 @@ cs_run(void)
     cs_gradient_initialize();
     cs_gradient_perio_initialize();
 
-    if (opts.verif == false) {
+    if (opts.cdo) { /* CDO kernel mode */
+
+      cs_cdo_main(cs_glob_mesh,
+                  cs_glob_mesh_quantities);
+
+    }
+    else if (opts.verif == false) {
 
       /* Initialize sparse linear systems resolution */
 
