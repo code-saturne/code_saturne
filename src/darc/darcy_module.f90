@@ -64,7 +64,7 @@ module darcy_module
   integer :: darcy_convergence_criterion
 
   !> \anchor darcy_gravity
-  !> Set gravity to pass from pressure head \f$ h \f$ to hydraulic i
+  !> Set gravity to pass from pressure head \f$ h \f$ to hydraulic
   !> head \f$ H \f$
   integer :: darcy_gravity
 
