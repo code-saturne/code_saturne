@@ -100,9 +100,6 @@ struct _cs_mesh_location_t {
 
   cs_mesh_location_type_t     type;         /* Location type */
 
-  _Bool                       is_built;     /* True if a location has been
-                                               built */
-
   char                       *select_str;   /* String */
   cs_mesh_location_select_t  *select_fp;    /* Function pointer */
 
@@ -130,9 +127,9 @@ const char  *cs_mesh_location_type_name[] = {N_("none"),
                                              N_("cells"),
                                              N_("interior faces"),
                                              N_("boundary faces"),
+                                             N_("vertices"),
                                              N_("faces"),
                                              N_("edges"),
-                                             N_("vertices"),
                                              N_("particles"),
                                              N_("other")};
 
@@ -208,7 +205,6 @@ _mesh_location_define(const char               *name,
   ml = _mesh_location + id;
 
   ml->mesh = NULL;
-  ml->is_built = false;
 
   strncpy(ml->name, name, 31);
   ml->name[31] = '\0';
@@ -247,11 +243,13 @@ cs_mesh_location_n_locations(void)
 /*!
  * \brief Initialize mesh location API.
  *
- * By default, 5 mesh locations are built, matching the 5 first values of
+ * By default, 7 mesh locations are built, matching the 7 first values of
  * the cs_mesh_location_type_t enum: CS_MESH_LOCATION_NONE for global
  * values, CS_MESH_LOCATION_CELLS for the cells of the (default) global mesh,
  * CS_MESH_LOCATION_INTERIOR_FACES and CS_MESH_LOCATION_BOUNDARY_FACES for
  * its faces, and CS_MESH_LOCATION_VERTICES for its vertices.
+ * CS_MESH_LOCATION_FACES and a placeholder for CS_MESH_LOCATION_EDGES are
+ * also added for CDO discretizations.
  *
  * Locations should then be built once the global mesh is complete, and
  * its halo structures completed.
@@ -267,11 +265,17 @@ cs_mesh_location_initialize(void)
   cs_mesh_location_add(N_("cells"),
                        CS_MESH_LOCATION_CELLS,
                        NULL);
+  cs_mesh_location_add(N_("faces"),
+                       CS_MESH_LOCATION_FACES,
+                       NULL);
   cs_mesh_location_add(N_("interior_faces"),
                        CS_MESH_LOCATION_INTERIOR_FACES,
                        NULL);
   cs_mesh_location_add(N_("boundary_faces"),
                        CS_MESH_LOCATION_BOUNDARY_FACES,
+                       NULL);
+  cs_mesh_location_add(N_("edges (type)"),
+                       CS_MESH_LOCATION_EDGES,
                        NULL);
   cs_mesh_location_add(N_("vertices"),
                        CS_MESH_LOCATION_VERTICES,
@@ -342,84 +346,79 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
     cs_mesh_location_t  *ml = _mesh_location + ml_id;
 
     ml->mesh = mesh;
-    if (ml->is_built == false) {
 
-      if (ml->elt_list != NULL)
-        BFT_FREE(ml->elt_list);
+    if (ml->elt_list != NULL)
+      BFT_FREE(ml->elt_list);
 
-      switch(ml->type) {
-      case CS_MESH_LOCATION_CELLS:
-        selector = mesh->select_cells;
-        n_elts_max = ml->mesh->n_cells;
-        break;
-      case CS_MESH_LOCATION_INTERIOR_FACES:
-        selector = mesh->select_i_faces;
-        n_elts_max = ml->mesh->n_i_faces;
-        break;
-      case CS_MESH_LOCATION_BOUNDARY_FACES:
-        selector = mesh->select_b_faces;
-        n_elts_max = ml->mesh->n_b_faces;
-        break;
-      case CS_MESH_LOCATION_FACES:
-        n_elts_max = ml->mesh->n_i_faces + ml->mesh->n_b_faces;
-        break;
-      case CS_MESH_LOCATION_VERTICES:
-        n_elts_max = mesh->n_vertices;
-        break;
-      default:
-        break;
-      }
+    switch(ml->type) {
+    case CS_MESH_LOCATION_CELLS:
+      selector = mesh->select_cells;
+      n_elts_max = ml->mesh->n_cells;
+      break;
+    case CS_MESH_LOCATION_FACES:
+      n_elts_max = ml->mesh->n_b_faces + ml->mesh->n_i_faces;
+      break;
+    case CS_MESH_LOCATION_INTERIOR_FACES:
+      selector = mesh->select_i_faces;
+      n_elts_max = ml->mesh->n_i_faces;
+      break;
+    case CS_MESH_LOCATION_BOUNDARY_FACES:
+      selector = mesh->select_b_faces;
+      n_elts_max = ml->mesh->n_b_faces;
+      break;
+    case CS_MESH_LOCATION_VERTICES:
+      n_elts_max = mesh->n_vertices;
+      break;
+    default:
+      break;
+    }
 
-      if (ml->select_str != NULL) {
-        if (selector != NULL) {
-          BFT_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
-          int c_id = fvm_selector_get_list(selector,
-                                           ml->select_str,
-                                           0,
-                                           ml->n_elts,
-                                           ml->elt_list);
-          if (ml->n_elts[0] == n_elts_max && ml->elt_list != NULL)
-            BFT_FREE(ml->elt_list);
-          else
-            BFT_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
-          if (fvm_selector_n_missing(selector, c_id) > 0) {
-            const char *missing
-              = fvm_selector_get_missing(selector, c_id, 0);
-            cs_base_warn(__FILE__, __LINE__);
-            bft_printf(_("The group \"%s\" in the selection criteria:\n"
-                         "\"%s\"\n"
-                         " does not correspond to any boundary face.\n"),
-                       missing, ml->select_str);
-          }
-        }
+    if (ml->select_str != NULL) {
+      if (selector != NULL) {
+        BFT_MALLOC(ml->elt_list, n_elts_max, cs_lnum_t);
+        int c_id = fvm_selector_get_list(selector,
+                                         ml->select_str,
+                                         0,
+                                         ml->n_elts,
+                                         ml->elt_list);
+        if (ml->n_elts[0] == n_elts_max && ml->elt_list != NULL)
+          BFT_FREE(ml->elt_list);
         else
-          bft_error(__FILE__, __LINE__, 0,
+          BFT_REALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+        if (fvm_selector_n_missing(selector, c_id) > 0) {
+          const char *missing
+            = fvm_selector_get_missing(selector, c_id, 0);
+          cs_base_warn(__FILE__, __LINE__);
+          bft_printf(_("The group \"%s\" in the selection criteria:\n"
+                       "\"%s\"\n"
+                       " does not correspond to any boundary face.\n"),
+                     missing, ml->select_str);
+        }
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
                   _("A selection criteria is given but no associated selector\n"
                     "is available for mesh location %d of type %d."),
-                    ml_id, (int)ml->type);
+                  ml_id, (int)ml->type);
+    }
+    else if (ml->select_fp != NULL)
+      ml->select_fp(ml->mesh,
+                    ml_id,
+                    ml->n_elts,
+                    &(ml->elt_list));
+    else
+      ml->n_elts[0] = n_elts_max;
+
+    ml->n_elts[1] = ml->n_elts[0];
+    ml->n_elts[2] = ml->n_elts[0];
+
+    if (ml->type == CS_MESH_LOCATION_CELLS && ml->n_elts[0] == mesh->n_cells) {
+      if (mesh->halo != NULL) {
+        assert(mesh->halo->n_local_elts == ml->n_elts[0]);
+        ml->n_elts[1] += mesh->halo->n_elts[0];
+        ml->n_elts[2] += mesh->halo->n_elts[1];
       }
-      else if (ml->select_fp != NULL)
-        ml->select_fp(ml->mesh,
-                      ml_id,
-                      ml->n_elts,
-                      &(ml->elt_list));
-      else
-        ml->n_elts[0] = n_elts_max;
-
-      ml->n_elts[1] = ml->n_elts[0];
-      ml->n_elts[2] = ml->n_elts[0];
-
-      if (ml->type == CS_MESH_LOCATION_CELLS && ml->n_elts[0] == mesh->n_cells) {
-        if (mesh->halo != NULL) {
-          assert(mesh->halo->n_local_elts == ml->n_elts[0]);
-          ml->n_elts[1] += mesh->halo->n_elts[0];
-          ml->n_elts[2] += mesh->halo->n_elts[1];
-        }
-      }
-
-      ml->is_built = true;
-
-    } /* mesh location is already built */
+    }
 
   } /* Loop on mesh locations */
 

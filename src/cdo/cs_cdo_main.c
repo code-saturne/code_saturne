@@ -295,6 +295,9 @@ cs_cdo_main(cs_mesh_t             *m,
   bft_printf(lsepline);
   bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
 
+  /* Determine which location are already built */
+  int n_mesh_locations_ini = cs_mesh_location_n_locations();
+
   /* Build additional connectivity using DEC matrices */
   cs_cdo_connect_t  *connect = cs_cdo_connect_build(m);
 
@@ -305,7 +308,7 @@ cs_cdo_main(cs_mesh_t             *m,
 
   cs_param_pty_set_default();
 
-  /* User-defined settings (Keep this order of call) */
+  /* User-defined settings (keep this order of call) */
   cs_user_cdo_setup();            // initial setup
   cs_user_cdo_numeric_settings(); // advanced setup
   cs_user_cdo_hodge_settings();   // advanced setup
@@ -317,7 +320,9 @@ cs_cdo_main(cs_mesh_t             *m,
   cs_param_pty_add_fields();
 
   /* Build all new mesh locations which are not set yet */
-  cs_mesh_location_build(m, -1);
+  int n_mesh_locations = cs_mesh_location_n_locations();
+  for (i = n_mesh_locations_ini; i < n_mesh_locations; i++)
+    cs_mesh_location_build(m, i);
 
   /* Resume the settings */
   cs_param_pty_resume_all();

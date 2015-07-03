@@ -63,9 +63,9 @@ typedef enum {
   CS_MESH_LOCATION_CELLS,
   CS_MESH_LOCATION_INTERIOR_FACES,
   CS_MESH_LOCATION_BOUNDARY_FACES,
+  CS_MESH_LOCATION_VERTICES,
   CS_MESH_LOCATION_FACES,
   CS_MESH_LOCATION_EDGES,
-  CS_MESH_LOCATION_VERTICES,
   CS_MESH_LOCATION_PARTICLES,
   CS_MESH_LOCATION_OTHER
 
@@ -118,11 +118,13 @@ cs_mesh_location_n_locations(void);
 /*----------------------------------------------------------------------------
  * Initialize mesh location API.
  *
- * By default, 5 mesh locations are built, matching the 5 first values of
+ * By default, 7 mesh locations are built, matching the 7 first values of
  * the cs_mesh_location_type_t enum: CS_MESH_LOCATION_NONE for global
  * values, CS_MESH_LOCATION_CELLS for the cells of the (default) global mesh,
  * CS_MESH_LOCATION_INTERIOR_FACES and CS_MESH_LOCATION_BOUNDARY_FACES for
  * its faces, and CS_MESH_LOCATION_VERTICES for its vertices.
+ * CS_MESH_LOCATION_FACES and a placeholder for CS_MESH_LOCATION_EDGES are
+ * also added for CDO discretizations.
  *
  * Locations should then be built once the global mesh is complete, and
  * its halo structures completed.
