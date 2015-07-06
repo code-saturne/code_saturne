@@ -265,20 +265,20 @@ cs_mesh_location_initialize(void)
   cs_mesh_location_add(N_("cells"),
                        CS_MESH_LOCATION_CELLS,
                        NULL);
-  cs_mesh_location_add(N_("faces"),
-                       CS_MESH_LOCATION_FACES,
-                       NULL);
   cs_mesh_location_add(N_("interior_faces"),
                        CS_MESH_LOCATION_INTERIOR_FACES,
                        NULL);
   cs_mesh_location_add(N_("boundary_faces"),
                        CS_MESH_LOCATION_BOUNDARY_FACES,
                        NULL);
-  cs_mesh_location_add(N_("edges (type)"),
-                       CS_MESH_LOCATION_EDGES,
-                       NULL);
   cs_mesh_location_add(N_("vertices"),
                        CS_MESH_LOCATION_VERTICES,
+                       NULL);
+  cs_mesh_location_add(N_("faces"),
+                       CS_MESH_LOCATION_FACES,
+                       NULL);
+  cs_mesh_location_add(N_("edges (type)"),
+                       CS_MESH_LOCATION_EDGES,
                        NULL);
 }
 
