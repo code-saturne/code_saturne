@@ -12,6 +12,8 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix time moment crash for boundary faces and local time step.
+
 - Fix parallel random distribution-related particle set reallocation issue.
 
 - Fix for handling of restart with compressible module.

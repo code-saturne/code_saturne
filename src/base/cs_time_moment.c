@@ -1541,7 +1541,7 @@ _compute_current_weight(cs_time_moment_wa_t  *mwa,
         if (elt_list == NULL) {
           for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++) {
             cs_lnum_t c_id = b_face_cells[f_id];
-            w[c_id] *= dt[c_id];
+            w[f_id] *= dt[c_id];
           }
         }
         else {
