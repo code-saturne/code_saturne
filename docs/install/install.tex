@@ -135,7 +135,7 @@ The following chapters give more details on \CS's recommended
 third-party libraries, configuration recommendations, troubleshooting,
 and post-installation options.
 
-\section{Compilers and interpreters{sec:compiler}}
+\section{Compilers and interpreters\label{sec:compiler}}
 
 For a minimal build of \CS on a Linux or Posix system, the requirements are:
 \begin{itemize}
@@ -146,20 +146,20 @@ For a minimal build of \CS on a Linux or Posix system, the requirements are:
 \end{itemize}
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build an use the GUI, Libxml2 and PyQt4 (which in turn requires
+To build and use the GUI, Libxml2 and PyQt4 (which in turn requires
 Qt4 and SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in \S\ref{sec:list_ext_lib}.
 
-For some external libraries, such as Catalyst (see \ref{sec:{sec:list_ext_lib}}),
+For some external libraries, such as Catalyst (see \ref{sec:list_ext_lib}),
 a C++ compiler is also required.
 
 In practice, the code is known to build and function properly at least with the
 GNU compilers 4.4 and above (up to 5.1 at this date), Intel compilers 11 and
 above (up to 15 at this date), IBM XL Fortran 14 and C 12 compilers.
 
-Note also that While \CS makes heavy use of Python, this is for scripts and
+Note also that while \CS makes heavy use of Python, this is for scripts and
 for the GUI only; The solver only uses compiled code, so we may for example use
 a 32-bit version of Python with 64-bit \CS libraries and executables.
 On supercomputers with separate front-end and compute node architectures,
@@ -174,7 +174,7 @@ For a minimal build of \CS, a Linux or Posix system with C and Fortran compilers
 (C99 and Fortran 95 with Fortran 2003 ISO C bindings conforming respectively),
 a Python (2.6 or later) interpreter and a {\tt make} tool should be sufficient.
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build an use the GUI, Libxml2 and Qt4 with PyQt4 Python bindings (which in
+To build and use the GUI, Libxml2 and Qt4 with PyQt4 Python bindings (which in
 turn requires SIP) are required.
 Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
