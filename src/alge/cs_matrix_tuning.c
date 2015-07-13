@@ -893,14 +893,15 @@ cs_matrix_variant_tuned(double                 t_measure,
 
         cs_matrix_fill_type_t  fill_type = _fill_types[f_id];
 
-        if (v->matrix_vector_cost[fill_type][ed_flag] > 0) {
-          if (   v->matrix_vector_cost[fill_type][ed_flag]
-               < r->matrix_vector_cost[fill_type][ed_flag]
-              || r->matrix_vector_cost[fill_type][ed_flag] < 0) {
+        if (v->matrix_vector_cost[fill_type][ed_flag][0] > 0) {
+          if (   v->matrix_vector_cost[fill_type][ed_flag][0]
+               < r->matrix_vector_cost[fill_type][ed_flag][0]
+              || r->matrix_vector_cost[fill_type][ed_flag][0] < 0) {
             r->vector_multiply[fill_type][ed_flag]
               = v->vector_multiply[fill_type][ed_flag];
-            r->matrix_vector_cost[fill_type][ed_flag][0]
-              = v->matrix_vector_cost[fill_type][ed_flag][0];
+            for (int o_id = 0; o_id < 1; o_id++)
+              r->matrix_vector_cost[fill_type][ed_flag][o_id]
+                = v->matrix_vector_cost[fill_type][ed_flag][o_id];
             r->loop_length[fill_type][ed_flag]
               = v->loop_length[fill_type][ed_flag];
             cur_select[f_id][ed_flag] = v_id;
