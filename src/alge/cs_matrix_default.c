@@ -166,7 +166,7 @@ _build_block_row_num(cs_lnum_t         n_rows,
 
   if (halo != NULL) {
     assert(n_rows == halo->n_local_elts);
-    _n_rows += halo->n_elts[CS_HALO_STANDARD];
+    _n_rows += halo->n_elts[CS_HALO_EXTENDED];
   }
 
   BFT_REALLOC(_global_row_num, _n_rows, cs_gnum_t);
@@ -185,7 +185,7 @@ _build_block_row_num(cs_lnum_t         n_rows,
 
   if (halo != NULL)
     cs_halo_sync_untyped(halo,
-                         CS_HALO_STANDARD,
+                         CS_HALO_EXTENDED,
                          sizeof(cs_gnum_t),
                          _global_row_num);
 }
