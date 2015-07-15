@@ -44,6 +44,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/mei \
 -I$(top_srcdir)/src/gui \
 $(CPPFLAGS_PLE) \
+$(PETSC_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)

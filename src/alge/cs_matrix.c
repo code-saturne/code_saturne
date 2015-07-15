@@ -2840,14 +2840,11 @@ _destroy_coeff_msr(cs_matrix_coeff_msr_t  **coeff)
 
     cs_matrix_coeff_msr_t  *mc = *coeff;
 
-    if (mc->x_prefetch != NULL)
-      BFT_FREE(mc->x_prefetch);
+    BFT_FREE(mc->x_prefetch);
 
-    if (mc->x_val != NULL)
-      BFT_FREE(mc->x_val);
+    BFT_FREE(mc->x_val);
 
-    if (mc->_d_val != NULL)
-      BFT_FREE(mc->_d_val);
+    BFT_FREE(mc->_d_val);
 
     BFT_FREE(*coeff);
 
@@ -4398,6 +4395,12 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
   }
 
+  /* Additional query buffers here */
+
+  m->row_buffer_size = 0;
+  m->row_buffer_id = NULL;
+  m->row_buffer_val = NULL;
+
   return m;
 }
 
@@ -4484,6 +4487,23 @@ cs_matrix_destroy(cs_matrix_t **matrix)
 
     BFT_FREE(*matrix);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return number of columns in matrix.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_type_t
+cs_matrix_get_type(const cs_matrix_t  *matrix)
+{
+  if (matrix == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("The matrix is not defined."));
+  return matrix->type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4819,6 +4839,10 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
+  BFT_FREE(matrix->row_buffer_id);
+  BFT_FREE(matrix->row_buffer_val);
+  matrix->row_buffer_size = 0;
+
   if (matrix->release_coefficients != NULL) {
     matrix->xa = NULL;
     matrix->release_coefficients(matrix);
@@ -5026,6 +5050,222 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get row values for a given matrix.
+ *
+ * This function may not work for all matrix types.
+ *
+ * In the case of blocked matrixes, the true (non-blocked)
+ * values are returned.
+ *
+ * For a given matrix, this function may only be called for a single
+ * row at a time, at least for some matrix types.
+ *
+ * \param[in,out]   matrix     pointer to matrix structure
+ * \param[in]       row_id     id of row to query
+ * \param[out]      row_size   number of nonzeroes on row
+ * \param[out]      col_id     pointer to column ids
+ * \param[out]      vals       pointer to values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_row(cs_matrix_t         *matrix,
+                  const cs_lnum_t      row_id,
+                  cs_lnum_t           *row_size,
+                  const cs_lnum_t    **col_id,
+                  const cs_real_t    **vals)
+{
+  cs_lnum_t b_size = matrix->db_size[0];
+
+  switch (matrix->type) {
+
+  case CS_MATRIX_CSR:
+    {
+      const cs_matrix_struct_csr_t  *ms = matrix->structure;
+      const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+      *row_size = (ms->row_index[row_id+1] - ms->row_index[row_id])*b_size;
+      *col_id = ms->col_id + ms->row_index[row_id]*b_size;
+      if (mc->val != NULL)
+        *vals = mc->val + ms->row_index[row_id]*b_size;
+      else
+        *vals = NULL;
+    }
+    break;
+
+  case CS_MATRIX_MSR:
+    {
+      const cs_lnum_t _row_id = row_id / b_size;
+      const cs_matrix_struct_csr_t  *ms = matrix->structure;
+      const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+      const cs_lnum_t n_ed_cols =   ms->row_index[_row_id+1]
+                                  - ms->row_index[_row_id];
+      if (b_size == 1)
+        *row_size = n_ed_cols + 1;
+      else if (matrix->eb_size[0] == 1)
+        *row_size = n_ed_cols*b_size;
+      else
+        *row_size = (n_ed_cols+1)*b_size;
+      if (matrix->row_buffer_size < *row_size) {
+        matrix->row_buffer_size = *row_size*2;
+        BFT_REALLOC(matrix->row_buffer_id, matrix->row_buffer_size, cs_lnum_t);
+        BFT_REALLOC(matrix->row_buffer_val, matrix->row_buffer_size, cs_real_t);
+      }
+      cs_lnum_t ii = 0, jj = 0;
+      cs_lnum_t *restrict c_id = ms->col_id + ms->row_index[_row_id];
+      if (b_size == 1) {
+        const cs_real_t *m_row = mc->val + ms->row_index[_row_id];
+        for (jj = 0; jj < n_ed_cols && c_id[jj] < _row_id; jj++) {
+          matrix->row_buffer_id[ii] = c_id[jj];
+          matrix->row_buffer_val[ii++] = m_row[jj];
+        }
+        matrix->row_buffer_id[ii] = _row_id;
+        matrix->row_buffer_val[ii++] = mc->d_val[_row_id];
+        for (; jj < n_ed_cols; jj++) {
+          matrix->row_buffer_id[ii] = c_id[jj];
+          matrix->row_buffer_val[ii++] = m_row[jj];
+        }
+      }
+      else if (matrix->eb_size[0] == 1) {
+        const cs_lnum_t _sub_id = row_id % b_size;
+        const cs_lnum_t *db_size = matrix->db_size;
+        const cs_real_t *m_row = mc->val + ms->row_index[_row_id];
+        for (jj = 0; jj < n_ed_cols && c_id[jj] < _row_id; jj++) {
+          matrix->row_buffer_id[ii] = c_id[jj]*b_size + _sub_id;
+          matrix->row_buffer_val[ii++] = m_row[jj];
+        }
+        for (cs_lnum_t kk = 0; kk < b_size; kk++) {
+          matrix->row_buffer_id[ii] = _row_id*b_size + kk;
+          matrix->row_buffer_val[ii++] = mc->d_val[  _row_id*db_size[3]
+                                                   + _sub_id*db_size[2] + kk];
+        }
+        for (; jj < n_ed_cols; jj++) {
+          matrix->row_buffer_id[ii] = c_id[jj]*b_size + _sub_id;
+          matrix->row_buffer_val[ii++] = m_row[jj];
+        }
+      }
+      else {
+        const cs_lnum_t _sub_id = row_id % b_size;
+        const cs_lnum_t *db_size = matrix->db_size;
+        const cs_lnum_t *eb_size = matrix->db_size;
+        const cs_real_t *m_row = mc->val + ms->row_index[_row_id]*eb_size[3];
+        for (jj = 0; jj < n_ed_cols && c_id[jj] < _row_id; jj++) {
+          for (cs_lnum_t kk = 0; kk < b_size; kk++) {
+            matrix->row_buffer_id[ii] = c_id[jj]*b_size + kk;
+            matrix->row_buffer_val[ii++] = m_row[_sub_id*eb_size[2] + kk];
+          }
+        }
+        for (cs_lnum_t kk = 0; kk < b_size; kk++) {
+          matrix->row_buffer_id[ii] = _row_id*b_size + kk;
+          matrix->row_buffer_val[ii++] = mc->d_val[  _row_id*db_size[3]
+                                                   + _sub_id*db_size[2] + kk];
+        }
+        for (; jj < n_ed_cols; jj++) {
+          for (cs_lnum_t kk = 0; kk < b_size; kk++) {
+            matrix->row_buffer_id[ii] = c_id[jj]*b_size + kk;
+            matrix->row_buffer_val[ii++] = m_row[_sub_id*eb_size[2] + kk];
+          }
+        }
+      }
+      *col_id = matrix->row_buffer_id;
+      *vals = matrix->row_buffer_val;
+    }
+    break;
+
+  default:
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Matrix format %s with fill type %s does not handle %s operation."),
+       cs_matrix_type_name[matrix->type],
+       cs_matrix_fill_type_name[matrix->fill_type],
+       __func__);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get arrays describing a matrix in native format.
+ *
+ * This function works for matrix in native format.
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * \param[in]   matrix     pointer to matrix structure
+ * \param[out]  symmetric  true if symmetric
+ * \param[out]  n_faces    number of associated faces
+ * \param[out]  face_cell  face -> cells connectivity
+ * \param[out]  d_val      diagonal values
+ * \param[out]  x_val      extra-diagonal values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_native_arrays(const cs_matrix_t    *matrix,
+                            bool                *symmetric,
+                            cs_lnum_t           *n_faces,
+                            const cs_lnum_2_t  **face_cell,
+                            const cs_real_t    **d_val,
+                            const cs_real_t    **x_val)
+{
+  *symmetric = false;
+  *n_faces = 0;
+  *face_cell = NULL;
+  *d_val = NULL;
+  *x_val = NULL;
+
+  if (matrix->type == CS_MATRIX_NATIVE) {
+    const cs_matrix_struct_native_t  *ms = matrix->structure;
+    const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+    *n_faces = ms->n_faces;
+    *face_cell = ms->face_cell;
+    if (mc != NULL) {
+      *symmetric = mc->symmetric;
+      *d_val = mc->da;
+      *x_val = mc->xa;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get arrays describing a matrix in CSR format.
+ *
+ * This function only works for an CSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * \param[in]   matrix     pointer to matrix structure
+ * \param[out]  row_index  CSR row index
+ * \param[out]  col_id     CSR column id
+ * \param[out]  val        values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
+                         const cs_lnum_t    **row_index,
+                         const cs_lnum_t    **col_id,
+                         const cs_real_t    **val)
+{
+  *row_index = NULL;
+  *col_id = NULL;
+  *val = NULL;
+
+  if (matrix->type == CS_MATRIX_CSR) {
+    const cs_matrix_struct_csr_t  *ms = matrix->structure;
+    const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+    *row_index = ms->row_index;
+    *col_id = ms->col_id;
+    if (mc != NULL) {
+      *val = mc->val;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get arrays describing a matrix in MSR format.
  *
  * This function only works for an MSR matrix (i.e. there is
@@ -5034,11 +5274,11 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
  * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
  * and cs_matrix_get_extra_diag_block_size().
  *
- * \param[in]  matrix     pointer to matrix structure
- * \param[in]  row_index  MSR row index
- * \param[in]  col_id     MSR column id
- * \param[in]  d_val      diagonal values
- * \param[in]  x_val      extra-diagonal values
+ * \param[in]   matrix     pointer to matrix structure
+ * \param[out]  row_index  MSR row index
+ * \param[out]  col_id     MSR column id
+ * \param[out]  d_val      diagonal values
+ * \param[out]  x_val      extra-diagonal values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5062,44 +5302,6 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
     if (mc != NULL) {
       *d_val = mc->d_val;
       *x_val = mc->x_val;
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get arrays describing a matrix in CSR format.
- *
- * This function only works for an CSR matrix (i.e. there is
- * no automatic conversion from another matrix type).
- *
- * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
- * and cs_matrix_get_extra_diag_block_size().
- *
- * \param[in]  matrix     pointer to matrix structure
- * \param[in]  row_index  CSR row index
- * \param[in]  col_id     CSR column id
- * \param[in]  val        values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
-                         const cs_lnum_t    **row_index,
-                         const cs_lnum_t    **col_id,
-                         const cs_real_t    **val)
-{
-  *row_index = NULL;
-  *col_id = NULL;
-  *val = NULL;
-
-  if (matrix->type == CS_MATRIX_CSR) {
-    const cs_matrix_struct_csr_t  *ms = matrix->structure;
-    const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-    *row_index = ms->row_index;
-    *col_id = ms->col_id;
-    if (mc != NULL) {
-      *val = mc->val;
     }
   }
 }

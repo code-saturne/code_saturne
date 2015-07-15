@@ -14,7 +14,7 @@ ls preprocessor/*/*.c src/*/*.c* | grep -v user_examples > po/POTFILES.in
 
 for f in `ls ./build-aux` ; do
   case $f in
-    *.py | catalyst) ;;
+    *.py | catalyst | *.makefile) ;;
     *) rm -rf $d/build-aux/*$ ;;
   esac
 done

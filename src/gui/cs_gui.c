@@ -68,6 +68,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
+#include "cs_log.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
@@ -6290,9 +6291,13 @@ cs_gui_usage_log(void)
 
 #endif
 
-  if (mei_wtime > 0.0)
-    bft_printf(_("\nTime elapsed defining values using MEI: %12.5f\n"),
-        mei_wtime);
+  if (mei_wtime > 0.0) {
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\nTime elapsed defining values using MEI: %12.5f\n"),
+                  mei_wtime);
+    cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+    cs_log_separator(CS_LOG_PERFORMANCE);
+  }
 }
 
 /*----------------------------------------------------------------------------

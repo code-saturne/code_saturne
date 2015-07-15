@@ -206,6 +206,16 @@ void
 cs_matrix_destroy(cs_matrix_t **matrix);
 
 /*----------------------------------------------------------------------------
+ * Return type of matrix.
+ *
+ * parameters:
+ *   matrix --> pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_type_t
+cs_matrix_get_type(const cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
  * Return number of columns in matrix.
  *
  * parameters:
@@ -429,6 +439,81 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
 const cs_real_t *
 cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get row values for a given matrix.
+ *
+ * This function may not work for all matrix types.
+ *
+ * In the case of blocked matrixes, the true (non-blocked)
+ * values are returned.
+ *
+ * For a given matrix, this function may only be called for a single
+ * row at a time, at least for some matrix types.
+ *
+ * parameters:
+ *   matrix    <-> pointer to matrix structure
+ *   row_id    <-- id of row to query
+ *   row_size  --> number of nonzeroes on row
+ *   col_id    --> pointer to column ids
+ *   vals      --> pointer to values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_row(cs_matrix_t         *matrix,
+                  const cs_lnum_t      row_id,
+                  cs_lnum_t           *row_size,
+                  const cs_lnum_t    **col_id,
+                  const cs_real_t    **vals);
+
+/*----------------------------------------------------------------------------
+ * Get arrays describing a matrix in native format.
+ *
+ * This function works for matrix in native format.
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *   symmetric --> true if symmetric
+ *   n_faces   --> number of associated faces
+ *   face_cell --> face -> cells connectivity
+ *   d_val     --> diagonal values
+ *   x_val     --> extra-diagonal values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_native_arrays(const cs_matrix_t    *matrix,
+                            bool                *symmetric,
+                            cs_lnum_t           *n_faces,
+                            const cs_lnum_2_t  **face_cell,
+                            const cs_real_t    **d_val,
+                            const cs_real_t    **x_val);
+
+/*----------------------------------------------------------------------------
+ * Get arrays describing a matrix in CSR format.
+ *
+ * This function only works for an CSR matrix (i.e. there is
+ * no automatic conversion from another matrix type).
+ *
+ * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
+ * and cs_matrix_get_extra_diag_block_size().
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *   row_index --> CSR row index
+ *   col_id    --> CSR column id
+ *   val       --> values
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
+                         const cs_lnum_t    **row_index,
+                         const cs_lnum_t    **col_id,
+                         const cs_real_t    **val);
+
 /*----------------------------------------------------------------------------
  * Get arrays describing a matrix in MSR format.
  *
@@ -452,28 +537,6 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
                          const cs_lnum_t    **col_id,
                          const cs_real_t    **d_val,
                          const cs_real_t    **x_val);
-
-/*----------------------------------------------------------------------------
- * Get arrays describing a matrix in CSR format.
- *
- * This function only works for an CSR matrix (i.e. there is
- * no automatic conversion from another matrix type).
- *
- * Matrix block sizes can be obtained by cs_matrix_get_diag_block_size()
- * and cs_matrix_get_extra_diag_block_size().
- *
- * parameters:
- *   matrix    <-- pointer to matrix structure
- *   row_index --> CSR row index
- *   col_id    --> CSR column id
- *   val       --> values
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_get_csr_arrays(const cs_matrix_t   *matrix,
-                         const cs_lnum_t    **row_index,
-                         const cs_lnum_t    **col_id,
-                         const cs_real_t    **val);
 
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x

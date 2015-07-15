@@ -600,6 +600,7 @@ CS_AC_TEST_ZLIB
 CS_AC_TEST_SALOME
 CS_AC_TEST_MEDCOUPLING
 CS_AC_TEST_CATALYST
+CS_AC_TEST_PETSC
 
 CS_AC_TEST_DOCS
 
@@ -1077,6 +1078,7 @@ echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
+echo " PETSc support: "$cs_have_petsc""
 echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support (for YACS): "$cs_have_dlloader""

@@ -249,30 +249,6 @@ The list of third-party software usable with \CS is provided here:
 
 \begin{itemize}
 
-\item BLAS (Basic Linear Algebra Subroutines) may be used by the
-      \texttt{cs\_blas\_test} unit test to compare the cost of operations
-      such as vector sums and dot products with those provided
-      by the code and compiler.
-      If no third-party BLAS is provided, \CS reverts to its own
-      implementation of BLAS routines, so no functionality is lost here.
-      Optimized BLAS libraries such as Atlas, MKL, ESSL, or ACML may be very
-      fast for BLAS3 (dense matrix/matrix operations), but the advantage is
-      usually much less significant for BLAS 1 (vector/vector) operations, which
-      are almost the only ones \CS has the opportunity of using.
-      \CS uses its own dot product implementation (using a superblock algorithm,
-      for better precision), and $y \leftarrow ax+y$ operations, so external
-      BLAS1 are not used for computation, but only for unit testing (so as
-      to be able to compare performance of built-in BLAS with external BLAS).
-      The Intel MKL BLAS may also be used for matrix-vector products, so it
-      is linked with the solver when available, but this is also currently only
-      used in unit benchmark mode.
-      Note that in some cases, threaded BLAS routines might oversubscribe
-      processor cores in some MPI calculations, depending on the way both
-      \CS and the BLAS were configured and interact, and this can actually
-      lead to lower performance.
-      Use of BLAS libraries is thus useful as a unit benchmarking feature,
-      but has no influence on full calculations.
-
 \item PyQt4 is required by the \CS GUI. PyQt4 in turn requires Qt4,
       Python,and SIP. Without this library, the GUI may not be built,
       although XML files generated with another install of \CS
@@ -343,6 +319,36 @@ The list of third-party software usable with \CS is provided here:
       energy formulations (or cubic EOS), and correlations of properties
       of incompressible fluids and brines. Its validation is based at least
       in part on comparisons with REFPROP.
+
+\item BLAS (Basic Linear Algebra Subroutines) may be used by the
+      \texttt{cs\_blas\_test} unit test to compare the cost of operations
+      such as vector sums and dot products with those provided
+      by the code and compiler.
+      If no third-party BLAS is provided, \CS reverts to its own
+      implementation of BLAS routines, so no functionality is lost here.
+      Optimized BLAS libraries such as Atlas, MKL, ESSL, or ACML may be very
+      fast for BLAS3 (dense matrix/matrix operations), but the advantage is
+      usually much less significant for BLAS 1 (vector/vector) operations, which
+      are almost the only ones \CS has the opportunity of using.
+      \CS uses its own dot product implementation (using a superblock algorithm,
+      for better precision), and $y \leftarrow ax+y$ operations, so external
+      BLAS1 are not used for computation, but only for unit testing (so as
+      to be able to compare performance of built-in BLAS with external BLAS).
+      The Intel MKL BLAS may also be used for matrix-vector products, so it
+      is linked with the solver when available, but this is also currently only
+      used in unit benchmark mode.
+      Note that in some cases, threaded BLAS routines might oversubscribe
+      processor cores in some MPI calculations, depending on the way both
+      \CS and the BLAS were configured and interact, and this can actually
+      lead to lower performance.
+      Use of BLAS libraries is thus useful as a unit benchmarking feature,
+      but has no influence on full calculations.
+
+\item PETSc (Portable, Extensible Toolkit for Scientific Computation,
+      \url{http://www.mcs.anl.gov/petsc/}) consists  of a variety of libraries,
+      which may be used by \CS for the resolution of linear equation systems.
+      In addition to providing many solver options, it may be used as a bridge
+      to other major solver libraries.
 
 \end{itemize}
 

@@ -132,10 +132,41 @@
   The following example shows how to activate convergence plotting
   for built-in iterative or multigrid solvers.
 
+  \snippet cs_user_parameters-linear_solvers.c sles_plot_1
+
   Plots will appear as CSV (comma-separated value) files in the
   monitoring subdirectory.
 
-  \snippet cs_user_parameters-linear_solvers.c sles_plot_1
+  \subsection cs_user_parameters_h_sles_petsc Using PETSc
+
+  The following example shows how to setup a solver to use the PETSc
+  library, if the code was built with PETSc support.
+
+  General options (those passed to PETSc through command line options)
+  may be defined directly in \ref cs_user_linear_solvers, for example:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_1
+
+  A specific system may be set up to use PETsc, as is shown
+  here for the pressure variable:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_2
+
+  The basic matrix format to be used by PETSc is defined at this stage, using
+  a PETSc MatType string (see PETSc documentation).
+  Further options may be defined in a setup hook function, as follows:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_1
+
+  If no additional settings are required, the matching parameter
+  in \ref cs_sles_petsc_define may be set to NULL.
+
+  Many additional features are possible with PETSc; for example,
+  the following setup hook also outputs a view of the matrix, depending
+  on an environment variable, \c CS_USER_PETSC_MAT_VIEW, which may
+  take values \c DEFAULT, \c DRAW_WORLD, or \c DRAW:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_2
 
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
@@ -228,7 +259,7 @@
   \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation_data
 
   Note that the input arrays must be accessible when updating moments at
-  each time step, so the array of inputs is declared static 
+  each time step, so the array of inputs is declared static
   in \ref cs_user_time_moments. Fo more complex inputs, we would have
   an array of inputs here; in this simple case, we could pass a simple
   call id as the input, casting from point to integer.

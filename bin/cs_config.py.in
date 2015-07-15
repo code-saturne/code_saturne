@@ -92,6 +92,7 @@ class config:
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
                         'catalyst',                     # co-processing library
                         'medcoupling', 'paramedmem',    # MED coupling
+                        'petsc',                        # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
                         'libxml2',                      # XML reader
@@ -321,6 +322,13 @@ class config:
                          flags = {'cppflags': "@MPI_CPPFLAGS@",
                                   'ldflags': "@MPI_LDFLAGS@",
                                   'libs': "@MPI_LIBS@"})
+
+        self.libs['petsc'] = \
+            prerequisite("PETSc",
+                         have = "@cs_have_petsc@",
+                         flags = {'cppflags': "@PETSC_CPPFLAGS@",
+                                  'ldflags': "@PETSC_LDFLAGS@",
+                                  'libs': "@PETSC_LIBS@"})
 
         self.libs['scotch'] = \
             prerequisite("SCOTCH",

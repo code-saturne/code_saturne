@@ -41,6 +41,12 @@
 #include <mpi.h>
 #endif
 
+#if defined(HAVE_PETSC)
+#include <petscdraw.h>
+#include <petscviewer.h>
+#include <petscksp.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -83,6 +89,10 @@
 
 #include "cs_post.h"
 
+#if defined(HAVE_PETSC)
+#include "cs_sles_petsc.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -96,6 +106,105 @@ BEGIN_C_DECLS
 /*============================================================================
  * User function definitions
  *============================================================================*/
+
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
+#if defined(HAVE_PETSC)
+
+/*----------------------------------------------------------------------------
+ * User function example for setup options of a PETSc KSP solver.
+ *
+ * This function is called the end of the setup stage for a KSP solver.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   context <-> pointer to optional (untyped) value or structure
+ *   ksp     <-> pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+/*! [sles_petsc_hook_1] */
+static void
+_petsc_p_setup_hook(const void  *context,
+                    KSP          ksp)
+{
+  PC pc;
+
+  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
+
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
+}
+/*! [sles_petsc_hook_1] */
+
+/*----------------------------------------------------------------------------
+ * User function example for setup options of a PETSc KSP solver.
+ *
+ * This example outputs the matrix structure and values, based on several
+ * options.
+ *
+ * This function is called the end of the setup stage for a KSP solver.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   context <-> pointer to optional (untyped) value or structure
+ *   ksp     <-> pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+/*! [sles_petsc_hook_2] */
+static void
+_petsc_p_setup_hook_view(const void  *context,
+                         KSP          ksp)
+{
+  PC pc;
+
+  const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
+
+  if (p != NULL) {
+
+    /* Get system and preconditioner matrixes */
+
+    Mat a, pa;
+    KSPGetOperators(ksp, &a, &pa);
+
+    /* Output matrix in several ways depending on
+       CS_USER_PETSC_MAT_VIEW environment variable */
+
+    if (strcmp(p, "DEFAULT") == 0)
+      MatView(a, PETSC_VIEWER_DEFAULT);
+
+    else if (strcmp(p, "DRAW_WORLD") == 0)
+      MatView(a, PETSC_VIEWER_DRAW_WORLD);
+
+    else if (strcmp(p, "DRAW") == 0) {
+
+      PetscViewer viewer;
+      PetscDraw draw;
+      PetscViewerDrawOpen(PETSC_COMM_WORLD, NULL, "PETSc View",
+                          0, 0, 600, 600, &viewer);
+      PetscViewerDrawGetDraw(viewer, 0, &draw);
+      PetscViewerDrawSetPause(viewer, -1);
+      MatView(a, viewer);
+      PetscDrawPause(draw);
+
+      PetscViewerDestroy(&viewer);
+
+    }
+
+  }
+}
+/*! [sles_petsc_hook_2] */
+
+#endif /* defined(HAVE_PETSC) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -223,7 +332,7 @@ cs_user_linear_solvers(void)
   /*! [sles_rad_dom_1] */
 
   /* Example: activate convergence plot for pressure */
-  /*-----------------------------------------------------*/
+  /*-------------------------------------------------*/
 
   BEGIN_EXAMPLE_SCOPE
 
@@ -248,6 +357,51 @@ cs_user_linear_solvers(void)
   /*! [sles_plot_1] */
 
   END_EXAMPLE_SCOPE
+
+#if defined(HAVE_PETSC)
+
+  /* Setting global options for PETSc */
+  /*----------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_petsc_1] */
+
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  PETSC_COMM_WORLD = cs_glob_mpi_comm;
+  PetscInitializeNoArguments();
+
+  /* See the PETSc documentation for the options database */
+
+  PetscOptionsSetValue("-ksp_type", "cg");
+  PetscOptionsSetValue("-pc_type", "jacobi");
+
+  /*! [sles_petsc_1] */
+
+  END_EXAMPLE_SCOPE
+
+  /* Setting pressure solver with PETSc */
+  /*------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_petsc_2] */
+
+  cs_sles_petsc_define(CS_F_(p)->id,
+                       NULL,
+                       MATSHELL,
+                       _petsc_p_setup_hook,
+                       NULL);
+
+  /*! [sles_petsc_2] */
+
+  END_EXAMPLE_SCOPE
+
+#endif /* defined(HAVE_PETSC) */
+
 }
 
 /*----------------------------------------------------------------------------*/

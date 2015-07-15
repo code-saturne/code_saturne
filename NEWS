@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add support for using PETSc in linear solvers.
+
 - Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
   for diffusion problems. This is a first step, and does not handle
   parallelism yet. Integration with the rest of the code will be improved

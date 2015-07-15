@@ -37,6 +37,15 @@ AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_LDFLAGS =
 
+# Conditionally compiled extensions
+
+libcsalge_petsc_la_CPPFLAGS =\
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+$(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -59,6 +68,10 @@ cs_multigrid.h \
 cs_sles.h \
 cs_sles_default.h \
 cs_sles_it.h
+
+if HAVE_PETSC
+pkginclude_HEADERS += cs_sles_petsc.h
+endif
 
 # Library source files
 
@@ -92,6 +105,14 @@ bilsca.f90 \
 bilscv.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined
+
+libcsalge_la_LIBADD =
+
+if HAVE_PETSC
+noinst_LTLIBRARIES += libcsalge_petsc.la
+libcsalge_la_LIBADD += libcsalge_petsc.la
+libcsalge_petsc_la_SOURCES = cs_sles_petsc.c
+endif
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
