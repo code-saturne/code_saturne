@@ -1197,13 +1197,35 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         sobj = self._singleSelectedObject()
         if not sobj == None:
+            import pvsimple
+            pvsimple.ShowParaviewView()
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
-            if re.match(".*\.med$", sobj.GetName()) or re.match(".*\.csv$", sobj.GetName()) :
-                #export Med file or csv file
-                import paravisSM
-                paravisSM.ImportFile(path)
+            if re.match(".*\.med$", sobj.GetName()) :
+                #export Med file from CFDSTUDY into PARAVIS
+                import salome
+                engine = salome.lcc.FindOrLoadComponent("FactoryServer", "PARAVIS")
+                renderView1 = pvsimple.GetActiveViewOrCreate('RenderView')
+                pvsimple.OpenDataFile(path)
+                DataRepresentation = pvsimple.Show()
+                renderView1.ResetCamera()
+
+            if re.match(".*\.csv$", sobj.GetName()) :
+                #export csv file from CFDSTUDY into PARAVIS
+                import salome
+                engine = salome.lcc.FindOrLoadComponent("FactoryServer", "PARAVIS")
+                coord_path = pvsimple.CSVReader(FileName=[path])
+                renderView1 = pvsimple.GetActiveViewOrCreate('RenderView')
+                viewLayout1 = pvsimple.GetLayout()
+                pvsimple.OpenDataFile(path)
+                # Create a new 'SpreadSheet View'
+                spreadSheetView1 = pvsimple.CreateView('SpreadSheetView')
+                # place view in the layout
+                #viewLayout1.AssignView(2, spreadSheetView1)
+                # show data in view
+                coord_Display = pvsimple.Show(coord_path, spreadSheetView1)
+
             if salome.sg.hasDesktop():
-              salome.sg.updateObjBrowser(1)
+                salome.sg.updateObjBrowser(1)
         QApplication.restoreOverrideCursor()
 
 
