@@ -2426,11 +2426,11 @@ _renum_face_multipass(cs_mesh_t    *mesh,
     int group_size = n_f_cells / n_i_threads;
     int n_g_i_threads = n_i_threads;
 
-    /* If the number of faces not ajacent to ghost cells represents
+    /* If the number of faces not adjacent to ghost cells represents
        a significant enough portion of faces, place faces adjacent
        to ghost cells in separate (later) groups */
 
-    if (n_no_adj_halo < faces_list_size / 2)
+    if (n_no_adj_halo > faces_list_size / 2)
       faces_list_assign_size = faces_list_size - n_no_adj_halo;
     else {
       faces_list_assign_size = faces_list_size;
@@ -2487,8 +2487,10 @@ _renum_face_multipass(cs_mesh_t    *mesh,
 
       _n_no_adj_halo_groups = g_id+1;
 
-      for (fl_id = faces_list_assign_size; fl_id < faces_list_size; fl_id++)
+      for (fl_id = faces_list_assign_size; fl_id < faces_list_size; fl_id++) {
+        f_id = faces_list[fl_id];
         f_t_id[f_id] = - 1;
+      }
 
     }
 
