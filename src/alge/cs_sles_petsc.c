@@ -1032,6 +1032,7 @@ cs_sles_petsc_setup(void               *context,
   /* Solver */
 
   KSPCreate(PETSC_COMM_WORLD, &(sd->ksp));
+  KSPSetFromOptions(sd->ksp);
   KSPSetOperators(sd->ksp, sd->a, sd->a);
 
   KSPSetTolerances(sd->ksp, PETSC_DEFAULT, 1e-30, 1.e10, 10000);
@@ -1045,6 +1046,8 @@ cs_sles_petsc_setup(void               *context,
 
   if (c->setup_hook != NULL)
     c->setup_hook(c->hook_context, sd->ksp);
+
+  KSPSetUp(sd->ksp);
 
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);
@@ -1148,9 +1151,9 @@ cs_sles_petsc_solve(void                *context,
   PetscScalar    _residue;
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
+  const int  db_size = cs_matrix_get_diag_block_size(a)[0];
 
   if (rotation_mode != CS_HALO_ROTATION_COPY) {
-    const int  db_size = cs_matrix_get_diag_block_size(a)[0];
     if (db_size > 1)
       bft_error(__FILE__, __LINE__, 0,
         _("Rotation mode %d with block size %d for system \"%s\"\n"
@@ -1160,25 +1163,26 @@ cs_sles_petsc_solve(void                *context,
 
   if (cs_glob_n_ranks > 1) {
 
-    PetscInt nghost = n_cols - n_rows;
+    PetscInt nghost = (n_cols - n_rows)*db_size;
     PetscInt *ghosts;
 
     BFT_MALLOC(ghosts, nghost, PetscInt);
 
     for (PetscInt i = 0; i < nghost; i++)
-      ghosts[i] = n_rows + i;
+      ghosts[i] = n_rows*db_size + i;
 
     /* Vector */
 
     VecCreateGhostWithArray(PETSC_COMM_WORLD,
-                            n_rows, PETSC_DECIDE,
+                            n_rows*db_size,
+                            PETSC_DECIDE,
                             nghost,
                             ghosts,
                             vx,
                             &x);
 
     VecCreateGhostWithArray(PETSC_COMM_WORLD,
-                            n_rows,
+                            n_rows*db_size,
                             PETSC_DECIDE,
                             nghost,
                             ghosts,
@@ -1192,13 +1196,13 @@ cs_sles_petsc_solve(void                *context,
 
     VecCreateSeqWithArray(PETSC_COMM_SELF,
                           1,
-                          n_rows,
+                          n_rows*db_size,
                           vx,
                           &x);
 
     VecCreateSeqWithArray(PETSC_COMM_SELF,
                           1,
-                          n_rows,
+                          n_rows*db_size,
                           rhs,
                           &b);
 
