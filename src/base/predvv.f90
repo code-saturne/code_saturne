@@ -1839,6 +1839,16 @@ if (iappel.eq.1) then
     if (irangp.ge.0) call parmax (rnorm)
 
     write(nfecra,1100) rnorm
+
+    do iel = 1, ncel
+      vitnor = sqrt(vel(1,iel)**2+vel(2,iel)**2+vel(3,iel)**2)
+      rnorm = min(rnorm,vitnor)
+    enddo
+
+    if (irangp.ge.0) call parmin (rnorm)
+
+    write(nfecra,1200) rnorm
+
   endif
 
 ! ---> Estimator on the whole Navier-Stokes:
@@ -1875,10 +1885,16 @@ if (allocated(divt)) deallocate(divt)
  1100 format(/,                                                   &
  1X,'Vitesse maximale apres prediction ',E12.4)
 
+ 1200 format(/,                                                   &
+ 1X,'Vitesse minimale apres prediction ',E12.4)
+
 #else
 
  1100 format(/,                                                   &
  1X,'Maximum velocity after prediction ',E12.4)
+
+ 1200 format(/,                                                   &
+ 1X,'Minimum velocity after prediction ',E12.4)
 
 #endif
 
