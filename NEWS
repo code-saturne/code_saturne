@@ -12,6 +12,9 @@ Changes:
 Bug fixes:
 ----------
 
+- Fix in the standard porous modelling (the porosity was not taken into
+  account next to the outlet in the correction step).
+
 - Fix time moment crash for boundary faces and local time step.
 
 - Fix parallel random distribution-related particle set reallocation issue.
