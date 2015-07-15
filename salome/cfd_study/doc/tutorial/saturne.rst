@@ -28,7 +28,7 @@ very simplified here.
 Open SALOME
 ----------------
 
-Two way are possible to launch salome with Code_Saturne:
+Two ways are possible to launch salome with Code_Saturne:
 
  - if you have downloaded salome_cfd, to open salome the command is ``~/salome/appli_x_y_z/salome``.
 
@@ -336,9 +336,9 @@ Now, define the **Study name** ("PIPESTUDY") and **Cases** ("CASE1"). The choice
 verify **create MESH directory** is checked.
 
 The new study directory with the new case is created with its sub directories and files.
-Move the mesh file *Pipe.med* in the directoty MESH of the sudy.
+Move the mesh file *Pipe.med* in the directoty MESH of the study.
 
-- The **Object Browser** reflects the study structure on the directory :
+- The **Object Browser** reflects the study structure on the directory:
 
   .. image:: images/T_PIPE/t-pipe-browser.png
     :align: center
@@ -509,7 +509,7 @@ By default the nature of each new imported group is *Wall*. *Double click* in th
   :align: center
   :width: 11cm
 
-Boundary conditions values
+Boundary condition values
 ```````````````````````````````````
 
 - Open **"Boundary conditions"**. For each inlet, give norm for the velocity, the hydraulic diameter for the turbulence, and the prescribed value for the temperature, as shown on the figures below.
