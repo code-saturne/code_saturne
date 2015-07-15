@@ -28,8 +28,13 @@ very simplified here.
 Open SALOME
 ----------------
 
-The command to open salome is ``./code_saturne salome``. For information about
-installation of *Code_Saturne* with SALOME, please consult the installation guide
+Two way are possible to launch salome with Code_Saturne:
+
+ - if you have downloaded salome_cfd, to open salome the command is ``~/salome/appli_x_y_z/salome``.
+
+ - if Code_Saturne is a post installation process, then the command to open salome is ``./code_saturne salome``.
+
+For information about installation of *Code_Saturne* with SALOME, please consult the installation guide
 of *Code_Saturne*.
 
 -------------------------------------
@@ -53,8 +58,7 @@ Activate the module **Geometry**.
 Points, lines and wire
 ~~~~~~~~~~~~~~~~~~~~~~
 
-- Creation of points: open the Notebook: **"File > Notebook"** and add the
-  following variables:
+- Creation of points: add the following variables on the Notebook Windows:
 
      =============  ==============
      Variable_Name  Variable_Value
@@ -212,19 +216,19 @@ Fisrt, choose the *shading* view mode instead of the *wireframe* view mode, in o
 In the **Object Browser**, select the *Pipe* object, use popup menus **"Show only"** and **"Create group"**.
 
 .. image:: images/T_PIPE/t-pipe-geom-pipe_create_group-popup.png
-  :align: center 
+  :align: center
   :width: 6cm
 
 Select faces as shape type (3rd choice under **Shape Type** header: one can select Vertices, Edges, Faces or Solids on a shape):
 
 .. image:: images/T_PIPE/t-pipe-geom-pipe_create_group-shape_type.png
-  :align: center 
+  :align: center
   :width: 10cm
 
 Give the name *Inlet1* to the new group and highlight (right click in the 3D view) the face corresponding to *Inlet1* on the *Pipe*. Then, push button *"Add"* (the number below identifies the face into the main shape), and apply. To be able to select a face, you may have to rotate the shape: *<Ctrl> + right click*.
 
 .. image:: images/T_PIPE/t-pipe-geom-pipe_create_group_Inlet1.png
-  :align: center 
+  :align: center
 
 Proceed as above for the 3 other groups: *Inlet2*, *Outlet* and *Wall*. For faces selection of "Wall", use the *<Shift> + left click* to make a multiple selection: the wall is constituted with 4 faces.
 
@@ -315,47 +319,29 @@ CFD calculation with *Code_Saturne*
 
 Activate the module **CFDSTUDY**.
 
-.. image:: ../images/CFDSTUDY_activation.png
+.. image:: ../images/CFDSTUDY_location.png
   :align: center
   :width: 12cm
-
-Click on **"New"**. A dialog window displays information about *Code_Saturne* installation.
-
-.. image:: ../images/CFDSTUDY_info.png
-  :align: center
-  :width: 10cm
-
-If the installation of *Code_Saturne* is not found the following error
-message is displayed:
-
-.. image:: ../images/CFDSTUDY_activation-error.png
-  :align: center
-  :width: 6cm
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-CFD study and case creation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By convention, CFD calculations with *Code_Saturne* are organized in studies and cases. Several calculations that share the same meshes and data sets,
 define a study for *Code_Saturne*. Each data set defined in a case.
 
-- Create a CFD study and a case by selecting the menu **"CFDSTUDY > Set CFD study location"** (or the equivalent button in the toolbar).
+Click on **"Add new case(s)"**. Then, use **"Browse"** button to select the directory which will contain the study directory.
 
-- Use **"Browse"** button to select the directory which will contain the study directory. In our scope, the study
-  will be named *PIPESTUDY*, and the case *CASE1*.
+.. image:: images/T_PIPE/t-pipe-study_location.png
+  :align: center
+  :width: 10cm
 
-  .. image:: images/T_PIPE/t-pipe-study_location.png
-    :align: center
-    :width: 10cm
+Now, define the **Study name** ("PIPESTUDY") and **Cases** ("CASE1"). The choice for the code is Code_Saturne. Please,
+verify **create MESH directory** is checked.
 
-  The new study directory with the new case is created with its sub directories and files.
-  Move the mesh file *Pipe.med* in the directoty MESH of the sudy.
+The new study directory with the new case is created with its sub directories and files.
+Move the mesh file *Pipe.med* in the directoty MESH of the sudy.
 
 - The **Object Browser** reflects the study structure on the directory :
 
   .. image:: images/T_PIPE/t-pipe-browser.png
     :align: center
-    :width: 5cm
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Open the *Code_Saturne* GUI
@@ -371,7 +357,7 @@ Open the *Code_Saturne* GUI
 - Then a window dialog appear, click on **"Activate"**. The *Code_Saturne* GUI open itself in the SALOME dekstop.
 
   .. image:: images/T_PIPE/t-pipe-open_GUI.png
-    :align: center 
+    :align: center
 
 On the left dockWidget, the salome **Object Browser** and the navigation tree of the GUI are grouped on tabs.
 When an item of the tree is selected, the corresponding panel raises in the GUI.
@@ -390,11 +376,11 @@ Location of the mesh file
 Open **"Meshes selection"**.
 Use **"Add"** button to open a file dialog, and select the MED file previously saved.
 
-.. image:: images/T_PIPE/t-pipe-cfd-mesh-selection.png 
+.. image:: images/T_PIPE/t-pipe-cfd-mesh-selection.png
   :align: center
   :width: 5cm
 
-.. image:: images/T_PIPE/t-pipe-cfd-mesh-selection1.png 
+.. image:: images/T_PIPE/t-pipe-cfd-mesh-selection1.png
   :align: center
   :width: 11cm
 
@@ -432,22 +418,19 @@ to continue the data input.
 Thermophysical models
 ---------------------------
 
-Open **"Thermal model"** and choose *Tempreature (Celsius)*.
+Open **"Thermal model"** and choose *Temperature (Celsius)*.
 
-.. image:: images/T_PIPE/t-pipe-cfd-temperature1.png 
+.. image:: images/T_PIPE/t-pipe-cfd-temperature1.png
   :align: center
-  :width: 5cm
 
-.. image:: images/T_PIPE/t-pipe-cfd-temperature.png 
+.. image:: images/T_PIPE/t-pipe-cfd-temperature.png
   :align: center
-  :width: 11cm
 
 Fluid properties
 ----------------------
 
 .. image:: images/T_PIPE/t-pipe-cfd-fluid-properties.png
   :align: center
-  :width: 5cm
 
 Open **"Fluid properties"**.
 
@@ -466,29 +449,25 @@ Open **"Fluid properties"**.
   For density, viscosity and thermal conductivity, select **"user law"**, and open the window dialog
   in order to give the associated formula:
 
-  - density: ``rho = 1000.94843 - 0.049388484 * TempC -0.000415645022 * TempC^2;``
+  - density: ``density = 1000.94843 - 0.049388484 * temperature -0.000415645022 * temperature^2;``
 
     .. image:: images/T_PIPE/t-pipe-cfd-mei-rho.png
       :align: center
-      :width: 11cm
 
-  - viscosity: ``mu = 0.0015452 - 3.2212e-5 * TempC + 2.45422e-7 * TempC^2;``
+  - viscosity: ``molecular_viscosity = 0.0015452 - 3.2212e-5 * temperature + 2.45422e-7 * temperature^2;``
 
     .. image:: images/T_PIPE/t-pipe-cfd-mei-mu.png
       :align: center
-      :width: 11cm
 
-  - thermal conductivity: ``lambda = 0.57423867 + 0.01443305 * TempC - 9.01853355e-7 * TempC^2;``
+  - thermal conductivity: ``thermal_conductivity = 0.57423867 + 0.01443305 * temperature - 9.01853355e-7 * temperature^2;``
 
     .. image:: images/T_PIPE/t-pipe-cfd-mei-lambda.png
       :align: center
-      :width: 11cm
 
   To take into account the effects of buoyancy, we have to impose a non-zero gravity.
 
   .. image:: images/T_PIPE/t-pipe-cfd-gravity.png
     :align: center
-    :width: 5cm
 
   .. image:: images/T_PIPE/t-pipe-cfd-gravity1.png
     :align: center
@@ -501,7 +480,6 @@ The initial temperature of the water in the pipe is set to 19 degrees.
 
 .. image:: images/T_PIPE/t-pipe-cfd-initialization.png
   :align: center
-  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-initialization-temp.png
   :align: center
@@ -515,20 +493,19 @@ Define locations graphically
 
 - Open **"Definition of boundary regions"**.
 
-.. image:: images/T_PIPE/t-pipe-cfd-boundary-selection.png 
+.. image:: images/T_PIPE/t-pipe-cfd-boundary-selection.png
   :align: center
-  :width: 5cm
 
 Highlight successively each group of the mesh *Pipe*, by selecting the name of the group in the **Object Browser** or by clicking
 the group in the VTK scene. When the group is highlighted, click on the **"Add from Salome"** button.
 
-.. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_3.png 
+.. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_3.png
   :align: center
   :width: 11cm
 
 By default the nature of each new imported group is *Wall*. *Double click* in the cell of the nature in order to edit it. In the same way, edit the label of the boundary condition zone.
 
-.. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_2.png 
+.. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_2.png
   :align: center
   :width: 11cm
 
@@ -539,7 +516,6 @@ Boundary conditions values
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-selection_1.png
   :align: center
-  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-boundary-values_1.png
   :align: center
@@ -560,7 +536,6 @@ Global parameters
 
 .. image:: images/T_PIPE/t-pipe-cfd-global-parameters.png
   :align: center
-  :width: 5cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-global-parameters_1.png
   :align: center
@@ -574,17 +549,14 @@ Equation parameters
 
   .. image:: images/T_PIPE/t-pipe-cfd-eqn-parameters.png
     :align: center
-    :width: 5cm
 
   .. image:: images/T_PIPE/t-pipe-cfd-eqn-parameters_1.png
     :align: center
-    :width: 11cm
 
 -  In the **"Scheme"** tab, the convective scheme for the velocity is set to *SOLU* and for the turbulent variables and the temperature is set to *Upwind*.
 
   .. image:: images/T_PIPE/t-pipe-cfd-eqn-upwind.png
     :align: center
-    :width: 11cm
 
 
 Time step
@@ -643,7 +615,6 @@ The positions of the monitoring points are displayed on the SALOME view. The pro
 
 .. image:: images/T_PIPE/t-pipe-cfd-probes_1.png
   :align: center
-  :width: 11cm
 
 .. image:: images/T_PIPE/t-pipe-cfd-probes_2.png
   :align: center
@@ -657,22 +628,19 @@ Calculation
 
 Select **"Prepare batch calculation"** heading.
 
-.. image:: images/T_PIPE/t-pipe-cfd-calculation-selection.png 
-  :align: center  
-  :width: 5cm
+.. image:: images/T_PIPE/t-pipe-cfd-calculation-selection.png
+  :align: center
 
-.. image:: images/T_PIPE/t-pipe-cfd-calculation-selection_1.png 
-  :align: center  
-  :width: 11cm
+.. image:: images/T_PIPE/t-pipe-cfd-calculation-selection_1.png
+  :align: center
 
 Before running *Code_Saturne*, save the case file (toolbar button or **"File > Code_Saturne > Save as
 data xml file"** or *<Shif> + <Ctrl> + S*), with the name "tjunction.xml" (extension .xml could be ommited).
 It is possible to see the listing in real time, in order to do that in the **"Advanced Options"** the option
 *to listing* must be replaced by *to standard output*.
 
-.. image:: images/T_PIPE/t-pipe-cfd-calculation-selection_2.png 
+.. image:: images/T_PIPE/t-pipe-cfd-calculation-selection_2.png
   :align: center
-  :width: 12cm
 
 Click on Button **"Code_Saturne batch running"**. A popup window raises during the computation. When the computation is completed, click on **OK** to close the window.
 
