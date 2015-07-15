@@ -53,6 +53,13 @@ AC_ARG_WITH(petsc-lib,
 
 if test "x$with_petsc" != "xno" ; then
 
+  if ! test -f ${PETSC_DIR}/conf/variables ; then
+    AC_MSG_FAILURE([${PETSC_DIR}/conf/variables not found.
+Check --with-petsc or --with-petsc-lib option or PETSc directory structure
+({--with-petsc}/lib/conf/variables or {--with-petsc_lib}/conf/variables
+should be present).])
+  fi
+
   PETSC_CPPFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile" PETSC_DIR="${PETSC_DIR}" getincludedirs)
   PETSC_LDFLAGS=""
   PETSC_LIBS=$(make -s -f "$cs_abs_srcdir/build-aux/petsc-variables.makefile"  PETSC_DIR="${PETSC_DIR}" getlinklibs)
