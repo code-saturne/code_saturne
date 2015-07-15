@@ -29,6 +29,8 @@ MODULE_NAME = CFDSTUDY
 RSTFILES = \
 index.rst \
 intro.rst \
+tutorial/coupling.rst \
+tutorial/debugging.rst \
 tutorial/saturne.rst \
 tutorials.rst
 

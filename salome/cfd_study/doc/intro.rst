@@ -19,7 +19,7 @@ please consult the software documentation.
 
 Note: CFDSTUDY is a pure Python module of SALOME. Only the GUI part of the module
 is implemented without its engine counterpart. Therefore, the dump functionality is
-not available.
+not available yet.
 
 ------------------------------
 Reference functionalities
@@ -50,33 +50,35 @@ loaded, several hooks are available:
 
             .. image:: images/CFDSTUDY_info.png
               :align: center
-              :width: 10cm
+
 
         - Tools: display the file of parameter, open an xterm.
 
     - **Help** menu:
 
         - **CFDSTUDY module User's guide** menu: display this document in html format.
-        - **Code_Saturne NEPTUNE_CFD** menu: several guides are available through this menu. These guides
-          are enable only if the GUI of the code is displayed.
+        - **CFD module** menu: direct access to Code_Saturne (and NEPTUNE_CFD):
+                - theoretical guide,
+                - tutorial guide,
+                - user guide,
+                - doxygen documentation.
 
-- Toolbar
 
-    - From the left to the right:
+- Toolbar (from the left to the right):
 
         .. image:: images/CFDSTUDY_toolbar.png
-          :align: left
-          :width: 7cm
+          :align: center
 
-        - Set CFD study Location
-        - Add a new case in a study
-        - Launch the GUI
-        - Run a case
-        - Save CFD Data file
-        - Save as CFD Data file
-        - Close a GUI
-        - Undo
-        - Redo
+
+    - Set CFD study Location
+    - Add a new case in a study
+    - Launch the GUI
+    - Run a case
+    - Save CFD Data file
+    - Save as CFD Data file
+    - Close a GUI
+    - Undo
+    - Redo
 
 - GUI: additional functionalities are available:
 
@@ -89,50 +91,52 @@ loaded, several hooks are available:
     - Study directory:
 
     .. image:: images/CFDSTUDY_context_menu_study.png
-      :align: left
+      :align: center
+
 
     - Mesh file:
 
     .. image:: images/CFDSTUDY_context_menu_mesh.png
-      :align: left
+      :align: center
+
 
     - Case directory:
 
     .. image:: images/CFDSTUDY_context_menu_case.png
-      :align: left
- 
+      :align: center
+
     - *SaturneGUI* file:
 
     .. image:: images/CFDSTUDY_context_menu_new_gui.png
-      :align: left
+      :align: center
 
     - File of parameters:
 
     .. image:: images/CFDSTUDY_context_menu_xml.png
-      :align: left
+      :align: center
 
     - File of functions in the *SRC* directory:
 
     .. image:: images/CFDSTUDY_context_menu_src.png
-      :align: left
+      :align: center
 
     - File of functions in the *REFERENCE* directory:
 
     .. image:: images/CFDSTUDY_context_menu_ref.png
-      :align: left
+      :align: center
 
     - File of functions in the *DRAFT* directory:
 
     .. image:: images/CFDSTUDY_context_menu_draft.png
-      :align: left
+      :align: center
 
     - Script of *runcase* file:
 
     .. image:: images/CFDSTUDY_context_menu_runcase.png
-      :align: left
+      :align: center
 
     - Results directories in the *RESU* directory:
 
     .. image:: images/CFDSTUDY_context_menu_resu.png
-       :align: left
+       :align: center
 
