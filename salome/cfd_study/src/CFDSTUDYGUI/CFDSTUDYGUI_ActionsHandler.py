@@ -1198,11 +1198,11 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         sobj = self._singleSelectedObject()
         if not sobj == None:
             import pvsimple
+            import salome
             pvsimple.ShowParaviewView()
             path = CFDSTUDYGUI_DataModel._GetPath(sobj)
             if re.match(".*\.med$", sobj.GetName()) :
                 #export Med file from CFDSTUDY into PARAVIS
-                import salome
                 engine = salome.lcc.FindOrLoadComponent("FactoryServer", "PARAVIS")
                 renderView1 = pvsimple.GetActiveViewOrCreate('RenderView')
                 pvsimple.OpenDataFile(path)
@@ -1211,7 +1211,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
             if re.match(".*\.csv$", sobj.GetName()) :
                 #export csv file from CFDSTUDY into PARAVIS
-                import salome
                 engine = salome.lcc.FindOrLoadComponent("FactoryServer", "PARAVIS")
                 coord_path = pvsimple.CSVReader(FileName=[path])
                 renderView1 = pvsimple.GetActiveViewOrCreate('RenderView')
