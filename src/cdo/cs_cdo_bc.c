@@ -564,7 +564,8 @@ cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
 
         const cs_cdo_quantities_t *q = (const cs_cdo_quantities_t *)geom;
 
-        for (k = 0; k < 3; k++) xyz[k] = q->face[id].center[k];
+        cs_lnum_t  f_id = q->n_i_faces + id;
+        for (k = 0; k < 3; k++) xyz[k] = q->face[f_id].center[k];
         bc_def->def_coef1.analytic(tcur, xyz, &get);
         dir_val[i] = get.val; // stride = 1
         break;

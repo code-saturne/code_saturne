@@ -573,6 +573,23 @@ cs_sla_matrix_dump(const char              *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Dump a cs_sla_matrix_t structure and its related right-hand side
+ *
+ * \param[in]  name        either name of the file if f is NULL or description
+ * \param[in]  f           pointer to a FILE struct.
+ * \param[in]  m           matrix to dump
+ * \param[in]  rhs         right-hand side to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_system_dump(const char              *name,
+                   FILE                    *f,
+                   const cs_sla_matrix_t   *m,
+                   const double            *rhs);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Assemble a MSR matrix from local contributions
  *          --> We assume that the local matrices are symmetric
  *          --> We assume that the assembled matrix has its columns sorted

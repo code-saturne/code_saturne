@@ -118,7 +118,10 @@ struct  _cdofb_codits_t {
   cs_lnum_t          *f_i2z_ids;  // Mapping n_faces     -> n_dof_faces
 
   /* Work buffer */
-  double    *work;
+  cs_real_t  *source_terms;  /* size: n_cells (sum of the contribution in each
+                                cell of all the volumic source terms */
+  cs_real_t  *face_values;   /* DoF unknowns (x) + BCs */
+  double     *work;  /* temporary buffers (size: 3*n_faces) */
 
 };
 
@@ -132,6 +135,63 @@ static  cs_cdofb_codits_t  *cs_cdofb_scal_systems = NULL;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Post-process the solution of a scalar convection/diffusion equation
+ *         solved with a CDO face-based scheme
+ *
+ * \param[in]  connect   pointer to a cs_cdo_connect_t struct.
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t struct.
+ * \param[in]  sys_id    id of the equation/system to treat
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_cell_field(const cs_cdo_connect_t     *connect,
+                    const cs_cdo_quantities_t  *quant,
+                    int                         sys_id)
+{
+  int  i, j, l, c_id, f_id;
+
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_cdofb_codits_t  *sys = cs_cdofb_scal_systems + sys_id;
+  const cs_param_eq_t  *eq = sys->eq;
+  const cs_param_hodge_t  h_info = eq->diffusion_hodge;
+
+  cs_field_t  *fld = cs_field_by_id(eq->field_id);
+  cs_toolbox_locmat_t  *_h = cs_toolbox_locmat_create(connect->n_max_fbyc);
+  cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_fbyc);
+
+  /* Build the remaining discrete operators */
+  for (c_id = 0; c_id < n_cells; c_id++) {
+
+    int  shft = connect->c2f->idx[c_id];
+    double _wf_val = 0.0, dsum = 0.0, rowsum = 0.0;
+
+    /* Build a local discrete Hodge operator */
+    cs_hodge_cost_build_local(c_id, connect, quant, h_info, _h, hb);
+
+    /* Compute dsum: the sum of all the entries of the local discrete Hodge
+       operator */
+    for (i = 0, l=shft; i < _h->n_ent; i++, l++) {
+      rowsum = 0;
+      f_id = connect->c2f->col[l]-1;
+      for (j = 0; j < _h->n_ent; j++)
+        rowsum += _h->mat[i*_h->n_ent+j];
+      dsum += rowsum;
+      _wf_val += sys->face_values[f_id] * rowsum;
+
+    }
+
+    fld->val[c_id] = 1/dsum*(sys->source_terms[c_id] + _wf_val);
+
+  } // loop on cells
+
+  /* Free memory */
+  _h = cs_toolbox_locmat_free(_h);
+  hb = cs_hodge_builder_free(hb);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -171,8 +231,8 @@ _init_bc_structures(const cs_mesh_t         *m,
     BFT_MALLOC(is_kept, sys->n_faces, _Bool);
     for (i = 0; i < sys->n_faces; i++)
       is_kept[i] = true;
-    for (i = 0; i < dir_faces->n_elts; i++)
-      is_kept[dir_faces->elt_ids[i]] = false;
+    for (i = 0; i < dir_faces->n_elts; i++) // i_faces then b_faces
+      is_kept[m->n_i_faces + dir_faces->elt_ids[i]] = false;
 
     /* Build sys->v_z2i_ids and sys->i2i_ids */
     BFT_MALLOC(sys->f_z2i_ids, sys->n_dof_faces, cs_lnum_t);
@@ -185,7 +245,7 @@ _init_bc_structures(const cs_mesh_t         *m,
         sys->f_z2i_ids[cur_id++] = i;
       }
     }
-    assert(cur_id == dir_faces->n_elts);
+    assert(cur_id == sys->n_dof_faces);
 
     BFT_FREE(is_kept);
 
@@ -308,15 +368,16 @@ _build_diffusion_system(const cs_mesh_t             *m,
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
 
-  /* Buffers stored in sys->work
-     We assume that n_cells <= n_faces for contrib */
-  double  *source_term = sys->work;                            // size: n_cells
-  double  *contrib = sys->work + sys->n_cells;                 // size: n_faces
-  double  *face_rhs = sys->work + sys->n_cells + sys->n_faces; // size: n_faces
-  double  *x_bc = sys->work + sys->n_cells + 2*sys->n_faces;   // size: n_faces
+  /* Buffers stored in sys->work */
+  double  *contrib = sys->work;                 // size: n_faces
+  double  *face_rhs = sys->work + sys->n_faces; // size: n_faces
+  double  *x_bc = sys->work + 2*sys->n_faces;   // size: n_faces
 
-  for (i = 0; i < sys->n_cells; i++)
-    source_term[i] = 0;
+  for (i = 0; i < n_cells; i++)
+    sys->source_terms[i] = 0;
+
+  for (i = 0; i < 3*sys->n_faces; i++)
+    sys->work[i] = 0;
 
   /* Compute the contribution from source terms */
   if (eq->n_source_terms) { /* Add contribution from source term */
@@ -344,8 +405,8 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
       } // There is an explicit part of the source term to take into account
 
-      for (i = 0; i < sys->n_cells; i++)
-        source_term[i] += contrib[i];
+      for (c_id = 0; c_id < sys->n_cells; c_id++)
+        sys->source_terms[c_id] += contrib[c_id];
 
     } // Loop on source terms
 
@@ -376,30 +437,30 @@ _build_diffusion_system(const cs_mesh_t             *m,
     /* Build a local discrete Hodge operator */
     cs_hodge_cost_build_local(c_id, connect, quant, h_info, _h, hb);
 
-    /* Compute dsum = Dc*_H*Uc where Uc = transpose(Dc) and B*H*Ct */
+    /* Compute dsum = Dc*_H*Uc where Uc = transpose(Dc) */
     dsum = 0;
+    _a->n_ent = _h->n_ent;
+
     for (i = 0; i < _h->n_ent; i++) {
       rowsum = 0;
+      _a->ids[i] = _h->ids[i];
+
       for (j = 0; j < _h->n_ent; j++)
         rowsum += _h->mat[i*_h->n_ent+j];
+
       dsum += rowsum;
       BHCtc[i] = -rowsum;
-      for (j = 0; j < _a->n_ent; j++)
-        _a->mat[_a->n_ent*j+i] = BHCtc[i];
+
     }
     invdsum = 1/dsum;
 
     /* Define local diffusion matrix */
     for (i = 0; i < _a->n_ent; i++) {
-
-      double  coef = invdsum*BHCtc[i];
-
       for (j = 0; j < _a->n_ent; j++) {
         ij = i*_a->n_ent+j;
-        _a->mat[ij] *= coef;
-        _a->mat[ij] -= _h->mat[ij];
+        _a->mat[ij] = -BHCtc[j]*invdsum*BHCtc[i];
+        _a->mat[ij] += _h->mat[ij];
       }
-
     }
 
     /* Assemble local matrices */
@@ -407,11 +468,12 @@ _build_diffusion_system(const cs_mesh_t             *m,
 
     /* Assemble RHS (source term contribution) */
     for (i = 0; i < _a->n_ent; i++)
-      face_rhs[_a->ids[i]] += BHCtc[i]*invdsum*source_term[c_id];
+      face_rhs[_a->ids[i]] -= BHCtc[i]*invdsum*sys->source_terms[c_id];
 
   } /* End of loop on cells */
 
   /* Clean entries of the operators */
+  cs_sla_matrix_msr2csr(A);
   cs_sla_matrix_clean(A, cs_get_eps_machine());
 
   /* Free memory */
@@ -433,11 +495,10 @@ _build_diffusion_system(const cs_mesh_t             *m,
                             dir_faces,
                             sys->dir_val);
 
-
     for (i = 0; i < sys->n_faces; i++)
       x_bc[i] = 0;
-    for (i = 0; i < dir_faces->n_nhmg_elts; i++)
-      x_bc[dir_faces->elt_ids[i]] = sys->dir_val[i];
+    for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
+      x_bc[m->n_i_faces + dir_faces->elt_ids[i]] = sys->dir_val[i];
 
     cs_sla_matvec(A, x_bc, &contrib, true);
     for (i = 0; i < sys->n_faces; i++)
@@ -448,12 +509,12 @@ _build_diffusion_system(const cs_mesh_t             *m,
   /* Reduce system size if there is a strong enforcement of the BCs */
   if (sys->n_dof_faces < sys->n_faces) {
 
-    sys->A = cs_sla_matrix_pack(sys->n_dof_faces,  /* n_block_rows */
-                                sys->n_dof_faces,  /* n_block_cols */
-                                A,                 /* full matrix */
-                                sys->f_z2i_ids,    /* row_p2f_num */
-                                sys->f_i2z_ids,    /* col_f2p_num */
-                                true);             /* keep sym. */
+    sys->A = cs_sla_matrix_pack(sys->n_dof_faces,  // n_block_rows
+                                sys->n_dof_faces,  // n_block_cols
+                                A,                 // full matrix */
+                                sys->f_z2i_ids,    // row_z2i_ids
+                                sys->f_i2z_ids,    // col_i2z_ids
+                                true);             // keep sym.
     A = cs_sla_matrix_free(A);
 
     /* Define new rhs */
@@ -543,10 +604,14 @@ cs_cdofb_codits_init(const cs_param_eq_t  *eq,
 
   sys->A = NULL; // allocated later
 
-  /* Work buffer */
-  assert(sys->n_cells <= sys->n_faces);
-  size_t  work_size = sys->n_cells + 3*sys->n_faces;
-  BFT_MALLOC(sys->work, work_size, double);
+  /* Contribution in each cell of the source terms */
+  BFT_MALLOC(sys->source_terms, sys->n_cells, cs_real_t);
+
+  /* Values at each face (interior or border) == DoFs + BCs */
+  BFT_MALLOC(sys->face_values, sys->n_faces, cs_real_t);
+
+  /* Work buffers */
+  BFT_MALLOC(sys->work, 3*sys->n_faces, double);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -583,6 +648,8 @@ cs_cdofb_codits_free_all(void)
     BFT_FREE(sys->x);
     sys->A = cs_sla_matrix_free(sys->A);
 
+    BFT_FREE(sys->source_terms);
+    BFT_FREE(sys->face_values);
     BFT_FREE(sys->work);
 
   } // Loop on algebraic systems
@@ -640,6 +707,8 @@ cs_cdofb_codits_solve(const cs_mesh_t            *m,
 
     /* Build diffusion system: stiffness matrix */
     _build_diffusion_system(m, connect, quant, tcur, sys);
+
+    //    cs_sla_system_dump("DiffusionSys.log", NULL, sys->A, sys->rhs); // DBG
 
     /* Build convection system */
     // TODO
@@ -711,28 +780,67 @@ cs_cdofb_codits_post(const cs_cdo_connect_t     *connect,
   const cs_cdo_bc_list_t  *dir_faces = sys->face_bc->dir;
   const cs_param_eq_t  *eq = sys->eq;
 
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
-
-  /* Set computed solution in field array */
+  /* Set computed solution in sys->face_values */
   if (sys->n_dof_faces < sys->n_faces)
     for (i = 0; i < sys->n_dof_faces; i++)
-      fld->val[sys->f_z2i_ids[i]] = sys->x[i];
+      sys->face_values[sys->f_z2i_ids[i]] = sys->x[i];
   else
     for (i = 0; i < sys->n_faces; i++)
-      fld->val[i] = sys->x[i];
+      sys->face_values[i] = sys->x[i];
 
   /* Take into account Dirichlet BCs */
   if (eq->bc->strong_enforcement)
-    for (i = 0; i < dir_faces->n_nhmg_elts; i++)
-      fld->val[dir_faces->elt_ids[i]] = sys->dir_val[i];
+    for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
+      sys->face_values[quant->n_i_faces + dir_faces->elt_ids[i]]
+        = sys->dir_val[i];
 
-  /* /\* Compute cell_field *\/ */
-  /* cs_sla_matvec(sys->BHCt, sys->x, &(sys->cell_field), true); */
-  /* for (i = 0; i < sys->n_cells; i++) { */
-  /*   tmpval = -sys->cell_field[i] + sys->rhs_cell[i]; */
-  /*   sys->cell_field[i] = sys->invdiag[i]*tmpval; */
-  /* } */
+  /* Get the value at each cell center
+     One needs sys->face_values to be set before */
+  _compute_cell_field(connect, quant, sys_id);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the computed values at each face
+ *
+ * \param[in]  eq_id    id related to a cs_param_eq_t struct.
+ *
+ * \return  a pointer to an array of double (size n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+const double *
+cs_cdofb_codits_get_face_values(int     eq_id)
+{
+  int  i;
+  cs_cdofb_codits_t  *sys = NULL;
+
+  int  sys_id = -1;
+  const char *ref_eqname = cs_param_eq_get_name(eq_id);
+  int  reflen = strlen(ref_eqname);
+
+  for (i = 0; i < cs_cdofb_n_scal_systems; i++) {
+
+    sys = cs_cdofb_scal_systems + i;
+
+    const cs_param_eq_t  *eq = sys->eq;
+    int  len = strlen(eq->name);
+
+    if (reflen == len) {
+      if (strcmp(ref_eqname, eq->name) == 0)
+        sys_id = i;
+      break;
+    }
+
+  } // Loop on CDO face-based algebraic systems
+
+  if (sys_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop execution.\n"
+                " Can not find the id of the algebraic system\n"));
+
+  return sys->face_values;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -3511,6 +3511,110 @@ cs_sla_matrix_dump(const char              *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Dump a cs_sla_matrix_t structure and its related right-hand side
+ *
+ * \param[in]  name        either name of the file if f is NULL or description
+ * \param[in]  f           pointer to a FILE struct.
+ * \param[in]  m           matrix to dump
+ * \param[in]  rhs         right-hand side to dump
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_system_dump(const char              *name,
+                   FILE                    *f,
+                   const cs_sla_matrix_t   *m,
+                   const double            *rhs)
+{
+  int i, j, k;
+
+  FILE  *_f = f;
+  _Bool close_file = false;
+
+  if (_f == NULL) {
+    if (name == NULL)  _f = stdout;
+    else
+      _f = fopen(name,"w"), close_file = true;
+  }
+
+  if (m == NULL)
+    fprintf(_f, "\n SLA matrix structure: %p (%s)\n", (const void *)m, name);
+
+  else if (m->type == CS_SLA_MAT_NONE) {
+    fprintf(_f, "\n SLA matrix structure: %p (%s)\n", (const void *)m, name);
+    fprintf(_f, "   type:        %s\n", _sla_matrix_type[m->type]);
+  }
+  else {
+
+    size_t  max_nnz = m->n_rows*m->n_cols;
+    size_t  nnz = cs_sla_matrix_get_nnz(m);
+    double  fill_in = nnz*100.0/max_nnz;
+
+    /* Sanity check */
+    assert(rhs != NULL);
+
+    fprintf(_f, "\n SLA matrix structure: %p (%s)\n", (const void *)m, name);
+    fprintf(_f, "   n_rows: %8d\n", m->n_rows);
+    fprintf(_f, "   n_cols: %8d\n", m->n_cols);
+    fprintf(_f, "   nnz:    %lu\n", nnz);
+    fprintf(_f, "   fill-in:     %.2f\n", fill_in);
+    fprintf(_f, "   stride: %8d\n", m->stride);
+    fprintf(_f, "   type:        %s\n", _sla_matrix_type[m->type]);
+    if (m->flag & CS_SLA_MATRIX_SYM)
+      fprintf(_f, "   sym:    True\n\n");
+    else
+      fprintf(_f, "   sym:    False\n\n");
+
+    for (i = 0; i < m->n_rows; i++) {
+
+      int  s = m->idx[i], e = m->idx[i+1];
+
+      fprintf(_f, "\nrow: %3d >> rhs: % -8.4e", i+1, rhs[i]);
+
+      if (m->type == CS_SLA_MAT_DEC) { // DEC matrix
+
+        if (m->diag != NULL) {
+          fprintf(_f, " <diag:");
+          for (k = 0; k < m->stride; k++)
+            fprintf(_f, " % -8.4e", m->diag[i*m->stride+k]);
+          fprintf(_f, ">\t");
+        }
+
+        for (j = s; j < e; j++) {
+          fprintf(_f, " <col: %3d;", m->col[j]);
+          for (k = 0; k < m->stride; k++)
+            fprintf(_f, " %2d", m->sgn[j*m->stride+k]);
+          fprintf(_f,">");
+        }
+
+      }
+      else if (m->type == CS_SLA_MAT_CSR || m->type == CS_SLA_MAT_MSR) {
+
+        if (m->diag != NULL) {
+          fprintf(_f, " <diag:");
+          for (k = 0; k < m->stride; k++)
+            fprintf(_f, " % -8.4e", m->diag[i*m->stride+k]);
+          fprintf(_f, ">\t");
+        }
+
+        for (j = s; j < e; j++) {
+          fprintf(_f, " <col: %3d;", m->col[j]);
+          for (k = 0; k < m->stride; k++)
+            fprintf(_f, " % -8.4e", m->val[j*m->stride+k]);
+          fprintf(_f, ">");
+        }
+      }
+
+    }
+
+  } /* m neither NULL nor CS_SLA_MAT_NONE */
+
+  if (close_file)
+    fclose(_f);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Assemble a MSR matrix from local contributions
  *          --> We assume that the local matrices are symmetric
  *          --> We assume that the assembled matrix has its columns sorted

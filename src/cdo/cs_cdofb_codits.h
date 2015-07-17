@@ -137,6 +137,19 @@ cs_cdofb_codits_post(const cs_cdo_connect_t     *connect,
                      int                         sys_id);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the computed values at each face
+ *
+ * \param[in]  eq_id    id related to a cs_param_eq_t struct.
+ *
+ * \return  a pointer to an array of double (size n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+const double *
+cs_cdofb_codits_get_face_values(int     eq_id);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

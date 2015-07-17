@@ -360,15 +360,14 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
   cs_lnum_t  i, j, k, e_id, f_id, c_id, v1_id, v2_id;
   double  add;
   cs_real_3_t  xc, xv1, xv2;
-  cs_quant_t  f;
+  cs_quant_t  f, e;
 
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(loc_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
-  /* Compute dual volumes */
-
+  /* Computation on elementary simplices */
   if (elt_ids == NULL) { // All cells are selected
 
     for (c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -379,11 +378,12 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
         f_id = c2f->col[i]-1;
-        f = quant->face[f_id]; /* Get quantities related to this edge */
+        f = quant->face[f_id]; /* Get quantities related to this face */
 
         for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
           e_id = f2e->col[j]-1;
+          e = quant->edge[e_id];
           v1_id = connect->e2v->col[2*e_id]-1;
           v2_id = connect->e2v->col[2*e_id+1]-1;
 
@@ -395,7 +395,8 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
           switch(quad_type) {
 
           case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-            add = _analytic_quad_tet1(tcur, xv1, xv2, f.center, xc, ana);
+            add  = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
+            add += _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
             break;
           case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
             add = _analytic_quad_tet4(tcur, xv1, xv2, f.center, xc, ana);
@@ -426,11 +427,12 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
         f_id = c2f->col[i]-1;
-        f = quant->face[f_id]; /* Get quantities related to this edge */
+        f = quant->face[f_id]; /* Get quantities related to this face */
 
         for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
           e_id = f2e->col[j]-1;
+          e = quant->edge[e_id];
           v1_id = connect->e2v->col[2*e_id]-1;
           v2_id = connect->e2v->col[2*e_id+1]-1;
 
@@ -442,7 +444,8 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
           switch(quad_type) {
 
           case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-            add = _analytic_quad_tet1(tcur, xv1, xv2, f.center, xc, ana);
+            add  = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
+            add += _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
             break;
           case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
             add = _analytic_quad_tet4(tcur, xv1, xv2, f.center, xc, ana);
@@ -600,9 +603,9 @@ cs_evaluate(const cs_mesh_t              *m,
   cs_flag_t  scd = CS_PARAM_FLAG_SCAL|CS_PARAM_FLAG_CELL|CS_PARAM_FLAG_DUAL;
   cs_flag_t  scp = CS_PARAM_FLAG_SCAL|CS_PARAM_FLAG_CELL|CS_PARAM_FLAG_PRIMAL;
 
-  if (dof_flag & scd)
+  if (dof_flag == scd)
     stride = 1, n_ent = quant->n_vertices;
-  else if (dof_flag & scp)
+  else if (dof_flag == scp)
     stride = 1, n_ent = quant->n_cells;
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -618,9 +621,9 @@ cs_evaluate(const cs_mesh_t              *m,
 
   case CS_PARAM_DEF_BY_VALUE: // constant value (simple case)
 
-    if (dof_flag & scd)
+    if (dof_flag == scd)
       _scd_by_val(quant, connect, def.get.val, loc_id, values);
-    else if (dof_flag & scp)
+    else if (dof_flag == scp)
       _scp_by_val(quant, def.get.val, loc_id, values);
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -630,12 +633,12 @@ cs_evaluate(const cs_mesh_t              *m,
 
   case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION: // constant value (simple case)
 
-    if (dof_flag & scd)
+    if (dof_flag == scd)
       _scd_by_analytic_func(m, quant, connect,
                             def.analytic,
                             tcur,
                             loc_id, quad_type, values);
-    else if (dof_flag & scp)
+    else if (dof_flag == scp)
       _scp_by_analytic_func(m, quant, connect,
                             def.analytic,
                             tcur,
