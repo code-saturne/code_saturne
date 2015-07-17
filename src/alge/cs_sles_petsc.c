@@ -1047,7 +1047,14 @@ cs_sles_petsc_setup(void               *context,
   if (c->setup_hook != NULL)
     c->setup_hook(c->hook_context, sd->ksp);
 
-  KSPSetUp(sd->ksp);
+  /* KSPSetup could be called here for better separation of setup/solve
+     logging, but calling it systematically seems to cause issues
+     at least with the performance of the GAMG preconditionner
+     (possibly calling unneed operations). So we avoid it for now,
+     noting that the user always has to option of calling it at the
+     end of the setup hook. */
+
+  /* KSPSetUp(sd->ksp); */
 
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);
