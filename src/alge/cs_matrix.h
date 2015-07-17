@@ -65,7 +65,7 @@ typedef enum {
 
 typedef enum {
 
-  CS_MATRIX_SCALAR,           /* Simple calar matrix */
+  CS_MATRIX_SCALAR,           /* Simple scalar matrix */
   CS_MATRIX_SCALAR_SYM,       /* Simple scalar symmetric matrix */
   CS_MATRIX_33_BLOCK_D,       /* Matrix with 3x3 diagonal blocks
                                  (and 3.I extradiagonal blocks) */
@@ -110,7 +110,7 @@ extern const char  *cs_matrix_fill_type_name[];
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Create a matrix Structure.
+ * Create a matrix structure.
  *
  * Note that the structure created maps to the given existing
  * cell global number, face -> cell connectivity arrays, and cell halo
@@ -120,7 +120,7 @@ extern const char  *cs_matrix_fill_type_name[];
  * Note that the resulting matrix structure will contain either a full or
  * an empty main diagonal, and that the extra-diagonal structure is always
  * symmetric (though the coefficients my not be, and we may choose a
- * matrix format that does not exploit ths symmetry). If the face_cell
+ * matrix format that does not exploit this symmetry). If the face_cell
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * parameters:

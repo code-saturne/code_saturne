@@ -2924,7 +2924,7 @@ _set_xa_coeffs_msr_direct(cs_matrix_t      *matrix,
 
 /*----------------------------------------------------------------------------
  * Set MSR extradiagonal matrix coefficients for the case where there are
- * multiple contributions to a given coefficient).
+ * multiple contributions to a given coefficient.
  *
  * The matrix coefficients should have been initialized (i.e. set to 0)
  * some before using this function.
@@ -4118,7 +4118,7 @@ _set_spmv_func(cs_matrix_type_t             m_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a matrix Structure.
+ * \brief Create a matrix structure.
  *
  * Note that the structure created maps to the given existing
  * cell global number, face -> cell connectivity arrays, and cell halo
@@ -4128,7 +4128,7 @@ _set_spmv_func(cs_matrix_type_t             m_type,
  * Note that the resulting matrix structure will contain either a full or
  * an empty main diagonal, and that the extra-diagonal structure is always
  * symmetric (though the coefficients my not be, and we may choose a
- * matrix format that does not exploit ths symmetry). If the face_cell
+ * matrix format that does not exploit this symmetry). If the face_cell
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * \param[in]  type        type of matrix considered
@@ -4440,6 +4440,14 @@ cs_matrix_create_by_variant(const cs_matrix_structure_t  *ms,
   return m;
 }
 
+/*----------------------------------------------------------------------------
+ * Destroy a matrix structure.
+ *
+ * In the case of a compound matrix, sub-matrices are not destroyed.
+ *
+ * parameters:
+ *   matrix <-> pointer to matrix structure pointer
+ *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_destroy(cs_matrix_t **matrix)

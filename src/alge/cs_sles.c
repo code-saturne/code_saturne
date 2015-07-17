@@ -1436,7 +1436,7 @@ cs_sles_free(cs_sles_t  *sles)
  *
  * The intended use of this function is to allow associating different
  * solvers to related systems, so as to differentiate logging, while using
- * the same setttings by default.
+ * the same settings by default.
  *
  * If the source solver does not provide a \ref cs_sles_copy_t function,
  * No modification is done to the solver. If the copy function is available,
