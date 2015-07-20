@@ -1366,6 +1366,9 @@ class mpi_environment:
         # If MPICH2 / MPICH-3 info is not available, try
         # to determine this in another way
 
+        if os.path.islink(mpiexec_path):
+            if os.path.basename(os.path.realpath(mpiexec_path)) == 'mpiexec.py':
+                return 'mpd'
         info = get_command_outputs(mpiexec_path + ' -help')
         if info.find('Hydra') > -1:
             return 'hydra'
