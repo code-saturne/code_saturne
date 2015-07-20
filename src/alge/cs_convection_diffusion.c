@@ -6401,8 +6401,11 @@ cs_diffusion_potential(const int                 f_id,
 
   const cs_lnum_2_t *restrict i_face_cells
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;
   const cs_real_3_t *restrict cell_cen
@@ -6620,13 +6623,34 @@ cs_diffusion_potential(const int                 f_id,
                           *i_f_face_surf[face_id]/i_dist[face_id];
           }
           else {
+            /* Recompute II' and JJ' */
+            double pnd = weight[face_id];
+            double diipfx = i_face_cog[face_id][0]
+                            - (cell_cen[ii][0]
+                              + (1.-pnd)*dijpf[face_id][0]);
+            double diipfy = i_face_cog[face_id][1]
+                            - (cell_cen[ii][1]
+                              + (1.-pnd)*dijpf[face_id][1]);
+            double diipfz = i_face_cog[face_id][2]
+                            - (cell_cen[ii][2]
+                              + (1.-pnd)*dijpf[face_id][2]);
+            double djjpfx = i_face_cog[face_id][0]
+                            - cell_cen[jj][0]
+                            + pnd*dijpf[face_id][0];
+            double djjpfy = i_face_cog[face_id][1]
+                            - cell_cen[jj][1]
+                            + pnd*dijpf[face_id][1];
+            double djjpfz = i_face_cog[face_id][2]
+                            - cell_cen[jj][2]
+                            + pnd*dijpf[face_id][2];
+
             i_massflux += i_visc[face_id]*
-                          ( grad[ii][0]*diipf[face_id][0]
-                          + grad[ii][1]*diipf[face_id][1]
-                          + grad[ii][2]*diipf[face_id][2]
-                          - grad[jj][0]*djjpf[face_id][0]
-                          - grad[jj][1]*djjpf[face_id][1]
-                          - grad[jj][2]*djjpf[face_id][2] );
+                          ( grad[ii][0]*diipfx
+                          + grad[ii][1]*diipfy
+                          + grad[ii][2]*diipfz
+                          - grad[jj][0]*djjpfx
+                          - grad[jj][1]*djjpfy
+                          - grad[jj][2]*djjpfz );
           }
 
           diverg[ii] += i_massflux;
