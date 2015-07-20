@@ -346,6 +346,7 @@ pkglib_LTLIBRARIES =
 
 if HAVE_PARAMEDMEM
 libcs_paramedmem_la_CPPFLAGS = \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
@@ -357,6 +358,7 @@ endif
 
 if HAVE_EOS
 cs_eos_la_CPPFLAGS = \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
