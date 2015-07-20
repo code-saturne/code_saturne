@@ -185,6 +185,14 @@ extern "C" {
 #  define __bool_true_false_are_defined 1
 #endif
 
+/* Precautions for C++ with strict ANSI */
+
+#ifdef __cplusplus
+#  ifndef _Bool
+#    define _Bool bool;
+#  endif
+#endif
+
 /* int32_t type */
 
 #if !defined(HAVE_INT32_T)
