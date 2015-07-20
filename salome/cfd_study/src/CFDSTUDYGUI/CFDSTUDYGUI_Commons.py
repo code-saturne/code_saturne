@@ -185,9 +185,11 @@ def BinCode():
     b = ""
     c = ""
     mess = ""
+    # default package is code_saturne (for convert...)
+    from cs_package import package
+    pkg = package()
+
     if CFD_Code() == CFD_Saturne:
-        from cs_package import package
-        pkg = package()
         bindir = pkg.get_dir('bindir')
         b = os.path.join(bindir, "code_saturne")
     elif CFD_Code() == CFD_Neptune:
