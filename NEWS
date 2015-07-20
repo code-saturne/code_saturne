@@ -1,6 +1,6 @@
 
-Version 4.0.2 (unreleased)
-==========================
+Version 4.0.2 (20 Jul 2015)
+===========================
 
 Changes:
 --------
@@ -21,7 +21,7 @@ Bug fixes:
 
 - Fix for handling of restart with compressible module.
 
-- LES model WALE was uncorrect (it was not referenceframe invariant).
+- LES model WALE was uncorrect (it was not reference frame invariant).
   The bug was introduced with the model itself.
 
 Release 4.0.1 (5 Jun 2015)
