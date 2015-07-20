@@ -1327,8 +1327,14 @@ _init_boundaries(const cs_lnum_t  *nfabor,
     }
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
       const char *sym[] = {"K"};
-      boundaries->headLoss[izone] =
-          _boundary_init_mei_tree(_head_loss_formula(label), sym, 1);
+      if (_head_loss_formula(label) != NULL)
+        boundaries->headLoss[izone] =
+            _boundary_init_mei_tree(_head_loss_formula(label), sym, 1);
+      else
+      {
+        bft_printf("Warning : free inlet outlet boundary conditions\n");
+        bft_printf("          without external head loss definition\n");
+      }
     }
 
     /* for each zone */
@@ -2567,7 +2573,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *ntcabs,
         itypfb[ifbr] = *ifrent;
       }
 
-      if (boundaries->headLoss != NULL) {
+      if (boundaries->headLoss[izone] != NULL) {
         t0 = cs_timer_wtime();
 
         const cs_field_t  *fp = cs_field_by_name_try("pressure");
