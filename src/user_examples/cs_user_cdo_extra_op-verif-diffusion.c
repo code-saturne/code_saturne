@@ -324,7 +324,7 @@ _compute_vb_l2pot(const cs_mesh_t             *m,
         }
         num_cell += n_add;
         denum_cell += d_add;
-        
+
       } /* Loop on face edges */
 
     } /* Loop on cell faces */
@@ -401,7 +401,7 @@ _cdovb_post(const cs_mesh_t            *m,
   if (eq->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_COST)
     fprintf(resume, " -hdg- Beta.Coef        %5.3e\n",
             eq->diffusion_hodge.coef);
-  
+
   fprintf(resume, lsepline);
   fprintf(resume, " -dim- n_vertices       %d\n", n_vertices);
   fprintf(resume, " -dim- n_edges          %d\n", n_edges);
@@ -701,7 +701,7 @@ _cdofb_post(const cs_mesh_t            *m,
   if (eq->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_COST)
     fprintf(resume, " -hdg- Beta.Coef        %5.3e\n",
             eq->diffusion_hodge.coef);
-  
+
   fprintf(resume, lsepline);
   fprintf(resume, " -dim- n_vertices       %d\n", cdoq->n_vertices);
   fprintf(resume, " -dim- n_edges          %d\n", cdoq->n_edges);
