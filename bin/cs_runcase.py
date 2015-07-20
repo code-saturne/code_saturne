@@ -195,7 +195,7 @@ class runcase(object):
                 if not study_name:
                     study_name = studydir
 
-            studycasename = string.lower(study_name) + string.lower(case_name)
+            studycasename = study_name.lower() + case_name.lower()
 
             # For some systems, names are limited to 15 caracters
             studycasename = studycasename[:15]
@@ -351,9 +351,11 @@ class runcase(object):
 
         args = separate_args(self.lines[self.run_cmd_line_id])
 
-        run_id = get_command_single_value(args, ('--id',))
-        run_id_prefix = get_command_single_value(args, ('--id-prefix',))
-        run_id_suffix = get_command_single_value(args, ('--id-suffix',))
+        run_id = get_command_single_value(args, ('--id', '--id='))
+        run_id_prefix = get_command_single_value(args, ('--id-prefix',
+                                                        '--id-prefix='))
+        run_id_suffix = get_command_single_value(args, ('--id-suffix',
+                                                        '--id-suffix='))
 
         return run_id, run_id_prefix, run_id_suffix
 
@@ -369,15 +371,15 @@ class runcase(object):
         args = separate_args(line)
         if run_id != None:
             args = update_command_single_value(args,
-                                               ('--id',),
+                                               ('--id', '--id='),
                                                enquote_arg(run_id))
         if run_id_prefix != None:
             args = update_command_single_value(args,
-                                               ('--id-prefix',),
+                                               ('--id-prefix', '--id-prefix='),
                                                enquote_arg(run_id_prefix))
         if run_id_suffix != None:
             args = update_command_single_value(args,
-                                               ('--id-suffix',),
+                                               ('--id-suffix', '--id-suffix='),
                                                enquote_arg(run_id_suffix))
 
         self.lines[self.run_cmd_line_id] = assemble_args(args)
