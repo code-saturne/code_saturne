@@ -121,7 +121,10 @@ def process_cmd_line(argv, pkg):
         if len(args) > 0:
             options.case_names = args
         else:
-            options.case_names = ["CASE1"]
+            if not options.import_only:
+                options.case_names = ["CASE1"]
+            else:
+                options.case_names = [""]
 
     return Study(pkg,
                  options.study_name,
@@ -440,10 +443,15 @@ domains = [
         Create a case for a Code_Saturne study.
         """
 
+        casedirname = casename
+
         if self.verbose > 0:
             if not self.import_only:
                 sys.stdout.write("  o Creating case  '%s'...\n" % casename)
             else:
+                if not casename:
+                    casedirname = "."
+                    casename = os.path.basename(os.getcwd())
                 sys.stdout.write("  o Importing case  '%s'...\n" % casename)
 
         datadir = self.package.get_dir("pkgdatadir")
@@ -454,11 +462,11 @@ domains = [
 
         if not self.import_only:
             try:
-                os.mkdir(casename)
+                os.mkdir(casedirname)
             except:
                 sys.exit(1)
 
-        os.chdir(casename)
+        os.chdir(casedirname)
 
         # Data directory
 
@@ -590,7 +598,7 @@ domains = [
 
         runcase = cs_runcase.runcase(batch_file,
                                      package=self.package,
-                                     create_if_missing=True,
+                                     rebuild=True,
                                      study_name=self.name,
                                      case_name=casename)
 

@@ -44,6 +44,7 @@ class runcase(object):
                  path,
                  package=None,
                  create_if_missing=True,
+                 rebuild=False,
                  study_name=None,
                  case_name=None):
         """
@@ -57,9 +58,14 @@ class runcase(object):
             f = open(self.path, mode = 'r')
             self.lines = f.readlines()
             f.close()
+            if rebuild:
+                self.get_run_command()
+                command_line = self.lines[self.run_cmd_line_id]
+                self.build_template(package, study_name, case_name)
+                self.lines[self.run_cmd_line_id] = command_line
 
         except IOError:
-            if create_if_missing:
+            if create_if_missing or rebuild:
                 self.build_template(package, study_name, case_name)
             else:
                 print("Error: can not open or read %s\n" % self.path)
