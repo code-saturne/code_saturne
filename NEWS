@@ -1,3 +1,10 @@
+Version 4.0.3 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix in preconditioned BiCGstab2: use left preconditioner.
 
 Version 4.0.2 (20 Jul 2015)
 ===========================
