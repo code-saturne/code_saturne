@@ -114,7 +114,7 @@ double precision, pointer, dimension(:) :: prhyd
 
 logical          interleaved, must_return
 
-integer          iel   , ifac  , inod  , ivar  , iscal , iappel
+integer          iel   , ifac  , inod  , ivar  , iscal , iappel, n_fans
 integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
@@ -125,7 +125,7 @@ integer          ii    , ientha, ippcv
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
-integer          ielpdc
+integer          ielpdc, iflmas, iflmab
 
 double precision tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
@@ -151,7 +151,7 @@ double precision, allocatable, dimension(:,:,:) :: rcodcl
 double precision, allocatable, dimension(:) :: hbord, theipb
 double precision, allocatable, dimension(:) :: visvdr
 double precision, allocatable, dimension(:) :: prdv2f
-double precision, dimension(:), pointer :: crom, crom_prev, crom_prev2
+double precision, dimension(:), pointer :: brom, crom, crom_prev, crom_prev2
 
 double precision, pointer, dimension(:,:) :: uvwk
 double precision, pointer, dimension(:,:) :: trava
@@ -175,6 +175,7 @@ integer, allocatable, dimension(:) :: delay_id
 double precision, dimension(:), pointer :: cpro_delay, cpro_capacity, cpro_sat
 double precision, dimension(:), pointer :: cproa_delay, cproa_capacity
 double precision, dimension(:), pointer :: cproa_sat
+double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 character(len=80) :: fname
 
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
@@ -1810,6 +1811,21 @@ if (allocated(delay_id)) deallocate(delay_id)
 
 iappel = 5
 call schtmp(nscal, iappel, propce)
+
+!===============================================================================
+! Update flow through fans
+!===============================================================================
+
+n_fans = cs_fan_n_fans()
+if (n_fans .gt. 0) then
+  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmas, i_mass_flux)
+  call field_get_val_s(iflmab, b_mass_flux)
+  call field_get_val_s(icrom, crom)
+  call field_get_val_s(ibrom, brom)
+  call debvtl(i_mass_flux, b_mass_flux, crom, brom)
+endif
 
 !===============================================================================
 

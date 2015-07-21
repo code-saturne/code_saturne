@@ -160,6 +160,19 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Return the number of fans.
+
+    !> \return number of defined fans
+
+    function cs_fan_n_fans() result(n_fans)  &
+      bind(C, name='cs_fan_n_fans')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int) :: n_fans
+    end function cs_fan_n_fans
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function logging field and other array statistics
     ! at relevant time steps.
 
@@ -614,6 +627,16 @@ module cs_c_bindings
       real(c_double), value :: uref2, t_intensity, dh
       real(kind=c_double), dimension(*) :: rcodcl
     end subroutine turbulence_bc_inlet_turb_intensity
+
+    !---------------------------------------------------------------------------
+
+    !> \brief  General user parameters
+
+    subroutine cs_user_parameters()  &
+      bind(C, name='cs_user_parameters')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_user_parameters
 
     !---------------------------------------------------------------------------
 

@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+- Add simple fan effects modeling as explicit momentum source term in
+  regions defined by fan characteristics.
+
 - Add support for using PETSc in linear solvers.
 
 - Add vertex-based CDO (Compatible Discrete Operator) numerical scheme

@@ -42,6 +42,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_physical_constants.h"
 #include "cs_sles.h"
@@ -146,6 +147,8 @@ cs_log_setup(void)
   cs_sles_default_setup();
 
   _log_global_model_options();
+
+  cs_fan_log_setup();
 
   cs_log_printf_flush(CS_LOG_SETUP);
 }

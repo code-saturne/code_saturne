@@ -266,4 +266,19 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_velocity_rotation
 
+  \section cs_user_parameters_h_cs_user_fans  Fan modeling options
+
+  Code_Saturne allows modeling of some circular fans as volume
+  regions, defined by simple geometric characteristics, and modeled
+  as explicit momentum source terms in those regions.
+
+  Fan pressure characteristic curves are defined as a 2nd order
+  polynomial, and a torque may also be specified. For correct results,
+  it is important that the mesh match the fan dimensions and placement
+  (thickness, hub, blades, and total radius).
+
+  The following example shows how a fan may be defined:
+
+  \snippet cs_user_parameters-fans.c fan_user_1
+
 */

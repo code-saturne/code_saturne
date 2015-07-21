@@ -197,7 +197,7 @@ double precision vela  (3  ,ncelet)
 
 ! Local variables
 
-integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl
+integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl, n_fans
 integer          iccocg, inc   , iprev , init  , ii    , jj
 integer          nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
@@ -1298,11 +1298,19 @@ do iel = 1, ncel
 enddo
 
 ! The computation of esplicit and implicit source terms is performed
-! at the first iter only.
+! at the first iteration only.
 if (iterns.eq.1) then
 
   if (iihmpr.eq.1) then
     call uitsnv (vel, tsexp, tsimp)
+  endif
+
+  n_fans = cs_fan_n_fans()
+  if (n_fans .gt. 0) then
+    if (ntcabs.eq.ntpabs+1) then
+      call debvtl(flumas, flumab, crom, brom)
+    endif
+    call tsvvtl(tsexp)
   endif
 
   call ustsnv &

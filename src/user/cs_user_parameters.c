@@ -57,6 +57,7 @@
 #include "fvm_writer.h"
 
 #include "cs_base.h"
+#include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_gui_util.h"
 #include "cs_field_pointer.h"
@@ -169,6 +170,21 @@ cs_user_model(void)
                                1,
                                CS_MESH_LOCATION_BOUNDARY_FACES);
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define or modify general numerical and physical user parameters.
+ *
+ * At the calling point of this function, most model-related most varibles
+ * and other fields have been defined, so specific settings related to those
+ * fields may be set here.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_parameters(void)
+{
 }
 
 /*----------------------------------------------------------------------------*/

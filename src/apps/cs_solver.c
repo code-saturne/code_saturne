@@ -53,6 +53,7 @@
 #include "cs_cdo_main.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
+#include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
@@ -330,6 +331,10 @@ cs_run(void)
 
       if (cs_user_solver_set() == 0) {
 
+        /* Additional initializations required by some models */
+
+        cs_fan_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
+
         /*----------------------------------------------
          * Call main calculation function (code Kernel)
          *----------------------------------------------*/
@@ -385,9 +390,10 @@ cs_run(void)
   cs_gui_usage_log();
   cs_mesh_selector_stats(cs_glob_mesh);
 
-  /* Free cooling towers related structures */
+  /* Finalizations related to some models */
 
   cs_ctwr_all_destroy();
+  cs_fan_destroy_all();
 
   /* Free thermal physical properties */
 

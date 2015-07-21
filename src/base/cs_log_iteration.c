@@ -46,6 +46,7 @@
 
 #include "cs_array_reduce.h"
 #include "cs_base.h"
+#include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_map.h"
@@ -1359,6 +1360,8 @@ cs_log_iteration(void)
     _log_sstats();
 
   cs_time_moment_log_iteration();
+
+  cs_fan_log_iteration();
 }
 
 /*----------------------------------------------------------------------------*/
