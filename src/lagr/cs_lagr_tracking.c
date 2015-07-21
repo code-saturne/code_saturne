@@ -72,6 +72,7 @@
 #include "cs_lagr_utils.h"
 #include "cs_lagr_clogging.h"
 #include "cs_lagr_roughness.h"
+#include "cs_lagr_dlvo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -333,6 +334,10 @@ const char *cs_lagr_attribute_name[] = {
   "CS_LAGR_ADHESION_FORCE",
   "CS_LAGR_ADHESION_TORQUE",
   "CS_LAGR_DISPLACEMENT_NORM",
+  "CS_LAGR_HEIGHT",
+  "CS_LAGR_CLUSTER_NB_PART",
+  "CS_LAGR_DEPO_TIME",
+  "CS_LAGR_CONSOL_HEIGHT",
   "CS_LAGR_TEMPERATURE",
   "CS_LAGR_FLUID_TEMPERATURE",
   "CS_LAGR_CP",
@@ -372,7 +377,7 @@ static  MPI_Datatype  _cs_mpi_particle_type;
 /* Global Lagragian module parameters and associated pointer
    Should move to cs_lagr.c */
 
-static cs_lagr_param_t  _lagr_param = {0, 1, 0, 0, 0, 0, 0, 0, 1};
+static cs_lagr_param_t  _lagr_param = {0, 1, 0, 0, 0, 0, 0, 0, 0, 1};
 const  cs_lagr_param_t  *cs_glob_lagr_params = &_lagr_param;
 
 /*============================================================================
@@ -2051,11 +2056,16 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     const cs_lnum_t           *iencdibd,
                     const cs_lnum_t           *iencckbd,
                     const cs_lnum_t           *inclg,
+                    const cs_lnum_t           *inclgt,
+                    const cs_lnum_t           *iclogt,
+                    const cs_lnum_t           *iclogh,
                     const cs_lnum_t           *iscovc,
+                    const cs_lnum_t           *ihdepm,
+                    const cs_lnum_t           *ihdepv,
+                    const cs_lnum_t           *ihsum,
                     const cs_lnum_t           *nusbor,
                     cs_lnum_t                  iusb[],
                     cs_real_t                 *part_b_mass_flux,
-                    cs_real_t                  energt[],
                     const cs_real_t            tprenc[],
                     const cs_real_t            visref[],
                     const cs_real_t            enc1[],
@@ -2086,8 +2096,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
 
+  cs_real_t  energt = 0.;
   cs_lnum_t  contact_number = 0;
   cs_real_t  *surface_coverage = NULL;
+  cs_real_t* deposit_height_mean = NULL;
+  cs_real_t* deposit_height_var = NULL;
+  cs_real_t* deposit_diameter_sum = NULL;
 
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
@@ -2098,9 +2112,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_real_t  *particle_velocity_seen
     = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY_SEEN);
 
-  const cs_real_t particle_stat_weight
+  cs_real_t particle_stat_weight
     = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
-  const cs_real_t particle_mass
+  cs_real_t particle_mass
     = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
 
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -2227,7 +2241,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   else if (bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
 
-    const cs_real_t particle_diameter
+    cs_real_t particle_diameter
       = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER);
 
     cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
@@ -2238,7 +2252,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     cs_real_t wzn = particle_velocity[2] * face_norm[2];
 
     cs_real_t energ = 0.5 * particle_mass * (uxn+vyn+wzn) * (uxn+vyn+wzn);
-    cs_real_t min_porosity ;
+    cs_real_t min_porosity;
     cs_real_t limit;
 
     if (cs_glob_lagr_params->clogging) {
@@ -2248,25 +2262,45 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       /* the depositing particle                                */
 
       surface_coverage = &boundary_stat[(*iscovc -1) * n_b_faces + face_id];
+      deposit_height_mean = &boundary_stat[(*ihdepm -1) * n_b_faces + face_id];
+      deposit_height_var = &boundary_stat[(*ihdepv -1) * n_b_faces + face_id];
+
+      deposit_diameter_sum = &boundary_stat[(*ihsum -1) * n_b_faces + face_id];
 
       contact_number = cs_lagr_clogging_barrier(particle,
                                                 p_am,
                                                 face_id,
-                                                face_area,
-                                                &energt[face_id],
+                                                &energt,
                                                 surface_coverage,
                                                 &limit,
                                                 &min_porosity);
 
+      if (contact_number == 0 && cs_glob_lagr_params->roughness > 0) {
+        cs_lagr_roughness_barrier(particle,
+                                  p_am,
+                                  face_id,
+                                  &energt);
+      }
+    }
+    else {
+
+      if (cs_glob_lagr_params->roughness > 0)
+        cs_lagr_roughness_barrier(particle,
+                                  p_am,
+                                  face_id,
+                                  &energt);
+
+      else if (cs_glob_lagr_params->roughness == 0) {
+        cs_lagr_barrier(particle,
+                        p_am,
+                        face_id,
+                        &energt);
+      }
+
     }
 
-    if (cs_glob_lagr_params->roughness > 0)
-      cs_lagr_roughness_barrier(particle,
-                                p_am,
-                                face_id,
-                                &energt[face_id]);
-
-    if (energ > energt[face_id] * 0.5 * particle_diameter) {
+     /* Deposition criterion: E_kin > E_barr */
+    if (energ > energt * 0.5 * particle_diameter) {
 
       /* The particle deposits*/
       if (!cs_glob_lagr_params->clogging && !cs_glob_lagr_params->resuspension) {
@@ -2283,7 +2317,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         particle_state = CS_LAGR_PART_STUCK;
       }
 
-      if (cs_glob_lagr_params->resuspension > 0) {
+      if (!cs_glob_lagr_params->clogging && cs_glob_lagr_params->resuspension > 0) {
 
         move_particle = CS_LAGR_PART_MOVE_OFF;
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
@@ -2304,6 +2338,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       if (cs_glob_lagr_params->clogging) {
 
+        boundary_stat[(*inclgt -1) * n_b_faces + face_id] += particle_stat_weight;
+        *deposit_diameter_sum += particle_diameter;
+
+        cs_real_t particle_height
+          = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_HEIGHT);
+
         cs_real_t depositing_radius = particle_diameter * 0.5;
 
         if (contact_number == 0) {
@@ -2314,6 +2354,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
           *surface_coverage += (pi * pow(depositing_radius,2))
                                *  particle_stat_weight / face_area;
 
+          *deposit_height_mean +=   particle_height* pi * pow(depositing_radius,2)
+                                  / face_area;
+          *deposit_height_var +=   pow(particle_height * pi / face_area, 2)
+                                 * pow(depositing_radius,4);
+
+          boundary_stat[(*inclg -1) * n_b_faces + face_id] += particle_stat_weight;
+
           for (k = 0; k < 3; k++) {
             particle_coord[k]
               = intersect_pt[k] - (0.5 * particle_diameter * face_norm[k]);
@@ -2321,251 +2368,172 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
             particle_velocity_seen[k] = 0.0;
           }
 
-        }
-        else {
-
-          cs_lnum_t i, j, one = 1, two = 2;
-
-          cs_real_t nb_depo_part, spher_angle[2];
-          cs_lnum_t contact;
-          const void *cur_part = NULL;
-
-          nb_depo_part = boundary_stat[(*inclg -1) * n_b_faces + face_id];
-
-          double unit_vect[3];
-
-          cs_lnum_t compt,compt2;
-          cs_lnum_t compt_max = 100;
-          cs_real_t dist;
-
-          compt2 = 0;
-          do {
-            /* We choose randomly a deposited particle to interact
-               with the depositing one */
-            cs_real_t random;
-            CS_PROCF(zufall, ZUFALL)(&one, &random);
-            int part_num = (int) (random * nb_depo_part);
-
-            k = 0;
-            for (i = 0, j = particles->first_used_id;
-                 i < particles->n_particles;
-                 i++) {
-
-              cur_part = (const void *)(particles->p_buffer + p_am->extents * j);
-
-              cs_lnum_t cur_part_depo
-                = cs_lagr_particle_get_lnum(cur_part, p_am,
-                                            CS_LAGR_DEPOSITION_FLAG);
-              cs_lnum_t cur_part_close_face_id
-                = cs_lagr_particle_get_lnum(cur_part, p_am,
-                                            CS_LAGR_NEIGHBOR_FACE_ID);
-
-              if ((cur_part_depo) && (cur_part_close_face_id == face_id)) {
-
-                if (k == part_num)
-                  break;
-                else
-                  k += 1;
-
-              }
-              j = particles->used_id[j].next_id;
-            }
-
-            double norm_vect = 0.5 * (  cs_lagr_particle_get_real
-                                          (cur_part, p_am, CS_LAGR_DIAMETER)
-                                      + particle_diameter);
-
-            compt2 += 1;
-            compt = 0;
-            do {
-              do {
-                /* The depositing particle is relocated in contact
-                   with the randomly chosen deposited */
-
-                CS_PROCF(zufall, ZUFALL)(&two, spher_angle);
-
-                spher_angle[0] *= pi;
-                spher_angle[1] *= 2 * pi;
-
-                unit_vect[0] =  sin(spher_angle[0]) * cos(spher_angle[1]);
-                unit_vect[1] =  sin(spher_angle[0]) * sin(spher_angle[1]);
-                unit_vect[2] =  cos(spher_angle[0]);
-              } while (_get_dot_prod(unit_vect,face_norm) > -0.3);
-
-              const cs_real_t  *cur_part_coord
-                = cs_lagr_particle_attr_const(cur_part, p_am,
-                                              CS_LAGR_COORDS);
-              for (k = 0; k < 3; k++) {
-                particle_velocity[k] = 0.0;
-                particle_coord[k]
-                  = cur_part_coord[k] + unit_vect[k] * norm_vect;
-              }
-
-              k = 0;
-              contact=0;
-              for (i = 0, j = particles->first_used_id;
-                   i < particles->n_particles;
-                   i++) {
-
-                const void * cur_part2 = particles->p_buffer + p_am->extents * j;
-
-                cs_lnum_t cur_part2_depo
-                  = cs_lagr_particle_get_lnum(cur_part2, p_am,
-                                              CS_LAGR_DEPOSITION_FLAG);
-                cs_lnum_t cur_part2_close_face_id
-                  = cs_lagr_particle_get_lnum(cur_part2, p_am,
-                                              CS_LAGR_NEIGHBOR_FACE_ID);
-
-                /* Calculation of the distance of two particles */
-                if ((cur_part2_depo) && (cur_part2_close_face_id == face_id)) {
-
-                  const cs_real_t  *cur_part2_coord
-                    = cs_lagr_particle_attr_const(cur_part2, p_am,
-                                                  CS_LAGR_COORDS);
-                  cs_real_t cur_part2_diameter
-                  = cs_lagr_particle_get_real(cur_part2, p_am,
-                                              CS_LAGR_DIAMETER);
-
-                  dist = sqrt(_delta_norm_2_3d(particle_coord,
-                                               cur_part2_coord));
-
-                  if (dist < (cur_part2_diameter/2 + particle_diameter/2))
-                    contact = contact + 1;
-                }
-                j = particles->used_id[j].next_id;
-              }
-
-              compt += 1;
-
-            } while (contact != 0 && compt < compt_max);
-            /* Test of an other angle if contact between particles */
-
-          } while (contact != 0 && compt2 < compt_max);
-          /* Test to prevent the covering of particles */
-        }
-
-        cs_lnum_t  ncel = cs_glob_mesh->n_cells;
-        cs_lnum_t  node;
-        cs_real_t volp[ncel];
-        cs_real_t porosity = 0.;
-        const cs_real_t *xyzcen = fvq->cell_cen;
-        const cs_real_t *volume  = fvq->cell_vol;
-
-        /* Determination of the cell number of the particle */
-        /* FIXME for parallel cases */
-
-        node = (ncel + 1) / 2;
-
-        cs_real_t xyz1[3] = {xyzcen[3 * (node - 1)],
-                             xyzcen[3 * (node - 1) + 1],
-                             xyzcen[3 * (node - 1) + 2]};
-
-        cs_real_t dis2mn = _delta_norm_2_3d(particle_coord, xyz1);
-
-        for (cs_lnum_t ii = 0; ii < ncel ; ii++) {
-          xyz1[0] = xyzcen[3*ii];
-          xyz1[1] = xyzcen[3*ii + 1];
-          xyz1[2] = xyzcen[3*ii + 2];
-
-          cs_real_t dis2 = _delta_norm_2_3d(particle_coord, xyz1);
-
-          if (dis2 < dis2mn) {
-            node = ii + 1;
-            dis2mn = dis2;
-          }
-        }
-
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                  node);
-
-        cs_lnum_t p_cur_cell_id = node - 1;
-
-        /* Calculation of the cell porosity */
-        porosity = (  volume[p_cur_cell_id]
-                    - volp[p_cur_cell_id]) / volume[p_cur_cell_id];
-
-        if (porosity > min_porosity) {
-
           move_particle = CS_LAGR_PART_MOVE_OFF;
-
-          volp[p_cur_cell_id]
-            +=  particle_stat_weight * 4./3. * pi * pow(particle_diameter/2,3);
-
-          /* Set negative value for current cell number */
-          cs_lagr_particle_set_lnum
-            (particle, p_am, CS_LAGR_CELL_NUM,
-             - cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_NUM));
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
+                                    CS_LAGR_PART_DEPOSITED);
+          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
+                                    cs_glob_mesh->b_face_cells[face_id] + 1);
+          cs_lagr_particle_set_lnum(particle, p_am,CS_LAGR_NEIGHBOR_FACE_ID ,
+                                     face_id);
 
           particles->n_part_dep += 1;
           particles->weight_dep += particle_stat_weight;
-
-          particle_state = CS_LAGR_PART_STUCK;
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                    CS_LAGR_PART_DEPOSITED);
-
-          /* Update of the number of stat. weight of deposited particles */
-          /* in case of clogging modeling                                */
-
-          boundary_stat[(*inclg -1) * n_b_faces + face_id]
-            += particle_stat_weight;
-
+          particle_state = CS_LAGR_PART_TREATED;
         }
         else {
 
-          /*The particle does not deposit: It 'rebounds' */
-          /* because the porosity threshold is reached   */
+          cs_lnum_t i, j, one = 1;
+          cs_real_t random;
+          cs_real_t scov_cdf;
+          void *cur_part = NULL;
 
-          move_particle = CS_LAGR_PART_MOVE_ON;
-          particle_state = CS_LAGR_PART_TO_SYNC;
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_NUM,
-                                    cs_glob_mesh->b_face_cells[face_id] + 1);
-          cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG,
-                                    CS_LAGR_PART_IN_FLOW);
+          /* We choose randomly a deposited particle to interact
+             with the depositing one (according to the relative surface coverage
+             of each class of particles) */
 
-          for (k = 0; k < 3; k++)
-            p_info->start_coords[k] = intersect_pt[k];
+          CS_PROCF(zufall, ZUFALL)(&one, &random);
+          cs_real_t scov_rand =  (random * (*surface_coverage));
 
-          /* Modify the ending point. */
+          scov_cdf = 0.;
 
-          for (k = 0; k < 3; k++)
-            depl[k] = particle_coord[k] - intersect_pt[k];
+          k = 0;
 
-          tmp = CS_ABS(_get_dot_prod(depl, face_norm));
-          tmp *= 2.0;
+          for (i = 0, j = particles->first_used_id;
+               i < particles->n_particles;
+               i++) {
 
-          for (k = 0; k < 3; k++)
-            particle_coord[k] -= tmp * face_norm[k];
+            cur_part = (void *)(particles->p_buffer + p_am->extents * j);
 
-          /* Modify particle velocity and velocity seen */
+            cs_lnum_t cur_part_depo
+              = cs_lagr_particle_get_lnum(cur_part, p_am,
+                                          CS_LAGR_DEPOSITION_FLAG);
 
-          tmp = CS_ABS(_get_dot_prod(particle_velocity, face_norm));
-          tmp *= 2.0;
+            cs_lnum_t cur_part_close_face_id
+              = cs_lagr_particle_get_lnum(cur_part, p_am,
+                                          CS_LAGR_NEIGHBOR_FACE_ID);
 
-          for (k = 0; k < 3; k++)
-            particle_velocity[k] -= tmp * face_norm[k];
+            cs_real_t cur_part_stat_weight
+              = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_STAT_WEIGHT);
 
-          tmp = CS_ABS(_get_dot_prod(particle_velocity_seen, face_norm));
-          tmp *= 2.0;
+            cs_real_t cur_part_diameter
+              = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_DIAMETER);
 
-          for (k = 0; k < 3; k++)
-            particle_velocity_seen[k] -= tmp * face_norm[k];
+            if ((cur_part_depo) && (cur_part_close_face_id == face_id)) {
+              scov_cdf +=   (pi * pow(cur_part_diameter,2) / 4.)
+                          *  cur_part_stat_weight / face_area;
+              if (scov_cdf >= scov_rand)
+                break;
+              else
+                k += 1;
+            }
+            j = particles->used_id[j].next_id;
+          }
+
+          cs_lnum_t cur_part_close_face_id
+            = cs_lagr_particle_get_lnum(cur_part, p_am,
+                                        CS_LAGR_NEIGHBOR_FACE_ID);
+
+          cs_lnum_t particle_close_face_id
+            = cs_lagr_particle_get_lnum(particle, p_am,
+                                        CS_LAGR_NEIGHBOR_FACE_ID);
+
+          if (cur_part_close_face_id != face_id) {
+            bft_error(__FILE__, __LINE__, 0,
+                      _(" Error in _bdy_treatment: in the face number %d \n"
+                        "no deposited particle found to form a cluster \n"
+                        "using the surface coverage %e (scov_cdf %e) \n"
+                        "The particle used thus belongs to another face (%d) \n"),
+                      particle_close_face_id, *surface_coverage,
+                      scov_cdf, cur_part_close_face_id);
+          }
+
+          /* The depositing particle is merged with the existing one */
+          /* Statistical weight obtained conserving weight*mass*/
+          cs_real_t cur_part_stat_weight
+            = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_STAT_WEIGHT);
+
+          cs_real_t cur_part_mass
+            = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_MASS);
+
+          cs_real_t cur_part_diameter
+            = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_DIAMETER);
+
+          cs_real_t cur_part_height
+            = cs_lagr_particle_get_real(cur_part, p_am, CS_LAGR_HEIGHT);
+
+          cs_lnum_t cur_part_cluster_nb_part
+            = cs_lagr_particle_get_lnum(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART);
+
+          *deposit_height_mean -=   cur_part_height*pi*pow(cur_part_diameter, 2)
+                                  / (4.0*face_area);
+          *deposit_height_var -=   pow(cur_part_height*pi
+                                 / (4.0*face_area),2)*pow(cur_part_diameter, 4);
+
+          if (*surface_coverage >= limit) {
+
+            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_HEIGHT,
+                                          cur_part_height
+                                      +  (  pow(particle_diameter,3)
+                                          / pow(cur_part_diameter,2)
+                                          / (1. - min_porosity)));
+
+
+            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_STAT_WEIGHT,
+                                        (   cur_part_stat_weight * cur_part_mass
+                                         +  particle_stat_weight * particle_mass)
+                                      / (cur_part_mass + particle_mass));
+
+          }
+          else {
+            *surface_coverage -= (pi * pow(cur_part_diameter,2)/4.)
+              *  cur_part_stat_weight / face_area;
+
+            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_DIAMETER,
+                                      pow (  pow(cur_part_diameter,3)
+                                           + pow(particle_diameter,3)
+                                           / (1. - min_porosity) , 1./3.));
+
+            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_STAT_WEIGHT,
+                                      ( (cur_part_stat_weight * cur_part_mass
+                                       + particle_stat_weight * particle_mass))
+                                       / (cur_part_mass + particle_mass) );
+
+            cur_part_diameter    = cs_lagr_particle_get_real(cur_part, p_am,
+                                                             CS_LAGR_DIAMETER);
+            cur_part_stat_weight = cs_lagr_particle_get_real(cur_part, p_am,
+                                                             CS_LAGR_STAT_WEIGHT);
+
+            *surface_coverage +=   (pi * pow(cur_part_diameter,2)/4.)
+                                 * cur_part_stat_weight / face_area;
+
+            cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_HEIGHT,
+                                      cur_part_diameter);
+          }
+
+          cs_lagr_particle_set_real(cur_part, p_am, CS_LAGR_MASS,
+                                    cur_part_mass + particle_mass);
+          cs_lagr_particle_set_lnum(cur_part, p_am, CS_LAGR_CLUSTER_NB_PART,
+                                    cur_part_cluster_nb_part+1);
+
+          move_particle = CS_LAGR_PART_MOVE_OFF;
+          particle_state = CS_LAGR_PART_OUT;
+          particles->n_part_dep += 1;
+          particles->weight_dep += particle_stat_weight;
+
+          cur_part_height   = cs_lagr_particle_get_real(cur_part, p_am,
+                                                        CS_LAGR_HEIGHT);
+
+          *deposit_height_mean +=   cur_part_height*pi*pow(cur_part_diameter,2)
+                                  / (4.0*face_area);
+          *deposit_height_var +=    pow(cur_part_height*pi
+                                  / (4.0*face_area),2)*pow(cur_part_diameter,4);
         }
 
       }
 
-      /* For post-processing purpose */
-
-      if (!cs_glob_lagr_params->clogging && !cs_glob_lagr_params->resuspension ) {
-        for (k = 0; k < 3; k++) {
-          particle_coord[k] = intersect_pt[k]
-                              - (0.5 * particle_diameter * face_norm[k]);
-          particle_velocity[k] = 0.0;
-          particle_velocity_seen[k] = 0.0;
-        }
-      }
     }
+    else {
 
-    else  {
       /*The particle does not deposit:
         It 'rebounds' on the energy barrier*/
 
@@ -2684,7 +2652,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
     /* Fouling of the particle, if its properties make it possible and
        with respect to a probability
-       ICI if  Tp     > TPENC
+       HERE if  Tp     > TPENC
            if viscp <= VISREF ==> Probability of fouling equal to 1
            if viscp  > VISREF ==> Probability equal to TRAP = 1-VISREF/viscp
                               ==> Fouling if VNORL is between TRAP et 1. */
@@ -2835,12 +2803,26 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Particulate boundary mass flux (contribution of rolling particles
      will be added  at the end of their movement) */
 
-  if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
-    cs_lnum_t deposition_flag
-      = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-    if (deposition_flag == CS_LAGR_PART_DEPOSITED && part_b_mass_flux != NULL)
-      part_b_mass_flux[face_id]
-        += particle_stat_weight * particle_mass / face_area;
+  if (*iensi3 > 0) {
+
+    if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1
+         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2
+         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
+      if (cs_glob_lagr_params->resuspension == 1) {
+        if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
+          cs_lnum_t deposition_flag
+            = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
+          if (deposition_flag == CS_LAGR_PART_DEPOSITED && part_b_mass_flux != NULL)
+            part_b_mass_flux[face_id]
+              += particle_stat_weight * particle_mass / face_area;
+        }
+      }
+      else {
+          if (part_b_mass_flux != NULL)
+          part_b_mass_flux[face_id]
+            += particle_stat_weight * particle_mass / face_area;
+        }
+    }
   }
 
   /* FIXME: Post-treatment not yet implemented... */
@@ -2925,14 +2907,19 @@ _local_propagation(void                           *particle,
                    const cs_lnum_t                *iencdibd,
                    const cs_lnum_t                *iencckbd,
                    const cs_lnum_t                *inclg,
+                   const cs_lnum_t                *inclgt,
+                   const cs_lnum_t                *iclogt,
+                   const cs_lnum_t                *iclogh,
                    const cs_lnum_t                *iscovc,
+                   const cs_lnum_t                *ihdepm,
+                   const cs_lnum_t                *ihdepv,
+                   const cs_lnum_t                *ihsum,
                    const cs_lnum_t                *nusbor,
                    cs_lnum_t                       iusb[],
                    cs_real_t                       visc_length[],
                    cs_real_t                       dlgeo[],
                    cs_real_t                      *part_b_mass_flux,
                    const cs_field_t               *u,
-                   cs_real_t                       energt[],
                    const cs_real_t                 tprenc[],
                    const cs_real_t                 visref[],
                    const cs_real_t                 enc1[],
@@ -3429,11 +3416,16 @@ _local_propagation(void                           *particle,
                               iencdibd,
                               iencckbd,
                               inclg,
+                              inclgt,
+                              iclogt,
+                              iclogh,
                               iscovc,
+                              ihdepm,
+                              ihdepv,
+                              ihsum,
                               nusbor,
                               iusb,
                               part_b_mass_flux,
-                              energt,
                               tprenc,
                               visref,
                               enc1,
@@ -4362,6 +4354,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
                           const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
+                          const cs_int_t    *idlvo,
                           const cs_int_t    *irough,
                           const cs_int_t    *ireent,
                           const cs_int_t    *iclogst,
@@ -4414,7 +4407,11 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
                           cs_int_t          *jmfadh,
                           cs_int_t          *jndisp,
                           cs_int_t          *jclst,
-                          cs_int_t          *jvls)
+                          cs_int_t          *jvls,
+                          cs_int_t          *jdp2,
+                          cs_int_t          *jnbpoi,
+                          cs_int_t          *jrtdep,
+                          cs_int_t          *jrhcon)
 {
   cs_lnum_t  i;
   cs_mesh_t  *mesh = cs_glob_mesh;
@@ -4435,6 +4432,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
     _lagr_param.n_temperature_layers = 1;
 
   _lagr_param.deposition = *idepst;
+  _lagr_param.dlvo = *idlvo;
   _lagr_param.roughness = *irough;
   _lagr_param.resuspension = *ireent;
   _lagr_param.clogging = *iclogst;
@@ -4480,7 +4478,10 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
   attr_keys[CS_LAGR_RESIDENCE_TIME][0] = PEPA;
   attr_keys[CS_LAGR_RESIDENCE_TIME][1] = *jrtsp;
 
-  attr_keys[CS_LAGR_MASS][0] = EPTP_TS;
+  attr_keys[CS_LAGR_HEIGHT][0] = EPTP;
+  attr_keys[CS_LAGR_HEIGHT][1] = *jdp2;
+
+  attr_keys[CS_LAGR_MASS][0] = EPTP;
   attr_keys[CS_LAGR_MASS][1] = *jmp;
 
   attr_keys[CS_LAGR_DIAMETER][0] = EPTP_TS;
@@ -4542,7 +4543,15 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
   attr_keys[CS_LAGR_DISPLACEMENT_NORM][0] = PEPA;
   attr_keys[CS_LAGR_DISPLACEMENT_NORM][1] = *jndisp;
 
-  attr_keys[CS_LAGR_TEMPERATURE][0] = EPTP_TS;
+  attr_keys[CS_LAGR_CLUSTER_NB_PART][0] = IPEPA;
+  attr_keys[CS_LAGR_CLUSTER_NB_PART][1] = *jnbpoi;
+
+  attr_keys[CS_LAGR_DEPO_TIME][0] = PEPA;
+  attr_keys[CS_LAGR_DEPO_TIME][1] = *jrtdep;
+
+  attr_keys[CS_LAGR_CONSOL_HEIGHT][0] = PEPA;
+  attr_keys[CS_LAGR_CONSOL_HEIGHT][1] = *jrhcon;
+
   if (*jtp > 0) {
     attr_keys[CS_LAGR_TEMPERATURE][1] = *jtp;
   }
@@ -4827,6 +4836,26 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
   else
     *jndisp = -1;
 
+  if (p_am->count[0][CS_LAGR_HEIGHT] > 0)
+    *jdp2 = p_am->displ[0][CS_LAGR_HEIGHT]/sizeof(cs_real_t) + 1;
+  else
+    *jdp2 = -1;
+
+  if (p_am->count[0][CS_LAGR_CLUSTER_NB_PART] > 0)
+    *jnbpoi = p_am->displ[0][CS_LAGR_CLUSTER_NB_PART]/sizeof(cs_lnum_t) + 1;
+  else
+    *jnbpoi = -1;
+
+  if (p_am->count[0][CS_LAGR_DEPO_TIME] > 0)
+    *jrtdep = p_am->displ[0][CS_LAGR_DEPO_TIME]/sizeof(cs_real_t) + 1;
+  else
+    *jrtdep = -1;
+
+  if (p_am->count[0][CS_LAGR_CONSOL_HEIGHT] > 0)
+    *jrhcon = p_am->displ[0][CS_LAGR_CONSOL_HEIGHT]/sizeof(cs_real_t) + 1;
+  else
+    *jrhcon = -1;
+
   if (p_am->count[0][CS_LAGR_STAT_CLASS] > 0)
     *jclst = p_am->displ[0][CS_LAGR_STAT_CLASS]/sizeof(cs_lnum_t) + 1;
   else
@@ -4937,12 +4966,17 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                           const cs_lnum_t  *iencdibd,
                           const cs_lnum_t  *iencckbd,
                           const cs_lnum_t  *inclg,
+                          const cs_lnum_t  *inclgt,
+                          const cs_lnum_t  *iclogt,
+                          const cs_lnum_t  *iclogh,
                           const cs_lnum_t  *iscovc,
+                          const cs_lnum_t  *ihdepm,
+                          const cs_lnum_t  *ihdepv,
+                          const cs_lnum_t  *ihsum,
                           const cs_lnum_t  *nusbor,
                           cs_lnum_t         iusb[],
                           cs_real_t         visc_length[],
                           cs_real_t         dlgeo[],
-                          cs_real_t         energt[],
                           const cs_real_t   tprenc[],
                           const cs_real_t   visref[],
                           const cs_real_t   enc1[],
@@ -5064,14 +5098,19 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                             iencdibd,
                                             iencckbd,
                                             inclg,
+                                            inclgt,
+                                            iclogt,
+                                            iclogh,
                                             iscovc,
+                                            ihdepm,
+                                            ihdepv,
+                                            ihsum,
                                             nusbor,
                                             iusb,
                                             visc_length,
                                             dlgeo,
                                             part_b_mass_flux,
                                             u,
-                                            energt,
                                             tprenc,
                                             visref,
                                             enc1,
@@ -5162,8 +5201,10 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
       cs_real_t *cur_part_yplus
         = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
 
-      _test_wall_cell(particle, p_am, visc_length, dlgeo,
-                      cur_part_yplus, cur_neighbor_face_id);
+      if (   cs_lagr_particles_get_lnum(particles, j, CS_LAGR_DEPOSITION_FLAG)
+          == 0)
+        _test_wall_cell(particle, p_am, visc_length, dlgeo,
+                        cur_part_yplus, cur_neighbor_face_id);
 
       if (*cur_part_yplus < 100.e0) {
 
@@ -5292,6 +5333,11 @@ cs_lagr_destroy(void)
   /* Destroy boundary condition structure */
 
   _lagr_bdy_conditions = _destroy_bdy_cond_struct(_lagr_bdy_conditions);
+
+  /* Destroy the structure dedicated to dlvo modeling */
+
+  if (cs_glob_lagr_params->dlvo)
+    cs_lagr_dlvo_finalize();
 
   /* Destroy the structure dedicated to clogging modeling */
 

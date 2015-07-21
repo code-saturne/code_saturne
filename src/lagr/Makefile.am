@@ -80,7 +80,6 @@ cs_lagr_utils.c \
 diverv.f90 \
 lagadh.f90 \
 lagaff.f90 \
-lagbar.f90 \
 lagcar.f90 \
 lagcli.f90 \
 lagcou.f90 \
@@ -97,6 +96,7 @@ lagesp.f90 \
 laggeo.f90 \
 laggra.f90 \
 laghis.f90 \
+laghlo.f90 \
 lagich.f90 \
 lagidp.f90 \
 lagimp.f90 \
@@ -120,7 +120,8 @@ lagsta.f90 \
 lagstf.f90 \
 lagswe.f90 \
 lagtmp.f90 \
-lagune.f90
+lagune.f90 \
+porcel.f90
 libcslagr_la_LDFLAGS = -no-undefined
 
 clean-local:

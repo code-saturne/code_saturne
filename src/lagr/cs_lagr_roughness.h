@@ -46,8 +46,8 @@ typedef struct {
   cs_real_t   free_space_permit;
   cs_real_t   water_permit;
   cs_real_t   ionic_strength;
-  cs_real_t   phi1;
-  cs_real_t   phi2;
+  cs_real_t   phi_p;
+  cs_real_t   phi_s;
   cs_real_t  *temperature;
   cs_real_t  valen;
   cs_real_t  *debye_length;
@@ -79,8 +79,8 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
                                           const cs_real_t   *ionic_strength,
                                           const cs_real_t    temperature[],
                                           const cs_real_t   *valen,
-                                          const cs_real_t   *phi1,
-                                          const cs_real_t   *phi2,
+                                          const cs_real_t   *phi_p,
+                                          const cs_real_t   *phi_s,
                                           const cs_real_t   *cstham,
                                           const cs_real_t   *dcutof,
                                           const cs_real_t   *lambwl,

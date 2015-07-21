@@ -105,11 +105,12 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
                               const cs_real_t   *ionic_strength,
                               const cs_real_t   *jamming_limit,
                               const cs_real_t   *min_porosity,
-                              const cs_real_t   *valen,
                               const cs_real_t    temperature[],
-                              const cs_real_t   *phi1,
-                              const cs_real_t   *phi2,
+                              const cs_real_t   *valen,
+                              const cs_real_t   *phi_p,
+                              const cs_real_t   *phi_s,
                               const cs_real_t   *cstham,
+                              const cs_real_t   *csthpp,
                               const cs_real_t   *dcutof,
                               const cs_real_t   *lambwl,
                               const cs_real_t   *kboltz
@@ -131,9 +132,10 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
   cs_lagr_clogging_param.jamming_limit = *jamming_limit;
   cs_lagr_clogging_param.min_porosity = *min_porosity;
   cs_lagr_clogging_param.valen = *valen;
-  cs_lagr_clogging_param.phi1 = *phi1;
-  cs_lagr_clogging_param.phi2 = *phi2;
+  cs_lagr_clogging_param.phi_p = *phi_p;
+  cs_lagr_clogging_param.phi_s = *phi_s;
   cs_lagr_clogging_param.cstham = *cstham;
+  cs_lagr_clogging_param.csthpp = *csthpp;
   cs_lagr_clogging_param.dcutof = *dcutof;
   cs_lagr_clogging_param.lambwl = *lambwl;
   cs_lagr_clogging_param.kboltz = *kboltz;
@@ -203,7 +205,6 @@ cs_lagr_clogging_finalize(void)
  *   particle         <-- pointer to particle data
  *   attr_map         <-- pointer to attribute map
  *   face_id          <-- id of face neighboring particle
- *   face_area        <-- area of face
  *   energy_barrier   <-> energy barrier
  *   surface_coverage <-> surface coverage
  *   limit            <-> jamming limit
@@ -217,7 +218,6 @@ int
 cs_lagr_clogging_barrier(const void                     *particle,
                          const cs_lagr_attribute_map_t  *attr_map,
                          cs_lnum_t                       face_id,
-                         cs_real_t                       face_area,
                          cs_real_t                      *energy_barrier,
                          cs_real_t                      *surface_coverage,
                          cs_real_t                      *limit,
@@ -228,7 +228,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
   cs_real_t mean_nb_cont;
 
-  cs_lnum_t  dim_aux = 1, contact_count[1], nbtemp[12000];
+  cs_lnum_t  dim_aux = 1, contact_count[1];
+  cs_real_t  dim_aux_r = 1.0, contact_count_r[1];
   cs_lnum_t  param1;
   cs_real_t  param2, value;
   cs_lnum_t  k,i;
@@ -241,34 +242,26 @@ cs_lagr_clogging_barrier(const void                     *particle,
   double p_stat_weight
     = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT);
   double p_diameter
-    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT);
+    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_DIAMETER);
   cs_real_t depositing_radius = p_diameter * 0.5;
 
   deposited_radius = depositing_radius;
 
-  contact_area = p_stat_weight
-                 * _pi * pow(2. * pow(deposited_radius * depositing_radius, 0.5)
-                             + deposited_radius,2);
+  contact_area = _pi * pow(2. * pow(deposited_radius * depositing_radius, 0.5)
+                           + deposited_radius,2);
 
   mean_nb_cont =   contact_area
                  * (*surface_coverage) / (_pi * pow(deposited_radius,2));
 
   /* Assuming Poisson distribution */
 
-  CS_PROCF(fische, FISCHE)(&dim_aux, &mean_nb_cont, contact_count);
-
   value = 700.;
   if (mean_nb_cont > value) {
-    param1 = mean_nb_cont / value;
-    param2 = fmod(mean_nb_cont,value);
-    assert(param1 < 12000); /* TODO use dynamic allocation or set bound */
-
-    CS_PROCF(fische, FISCHE)(&dim_aux, &param2, contact_count);
-    CS_PROCF(fische, FISCHE)(&param1, &value, nbtemp);
-
-    for (k = 0; k < param1; k++) {
-      contact_count[0] = contact_count[0] + nbtemp[k];
-    }
+    CS_PROCF(normalen, NORMALEN)(&dim_aux, contact_count_r);
+    contact_count[0] = (int) contact_count_r[0] * pow(mean_nb_cont,0.5) + mean_nb_cont;
+  }
+  else {
+    CS_PROCF(fische, FISCHE)(&dim_aux, &mean_nb_cont, contact_count);
   }
 
   /* If the surface coverage is above the jamming limit,
@@ -276,11 +269,9 @@ cs_lagr_clogging_barrier(const void                     *particle,
      must be greater than zero  */
 
    /* The surface coverage must be greater than zero */
-  if (*surface_coverage > 1e-15)
-
-    if (((_pi * pow(depositing_radius,2) * p_stat_weight)/face_area
-         + (*surface_coverage)) > cs_lagr_clogging_param.jamming_limit)
-      contact_count[0] +=1;
+  if (*surface_coverage > cs_lagr_clogging_param.jamming_limit) {
+    contact_count[0] +=1;
+  }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (mean_nb_cont > 0) {
@@ -289,9 +280,51 @@ cs_lagr_clogging_barrier(const void                     *particle,
   }
 #endif
 
-  if (contact_count[0] != 0) {
+  if (contact_count[0] == 0) {
 
-    *energy_barrier = 0;
+    *energy_barrier = 0.0;
+
+    /* Computation of the energy barrier */
+
+    for (i = 0; i < 101; i++) {
+
+      cs_real_t  step = 1e-10;
+
+      cs_real_t distp = cs_lagr_clogging_param.dcutof + i*step;
+
+      cs_real_t var1
+        = cs_lagr_van_der_waals_sphere_plane(distp,
+                                             depositing_radius,
+                                             cs_lagr_clogging_param.lambwl,
+                                             cs_lagr_clogging_param.cstham);
+
+      cs_real_t var2
+        = cs_lagr_edl_sphere_plane(distp,
+                                   depositing_radius,
+                                   cs_lagr_clogging_param.valen,
+                                   cs_lagr_clogging_param.phi_p,
+                                   cs_lagr_clogging_param.phi_s,
+                                   cs_lagr_clogging_param.kboltz,
+                                   cs_lagr_clogging_param.temperature[face_id],
+                                   cs_lagr_clogging_param.debye_length[face_id],
+                                   cs_lagr_clogging_param.free_space_permit,
+                                   cs_lagr_clogging_param.water_permit);
+
+      cs_real_t var = var1 + var2;
+
+      if (var > *energy_barrier)
+        *energy_barrier = var;
+      if (var < 0.)
+        *energy_barrier = 0.;
+
+    }
+
+    *energy_barrier =  *energy_barrier / (0.5 * p_diameter);
+  }
+
+  else if (contact_count[0] > 0) {
+
+    *energy_barrier = 0.0;
 
     /* Computation of the energy barrier */
     for (i = 0; i < 101; i++) {
@@ -306,15 +339,15 @@ cs_lagr_clogging_barrier(const void                     *particle,
                                               deposited_radius,
                                               depositing_radius,
                                               cs_lagr_clogging_param.lambwl,
-                                              cs_lagr_clogging_param.cstham);
+                                              cs_lagr_clogging_param.csthpp);
 
       cs_real_t var2
         = cs_lagr_edl_sphere_sphere(distcc,
                                     deposited_radius,
                                     depositing_radius,
                                     cs_lagr_clogging_param.valen,
-                                    cs_lagr_clogging_param.phi1,
-                                    cs_lagr_clogging_param.phi2,
+                                    cs_lagr_clogging_param.phi_p,
+                                    cs_lagr_clogging_param.phi_p,
                                     cs_lagr_clogging_param.kboltz,
                                     cs_lagr_clogging_param.temperature[face_id],
                                     cs_lagr_clogging_param.debye_length[face_id],
@@ -325,8 +358,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
       if (var > *energy_barrier)
         *energy_barrier = var;
-      if (var < 0)
-        *energy_barrier = 0;
+      if (var < 0.)
+        *energy_barrier = 0.;
 
     }
 

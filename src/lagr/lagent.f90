@@ -1036,6 +1036,10 @@ do ii = 1,nfrtot
 
         endif
 
+        if (iclogst.eq.1) then
+           eptp(jdp2,ip) = eptp(jdp,ip)
+        endif
+
 !--> Autres variables : masse, ... en fonction de la physique
 
         d3 = eptp(jdp,ip) * eptp(jdp,ip) * eptp(jdp,ip)
@@ -1231,15 +1235,24 @@ do ii = 1,nfrtot
           ipepa(jimark,ip) = -1
           ipepa(jdfac,ip)  = 0
 
-        endif
+       endif
 
-      enddo
+       ! Clogging model : Initialisation
+       if ( iclogst .eq. 1 ) then
 
-      npt = npt + iusloc(nc,nb,ijnbp)
+          pepa(jrtdep,ip) = 0.0d0
+          pepa(jrhcon,ip) = 0.0d0
+          ipepa(jnbpoi,ip) = 1
 
-    endif
+       endif
 
-  enddo
+    enddo
+
+    npt = npt + iusloc(nc,nb,ijnbp)
+
+ endif
+
+enddo
 enddo
 
 !-->TEST DE CONTROLE (NE PAS MODIFIER)

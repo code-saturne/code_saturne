@@ -285,6 +285,10 @@ module lagran
   !> - 1: DLVO conditions with roughness surface
   integer, save ::     irough
 
+  !> - 0: no head losses calculation for influence of the deposit on the flow
+  !> - 1: head losses calculation for influence of the deposit on the flow
+  integer, save :: iflow
+
   !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
   integer, save ::   jroll
   !> Additional pointer in IPEPA and PEPA arrays (contains particule state)
@@ -322,11 +326,18 @@ module lagran
 
   !> - 0: no clogging model
   !> - 1: clogging model
-  integer, save ::         iclogst
+  integer, save ::   iclogst
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jnbpoi
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jrtdep
+  !> Additional pointer in ITEPA and TEPA arrays (contains particule state)
+  integer, save ::   jrhcon
 
   !> Parameter of the particle clogging model
-   double precision, save :: jamlim
-   double precision, save :: mporos
+  double precision, save :: jamlim
+  double precision, save :: mporos
+  double precision, save :: csthpp
 
   !> \}
   !> \}
@@ -399,6 +410,8 @@ module lagran
   integer, save ::  jmp
   !> pointer to particle diameter for pointer \ref eptp
   integer, save ::  jdp
+  !> pointer to particle extent for array \ref ettp
+  integer, save ::  jdp2
   !> pointer to particle and locally undisturbed fluid flow temperature
   !> (Celsius) for pointer \ref eptp
   integer, save ::  jtp
@@ -544,10 +557,11 @@ module lagran
   !> - if \ref iusclb "iusclb"(izone) = \ref lagpar::iencrl "iencrl",
   !>   the particles which are coal
   !>   particles (if \ref iphyla = 2) can become fouled up on the zone \c izone. The
-  !> slagging is a \ref lagpar::idepo1 "idepo1" type deposit of the coal particle if a certain
-  !> criterion is respected. Otherwise, the coal particle rebounds
-  !> (\ref lagpar::irebol "irebol" type behaviour). This boundary condition type is available
-  !> if \ref iencra = 1. A limit temperature \ref tprenc, a
+  !> slagging is a \ref lagpar::idepo1 "idepo1" type deposit of the coal
+  !> particle if a certain criterion is respected. Otherwise, the coal particle
+  !> rebounds
+  !> (\ref lagpar::irebol "irebol" type behaviour). This boundary condition type
+  !> is available if \ref iencra = 1. A limit temperature \ref tprenc, a
   !> critical viscosity \ref visref and the coal composition
   !> in mineral matters must be given in the subroutine
   !> \ref uslag1.
@@ -1008,11 +1022,11 @@ module lagran
   !> Dielectric constant of the fluid
   double precision, save ::  epseau
 
-  !> Electrokinetic potential of the first solid
-  double precision, save ::  phi1
+  !> Electrokinetic potential of the first solid - particle
+  double precision, save ::  phi_p
 
-  !> Electrokinetic potential of the second solid
-  double precision, save ::  phi2
+  !> Electrokinetic potential of the second solid - surface
+  double precision, save ::  phi_s
 
   !> Valency of ions in the solution (used for EDL forces)
   double precision, save ::  valen
@@ -1169,6 +1183,12 @@ module lagran
   !> Useful if \ref iensi3=1
   integer, save ::  ivitbd
 
+  !> activation (=1) or not (=0) of the recording of clogging parameters
+  !> involved in a particle/boundary interaction, and of the calculation of
+  !> the associated boundary statistics.
+  !> Useful if \ref iensi3=1
+  integer, save ::  iclgst
+
   ! TODO
   integer, save ::  iencnbbd
   ! TODO
@@ -1232,9 +1252,16 @@ module lagran
 
   ! TODO
   integer, save ::  inclg
+  integer, save ::  inclgt
+  integer, save ::  iclogt
+  integer, save ::  iclogh
   ! TODO
   integer, save ::  iscovc
-
+  ! Clogging
+  integer, save ::  ihdepm
+  integer, save ::  ihdepv
+  integer, save ::  ihdiam
+  integer, save ::  ihsum
   !> if the recording of the boundary statistics is steady, \ref tstatp
   !> contains the cumulated physical duration of the recording of the boundary
   !> statistics.

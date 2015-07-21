@@ -119,8 +119,6 @@ double precision, allocatable, dimension(:) :: w1, w2, w3
 
 double precision, allocatable, save, dimension(:) :: vislen
 
-double precision, allocatable, dimension(:) :: energt
-
 double precision, allocatable, dimension(:) :: tempp
 
 double precision, dimension(:), pointer :: cromf
@@ -152,11 +150,9 @@ endif
 if (iroule.eq.1) then
   allocate(croule(ncelet))
 endif
-if (idlvo.eq.1) then
-  allocate(energt(nfabor))
-  if (iclogst.eq.1 .or.  irough .eq.1) then
-    allocate(tempp(nfabor))
-  endif
+
+if (iclogst.eq.1 .or.  irough .eq.1 .or. idlvo .eq. 1) then
+   allocate(tempp(nfabor))
 endif
 
 ipass = ipass + 1
@@ -198,8 +194,8 @@ if (iplar.eq.1) then
 
   call lagbeg                                                     &
   !==========
- ( nordre , nlayer , iphyla , idepst , irough , ireent , iclogst, &
-   nvls   , nbclst , icocel , itycel ,                            &
+ ( nordre , nlayer , iphyla , idepst , idlvo  , irough , ireent , &
+   iclogst, nvls   , nbclst , icocel , itycel ,                   &
    jisor  , jisora , jirka  , jord1  ,                            &
    jrval  , jrpoi  , jrtsp  , jdp    , jmp    ,                   &
    jxp    , jyp    , jzp    , jup    , jvp    , jwp    ,          &
@@ -208,7 +204,8 @@ if (iplar.eq.1) then
    jtp    , jhp    , jtf    , jmwat  , jmch   , jmck   ,          &
    jcp    , jrdck  , jrd0p  , jinch  , jrhock ,                   &
    jreps  , jdepo  , jnbasg , jnbasp , jfadh  , jmfadh ,          &
-   jndisp , jclst  , jvls   )
+   jndisp , jclst  , jvls   , jdp2   , jnbpoi , jrtdep ,          &
+   jrhcon   )
 
   ! first initializations
 
@@ -310,10 +307,10 @@ dnbdep = 0.d0
 dnbres = 0.d0
 
 !===============================================================================
-! 1.bis  Initialization for the clogging model
+! 1.bis  Initialization for the dlvo, roughness and clogging  model
 !===============================================================================
 
-if ( iclogst.eq.1 ) then
+if (idlvo .eq. 1 .or. irough .eq. 1 .or. iclogst .eq. 1) then
 
   if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
 
@@ -335,48 +332,45 @@ if ( iclogst.eq.1 ) then
     endif
 
   enddo
+endif
 
-  call cloginit                                                   &
-  !===========
-  ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,          &
-    valen , phi1  , phi2  , cstham, dcutof, lambwl, kboltz )
+!===============================================================================
+!   Initialization for the dlvo model
+!===============================================================================
+
+if (idlvo .eq. 1) then
+
+  call dlvo_init                                            &
+     ( cstfar, epsvid, epseau, fion, tempp,  valen    ,     &
+       phi_p  , phi_s  , cstham, dcutof, lambwl, kboltz )
 
 endif
 
 !===============================================================================
-! 1.ter  Initialization for the roughness surface model
+!  Initialization for the roughness surface model
 !===============================================================================
 
 if ( irough .eq. 1 ) then
 
-  if (iscalt.gt.0) call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
-
-  do ifac = 1,nfabor
-    iel = ifabor(ifac)
-
-    if (iscalt.gt.0) then
-
-      if (itherm.eq.1 .and. itpscl.eq.2) then
-        tempp(ifac) = cvar_scalt(iel) + tkelvi
-      else if (itherm.eq.1 .and. itpscl.eq.2) then
-        tempp(ifac) = cvar_scalt(iel)
-      else if (itherm.eq.2) then
-        call usthht(1,cvar_scalt(iel),tempp(ifac))
-      endif
-
-    else
-      tempp(ifac) = t0
-    endif
-
-  enddo
-
-  call roughness_init                                &
-  !===========
-  ( cstfar, epsvid, epseau, fion, tempp,  valen    , &
-    phi1  , phi2  , cstham, dcutof, lambwl, kboltz , &
-    espasg , denasp , rayasp , rayasg)
+   call roughness_init                                     &
+      ( cstfar, epsvid, epseau, fion, tempp,  valen    ,   &
+        phi_p  , phi_s  , cstham, dcutof, lambwl, kboltz , &
+        espasg , denasp , rayasp , rayasg)
 
 endif
+
+!===============================================================================
+!   Initialization for the clogging model
+!===============================================================================
+
+if (iclogst.eq.1) then
+
+   call cloginit                                                           &
+     ( cstfar, epsvid, epseau, fion, jamlim, mporos, tempp,                &
+       valen , phi_p  , phi_s  , cstham, csthpp , dcutof, lambwl, kboltz )
+
+endif
+
 
 !===============================================================================
 ! 2.  MISE A JOUR DES NOUVELLES PARTICULES ENTREES DANS LE DOMAINE
@@ -619,17 +613,6 @@ if (iilagr.eq.2 .and. nor.eq.nordre) then
 
 endif
 
-!===============================================================================
-! 7.  Calcul de la barrière d'énergie dans le cas DLVO
-!===============================================================================
-
-if (idlvo.eq.1) then
-
-   call lagbar (energt)
-   !==========
-
-endif
-
 ! Deallocate arrays whose size is based on nbpart (which may change next)
 
 deallocate(tlag)
@@ -690,9 +673,10 @@ if (nor.eq.1) then
    inbr     , inbrbd   , iflm     , iflmbd   , iang     ,         &
    iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
    iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &
-   iencckbd , inclg    , iscovc   ,                               &
-   nusbor   , iusb     , vislen   , dlgeo    , energt   ,         &
-   tprenc   , visref   , enc1     , enc2     , tkelvi)
+   iencckbd , inclg    , inclgt   , iclogt   , iclogh   , iscovc, &
+   ihdepm   , ihdepv   , ihsum    , nusbor   , iusb     , vislen, &
+   dlgeo    , tprenc   , visref   , enc1     ,                    &
+   enc2     , tkelvi)
 
   call lagr_update_pointers
 
@@ -741,6 +725,38 @@ if (nor.eq.nordre .and. istala.eq.1 .and. iplas.ge.idstnt) then
  ( nvlsta ,                                                       &
    statis , stativ )
 
+endif
+
+!  STATISTICS FOR CLOGGING
+
+if (nor.eq.nordre .and. iclogst.eq.1) then
+
+   ! Height and time of deposit
+   !
+   do ifac = 1, nfabor
+      parbor(ifac,iclogt) = 0.0d0
+      parbor(ifac,iclogh) = 0.0d0
+      parbor(ifac,ihdiam) = 0.0d0
+   enddo
+   !
+   do npt = 1, nbpart
+      if ( ipepa(jdepo,npt).gt.0 ) then
+         parbor(ipepa(jdfac,npt),iclogt) = parbor(ipepa(jdfac,npt),iclogt) &
+              + pepa(jrtdep,npt)
+         parbor(ipepa(jdfac,npt),iclogh) = parbor(ipepa(jdfac,npt),iclogh) &
+              + pepa(jrhcon,npt)*pi*eptp(jdp,npt)**2.0d0/ surfbn(ipepa(jdfac,npt))
+      endif
+   enddo
+   !
+   do ifac = 1, nfabor
+      if ( parbor(ifac,inclg).gt.0) then
+         parbor(ifac,iclogt) = parbor(ifac,iclogt) / parbor(ifac,inclg)
+         parbor(ifac,ihdiam) = parbor(ifac,ihsum) / parbor(ifac,inclgt)
+      else
+         parbor(ifac,iclogt) = 0.0d0
+         parbor(ifac,ihdiam) = 0.0d0
+      endif
+   enddo
 endif
 
 !===============================================================================
@@ -847,11 +863,9 @@ endif
 if ((idepst.eq.1).and.(ntcabs.eq.ntmabs)) then
    deallocate(vislen)
 endif
-if (idlvo.eq.1) then
-   deallocate(energt)
-  if (iclogst.eq.1 .or. irough .eq. 1 ) then
-     deallocate(tempp)
-  endif
+
+if (iclogst.eq.1 .or. irough .eq. 1 .or. idlvo .eq. 1) then
+   deallocate(tempp)
 endif
 
 !===============================================================================

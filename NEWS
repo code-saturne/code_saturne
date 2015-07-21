@@ -5,6 +5,16 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Changes in Lagrangian Particle tracking, provided by Céline Caruyer.
+   * modification of multi-layer model (iclogst = 1)
+   * compute porosity in each cell based on mean deposition height only
+     at boundary faces (porcel.f90)
+   * influence of deposited layers on the flow (iflow = 1 option); addition of
+     laghlo.f90 to compute the head loss due to deposition based on porosity)
+   * remove lagbar.f90 (energy barrier now computed by cs_lagr_barrier for
+     smooth wall/irough = 0, and cs_lagr_roughness_barrier for rough wall/
+     irough = 1).
+
 - Add simple fan effects modeling as explicit momentum source term in
   regions defined by fan characteristics.
 

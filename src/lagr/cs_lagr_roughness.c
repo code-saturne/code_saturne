@@ -110,8 +110,8 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
                                           const cs_real_t   *ionic_strength,
                                           const cs_real_t    temperature[],
                                           const cs_real_t   *valen,
-                                          const cs_real_t   *phi1,
-                                          const cs_real_t   *phi2,
+                                          const cs_real_t   *phi_p,
+                                          const cs_real_t   *phi_s,
                                           const cs_real_t   *cstham,
                                           const cs_real_t   *dcutof,
                                           const cs_real_t   *lambwl,
@@ -133,8 +133,8 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
   cs_lagr_roughness_param.water_permit = *water_permit;
   cs_lagr_roughness_param.ionic_strength = *ionic_strength;
   cs_lagr_roughness_param.valen = *valen;
-  cs_lagr_roughness_param.phi1 = *phi1;
-  cs_lagr_roughness_param.phi2 = *phi2;
+  cs_lagr_roughness_param.phi_p = *phi_p;
+  cs_lagr_roughness_param.phi_s = *phi_s;
   cs_lagr_roughness_param.cstham = *cstham;
   cs_lagr_roughness_param.dcutof = *dcutof;
   cs_lagr_roughness_param.lambwl = *lambwl;
@@ -176,8 +176,8 @@ CS_PROCF (roughness_init, ROUGHNESS_INIT)(const cs_real_t   *faraday_cst,
   bft_printf(" temp[1]   = %g\n", cs_lagr_roughness_param.temperature[0]);
   bft_printf(" valen   = %g\n", cs_lagr_roughness_param.valen);
   bft_printf(" debye[1]   = %g\n", cs_lagr_roughness_param.debye_length[0]);
-  bft_printf(" phi1   = %g\n", cs_lagr_roughness_param.phi1);
-  bft_printf(" phi2  = %g\n", cs_lagr_roughness_param.phi2);
+  bft_printf(" phi_p   = %g\n", cs_lagr_roughness_param.phi_p);
+  bft_printf(" phi_s  = %g\n", cs_lagr_roughness_param.phi_s);
 #endif
 
 }
@@ -266,7 +266,7 @@ cs_lagr_roughness_barrier(const void                     *particle,
 
     cs_real_t value2 = seff[iclas] * scov[iclas] / _pi / pow(rpart2[iclas],2) ;
 
-    if ( value2  > 700)   {
+    if (value2  > 700) {
       param1 = value2 / 700;
       param2 = fmod(value2 , 700.);
       CS_PROCF(fische, FISCHE)(&dim_aux, &param2, nbaspt);
@@ -379,8 +379,8 @@ cs_lagr_roughness_barrier(const void                     *particle,
     cs_real_t var2     = cs_lagr_edl_sphere_plane(distp,
                                                   rpart,
                                                   cs_lagr_roughness_param.valen,
-                                                  cs_lagr_roughness_param.phi1,
-                                                  cs_lagr_roughness_param.phi2,
+                                                  cs_lagr_roughness_param.phi_p,
+                                                  cs_lagr_roughness_param.phi_s,
                                                   cs_lagr_roughness_param.kboltz,
                                                   cs_lagr_roughness_param.temperature[face_id],
                                                   cs_lagr_roughness_param.debye_length[face_id],
@@ -407,8 +407,8 @@ cs_lagr_roughness_barrier(const void                     *particle,
                                        rpart,
                                        posasp4[iasp],
                                        cs_lagr_roughness_param.valen,
-                                       cs_lagr_roughness_param.phi1,
-                                       cs_lagr_roughness_param.phi2,
+                                       cs_lagr_roughness_param.phi_p,
+                                       cs_lagr_roughness_param.phi_s,
                                        cs_lagr_roughness_param.kboltz,
                                        cs_lagr_roughness_param.temperature[face_id],
                                        cs_lagr_roughness_param.debye_length[face_id],

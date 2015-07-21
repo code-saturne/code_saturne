@@ -248,6 +248,10 @@ allocate(izft1d(nfabor))
 ! Head-loss
 ! ---------
 
+if (iflow .eq. 1) then
+  ncepdc = ncel
+endif
+
 if (iihmpr.eq.1) then
   call uikpdc &
 ( iappel ,          &
@@ -744,9 +748,15 @@ endif
 !     On appelle cependant cs_user_head_losses avec tous les processeurs,
 !     au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
 
-if(ncpdct.gt.0) then
+if (ncpdct.gt.0) then
 
   iappel = 2
+
+  if (iflow .eq.1) then
+    do iel = 1, ncepdc
+      icepdc(iel) = iel
+    enddo
+  endif
 
   if (iihmpr.eq.1) then
     call uikpdc(iappel, ncelet, ncepdc, icepdc, ckupdc)

@@ -73,6 +73,18 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
+ * Local macro declarations
+ *============================================================================*/
+
+#define PG_CST 8.314  /* Ideal gas constant */
+
+/*============================================================================
+ * Local structure declarations
+ *============================================================================*/
+
+static cs_lagr_dlvo_param_t cs_lagr_dlvo_param;
+
+/*============================================================================
  * Static global variables
  *============================================================================*/
 
@@ -81,8 +93,158 @@ static const double _pi = 3.14159265358979323846;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function for Fortran API
+ * Public function prototypes for Fortran API
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * DLVO initialization:
+ *  - Retrieve various parameters for storing in global structure
+ *  - Compute and store the Debye screening length
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (dlvo_init, DLVO_INIT)(const cs_real_t   *faraday_cst,
+                                const cs_real_t   *free_space_permit,
+                                const cs_real_t   *water_permit,
+                                const cs_real_t   *ionic_strength,
+                                const cs_real_t    temperature[],
+                                const cs_real_t   *valen,
+                                const cs_real_t   *phi_p,
+                                const cs_real_t   *phi_s,
+                                const cs_real_t   *cstham,
+                                const cs_real_t   *dcutof,
+                                const cs_real_t   *lambwl,
+                                const cs_real_t   *kboltz)
+{
+  int ifac;
+
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+
+  /* Retrieve physical parameters related to clogging modeling */
+  /* and fill the global structure cs_lagr_clog_param          */
+
+  cs_lagr_dlvo_param.faraday_cst = *faraday_cst;
+  cs_lagr_dlvo_param.free_space_permit = *free_space_permit;
+  cs_lagr_dlvo_param.water_permit = *water_permit;
+  cs_lagr_dlvo_param.ionic_strength = *ionic_strength;
+  cs_lagr_dlvo_param.valen = *valen;
+  cs_lagr_dlvo_param.phi_p = *phi_p;
+  cs_lagr_dlvo_param.phi_s = *phi_s;
+  cs_lagr_dlvo_param.cstham = *cstham;
+  cs_lagr_dlvo_param.dcutof = *dcutof;
+  cs_lagr_dlvo_param.lambwl = *lambwl;
+  cs_lagr_dlvo_param.kboltz = *kboltz;
+
+  /* Allocate memory for the temperature and Debye length arrays */
+
+  if (cs_lagr_dlvo_param.temperature == NULL)
+    BFT_MALLOC(cs_lagr_dlvo_param.temperature, mesh->n_b_faces, cs_real_t);
+
+  if (cs_lagr_dlvo_param.debye_length == NULL)
+    BFT_MALLOC(cs_lagr_dlvo_param.debye_length, mesh->n_b_faces, cs_real_t);
+
+  /* Store the temperature */
+
+  for (ifac = 0; ifac < mesh->n_b_faces; ifac++)
+    cs_lagr_dlvo_param.temperature[ifac] = temperature[ifac];
+
+  /* Computation and storage of the Debye length */
+
+  for (ifac = 0; ifac < mesh->n_b_faces ; ifac++)
+
+    cs_lagr_dlvo_param.debye_length[ifac]
+      =   pow(2e3 * pow(cs_lagr_dlvo_param.faraday_cst,2)
+        * cs_lagr_dlvo_param.ionic_strength /
+        (cs_lagr_dlvo_param.water_permit
+         * cs_lagr_dlvo_param.free_space_permit * PG_CST
+         * cs_lagr_dlvo_param.temperature[ifac]), -0.5);
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  bft_printf(" cstfar = %g\n", cs_lagr_dlvo_param.faraday_cst);
+  bft_printf(" epsvid = %g\n", cs_lagr_dlvo_param.free_space_permit);
+  bft_printf(" epseau = %g\n", cs_lagr_dlvo_param.water_permit);
+  bft_printf(" fion   = %g\n", cs_lagr_dlvo_param.ionic_strength);
+  bft_printf(" temp[1]   = %g\n", cs_lagr_dlvo_param.temperature[0]);
+  bft_printf(" valen   = %g\n", cs_lagr_dlvo_param.valen);
+  bft_printf(" debye[1]   = %g\n", cs_lagr_dlvo_param.debye_length[0]);
+  bft_printf(" phi_p   = %g\n", cs_lagr_dlvo_param.phi_p);
+  bft_printf(" phi_s  = %g\n", cs_lagr_dlvo_param.phi_s);
+#endif
+
+}
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Deallocate the arrays storing temperature and Debye length.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_dlvo_finalize()
+{
+  BFT_FREE(cs_lagr_dlvo_param.temperature);
+  BFT_FREE(cs_lagr_dlvo_param.debye_length);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the energy barrier for a smooth wall.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_barrier(const void                     *particle,
+                const cs_lagr_attribute_map_t  *attr_map,
+                cs_lnum_t                       face_id,
+                cs_real_t                      *energy_barrier)
+{
+  cs_lnum_t i;
+  cs_real_t rpart = cs_lagr_particle_get_real(particle, attr_map,
+                                              CS_LAGR_DIAMETER) * 0.5;
+
+  *energy_barrier = 0.;
+
+  cs_real_t barr = 0.;
+  cs_real_t distp = 0.;
+
+  /* Computation of the energy barrier */
+
+  for (i = 0; i < 1001; i++) {
+
+    cs_real_t  step = 1e-10;
+
+    /* Interaction between the sphere and the plate */
+
+    distp = cs_lagr_dlvo_param.dcutof + i * step;
+
+    cs_real_t var1
+      = cs_lagr_van_der_waals_sphere_plane(distp,
+                                           rpart,
+                                           cs_lagr_dlvo_param.lambwl,
+                                           cs_lagr_dlvo_param.cstham);
+
+    cs_real_t var2
+      = cs_lagr_edl_sphere_plane(distp,
+                                 rpart,
+                                 cs_lagr_dlvo_param.valen,
+                                 cs_lagr_dlvo_param.phi_p,
+                                 cs_lagr_dlvo_param.phi_s,
+                                 cs_lagr_dlvo_param.kboltz,
+                                 cs_lagr_dlvo_param.temperature[face_id],
+                                 cs_lagr_dlvo_param.debye_length[face_id],
+                                 cs_lagr_dlvo_param.free_space_permit,
+                                 cs_lagr_dlvo_param.water_permit);
+
+    barr = (var1 + var2);
+
+    if (barr >  *energy_barrier)
+      *energy_barrier = barr;
+    if ( *energy_barrier < 0)
+      *energy_barrier = 0;
+   }
+
+  *energy_barrier = *energy_barrier / rpart;
+}
 
 /*----------------------------------------------------------------------------
  * Van der Waals interaction between a sphere and a plane

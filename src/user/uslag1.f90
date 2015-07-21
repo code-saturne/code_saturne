@@ -580,13 +580,13 @@ if (idlvo.eq.1) then
 
   epseau = 80.10d0
 
-  ! Electrokinetic potential of the first solid (Volt)
+  ! Electrokinetic potential of the first solid - particle (Volt)
 
-  phi1 = 50.d-3
+  phi_p = 50.d-3
 
-  ! Electrokinetic potential of the second solid (Volt)
+  ! Electrokinetic potential of the second solid - surface (Volt)
 
-  phi2 = -50.d-3
+  phi_s = -50.d-3
 
   ! Valency of ions in the solution (used for EDL forces)
 
@@ -617,11 +617,10 @@ lamvbr = 0
 ! Activation of the deposition model
 ! (default off: 0 ; on: 1)
 
-
 idepst = 0
 
 !===============================================================================
-! 12bis. Activation of resuspension model
+! 13. Activation of resuspension model
 !===============================================================================
 
 ! Activation of the resuspension model
@@ -640,7 +639,7 @@ irough = 0  ! dlvo deposition conditions for roughness surface
 espasg = 20.d-6
 
 !density of the small-scale asperities
-denasp = 6.36d13
+denasp = 6.36d10
 
 !radius of small asperities
 rayasp = 5.d-9
@@ -652,7 +651,7 @@ rayasg = 2.d-6
 modyeq = 266.d9
 
 !===============================================================================
-! 12ter. Activation of the clogging model
+! 14. Activation of the clogging model
 !===============================================================================
 
 ! Activation of the clogging model
@@ -669,8 +668,25 @@ jamlim = 0.74d0       ! Jamming limit
 
 mporos = 0.366d0      ! Minimal porosity
 
+csthpp = 5.0d-20      ! Hamaker constant for the particle/fluid/particle system
+
 !===============================================================================
-! 13. Variables to visualize on the trajectories or the particles
+! 14bis. Influence of the deposit on the flow
+!===============================================================================
+! Activation of the influence of the deposit on the flow
+! by the head losses calculation (with clogging model only)
+! (default off: 0 ; on: 1)
+
+iflow = 0
+
+if (iflow .eq.1 ) then
+iilagr = 1 !one-way coupling
+isttio = 1 !the statistical averages are not reset
+           !at each lagrangian iteration
+endif
+
+!===============================================================================
+! 15. Variables to visualize on the trajectories or the particles
 !
 !     See also cs_user_postprocess_mesh in cs_user_postprocess.c to define
 !     the associated visualization particle or trajectory segment meshes.
@@ -712,10 +728,10 @@ if (iphyla.eq.2) then
 
 endif
 
-! 13.2 Boundary statistics: visualization of the particle/boundaries interactions
+! 15.2 Boundary statistics: visualization of the particle/boundaries interactions
 ! ------------------------------------------------
 
-! 13.2.1 Generic parameters
+! 15.2.1 Generic parameters
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ! Particle/boundary interaction mode
@@ -746,7 +762,7 @@ nstbor = 1
 
 seuilf = 0.d0
 
-! 13.2.2 Information to be recorded
+! 15.2.2 Information to be recorded
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
 ! * To activate them, the user has to set below
@@ -773,6 +789,21 @@ iangbd = 0
 ! (default off: 0 ; on: 1)
 ivitbd = 0
 
+! Boundary statistics related to particle clogging
+! iclgst (default off without iclogst: 0 ; on with iclogst: 1)
+!   Contains the following statistics:
+!     inclg: number of clusters on the boundary
+!     iclgt: average time of deposited clusters
+!     iscovc: surface covered by particles
+!     ihdepm: average height of deposited clusters
+!     ihdepv: variance of the height of deposited clusters
+!     ihdiam: mean diameter of deposited particles
+ if (iclogst.eq.1) then
+    iclgst = 1 ! Has to be activated if iclogst = 1
+ else
+    iclgst = 0
+ endif
+
 ! (default off: 0 ; on: 1)
  if (iphyla.eq.2 .and. iencra.eq.1) then
    ! Number of particle/boundary interactions with fouling
@@ -793,7 +824,7 @@ ivitbd = 0
 
 nusbor = 0
 
-! 13.2.3 Name of the recordings for display,
+! 15.2.3 Name of the recordings for display,
 !        Average in time of particle average
 !        of the boundary statistics
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -826,7 +857,7 @@ nusbor = 0
 !   otherwise this average is set to zero.
 
 !===============================================================================
-! 14. Lagrangian listing
+! 16. Lagrangian listing
 !===============================================================================
 
 ! Lagrangian period for the writing of the Lagrangian listing

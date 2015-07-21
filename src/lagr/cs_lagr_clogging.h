@@ -50,13 +50,14 @@ typedef struct {
   cs_real_t   ionic_strength;
   cs_real_t   jamming_limit;
   cs_real_t   min_porosity;
-  cs_real_t   phi1;
-  cs_real_t   phi2;
+  cs_real_t   valen;
+  cs_real_t   phi_p;
+  cs_real_t   phi_s;
 
   cs_real_t*  temperature;
-  cs_real_t   valen;
   cs_real_t*  debye_length;
   cs_real_t   cstham;
+  cs_real_t   csthpp;
   cs_real_t   dcutof;
   cs_real_t   lambwl;
   cs_real_t   kboltz;
@@ -83,9 +84,10 @@ CS_PROCF (cloginit, CLOGINIT)(const cs_real_t   *faraday_cst,
                               const cs_real_t   *min_porosity,
                               const cs_real_t    temperature[],
                               const cs_real_t   *valen,
-                              const cs_real_t   *phi1,
-                              const cs_real_t   *phi2,
+                              const cs_real_t   *phi_p,
+                              const cs_real_t   *phi_s,
                               const cs_real_t   *cstham,
+                              const cs_real_t   *csthpp,
                               const cs_real_t   *dcutof,
                               const cs_real_t   *lambwl,
                               const cs_real_t   *kboltz
@@ -129,7 +131,6 @@ int
 cs_lagr_clogging_barrier(const void                     *particle,
                          const cs_lagr_attribute_map_t  *attr_map,
                          cs_lnum_t                       face_id,
-                         cs_real_t                       face_area,
                          cs_real_t                      *energy_barrier,
                          cs_real_t                      *surface_coverage,
                          cs_real_t                      *limit,

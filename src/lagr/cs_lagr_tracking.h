@@ -83,6 +83,13 @@ typedef enum {
   CS_LAGR_ADHESION_TORQUE,
   CS_LAGR_DISPLACEMENT_NORM,
 
+  /* Clogging model additional parameters */
+
+  CS_LAGR_HEIGHT,
+  CS_LAGR_CLUSTER_NB_PART,
+  CS_LAGR_DEPO_TIME,
+  CS_LAGR_CONSOL_HEIGHT,
+
   /* Thermal model additional parameters */
 
   CS_LAGR_TEMPERATURE,
@@ -199,6 +206,7 @@ typedef struct {
   int  n_temperature_layers;
 
   int  deposition;
+  int  dlvo;
   int  roughness;
   int  resuspension;
   int  clogging;
@@ -241,6 +249,7 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
                           const cs_int_t    *nlayer,
                           const cs_int_t    *iphyla,
                           const cs_int_t    *idepst,
+                          const cs_int_t    *idlvo,
                           const cs_int_t    *irough,
                           const cs_int_t    *ireent,
                           const cs_int_t    *iclogst,
@@ -293,7 +302,12 @@ CS_PROCF (lagbeg, LAGBEG)(const cs_int_t    *nordre,
                           cs_int_t          *jmfadh,
                           cs_int_t          *jndisp,
                           cs_int_t          *jclst,
-                          cs_int_t          *jvls);
+                          cs_int_t          *jvls,
+                          cs_int_t          *jdp2,
+                          cs_int_t          *jnbpoi,
+                          cs_int_t          *jrtdep,
+                          cs_int_t          *jrhcon
+      );
 
 /*----------------------------------------------------------------------------
  * Get variables and parameters associated to each particles and keep it in
@@ -341,12 +355,17 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_scheme_order,
                           const cs_int_t  *iencdibd,
                           const cs_int_t  *iencckbd,
                           const cs_int_t  *inclg,
+                          const cs_int_t  *inclgt,
+                          const cs_int_t  *iclogt,
+                          const cs_int_t  *iclogh,
                           const cs_int_t  *iscovc,
+                          const cs_int_t  *ihdepm,
+                          const cs_int_t  *ihdepv,
+                          const cs_int_t  *ihsum,
                           const cs_int_t  *nusbor,
                           cs_int_t         iusb[],
                           cs_real_t        visc_length[],
                           cs_real_t        dlgeo[],
-                          cs_real_t        energt[],
                           const cs_real_t  tprenc[],
                           const cs_real_t  visref[],
                           const cs_real_t  enc1[],

@@ -39,9 +39,68 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct {
+
+  cs_real_t   faraday_cst;
+  cs_real_t   free_space_permit;
+  cs_real_t   water_permit;
+  cs_real_t   ionic_strength;
+  cs_real_t   phi_p;
+  cs_real_t   phi_s;
+  cs_real_t  *temperature;
+  cs_real_t  valen;
+  cs_real_t  *debye_length;
+  cs_real_t   cstham;
+  cs_real_t   dcutof;
+  cs_real_t   lambwl;
+  cs_real_t   kboltz;
+
+} cs_lagr_dlvo_param_t;
+
+
 /*=============================================================================
  * Function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * DLVO initialization
+ *----------------------------------------------------------------------------*/
+void
+CS_PROCF (dlvo_init, DLVO_INIT)(const cs_real_t   *faraday_cst,
+                                const cs_real_t   *free_space_permit,
+                                const cs_real_t   *water_permit,
+                                const cs_real_t   *ionic_strength,
+                                const cs_real_t    temperature[],
+                                const cs_real_t   *valen,
+                                const cs_real_t   *phi_p,
+                                const cs_real_t   *phi_s,
+                                const cs_real_t   *cstham,
+                                const cs_real_t   *dcutof,
+                                const cs_real_t   *lambwl,
+                                const cs_real_t   *kboltz
+  );
+
+
+/*----------------------------------------------------------------------------
+ * Deallocate the arrays storing temperature and Debye length.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_dlvo_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Compute the energy barrier for a smooth wall.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_barrier(const void                     *particle,
+                const cs_lagr_attribute_map_t  *attr_map,
+                cs_lnum_t                       face_id,
+                cs_real_t                      *energy_barrier);
 
 /*----------------------------------------------------------------------------
  * Van der Waals interaction between a sphere and a plane

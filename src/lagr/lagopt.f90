@@ -1205,6 +1205,15 @@ if ( ireent .eq. 1 ) then
   nivep = nivep + 2
 endif
 
+! Modele de depot multicouches :   2 tableaux supp dans TEPA  : JRTDEP , JRHCON
+!                                  1 tableau supp dans ITEPA : JNBPOI
+!                                  1 tableau supp dans ETTP : JDP2
+
+if ( iclogst .eq. 1 ) then
+   nvep  = nvep  + 2
+   nivep = nivep + 1
+   nvp = nvp + 1
+endif
 
 !-->  VARIABLES UTILISATEURS SUPPLEMENTAIRES : NVLS
 
@@ -1289,6 +1298,11 @@ else if (iphyla.eq.2) then
   jcp  = irf + 1
   irf  = jcp
 
+endif
+
+if (iclogst.eq.1) then
+   jdp2 = irf + 1
+   irf = jdp2
 endif
 
 if (nvls.gt.0) then
@@ -1376,6 +1390,13 @@ if ( ireent .eq. 1 ) then
   irf    = jndisp
 endif
 
+! Modele de depot multicouches : 2 tableaux supp dans TEPA  : JRTDEP, JRHCON
+
+if ( iclogst .eq. 1 ) then
+  jrtdep = irf + 1
+  jrhcon = jrtdep + 1
+  irf    = jrhcon
+endif
 
 if (irf.ne.nvep) then
   write(nfecra,3005) irf, nvep
@@ -1439,6 +1460,13 @@ if ( ireent .eq. 1 ) then
   jnbasg  = irf    + 1
   jnbasp = jnbasg + 1
   irf    = jnbasp
+endif
+
+! Modele de depot multicouches : 1 tableaux supp dans ITEPA  : JNBPOI
+
+if ( iclogst .eq. 1 ) then
+  jnbpoi  = irf    + 1
+  irf    = jnbpoi
 endif
 
 if (irf.ne.nivep) then
@@ -1802,15 +1830,59 @@ if (iensi3.eq.1) then
   endif
 
   if (iclogst.eq.1) then
+
+     ! At the moment, there is no specific distinction of clogging parameters
+     ! to allow a calculation without visualisation of the results
+     ! Thus, we need: iclogst=1 and iclgst=1
+    if (iclgst.eq.0) then
+       write(nfecra,2076) iclogst, iclgst
+       call csexit (1)
+    endif
+
     irf = irf + 1
     inclg = irf
     nombrd(inclg) = 'Part_deposited_number'
     imoybr(inclg) = 0
 
     irf = irf + 1
+    inclgt = irf
+    nombrd(inclgt) = 'Part_deposited_part'
+    imoybr(inclgt) = 0
+
+    irf = irf + 1
+    iclogt = irf
+    nombrd(iclogt) = 'Part_deposited_time'
+    imoybr(iclogt) = 0
+
+    irf = irf + 1
+    iclogh = irf
+    nombrd(iclogh) = 'Part_consolidation_height'
+    imoybr(iclogh) = 0
+
+    irf = irf + 1
     iscovc = irf
     nombrd(iscovc) = 'Part_surf_coverage'
     imoybr(iscovc) = 0
+
+    irf = irf + 1
+    ihdepm = irf
+    nombrd(ihdepm) = 'Part_dep_height_mean'
+    imoybr(ihdepm) = 0
+
+    irf = irf +  1
+    ihdiam = irf
+    nombrd(ihdiam) = 'Part_dep_diameter_mean'
+    imoybr(ihdiam) = 0
+
+    irf = irf +  1
+    ihsum = irf
+    nombrd(ihsum) = 'Part_dep_diameter_sum'
+    imoybr(ihsum) = 0
+
+    irf = irf + 1
+    ihdepv = irf
+    nombrd(ihdepv) = 'Part_dep_height_variance'
+    imoybr(ihdepv) = 0
 
   endif
 
@@ -3777,6 +3849,31 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+
+ 2076 format(                                                     &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : A L''EXECUTION DU MODULE LAGRANGIEN         ',/,&
+'@    =========                                               ',/,&
+'@    LES STATISTIQUES AUX FRONTIERES                         ',/,&
+'@    POUR LE COLMATAGE NE SONT PAS ACTIVEES (ICLGST = 1)     ',/,&
+'@    ALORS QUE LE MODELE DE COLMATAGE EST ACTIVE (ICLOGST=1).',/,&
+'@    IL Y A INCOHERENCE!  (LAGOPT).                          ',/,&
+'@                                                            ',/,&
+'@    LES INDICATEURS DE CALCUL DES STATISTIQUES VALENT :     ',/,&
+'@       ICLOGST = ',I10                                       ,/,&
+'@       ICLGST  = ',I10                                       ,/,&
+'@                                                            ',/,&
+'@    ICLGST DEVRAIT ETRE EGAL A 1                            ',/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@  Verifier la valeur de ICLGST dans la  USLAG1.             ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
  3001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&

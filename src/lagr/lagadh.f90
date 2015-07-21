@@ -337,17 +337,16 @@ endif
 call zufall(1,rtmp)
 dismom = rtmp(1)
 
-if (nbasg.gt.0) then
-   dismom = dismom * sqrt((2.0d0*rpart+rayasg)*rayasg)
-elseif (nbasg.eq.0 .and. nbasp.gt.0) then
-   dismom = dismom * sqrt((2.0d0*rpart+rayasp)*rayasp)
+if (nbasp.gt.0) then
+   dismom =   (rtmp(1)**(1.0d0/(ipepa(jnbasp,ip)*1.0d0)) * 2.0d0 - 1.0d0 )   &
+            * sqrt((2.0d0*rpart+rayasp)*rayasp)
 else
 
    !in the sphere-plate case, we use the deformation given by the DMT theory,
    !which is close to our approach
 
    omsurf = cstham / (24.0d0 * pi * dcutof**2)
-   dismom = (4.0d0 * pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0)
+   dismom = (12.0d0 * pi * omsurf * (rpart**2)/modyeq)**(1.0d0/3.0d0)
 
 endif
 
@@ -376,13 +375,13 @@ double precision distp, rpart, var
 
 if (distp.lt.lambwl/2/pi) then
    var = -cstham*rpart/(6*distp)*(1/                                &
-        (1+14*distp/lambwl+5*pi/4.9d0*distp**3/lambwl/rpart**2))
+        (1.d0+14.d0*distp/lambwl+5*pi/4.9d0*distp**3/lambwl/rpart**2))
 else
    var = cstham*(2.45/60/pi*lambwl*((distp-rpart)/distp**2          &
             -(distp+3*rpart)/(distp+2*rpart)**2)                  &
-            -2.17/720/pi**2*lambwl**2*((distp-2*rpart)            &
+            -2.17d0/720.d0/pi**2*lambwl**2*((distp-2*rpart)            &
             /distp**3 -(distp+4*rpart)/(distp+2*rpart)**3)        &
-            +0.59/5040/pi**3*lambwl**3*((distp-3*rpart)/          &
+            +0.59d0/5040.d0/pi**3*lambwl**3*((distp-3*rpart)/          &
             distp**4 -(distp+5*rpart)/(distp+2*rpart)**4))
 endif
 
@@ -440,8 +439,8 @@ ldebye = ((2.d3 * cstfar**2 * fion)                                     &
 
 
 ! Reduced zeta potential
-lphi1 =  valen * charge * phi1 /  kboltz / tempf
-lphi2 =  valen * charge * phi2 /  kboltz / tempf
+lphi1 =  valen * charge * phi_p /  kboltz / tempf
+lphi2 =  valen * charge * phi_s /  kboltz / tempf
 
 
 !Extended reduced zeta potential
@@ -498,14 +497,14 @@ ldebye = ((2.d3 * cstfar**2 * fion)                                     &
 
 
 ! Reduced zeta potential
-lphi1 =  valen * charge * phi1 /  kboltz / tempf
-lphi2 =  valen * charge * phi2 /  kboltz / tempf
+lphi1 =  valen * charge * phi_p /  kboltz / tempf
+lphi2 =  valen * charge * phi_s /  kboltz / tempf
 
 !Extended reduced zeta potential
 !  (following the work from Ohshima et al, 1982, JCIS, 90, 17-26)
 
 ! For the first particle
-tau = rpart1/ldebye
+tau = rpart1 / ldebye
 
 lphi1 = 8.d0 * tanh(lphi1 / 4.d0) /                       &
 ( 1.d0 + sqrt(1.d0 - (2.d0 * tau + 1.d0) / (tau + 1)**2   &

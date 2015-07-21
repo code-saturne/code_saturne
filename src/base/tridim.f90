@@ -583,6 +583,10 @@ if (ncpdct.gt.0) then
   dt     ,                                                       &
   ckupdc )
 
+ if (iflow .eq.1) then
+   call laghlo(ncepdc, icepdc, ckupdc)
+ endif
+
 endif
 
 ! REMPLISSAGE DES COEFS DE TERME SOURCE DE MASSE
