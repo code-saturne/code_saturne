@@ -93,7 +93,7 @@ BEGIN_C_DECLS
   \var CS_SLES_BICGSTAB
        Preconditioned BiCGstab (biconjugate gradient stabilized)
   \var CS_SLES_BICGSTAB2
-       Preconditioned BiCGstab (biconjugate gradient stabilized)
+       Preconditioned BiCGstab2 (biconjugate gradient stabilized)
   \var CS_SLES_GMRES
        Preconditioned GMRES (generalized minimum residual)
   \var CS_SLES_P_GAUSS_SEIDEL
@@ -2319,17 +2319,18 @@ _bicgstab2(cs_sles_it_t              *c,
     for (ii = 0; ii < n_rows; ii++)
       uk[ii] = rk[ii] - beta* uk[ii];
 
-    /* Compute zk = c.uk */
+    /* Compute vk =  A*uk */
+
+    cs_matrix_vector_multiply(rotation_mode, a, uk, vk);
+
+    /* Compute zk = c.vk */
 
     _polynomial_preconditionning(c,
                                  rotation_mode,
                                  a,
-                                 uk,
+                                 vk,
                                  zk,
-                                 vk);
-    /* Compute vk =  A*zk */
-
-    cs_matrix_vector_multiply(rotation_mode, a, zk, vk);
+                                 sk);
 
     /* Compute gamma and alpha */
 
@@ -2351,14 +2352,14 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* p = A*r */
 
+    cs_matrix_vector_multiply(rotation_mode, a, rk, sk);
+
     _polynomial_preconditionning(c,
                                  rotation_mode,
                                  a,
-                                 rk,
+                                 sk,
                                  zk,
-                                 sk);
-
-    cs_matrix_vector_multiply(rotation_mode, a, zk, sk);
+                                 wk);
 
     ro_1 = _dot_product(c, qk, sk);
     beta = alpha*ro_1/ro_0;
@@ -2376,14 +2377,14 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* wk = A*vk */
 
+    cs_matrix_vector_multiply(rotation_mode, a, vk, wk);
+
     _polynomial_preconditionning(c,
                                  rotation_mode,
                                  a,
-                                 vk,
+                                 wk,
                                  zk,
-                                 wk);
-
-    cs_matrix_vector_multiply(rotation_mode, a, zk, wk);
+                                 tk);
 
     gamma = _dot_product(c, qk, wk);
     alpha = (ro_0+mprec)/(gamma+mprec);
@@ -2396,14 +2397,14 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* tk = A*sk */
 
+    cs_matrix_vector_multiply(rotation_mode, a, sk, tk);
+
     _polynomial_preconditionning(c,
                                  rotation_mode,
                                  a,
-                                 sk,
+                                 tk,
                                  zk,
-                                 tk);
-
-    cs_matrix_vector_multiply(rotation_mode, a, zk, tk);
+                                 vk);
 
     _dot_products_xx_yy_xy_xz_yz(c, sk, tk, rk,
                                  &mu, &tau, &nu, &omega_1, &omega_2);
