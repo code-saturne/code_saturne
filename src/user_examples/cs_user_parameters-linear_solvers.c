@@ -158,10 +158,6 @@ _petsc_p_setup_hook_gamg(const void  *context,
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
 
-#if 0
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-#endif
-
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCGAMG);  /* GAMG (geometric-algebraic multigrid)
                              preconditioning */
@@ -179,10 +175,6 @@ _petsc_p_setup_hook_bamg(const void  *context,
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
-
-#if 0
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
-#endif
 
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCHYPRE);  /* Jacobi (diagonal) preconditioning */
