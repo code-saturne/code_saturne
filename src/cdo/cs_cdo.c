@@ -82,14 +82,14 @@ static double cs_base_eps_machine;
 /*!
  * \brief  Return a string "true" or "false" according to the boolean
  *
- * \param[in]  boolean     _Bool type
+ * \param[in]  boolean  bool type
  *
  * \return a string "true" or "false"
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_base_strtf(const _Bool   boolean)
+cs_base_strtf(bool  boolean)
 {
   if (boolean)
     return "true";

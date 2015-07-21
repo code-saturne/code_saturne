@@ -166,7 +166,7 @@ typedef enum {
 typedef struct {
 
   int                     pty_id;  /* id of the related material property */
-  _Bool                   inv_pty; /* Definition based on material property
+  bool                    inv_pty; /* Definition based on material property
                                       or its inverse */
 
   cs_param_hodge_type_t   type;
@@ -248,7 +248,7 @@ typedef struct {
 typedef struct {
 
   cs_param_bc_type_t   default_bc;
-  _Bool                strong_enforcement;
+  bool                 strong_enforcement;
   double               penalty_coef; // TODO: preliminary step
   cs_quadra_type_t     quad_type;    // barycentric, higher, highest...
 
@@ -325,7 +325,7 @@ typedef struct {
   double                   eps;         // stopping criterion on accuracy
 
   int                      output_freq; // frequencdy of output into listing
-  _Bool                    resid_normalized;
+  bool                     resid_normalized;
 
 } cs_param_itsol_t;
 
@@ -444,7 +444,7 @@ cs_param_pty_set_by_analytic_func(const char          *name,
  */
 /*----------------------------------------------------------------------------*/
 
-_Bool
+bool
 cs_param_pty_is_uniform(int       pty_id);
 
 /*----------------------------------------------------------------------------*/
@@ -477,7 +477,7 @@ void
 cs_param_pty_get_val(int            pty_id,
                      cs_real_t      t,
                      cs_real_3_t    xyz,
-                     _Bool          invers,
+                     bool           invers,
                      cs_real_33_t  *matval);
 
 /*----------------------------------------------------------------------------*/
@@ -511,7 +511,7 @@ cs_param_pty_finalize(void);
 
 cs_param_bc_t *
 cs_param_bc_create(cs_param_bc_type_t  default_bc,
-                   _Bool               is_penalized);
+                   bool                is_penalized);
 
 /*----------------------------------------------------------------------------*/
 /*!

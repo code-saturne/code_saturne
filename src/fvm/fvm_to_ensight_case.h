@@ -58,7 +58,7 @@ typedef struct _fvm_to_ensight_case_t fvm_to_ensight_case_t;
 typedef struct {
 
   const char  * name;    /* Pointer to file name */
-  _Bool         queried; /* Indicates if this file name has already been
+  bool          queried; /* Indicates if this file name has already been
                             returned by "fvm_to_ensight_case_get_..._file()"
                             (so we can decide to create or append to it) */
 

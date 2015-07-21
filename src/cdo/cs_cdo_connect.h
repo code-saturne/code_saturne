@@ -76,7 +76,7 @@ typedef struct {
 
 typedef struct {
 
-  _Bool    owner;
+  bool     owner;
   int      n;
   int     *idx;   /* from 0, size = n+1 */
   int     *lst;   /* number from 1 to ... (there is no multifold entry) */

@@ -242,7 +242,7 @@ fvm_morton_local_sort(cs_lnum_t          n_codes,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_morton_a_gt_b(fvm_morton_code_t  a,
                   fvm_morton_code_t  b);
 
@@ -257,7 +257,7 @@ fvm_morton_a_gt_b(fvm_morton_code_t  a,
  *  true or false
  *----------------------------------------------------------------------------*/
 
-_Bool
+bool
 fvm_morton_a_ge_b(fvm_morton_code_t  a,
                   fvm_morton_code_t  b);
 

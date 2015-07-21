@@ -112,7 +112,7 @@ typedef struct {
 
   /* Unsteady term */
   cs_param_hodge_t     unsteady_hodge;
-  _Bool                is_multiplied_by_rho;  /* true or false */
+  bool                 is_multiplied_by_rho;  /* true or false */
 
   /* Diffusion parameters */
   cs_param_hodge_t     diffusion_hodge;
@@ -243,9 +243,9 @@ int
 cs_param_eq_add(const char               *name,
                 const char               *varname,
                 cs_param_eq_type_t        type,
-                _Bool                     is_steady,
-                _Bool                     do_convection,
-                _Bool                     do_diffusion,
+                bool                      is_steady,
+                bool                      do_convection,
+                bool                      do_diffusion,
                 cs_param_bc_basic_type_t  default_bc_type);
 
 /*----------------------------------------------------------------------------*/
@@ -492,7 +492,7 @@ cs_param_eq_free_all(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_get_info(_Bool       *do_navsto,
+cs_param_eq_get_info(bool        *do_navsto,
                      int         *n_cdo_eqs);
 
 /*----------------------------------------------------------------------------*/

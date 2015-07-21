@@ -271,7 +271,7 @@ cs_daxpy(int                size,
          cs_real_t          beta,
          const cs_real_t    y[],
          cs_real_t         *p_z[],
-         _Bool              reset);
+         bool               reset);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -437,7 +437,7 @@ cs_analysis_data(cs_lnum_t       n_elts,
                  int             stride,
                  cs_datatype_t   datatype,
                  const void     *indata,
-                 _Bool           do_abs);
+                 bool            do_abs);
 
 /*----------------------------------------------------------------------------*/
 /*!

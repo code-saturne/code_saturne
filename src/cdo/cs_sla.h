@@ -234,7 +234,7 @@ cs_sla_matrix_pack(cs_lnum_t                n_final_rows,
                    const cs_sla_matrix_t   *init,
                    const cs_lnum_t         *row_z2i_ids,
                    const cs_lnum_t         *col_i2z_ids,
-                   _Bool                    keep_sym);
+                   bool                     keep_sym);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -298,13 +298,13 @@ cs_sla_block2mat(cs_sla_matrix_t         *A,
                  const cs_sla_matrix_t   *B,
                  const cs_sla_matrix_t   *C,
                  const cs_sla_matrix_t   *D,
-                 _Bool                    sym);
+                 bool                     sym);
 
 /* Operations on matrices */
 void cs_sla_matvec(const cs_sla_matrix_t *m,
                    const double           v[],
                    double                *inout[],
-                   _Bool                  reset);
+                   bool                   reset);
 
 void cs_sla_amxby(double                  alpha,
                   const cs_sla_matrix_t  *m,
@@ -341,7 +341,7 @@ cs_sla_matvec_block2(const cs_sla_matrix_t  *A,
                      const double            Y[],
                      double                 *F[],
                      double                 *G[],
-                     _Bool                   reset);
+                     bool                    reset);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -443,7 +443,7 @@ cs_sla_matrix_create(int                   n_rows,
                      int                   n_cols,
                      int                   stride,
                      cs_sla_matrix_type_t  type,
-                     _Bool                 sym);
+                     bool                  sym);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -475,7 +475,7 @@ cs_sla_matrix_create_from_pattern(const cs_sla_matrix_t  *ref,
 
 cs_sla_matrix_t *
 cs_sla_matrix_copy(const cs_sla_matrix_t  *a,
-                   _Bool                   shared);
+                   bool                    shared);
 
 /*----------------------------------------------------------------------------*/
 /*!
