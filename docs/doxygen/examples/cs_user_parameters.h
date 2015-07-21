@@ -161,12 +161,50 @@
   If no additional settings are required, the matching parameter
   in \ref cs_sles_petsc_define may be set to NULL.
 
+  \subsubsection cs_user_parameters_h_sles_petsc_gamg Using PETSc with GAMG
+
+  To use PETSc's GAMG (geometric-algebraic multigrid) preconditioner,
+  the following general options should be set:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_gamg_1
+
+  Setting GAMG-preconditioned PCG for the pressure may be done as in
+  the previous option, ensuring here that a matrix structure
+  native to PETSc is used (SEQAIJ, MPIAIJ, or some other AIJ variant),
+  so all required matrix operations are available:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_gamg_2
+
+  With the associated setup hook function:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_gamg
+
+  \subsubsection cs_user_parameters_h_sles_petsc_bamg Using PETSc with HYPRE
+
+  To use HYPRE's Boomer AMG as a PETSc preconditioner,
+  the following general options should be set:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_bamg_1
+
+  Setting BoomerAMG-preconditioned PCG for the pressure may be done as in
+  the previous option, ensuring here that a matrix structure
+  native to PETSc is used (SEQAIJ, MPIAIJ, or some other AIJ variant),
+  so all required matrix operations are available:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_bamg_2
+
+  With the associated setup hook function:
+
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_bamg
+
+  \subsubsection cs_user_parameters_h_sles_petsc_add Additional PETSc features
+
   Many additional features are possible with PETSc; for example,
   the following setup hook also outputs a view of the matrix, depending
   on an environment variable, \c CS_USER_PETSC_MAT_VIEW, which may
   take values \c DEFAULT, \c DRAW_WORLD, or \c DRAW:
 
-  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_2
+  \snippet cs_user_parameters-linear_solvers.c sles_petsc_hook_view
 
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 

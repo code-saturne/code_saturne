@@ -127,6 +127,9 @@ BEGIN_C_DECLS
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
+/* Conjugate gradient with Jacobi preconditioning */
+/*------------------------------------------------*/
+
 /*! [sles_petsc_hook_1] */
 static void
 _petsc_p_setup_hook(const void  *context,
@@ -142,6 +145,49 @@ _petsc_p_setup_hook(const void  *context,
   PCSetType(pc, PCJACOBI);  /* Jacobi (diagonal) preconditioning */
 }
 /*! [sles_petsc_hook_1] */
+
+/* Conjugate gradient with GAMG preconditioning */
+/*----------------------------------------------*/
+
+/*! [sles_petsc_hook_gamg] */
+static void
+_petsc_p_setup_hook_gamg(const void  *context,
+                         KSP          ksp)
+{
+  PC pc;
+
+  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
+
+#if 0
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+#endif
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCGAMG);  /* GAMG (geometric-algebraic multigrid)
+                             preconditioning */
+}
+/*! [sles_petsc_hook_gamg] */
+
+/* Conjugate gradient with HYPRE BoomerAMG preconditioning */
+/*---------------------------------------------------------*/
+
+/*! [sles_petsc_hook_bamg] */
+static void
+_petsc_p_setup_hook_bamg(const void  *context,
+                         KSP          ksp)
+{
+  PC pc;
+
+  KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
+
+#if 0
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+#endif
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCHYPRE);  /* Jacobi (diagonal) preconditioning */
+}
+/*! [sles_petsc_hook_bamg] */
 
 /*----------------------------------------------------------------------------
  * User function example for setup options of a PETSc KSP solver.
@@ -160,7 +206,7 @@ _petsc_p_setup_hook(const void  *context,
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
-/*! [sles_petsc_hook_2] */
+/*! [sles_petsc_hook_view] */
 static void
 _petsc_p_setup_hook_view(const void  *context,
                          KSP          ksp)
@@ -202,7 +248,7 @@ _petsc_p_setup_hook_view(const void  *context,
 
   }
 }
-/*! [sles_petsc_hook_2] */
+/*! [sles_petsc_hook_view] */
 
 #endif /* defined(HAVE_PETSC) */
 
@@ -397,6 +443,100 @@ cs_user_linear_solvers(void)
                        NULL);
 
   /*! [sles_petsc_2] */
+
+  END_EXAMPLE_SCOPE
+
+  /* Setting global options for PETSc with GAMG preconditionner */
+  /*------------------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_petsc_gamg_1] */
+
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  PETSC_COMM_WORLD = cs_glob_mpi_comm;
+  PetscInitializeNoArguments();
+
+  /* See the PETSc documentation for the options database */
+
+  PetscOptionsSetValue("-ksp_type", "cg");
+  PetscOptionsSetValue("-pc_type", "gamg");
+  PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
+  PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
+  PetscOptionsSetValue("-mg_levels_pc_type", "sor");
+  PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
+  PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
+  PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
+  PetscOptionsSetValue("-pc_gamg_square_graph", "4");
+
+  /*! [sles_petsc_gamg_1] */
+
+  END_EXAMPLE_SCOPE
+
+  /* Setting pressure solver with PETSc and GAMG preconditioner */
+  /*------------------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_petsc_gamg_2] */
+
+  cs_sles_petsc_define(CS_F_(p)->id,
+                       NULL,
+                       MATMPIAIJ,
+                       _petsc_p_setup_hook_gamg,
+                       NULL);
+
+  /*! [sles_petsc_gamg_2] */
+
+  END_EXAMPLE_SCOPE
+
+  /* Setting global options for PETSc with HYPRE BoomerAMG preconditionner */
+  /*-----------------------------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_petsc_bamg_1] */
+
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  PETSC_COMM_WORLD = cs_glob_mpi_comm;
+  PetscInitializeNoArguments();
+
+  /* See the PETSc documentation for the options database */
+
+  PetscOptionsSetValue("-ksp_type", "cg");
+  PetscOptionsSetValue("-pc_type", "hypre");
+  PetscOptionsSetValue("-pc_hypre_type","boomeramg");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
+  PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
+
+  /*! [sles_petsc_bamg_1] */
+
+  END_EXAMPLE_SCOPE
+
+  /* Setting pressure solver with PETSc and BoomerAMG preconditioner */
+  /*-----------------------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_petsc_bamg_2] */
+
+  cs_sles_petsc_define(CS_F_(p)->id,
+                       NULL,
+                       MATMPIAIJ,
+                       _petsc_p_setup_hook_bamg,
+                       NULL);
+
+  /*! [sles_petsc_bamg_2] */
 
   END_EXAMPLE_SCOPE
 
