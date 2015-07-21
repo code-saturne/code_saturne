@@ -121,7 +121,7 @@ integer          ntrela
 integer          icmst
 
 integer          isvhb, iz
-integer          ii    , ientha, ippcv
+integer          ii    , ientha, ippcv , ikpdc
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
@@ -564,6 +564,12 @@ endif
 if (ncpdct.gt.0) then
 
   iappel = 3
+
+  do ikpdc = 1, 6
+    do ielpdc = 1, ncepdc
+      ckupdc(ielpdc,ikpdc) = 0.d0
+    enddo
+  enddo
 
   if (iihmpr.eq.1) then
     call uikpdc &

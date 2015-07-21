@@ -251,14 +251,6 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !< [generic_subsection_1]
 !-------------------------------------------------------------------------------
 
-!< [generic_subsection_2]
-else if (iappel.eq.3) then
-  do ikpdc = 1, 6
-    do ielpdc = 1, ncepdp
-      ckupdc(ielpdc,ikpdc) = 0.d0
-    enddo
-  enddo
-!< [generic_subsection_2]
 !=============================================================================
 
   ! Third call, at each time step
@@ -279,21 +271,6 @@ else if (iappel.eq.3) then
   ! To be completed by the user: coefficient values
   ! -----------------------------------------------
 
-  ! --- Caution
-  !   It is important that all ckupdc values are defined (by zero values if
-  !   necessary), as they will be used to compute a source term in cells
-  !   identified previously.
-
-  !   They are initialized by zero values,
-  !   and the user must keep this initialization.
-  !                     ====
-
-  do ikpdc = 1, 6
-    do ielpdc = 1, ncepdp
-      ckupdc(ielpdc,ikpdc) = 0.d0
-    enddo
-  enddo
-
   ! --- Diagonal tensor
   !     Example of head losses in direction x
 
@@ -308,7 +285,6 @@ else if (iappel.eq.3) then
     ckupdc(ielpdc,3) =  0.d0*vit
   enddo
 !< [example_3]
-
 
   ! ---  3x3 tensor
   !      Example of head losses at alpha = 45 degres x,y

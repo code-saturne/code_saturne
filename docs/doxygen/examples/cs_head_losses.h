@@ -155,9 +155,7 @@ To be completed by the user: cell selection
 
   \snippet cs_user_head_losses.f90 generic_subsection_1
 
-  Computing the head loss coefficients
-
-  \snippet cs_user_head_losses.f90 generic_subsection_2
+  Computing the head loss coefficient values
 
   Third call, at each time step
 
@@ -173,20 +171,11 @@ To be completed by the user: cell selection
         be done
 
 
-   To be completed by the user: coefficient values:
-
-  \warning   It is important that all \c ckupdc values are defined (by zero values if
-     necessary), as they will be used to compute a source term in cells
-     identified previously. They are initialized by zero values,
-     and the user must keep this initialization.
-
-
    \subsection diagonal_tensor Example 1: head losses in direction x
 
  Diagonal tensor : Example of head losses in direction \c x
 
   \snippet cs_user_head_losses.f90 example_3
-
 
 
   \subsection alpha_tensor Example 2: alpha = 45 degres
