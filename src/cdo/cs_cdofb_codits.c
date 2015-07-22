@@ -176,7 +176,7 @@ _compute_cell_field(const cs_cdo_connect_t     *connect,
        operator */
     for (i = 0, l=shft; i < _h->n_ent; i++, l++) {
       rowsum = 0;
-      f_id = connect->c2f->col[l]-1;
+      f_id = connect->c2f->col_id[l];
       for (j = 0; j < _h->n_ent; j++)
         rowsum += _h->mat[i*_h->n_ent+j];
       dsum += rowsum;
@@ -287,9 +287,9 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
                                                false);
 
   /* Build a face -> face connectivity */
-  f2c = cs_index_map(mf2c->n_rows, mf2c->idx, mf2c->col);
-  c2f = cs_index_map(mc2f->n_rows, mc2f->idx, mc2f->col);
-  f2f = cs_index_convol(n_faces, f2c, c2f);
+  f2c = cs_index_map(mf2c->n_rows, mf2c->idx, mf2c->col_id);
+  c2f = cs_index_map(mc2f->n_rows, mc2f->idx, mc2f->col_id);
+  f2f = cs_index_compose(n_faces, f2c, c2f);
   cs_index_sort(f2f);
   mat->flag |= CS_SLA_MATRIX_SORTED;
 
@@ -298,13 +298,13 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
   for (i = 0; i < n_faces; i++)
     mat->idx[i+1] = mat->idx[i] + f2f->idx[i+1]-f2f->idx[i]-1;
 
-  /* Fill column num */
-  BFT_MALLOC(mat->col, mat->idx[n_faces], int);
+  /* Fill column ids */
+  BFT_MALLOC(mat->col_id, mat->idx[n_faces], cs_lnum_t);
   shift = 0;
   for (i = 0; i < n_faces; i++)
     for (j = f2f->idx[i]; j < f2f->idx[i+1]; j++)
-      if (f2f->lst[j] != i+1)
-        mat->col[shift++] = f2f->lst[j];
+      if (f2f->ids[j] != i)
+        mat->col_id[shift++] = f2f->ids[j];
 
   /* Sanity check */
   assert(shift == mat->idx[n_faces]);

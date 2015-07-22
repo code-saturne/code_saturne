@@ -330,10 +330,10 @@ _spa_dec_add(_spa_dec_t   *spa,
  * \brief   Gather data from the current SPA state to update matrix structure
  *          Do not add zero entries.
  *
- * \param[in]    spa     pointer to the SPA struct.
- * \param[in]    idx     current index position
- * \param[inout] col     pointer to matrix->col array
- * \param[inout] val     pointer to matrix->val array
+ * \param[in]    spa      pointer to the SPA struct.
+ * \param[in]    idx      current index position
+ * \param[inout] col_id   pointer to matrix->col_id array
+ * \param[inout] val      pointer to matrix->val array
  *
  * \return the number of entries added
  */
@@ -342,7 +342,7 @@ _spa_dec_add(_spa_dec_t   *spa,
 static size_t
 _spa_gather(_spa_t     *spa,
             size_t      idx,
-            cs_lnum_t  *col,
+            cs_lnum_t  *col_id,
             double     *val)
 {
   size_t  i, shift;
@@ -357,7 +357,7 @@ _spa_gather(_spa_t     *spa,
     /* Do not affect an entry with zero value */
     if (value > DBL_EPSILON || value < -DBL_EPSILON) {
       shift = idx + n_entries;
-      col[shift] = pos+1;
+      col_id[shift] = pos;
       val[shift] = value;
       n_entries++;
     }
@@ -380,7 +380,7 @@ _spa_gather(_spa_t     *spa,
  *
  * \param[in]    spa     pointer to the SPA struct.
  * \param[in]    idx     current index position
- * \param[inout] col     pointer to matrix->col array
+ * \param[inout] col_id  pointer to matrix->col_id array
  * \param[inout] val     pointer to matrix->sgn array
  *
  * \return the number of entries added
@@ -390,7 +390,7 @@ _spa_gather(_spa_t     *spa,
 static size_t
 _spa_dec_gather(_spa_dec_t  *spa,
                 size_t       idx,
-                cs_lnum_t   *col,
+                cs_lnum_t   *col_id,
                 short int   *connect)
 {
   size_t  i, shift;
@@ -405,7 +405,7 @@ _spa_dec_gather(_spa_dec_t  *spa,
     /* Do not affect an entry with zero value */
     if (value != 0) {
       shift = idx + n_entries;
-      col[shift] = pos+1;
+      col_id[shift] = pos;
       connect[shift] = value;
       n_entries++;
     }
@@ -478,7 +478,7 @@ _init_mat(const cs_sla_matrix_t   *a,
 
   c = cs_sla_matrix_create(a->n_rows, b->n_cols, 1, type, sym);
 
-  BFT_MALLOC(c->col, guess_size, cs_lnum_t);
+  BFT_MALLOC(c->col_id, guess_size, cs_lnum_t);
 
   if (type == CS_SLA_MAT_CSR || type == CS_SLA_MAT_MSR)
     BFT_MALLOC(c->val, guess_size, double);
@@ -502,7 +502,7 @@ _resize_mat(cs_sla_matrix_t   *mat,
   if (cur_size + 1 > ms) { /* Realloc */
 
     ms = CS_MAX(cur_size + 1, floor(1.3*ms));
-    BFT_REALLOC(mat->col, ms, cs_lnum_t);
+    BFT_REALLOC(mat->col_id, ms, cs_lnum_t);
 
     if (mat->type == CS_SLA_MAT_CSR || mat->type == CS_SLA_MAT_MSR)
       BFT_REALLOC(mat->val, ms, double);
@@ -548,23 +548,23 @@ _multiply_dec_matrices(const cs_sla_matrix_t  *a,
 
     for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
 
-      jj = a->col[j]-1, val = a->sgn[j];
+      jj = a->col_id[j], val = a->sgn[j];
       for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
-        kk = b->col[k] - 1, _spa_dec_add(spa, val*b->sgn[k], kk, ii);
+        kk = b->col_id[k], _spa_dec_add(spa, val*b->sgn[k], kk, ii);
 
     } /* End of loop on non-empty columnd of row ii of a */
 
     /* Fill a new row in c and prepare next step */
     if (spa->nnz + idx > size_max)
       _resize_mat(c, spa->nnz + idx, &size_max);
-    n_entries = _spa_dec_gather(spa, idx, c->col, c->sgn);
+    n_entries = _spa_dec_gather(spa, idx, c->col_id, c->sgn);
     c->idx[ii+1] = idx + n_entries;
     idx = c->idx[ii+1];
 
   } /* End of loop on row ii of a */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->sgn, c->idx[c->n_rows], short int);
   spa = _spa_dec_free(spa);
 
@@ -606,23 +606,23 @@ _multiply_csr_matrices(const cs_sla_matrix_t  *a,
 
     for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
 
-      jj = a->col[j]-1, val = a->val[j];
+      jj = a->col_id[j], val = a->val[j];
       for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
-        kk = b->col[k]-1, _spa_add(spa, val*b->val[k], kk, ii);
+        kk = b->col_id[k], _spa_add(spa, val*b->val[k], kk, ii);
 
     } /* End of loop on non-empty columns of row ii of a */
 
     /* Fill a new row in c and prepare next step */
     if (spa->nnz + idx > size_max)
       _resize_mat(c, spa->nnz + idx, &size_max);
-    n_entries = _spa_gather(spa, idx, c->col, c->val);
+    n_entries = _spa_gather(spa, idx, c->col_id, c->val);
     c->idx[ii+1] = idx + n_entries;
     idx = c->idx[ii+1];
 
   } /* End of loop on row ii of a */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -664,23 +664,23 @@ _multiply_deccsr_matrices(const cs_sla_matrix_t  *a,
 
     for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
 
-      jj = a->col[j]-1, val = a->sgn[j];
+      jj = a->col_id[j], val = a->sgn[j];
       for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
-        kk = b->col[k]-1, _spa_add(spa, val*b->val[k], kk, ii);
+        kk = b->col_id[k], _spa_add(spa, val*b->val[k], kk, ii);
 
     } /* End of loop on non-empty columns of row ii of a */
 
     /* Fill a new row in c and prepare next step */
     if (spa->nnz + idx > size_max)
       _resize_mat(c, spa->nnz + idx, &size_max);
-    n_entries = _spa_gather(spa, idx, c->col, c->val);
+    n_entries = _spa_gather(spa, idx, c->col_id, c->val);
     c->idx[ii+1] = idx + n_entries;
     idx = c->idx[ii+1];
 
   } /* End of loop on row ii of a */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -722,23 +722,23 @@ _multiply_csrdec_matrices(const cs_sla_matrix_t  *a,
 
     for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
 
-      jj = a->col[j]-1, val = a->val[j];
+      jj = a->col_id[j], val = a->val[j];
       for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
-        kk = b->col[k]-1, _spa_add(spa, val*b->sgn[k], kk, ii);
+        kk = b->col_id[k], _spa_add(spa, val*b->sgn[k], kk, ii);
 
     } /* End of loop on non-empty columns of row ii of a */
 
     /* Fill a new row in c and prepare next step */
     if (spa->nnz + idx > size_max)
       _resize_mat(c, spa->nnz + idx, &size_max);
-    n_entries = _spa_gather(spa, idx, c->col, c->val);
+    n_entries = _spa_gather(spa, idx, c->col_id, c->val);
     c->idx[ii+1] = idx + n_entries;
     idx = c->idx[ii+1];
 
   } /* End of loop on row ii of a */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -779,28 +779,28 @@ _multiply_decmsr_matrices(const cs_sla_matrix_t  *a,
 
     for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
 
-      jj = a->col[j] - 1, val = a->sgn[j];
+      jj = a->col_id[j], val = a->sgn[j];
 
       /* Diagonal term */
       _spa_add(spa, val*b->diag[jj], jj, ii);
 
       /* Extra diag term */
       for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
-        kk = b->col[k]-1, _spa_add(spa, val*b->val[k], kk, ii);
+        kk = b->col_id[k], _spa_add(spa, val*b->val[k], kk, ii);
 
     } /* End of loop on non-empty columns of row ii of a */
 
     /* Fill a new row in c and prepare next step */
     if (spa->nnz + idx > size_max)
       _resize_mat(c, spa->nnz + idx, &size_max);
-    n_entries = _spa_gather(spa, idx, c->col, c->val);
+    n_entries = _spa_gather(spa, idx, c->col_id, c->val);
     c->idx[ii+1] = idx + n_entries;
     idx = c->idx[ii+1];
 
   } /* End of loop on row ii of a */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -843,28 +843,28 @@ _multiply_msrdec_matrices(const cs_sla_matrix_t  *a,
     /* Diagonal term */
     val = a->diag[ii];
     for (k = b->idx[ii]; k < b->idx[ii+1]; k++)
-      kk = b->col[k]-1, _spa_add(spa, val*b->sgn[k], kk, ii);
+      kk = b->col_id[k], _spa_add(spa, val*b->sgn[k], kk, ii);
 
     /* Extra-diagonal terms */
     for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
 
-      jj = a->col[j]-1, val = a->val[j];
+      jj = a->col_id[j], val = a->val[j];
       for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
-        kk = b->col[k]-1, _spa_add(spa, val*b->sgn[k], kk, ii);
+        kk = b->col_id[k], _spa_add(spa, val*b->sgn[k], kk, ii);
 
     } /* End of loop on non-empty columns of row ii of a */
 
     /* Fill a new row in c and prepare next step */
     if (spa->nnz + idx > size_max)
       _resize_mat(c, spa->nnz + idx, &size_max);
-    n_entries = _spa_gather(spa, idx, c->col, c->val);
+    n_entries = _spa_gather(spa, idx, c->col_id, c->val);
     c->idx[ii+1] = idx + n_entries;
     idx = c->idx[ii+1];
 
   } /* End of loop on row ii of a */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -894,38 +894,38 @@ _decdec_AtDA(const cs_sla_matrix_t  *At,
   int  ii, j, jj, kk, k, shift;
   double  val;
 
-  int  size = 0, size_max = 250;
+  int  size = 0, size_max = At->n_rows;
 
   /* Sanity check */
   assert(A->type == CS_SLA_MAT_DEC);
   assert(At->type == CS_SLA_MAT_DEC);
 
   /* Default allocation */
-  BFT_MALLOC(C->col, size_max, int);
+  BFT_MALLOC(C->col_id, size_max, cs_lnum_t);
   BFT_MALLOC(C->val, size_max, double);
 
   /* Compute the double multiplication */
   for (ii = 0; ii < At->n_rows; ii++) {
     for (j = At->idx[ii]; j < At->idx[ii+1]; j++) {
 
-      jj = At->col[j];
+      jj = At->col_id[j];
       val = D[jj-1] * At->sgn[j];
 
-      for (k = A->idx[jj-1]; k < A->idx[jj]; k++) {
+      for (k = A->idx[jj]; k < A->idx[jj+1]; k++) {
 
-        kk = A->col[k];
-        shift = w[kk-1];
+        kk = A->col_id[k];
+        shift = w[kk];
 
         if (shift == -1) { /* Add a new entry */
           if (size + 1 > size_max) { /* Realloc buffers */
             size_max *= 1.5;
             assert(size_max > size);
-            BFT_REALLOC(C->col, size_max, int);
+            BFT_REALLOC(C->col_id, size_max, cs_lnum_t);
             BFT_REALLOC(C->val, size_max, double);
           }
 
-          w[kk-1] = size;
-          C->col[size] = kk;
+          w[kk] = size;
+          C->col_id[size] = kk;
           C->val[size] = val * A->sgn[k];
           size++;
 
@@ -940,10 +940,10 @@ _decdec_AtDA(const cs_sla_matrix_t  *At,
     shift = C->idx[ii];
 
     for (k = shift; k < C->idx[ii+1]; k++) {
-      w[C->col[k]-1] = -1;
+      w[C->col_id[k]] = -1;
       if (fabs(C->val[k]) > cs_base_zthreshold) { /* Clean zero entry */
         if (k != shift) {
-          C->col[shift] = C->col[k];
+          C->col_id[shift] = C->col_id[k];
           C->val[shift] = C->val[k];
         }
         shift++;
@@ -980,38 +980,38 @@ _csrcsr_AtDA(const cs_sla_matrix_t  *At,
   int  ii, j, jj, kk, k, shift;
   double  val;
 
-  int  size = 0, size_max = 250;
+  int  size = 0, size_max = A->n_rows;
 
   /* Sanity check */
   assert(A->type == CS_SLA_MAT_CSR);
   assert(At->type == CS_SLA_MAT_CSR);
 
   /* Default allocation */
-  BFT_MALLOC(C->col, size_max, int);
+  BFT_MALLOC(C->col_id, size_max, int);
   BFT_MALLOC(C->val, size_max, double);
 
   /* Compute the double multiplication */
   for (ii = 0; ii < At->n_rows; ii++) {
     for (j = At->idx[ii]; j < At->idx[ii+1]; j++) {
 
-      jj = At->col[j];
-      val = D[jj-1] * At->val[j];
+      jj = At->col_id[j];
+      val = D[jj] * At->val[j];
 
-      for (k = A->idx[jj-1]; k < A->idx[jj]; k++) {
+      for (k = A->idx[jj]; k < A->idx[jj+1]; k++) {
 
-        kk = A->col[k];
-        shift = w[kk-1];
+        kk = A->col_id[k];
+        shift = w[kk];
 
         if (shift == -1) { /* Add a new entry */
           if (size + 1 > size_max) { /* Realloc buffers */
             size_max *= 1.5;
             assert(size_max > size);
-            BFT_REALLOC(C->col, size_max, int);
+            BFT_REALLOC(C->col_id, size_max, int);
             BFT_REALLOC(C->val, size_max, double);
           }
 
-          w[kk-1] = size;
-          C->col[size] = kk;
+          w[kk] = size;
+          C->col_id[size] = kk;
           C->val[size] = val * A->val[k];
           size++;
 
@@ -1026,10 +1026,10 @@ _csrcsr_AtDA(const cs_sla_matrix_t  *At,
     shift = C->idx[ii];
 
     for (k = shift; k < C->idx[ii+1]; k++) {
-      w[C->col[k]-1] = -1;
+      w[C->col_id[k]] = -1;
       if (fabs(C->val[k]) > cs_base_zthreshold) { /* Clean zero entry */
         if (k != shift) {
-          C->col[shift] = C->col[k];
+          C->col_id[shift] = C->col_id[k];
           C->val[shift] = C->val[k];
         }
         shift++;
@@ -1072,7 +1072,7 @@ _pack_dec(cs_sla_matrix_t         *final,
       irow_id = row_z2i_ids[zrow_id];
       shift = final->idx[zrow_id];
       for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++, shift++) {
-        final->col[shift] = init->col[j];
+        final->col_id[shift] = init->col_id[j];
         final->sgn[shift] = init->sgn[j];
       }
     }
@@ -1084,9 +1084,9 @@ _pack_dec(cs_sla_matrix_t         *final,
       irow_id = row_z2i_ids[zrow_id];
       shift = final->idx[zrow_id];
       for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++) {
-        icol_id = init->col[j]-1;
+        icol_id = init->col_id[j];
         if (col_i2z_ids[icol_id] > -1) { /* Not removed */
-          final->col[shift] = col_i2z_ids[icol_id]+1;
+          final->col_id[shift] = col_i2z_ids[icol_id];
           final->sgn[shift] = init->sgn[j];
           shift++;
         }
@@ -1126,8 +1126,8 @@ _pack_csr(cs_sla_matrix_t         *final,
     for (zrow_id = 0; zrow_id < final->n_rows; zrow_id++) {
       irow_id = row_z2i_ids[zrow_id];
       shift = final->idx[zrow_id];
-      for (j = init->idx[irow_id-1]; j < init->idx[irow_id]; j++, shift++) {
-        final->col[shift] = init->col[j];
+      for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++, shift++) {
+        final->col_id[shift] = init->col_id[j];
         final->val[shift] = init->val[j];
       }
     }
@@ -1139,9 +1139,9 @@ _pack_csr(cs_sla_matrix_t         *final,
       irow_id = row_z2i_ids[zrow_id];
       shift = final->idx[zrow_id];
       for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++) {
-        icol_id = init->col[j]-1;
+        icol_id = init->col_id[j];
         if (col_i2z_ids[icol_id] > -1) { /* Not removed */
-          final->col[shift] = col_i2z_ids[icol_id]+1;
+          final->col_id[shift] = col_i2z_ids[icol_id];
           final->val[shift] = init->val[j];
           shift++;
         }
@@ -1186,12 +1186,12 @@ _pack_msr(cs_sla_matrix_t         *final,
         shift = final->idx[zrow_id];
         irow_id = row_z2i_ids[zrow_id];
         if (zrow_id < final->n_cols) { // Diag. entry
-          final->col[shift] = zrow_id+1;
+          final->col_id[shift] = zrow_id;
           final->val[shift] = init->diag[irow_id];
           shift++;
         }
         for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++, shift++) {
-          final->col[shift] = init->col[j];
+          final->col_id[shift] = init->col_id[j];
           final->val[shift] = init->val[j];
         }
       }
@@ -1204,7 +1204,7 @@ _pack_msr(cs_sla_matrix_t         *final,
         final->diag[zrow_id] = init->diag[irow_id];
         shift = final->idx[zrow_id];
         for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++, shift++) {
-          final->col[shift] = init->col[j];
+          final->col_id[shift] = init->col_id[j];
           final->val[shift] = init->val[j];
         }
       }
@@ -1220,14 +1220,14 @@ _pack_msr(cs_sla_matrix_t         *final,
         irow_id = row_z2i_ids[zrow_id];
         shift = final->idx[zrow_id];
         if (zrow_id < final->n_cols) {
-          final->col[shift] = zrow_id+1;
+          final->col_id[shift] = zrow_id;
           final->val[shift] = init->diag[irow_id];
           shift++;
         }
         for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++) {
-          icol_id = init->col[j]-1;
+          icol_id = init->col_id[j];
           if (col_i2z_ids[icol_id] > -1) { /* Not removed */
-            final->col[shift] = col_i2z_ids[icol_id]+1;
+            final->col_id[shift] = col_i2z_ids[icol_id];
             final->val[shift] = init->val[j];
             shift++;
           }
@@ -1242,9 +1242,9 @@ _pack_msr(cs_sla_matrix_t         *final,
         final->diag[zrow_id] = init->diag[irow_id];
         shift = final->idx[zrow_id];
         for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++) {
-          icol_id = init->col[j]-1;
+          icol_id = init->col_id[j];
           if (col_i2z_ids[icol_id] > -1) { /* Not removed */
-            final->col[shift] = col_i2z_ids[icol_id]+1;
+            final->col_id[shift] = col_i2z_ids[icol_id];
             final->val[shift] = init->val[j];
             shift++;
           }
@@ -1442,7 +1442,7 @@ cs_sla_block2mat(cs_sla_matrix_t        *A,
   }
 
   nnz = M->idx[M->n_rows];
-  BFT_MALLOC(M->col, nnz, int);
+  BFT_MALLOC(M->col_id, nnz, int);
   BFT_MALLOC(M->val, nnz, double);
 
   /* Build global matrix */
@@ -1450,13 +1450,13 @@ cs_sla_block2mat(cs_sla_matrix_t        *A,
 
     shift = M->idx[i];
     for (j = A->idx[i]; j < A->idx[i+1]; j++) {
-      M->col[shift] = A->col[j];
+      M->col_id[shift] = A->col_id[j];
       M->val[shift] = A->val[j];
       shift++;
     }
 
     for (j = B->idx[i]; j < B->idx[i+1]; j++) {
-      M->col[shift] = B->col[j] + A->n_cols;
+      M->col_id[shift] = B->col_id[j] + A->n_cols;
       M->val[shift] = (double)B->sgn[j]; /* assume it's a DEC type */
       shift++;
     }
@@ -1467,14 +1467,14 @@ cs_sla_block2mat(cs_sla_matrix_t        *A,
 
     shift = M->idx[A->n_rows + i];
     for (j = C->idx[i]; j < C->idx[i+1]; j++) {
-      M->col[shift] = C->col[j];
+      M->col_id[shift] = C->col_id[j];
       M->val[shift] = (double)C->sgn[j];
       shift++;
     }
 
     if (D != NULL) {
       for (j = D->idx[i]; j < D->idx[i+1]; j++) {
-        M->col[shift] = D->col[j] + C->n_cols;
+        M->col_id[shift] = D->col_id[j] + C->n_cols;
         M->val[shift] = D->val[j];
         shift++;
       }
@@ -1550,16 +1550,16 @@ cs_sla_matrix_add(double                  alpha,
 
         /* Contribution of matrix a */
         for (j = a->idx[ii]; j < a->idx[ii+1]; j++)
-          jj = a->col[j]-1, _spa_add(spa, alpha*a->sgn[j], jj, ii);
+          jj = a->col_id[j], _spa_add(spa, alpha*a->sgn[j], jj, ii);
 
         /* Contribution of matrix b */
         for (j = b->idx[ii]; j < b->idx[ii+1]; j++)
-          jj = b->col[j]-1, _spa_add(spa, beta*b->sgn[j], jj, ii);
+          jj = b->col_id[j], _spa_add(spa, beta*b->sgn[j], jj, ii);
 
         /* Fill a new row in c and prepare next step */
         if (spa->nnz + idx > size_max)
           _resize_mat(c, spa->nnz + idx, &size_max);
-        n_entries = _spa_gather(spa, idx, c->col, c->val);
+        n_entries = _spa_gather(spa, idx, c->col_id, c->val);
         c->idx[ii+1] = idx + n_entries;
         idx = c->idx[ii+1];
 
@@ -1577,16 +1577,16 @@ cs_sla_matrix_add(double                  alpha,
 
         /* Contribution of matrix a */
         for (j = a->idx[ii]; j < a->idx[ii+1]; j++)
-          jj = a->col[j]-1, _spa_add(spa, alpha*a->val[j], jj, ii);
+          jj = a->col_id[j], _spa_add(spa, alpha*a->val[j], jj, ii);
 
         /* Contribution of matrix b */
         for (j = b->idx[ii]; j < b->idx[ii+1]; j++)
-          jj = b->col[j]-1, _spa_add(spa, beta*b->val[j], jj, ii);
+          jj = b->col_id[j], _spa_add(spa, beta*b->val[j], jj, ii);
 
         /* Fill a new row in c and prepare next step */
         if (spa->nnz + idx > size_max)
           _resize_mat(c, spa->nnz + idx, &size_max);
-        n_entries = _spa_gather(spa, idx, c->col, c->val);
+        n_entries = _spa_gather(spa, idx, c->col_id, c->val);
         c->idx[ii+1] = idx + n_entries;
         idx = c->idx[ii+1];
 
@@ -1607,16 +1607,16 @@ cs_sla_matrix_add(double                  alpha,
         /* Contribution of matrix a */
         _spa_add(spa, alpha*a->diag[ii], ii, ii);
         for (j = a->idx[ii]; j < a->idx[ii+1]; j++)
-          jj = a->col[j]-1, _spa_add(spa, alpha*a->val[j], jj, ii);
+          jj = a->col_id[j], _spa_add(spa, alpha*a->val[j], jj, ii);
 
         /* Contribution of matrix b */
         for (j = b->idx[ii]; j < b->idx[ii+1]; j++)
-          jj = b->col[j]-1, _spa_add(spa, beta*b->val[j], jj, ii);
+          jj = b->col_id[j], _spa_add(spa, beta*b->val[j], jj, ii);
 
         /* Fill a new row in c and prepare next step */
         if (spa->nnz + idx > size_max)
           _resize_mat(c, spa->nnz + idx, &size_max);
-        n_entries = _spa_gather(spa, idx, c->col, c->val);
+        n_entries = _spa_gather(spa, idx, c->col_id, c->val);
         c->idx[ii+1] = idx + n_entries;
         idx = c->idx[ii+1];
 
@@ -1629,7 +1629,7 @@ cs_sla_matrix_add(double                  alpha,
   }
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -1792,7 +1792,7 @@ cs_sla_matrix_combine(double                  alpha,
 
       /* Add contribution from alpha*a */
       for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
-        jj = a->col[j]-1, val = alpha*a->val[j];
+        jj = a->col_id[j], val = alpha*a->val[j];
         _spa_add(spa, val, jj, ii);
       }
       if (a->type == CS_SLA_MAT_MSR)
@@ -1800,10 +1800,10 @@ cs_sla_matrix_combine(double                  alpha,
 
       for (j = bt->idx[ii]; j < bt->idx[ii+1]; j++) {
 
-        jj = bt->col[j]-1, val = beta*bt->sgn[j];
+        jj = bt->col_id[j], val = beta*bt->sgn[j];
 
         for (k = b->idx[jj]; k < b->idx[jj+1]; k++) {
-          kk = b->col[k]-1;
+          kk = b->col_id[k];
           _spa_add(spa, val*b->sgn[k], kk, ii);
         }
 
@@ -1812,7 +1812,7 @@ cs_sla_matrix_combine(double                  alpha,
       /* Fill a new row in c and prepare next step */
       if (spa->nnz + idx > size_max)
         _resize_mat(c, spa->nnz + idx, &size_max);
-      n_entries = _spa_gather(spa, idx, c->col, c->val);
+      n_entries = _spa_gather(spa, idx, c->col_id, c->val);
       c->idx[ii+1] = idx + n_entries;
       idx = c->idx[ii+1];
 
@@ -1825,7 +1825,7 @@ cs_sla_matrix_combine(double                  alpha,
 
       /* Add contribution from alpha*a */
       for (j = a->idx[ii]; j < a->idx[ii+1]; j++) {
-        jj = a->col[j]-1, val = alpha*a->val[j];
+        jj = a->col_id[j], val = alpha*a->val[j];
         _spa_add(spa, val, jj, ii);
       }
       if (a->type == CS_SLA_MAT_MSR)
@@ -1833,19 +1833,17 @@ cs_sla_matrix_combine(double                  alpha,
 
       for (j = bt->idx[ii]; j < bt->idx[ii+1]; j++) {
 
-        jj = bt->col[j]-1, val = beta * bt->val[j];
+        jj = bt->col_id[j], val = beta * bt->val[j];
 
-        for (k = b->idx[jj]; k < b->idx[jj+1]; k++) {
-          kk = b->col[k]-1;
-          _spa_add(spa, val*b->val[k], kk, ii);
-        }
+        for (k = b->idx[jj]; k < b->idx[jj+1]; k++)
+          kk = b->col_id[k], _spa_add(spa, val*b->val[k], kk, ii);
 
       } /* End of loop on non-empty columns of row ii of bt */
 
       /* Fill a new row in c and prepare next step */
       if (spa->nnz + idx > size_max)
         _resize_mat(c, spa->nnz + idx, &size_max);
-      n_entries = _spa_gather(spa, idx, c->col, c->val);
+      n_entries = _spa_gather(spa, idx, c->col_id, c->val);
       c->idx[ii+1] = idx + n_entries;
       idx = c->idx[ii+1];
 
@@ -1854,7 +1852,7 @@ cs_sla_matrix_combine(double                  alpha,
   } /* CSR type */
 
   /* Memory management */
-  BFT_REALLOC(c->col, c->idx[c->n_rows], cs_lnum_t);
+  BFT_REALLOC(c->col_id, c->idx[c->n_rows], cs_lnum_t);
   BFT_REALLOC(c->val, c->idx[c->n_rows], double);
   spa = _spa_free(spa);
 
@@ -1913,7 +1911,7 @@ cs_sla_multiply_AtDA(const cs_sla_matrix_t  *At,
     _decdec_AtDA(At, D, A, C, w);
 
   /* Memory management */
-  BFT_REALLOC(C->col, C->idx[C->n_rows], int);
+  BFT_REALLOC(C->col_id, C->idx[C->n_rows], int);
   BFT_REALLOC(C->val, C->idx[C->n_rows], double);
 
   if (use_work == 1)
@@ -1960,42 +1958,42 @@ cs_sla_matvec(const cs_sla_matrix_t  *m,
     for (i = 0; i < m->n_rows; i++)
       out[i] = 0.0;
 
-  if (m->type == CS_SLA_MAT_DEC) {
-
+  switch (m->type) {
+  case CS_SLA_MAT_DEC:
     for (i = 0; i < m->n_rows; i++) {
       sum = 0.0;
       for (j = m->idx[i]; j < m->idx[i+1]; j++)
-        sum += m->sgn[j]*v[m->col[j]-1];
+        sum += m->sgn[j]*v[m->col_id[j]];
       out[i] += sum;
     }
+    break;
 
-  }
-  else if (m->type == CS_SLA_MAT_CSR) {
-
+  case CS_SLA_MAT_CSR:
     for (i = 0; i < m->n_rows; i++) {
       sum = 0.0;
       for (j = m->idx[i]; j < m->idx[i+1]; j++)
-        sum += m->val[j] * v[m->col[j]-1];
+        sum += m->val[j] * v[m->col_id[j]];
       out[i] += sum;
     }
+    break;
 
-  }
-  else if (m->type == CS_SLA_MAT_MSR) {
-
+  case CS_SLA_MAT_MSR:
     assert(m->n_rows == m->n_cols); /* Should be a squared matrix */
-
     for (i = 0; i < m->n_rows; i++) {
       sum = m->diag[i] * v[i];
       for (j = m->idx[i]; j < m->idx[i+1]; j++)
-        sum += m->val[j] * v[m->col[j]-1];
+        sum += m->val[j] * v[m->col_id[j]];
       out[i] += sum;
     }
+    break;
 
-  }
-  else
+  default:
     bft_error(__FILE__, __LINE__, 0,
               "  Incompatible matrix type.\n"
               "  Cannot mulitply matrix by vector.\n");
+    break;
+
+  } // end of switch
 
   /* Return pointer */
   *inout = out;
@@ -2088,30 +2086,25 @@ cs_sla_matvec_block2(const cs_sla_matrix_t  *A,
   }
 
   if (reset == true) {
-    for (i = 0; i < nx; i++)
-      _F[i] = 0.0;
-    for (i = 0; i < ny; i++)
-      _G[i] = 0.0;
+    for (i = 0; i < nx; i++) _F[i] = 0.0;
+    for (i = 0; i < ny; i++) _G[i] = 0.0;
   }
 
   /* Compute _F = A*X + B*Y */
   if (A != NULL)
     cs_sla_matvec(A, X, &_F, reset);
-
   if (B != NULL)
     cs_sla_matvec(B, Y, &_F, reset);
 
   /* Compute _G = A*X + B*Y */
   if (C != NULL)
     cs_sla_matvec(C, X, &_G, reset);
-
   if (D != NULL)
     cs_sla_matvec(D, Y, &_G, reset);
 
   /* Return pointers */
   *F = _F;
   *G = _G;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2129,7 +2122,7 @@ cs_sla_matrix_msr2csr(cs_sla_matrix_t  *a)
   int  i, j, s, e, new_nnz;
 
   cs_lnum_t  shift = 0;
-  cs_lnum_t  *new_index = NULL, *new_col = NULL;
+  cs_lnum_t  *new_index = NULL, *new_col_id = NULL;
   double  *new_val = NULL;
 
   if (a->type == CS_SLA_MAT_CSR) /* Nothing to do */
@@ -2149,25 +2142,23 @@ cs_sla_matrix_msr2csr(cs_sla_matrix_t  *a)
   /* Allocate new buffers */
   BFT_MALLOC(new_index, a->n_rows + 1, cs_lnum_t);
   new_index[0] = 0;
-
   new_nnz = a->idx[a->n_rows] + a->n_rows;
-  BFT_MALLOC(new_col, new_nnz, cs_lnum_t);
+  BFT_MALLOC(new_col_id, new_nnz, cs_lnum_t);
   BFT_MALLOC(new_val, new_nnz, double);
 
   /* Fill new buffers */
   for (i = 0; i < a->n_rows; i++) {
 
-    s = a->idx[i];
-    e = a->idx[i+1];
+    s = a->idx[i], e = a->idx[i+1];
 
     /* Diagonal term */
-    new_col[shift] = i+1;
+    new_col_id[shift] = i;
     new_val[shift] = a->diag[i];
     shift++;
 
     /* Extra_diagonal terms */
     for (j = s; j < e; j++) {
-      new_col[shift] = a->col[j];
+      new_col_id[shift] = a->col_id[j];
       new_val[shift] = a->val[j];
       shift++;
     }
@@ -2177,13 +2168,13 @@ cs_sla_matrix_msr2csr(cs_sla_matrix_t  *a)
 
   /* Change elements of the matrix structure */
   BFT_FREE(a->idx);
-  BFT_FREE(a->col);
+  BFT_FREE(a->col_id);
   BFT_FREE(a->val);
   BFT_FREE(a->diag);
 
   a->diag = NULL;
   a->idx = new_index;
-  a->col = new_col;
+  a->col_id = new_col_id;
   a->val = new_val;
   a->type = CS_SLA_MAT_CSR;
 }
@@ -2199,7 +2190,7 @@ cs_sla_matrix_msr2csr(cs_sla_matrix_t  *a)
 void
 cs_sla_matrix_csr2msr(cs_sla_matrix_t  *a)
 {
-  int  i, j, s, e, new_nnz;
+  int  row_id, j, s, e, new_nnz;
 
   cs_lnum_t  shift = 0;
 
@@ -2220,35 +2211,34 @@ cs_sla_matrix_csr2msr(cs_sla_matrix_t  *a)
 
   /* Allocate new buffers */
   BFT_MALLOC(a->diag, a->n_rows, double);
-  for (i = 0; i < a->n_rows; i++)
-    a->diag[i] = 0;
+  for (row_id = 0; row_id < a->n_rows; row_id++)
+    a->diag[row_id] = 0;
 
   /* Modify existing entries and fill diag */
   s = a->idx[0];
-  for (i = 0; i < a->n_rows; i++) {
-
-    e = a->idx[i+1];
+  for (row_id = 0; row_id < a->n_rows; row_id++) {
 
     /* Extra_diagonal terms */
+    e = a->idx[row_id+1];
     for (j = s; j < e; j++) {
 
-      if (a->col[j] == i+1)  /* Diagonal entry */
-        a->diag[i] = a->val[j];
-      else {                 /* Extra diag. entry */
-        a->col[shift] = a->col[j];
+      if (a->col_id[j] == row_id)  /* Diagonal entry */
+        a->diag[row_id] = a->val[j];
+      else {                       /* Extra diag. entry */
+        a->col_id[shift] = a->col_id[j];
         a->val[shift] = a->val[j];
         shift++;
       }
 
     }
-    a->idx[i+1] = shift;
+    a->idx[row_id+1] = shift;
     s = e;
 
   } /* End of loop on rows */
 
   /* Change elements of the matrix structure */
   new_nnz = shift;
-  BFT_REALLOC(a->col, new_nnz, cs_lnum_t);
+  BFT_REALLOC(a->col_id, new_nnz, cs_lnum_t);
   BFT_REALLOC(a->val, new_nnz, double);
   a->type = CS_SLA_MAT_MSR;
 }
@@ -2272,12 +2262,12 @@ cs_sla_matrix_share2own(cs_sla_matrix_t  *a)
   if (a->flag & CS_SLA_MATRIX_SHARED) { /* Pattern is shared */
 
     p = a->idx;
-    BFT_MALLOC(a->idx, a->n_rows + 1, int);
-    memcpy(a->idx, p, (a->n_rows+1)*sizeof(int));
+    BFT_MALLOC(a->idx, a->n_rows + 1, cs_lnum_t);
+    memcpy(a->idx, p, (a->n_rows+1)*sizeof(cs_lnum_t));
 
-    p = a->col;
-    BFT_MALLOC(a->col, a->idx[a->n_rows], int);
-    memcpy(a->col, p, a->idx[a->n_rows]*sizeof(int));
+    p = a->col_id;
+    BFT_MALLOC(a->col_id, a->idx[a->n_rows], cs_lnum_t);
+    memcpy(a->col_id, p, a->idx[a->n_rows]*sizeof(cs_lnum_t));
 
     if (a->didx != NULL) {
       p = a->didx;
@@ -2362,7 +2352,7 @@ cs_sla_matrix_pack(cs_lnum_t                n_final_rows,
         irow_id = row_z2i_ids[zrow_id];
         n_entries = 0;
         for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++)
-          if (col_i2z_ids[init->col[j]-1] > -1) /* Not removed */
+          if (col_i2z_ids[init->col_id[j]] > -1) /* Not removed */
             n_entries++;
         final->idx[zrow_id+1] = final->idx[zrow_id] + n_entries;
 
@@ -2395,7 +2385,7 @@ cs_sla_matrix_pack(cs_lnum_t                n_final_rows,
         if (zrow_id < n_final_cols)
           n_entries = 1;
         for (j = init->idx[irow_id]; j < init->idx[irow_id+1]; j++)
-          if (col_i2z_ids[init->col[j]-1] > -1) /* Not removed */
+          if (col_i2z_ids[init->col_id[j]] > -1) /* Not removed */
             n_entries++;
         final->idx[zrow_id+1] = final->idx[zrow_id] + n_entries;
 
@@ -2407,7 +2397,7 @@ cs_sla_matrix_pack(cs_lnum_t                n_final_rows,
 
   /* Allocate arrays */
   nnz = final->idx[final->n_rows];
-  BFT_MALLOC(final->col, nnz, int);
+  BFT_MALLOC(final->col_id, nnz, int);
 
   if (init->type == CS_SLA_MAT_DEC) {
 
@@ -2439,7 +2429,7 @@ cs_sla_matrix_pack(cs_lnum_t                n_final_rows,
 void
 cs_sla_matrix_diag_idx(cs_sla_matrix_t    *m)
 {
-  int  i, j;
+  cs_lnum_t  row_id, pos;
 
   if (m == NULL)
     return;
@@ -2454,11 +2444,11 @@ cs_sla_matrix_diag_idx(cs_sla_matrix_t    *m)
     if (m->didx == NULL)
       BFT_MALLOC(m->didx, m->n_rows, int);
 
-    for (i = 0; i < m->n_rows; i++) {
-      m->didx[i] = -1; /* Default initialization: no diagonal entry */
-      for (j = m->idx[i]; j < m->idx[i+1]; j++) {
-        if (m->col[j]-1 == i) {
-          m->didx[i] = j;
+    for (row_id = 0; row_id < m->n_rows; row_id++) {
+      m->didx[row_id] = -1; /* Default initialization: no diagonal entry */
+      for (pos = m->idx[row_id]; pos < m->idx[row_id+1]; pos++) {
+        if (m->col_id[pos] == row_id) {
+          m->didx[row_id] = pos;
           break;
         }
       }
@@ -2538,7 +2528,7 @@ cs_sla_matrix_get_diag(const cs_sla_matrix_t  *m,
 
       for (i = 0; i < m->n_rows; i++) {
         for (j = m->idx[i]; j < m->idx[i+1]; j++) {
-          if (m->col[j] == i+1) {
+          if (m->col_id[j] == i) {
             for (k = 0; k < stride; k++)
               diag[i*stride+k] = m->val[j*stride+k];
             break;
@@ -2551,7 +2541,7 @@ cs_sla_matrix_get_diag(const cs_sla_matrix_t  *m,
 
       for (i = 0; i < m->n_rows; i++) {
         for (j = m->idx[i]; j < m->idx[i+1]; j++) {
-          if (m->col[j] == i+1) {
+          if (m->col_id[j] == i) {
             diag[i] = m->val[j];
             break;
           }
@@ -2590,14 +2580,14 @@ cs_sla_matrix_sort(cs_sla_matrix_t  *m)
     for (ii = 0; ii < m->n_rows; ii++)
       cs_sort_dcoupled_shell(m->idx[ii],
                              m->idx[ii + 1],
-                             m->col,
+                             m->col_id,
                              m->val);
 
   else if (m->type == CS_SLA_MAT_DEC)
     for (ii = 0; ii < m->n_rows; ii++)
       cs_sort_sicoupled_shell(m->idx[ii],
                               m->idx[ii + 1],
-                              m->col,
+                              m->col_id,
                               m->sgn);
 }
 
@@ -2710,11 +2700,11 @@ cs_sla_bread(const char        *name,
 
   if (nnz > 0) {
 
-    BFT_MALLOC(m->col, nnz, int);
+    BFT_MALLOC(m->col_id, nnz, int);
     BFT_MALLOC(m->val, nnz, double);
 
     /* cols from 1 to n_rows */
-    fread(m->col, nnz*sizeof(int), 1, f);
+    fread(m->col_id, nnz*sizeof(int), 1, f);
     fread(m->val, nnz*sizeof(double), 1, f);
 
   }
@@ -2803,7 +2793,7 @@ cs_sla_bwrite(const char              *name,
   fwrite(m->idx, sizeof(int), m->n_rows + 1, f);
 
   /* write cols (start from 1 to n_rows) and values */
-  fwrite(m->col, sizeof(int), m->idx[m->n_rows], f);
+  fwrite(m->col_id, sizeof(int), m->idx[m->n_rows], f);
   fwrite(m->val, sizeof(double), m->idx[m->n_rows], f);
 
   fclose(f);
@@ -2851,7 +2841,7 @@ cs_sla_matrix_create(int                   n_rows,
   m->diag = NULL;
   m->idx = NULL;
   m->didx = NULL;
-  m->col = NULL;
+  m->col_id = NULL;
   m->sgn = NULL;
   m->val = NULL;
 
@@ -2918,7 +2908,7 @@ cs_sla_matrix_create_from_pattern(const cs_sla_matrix_t  *ref,
 
   m->flag = ref->flag | CS_SLA_MATRIX_SHARED;
   m->idx = ref->idx;
-  m->col = ref->col;
+  m->col_id = ref->col_id;
   m->didx = ref->didx;
 
   if (m->type == CS_SLA_MAT_MSR) {
@@ -2965,9 +2955,9 @@ cs_sla_matrix_copy(const cs_sla_matrix_t  *a,
 
     if (a->type != CS_SLA_MAT_NONE) { /* Copy pattern */
 
-      BFT_MALLOC(b->col, a->idx[a->n_rows], int);
-      memcpy(b->idx, a->idx, (a->n_rows+1)*sizeof(int));
-      memcpy(b->col, a->col, a->idx[a->n_rows]*sizeof(int));
+      BFT_MALLOC(b->col_id, a->idx[a->n_rows], cs_lnum_t);
+      memcpy(b->idx, a->idx, (a->n_rows+1)*sizeof(cs_lnum_t));
+      memcpy(b->col_id, a->col_id, a->idx[a->n_rows]*sizeof(cs_lnum_t));
 
       if (a->didx != NULL) {
         BFT_MALLOC(b->didx, a->n_rows, int);
@@ -3035,12 +3025,12 @@ cs_sla_matrix_transpose(const cs_sla_matrix_t  *a)
     return at;
 
   /* General case: 1) build index */
-  BFT_MALLOC(at->col, a->idx[a->n_rows], int);
+  BFT_MALLOC(at->col_id, a->idx[a->n_rows], cs_lnum_t);
   BFT_MALLOC(count, at->n_rows, int);
 
   for (i = 0; i < a->n_rows; i++)
     for (j = a->idx[i]; j < a->idx[i+1]; j++)
-      at->idx[a->col[j]] += 1;
+      at->idx[a->col_id[j]+1] += 1;
 
   for (i = 0; i < at->n_rows; i++) {
     count[i] = 0;
@@ -3059,9 +3049,9 @@ cs_sla_matrix_transpose(const cs_sla_matrix_t  *a)
     for (i = 0; i < a->n_rows; i++) {
       for (j = a->idx[i]; j < a->idx[i+1]; j++) {
 
-        row_id = a->col[j] - 1;
+        row_id = a->col_id[j];
         shift = at->idx[row_id] + count[row_id];
-        at->col[shift] = i+1;
+        at->col_id[shift] = i;
         at->sgn[shift] = a->sgn[j];
         count[row_id] += 1;
 
@@ -3082,9 +3072,9 @@ cs_sla_matrix_transpose(const cs_sla_matrix_t  *a)
     for (i = 0; i < a->n_rows; i++) {
       for (j = a->idx[i]; j < a->idx[i+1]; j++) {
 
-        row_id = a->col[j] - 1;
+        row_id = a->col_id[j];
         shift = at->idx[row_id] + count[row_id];
-        at->col[shift] = i+1;
+        at->col_id[shift] = i;
         at->val[shift] = a->val[j];
         count[row_id] += 1;
 
@@ -3148,10 +3138,62 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m)
     /* Common pointers defining the pattern */
     if (!(m->flag & CS_SLA_MATRIX_SHARED)) {
       BFT_FREE(m->idx);
-      BFT_FREE(m->col);
+      BFT_FREE(m->col_id);
       if (m->didx != NULL) /* Should be only for square CSR matrix */
         BFT_FREE(m->didx);
     }
+
+    if (m->properties != NULL)
+      BFT_FREE(m->properties);
+
+  } /* TYPE_NONE */
+
+  BFT_FREE(m);
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_sla_matrix_t structure after a mapping into a
+ *          cs_matrix_t  struct. (idx and col_id are not owned anymore by
+ *          the current structure)
+ *
+ * \param[in]  m     matrix to free
+ *
+ *\return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_matrix_t *
+cs_sla_matrix_free_after_mapping(cs_sla_matrix_t  *m)
+{
+  if (m == NULL)
+    return NULL;
+
+  if (m->type != CS_SLA_MAT_NONE) {
+
+    switch (m->type) {
+
+    case CS_SLA_MAT_DEC:
+      BFT_FREE(m->sgn);
+      break;
+    case CS_SLA_MAT_CSR:
+      BFT_FREE(m->val);
+      if (m->diag != NULL)
+        BFT_FREE(m->diag);
+      break;
+    case CS_SLA_MAT_MSR:
+      BFT_FREE(m->val);
+      BFT_FREE(m->diag);
+      break;
+    default:
+      break;
+
+    } /* End switch */
+
+    if (m->didx != NULL) /* Should be only for square CSR matrix */
+      BFT_FREE(m->didx);
 
     if (m->properties != NULL)
       BFT_FREE(m->properties);
@@ -3209,7 +3251,7 @@ cs_sla_matrix_clean(cs_sla_matrix_t   *m,
         if (fabs(m->val[j]) > limit) { /* Keep value */
           if (j != shift) { /* Need to copy */
             m->val[shift] = m->val[j];
-            m->col[shift] = m->col[j];
+            m->col_id[shift] = m->col_id[j];
           }
           shift++;
         }
@@ -3223,7 +3265,7 @@ cs_sla_matrix_clean(cs_sla_matrix_t   *m,
 
     if (init_nnz != shift) {
       BFT_REALLOC(m->val, shift, double);
-      BFT_REALLOC(m->col, shift, int);
+      BFT_REALLOC(m->col_id, shift, int);
     }
 
     /* Output message */
@@ -3488,14 +3530,14 @@ cs_sla_matrix_dump(const char              *name,
           for (j = s; j < e; j++) {
             for (k = 0; k < m->stride; k++)
               fprintf(_f, " %2d", m->sgn[j*m->stride+k]);
-            fprintf(_f, " (%5d)", m->col[j]);
+            fprintf(_f, " (%5d)", m->col_id[j]);
           }
         }
         else if (m->type == CS_SLA_MAT_CSR || m->type == CS_SLA_MAT_MSR) {
           for (j = s; j < e; j++) {
             for (k = 0; k < m->stride; k++)
               fprintf(_f, " % -8.4e", m->val[j*m->stride+k]);
-            fprintf(_f, " (%5d)", m->col[j]);
+            fprintf(_f, " (%5d)", m->col_id[j]);
           }
         }
         fprintf(_f, "\n");
@@ -3581,7 +3623,7 @@ cs_sla_system_dump(const char              *name,
         }
 
         for (j = s; j < e; j++) {
-          fprintf(_f, " <col: %3d;", m->col[j]);
+          fprintf(_f, " <col: %3d;", m->col_id[j]);
           for (k = 0; k < m->stride; k++)
             fprintf(_f, " %2d", m->sgn[j*m->stride+k]);
           fprintf(_f,">");
@@ -3598,7 +3640,7 @@ cs_sla_system_dump(const char              *name,
         }
 
         for (j = s; j < e; j++) {
-          fprintf(_f, " <col: %3d;", m->col[j]);
+          fprintf(_f, " <col: %3d;", m->col_id[j]);
           for (k = 0; k < m->stride; k++)
             fprintf(_f, " % -8.4e", m->val[j*m->stride+k]);
           fprintf(_f, ">");
@@ -3657,12 +3699,12 @@ cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
         size_t  n_j_ents = ass->idx[j_id+1] - start_j;
 
         /* First add: loc(i,j) */
-        k_ij = cs_search_binary(n_i_ents, j_id+1, &(ass->col[start_i]));
+        k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
         assert(k_ij > -1);
         ass->val[start_i+k_ij] += val_ij;
 
         /* Second add: loc(j,i) */
-        k_ji = cs_search_binary(n_j_ents, i_id+1, &(ass->col[start_j]));
+        k_ji = cs_search_binary(n_j_ents, i_id, &(ass->col_id[start_j]));
         assert(k_ji > -1);
         ass->val[start_j+k_ji] += val_ij;
 

@@ -101,7 +101,7 @@ BEGIN_C_DECLS
 
  \page sles_it Iterative linear solvers.
 
- For Krylov space solvers (all here except Jacobi), reconditioning is based
+ For Krylov space solvers (all here except Jacobi), preconditioning is based
  on a Neumann polynomial of degree \a poly_degree, with a negative value
  meaning no preconditionig, and 0 diagonal preconditioning.
 
@@ -116,7 +116,7 @@ BEGIN_C_DECLS
 
  The efficiency of the polynomial preconditioning will vary depending
  on the system type. In most cases, diagonal or degree 1 provide
- best results. Each polynomial precoditioning degree above 0 adds one
+ best results. Each polynomial preconditioning degree above 0 adds one
  matrix-vector product per inital matrix-vector product of the algorithm.
  Switching from diagonal to polynomial degree 1 often divides the number of
  required iterations by approximately 2, but each iteration then costs

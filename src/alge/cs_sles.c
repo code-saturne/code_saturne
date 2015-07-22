@@ -1067,8 +1067,6 @@ cs_sles_find_or_add(int          f_id,
  *
  * \param[in]  f_id  associated field id, or < 0
  * \param[in]  name  associated name if f_id < 0, or NULL
- *
- * \return  pointer to associated linear system object, or NULL
  */
 /*----------------------------------------------------------------------------*/
 

@@ -43,15 +43,17 @@
 
 #include <fvm_defs.h>
 
-#include <cs_base.h>
-#include <cs_timer.h>
-#include <cs_log.h>
-#include <cs_post.h>
-#include <cs_restart.h>
-#include <cs_time_plot.h>
-#include <cs_ext_neighborhood.h>
-#include <cs_prototypes.h>
-#include <cs_mesh_location.h>
+#include "cs_base.h"
+#include "cs_timer.h"
+#include "cs_log.h"
+#include "cs_post.h"
+#include "cs_restart.h"
+#include "cs_time_plot.h"
+#include "cs_ext_neighborhood.h"
+#include "cs_prototypes.h"
+#include "cs_mesh_location.h"
+#include "cs_sles_it.h"
+
 
 /* CDO module */
 #include "cs_cdo.h"
@@ -86,7 +88,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.1";
+static const char cs_cdoversion[] = "0.1.1";
 
 static  _Bool  cs_cdo_do_navsto = false;
 static  int  cs_cdo_n_equations = 0;
@@ -95,6 +97,72 @@ static  int  n_cdo_equations_by_type[CS_N_TYPES_OF_CDOEQS];
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize linear solver
+ *
+ * \param[in]     eq    pointer to a cs_param_eq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_linear_solver(const cs_param_eq_t    *eq)
+{
+
+  switch (eq->algo_info.type) {
+  case CS_PARAM_EQ_ALGO_CS_ITSOL:
+    {
+      cs_sles_it_type_t   it_type = CS_SLES_N_IT_TYPES; // not set
+
+      switch (eq->itsol_info.solver) { // Type of iterative solver
+      case CS_PARAM_ITSOL_CG:
+        it_type = CS_SLES_PCG;
+        break;
+      case CS_PARAM_ITSOL_BICG:
+        it_type = CS_SLES_BICGSTAB2;
+        break;
+      case CS_PARAM_ITSOL_GMRES:
+        it_type = CS_SLES_GMRES;
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" Undefined iterative solver for solving %s equation.\n"
+                    " Please modify your settings."), eq->name);
+        break;
+      } // end of switch
+
+      cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                        NULL,
+                        it_type,
+                        0, // polynomial degree 0 -> diag
+                        eq->itsol_info.n_max_iter);
+
+    }
+    break;
+
+  case CS_PARAM_EQ_ALGO_PETSC_ITSOL:
+    {
+#if defined(HAVE_PETSC)
+      bft_printf(" -sla- PETSc is requested for solving %s", eq->name);
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" PETSC algorithms used to solve %s are not linked.\n"
+                  " Please install Code_Saturne with PETSc."), eq->name);
+
+#endif // HAVE_PETSC
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Algorithm used to solve %s is not implemented yet.\n"
+                " Please modify your settings."), eq->name);
+    break;
+
+  } // end switch
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -160,7 +228,8 @@ _create_algebraic_systems(const cs_mesh_t             *m,
 
     /* Up to now only this type of equation is handled */
     assert(eq->type == CS_PARAM_EQ_TYPE_SCAL);
-    assert(eq->algo_info.type == CS_PARAM_EQ_ALGO_ITSOL);
+    assert(eq->algo_info.type == CS_PARAM_EQ_ALGO_CS_ITSOL ||
+           eq->algo_info.type == CS_PARAM_EQ_ALGO_PETSC_ITSOL);
 
     /* Build algebraic system */
     switch (eq->space_scheme) {
@@ -169,7 +238,6 @@ _create_algebraic_systems(const cs_mesh_t             *m,
       bft_printf("\n -cdo- SpaceDiscretization >> %s >> CDO.VB\n",
                  eq->name);
       cs_cdovb_codits_init(eq, m, cdo_eq_counters[CS_CDOEQ_VB]);
-      cs_sla_itsol_update_buffer_sizes(cdoq->n_vertices, eq->itsol_info);
       cdo_eq_counters[CS_CDOEQ_VB] += 1;
       break;
 
@@ -177,7 +245,6 @@ _create_algebraic_systems(const cs_mesh_t             *m,
       bft_printf("\n -cdo- SpaceDiscretization >> %s >> CDO.FB\n",
                  eq->name);
       cs_cdofb_codits_init(eq, m, cdo_eq_counters[CS_CDOEQ_FB]);
-      cs_sla_itsol_update_buffer_sizes(cdoq->n_faces, eq->itsol_info);
       cdo_eq_counters[CS_CDOEQ_FB] += 1;
       break;
 
@@ -187,9 +254,10 @@ _create_algebraic_systems(const cs_mesh_t             *m,
 
     } /* space_scheme */
 
-  } /* Loop on equations */
+    /* Initialize structures for solving the related linear system */
+    _init_linear_solver(eq);
 
-  cs_sla_itsol_alloc_buffers();
+  } /* Loop on equations */
 
 }
 
@@ -260,6 +328,30 @@ _solve(const cs_mesh_t              *m,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free all structure allocated during the resolution with CDO schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_finalize(void)
+{
+  cs_cdo_n_equations = 0;
+  for (int i = 0; i < CS_N_TYPES_OF_CDOEQS; i++)
+    n_cdo_equations_by_type[i] = 0;
+
+  cs_cdovb_codits_free_all();
+  cs_cdofb_codits_free_all();
+  cs_param_pty_free_all();
+  cs_param_eq_free_all();
+
+  cs_toolbox_finalize();
+
+  /* Free structures related to the resolution of linear systems */
+  cs_sles_default_finalize();
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -311,10 +403,13 @@ cs_cdo_main(cs_mesh_t             *m,
   /* User-defined settings (keep this order of call) */
   cs_user_cdo_setup();            // initial setup
   cs_user_cdo_numeric_settings(); // advanced setup
+  cs_user_cdo_itsol_settings();   // advanced setup for solving linear systems
   cs_user_cdo_hodge_settings();   // advanced setup
 
   /* Add variables related to user-defined equations */
   cs_param_eq_add_fields();
+
+  cs_user_linear_solvers();       // advanced setup for solving linear systems
 
   /* Add user-defined material properties */
   cs_param_pty_add_fields();
@@ -388,17 +483,7 @@ cs_cdo_main(cs_mesh_t             *m,
   /* Free main CDO structures */
   t0 = cs_timer_time();
 
-  cs_cdo_n_equations = 0;
-  for (i = 0; i < CS_N_TYPES_OF_CDOEQS; i++)
-    n_cdo_equations_by_type[i] = 0;
-
-  cs_cdovb_codits_free_all();
-  cs_cdofb_codits_free_all();
-  cs_param_pty_free_all();
-  cs_param_eq_free_all();
-
-  cs_toolbox_finalize();
-  cs_sla_itsol_free_buffers();
+  _finalize();
 
   cdoq = cs_cdo_quantities_free(cdoq);
   connect = cs_cdo_connect_free(connect);

@@ -90,7 +90,6 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_matrix.h"
 #include "cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
@@ -738,67 +737,6 @@ _release_coeffs_native(cs_matrix_t  *matrix)
   if (mc != NULL) {
     mc->da = NULL;
     mc->xa = NULL;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Copy diagonal of native or MSR matrix.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   da     --> Diagonal (pre-allocated, size: n_cells)
- *----------------------------------------------------------------------------*/
-
-static void
-_copy_diagonal_separate(const cs_matrix_t  *matrix,
-                        cs_real_t          *restrict da)
-{
-  const cs_real_t *_da = NULL;
-  if (matrix->type == CS_MATRIX_NATIVE) {
-    const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-    _da = mc->da;
-  }
-  else if (matrix->type == CS_MATRIX_MSR) {
-    const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-    _da = mc->d_val;
-  }
-  const cs_lnum_t  n_cells = matrix->n_cells;
-
-  /* Unblocked version */
-
-  if (matrix->db_size[3] == 1) {
-
-    if (_da != NULL) {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_cells; ii++)
-        da[ii] = _da[ii];
-    }
-    else {
-#     pragma omp parallel for  if(n_cells > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_cells; ii++)
-        da[ii] = 0.0;
-    }
-
-  }
-
-  /* Blocked version */
-
-  else {
-
-    const int *db_size = matrix->db_size;
-
-    if (_da != NULL) {
-#     pragma omp parallel for  if(n_cells*db_size[0] > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
-        for (cs_lnum_t jj = 0; jj < db_size[0]; jj++)
-          da[ii*db_size[1] + jj] = _da[ii*db_size[3] + jj*db_size[2] + jj];
-      }
-    }
-    else {
-#     pragma omp parallel for  if(n_cells*db_size[1] > CS_THR_MIN)
-      for (cs_lnum_t ii = 0; ii < n_cells*db_size[1]; ii++)
-        da[ii] = 0.0;
-    }
   }
 }
 
@@ -1682,63 +1620,6 @@ _create_struct_csr(bool                have_diag,
 }
 
 /*----------------------------------------------------------------------------
- * Destroy CSR matrix structure.
- *
- * parameters:
- *   matrix  <->  Pointer to CSR matrix structure pointer
- *----------------------------------------------------------------------------*/
-
-static void
-_destroy_struct_csr(cs_matrix_struct_csr_t  **matrix)
-{
-  if (matrix != NULL && *matrix !=NULL) {
-
-    cs_matrix_struct_csr_t  *ms = *matrix;
-
-    if (ms->row_index != NULL)
-      BFT_FREE(ms->row_index);
-
-    if (ms->col_id != NULL)
-      BFT_FREE(ms->col_id);
-
-    BFT_FREE(ms);
-
-    *matrix = ms;
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Create CSR matrix coefficients.
- *
- * returns:
- *   pointer to allocated CSR coefficients structure.
- *----------------------------------------------------------------------------*/
-
-static cs_matrix_coeff_csr_t *
-_create_coeff_csr(void)
-{
-  cs_matrix_coeff_csr_t  *mc;
-
-  /* Allocate */
-
-  BFT_MALLOC(mc, 1, cs_matrix_coeff_csr_t);
-
-  /* Initialize */
-
-  mc->n_prefetch_rows = 0;
-
-  mc->val = NULL;
-
-  mc->x_prefetch = NULL;
-
-  mc->d_val = NULL;
-  mc->_d_val = NULL;
-
-  return mc;
-}
-
-/*----------------------------------------------------------------------------
  * Destroy CSR matrix coefficients.
  *
  * parameters:
@@ -2005,160 +1886,6 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
   } /* (matrix->face_cell != NULL) */
 
 }
-
-/*----------------------------------------------------------------------------
- * Release shared CSR matrix coefficients.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *----------------------------------------------------------------------------*/
-
-static void
-_release_coeffs_csr(cs_matrix_t  *matrix)
-{
-  cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-  if (mc != NULL)
-    mc->d_val = NULL;
-  return;
-}
-
-/*----------------------------------------------------------------------------
- * Copy diagonal of CSR matrix.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   da     --> Diagonal (pre-allocated, size: n_rows)
- *----------------------------------------------------------------------------*/
-
-static void
-_copy_diagonal_csr(const cs_matrix_t  *matrix,
-                   cs_real_t          *restrict da)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  if (ms->have_diag == true) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t  *restrict m_row = mc->val + ms->row_index[ii];
-      cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      da[ii] = 0.0;
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] == ii) {
-          da[ii] = m_row[jj];
-          break;
-        }
-      }
-
-    }
-
-  }
-  else { /* if (have_diag == false) */
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      da[ii] = 0.0;
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with CSR matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_csr(bool                exclude_diag,
-                 const cs_matrix_t  *matrix,
-                 const cs_real_t    *restrict x,
-                 cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Standard case */
-
-  if (!exclude_diag) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t *restrict m_row = mc->val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = sii;
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t *restrict m_row = mc->val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] != ii)
-          sii += (m_row[jj]*x[col_id[jj]]);
-      }
-
-      y[ii] = sii;
-
-    }
-  }
-
-}
-
-#if defined (HAVE_MKL)
-
-static void
-_mat_vec_p_l_csr_mkl(bool                exclude_diag,
-                     const cs_matrix_t  *matrix,
-                     const cs_real_t    *restrict x,
-                     cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-
-  int n_rows = ms->n_rows;
-  char transa[] = "n";
-
-  if (exclude_diag)
-    bft_error(__FILE__, __LINE__, 0,
-              _(_no_exclude_diag_error_str), __func__);
-
-  mkl_cspblas_dcsrgemv(transa,
-                       &n_rows,
-                       mc->val,
-                       ms->row_index,
-                       ms->col_id,
-                       (double *)x,
-                       y);
-}
-
-#endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with CSR matrix (prefetch).
@@ -2795,38 +2522,6 @@ _mat_vec_p_l_csr_sym_mkl(bool                exclude_diag,
 #endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
- * Create MSR matrix coefficients.
- *
- * returns:
- *   pointer to allocated MSR coefficients structure.
- *----------------------------------------------------------------------------*/
-
-static cs_matrix_coeff_msr_t *
-_create_coeff_msr(void)
-{
-  cs_matrix_coeff_msr_t  *mc;
-
-  /* Allocate */
-
-  BFT_MALLOC(mc, 1, cs_matrix_coeff_msr_t);
-
-  /* Initialize */
-
-  mc->n_prefetch_rows = 0;
-  mc->max_db_size = 0;
-  mc->max_eb_size = 0;
-
-  mc->d_val = NULL;
-
-  mc->_d_val = NULL;
-  mc->x_val = NULL;
-
-  mc->x_prefetch = NULL;
-
-  return mc;
-}
-
-/*----------------------------------------------------------------------------
  * Destroy MSR matrix coefficients.
  *
  * parameters:
@@ -3097,86 +2792,6 @@ _set_coeffs_msr(cs_matrix_t      *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Release shared MSR matrix coefficients.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *----------------------------------------------------------------------------*/
-
-static void
-_release_coeffs_msr(cs_matrix_t  *matrix)
-{
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  if (mc !=NULL) {
-    /* Unmap shared values */
-    mc->d_val = NULL;
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_msr(bool                exclude_diag,
-                 const cs_matrix_t  *matrix,
-                 const cs_real_t    *restrict x,
-                 cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = sii + mc->d_val[ii]*x[ii];
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = sii;
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
@@ -3246,51 +2861,6 @@ _b_mat_vec_p_l_msr(bool                exclude_diag,
   }
 
 }
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, using MKL
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   matrix       <-- Pointer to matrix structure
- *   x            <-- Multipliying vector values
- *   y            --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-#if defined (HAVE_MKL)
-
-static void
-_mat_vec_p_l_msr_mkl(bool                exclude_diag,
-                     const cs_matrix_t  *matrix,
-                     const cs_real_t    *restrict x,
-                     cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-
-  int n_rows = ms->n_rows;
-  char transa[] = "n";
-
-  mkl_cspblas_dcsrgemv(transa,
-                       &n_rows,
-                       mc->x_val,
-                       ms->row_index,
-                       ms->col_id,
-                       (double *)x,
-                       y);
-
-  /* Add diagonal contribution */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-    cs_lnum_t ii;
-    const double *restrict da = mc->d_val;
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += da[ii] * x[ii];
-  }
-}
-
-#endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
  * Local matrix.vector product y = A.x with MSR matrix (prefetch).
@@ -3995,8 +3565,8 @@ _set_spmv_func(cs_matrix_type_t             m_type,
     case CS_MATRIX_SCALAR:
     case CS_MATRIX_SCALAR_SYM:
       if (standard > 0) {
-        spmv[0] = _mat_vec_p_l_csr;
-        spmv[1] = _mat_vec_p_l_csr;
+        spmv[0] = cs_matrix_vec_p_l_csr;
+        spmv[1] = cs_matrix_vec_p_l_csr;
       }
       else if (!strcmp(func_name, "prefetch")) {
         l_length[0] = 508;
@@ -4006,8 +3576,8 @@ _set_spmv_func(cs_matrix_type_t             m_type,
       }
       else if (!strcmp(func_name, "mkl")) {
 #if defined(HAVE_MKL)
-        spmv[0] = _mat_vec_p_l_csr_mkl;
-        spmv[1] = _mat_vec_p_l_csr_mkl;
+        spmv[0] = cs_matrix_vec_p_l_csr_mkl;
+        spmv[1] = cs_matrix_vec_p_l_csr_mkl;
 #else
         retcode = 2;
 #endif
@@ -4047,8 +3617,8 @@ _set_spmv_func(cs_matrix_type_t             m_type,
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_msr;
-        spmv[1] = _mat_vec_p_l_msr;
+        spmv[0] = cs_matrix_vec_p_l_msr;
+        spmv[1] = cs_matrix_vec_p_l_msr;
         break;
       case CS_MATRIX_33_BLOCK_D:
       case CS_MATRIX_33_BLOCK_D_SYM:
@@ -4079,8 +3649,8 @@ _set_spmv_func(cs_matrix_type_t             m_type,
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_msr_mkl;
-        spmv[1] = _mat_vec_p_l_msr_mkl;
+        spmv[0] = cs_matrix_vec_p_l_msr_mkl;
+        spmv[1] = cs_matrix_vec_p_l_msr_mkl;
         break;
       default:
         break;
@@ -4241,7 +3811,7 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
     case CS_MATRIX_CSR:
       {
         cs_matrix_struct_csr_t *structure = _ms->structure;
-        _destroy_struct_csr(&structure);
+        cs_matrix_destroy_struct_csr(&structure);
       }
       break;
     case CS_MATRIX_CSR_SYM:
@@ -4253,7 +3823,7 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
     case CS_MATRIX_MSR:
       {
         cs_matrix_struct_csr_t *structure = _ms->structure;
-        _destroy_struct_csr(&structure);
+        cs_matrix_destroy_struct_csr(&structure);
       }
       break;
     default:
@@ -4327,13 +3897,13 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
     m->coeffs = _create_coeff_native();
     break;
   case CS_MATRIX_CSR:
-    m->coeffs = _create_coeff_csr();
+    m->coeffs = cs_matrix_create_coeff_csr();
     break;
   case CS_MATRIX_CSR_SYM:
     m->coeffs = _create_coeff_csr_sym();
     break;
   case CS_MATRIX_MSR:
-    m->coeffs = _create_coeff_msr();
+    m->coeffs = cs_matrix_create_coeff_msr();
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -4362,13 +3932,13 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
     m->set_coefficients = _set_coeffs_native;
     m->release_coefficients = _release_coeffs_native;
-    m->copy_diagonal = _copy_diagonal_separate;
+    m->copy_diagonal = cs_matrix_copy_diagonal_separate;
     break;
 
   case CS_MATRIX_CSR:
     m->set_coefficients = _set_coeffs_csr;
-    m->release_coefficients = _release_coeffs_csr;
-    m->copy_diagonal = _copy_diagonal_csr;
+    m->release_coefficients = cs_matrix_release_coeffs_csr;
+    m->copy_diagonal = cs_matrix_copy_diagonal_csr;
     break;
 
   case CS_MATRIX_CSR_SYM:
@@ -4380,8 +3950,8 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
 
   case CS_MATRIX_MSR:
     m->set_coefficients = _set_coeffs_msr;
-    m->release_coefficients = _release_coeffs_msr;
-    m->copy_diagonal = _copy_diagonal_separate;
+    m->release_coefficients = cs_matrix_release_coeffs_msr;
+    m->copy_diagonal = cs_matrix_copy_diagonal_separate;
     break;
 
   default:
@@ -5584,7 +5154,7 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                  fill_types,
                  2, /* ed_flag */
                  0, /* loop_length */
-                 _mat_vec_p_l_csr,
+                 cs_matrix_vec_p_l_csr,
                  NULL,
                  NULL,
                  n_variants,
@@ -5612,7 +5182,7 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                  fill_types,
                  0, /* ed_flag */
                  0, /* loop_length */
-                 _mat_vec_p_l_csr_mkl,
+                 cs_matrix_vec_p_l_csr_mkl,
                  NULL,
                  NULL,
                  n_variants,
@@ -5675,7 +5245,7 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                  fill_types,
                  2, /* ed_flag */
                  0, /* loop_length */
-                 _mat_vec_p_l_msr,
+                 cs_matrix_vec_p_l_msr,
                  _b_mat_vec_p_l_msr,
                  NULL,
                  n_variants,
@@ -5703,7 +5273,7 @@ cs_matrix_variant_build_list(int                      n_fill_types,
                  fill_types,
                  2, /* ed_flag */
                  0, /* loop_length */
-                 _mat_vec_p_l_msr_mkl,
+                 cs_matrix_vec_p_l_msr_mkl,
                  NULL,
                  NULL,
                  n_variants,

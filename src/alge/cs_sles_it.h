@@ -35,6 +35,7 @@
 #include "cs_halo_perio.h"
 #include "cs_matrix.h"
 #include "cs_time_plot.h"
+#include "cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -78,8 +78,6 @@ BEGIN_C_DECLS
 cs_cdo_cc_algo_t
 cs_user_cdo_geometric_settings(void)
 {
-  return CS_CDO_CC_SATUR; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* Algorithm for computing cell centers */
   /* ==================================== */
 
@@ -103,7 +101,21 @@ cs_user_cdo_geometric_settings(void)
 void
 cs_user_cdo_numeric_settings(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+  /* Set the scheme used to discretize in space
+     --> Choice between:
+     CS_SPACE_SCHEME_CDOVB: CDO vertex-based scheme
+     CS_SPACE_SCHEME_CDOFB: CDO cell-based scheme with hybridization
+                            Degrees of freedom are located on faces
+  */
+
+  cs_param_eq_set_space_scheme("Laplace", // Equation name
+                               CS_SPACE_SCHEME_CDOVB);
+
+  /* Warining level (former IWARNI)
+     --> Choice between:
+     0 (default) or > 0
+   */
+  cs_param_eq_set_warning_level("Laplace", 0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -115,7 +127,26 @@ cs_user_cdo_numeric_settings(void)
 void
 cs_user_cdo_hodge_settings(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+  /* Set the algorithm used to build the discrete Hodge operator
+     --> Choice between:
+     CS_PARAM_HODGE_ALGO_VORONOI (only possible in specific cases: Cartesian
+                                  meshes or Delaunay meshes for instance)
+     CS_PARAM_HODGE_ALGO_COST    (default: splitting COnsistency/STabilization)
+  */
+
+  cs_param_eq_hodge_diffusion_set_algo("Laplace",  // Equation name
+                                       CS_PARAM_HODGE_ALGO_COST); // Algo
+
+  /* In the case of a COST algorithm, you may additionally specify the value
+     of the stabilization coefficient (> 0)
+     coef = 1./3       --> DGA scheme (Default)
+     coef = 1./sqrt(3) --> SUSHI scheme
+     coef = 1.         --> Generalized Crouzeix--Raviart scheme
+     Other choices are possible leading to different schemes...
+  */
+
+  cs_param_eq_hodge_diffusion_set_coef("Laplace", 1./3.);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -128,10 +159,52 @@ cs_user_cdo_hodge_settings(void)
 void
 cs_user_cdo_itsol_settings(void)
 {
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+  const char eqname[16] = "Laplace";
+
+  /* Choice of the algorithm used to solve an equation among
+     >> CS_PARAM_EQ_ALGO_CS_ITSOL     iter. solvers implemented in Code_Saturne
+     >> CS_PARAM_EQ_ALGO_PETSC_ITSOL  iter. solvers implemented in PETSc
+     >> ...
+
+     Default is CS_PARAM_EQ_ALGO_CS_ITSOL
+   */
+
+  cs_param_eq_set_algo_type(eqname,
+                            CS_PARAM_EQ_ALGO_CS_ITSOL);
+
+  /* An iterative solver is defined thanks to 
+     >> a solver type among
+         >> CS_PARAM_ITSOL_CG       conjuguate gradient
+         >> CS_PARAM_ITSOL_BICG     bi-conjuguate gradient
+         >> CS_PARAM_ITSOL_GMRES    GMRES algorithm
+
+     >> a preconditioner type among
+         >> CS_PARAM_PRECOND_DIAG   Jacobi (inverse of the diagonal)
+         >> CS_PARAM_PRECOND_POLY   Neumann polynomial of order 1
+         >> CS_PARAM_PRECOND_SSOR   Symmetric Successive Over-Relaxation
+         >> CS_PARAM_PRECOND_ILU0   Incomplete LU factorisation (type 0)
+         >> CS_PARAM_PRECOND_MG     Algebraic/Geometric Multigrid
+
+     Default is CS_PARAM_ITSOL_CG / CS_PARAM_PRECOND_SSOR
+  */
+
+  cs_param_eq_set_itsol_type(eqname,
+                             CS_PARAM_ITSOL_CG,
+                             CS_PARAM_PRECOND_DIAG);
+
+  /* Additionnal settings related to an iterative solver
+     >> The required accuracy on the norm of the residual
+     >> The max number of iterations of the iterative solver
+     >> The normalization or not of the norm of residual (impact on the
+         overall accuracy of the algorithm)
+  */
+
+  cs_param_eq_set_itsol_precision(eqname,  // equation name
+                                  1e-12);  // precision
+
+  cs_param_eq_set_itsol_max_iter(eqname,  // equation name
+                                 2500);   // max. number of iterations
+
+  cs_param_eq_set_itsol_normalization(eqname,  // equation name
+                                      false);  // normalize residual ?
 }
-
-
-
-
-

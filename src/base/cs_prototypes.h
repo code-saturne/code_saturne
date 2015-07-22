@@ -531,6 +531,16 @@ cs_user_cdo_hodge_settings(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Setup advanced features concerning the resolution of linear systems
+ *         within the CDO framework
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_itsol_settings(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Additional operations on results produced by CDO schemes.
  *         Define advanced post-processing and/or analysis for instance.
  *

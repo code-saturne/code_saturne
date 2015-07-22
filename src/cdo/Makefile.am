@@ -25,6 +25,7 @@
 # Main part
 
 AM_CPPFLAGS = \
+-I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
@@ -32,24 +33,6 @@ AM_CPPFLAGS = \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-
-# AM_FCFLAGS = \
-# $(FCMODINCLUDE)$(top_builddir)/src \
-# $(FCMODINCLUDE)$(top_builddir)/src/alge \
-# $(FCMODINCLUDE)$(top_builddir)/src/base \
-# $(FCMODINCLUDE)$(top_builddir)/src/atmo \
-# $(FCMODINCLUDE)$(top_builddir)/src/cdo  \
-# $(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-# $(FCMODINCLUDE)$(top_builddir)/src/cogz \
-# $(FCMODINCLUDE)$(top_builddir)/src/comb \
-# $(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-# $(FCMODINCLUDE)$(top_builddir)/src/elec \
-# $(FCMODINCLUDE)$(top_builddir)/src/lagr \
-# $(FCMODINCLUDE)$(top_builddir)/src/pprt \
-# $(FCMODINCLUDE)$(top_builddir)/src/rayt \
-# $(FCMODINCLUDE)$(top_builddir)/src/turb \
-# $(FCMODINCLUDE)$(top_builddir)/src/user \
-# $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 

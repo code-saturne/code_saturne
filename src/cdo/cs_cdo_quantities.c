@@ -225,8 +225,8 @@ _get_proj_quantities(int                        fid,
                      const double               vtx_coords[],
                      const int                  axis[])
 {
-  int  i, e_sgn, e_num, e_id, s, e;
-  int  v_num[2], v_id[2];
+  cs_lnum_t  i, e_sgn, e_id, s, e;
+  cs_lnum_t  v_id[2];
   double  da, db, C1, Ca, Cb, Cab, Ca2, Cb2, Kab;
   double  a0, a1, a0_2, a1_2, a0_3;
   double  b0, b1, b0_2, b1_2, b0_3;
@@ -258,23 +258,16 @@ _get_proj_quantities(int                        fid,
   for (i = f2e->idx[fid]; i < f2e->idx[fid+1]; i++) {
 
     e_sgn = f2e->sgn[i];
-    e_num = f2e->col[i];
-    e_id = CS_ABS(e_num) - 1;
-    s = e2v->idx[e_id];
-    e = e2v->idx[e_id+1];
+    e_id = f2e->col_id[i];
+    s = e2v->idx[e_id], e = e2v->idx[e_id+1];
+
+    /* Sanity check */
     assert(e-s == 2);
 
-    if (e_sgn > 0) {
-     v_num[0] = e2v->col[s];
-     v_num[1] = e2v->col[s+1];
-    }
-    else {
-     v_num[0] = e2v->col[s+1];
-     v_num[1] = e2v->col[s];
-    }
-
-    v_id[0] = CS_ABS(v_num[0]) - 1;
-    v_id[1] = CS_ABS(v_num[1]) - 1;
+    if (e_sgn > 0)
+      v_id[0] = e2v->col_id[s], v_id[1] = e2v->col_id[s+1];
+    else
+      v_id[0] = e2v->col_id[s+1], v_id[1] = e2v->col_id[s];
 
     /* First vertex coordinnates in (alpha, beta) plane */
     a0 = vtx_coords[3*v_id[0] + axis[0]];
@@ -378,12 +371,12 @@ _get_fsub_quantities(int                         fid,
  * ---------------------------------------------------------------------------*/
 
 static void
-_compute_edge_quantities(const cs_mesh_t           *mesh,
+_compute_edge_quantities(const cs_mesh_t         *mesh,
                          const cs_cdo_connect_t  *topo,
                          cs_cdo_quantities_t     *iq)  /* In/out */
 {
   int  i, j, k;
-  int  vid[2];
+  int  v_id[2];
   double  xaxb[3];
   double  xva, xvb, len, invlen;
   cs_quant_t  eq;
@@ -400,22 +393,21 @@ _compute_edge_quantities(const cs_mesh_t           *mesh,
 
     /* Get the two vertex ids related to the current edge */
     for (j = topo->e2v->idx[i], k = 0; j < topo->e2v->idx[i+1]; j++, k++)
-      vid[k] = topo->e2v->col[j] - 1;
+      v_id[k] = topo->e2v->col_id[j];
     assert(k == 2);
 
     for (k = 0; k < 3; k++) {
-      xva = mesh->vtx_coord[3*vid[0]+k];
-      xvb = mesh->vtx_coord[3*vid[1]+k];
+      xva = mesh->vtx_coord[3*v_id[0]+k];
+      xvb = mesh->vtx_coord[3*v_id[1]+k];
       xaxb[k] = xvb - xva;
       eq.center[k] = 0.5 * ( xva + xvb );
     }
-
     len = _n3(xaxb);
     assert(len > 0);
     invlen = 1/len;
     eq.meas = len;
 
-    if (vid[1] > vid[0]) /* vb > va */
+    if (v_id[1] > v_id[0]) /* vb > va */
       for (k = 0; k < 3; k++)
         eq.unitv[k] = invlen * xaxb[k];
     else  /* Change orientation */
@@ -437,7 +429,7 @@ static void
 _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
                           cs_cdo_quantities_t     *iq)    /* In/out */
 {
-  int  eid, fid, cid, vid, i, j, k, l, shift;
+  int  e_id, f_id, c_id, v_id, i, j, k, l, shift;
   double  vol, xc[3], xv[3];
   cs_quant_t  eq, fq;
 
@@ -455,34 +447,34 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
     cell_shift[i] = topo->c2v->idx[i];
 
   /* Fill array : one needs c2v->lst to be ordered. It should have been done. */
-  for (vid = 0; vid < iq->n_vertices; vid++) {
+  for (v_id = 0; v_id < iq->n_vertices; v_id++) {
 
     for (k = 0; k < 3; k++)
-      xv[k] = m->vtx_coord[3*vid+k];
+      xv[k] = m->vtx_coord[3*v_id+k];
 
-    for (i = topo->v2e->idx[vid]; i < topo->v2e->idx[vid+1]; i++) {
+    for (i = topo->v2e->idx[v_id]; i < topo->v2e->idx[v_id+1]; i++) {
 
-      eid = topo->v2e->col[i] - 1;
-      eq = iq->edge[eid]; /* Get quantities related to this edge */
+      e_id = topo->v2e->col_id[i];
+      eq = iq->edge[e_id]; /* Get quantities related to this edge */
 
-      for (j = topo->e2f->idx[eid]; j < topo->e2f->idx[eid+1]; j++) {
+      for (j = topo->e2f->idx[e_id]; j < topo->e2f->idx[e_id+1]; j++) {
 
-        fid = topo->e2f->col[j] - 1;
-        fq = iq->face[fid]; /* Get quantities related to this face */
+        f_id = topo->e2f->col_id[j];
+        fq = iq->face[f_id]; /* Get quantities related to this face */
 
         /* Get related cell(s) */
-        for (l = topo->f2c->idx[fid]; l < topo->f2c->idx[fid+1]; l++) {
+        for (l = topo->f2c->idx[f_id]; l < topo->f2c->idx[f_id+1]; l++) {
 
           /* Get cell center */
-          cid = topo->f2c->col[l] - 1;
+          c_id = topo->f2c->col_id[l];
           for (k = 0; k < 3; k++)
-            xc[k] = iq->cell_centers[3*cid+k];
+            xc[k] = iq->cell_centers[3*c_id+k];
 
           vol = cs_voltet(xv, eq.center, fq.center, xc);
 
-          shift = cell_shift[cid];
-          if (topo->c2v->lst[shift] != vid + 1)
-            cell_shift[cid] += 1, shift++;
+          shift = cell_shift[c_id];
+          if (topo->c2v->ids[shift] != v_id)
+            cell_shift[c_id] += 1, shift++;
           iq->dcell_vol[shift] += vol;
 
         } /* End of loop on cells related to this face */
@@ -500,14 +492,14 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 /*----------------------------------------------------------------------------
  * Compute dual face normals (face crossed by primal edges).
  * Given a cell, a face and an edge, there are two dual face normals
- * Storage based on e2f connectivity
+ * Storage based on c2e connectivity
  * ---------------------------------------------------------------------------*/
 
 static void
 _compute_dface_quantities(const cs_cdo_connect_t  *topo,
                           cs_cdo_quantities_t     *iq)  /* In/out */
 {
-  int  cid, i, j, k, size, shift, parent;
+  int  c_id, i, j, k, size, shift, parent;
   double orient, area, inv;
   cs_real_3_t  trinorm, xexf, xexc, xc;
 
@@ -526,43 +518,43 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
   for (i = 0; i < iq->n_edges; i++)
     tag_shift[i] = 0;
 
-  for (cid = 0; cid < iq->n_cells; cid++) {
+  for (c_id = 0; c_id < iq->n_cells; c_id++) {
 
     /* Tag cell edges */
-    for (i = topo->c2e->idx[cid]; i < topo->c2e->idx[cid+1]; i++)
-      tag_shift[topo->c2e->lst[i]-1] = i+1;
+    for (i = topo->c2e->idx[c_id]; i < topo->c2e->idx[c_id+1]; i++)
+      tag_shift[topo->c2e->ids[i]] = i+1;
 
     /* Get cell center */
     for (k = 0; k < 3; k++)
-      xc[k] = iq->cell_centers[3*cid+k];
+      xc[k] = iq->cell_centers[3*c_id+k];
 
-    for (i = topo->c2f->idx[cid]; i < topo->c2f->idx[cid+1]; i++) {
+    for (i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1]; i++) {
 
-      const cs_lnum_t  fid = topo->c2f->col[i]-1;
-      const cs_quant_t  fq = iq->face[fid]; /* Face quantities */
+      const cs_lnum_t  f_id = topo->c2f->col_id[i];
+      const cs_quant_t  f_q = iq->face[f_id]; /* Face quantities */
 
-      for (j = topo->f2e->idx[fid]; j < topo->f2e->idx[fid+1]; j++) {
+      for (j = topo->f2e->idx[f_id]; j < topo->f2e->idx[f_id+1]; j++) {
 
-        const cs_lnum_t  eid = topo->f2e->col[j]-1;
-        const cs_quant_t  eq = iq->edge[eid]; /* Edge quantities */
+        const cs_lnum_t  e_id = topo->f2e->col_id[j];
+        const cs_quant_t  e_q = iq->edge[e_id]; /* Edge quantities */
 
         /* Compute the vectorial area for the triangle : xc, xf, xe */
         for (k = 0; k < 3; k++) {
-          xexf[k] = fq.center[k] - eq.center[k];
-          xexc[k] = xc[k] - eq.center[k];
+          xexf[k] = f_q.center[k] - e_q.center[k];
+          xexc[k] = xc[k] - e_q.center[k];
         }
         _cp3(xexf, xexc, &trinorm);
 
         /* One should have (trinorm, te) > 0 */
-        orient = _dp3(trinorm, eq.unitv);
+        orient = _dp3(trinorm, e_q.unitv);
         assert(fabs(orient) > 0);
 
-        if (tag_shift[eid] > 0) /* First time */
-          shift = tag_shift[eid]-1, tag_shift[eid] *= -1, parent = 0;
+        if (tag_shift[e_id] > 0) /* First time */
+          shift = tag_shift[e_id]-1, tag_shift[e_id] *= -1, parent = 0;
         else /* Second time (<0) */
-          tag_shift[eid] *= -1, shift = tag_shift[eid]-1, parent = 1;
+          tag_shift[e_id] *= -1, shift = tag_shift[e_id]-1, parent = 1;
 
-        iq->dface[shift].parent_id[parent] = fid;
+        iq->dface[shift].parent_id[parent] = f_id;
         if (orient < 0) {
           for (k = 0; k < 3; k++)
             iq->dface[shift].unitv[3*parent+k] = -0.5 * trinorm[k];
@@ -579,8 +571,8 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
   } /* Loop on cells */
 
   /* Normalize dual face normal and fill dual face area  */
-  for (cid = 0; cid < iq->n_cells; cid++) {
-    for (i = topo->c2e->idx[cid]; i < topo->c2e->idx[cid+1]; i++) {
+  for (c_id = 0; c_id < iq->n_cells; c_id++) {
+    for (i = topo->c2e->idx[c_id]; i < topo->c2e->idx[c_id+1]; i++) {
 
       for (k = 0; k < 3; k++)
         iq->dface[i].vect[k] = iq->dface[i].unitv[k] + iq->dface[i].unitv[3+k];
@@ -650,7 +642,7 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
                const cs_cdo_connect_t      *connect,
                cs_cdo_quantities_t         *iq) /* In/out */
 {
-  int  i, j, k, cid, fid, vid, s, e, n_face_vertices, count;
+  int  i, j, k, c_id, f_id, v_id, s, e, n_face_vertices, count;
   double  xf[3], xc[3], inv;
 
   int  *vtag = NULL;
@@ -673,35 +665,35 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
   for (i = 0; i < n_vertices; i++)
     vtag[i] = -1;
 
-  for (cid = 0; cid < n_cells; cid++) {   /* Loop on cells */
+  for (c_id = 0; c_id < n_cells; c_id++) {   /* Loop on cells */
 
     count = 0; /* number of cell vertices */
 
     for (k = 0; k < 3; k++)
       xc[k] = 0.0;
 
-    for (i = connect->c2f->idx[cid]; i < connect->c2f->idx[cid+1]; i++) {
+    for (i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id+1]; i++) {
 
-      fid = connect->c2f->col[i] - 1;
+      f_id = connect->c2f->col_id[i];
       for (k = 0; k < 3; k++)
         xf[k] = 0.0;
 
-      if (fid < n_i_faces) { /* Interior faces */
+      if (f_id < n_i_faces) { /* Interior faces */
 
-        s = mesh->i_face_vtx_idx[fid], e = mesh->i_face_vtx_idx[fid+1];
+        s = mesh->i_face_vtx_idx[f_id], e = mesh->i_face_vtx_idx[f_id+1];
         n_face_vertices = e - s;
 
         for (j = s; j < e; j++) {
 
-          vid = mesh->i_face_vtx_lst[j];
+          v_id = mesh->i_face_vtx_lst[j];
           for (k = 0; k < 3; k++)
-            xf[k] += xv[3*vid+k];
+            xf[k] += xv[3*v_id+k];
 
-          if (vtag[vid] != cid) { /* Not already computed */
+          if (vtag[v_id] != c_id) { /* Not already computed */
             count++;
-            vtag[vid] = cid;
+            vtag[v_id] = c_id;
             for (k = 0; k < 3; k++)
-              xc[k] += xv[3*vid+k];
+              xc[k] += xv[3*v_id+k];
           }
 
         } /* End of loop on face vertices */
@@ -709,21 +701,21 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
       }
       else { /* Border faces */
 
-        int _fid = fid - n_i_faces;
-        s = mesh->b_face_vtx_idx[_fid], e = mesh->b_face_vtx_idx[_fid+1];
+        int _f_id = f_id - n_i_faces;
+        s = mesh->b_face_vtx_idx[_f_id], e = mesh->b_face_vtx_idx[_f_id+1];
         n_face_vertices = e - s;
 
         for (j = s; j < e; j++) {
 
-          vid = mesh->b_face_vtx_lst[j];
+          v_id = mesh->b_face_vtx_lst[j];
           for (k = 0; k < 3; k++)
-            xf[k] += xv[3*vid+k];
+            xf[k] += xv[3*v_id+k];
 
-          if (vtag[vid] != cid) { /* Not already computed */
+          if (vtag[v_id] != c_id) { /* Not already computed */
             count++;
-            vtag[vid] = cid;
+            vtag[v_id] = c_id;
             for (k = 0; k < 3; k++)
-              xc[k] += xv[3*vid+k];
+              xc[k] += xv[3*v_id+k];
           }
 
         } /* End of loop on face vertices */
@@ -732,13 +724,13 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
 
       inv = 1/n_face_vertices;
       for (k = 0; k < 3; k++)
-        iq->face[fid].center[k] = inv*xf[k];
+        iq->face[f_id].center[k] = inv*xf[k];
 
     } /* End of loop on cell faces */
 
     inv = 1/count;
     for (k = 0; k < 3; k++)
-      iq->cell_centers[3*cid+k] = inv*xc[k];
+      iq->cell_centers[3*c_id+k] = inv*xc[k];
 
   } /* End of loop on cells */
 
@@ -766,10 +758,10 @@ _vtx_algorithm(const cs_mesh_t             *mesh,
 static void
 _mirtich_algorithm(const cs_mesh_t             *mesh,
                    const cs_mesh_quantities_t  *mq,
-                   const cs_cdo_connect_t    *connect,
-                   cs_cdo_quantities_t       *iq) /* In/out */
+                   const cs_cdo_connect_t      *connect,
+                   cs_cdo_quantities_t         *iq) /* In/out */
 {
-  int  i, k, cid, fid, A, B, C, sgn;
+  int  i, k, c_id, f_id, A, B, C, sgn;
   double  Fvol, inv_surf;
   _cdo_fspec_t  fspec;
   _cdo_fsubq_t  fsubq;
@@ -782,7 +774,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
   assert(connect->f2c != NULL);
   assert(connect->c2f != NULL);
 
-  /* Build and initialize cell quantities */
+  /* Allocate and initialize cell quantities */
   BFT_MALLOC(iq->face, n_faces, cs_quant_t);
   BFT_MALLOC(iq->cell_centers, 3*n_cells, double);
   BFT_MALLOC(iq->cell_vol, n_cells, double);
@@ -792,66 +784,38 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
       iq->cell_centers[3*i+k] = 0.0;
   }
 
-  for (fid = 0; fid < n_faces; fid++) {   /* Loop on faces */
+  for (f_id = 0; f_id < n_faces; f_id++) {   /* Loop on faces */
 
     /* Choose gamma to maximize normal according gamma (x, y, or z)
        Define a direct basis (alpha, beta, gamma) with this choice
        Compute omega = - <n, P> where P belongs to the face */
 
-    fspec = _get_fspec(fid, mesh, mq);
+    fspec = _get_fspec(f_id, mesh, mq);
 
     A = fspec.XYZ[X];
     B = fspec.XYZ[Y];
     C = fspec.XYZ[Z];
 
-    fsubq = _get_fsub_quantities(fid, connect, mesh, fspec);
+    fsubq = _get_fsub_quantities(f_id, connect, mesh, fspec);
 
     inv_surf = 1.0/fsubq.F1;
-    iq->face[fid].center[A] = inv_surf * fsubq.Fa;
-    iq->face[fid].center[B] = inv_surf * fsubq.Fb;
-    iq->face[fid].center[C] = inv_surf * fsubq.Fc;
-
-#if INNOV_QUANT_DEBUG > 1
-    {
-      cs_quant_t  f = iq->face[fid];
-
-      printf(" F: %d >> Fa: %e, Fb, %e, Fc: %e, Fa2: %e, Fb2: %e, Fc2: %e\n",
-             fid, fsubq.Fa, fsubq.Fb, fsubq.Fc, fsubq.Fa2, fsubq.Fb2, fsubq.Fc2);
-      printf(" (face center) Mirtich Algo: [% -.6e, % -.6e, % -e.6] |",
-             f.center[0], f.center[1], face.center[2]);
-      if (fid < n_i_faces)
-        printf(" Saturne [% -.6e, % -.6e, % -.6e] | [% -.6e, % -.6e, % -.6e]\n",
-               mq->i_face_cog[3*fid],mq->i_face_cog[3*fid+1],
-               mq->i_face_cog[3*fid+2],
-               fabs(f.center[0] - mq->i_face_cog[3*fid]),
-               fabs(f.center[1] - mq->i_face_cog[3*fid+1]),
-               fabs(f.center[2] - mq->i_face_cog[3*fid+2]));
-      else {
-        int fidb = fid - n_i_faces;
-        printf(" Saturne [% -.6e, % -.6e, % -.6e] | [% -.6e, % -.6e, % -.6e]\n",
-               mq->b_face_cog[3*fidb], mq->b_face_cog[3*fidb+1],
-               mq->b_face_cog[3*fidb+2],
-               fabs(iq->f.center[0] - mq->b_face_cog[3*fidb]),
-               fabs(iq->f.center[1] - mq->b_face_cog[3*fidb+1]),
-               fabs(iq->f.center[2] - mq->b_face_cog[3*fidb+2]));
-      }
-    }
-#endif
+    iq->face[f_id].center[A] = inv_surf * fsubq.Fa;
+    iq->face[f_id].center[B] = inv_surf * fsubq.Fb;
+    iq->face[f_id].center[C] = inv_surf * fsubq.Fc;
 
     /* Update cell quantities */
+    for (i = connect->f2c->idx[f_id]; i < connect->f2c->idx[f_id+1]; i++) {
 
-    for (i = connect->f2c->idx[fid]; i < connect->f2c->idx[fid+1]; i++) {
-
-      cid = CS_ABS(connect->f2c->col[i]) - 1;
+      c_id = connect->f2c->col_id[i];
       sgn = connect->f2c->sgn[i];
 
       Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
                ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
 
-      iq->cell_vol[cid] += sgn * fspec.n[0] * Fvol;
-      iq->cell_centers[3*cid + A] += sgn * fspec.n[A] * fsubq.Fa2;
-      iq->cell_centers[3*cid + B] += sgn * fspec.n[B] * fsubq.Fb2;
-      iq->cell_centers[3*cid + C] += sgn * fspec.n[C] * fsubq.Fc2;
+      iq->cell_vol[c_id] += sgn * fspec.n[0] * Fvol;
+      iq->cell_centers[3*c_id + A] += sgn * fspec.n[A] * fsubq.Fa2;
+      iq->cell_centers[3*c_id + B] += sgn * fspec.n[B] * fsubq.Fb2;
+      iq->cell_centers[3*c_id + C] += sgn * fspec.n[C] * fsubq.Fc2;
 
     } /* End of loop on cell faces */
 
@@ -909,7 +873,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_cdo_connect_t      *topo)
 {
   short int  sgn;
-  int  i, j, k, ii, nnz, cid, fid;
+  int  i, j, k, ii, nnz, c_id, f_id;
   double  mes, inv, vec[3], xc[3];
 
   cs_cdo_quantities_t  *cdoq = NULL;
@@ -999,17 +963,17 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   nnz = topo->c2f->idx[cdoq->n_cells];
   BFT_MALLOC(cdoq->dedge, 4*nnz, double);
 
-  for (cid = 0; cid < cdoq->n_cells; cid++) {
+  for (c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     for (k = 0; k < 3; k++)
-      xc[k] = cdoq->cell_centers[3*cid+k];
+      xc[k] = cdoq->cell_centers[3*c_id+k];
 
-    for (i = topo->c2f->idx[cid]; i < topo->c2f->idx[cid+1]; i++) {
+    for (i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1]; i++) {
 
-      fid = topo->c2f->col[i] - 1;
+      f_id = topo->c2f->col_id[i];
       sgn = topo->c2f->sgn[i];
       for (k = 0; k < 3; k++)
-        vec[k] = cdoq->face[fid].center[k] - xc[k];
+        vec[k] = cdoq->face[f_id].center[k] - xc[k];
       mes = _n3(vec);
 
       /* Fill dedge */
@@ -1175,7 +1139,7 @@ cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
 
   for (i = 0; i < quant->n_cells; i++)
     for (j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
-      pvol[c2v->lst[j]-1] += quant->dcell_vol[j];
+      pvol[c2v->ids[j]] += quant->dcell_vol[j];
 
   /* Return pointer */
   *p_pvol = pvol;
@@ -1211,13 +1175,13 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
   for (i = 0; i < quant->n_cells; i++) {
     for (j = connect->c2e->idx[i]; j < connect->c2e->idx[i+1]; j++) {
 
-      const cs_lnum_t  eid = connect->c2e->lst[j]-1;
-      const cs_quant_t  edgeq = quant->edge[eid];
+      const cs_lnum_t  e_id = connect->c2e->ids[j];
+      const cs_quant_t  edgeq = quant->edge[e_id];
       const cs_dface_t  dface = quant->dface[j];
 
       dvol  = dface.meas[0] * _dp3(edgeq.unitv, &(dface.unitv[0]));
       dvol += dface.meas[1] * _dp3(edgeq.unitv, &(dface.unitv[3]));
-      pvol[eid] += dvol * _overdim * edgeq.meas;
+      pvol[e_id] += dvol * _overdim * edgeq.meas;
 
     }
   }
@@ -1242,10 +1206,13 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
                      const cs_cdo_quantities_t  *quant,
                      double                     *p_pvol[])
 {
-  int  i, j, k;
-  double  height, xfc[3], xc[3];
+  cs_lnum_t  i, k, pos;
+  double  height;
+  cs_real_3_t  xfc, xc;
 
   double  *pvol = *p_pvol;
+
+  const cs_sla_matrix_t  *c2f = connect->c2f;
 
   /* Allocate if needed and initialize */
   if (pvol == NULL)
@@ -1253,15 +1220,15 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
   for (i = 0; i < quant->n_faces; i++)
     pvol[i] = 0;
 
-  for (i = 0; i < quant->n_cells; i++) {
+  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
     for (k = 0; k < 3; k++)
-      xc[k] = quant->cell_centers[3*i+k];
+      xc[k] = quant->cell_centers[3*c_id+k];
 
-    for (j = connect->c2f->idx[i]; j < connect->c2f->idx[i+1]; j++) {
+    for (pos = c2f->idx[c_id]; pos < c2f->idx[c_id+1]; pos++) {
 
-      const cs_lnum_t  fid = connect->c2f->col[j]-1;
-      const cs_quant_t  fq = quant->face[fid];
+      cs_lnum_t  f_id = c2f->col_id[pos];
+      const cs_quant_t  fq = quant->face[f_id];
 
       /* Step 1: Compute h_(f,c) the height of the pyramid of base face f */
       for (k = 0; k < 3; k++)
@@ -1269,7 +1236,7 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
       height = fabs(_dp3(fq.unitv, xfc));
 
       /* Step 2: Compute volume of the pyramid */
-      pvol[fid] += _overdim * fq.meas * height;
+      pvol[f_id] += _overdim * fq.meas * height;
 
     }
   }
@@ -1312,10 +1279,10 @@ cs_compute_face_weights(cs_lnum_t                   f_id,
   /* Compute a weight for each vertex of the current face */
   for (ii = connect->f2e->idx[f_id]; ii < connect->f2e->idx[f_id+1]; ii++) {
 
-    cs_lnum_t  e_id = connect->f2e->col[ii]-1;
+    cs_lnum_t  e_id = connect->f2e->col_id[ii];
     cs_quant_t  peq = quant->edge[e_id];
-    cs_lnum_t  v1_id = connect->e2v->col[2*e_id]-1;
-    cs_lnum_t  v2_id = connect->e2v->col[2*e_id+1]-1;
+    cs_lnum_t  v1_id = connect->e2v->col_id[2*e_id];
+    cs_lnum_t  v2_id = connect->e2v->col_id[2*e_id+1];
 
     _lenunit3(peq.center, pfq.center, &len, &un);
     _cp3(un, peq.unitv, &cp);

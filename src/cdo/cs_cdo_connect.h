@@ -62,6 +62,15 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  bool     owner;
+  int      n;
+  int     *idx;   /* from 0, size = n+1 */
+  int     *ids;   /* ids from 0 to n-1 (there is no multifold entry) */
+
+} cs_connect_index_t;
+
+typedef struct {
+
   short int   *flag;   /* CS_CONNECT_(IN/BD/II/IB/BB/BI) */
 
   cs_lnum_t  n;    /* full number of entities */
@@ -74,44 +83,38 @@ typedef struct {
 
 } cs_connect_info_t;
 
-typedef struct {
-
-  bool     owner;
-  int      n;
-  int     *idx;   /* from 0, size = n+1 */
-  int     *lst;   /* number from 1 to ... (there is no multifold entry) */
-
-} cs_connect_index_t;
-
 typedef struct { /* Connectivity structure */
 
   /* Upward oriented connectivity */
-  cs_sla_matrix_t   *v2e;
-  cs_sla_matrix_t   *e2f;
-  cs_sla_matrix_t   *f2c;
+  cs_sla_matrix_t   *v2e;  // vertex --> edges connectivity
+  cs_sla_matrix_t   *e2f;  // edge --> faces connectivity
+  cs_sla_matrix_t   *f2c;  // face --> cells connectivity
 
   /* Downward oriented connectivity */
-  cs_sla_matrix_t   *e2v;
-  cs_sla_matrix_t   *f2e;
-  cs_sla_matrix_t   *c2f;
+  cs_sla_matrix_t   *e2v;  // edge --> vertices connectivity
+  cs_sla_matrix_t   *f2e;  // face --> edges connectivity
+  cs_sla_matrix_t   *c2f;  // cell --> faces connectivity
 
   /* Specific CDO connect : not oriented (same spirit as Code_Saturne
      historical connectivity. Use this connectivity  to scan dual quantities
   */
-  cs_connect_index_t  *c2e;  /* Cell -> Edges connectivity */
-  cs_connect_index_t  *c2v;  /* Cell -> Vertices connectivity */
+  cs_connect_index_t  *c2e;  /* cell -> edges connectivity */
+  cs_connect_index_t  *c2v;  /* cell -> vertices connectivity */
 
   /* Max. connectitivy size for cells */
-  cs_lnum_t  max_set_size;
-  cs_lnum_t  n_max_vbyc;
-  cs_lnum_t  n_max_ebyc;
-  cs_lnum_t  n_max_fbyc;
+  cs_lnum_t  n_max_vbyc;    // max. number of vertices in a cell
+  cs_lnum_t  n_max_ebyc;    // max. number of edges in a cell
+  cs_lnum_t  n_max_fbyc;    // max. number of faces in a cell
+
+  cs_lnum_t  max_set_size;  /* max between n_vertices, n_edges, n_faces
+                               and n_cells */
 
   /* Status internal or border entity */
-  cs_connect_info_t  *v_info;
-  cs_connect_info_t  *e_info;
-  cs_connect_info_t  *f_info;
-  cs_connect_info_t  *c_info;
+  cs_connect_info_t  *v_info;  // count of interior/border vertices
+  cs_connect_info_t  *e_info;  // count of interior/border edges
+  cs_connect_info_t  *f_info;  // count of interior/border faces
+  cs_connect_info_t  *c_info;  /* count of interior/border cells
+                                  a border cell has at least one border face */
 
 } cs_cdo_connect_t;
 
@@ -202,7 +205,7 @@ cs_index_create(int  n);
  *
  * \param[in]  n     number of entries of the indexed list
  * \param[in]  idx   array of size n+1
- * \param[in]  lst   array of size idx[n]
+ * \param[in]  ids   array of size idx[n]
  *
  * \return  a pointer to a cs_connect_index_t
  */
@@ -211,7 +214,7 @@ cs_index_create(int  n);
 cs_connect_index_t *
 cs_index_map(int    n,
              int   *idx,
-             int   *lst);
+             int   *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -230,23 +233,23 @@ cs_index_free(cs_connect_index_t   **pidx);
  *
  * \param[in]  nc      number of elements in C set
  * \param[in]  xab     pointer to the index A -> B
- * \param[in]  xbc     pointer to the index B -> C
+ * \param[in]  b2c     pointer to the index B -> C
  *
  *\return  a pointer to the cs_connect_index_t structure A -> C
  */
 /*----------------------------------------------------------------------------*/
 
 cs_connect_index_t *
-cs_index_convol(int                        nc,
-                const cs_connect_index_t  *xab,
-                const cs_connect_index_t  *xbc);
+cs_index_compose(int                        nc,
+                 const cs_connect_index_t  *a2b,
+                 const cs_connect_index_t  *b2c);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   From a cs_connect_index_t struct. A -> B create a new index B -> A
  *
  * \param[in]  nb     size of the "b" set
- * \param[in]  ab     pointer to the index A -> B
+ * \param[in]  a2b    pointer to the index A -> B
  *
  *\return  a new pointer to the cs_connect_index_t structure B -> A
  */
@@ -254,7 +257,7 @@ cs_index_convol(int                        nc,
 
 cs_connect_index_t *
 cs_index_transpose(int                         nb,
-                   const cs_connect_index_t   *ab);
+                   const cs_connect_index_t   *a2b);
 
 /*----------------------------------------------------------------------------*/
 /*!

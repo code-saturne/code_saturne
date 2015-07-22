@@ -1056,13 +1056,22 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
     return  "Diagonal";
     break;
 
+  case CS_PARAM_PRECOND_POLY1:
+    return  "Neumann.Poly.O1";
+    break;
+
   case CS_PARAM_PRECOND_SSOR:
     return  "SSOR";
     break;
 
-  case CS_PARAM_PRECOND_CHEBY:
-    return  "Chebychev";
+  case CS_PARAM_PRECOND_ILU0:
+    return  "ILU0";
     break;
+
+  case CS_PARAM_PRECOND_MG:
+    return  "MultiGrid";
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid preconditionner. Stop execution."));

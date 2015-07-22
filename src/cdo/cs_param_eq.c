@@ -67,12 +67,12 @@ cs_param_eq_t  *cs_cdo_param_eqs = NULL;
 
 /* Default initialization */
 static cs_param_eq_algo_t _algo_default = {
-  CS_PARAM_EQ_ALGO_ITSOL, // type of iterative solver
-  0,                      // n_iters
-  50,                     // max. number of iterations
-  0,                      // n_cumulated_iters
-  10000,                  // max. number of cumulated iterations
-  1e-6                    // stopping criterion
+  CS_PARAM_EQ_ALGO_CS_ITSOL, // type of iterative solver
+  0,                         // n_iters
+  50,                        // max. number of iterations
+  0,                         // n_cumulated_iters
+  10000,                     // max. number of cumulated iterations
+  1e-6                       // stopping criterion
 };
 
 static cs_param_itsol_t _itsol_default = {
@@ -338,6 +338,141 @@ cs_param_eq_set_diffusion_pty(const char   *eq_name,
   cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
 
   eq->diffusion_hodge.pty_id = pty_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of algorithm for solving the linear system related to
+ *         the equation named eqname
+ *
+ * \param[in]   eqname   name of the equation to deal with
+ * \param[in]   algo     algorithm used for solving linear systems
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_algo_type(const char                *eqname,
+                          cs_param_eq_algo_type_t    algo)
+{
+  int  eq_id = cs_param_eq_get_id_by_name(eqname);
+
+  /* Sanity checks */
+  if (eq_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid equation name %s.\n"
+                " This equation is not already defined.\n"), eqname);
+
+  cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
+
+  eq->algo_info.type = algo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of iterative solver and the type of preconditionner
+ *         for solving the linear system related to the equation named eqname
+ *
+ * \param[in]   name      name of the equation to deal with
+ * \param[in]   itsol     iterative solver used for solving linear systems
+ * \param[in]   precond   preconditionner used for solving linear systems
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_type(const char                *name,
+                           cs_param_itsol_type_t      itsol,
+                           cs_param_precond_type_t    precond)
+{
+  int  eq_id = cs_param_eq_get_id_by_name(name);
+
+  /* Sanity checks */
+  if (eq_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid equation name %s.\n"
+                " This equation is not already defined.\n"), name);
+
+  cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
+
+  eq->itsol_info.solver = itsol;
+  eq->itsol_info.precond = precond;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the solver precision
+ *
+ * \param[in]   name       name of the equation to deal with
+ * \param[in]   accuracy   value of the stopping criterion
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_precision(const char   *name,
+                                double        accuracy)
+{
+  int  eq_id = cs_param_eq_get_id_by_name(name);
+
+  /* Sanity checks */
+  if (eq_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid equation name %s.\n"
+                " This equation is not already defined.\n"), name);
+
+  cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
+
+  eq->itsol_info.eps = accuracy;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the maximum number of iterations to do in an iterative solver
+ *
+ * \param[in]  name         name of the equation to deal with
+ * \param[in]  n_max_iter   max num. of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_max_iter(const char   *name,
+                                int           n_max_iter)
+{
+  int  eq_id = cs_param_eq_get_id_by_name(name);
+
+  /* Sanity checks */
+  if (eq_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid equation name %s.\n"
+                " This equation is not already defined.\n"), name);
+
+  cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
+
+  eq->itsol_info.n_max_iter = n_max_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set if the residual is normalized or not
+ *
+ * \param[in]  name              name of the equation to deal with
+ * \param[in]  resid_normalized  true/false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_normalization(const char   *name,
+                                    bool          resid_normalized)
+{
+  int  eq_id = cs_param_eq_get_id_by_name(name);
+
+  /* Sanity checks */
+  if (eq_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid equation name %s.\n"
+                " This equation is not already defined.\n"), name);
+
+  cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
+
+  eq->itsol_info.resid_normalized = resid_normalized;
 }
 
 /*----------------------------------------------------------------------------*/

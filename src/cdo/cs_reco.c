@@ -115,7 +115,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 
     crec[i] = 0;
     for (j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
-      crec[i] += dcv[j]*dof[c2v->lst[j]-1];
+      crec[i] += dcv[j]*dof[c2v->ids[j]];
     crec[i] /= quant->cell_vol[i];
 
   } /* End of loop on cells */
@@ -128,13 +128,13 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
 
     for (j = f2e->idx[i]; j < f2e->idx[i+1]; j++) {
 
-      eid = f2e->col[j]-1;
+      eid = f2e->col_id[j];
       eq = quant->edge[eid];
       _lenunit3(eq.center, fq.center, &lef, &uef);
 
       for (l = e2v->idx[eid]; l < e2v->idx[eid+1]; l++) {
 
-        vid = e2v->col[l]-1;
+        vid = e2v->col_id[l];
         _lenunit3(&(m->vtx_coord[3*vid]), eq.center, &lve, &uve);
         _cp3(uve, uef, &cp);
         frec[i] += 0.5*lve*lef*_n3(cp) * dof[vid];
@@ -162,7 +162,6 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
  *  \param[in]    quant   pointer to the additional quantities struct.
  *  \param[in]    dof     pointer to the field of edge-based DoFs
  *  \param[inout] reco    value of the reconstrcuted field in this sub-volume
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -189,7 +188,7 @@ cs_reco_dga_edge_dof(cs_lnum_t                    cid,
   for (i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
     const cs_dface_t  df2q = quant->dface[i];   /* Dual face quantities */
-    const cs_lnum_t  e2_id = c2e->lst[i]-1;
+    const cs_lnum_t  e2_id = c2e->ids[i];
     const double  val = dof[e2_id];             /* Edge value */
 
     for (k = 0; k < 3; k++)
@@ -229,16 +228,15 @@ cs_reco_dga_edge_dof(cs_lnum_t                    cid,
  *  \param[in]    quant   pointer to the additional quantities struct.
  *  \param[in]    dof     pointer to the field of edge-based DoFs
  *  \param[inout] reco    value of the reconstrcuted field at cell center
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_ccen_edge_dof(cs_lnum_t                     cid,
-                      const cs_connect_index_t             *c2e,
-                      const cs_cdo_quantities_t  *quant,
-                      const double                 *dof,
-                      double                        reco[])
+cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
+                      const cs_connect_index_t    *c2e,
+                      const cs_cdo_quantities_t   *quant,
+                      const double                *dof,
+                      double                       reco[])
 {
   int  i, k;
 
@@ -254,7 +252,7 @@ cs_reco_ccen_edge_dof(cs_lnum_t                     cid,
   for (i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
     const cs_dface_t  dfq = quant->dface[i];  /* Dual face quantities */
-    const double  val = dof[c2e->lst[i]-1];   /* Edge value */
+    const double  val = dof[c2e->ids[i]];     /* Edge value */
 
     for (k = 0; k < 3; k++)
       reco[k] += val*dfq.vect[k];

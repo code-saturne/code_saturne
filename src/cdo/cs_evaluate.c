@@ -234,15 +234,15 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
 
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
-        f_id = c2f->col[i]-1;
+        f_id = c2f->col_id[i];
         f = quant->face[f_id]; /* Get quantities related to this edge */
 
         for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
-          e_id = f2e->col[j]-1;
+          e_id = f2e->col_id[j];
           e = quant->edge[e_id]; /* Get quantities related to this edge */
-          v1_id = connect->e2v->col[2*e_id]-1;
-          v2_id = connect->e2v->col[2*e_id+1]-1;
+          v1_id = connect->e2v->col_id[2*e_id];
+          v2_id = connect->e2v->col_id[2*e_id+1];
 
           for (k = 0; k < 3; k++) {
             xv1[k] = m->vtx_coord[3*v1_id+k];
@@ -286,15 +286,15 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
 
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
-        f_id = c2f->col[i]-1;
+        f_id = c2f->col_id[i];
         f = quant->face[f_id]; /* Get quantities related to this edge */
 
         for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
-          e_id = f2e->col[j]-1;
+          e_id = f2e->col_id[j];
           e = quant->edge[e_id]; /* Get quantities related to this edge */
-          v1_id = connect->e2v->col[2*e_id]-1;
-          v2_id = connect->e2v->col[2*e_id+1]-1;
+          v1_id = connect->e2v->col_id[2*e_id];
+          v2_id = connect->e2v->col_id[2*e_id+1];
 
           for (k = 0; k < 3; k++) {
             xv1[k] = m->vtx_coord[3*v1_id+k];
@@ -377,15 +377,15 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
 
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
-        f_id = c2f->col[i]-1;
+        f_id = c2f->col_id[i];
         f = quant->face[f_id]; /* Get quantities related to this face */
 
         for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
-          e_id = f2e->col[j]-1;
+          e_id = f2e->col_id[j];
           e = quant->edge[e_id];
-          v1_id = connect->e2v->col[2*e_id]-1;
-          v2_id = connect->e2v->col[2*e_id+1]-1;
+          v1_id = connect->e2v->col_id[2*e_id];
+          v2_id = connect->e2v->col_id[2*e_id+1];
 
           for (k = 0; k < 3; k++) {
             xv1[k] = m->vtx_coord[3*v1_id+k];
@@ -426,15 +426,15 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
 
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
-        f_id = c2f->col[i]-1;
+        f_id = c2f->col_id[i];
         f = quant->face[f_id]; /* Get quantities related to this face */
 
         for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
-          e_id = f2e->col[j]-1;
+          e_id = f2e->col_id[j];
           e = quant->edge[e_id];
-          v1_id = connect->e2v->col[2*e_id]-1;
-          v2_id = connect->e2v->col[2*e_id+1]-1;
+          v1_id = connect->e2v->col_id[2*e_id];
+          v2_id = connect->e2v->col_id[2*e_id+1];
 
           for (k = 0; k < 3; k++) {
             xv1[k] = m->vtx_coord[3*v1_id+k];
@@ -501,7 +501,7 @@ _scd_by_val(const cs_cdo_quantities_t    *quant,
 
     for (c_id = 0; c_id < quant->n_cells; c_id++)
       for (j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        values[c2v->lst[j]-1] += quant->dcell_vol[j]*const_val;
+        values[c2v->ids[j]] += quant->dcell_vol[j]*const_val;
 
   }
   else { // selection
@@ -510,7 +510,7 @@ _scd_by_val(const cs_cdo_quantities_t    *quant,
 
       c_id = elt_ids[i];
       for (j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        values[c2v->lst[j]-1] += quant->dcell_vol[j]*const_val;
+        values[c2v->ids[j]] += quant->dcell_vol[j]*const_val;
 
     }
 

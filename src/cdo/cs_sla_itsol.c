@@ -220,10 +220,10 @@ _ssor_precond(int                     size,
               const double           *rk,
               double                 *pk)
 {
-  int  i, j, colid;
+  int  i, j;
   double  sum;
 
-  const cs_lnum_t  *col = A->col, *idx = A->idx, *didx = A->didx;
+  const cs_lnum_t  *col_id = A->col_id, *idx = A->idx, *didx = A->didx;
   const double  *val = A->val;
 
   /* Sanity check */
@@ -233,10 +233,8 @@ _ssor_precond(int                     size,
   /* Forward solve */
   for (i = 0; i < size; i++) {
     sum = 0;
-    for (j = idx[i]; j < didx[i]; j++) {  /* Lower part */
-      colid = col[j]-1;
-      sum += val[j]*pk[colid]*dinv[colid];
-    }
+    for (j = idx[i]; j < didx[i]; j++)  /* Lower part */
+      sum += val[j]*pk[col_id[j]]*dinv[col_id[j]];
     pk[i] = rk[i] - sum;
   }
 
@@ -244,36 +242,10 @@ _ssor_precond(int                     size,
   for (i = size-1; i > -1 ; i--) {
     sum = 0;
     for (j = didx[i]+1; j < idx[i+1]; j++) /* Upper part */
-      sum += val[j]*pk[col[j]-1];
+      sum += val[j]*pk[col_id[j]];
     pk[i] = dinv[i]*(pk[i] - sum);
   }
 
-}
-
-/*---------------------------------------------------------------------------*
- * Chebyshev  preconditionning   beta <-- spectral radius
- *---------------------------------------------------------------------------*/
-
-static void
-_spectral_preconditionning(int                     size,
-                           double                  beta,
-                           const cs_sla_matrix_t  *a,
-                           const double           *rk,
-                           double                 *gk)
-{
-  int ii;
-
-  const double  alpha = beta/4.0;
-  const double  c0 = 1.0/sqrt(beta*alpha);
-  const double  sqab = sqrt(alpha/beta);
-  const double  c1 = -c0*((1-sqab)/(1+sqab));
-  const double  gamma = 2*c1/(beta-alpha);
-  const double  omega = c1*((beta+alpha)/(beta-alpha)) - c0/2.0;
-
-  cs_sla_matvec(a, rk, &gk, true);
-
-  for (ii = 0; ii < size; ii++)
-    gk[ii] = gamma*gk[ii] - omega*rk[ii];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -314,13 +286,6 @@ _preconditionning(int                        size,
       double  *invdiag = (double *)_sla_itsol_pcd_buffer->buf;
       _ssor_precond(size, invdiag, A, rk, pk);
     }
-    break;
-  case CS_PARAM_PRECOND_CHEBY:
-    cs_sla_get_mat_spectral_radius(A,
-                                   25,     /* Number max. of iterations */
-                                   1.e-3,  /* Conv. epsilon */
-                                   &beta);
-    _spectral_preconditionning(size, beta, A, rk, pk);
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -1149,11 +1114,6 @@ cs_sla_solve(const cs_param_itsol_t    itsol_info,
       ret = _cg2(A, rhs, x, itsol_info);
       break;
 
-    case CS_PARAM_PRECOND_CHEBY:
-      assert(_sla_itsol_pcd_buffer->buf != NULL);
-      ret = _pcd_cg(A, rhs, x, itsol_info);
-      break;
-
     case CS_PARAM_PRECOND_DIAG:
     case CS_PARAM_PRECOND_SSOR:
       assert(_sla_itsol_pcd_buffer->buf != NULL);
@@ -1183,11 +1143,6 @@ cs_sla_solve(const cs_param_itsol_t    itsol_info,
       ret = _bicgstab(A, rhs, x, itsol_info);
       break;
 
-    case CS_PARAM_PRECOND_CHEBY:
-      assert(_sla_itsol_pcd_buffer->buf != NULL);
-      ret = _pcd_bicgstab(A, rhs, x, itsol_info);
-      break;
-
     case CS_PARAM_PRECOND_SSOR:
     case CS_PARAM_PRECOND_DIAG:
       assert(A->flag & CS_SLA_MATRIX_LU);
@@ -1214,7 +1169,6 @@ cs_sla_solve(const cs_param_itsol_t    itsol_info,
     case CS_PARAM_PRECOND_NONE:
     case CS_PARAM_PRECOND_SSOR:
     case CS_PARAM_PRECOND_DIAG:
-    case CS_PARAM_PRECOND_CHEBY:
       assert(A->flag & CS_SLA_MATRIX_LU);
       ret = _gmres(A, rhs, x, itsol_info);
       break;
@@ -1257,7 +1211,6 @@ cs_sla_itsol_update_buffer_sizes(size_t                   refsize,
       _main_size = 3 * sizeof(double) * refsize;
       break;
 
-    case CS_PARAM_PRECOND_CHEBY:
     case CS_PARAM_PRECOND_DIAG:
     case CS_PARAM_PRECOND_SSOR:
       _main_size = 4 * sizeof(double) * refsize;
@@ -1276,7 +1229,6 @@ cs_sla_itsol_update_buffer_sizes(size_t                   refsize,
       _main_size = 6 * sizeof(double) * refsize;
       break;
 
-    case CS_PARAM_PRECOND_CHEBY:
     case CS_PARAM_PRECOND_DIAG:
     case CS_PARAM_PRECOND_SSOR:
       _main_size = 8 * sizeof(double) * refsize;

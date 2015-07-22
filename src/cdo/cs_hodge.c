@@ -217,11 +217,11 @@ _prepare_local_hodge_cost(int                          cid,
 
       for (i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
 
-        const cs_lnum_t  eid = c2e->lst[i] - 1;
-        const cs_dface_t  fd = quant->dface[i];  /* Dual face quantities */
-        const cs_quant_t  ep = quant->edge[eid]; /* Edge quantities */
+        const cs_lnum_t  e_id = c2e->ids[i];
+        const cs_dface_t  fd = quant->dface[i];   /* Dual face quantities */
+        const cs_quant_t  ep = quant->edge[e_id]; /* Edge quantities */
 
-        hloc->ids[n_ent] = eid;
+        hloc->ids[n_ent] = e_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
@@ -245,11 +245,11 @@ _prepare_local_hodge_cost(int                          cid,
 
       for (i = c2f->idx[cid]; i < c2f->idx[cid+1]; i++) {
 
-        const cs_lnum_t  fid = c2f->col[i] - 1;
+        const cs_lnum_t  f_id = c2f->col_id[i];
         const double  *ed = &(quant->dedge[4*i]); /* Dual edge quantities */
-        const cs_quant_t  fp = quant->face[fid];  /* Face quantities */
+        const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
-        hloc->ids[n_ent] = fid;
+        hloc->ids[n_ent] = f_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
@@ -272,12 +272,12 @@ _prepare_local_hodge_cost(int                          cid,
 
       for (i = c2f->idx[cid]; i < c2f->idx[cid+1]; i++) {
 
-        const cs_lnum_t  fid = c2f->col[i] - 1;
+        const cs_lnum_t  f_id = c2f->col_id[i];
         const short int  sgn = c2f->sgn[i];
-        const double  *ed = &(quant->dedge[4*i]); /* Dual edge quantities */
-        const cs_quant_t  fp = quant->face[fid];  /* Face quantities */
+        const double  *ed = &(quant->dedge[4*i]);  /* Dual edge quantities */
+        const cs_quant_t  fp = quant->face[f_id];  /* Face quantities */
 
-        hloc->ids[n_ent] = fid;
+        hloc->ids[n_ent] = f_id;
 
         /* Primal and dual vector quantities are split into
            a measure and a unit vector in order to achieve a better accuracy */
@@ -370,7 +370,7 @@ _init_hodge_vertex(const cs_cdo_connect_t     *connect,
 
   /* Initialize index (v2v connectivity) */
   v2c = cs_index_transpose(n_vertices, c2v);
-  v2v = cs_index_convol(n_vertices, v2c, c2v);
+  v2v = cs_index_compose(n_vertices, v2c, c2v);
   cs_index_free(&v2c);
 
   cs_index_sort(v2v);
@@ -382,12 +382,12 @@ _init_hodge_vertex(const cs_cdo_connect_t     *connect,
     h_mat->idx[i+1] = h_mat->idx[i] + v2v->idx[i+1]-v2v->idx[i]-1;
 
   /* Fill column num */
-  BFT_MALLOC(h_mat->col, h_mat->idx[n_vertices], int);
+  BFT_MALLOC(h_mat->col_id, h_mat->idx[n_vertices], cs_lnum_t);
   shift = 0;
   for (i = 0; i < n_vertices; i++)
     for (j = v2v->idx[i]; j < v2v->idx[i+1]; j++)
-      if (v2v->lst[j] != i+1)
-        h_mat->col[shift++] = v2v->lst[j];
+      if (v2v->ids[j] != i)
+        h_mat->col_id[shift++] = v2v->ids[j];
 
   /* Sanity check */
   assert(shift == h_mat->idx[n_vertices]);
@@ -423,7 +423,7 @@ static cs_sla_matrix_t *
 _init_hodge_edge(const cs_cdo_connect_t     *connect,
                  const cs_cdo_quantities_t  *quant)
 {
-  int  cid, eid, eid2, i, j, count, shift;
+  int  c_id, eid, eid2, i, j, count, shift;
 
   int  *etag = NULL;
   cs_connect_index_t  *e2f =  NULL, *f2c = NULL, *e2c = NULL, *e2e = NULL;
@@ -442,12 +442,12 @@ _init_hodge_edge(const cs_cdo_connect_t     *connect,
   /* Build a edge -> cell connectivity */
   e2f = cs_index_map(connect->e2f->n_rows,
                      connect->e2f->idx,
-                     connect->e2f->col);
+                     connect->e2f->col_id);
   f2c = cs_index_map(connect->f2c->n_rows,
                      connect->f2c->idx,
-                     connect->f2c->col);
+                     connect->f2c->col_id);
 
-  e2c = cs_index_convol(n_cells, e2f, f2c);
+  e2c = cs_index_compose(n_cells, e2f, f2c);
 
   /* Count nnz in H */
   BFT_MALLOC(etag, n_edges, int);
@@ -458,11 +458,9 @@ _init_hodge_edge(const cs_cdo_connect_t     *connect,
 
     count = 0;
     for (i = e2c->idx[eid]; i < e2c->idx[eid+1]; i++) {
-
-      cid = e2c->lst[i] - 1;
-      for (j = c2e->idx[cid]; j < c2e->idx[cid+1]; j++) {
-
-        eid2 = c2e->lst[j] - 1;
+      c_id = e2c->ids[i];
+      for (j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+        eid2 = c2e->ids[j];
         if (eid != eid2 && etag[eid2] != eid) {
           etag[eid2] = eid;
           count++;
@@ -481,9 +479,9 @@ _init_hodge_edge(const cs_cdo_connect_t     *connect,
     h_mat->idx[i+1] = h_mat->idx[i+1] + h_mat->idx[i];
 
   /* Fill column num */
-  BFT_MALLOC(h_mat->col, h_mat->idx[n_edges], int);
+  BFT_MALLOC(h_mat->col_id, h_mat->idx[n_edges], cs_lnum_t);
   for (i = 0; i < h_mat->idx[n_edges]; i++)
-    h_mat->col[i] = -1;
+    h_mat->col_id[i] = -1;
 
   for (eid = 0; eid < n_edges; eid++)
     etag[eid] = -1;
@@ -493,14 +491,13 @@ _init_hodge_edge(const cs_cdo_connect_t     *connect,
     shift = h_mat->idx[eid];
     for (i = e2c->idx[eid]; i < e2c->idx[eid+1]; i++) {
 
-      cid = e2c->lst[i] - 1;
-      for (j = c2e->idx[cid]; j < c2e->idx[cid+1]; j++) {
+      c_id = e2c->ids[i];
+      for (j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
 
-        eid2 = c2e->lst[j] - 1;
+        eid2 = c2e->ids[j];
         if (eid != eid2 && etag[eid2] != eid) {
           etag[eid2] = eid;
-          h_mat->col[shift] = eid2 + 1;
-          shift++;
+          h_mat->col_id[shift++] = eid2;
         }
 
       } /* Loop on edges sharing this cell */
@@ -510,7 +507,7 @@ _init_hodge_edge(const cs_cdo_connect_t     *connect,
   } /* End of loop on edges */
 
   /* Order column entries in increasing order */
-  e2e = cs_index_map(h_mat->n_rows, h_mat->idx, h_mat->col);
+  e2e = cs_index_map(h_mat->n_rows, h_mat->idx, h_mat->col_id);
   cs_index_sort(e2e);
   h_mat->flag |= CS_SLA_MATRIX_SORTED;
 
@@ -549,7 +546,7 @@ static cs_sla_matrix_t *
 _init_hodge_face(const cs_cdo_connect_t     *connect,
                  const cs_cdo_quantities_t  *quant)
 {
-  int  i, j, shift;
+  int  f_id, j, shift;
 
   cs_connect_index_t  *f2f = NULL, *c2f = NULL, *f2c = NULL;
 
@@ -565,24 +562,24 @@ _init_hodge_face(const cs_cdo_connect_t     *connect,
                                                  false);
 
   /* Build a face -> face connectivity */
-  f2c = cs_index_map(mf2c->n_rows, mf2c->idx, mf2c->col);
-  c2f = cs_index_map(mc2f->n_rows, mc2f->idx, mc2f->col);
-  f2f = cs_index_convol(n_faces, f2c, c2f);
+  f2c = cs_index_map(mf2c->n_rows, mf2c->idx, mf2c->col_id);
+  c2f = cs_index_map(mc2f->n_rows, mc2f->idx, mc2f->col_id);
+  f2f = cs_index_compose(n_faces, f2c, c2f);
   cs_index_sort(f2f);
   h_mat->flag |= CS_SLA_MATRIX_SORTED;
 
   /* Update index: f2f has the diagonal entry. Remove it for the Hodge index */
   h_mat->idx[0] = 0;
-  for (i = 0; i < n_faces; i++)
-    h_mat->idx[i+1] = h_mat->idx[i] + f2f->idx[i+1]-f2f->idx[i]-1;
+  for (f_id = 0; f_id < n_faces; f_id++)
+    h_mat->idx[f_id+1] = h_mat->idx[f_id] + f2f->idx[f_id+1]-f2f->idx[f_id]-1;
 
   /* Fill column num */
-  BFT_MALLOC(h_mat->col, h_mat->idx[n_faces], int);
+  BFT_MALLOC(h_mat->col_id, h_mat->idx[n_faces], cs_lnum_t);
   shift = 0;
-  for (i = 0; i < n_faces; i++)
-    for (j = f2f->idx[i]; j < f2f->idx[i+1]; j++)
-      if (f2f->lst[j] != i+1)
-        h_mat->col[shift++] = f2f->lst[j];
+  for (f_id = 0; f_id < n_faces; f_id++)
+    for (j = f2f->idx[f_id]; j < f2f->idx[f_id+1]; j++)
+      if (f2f->ids[j] != f_id)
+        h_mat->col_id[shift++] = f2f->ids[j];
 
   /* Sanity check */
   assert(shift == h_mat->idx[n_faces]);
@@ -593,12 +590,12 @@ _init_hodge_face(const cs_cdo_connect_t     *connect,
   cs_index_free(&c2f);
 
   /* Allocate and initialize value array */
-  for (i = 0; i < n_faces; i++)
-    h_mat->diag[i] = 0.0;
+  for (f_id = 0; f_id < n_faces; f_id++)
+    h_mat->diag[f_id] = 0.0;
 
   BFT_MALLOC(h_mat->val, h_mat->idx[n_faces], double);
-  for (i = 0; i < h_mat->idx[n_faces]; i++)
-    h_mat->val[i] = 0.0;
+  for (f_id = 0; f_id < h_mat->idx[n_faces]; f_id++)
+    h_mat->val[f_id] = 0.0;
 
   return h_mat;
 }
@@ -639,15 +636,15 @@ _assemble_local_hodge(const cs_toolbox_locmat_t  *hloc,
 
         /* First add: H(i,j) */
         for (k = start;
-             k < h_mat->idx[iid+1] && h_mat->col[k] != jid+1; k++);
+             k < h_mat->idx[iid+1] && h_mat->col_id[k] != jid; k++);
         assert(k < h_mat->idx[iid+1]);
         h_mat->val[k] += hloc->mat[ij];
         start = k;
 
         /* Second add: H(j,i) */
         for (k = h_mat->idx[jid];
-             k < h_mat->idx[jid+1] && h_mat->col[k] != iid+1; k++);
-        assert(h_mat->col[k] == iid+1);
+             k < h_mat->idx[jid+1] && h_mat->col_id[k] != iid; k++);
+        assert(h_mat->col_id[k] == iid);
         h_mat->val[k] += hloc->mat[ij];
 
       } /* Hloc[ij] != 0.0 */
@@ -1022,7 +1019,7 @@ cs_hodge_voronoi_build(const cs_cdo_connect_t      *connect,
 
         cs_dface_t  dfq = quant->dface[i];
 
-        entid = c2e->lst[i] - 1;  /* edge id in full system */
+        entid = c2e->ids[i];  /* edge id in full system */
 
         /* First sub-triangle contribution */
         _mv3(ptyval, dfq.unitv, &mv);
@@ -1047,7 +1044,7 @@ cs_hodge_voronoi_build(const cs_cdo_connect_t      *connect,
           dv[k] = quant->dedge[1+3*i+k];
         _mv3(ptyval, dv, &mv);
 
-        entid = connect->c2f->col[i]-1;
+        entid = connect->c2f->col_id[i];
         h_mat->diag[entid] += meas * _dp3(mv, dv);
 
       } /* End of loop on cell faces */

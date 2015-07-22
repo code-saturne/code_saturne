@@ -67,10 +67,13 @@ typedef enum {
 typedef enum {
 
   CS_PARAM_EQ_ALGO_NONE,
-  CS_PARAM_EQ_ALGO_ITSOL,   // Directly used an iterative solver
-  CS_PARAM_EQ_ALGO_UZAWA,   // To solve sadle-point system
-  CS_PARAM_EQ_ALGO_NEWTON,  // To solve non-linear system
-  CS_PARAM_EQ_ALGO_PICARD,  // To solve non-linear system
+  CS_PARAM_EQ_ALGO_CS_ITSOL,    /* Used an iterative solver
+                                   defined by Code_Saturne */
+  CS_PARAM_EQ_ALGO_PETSC_ITSOL, /* Used an iterative solver
+                                   defined by PETSc */
+  CS_PARAM_EQ_ALGO_UZAWA,       // To solve sadle-point system
+  CS_PARAM_EQ_ALGO_NEWTON,      // To solve non-linear system
+  CS_PARAM_EQ_ALGO_PICARD,      // To solve non-linear system
   CS_PARAM_EQ_N_ALGOS
 
 } cs_param_eq_algo_type_t;
@@ -261,6 +264,88 @@ cs_param_eq_add(const char               *name,
 void
 cs_param_eq_set_diffusion_pty(const char   *eq_name,
                               const char   *pty_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of algorithm for solving the linear system related to
+ *         the equation named eqname
+ *
+ * \param[in]   eqname   name of the equation to deal with
+ * \param[in]   algo     algorithm used for solving linear systems
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_algo_type(const char                *eqname,
+                          cs_param_eq_algo_type_t    algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the type of iterative solver and the type of preconditionner
+ *         for solving the linear system related to the equation named eqname
+ *
+ * \param[in]   name      name of the equation to deal with
+ * \param[in]   itsol     iterative solver used for solving linear systems
+ * \param[in]   precond   preconditionner used for solving linear systems
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_type(const char                *name,
+                           cs_param_itsol_type_t      itsol,
+                           cs_param_precond_type_t    precond);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the solver precision
+ *
+ * \param[in]   name       name of the equation to deal with
+ * \param[in]   accuracy   value of the stopping criterion
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_precision(const char   *name,
+                                double        accuracy);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the solver precision
+ *
+ * \param[in]   name       name of the equation to deal with
+ * \param[in]   accuracy   value of the stopping criterion
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_precision(const char   *name,
+                                double        accuracy);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the maximum number of iterations to do in an iterative solver
+ *
+ * \param[in]  name         name of the equation to deal with
+ * \param[in]  n_max_iter   max num. of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_max_iter(const char   *name,
+                               int           n_max_iter);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set if the residual is normalized or not
+ *
+ * \param[in]  name              name of the equation to deal with
+ * \param[in]  resid_normalized  true/false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_eq_set_itsol_normalization(const char   *name,
+                                    bool          resid_normalized);
 
 /*----------------------------------------------------------------------------*/
 /*!

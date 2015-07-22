@@ -264,6 +264,35 @@ struct _cs_matrix_structure_t {
                                           numbering information */
 };
 
+/* Matrix structure (representation-independent part) */
+/*----------------------------------------------------*/
+
+struct _cs_matrix_cdo_structure_t {
+
+  cs_matrix_type_t       type;         /* Matrix storage and definition type */
+
+  cs_lnum_t              n_rows;      /* Local number of entities attached to
+                                         rows */
+  cs_lnum_t              n_rows_ext;  /* Local number of participating entities
+                                         (n_rows + ghost rows implied in sync.
+                                          process) */
+  cs_lnum_t              n_cols;      /* Local number of entities attached to
+                                         columns */
+
+  bool                   owner;        /* Deallocate or not members inside
+                                          "structure" */
+  void                  *structure;    /* Matrix structure */
+
+  /* Pointers to shared arrays from mesh structure
+     (face->cell connectivity for coefficient assignment,
+     local->local cell numbering for future info or renumbering,
+     and halo) */
+
+  const cs_halo_t       *halo;         /* Parallel or periodic halo */
+  const cs_numbering_t  *numbering;    /* Vectorization or thread-related
+                                          numbering information */
+};
+
 /* Structure associated with Matrix (representation-independent part) */
 /*--------------------------------------------------------------------*/
 
@@ -378,6 +407,159 @@ struct _cs_matrix_variant_t {
 /*=============================================================================
  * Semi-private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Create CSR matrix coefficients.
+ *
+ * returns:
+ *   pointer to allocated CSR coefficients structure.
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_coeff_csr_t *
+cs_matrix_create_coeff_csr(void);
+
+/*----------------------------------------------------------------------------
+ * Destroy CSR matrix coefficients.
+ *
+ * parameters:
+ *   coeff  <->  Pointer to CSR matrix coefficients pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_destroy_coeff_csr(cs_matrix_coeff_csr_t **coeff);
+
+/*----------------------------------------------------------------------------
+ * Release shared CSR matrix coefficients.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_release_coeffs_csr(cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Copy diagonal of CSR matrix.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *   da     --> Diagonal (pre-allocated, size: n_rows)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_copy_diagonal_csr(const cs_matrix_t  *matrix,
+                            cs_real_t          *restrict da);
+
+/*----------------------------------------------------------------------------
+ * Destroy CSR matrix structure.
+ *
+ * parameters:
+ *   matrix  <->  Pointer to CSR matrix structure pointer
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_destroy_struct_csr(cs_matrix_struct_csr_t  **matrix);
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with CSR matrix.
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- Pointer to matrix structure
+ *   x            <-- Multipliying vector values
+ *   y            --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vec_p_l_csr(bool                exclude_diag,
+                      const cs_matrix_t  *matrix,
+                      const cs_real_t    *restrict x,
+                      cs_real_t          *restrict y);
+
+#if defined (HAVE_MKL)
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with MSR matrix, using MKL
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- Pointer to matrix structure
+ *   x            <-- Multipliying vector values
+ *   y            --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vec_p_l_csr_mkl(bool                exclude_diag,
+                          const cs_matrix_t  *matrix,
+                          const cs_real_t    *restrict x,
+                          cs_real_t          *restrict y);
+
+#endif /* defined (HAVE_MKL) */
+
+/*----------------------------------------------------------------------------
+ * Copy diagonal of native or MSR matrix.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *   da     --> Diagonal (pre-allocated, size: n_cells)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_copy_diagonal_separate(const cs_matrix_t  *matrix,
+                                 cs_real_t          *restrict da);
+
+/*----------------------------------------------------------------------------
+ * Create MSR matrix coefficients.
+ *
+ * returns:
+ *   pointer to allocated MSR coefficients structure.
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_coeff_msr_t *
+cs_matrix_create_coeff_msr(void);
+
+/*----------------------------------------------------------------------------
+ * Release shared MSR matrix coefficients.
+ *
+ * parameters:
+ *   matrix <-- Pointer to matrix structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_release_coeffs_msr(cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with MSR matrix.
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- Pointer to matrix structure
+ *   x            <-- Multipliying vector values
+ *   y            --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vec_p_l_msr(bool                exclude_diag,
+                      const cs_matrix_t  *matrix,
+                      const cs_real_t    *restrict x,
+                      cs_real_t          *restrict y);
+
+#if defined (HAVE_MKL)
+/*----------------------------------------------------------------------------
+ * Local matrix.vector product y = A.x with MSR matrix, using MKL
+ *
+ * parameters:
+ *   exclude_diag <-- exclude diagonal if true
+ *   matrix       <-- Pointer to matrix structure
+ *   x            <-- Multipliying vector values
+ *   y            --> Resulting vector
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vec_p_l_msr_mkl(bool                exclude_diag,
+                          const cs_matrix_t  *matrix,
+                          const cs_real_t    *restrict x,
+                          cs_real_t          *restrict y);
+#endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------*/
 

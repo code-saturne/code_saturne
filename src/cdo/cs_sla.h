@@ -96,7 +96,7 @@ typedef struct {
   int     n_cols;
 
   cs_lnum_t   *idx;
-  cs_lnum_t   *col;
+  cs_lnum_t   *col_id;
 
   short int   *sgn;  /* Only for DEC type: -1 or 1 according to orientation */
   double      *val;  /* Only for CSR and MSR type */
@@ -502,6 +502,21 @@ cs_sla_matrix_transpose(const cs_sla_matrix_t  *mat);
 
 cs_sla_matrix_t *
 cs_sla_matrix_free(cs_sla_matrix_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Free a cs_sla_matrix_t structure after a mapping into a
+ *          cs_matrix_t  struct. (idx and col are not owned anymore by
+ *          the current structure)
+ *
+ * \param[in]  m     matrix to free
+ *
+ *\return  a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sla_matrix_t *
+cs_sla_matrix_free_after_mapping(cs_sla_matrix_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!

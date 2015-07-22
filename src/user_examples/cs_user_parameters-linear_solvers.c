@@ -116,7 +116,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * User function example for setup options of a PETSc KSP solver.
  *
- * This function is called the end of the setup stage for a KSP solver.
+ * This function is called at the end of the setup stage for a KSP solver.
  *
  * Note: if the context pointer is non-NULL, it must point to valid data
  * when the selection function is called so that value or structure should
