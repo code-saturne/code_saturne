@@ -608,7 +608,7 @@ cs_sles_petsc_setup(void               *context,
 
   }
   else if (   db_size == 1 && cs_mat_type == CS_MATRIX_CSR
-           && (   strcmp(c->mat_type[0], MATMPIMAIJ) == 0
+           && (   strcmp(c->mat_type[0], MATMPIAIJ) == 0
                || (   strcmp(c->mat_type[0], MATAIJ) == 0
                    && cs_glob_n_ranks > 1))) {
 
@@ -759,8 +759,10 @@ cs_sles_petsc_setup(void               *context,
         cs_matrix_get_csr_arrays(a, &a_row_index, &a_col_id, &a_val);
 
         for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
-          for (cs_lnum_t kk = 0; kk < db_size; kk++)
-            o_nnz[row_id*db_size + kk] = db_size;
+          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+            d_nnz[row_id*db_size + kk] = 0;
+            o_nnz[row_id*db_size + kk] = 0;
+          }
         }
 
       }
@@ -769,8 +771,10 @@ cs_sles_petsc_setup(void               *context,
         cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &d_val, &a_val);
 
         for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
-          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+            d_nnz[row_id*db_size + kk] = db_size;
             o_nnz[row_id*db_size + kk] = 0;
+          }
         }
 
       }
@@ -995,7 +999,7 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
             cs_lnum_t c_id = a_col_id[i];
             for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-              PetscInt idxm[] = {grow_num[c_id*db_size + kk] - 1};
+              PetscInt idxm[] = {grow_num[row_id*db_size + kk] - 1};
               PetscInt idxn[] = {grow_num[c_id*db_size + kk] - 1};
               PetscScalar v[] = {a_val[i]};
               MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
@@ -1010,7 +1014,7 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
             cs_lnum_t c_id = a_col_id[i];
             for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-              PetscInt idxm[] = {grow_num[c_id*db_size + ii] - 1};
+              PetscInt idxm[] = {grow_num[row_id*db_size + ii] - 1};
               for (cs_lnum_t jj = 0; jj < db_size; jj++) {
                 PetscInt idxn[] = {grow_num[c_id*db_size + jj] - 1};
                 PetscScalar v[] = {d_val[i*b_size[3] + ii*b_size[2] + jj]};
