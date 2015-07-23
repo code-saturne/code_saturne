@@ -633,12 +633,6 @@ cs_matrix_cdo_create(const cs_matrix_cdo_structure_t  *ms)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
   }
 
-  /* Additional query buffers here */
-
-  m->row_buffer_size = 0;
-  m->row_buffer_id = NULL;
-  m->row_buffer_val = NULL;
-
   return m;
 }
 

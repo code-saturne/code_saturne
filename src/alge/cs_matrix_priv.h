@@ -361,12 +361,6 @@ struct _cs_matrix_t {
 
   int                                loop_length[CS_MATRIX_N_FILL_TYPES][2];
 
-  /* Query buffers for some high-level algorithms */
-
-  cs_lnum_t   row_buffer_size;
-  cs_lnum_t  *row_buffer_id;
-  cs_real_t  *row_buffer_val;
-
 };
 
 /* Structure used for tuning variants */

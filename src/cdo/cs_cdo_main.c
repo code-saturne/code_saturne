@@ -54,7 +54,6 @@
 #include "cs_mesh_location.h"
 #include "cs_sles_it.h"
 
-
 /* CDO module */
 #include "cs_cdo.h"
 #include "cs_quadrature.h"

@@ -89,6 +89,19 @@ typedef struct _cs_matrix_t cs_matrix_t;
 
 typedef struct _cs_matrix_variant_t cs_matrix_variant_t;
 
+/* Information structure for extraction of matrix row */
+
+typedef struct {
+
+  cs_lnum_t          row_size;       /*< Row size from last call */
+  cs_lnum_t          buffer_size;    /*< Allocated buffer size */
+  const cs_lnum_t   *col_id;         /*< Pointer to local column ids */
+  cs_lnum_t        *_col_id;         /*< Pointer to local column ids copy */
+  const cs_real_t   *vals;           /*< Pointer to local row values */
+  cs_real_t        *_vals;           /*< Pointer to local row values copy */
+
+} cs_matrix_row_info_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -439,33 +452,49 @@ cs_matrix_get_diagonal(const cs_matrix_t  *matrix);
 const cs_real_t *
 cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get row values for a given matrix.
+/*----------------------------------------------------------------------------
+ * Initialize row info for a given matrix.
+ *
+ * parameters:
+ *   row_info --> row info structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_row_init(cs_matrix_row_info_t  *r);
+
+/*----------------------------------------------------------------------------
+ * Finalize row info for a given matrix.
+ *
+ * parameters:
+ *   row_info <-> row info structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_row_finalize(cs_matrix_row_info_t  *r);
+
+/*----------------------------------------------------------------------------
+ * Get row values for a given matrix.
  *
  * This function may not work for all matrix types.
  *
  * In the case of blocked matrixes, the true (non-blocked)
  * values are returned.
  *
- * For a given matrix, this function may only be called for a single
- * row at a time, at least for some matrix types.
+ * The row information structure must have been previously initialized
+ * using cs_matrix_row_init(), and should be finalized using
+ * using cs_matrix_row_finalize(), so as to free buffers it may have
+ * built for certain matrix formats.
  *
  * parameters:
- *   matrix    <-> pointer to matrix structure
+ *   matrix    <-- pointer to matrix structure
  *   row_id    <-- id of row to query
- *   row_size  --> number of nonzeroes on row
- *   col_id    --> pointer to column ids
- *   vals      --> pointer to values
- */
-/*----------------------------------------------------------------------------*/
+ *   row_info  <-> row info structure
+ *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_row(cs_matrix_t         *matrix,
-                  const cs_lnum_t      row_id,
-                  cs_lnum_t           *row_size,
-                  const cs_lnum_t    **col_id,
-                  const cs_real_t    **vals);
+cs_matrix_get_row(const cs_matrix_t     *matrix,
+                  const cs_lnum_t        row_id,
+                  cs_matrix_row_info_t  *r);
 
 /*----------------------------------------------------------------------------
  * Get arrays describing a matrix in native format.

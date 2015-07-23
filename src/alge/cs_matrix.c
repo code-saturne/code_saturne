@@ -3965,12 +3965,6 @@ cs_matrix_create(const cs_matrix_structure_t  *ms)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
   }
 
-  /* Additional query buffers here */
-
-  m->row_buffer_size = 0;
-  m->row_buffer_id = NULL;
-  m->row_buffer_val = NULL;
-
   return m;
 }
 
@@ -4417,10 +4411,6 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
 
-  BFT_FREE(matrix->row_buffer_id);
-  BFT_FREE(matrix->row_buffer_val);
-  matrix->row_buffer_size = 0;
-
   if (matrix->release_coefficients != NULL) {
     matrix->xa = NULL;
     matrix->release_coefficients(matrix);
@@ -4628,6 +4618,44 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize row info for a given matrix.
+ *
+ * \param[out]  row_info   row info structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_row_init(cs_matrix_row_info_t  *r)
+{
+  r->row_size = 0;
+  r->buffer_size = 0;
+  r->col_id = NULL;
+  r->_col_id = NULL;
+  r->vals = NULL;
+  r->_vals = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize row info for a given matrix.
+ *
+ * \param[in, out]  row_info   row info structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_row_finalize(cs_matrix_row_info_t  *r)
+{
+  r->row_size = 0;
+  r->buffer_size = 0;
+  r->col_id = NULL;
+  BFT_FREE(r->_col_id);
+  r->vals = NULL;
+  BFT_FREE(r->_vals);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get row values for a given matrix.
  *
  * This function may not work for all matrix types.
@@ -4635,23 +4663,21 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
  * In the case of blocked matrixes, the true (non-blocked)
  * values are returned.
  *
- * For a given matrix, this function may only be called for a single
- * row at a time, at least for some matrix types.
+ * The row information structure must have been previously initialized
+ * using \ref cs_matrix_row_init, and should be finalized using
+ * using \ref cs_matrix_row_finalize, so as to free buffers it may have
+ * built for certain matrix formats.
  *
- * \param[in,out]   matrix     pointer to matrix structure
+ * \param[in]       matrix     pointer to matrix structure
  * \param[in]       row_id     id of row to query
- * \param[out]      row_size   number of nonzeroes on row
- * \param[out]      col_id     pointer to column ids
- * \param[out]      vals       pointer to values
+ * \param[in, out]  row_info   row info structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_get_row(cs_matrix_t         *matrix,
-                  const cs_lnum_t      row_id,
-                  cs_lnum_t           *row_size,
-                  const cs_lnum_t    **col_id,
-                  const cs_real_t    **vals)
+cs_matrix_get_row(const cs_matrix_t     *matrix,
+                  const cs_lnum_t        row_id,
+                  cs_matrix_row_info_t  *r)
 {
   cs_lnum_t b_size = matrix->db_size[0];
 
@@ -4661,12 +4687,12 @@ cs_matrix_get_row(cs_matrix_t         *matrix,
     {
       const cs_matrix_struct_csr_t  *ms = matrix->structure;
       const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-      *row_size = (ms->row_index[row_id+1] - ms->row_index[row_id])*b_size;
-      *col_id = ms->col_id + ms->row_index[row_id]*b_size;
+      r->row_size = (ms->row_index[row_id+1] - ms->row_index[row_id])*b_size;
+      r->col_id = ms->col_id + ms->row_index[row_id]*b_size;
       if (mc->val != NULL)
-        *vals = mc->val + ms->row_index[row_id]*b_size;
+        r->vals = mc->val + ms->row_index[row_id]*b_size;
       else
-        *vals = NULL;
+        r->vals = NULL;
     }
     break;
 
@@ -4678,29 +4704,31 @@ cs_matrix_get_row(cs_matrix_t         *matrix,
       const cs_lnum_t n_ed_cols =   ms->row_index[_row_id+1]
                                   - ms->row_index[_row_id];
       if (b_size == 1)
-        *row_size = n_ed_cols + 1;
+        r->row_size = n_ed_cols + 1;
       else if (matrix->eb_size[0] == 1)
-        *row_size = n_ed_cols*b_size;
+        r->row_size = n_ed_cols*b_size;
       else
-        *row_size = (n_ed_cols+1)*b_size;
-      if (matrix->row_buffer_size < *row_size) {
-        matrix->row_buffer_size = *row_size*2;
-        BFT_REALLOC(matrix->row_buffer_id, matrix->row_buffer_size, cs_lnum_t);
-        BFT_REALLOC(matrix->row_buffer_val, matrix->row_buffer_size, cs_real_t);
+        r->row_size = (n_ed_cols+1)*b_size;
+      if (r->buffer_size < r->row_size) {
+        r->buffer_size = r->row_size*2;
+        BFT_REALLOC(r->_col_id, r->buffer_size, cs_lnum_t);
+        r->col_id = r->_col_id;
+        BFT_REALLOC(r->_vals, r->buffer_size, cs_real_t);
+        r->vals = r->_vals;
       }
       cs_lnum_t ii = 0, jj = 0;
       cs_lnum_t *restrict c_id = ms->col_id + ms->row_index[_row_id];
       if (b_size == 1) {
         const cs_real_t *m_row = mc->val + ms->row_index[_row_id];
         for (jj = 0; jj < n_ed_cols && c_id[jj] < _row_id; jj++) {
-          matrix->row_buffer_id[ii] = c_id[jj];
-          matrix->row_buffer_val[ii++] = m_row[jj];
+          r->_col_id[ii] = c_id[jj];
+          r->_vals[ii++] = m_row[jj];
         }
-        matrix->row_buffer_id[ii] = _row_id;
-        matrix->row_buffer_val[ii++] = mc->d_val[_row_id];
+        r->_col_id[ii] = _row_id;
+        r->_vals[ii++] = mc->d_val[_row_id];
         for (; jj < n_ed_cols; jj++) {
-          matrix->row_buffer_id[ii] = c_id[jj];
-          matrix->row_buffer_val[ii++] = m_row[jj];
+          r->_col_id[ii] = c_id[jj];
+          r->_vals[ii++] = m_row[jj];
         }
       }
       else if (matrix->eb_size[0] == 1) {
@@ -4708,17 +4736,17 @@ cs_matrix_get_row(cs_matrix_t         *matrix,
         const cs_lnum_t *db_size = matrix->db_size;
         const cs_real_t *m_row = mc->val + ms->row_index[_row_id];
         for (jj = 0; jj < n_ed_cols && c_id[jj] < _row_id; jj++) {
-          matrix->row_buffer_id[ii] = c_id[jj]*b_size + _sub_id;
-          matrix->row_buffer_val[ii++] = m_row[jj];
+          r->_col_id[ii] = c_id[jj]*b_size + _sub_id;
+          r->_vals[ii++] = m_row[jj];
         }
         for (cs_lnum_t kk = 0; kk < b_size; kk++) {
-          matrix->row_buffer_id[ii] = _row_id*b_size + kk;
-          matrix->row_buffer_val[ii++] = mc->d_val[  _row_id*db_size[3]
-                                                   + _sub_id*db_size[2] + kk];
+          r->_col_id[ii] = _row_id*b_size + kk;
+          r->_vals[ii++] = mc->d_val[  _row_id*db_size[3]
+                                     + _sub_id*db_size[2] + kk];
         }
         for (; jj < n_ed_cols; jj++) {
-          matrix->row_buffer_id[ii] = c_id[jj]*b_size + _sub_id;
-          matrix->row_buffer_val[ii++] = m_row[jj];
+          r->_col_id[ii] = c_id[jj]*b_size + _sub_id;
+          r->_vals[ii++] = m_row[jj];
         }
       }
       else {
@@ -4728,24 +4756,22 @@ cs_matrix_get_row(cs_matrix_t         *matrix,
         const cs_real_t *m_row = mc->val + ms->row_index[_row_id]*eb_size[3];
         for (jj = 0; jj < n_ed_cols && c_id[jj] < _row_id; jj++) {
           for (cs_lnum_t kk = 0; kk < b_size; kk++) {
-            matrix->row_buffer_id[ii] = c_id[jj]*b_size + kk;
-            matrix->row_buffer_val[ii++] = m_row[_sub_id*eb_size[2] + kk];
+            r->_col_id[ii] = c_id[jj]*b_size + kk;
+            r->_vals[ii++] = m_row[_sub_id*eb_size[2] + kk];
           }
         }
         for (cs_lnum_t kk = 0; kk < b_size; kk++) {
-          matrix->row_buffer_id[ii] = _row_id*b_size + kk;
-          matrix->row_buffer_val[ii++] = mc->d_val[  _row_id*db_size[3]
-                                                   + _sub_id*db_size[2] + kk];
+          r->_col_id[ii] = _row_id*b_size + kk;
+          r->_vals[ii++] = mc->d_val[  _row_id*db_size[3]
+                                     + _sub_id*db_size[2] + kk];
         }
         for (; jj < n_ed_cols; jj++) {
           for (cs_lnum_t kk = 0; kk < b_size; kk++) {
-            matrix->row_buffer_id[ii] = c_id[jj]*b_size + kk;
-            matrix->row_buffer_val[ii++] = m_row[_sub_id*eb_size[2] + kk];
+            r->_col_id[ii] = c_id[jj]*b_size + kk;
+            r->_vals[ii++] = m_row[_sub_id*eb_size[2] + kk];
           }
         }
       }
-      *col_id = matrix->row_buffer_id;
-      *vals = matrix->row_buffer_val;
     }
     break;
 

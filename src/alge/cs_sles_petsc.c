@@ -165,6 +165,17 @@ struct _cs_sles_petsc_t {
 
 };
 
+/* Shell matrix context */
+/*----------------------*/
+
+typedef struct {
+
+  const cs_matrix_t     *a;              /* Pointer to matrix */
+
+  cs_matrix_row_info_t   r;              /* Access buffer */
+
+} _mat_shell_t;
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -191,17 +202,17 @@ _shell_mat_mult(Mat  a,
                 Vec  x,
                 Vec  y)
 {
-  cs_matrix_t *matrix;
+  _mat_shell_t *sh;
   PetscScalar *ax, *ay;
 
   assert(sizeof(PetscScalar) == sizeof(cs_real_t));
 
-  MatShellGetContext(a, &matrix);
+  MatShellGetContext(a, &sh);
 
   VecGetArrayRead(x, &ax);
   VecGetArray(y, &ay);
 
-  cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, matrix, ax, ay);
+  cs_matrix_vector_multiply(CS_HALO_ROTATION_COPY, sh->a, ax, ay);
 
   VecRestoreArray(x, &ax);
   VecRestoreArray(y, &ay);
@@ -219,16 +230,16 @@ static void
 _shell_get_diag(Mat  a,
                 Vec  y)
 {
-  cs_matrix_t *matrix;
+  _mat_shell_t *sh;
   PetscScalar *ay;
 
   assert(sizeof(PetscScalar) == sizeof(cs_real_t));
 
-  MatShellGetContext(a, &matrix);
+  MatShellGetContext(a, &sh);
 
   VecGetArray(y, &ay);
 
-  cs_matrix_copy_diagonal(matrix, ay);
+  cs_matrix_copy_diagonal(sh->a, ay);
 
   VecRestoreArray(y, &ay);
 }
@@ -254,14 +265,17 @@ _shell_get_row(Mat                 a,
                const PetscInt     *cols[],
                const PetscScalar  *vals[])
 {
-  cs_matrix_t *matrix;
+  _mat_shell_t *sh;
+
+  MatShellGetContext(a, &sh);
 
   assert(sizeof(PetscScalar) == sizeof(cs_real_t));
   assert(sizeof(PetscInt) == sizeof(cs_lnum_t));
 
-  MatShellGetContext(a, &matrix);
+  cs_matrix_get_row(sh->a, row, &(sh->r));
 
-  cs_matrix_get_row(matrix, row, nnz, cols, vals);
+  *cols = sh->r.col_id;
+  *vals = sh->r.vals;
 }
 
 /*----------------------------------------------------------------------------
@@ -278,22 +292,50 @@ _shell_mat_duplicate(Mat                  a,
                      MatDuplicateOption   op,
                      Mat                 *m)
 {
-  cs_matrix_t *matrix;
-  MatShellGetContext(a, &matrix);
+  _mat_shell_t *sh;
 
-  cs_matrix_t *mat = matrix;
+  MatShellGetContext(a, &sh);
 
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(mat);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(sh->a);
 
   /* Shell matrix */
+
+  _mat_shell_t *shc;
+
+  BFT_MALLOC(shc, 1, _mat_shell_t);
+  shc->a = sh->a;
+  cs_matrix_row_init(&(shc->r));
 
   MatCreateShell(PETSC_COMM_WORLD,
                  n_rows,
                  n_rows,
                  PETSC_DETERMINE,
                  PETSC_DETERMINE,
-                 mat,
+                 shc,
                  m);
+}
+
+/*----------------------------------------------------------------------------
+ * Duplicate matrix
+ *
+ * parameters:
+ *   a  <-- Pointer to PETSc matrix structure
+ *   op <-- Matrix duplication option
+ *   m  --> Duplicate matrix
+ *----------------------------------------------------------------------------*/
+
+static void
+_shell_mat_destroy(Mat                  a,
+                   MatDuplicateOption   op,
+                   Mat                 *m)
+{
+  _mat_shell_t *sh;
+
+  MatShellGetContext(a, &sh);
+
+  cs_matrix_row_finalize(&(sh->r));
+
+  BFT_FREE(sh);
 }
 
 /*----------------------------------------------------------------------------
@@ -589,12 +631,18 @@ cs_sles_petsc_setup(void               *context,
   if (   strcmp(c->mat_type[0], MATSHELL) == 0
       || (have_perio && n_rows > 1)) {
 
+    _mat_shell_t *sh;
+
+    BFT_MALLOC(sh, 1, _mat_shell_t);
+    sh->a = a;
+    cs_matrix_row_init(&(sh->r));
+
     MatCreateShell(PETSC_COMM_WORLD,
                    n_rows*db_size,
                    n_rows*db_size,
                    PETSC_DECIDE,
                    PETSC_DECIDE,
-                   (const void *)a,
+                   sh,
                    &(sd->a));
 
     MatShellSetOperation(sd->a, MATOP_MULT,
@@ -605,6 +653,8 @@ cs_sles_petsc_setup(void               *context,
                          (void(*)(void))_shell_get_row);
     MatShellSetOperation(sd->a, MATOP_DUPLICATE,
                          (void(*)(void))_shell_mat_duplicate);
+    MatShellSetOperation(sd->a, MATOP_DESTROY,
+                         (void(*)(void))_shell_mat_destroy);
 
   }
   else if (   db_size == 1 && cs_mat_type == CS_MATRIX_CSR
