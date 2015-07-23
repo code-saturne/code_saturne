@@ -173,7 +173,7 @@ void CS_PROCF (matrix, MATRIX)
      to shift the eigenvalues spectrum (if IDIRCL=0, we force NDIRCP to be at
      least 1 in order not to shift the diagonal). */
 
-  if (ndircp <= 0) {
+  if (*ndircp <= 0) {
     const double epsi = 1.e-7;
 
 #   pragma omp parallel for
@@ -256,7 +256,7 @@ void CS_PROCF (matrxv, MATRXV)
   /* If no Dirichlet condition, the diagonal is slightly increased in order
      to shift the eigenvalues spectrum. */
 
-  if (ndircp <= 0) {
+  if (*ndircp <= 0) {
     const double epsi = 1.e-7;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
@@ -269,7 +269,8 @@ void CS_PROCF (matrxv, MATRXV)
 # pragma omp parallel for
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     for (int isou = 0; isou < 3; isou++)
-      da[cell_id][isou][isou] += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
+      da[cell_id][isou][isou]
+        += mq->c_solid_flag[CS_MIN(cs_glob_porous_model, 1)*cell_id];
   }
 
 }
@@ -374,7 +375,7 @@ void CS_PROCF (matrvv, MATRVV)
   /* If no Dirichlet condition, the diagonal is slightly increased in order
      to shift the eigenvalues spectrum. */
 
-  if (ndircp <= 0) {
+  if (*ndircp <= 0) {
     const double epsi = 1.e-7;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (int isou = 0; isou < 3; isou++) {
