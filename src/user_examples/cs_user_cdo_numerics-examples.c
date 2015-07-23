@@ -172,7 +172,7 @@ cs_user_cdo_itsol_settings(void)
   cs_param_eq_set_algo_type(eqname,
                             CS_PARAM_EQ_ALGO_CS_ITSOL);
 
-  /* An iterative solver is defined thanks to 
+  /* An iterative solver is defined thanks to
      >> a solver type among
          >> CS_PARAM_ITSOL_CG       conjuguate gradient
          >> CS_PARAM_ITSOL_BICG     bi-conjuguate gradient

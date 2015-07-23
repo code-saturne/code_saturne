@@ -177,7 +177,7 @@ _petsc_p_setup_hook_bamg(const void  *context,
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
 
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCHYPRE);  /* Jacobi (diagonal) preconditioning */
+  PCSetType(pc, PCHYPRE);  /* HYPRE BoomerAMG preconditioning */
 }
 /*! [sles_petsc_hook_bamg] */
 

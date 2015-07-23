@@ -50,6 +50,8 @@
 #include "cs_search.h"
 #include "cs_prototypes.h"
 #include "cs_field.h"
+#include "cs_sles.h"
+#include "cs_matrix_cdo.h"
 #include "cs_cdo_bc.h"
 #include "cs_quadrature.h"
 #include "cs_evaluate.h"
@@ -86,11 +88,13 @@ struct  _cdofb_codits_t {
   cs_lnum_t  n_faces;
   cs_lnum_t  n_dof_faces; /* Number of interior faces + Neumann faces */
 
-  /* Algebraic system (size = n_dof_vertices) */
+  /* Algebraic system (size = n_dof_faces) */
 
-  cs_sla_matrix_t  *A;   // matrix to inverse
-  double           *x;   // DoF unknows
-  double           *rhs; // right-hand side
+  cs_matrix_cdo_structure_t   *ms;  /* matrix structure (how are stored
+                                       coefficients of the matrix a) */
+  cs_matrix_t                 *a;   // matrix to inverse with cs_sles_solve()
+  cs_real_t                   *x;   // DoF unknows
+  cs_real_t                   *rhs; // right-hand side
 
   /* Boundary conditions:
 
@@ -338,10 +342,12 @@ _init_diffusion_matrix(const cs_cdo_connect_t     *connect,
  * \param[in]    quant     pointer to a cs_cdo_quantities_t struct.
  * \param[in]    tcur      current physical time of the simulation
  * \param[inout] sys       pointer to a cs_cdofb_codits_t struct.
+ *
+ * \return a pointer to the full stiffness matrix
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static cs_sla_matrix_t *
 _build_diffusion_system(const cs_mesh_t             *m,
                         const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *quant,
@@ -352,9 +358,9 @@ _build_diffusion_system(const cs_mesh_t             *m,
   double  dsum, rowsum, invdsum;
 
   double  *BHCtc = NULL; // local size arrays
+  cs_sla_matrix_t  *final_matrix = NULL;
 
-  cs_sla_matrix_t  *A = _init_diffusion_matrix(connect, quant);
-
+  cs_sla_matrix_t  *full_matrix = _init_diffusion_matrix(connect, quant);
   cs_toolbox_locmat_t  *_h = cs_toolbox_locmat_create(connect->n_max_fbyc);
   cs_toolbox_locmat_t  *_a = cs_toolbox_locmat_create(connect->n_max_fbyc);
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_fbyc);
@@ -464,7 +470,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
     }
 
     /* Assemble local matrices */
-    cs_sla_assemble_msr(_a, A);
+    cs_sla_assemble_msr(_a, full_matrix);
 
     /* Assemble RHS (source term contribution) */
     for (i = 0; i < _a->n_ent; i++)
@@ -473,8 +479,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
   } /* End of loop on cells */
 
   /* Clean entries of the operators */
-  cs_sla_matrix_msr2csr(A);
-  cs_sla_matrix_clean(A, cs_get_eps_machine());
+  cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
 
   /* Free memory */
   BFT_FREE(BHCtc);
@@ -500,7 +505,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
     for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
       x_bc[m->n_i_faces + dir_faces->elt_ids[i]] = sys->dir_val[i];
 
-    cs_sla_matvec(A, x_bc, &contrib, true);
+    cs_sla_matvec(full_matrix, x_bc, &contrib, true);
     for (i = 0; i < sys->n_faces; i++)
       face_rhs[i] -= contrib[i];
 
@@ -509,26 +514,129 @@ _build_diffusion_system(const cs_mesh_t             *m,
   /* Reduce system size if there is a strong enforcement of the BCs */
   if (sys->n_dof_faces < sys->n_faces) {
 
-    sys->A = cs_sla_matrix_pack(sys->n_dof_faces,  // n_block_rows
-                                sys->n_dof_faces,  // n_block_cols
-                                A,                 // full matrix */
-                                sys->f_z2i_ids,    // row_z2i_ids
-                                sys->f_i2z_ids,    // col_i2z_ids
-                                true);             // keep sym.
-    A = cs_sla_matrix_free(A);
-
     /* Define new rhs */
     for (i = 0; i < sys->n_dof_faces; i++)
       sys->rhs[i] = face_rhs[sys->f_z2i_ids[i]];
 
+    final_matrix = cs_sla_matrix_pack(sys->n_dof_faces,  // n_block_rows
+                                      sys->n_dof_faces,  // n_block_cols
+                                      full_matrix,       // full matrix */
+                                      sys->f_z2i_ids,    // row_z2i_ids
+                                      sys->f_i2z_ids,    // col_i2z_ids
+                                      true);             // keep sym.
+
+     /* Free buffers */
+   full_matrix = cs_sla_matrix_free(full_matrix);
+
   }
   else {
-    sys->A = A;
+    final_matrix = full_matrix;
     memcpy(sys->rhs, face_rhs, sizeof(cs_real_t)*sys->n_faces);
   }
 
-  /* Prepare usage of iterative solvers */
-  cs_sla_matrix_lu_pattern(sys->A);
+  return final_matrix;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Switch the matrix represenation from a cs_sla_matrix_t struct. to
+ *          a cs_matrix_t struct.
+ *          sla_mat is freed inside this routine.
+ *
+ * \param[inout] sys       pointer to a cs_cdovb_codits_t struct.
+ * \param[inout] sla_mat   pointer to a cs_sla_matrix_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_map_to_matrix(cs_cdofb_codits_t          *sys,
+               cs_sla_matrix_t            *sla_mat)
+{
+  /* Sanity check */
+  assert(sla_mat->type == CS_SLA_MAT_MSR);
+
+  /* First step: create a matrix structure */
+  sys->ms =  cs_matrix_cdo_structure_create(CS_MATRIX_MSR,   // type
+                                            true,            // owner
+                                            true,            // have_diag
+                                            sla_mat->n_rows, // n_rows
+                                            sla_mat->n_rows, // n_rows_ext
+                                            sla_mat->n_cols, // n_cols
+                                            sla_mat->idx,    // row_index
+                                            sla_mat->col_id, // col_id
+                                            NULL,            // halo
+                                            NULL);           // numbering
+
+  sys->a = cs_matrix_cdo_create(sys->ms); // ms is also stored inside a
+
+  /* Second step: associate coefficients to a matrix structure */
+  cs_matrix_copy_coefficients(sys->a,
+                              false,         // explicit symmetric storage
+                              NULL,          // diag. block
+                              NULL,          // extra-diag. block
+                              sla_mat->diag, // diag. values
+                              sla_mat->val); // extra-diag. values
+
+  /* Free sla_mat (idx and col are mapped while diag. and extra-diag. coef.
+     are copied */
+  sla_mat = cs_sla_matrix_free_after_mapping(sla_mat);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Solve a linear system Ax = b arising from a CDO vertex-based scheme
+ *
+ * \param[in]    eq        pointer to a cs_param_eq_t structure
+ * \param[in]    a         pointer to a cs_matrix_t struct.
+ * \param[in]    rhs       right-hand side
+ * \param[inout] x         array of unkowns
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_solve_linear_system(const cs_param_eq_t        *eq,
+                     const cs_matrix_t          *a,
+                     const cs_real_t            *rhs,
+                     cs_real_t                  *x)
+{
+  double  r_norm;
+  cs_sles_convergence_state_t  cvg;
+  cs_sla_sumup_t  ret;
+
+  cs_halo_rotation_t  halo_rota = CS_HALO_ROTATION_IGNORE;
+
+  cs_sles_t  *solver_struct = cs_sles_find_or_add(eq->field_id, NULL);
+
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
+  const cs_param_itsol_t  itsol_info = eq->itsol_info;
+
+  printf("\n# Solve Ax = b for %s with %s\n"
+         "# System size: %8d ; eps: % -8.5e ;\n",
+         eq->name, cs_param_get_solver_name(itsol_info.solver),
+         n_rows, itsol_info.eps);
+
+  if (itsol_info.resid_normalized)
+    r_norm = cs_euclidean_norm(n_rows, rhs) / n_rows;
+  else
+    r_norm = 1.0;
+
+  cvg = cs_sles_solve(solver_struct,
+                      a,
+                      halo_rota,
+                      itsol_info.eps,
+                      r_norm,
+                      &(ret.iter),
+                      &(ret.residual),
+                      rhs,
+                      x,
+                      0,      // aux. size
+                      NULL);  // aux. buffers
+
+  bft_printf("\n <iterative solver convergence sumup>\n");
+  bft_printf(" -sla- code        %d\n", cvg);
+  bft_printf(" -sla- n_iters     %d\n", ret.iter);
+  bft_printf(" -sla- residual    % -8.4e\n", ret.residual);
 }
 
 /*============================================================================
@@ -602,7 +710,10 @@ cs_cdofb_codits_init(const cs_param_eq_t  *eq,
   for (i = 0; i < sys->n_dof_faces; i++)
     sys->x[i] = sys->rhs[i] = 0.0;
 
-  sys->A = NULL; // allocated later
+  /* A matrix is composed of a matrix structure and a coefficient structure
+     both are allocated later */
+  sys->ms = NULL;
+  sys->a = NULL;
 
   /* Contribution in each cell of the source terms */
   BFT_MALLOC(sys->source_terms, sys->n_cells, cs_real_t);
@@ -646,7 +757,9 @@ cs_cdofb_codits_free_all(void)
     /* Free algebraic system */
     BFT_FREE(sys->rhs);
     BFT_FREE(sys->x);
-    sys->A = cs_sla_matrix_free(sys->A);
+
+    cs_matrix_cdo_structure_destroy(&(sys->ms));
+    cs_matrix_destroy(&(sys->a));
 
     BFT_FREE(sys->source_terms);
     BFT_FREE(sys->face_values);
@@ -681,7 +794,6 @@ cs_cdofb_codits_solve(const cs_mesh_t            *m,
 {
   cs_timer_t  t0, t1;
   cs_timer_counter_t  time_count;
-  cs_sla_sumup_t  ret;
 
   /* Sanity check */
   if (sys_id < 0 || sys_id >= cs_cdofb_n_scal_systems)
@@ -690,7 +802,6 @@ cs_cdofb_codits_solve(const cs_mesh_t            *m,
   cs_cdofb_codits_t  *sys = cs_cdofb_scal_systems + sys_id;
 
   const cs_param_eq_t  *eq = sys->eq;
-  const cs_param_itsol_t  itsol_info = eq->itsol_info;
 
   /* Test to remove */
   if (eq->flag & CS_PARAM_EQ_CONVECTION)
@@ -706,24 +817,29 @@ cs_cdofb_codits_solve(const cs_mesh_t            *m,
   if (sys->build_system) {
 
     /* Build diffusion system: stiffness matrix */
-    _build_diffusion_system(m, connect, quant, tcur, sys);
-
-    //    cs_sla_system_dump("DiffusionSys.log", NULL, sys->A, sys->rhs); // DBG
+    cs_sla_matrix_t  *sla_mat =  _build_diffusion_system(m, connect, quant,
+                                                         tcur,
+                                                         sys);
 
     /* Build convection system */
     // TODO
 
     /* Get information on the matrix related to this linear system */
-    cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sys->A);
+    cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
 
     bft_printf("\n  <Information about the linear system for %s equation>\n",
                eq->name);
-    bft_printf(" -sla- A.size         %d\n", sys->A->n_rows);
+    bft_printf(" -sla- A.size         %d\n", sla_mat->n_rows);
     bft_printf(" -sla- A.nnz          %lu\n", minfo.nnz);
     bft_printf(" -sla- A.FillIn       %5.2e %%\n", minfo.fillin);
     bft_printf(" -sla- A.StencilMin   %d\n", minfo.stencil_min);
     bft_printf(" -sla- A.StencilMax   %d\n", minfo.stencil_max);
     bft_printf(" -sla- A.StencilMean  %5.2e\n", minfo.stencil_mean);
+
+    /* Map sla_mat (cs_sla_matrix_t struct.) into sys->a (cs_matrix_t struct.)
+       sla_mat is freed during this call */
+    _map_to_matrix(sys, sla_mat);
+
   }
 
   t1 = cs_timer_time();
@@ -734,18 +850,7 @@ cs_cdofb_codits_solve(const cs_mesh_t            *m,
   t0 = cs_timer_time();
 
   /* Solve system */
-  printf("\n# Solve Ax = b with (%s, %s)\n"
-         "# System size: %8d ; eps: % -8.5e ;\n",
-         cs_param_get_solver_name(itsol_info.solver),
-         cs_param_get_precond_name(itsol_info.precond),
-         sys->A->n_rows, itsol_info.eps);
-
-  ret = cs_sla_solve(itsol_info, sys->A, sys->rhs, sys->x);
-
-  bft_printf("\n <iterative solver convergence sumup>\n");
-  bft_printf(" -sla- code         %s\n", cs_sla_get_code_name(ret.code));
-  bft_printf(" -sla- n_iters     %8d\n", ret.iter);
-  bft_printf(" -sla- residual   % -8.4e\n", ret.residual);
+  _solve_linear_system(eq, sys->a, sys->rhs, sys->x);
 
   t1 = cs_timer_time();
   time_count = cs_timer_diff(&t0, &t1);

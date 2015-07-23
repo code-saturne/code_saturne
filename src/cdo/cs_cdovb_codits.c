@@ -55,7 +55,7 @@
 #include "cs_prototypes.h"
 #include "cs_field.h"
 #include "cs_matrix_cdo.h"
-#include "cs_sles_it.h"
+#include "cs_sles.h"
 #include "cs_cdo_bc.h"
 
 /*----------------------------------------------------------------------------
@@ -621,8 +621,8 @@ _build_diffusion_system(const cs_mesh_t            *m,
   /* Build the (full) stiffness matrix i.e. without taking into account BCs */
   full_matrix = _build_stiffness_matrix(connect, quant, sys);
 
-  cs_sla_matrix_clean(full_matrix,
-                      10*cs_get_eps_machine()); // remove small entries
+  /* Remove entries very small with respect to other coefficients */
+  cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
 
   /* Compute the full rhs */
   _compute_rhs(m, connect, quant, full_matrix, tcur, sys);
@@ -927,10 +927,10 @@ cs_cdovb_codits_solve(const cs_mesh_t            *m,
 
   if (sys->build_system) {
 
-    cs_sla_matrix_t  *sla_mat = NULL;
-
     /* Build diffusion system: stiffness matrix */
-    sla_mat = _build_diffusion_system(m, connect, quant, tcur, sys);
+    cs_sla_matrix_t  *sla_mat =  _build_diffusion_system(m, connect, quant,
+                                                         tcur,
+                                                         sys);
 
     /* Build convection system */
     // TODO

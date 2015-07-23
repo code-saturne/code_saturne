@@ -112,6 +112,7 @@ _init_linear_solver(const cs_param_eq_t    *eq)
   switch (eq->algo_info.type) {
   case CS_PARAM_EQ_ALGO_CS_ITSOL:
     {
+      int  poly_degree = 0;
       cs_sles_it_type_t   it_type = CS_SLES_N_IT_TYPES; // not set
 
       switch (eq->itsol_info.solver) { // Type of iterative solver
@@ -131,10 +132,13 @@ _init_linear_solver(const cs_param_eq_t    *eq)
         break;
       } // end of switch
 
+      if (eq->itsol_info.precond == CS_PARAM_PRECOND_POLY1)
+        poly_degree = 1;
+
       cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
                         NULL,
                         it_type,
-                        0, // polynomial degree 0 -> diag
+                        poly_degree, // polynomial degree 0 -> diag
                         eq->itsol_info.n_max_iter);
 
     }

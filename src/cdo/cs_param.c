@@ -1049,29 +1049,21 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
 {
   switch (precond) {
   case CS_PARAM_PRECOND_NONE:
-    return  "None";
-    break;
-
+    return  "None"; break;
   case CS_PARAM_PRECOND_DIAG:
-    return  "Diagonal";
-    break;
-
+    return  "Diagonal"; break;
   case CS_PARAM_PRECOND_POLY1:
-    return  "Neumann.Poly.O1";
-    break;
-
+    return  "Neumann.Poly.O1"; break;
   case CS_PARAM_PRECOND_SSOR:
-    return  "SSOR";
-    break;
-
+    return  "SSOR"; break;
   case CS_PARAM_PRECOND_ILU0:
-    return  "ILU0";
-    break;
-
-  case CS_PARAM_PRECOND_MG:
-    return  "MultiGrid";
-    break;
-
+    return  "ILU0"; break;
+  case CS_PARAM_PRECOND_ICC0:
+    return  "ICC0"; break;
+  case CS_PARAM_PRECOND_AMG:
+    return  "Algebraic.MultiGrid"; break;
+  case CS_PARAM_PRECOND_AS:
+    return  "Additive.Schwarz"; break;
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid preconditionner. Stop execution."));

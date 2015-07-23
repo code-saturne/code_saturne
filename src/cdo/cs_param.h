@@ -116,7 +116,7 @@ typedef enum {
 typedef struct {
 
   char        *restrict name;
-  cs_flag_t             flag;  /* Short descriptor */
+  cs_flag_t             flag;  /* Short descriptor (mask of bits) */
 
   int        post_freq; /* -1 (no post-processing), 0 (at the beginning)
                            otherwise every post_freq iteration(s) */
@@ -297,11 +297,13 @@ typedef struct {
 typedef enum {
 
   CS_PARAM_PRECOND_NONE,
-  CS_PARAM_PRECOND_DIAG,
-  CS_PARAM_PRECOND_POLY1,
-  CS_PARAM_PRECOND_SSOR,
-  CS_PARAM_PRECOND_ILU0,
-  CS_PARAM_PRECOND_MG,
+  CS_PARAM_PRECOND_DIAG,    // Diagonal preconditionning (also called Jacobi)
+  CS_PARAM_PRECOND_POLY1,   // Neumann polynomial preconditionning (Order 1)
+  CS_PARAM_PRECOND_SSOR,    // Symmetric Successive OverRelaxations
+  CS_PARAM_PRECOND_ILU0,    // Incomplete LU factorization
+  CS_PARAM_PRECOND_ICC0,    // Incomplete Cholesky factorization
+  CS_PARAM_PRECOND_AMG,     // Algebraic MultiGrid
+  CS_PARAM_PRECOND_AS,      // Additive Schwarz method
   CS_PARAM_N_PRECOND_TYPES
 
 } cs_param_precond_type_t;
