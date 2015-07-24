@@ -98,6 +98,8 @@ BEGIN_C_DECLS
        Preconditioned GMRES (generalized minimum residual)
   \var CS_SLES_P_GAUSS_SEIDEL
        Process-local Gauss-Seidel
+  \var CS_SLES_PCR3
+       3-layer conjugate residual
 
  \page sles_it Iterative linear solvers.
 
@@ -185,6 +187,7 @@ struct _cs_sles_it_t {
   int                  poly_degree;        /* preconditioning polynomial
                                               degree (0: diagonal,
                                               -1: non-preconditioned) */
+  bool                 symmetric;          /* symmetric for Gauss-Seidel */
 
   bool                 update_stats;       /* do stats need to be updated ? */
 
@@ -265,7 +268,8 @@ const char *cs_sles_it_type_name[] = {N_("Conjugate gradient"),
                                       N_("BiCGstab"),
                                       N_("BiCGstab2"),
                                       N_("GMRES"),
-                                      N_("Block Gauss-Seidel")};
+                                      N_("Processor Gauss-Seidel"),
+                                      N_("3-layer conjugate residual")};
 
 /*============================================================================
  * Private function definitions
@@ -1633,6 +1637,181 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using preconditioned 3-layer conjugate residual.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- block size of element ii, ii
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_conjugate_residual_3(cs_sles_it_t              *c,
+                      const cs_matrix_t         *a,
+                      int                        diag_block_size,
+                      cs_halo_rotation_t         rotation_mode,
+                      cs_sles_it_convergence_t  *convergence,
+                      const cs_real_t           *rhs,
+                      cs_real_t                 *restrict vx,
+                      size_t                     aux_size,
+                      void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg;
+  cs_lnum_t  ii;
+  double  residue;
+  double  ak, bk, ck, dk, ek, denom, alpha, tau;
+  cs_real_t *_aux_vectors;
+  cs_real_t  *restrict vxm1;
+  cs_real_t  *restrict rk, *restrict rkm1;
+  cs_real_t  *restrict wk, *restrict zk;
+  cs_real_t  *restrict tmp;
+
+  unsigned n_iter = 0;
+
+  /* Call setup if not already done, allocate or map work arrays */
+  /*-------------------------------------------------------------*/
+
+  if (c->setup_data == NULL)
+    _setup_sles_it(c, a, diag_block_size, false);
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_real_t *restrict ad = cs_matrix_get_diagonal(a);
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 6;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+    else
+      _aux_vectors = aux_vectors;
+
+    vxm1 = _aux_vectors;
+    rk = _aux_vectors + wa_size;
+    rkm1 = _aux_vectors + wa_size*2;
+    tmp = _aux_vectors + wa_size*3;
+    wk = _aux_vectors + wa_size*4;
+    zk = _aux_vectors + wa_size*5;
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++) {
+      vxm1[ii] = vx[ii];
+      rkm1[ii] = 0.0;
+    }
+  }
+
+  /* Initialize iterative calculation */
+  /*----------------------------------*/
+
+  /* Residue */
+
+  cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (ii = 0; ii < n_rows; ii++)
+    rk[ii] -= rhs[ii];
+
+  residue = _dot_product(c, rk, rk);
+  residue = sqrt(residue);
+
+  /* If no solving required, finish here */
+
+  c->setup_data->initial_residue = residue;
+  cvg = _convergence_test(c, n_iter, residue, convergence);
+
+  /* Current Iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    _polynomial_preconditionning(c,
+                                 rotation_mode,
+                                 a,
+                                 rk,
+                                 wk,
+                                 tmp); /* used as work array here */
+
+    cs_matrix_vector_multiply(rotation_mode, a, wk, zk);
+
+    _dot_products_xy_yz(c, rk, zk, rkm1, &ak, &bk);
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (ii = 0; ii < n_rows; ii++)
+      tmp[ii] = rk[ii] - rkm1[ii];
+
+    _dot_products_xy_yz(c, rk, tmp, rkm1, &ck, &dk);
+
+    ek = _dot_product_xx(c, zk);
+
+    denom = (ck-dk)*ek - ((ak-bk)*(ak-bk));
+
+    if (fabs(denom) < 1.e-30)
+      alpha = 1.0;
+    else
+      alpha = ((ak-bk)*bk - dk*ek)/denom;
+
+    if (fabs(alpha) < 1.e-30 || fabs(alpha - 1.) < 1.e-30) {
+      alpha = 1.0;
+      tau = ak/ek;
+    }
+    else
+      tau = ak/ek + ((1 - alpha)/alpha) * bk/ek;
+
+    cs_real_t c0 = (1 - alpha);
+    cs_real_t c1 = -alpha*tau;
+
+#   pragma omp parallel firstprivate(alpha, tau, c0, c1) if(n_rows > CS_THR_MIN)
+    {
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++) {
+        cs_real_t trk = rk[ii];
+        rk[ii] = alpha*rk[ii] + c0*rkm1[ii] + c1*zk[ii];
+        rkm1[ii] = trk;
+      }
+#     pragma omp for nowait
+      for (ii = 0; ii < n_rows; ii++) {
+        cs_real_t tvx = vx[ii];
+        vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
+        vxm1[ii] = tvx;
+      }
+    }
+
+    /* compute residue */
+
+    residue = sqrt(_dot_product(c, rk, rk));
+
+    /* Convergence test for end of previous iteration */
+
+    if (n_iter > 1)
+      cvg = _convergence_test(c, n_iter, residue, convergence);
+
+    if (cvg != CS_SLES_ITERATING)
+      break;
+
+    n_iter += 1;
+
+  }
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Jacobi.
  *
  * On entry, vx is considered initialized.
@@ -2818,7 +2997,7 @@ _gmres(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Block Gauss-Seidel.
+ * Solution of A.vx = Rhs using Process-local Gauss-Seidel.
  *
  * On entry, vx is considered initialized.
  *
@@ -2836,24 +3015,18 @@ _gmres(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_p_gauss_seidel(cs_sles_it_t              *c,
-                const cs_matrix_t         *a,
-                int                        diag_block_size,
-                cs_halo_rotation_t         rotation_mode,
-                cs_sles_it_convergence_t  *convergence,
-                const cs_real_t           *rhs,
-                cs_real_t                 *restrict vx)
+_p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
+                            const cs_matrix_t         *a,
+                            int                        diag_block_size,
+                            cs_halo_rotation_t         rotation_mode,
+                            cs_sles_it_convergence_t  *convergence,
+                            const cs_real_t           *rhs,
+                            cs_real_t                 *restrict vx)
 {
   cs_sles_convergence_state_t cvg;
   double  res2, residue;
 
   unsigned n_iter = 0;
-
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
-
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
 
@@ -2863,16 +3036,13 @@ _p_gauss_seidel(cs_sles_it_t              *c,
 
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
-  const cs_lnum_t  *order = NULL;
-
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
   const int *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
-  if (c->add_data != NULL)
-    order = c->add_data->order;
+  const cs_lnum_t  *order = c->add_data->order;
 
   cvg = CS_SLES_ITERATING;
 
@@ -2918,69 +3088,69 @@ _p_gauss_seidel(cs_sles_it_t              *c,
 
     res2 = 0.0;
 
-    if (order == NULL) {
+    if (diag_block_size == 1) {
 
-      if (diag_block_size == 1) {
+#     pragma omp parallel for private(r) reduction(+:res2)      \
+                          if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
 
-#       pragma omp parallel for private(r) reduction(+:res2)      \
-                            if(n_rows > CS_THR_MIN)
-        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        cs_lnum_t ii = order[ll];
 
-          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
-          cs_real_t vxm1 = vx[ii];
+        cs_real_t vxm1 = vx[ii];
 
-          vx[ii] = rhs[ii];
+        vx[ii] = rhs[ii];
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+
+        vx[ii] *= ad_inv[ii];
+
+        r = ad[ii] * (vx[ii]-vxm1);
+        res2 += (r*r);
+      }
+
+    }
+    else {
+
+#     pragma omp parallel for private(r) reduction(+:res2) \
+                          if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
+
+        cs_lnum_t ii = order[ll];
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        cs_real_t vxm1;
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+
+          vxm1 = vx[ii*db_size[1] + kk];
+
+          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+
+          for (cs_lnum_t jj = 0; jj < kk; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+          for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
 
           for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-            vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+            vx[ii*db_size[1] + kk]
+              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
 
-          vx[ii] *= ad_inv[ii];
+          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
 
-          r = ad[ii] * (vx[ii]-vxm1);
+          r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
           res2 += (r*r);
-        }
-
-      }
-      else {
-
-#       pragma omp parallel for private(r) reduction(+:res2) \
-                          if(n_rows > CS_THR_MIN)
-        for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
-
-          cs_real_t vxm1;
-
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-
-            vxm1 = vx[ii*db_size[1] + kk];
-
-            vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
-
-            for (cs_lnum_t jj = 0; jj < kk; jj++)
-              vx[ii*db_size[1] + kk]
-                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                   * vx[ii*db_size[1] + jj];
-            for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
-              vx[ii*db_size[1] + kk]
-                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                   * vx[ii*db_size[1] + jj];
-
-            for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-              vx[ii*db_size[1] + kk]
-                -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
-
-            vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
-
-            r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
-            res2 += (r*r);
-
-          }
 
         }
 
@@ -2988,75 +3158,179 @@ _p_gauss_seidel(cs_sles_it_t              *c,
 
     }
 
-    /* Ordered variant */
+#if defined(HAVE_MPI)
 
-    else {
+    if (c->comm != MPI_COMM_NULL) {
+      double _sum;
+      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      res2 = _sum;
+    }
 
-      if (diag_block_size == 1) {
+#endif /* defined(HAVE_MPI) */
 
-#       pragma omp parallel for private(r) reduction(+:res2)      \
-                            if(n_rows > CS_THR_MIN)
-        for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
+    residue = sqrt(res2); /* Actually, residue of previous iteration */
 
-          cs_lnum_t ii = order[ll];
+    /* Convergence test */
 
-          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+    if (n_iter == 1)
+      c->setup_data->initial_residue = residue;
 
-          cs_real_t vxm1 = vx[ii];
+    cvg = _convergence_test(c, n_iter, residue, convergence);
 
-          vx[ii] = rhs[ii];
+  }
 
-          for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-            vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+  return cvg;
+}
 
-          vx[ii] *= ad_inv[ii];
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Process-local Gauss-Seidel.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
 
-          r = ad[ii] * (vx[ii]-vxm1);
-          res2 += (r*r);
-        }
+static cs_sles_convergence_state_t
+_p_gauss_seidel_msr(cs_sles_it_t              *c,
+                    const cs_matrix_t         *a,
+                    int                        diag_block_size,
+                    cs_halo_rotation_t         rotation_mode,
+                    cs_sles_it_convergence_t  *convergence,
+                    const cs_real_t           *rhs,
+                    cs_real_t                 *restrict vx)
+{
+  cs_sles_convergence_state_t cvg;
+  double  res2, residue;
+
+  unsigned n_iter = 0;
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+
+  const cs_lnum_t  *a_row_index, *a_col_id;
+  const cs_real_t  *a_d_val, *a_x_val;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
+
+  cvg = CS_SLES_ITERATING;
+
+  /* Current iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    register double r;
+
+    n_iter += 1;
+
+    /* Synchronize ghost cells first */
+
+    if (halo != NULL) {
+
+      if (db_size[3] == 1)
+        cs_halo_sync_component(halo,
+                               CS_HALO_STANDARD,
+                               rotation_mode,
+                               vx);
+
+      else { /* if (matrix->db_size[3] > 1) */
+
+        cs_halo_sync_var_strided(halo,
+                                 CS_HALO_STANDARD,
+                                 vx,
+                                 db_size[1]);
+
+        /* Synchronize periodic values */
+
+        if (halo->n_transforms > 0 && db_size[0] == 3)
+          cs_halo_perio_sync_var_vect(halo,
+                                      CS_HALO_STANDARD,
+                                      vx,
+                                      db_size[1]);
 
       }
-      else {
 
-#       pragma omp parallel for private(r) reduction(+:res2) \
-                            if(n_rows > CS_THR_MIN)
-        for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
+    }
 
-          cs_lnum_t ii = order[ll];
+    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-          const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
-          const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
-          const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+    res2 = 0.0;
 
-          cs_real_t vxm1;
+    if (diag_block_size == 1) {
 
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+#     pragma omp parallel for private(r) reduction(+:res2)      \
+                          if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
-            vxm1 = vx[ii*db_size[1] + kk];
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
 
-            vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+        cs_real_t vxm1 = vx[ii];
 
-            for (cs_lnum_t jj = 0; jj < kk; jj++)
-              vx[ii*db_size[1] + kk]
-                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                   * vx[ii*db_size[1] + jj];
-            for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
-              vx[ii*db_size[1] + kk]
-                -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
-                   * vx[ii*db_size[1] + jj];
+        vx[ii] = rhs[ii];
 
-            for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-              vx[ii*db_size[1] + kk]
-                -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
 
-            vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+        vx[ii] *= ad_inv[ii];
 
-            r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
-            res2 += (r*r);
+        r = ad[ii] * (vx[ii]-vxm1);
+        res2 += (r*r);
+      }
 
-          }
+    }
+    else {
+
+#     pragma omp parallel for private(r) reduction(+:res2) \
+                          if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        cs_real_t vxm1;
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+
+          vxm1 = vx[ii*db_size[1] + kk];
+
+          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+
+          for (cs_lnum_t jj = 0; jj < kk; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+          for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+
+          for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+            vx[ii*db_size[1] + kk]
+              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+
+          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+
+          r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+          res2 += (r*r);
 
         }
 
@@ -3085,6 +3359,344 @@ _p_gauss_seidel(cs_sles_it_t              *c,
     cvg = _convergence_test(c, n_iter, residue, convergence);
 
   }
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Process-local symmetric Gauss-Seidel.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
+                        const cs_matrix_t         *a,
+                        int                        diag_block_size,
+                        cs_halo_rotation_t         rotation_mode,
+                        cs_sles_it_convergence_t  *convergence,
+                        const cs_real_t           *rhs,
+                        cs_real_t                 *restrict vx)
+{
+  cs_sles_convergence_state_t cvg;
+  double  res2, residue;
+
+  unsigned n_iter = 0;
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+
+  const cs_halo_t *halo = cs_matrix_get_halo(a);
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+
+  const cs_lnum_t  *a_row_index, *a_col_id;
+  const cs_real_t  *a_d_val, *a_x_val;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
+
+  cvg = CS_SLES_ITERATING;
+
+  /* Current iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    register double r;
+
+    n_iter += 1;
+
+    /* Synchronize ghost cells first */
+
+    if (halo != NULL) {
+
+      if (db_size[3] == 1)
+        cs_halo_sync_component(halo,
+                               CS_HALO_STANDARD,
+                               rotation_mode,
+                               vx);
+
+      else { /* if (matrix->db_size[3] > 1) */
+
+        cs_halo_sync_var_strided(halo,
+                                 CS_HALO_STANDARD,
+                                 vx,
+                                 db_size[1]);
+
+        /* Synchronize periodic values */
+
+        if (halo->n_transforms > 0 && db_size[0] == 3)
+          cs_halo_perio_sync_var_vect(halo,
+                                      CS_HALO_STANDARD,
+                                      vx,
+                                      db_size[1]);
+
+      }
+
+    }
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residue: forward step */
+
+    if (diag_block_size == 1) {
+
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        vx[ii] = rhs[ii];
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+
+        vx[ii] *= ad_inv[ii];
+      }
+
+    }
+    else {
+
+#     pragma omp parallel for if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+
+          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+
+          for (cs_lnum_t jj = 0; jj < kk; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+          for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+
+          for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+            vx[ii*db_size[1] + kk]
+              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+
+          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+
+        }
+
+      }
+
+    }
+
+    /* Synchronize ghost cells again */
+
+    if (halo != NULL) {
+
+      if (db_size[3] == 1)
+        cs_halo_sync_component(halo,
+                               CS_HALO_STANDARD,
+                               rotation_mode,
+                               vx);
+
+      else { /* if (matrix->db_size[3] > 1) */
+
+        cs_halo_sync_var_strided(halo,
+                                 CS_HALO_STANDARD,
+                                 vx,
+                                 db_size[1]);
+
+        /* Synchronize periodic values */
+
+        if (halo->n_transforms > 0 && db_size[0] == 3)
+          cs_halo_perio_sync_var_vect(halo,
+                                      CS_HALO_STANDARD,
+                                      vx,
+                                      db_size[1]);
+
+      }
+
+    }
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residue: backward step */
+
+    if (diag_block_size == 1) {
+
+#     pragma omp parallel for private(r) reduction(+:res2)      \
+                          if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        cs_real_t vxm1 = vx[ii];
+
+        vx[ii] = rhs[ii];
+
+        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+          vx[ii] -= (m_row[jj]*vx[col_id[jj]]);
+
+        vx[ii] *= ad_inv[ii];
+
+        r = ad[ii] * (vx[ii]-vxm1);
+        res2 += (r*r);
+      }
+
+    }
+    else {
+
+#     pragma omp parallel for private(r) reduction(+:res2) \
+                          if(n_rows > CS_THR_MIN)
+      for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
+
+        const cs_lnum_t *restrict col_id = a_col_id + a_row_index[ii];
+        const cs_real_t *restrict m_row = a_x_val + a_row_index[ii];
+        const cs_lnum_t n_cols = a_row_index[ii+1] - a_row_index[ii];
+
+        cs_real_t vxm1;
+
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+
+          vxm1 = vx[ii*db_size[1] + kk];
+
+          vx[ii*db_size[1] + kk] = rhs[ii*db_size[1] + kk];
+
+          for (cs_lnum_t jj = 0; jj < kk; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+          for (cs_lnum_t jj = kk+1; jj < db_size[0]; jj++)
+            vx[ii*db_size[1] + kk]
+              -=   ad[ii*db_size[3] + kk*db_size[2] + jj]
+                 * vx[ii*db_size[1] + jj];
+
+          for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+            vx[ii*db_size[1] + kk]
+              -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+
+          vx[ii*db_size[1] + kk] *= ad_inv[ii*db_size[1] + kk];
+
+          r = ad[ii*db_size[1] + kk] * (vx[ii*db_size[1] + kk]-vxm1);
+          res2 += (r*r);
+
+        }
+
+      }
+
+    }
+
+    if (convergence->precision > 0. || c->plot != NULL) {
+
+#if defined(HAVE_MPI)
+
+      if (c->comm != MPI_COMM_NULL) {
+        double _sum;
+        MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
+                      c->comm);
+        res2 = _sum;
+      }
+
+#endif /* defined(HAVE_MPI) */
+
+      residue = sqrt(res2); /* Actually, residue of previous iteration */
+
+      /* Convergence test */
+
+      if (n_iter == 1)
+        c->setup_data->initial_residue = residue;
+
+      cvg = _convergence_test(c, n_iter, residue, convergence);
+
+    }
+
+  }
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Process-local symmetric Gauss-Seidel.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_p_gauss_seidel(cs_sles_it_t              *c,
+                const cs_matrix_t         *a,
+                int                        diag_block_size,
+                cs_halo_rotation_t         rotation_mode,
+                cs_sles_it_convergence_t  *convergence,
+                const cs_real_t           *rhs,
+                cs_real_t                 *restrict vx)
+{
+  cs_sles_convergence_state_t cvg;
+
+  /* Call setup if not already done, allocate or map work arrays */
+  /*-------------------------------------------------------------*/
+
+  if (c->setup_data == NULL)
+    _setup_sles_it(c, a, diag_block_size, false);
+
+  /* Check for ordered variant */
+
+  const cs_lnum_t  *order = NULL;
+
+  if (c->add_data != NULL)
+    order = c->add_data->order;
+
+  if (order != NULL)
+    cvg = _p_ordered_gauss_seidel_msr(c,
+                                      a,
+                                      diag_block_size,
+                                      rotation_mode,
+                                      convergence,
+                                      rhs,
+                                      vx);
+
+  else if (c->symmetric == false)
+    cvg = _p_gauss_seidel_msr(c,
+                              a,
+                              diag_block_size,
+                              rotation_mode,
+                              convergence,
+                              rhs,
+                              vx);
+
+  else
+    cvg = _p_sym_gauss_seidel_msr(c,
+                                  a,
+                                  diag_block_size,
+                                  rotation_mode,
+                                  convergence,
+                                  rhs,
+                                  vx);
 
   return cvg;
 }
@@ -3184,6 +3796,8 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   c->poly_degree = poly_degree;
   if (c->type == CS_SLES_JACOBI)
     c->poly_degree = 0;
+
+  c->symmetric = false;
 
   c->update_stats = update_stats;
 
@@ -3465,6 +4079,17 @@ cs_sles_it_solve(void                *context,
 #endif
 
     switch (c->type) {
+    case CS_SLES_PCR3:
+      cvg = _conjugate_residual_3(c,
+                                  a,
+                                  _diag_block_size,
+                                  rotation_mode,
+                                  &convergence,
+                                  rhs,
+                                  vx,
+                                  aux_size,
+                                  aux_vectors);
+      break;
     case CS_SLES_PCG:
       if (! c->setup_data->single_reduce) {
         if (c->poly_degree > -1)
@@ -3818,6 +4443,25 @@ cs_sles_it_assign_order(cs_sles_it_t   *context,
     *order = NULL;
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign symmetric option to iterative solver.
+ *
+ * This is useful only for Process-local Gauss-Seidel.
+ *
+ * \param[in, out]  context    pointer to iterative solver info and context
+ * \param[in]       symmetric  symmetric if true
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_symmetric(cs_sles_it_t   *context,
+                         bool            symmetric)
+{
+  if (context->type == CS_SLES_P_GAUSS_SEIDEL)
+    context->symmetric = symmetric;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1018,6 +1018,8 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
   g = mgd->grid_hierarchy[i];
   m = cs_grid_get_matrix(g);
 
+  bool symmetric = cs_matrix_is_symmetric(m);
+
   mg_lv_info = mg->lv_info + i;
 
   mgd->sles_hierarchy[0]
@@ -1029,6 +1031,9 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
 #if defined(HAVE_MPI)
   cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[0], cs_grid_get_comm(g));
 #endif
+
+  if (mg->info.type[0] && symmetric)
+    cs_sles_it_set_symmetric(mgd->sles_hierarchy[0], true);
 
   cs_sles_it_setup(mgd->sles_hierarchy[0], name, m, verbosity - 2);
   mgd->sles_hierarchy[1] = NULL;
@@ -1061,6 +1066,11 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
 
     cs_sles_it_set_shareable(mgd->sles_hierarchy[i*2 + 1],
                              mgd->sles_hierarchy[i*2]);
+
+    if (mg->info.type[0] && symmetric)
+      cs_sles_it_set_symmetric(mgd->sles_hierarchy[i*2], true);
+    if (mg->info.type[1] && symmetric)
+      cs_sles_it_set_symmetric(mgd->sles_hierarchy[i*2+1], true);
 
     cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
     cs_sles_it_setup(mgd->sles_hierarchy[i*2+1], "", m, verbosity - 2);
@@ -1101,6 +1111,9 @@ _multigrid_setup_sles_it(cs_multigrid_t  *mg,
     cs_sles_it_set_mpi_reduce_comm(mgd->sles_hierarchy[i*2],
                                    cs_grid_get_comm(mgd->grid_hierarchy[i]));
 #endif
+
+    if (mg->info.type[2] && symmetric)
+      cs_sles_it_set_symmetric(mgd->sles_hierarchy[i*2], true);
 
     cs_sles_it_setup(mgd->sles_hierarchy[i*2], "", m, verbosity - 2);
     mgd->sles_hierarchy[i*2+1] = NULL;

@@ -18,6 +18,11 @@ Changes:
 - Add simple fan effects modeling as explicit momentum source term in
   regions defined by fan characteristics.
 
+- Add 3-layer conjugate directions (residual) algorithm for non-symmetric
+  linear systems (this algorithm was used in older EDF codes, and is
+  different from the "standard" conjugate residual, which is limited to
+  Hermitian matrixes).
+
 - Add support for using PETSc in linear solvers.
 
 - Add vertex-based CDO (Compatible Discrete Operator) numerical scheme
