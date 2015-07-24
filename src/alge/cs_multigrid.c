@@ -1248,7 +1248,7 @@ _convergence_test(const char         *var_name,
     return CS_SLES_CONVERGED;
   }
 
-  else if (cycle_id >= n_max_cycles) {
+  else if (cycle_id > n_max_cycles) {
 
     if (verbosity > 0) {
       if (verbosity == 1)
