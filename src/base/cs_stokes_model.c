@@ -145,6 +145,11 @@ BEGIN_C_DECLS
         conditions on the pressure at outlets
         - 1: true
         - 0: false (default)
+  \var  cs_stokes_model_t::irecmf
+        use interpolated face diffusion coefficient instead of cell diffusion coefficient
+        for the mass flux reconstruction for the non-orthogonalities
+        - 1: true
+        - 0: false (default)
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -180,7 +185,8 @@ static cs_stokes_model_t  _stokes_model = {
   .igprij = 0,
   .igpust = 1,
   .iifren = 0,
-  .icalhy = -1};
+  .icalhy = -1,
+  .irecmf = 0};
 
 const cs_stokes_model_t  *cs_glob_stokes_model = &_stokes_model;
 
@@ -205,7 +211,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **igprij,
                                  int     **igpust,
                                  int     **iifren,
-                                 int     **icalhy);
+                                 int     **icalhy,
+                                 int     **irecmf);
 
 /*============================================================================
  * Private function definitions
@@ -222,22 +229,23 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ivisse  --> pointer to cs_globe_stokes_model->ivisse
- *   irevmc  --> pointer to cs_globe_stokes_model->irevmc
- *   iprco   --> pointer to cs_globe_stokes_model->iprco
- *   irnpnw  --> pointer to cs_globe_stokes_model->irnpnw
- *   rnormp  --> pointer to cs_globe_stokes_model->rnormp
- *   arak    --> pointer to cs_globe_stokes_model->arak
- *   ipucou  --> pointer to cs_globe_stokes_model->ipucou
- *   iccvfg  --> pointer to cs_globe_stokes_model->iccvfg
- *   idilat  --> pointer to cs_globe_stokes_model->idilat
- *   epsdp   --> pointer to cs_globe_stokes_model->epsdp
- *   itbrrb  --> pointer to cs_globe_stokes_model->itbrrb
- *   iphydr  --> pointer to cs_globe_stokes_model->iphydr
- *   igprij  --> pointer to cs_globe_stokes_model->igprij
- *   igpust  --> pointer to cs_globe_stokes_model->igpust
- *   iifren  --> pointer to cs_globe_stokes_model->iifren
- *   icalhy  --> pointer to cs_globe_stokes_model->icalhy
+ *   ivisse  --> pointer to cs_glob_stokes_model->ivisse
+ *   irevmc  --> pointer to cs_glob_stokes_model->irevmc
+ *   iprco   --> pointer to cs_glob_stokes_model->iprco
+ *   irnpnw  --> pointer to cs_glob_stokes_model->irnpnw
+ *   rnormp  --> pointer to cs_glob_stokes_model->rnormp
+ *   arak    --> pointer to cs_glob_stokes_model->arak
+ *   ipucou  --> pointer to cs_glob_stokes_model->ipucou
+ *   iccvfg  --> pointer to cs_glob_stokes_model->iccvfg
+ *   idilat  --> pointer to cs_glob_stokes_model->idilat
+ *   epsdp   --> pointer to cs_glob_stokes_model->epsdp
+ *   itbrrb  --> pointer to cs_glob_stokes_model->itbrrb
+ *   iphydr  --> pointer to cs_glob_stokes_model->iphydr
+ *   igprij  --> pointer to cs_glob_stokes_model->igprij
+ *   igpust  --> pointer to cs_glob_stokes_model->igpust
+ *   iifren  --> pointer to cs_glob_stokes_model->iifren
+ *   icalhy  --> pointer to cs_glob_stokes_model->icalhy
+ *   irecmf  --> pointer to cs_glob_stokes_model->irecmf
  *----------------------------------------------------------------------------*/
 
 void
@@ -256,7 +264,8 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
                                  int     **igprij,
                                  int     **igpust,
                                  int     **iifren,
-                                 int     **icalhy)
+                                 int     **icalhy,
+                                 int     **irecmf)
 {
   *ivisse = &(_stokes_model.ivisse);
   *irevmc = &(_stokes_model.irevmc);
@@ -274,6 +283,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
   *igpust = &(_stokes_model.igpust);
   *iifren = &(_stokes_model.iifren);
   *icalhy = &(_stokes_model.icalhy);
+  *irecmf = &(_stokes_model.irecmf);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

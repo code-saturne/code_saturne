@@ -761,6 +761,12 @@ module optcal
   !>    - 0: false (default)
   integer(c_int), pointer, save :: icalhy
 
+  !> use interpolated face diffusion coefficient instead of cell diffusion coefficient
+  !> for the mass flux reconstruction for the non-orthogonalities
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer(c_int), pointer, save :: irecmf
+
   !> choice the way to compute the exchange coefficient of the
   !> condensation source term used by the copain model
   !>    - 1: the turbulent exchange coefficient of the flow
@@ -1119,13 +1125,13 @@ module optcal
                                                 rnormp, arak  ,ipucou, iccvfg, &
                                                 idilat, epsdp ,itbrrb, iphydr, &
                                                 igprij, igpust,                &
-                                                iifren, icalhy)        &
+                                                iifren, icalhy, irecmf)        &
       bind(C, name='cs_f_stokes_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ivisse, irevmc, iprco, irnpnw, rnormp, arak
       type(c_ptr), intent(out) :: ipucou, iccvfg, idilat, epsdp, itbrrb, iphydr
-      type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy
+      type(c_ptr), intent(out) :: igprij, igpust, iifren, icalhy, irecmf
     end subroutine cs_f_stokes_options_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1391,13 +1397,13 @@ contains
 
     type(c_ptr) :: c_ivisse, c_irevmc, c_iprco, c_irnpnw, c_rnormp, c_arak
     type(c_ptr) :: c_ipucou, c_iccvfg, c_idilat, c_epsdp, c_itbrrb, c_iphydr
-    type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy
+    type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
 
 
     call cs_f_stokes_options_get_pointers(c_ivisse, c_irevmc, c_iprco ,  &
                                           c_irnpnw, c_rnormp, c_arak  , c_ipucou, c_iccvfg, &
                                           c_idilat, c_epsdp , c_itbrrb, c_iphydr, c_igprij, &
-                                          c_igpust, c_iifren, c_icalhy)
+                                          c_igpust, c_iifren, c_icalhy, c_irecmf)
 
     call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_irevmc, irevmc)
@@ -1415,6 +1421,7 @@ contains
     call c_f_pointer(c_igpust, igpust)
     call c_f_pointer(c_iifren, iifren)
     call c_f_pointer(c_icalhy, icalhy)
+    call c_f_pointer(c_irecmf, irecmf)
 
   end subroutine stokes_options_init
 

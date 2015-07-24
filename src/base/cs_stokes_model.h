@@ -108,6 +108,11 @@ typedef struct {
                                  pressure at outlets
                                  - 1: true
                                  - 0: false (default) */
+  int           irecmf;       /* use interpolated face diffusion coefficient instead of
+                                 cell diffusion coefficient for the mass flux reconstruction
+                                 for the non-orthogonalities
+                                 - 1: true
+                                 - 0: false (default) */
 
 } cs_stokes_model_t;
 

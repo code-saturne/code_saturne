@@ -65,6 +65,7 @@
 #include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
+#include "cs_stokes_model.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -6414,16 +6415,12 @@ cs_diffusion_potential(const int                 f_id,
     = (const cs_real_3_t *restrict)fvq->dijpf;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-  const cs_real_3_t *restrict diipf
-    = (const cs_real_3_t *restrict)fvq->diipf;
-  const cs_real_3_t *restrict djjpf
-    = (const cs_real_3_t *restrict)fvq->djjpf;
 
   /* Local variables */
 
   char var_name[32];
   int tr_dim = 0;
-  int mass_flux_rec_type = 0;
+  int mass_flux_rec_type = cs_glob_stokes_model->irecmf;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -6548,7 +6545,6 @@ cs_diffusion_potential(const int                 f_id,
       cs_var_cal_opt_t var_cal_opt;
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-        mass_flux_rec_type = 1;
         if (var_cal_opt.idiff > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);

@@ -78,9 +78,12 @@ iwgrec(ipr) = 0
 imrgra = 1
 imvisf = 1
 
+! Mass flux reconstruction option
+irecmf = 1
+
 ! Reference density and pressure
-ro0 = 1.
-p0 = 0
+ro0 = 1.d0
+p0 = 0.d0
 
 ! Set permeability and dispersion to isotropic
 darcy_anisotropic_permeability = 0
@@ -94,9 +97,9 @@ darcy_convergence_criterion = 0
 
 ! No gravitational effects
 darcy_gravity = 0
-darcy_gravity_x = 0.
-darcy_gravity_y = 0.
-darcy_gravity_z = 0.
+darcy_gravity_x = 0.d0
+darcy_gravity_y = 0.d0
+darcy_gravity_z = 0.d0
 
 if (iihmpr.eq.1) then
   call uidai1(ippmod(idarcy),                     &
