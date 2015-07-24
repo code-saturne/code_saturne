@@ -107,6 +107,7 @@ subroutine porcel &
   do ifac = 1, nfabor
     if (      (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) &
         .and. parbor(ifac,ihdepm).gt.0.d0) then
+      indic = 1
       itytmp(ifac) = iparoi
     else
       itytmp(ifac) = iindef
