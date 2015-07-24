@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-07-21 18:08+0200\n"
+"POT-Creation-Date: 2015-07-24 17:35+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3271,6 +3271,17 @@ msgstr ""
 "Test de variantes de structures et opérations matricielles (diff/"
 "référence) :\n"
 "---------------------------------------------------------------------------\n"
+
+msgid " da != NULL. This case is not handled within the CDO framework."
+msgstr ""
+
+#, c-format
+msgid ""
+"Handling of matrices in %s format\n"
+"is not operational yet."
+msgstr ""
+"La gestion des matrices au format %s \n"
+"n'est pas encore opérationnelle."
 
 #, c-format
 msgid ""
@@ -7777,15 +7788,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" The given vertex number: %d is not defined in the edge structure (edges-"
-">vtx_idx).\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" The given couple of vertex numbers :\n"
-"   vertex 1 : %d\n"
-"   vertex 2 : %d\n"
+" The given couple of vertices (number): [%d, %d]\n"
 " is not defined in the edge structure.\n"
 msgstr ""
 
@@ -7830,6 +7833,24 @@ msgstr ""
 msgid ""
 " Stop execution.\n"
 " Can not find the id of the algebraic system\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Undefined iterative solver for solving %s equation.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" PETSC algorithms used to solve %s are not linked.\n"
+" Please install Code_Saturne with PETSc."
+msgstr ""
+
+#, c-format
+msgid ""
+" Algorithm used to solve %s is not implemented yet.\n"
+" Please modify your settings."
 msgstr ""
 
 msgid "Invalid space scheme. Stop creating algebraic systems \n"
@@ -10317,6 +10338,20 @@ msgid ""
 "\n"
 " Glob. Num. |  Tolerance  |              Coordinates\n"
 "\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" The given vertex number: %d is not defined in the edge structure (edges-"
+">vtx_idx).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" The given couple of vertex numbers :\n"
+"   vertex 1 : %d\n"
+"   vertex 2 : %d\n"
+" is not defined in the edge structure.\n"
 msgstr ""
 
 #, c-format
