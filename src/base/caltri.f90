@@ -248,10 +248,6 @@ allocate(izft1d(nfabor))
 ! Head-loss
 ! ---------
 
-if (iflow .eq. 1) then
-  ncepdc = ncel
-endif
-
 if (iihmpr.eq.1) then
   call uikpdc &
 ( iappel ,          &
@@ -270,6 +266,10 @@ call cs_user_head_losses &
 ncpdct = ncepdc
 if (irangp.ge.0) then
   call parcpt(ncpdct)
+endif
+
+if (iflow .eq. 1 .and. ncpdct.eq.0) then
+  ncepdc = ncel
 endif
 
 if (ncpdct.gt.0) then
