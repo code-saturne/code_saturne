@@ -53,8 +53,7 @@ BEGIN_C_DECLS
 /* Matrix flag */
 #define  CS_SLA_MATRIX_SYM        (1 <<  0)  /*    1: symmetric */
 #define  CS_SLA_MATRIX_SORTED     (1 <<  1)  /*    2: sorted */
-#define  CS_SLA_MATRIX_LU         (1 <<  2)  /*    4: lower/upper separation */
-#define  CS_SLA_MATRIX_SHARED     (1 <<  3)  /*    8: share pattern */
+#define  CS_SLA_MATRIX_SHARED     (1 <<  2)  /*    4: share pattern */
 
 /*============================================================================
  * Type definitions for matrices
@@ -89,7 +88,7 @@ typedef struct {
 
   cs_sla_matrix_type_t   type;
   cs_sla_mat_prop_t     *properties;
-  int                    flag;       /* Symmetric, sorted, LU, shared... */
+  int                    flag;       /* Symmetric, sorted, shared... */
 
   int     stride;   /* Number of entries in "val" for each couple A(i,j) */
   int     n_rows;
@@ -112,25 +111,9 @@ typedef struct {
  * Type definitions for iterative solvers
  *============================================================================*/
 
-typedef enum {
-
-  CS_SLA_CODE_CONTINUE,   /* Need one more iteration */
-  CS_SLA_CODE_CVG,        /* Convergence criterion is fullfilled */
-  CS_SLA_CODE_CVG_EPS,    /* Convergence is reached to the machine precision
-                             we can not go further */
-  CS_SLA_CODE_MAX_ITER,   /* Max iteration is reached. Stop solver iterations */
-  CS_SLA_CODE_DIVZERO,    /* Division by zero is encountered. Stop algorithm */
-  CS_SLA_CODE_STAG,       /* No evolution in the residual norm since several
-                             iterations. Stop algorithm */
-  CS_SLA_CODE_DVG,        /* Residual norm is now greater than the initial
-                             residual by a big factor */
-  CS_SLA_CODE_STOP        /* Algorithm encountered a problem. Stop algorithm */
-
-} cs_sla_code_t;
-
 typedef struct {
 
-  cs_sla_code_t    code;       // Convergence code
+  int              code;       // Convergence code
   int              iter;       // Current iteration
   double           residual;   // Current residual norm computed
 
@@ -270,19 +253,6 @@ cs_sla_matrix_get_diag(const cs_sla_matrix_t  *m,
 
 void
 cs_sla_matrix_sort(cs_sla_matrix_t  *m);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Build a Lower/Upper pattern by sorting entries in each row by
- *          increasing number and by defining diagonal index
- *          Matrix should stored in CSR format and be square
- *
- * \param[inout]  m   matrix to work with
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_matrix_lu_pattern(cs_sla_matrix_t    *m);
 
 /*----------------------------------------------------------------------------
  * Create a new matrix from a block description (not done for all matrix
@@ -617,74 +587,6 @@ cs_sla_system_dump(const char              *name,
 void
 cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
                     cs_sla_matrix_t            *ass);
-
-/*============================================================================
- * Public function prototypes for iterative solvers
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Evaluate the sizes of temporary buffers used in iterative solvers
- *
- * \param[in]  refsize        reference size to evaluate buffer dimension
- * \param[in]  info           information about the iterative solver to use
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_itsol_update_buffer_sizes(size_t                   refsize,
-                                 const cs_param_itsol_t   info);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Allocate temporary buffers used in iterative solvers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_itsol_alloc_buffers(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Free temporary buffers useful for iterative solvers
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_itsol_free_buffers(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve a sparse linear system A*x = rhs
- *         Matrix A can re-order during the solving process.
- *
- * \param[in]     itsol_info   set of parameters for the iterative solver
- * \param[in]     A            matrix to invert
- * \param[in]     rhs          right hand side
- * \param[inout]  x            initial guess (in) / solution (out)
- *
- * \return  a summary of the convergence monitoring
- */
-/*----------------------------------------------------------------------------*/
-
-cs_sla_sumup_t
-cs_sla_solve(const cs_param_itsol_t    itsol_info,
-             const cs_sla_matrix_t    *A,
-             const double              rhs[],
-             double                   *x);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of a monitoring code
- *
- * \param[in] code     type of code
- *
- * \return the associated code name
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_sla_get_code_name(cs_sla_code_t  code);
 
 /*----------------------------------------------------------------------------*/
 

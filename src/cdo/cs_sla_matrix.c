@@ -2593,53 +2593,6 @@ cs_sla_matrix_sort(cs_sla_matrix_t  *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a Lower/Upper pattern by sorting entries in each row by
- *          increasing number and by defining diagonal index
- *          Matrix should stored in CSR format and be square
- *
- * \param[inout]  m   matrix to work with
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sla_matrix_lu_pattern(cs_sla_matrix_t    *m)
-{
-  int  i;
-
-  if (m == NULL)
-    return;
-
-  if (m->type == CS_SLA_MAT_CSR && m->n_rows == m->n_cols) {
-
-    /* Step 1: sort entries */
-    cs_sla_matrix_sort(m);
-
-    /* Step 2: identify diagonal index */
-    cs_sla_matrix_diag_idx(m);
-
-    /* Sanity check */
-    for (i = 0; i < m->n_rows; i++)
-      if (m->didx[i] == -1) { /* No diagonal entry */
-        cs_sla_matrix_resume(NULL, NULL, m);
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Definition of Lower/Upper pattern aborted.\n"
-                    " At least one row without diagonal entry.\n"));
-      }
-    m->flag |= CS_SLA_MATRIX_LU;
-
-  } /* Required conditions to build LU pattern */
-  else if (m->type == CS_SLA_MAT_MSR) {
-    m->flag |= CS_SLA_MATRIX_LU;
-    return; /* Nothing to do */
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _("  No LU pattern defined because this is not an available"
-                " situation.\n  Check if this is a real error...\n"));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Read from a binary file a matrix in CSR format, its righ hand side
  *         and the solution. Matrix must have a stride equal to 1.
  *
@@ -3081,10 +3034,7 @@ cs_sla_matrix_transpose(const cs_sla_matrix_t  *a)
       }
     }
 
-    if (a->flag & CS_SLA_MATRIX_LU)
-      cs_sla_matrix_lu_pattern(at);
-    else
-      cs_sla_matrix_diag_idx(at);
+    cs_sla_matrix_diag_idx(at);
 
     break;
 

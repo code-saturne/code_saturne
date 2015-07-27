@@ -73,7 +73,6 @@ cs_param.c \
 cs_param_eq.c \
 cs_quadrature.c \
 cs_reco.c \
-cs_sla_itsol.c \
 cs_sla_matrix.c
 
 libcscdo_la_LDFLAGS = -no-undefined
