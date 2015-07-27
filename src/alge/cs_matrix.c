@@ -2660,7 +2660,13 @@ _create_struct_csr_sym(bool                have_diag,
   ms->have_diag = have_diag;
   ms->direct_assembly = true;
 
-  BFT_MALLOC(ms->row_index, ms->n_rows + 1, cs_lnum_t);
+  /* Allocate index on size n_cols rather than n_rows, so
+     as to prolong index, and make local matrix really "square".
+     This is not important for the local code, but seems expected
+     of external libraries such as MKL (i.e. not doing this
+     causes crashes usign the MKL routines). */
+
+  BFT_MALLOC(ms->row_index, ms->n_cols + 1, cs_lnum_t);
   ms->row_index = ms->row_index;
 
   /* Count number of nonzero elements per row */
@@ -2764,6 +2770,11 @@ _create_struct_csr_sym(bool                have_diag,
     BFT_REALLOC(ms->col_id, (ms->row_index[ms->n_rows]), cs_lnum_t);
 
   }
+
+  /* Prolong index in case of use by external library, such as MKL. */
+
+  for (ii = ms->n_rows; ii < ms->n_cols; ii++)
+    ms->row_index[ii+1] = ms->row_index[ms->n_rows];
 
   return ms;
 }
