@@ -329,7 +329,7 @@ cs_user_linear_solvers(void)
      CS_SLES_JACOBI, /* ascent smoother type (default: CS_SLES_PCG) */
      CS_SLES_PCG,    /* coarse solver type (default: CS_SLES_PCG) */
      50,             /* n max cycles (default 100) */
-     5,              /* n max iter for descent (default 10) */
+     5,              /* n max iter for descent (default 2) */
      5,              /* n max iter for asscent (default 10) */
      1000,           /* n max iter coarse solver (default 10000) */
      0,              /* polynomial precond. degree descent (default 0) */

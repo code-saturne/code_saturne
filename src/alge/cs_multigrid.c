@@ -297,7 +297,7 @@ _multigrid_info_init(cs_multigrid_info_t *info)
 
   info->n_max_cycles = 100;
 
-  info->n_max_iter[0] = 10;
+  info->n_max_iter[0] = 2;
   info->n_max_iter[1] = 10;
   info->n_max_iter[2] = 10000;
 

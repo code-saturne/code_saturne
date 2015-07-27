@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Change multigrid default settings based on recent performance benchmarks.
+
  - Changes in Lagrangian Particle tracking, provided by Céline Caruyer.
    * modification of multi-layer model (iclogst = 1)
    * compute porosity in each cell based on mean deposition height only

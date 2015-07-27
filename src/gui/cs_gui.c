@@ -5636,7 +5636,7 @@ cs_gui_linear_solvers(void)
     cs_multigrid_set_solver_options(mg,
                                     CS_SLES_PCG, CS_SLES_PCG, CS_SLES_PCG,
                                     100, /* n max cycles */
-                                    10,  /* n max iter for descent (default 10) */
+                                    2,   /* n max iter for descent (default 2) */
                                     10,  /* n max iter for ascent (default 10) */
                                     n_max_iter,
                                     0, 0, 0,  /* precond degree */
