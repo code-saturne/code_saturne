@@ -268,8 +268,14 @@ if (irangp.ge.0) then
   call parcpt(ncpdct)
 endif
 
-if (iflow .eq. 1 .and. ncpdct.eq.0) then
-  ncepdc = ncel
+if (iflow .eq. 1) then
+  if (ncpdct.eq.0) then
+    ncepdc = ncel
+    ncpdct = ncel
+  endif
+  if (irangp.ge.0) then
+    call parcpt(ncpdct)
+  endif
 endif
 
 if (ncpdct.gt.0) then
