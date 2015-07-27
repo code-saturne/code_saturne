@@ -358,9 +358,10 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
                       double                        values[])
 {
   cs_lnum_t  i, j, k, e_id, f_id, c_id, v1_id, v2_id;
-  double  add;
   cs_real_3_t  xc, xv1, xv2;
   cs_quant_t  f, e;
+
+  double  add = 0.0;
 
   const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(loc_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
@@ -603,6 +604,7 @@ cs_evaluate(const cs_mesh_t              *m,
   cs_flag_t  scd = CS_PARAM_FLAG_SCAL|CS_PARAM_FLAG_CELL|CS_PARAM_FLAG_DUAL;
   cs_flag_t  scp = CS_PARAM_FLAG_SCAL|CS_PARAM_FLAG_CELL|CS_PARAM_FLAG_PRIMAL;
 
+  stride = 0, n_ent = 0;
   if (dof_flag == scd)
     stride = 1, n_ent = quant->n_vertices;
   else if (dof_flag == scp)

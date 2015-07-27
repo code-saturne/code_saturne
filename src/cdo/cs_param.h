@@ -297,8 +297,8 @@ typedef struct {
 typedef enum {
 
   CS_PARAM_PRECOND_NONE,
-  CS_PARAM_PRECOND_DIAG,    // Diagonal preconditionning (also called Jacobi)
-  CS_PARAM_PRECOND_POLY1,   // Neumann polynomial preconditionning (Order 1)
+  CS_PARAM_PRECOND_DIAG,    // Diagonal preconditioning (also called Jacobi)
+  CS_PARAM_PRECOND_POLY1,   // Neumann polynomial preconditioning (Order 1)
   CS_PARAM_PRECOND_SSOR,    // Symmetric Successive OverRelaxations
   CS_PARAM_PRECOND_ILU0,    // Incomplete LU factorization
   CS_PARAM_PRECOND_ICC0,    // Incomplete Cholesky factorization
@@ -312,9 +312,10 @@ typedef enum {
 typedef enum {
 
   CS_PARAM_ITSOL_NONE,
-  CS_PARAM_ITSOL_CG,
-  CS_PARAM_ITSOL_BICG,
-  CS_PARAM_ITSOL_GMRES,
+  CS_PARAM_ITSOL_CG,        // Conjuguate Gradient
+  CS_PARAM_ITSOL_BICG,      // Bi-Conjuguate gradient
+  CS_PARAM_ITSOL_GMRES,     // Generalized Minimal RESidual
+  CS_PARAM_ITSOL_AMG,       // Algebraic MultiGrid
   CS_PARAM_N_ITSOL_TYPES
 
 } cs_param_itsol_type_t;
@@ -322,15 +323,16 @@ typedef enum {
 /* Description of the algorithm used to solve an equation */
 typedef struct {
 
-  cs_param_precond_type_t  precond;
-  cs_param_itsol_type_t    solver;
+  cs_param_precond_type_t  precond; // type of preconditioner
+  cs_param_itsol_type_t    solver;  // type of solver
 
-  int                      n_max_iter;
-  double                   eps;         // stopping criterion on accuracy
+  int          n_max_iter;          // max. number of iterations
+  double       eps;                 // stopping criterion on accuracy
 
-  int                      output_freq; // frequencdy of output into listing
-  bool                     resid_normalized;
-
+  int          output_freq;         // frequencdy of output into listing
+  bool         resid_normalized;    /* normalized or not the norm of the
+                                       residual used for the stopping criterion
+                                    */
 } cs_param_itsol_t;
 
 /*============================================================================

@@ -1,5 +1,5 @@
 /*============================================================================
- * Build an algebraic CDO vertex-based system for scalar conv./diff. equation
+ * Build an algebraic CDO vertex-based system for convection/diffusion equation
  * with source terms
  *============================================================================*/
 

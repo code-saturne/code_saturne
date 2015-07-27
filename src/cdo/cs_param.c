@@ -1017,15 +1017,15 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_CG:
     return  "CG";
     break;
-
   case CS_PARAM_ITSOL_BICG:
     return "BiCGstab";
     break;
-
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
     break;
-
+  case CS_PARAM_ITSOL_AMG:
+    return "Algebraic.Multigrid";
+    break;
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid solver. Stop execution."));
@@ -1049,21 +1049,29 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
 {
   switch (precond) {
   case CS_PARAM_PRECOND_NONE:
-    return  "None"; break;
+    return  "None";
+    break;
   case CS_PARAM_PRECOND_DIAG:
-    return  "Diagonal"; break;
+    return  "Diagonal";
+    break;
   case CS_PARAM_PRECOND_POLY1:
-    return  "Neumann.Poly.O1"; break;
+    return  "Neumann.Poly.O1";
+    break;
   case CS_PARAM_PRECOND_SSOR:
-    return  "SSOR"; break;
+    return  "SSOR";
+    break;
   case CS_PARAM_PRECOND_ILU0:
-    return  "ILU0"; break;
+    return  "ILU0";
+    break;
   case CS_PARAM_PRECOND_ICC0:
-    return  "ICC0"; break;
+    return  "ICC0";
+    break;
   case CS_PARAM_PRECOND_AMG:
-    return  "Algebraic.MultiGrid"; break;
+    return  "Algebraic.MultiGrid";
+    break;
   case CS_PARAM_PRECOND_AS:
-    return  "Additive.Schwarz"; break;
+    return  "Additive.Schwarz";
+    break;
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid preconditionner. Stop execution."));

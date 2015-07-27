@@ -52,7 +52,10 @@
 #include "cs_ext_neighborhood.h"
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
+#include "cs_sles.h"
+#include "cs_sles_default.h"
 #include "cs_sles_it.h"
+#include "cs_multigrid.h"
 
 /* CDO module */
 #include "cs_cdo.h"
@@ -108,23 +111,68 @@ static  int  n_cdo_equations_by_type[CS_N_TYPES_OF_CDOEQS];
 static void
 _init_linear_solver(const cs_param_eq_t    *eq)
 {
+  const cs_param_itsol_t  itsol = eq->itsol_info;
+  const cs_param_eq_algo_t  algo = eq->algo_info;
 
-  switch (eq->algo_info.type) {
+  switch (algo.type) {
   case CS_PARAM_EQ_ALGO_CS_ITSOL:
     {
-      int  poly_degree = 0;
-      cs_sles_it_type_t   it_type = CS_SLES_N_IT_TYPES; // not set
+      int  poly_degree = 0; // by default: Jacobi preconditioner
 
-      switch (eq->itsol_info.solver) { // Type of iterative solver
+      if (itsol.precond == CS_PARAM_PRECOND_POLY1)
+        poly_degree = 1;
+
+      if (itsol.precond != CS_PARAM_PRECOND_POLY1 &&
+          itsol.precond != CS_PARAM_PRECOND_DIAG)
+        bft_error(__FILE__, __LINE__, 0,
+                  " Incompatible preconditioner with Code_Saturne solvers.\n"
+                  " Please change your settings (try PETSc ?)");
+
+      switch (itsol.solver) { // Type of iterative solver
       case CS_PARAM_ITSOL_CG:
-        it_type = CS_SLES_PCG;
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_PCG,
+                          poly_degree,
+                          itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_BICG:
-        it_type = CS_SLES_BICGSTAB2;
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_BICGSTAB2,
+                          poly_degree,
+                          itsol.n_max_iter);
         break;
       case CS_PARAM_ITSOL_GMRES:
-        it_type = CS_SLES_GMRES;
+        cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
+                          NULL,
+                          CS_SLES_GMRES,
+                          poly_degree,
+                          itsol.n_max_iter);
         break;
+      case CS_PARAM_ITSOL_AMG:
+        {
+          cs_multigrid_t  *mg = cs_multigrid_define(eq->field_id,
+                                                    NULL);
+
+          /* Advanced setup (default is specified inside the brackets) */
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_JACOBI,   // descent smoother type (CS_SLES_PCG)
+             CS_SLES_JACOBI,   // ascent smoother type (CS_SLES_PCG)
+             CS_SLES_PCG,      // coarse solver type (CS_SLES_PCG)
+             itsol.n_max_iter, // n max cycles (100)
+             5,                // n max iter for descent (10)
+             5,                // n max iter for asscent (10)
+             1000,             // n max iter coarse solver (10000)
+             0,                // polynomial precond. degree descent (0)
+             0,                // polynomial precond. degree ascent (0)
+             0,                // polynomial precond. degree coarse (0)
+             1.0,    // precision multiplier descent (< 0 forces max iters)
+             1.0,    // precision multiplier ascent (< 0 forces max iters)
+             1);     // requested precision multiplier coarse (default 1)
+
+        }
       default:
         bft_error(__FILE__, __LINE__, 0,
                   _(" Undefined iterative solver for solving %s equation.\n"
@@ -132,16 +180,7 @@ _init_linear_solver(const cs_param_eq_t    *eq)
         break;
       } // end of switch
 
-      if (eq->itsol_info.precond == CS_PARAM_PRECOND_POLY1)
-        poly_degree = 1;
-
-      cs_sles_it_define(eq->field_id,  // give the field id (future: eq_id ?)
-                        NULL,
-                        it_type,
-                        poly_degree, // polynomial degree 0 -> diag
-                        eq->itsol_info.n_max_iter);
-
-    }
+    } // Solver provided by Code_Saturne
     break;
 
   case CS_PARAM_EQ_ALGO_PETSC_ITSOL:
@@ -154,16 +193,16 @@ _init_linear_solver(const cs_param_eq_t    *eq)
                   " Please install Code_Saturne with PETSc."), eq->name);
 
 #endif // HAVE_PETSC
-    }
+    } // Solver provided by PETSc
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Algorithm used to solve %s is not implemented yet.\n"
+              _(" Algorithm requested to solve %s is not implemented yet.\n"
                 " Please modify your settings."), eq->name);
     break;
 
-  } // end switch
+  } // end switch on algorithms
 
 }
 

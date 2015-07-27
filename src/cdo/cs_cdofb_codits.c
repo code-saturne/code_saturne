@@ -1,5 +1,6 @@
 /*============================================================================
- * Build the algebraic system for scalar conv./diff. in CDO hybrid cell-based
+ * Build an algebraic CDO face-based system for convection/diffusion equation
+ * with source terms
  *============================================================================*/
 
 /*
@@ -72,6 +73,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CDOFB_CODITS_DBG 0
+
+/* Algebraic system for CDO face-based discretization */
 
 struct  _cdofb_codits_t {
 

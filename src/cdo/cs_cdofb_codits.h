@@ -2,8 +2,8 @@
 #define __CS_CDOFB_CODITS_H__
 
 /*============================================================================
- * Functions specific for the discretization of conv/diff eqs. with
- * a CDO hybrid cell-based scheme
+ * Build an algebraic CDO face-based system for convection/diffusion equation
+ * with source terms
  *============================================================================*/
 
 /*
