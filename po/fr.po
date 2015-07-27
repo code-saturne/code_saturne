@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-07-24 14:15+0200\n"
+"POT-Creation-Date: 2015-07-27 01:12+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3204,8 +3204,21 @@ msgstr ""
 "La gestion des matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
+#, c-format
+msgid ""
+"%s: handling of matrices in %s format\n"
+"is not operational yet."
+msgstr ""
+"%s: la gestion des matrices au format %s \n"
+"n'est pas encore opérationnelle."
+
 msgid "The matrix is not defined."
 msgstr "La matrice n'est pas définie."
+
+msgid ""
+"Matrix coefficients were not mapped from native face-based arrays,\n"
+"so the extra-diagonla coefficients are not available in that form."
+msgstr ""
 
 #, c-format
 msgid "Matrix format %s with fill type %s does not handle %s operation."
@@ -3271,17 +3284,6 @@ msgstr ""
 "Test de variantes de structures et opérations matricielles (diff/"
 "référence) :\n"
 "---------------------------------------------------------------------------\n"
-
-msgid " da != NULL. This case is not handled within the CDO framework."
-msgstr ""
-
-#, c-format
-msgid ""
-"Handling of matrices in %s format\n"
-"is not operational yet."
-msgstr ""
-"La gestion des matrices au format %s \n"
-"n'est pas encore opérationnelle."
 
 #, c-format
 msgid ""

@@ -294,6 +294,8 @@ _matrix_tune_test(double                 t_measure,
                                      sym_coeffs,
                                      _d_block_size,
                                      _ed_block_size,
+                                     n_faces,
+                                     (const cs_lnum_2_t *)face_cell,
                                      da,
                                      xa);
           run_id++;

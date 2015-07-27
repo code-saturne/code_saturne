@@ -54,6 +54,7 @@
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_log.h"
+#include "cs_mesh.h"
 #include "cs_numbering.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
@@ -211,6 +212,7 @@ void CS_PROCF(promav, PROMAV)
  cs_real_t        *vy         /* <-> vy = A*vx */
 )
 {
+  const cs_mesh_t *m = cs_glob_mesh;
   cs_matrix_t *a;
 
   bool symmetric = (*isym == 1) ? true : false;
@@ -248,6 +250,8 @@ void CS_PROCF(promav, PROMAV)
                                symmetric,
                                _diag_block_size,
                                _extra_diag_block_size,
+                               m->n_i_faces,
+                               (const cs_lnum_2_t *)m->i_face_cells,
                                dam,
                                xam);
   }
@@ -255,7 +259,10 @@ void CS_PROCF(promav, PROMAV)
 
     a = cs_matrix_default(symmetric, NULL, NULL);
 
-    cs_matrix_set_coefficients(a, false, NULL, NULL, dam, xam);
+    cs_matrix_set_coefficients(a, false, NULL, NULL,
+                               m->n_i_faces,
+                               (const cs_lnum_2_t *)m->i_face_cells,
+                               dam, xam);
 
   }
 

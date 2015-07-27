@@ -54,7 +54,7 @@
 #include "cs_evaluate.h"
 #include "cs_prototypes.h"
 #include "cs_field.h"
-#include "cs_matrix_cdo.h"
+#include "cs_matrix.h"
 #include "cs_sles.h"
 #include "cs_cdo_bc.h"
 #include "cs_hodge.h"
@@ -106,7 +106,7 @@ struct  _cdofb_codits_t {
 
   /* Algebraic system (size = n_dof_faces) */
 
-  cs_matrix_cdo_structure_t   *ms;  /* matrix structure (how are stored
+  cs_matrix_structure_t       *ms;  /* matrix structure (how are stored
                                        coefficients of the matrix a) */
   cs_matrix_t                 *a;   // matrix to inverse with cs_sles_solve()
   cs_real_t                   *x;   // DoF unknows
@@ -572,31 +572,33 @@ _map_to_matrix(cs_cdofb_codits_t          *sys,
   assert(sla_mat->type == CS_SLA_MAT_MSR);
 
   /* First step: create a matrix structure */
-  sys->ms =  cs_matrix_cdo_structure_create(CS_MATRIX_MSR,   // type
-                                            true,            // owner
-                                            true,            // have_diag
-                                            sla_mat->n_rows, // n_rows
-                                            sla_mat->n_rows, // n_rows_ext
-                                            sla_mat->n_cols, // n_cols
-                                            sla_mat->idx,    // row_index
-                                            sla_mat->col_id, // col_id
-                                            NULL,            // halo
-                                            NULL);           // numbering
+  sys->ms =  cs_matrix_structure_create_msr(CS_MATRIX_MSR,      // type
+                                            true,               // transfer
+                                            true,               // have_diag
+                                            sla_mat->n_rows,    // n_rows
+                                            sla_mat->n_cols,    // n_cols_ext
+                                            &(sla_mat->idx),    // row_index
+                                            &(sla_mat->col_id), // col_id
+                                            NULL,               // halo
+                                            NULL);              // numbering
 
-  sys->a = cs_matrix_cdo_create(sys->ms); // ms is also stored inside a
+  sys->a = cs_matrix_create(sys->ms); // ms is also stored inside a
+
+  const cs_lnum_t  *row_index, *col_id;
+  cs_matrix_get_msr_arrays(sys->a, &row_index, &col_id, NULL, NULL);
 
   /* Second step: associate coefficients to a matrix structure */
-  cs_matrix_copy_coefficients(sys->a,
-                              false,         // explicit symmetric storage
-                              NULL,          // diag. block
-                              NULL,          // extra-diag. block
-                              sla_mat->diag, // diag. values
-                              sla_mat->val); // extra-diag. values
+  cs_matrix_transfer_coefficients_msr(sys->a,
+                                      false,             // symmetric values ?
+                                      NULL,              // diag. block
+                                      NULL,              // extra-diag. block
+                                      row_index,         // row_index
+                                      col_id,            // col_id
+                                      &(sla_mat->diag),  // diag. values
+                                      &(sla_mat->val));  // extra-diag. values
 
-  /* Free sla_mat (idx and col are mapped while diag. and extra-diag. coef.
-     are copied */
+  /* Free non-transferred parts of sla_mat */
   sla_mat = cs_sla_matrix_free_after_mapping(sla_mat);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -811,7 +813,7 @@ cs_cdofb_codits_free_all(void)
     BFT_FREE(sys->rhs);
     BFT_FREE(sys->x);
 
-    cs_matrix_cdo_structure_destroy(&(sys->ms));
+    cs_matrix_structure_destroy(&(sys->ms));
     cs_matrix_destroy(&(sys->a));
 
     BFT_FREE(sys->source_terms);

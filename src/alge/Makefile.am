@@ -60,7 +60,6 @@ cs_gradient_perio.h \
 cs_grid.h \
 cs_matrix.h \
 cs_matrix_building.h \
-cs_matrix_cdo.h \
 cs_matrix_default.h \
 cs_matrix_priv.h \
 cs_matrix_tuning.h \
@@ -94,9 +93,7 @@ cs_gradient.c \
 cs_gradient_perio.c \
 cs_grid.c \
 cs_matrix.c \
-cs_matrix_priv.c \
 cs_matrix_building.c \
-cs_matrix_cdo.c \
 cs_matrix_default.c \
 cs_matrix_tuning.c \
 cs_matrix_util.c \

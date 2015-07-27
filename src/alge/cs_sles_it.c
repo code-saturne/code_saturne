@@ -1686,8 +1686,6 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     _setup_sles_it(c, a, diag_block_size, false);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
-  const int *db_size = cs_matrix_get_diag_block_size(a);
-  const cs_real_t *restrict ad = cs_matrix_get_diagonal(a);
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;

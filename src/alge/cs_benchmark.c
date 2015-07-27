@@ -277,6 +277,8 @@ _matrix_vector_test(double                 t_measure,
                              sym_coeffs,
                              NULL,
                              NULL,
+                             n_faces,
+                             face_cell,
                              da,
                              xa);
 

@@ -370,6 +370,8 @@ cs_sles_solve_native(int                  f_id,
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
   cs_matrix_t *a = NULL;
 
+  const cs_mesh_t *m = cs_glob_mesh;
+
   /* Check if this system has already been setup */
 
   cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
@@ -410,6 +412,8 @@ cs_sles_solve_native(int                  f_id,
                                symmetric,
                                diag_block_size,
                                extra_diag_block_size,
+                               m->n_i_faces,
+                               (const cs_lnum_2_t *)(m->i_face_cells),
                                da,
                                xa);
 

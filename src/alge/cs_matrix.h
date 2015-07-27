@@ -125,7 +125,7 @@ extern const char  *cs_matrix_fill_type_name[];
 /*----------------------------------------------------------------------------
  * Create a matrix structure.
  *
- * Note that the structure created maps to the given existing
+ * Note that the structure created usually maps to the given existing
  * cell global number, face -> cell connectivity arrays, and cell halo
  * structure, so it must be destroyed before they are freed
  * (usually along with the code's main face -> cell structure).
@@ -133,17 +133,16 @@ extern const char  *cs_matrix_fill_type_name[];
  * Note that the resulting matrix structure will contain either a full or
  * an empty main diagonal, and that the extra-diagonal structure is always
  * symmetric (though the coefficients my not be, and we may choose a
- * matrix format that does not exploit this symmetry). If the face_cell
+ * matrix format that does not exploit this symmetry). If the edges
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * parameters:
  *   type        <-- type of matrix considered
  *   have_diag   <-- indicates if the diagonal structure contains nonzeroes
- *   n_cells     <-- local number of cells
- *   n_cells_ext <-- local number of cells + ghost cells sharing a face
- *   n_faces     <-- local number of internal faces
- *   cell_num    <-- optional global cell numbers (1 to n), or NULL
- *   face_cell   <-- face -> cells connectivity
+ *   n_rows      <-- local number of rows
+ *   n_cols_ext  <-- number of columns + ghosts
+ *   n_edges     <-- local number of (undirected) graph edges
+ *   edges       <-- edges (symmetric row <-> column) connectivity
  *   halo        <-- halo structure associated with cells, or NULL
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
  *
@@ -154,13 +153,53 @@ extern const char  *cs_matrix_fill_type_name[];
 cs_matrix_structure_t *
 cs_matrix_structure_create(cs_matrix_type_t       type,
                            bool                   have_diag,
-                           cs_lnum_t              n_cells,
-                           cs_lnum_t              n_cells_ext,
-                           cs_lnum_t              n_faces,
+                           cs_lnum_t              n_rows,
+                           cs_lnum_t              n_cols_ext,
+                           cs_lnum_t              n_edges,
                            const cs_gnum_t       *cell_num,
-                           const cs_lnum_2_t     *face_cell,
+                           const cs_lnum_2_t     *edges,
                            const cs_halo_t       *halo,
                            const cs_numbering_t  *numbering);
+
+/*----------------------------------------------------------------------------
+ * Create a matrix structure based on a MSR connectivity definition.
+ *
+ * Only CSR and MSR formats are handled.
+ *
+ * col_id is sorted row by row during the creation of this structure.
+ *
+ * In case the property of the row index and col_id arrays are transferred
+ * to the structure, the arrays pointers passed as arguments are set to NULL,
+ * to help ensure the caller does not use the original arrays directly after
+ * this call.
+ *
+ * parameters:
+ *   type       <-- type of matrix considered
+ *   transfer   <-- transfer property of row_index and col_id
+ *                  if true, map them otherwise
+ *   have_diag  <-- indicates if the structure includes the
+ *                  diagonal (should be the same for all rows)
+ *   n_rows     <-- local number of rows
+ *   n_cols_ext <-- local number of columns + ghosts
+ *   row_index  <-> pointer to index on rows
+ *   col_id     <-> pointer to array of colum ids related to the row index
+ *   halo       <-- halo structure for synchronization, or NULL
+ *   numbering  <-- vectorization or thread-related numbering info, or NULL
+ *
+ * returns:
+ *   a pointer to a created CDO matrix structure
+ *----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_matrix_structure_create_msr(cs_matrix_type_t        type,
+                               bool                    transfer,
+                               bool                    have_diag,
+                               cs_lnum_t               n_rows,
+                               cs_lnum_t               n_cols_ext,
+                               cs_lnum_t             **row_index,
+                               cs_lnum_t             **col_id,
+                               const cs_halo_t        *halo,
+                               const cs_numbering_t   *numbering);
 
 /*----------------------------------------------------------------------------
  * Destroy a matrix structure.
@@ -317,7 +356,8 @@ cs_matrix_get_fill_type(bool        symmetric,
                         const int  *extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
- * Set matrix coefficients, sharing arrays with the caller when possible.
+ * Set matrix coefficients defined relative to a "native" edge graph,
+ * sharing arrays with the caller when possible.
  *
  * With shared arrays, the matrix becomes unusable if the arrays passed as
  * arguments are not be modified (its coefficients should be unset first
@@ -335,17 +375,24 @@ cs_matrix_get_fill_type(bool        symmetric,
  *   symmetric              <-- indicates if matrix coefficients are symmetric
  *   diag_block_size        <-- block sizes for diagonal, or NULL
  *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   n_edges                <-- local number of graph edges
+ *   edges                  <-- edges (row <-> column) connectivity
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
+ *                              casts as:
+ *                                xa[n_edges]    if symmetric,
+ *                                xa[n_edges][2] if non symmetric
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_coefficients(cs_matrix_t      *matrix,
-                           bool              symmetric,
-                           const int        *diag_block_size,
-                           const int        *extra_diag_block_size,
-                           const cs_real_t  *da,
-                           const cs_real_t  *xa);
+cs_matrix_set_coefficients(cs_matrix_t        *matrix,
+                           bool                symmetric,
+                           const int          *diag_block_size,
+                           const int          *extra_diag_block_size,
+                           const cs_lnum_t     n_edges,
+                           const cs_lnum_2_t   edges[],
+                           const cs_real_t    *da,
+                           const cs_real_t    *xa);
 
 /*----------------------------------------------------------------------------
  * Set matrix coefficients, copying values to private arrays.
@@ -362,17 +409,59 @@ cs_matrix_set_coefficients(cs_matrix_t      *matrix,
  *   symmetric              <-- indicates if matrix coefficients are symmetric
  *   diag_block_size        <-- block sizes for diagonal, or NULL
  *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   n_edges                <-- local number of graph edges
+ *   edges                  <-- edges (row <-> column) connectivity
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
+ *                              casts as:
+ *                                xa[n_edges]    if symmetric,
+ *                                xa[n_edges][2] if non symmetric
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_copy_coefficients(cs_matrix_t      *matrix,
-                            bool              symmetric,
-                            const int        *diag_block_size,
-                            const int        *extra_diag_block_size,
-                            const cs_real_t  *da,
-                            const cs_real_t  *xa);
+cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
+                            bool                symmetric,
+                            const int          *diag_block_size,
+                            const int          *extra_diag_block_size,
+                            const cs_lnum_t     n_edges,
+                            const cs_lnum_2_t   edges[],
+                            const cs_real_t    *da,
+                            const cs_real_t    *xa);
+
+/*----------------------------------------------------------------------------
+ * Set matrix coefficients in an MSR format, transferring the
+ * property of those arrays to the matrix.
+ *
+ * If the matrix is also in MSR format, this avoids an extra copy.
+ * If it is in a different format, values are copied to the structure,
+ * and the original arrays freed. In any case, the arrays pointers passed as
+ * arguments are set to NULL, to help ensure the caller does not use the
+ * original arrays directly after this call.
+ *
+ * Block sizes are defined by an optional array of 4 values:
+ *   0: useful block size, 1: vector block extents,
+ *   2: matrix line extents,  3: matrix line*column extents
+ *
+ * parameters:
+ *   matrix                 <-> pointer to matrix structure
+ *   symmetric              <-- indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   row_index              <-- MSR row index (0 to n-1)
+ *   col_id                 <-- MSR column id (0 to n-1)
+ *   d_val                  <-> diagonal values (NULL if zero)
+ *   x_val                  <-> extradiagonal values (NULL if zero)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
+                                    bool                 symmetric,
+                                    const int           *diag_block_size,
+                                    const int           *extra_diag_block_size,
+                                    const cs_lnum_t      row_index[],
+                                    const cs_lnum_t      col_id[],
+                                    cs_real_t          **d_val,
+                                    cs_real_t          **x_val);
 
 /*----------------------------------------------------------------------------
  * Release shared matrix coefficients.
@@ -398,7 +487,7 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix);
  *
  * parameters:
  *   matrix --> pointer to matrix structure
- *   da     --> diagonal (pre-allocated, size: n_cells*block_size
+ *   da     --> diagonal (pre-allocated, size: n_rows*block_size
  *----------------------------------------------------------------------------*/
 
 void
@@ -507,8 +596,8 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
  * parameters:
  *   matrix    <-- pointer to matrix structure
  *   symmetric --> true if symmetric
- *   n_faces   --> number of associated faces
- *   face_cell --> face -> cells connectivity
+ *   n_edges   --> number of associated faces
+ *   edges     --> edges (symmetric row <-> column) connectivity
  *   d_val     --> diagonal values
  *   x_val     --> extra-diagonal values
  *----------------------------------------------------------------------------*/
@@ -516,8 +605,8 @@ cs_matrix_get_row(const cs_matrix_t     *matrix,
 void
 cs_matrix_get_native_arrays(const cs_matrix_t    *matrix,
                             bool                *symmetric,
-                            cs_lnum_t           *n_faces,
-                            const cs_lnum_2_t  **face_cell,
+                            cs_lnum_t           *n_edges,
+                            const cs_lnum_2_t  **edges,
                             const cs_real_t    **d_val,
                             const cs_real_t    **x_val);
 
@@ -745,21 +834,21 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
  * Test local matrix.vector product operations.
  *
  * parameters:
- *   n_cells        <-- number of local cells
- *   n_cells_ext    <-- number of cells including ghost cells (array size)
- *   n_faces        <-- local number of internal faces
+ *   n_rows         <-- number of local rows
+ *   n_cols_ext     <-- number of columns + ghosts
+ *   n_edges        <-- local number of (undirected) graph edges
  *   cell_num       <-- optional global cell numbers (1 to n), or NULL
- *   face_cell      <-- face -> cells connectivity
+ *   edges          <-- edges (symmetric row <-> column) connectivity
  *   halo           <-- cell halo structure
  *   numbering      <-- vectorization or thread-related numbering info, or NULL
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_variant_test(cs_lnum_t              n_cells,
-                       cs_lnum_t              n_cells_ext,
-                       cs_lnum_t              n_faces,
+cs_matrix_variant_test(cs_lnum_t              n_rows,
+                       cs_lnum_t              n_cols_ext,
+                       cs_lnum_t              n_edges,
                        const cs_gnum_t       *cell_num,
-                       const cs_lnum_2_t     *face_cell,
+                       const cs_lnum_2_t     *edges,
                        const cs_halo_t       *halo,
                        const cs_numbering_t  *numbering);
 

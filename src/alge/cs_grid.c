@@ -4012,6 +4012,8 @@ cs_grid_coarsen(const cs_grid_t   *f,
                              c->symmetric,
                              c->diag_block_size,
                              c->extra_diag_block_size,
+                             c->n_faces,
+                             c->face_cell,
                              c->da,
                              c->xa);
 

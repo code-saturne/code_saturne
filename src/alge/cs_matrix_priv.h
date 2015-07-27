@@ -61,11 +61,13 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef void
-(cs_matrix_set_coeffs_t) (cs_matrix_t      *matrix,
-                          bool              symmetric,
-                          bool              copy,
-                          const cs_real_t  *restrict da,
-                          const cs_real_t  *restrict xa);
+(cs_matrix_set_coeffs_t) (cs_matrix_t        *matrix,
+                          bool                symmetric,
+                          bool                copy,
+                          cs_lnum_t           n_edges,
+                          const cs_lnum_2_t  *restrict edges,
+                          const cs_real_t    *restrict da,
+                          const cs_real_t    *restrict xa);
 
 typedef void
 (cs_matrix_release_coeffs_t) (cs_matrix_t  *matrix);
@@ -94,15 +96,15 @@ typedef void
 
 typedef struct _cs_matrix_struct_native_t {
 
-  cs_lnum_t          n_cells;       /* Local number of cells */
-  cs_lnum_t          n_cells_ext;   /* Local number of participating cells
-                                       (cells + ghost cells sharing a face) */
-  cs_lnum_t          n_faces;       /* Local number of faces
-                                       (for extra-diagonal terms */
+  cs_lnum_t          n_rows;        /* Local number of rows */
+  cs_lnum_t          n_cols_ext;    /* Local number of columns + ghosts */
+  cs_lnum_t          n_edges;       /* Local number of graph edges
+                                       (for extra-diagonal terms) */
 
   /* Pointers to shared arrays */
 
-  const cs_lnum_2_t  *face_cell;    /* Face -> cells connectivity (0 to n-1) */
+  const cs_lnum_2_t  *edges;        /* Edges (symmetric row <-> column)
+                                       connectivity */
 
 } cs_matrix_struct_native_t;
 
@@ -133,8 +135,7 @@ typedef struct _cs_matrix_coeff_native_t {
 typedef struct _cs_matrix_struct_csr_t {
 
   cs_lnum_t         n_rows;           /* Local number of rows */
-  cs_lnum_t         n_cols;           /* Local number of columns
-                                         (> n_rows in case of ghost cells) */
+  cs_lnum_t         n_cols_ext;       /* Local number of columns + ghosts */
   cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
                                          on a given row */
 
@@ -146,8 +147,11 @@ typedef struct _cs_matrix_struct_csr_t {
                                          faces contribute to the same
                                          value (i.e. we have split faces) */
 
-  cs_lnum_t        *row_index;        /* Row index (0 to n-1) */
-  cs_lnum_t        *col_id;           /* Column id (0 to n-1) */
+  const cs_lnum_t  *row_index;        /* Pointer to row index (0 to n-1) */
+  const cs_lnum_t  *col_id;           /* Pointer to column id (0 to n-1) */
+
+  cs_lnum_t        *_row_index;       /* Row index (0 to n-1), if owner */
+  cs_lnum_t        *_col_id;          /* Column id (0 to n-1), if owner */
 
 } cs_matrix_struct_csr_t;
 
@@ -160,7 +164,13 @@ typedef struct _cs_matrix_coeff_csr_t {
                                          the x values in y = Ax should be
                                          prefetched (0 if no prefetch) */
 
-  cs_real_t        *val;              /* Matrix coefficients */
+  /* Pointers to possibly shared arrays */
+
+  const cs_real_t  *val;              /* Matrix coefficients */
+
+  /* Pointers to private arrays (NULL if shared) */
+
+  cs_real_t        *_val;             /* Diagonal matrix coefficients */
 
   cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
 
@@ -180,7 +190,7 @@ typedef struct _cs_matrix_struct_csr_sym_t {
 
   cs_lnum_t         n_rows;           /* Local number of rows */
   cs_lnum_t         n_cols;           /* Local number of columns
-                                         (> n_rows in case of ghost cells) */
+                                         (> n_rows in case of ghost columns) */
   cs_lnum_t         n_cols_max;       /* Maximum number of nonzero values
                                          on a given row */
 
@@ -227,11 +237,12 @@ typedef struct _cs_matrix_coeff_msr_t {
   /* Pointers to possibly shared arrays */
 
   const cs_real_t  *d_val;            /* Diagonal matrix coefficients */
+  const cs_real_t  *x_val;            /* Extra-diagonal matrix coefficients */
 
   /* Pointers to private arrays (NULL if shared) */
 
   cs_real_t        *_d_val;           /* Diagonal matrix coefficients */
-  cs_real_t        *x_val;            /* Extra-diagonal matrix coefficients */
+  cs_real_t        *_x_val;           /* Extra-diagonal matrix coefficients */
 
   cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
 
@@ -244,11 +255,8 @@ struct _cs_matrix_structure_t {
 
   cs_matrix_type_t       type;         /* Matrix storage and definition type */
 
-  cs_lnum_t              n_cells;      /* Local number of cells */
-  cs_lnum_t              n_cells_ext;  /* Local number of participating cells
-                                          (cells + ghost cells sharing a face) */
-  cs_lnum_t              n_faces;      /* Local Number of mesh faces
-                                          (necessary to affect coefficients) */
+  cs_lnum_t              n_rows;       /* Local number of rows */
+  cs_lnum_t              n_cols_ext;   /* Local number of columns + ghosts */
 
   void                  *structure;    /* Matrix structure */
 
@@ -257,37 +265,7 @@ struct _cs_matrix_structure_t {
      local->local cell numbering for future info or renumbering,
      and halo) */
 
-  const cs_lnum_2_t     *face_cell;    /* Face -> cells connectivity */
-  const cs_gnum_t       *cell_num;     /* Global cell numbers */
-  const cs_halo_t       *halo;         /* Parallel or periodic halo */
-  const cs_numbering_t  *numbering;    /* Vectorization or thread-related
-                                          numbering information */
-};
-
-/* Matrix structure (representation-independent part) */
-/*----------------------------------------------------*/
-
-struct _cs_matrix_cdo_structure_t {
-
-  cs_matrix_type_t       type;         /* Matrix storage and definition type */
-
-  cs_lnum_t              n_rows;      /* Local number of entities attached to
-                                         rows */
-  cs_lnum_t              n_rows_ext;  /* Local number of participating entities
-                                         (n_rows + ghost rows implied in sync.
-                                          process) */
-  cs_lnum_t              n_cols;      /* Local number of entities attached to
-                                         columns */
-
-  bool                   owner;        /* Deallocate or not members inside
-                                          "structure" */
-  void                  *structure;    /* Matrix structure */
-
-  /* Pointers to shared arrays from mesh structure
-     (face->cell connectivity for coefficient assignment,
-     local->local cell numbering for future info or renumbering,
-     and halo) */
-
+  const cs_gnum_t       *row_num;      /* Global row numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
@@ -300,11 +278,8 @@ struct _cs_matrix_t {
 
   cs_matrix_type_t       type;         /* Matrix storage and definition type */
 
-  cs_lnum_t              n_cells;      /* Local number of cells */
-  cs_lnum_t              n_cells_ext;  /* Local number of participating cells
-                                          (cells + ghost cells sharing a face) */
-  cs_lnum_t              n_faces;      /* Local Number of mesh faces
-                                          (necessary to affect coefficients) */
+  cs_lnum_t              n_rows;       /* Local number of rows */
+  cs_lnum_t              n_cols_ext;   /* Local number of columns + ghosts */
 
   cs_matrix_fill_type_t  fill_type;    /* Matrix fill type */
 
@@ -324,21 +299,19 @@ struct _cs_matrix_t {
 
   const void            *structure;    /* Matrix structure */
 
-  /* Pointers to shared arrays from mesh structure
-     (face->cell connectivity for coefficient assignment,
-     local->local cell numbering for future info or renumbering,
+  /* Pointers to arrays possibly shared from mesh structure
+     (graph edges: face->cell connectivity for coefficient assignment,
+     rows: local->local cell numbering for future info or renumbering,
      and halo) */
 
-  const cs_lnum_2_t     *face_cell;    /* Face -> cells connectivity */
-  const cs_gnum_t       *cell_num;     /* Global cell numbers */
   const cs_halo_t       *halo;         /* Parallel or periodic halo */
   const cs_numbering_t  *numbering;    /* Vectorization or thread-related
                                           numbering information */
 
-  /* Pointers to shared arrays from coefficient assignment
-     these may become NULL in the future if coefficients are passed
-     directly from non "native" types, so precautions may need to be
-     taken when accessing those */
+  /* Pointer to shared arrays from coefficient assignment from
+     "native" type. This should be removed in the future, but requires
+     removing the dependency to the native structure in the multigrid
+     code first. */
 
   const cs_real_t      *xa;            /* Extra-diagonal terms */
 
@@ -494,7 +467,7 @@ cs_matrix_vec_p_l_csr_mkl(bool                exclude_diag,
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
- *   da     --> Diagonal (pre-allocated, size: n_cells)
+ *   da     --> Diagonal (pre-allocated, size: n_cols)
  *----------------------------------------------------------------------------*/
 
 void

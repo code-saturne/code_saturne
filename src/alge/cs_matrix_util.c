@@ -269,17 +269,17 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 
   /* diagonal contribution */
 
-  _diag_dom_diag_contrib(mc->da, dd, ms->n_cells, ms->n_cells_ext);
+  _diag_dom_diag_contrib(mc->da, dd, ms->n_rows, ms->n_cols_ext);
 
   /* non-diagonal terms */
 
   if (mc->xa != NULL) {
 
-    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
+    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
         dd[ii] -= fabs(xa[face_id]);
@@ -289,7 +289,7 @@ _diag_dom_native(const cs_matrix_t  *matrix,
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
         dd[ii] -= fabs(xa[2*face_id]);
@@ -300,7 +300,7 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 
   }
 
-  _diag_dom_diag_normalize(mc->da, dd, ms->n_cells);
+  _diag_dom_diag_normalize(mc->da, dd, ms->n_rows);
 }
 
 /*----------------------------------------------------------------------------
@@ -325,17 +325,17 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
   /* block diagonal contribution */
 
-  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_cells, ms->n_cells_ext, db_size);
+  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_rows, ms->n_cols_ext, db_size);
 
   /* non-diagonal terms */
 
   if (mc->xa != NULL) {
 
-    const cs_lnum_2_t *restrict face_cel_p = ms->face_cell;
+    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
@@ -346,7 +346,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
@@ -359,7 +359,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
   }
 
-  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_cells, db_size);
+  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_rows, db_size);
 }
 
 /*----------------------------------------------------------------------------
@@ -376,8 +376,8 @@ _diag_dom_csr(const cs_matrix_t  *matrix,
 {
   cs_lnum_t  ii, jj, n_cols;
   double  sii, sign, d_val;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
+  const cs_lnum_t  *restrict col_id;
+  const cs_real_t  *restrict m_row;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
@@ -495,7 +495,7 @@ _diag_dom_msr(const cs_matrix_t  *matrix,
 {
   cs_lnum_t  ii, jj, n_cols;
   cs_real_t  sii;
-  cs_real_t  *restrict m_row;
+  const cs_real_t  *restrict m_row;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
@@ -503,7 +503,7 @@ _diag_dom_msr(const cs_matrix_t  *matrix,
 
   /* diagonal contribution */
 
-  _diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols);
+  _diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols_ext);
 
   /* extra-diagonal contribution */
 
@@ -537,7 +537,7 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
                 cs_real_t          *restrict dd)
 {
   cs_lnum_t  ii, jj, kk, n_cols;
-  cs_real_t  *restrict m_row;
+  const cs_real_t  *restrict m_row;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
@@ -546,7 +546,7 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
 
   /* diagonal contribution */
 
-  _b_diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols, db_size);
+  _b_diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols_ext, db_size);
 
   /* extra-diagonal contribution */
 
@@ -582,7 +582,7 @@ static void
 _pre_dump_diag_contrib(const cs_real_t  *restrict da,
                        cs_gnum_t        *restrict m_coo,
                        cs_real_t        *restrict m_val,
-                       cs_gnum_t        *restrict g_coo_num,
+                       const cs_gnum_t  *restrict g_coo_num,
                        cs_lnum_t         n_cells)
 {
   cs_lnum_t  ii;
@@ -625,7 +625,7 @@ static void
 _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
                          cs_gnum_t        *restrict m_coo,
                          cs_real_t        *restrict m_val,
-                         cs_gnum_t        *restrict g_coo_num,
+                         const cs_gnum_t  *restrict g_coo_num,
                          cs_lnum_t         n_cells,
                          const int         b_size[4])
 {
@@ -668,66 +668,79 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
  *
  * parameters:
  *   matrix    <-- Pointer to matrix structure
- *   m_coo     <-- Matrix coefficient coordinates array
- *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
+ *   m_coo     --> Matrix coefficient coordinates array
+ *   m_val     --> Matrix coefficient values array
  *
  * returns:
  *   number of matrix entries
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_pre_dump_native(const cs_matrix_t  *matrix,
-                 cs_gnum_t          *restrict m_coo,
-                 cs_real_t          *restrict m_val,
-                 cs_gnum_t          *restrict g_coo_num)
+_pre_dump_native(const cs_matrix_t   *matrix,
+                 const cs_gnum_t     *g_coo_num,
+                 cs_gnum_t          **m_coo,
+                 cs_real_t          **m_val)
 {
   cs_lnum_t  ii, jj, face_id, dump_id;
+
+  cs_gnum_t   *restrict _m_coo;
+  cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
 
+  cs_lnum_t  n_entries = ms->n_rows + ms->n_edges*2;
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  BFT_MALLOC(_m_val, n_entries, double);
+
+  *m_coo = _m_coo;
+  *m_val = _m_val;
+
   /* diagonal contribution */
 
-  _pre_dump_diag_contrib(mc->da, m_coo, m_val, g_coo_num, ms->n_cells);
+  _pre_dump_diag_contrib(mc->da, _m_coo, _m_val, g_coo_num, ms->n_rows);
 
   /* non-diagonal terms */
 
-  dump_id = ms->n_cells;
+  dump_id = ms->n_rows;
 
   if (mc->xa != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p
-      = (const cs_lnum_2_t *restrict)(ms->face_cell);
+      = (const cs_lnum_2_t *restrict)(ms->edges);
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
-        m_coo[dump_id*2] = g_coo_num[ii];
-        m_coo[dump_id*2 + 1] = g_coo_num[jj];
-        m_val[dump_id] = xa[face_id];
-        m_coo[dump_id*2 + 2] = g_coo_num[jj];
-        m_coo[dump_id*2 + 3] = g_coo_num[ii];
-        m_val[dump_id + 1] = xa[face_id];
+        _m_coo[dump_id*2] = g_coo_num[ii];
+        _m_coo[dump_id*2 + 1] = g_coo_num[jj];
+        _m_val[dump_id] = xa[face_id];
+        _m_coo[dump_id*2 + 2] = g_coo_num[jj];
+        _m_coo[dump_id*2 + 3] = g_coo_num[ii];
+        _m_val[dump_id + 1] = xa[face_id];
         dump_id += 2;
       }
 
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
-        m_coo[dump_id*2] = g_coo_num[ii];
-        m_coo[dump_id*2 + 1] = g_coo_num[jj];
-        m_val[dump_id] = xa[2*face_id];
-        m_coo[dump_id*2 + 2] = g_coo_num[jj];
-        m_coo[dump_id*2 + 3] = g_coo_num[ii];
-        m_val[dump_id + 1] = xa[2*face_id + 1];
+        _m_coo[dump_id*2] = g_coo_num[ii];
+        _m_coo[dump_id*2 + 1] = g_coo_num[jj];
+        _m_val[dump_id] = xa[2*face_id];
+        _m_coo[dump_id*2 + 2] = g_coo_num[jj];
+        _m_coo[dump_id*2 + 3] = g_coo_num[ii];
+        _m_val[dump_id + 1] = xa[2*face_id + 1];
         dump_id += 2;
       }
 
@@ -735,7 +748,7 @@ _pre_dump_native(const cs_matrix_t  *matrix,
 
   }
 
-  return (ms->n_cells + ms->n_faces*2);
+  return n_entries;
 }
 
 /*----------------------------------------------------------------------------
@@ -743,9 +756,9 @@ _pre_dump_native(const cs_matrix_t  *matrix,
  *
  * parameters:
  *   matrix    <-- Pointer to matrix structure
- *   m_coo     <-- Matrix coefficient coordinates array
- *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
+ *   m_coo     --> Matrix coefficient coordinates array
+ *   m_val     --> Matrix coefficient values array
  *
  * returns:
  *   number of matrix entries
@@ -753,11 +766,14 @@ _pre_dump_native(const cs_matrix_t  *matrix,
 
 static cs_lnum_t
 _b_pre_dump_native(const cs_matrix_t  *matrix,
-                   cs_gnum_t          *restrict m_coo,
-                   cs_real_t          *restrict m_val,
-                   cs_gnum_t          *restrict g_coo_num)
+                   const cs_gnum_t     *g_coo_num,
+                   cs_gnum_t          **m_coo,
+                   cs_real_t          **m_val)
 {
   cs_lnum_t  ii, jj, kk, face_id, dump_id;
+
+  cs_gnum_t   *restrict _m_coo;
+  cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
@@ -765,48 +781,58 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
   const cs_real_t  *restrict xa = mc->xa;
   const int *db_size = matrix->db_size;
 
+  cs_lnum_t  n_entries = (ms->n_rows*db_size[0] + ms->n_edges*2) * db_size[0];
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  BFT_MALLOC(_m_val, n_entries, double);
+
+  *m_coo = _m_coo;
+  *m_val = _m_val;
+
   /* block diagonal contribution */
 
-  _b_pre_dump_diag_contrib(mc->da, m_coo, m_val,
-                           g_coo_num, ms->n_cells, db_size);
+  _b_pre_dump_diag_contrib(mc->da, _m_coo, _m_val,
+                           g_coo_num, ms->n_rows, db_size);
 
   /* non-diagonal terms */
 
-  dump_id = ms->n_cells*db_size[0]*db_size[0];
+  dump_id = ms->n_rows*db_size[0]*db_size[0];
 
   if (mc->xa != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p
-      = (const cs_lnum_2_t *restrict)(ms->face_cell);
+      = (const cs_lnum_2_t *restrict)(ms->edges);
 
     if (mc->symmetric) {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
-          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
-          m_val[dump_id] = xa[face_id];
-          m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
-          m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
-          m_val[dump_id + 1] = xa[face_id];
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
+          _m_val[dump_id] = xa[face_id];
+          _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
+          _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
+          _m_val[dump_id + 1] = xa[face_id];
           dump_id += 2;
         }
       }
     }
     else {
 
-      for (face_id = 0; face_id < ms->n_faces; face_id++) {
+      for (face_id = 0; face_id < ms->n_edges; face_id++) {
         ii = face_cel_p[face_id][0];
         jj = face_cel_p[face_id][1];
         for (kk = 0; kk < db_size[0]; kk++) {
-          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
-          m_val[dump_id] = xa[face_id*2];
-          m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
-          m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
-          m_val[dump_id + 1] = xa[face_id*2 + 1];
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
+          _m_val[dump_id] = xa[face_id*2];
+          _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
+          _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
+          _m_val[dump_id + 1] = xa[face_id*2 + 1];
           dump_id += 2;
         }
       }
@@ -815,7 +841,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   }
 
-  return ((ms->n_cells*db_size[0] + ms->n_faces*2) * db_size[0]);
+  return n_entries;
 }
 
 /*----------------------------------------------------------------------------
@@ -823,36 +849,51 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
  *
  * parameters:
  *   matrix    <-- Pointer to matrix structure
- *   m_coo     <-- Matrix coefficient coordinates array
- *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
+ *   m_coo     --> Matrix coefficient coordinates array
+ *   m_val     --> Matrix coefficient values array
  *
  * returns:
  *   number of matrix entries
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_pre_dump_csr(const cs_matrix_t  *matrix,
-              cs_gnum_t          *restrict m_coo,
-              cs_real_t          *restrict m_val,
-              cs_gnum_t          *restrict g_coo_num)
+_pre_dump_csr(const cs_matrix_t   *matrix,
+              const cs_gnum_t     *g_coo_num,
+              cs_gnum_t          **m_coo,
+              cs_real_t          **m_val)
 {
   cs_lnum_t  ii, jj, n_cols, dump_id;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
+  const cs_lnum_t  *restrict col_id;
+  const cs_real_t  *restrict m_row;
+
+  cs_gnum_t   *restrict _m_coo;
+  cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
   cs_lnum_t  dump_id_shift = 0;
   cs_lnum_t  n_rows = ms->n_rows;
 
+  cs_lnum_t  n_entries = ms->row_index[n_rows];
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  BFT_MALLOC(_m_val, n_entries, double);
+
+  *m_coo = _m_coo;
+  *m_val = _m_val;
+
+  /* Contribution */
+
   if (ms->have_diag == false) {
     assert(0);
 #   pragma omp parallel for
     for (ii = 0; ii < n_rows; ii++) {
-      m_coo[ii*2] = g_coo_num[ii];
-      m_coo[ii*2+1] = g_coo_num[ii];
-      m_val[ii] = 0.0;
+      _m_coo[ii*2] = g_coo_num[ii];
+      _m_coo[ii*2+1] = g_coo_num[ii];
+      _m_val[ii] = 0.0;
     }
     dump_id_shift = n_rows;
   }
@@ -864,13 +905,13 @@ _pre_dump_csr(const cs_matrix_t  *matrix,
     n_cols = ms->row_index[ii+1] - ms->row_index[ii];
     for (jj = 0; jj < n_cols; jj++) {
       dump_id = ms->row_index[ii] + jj + dump_id_shift;
-      m_coo[dump_id*2] = g_coo_num[ii];
-      m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
-      m_val[dump_id] = m_row[jj];
+      _m_coo[dump_id*2] = g_coo_num[ii];
+      _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
+      _m_val[dump_id] = m_row[jj];
     }
   }
 
-  return (ms->row_index[n_rows] + dump_id_shift);
+  return n_entries;
 }
 
 /*----------------------------------------------------------------------------
@@ -878,9 +919,9 @@ _pre_dump_csr(const cs_matrix_t  *matrix,
  *
  * parameters:
  *   matrix    <-- Pointer to matrix structure
- *   m_coo     <-- Matrix coefficient coordinates array
- *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
+ *   m_coo     --> Matrix coefficient coordinates array
+ *   m_val     --> Matrix coefficient values array
  *
  * returns:
  *   number of matrix entries
@@ -888,13 +929,16 @@ _pre_dump_csr(const cs_matrix_t  *matrix,
 
 static cs_lnum_t
 _pre_dump_csr_sym(const cs_matrix_t  *matrix,
-                  cs_gnum_t          *restrict m_coo,
-                  cs_real_t          *restrict m_val,
-                  cs_gnum_t          *restrict g_coo_num)
+                  const cs_gnum_t     *g_coo_num,
+                  cs_gnum_t          **m_coo,
+                  cs_real_t          **m_val)
 {
   cs_lnum_t  ii, jj, n_cols;
   cs_lnum_t  *restrict col_id;
   cs_real_t  *restrict m_row;
+
+  cs_gnum_t   *restrict _m_coo;
+  cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
   const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
@@ -902,16 +946,31 @@ _pre_dump_csr_sym(const cs_matrix_t  *matrix,
   cs_lnum_t  n_rows = ms->n_rows;
   cs_lnum_t sym_jj_start = 1;
 
+  cs_lnum_t  n_entries = ms->row_index[n_rows] * 2;
+
   /* By construction, the matrix has either a full or an empty
      diagonal structure, so testing this on the first row is enough */
+
+  if (ms->col_id[ms->row_index[0]] != 0)
+    n_entries += n_rows;
+  else
+    n_entries -= n_rows;
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  BFT_MALLOC(_m_val, n_entries, double);
+
+  *m_coo = _m_coo;
+  *m_val = _m_val;
 
   if (ms->col_id[ms->row_index[0]] != 0) {
     sym_jj_start = 0;
 #   pragma omp parallel for
     for (ii = 0; ii < n_rows; ii++) {
-      m_coo[ii*2] = g_coo_num[ii];
-      m_coo[ii*2+1] = g_coo_num[ii];
-      m_val[ii] = 0.0;
+      _m_coo[ii*2] = g_coo_num[ii];
+      _m_coo[ii*2+1] = g_coo_num[ii];
+      _m_val[ii] = 0.0;
     }
     dump_id = n_rows;
   }
@@ -922,21 +981,23 @@ _pre_dump_csr_sym(const cs_matrix_t  *matrix,
     n_cols = ms->row_index[ii+1] - ms->row_index[ii];
     /* Upper triangular + diagonal part */
     for (jj = 0; jj < n_cols; jj++) {
-      m_coo[dump_id*2] = g_coo_num[ii];
-      m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
-      m_val[dump_id] = m_row[jj];
+      _m_coo[dump_id*2] = g_coo_num[ii];
+      _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
+      _m_val[dump_id] = m_row[jj];
       dump_id += 1;
     }
     /* Lower triangular part */
     for (jj = sym_jj_start; jj < n_cols; jj++) {
-      m_coo[dump_id*2] = g_coo_num[col_id[jj]];
-      m_coo[dump_id*2+1] = g_coo_num[ii];
-      m_val[dump_id] = m_row[jj];
+      _m_coo[dump_id*2] = g_coo_num[col_id[jj]];
+      _m_coo[dump_id*2+1] = g_coo_num[ii];
+      _m_val[dump_id] = m_row[jj];
       dump_id += 1;
     }
   }
 
-  return (dump_id);
+  assert(n_entries == dump_id);
+
+  return n_entries;
 }
 
 /*----------------------------------------------------------------------------
@@ -944,31 +1005,44 @@ _pre_dump_csr_sym(const cs_matrix_t  *matrix,
  *
  * parameters:
  *   matrix    <-- Pointer to matrix structure
- *   m_coo     <-- Matrix coefficient coordinates array
- *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
+ *   m_coo     --> Matrix coefficient coordinates array
+ *   m_val     --> Matrix coefficient values array
  *
  * returns:
  *   number of matrix entries
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_pre_dump_msr(const cs_matrix_t  *matrix,
-              cs_gnum_t          *restrict m_coo,
-              cs_real_t          *restrict m_val,
-              cs_gnum_t          *restrict g_coo_num)
+_pre_dump_msr(const cs_matrix_t   *matrix,
+              const cs_gnum_t     *g_coo_num,
+              cs_gnum_t          **m_coo,
+              cs_real_t          **m_val)
 {
   cs_lnum_t  ii, jj, n_cols, dump_id;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
+  const cs_lnum_t  *restrict col_id;
+  const cs_real_t  *restrict m_row;
+
+  cs_gnum_t   *restrict _m_coo;
+  cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   const cs_lnum_t  n_rows = ms->n_rows;
 
+  cs_lnum_t  n_entries = ms->row_index[n_rows] + ms->n_rows;
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  BFT_MALLOC(_m_val, n_entries, double);
+
+  *m_coo = _m_coo;
+  *m_val = _m_val;
+
   /* diagonal contribution */
 
-  _pre_dump_diag_contrib(mc->d_val, m_coo, m_val, g_coo_num, ms->n_rows);
+  _pre_dump_diag_contrib(mc->d_val, _m_coo, _m_val, g_coo_num, ms->n_rows);
 
   /* extra-diagonal contribution */
 
@@ -980,9 +1054,9 @@ _pre_dump_msr(const cs_matrix_t  *matrix,
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
         dump_id = ms->row_index[ii] + jj + ms->n_rows;
-        m_coo[dump_id*2] = g_coo_num[ii];
-        m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
-        m_val[dump_id] = m_row[jj];
+        _m_coo[dump_id*2] = g_coo_num[ii];
+        _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
+        _m_val[dump_id] = m_row[jj];
       }
     }
   }
@@ -993,14 +1067,14 @@ _pre_dump_msr(const cs_matrix_t  *matrix,
       n_cols = ms->row_index[ii+1] - ms->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
         dump_id = ms->row_index[ii] + jj + ms->n_rows;
-        m_coo[dump_id*2] = g_coo_num[ii];
-        m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
-        m_val[dump_id] = 0.0;
+        _m_coo[dump_id*2] = g_coo_num[ii];
+        _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
+        _m_val[dump_id] = 0.0;
       }
     }
   }
 
-  return (ms->row_index[n_rows] + ms->n_rows);
+  return n_entries;
 }
 
 /*----------------------------------------------------------------------------
@@ -1008,23 +1082,26 @@ _pre_dump_msr(const cs_matrix_t  *matrix,
  *
  * parameters:
  *   matrix    <-- Pointer to matrix structure
- *   m_coo     <-- Matrix coefficient coordinates array
- *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
+ *   m_coo     --> Matrix coefficient coordinates array
+ *   m_val     --> Matrix coefficient values array
  *
  * returns:
  *   number of matrix entries
  *----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_b_pre_dump_msr(const cs_matrix_t  *matrix,
-                cs_gnum_t          *restrict m_coo,
-                cs_real_t          *restrict m_val,
-                cs_gnum_t          *restrict g_coo_num)
+_b_pre_dump_msr(const cs_matrix_t   *matrix,
+                const cs_gnum_t     *g_coo_num,
+                cs_gnum_t          **m_coo,
+                cs_real_t          **m_val)
 {
   cs_lnum_t  ii, jj, kk, n_cols, dump_id;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
+  const cs_lnum_t  *restrict col_id;
+  const cs_real_t  *restrict m_row;
+
+  cs_gnum_t   *restrict _m_coo;
+  cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
@@ -1032,9 +1109,20 @@ _b_pre_dump_msr(const cs_matrix_t  *matrix,
   const cs_lnum_t  n_rows = ms->n_rows;
   const cs_lnum_t  dump_id_shift = ms->n_rows*db_size[0]*db_size[0];
 
+  cs_lnum_t  n_entries =   ms->row_index[n_rows]*db_size[0]
+                         + ms->n_rows*db_size[0]*db_size[0];
+
+  /* Allocate arrays */
+
+  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
+  BFT_MALLOC(_m_val, n_entries, double);
+
+  *m_coo = _m_coo;
+  *m_val = _m_val;
+
   /* diagonal contribution */
 
-  _b_pre_dump_diag_contrib(mc->d_val, m_coo, m_val,
+  _b_pre_dump_diag_contrib(mc->d_val, _m_coo, _m_val,
                            g_coo_num, ms->n_rows, db_size);
 
 
@@ -1049,9 +1137,9 @@ _b_pre_dump_msr(const cs_matrix_t  *matrix,
       for (jj = 0; jj < n_cols; jj++) {
         for (kk = 0; kk < db_size[0]; kk++) {
           dump_id = (ms->row_index[ii] + jj)*db_size[0] + kk + dump_id_shift;
-          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
-          m_val[dump_id] = m_row[jj];
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
+          _m_val[dump_id] = m_row[jj];
         }
       }
     }
@@ -1064,15 +1152,15 @@ _b_pre_dump_msr(const cs_matrix_t  *matrix,
       for (jj = 0; jj < n_cols; jj++) {
         for (kk = 0; kk < db_size[0]; kk++) {
           dump_id = (ms->row_index[ii] + jj)*db_size[0] + kk + dump_id_shift;
-          m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
-          m_val[dump_id] = 0.0;
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
+          _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
+          _m_val[dump_id] = 0.0;
         }
       }
     }
   }
 
-  return ((ms->row_index[n_rows])*db_size[0] + dump_id_shift);
+  return n_entries;
 }
 
 /*----------------------------------------------------------------------------
@@ -1164,33 +1252,32 @@ _sort_matrix_dump_data(cs_lnum_t   n_entries,
  *----------------------------------------------------------------------------*/
 
 static void
-_prepare_matrix_dump_data(const cs_matrix_t  *m,
-                          cs_lnum_t          *n_entries,
+_prepare_matrix_dump_data(const cs_matrix_t   *m,
+                          cs_lnum_t           *n_entries,
                           cs_gnum_t          **m_coords,
                           double             **m_vals)
 {
   cs_lnum_t ii, jj;
-  cs_lnum_t _n_entries
-    = (m->n_cells*m->db_size[0] + m->n_faces*2) * m->db_size[0];
+  cs_lnum_t _n_entries = 0;
   cs_gnum_t coo_shift = 1, n_g_rows = 0;
 
   cs_gnum_t *g_coo_num = NULL;
   cs_gnum_t *_m_coords = NULL;
   double *_m_vals = NULL;
 
-  BFT_MALLOC(g_coo_num, m->n_cells_ext, cs_gnum_t);
+  BFT_MALLOC(g_coo_num, m->n_cols_ext, cs_gnum_t);
 
-  n_g_rows = m->n_cells;
+  n_g_rows = m->n_rows;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_gnum_t loc_shift = m->n_cells;
+    cs_gnum_t loc_shift = m->n_rows;
     MPI_Scan(&loc_shift, &coo_shift, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
     coo_shift = coo_shift + 1 - loc_shift;
   }
 #endif
 
-  for (ii = 0; ii < m->n_cells; ii++)
+  for (ii = 0; ii < m->n_rows; ii++)
     g_coo_num[ii] = ii + coo_shift;
 
   if (m->halo != NULL)
@@ -1199,33 +1286,28 @@ _prepare_matrix_dump_data(const cs_matrix_t  *m,
                          sizeof(cs_gnum_t),
                          g_coo_num);
 
-  /* Allocate arrays */
-
-  BFT_MALLOC(_m_coords, _n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_vals, _n_entries, double);
-
   /* Populate arrays based on matrix type */
 
   switch(m->type) {
   case CS_MATRIX_NATIVE:
     if (m->db_size[3] == 1)
-      _n_entries = _pre_dump_native(m, _m_coords, _m_vals, g_coo_num);
+      _n_entries = _pre_dump_native(m, g_coo_num, &_m_coords, &_m_vals);
     else
-      _n_entries = _b_pre_dump_native(m, _m_coords, _m_vals, g_coo_num);
+      _n_entries = _b_pre_dump_native(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   case CS_MATRIX_CSR:
     assert(m->db_size[3] == 1);
-    _n_entries = _pre_dump_csr(m, _m_coords, _m_vals, g_coo_num);
+    _n_entries = _pre_dump_csr(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   case CS_MATRIX_CSR_SYM:
     assert(m->db_size[3] == 1);
-    _n_entries = _pre_dump_csr_sym(m, _m_coords, _m_vals, g_coo_num);
+    _n_entries = _pre_dump_csr_sym(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   case CS_MATRIX_MSR:
     if (m->db_size[3] == 1)
-      _n_entries = _pre_dump_msr(m, _m_coords, _m_vals, g_coo_num);
+      _n_entries = _pre_dump_msr(m, g_coo_num, &_m_coords, &_m_vals);
     else
-      _n_entries = _b_pre_dump_msr(m, _m_coords, _m_vals, g_coo_num);
+      _n_entries = _b_pre_dump_msr(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -1699,13 +1781,13 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
                              const char         *name)
 {
   char filename[64];
-  cs_gnum_t n_g_rows = matrix->n_cells;
+  cs_gnum_t n_g_rows = matrix->n_rows;
 
   cs_file_t  *f = NULL;
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_gnum_t n_l_rows = matrix->n_cells;
+    cs_gnum_t n_l_rows = matrix->n_rows;
     MPI_Allreduce(&n_l_rows, &n_g_rows, 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
@@ -1721,12 +1803,12 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
     _write_matrix_g(matrix, f);
-    _write_vector_g(matrix->n_cells, rhs, f);
+    _write_vector_g(matrix->n_rows, rhs, f);
   }
 #endif
   if (cs_glob_n_ranks == 1) {
     _write_matrix_l(matrix, f);
-    _write_vector_l(matrix->n_cells, rhs, f);
+    _write_vector_l(matrix->n_rows, rhs, f);
   }
 
   f = cs_file_free(f);
@@ -1738,9 +1820,9 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
  * parameters:
  *   n_cells     <-- number of local cells
  *   n_cells_ext <-- number of cells including ghost cells (array size)
- *   n_faces     <-- local number of internal faces
+ *   n_edges     <-- local number of graph edges
  *   cell_num    <-- global cell numbers (1 to n)
- *   face_cell   <-- face -> cells connectivity (1 to n)
+ *   edges       <-- graph edges connectivity
  *   halo        <-- cell halo structure
  *   numbering   <-- vectorization or thread-related numbering info, or NULL
  *----------------------------------------------------------------------------*/
@@ -1748,9 +1830,9 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
 void
 cs_matrix_dump_test(cs_lnum_t              n_cells,
                     cs_lnum_t              n_cells_ext,
-                    cs_lnum_t              n_faces,
+                    cs_lnum_t              n_edges,
                     const cs_gnum_t       *cell_num,
-                    const cs_lnum_2_t     *face_cell,
+                    const cs_lnum_2_t     *edges,
                     const cs_halo_t       *halo,
                     const cs_numbering_t  *numbering)
 {
@@ -1785,7 +1867,7 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
   BFT_MALLOC(rhs, n_cells_ext*diag_block_size[1], cs_real_t);
 
   BFT_MALLOC(da, n_cells_ext*diag_block_size[3], cs_real_t);
-  BFT_MALLOC(xa, n_faces*2, cs_real_t);
+  BFT_MALLOC(xa, n_edges*2, cs_real_t);
 
 # pragma omp parallel for
   for (ii = 0; ii < n_cells_ext*diag_block_size[3]; ii++)
@@ -1795,9 +1877,9 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
     rhs[ii] = ii*0.1/n_cells_ext;
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_faces; ii++) {
-    xa[ii*2] = 0.5*(1.0 + ii*1.0/n_faces);
-    xa[ii*2 + 1] = -0.5*(1.0 + ii*1.0/n_faces);
+  for (ii = 0; ii < n_edges; ii++) {
+    xa[ii*2] = 0.5*(1.0 + ii*1.0/n_edges);
+    xa[ii*2 + 1] = -0.5*(1.0 + ii*1.0/n_edges);
   }
 
   /* Loop on variant types */
@@ -1813,9 +1895,9 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
                                        true,
                                        n_cells,
                                        n_cells_ext,
-                                       n_faces,
+                                       n_edges,
                                        cell_num,
-                                       face_cell,
+                                       edges,
                                        halo,
                                        numbering);
     cs_matrix_t *m = cs_matrix_create(ms);
@@ -1824,6 +1906,8 @@ cs_matrix_dump_test(cs_lnum_t              n_cells,
                                sym_flag[test_id],
                                _diag_block_size,
                                _extra_diag_block_size,
+                               n_edges,
+                               edges,
                                da,
                                xa);
 
