@@ -101,7 +101,7 @@ typedef struct {
   char *restrict       name;    /* Short description */
 
   cs_param_eq_type_t   type;    /* scalar, vector, tensor... */
-  int                  iwarni;  /* Level of detail to output */
+  int                  verbosity;  /* Level of detail to output */
 
   /* Numerical settings */
   cs_space_scheme_t    space_scheme;
@@ -349,16 +349,16 @@ cs_param_eq_set_itsol_normalization(const char   *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Modify the level of warning (user function)
+ * \brief  Modify the level of verbosity (user function)
  *
- * \param[in]   name      name of the equation to deal with
- * \param[in]   iwarni    level of warning
+ * \param[in]   name         name of the equation to deal with
+ * \param[in]   verbosity    level of verbosity
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_set_warning_level(const char         *name,
-                              int                 iwarni);
+cs_param_eq_set_verbosity_level(const char       *name,
+                                int               verbosity);
 
 /*----------------------------------------------------------------------------*/
 /*!

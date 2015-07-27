@@ -250,7 +250,7 @@ cs_param_eq_add(const char               *name,
   strncpy(eq->name, name, len);
 
   eq->type = type;
-  eq->iwarni = 0;
+  eq->verbosity = 0;
   eq->space_scheme = CS_SPACE_SCHEME_CDOVB;
   eq->field_id = -1;  // field is created when all user-defined data are set
   eq->is_multiplied_by_rho = true;
@@ -477,16 +477,16 @@ cs_param_eq_set_itsol_normalization(const char   *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Modify the level of warning (user function)
+ * \brief  Modify the level of verbosity (user function)
  *
- * \param[in]   name      name of the equation to deal with
- * \param[in]   iwarni    level of warning
+ * \param[in]   name         name of the equation to deal with
+ * \param[in]   verbosity    level of verbosity
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_set_warning_level(const char         *name,
-                              int                 iwarni)
+cs_param_eq_set_verbosity_level(const char       *name,
+                                int               verbosity)
 {
   int  eq_id = cs_param_eq_get_id_by_name(name);
 
@@ -498,7 +498,7 @@ cs_param_eq_set_warning_level(const char         *name,
 
   cs_param_eq_t  *eq = cs_cdo_param_eqs + eq_id;
 
-  eq->iwarni = iwarni;
+  eq->verbosity = verbosity;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -784,8 +784,9 @@ cs_param_eq_add_source_term_by_val(const char                    *eq_name,
                                    cs_get_t                       get_exp)
 {
   int  k, l, eq_id, ml_id, st_id;
-  cs_param_var_type_t  var_type;
   cs_def_t  imp_def, exp_def;
+
+  cs_param_var_type_t  var_type = CS_PARAM_VAR_NONE;
 
   /* Retrieve related id */
   _check_eq_name(eq_name, &eq_id);
@@ -864,8 +865,9 @@ cs_param_eq_add_source_term_by_user(const char                   *eq_name,
                                     cs_user_func_t               *exp_func)
 {
   int  eq_id, ml_id, st_id;
-  cs_param_var_type_t  var_type;
   cs_def_t  imp_def, exp_def;
+
+  cs_param_var_type_t  var_type = CS_PARAM_VAR_NONE;
 
   /* Retrieve related id */
   _check_eq_name(eq_name, &eq_id);
@@ -933,8 +935,9 @@ cs_param_eq_add_source_term_by_analytic(const char                  *eq_name,
                                         cs_analytic_func_t          *exp_func)
 {
   int  eq_id, ml_id, st_id;
-  cs_param_var_type_t  var_type;
   cs_def_t  imp_def, exp_def;
+
+  cs_param_var_type_t  var_type = CS_PARAM_VAR_NONE;
 
   /* Retrieve related id */
   _check_eq_name(eq_name, &eq_id);
@@ -1010,6 +1013,7 @@ cs_param_eq_add_fields(void)
                 _(" Type of equation for eq. %s is incompatible with the"
                   " creation of field.\n"
                   " Stop adding field from CDO user equations.\n"), eq->name);
+      break;
     }
 
     /* Define mesh_location_id */
@@ -1025,6 +1029,7 @@ cs_param_eq_add_fields(void)
                 _(" Space scheme for eq. %s is incompatible with the"
                   " creation of field.\n"
                   " Stop adding field from CDO user equations.\n"), eq->name);
+      break;
     }
 
     if (location_id == -1)
@@ -1159,7 +1164,7 @@ cs_param_eq_resume_all(void)
       bft_printf("\t\t--> Property related to the diffusion term: %s\n",
                  cs_param_pty_get_name(h_info.pty_id));
 
-      if (eq->iwarni > 0) {
+      if (eq->verbosity > 0) {
         bft_printf("\t\t--> Hodge operator: %s / %s\n",
                    cs_param_hodge_get_type_name(h_info),
                    cs_param_hodge_get_algo_name(h_info));
@@ -1189,7 +1194,7 @@ cs_param_eq_resume_all(void)
                    cs_param_source_term_get_type_name(st_info),
                    cs_param_get_var_type_name(st_info.var_type),
                    cs_param_get_def_type_name(st_info.def_type));
-        if (eq->iwarni > 0)
+        if (eq->verbosity > 0)
           bft_printf("\t\t--> Quadrature type: %s\n",
                      cs_quadrature_get_type_name(st_info.quad_type));
 

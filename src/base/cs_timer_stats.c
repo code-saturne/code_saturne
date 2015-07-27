@@ -592,7 +592,7 @@ cs_timer_stats_is_active(int  id)
  *
  * If a timer with the same root but different parents is active, we assume
  * the current operation is a subset of the active timer, so the timer is
- * not started, so as to avoid having a sum of parts larger thn the total.
+ * not started, so as to avoid having a sum of parts larger than the total.
  *
  * \param[in]  id  id of statistic
  */

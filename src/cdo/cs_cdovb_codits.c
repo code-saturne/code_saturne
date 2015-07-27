@@ -35,9 +35,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
-#include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <limits.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -48,6 +48,7 @@
 
 #include "cs_mesh.h"
 #include "cs_timer.h"
+#include "cs_timer_stats.h"
 #include "cs_log.h"
 #include "cs_search.h"
 #include "cs_quadrature.h"
@@ -57,6 +58,7 @@
 #include "cs_matrix_cdo.h"
 #include "cs_sles.h"
 #include "cs_cdo_bc.h"
+#include "cs_hodge.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -83,10 +85,21 @@ struct _cdovb_codits_t {
                                  Not owned by the structure.
                                  This structure is freed later */
 
+  int     main_ts_id;         /* Id of the main timer states structure related
+                                 to this equation */
+  int     pre_ts_id;          /* Id of the timer stats structure gathering all
+                                 steps before the resolution of the linear
+                                 systems */
+  int     solve_ts_id;       /* Id of the timer stats structure related
+                                to the inversion of the linear system */
+  int     post_ts_id;        /* Id of the timer stats structure gathering all
+                                steps afterthe resolution of the linear systems
+                                (post, balance...) */
+
   _Bool   build_system;       /* false => keep the system as it was at the
                                  previous time step */
 
-  /* System size (known boundary entities can be removed if BCs are strongly
+  /* System size (known boundary entities may be removed if BCs are strongly
      enforced) */
 
   cs_lnum_t  n_vertices;
@@ -796,7 +809,7 @@ cs_cdovb_codits_init(const cs_param_eq_t  *eq,
                      const cs_mesh_t      *m,
                      int                   eq_id)
 {
-  cs_lnum_t  i;
+  cs_lnum_t  i, len;
 
   /* Sanity checks */
   assert(eq != NULL);
@@ -811,6 +824,43 @@ cs_cdovb_codits_init(const cs_param_eq_t  *eq,
 
   /* Set of parameters related to this algebraic system */
   sys->eq = eq;
+
+  /* Create timer statistic structure for a simplified profiling */
+  sys->main_ts_id = sys->pre_ts_id = sys->solve_ts_id = sys->post_ts_id = -1;
+
+  if (eq->verbosity > 0) {
+    sys->main_ts_id = cs_timer_stats_create("stages", // parent name
+                                            eq->name,
+                                            eq->name);
+
+    cs_timer_stats_start(sys->main_ts_id);
+    cs_timer_stats_set_plot(sys->main_ts_id, 1);
+
+    if (eq->verbosity > 1) {
+
+      char *label = NULL;
+
+      len = strlen("_solve") + strlen(eq->name) + 1;
+      BFT_MALLOC(label, len, char);
+
+      sprintf(label, "%s_pre", eq->name);
+      sys->pre_ts_id = cs_timer_stats_create(eq->name, label, label);
+      cs_timer_stats_set_plot(sys->pre_ts_id, 1);
+
+      sprintf(label, "%s_solve", eq->name);
+      sys->solve_ts_id = cs_timer_stats_create(eq->name, label, label);
+      cs_timer_stats_set_plot(sys->solve_ts_id, 1);
+
+      sprintf(label, "%s_post", eq->name);
+      sys->post_ts_id = cs_timer_stats_create(eq->name, label, label);
+      cs_timer_stats_set_plot(sys->post_ts_id, 1);
+
+      BFT_FREE(label);
+
+    } // verbosity > 1
+
+  } // verbosity > 0
+
   sys->build_system = true; // call the first build
 
   /* Dimensions: By default, we set number of DoFs as if there is a
@@ -877,6 +927,9 @@ cs_cdovb_codits_free_all(void)
     cs_matrix_destroy(&(sys->a));
 
     BFT_FREE(sys->work);
+
+    if (sys->main_ts_id > -1)
+      cs_timer_stats_stop(sys->main_ts_id);
   }
 
   BFT_FREE(cs_cdovb_scal_systems);
@@ -904,9 +957,6 @@ cs_cdovb_codits_solve(const cs_mesh_t            *m,
                       double                      tcur,
                       int                         eq_id)
 {
-  cs_timer_t  t0, t1;
-  cs_timer_counter_t  time_count;
-
   /* Sanity check */
   if (eq_id < 0 || eq_id >= cs_cdovb_n_scal_systems)
     bft_error(__FILE__, __LINE__, 0, _(" Invalid equation id %d\n"), eq_id);
@@ -923,9 +973,10 @@ cs_cdovb_codits_solve(const cs_mesh_t            *m,
     bft_error(__FILE__, __LINE__, 0,
               _(" Transient simulation is not handled yet.\n"));
 
-  t0 = cs_timer_time();
-
   if (sys->build_system) {
+
+    if (sys->pre_ts_id > -1)
+      cs_timer_stats_start(sys->pre_ts_id);
 
     /* Build diffusion system: stiffness matrix */
     cs_sla_matrix_t  *sla_mat =  _build_diffusion_system(m, connect, quant,
@@ -951,24 +1002,19 @@ cs_cdovb_codits_solve(const cs_mesh_t            *m,
        sla_mat is freed during this call */
     _map_to_matrix(sys, sla_mat);
 
+    if (sys->pre_ts_id > -1)
+      cs_timer_stats_stop(sys->pre_ts_id);
+
   }
 
-  t1 = cs_timer_time();
-  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n  -t- Build system >> %s                    %9.3f s\n"),
-                eq->name, time_count.wall_nsec*1e-9);
-  t0 = cs_timer_time();
-
   /* Solve system */
+  if (sys->solve_ts_id > -1)
+    cs_timer_stats_start(sys->solve_ts_id);
+
   _solve_linear_system(eq, sys->a, sys->rhs, sys->x);
 
-  t1 = cs_timer_time();
-  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n  -t- Linear solver runtime >> %s           %9.3f s\n"),
-                eq->name, time_count.wall_nsec*1e-9);
-
+  if (sys->solve_ts_id > -1)
+    cs_timer_stats_stop(sys->solve_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -999,6 +1045,9 @@ cs_cdovb_codits_post(const cs_cdo_connect_t     *connect,
 
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
+  if (sys->post_ts_id > -1)
+    cs_timer_stats_start(sys->post_ts_id);
+
   /* Set computed solution in field array */
   if (sys->n_dof_vertices < sys->n_vertices)
     for (i = 0; i < sys->n_dof_vertices; i++)
@@ -1012,8 +1061,8 @@ cs_cdovb_codits_post(const cs_cdo_connect_t     *connect,
     for (i = 0; i < v_dir->n_nhmg_elts; i++)
       fld->val[v_dir->elt_ids[i]] = sys->dir_val[i];
 
-
-
+  if (sys->post_ts_id > -1)
+    cs_timer_stats_stop(sys->post_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -111,11 +111,14 @@ cs_user_cdo_numeric_settings(void)
   cs_param_eq_set_space_scheme("Laplace", // Equation name
                                CS_SPACE_SCHEME_CDOVB);
 
-  /* Warining level (former IWARNI)
+  /* Verbosity level (former IWARNI)
      --> Choice between:
-     0 (default) or > 0
+     0  >> default
+     1  >> detailed setup resume and coarse grain timer stats
+     2  >> fine grain timer stats
+     >2 >> more detailed (for debugging purpose)
    */
-  cs_param_eq_set_warning_level("Laplace", 0);
+  cs_param_eq_set_verbosity_level("Laplace", 2);
 }
 
 /*----------------------------------------------------------------------------*/
