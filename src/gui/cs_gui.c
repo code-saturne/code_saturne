@@ -4911,16 +4911,14 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
 
         if (output_frequency > 0 || time_output > 0.) {
 
-          char buf1[5];
-          const char buffer[5] = "%.4i";
+          char buf1[16];
 
           /* Extension creation : format stored in 'buffer' */
 
-          sprintf(buf1, buffer, *ntcabs);
+          sprintf(buf1, "_%.4i", *ntcabs);
 
-          BFT_REALLOC(filename, strlen(filename) + 1 + 4 + 1, char);
+          BFT_REALLOC(filename, strlen(filename) + strlen(buf1) + 1, char);
 
-          strcat(filename, "_");
           strcat(filename, buf1);
 
         }
