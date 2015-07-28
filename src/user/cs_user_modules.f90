@@ -104,6 +104,25 @@ contains
 
   !=============================================================================
 
+  ! Pass pointer to rwork array to C
+
+  function get_user_module_rwork() result(r) &
+      bind(C, name='get_user_module_rwork')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr) :: r
+      if (allocated(rwork)) then
+        r = c_loc(rwork)
+      else
+        r = c_null_ptr
+      endif
+    end function get_user_module_rwork
+  function
+
+  end subroutine finalize_user_module
+
+  !=============================================================================
+
 end module user_module
 
 !-------------------------------------------------------------------------------
