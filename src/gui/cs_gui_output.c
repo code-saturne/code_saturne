@@ -1114,11 +1114,11 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
   for (int i = 0; i < 6; i++)
     ipstdv[i] = 0;
 
-  if (_surfacic_variable_post("effort", true))
+  if (_surfacic_variable_post("stress", true))
     ipstdv[0] += 1;
-  if (_surfacic_variable_post("effort_tangential", false))
+  if (_surfacic_variable_post("stress_tangential", false))
     ipstdv[0] += 2;
-  if (_surfacic_variable_post("effort_normal", false))
+  if (_surfacic_variable_post("stress_normal", false))
     ipstdv[0] += 4;
 
   if (_surfacic_variable_post("yplus", true))

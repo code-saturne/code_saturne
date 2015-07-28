@@ -574,7 +574,7 @@ end subroutine post_boundary_nusselt
 ! Function:
 ! ---------
 
-!> \brief Compute efforts at boundary     .
+!> \brief Compute stress at boundary.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -583,12 +583,12 @@ end subroutine post_boundary_nusselt
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[out]    effort        efforts at selected faces
+!> \param[out]    stress        stress at selected faces
 !_______________________________________________________________________________
 
-subroutine post_efforts &
+subroutine post_stress &
  ( nfbrps , lstfbr ,                                                    &
-   effort )
+   stress )
 
 !===============================================================================
 
@@ -615,7 +615,7 @@ implicit none
 
 integer, intent(in)                                 :: nfbrps
 integer, dimension(nfbrps), intent(in)              :: lstfbr
-double precision, dimension(3, nfbrps), intent(out) :: effort
+double precision, dimension(3, nfbrps), intent(out) :: stress
 
 ! Local variables
 
@@ -630,9 +630,9 @@ call field_get_val_v(iforbr, forbr)
 do iloc = 1, nfbrps
   ifac = lstfbr(iloc)
   srfbn = surfbn(ifac)
-  effort(1,iloc) = forbr(1,ifac)/srfbn
-  effort(2,iloc) = forbr(2,ifac)/srfbn
-  effort(3,iloc) = forbr(3,ifac)/srfbn
+  stress(1,iloc) = forbr(1,ifac)/srfbn
+  stress(2,iloc) = forbr(2,ifac)/srfbn
+  stress(3,iloc) = forbr(3,ifac)/srfbn
 enddo
 
 !--------
@@ -644,13 +644,13 @@ enddo
 !----
 
 return
-end subroutine post_efforts
+end subroutine post_stress
 
 !===============================================================================
 ! Function:
 ! ---------
 
-!> \brief Extract efforts normal to the boundary     .
+!> \brief Extract stress normal to the boundary.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -659,10 +659,10 @@ end subroutine post_efforts
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[out]    effnrm        efforts normal to wall at selected faces
+!> \param[out]    effnrm        stress normal to wall at selected faces
 !_______________________________________________________________________________
 
-subroutine post_efforts_normal &
+subroutine post_stress_normal &
  ( nfbrps , lstfbr ,                                              &
    effnrm )
 
@@ -724,13 +724,13 @@ enddo
 !----
 
 return
-end subroutine post_efforts_normal
+end subroutine post_stress_normal
 
 !===============================================================================
 ! Function:
 ! ---------
 
-!> \brief Compute tangential efforts at boundary     .
+!> \brief Compute tangential stress at boundary.
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -739,12 +739,12 @@ end subroutine post_efforts_normal
 !______________________________________________________________________________!
 !> \param[in]     nfbrps        number of boundary faces to postprocess
 !> \param[in]     lstfbr        list of boundary faces to postprocess
-!> \param[out]    effort        efforts at selected faces
+!> \param[out]    stress        stress at selected faces
 !_______________________________________________________________________________
 
-subroutine post_efforts_tangential &
+subroutine post_stress_tangential &
  ( nfbrps , lstfbr ,                                              &
-   effort )
+   stress )
 
 !===============================================================================
 
@@ -771,7 +771,7 @@ implicit none
 
 integer, intent(in)                                 :: nfbrps
 integer, dimension(nfbrps), intent(in)              :: lstfbr
-double precision, dimension(3, nfbrps), intent(out) :: effort
+double precision, dimension(3, nfbrps), intent(out) :: stress
 
 ! Local variables
 
@@ -793,9 +793,9 @@ do iloc = 1, nfbrps
   fornor =    forbr(1,ifac)*srfnor(1)                                 &
             + forbr(2,ifac)*srfnor(2)                                 &
             + forbr(3,ifac)*srfnor(3)
-  effort(1,iloc) = (forbr(1,ifac) - fornor*srfnor(1)) / srfbn
-  effort(2,iloc) = (forbr(2,ifac) - fornor*srfnor(2)) / srfbn
-  effort(3,iloc) = (forbr(3,ifac) - fornor*srfnor(3)) / srfbn
+  stress(1,iloc) = (forbr(1,ifac) - fornor*srfnor(1)) / srfbn
+  stress(2,iloc) = (forbr(2,ifac) - fornor*srfnor(2)) / srfbn
+  stress(3,iloc) = (forbr(3,ifac) - fornor*srfnor(3)) / srfbn
 enddo
 
 !--------
@@ -807,5 +807,5 @@ enddo
 !----
 
 return
-end subroutine post_efforts_tangential
+end subroutine post_stress_tangential
 

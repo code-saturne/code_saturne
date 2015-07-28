@@ -416,20 +416,20 @@ else if (numtyp .eq. -2) then
 
   enddo ! End of loop on variables
 
-  ! Handle efforts at boundary
-  ! --------------------------------
+  ! Handle stresses at boundary
+  ! ---------------------------
 
   if (iand(ipstdv(ipstfo), 1) .ne. 0) then
 
     ! Compute variable values on boundary faces
 
-    call post_efforts(nfbrps, lstfbr, trafbr)
+    call post_stress(nfbrps, lstfbr, trafbr)
 
     idimt = 3        ! variable dimension
     ientla = .true.  ! interleaved values
     ivarpr = .false. ! defined on work array
 
-    call post_write_var(nummai, 'Efforts', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, 'Stress', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
@@ -438,13 +438,13 @@ else if (numtyp .eq. -2) then
 
     ! Compute variable values on boundary faces
 
-    call post_efforts_tangential(nfbrps, lstfbr, trafbr)
+    call post_stress_tangential(nfbrps, lstfbr, trafbr)
 
     idimt = 3        ! variable dimension
     ientla = .true.  ! interleaved values
     ivarpr = .false. ! defined on work array
 
-    call post_write_var(nummai, 'Tangential Efforts', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, 'Shear Stress', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif
@@ -453,13 +453,13 @@ else if (numtyp .eq. -2) then
 
     ! Calcul des valeurs de la variable sur les faces de bord
 
-    call post_efforts_normal(nfbrps, lstfbr, trafbr)
+    call post_stress_normal(nfbrps, lstfbr, trafbr)
 
     idimt = 1        ! variable dimension
     ientla = .true.  ! interleaved values
     ivarpr = .false. ! defined on work array
 
-    call post_write_var(nummai, 'Normal Efforts', idimt, ientla, ivarpr,  &
+    call post_write_var(nummai, 'Normal Stress', idimt, ientla, ivarpr,  &
                         ntcabs, ttcabs, rbid, rbid, trafbr)
 
   endif

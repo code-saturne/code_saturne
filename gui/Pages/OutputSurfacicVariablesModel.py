@@ -78,7 +78,7 @@ class OutputSurfacicVariablesModel(Model):
 
     def _getListOfVelocityPressureSurfacicProperties(self):
         """
-        Private method: return node of yplus, effort
+        Private method: return node of yplus, stress
         """
         nodeList = []
         self.node_veloce = self.node_models.xmlInitNode('velocity_pressure')
@@ -213,7 +213,7 @@ class OutputSurfacicVariablesTestCase(ModelTest):
                     <variable label="VelocitW" name="velocity_W"/>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="toto" name="yplus" support="boundary"/>
-                    <property label="Efforts" name="effort" support="boundary"/>
+                    <property label="Stress" name="stress" support="boundary"/>
                  </velocity_pressure>'''
         assert node == self.xmlNodeFromString(doc),\
             'Could not set label of property in output surfacic variables model'

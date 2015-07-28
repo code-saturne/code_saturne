@@ -143,14 +143,14 @@ module cs_f_interfaces
 
     !---------------------------------------------------------------------------
 
-    subroutine post_efforts &
-      (nfbrps, lstfbr, effort)
+    subroutine post_stress &
+      (nfbrps, lstfbr, stress)
       use dimens
       use mesh
       integer, intent(in)                                 :: nfbrps
       integer, dimension(nfbrps), intent(in)              :: lstfbr
-      double precision, dimension(3, nfbrps), intent(out) :: effort
-    end subroutine post_efforts
+      double precision, dimension(3, nfbrps), intent(out) :: stress
+    end subroutine post_stress
 
     !---------------------------------------------------------------------------
 

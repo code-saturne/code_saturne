@@ -555,7 +555,7 @@ class OutputVolumicVariablesModelTestCase(ModelTest):
                     <variable label="VelocitW" name="velocity_W"/>
                     <property label="total_pressure" name="total_pressure"/>
                     <property label="Yplus" name="yplus" support="boundary"/>
-                    <property label="Efforts" name="effort" support="boundary"/>
+                    <property label="Stress" name="stress" support="boundary"/>
                  </velocity_pressure>'''
         assert node == self.xmlNodeFromString(doc),\
             'Could not set label of property in output volumic variables model'

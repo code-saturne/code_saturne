@@ -77,7 +77,7 @@ class XMLinit(Variables):
 
     def initialize(self):
         """
-        Verify that all Heading exist only once in the XMLDocument and
+        Verify that all Headings exist only once in the XMLDocument and
         create the missing heading.
         """
         msg = self.__initHeading()
@@ -96,17 +96,17 @@ class XMLinit(Variables):
         n = self.setNewProperty(node, 'yplus')
         n['support'] = 'boundary'
         n['label'] = 'Yplus'
-        n = self.setNewProperty(node, 'effort')
+        n = self.setNewProperty(node, 'stress')
         n['support'] = 'boundary'
-        n['label'] = 'Efforts'
-        if not node.xmlGetChildNode('property', name='effort_tangential'):
-            n = self.setNewProperty(node, 'effort_tangential')
-            n['label'] = 'Efforts, tangential'
+        n['label'] = 'Stress'
+        if not node.xmlGetChildNode('property', name='stress_tangential'):
+            n = self.setNewProperty(node, 'stress_tangential')
+            n['label'] = 'Stress, tangential'
             n['support'] = 'boundary'
             n.xmlInitNode('postprocessing_recording')['status']= "off"
-        if not node.xmlGetChildNode('property', name='effort_normal'):
-            n = self.setNewProperty(node, 'effort_normal')
-            n['label'] = 'Efforts, normal'
+        if not node.xmlGetChildNode('property', name='stress_normal'):
+            n = self.setNewProperty(node, 'stress_normal')
+            n['label'] = 'Stress, normal'
             n['support'] = 'boundary'
             n.xmlInitNode('postprocessing_recording')['status']= "off"
 
@@ -1048,6 +1048,25 @@ class XMLinit(Variables):
         if len(lst) > 1:
             for i in range(len(lst)):
                 lst[i].xmlRemoveNode()
+
+        node = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
+        if node:
+            for f_name in ['effort', 'effort_tangential', 'effort_normal']:
+                nn = node.xmlGetChildNode('property', name=f_name)
+                if nn:
+                    s = None
+                    l = None
+                    ns = nn.xmlGetChildNode('postprocessing_recording')
+                    if ns:
+                        s = ns['status']
+                    l = nn['label']
+                    nn = node.xmlRemoveChild('property', name=f_name)
+                    l = 'Stress' + l[7:]
+                    nn = self.setNewProperty(node, 'stress' + f_name[6:])
+                    nn['label'] = l
+                    nn['support'] = 'boundary'
+                    if s:
+                        nn.xmlInitNode('postprocessing_recording')['status']= s
 
 
 #-------------------------------------------------------------------------------
