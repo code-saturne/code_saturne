@@ -1075,6 +1075,9 @@ if (iecaux.eq.1) then
 
       call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
+      rubriq = 'elcou_recalage_arc_elec'
+      rval(1) = elcou
+      call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
     endif
   endif
 

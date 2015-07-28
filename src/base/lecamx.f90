@@ -1489,6 +1489,11 @@ if ( ippmod(ielarc).ge.1  .or. ippmod(ieljou).ge.1 ) then
     call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
     dpot = rval(1)
     nberro=nberro+ierror
+
+    rubriq = 'elcou_recalage_arc_elec'
+    call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+    elcou = rval(1)
+    nberro=nberro+ierror
   endif
 endif
 
