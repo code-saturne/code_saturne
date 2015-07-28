@@ -5,6 +5,8 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Renamed 'efforts' to 'stress', which should be less confusing.
+
  - Change multigrid default settings based on recent performance benchmarks.
 
  - Changes in Lagrangian Particle tracking, provided by Céline Caruyer.
