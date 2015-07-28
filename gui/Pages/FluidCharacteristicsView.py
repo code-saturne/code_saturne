@@ -135,7 +135,7 @@ T0 = 291.15;
 mu_ref = 18.27e-6;
 
 if ( temperature > 0 && temperature < 555) {
-molecular_viscosity = mu_ref * (T0+CST / temperature+CST) * (temperature/T0)^(3./2.);
+molecular_viscosity = mu_ref * ((T0+CST) / (temperature+CST)) * (temperature/T0)^(3./2.);
 } else {
 molecular_viscosity = -999.0;
 }
