@@ -4,6 +4,8 @@ Version 4.0.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix restart with electric module (issue #59).
+
 - Fix in preconditioned BiCGstab2: use left preconditioner.
 
 Version 4.0.2 (20 Jul 2015)
