@@ -2843,9 +2843,9 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
     if (_properties_choice_id("molecular_viscosity", &choice))
       *ivivar = choice;
 
-  /* T0 if necessary */
-  if (vars->model != NULL && !cs_gui_strcmp(vars->model, "thermal_scalar"))
-    cs_gui_reference_initialization("temperature", t0);
+  // Read T0 in each case for user
+  cs_gui_reference_initialization("temperature", t0);
+
   if (cs_gui_strcmp(vars->model, "compressible_model"))
     cs_gui_reference_initialization("mass_molar", xmasmr);
 
@@ -2853,7 +2853,6 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
     material = _thermal_table_choice("material");
     if (material != NULL) {
       if (!(cs_gui_strcmp(material, "user_material"))) {
-        cs_gui_reference_initialization("temperature", t0);
         phas = _thermal_table_choice("phas");
 
         if (!phas) {

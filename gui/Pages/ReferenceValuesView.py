@@ -149,8 +149,6 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
                 elif thmodel == "temperature_celsius":
                     self.labelUnitT0.setText("C")
                 self.labelInfoT0.hide()
-            else:
-                self.groupBoxTemperature.hide()
 
         gas_comb = GasCombustionModel(self.case).getGasCombustionModel()
         if gas_comb == 'd3p':
@@ -193,7 +191,7 @@ class ReferenceValuesView(QWidget, Ui_ReferenceValuesForm):
             self.lineEditT0.setText(str(t))
             m = self.mdl.getMassemol()
             self.lineEditMassMolar.setText(str(m))
-        elif FluidCharacteristicsModel(self.case).getMaterials() != "user_material":
+        else:
             t = self.mdl.getTemperature()
             self.lineEditT0.setText(str(t))
 

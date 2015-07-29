@@ -49,6 +49,7 @@ from code_saturne.Pages.GasCombustionModel import GasCombustionModel
 from code_saturne.Pages.ElectricalModel import ElectricalModel
 from code_saturne.Pages.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.Pages.CompressibleModel import CompressibleModel
+from code_saturne.Pages.FluidCharacteristicsModel import FluidCharacteristicsModel
 
 #-------------------------------------------------------------------------------
 # Reference values model class
@@ -88,6 +89,9 @@ class ReferenceValuesModel(Model):
         default['oxydant_temperature']   = 353.
         if (self.getParticularPhysical() == "atmo" or
             self.getParticularPhysical() == "gas"):
+            default['reference_temperature'] = 293.15
+        if (self.getParticularPhysical() == "off" and
+            FluidCharacteristicsModel(self.case).getMaterials() == "user_material"):
             default['reference_temperature'] = 293.15
         # molar mass for dry air
         default['reference_mass_molar'] = 28.966e-3
