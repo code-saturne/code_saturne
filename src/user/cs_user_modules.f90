@@ -51,7 +51,7 @@ module user_module
   ! Example: allocatable user arrays
 
   integer,          dimension(:), allocatable :: iwork
-  double precision, dimension(:,:), allocatable :: rwork
+  double precision, dimension(:,:), pointer :: rwork => null()
 
 contains
 
@@ -73,7 +73,7 @@ contains
       allocate(iwork(ncelet), stat=err)
     endif
 
-    if (err .eq. 0 .and. .not.allocated(rwork)) then
+    if (err .eq. 0 .and. .not.associated(rwork)) then
       allocate(rwork(3, ncelet), stat=err)
     endif
 
@@ -88,6 +88,22 @@ contains
 
   !=============================================================================
 
+  ! Pass pointer to rwork array to C
+
+  function get_user_module_rwork() result(r) &
+    bind(C, name='get_user_module_rwork')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr) :: r
+    if (associated(rwork)) then
+      r = c_loc(rwork(1,1))
+    else
+      r = c_null_ptr
+    endif
+  end function get_user_module_rwork
+
+  !=============================================================================
+
   ! Free related arrays
 
   subroutine finalize_user_module
@@ -96,7 +112,7 @@ contains
       deallocate(iwork)
     endif
 
-    if (allocated(rwork)) then
+    if (associated(rwork)) then
       deallocate(rwork)
     endif
 
