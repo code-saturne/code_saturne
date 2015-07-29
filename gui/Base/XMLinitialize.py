@@ -231,20 +231,27 @@ class XMLinit(Variables):
             self.__backwardCompatibilityFrom_3_1()
             self.__backwardCompatibilityFrom_3_2()
             self.__backwardCompatibilityFrom_3_3()
+            self.__backwardCompatibilityFrom_4_0()
         elif from_vers == "3.0":
             self.__backwardCompatibilityFrom_3_0()
             self.__backwardCompatibilityFrom_3_1()
             self.__backwardCompatibilityFrom_3_2()
             self.__backwardCompatibilityFrom_3_3()
+            self.__backwardCompatibilityFrom_4_0()
         elif from_vers == "3.1":
             self.__backwardCompatibilityFrom_3_1()
             self.__backwardCompatibilityFrom_3_2()
             self.__backwardCompatibilityFrom_3_3()
+            self.__backwardCompatibilityFrom_4_0()
         elif from_vers == "3.2":
             self.__backwardCompatibilityFrom_3_2()
             self.__backwardCompatibilityFrom_3_3()
+            self.__backwardCompatibilityFrom_4_0()
         elif from_vers == "3.3":
             self.__backwardCompatibilityFrom_3_3()
+            self.__backwardCompatibilityFrom_4_0()
+        elif from_vers == "4.0":
+            self.__backwardCompatibilityFrom_4_0()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -921,37 +928,11 @@ class XMLinit(Variables):
                 node['name'] = "thermal_flux"
 
 
-    def __backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_4_0(self):
         """
         Change XML in order to ensure backward compatibility.
         """
-        # update wall functions settings
         XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
-        XMLTurbModelNode = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
-        if XMLTurbModelNode:
-            scaleModelNode = XMLTurbModelNode.xmlGetNode('scale_model')
-            wallFunctionNode = XMLTurbModelNode.xmlGetNode('wall_function')
-
-            if scaleModelNode and not wallFunctionNode:
-                scale = XMLTurbModelNode.xmlGetInt('scale_model')
-
-                if scale == 0:
-                    wallFunction = 2
-                elif scale == 1:
-                    wallFunction = 3
-                elif scale == 2:
-                    wallFunction = 4
-                else:
-                    wallFunction = 0
-
-                model = XMLTurbModelNode['model']
-                if model == 'v2f-BL-v2/k' or \
-                   model == 'Rij-EBRSM':
-                    wallFunction = 0
-
-                XMLTurbModelNode.xmlSetData('wall_function', wallFunction)
-                scaleModelNode.xmlRemoveNode()
-
         n = XMLThermoPhysicalModelNode.xmlGetNode('variable', type='thermal')
         if n:
             # try to get turbulent_flux_model
@@ -1048,6 +1029,39 @@ class XMLinit(Variables):
         if len(lst) > 1:
             for i in range(len(lst)):
                 lst[i].xmlRemoveNode()
+
+
+
+    def __backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        # update wall functions settings
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        XMLTurbModelNode = XMLThermoPhysicalModelNode.xmlGetNode('turbulence')
+        if XMLTurbModelNode:
+            scaleModelNode = XMLTurbModelNode.xmlGetNode('scale_model')
+            wallFunctionNode = XMLTurbModelNode.xmlGetNode('wall_function')
+
+            if scaleModelNode and not wallFunctionNode:
+                scale = XMLTurbModelNode.xmlGetInt('scale_model')
+
+                if scale == 0:
+                    wallFunction = 2
+                elif scale == 1:
+                    wallFunction = 3
+                elif scale == 2:
+                    wallFunction = 4
+                else:
+                    wallFunction = 0
+
+                model = XMLTurbModelNode['model']
+                if model == 'v2f-BL-v2/k' or \
+                   model == 'Rij-EBRSM':
+                    wallFunction = 0
+
+                XMLTurbModelNode.xmlSetData('wall_function', wallFunction)
+                scaleModelNode.xmlRemoveNode()
 
         node = XMLThermoPhysicalModelNode.xmlGetNode('velocity_pressure')
         if node:
