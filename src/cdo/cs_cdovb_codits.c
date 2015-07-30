@@ -767,6 +767,8 @@ _solve_linear_system(const cs_param_eq_t        *eq,
                       0,      // aux. size
                       NULL);  // aux. buffers
 
+  cs_sles_free(sles);
+
   bft_printf("\n <iterative solver convergence sumup>\n");
   bft_printf(" -sla- code        %d\n", cvg);
   bft_printf(" -sla- n_iters     %d\n", ret.iter);
