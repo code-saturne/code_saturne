@@ -102,11 +102,17 @@ struct _cs_mesh_location_t {
 
   char                       *select_str;   /* String */
   cs_mesh_location_select_t  *select_fp;    /* Function pointer */
+  int                         n_sub_ids;    /* Number of mesh location ids
+                                               used to build a new mesh location
+                                            */
+  int                        *sub_ids;      /* List of mesh location ids */
+  bool                        complement;   /* Take the complement ? */
 
   cs_lnum_t                   n_elts[3];    /* Number of associated elements:
                                                0: local,
                                                1: with standard ghost elements,
-                                               2: with extended ghost elements */
+                                               2: with extended ghost elements
+                                            */
 
   cs_lnum_t                  *elt_list;     /* List of associated elements,
                                                (0 to n-1 numbering) if non
@@ -151,7 +157,8 @@ static cs_mesh_location_t  *_mesh_location = NULL;
  * \param[in]  id         id of mesh location
  *
  * \return  a pointer to the associated mesh location
- *----------------------------------------------------------------------------*/
+ *\
+/*----------------------------------------------------------------------------*/
 
 static const cs_mesh_location_t *
 _const_mesh_location_by_id(int  id)
@@ -168,6 +175,38 @@ _const_mesh_location_by_id(int  id)
   return retval;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Find the related location id from the location name
+ *
+ * \param[in]  ref_name    name of the location to find
+ *
+ * \return -1 if not found otherwise the associated id
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_find_id_by_name(const char  *ref_name)
+{
+  int  ml_id = -1, reflen = strlen(ref_name);
+
+  for (int i = 0; i < _n_mesh_locations; i++) {
+
+    cs_mesh_location_t  *ml = _mesh_location + i;
+    int len = strlen(ml->name);
+
+    if (reflen == len) {
+      if (strcmp(ref_name, ml->name) == 0) {
+        ml_id = i;
+        break;
+      }
+    }
+
+  } /* Loops on mesh locations */
+
+  return ml_id;
+}
+
 /*----------------------------------------------------------------------------
  * \brief Define a new mesh location.
  *
@@ -178,7 +217,8 @@ _const_mesh_location_by_id(int  id)
  * \param[in]  type      type of location to define
  *
  * \return   id of the newly defined mesh location
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static int
 _mesh_location_define(const char               *name,
@@ -187,7 +227,22 @@ _mesh_location_define(const char               *name,
   int  i;
 
   cs_mesh_location_t  *ml = NULL;
-  int id = _n_mesh_locations;
+
+  /* Check if there is already a mesh location with the same name */
+  int id = _find_id_by_name(name);
+
+  if (id == -1) /* Not found in the current list */
+    id = _n_mesh_locations;
+
+  else { /* A mesh location shares the same name */
+    ml = _mesh_location + id;
+    if (ml->type != type)
+      bft_error(__FILE__, __LINE__, 0,
+                _(" The mesh location %s is already defined as a mesh location"
+                  " but with a different type.\n"
+                  " Please check your settings."), name);
+    return id;
+  }
 
   /* Allocate new locations if necessary */
   if (_n_mesh_locations >= _n_mesh_locations_max) {
@@ -213,12 +268,120 @@ _mesh_location_define(const char               *name,
 
   ml->select_str = NULL;
   ml->select_fp = NULL;
+  ml->n_sub_ids = 0;
+  ml->sub_ids = NULL;
+  ml->complement = false;
 
   for (i = 0; i < 3; i++)
     ml->n_elts[i] = 0;
   ml->elt_list = NULL;
 
   return id;
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Build a list of element ids from a list of existing mesh location
+ *        ids
+ *
+ * \param[in]  name      name of location to define
+ * \param[in]  type      type of location to define
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_by_ml_ids(cs_mesh_location_t  *ml)
+{
+  int  i, count;
+
+  cs_lnum_t  n_elts_max = 0;
+
+  switch(ml->type) {
+  case CS_MESH_LOCATION_CELLS:
+    n_elts_max = ml->mesh->n_cells;
+    break;
+  case CS_MESH_LOCATION_FACES:
+    n_elts_max = ml->mesh->n_b_faces + ml->mesh->n_i_faces;
+    break;
+  case CS_MESH_LOCATION_INTERIOR_FACES:
+    n_elts_max = ml->mesh->n_i_faces;
+    break;
+  case CS_MESH_LOCATION_BOUNDARY_FACES:
+    n_elts_max = ml->mesh->n_b_faces;
+    break;
+  case CS_MESH_LOCATION_VERTICES:
+    n_elts_max = ml->mesh->n_vertices;
+    break;
+  default:
+    assert(0);
+    break;
+  }
+
+  if (ml->n_sub_ids == 1 && ml->complement == false) {
+
+    int  sub_id = ml->sub_ids[0];
+    assert(sub_id < _n_mesh_locations);
+    cs_mesh_location_t  *sub_ml = _mesh_location + sub_id;
+    assert(sub_ml->type == ml->type);
+
+    ml->n_elts[0] = sub_ml->n_elts[0];
+    if (sub_ml->elt_list != NULL) { /* Copy */
+      BFT_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+      memcpy(ml->elt_list, sub_ml->elt_list, ml->n_elts[0]*sizeof(cs_lnum_t));
+    }
+
+  }
+  else {
+
+    bool  *flag = NULL;
+
+    /* Initialize flag */
+    BFT_MALLOC(flag, n_elts_max, bool);
+    for (i = 0; i < n_elts_max; i++)
+      flag[i] = false;
+
+    /* Build flag */
+    for (int ii = 0; ii < ml->n_sub_ids; ii++) {
+
+      int  sub_id = ml->sub_ids[ii];
+      assert(sub_id < _n_mesh_locations);
+      cs_mesh_location_t  *sub_ml = _mesh_location + sub_id;
+      assert(sub_ml->type == ml->type);
+
+      if (sub_ml->elt_list == NULL)
+        for (i = 0; i < n_elts_max; i++)
+          flag[i] = true;
+      else
+        for (i = 0; i < sub_ml->n_elts[0]; i++)
+          flag[sub_ml->elt_list[i]] = true;
+
+    } /* Loop on (sub) mesh locations */
+
+    if (ml->complement) {
+      for (i = 0; i < n_elts_max; i++) {
+        if (flag[i])
+          flag[i] = false;
+        else 
+          flag[i] = true;
+      }
+    }
+
+    /* Compute n_elts[0] */
+    count = 0;
+    for (i = 0; i < n_elts_max; i++)
+      if (flag[i]) count++;
+    ml->n_elts[0] = count;
+
+    /* Build elt_list */
+    if (ml->n_elts[0] != 0 && ml->n_elts != n_elts_max) {
+      BFT_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
+      count = 0;
+      for (i = 0; i < n_elts_max; i++)
+        if (flag[i]) ml->elt_list[count++] = i;
+    }
+
+    BFT_FREE(flag);
+
+  } /* If simple case (n_sub_ids = 1 and no complement) or not */
+
 }
 
 /*=============================================================================
@@ -297,6 +460,7 @@ cs_mesh_location_finalize(void)
     cs_mesh_location_t  *ml = _mesh_location + i;
     BFT_FREE(ml->elt_list);
     BFT_FREE(ml->select_str);
+    BFT_FREE(ml->sub_ids);
   }
 
   _n_mesh_locations = 0;
@@ -406,6 +570,8 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
                     ml_id,
                     ml->n_elts,
                     &(ml->elt_list));
+    else if (ml->n_sub_ids > 0 && ml->sub_ids != NULL)
+      _build_by_ml_ids(ml);
     else
       ml->n_elts[0] = n_elts_max;
 
@@ -490,6 +656,44 @@ cs_mesh_location_add_by_func(const char                 *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define a new mesh location.
+ *
+ * So as to define a subset of mesh entities of a given type, a list of ids
+ * related to existing mesh locations may be given
+ *
+ * \param[in]  name        name of location to define
+ * \param[in]  type        type of location to define
+ * \param[in]  n_ml_ids    number of mesh location ids
+ * \param[in]  ml_ids      list of mesh location ids
+ * \param[in]  complement  take the complement of the selected entities if true
+ *
+ * \return  id of newly created mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_location_add_by_union(const char               *name,
+                              cs_mesh_location_type_t   type,
+                              int                       n_ml_ids,
+                              const int                *ml_ids,
+                              bool                      complement)
+{
+  int  ml_id = _mesh_location_define(name, type);
+  cs_mesh_location_t  *ml = _mesh_location + ml_id;
+
+  ml->complement = complement;
+  ml->n_sub_ids = n_ml_ids;
+  if (ml->n_sub_ids > 0) {
+    BFT_MALLOC(ml->sub_ids, ml->n_sub_ids, int);
+    for (int i = 0; i < ml->n_sub_ids; i++)
+      ml->sub_ids[i] = ml_ids[i];
+  }
+
+  return ml_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Find the related location id from the location name
  *
  * \param[in]  ref_name    name of the location to find
@@ -502,6 +706,8 @@ int
 cs_mesh_location_get_id_by_name(const char  *ref_name)
 {
   int  i, ml_id = -1;
+
+  return _find_id_by_name(ref_name);
 
   int  reflen = strlen(ref_name);
 

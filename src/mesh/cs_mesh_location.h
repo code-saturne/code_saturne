@@ -185,7 +185,7 @@ cs_mesh_location_build(cs_mesh_t  *mesh,
  *   criteria  <-- selection criteria for associated elements, or NULL
  *
  * returns:
- *   id of newly defined created mesh location
+ *   id of newly created mesh location
  *----------------------------------------------------------------------------*/
 
 int
@@ -208,13 +208,37 @@ cs_mesh_location_add(const char               *name,
  *   func <-- pointer to selection function for associated elements, or NULL
  *
  * returns:
- *   id of newly defined created mesh location
+ *   id of newly created mesh location
  *----------------------------------------------------------------------------*/
 
 int
 cs_mesh_location_add_by_func(const char                 *name,
                              cs_mesh_location_type_t     type,
                              cs_mesh_location_select_t  *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a new mesh location.
+ *
+ * So as to define a subset of mesh entities of a given type, a list of ids
+ * related to existing mesh locations may be given
+ *
+ * \param[in]  name        name of location to define
+ * \param[in]  type        type of location to define
+ * \param[in]  n_ml_ids    number of mesh location ids
+ * \param[in]  ml_ids      list of mesh location ids
+ * \param[in]  complement  take the complement of the selected entities if true
+ *
+ * \return  id of newly created mesh location
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mesh_location_add_by_union(const char               *name,
+                              cs_mesh_location_type_t   type,
+                              int                       n_ml_ids,
+                              const int                *ml_ids,
+                              bool                      complement);
 
 /*----------------------------------------------------------------------------
  * Get a mesh location's name.
