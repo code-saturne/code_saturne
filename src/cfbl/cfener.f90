@@ -46,8 +46,6 @@
 !> \param[in]     smacel        variable value associated to the mass source
 !>                               term (for ivar=ipr, smacel is the mass flux
 !>                               \f$ \Gamma^n \f$)
-!> \param[in]     viscf         visc*surface/dist at internal faces
-!> \param[in]     viscb         visc*surface/dist at boundary faces
 !_______________________________________________________________________________
 
 subroutine cfener &
@@ -55,8 +53,7 @@ subroutine cfener &
    iscal  ,                                                       &
    icepdc , icetsm , itypsm ,                                     &
    dt     , propce ,                                              &
-   ckupdc , smacel ,                                              &
-   viscf  , viscb  )
+   ckupdc , smacel )
 
 !===============================================================================
 
@@ -97,7 +94,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet)
 double precision propce(ncelet,*)
 double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
 
 ! Local variables
 
@@ -116,19 +112,19 @@ double precision sclnor, thetap, epsrsp, relaxp
 integer          inc    , iccocg , imucpp , idftnp , iswdyp
 integer          f_id0  , ii , jj
 integer          iel1  , iel2
-integer          iterns
+integer          iterns, irecpt
 
-double precision flux
+double precision flux, flui, fluj
 double precision dijpfx, dijpfy, dijpfz, pnd  , pip   , pjp
 double precision diipfx, diipfy, diipfz, djjpfx, djjpfy, djjpfz
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: wb
+double precision, allocatable, dimension(:) :: wb, iprtfl, bprtfl, viscf, viscb
 double precision, allocatable, dimension(:) :: dpvar, smbrs, rovsdt
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:) :: w7, w9
+double precision, allocatable, dimension(:) :: gapinj
+double precision, allocatable, dimension(:) :: w1, w7, w9
 
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom, cromo
@@ -163,7 +159,6 @@ allocate(smbrs(ncelet), rovsdt(ncelet))
 
 ! Allocate work arrays
 allocate(grad(3,ncelet))
-allocate(w1(ncelet))
 allocate(w7(ncelet), w9(ncelet))
 allocate(dpvar(ncelet))
 
@@ -237,11 +232,13 @@ enddo
 !                                     inj
 if (ncesmp.gt.0) then
   iterns = 1
+  allocate(gapinj(ncelet))
   call catsma ( ncelet , ncel , ncesmp , iterns ,                              &
                 isno2t, thetav(ivar),                                          &
                 icetsm , itypsm(1,ivar),                                       &
                 cell_f_vol    , cvara_energ   , smacel(1,ivar),                &
-                smacel(1,ipr) , smbrs , rovsdt , w1    )
+                smacel(1,ipr) , smbrs , rovsdt , gapinj)
+  deallocate(gapinj)
 endif
 
 
@@ -255,8 +252,8 @@ do iel = 1, ncel
 enddo
 
 !                                       __        v
-!     TERME DE DISSIPATION VISQUEUS   : >  ((SIGMA *U).n)  *S
-!     ==============================    --               ij  ij
+!     VISCOUS DISSIPATION TERM        : >  ((SIGMA *U).n)  *S
+!     ========================          --               ij  ij
 
 if (idiff(iu).ge. 1) then
   call cfdivs(smbrs, vel)
@@ -266,94 +263,96 @@ endif
 ! PRESSURE TRANSPORT TERM  : - >  (---)  *(Q    .n)  *S
 ! =======================      --  RHO ij   pr     ij  ij
 
-!     Avec Reconstruction : ca pose probleme pour l'instant
+irecpt = 0
+allocate(iprtfl(nfac))
+allocate(bprtfl(nfabor))
 
-!   Calcul du gradient de P/RHO
+if (irecpt.eq.1) then
 
-!      do iel = 1, ncel
-!        w7(iel) = cvar_pr(iel)/crom(iel)
-!      enddo
+  ! With reconstruction: yields problems for now
 
-! Rq : A defaut de connaitre les parametres pour P/RHO on prend ceux de P
+  ! gradient of P/rho
 
-!      iii = ipr
-!      inc = 1
-!      iccocg = 1
-!      nswrgp = nswrgr(iii)
-!      imligp = imligr(iii)
-!      iwarnp = iwarni(iii)
-!      epsrgp = epsrgr(iii)
-!      climgp = climgr(iii)
-!      extrap = extrag(iii)
+  do iel = 1, ncel
+    w7(iel) = cvar_pr(iel)/crom(iel)
+  enddo
 
-!       On alloue localement 2 tableaux de NFABOR pour le calcul
-!       de COEFA et COEFB de P/RHO
+  ! Since we don't know the parameters for P/rho,
+  ! parameters of P are set.
 
-!      allocate(coefap(nfabor))
-!      allocate(coefbp(nfabor))
+  iii = ipr
+  inc = 1
+  iccocg = 1
+  nswrgp = nswrgr(iii)
+  imligp = imligr(iii)
+  iwarnp = iwarni(iii)
+  epsrgp = epsrgr(iii)
+  climgp = climgr(iii)
+  extrap = extrag(iii)
 
-!      do ifac = 1, nfabor
-!        coefap(ifac) = zero
-!        coefbp(ifac) = 1.d0
-!      enddo
+  allocate(coefap(nfabor))
+  allocate(coefbp(nfabor))
 
-!  f_id0 = -1 (indique pour la periodicite de rotation que la variable
-!              n'est pas  Rij)
-!      f_id0 = -1
-!      call gradient_s
-!     & ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,
-!     &   iwarnp , epsrgp , climgp , extrap ,
-!     &   w7     , coefap , coefbp ,
-!     &   grad   )
+  do ifac = 1, nfabor
+    coefap(ifac) = zero
+    coefbp(ifac) = 1.d0
+  enddo
 
-!     Faces internes
-!      do ifac = 1, nfac
+  !  f_id0 = -1
+  ! (indicates for the periodicity of rotation that the variable is not a Rij)
+  f_id0 = -1
 
-!        ii = ifacel(1,ifac)
-!        jj = ifacel(2,ifac)
+  call gradient_s                                       &
+ ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,&
+   iwarnp , epsrgp , climgp , extrap ,                  &
+   w7     , coefap , coefbp ,                           &
+   grad   )
 
-!        dijpfx = dijpf(1,ifac)
-!        dijpfy = dijpf(2,ifac)
-!        dijpfz = dijpf(3,ifac)
+  ! internal faces
+  do ifac = 1, nfac
 
-!        pnd   = pond(ifac)
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
 
-!        Calcul II' et JJ'
+    dijpfx = dijpf(1,ifac)
+    dijpfy = dijpf(2,ifac)
+    dijpfz = dijpf(3,ifac)
 
-!        diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+ (1.d0-pnd) * dijpfx)
-!        diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+ (1.d0-pnd) * dijpfy)
-!        diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+ (1.d0-pnd) * dijpfz)
-!        djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+       pnd  * dijpfx
-!        djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+       pnd  * dijpfy
-!        djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+       pnd  * dijpfz
+    pnd   = pond(ifac)
 
-!        pip = w7(ii) +grad(1,ii)*diipfx+grad(2,ii)*diipfy+grad(3,ii)*diipfz
-!        pjp = w7(jj) +grad(1,jj)*djjpfx+grad(2,jj)*djjpfy+grad(3,jj)*djjpfz
+    ! Computation of II' and JJ'
 
-!        flui = (imasfl(ifac)+abs(imasfl(ifac)))
-!        fluj = (imasfl(ifac)-abs(imasfl(ifac)))
+    diipfx = cdgfac(1,ifac) - (xyzcen(1,ii)+ (1.d0-pnd) * dijpfx)
+    diipfy = cdgfac(2,ifac) - (xyzcen(2,ii)+ (1.d0-pnd) * dijpfy)
+    diipfz = cdgfac(3,ifac) - (xyzcen(3,ii)+ (1.d0-pnd) * dijpfz)
+    djjpfx = cdgfac(1,ifac) -  xyzcen(1,jj)+       pnd  * dijpfx
+    djjpfy = cdgfac(2,ifac) -  xyzcen(2,jj)+       pnd  * dijpfy
+    djjpfz = cdgfac(3,ifac) -  xyzcen(3,jj)+       pnd  * dijpfz
 
-!        viscf(ifac) = -(pnd*pip*flui+pnd*pjp*fluj)
+    pip = w7(ii) +grad(1,ii)*diipfx+grad(2,ii)*diipfy+grad(3,ii)*diipfz
+    pjp = w7(jj) +grad(1,jj)*djjpfx+grad(2,jj)*djjpfy+grad(3,jj)*djjpfz
 
-!      enddo
+    flui = (imasfl(ifac)+abs(imasfl(ifac)))
+    fluj = (imasfl(ifac)-abs(imasfl(ifac)))
 
-!     Sans Reconstruction
+    iprtfl(ifac) = -(pnd*pip*flui+pnd*pjp*fluj)
 
-!     En periodique et parallele, echange avant utilisation
-!       des valeurs aux faces
-if (irangp.ge.0.or.iperio.eq.1) then
-  call synsca(crom)
-  !==========
+  enddo
+
+else
+
+  ! without reconstruction
+
+  ! Internal faces
+  do ifac = 1, nfac
+    iel1 = ifacel(1,ifac)
+    iel2 = ifacel(2,ifac)
+    iprtfl(ifac) =                                                             &
+         - cvar_pr(iel1)/crom(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))  &
+         - cvar_pr(iel2)/crom(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
+  enddo
+
 endif
-
-! Internal faces
-do ifac = 1, nfac
-  iel1 = ifacel(1,ifac)
-  iel2 = ifacel(2,ifac)
-  viscf(ifac) =                                                                 &
-     - cvar_pr(iel1)/crom(iel1) * 0.5d0*(imasfl(ifac) +abs(imasfl(ifac)))             &
-     - cvar_pr(iel2)/crom(iel2) * 0.5d0*(imasfl(ifac) -abs(imasfl(ifac)))
-enddo
 
 ! Boundary faces: for the faces where a flux (Rusanov or analytical) has been
 ! computed, the standard contribution is replaced by this flux in bilsc2.
@@ -364,18 +363,20 @@ call field_get_coefb_s(ivarfl(ipr), coefb_p)
 do ifac = 1, nfabor
   if (icvfli(ifac).eq.0) then
     iel = ifabor(ifac)
-    viscb(ifac) = - bmasfl(ifac)                                                &
-                    * (coefa_p(ifac) + coefb_p(ifac)*cvar_pr(iel))                  &
+    bprtfl(ifac) = - bmasfl(ifac)                                            &
+                    * (coefa_p(ifac) + coefb_p(ifac)*cvar_pr(iel))          &
                     / brom(ifac)
   else
-    viscb(ifac) = 0.d0
+    bprtfl(ifac) = 0.d0
   endif
 enddo
 
 !     Divergence
 init = 0
-call divmas(init, viscf, viscb, smbrs)
+call divmas(init, iprtfl, bprtfl, smbrs)
 
+deallocate(iprtfl)
+deallocate(bprtfl)
 
 ! GRAVITATION FORCE TERM : RHO*g.U *VOLUME
 ! ======================
@@ -390,6 +391,10 @@ enddo
 !                                  Kij*Sij           LAMBDA   Cp   MUT
 !     FACE DIFFUSION "VELOCITY" : --------- avec K = ------ + -- .------
 !     =========================    IJ.nij              Cv     Cv  SIGMAS
+
+allocate(w1(ncelet))
+allocate(viscf(nfac))
+allocate(viscb(nfabor))
 
 if( idiff(ivar).ge. 1 ) then
 
@@ -446,11 +451,11 @@ if( idiff(ivar).ge. 1 ) then
   ! Compute e - CvT
 
   ! At cell centers
-  call cs_cf_thermo_eps_sup(w9, ncel)
+  call cs_cf_thermo_eps_sup(crom, w9, ncel)
   !========================
 
   ! At boundary faces centers
-  call cs_cf_thermo_eps_sup(wb, nfabor)
+  call cs_cf_thermo_eps_sup(brom, wb, nfabor)
   !========================
 
 ! Divergence computation with reconstruction
@@ -636,6 +641,8 @@ call codits                                                      &
   rovsdt , smbrs  , cvar_energ      , dpvar  ,                   &
   rvoid  , rvoid  )
 
+deallocate(viscf)
+deallocate(viscb)
 
 !===============================================================================
 ! 5. Printings and clippings

@@ -349,12 +349,14 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
  * Compute epsilon sup for perfect gas.
  *
  * parameters:
+ *   dens    <-- array of density values
  *   eps_sup --> epsilon sup array
  *   l_size  <-- l_size of the array
  *----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_eps_sup(cs_real_t *eps_sup,
+cs_cf_thermo_eps_sup(cs_real_t *dens,
+                     cs_real_t *eps_sup,
                      cs_lnum_t  l_size);
 
 /*----------------------------------------------------------------------------

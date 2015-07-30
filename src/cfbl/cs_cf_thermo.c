@@ -368,7 +368,7 @@ cs_cf_check_density(cs_real_t *dens,
 
 void
 cs_cf_check_temperature(cs_real_t *temp,
-                     cs_lnum_t l_size)
+                        cs_lnum_t l_size)
 {
   /* Local variables */
   cs_gnum_t ierr;
@@ -1409,29 +1409,33 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
  * \f[\epsilon_{\textrm{sup}} = e - C_v T\f]
  *
  * for perfect gas: \f[\epsilon_{\textrm{sup}} = 0\f]
-
+ *
+ * \param[in]     dens    array of density values
  * \param[out]    eps_sup epsilon sup array
  * \param[in]     l_size  l_size of the array
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_eps_sup(cs_real_t *eps_sup,
+cs_cf_thermo_eps_sup(cs_real_t *dens,
+                     cs_real_t *eps_sup,
                      cs_lnum_t  l_size)
 {
   int ieos = cs_glob_fluid_properties->ieos;
 
   /* Stiffened gas (perfect gas if infinite pressure equals 0) */
   if (ieos == 1 || ieos == 2) {
+    cs_real_t psginf = cs_glob_fluid_properties->psginf;
+
     for (cs_lnum_t ii = 0; ii < l_size; ii++)
-      eps_sup[ii] = 0.;
+      eps_sup[ii] = psginf / dens[ii];
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This subroutine is a driver allowing to call the appropriate
- * thermodynamicalfunctions depending on the quantities provided by the user.
+ * thermodynamical functions depending on the quantities provided by the user.
  * Hence it is only used during the initialization step and at the boundaries
  * of type supersonic inlet. It is described in the following how to select the
  * quantity to be returned.

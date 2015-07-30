@@ -309,12 +309,12 @@ module cs_cf_bindings
 
     ! Interface to C function computing epsilon sup.
 
-    subroutine cs_cf_thermo_eps_sup(eps_sup, l_size) &
+    subroutine cs_cf_thermo_eps_sup(dens, eps_sup, l_size) &
       bind(C, name='cs_cf_thermo_eps_sup')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: l_size
-      real(kind=c_double), dimension(*) :: eps_sup
+      real(kind=c_double), dimension(*) :: dens, eps_sup
     end subroutine cs_cf_thermo_eps_sup
 
   end interface
