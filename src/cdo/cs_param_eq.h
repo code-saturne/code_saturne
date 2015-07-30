@@ -186,8 +186,9 @@ typedef struct {
 
   /* Boundary conditions */
   int                         n_bc_defs;
-  cs_param_bc_def_t          *bc_defs;
-  cs_param_bc_navsto_type_t   default_bc;
+  cs_param_bc_def_t   *bc_defs;
+  cs_param_bc_type_t   default_velocity_bc;
+  cs_param_bc_type_t   default_pressure_bc;
 
 } cs_param_navsto_t;
 
@@ -249,7 +250,7 @@ cs_param_eq_add(const char               *name,
                 bool                      is_steady,
                 bool                      do_convection,
                 bool                      do_diffusion,
-                cs_param_bc_basic_type_t  default_bc_type);
+                cs_param_bc_type_t        default_bc_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -441,10 +442,10 @@ cs_param_eq_hodge_diffusion_set_coef(const char   *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_add_scalbc_by_val(const char                *eq_name,
-                              const char                *location_name,
-                              cs_param_bc_basic_type_t   bc_type,
-                              double                     bc_val);
+cs_param_eq_add_scalbc_by_val(const char           *eq_name,
+                              const char           *location_name,
+                              cs_param_bc_type_t    bc_type,
+                              double                bc_val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -459,10 +460,10 @@ cs_param_eq_add_scalbc_by_val(const char                *eq_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_add_scalbc_by_analytic(const char                *eq_name,
-                                   const char                *location_name,
-                                   cs_param_bc_basic_type_t   bc_type,
-                                   cs_analytic_func_t        *func);
+cs_param_eq_add_scalbc_by_analytic(const char          *eq_name,
+                                   const char          *location_name,
+                                   cs_param_bc_type_t   bc_type,
+                                   cs_analytic_func_t  *func);
 
 /*----------------------------------------------------------------------------*/
 /*!

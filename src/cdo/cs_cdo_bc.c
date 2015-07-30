@@ -171,10 +171,10 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
                cs_lnum_t             n_b_faces)
 {
   cs_lnum_t  i, id, shift, n_ents;
-  cs_lnum_t  count[CS_PARAM_BC_N_BASIC_TYPES];
-  cs_param_bc_basic_type_t  type;
+  cs_lnum_t  count[CS_PARAM_N_BC_TYPES];
+  cs_param_bc_type_t  type;
 
-  cs_param_bc_basic_type_t  *bc_types = NULL;
+  cs_param_bc_type_t  *bc_types = NULL;
   cs_cdo_bc_t  *bc = NULL;
 
   /* Sanity check */
@@ -189,9 +189,8 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
   bc->neu = NULL;
   bc->rob = NULL;
 
-  if (param_bc->default_bc.basic != CS_PARAM_BC_BASIC_NONE    &&
-      param_bc->default_bc.basic != CS_PARAM_BC_HMG_DIRICHLET &&
-      param_bc->default_bc.basic != CS_PARAM_BC_HMG_NEUMANN)
+  if (param_bc->default_bc != CS_PARAM_BC_HMG_DIRICHLET &&
+      param_bc->default_bc != CS_PARAM_BC_HMG_NEUMANN)
     bft_error(__FILE__, __LINE__, 0,
               _(" Incompatible type of boundary condition by default.\n"
                 " Please modify your settings.\n"));
@@ -199,10 +198,10 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
   if (n_b_faces > 0) {
 
     // 1) build bc_types
-    BFT_MALLOC(bc_types, n_b_faces, cs_param_bc_basic_type_t);
+    BFT_MALLOC(bc_types, n_b_faces, cs_param_bc_type_t);
 
     for (i = 0; i < n_b_faces; i++)
-      bc_types[i] = param_bc->default_bc.basic;
+      bc_types[i] = param_bc->default_bc;
 
     /* Loop on the definition of each boundary condition */
     for (id = 0; id < param_bc->n_defs; id++) {
@@ -214,16 +213,16 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
       if (elt_ids == NULL) {
         assert(n_elts[0] == n_b_faces);
         for (i = 0; i < n_elts[0]; i++)
-          bc_types[i] = def->bc_type.basic;
+          bc_types[i] = def->bc_type;
       }
       else
         for (i = 0; i < n_elts[0]; i++)
-          bc_types[elt_ids[i]] = def->bc_type.basic;
+          bc_types[elt_ids[i]] = def->bc_type;
 
     } // Loop on boundary conditions
 
     // 2) Define bc->type_shift and bc->type_size
-    for (i = 0; i < CS_PARAM_BC_N_BASIC_TYPES; i++)
+    for (i = 0; i < CS_PARAM_N_BC_TYPES; i++)
       count[i] = 0;
     for (i = 0; i < n_b_faces; i++)
       count[bc_types[i]] += 1;
@@ -240,19 +239,12 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
 
     /* Sanity checks */
     cs_lnum_t  n_counted_faces = 0;
-    for (i = 0; i < CS_PARAM_BC_N_BASIC_TYPES; i++)
+    for (i = 0; i < CS_PARAM_N_BC_TYPES; i++)
       n_counted_faces += count[i];
     assert(n_counted_faces == n_b_faces);
 
-    // TODO: MPI_Allreduce
-    if (count[CS_PARAM_BC_BASIC_NONE] > 0)
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %d border faces have no boundary condition set.\n"
-                  " Please check your settings.\n"),
-                count[CS_PARAM_BC_BASIC_NONE]);
-
     // 4) Define each cs_cdo_bc_list_t
-    for (i = 0; i < CS_PARAM_BC_N_BASIC_TYPES; i++)
+    for (i = 0; i < CS_PARAM_N_BC_TYPES; i++)
       count[i] = 0;
 
     /* Loop on the definition of each boundary condition */
@@ -262,7 +254,7 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
       const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(def->loc_id);
       const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(def->loc_id);
 
-      type = def->bc_type.basic;
+      type = def->bc_type;
       switch (type) {
 
       case CS_PARAM_BC_DIRICHLET:
@@ -413,7 +405,7 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
   cs_lnum_t  i, j, f_id, v_id, def_id;
 
   cs_lnum_t  n_nhmg_vertices = 0, n_hmg_vertices = 0;
-  cs_param_bc_basic_type_t  *vtx_type = NULL;
+  cs_param_bc_type_t  *vtx_type = NULL;
   short int *vtx_def = NULL;
 
   const cs_cdo_bc_list_t  *face_dir = face_bc->dir;
@@ -421,10 +413,10 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
   const cs_lnum_t  *f2v_lst = m->b_face_vtx_lst;
 
   /* Initialization */
-  BFT_MALLOC(vtx_type, m->n_vertices, cs_param_bc_basic_type_t);
+  BFT_MALLOC(vtx_type, m->n_vertices, cs_param_bc_type_t);
   BFT_MALLOC(vtx_def, m->n_vertices, short int);
   for (i = 0; i < m->n_vertices; i++) {
-    vtx_type[i] = CS_PARAM_BC_BASIC_NONE;
+    vtx_type[i] = CS_PARAM_N_BC_TYPES;
     vtx_def[i] = -1;
   }
 

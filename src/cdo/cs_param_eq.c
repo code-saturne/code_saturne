@@ -220,17 +220,16 @@ cs_param_eq_get_by_id(int   eq_id)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_param_eq_add(const char               *name,
-                const char               *varname,
-                cs_param_eq_type_t        type,
-                _Bool                     is_steady,
-                _Bool                     do_convection,
-                _Bool                     do_diffusion,
-                cs_param_bc_basic_type_t  default_bc_basic_type)
+cs_param_eq_add(const char           *name,
+                const char           *varname,
+                cs_param_eq_type_t    type,
+                _Bool                 is_steady,
+                _Bool                 do_convection,
+                _Bool                 do_diffusion,
+                cs_param_bc_type_t    default_bc_type)
 {
   int  len = strlen(name)+1;
   int  eq_id = cs_param_eq_get_id_by_name(name);
-  cs_param_bc_type_t  default_bc_type;
   cs_param_eq_t  *eq = NULL;
 
   if (eq_id > -1) {
@@ -296,7 +295,6 @@ cs_param_eq_add(const char               *name,
     strncpy(eq->varname, varname, len);
   }
 
-  default_bc_type.basic = default_bc_basic_type;
   eq->bc = cs_param_bc_create(default_bc_type,
                               false);           // penalized BCs ?
 
@@ -680,10 +678,10 @@ cs_param_eq_hodge_diffusion_set_coef(const char   *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_add_scalbc_by_val(const char               *eq_name,
-                              const char               *ml_name,
-                              cs_param_bc_basic_type_t  bc_type,
-                              double                    bc_val)
+cs_param_eq_add_scalbc_by_val(const char          *eq_name,
+                              const char          *ml_name,
+                              cs_param_bc_type_t   bc_type,
+                              double               bc_val)
 {
   int  eq_id, ml_id, def_id;
   cs_def_t  def_coef1, def_coef2;
@@ -727,10 +725,10 @@ cs_param_eq_add_scalbc_by_val(const char               *eq_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_add_scalbc_by_analytic(const char                *eq_name,
-                                   const char                *ml_name,
-                                   cs_param_bc_basic_type_t   bc_type,
-                                   cs_analytic_func_t        *analytic)
+cs_param_eq_add_scalbc_by_analytic(const char           *eq_name,
+                                   const char           *ml_name,
+                                   cs_param_bc_type_t    bc_type,
+                                   cs_analytic_func_t   *analytic)
 {
   int  eq_id, ml_id, def_id;
   cs_def_t  def_coef1, def_coef2;
@@ -786,7 +784,7 @@ cs_param_eq_add_source_term_by_val(const char                    *eq_name,
   int  k, l, eq_id, ml_id, st_id;
   cs_def_t  imp_def, exp_def;
 
-  cs_param_var_type_t  var_type = CS_PARAM_VAR_NONE;
+  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
 
   /* Retrieve related id */
   _check_eq_name(eq_name, &eq_id);
@@ -867,7 +865,7 @@ cs_param_eq_add_source_term_by_user(const char                   *eq_name,
   int  eq_id, ml_id, st_id;
   cs_def_t  imp_def, exp_def;
 
-  cs_param_var_type_t  var_type = CS_PARAM_VAR_NONE;
+  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
 
   /* Retrieve related id */
   _check_eq_name(eq_name, &eq_id);
@@ -937,7 +935,7 @@ cs_param_eq_add_source_term_by_analytic(const char                  *eq_name,
   int  eq_id, ml_id, st_id;
   cs_def_t  imp_def, exp_def;
 
-  cs_param_var_type_t  var_type = CS_PARAM_VAR_NONE;
+  cs_param_var_type_t  var_type = CS_PARAM_N_VAR_TYPES;
 
   /* Retrieve related id */
   _check_eq_name(eq_name, &eq_id);

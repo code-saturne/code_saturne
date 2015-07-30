@@ -78,8 +78,7 @@ static cs_param_pty_t  *cs_param_properties = NULL;
 
 static const char
 cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_CDO_LEN_NAME]=
-  { N_("none"),
-    N_("by value"),
+  { N_("by value"),
     N_("by field"),
     N_("by evaluator"),
     N_("by analytic function"),
@@ -89,59 +88,48 @@ cs_param_def_type_name[CS_PARAM_N_DEF_TYPES][CS_CDO_LEN_NAME]=
 
 static const char
 cs_param_var_type_name[CS_PARAM_N_VAR_TYPES][CS_CDO_LEN_NAME]=
-  { N_("none"),
-    N_("scalar"),
+  { N_("scalar"),
     N_("vector"),
     N_("tensor") };
 
 static const char
-cs_param_pty_type_name[CS_PARAM_PTY_N_TYPES][CS_CDO_LEN_NAME]=
-  { N_("none"),
-    N_("isotropic"),
+cs_param_pty_type_name[CS_PARAM_N_PTY_TYPES][CS_CDO_LEN_NAME]=
+  { N_("isotropic"),
     N_("orthotropic"),
     N_("anisotropic") };
 
 static const char
-cs_param_bc_basic_type_name[CS_PARAM_BC_N_BASIC_TYPES][CS_CDO_LEN_NAME] =
-  { N_("None"),
-    N_("Homogeneous Dirichlet"),
+cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_CDO_LEN_NAME] =
+  { N_("Homogeneous Dirichlet"),
     N_("Dirichlet"),
     N_("Homogeneous Neumann"),
     N_("Neumann"),
     N_("Robin") };
 
 static const char
-cs_param_bc_navsto_type_name[CS_PARAM_BC_N_NAVSTO_TYPES][CS_CDO_LEN_NAME] =
-  { N_("None"),
-    N_("Wall"),
-    N_("Sliding wall"),
+cs_param_boundary_type_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
+  { N_("Wall"),
     N_("Inlet"),
     N_("Outlet"),
-    N_("Symmetry"),
-    N_("Tang. velocity & Norm. velocity"),
-    N_("Norm. velocity & Tang. vorticity"),
-    N_("Tang. velocity & Pressure") };
+    N_("Symmetry") };
 
 static const char
-cs_param_hodge_type_desc[CS_PARAM_HODGE_N_TYPES][CS_CDO_LEN_NAME] =
-  { "None",
-    "VpCd",
+cs_param_hodge_type_desc[CS_PARAM_N_HODGE_TYPES][CS_CDO_LEN_NAME] =
+  { "VpCd",
     "EpFd",
     "FpEd",
     "EdFp",
     "CpVd"  };
 
 static const char
-cs_param_hodge_algo_desc[CS_PARAM_HODGE_N_ALGOS][CS_CDO_LEN_NAME] =
-  { "None",
-    "Voronoi",
+cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_CDO_LEN_NAME] =
+  { "Voronoi",
     "Whitney on the Barycentric Subdivision (WBS)",
     "COnsistency-STabilization splitting (COST)" };
 
 static const char
 cs_param_source_term_type_name[CS_PARAM_N_SOURCE_TERM_TYPES][CS_CDO_LEN_NAME] =
-  { N_("none"),
-    N_("standard (explicit)"),
+  { N_("standard (explicit)"),
     N_("implicit"),
     N_("implicit/explicit"),
     N_("mass"),
@@ -335,7 +323,7 @@ cs_param_pty_add(const char             *name,
 
   /*Default initialization */
   pty->flag = 0;
-  pty->def_type = CS_PARAM_DEF_NONE;
+  pty->def_type = CS_PARAM_N_DEF_TYPES;
   pty->def.get.val = 0;
 }
 
@@ -837,20 +825,20 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_bc_def_set(cs_param_bc_def_t         *bc_def,
-                    int                        loc_id,
-                    cs_param_bc_basic_type_t   bc_type,
-                    cs_param_def_type_t        def_type,
-                    cs_def_t                   def_coef1,
-                    cs_def_t                   def_coef2)
+cs_param_bc_def_set(cs_param_bc_def_t       *bc_def,
+                    int                      loc_id,
+                    cs_param_bc_type_t       bc_type,
+                    cs_param_def_type_t      def_type,
+                    cs_def_t                 def_coef1,
+                    cs_def_t                 def_coef2)
 {
   /* Sanity checks */
   assert(bc_def != NULL);
-  assert(def_type != CS_PARAM_DEF_NONE);
-  assert(bc_type != CS_PARAM_BC_BASIC_NONE);
+  assert(def_type != CS_PARAM_N_DEF_TYPES);
+  assert(bc_type != CS_PARAM_N_BC_TYPES);
 
   bc_def->loc_id = loc_id;
-  bc_def->bc_type.basic = bc_type;
+  bc_def->bc_type = bc_type;
   bc_def->def_type = def_type;
   bc_def->def_coef1 = def_coef1;
   bc_def->def_coef2 = def_coef2;
@@ -1046,9 +1034,6 @@ const char *
 cs_param_get_precond_name(cs_param_precond_type_t  precond)
 {
   switch (precond) {
-  case CS_PARAM_PRECOND_NONE:
-    return  "None";
-    break;
   case CS_PARAM_PRECOND_DIAG:
     return  "Diagonal";
     break;

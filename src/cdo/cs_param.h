@@ -73,7 +73,6 @@ typedef union {
 
 typedef enum {
 
-  CS_PARAM_DEF_NONE,
   CS_PARAM_DEF_BY_VALUE,
   CS_PARAM_DEF_BY_FIELD,
   CS_PARAM_DEF_BY_EVALUATOR,
@@ -88,7 +87,6 @@ typedef enum {
 /* Dimension of the variable to deal with */
 typedef enum {
 
-  CS_PARAM_VAR_NONE,
   CS_PARAM_VAR_SCAL,    // scalar variable (dim = 1)
   CS_PARAM_VAR_VECT,    // vector variable (dim = 3)
   CS_PARAM_VAR_SYMTENS, // symmetric tensor variable (dim = 6)
@@ -104,11 +102,10 @@ typedef enum {
    or viscosity */
 typedef enum {
 
-  CS_PARAM_PTY_NONE,
   CS_PARAM_PTY_ISO,
   CS_PARAM_PTY_ORTHO,
   CS_PARAM_PTY_ANISO,
-  CS_PARAM_PTY_N_TYPES
+  CS_PARAM_N_PTY_TYPES
 
 } cs_param_pty_type_t;
 
@@ -143,23 +140,21 @@ typedef struct {
 
 typedef enum {
 
-  CS_PARAM_HODGE_TYPE_NONE,
   CS_PARAM_HODGE_TYPE_VPCD,
   CS_PARAM_HODGE_TYPE_EPFD,
   CS_PARAM_HODGE_TYPE_FPED,
   CS_PARAM_HODGE_TYPE_EDFP,
   CS_PARAM_HODGE_TYPE_CPVD,
-  CS_PARAM_HODGE_N_TYPES
+  CS_PARAM_N_HODGE_TYPES
 
 } cs_param_hodge_type_t;
 
 typedef enum {
 
-  CS_PARAM_HODGE_ALGO_NONE,
   CS_PARAM_HODGE_ALGO_VORONOI,
   CS_PARAM_HODGE_ALGO_WBS,     // WBS: Whitney Barycentric Subdivision
   CS_PARAM_HODGE_ALGO_COST,    // COST: COnsistency & STabilization splitting
-  CS_PARAM_HODGE_N_ALGOS
+  CS_PARAM_N_HODGE_ALGOS
 
 } cs_param_hodge_algo_t;
 
@@ -179,10 +174,8 @@ typedef struct {
 /* BOUNDARY CONDITIONS */
 /* =================== */
 
-/* Basic boundary conditions */
+/* Mathematical boundary conditions */
 typedef enum {
-
-  CS_PARAM_BC_BASIC_NONE,
 
   CS_PARAM_BC_HMG_DIRICHLET,
   CS_PARAM_BC_DIRICHLET,
@@ -190,40 +183,21 @@ typedef enum {
   CS_PARAM_BC_NEUMANN,
   CS_PARAM_BC_ROBIN,
 
-  CS_PARAM_BC_N_BASIC_TYPES
-
-} cs_param_bc_basic_type_t;
-
-/* Physic-driven boundary conditions */
-typedef enum {
-
-  CS_PARAM_BC_NAVSTO_NONE,
-
-  CS_PARAM_BC_WALL,
-  CS_PARAM_BC_MOVING_WALL,
-  CS_PARAM_BC_INLET,
-  CS_PARAM_BC_OUTLET,
-  CS_PARAM_BC_SYMMETRY,
-
-  /* Specific condition in CDO schemes for the Stokes problem in CURL
-     formulation */
-  CS_PARAM_BC_UNUT,   /* Normal and tangential component of velocity */
-  CS_PARAM_BC_UNWT,   /* Normal compenent of velocity and viscosity times
-                         tangential component of vorticity */
-  CS_PARAM_BC_PRUT,   /* Tangential component of the velocity and pressure */
-
-  CS_PARAM_BC_N_NAVSTO_TYPES
-
-} cs_param_bc_navsto_type_t;
-
-/* Values associated to the different ways to retrieve data */
-typedef union {
-
-  cs_param_bc_navsto_type_t   navsto;
-  cs_param_bc_basic_type_t    basic;
+  CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;
 
+/* Physic-driven boundary */
+typedef enum {
+
+  CS_PARAM_BOUNDARY_WALL,
+  CS_PARAM_BOUNDARY_INLET,
+  CS_PARAM_BOUNDARY_OUTLET,
+  CS_PARAM_BOUNDARY_SYMMETRY,
+
+  CS_PARAM_N_BOUNDARY_TYPES
+
+} cs_param_boundary_type_t;
 
 /* Definition of the value of a boundary condition (BC)
    One or two values may be needed according to the type of BC.
@@ -233,15 +207,15 @@ typedef union {
 
 typedef struct {
 
-  int                  loc_id;   // Id related to the list of border faces
+  int                    loc_id;   // Id related to the list of border faces
 
-  cs_param_bc_type_t   bc_type;
-  cs_param_def_type_t  def_type; // Type of definition for a and b
+  cs_param_bc_type_t     bc_type;  // type of mathematical BC
+  cs_param_def_type_t    def_type; // Type of definition for a and b
 
   /* Access to the value related to the first coefficient and possibly
      the second one */
-  cs_def_t             def_coef1;
-  cs_def_t             def_coef2;
+  cs_def_t               def_coef1;
+  cs_def_t               def_coef2;
 
 } cs_param_bc_def_t;
 
@@ -263,7 +237,6 @@ typedef struct {
 /* Types of source terms */
 typedef enum {
 
-  CS_PARAM_SOURCE_TERM_NONE,     // not set
   CS_PARAM_SOURCE_TERM_BASIC,    // in the right hand side
   CS_PARAM_SOURCE_TERM_IMPLICIT, // in the matrix to invert
   CS_PARAM_SOURCE_TERM_IMEX,     // implicit/explicit: two contributions
@@ -297,7 +270,6 @@ typedef struct {
 
 typedef enum {
 
-  CS_PARAM_PRECOND_NONE,
   CS_PARAM_PRECOND_DIAG,    // Diagonal preconditioning (also called Jacobi)
   CS_PARAM_PRECOND_POLY1,   // Neumann polynomial preconditioning (Order 1)
   CS_PARAM_PRECOND_SSOR,    // Symmetric Successive OverRelaxations
@@ -312,7 +284,6 @@ typedef enum {
 /* Type of iterative solver to use to inverse the linear system */
 typedef enum {
 
-  CS_PARAM_ITSOL_NONE,
   CS_PARAM_ITSOL_CG,        // Conjuguate Gradient
   CS_PARAM_ITSOL_BICG,      // Bi-Conjuguate gradient
   CS_PARAM_ITSOL_GMRES,     // Generalized Minimal RESidual
@@ -532,12 +503,12 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_bc_def_set(cs_param_bc_def_t         *bc_def,
-                    int                        loc_id,
-                    cs_param_bc_basic_type_t   bc_type,
-                    cs_param_def_type_t        def_type,
-                    cs_def_t                   def_coef1,
-                    cs_def_t                   def_coef2);
+cs_param_bc_def_set(cs_param_bc_def_t     *bc_def,
+                    int                    loc_id,
+                    cs_param_bc_type_t     bc_type,
+                    cs_param_def_type_t    def_type,
+                    cs_def_t               def_coef1,
+                    cs_def_t               def_coef2);
 
 /*----------------------------------------------------------------------------*/
 /*!
