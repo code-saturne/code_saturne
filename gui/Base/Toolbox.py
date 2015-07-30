@@ -85,10 +85,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, study=None, tree=None
         import code_saturne.Pages.SolutionDomainView as Page
         thisPage = Page.SolutionDomainView(root, case, stbar)
 
-    elif page_name == tr("Mesh quality criteria"):
-        import code_saturne.Pages.SolutionVerifView as Page
-        thisPage = Page.SolutionVerifView(root, case)
-
     elif page_name == tr("Volume regions definition"):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.VolumeLocalizationView(root, case, tree)

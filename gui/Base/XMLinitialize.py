@@ -75,102 +75,105 @@ class XMLinit(Variables):
         self.case = case
 
 
-    def initialize(self):
+    def initialize(self, prepro = False):
         """
         Verify that all Headings exist only once in the XMLDocument and
         create the missing heading.
         """
-        msg = self.__initHeading()
+        msg = self.__initHeading(prepro)
         if msg:
             return msg
 
-        self.__backwardCompatibility()
-
-        # Initialization (order is important, see turbulenceModelsList method)
-
-        self.node_models = self.case.xmlInitNode('thermophysical_models')
-        node = self.node_models.xmlInitNode('velocity_pressure')
-        self.setNewVariable(node, 'pressure')
-        self.setNewVariable(node, 'velocity', dim = '3')
-        self.setNewProperty(node, 'total_pressure')
-        n = self.setNewProperty(node, 'yplus')
-        n['support'] = 'boundary'
-        n['label'] = 'Yplus'
-        n = self.setNewProperty(node, 'stress')
-        n['support'] = 'boundary'
-        n['label'] = 'Stress'
-        if not node.xmlGetChildNode('property', name='stress_tangential'):
-            n = self.setNewProperty(node, 'stress_tangential')
-            n['label'] = 'Stress, tangential'
-            n['support'] = 'boundary'
-            n.xmlInitNode('postprocessing_recording')['status']= "off"
-        if not node.xmlGetChildNode('property', name='stress_normal'):
-            n = self.setNewProperty(node, 'stress_normal')
-            n['label'] = 'Stress, normal'
-            n['support'] = 'boundary'
-            n.xmlInitNode('postprocessing_recording')['status']= "off"
-
         OutputControlModel(self.case).addDefaultWriter()
         OutputControlModel(self.case).addDefaultMesh()
-        MobileMeshModel(self.case).getMethod()
-        TurbulenceModel(self.case).getTurbulenceModel()
 
-        # First Volume Zone definition for all cells -> initialization
+        if not prepro:
+            self.__backwardCompatibility()
 
-        zones = LocalizationModel("VolumicZone", self.case).getZones()
-        iok = 0
-        for zone in zones:
-            if zone.getLabel() == 'all_cells':
-                iok = 1
-        if iok == 0:
-            zone = Zone("VolumicZone", self.case, label = 'all_cells', localization = 'all[]')
-            LocalizationModel("VolumicZone", self.case).addZone(zone)
-            zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
-            InitializationModel(self.case).getInitialTurbulenceChoice(zone)
+            # Initialization (order is important, see turbulenceModelsList method)
 
-        # Time step
+            self.node_models = self.case.xmlInitNode('thermophysical_models')
+            node = self.node_models.xmlInitNode('velocity_pressure')
+            self.setNewVariable(node, 'pressure')
+            self.setNewVariable(node, 'velocity', dim = '3')
+            self.setNewProperty(node, 'total_pressure')
+            n = self.setNewProperty(node, 'yplus')
+            n['support'] = 'boundary'
+            n['label'] = 'Yplus'
+            n = self.setNewProperty(node, 'stress')
+            n['support'] = 'boundary'
+            n['label'] = 'Stresss'
+            if not node.xmlGetChildNode('property', name='stress_tangential'):
+                n = self.setNewProperty(node, 'stress_tangential')
+                n['label'] = 'Stresss, tangential'
+                n['support'] = 'boundary'
+                n.xmlInitNode('postprocessing_recording')['status']= "off"
+            if not node.xmlGetChildNode('property', name='stress_normal'):
+                n = self.setNewProperty(node, 'stress_normal')
+                n['label'] = 'Stresss, normal'
+                n['support'] = 'boundary'
+                n.xmlInitNode('postprocessing_recording')['status']= "off"
 
-        TimeStepModel(self.case).getTimeStep()
-        TimeStepModel(self.case).getIterationsNumber()
-        TimeStepModel(self.case).getTimePassing()
+            MobileMeshModel(self.case).getMethod()
+            TurbulenceModel(self.case).getTurbulenceModel()
 
-        # Thermodynamics definitinon
+            # First Volume Zone definition for all cells -> initialization
 
-        m = FluidCharacteristicsModel(self.case)
-        for tag in ('density',
-                    'molecular_viscosity',
-                    'specific_heat',
-                    'thermal_conductivity'):
-            m.getInitialValue(tag)
+            zones = LocalizationModel("VolumicZone", self.case).getZones()
+            iok = 0
+            for zone in zones:
+                if zone.getLabel() == 'all_cells':
+                    iok = 1
+            if iok == 0:
+                zone = Zone("VolumicZone", self.case, label = 'all_cells', localization = 'all[]')
+                LocalizationModel("VolumicZone", self.case).addZone(zone)
+                zone = LocalizationModel("VolumicZone", self.case).getCodeNumberOfZoneLabel('all_cells')
+                InitializationModel(self.case).getInitialTurbulenceChoice(zone)
 
-        # Calculation features
+            # Time step
 
-        SteadyManagementModel(self.case).getSteadyFlowManagement()
-        ThermalScalarModel(self.case).getThermalScalarModel()
-        CoalCombustionModel(self.case).getCoalCombustionModel()
-        GasCombustionModel(self.case).getGasCombustionModel()
-        ElectricalModel(self.case).getElectricalModel()
-        ThermalRadiationModel(self.case).getRadiativeModel()
-        DarcyModel(self.case).getDarcyModel()
-        AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
-        LagrangianModel(self.case).getLagrangianStatus()
+            TimeStepModel(self.case).getTimeStep()
+            TimeStepModel(self.case).getIterationsNumber()
+            TimeStepModel(self.case).getTimePassing()
 
-        return msg
+            # Thermodynamics definitinon
+
+            m = FluidCharacteristicsModel(self.case)
+            for tag in ('density',
+                        'molecular_viscosity',
+                        'specific_heat',
+                        'thermal_conductivity'):
+                m.getInitialValue(tag)
+
+            # Calculation features
+
+            SteadyManagementModel(self.case).getSteadyFlowManagement()
+            ThermalScalarModel(self.case).getThermalScalarModel()
+            CoalCombustionModel(self.case).getCoalCombustionModel()
+            GasCombustionModel(self.case).getGasCombustionModel()
+            ElectricalModel(self.case).getElectricalModel()
+            ThermalRadiationModel(self.case).getRadiativeModel()
+            DarcyModel(self.case).getDarcyModel()
+            AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
+            LagrangianModel(self.case).getLagrangianStatus()
+
+            return msg
 
 
-    def __initHeading(self):
+    def __initHeading(self, prepro):
         """
         Create if necessary headings from the root element of the case.
         """
         msg = ""
         tagList = ('solution_domain',
-                   'thermophysical_models',
-                   'numerical_parameters',
-                   'physical_properties',
-                   'additional_scalars',
-                   'boundary_conditions',
                    'analysis_control',
                    'calculation_management')
+        if not prepro :
+            tagList += ('thermophysical_models',
+                       'numerical_parameters',
+                       'physical_properties',
+                       'additional_scalars',
+                       'boundary_conditions')
 
         for tag in tagList:
             nodeList = self.case.root().xmlInitChildNodeList(tag)

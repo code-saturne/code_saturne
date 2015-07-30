@@ -406,7 +406,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
     Identity and paths
 Calculation environment
     Meshes selection
-    Mesh quality criteria
 Thermophysical models
     Calculation features
     Deformable mesh
@@ -673,6 +672,36 @@ Calculation management
         self.setRowClose(self.tr('Lagrangian solution control'))
         self.setRowClose(self.tr('Darcy'))
         self.setRowClose(self.tr('Darcy laws'))
+
+        if case['prepro'] == True:
+            self.setRowClose(self.tr('Thermophysical models'))
+            self.setRowClose(self.tr('Physical properties'))
+            self.setRowClose(self.tr('Volume conditions'))
+            self.setRowClose(self.tr('Particles and droplets tracking'))
+            self.setRowClose(self.tr('Boundary conditions'))
+            self.setRowClose(self.tr('Numerical parameters'))
+            self.setRowClose(self.tr('Start/Restart'))
+            self.setRowClose(self.tr('Performance tuning'))
+            self.setRowClose(self.tr('Time averages'))
+            self.setRowClose(self.tr('Volume solution control'))
+            self.setRowClose(self.tr('Surface solution control'))
+            self.setRowClose(self.tr('Lagrangian solution control'))
+            self.setRowClose(self.tr('Profiles'))
+            return
+        else:
+            self.setRowOpen(self.tr('Thermophysical models'))
+            self.setRowOpen(self.tr('Physical properties'))
+            self.setRowOpen(self.tr('Volume conditions'))
+            self.setRowOpen(self.tr('Particles and droplets tracking'))
+            self.setRowOpen(self.tr('Boundary conditions'))
+            self.setRowOpen(self.tr('Numerical parameters'))
+            self.setRowOpen(self.tr('Start/Restart'))
+            self.setRowOpen(self.tr('Performance tuning'))
+            self.setRowOpen(self.tr('Time averages'))
+            self.setRowOpen(self.tr('Volume solution control'))
+            self.setRowOpen(self.tr('Surface solution control'))
+            self.setRowOpen(self.tr('Lagrangian solution control'))
+            self.setRowOpen(self.tr('Profiles'))
 
         # Steady flow management
 

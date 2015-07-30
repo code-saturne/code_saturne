@@ -112,7 +112,6 @@ SalomeHandler.py \
 ScriptRunningModel.py \
 SolutionDomainModel.py \
 SolutionDomainView.py \
-SolutionVerifView.py \
 SourceTermsModel.py \
 SourceTermsView.py \
 StartRestartModel.py \
@@ -193,7 +192,6 @@ ProfilesForm.ui \
 QMeiEditorForm.ui \
 ReferenceValuesForm.ui \
 SolutionDomainForm.ui \
-SolutionVerifForm.ui \
 SourceTermsForm.ui \
 StartRestartAdvancedDialogForm.ui \
 StartRestartForm.ui \

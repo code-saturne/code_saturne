@@ -1218,7 +1218,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStopGlobal()
         self.mdl = OutputControlModel(self.case)
 
-        if self.case['package'].name == 'code_saturne':
+        if self.case['package'].name == 'code_saturne' and \
+           self.case['prepro'] == False:
             # lagrangian model
             self.lag_mdl = LagrangianModel(self.case)
 
@@ -1272,8 +1273,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelProbeFmt.addItem(self.tr(".csv"), 'CSV')
 
         # Hide time frequency (in s) when calculation is steady
-        if self.isSteady() != 1:
-            self.modelHisto.disableItem(3)
+        if self.case['prepro'] == False:
+            if self.isSteady() != 1:
+                self.modelHisto.disableItem(3)
 
         # Model for QTableView
 
@@ -1425,7 +1427,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditNTLIST.setText(str(ntlist))
         self.slotOutputListing(t)
 
-        if self.case['package'].name == 'code_saturne':
+        if self.case['package'].name == 'code_saturne' and \
+           self.case['prepro'] == False:
             if self.lag_mdl.getLagrangianStatus() != 'off':
                 self.groupBoxListingParticles.show()
                 period = self.mdl.getListingFrequencyLagrangian()

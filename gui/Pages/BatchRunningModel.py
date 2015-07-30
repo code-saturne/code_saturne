@@ -643,35 +643,36 @@ class BatchRunningModel(Model):
         """
         Update environment variables in batch file lines
         """
-        batch_lines = self.case['runcase'].lines
+        if self.case['runcase']:
+            batch_lines = self.case['runcase'].lines
 
-        for i in range(len(batch_lines)):
-            j = batch_lines[i].find('#')
-            if j > -1:
-                toks = batch_lines[i][:j].split()
-            else:
-                toks = batch_lines[i].split()
-            if len(toks) > 1:
-                var = None
-                val = None
-                if toks[0] in ('set', 'export'):
-                    k = toks[1].find('=')
-                    if k > 1:
-                        var = toks[1][0:k]
-                        val = toks[1][k+1:]
-                elif toks[0] in ('setenv'):
-                    if len(toks) > 2:
-                        var = toks[1]
-                        val = toks[2]
-                if var == 'OMP_NUM_THREADS' and self.dictValues['job_threads']:
-                    s_threads = str(self.dictValues['job_threads'])
+            for i in range(len(batch_lines)):
+                j = batch_lines[i].find('#')
+                if j > -1:
+                    toks = batch_lines[i][:j].split()
+                else:
+                    toks = batch_lines[i].split()
+                if len(toks) > 1:
+                    var = None
+                    val = None
                     if toks[0] in ('set', 'export'):
-                        s = toks[0] + ' ' + var + '=' + s_threads
+                        k = toks[1].find('=')
+                        if k > 1:
+                            var = toks[1][0:k]
+                            val = toks[1][k+1:]
                     elif toks[0] in ('setenv'):
-                        s = toks[0] + ' ' + var + ' ' + s_threads
-                    if j > 1:
-                        s += ' ' + batch_lines[i][j:]
-                    batch_lines[i] = s
+                        if len(toks) > 2:
+                            var = toks[1]
+                            val = toks[2]
+                    if var == 'OMP_NUM_THREADS' and self.dictValues['job_threads']:
+                        s_threads = str(self.dictValues['job_threads'])
+                        if toks[0] in ('set', 'export'):
+                            s = toks[0] + ' ' + var + '=' + s_threads
+                        elif toks[0] in ('setenv'):
+                            s = toks[0] + ' ' + var + ' ' + s_threads
+                        if j > 1:
+                            s += ' ' + batch_lines[i][j:]
+                        batch_lines[i] = s
 
 
     def parseBatchFile(self):

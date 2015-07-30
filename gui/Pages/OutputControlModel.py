@@ -64,10 +64,6 @@ class OutputControlModel(Model):
         node_control  = self.case.xmlGetNode('analysis_control')
         self.node_out = node_control.xmlInitNode('output')
 
-        if self.case['package'].name == 'code_saturne':
-            node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
-            self.node_out_lag = node_lagr.xmlInitChildNode('output')
-
 
     def defaultInitialValues(self):
         """
@@ -127,7 +123,9 @@ class OutputControlModel(Model):
         """
         Return the frequency for printing listing for lagrangian variables
         """
-        f = self.node_out_lag.xmlGetInt('listing_printing_frequency')
+        node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
+        node_out_lag = node_lagr.xmlInitChildNode('output')
+        f = node_out_lag.xmlGetInt('listing_printing_frequency')
         if f == None:
             f = self.defaultInitialValues()['listing_printing_frequency']
             self.setListingFrequencyLagrangian(f)
@@ -140,7 +138,9 @@ class OutputControlModel(Model):
         Set the frequency for printing listing for lagrangian variables
         """
         self.isInt(freq)
-        self.node_out_lag.xmlSetData('listing_printing_frequency', freq)
+        node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
+        node_out_lag = node_lagr.xmlInitChildNode('output')
+        node_out_lag.xmlSetData('listing_printing_frequency', freq)
 
 
     def defaultWriterValues(self):

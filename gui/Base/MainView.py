@@ -443,6 +443,9 @@ class MainView(object):
                     self.setFont(font)
                     app.setFont(font)
 
+        self.actionPrepro.setEnabled(False)
+        self.actionCalculation.setEnabled(False)
+
         self.updateRecentFileMenu()
         QTimer.singleShot(0, self.loadInitialFile)
 
@@ -663,6 +666,8 @@ class MainView(object):
             self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
+        self.actionPrepro.setEnabled(True)
+        self.actionCalculation.setEnabled(True)
 
 
     @pyqtSignature("")
@@ -805,6 +810,9 @@ class MainView(object):
         # Cleaning the '\n' and '\t' from file_name (except in formula)
         self.case.xmlCleanAllBlank(self.case.xmlRootNode())
 
+        # we consider we are in calculation mode when we open an xml file
+        self.case['prepro'] = False
+
         msg = self.initCase()
         if msg:
             self.loadingAborted(msg, fn)
@@ -838,6 +846,8 @@ class MainView(object):
             self.currentEntry = 'Prepare batch calculation'
 
         self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
+        self.actionPrepro.setEnabled(True)
+        self.actionCalculation.setEnabled(True)
 
 
     @pyqtSignature("")
@@ -1312,6 +1322,8 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.connect(self.displayCSDoxygenAction,  SIGNAL("triggered()"), self.displayCSDoxygen)
         self.connect(self.actionUndo,              SIGNAL("activated()"), self.slotUndo)
         self.connect(self.actionRedo,              SIGNAL("activated()"), self.slotRedo)
+        self.connect(self.actionPrepro,            SIGNAL("activated()"), self.slotPreproMode)
+        self.connect(self.actionCalculation,       SIGNAL("activated()"), self.slotCalculationMode)
 
         docdir = self.package.get_dir('docdir')
         if os.path.isdir(docdir):
@@ -1335,7 +1347,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        return XMLinit(self.case).initialize()
+        return XMLinit(self.case).initialize(self.case['prepro'])
 
 
     def displayWelcomePage(self):
@@ -1471,6 +1483,26 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
                                     study=self.Id,
                                     tree=self.Browser)
             self.scrollArea.setWidget(p)
+
+
+    @pyqtSignature("")
+    def slotPreproMode(self):
+        """
+        mode prepro slot
+        """
+        self.case['prepro'] = True
+        self.initCase()
+        self.Browser.configureTree(self.case)
+
+
+    @pyqtSignature("")
+    def slotCalculationMode(self):
+        """
+        mode calculation slot
+        """
+        self.case['prepro'] = False
+        self.initCase()
+        self.Browser.configureTree(self.case)
 
 
     @pyqtSignature("")

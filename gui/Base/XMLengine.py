@@ -107,6 +107,7 @@ class Dico:
 
         self.data['new']              = ""
         self.data['saved']            = "yes"
+        self.data['prepro']           = True
         self.data['xmlfile']          = ""
         self.data['mesh_path']        = ""
         self.data['user_src_path']    = ""

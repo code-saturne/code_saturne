@@ -61,13 +61,28 @@ class ScriptRunningModel(Model):
 
 
     @Variables.noUndo
-    def getRunType(self):
+    def getRunType(self, preproview = None):
         """
         Get run type.
         """
         val = self.node_mgt.xmlGetString('run_type')
+        prepro = self.case.xmlGetNode('additional_scalars')
+
+        if preproview == None:
+            if prepro:
+                preproview = False
+            else:
+                preproview = True
+
         if not val:
-            val = 'standard'
+            if not preproview:
+                val = 'standard'
+            else:
+                val = 'mesh quality'
+            self.setRunType(val)
+        elif (preproview and val == 'standard'):
+            val = 'mesh quality'
+            self.setRunType(val)
 
         return val
 

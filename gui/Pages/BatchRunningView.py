@@ -558,7 +558,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.modelArg_cs_verif.addItem(self.tr("Mesh preprocessing"), 'mesh preprocess')
         self.modelArg_cs_verif.addItem(self.tr("Mesh quality criteria"), 'mesh quality')
         self.modelArg_cs_verif.addItem(self.tr("Standard"), 'standard')
-        self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType())
+        if self.case['prepro'] == False:
+            self.modelArg_cs_verif.enableItem(3)
+        else:
+            self.modelArg_cs_verif.disableItem(3)
+        self.modelArg_cs_verif.setItem(str_model=self.mdl.getRunType(self.case['prepro']))
 
         # initialize Widgets
 
@@ -670,8 +674,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Input run type option.
         """
-        self.run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
-        self.mdl.setRunType(self.run_type)
+        run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
+        self.mdl.setRunType(run_type)
 
 
     @pyqtSignature("int")
@@ -747,14 +751,14 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             return
 
         # Verify if boundary condition definitions exist
-
-        bd = LocalizationModel('BoundaryZone', self.case)
-        if not bd.getZones():
-            if self.case['no_boundary_conditions'] == False:
-                title = self.tr("Warning")
-                msg   = self.tr("No boundary definition declared.\n\n")
-                QMessageBox.warning(self, title, msg)
-                self.case['no_boundary_conditions'] = True
+        if self.case['prepro'] == False:
+            bd = LocalizationModel('BoundaryZone', self.case)
+            if not bd.getZones():
+                if self.case['no_boundary_conditions'] == False:
+                    title = self.tr("Warning")
+                    msg   = self.tr("No boundary definition declared.\n\n")
+                    QMessageBox.warning(self, title, msg)
+                    self.case['no_boundary_conditions'] = True
 
         # Build command line
 
@@ -822,7 +826,10 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         runcase = self.case['runcase']
 
-        runcase.set_run_id(run_id=run_id)
+        if self.mdl.getRunType() == "standard":
+            runcase.set_run_id(run_id=run_id)
+        else:
+            runcase.set_run_id(run_id=run_id, run_id_prefix="prepro_")
         runcase.save()
 
 
