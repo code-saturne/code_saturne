@@ -1097,20 +1097,14 @@ cs_param_eq_free_all(void)
 /*!
  * \brief  Retrieve high-level information on the setting
  *
- * \param[inout]   do_navsto     true or false
  * \param[inout]   n_cdo_eqs     number of additional equations using the CDO
  *                               kernel
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_get_info(_Bool       *do_navsto,
-                     int         *n_cdo_eqs)
+cs_param_eq_get_info(int         *n_cdo_eqs)
 {
-  *do_navsto = false;
-  if (_navsto_param != NULL)
-    *do_navsto = true;
-
   *n_cdo_eqs = cs_n_cdo_param_eqs;
 }
 
@@ -1222,9 +1216,6 @@ cs_param_eq_resume_all(void)
     bft_printf(" -sla- Solver.Eps        % -10.6e\n", itsol.eps);
     bft_printf(" -sla- Solver.Normalized  %s\n",
                cs_base_strtf(itsol.resid_normalized));
-
-    /* if (eqp->saddle_solver.type != CS_SADDLE_ALGO_NONE) */
-    /*   cs_saddle_info_resume(eqp->saddle_solver); */
 
   } /* Loop on equations */
 

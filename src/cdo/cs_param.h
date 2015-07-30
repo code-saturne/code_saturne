@@ -277,7 +277,8 @@ typedef struct {
 
   char  *restrict name;  /* short description of the source term */
 
-  int            location_id;  /* list of cells */
+  int                          location_id;  /* id of the related mesh location
+                                                structure */
 
   /* Specification related to the way of computing the source term */
   cs_param_source_term_type_t  type;      /* mass, head loss... */
@@ -338,8 +339,6 @@ typedef struct {
 /*============================================================================
  * Global variables
  *============================================================================*/
-
-extern cs_flag_t  cs_glob_param_discretization_flag;
 
 /*============================================================================
  * Public function prototypes

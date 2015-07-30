@@ -740,7 +740,7 @@ _solve_linear_system(const cs_param_eq_t        *eq,
 
   cs_halo_rotation_t  halo_rota = CS_HALO_ROTATION_IGNORE;
 
-  cs_sles_t  *solver_struct = cs_sles_find_or_add(eq->field_id, NULL);
+  cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_param_itsol_t  itsol_info = eq->itsol_info;
@@ -755,7 +755,7 @@ _solve_linear_system(const cs_param_eq_t        *eq,
   else
     r_norm = 1.0;
 
-  cvg = cs_sles_solve(solver_struct,
+  cvg = cs_sles_solve(sles,
                       a,
                       halo_rota,
                       itsol_info.eps,

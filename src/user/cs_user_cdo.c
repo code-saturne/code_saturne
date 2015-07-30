@@ -32,14 +32,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <errno.h>
-#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
-#include <float.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers

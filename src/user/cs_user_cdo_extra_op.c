@@ -93,7 +93,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Additional operations on results produced by CDO schemes.
+ * \brief  Additional operations on results provided by CDO schemes.
  *         Define advanced post-processing and/or analysis for instance.
  *
  * \param[in]  m        pointer to a cs_mesh_t struct.

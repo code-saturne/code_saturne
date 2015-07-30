@@ -593,7 +593,7 @@ cs_euclidean_norm(int            len,
     n2 = sqrt(n2);
   else
     bft_error(__FILE__, __LINE__, 0,
-              _(" Stop norm computation. Dot product is < 0 !\n"));
+              _(" Stop norm computation. Norm value is < 0 !\n"));
 
   return n2;
 }

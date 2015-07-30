@@ -47,9 +47,6 @@
 #include "cs_timer.h"
 #include "cs_log.h"
 #include "cs_post.h"
-#include "cs_restart.h"
-#include "cs_time_plot.h"
-#include "cs_ext_neighborhood.h"
 #include "cs_prototypes.h"
 #include "cs_mesh_location.h"
 #include "cs_sles.h"
@@ -92,7 +89,6 @@ BEGIN_C_DECLS
 
 static const char cs_cdoversion[] = "0.1.1";
 
-static  _Bool  cs_cdo_do_navsto = false;
 static  int  cs_cdo_n_equations = 0;
 static  int  n_cdo_equations_by_type[CS_N_TYPES_OF_CDOEQS];
 
@@ -231,7 +227,7 @@ _create_algebraic_systems(const cs_mesh_t             *m,
   }
 
   /* Retrieve general information */
-  cs_param_eq_get_info(&cs_cdo_do_navsto, &cs_cdo_n_equations);
+  cs_param_eq_get_info(&cs_cdo_n_equations);
 
   /* First loop: count the number of equations of each case */
   for (eq_id = 0; eq_id < cs_cdo_n_equations; eq_id++) {

@@ -310,19 +310,6 @@ cs_param_eq_set_itsol_precision(const char   *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the solver precision
- *
- * \param[in]   name       name of the equation to deal with
- * \param[in]   accuracy   value of the stopping criterion
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_eq_set_itsol_precision(const char   *name,
-                                double        accuracy);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the maximum number of iterations to do in an iterative solver
  *
  * \param[in]  name         name of the equation to deal with
@@ -570,15 +557,13 @@ cs_param_eq_free_all(void);
 /*!
  * \brief  Retrieve high-level information on the setting
  *
- * \param[inout]   do_navsto     true or false
  * \param[inout]   n_cdo_eqs     number of additional equations using the CDO
  *                               kernel
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_eq_get_info(bool        *do_navsto,
-                     int         *n_cdo_eqs);
+cs_param_eq_get_info(int         *n_cdo_eqs);
 
 /*----------------------------------------------------------------------------*/
 /*!

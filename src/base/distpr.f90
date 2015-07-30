@@ -133,7 +133,7 @@ nittot = 0
 !     Conditions aux limites pour le scalaire resolu T
 !       Dirichlet a 0 en paroi
 !       Neumann nul ailleurs
-!     On test aussi la pressence d'un Dirichlet
+!     On test aussi la presence d'un Dirichlet
 
 ndircp = 0
 
