@@ -5,11 +5,21 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - GUI: "check mesh" option is replaced by a new "preprocessor view": when
+   building a new case, the GUI only shows sections relative to mesh
+   selection and preprocessing, showing only the steps necessary up to
+   preprocessing. "Tools"  menu entries and toolbar icons allow switching
+   from the preprocessing mode to the computation mode.
+   This new view encourages users to use the "preprocessing" run type,
+   which was previously available at the end of the GUI options,
+   instead of the "check mesh" option, which did not handle batch runs
+   or user subroutines.
+
  - Renamed 'efforts' to 'stress', which should be less confusing.
 
  - Change multigrid default settings based on recent performance benchmarks.
 
- - Changes in Lagrangian Particle tracking, provided by Céline Caruyer.
+ - Changes in Lagrangian Particle tracking:
    * modification of multi-layer model (iclogst = 1)
    * compute porosity in each cell based on mean deposition height only
      at boundary faces (porcel.f90)

@@ -536,7 +536,7 @@
      <normaloff>:/icons/22x22/prepro-mode.png</normaloff>:/icons/22x22/prepro-mode.png</iconset>
    </property>
    <property name="text">
-    <string>&amp;Prepro Mode</string>
+    <string>&amp;Preprocessing Mode</string>
    </property>
   </action>
   <action name="actionCalculation">
