@@ -805,6 +805,8 @@ cs_sles_finalize(void)
 
       if (_cs_sles_systems[i][j] != NULL) {
         cs_sles_t *sles = _cs_sles_systems[i][j];
+        if (sles->free_func != NULL)
+          sles->free_func(sles->context);
         if (sles->destroy_func != NULL)
           sles->destroy_func(&(sles->context));
         BFT_FREE(sles->_name);
