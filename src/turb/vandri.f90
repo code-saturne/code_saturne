@@ -26,7 +26,7 @@
 ! ---------
 !> \file vandri.f90
 !> \brief Imposition of an amortization of Van Driest type for the LES.
-!>        \f$ \nu_T \f$ is aborsorbed by \f$ (1-\exp(\dfrac{-y^+}{d^+}))^2 \f$
+!>        \f$ \nu_T \f$ is absorbed by \f$ (1-\exp(\dfrac{-y^+}{d^+}))^2 \f$
 !>        where \f$ d^+ \f$ is set at 26.
 
 !-------------------------------------------------------------------------------
@@ -37,7 +37,7 @@
 ! modename        name          role
 !______________________________________________________________________________!
 !> \param[in]     itypfb        boundary face types
-!> \param[in]     ifapat        number of the edge face code 5 the nearst
+!> \param[in]     ifapat        number of the edge face code 5 the nearest
 !>                                 (R_{ij} and wall echo)
 !> \param[in]     visvdr        dynamic viscosity in edge cells after
 !>                               driest velocity amortization
@@ -91,7 +91,7 @@ call field_get_val_s(iprpfl(ivisct), visct)
 !     (non compatible parall/perio)
 if(abs(icdpar).eq.2) then
 
-  !     In sequentiel, nothing to report
+  !     In sequential, nothing to report
   if(irangp.lt.0) then
     do iel = 1, ncel
       ifac = ifapat(iel)
@@ -105,7 +105,7 @@ if(abs(icdpar).eq.2) then
     enddo
   !     In parallel, we absorb only the first mesh of the wall:
   !     dangereous but a priori useless (because the use of
-  !     icdpar=+/-2 in parallel is bloqued in verini)
+  !     icdpar=+/-2 in parallel is blocked in verini)
   else
     write(nfecra,1000)
     do ifac = 1, nfabor
