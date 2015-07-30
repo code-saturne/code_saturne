@@ -714,7 +714,7 @@ _map_to_matrix(cs_cdovb_codits_t          *sys,
                                       &(sla_mat->val));  // extra-diag. values
 
   /* Free non-transferred parts of sla_mat */
-  sla_mat = cs_sla_matrix_free_after_mapping(sla_mat);
+  sla_mat = cs_sla_matrix_free(sla_mat);
 }
 
 /*----------------------------------------------------------------------------*/

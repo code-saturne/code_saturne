@@ -475,21 +475,6 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free a cs_sla_matrix_t structure after a mapping into a
- *          cs_matrix_t  struct. (idx and col are not owned anymore by
- *          the current structure)
- *
- * \param[in]  m     matrix to free
- *
- *\return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_sla_matrix_t *
-cs_sla_matrix_free_after_mapping(cs_sla_matrix_t  *m);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Remove entries in a cs_sla_matrix_t structure below a given
  *          threshold. |a(i,j)| < eps * max|a(i,j)|
  *

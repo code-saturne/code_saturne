@@ -3105,58 +3105,6 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Free a cs_sla_matrix_t structure after a mapping into a
- *          cs_matrix_t  struct. (idx and col_id are not owned anymore by
- *          the current structure)
- *
- * \param[in]  m     matrix to free
- *
- *\return  a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-cs_sla_matrix_t *
-cs_sla_matrix_free_after_mapping(cs_sla_matrix_t  *m)
-{
-  if (m == NULL)
-    return NULL;
-
-  if (m->type != CS_SLA_MAT_NONE) {
-
-    switch (m->type) {
-
-    case CS_SLA_MAT_DEC:
-      BFT_FREE(m->sgn);
-      break;
-    case CS_SLA_MAT_CSR:
-      BFT_FREE(m->val);
-      if (m->diag != NULL)
-        BFT_FREE(m->diag);
-      break;
-    case CS_SLA_MAT_MSR:
-      BFT_FREE(m->val);
-      BFT_FREE(m->diag);
-      break;
-    default:
-      break;
-
-    } /* End switch */
-
-    if (m->didx != NULL) /* Should be only for square CSR matrix */
-      BFT_FREE(m->didx);
-
-    if (m->properties != NULL)
-      BFT_FREE(m->properties);
-
-  } /* TYPE_NONE */
-
-  BFT_FREE(m);
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Remove entries in a cs_sla_matrix_t structure below a given
  *          threshold. |a(i,j)| < eps * max|a(i,j)|
  *                                       i
