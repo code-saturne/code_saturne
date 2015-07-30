@@ -157,7 +157,7 @@ static cs_mesh_location_t  *_mesh_location = NULL;
  * \param[in]  id         id of mesh location
  *
  * \return  a pointer to the associated mesh location
- *\
+ */
 /*----------------------------------------------------------------------------*/
 
 static const cs_mesh_location_t *
@@ -285,7 +285,8 @@ _mesh_location_define(const char               *name,
  *
  * \param[in]  name      name of location to define
  * \param[in]  type      type of location to define
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _build_by_ml_ids(cs_mesh_location_t  *ml)
@@ -371,7 +372,7 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
     ml->n_elts[0] = count;
 
     /* Build elt_list */
-    if (ml->n_elts[0] != 0 && ml->n_elts != n_elts_max) {
+    if (ml->n_elts[0] != 0 && ml->n_elts[0] != n_elts_max) {
       BFT_MALLOC(ml->elt_list, ml->n_elts[0], cs_lnum_t);
       count = 0;
       for (i = 0; i < n_elts_max; i++)
