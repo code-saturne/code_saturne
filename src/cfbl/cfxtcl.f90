@@ -184,10 +184,10 @@ do ifac = 1, nfabor
 enddo
 if(icalep.ne.0) then
   ! At cell centers
-  call cs_cf_thermo_eps_sup(w5, ncel)
+  call cs_cf_thermo_eps_sup(crom, w5, ncel)
 
   ! At boundary faces centers
-  call cs_cf_thermo_eps_sup(w7, nfabor)
+  call cs_cf_thermo_eps_sup(brom, w7, nfabor)
 endif
 
 ! Loop on all boundary faces and treatment of types of BCs given by itypfb
