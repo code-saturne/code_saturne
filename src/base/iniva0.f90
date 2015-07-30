@@ -612,7 +612,7 @@ enddo
 !     Si IFAPAT existe,
 !     on suppose qu'il faut le (re)calculer : on init le tab a -1.
 
-if(abs(icdpar).eq.2) then
+if (ineedy.gt.0 .and. abs(icdpar).eq.2) then
   do iel = 1, ncel
     ifapat(iel) = -1
   enddo
