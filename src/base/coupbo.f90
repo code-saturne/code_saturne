@@ -90,6 +90,7 @@ integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_cp
+double precision, dimension(:), pointer :: brom, crom
 
 !===============================================================================
 
@@ -98,6 +99,8 @@ call field_get_val_v(ivarfl(iu), vel)
 if(icp.gt.0 .and. ientha.eq.1) then
   call field_get_val_s(iprpfl(icp), cpro_cp)
 endif
+call field_get_val_s(icrom, crom)
+call field_get_val_s(ibrom, brom)
 
 !===============================================================================
 
@@ -210,11 +213,11 @@ do inbcou = 1, nbccou
       ! Compute e - CvT
 
       ! At cell centers
-      call cs_cf_thermo_eps_sup(wa(iepsel), ncel)
+      call cs_cf_thermo_eps_sup(crom, wa(iepsel), ncel)
       !========================
 
       ! At boundary faces centers
-      call cs_cf_thermo_eps_sup(wa(iepsfa), nfabor)
+      call cs_cf_thermo_eps_sup(brom, wa(iepsfa), nfabor)
       !========================
 
       do iloc = 1, nbfcou
