@@ -1,6 +1,6 @@
 
-Trunk (unreleased)
-==================
+Release 4.1.0 (July 31, 2015)
+=============================
 
 Changes:
 --------
@@ -82,7 +82,7 @@ Architectural changes
   (which can still be used if needed using post-install settings).
 
 - Complete Python 3 compatibility, except for builds with SALOME support
-  (as the SALOME platform is not yet Python-3 copatible).
+  (as the SALOME platform is not yet Python-3 compatible).
 
 - Refactor EnSight, MED and CGNS output, replacing slice by block logic.
   The fvm_gather_...(*) API is now removed, and using parallel APIs
