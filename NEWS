@@ -4,6 +4,8 @@ Version 4.0.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix crash using geometrical wall distance computation for some cases.
+
 - Fix restart with electric module (issue #59).
 
 - Fix in preconditioned BiCGstab2: use left preconditioner.
