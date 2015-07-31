@@ -92,20 +92,10 @@ def version_from_news(srcdir):
                     version = [j] + n.split('.')
 
                 if release[0] < 0:
-                    try:
-                        dateinfo = info.split('(')[1].split(')')[0].split()
-                        num_count = 0
-                        for d in dateinfo:
-                            try:
-                                if int(d) > 0:
-                                    num_count += 1
-                            except Exception:
-                                pass
-                        if num_count > 1:
+                    s = ''.join(c for c in info if c.isdigit())
+                    if len(s) > 0:
                             release = [j] + n.split('.')
                             break
-                    except Exception:
-                        pass
 
     if trunk > -1:
         if version[0] > -1:
