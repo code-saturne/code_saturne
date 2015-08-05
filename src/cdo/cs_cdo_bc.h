@@ -168,13 +168,12 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
 /*!
  * \brief  Set the Dirichlet values to enforce on the corresponding entities
  *
- * \param[in] dof_flag      information about the corresponding DoF to treat
- * \param[in] tcur          current physical time of the simulation
- * \param[in] stride        1, 3, 6, 9 (depend on the type of equation)
- * \param[in] geom          structure storing geometric information
- * \param[in] bc            pointer to a cs_param_bc_t structure
- * \param[in] ent_dir       pointer to a cs_cdo_bc_list_t
- * \param[inout] dir_val    array used to store Dirichlet values
+ * \param[in]      dof_flag  information about the corresponding DoF to treat
+ * \param[in]      tcur      current physical time of the simulation
+ * \param[in]      geom      structure storing geometric information
+ * \param[in]      bc        pointer to a cs_param_bc_t structure
+ * \param[in]      ent_dir   pointer to a cs_cdo_bc_list_t
+ * \param[in, out] dir_val   array used to store Dirichlet values
  */
 /*----------------------------------------------------------------------------*/
 

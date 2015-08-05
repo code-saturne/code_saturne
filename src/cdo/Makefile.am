@@ -30,7 +30,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
-$(MPI_CPPFLAGS)
+$(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
@@ -47,13 +47,16 @@ cs_cdo_quantities.h \
 cs_cdo_toolbox.h \
 cs_cdofb_codits.h \
 cs_cdovb_codits.h \
+cs_domain.h \
+cs_equation.h \
+cs_equation_priv.h \
 cs_evaluate.h \
 cs_hodge.h \
 cs_param.h \
-cs_param_eq.h \
 cs_quadrature.h \
 cs_reco.h \
-cs_sla.h
+cs_sla.h \
+cs_walldistance.h
 
 # Library source files
 
@@ -67,13 +70,15 @@ cs_cdo_quantities.c \
 cs_cdo_toolbox.c \
 cs_cdofb_codits.c \
 cs_cdovb_codits.c \
+cs_domain.c \
+cs_equation.c \
 cs_evaluate.c \
 cs_hodge.c \
 cs_param.c \
-cs_param_eq.c \
 cs_quadrature.c \
 cs_reco.c \
-cs_sla_matrix.c
+cs_sla_matrix.c \
+cs_walldistance.c
 
 libcscdo_la_LDFLAGS = -no-undefined
 

@@ -36,7 +36,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_param_eq.h"
+#include "cs_cdo_quantities.h"
+#include "cs_domain.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -78,59 +79,34 @@ BEGIN_C_DECLS
 cs_cdo_cc_algo_t
 cs_user_cdo_geometric_settings(void)
 {
-  return CS_CDO_CC_SATUR; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-
   /* Algorithm for computing cell centers */
   /* ==================================== */
 
   /* Choice between:
-     CS_CDO_CC_MEANV: Cell center is computed as the mean of cell vertices
-     CS_CDO_CC_BARYC: Cell center is computed as the real cell barycenter
-     CS_CDO_CC_SATUR: Cell center is given by Code_Saturne
-     CS_CDO_CC_ORTHO: Cell center is optimized to enforce orthogonality
-                      between cell-face edge and face plane
+     CS_CDO_CC_MEANV:   Cell center is computed as the mean of cell vertices
+     CS_CDO_CC_BARYC:   Cell center is computed as the real cell barycenter
+     CS_CDO_CC_SATURNE: Cell center is given by Code_Saturne
+     CS_CDO_CC_ORTHO:   Cell center is optimized to enforce orthogonality
+                        between cell-face edge and face plane
    */
 
-  return CS_CDO_CC_BARYC;
+  return CS_CDO_CC_SATURNE;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Setup advanced features concerning the numerical parameters
+ *         of the equation resolved during the computation
+ *
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(void)
+cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the discrete Hodge operators
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_hodge_settings(void)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the resolution of linear systems
- *         within the CDO framework
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_itsol_settings(void)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
-
 
 
 

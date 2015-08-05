@@ -36,7 +36,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_param_eq.h"
+#include "cs_equation.h"
+#include "cs_domain.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -66,6 +67,14 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
+/*============================================================================
+ * Private user function definitions
+ *============================================================================*/
+
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Setup advanced features concerning the way geometric quantities
@@ -82,11 +91,11 @@ cs_user_cdo_geometric_settings(void)
   /* ==================================== */
 
   /* Choice between:
-     CS_CDO_CC_MEANV: Cell center is computed as the mean of cell vertices
-     CS_CDO_CC_BARYC: Cell center is computed as the real cell barycenter
-     CS_CDO_CC_SATUR: Cell center is given by Code_Saturne
-     CS_CDO_CC_ORTHO: Cell center is optimized to enforce orthogonality
-                      between cell-face edge and face plane
+     CS_CDO_CC_MEANV:   Cell center is computed as the mean of cell vertices
+     CS_CDO_CC_BARYC:   Cell center is computed as the real cell barycenter
+     CS_CDO_CC_SATURNE: Cell center is given by Code_Saturne
+     CS_CDO_CC_ORTHO:   Cell center is optimized to enforce orthogonality
+                        between cell-face edge and face plane
    */
 
   return CS_CDO_CC_BARYC;
@@ -95,119 +104,88 @@ cs_user_cdo_geometric_settings(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Setup advanced features concerning the numerical parameters
+ *         of the equation resolved during the computation
+ *
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(void)
+cs_user_cdo_numeric_settings(cs_domain_t   *domain)
 {
-  /* Set the scheme used to discretize in space
-     --> Choice between:
-     CS_SPACE_SCHEME_CDOVB: CDO vertex-based scheme
-     CS_SPACE_SCHEME_CDOFB: CDO cell-based scheme with hybridization
-                            Degrees of freedom are located on faces
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+
+  /* Modify the setting of an equation using a generic process
+
+                   cs_equation_set(eq, key, val)
+
+     the couple (key,val) are strings among the following choices:
+     >> key: "scheme_space"
+         >> val: "cdo_vb" for CDO vertex-based scheme
+         >> val: "cdo_fb" for CDO face-based scheme
+
+     >> key: "verbosity"
+        >> val: "0" (default), "1", "2", ...
+        The higher the more detailed information is displayed
+        "1" detailed setup resume and coarse grain timer stats
+        "2" fine grain timer stats
+
+     >> key: "hodge_diff_algo" or "hodge_time_algo"
+       >> val: "voronoi" or "cost" (default)
+       "voronoi" leads to diagonal discrete Hodge operator but is not
+       consistent for all meshes
+       "cost" is more robust (i.e. it handles more general meshes but is is
+       less efficient)
+
+     >> key: "hodge_diff_coef" or "hodge_time_coef"
+        This key is only useful if "cost" is set as algorithm
+        >> val: "dga", "sushi", "gcr" or "1.5", "9"..
+        val is either a name or a value. Notice that
+        "dga" corresponds to the value 1./3.
+        "sushi" corresponds to the value 1./sqrt(3.)
+        "gcr" corresponds to the value 1.
+
+     >> key: "solver_family"
+        >> val: "cs" (default), "petsc", "newton" (not implemented yet)
+        For using "petsc" one needs to compile Code_Saturne with the PETSc
+        library
+
+     >> key: "itsol"
+        >> val: "cg" (default), "bicg", "gmres", "amg"
+        "cg" is the standard conjuguate gradient algorithm
+        "bicg" is BiCG-Stab2 algorithm (for non-symmetric linear systems)
+        "gmres" is a robust iterative solver but not as efficient
+        "amg" is an algebraic multigrid iterative solver
+
+     >> key: "precond"
+        >> val: "jacobi", "poly1", "ssor", "ilu0", "icc0", "amg", "as"
+        "jacobi" diagonal preconditoner
+        "poly1"  neumann polynomial of order 1
+        "ssor"   symmetric successive over-relaxation
+        "ilu0"   incomplete LU factorization
+        "icc0"   incomplete Cholesky factorization (for symmetric matrices)
+        "amg"    algebraic multigrid
+        "as"     additive schwarz method
+
+     >> key: "itsol_max_iter"
+     >> key: "itsol_eps"
+     >> key: "itsol_resnorm"
+        >> val: "true" or "false"
   */
 
-  cs_param_eq_set_space_scheme("Laplace", // Equation name
-                               CS_SPACE_SCHEME_CDOVB);
+  cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");
 
-  /* Verbosity level (former IWARNI)
-     --> Choice between:
-     0  >> default
-     1  >> detailed setup resume and coarse grain timer stats
-     2  >> fine grain timer stats
-     >2 >> more detailed (for debugging purpose)
-   */
-  cs_param_eq_set_verbosity_level("Laplace", 2);
-}
+  if (eq != NULL) {
+    cs_equation_set(eq, "space_scheme", "cdo_fb");
+    cs_equation_set(eq, "verbosity", "2");
+    cs_equation_set(eq, "hodge_diff_algo", "cost");
+    cs_equation_set(eq, "hodge_diff_coef", "dga");
+    cs_equation_set(eq, "solver_family", "petsc");
+    cs_equation_set(eq, "itsol", "cg");
+    cs_equation_set(eq, "precond", "amg");
+    cs_equation_set(eq, "itsol_max_iter", "2500");
+    cs_equation_set(eq, "itsol_eps", "1e-12");
+    cs_equation_set(eq, "itsol_resnorm", "false");
+  }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the discrete Hodge operators
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_hodge_settings(void)
-{
-  /* Set the algorithm used to build the discrete Hodge operator
-     --> Choice between:
-     CS_PARAM_HODGE_ALGO_VORONOI (only possible in specific cases: Cartesian
-                                  meshes or Delaunay meshes for instance)
-     CS_PARAM_HODGE_ALGO_COST    (default: splitting COnsistency/STabilization)
-  */
-
-  cs_param_eq_hodge_diffusion_set_algo("Laplace",  // Equation name
-                                       CS_PARAM_HODGE_ALGO_COST); // Algo
-
-  /* In the case of a COST algorithm, you may additionally specify the value
-     of the stabilization coefficient (> 0)
-     coef = 1./3       --> DGA scheme (Default)
-     coef = 1./sqrt(3) --> SUSHI scheme
-     coef = 1.         --> Generalized Crouzeix--Raviart scheme
-     Other choices are possible leading to different schemes...
-  */
-
-  cs_param_eq_hodge_diffusion_set_coef("Laplace", 1./3.);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the resolution of linear systems
- *         within the CDO framework
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_itsol_settings(void)
-{
-  const char eqname[16] = "Laplace";
-
-  /* Choice of the algorithm used to solve an equation among
-     >> CS_PARAM_EQ_ALGO_CS_ITSOL     iter. solvers implemented in Code_Saturne
-     >> CS_PARAM_EQ_ALGO_PETSC_ITSOL  iter. solvers implemented in PETSc
-     >> ...
-
-     Default is CS_PARAM_EQ_ALGO_CS_ITSOL
-   */
-
-  cs_param_eq_set_algo_type(eqname,
-                            CS_PARAM_EQ_ALGO_CS_ITSOL);
-
-  /* An iterative solver is defined thanks to
-     >> a solver type among
-         >> CS_PARAM_ITSOL_CG       conjuguate gradient
-         >> CS_PARAM_ITSOL_BICG     bi-conjuguate gradient
-         >> CS_PARAM_ITSOL_GMRES    GMRES algorithm
-
-     >> a preconditioner type among
-         >> CS_PARAM_PRECOND_DIAG   Jacobi (inverse of the diagonal)
-         >> CS_PARAM_PRECOND_POLY   Neumann polynomial of order 1
-         >> CS_PARAM_PRECOND_SSOR   Symmetric Successive Over-Relaxation
-         >> CS_PARAM_PRECOND_ILU0   Incomplete LU factorisation (type 0)
-         >> CS_PARAM_PRECOND_MG     Algebraic/Geometric Multigrid
-
-     Default is CS_PARAM_ITSOL_CG / CS_PARAM_PRECOND_SSOR
-  */
-
-  cs_param_eq_set_itsol_type(eqname,
-                             CS_PARAM_ITSOL_CG,
-                             CS_PARAM_PRECOND_DIAG);
-
-  /* Additionnal settings related to an iterative solver
-     >> The required accuracy on the norm of the residual
-     >> The max number of iterations of the iterative solver
-     >> The normalization or not of the norm of residual (impact on the
-         overall accuracy of the algorithm)
-  */
-
-  cs_param_eq_set_itsol_precision(eqname,  // equation name
-                                  1e-12);  // precision
-
-  cs_param_eq_set_itsol_max_iter(eqname,  // equation name
-                                 2500);   // max. number of iterations
-
-  cs_param_eq_set_itsol_normalization(eqname,  // equation name
-                                      false);  // normalize residual ?
 }

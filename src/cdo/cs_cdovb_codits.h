@@ -30,11 +30,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_mesh.h"
+#include "cs_field.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
-#include "cs_param_eq.h"
-#include "cs_cdo_bc.h"
-#include "cs_hodge.h"
+#include "cs_equation_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -49,7 +49,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO vertex-based discretization */
-typedef struct _cdovb_codits_t cs_cdovb_codits_t;
+typedef struct _cs_cdovb_codits_t cs_cdovb_codits_t;
 
 /*============================================================================
  * Public function prototypes
@@ -57,75 +57,75 @@ typedef struct _cdovb_codits_t cs_cdovb_codits_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the required number of scalar equations based on a vertex
- *         based discretization
+ * \brief  Initialize a cs_cdovb_codits_t structure
  *
- * \param[in]    n_scal_systems   number of scalar equations
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_codits_create_all(int  n_scal_systems);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a cs_cdovb_codits_t
- *
- * \param[in] eq       pointer to a structure storing parameters of an eq.
+ * \param[in] eq       pointer to a cs_equation_param_t structure
  * \param[in] m        pointer to a mesh structure
- * \param[in] eq_id    id related to the equation to treat
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_codits_init(const cs_param_eq_t  *eq,
-                     const cs_mesh_t      *m,
-                     int                   eq_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Destroy all cs_cdovb_codits_t structures
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_codits_free_all(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve a scalar convection/diffusion equation with a CDO
- *         vertex-based scheme.
  *
- * \param[in]  m        pointer to a cs_mesh_t structure
- * \param[in]  connect  pointer to a cs_cdo_connect_t structure
- * \param[in]  quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]  tcur     current physical time of the simulation
- * \param[in]  eq_id    pointer to a cs_cdovb_codits_t struct.
+ * \return a pointer to a new allocated cs_cdovb_codits_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cdovb_codits_init(const cs_equation_param_t  *eqp,
+                     const cs_mesh_t            *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy a cs_cdovb_codits_t structure
+ *
+ * \param[in, out]  builder   pointer to a cs_cdovb_codits_t structure
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void *
+cs_cdovb_codits_free(void   *builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the linear system arising from a scalar convection/diffusion
+ *         equation with a CDO vertex-based scheme.
+ *
+ * \param[in]      m        pointer to a cs_mesh_t structure
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tcur     current physical time of the simulation
+ * \param[in, out] builder  pointer to cs_cdovb_codits_t structure
+ * \param[in, out] rhs      right-hand side
+ * \param[in, out] sla_mat  pointer to cs_sla_matrix_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_codits_solve(const cs_mesh_t            *m,
-                      const cs_cdo_connect_t     *connect,
-                      const cs_cdo_quantities_t  *quant,
-                      double                      tcur,
-                      int                         eq_id);
+cs_cdovb_codits_build_system(const cs_mesh_t            *m,
+                             const cs_cdo_connect_t     *connect,
+                             const cs_cdo_quantities_t  *quant,
+                             double                      tcur,
+                             void                       *builder,
+                             cs_real_t                 **rhs,
+                             cs_sla_matrix_t           **sla_mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *
- * \param[in]  connect   pointer to a cs_cdo_connect_t struct.
- * \param[in]  quant     pointer to a cs_cdo_quantities_t struct.
- * \param[in]  eq_id     id of the equation/system to treat
+ * \param[in]      connect  pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant    pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      solu     solution array
+ * \param[in, out] builder  pointer to cs_cdovb_codits_t structure
+ * \param[in, out] field    pointer to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_codits_post(const cs_cdo_connect_t     *connect,
-                     const cs_cdo_quantities_t  *quant,
-                     int                         eq_id);
+cs_cdovb_codits_update_field(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_quantities_t  *quant,
+                             const cs_real_t            *solu,
+                             void                       *builder,
+                             cs_field_t                 *field);
 
 /*----------------------------------------------------------------------------*/
 

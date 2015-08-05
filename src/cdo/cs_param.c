@@ -30,6 +30,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -139,6 +140,88 @@ cs_param_source_term_type_name[CS_PARAM_N_SOURCE_TERM_TYPES][CS_CDO_LEN_NAME] =
  * Private function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set a cs_def_t structure
+ *
+ * \param[in]      def_type   type of definition (by value, function...)
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      val        value to set
+ * \param[in, out] def        pointer to cs_def_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_def(cs_param_def_type_t      def_type,
+         cs_param_var_type_t      var_type,
+         const void              *val,
+         cs_def_t                *def)
+{
+  assert(var_type != CS_PARAM_N_VAR_TYPES);
+
+  switch (def_type) {
+
+  case CS_PARAM_DEF_BY_VALUE:
+    if (val == NULL) {
+      if (var_type == CS_PARAM_VAR_SCAL)
+        def->get.val = 0.0;
+      else if (var_type == CS_PARAM_VAR_VECT)
+        def->get.vect[0] = def->get.vect[1] = def->get.vect[2] = 0.0;
+      else if (var_type == CS_PARAM_VAR_TENS) {
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++)
+            def->get.tens[i][j] = 0.0;
+      }
+      else {
+        assert(var_type == CS_PARAM_VAR_SYMTENS);
+        for (int i = 0; i < 6; i++)
+          def->get.twovects[i] = 0.0;
+      }
+    }
+    else { // val != NULL
+      if (var_type == CS_PARAM_VAR_SCAL)
+        def->get.val = atof(val);
+      else if (var_type == CS_PARAM_VAR_VECT) {
+        char s[3][32];
+        sscanf(val, "%s %s %s", s[0], s[1], s[2]);
+        for (int i = 0; i < 3; i++)
+          def->get.vect[i] = atof(s[i]);
+      }
+      else if (var_type == CS_PARAM_VAR_TENS) {
+        char s[9][32];
+        sscanf(val, "%s %s %s %s %s %s %s %s %s",
+               s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]);
+        for (int i = 0; i < 3; i++)
+          for (int j = 0; j < 3; j++)
+            def->get.tens[i][j] = atof(s[3*i+j]);
+      }
+      else {
+        assert(var_type == CS_PARAM_VAR_SYMTENS);
+        char s[6][32];
+        sscanf(val, "%s %s %s %s %s %s", s[0], s[1], s[2], s[3], s[4], s[5]);
+        for (int i = 0; i < 6; i++)
+          def->get.twovects[i] = atof(s[i]);
+      }
+    }
+    break;
+
+  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+    if (val == NULL)
+      def->analytic = NULL;
+    else
+      def->analytic = (cs_analytic_func_t *)val;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " This type of definition is not handled yet.\n"
+              " Please modify your settings.");
+    break;
+
+  } /* end of switch on def_type */
+
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -244,9 +327,9 @@ cs_param_pty_set_default(void)
 
   /* Property: Unity */
   pty = cs_param_properties;
-  len = strlen("Unity")+1;
+  len = strlen("unity")+1;
   BFT_MALLOC(pty->name, len, char);
-  strncpy(pty->name, "Unity", len);
+  strncpy(pty->name, "unity", len);
   pty->flag = CS_PARAM_FLAG_UNIFORM;
   pty->post_freq = -1;
   pty->field_id = -1;
@@ -256,9 +339,9 @@ cs_param_pty_set_default(void)
 
   /* Property: MassDensity */
   pty = cs_param_properties + 1;
-  len = strlen("MassDensity")+1;
+  len = strlen("mass_density")+1;
   BFT_MALLOC(pty->name, len, char);
-  strncpy(pty->name, "MassDensity", len);
+  strncpy(pty->name, "mass_density", len);
   pty->flag = CS_PARAM_FLAG_UNIFORM;
   pty->type = CS_PARAM_PTY_ISO;
   pty->post_freq = -1;
@@ -268,9 +351,9 @@ cs_param_pty_set_default(void)
 
   /* Property: LaminarViscosity */
   pty = cs_param_properties + 2;
-  len = strlen("LaminarViscosity")+1;
+  len = strlen("laminar_viscosity")+1;
   BFT_MALLOC(pty->name, len, char);
-  strncpy(pty->name, "LaminarViscosity", len);
+  strncpy(pty->name, "laminar_viscosity", len);
   pty->flag = CS_PARAM_FLAG_UNIFORM;
   pty->post_freq = -1;
   pty->field_id = -1;
@@ -284,16 +367,16 @@ cs_param_pty_set_default(void)
  * \brief  Create and intialize a material property
  *
  * \param[in]  name        name of the material property
- * \param[in]  type        type of behavior of this material property
+ * \param[in]  key_type    keyname of the type of property
  * \param[in]  post_freq   -1 (no post-processing), 0 (at the beginning)
  *                         otherwise every post_freq iteration(s)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_pty_add(const char             *name,
-                 cs_param_pty_type_t     type,
-                 int                     post_freq)
+cs_param_pty_add(const char      *name,
+                 const char      *key_type,
+                 int              post_freq)
 {
   int  pty_id = cs_param_pty_get_id_by_name(name);
   cs_param_pty_t  *pty = NULL;
@@ -313,8 +396,21 @@ cs_param_pty_add(const char             *name,
   pty = cs_param_properties + cs_param_n_properties;
   cs_param_n_properties++;
 
-  pty->type = type;
   pty->post_freq = post_freq;
+
+  /* Assign a type */
+  if (strcmp(key_type, "isotropic") == 0)
+    pty->type = CS_PARAM_PTY_ISO;
+  else if (strcmp(key_type, "orthotropic") == 0)
+    pty->type = CS_PARAM_PTY_ORTHO;
+  else if (strcmp(key_type, "anisotropic") == 0)
+    pty->type = CS_PARAM_PTY_ANISO;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key %s for setting the type of property.\n"
+                " Key is one of the following: isotropic, orthotropic or"
+                " anisotropic.\n"
+                " Please modify your settings."), key_type);
 
   /* Copy name */
   int  len = strlen(name) + 1;
@@ -325,6 +421,88 @@ cs_param_pty_add(const char             *name,
   pty->flag = 0;
   pty->def_type = CS_PARAM_N_DEF_TYPES;
   pty->def.get.val = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a way to compute the value of a material property
+ *
+ * \param[in]  name      name of the material property
+ * \param[in]  def_key   way of defining the value of the property
+ * \param[in]  val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_pty_set(const char     *name,
+                 const char     *def_key,
+                 const void     *val)
+{
+  int  pty_id = cs_param_pty_get_id_by_name(name);
+
+  if (pty_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop setting the material property %s.\n"
+                " Do not find a similar name in the property database.\n"),
+              name);
+
+  cs_param_pty_t  *pty = cs_param_properties + pty_id;
+
+  /* Get the type of definition */
+  if (strcmp(def_key, "value") == 0) {
+    pty->def_type =  CS_PARAM_DEF_BY_VALUE;
+    pty->flag |= CS_PARAM_FLAG_UNIFORM;
+  }
+  else if (strcmp(def_key, "field") == 0)
+    pty->def_type = CS_PARAM_DEF_BY_FIELD;
+  else if (strcmp(def_key, "evaluator") == 0)
+    pty->def_type = CS_PARAM_DEF_BY_EVALUATOR;
+  else if (strcmp(def_key, "analytic") == 0)
+    pty->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
+  else if (strcmp(def_key, "user") == 0)
+    pty->def_type = CS_PARAM_DEF_BY_USER_FUNCTION;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting the type of definition.\n"
+                " Given key: %s\n"
+                " Choice among value, field, evaluator, analytic, user, law"
+                " or file\n"
+                " Please modify your settings."), def_key);
+
+  pty->flag |= CS_PARAM_FLAG_SYMMET;  // A material must be symmetric
+
+  switch (pty->type) {
+
+  case CS_PARAM_PTY_ISO:
+    _set_def(pty->def_type, CS_PARAM_VAR_SCAL, val, &(pty->def));
+    break;
+  case CS_PARAM_PTY_ORTHO:
+    _set_def(pty->def_type, CS_PARAM_VAR_VECT, val, &(pty->def));
+    break;
+  case CS_PARAM_PTY_ANISO:
+    _set_def(pty->def_type, CS_PARAM_VAR_TENS, val, &(pty->def));
+
+    if (pty->def_type == CS_PARAM_DEF_BY_VALUE) { /* Check the symmetry */
+
+      cs_get_t  get = pty->def.get;
+      if ((get.tens[0][1] - get.tens[1][0]) > cs_get_eps_machine() ||
+          (get.tens[0][2] - get.tens[2][0]) > cs_get_eps_machine() ||
+          (get.tens[1][2] - get.tens[2][1]) > cs_get_eps_machine())
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" The definition of the tensor related to the material"
+                    " property %s is not symmetric.\n"
+                    " This case is not handled. Please check your settings.\n"),
+                  pty->name);
+
+    }
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of material property."));
+    break;
+
+  } /* switch on property type */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -378,101 +556,6 @@ cs_param_pty_add_fields(void)
 
   } // Loop on material properties
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a material property by value
- *
- * \param[in]  name      name of the material property
- * \param[in]  matval    value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_set_by_val(const char     *name,
-                        cs_get_t        matval)
-{
-  int  i, j;
-
-  int  pty_id = cs_param_pty_get_id_by_name(name);
-  cs_param_pty_t  *pty = NULL;
-
-  if (pty_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop setting the material property %s.\n"
-                " Do not find a similar name in the property database.\n"),
-              name);
-
-  pty = cs_param_properties + pty_id;
-
-  /* Set members of the structure */
-  pty->def_type = CS_PARAM_DEF_BY_VALUE;
-  pty->flag |= CS_PARAM_FLAG_UNIFORM;
-  pty->flag |= CS_PARAM_FLAG_SYMMET;  // Must be symmetric
-
-  switch (pty->type) {
-
-  case CS_PARAM_PTY_ISO:
-    pty->def.get.val = matval.val;
-    break;
-
-  case CS_PARAM_PTY_ORTHO:
-    for (i = 0; i < 3; i++)
-      pty->def.get.vect[i] = matval.vect[i];
-    break;
-
-  case CS_PARAM_PTY_ANISO:
-    for (i = 0; i < 3; i++)
-      for (j = 0; j < 3; j++)
-        pty->def.get.tens[i][j] = matval.tens[i][j];
-
-    /* Check the symmetry of the tensor */
-    if ((matval.tens[0][1] - matval.tens[1][0]) > cs_get_eps_machine() ||
-        (matval.tens[0][2] - matval.tens[2][0]) > cs_get_eps_machine() ||
-        (matval.tens[1][2] - matval.tens[2][1]) > cs_get_eps_machine())
-      bft_error(__FILE__, __LINE__, 0,
-                _(" The definition of the tensor related to the material"
-                  " property %s is not symmetric.\n"
-                  " This case is not handled. Please check your settings.\n"),
-                pty->name);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of material property."));
-    break;
-
-  } /* switch type */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a material property by an analytical function
- *
- * \param[in]  name       name of the material property
- * \param[in]  analytic   pointer to a cs_analytic_func_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_set_by_analytic_func(const char          *name,
-                                  cs_analytic_func_t  *analytic_func)
-{
-  int  pty_id = cs_param_pty_get_id_by_name(name);
-  cs_param_pty_t  *pty = NULL;
-
-  if (pty_id == -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Stop setting the material property %s.\n"
-                " Do not find a similar name in the property database.\n"),
-              name);
-
-  pty = cs_param_properties + pty_id;
-  pty->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
-  pty->def.analytic = analytic_func;
-  pty->flag |= CS_PARAM_FLAG_SYMMET;  // Must be symmetric
 }
 
 /*----------------------------------------------------------------------------*/
@@ -695,7 +778,7 @@ cs_param_pty_resume_all(void)
 
   bft_printf("\n");
   bft_printf(lsepline);
-  bft_printf("  Resume the definition of material properties\n");
+  bft_printf("\tResume the definition of material properties\n");
   bft_printf(lsepline);
 
   for (pty_id = 0; pty_id < cs_param_n_properties; pty_id++) {
@@ -788,21 +871,19 @@ cs_param_pty_finalize(void)
  * \brief  Allocate and initialize a new cs_param_bc_t structure
  *
  * \param[in]  default_bc     default boundary condition
- * \param[in]  is_penalized   true/false
  *
  * \return a pointer to the new structure (free with cs_param_eq_t)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_param_bc_t *
-cs_param_bc_create(cs_param_bc_type_t  default_bc,
-                   _Bool               is_penalized)
+cs_param_bc_create(cs_param_bc_type_t  default_bc)
 {
   cs_param_bc_t  *bc = NULL;
 
   BFT_MALLOC(bc, 1, cs_param_bc_t);
   bc->default_bc = default_bc;
-  bc->strong_enforcement = (is_penalized ? false : true);
+  bc->strong_enforcement = true;
   bc->penalty_coef = 0.;
 
   bc->n_defs = 0;
@@ -815,33 +896,39 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc,
 /*!
  * \brief  Set a cs_param_bc_def_t structure
  *
- * \param[inout] bc_def     pointer to cs_param_bc_def_t struct. to set
- * \param[in]    loc_id     id related to a cs_mesh_location_t
- * \param[in]    bc_type    generic type of admissible boundary conditions
- * \param[in]    def_type   by value, function...
- * \param[in]    def_coef1  access to the value of the first coef
- * \param[in]    def_coef2  access to the value of the second coef (optional)
+ * \param[in, out] bc_def     pointer to cs_param_bc_def_t struct. to set
+ * \param[in]      loc_id     id related to a cs_mesh_location_t
+ * \param[in]      bc_type    generic type of admissible boundary conditions
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      def_type   by value, function...
+ * \param[in]      def_coef1  access to the value of the first coef
+ * \param[in]      def_coef2  access to the value of the second coef (optional)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_bc_def_set(cs_param_bc_def_t       *bc_def,
+cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
                     int                      loc_id,
                     cs_param_bc_type_t       bc_type,
+                    cs_param_var_type_t      var_type,
                     cs_param_def_type_t      def_type,
-                    cs_def_t                 def_coef1,
-                    cs_def_t                 def_coef2)
+                    const void              *coef1,
+                    const void              *coef2)
 {
+  if (bcpd == NULL)
+    return;
+
   /* Sanity checks */
-  assert(bc_def != NULL);
   assert(def_type != CS_PARAM_N_DEF_TYPES);
   assert(bc_type != CS_PARAM_N_BC_TYPES);
 
-  bc_def->loc_id = loc_id;
-  bc_def->bc_type = bc_type;
-  bc_def->def_type = def_type;
-  bc_def->def_coef1 = def_coef1;
-  bc_def->def_coef2 = def_coef2;
+  bcpd->loc_id = loc_id;
+  bcpd->var_type = var_type;
+  bcpd->bc_type = bc_type;
+  bcpd->def_type = def_type;
+
+  _set_def(def_type, var_type, coef1, &(bcpd->def_coef1));
+  _set_def(def_type, var_type, coef2, &(bcpd->def_coef2));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -849,45 +936,41 @@ cs_param_bc_def_set(cs_param_bc_def_t       *bc_def,
  * \brief  Define a source term. This source term is added to the list of
  *         source terms associated to an equation
  *
- * \param[inout] st         pointer to the cs_param_source_term_t struc. to set
- * \param[in]    st_name    name of the source term (for log/post-processing)
- * \param[in]    ml_id      id related to a cs_mesh_location_t
- * \param[in]    type       type of source term
- * \param[in]    var_type   type of variables (scalar, vector, tensor...)
- * \param[in]    quad_type  type of quadrature rule to use
- * \param[in]    def_type   type of definition (by value, function...)
- * \param[in]    imp_def    access to the definition of the implicit part
- * \param[in]    exp-def    access to the definition of the explicit part
+ * \param[in, out] stp        pointer to cs_param_source_term_t structure
+ * \param[in]      st_name   name of the source term
+ * \param[in]      ml_id      id of the related to a cs_mesh_location_t struct.
+ * \param[in]      st_type    type of source term
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      quad_type  type of quadrature rule to use
+ * \param[in]      def_type   type of definition (by value, function...)
+ * \param[in]      val        access to the definition of the source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_source_term_add(cs_param_source_term_t       *st,
+cs_param_source_term_add(cs_param_source_term_t       *stp,
                          const char                   *st_name,
                          int                           ml_id,
                          cs_param_source_term_type_t   type,
                          cs_param_var_type_t           var_type,
                          cs_quadra_type_t              quad_type,
                          cs_param_def_type_t           def_type,
-                         cs_def_t                      imp_def,
-                         cs_def_t                      exp_def)
+                         const void                   *val)
 {
-  int  len;
+  if (stp == NULL)
+    return;
 
-  /* Sanity check */
-  assert(st != NULL);
+  int len = strlen(st_name)+1;
+  BFT_MALLOC(stp->name, len, char);
+  strncpy(stp->name, st_name, len);
 
-  len = strlen(st_name)+1;
-  BFT_MALLOC(st->name, len, char);
-  strncpy(st->name, st_name, len);
+  stp->ml_id = ml_id;
+  stp->type = type;
+  stp->var_type = var_type;
+  stp->quad_type = quad_type;
+  stp->def_type = def_type;
 
-  st->location_id = ml_id;
-  st->type = type;
-  st->var_type = var_type;
-  st->quad_type = quad_type;
-  st->def_type = def_type;
-  st->imp_def = imp_def;
-  st->exp_def = exp_def;
+  _set_def(def_type, var_type, val, &(stp->def));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -908,11 +991,11 @@ cs_param_source_term_get_name(const cs_param_source_term_t   st_info)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name related to a source term
+ * \brief   Get the name of type of a given source term structure
  *
  * \param[in] st_info     cs_param_source_term_t structure
  *
- * \return the name of the source term
+ * \return  the name of the type
  */
 /*----------------------------------------------------------------------------*/
 

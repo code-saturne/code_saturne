@@ -308,13 +308,7 @@ cs_run(void)
     cs_gradient_initialize();
     cs_gradient_perio_initialize();
 
-    if (opts.cdo) { /* CDO kernel mode */
-
-      cs_cdo_main(cs_glob_mesh,
-                  cs_glob_mesh_quantities);
-
-    }
-    else if (opts.verif == false) {
+    if (opts.verif == false) {
 
       /* Initialize sparse linear systems resolution */
 
@@ -331,25 +325,35 @@ cs_run(void)
 
       if (cs_user_solver_set() == 0) {
 
-        /* Additional initializations required by some models */
+        if (opts.cdo) { /* CDO kernel mode */
 
-        cs_fan_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
+          cs_cdo_main(cs_glob_mesh,
+                      cs_glob_mesh_quantities);
 
-        /*----------------------------------------------
-         * Call main calculation function (code Kernel)
-         *----------------------------------------------*/
+        }
+        else {
 
-        CS_PROCF(caltri, CALTRI)();
+          /* Additional initializations required by some models */
+
+          cs_fan_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
+
+          /*----------------------------------------------
+           * Call main calculation function (code Kernel)
+           *----------------------------------------------*/
+
+          CS_PROCF(caltri, CALTRI)();
+
+        }
 
       }
       else {
 
-        /*--------------------------------
-         * Call user calculation function
-         *--------------------------------*/
+          /*--------------------------------
+           * Call user calculation function
+           *--------------------------------*/
 
-        cs_user_solver(cs_glob_mesh,
-                       cs_glob_mesh_quantities);
+          cs_user_solver(cs_glob_mesh,
+                         cs_glob_mesh_quantities);
 
       }
 

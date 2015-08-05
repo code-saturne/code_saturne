@@ -52,7 +52,6 @@ typedef unsigned short int cs_flag_t;
 /* Type of numerical scheme */
 typedef enum {
 
-  CS_SPACE_SCHEME_NONE,
   CS_SPACE_SCHEME_CDOVB,   /* CDO scheme with vertex-based positionning */
   CS_SPACE_SCHEME_CDOFB,   /* CDO cell-based scheme with hybridization */
   CS_SPACE_N_SCHEMES

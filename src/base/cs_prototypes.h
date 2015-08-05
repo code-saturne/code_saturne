@@ -36,8 +36,7 @@
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
 
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
+#include "cs_domain.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -492,12 +491,56 @@ cs_user_turbomachinery_rotor(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the specifications for the current simulation
+ * \brief  Specify additional mesh locations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup(void);
+cs_user_cdo_add_mesh_locations(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify which type of boundaries closed the computational domain
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_domain_boundary(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify which are the equatinos to be solved in this computational
+ *         domain
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_add_domain_equations(cs_domain_t   *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify additional material properties
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_properties(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate material property to user-defined equations and specify
+ *         boundary conditions, source terms for thes additional equations
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_setup_equations(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -514,50 +557,28 @@ cs_user_cdo_geometric_settings(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Setup advanced features concerning the numerical parameters
+ *         of the equation resolved during the computation
+ *
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_numeric_settings(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the discrete Hodge operators
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_hodge_settings(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Setup advanced features concerning the resolution of linear systems
- *         within the CDO framework
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_cdo_itsol_settings(void);
+cs_user_cdo_numeric_settings(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Additional operations on results produced by CDO schemes.
  *         Define advanced post-processing and/or analysis for instance.
  *
- * \param[in]  m        pointer to a cs_mesh_t struct.
- * \param[in]  mq       pointer to a cs_quantities_t struct.
- * \param[in]  connect  pointer to a cs_cdo_connect_t structure
- * \param[in]  quant    pointer to a cs_cdo_quantities_t structure
+ * \param[in]  domain   pointer to a cs_domain_t structure
  * \param[in]  tcur     current physical time of the simulation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_extra_op(const cs_mesh_t             *m,
-                     const cs_mesh_quantities_t  *mq,
-                     const cs_cdo_connect_t      *connect,
-                     const cs_cdo_quantities_t   *quant,
-                     double                       tcur);
+cs_user_cdo_extra_op(const cs_domain_t      *domain,
+                     double                  tcur);
 
 /*----------------------------------------------------------------------------*/
 

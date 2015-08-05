@@ -182,7 +182,6 @@ typedef enum {
   CS_PARAM_BC_HMG_NEUMANN,
   CS_PARAM_BC_NEUMANN,
   CS_PARAM_BC_ROBIN,
-
   CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;
@@ -194,7 +193,6 @@ typedef enum {
   CS_PARAM_BOUNDARY_INLET,
   CS_PARAM_BOUNDARY_OUTLET,
   CS_PARAM_BOUNDARY_SYMMETRY,
-
   CS_PARAM_N_BOUNDARY_TYPES
 
 } cs_param_boundary_type_t;
@@ -210,7 +208,9 @@ typedef struct {
   int                    loc_id;   // Id related to the list of border faces
 
   cs_param_bc_type_t     bc_type;  // type of mathematical BC
+  cs_param_var_type_t    var_type; // type of variable
   cs_param_def_type_t    def_type; // Type of definition for a and b
+
 
   /* Access to the value related to the first coefficient and possibly
      the second one */
@@ -237,7 +237,7 @@ typedef struct {
 /* Types of source terms */
 typedef enum {
 
-  CS_PARAM_SOURCE_TERM_BASIC,    // in the right hand side
+  CS_PARAM_SOURCE_TERM_EXPLICIT, // in the right hand side
   CS_PARAM_SOURCE_TERM_IMPLICIT, // in the matrix to invert
   CS_PARAM_SOURCE_TERM_IMEX,     // implicit/explicit: two contributions
   CS_PARAM_SOURCE_TERM_MASS,     // specific treatment
@@ -248,10 +248,11 @@ typedef enum {
 
 typedef struct {
 
-  char  *restrict name;  /* short description of the source term */
+  char                   *restrict name;  /* short description of the source term */
 
-  int                          location_id;  /* id of the related mesh location
+  int                          ml_id;  /* id of the related mesh location
                                                 structure */
+  bool                         post;
 
   /* Specification related to the way of computing the source term */
   cs_param_source_term_type_t  type;      /* mass, head loss... */
@@ -259,9 +260,9 @@ typedef struct {
   cs_param_def_type_t          def_type;  /* by value, by function... */
   cs_quadra_type_t             quad_type; /* barycentric, higher, highest */
 
-  /* Two potential values (implicit and explicit) */
-  cs_def_t                     imp_def;
-  cs_def_t                     exp_def;
+  /* Values if one needs an implicit and explicit part
+     implicit part comes first */
+  cs_def_t                     def;
 
 } cs_param_source_term_t;
 
@@ -364,16 +365,31 @@ cs_param_pty_set_default(void);
  * \brief  Create and intialize a material property
  *
  * \param[in]  name        name of the material property
- * \param[in]  type        type of behavior of this material property
+ * \param[in]  key_type    keyname of the type of property
  * \param[in]  post_freq   -1 (no post-processing), 0 (at the beginning)
  *                         otherwise every post_freq iteration(s)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_pty_add(const char             *name,
-                 cs_param_pty_type_t     type,
-                 int                     post_freq);
+cs_param_pty_add(const char      *name,
+                 const char      *key_type,
+                 int              post_freq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a way to compute the value of a material property
+ *
+ * \param[in]  name      name of the material property
+ * \param[in]  def_key   way of defining the value of the property
+ * \param[in]  val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_pty_set(const char     *name,
+                 const char     *def_key,
+                 const void     *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -383,32 +399,6 @@ cs_param_pty_add(const char             *name,
 
 void
 cs_param_pty_add_fields(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a material property by value
- *
- * \param[in]  name      name of the material property
- * \param[in]  matval    value to set
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_set_by_val(const char   *name,
-                        cs_get_t      matval);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a material property by an analytical function
- *
- * \param[in]  name       name of the material property
- * \param[in]  analytic   pointer to a cs_analytic_func_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_set_by_analytic_func(const char          *name,
-                                  cs_analytic_func_t  *analytic_func);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -479,64 +469,62 @@ cs_param_pty_finalize(void);
  * \brief  Allocate and initialize a new cs_param_bc_t structure
  *
  * \param[in]  default_bc     default boundary condition
- * \param[in]  is_penalized   true/false
  *
  * \return a pointer to the new structure (free with cs_param_eq_t)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_param_bc_t *
-cs_param_bc_create(cs_param_bc_type_t  default_bc,
-                   bool                is_penalized);
+cs_param_bc_create(cs_param_bc_type_t  default_bc);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set a cs_param_bc_def_t structure
  *
- * \param[inout] bc_def     pointer to cs_param_bc_def_t struct. to set
- * \param[in]    loc_id     id related to a cs_mesh_location_t
- * \param[in]    bc_type    generic type of admissible boundary conditions
- * \param[in]    def_type   by value, function...
- * \param[in]    def_coef1  access to the value of the first coef
- * \param[in]    def_coef2  access to the value of the second coef (optional)
+ * \param[in, out] bc_def     pointer to cs_param_bc_def_t struct. to set
+ * \param[in]      loc_id     id related to a cs_mesh_location_t
+ * \param[in]      bc_type    generic type of admissible boundary conditions
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      def_type   by value, function...
+ * \param[in]      def_coef1  access to the value of the first coef
+ * \param[in]      def_coef2  access to the value of the second coef (optional)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_bc_def_set(cs_param_bc_def_t     *bc_def,
-                    int                    loc_id,
-                    cs_param_bc_type_t     bc_type,
-                    cs_param_def_type_t    def_type,
-                    cs_def_t               def_coef1,
-                    cs_def_t               def_coef2);
+cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
+                    int                      loc_id,
+                    cs_param_bc_type_t       bc_type,
+                    cs_param_var_type_t      var_type,
+                    cs_param_def_type_t      def_type,
+                    const void              *coef1,
+                    const void              *coef2);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define a source term. This source term is added to the list of
  *         source terms associated to an equation
  *
- * \param[inout] st         pointer to the cs_param_source_term_t struc. to set
- * \param[in]    st_name    name of the source term (for log/post-processing)
- * \param[in]    ml_id      id related to a cs_mesh_location_t
- * \param[in]    type       type of source term
- * \param[in]    var_type   type of variables (scalar, vector, tensor...)
- * \param[in]    quad_type  type of quadrature rule to use
- * \param[in]    def_type   type of definition (by value, function...)
- * \param[in]    imp_def    access to the definition of the implicit part
- * \param[in]    exp-def    access to the definition of the explicit part
+ * \param[in, out] stp        pointer to cs_param_source_term_t structure
+ * \param[in]      st_name   name of the source term
+ * \param[in]      ml_id      id of the related to a cs_mesh_location_t struct.
+ * \param[in]      st_type    type of source term
+ * \param[in]      var_type   type of variables (scalar, vector, tensor...)
+ * \param[in]      quad_type  type of quadrature rule to use
+ * \param[in]      def_type   type of definition (by value, function...)
+ * \param[in]      val        access to the definition of the source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_source_term_add(cs_param_source_term_t       *st,
-                         const char                   *st_name,
+cs_param_source_term_add(cs_param_source_term_t       *stp,
+                         const char                   *st_label,
                          int                           ml_id,
                          cs_param_source_term_type_t   type,
                          cs_param_var_type_t           var_type,
                          cs_quadra_type_t              quad_type,
                          cs_param_def_type_t           def_type,
-                         cs_def_t                      imp_def,
-                         cs_def_t                      exp_def);
+                         const void                   *val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -553,11 +541,11 @@ cs_param_source_term_get_name(const cs_param_source_term_t   st_info);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name related to a source term
+ * \brief   Get the name of type of a given source term structure
  *
  * \param[in] st_info     cs_param_source_term_t structure
  *
- * \return the name of the source term
+ * \return  the name of the type
  */
 /*----------------------------------------------------------------------------*/
 

@@ -877,7 +877,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   double  mes, inv, vec[3], xc[3];
 
   cs_cdo_quantities_t  *cdoq = NULL;
-  cs_cdo_cc_algo_t cc_algo = CS_CDO_CC_SATUR; // default value
+  cs_cdo_cc_algo_t cc_algo = CS_CDO_CC_SATURNE; // default value
 
   /* Sanity check */
   assert(topo != NULL);
@@ -920,7 +920,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
     _vtx_algorithm(m, mq, topo, cdoq);
     break;
 
-  case CS_CDO_CC_SATUR:
+  case CS_CDO_CC_SATURNE:
     bft_printf(" -cdo- Cell.Center.Algo >> Original\n");
     _saturn_algorithm(m, mq, cdoq);
     break;

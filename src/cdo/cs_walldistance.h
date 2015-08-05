@@ -1,5 +1,8 @@
+#ifndef __CS_WALLDISTANCE_H__
+#define __CS_WALLDISTANCE_H__
+
 /*============================================================================
- * Additional post-processing functions defined by user related to CDO schemes
+ * Compute the wall distance using the CDO framework
  *============================================================================*/
 
 /*
@@ -24,62 +27,23 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <errno.h>
-#include <locale.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <math.h>
-
-/*----------------------------------------------------------------------------
- * Local headers
- *----------------------------------------------------------------------------*/
-
-#include <bft_mem.h>
-#include <bft_printf.h>
-
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_post.h"
-#include "cs_domain.h"
-
-/*----------------------------------------------------------------------------
- * Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_base.h"
+#include "cs_equation.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-/*=============================================================================
- * Additional doxygen documentation
+/*============================================================================
+ * Macro definitions
  *============================================================================*/
-
-/*!
-  \file cs_user_cdo_post.c
-
-  \brief Additional user-defined post-processing and analysis functions
-*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*=============================================================================
- * Local Macro definitions and structure definitions
- *============================================================================*/
-
-/*! \endcond (end ignore by Doxygen) */
 
 /*============================================================================
- * Private function prototypes
+ * Type definitions
  *============================================================================*/
 
 /*============================================================================
@@ -88,21 +52,34 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Additional operations on results provided by CDO schemes.
- *         Define advanced post-processing and/or analysis for instance.
+ * \brief  Compute the wall distance
  *
- * \param[in]  domain   pointer to a cs_domain_t structure
- * \param[in]  tcur     current physical time of the simulation
+ * \param[in]   connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]   cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]   eq        pointer to the associated cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_extra_op(const cs_domain_t           *domain,
-                     double                       tcur)
-{
-  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
-}
+cs_walldistance_compute(const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *cdoq,
+                        const cs_equation_t         *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup an new equation related to the wall distance
+ *
+ * \param[in]   eq          pointer to the associated cs_equation_t structure
+ * \param[in]   wall_ml_id  id of the mesh location related to wall boundaries
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_walldistance_setup(cs_equation_t   *eq,
+                      int              wall_ml_id);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#endif /* __CS_CDO_WALLDIST_H__ */

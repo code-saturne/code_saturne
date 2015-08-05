@@ -46,17 +46,10 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "cs_mesh.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
 #include "cs_log.h"
 #include "cs_search.h"
 #include "cs_quadrature.h"
 #include "cs_evaluate.h"
-#include "cs_prototypes.h"
-#include "cs_field.h"
-#include "cs_matrix.h"
-#include "cs_sles.h"
 #include "cs_cdo_bc.h"
 #include "cs_hodge.h"
 
@@ -78,40 +71,18 @@ BEGIN_C_DECLS
 
 /* Algebraic system for CDO vertex-based discretization */
 
-struct _cdovb_codits_t {
+struct _cs_cdovb_codits_t {
 
-  const cs_param_eq_t  *eq;   /* Set of parameters defining the current
-                                 system to solve: BCs, material property...
-                                 Not owned by the structure.
-                                 This structure is freed later */
+  /* Pointer to a cs_equation_param_t structure shared with a cs_equation_t
+     structure. This structure is not owner. */
 
-  int     main_ts_id;         /* Id of the main timer states structure related
-                                 to this equation */
-  int     pre_ts_id;          /* Id of the timer stats structure gathering all
-                                 steps before the resolution of the linear
-                                 systems */
-  int     solve_ts_id;       /* Id of the timer stats structure related
-                                to the inversion of the linear system */
-  int     post_ts_id;        /* Id of the timer stats structure gathering all
-                                steps afterthe resolution of the linear systems
-                                (post, balance...) */
-
-  _Bool   build_system;       /* false => keep the system as it was at the
-                                 previous time step */
+  const cs_equation_param_t  *eqp;
 
   /* System size (known boundary entities may be removed if BCs are strongly
      enforced) */
 
   cs_lnum_t  n_vertices;
   cs_lnum_t  n_dof_vertices; /* n_rows = n_cols = n_vertices - dir. vertices */
-
-  /* Algebraic system (size = n_dof_vertices) */
-
-  cs_matrix_structure_t       *ms;  /* matrix structure (how are stored
-                                       coefficients of the matrix a) */
-  cs_matrix_t                 *a;   // matrix to inverse with cs_sles_solve()
-  cs_real_t                   *x;   // DoF unknows
-  cs_real_t                   *rhs; // right-hand side
 
   /* Boundary conditions:
 
@@ -132,11 +103,12 @@ struct _cdovb_codits_t {
 
    */
 
-  cs_cdo_bc_t        *face_bc;
-  cs_cdo_bc_list_t   *vtx_dir;
-  double             *dir_val; /* size = vtx_dir->n_nhmg_elts
-                                  allocated if there is a strong enforcement
-                                  of the BCs */
+  bool               strong_bc; // strong enforcement of BCs or not
+  cs_cdo_bc_t       *face_bc;   // list of faces sorted by type of BCs
+  cs_cdo_bc_list_t  *vtx_dir;   // list of vertices attached to a Dirichlet BC
+  double            *dir_val;   /* size = vtx_dir->n_nhmg_elts
+                                   allocated if there is a strong enforcement
+                                   of the BCs */
 
   /* Indirection between zipped numbering (without BC) and initial numbering
      Allocated only if the boundary conditions are strongly enforced.
@@ -145,7 +117,7 @@ struct _cdovb_codits_t {
   cs_lnum_t          *v_i2z_ids;  // Mapping n_vertices     -> n_dof_vertices
 
   /* Work buffer */
-  cs_real_t    *work;
+  cs_real_t          *work;
 
 };
 
@@ -153,79 +125,13 @@ struct _cdovb_codits_t {
  * Private variables
  *============================================================================*/
 
-static  int  cs_cdovb_n_scal_systems = 0;
-static  cs_cdovb_codits_t  *cs_cdovb_scal_systems = NULL;
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize structures related to boundary conditions
- *
- * \param[in]     m     pointer to the mesh structure
- * \param[inout]  sys   pointer to a cs_cdovb_codits_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_init_bc_structures(const cs_mesh_t         *m,
-                    cs_cdovb_codits_t       *sys)
-{
-  int  i;
-
-  const cs_param_bc_t  *bc_param = sys->eq->bc;
-
-  /* Initialize BC information
-     Compute also the list of Dirichlet vertices and their related definition
-     We make the distinction betweenn homogeneous and non-homogeneous BCs
-  */
-  sys->face_bc = cs_cdo_bc_init(bc_param, m->n_b_faces);
-  sys->vtx_dir = cs_cdo_bc_vtx_dir_create(m, sys->face_bc);
-
-  /* Strong enforcement => compress (or zip) the numbering of vertices */
-  sys->v_z2i_ids = NULL; // zipped --> initial ids
-  sys->v_i2z_ids = NULL; // initial --> zipped ids
-
-  if (bc_param->strong_enforcement && sys->vtx_dir->n_elts > 0) {
-
-    cs_lnum_t  cur_id = 0;
-    _Bool  *is_kept = NULL;
-
-    sys->n_dof_vertices = sys->n_vertices - sys->vtx_dir->n_elts;
-
-    BFT_MALLOC(is_kept, sys->n_vertices, _Bool);
-    for (i = 0; i < sys->n_vertices; i++)
-      is_kept[i] = true;
-    for (i = 0; i < sys->vtx_dir->n_elts; i++)
-      is_kept[sys->vtx_dir->elt_ids[i]] = false;
-
-    /* Build sys->v_z2i_ids and sys->i2i_ids */
-    BFT_MALLOC(sys->v_z2i_ids, sys->n_dof_vertices, cs_lnum_t);
-    BFT_MALLOC(sys->v_i2z_ids, sys->n_vertices, cs_lnum_t);
-
-    for (i = 0; i < sys->n_vertices; i++) {
-      sys->v_i2z_ids[i] = -1;  /* by default, we consider that it's removed */
-      if (is_kept[i]) {
-        sys->v_i2z_ids[i] = cur_id;
-        sys->v_z2i_ids[cur_id++] = i;
-      }
-    }
-    assert(cur_id == sys->n_dof_vertices);
-
-    BFT_FREE(is_kept);
-
-    /* Allocate dir_val */
-    BFT_MALLOC(sys->dir_val, sys->vtx_dir->n_nhmg_elts, double);
-
-  } /* Strong enforcement of BCs */
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute the right hand side (rhs) for a convection/diffusion
+ * \brief   Compute the (full) right hand side (rhs) for a convection/diffusion
  *          equation.
  *          Take into account several contributions:
  *          --> Dirichlet, Neumann and Robin BCs
@@ -236,7 +142,7 @@ _init_bc_structures(const cs_mesh_t         *m,
  * \param[in]     quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]     ad        pointer to the (full) diffusion matrix
  * \param[in]     tcur      current physical time of the simulation
- * \param[inout]  sys       pointer to a cs_cdovb_codits_t structure
+ * \param[in,out] builder   pointer to a cs_cdovb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -246,21 +152,21 @@ _compute_rhs(const cs_mesh_t            *m,
              const cs_cdo_quantities_t  *quant,
              const cs_sla_matrix_t      *ad,
              double                      tcur,
-             cs_cdovb_codits_t          *sys)
+             cs_cdovb_codits_t          *builder)
 {
   int  i;
 
-  const cs_param_eq_t  *eq = sys->eq;
-  const cs_param_bc_t  *bc = eq->bc;
-  const cs_cdo_bc_list_t  *vtx_dir = sys->vtx_dir;
+  const cs_equation_param_t  *eqp = builder->eqp;
+  const cs_param_bc_t  *bc = eqp->bc;
+  const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
 
   // only scalar equation are handled up to now (TODO)
-  assert(eq->type == CS_PARAM_EQ_TYPE_SCAL);
+  assert(eqp->type == CS_EQUATION_TYPE_SCAL);
 
   /* Initialize rhs */
-  double *full_rhs = sys->work;
+  double *full_rhs = builder->work;
 
-  for (i = 0; i < sys->n_vertices; i++)
+  for (i = 0; i < builder->n_vertices; i++)
     full_rhs[i] = 0.0;
 
   /* BOUNDARY CONDITIONS */
@@ -275,28 +181,28 @@ _compute_rhs(const cs_mesh_t            *m,
                             m,
                             bc,
                             vtx_dir,
-                            sys->dir_val);
+                            builder->dir_val);
 
-    if (bc->strong_enforcement) {
+    if (builder->strong_bc) {
 
-      double  *x_bc = sys->work + sys->n_vertices;
-      double  *contrib = sys->work + 2*sys->n_vertices;
+      double  *x_bc = builder->work + builder->n_vertices;
+      double  *contrib = builder->work + 2*builder->n_vertices;
 
-      for (i = 0; i < sys->n_vertices; i++)
+      for (i = 0; i < builder->n_vertices; i++)
         x_bc[i] = 0.0;
       for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
-        x_bc[vtx_dir->elt_ids[i]] = sys->dir_val[i];
+        x_bc[vtx_dir->elt_ids[i]] = builder->dir_val[i];
 
       /* Compute ad*Tbc: rhs = rhs - ad*Tbc */
       cs_sla_matvec(ad, x_bc, &contrib, true);
-      for (i = 0; i < sys->n_vertices; i++)
+      for (i = 0; i < builder->n_vertices; i++)
         full_rhs[i] -= contrib[i];
 
     }
     else { /* Take into account Dirichlet BC: Define x_bc */
 
       for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
-        full_rhs[vtx_dir->elt_ids[i]] += bc->penalty_coef * sys->dir_val[i];
+        full_rhs[vtx_dir->elt_ids[i]] += bc->penalty_coef * builder->dir_val[i];
 
     }
 
@@ -307,35 +213,32 @@ _compute_rhs(const cs_mesh_t            *m,
 
   /* SOURCE TERMS */
 
-  if (eq->n_source_terms > 0) { /* Add contribution from source term */
+  if (eqp->n_source_terms > 0) { /* Add contribution from source term */
 
-    for (i = 0; i < eq->n_source_terms; i++) {
+    for (i = 0; i < eqp->n_source_terms; i++) {
 
-      const cs_param_source_term_t  st = eq->source_terms[i];
+      const cs_param_source_term_t  st = eqp->source_terms[i];
 
-      double  *contrib = sys->work + 2*sys->n_vertices;
+      double  *contrib = builder->work + 2*builder->n_vertices;
       cs_flag_t  dof_flag =
         CS_PARAM_FLAG_CELL | CS_PARAM_FLAG_DUAL | CS_PARAM_FLAG_SCAL;
 
       /* Sanity check */
       assert(st.var_type == CS_PARAM_VAR_SCAL);
+      assert(st.type == CS_PARAM_SOURCE_TERM_EXPLICIT);
 
-      if (st.type == CS_PARAM_SOURCE_TERM_BASIC ||
-          st.type == CS_PARAM_SOURCE_TERM_IMEX) {
-        cs_evaluate(m, quant, connect,  // geometrical and topological info.
-                    tcur,
-                    dof_flag,
-                    st.location_id,
-                    st.def_type,
-                    st.quad_type,
-                    st.exp_def,         // definition of the explicit part
-                    &contrib);          // updated inside this function
+      cs_evaluate(m, quant, connect,  // geometrical and topological info.
+                  tcur,
+                  dof_flag,
+                  st.ml_id,
+                  st.def_type,
+                  st.quad_type,
+                  st.def,             // definition of the explicit part
+                  &contrib);          // updated inside this function
 
         /* Update full rhs */
-        for (i = 0; i < sys->n_vertices; i++)
+        for (i = 0; i < builder->n_vertices; i++)
           full_rhs[i] += contrib[i];
-
-      } // There is an explicit part of the source term to take into account
 
     } // Loop on source terms
 
@@ -465,9 +368,9 @@ _encode_edge_masks(cs_lnum_t                c_id,
  * \brief   Define the full stiffness matrix and the matrix related to the
  *          discrete Hodge operator from a cellwise assembly process
  *
- * \param[in]    connect     pointer to a cs_cdo_connect_t struct.
- * \param[in]    quant       pointer to a cs_cdo_quantities_t struct.
- * \param[inout] sys         pointer to a cs_cdovb_codits_t struct.
+ * \param[in]     connect     pointer to a cs_cdo_connect_t struct.
+ * \param[in]     quant       pointer to a cs_cdo_quantities_t struct.
+ * \param[in,out] builder     pointer to a cs_cdovb_codits_t struct.
  *
  * \return a pointer to the full stiffness matrix
  */
@@ -476,7 +379,7 @@ _encode_edge_masks(cs_lnum_t                c_id,
 static cs_sla_matrix_t *
 _build_stiffness_matrix(const cs_cdo_connect_t     *connect,
                         const cs_cdo_quantities_t  *quant,
-                        cs_cdovb_codits_t          *sys)
+                        cs_cdovb_codits_t          *builder)
 {
   int  i, j, n_ent, n_blocks, n_bits, mask_size;
   cs_lnum_t  c_id, v_id;
@@ -490,8 +393,8 @@ _build_stiffness_matrix(const cs_cdo_connect_t     *connect,
   cs_sla_matrix_t  *s = _init_stiffness(quant->n_vertices, connect);
 
   const cs_connect_index_t  *c2v = connect->c2v;
-  const cs_param_eq_t  *eq = sys->eq;
-  const cs_param_hodge_t  h_info = eq->diffusion_hodge;
+  const cs_equation_param_t  *eqp = builder->eqp;
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EPFD);
@@ -605,11 +508,12 @@ _build_stiffness_matrix(const cs_cdo_connect_t     *connect,
  *           - Robin boundary conditions (TODO) [the explicit part]
  *           - Dirichlet boundary conditions : full Ad*Tbc
  *
- * \param[in]    m         pointer to a cs_mesh_t structure
- * \param[in]    connect   pointer to a cs_cdo_connect_t struct.
- * \param[in]    quant     pointer to a cs_cdo_quantities_t struct.
- * \param[in]    tcur      current physical time of the simulation
- * \param[inout] sys       pointer to a cs_cdovb_codits_t struct.
+ * \param[in]      m         pointer to a cs_mesh_t structure
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tcur      current physical time of the simulation
+ * \param[in, out] rhs       right-hand side
+ * \param[in, out] builder   pointer to a cs_cdovb_codits_t structure
  *
  * \return a pointer to a cs_sla_matrix_t structure
  */
@@ -620,45 +524,44 @@ _build_diffusion_system(const cs_mesh_t            *m,
                         const cs_cdo_connect_t     *connect,
                         const cs_cdo_quantities_t  *quant,
                         double                      tcur,
-                        cs_cdovb_codits_t          *sys)
+                        cs_real_t                  *rhs,
+                        cs_cdovb_codits_t          *builder)
 {
   int  i;
 
   cs_sla_matrix_t  *full_matrix = NULL, *final_matrix = NULL;
 
-  const cs_param_eq_t  *eq = sys->eq;
-
   /* Sanity check */
-  assert(eq->bc->strong_enforcement == true); // TODO
+  assert(builder->strong_bc == true); // TODO
 
   /* Build the (full) stiffness matrix i.e. without taking into account BCs */
-  full_matrix = _build_stiffness_matrix(connect, quant, sys);
+  full_matrix = _build_stiffness_matrix(connect, quant, builder);
 
   /* Remove entries very small with respect to other coefficients */
   cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
 
   /* Compute the full rhs */
-  _compute_rhs(m, connect, quant, full_matrix, tcur, sys);
+  _compute_rhs(m, connect, quant, full_matrix, tcur, builder);
 
-  double  *full_rhs = sys->work; // stored in sys->work
+  double  *full_rhs = builder->work; // stored in builder->work
 
-  if (sys->n_vertices == sys->n_dof_vertices) { // Keep the full system
+  if (builder->n_vertices == builder->n_dof_vertices) { // Keep the full system
 
     final_matrix = full_matrix;
-    memcpy(sys->rhs, full_rhs, sys->n_vertices*sizeof(double));
+    memcpy(rhs, full_rhs, builder->n_vertices*sizeof(double));
 
   }
   else { /* Reduce size. Extract block with degrees of freedom */
 
-    for (i = 0; i < sys->n_dof_vertices; i++)
-      sys->rhs[i] = full_rhs[sys->v_z2i_ids[i]];
+    for (i = 0; i < builder->n_dof_vertices; i++)
+      rhs[i] = full_rhs[builder->v_z2i_ids[i]];
 
-    final_matrix = cs_sla_matrix_pack(sys->n_dof_vertices,  // n_block_rows
-                                      sys->n_dof_vertices,  // n_block_cols
-                                      full_matrix,          // full matrix
-                                      sys->v_z2i_ids,       // row_z2i_ids
-                                      sys->v_i2z_ids,       // col_i2z_ids
-                                      true);                // keep sym.
+    final_matrix = cs_sla_matrix_pack(builder->n_dof_vertices, // n_block_rows
+                                      builder->n_dof_vertices, // n_block_cols
+                                      full_matrix,             // full matrix
+                                      builder->v_z2i_ids,      // row_z2i_ids
+                                      builder->v_i2z_ids,      // col_i2z_ids
+                                      true);                   // keep sym.
 
     /* Free buffers */
     full_matrix = cs_sla_matrix_free(full_matrix);
@@ -669,356 +572,190 @@ _build_diffusion_system(const cs_mesh_t            *m,
   return final_matrix;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Switch the matrix represenation from a cs_sla_matrix_t struct. to
- *          a cs_matrix_t struct.
- *          sla_mat is freed inside this routine.
- *
- * \param[inout] sys       pointer to a cs_cdovb_codits_t struct.
- * \param[inout] sla_mat   pointer to a cs_sla_matrix_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_map_to_matrix(cs_cdovb_codits_t          *sys,
-               cs_sla_matrix_t            *sla_mat)
-{
-  /* Sanity check */
-  assert(sla_mat->type == CS_SLA_MAT_MSR);
-
-  /* First step: create a matrix structure */
-  sys->ms =  cs_matrix_structure_create_msr(CS_MATRIX_MSR,      // type
-                                            true,               // transfer
-                                            true,               // have_diag
-                                            sla_mat->n_rows,    // n_rows
-                                            sla_mat->n_cols,    // n_cols_ext
-                                            &(sla_mat->idx),    // row_index
-                                            &(sla_mat->col_id), // col_id
-                                            NULL,               // halo
-                                            NULL);              // numbering
-
-  sys->a = cs_matrix_create(sys->ms); // ms is also stored inside a
-
-  const cs_lnum_t  *row_index, *col_id;
-  cs_matrix_get_msr_arrays(sys->a, &row_index, &col_id, NULL, NULL);
-
-  /* Second step: associate coefficients to a matrix structure */
-  cs_matrix_transfer_coefficients_msr(sys->a,
-                                      false,             // symmetric values ?
-                                      NULL,              // diag. block
-                                      NULL,              // extra-diag. block
-                                      row_index,         // row_index
-                                      col_id,            // col_id
-                                      &(sla_mat->diag),  // diag. values
-                                      &(sla_mat->val));  // extra-diag. values
-
-  /* Free non-transferred parts of sla_mat */
-  sla_mat = cs_sla_matrix_free(sla_mat);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Solve a linear system Ax = b arising from a CDO vertex-based scheme
- *
- * \param[in]    eq        pointer to a cs_param_eq_t structure
- * \param[in]    a         pointer to a cs_matrix_t struct.
- * \param[in]    rhs       right-hand side
- * \param[inout] x         array of unkowns
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_solve_linear_system(const cs_param_eq_t        *eq,
-                     const cs_matrix_t          *a,
-                     const cs_real_t            *rhs,
-                     cs_real_t                  *x)
-{
-  double  r_norm;
-  cs_sles_convergence_state_t  cvg;
-  cs_sla_sumup_t  ret;
-
-  cs_halo_rotation_t  halo_rota = CS_HALO_ROTATION_IGNORE;
-
-  cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
-
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
-  const cs_param_itsol_t  itsol_info = eq->itsol_info;
-
-  printf("\n# Solve Ax = b for %s with %s\n"
-         "# System size: %8d ; eps: % -8.5e ;\n",
-         eq->name, cs_param_get_solver_name(itsol_info.solver),
-         n_rows, itsol_info.eps);
-
-  if (itsol_info.resid_normalized)
-    r_norm = cs_euclidean_norm(n_rows, rhs) / n_rows;
-  else
-    r_norm = 1.0;
-
-  cvg = cs_sles_solve(sles,
-                      a,
-                      halo_rota,
-                      itsol_info.eps,
-                      r_norm,
-                      &(ret.iter),
-                      &(ret.residual),
-                      rhs,
-                      x,
-                      0,      // aux. size
-                      NULL);  // aux. buffers
-
-  cs_sles_free(sles);
-
-  bft_printf("\n <iterative solver convergence sumup>\n");
-  bft_printf(" -sla- code        %d\n", cvg);
-  bft_printf(" -sla- n_iters     %d\n", ret.iter);
-  bft_printf(" -sla- residual    % -8.4e\n", ret.residual);
-}
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate the required number of scalar equations based on a vertex
- *         based discretization
+ * \brief  Initialize a cs_cdovb_codits_t structure
  *
- * \param[in]    n_scal_systems   number of scalar equations
+ * \param[in] eqp      pointer to a cs_equation_param_t structure
+ * \param[in]  m       pointer to a mesh structure
+ *
+ * \return a pointer to a new allocated cs_cdovb_codits_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdovb_codits_create_all(int  n_scal_systems)
+void  *
+cs_cdovb_codits_init(const cs_equation_param_t  *eqp,
+                     const cs_mesh_t            *m)
 {
-  assert(n_scal_systems > -1);
-
-  BFT_MALLOC(cs_cdovb_scal_systems, n_scal_systems, cs_cdovb_codits_t);
-
-  cs_cdovb_n_scal_systems = n_scal_systems;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a cs_cdovb_codits_t
- *
- * \param[in] eq       pointer to a structure storing parameters of an eq.
- * \param[in] m        pointer to a mesh structure
- * \param[in] eq_id    id related to the equation/system to treat
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdovb_codits_init(const cs_param_eq_t  *eq,
-                     const cs_mesh_t      *m,
-                     int                   eq_id)
-{
-  cs_lnum_t  i, len;
-
   /* Sanity checks */
-  assert(eq != NULL);
-  assert(eq->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(eq->type == CS_PARAM_EQ_TYPE_SCAL);
+  assert(eqp != NULL);
+  assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
+  assert(eqp->type == CS_EQUATION_TYPE_SCAL);
 
-  if (eq_id < 0 || eq_id >= cs_cdovb_n_scal_systems)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid equation id (id = %d)\n"), eq_id);
+  cs_cdovb_codits_t  *builder = NULL;
 
-  cs_cdovb_codits_t  *sys = cs_cdovb_scal_systems + eq_id;
+  BFT_MALLOC(builder, 1, cs_cdovb_codits_t);
 
-  /* Set of parameters related to this algebraic system */
-  sys->eq = eq;
+  builder->eqp = eqp;
 
-  /* Create timer statistic structure for a simplified profiling */
-  sys->main_ts_id = sys->pre_ts_id = sys->solve_ts_id = sys->post_ts_id = -1;
+  /* Dimensions:
+     By default, we set number of DoFs as if there is a weak enforcement of
+     the boundary conditions */
+  builder->n_vertices = m->n_vertices;
+  builder->n_dof_vertices = builder->n_vertices;
 
-  if (eq->verbosity > 0) {
-    sys->main_ts_id = cs_timer_stats_create("stages", // parent name
-                                            eq->name,
-                                            eq->name);
+  /* Set members and structures related to the management of the BCs */
 
-    cs_timer_stats_start(sys->main_ts_id);
-    cs_timer_stats_set_plot(sys->main_ts_id, 1);
+  const cs_param_bc_t  *bc_param = eqp->bc;
 
-    if (eq->verbosity > 1) {
+  builder->strong_bc = bc_param->strong_enforcement;
 
-      char *label = NULL;
+  /* Translate user-defined information about BC into a structure well-suited
+     for computation. We make the distinction between homogeneous and
+     non-homogeneous BCs.
+     We also compute also the list of Dirichlet vertices along with their
+     related definition.
+  */
+  builder->face_bc = cs_cdo_bc_init(bc_param, m->n_b_faces);
+  builder->vtx_dir = cs_cdo_bc_vtx_dir_create(m, builder->face_bc);
 
-      len = strlen("_solve") + strlen(eq->name) + 1;
-      BFT_MALLOC(label, len, char);
+  /* Strong enforcement means that we need an indirection list between the
+     compress (or zip) and initial numbering of vertices */
+  builder->v_z2i_ids = NULL; // zipped --> initial ids
+  builder->v_i2z_ids = NULL; // initial --> zipped ids
 
-      sprintf(label, "%s_pre", eq->name);
-      sys->pre_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(sys->pre_ts_id, 1);
+  if (builder->strong_bc && builder->vtx_dir->n_elts > 0) {
 
-      sprintf(label, "%s_solve", eq->name);
-      sys->solve_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(sys->solve_ts_id, 1);
+    cs_lnum_t  i, cur_id = 0;
+    bool  *is_kept = NULL;
 
-      sprintf(label, "%s_post", eq->name);
-      sys->post_ts_id = cs_timer_stats_create(eq->name, label, label);
-      cs_timer_stats_set_plot(sys->post_ts_id, 1);
+    builder->n_dof_vertices = builder->n_vertices - builder->vtx_dir->n_elts;
 
-      BFT_FREE(label);
+    BFT_MALLOC(is_kept, builder->n_vertices, bool);
+    for (i = 0; i < builder->n_vertices; i++)
+      is_kept[i] = true;
+    for (i = 0; i < builder->vtx_dir->n_elts; i++)
+      is_kept[builder->vtx_dir->elt_ids[i]] = false;
 
-    } // verbosity > 1
+    /* Build builder->v_z2i_ids and builder->i2i_ids */
+    BFT_MALLOC(builder->v_z2i_ids, builder->n_dof_vertices, cs_lnum_t);
+    BFT_MALLOC(builder->v_i2z_ids, builder->n_vertices, cs_lnum_t);
 
-  } // verbosity > 0
+    for (i = 0; i < builder->n_vertices; i++) {
+      /* by default, we consider that it's removed */
+      builder->v_i2z_ids[i] = -1;
+      if (is_kept[i]) {
+        builder->v_i2z_ids[i] = cur_id;
+        builder->v_z2i_ids[cur_id++] = i;
+      }
+    }
+    assert(cur_id == builder->n_dof_vertices);
 
-  sys->build_system = true; // call the first build
+    BFT_FREE(is_kept);
 
-  /* Dimensions: By default, we set number of DoFs as if there is a
-     weak enforcement of the BCs */
-  sys->n_vertices = m->n_vertices;
-  sys->n_dof_vertices = sys->n_vertices;
+    /* Allocate dir_val */
+    BFT_MALLOC(builder->dir_val, builder->vtx_dir->n_nhmg_elts, double);
 
-  /* Boundary conditions (may modify n_dof_vertices)
-     Set structures related to the management of the BCs */
-  _init_bc_structures(m, sys);
-
-  /* Algebraic system */
-  BFT_MALLOC(sys->x, sys->n_dof_vertices, cs_real_t);
-  BFT_MALLOC(sys->rhs, sys->n_dof_vertices, cs_real_t);
-  for (i = 0; i < sys->n_dof_vertices; i++)
-    sys->x[i] = 0.0, sys->rhs[i] = 0.;
-
-  /* A matrix is composed of a matrix structure and a coefficient structure
-     both are allocated later */
-  sys->ms = NULL;
-  sys->a = NULL;
+  } /* Strong enforcement of BCs */
 
   /* Work buffer */
-  size_t  work_size = 3*sys->n_vertices;
-  BFT_MALLOC(sys->work, work_size, cs_real_t);
+  BFT_MALLOC(builder->work, 3*builder->n_vertices, cs_real_t);
+
+  return builder;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy all cs_cdovb_codits_t structures
+ * \brief  Destroy a cs_cdovb_codits_t structure
+ *
+ * \param[in, out]  builder   pointer to a cs_cdovb_codits_t structure
+ *
+ * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdovb_codits_free_all(void)
+void *
+cs_cdovb_codits_free(void   *builder)
 {
-  int  sys_id;
+  cs_cdovb_codits_t  *_builder = (cs_cdovb_codits_t *)builder;
 
-  for (sys_id = 0; sys_id < cs_cdovb_n_scal_systems; sys_id++) {
+  if (_builder == NULL)
+    return _builder;
 
-    cs_cdovb_codits_t  *sys = cs_cdovb_scal_systems + sys_id;
+  /* Free BC structure */
+  if (_builder->strong_bc && _builder->vtx_dir->n_elts > 0)
+    BFT_FREE(_builder->dir_val);
 
-    /* Do not free eq here (not owned by the structure).
-       This is done later. */
+  _builder->face_bc = cs_cdo_bc_free(_builder->face_bc);
+  _builder->vtx_dir = cs_cdo_bc_list_free(_builder->vtx_dir);
 
-    /* Free BC structure */
-    if (sys->eq->bc->strong_enforcement && sys->vtx_dir->n_elts > 0)
-      BFT_FREE(sys->dir_val);
-
-    sys->face_bc = cs_cdo_bc_free(sys->face_bc);
-    sys->vtx_dir = cs_cdo_bc_list_free(sys->vtx_dir);
-
-    /* Renumbering */
-    if (sys->n_vertices > sys->n_dof_vertices) {
-    BFT_FREE(sys->v_z2i_ids);
-    BFT_FREE(sys->v_i2z_ids);
-    }
-
-    /* Free algebraic system */
-    BFT_FREE(sys->rhs);
-    BFT_FREE(sys->x);
-
-    cs_matrix_structure_destroy(&(sys->ms));
-    cs_matrix_destroy(&(sys->a));
-
-    BFT_FREE(sys->work);
-
-    if (sys->main_ts_id > -1)
-      cs_timer_stats_stop(sys->main_ts_id);
+  /* Renumbering */
+  if (_builder->n_vertices > _builder->n_dof_vertices) {
+    BFT_FREE(_builder->v_z2i_ids);
+    BFT_FREE(_builder->v_i2z_ids);
   }
 
-  BFT_FREE(cs_cdovb_scal_systems);
-  cs_cdovb_scal_systems = NULL;
-  cs_cdovb_n_scal_systems = 0;
+  BFT_FREE(_builder->work);
+  BFT_FREE(_builder);
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a scalar convection/diffusion equation with a CDO
- *         vertex-based scheme.
+ * \brief  Build the linear system arising from a scalar convection/diffusion
+ *         equation with a CDO vertex-based scheme.
  *
- * \param[in]  m        pointer to a cs_mesh_t structure
- * \param[in]  connect  pointer to a cs_cdo_connect_t structure
- * \param[in]  quant    pointer to a cs_cdo_quantities_t structure
- * \param[in]  tcur     current physical time of the simulation
- * \param[in]  eq_id    pointer to a cs_cdovb_codits_t struct.
+ * \param[in]      m        pointer to a cs_mesh_t structure
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tcur     current physical time of the simulation
+ * \param[in, out] builder  pointer to cs_cdovb_codits_t structure
+ * \param[in, out] rhs      right-hand side
+ * \param[in, out] sla_mat  pointer to cs_sla_matrix_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_codits_solve(const cs_mesh_t            *m,
-                      const cs_cdo_connect_t     *connect,
-                      const cs_cdo_quantities_t  *quant,
-                      double                      tcur,
-                      int                         eq_id)
+cs_cdovb_codits_build_system(const cs_mesh_t            *m,
+                             const cs_cdo_connect_t     *connect,
+                             const cs_cdo_quantities_t  *quant,
+                             double                      tcur,
+                             void                       *builder,
+                             cs_real_t                 **rhs,
+                             cs_sla_matrix_t           **sla_mat)
 {
-  /* Sanity check */
-  if (eq_id < 0 || eq_id >= cs_cdovb_n_scal_systems)
-    bft_error(__FILE__, __LINE__, 0, _(" Invalid equation id %d\n"), eq_id);
-
-  cs_cdovb_codits_t  *sys = cs_cdovb_scal_systems + eq_id;
-
-  const cs_param_eq_t  *eq = sys->eq;
+  cs_sla_matrix_t  *diffusion_mat = NULL;
+  cs_cdovb_codits_t  *_builder = (cs_cdovb_codits_t *)builder;
+  const cs_equation_param_t  *eqp = _builder->eqp;
 
   /* Test to remove */
-  if (eq->flag & CS_PARAM_EQ_CONVECTION)
+  if (eqp->flag & CS_EQUATION_CONVECTION)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Convection is not handled yet.\n"));
-  if (eq->flag & CS_PARAM_EQ_UNSTEADY)
+              _(" Convection term is not handled yet.\n"));
+  if (eqp->flag & CS_EQUATION_UNSTEADY)
     bft_error(__FILE__, __LINE__, 0,
-              _(" Transient simulation is not handled yet.\n"));
+              _(" Unsteady terms are not handled yet.\n"));
 
-  if (sys->build_system) {
+  if (*rhs == NULL)
+    BFT_MALLOC(*rhs, _builder->n_dof_vertices, cs_real_t);
 
-    if (sys->pre_ts_id > -1)
-      cs_timer_stats_start(sys->pre_ts_id);
+  /* Build diffusion system: stiffness matrix */
+  if (eqp->flag & CS_EQUATION_DIFFUSION)
+    diffusion_mat = _build_diffusion_system(m, connect, quant,
+                                            tcur,
+                                            *rhs,
+                                            _builder);
 
-    /* Build diffusion system: stiffness matrix */
-    cs_sla_matrix_t  *sla_mat =  _build_diffusion_system(m, connect, quant,
-                                                         tcur,
-                                                         sys);
+  *sla_mat = diffusion_mat;
 
-    /* Build convection system */
-    // TODO
+  /* Build convection system */
+  // TODO
 
-    /* Get information on the matrix related to this linear system */
-    cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
-
-    bft_printf("\n  <Information about the linear system for %s equation>\n",
-               eq->name);
-    bft_printf(" -sla- A.size         %d\n", sla_mat->n_rows);
-    bft_printf(" -sla- A.nnz          %lu\n", minfo.nnz);
-    bft_printf(" -sla- A.FillIn       %5.2e %%\n", minfo.fillin);
-    bft_printf(" -sla- A.StencilMin   %d\n", minfo.stencil_min);
-    bft_printf(" -sla- A.StencilMax   %d\n", minfo.stencil_max);
-    bft_printf(" -sla- A.StencilMean  %5.2e\n", minfo.stencil_mean);
-
-    /* Map sla_mat (cs_sla_matrix_t struct.) into sys->a (cs_matrix_t struct.)
-       sla_mat is freed during this call */
-    _map_to_matrix(sys, sla_mat);
-
-    if (sys->pre_ts_id > -1)
-      cs_timer_stats_stop(sys->pre_ts_id);
-
-  }
-
-  /* Solve system */
-  if (sys->solve_ts_id > -1)
-    cs_timer_stats_start(sys->solve_ts_id);
-
-  _solve_linear_system(eq, sys->a, sys->rhs, sys->x);
-
-  if (sys->solve_ts_id > -1)
-    cs_timer_stats_stop(sys->solve_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1026,47 +763,41 @@ cs_cdovb_codits_solve(const cs_mesh_t            *m,
  * \brief  Post-process the solution of a scalar convection/diffusion equation
  *         solved with a CDO vertex-based scheme.
  *
- * \param[in]  connect   pointer to a cs_cdo_connect_t struct.
- * \param[in]  quant     pointer to a cs_cdo_quantities_t struct.
- * \param[in]  eq_id     id of the equation/system to treat
+ * \param[in]      connect  pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant    pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      solu     solution array
+ * \param[in, out] builder  pointer to cs_cdovb_codits_t structure
+ * \param[in, out] field    pointer to a cs_field_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_codits_post(const cs_cdo_connect_t     *connect,
-                     const cs_cdo_quantities_t  *quant,
-                     int                         eq_id)
+cs_cdovb_codits_update_field(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_quantities_t  *quant,
+                             const cs_real_t            *solu,
+                             void                       *builder,
+                             cs_field_t                 *field)
 {
   int  i;
 
-  /* Sanity check */
-  if (eq_id < 0 || eq_id >= cs_cdovb_n_scal_systems)
-    bft_error(__FILE__, __LINE__, 0, _(" Invalid equation id %d\n"), eq_id);
-
-  const  cs_cdovb_codits_t  *sys = cs_cdovb_scal_systems + eq_id;
-  const cs_cdo_bc_list_t  *v_dir = sys->vtx_dir;
-  const cs_param_eq_t  *eq = sys->eq;
-
-  cs_field_t  *fld = cs_field_by_id(eq->field_id);
-
-  if (sys->post_ts_id > -1)
-    cs_timer_stats_start(sys->post_ts_id);
+  cs_cdovb_codits_t  *_builder = (cs_cdovb_codits_t  *)builder;
+  const cs_cdo_bc_list_t  *v_dir = _builder->vtx_dir;
 
   /* Set computed solution in field array */
-  if (sys->n_dof_vertices < sys->n_vertices)
-    for (i = 0; i < sys->n_dof_vertices; i++)
-      fld->val[sys->v_z2i_ids[i]] = sys->x[i];
+  if (_builder->n_dof_vertices < _builder->n_vertices) {
+    for (i = 0; i < _builder->n_vertices; i++)
+      field->val[i] = 0;
+    for (i = 0; i < _builder->n_dof_vertices; i++)
+      field->val[_builder->v_z2i_ids[i]] = solu[i];
+  }
   else
-    for (i = 0; i < sys->n_vertices; i++)
-      fld->val[i] = sys->x[i];
+    for (i = 0; i < _builder->n_vertices; i++)
+      field->val[i] = solu[i];
 
   /* Set BC in field array if we have this knowledge */
-  if (eq->bc->strong_enforcement)
+  if (_builder->strong_bc)
     for (i = 0; i < v_dir->n_nhmg_elts; i++)
-      fld->val[v_dir->elt_ids[i]] = sys->dir_val[i];
-
-  if (sys->post_ts_id > -1)
-    cs_timer_stats_stop(sys->post_ts_id);
+      field->val[v_dir->elt_ids[i]] = _builder->dir_val[i];
 }
 
 /*----------------------------------------------------------------------------*/

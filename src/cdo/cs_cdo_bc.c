@@ -489,13 +489,12 @@ cs_cdo_bc_vtx_dir_create(const cs_mesh_t    *m,
 /*!
  * \brief  Set the Dirichlet values to enforce on the corresponding entities
  *
- * \param[in] dof_flag      information about the corresponding DoF to treat
- * \param[in] tcur          current physical time of the simulation
- * \param[in] stride        1, 3, 6, 9 (depend on the type of equation)
- * \param[in] geom          structure storing geometric information
- * \param[in] bc            pointer to a cs_param_bc_t structure
- * \param[in] ent_dir       pointer to a cs_cdo_bc_list_t
- * \param[inout] dir_val    array used to store Dirichlet values
+ * \param[in]      dof_flag  information about the corresponding DoF to treat
+ * \param[in]      tcur      current physical time of the simulation
+ * \param[in]      geom      structure storing geometric information
+ * \param[in]      bc        pointer to a cs_param_bc_t structure
+ * \param[in]      ent_dir   pointer to a cs_cdo_bc_list_t
+ * \param[in, out] dir_val   array used to store Dirichlet values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -507,32 +506,26 @@ cs_cdo_bc_dirichlet_set(cs_flag_t                dof_flag,
                         const cs_cdo_bc_list_t  *ent_dir,
                         double                  *dir_val)
 {
-  cs_lnum_t  i, k;
+  cs_lnum_t  i, k, stride;
   cs_real_3_t  xyz;
   cs_get_t  get;
-
-  int  stride = 1;
 
   if (ent_dir->n_nhmg_elts == 0) /* Nothing to compute */
     return;
 
-  /* Define stride */
-  if (dof_flag & CS_PARAM_FLAG_VECT)
-    stride = 3;
-  else if (dof_flag & CS_PARAM_FLAG_TENS) {
-    stride = 9;
-    if (dof_flag & CS_PARAM_FLAG_SYMMET)
-      stride = 6;
-  }
-
   /* Sanity check */
   assert(dir_val != NULL);
-  assert(stride == 1); // only scalar equation are handled up to now (TODO)
 
   for (i = 0; i < ent_dir->n_nhmg_elts; i++) {
 
     cs_lnum_t  id = ent_dir->elt_ids[i];
     cs_param_bc_def_t  *bc_def = bc->defs + ent_dir->def_ids[i];
+
+    if (bc_def->var_type == CS_PARAM_VAR_SCAL)
+      stride = 1;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" This situation is not handled yet."));
 
     switch(bc_def->def_type) {
 
