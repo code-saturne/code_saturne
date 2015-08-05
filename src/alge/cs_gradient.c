@@ -483,14 +483,18 @@ _compute_ani_weighting_cocg(double wi[],
  *
  * parameters:
  *   m         <--  mesh
- *   c_weight  <--  mesh quantities
- *   fvq       <->  mesh quantities
+ *   c_weight  <--  weigthing coefficients
+ *   fvq       <--  mesh quantities
+ *   cocgb     -->  weighted cocgb
+ *   cocg      -->  weighted cocg
  *----------------------------------------------------------------------------*/
 
 static void
 _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
                                   cs_real_t              *c_weight,
-                                  cs_mesh_quantities_t   *fvq)
+                                  cs_mesh_quantities_t   *fvq,
+                                  cs_real_33_t           *cocgb,
+                                  cs_real_33_t           *cocg)
 {
   const int n_cells = m->n_cells;
   const int n_cells_ext = m->n_cells_with_ghosts;
@@ -519,22 +523,12 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
 
   const cs_real_t *restrict weight = fvq->weight;
 
-  cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
-  cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
-
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
   cs_real_t  a11, a12, a13, a22, a23, a33;
   cs_real_t  cocg11, cocg12, cocg13, cocg22, cocg23, cocg33;
   cs_real_t  det_inv, uddij2, udbfs;
   cs_real_3_t  dc, dddij;
-
-  if (cocg == NULL) {
-    BFT_MALLOC(cocgb, m->n_b_cells, cs_real_33_t);
-    BFT_MALLOC(cocg, n_cells_ext, cs_real_33_t);
-    fvq->cocgb_s_lsq = cocgb;
-    fvq->cocg_s_lsq = cocg;
-  }
 
   /* Initialization */
 
@@ -2056,6 +2050,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
 
   cs_real_33_t   *restrict cocgb = fvq->cocgb_s_lsq;
   cs_real_33_t   *restrict cocg = fvq->cocg_s_lsq;
+  cs_real_33_t   *restrict _cocg = NULL;
+  cs_real_33_t   *restrict _cocgb = NULL;
 
   cs_lnum_t  cell_id, face_id, ii, jj, ll, mm;
   int        g_id, t_id;
@@ -2076,10 +2072,17 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
      symmetries: the gradient is thus not extrapolated on those faces. */
 
    if (c_weight != NULL) {
-     if (w_stride == 6)
+     if (w_stride == 6) {
+       BFT_MALLOC(_cocgb, m->n_b_cells, cs_real_33_t);
+       BFT_MALLOC(_cocg, n_cells_ext, cs_real_33_t);
        _compute_weighted_cell_cocg_s_lsq(cs_glob_mesh,
                                          c_weight,
-                                         cs_glob_mesh_quantities);
+                                         cs_glob_mesh_quantities,
+                                         _cocgb,
+                                         _cocg);
+       cocg = _cocg;
+       cocgb = _cocgb;
+     }
    }
 
   /* Initialize gradient */
@@ -2511,6 +2514,13 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
   /* Synchronize halos */
 
   _sync_scalar_gradient_halo(m, CS_HALO_STANDARD, idimtr, grad);
+
+   if (c_weight != NULL) {
+     if (w_stride == 6) {
+       BFT_FREE(_cocgb);
+       BFT_FREE(_cocg);
+     }
+   }
 }
 
 /*----------------------------------------------------------------------------
