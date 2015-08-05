@@ -228,6 +228,19 @@ cs_timer_stats_add_diff(int  id,
                         const cs_timer_t    *t1);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define default timer statistics
+ *
+ * This creates 2 statistic timer trees, whose roots ids are:
+ * - 0 for computational operations
+ * - 1 for computational stages
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_timer_stats_define_defaults(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
