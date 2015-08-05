@@ -97,7 +97,6 @@ cs_map_name_to_id(cs_map_name_to_id_t  *m,
 /*----------------------------------------------------------------------------
  * Return id matching a key, or -1 if not present.
  *
- *
  * parameters:
  *   m      <-- pointer to map structure
  *   key    <-- character string (key)

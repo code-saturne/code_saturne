@@ -60,9 +60,12 @@ BEGIN_C_DECLS
 double  cs_base_zthreshold = 100*DBL_MIN;
 
 /* Separation lines: long, medium, short */
-const char lsepline[] = " ==================================================\n";
-const char msepline[] = " =================================\n";
-const char ssepline[] = " ================\n";
+const char lsepline[] =
+  " ========================================================================\n";
+const char msepline[] =
+  " ==========================================\n";
+const char ssepline[] =
+  " ==================\n";
 
 /*=============================================================================
  * Local static variables
