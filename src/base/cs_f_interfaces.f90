@@ -64,12 +64,12 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine itrmav &
-     (init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                       &
+     (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                       &
      iphydp, iwarnp, epsrgp, climgp, extrap, frcxt,                            &
      pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,               &
      weighf, weighb, flumas, flumab)
       use mesh
-      integer :: init, inc, imrgra
+      integer :: f_id, init, inc, imrgra
       integer :: iccocg, nswrgp, imligp, ircflp
       integer :: iwarnp, iphydp
       double precision :: epsrgp , climgp , extrap
@@ -88,13 +88,13 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine itrgrv &
-      (init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                      &
+      (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                      &
       iphydp, iwarnp,                                                          &
       epsrgp, climgp, extrap, frcxt,                                           &
       pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,              &
       weighf, weighb, diverg)
       use mesh
-      integer :: init, inc, imrgra, iccocg, nswrgp, imligp, ircflp
+      integer :: f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp
       integer :: iwarnp , iphydp
       double precision :: epsrgp, climgp, extrap
       double precision, dimension(ncelet) :: pvar

@@ -156,6 +156,7 @@ cs_gradient_finalize(void);
  *   tr_dim         <-- 2 for tensor with periodicity of rotation,
  *                      0 otherwise
  *   hyd_p_flag     <-- flag for hydrostatic pressure
+ *   w_stride       <-- stride for weighting coefficient
  *   verbosity      <-- verbosity level
  *   clip_mode      <-- clipping mode
  *   epsilon        <-- precision for iterative gradient calculation
@@ -179,6 +180,7 @@ cs_gradient_scalar(const char                *var_name,
                    int                        n_r_sweeps,
                    int                        tr_dim,
                    int                        hyd_p_flag,
+                   int                        w_stride,
                    int                        verbosity,
                    int                        clip_mode,
                    double                     epsilon,

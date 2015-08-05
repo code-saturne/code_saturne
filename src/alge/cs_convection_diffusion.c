@@ -462,6 +462,7 @@ void CS_PROCF (itrmas, ITRMAS)
 
 void CS_PROCF (itrmav, ITRMAV)
 (
+ const cs_int_t  *const   f_id,
  const cs_int_t  *const   init,
  const cs_int_t  *const   inc,
  const cs_int_t  *const   imrgra,
@@ -492,7 +493,8 @@ void CS_PROCF (itrmav, ITRMAV)
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  cs_face_anisotropic_diffusion_potential(m,
+  cs_face_anisotropic_diffusion_potential(*f_id,
+                                          m,
                                           fvq,
                                           *init,
                                           *inc,
@@ -590,6 +592,7 @@ void CS_PROCF (itrgrp, ITRGRP)
 
 void CS_PROCF (itrgrv, ITRGRV)
 (
+ const cs_int_t  *const   f_id,
  const cs_int_t  *const   init,
  const cs_int_t  *const   inc,
  const cs_int_t  *const   imrgra,
@@ -619,7 +622,8 @@ void CS_PROCF (itrgrv, ITRGRV)
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
-  cs_anisotropic_diffusion_potential(m,
+  cs_anisotropic_diffusion_potential(*f_id,
+                                     m,
                                      fvq,
                                      *init,
                                      *inc,
@@ -786,6 +790,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   int iupwin;
   int g_id, t_id;
   int tr_dim = 0;
+  int w_stride = 1;
 
   bool upwind_switch;
   bool recompute_cocg = (iccocg) ? true : false;
@@ -867,6 +872,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
+            w_stride = weight_f->dim;
           }
         }
       }
@@ -880,6 +886,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                        nswrgp,
                        tr_dim,
                        0, /* hyd_p_flag */
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -3363,6 +3370,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_lnum_t face_id, ii, jj, cell_id;
   int iupwin, g_id, t_id;
   int tr_dim = 0;
+  int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -3455,10 +3463,12 @@ cs_convection_diffusion_thermal(int                       idtvar,
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
+            w_stride = weight_f->dim;
           }
         }
       }
     }
+
     cs_gradient_scalar(var_name,
                        gradient_type,
                        halo_type,
@@ -3467,6 +3477,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
                        nswrgp,
                        tr_dim,
                        0, /* hyd_p_flag */
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -4568,6 +4579,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   double visci[3][3], viscj[3][3];
   double fikdvi, fjkdvi;
   int tr_dim = 0;
+  int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -4665,10 +4677,12 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
+            w_stride = weight_f->dim;
           }
         }
       }
     }
+
     cs_gradient_scalar(var_name,
                        gradient_type,
                        halo_type,
@@ -4677,6 +4691,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                        nswrgp,
                        tr_dim,
                        0, /* hyd_p_flag */
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -5668,6 +5683,7 @@ cs_face_diffusion_potential(const int                 f_id,
 
   char var_name[32];
   int tr_dim = 0;
+  int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -5798,6 +5814,7 @@ cs_face_diffusion_potential(const int                 f_id,
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
+            w_stride = weight_f->dim;
           }
         }
       }
@@ -5805,6 +5822,7 @@ cs_face_diffusion_potential(const int                 f_id,
     else if (f_id == -2) {
       gweight = viselx;
     }
+
     cs_gradient_scalar(var_name,
                        gradient_type,
                        halo_type,
@@ -5813,6 +5831,7 @@ cs_face_diffusion_potential(const int                 f_id,
                        nswrgp,
                        tr_dim,
                        iphydp,
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -5914,6 +5933,7 @@ cs_face_diffusion_potential(const int                 f_id,
  *              \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
  * \f]
  *
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init           indicator
@@ -5972,7 +5992,8 @@ cs_face_diffusion_potential(const int                 f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
+cs_face_anisotropic_diffusion_potential(const int                 f_id,
+                                        const cs_mesh_t          *m,
                                         cs_mesh_quantities_t     *fvq,
                                         int                       init,
                                         int                       inc,
@@ -6024,6 +6045,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
   char var_name[32];
   int tr_dim = 0;
+  int w_stride = 6;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -6033,6 +6055,9 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_3_t *grad;
+  cs_field_t *f;
+
+  cs_real_t *gweight = NULL;
 
   /*==========================================================================
     1. Initialization
@@ -6062,7 +6087,13 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                              &gradient_type,
                              &halo_type);
 
-  strcpy(var_name, "Work array"); var_name[31] = '\0';
+  if (f_id > -1) {
+    f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name);
+  }
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -6163,6 +6194,28 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
+    if (f_id > -1) {
+      /* Get the calculation option from the field */
+      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+      cs_var_cal_opt_t var_cal_opt;
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+        if (var_cal_opt.idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            gweight = weight_f->val;
+            w_stride = weight_f->dim;
+          }
+        }
+      }
+    }
+    else if (f_id == -2) {
+      gweight = viscce;
+    }
+
+    /* Compute gradient */
     cs_gradient_scalar(var_name,
                        gradient_type,
                        halo_type,
@@ -6171,6 +6224,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                        nswrgp,
                        tr_dim,
                        iphydp,
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -6180,7 +6234,7 @@ cs_face_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                        coefap,
                        coefbp,
                        pvar,
-                       NULL, /* Weighted gradient */
+                       gweight, /* Weighted gradient */
                        grad);
 
     /* Mass flow through interior faces */
@@ -6421,6 +6475,7 @@ cs_diffusion_potential(const int                 f_id,
   char var_name[32];
   int tr_dim = 0;
   int mass_flux_rec_type = cs_glob_stokes_model->irecmf;
+  int w_stride = 1;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -6551,6 +6606,7 @@ cs_diffusion_potential(const int                 f_id,
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             gweight = weight_f->val;
+            w_stride = weight_f->dim;
           }
         }
       }
@@ -6564,6 +6620,7 @@ cs_diffusion_potential(const int                 f_id,
                        nswrgp,
                        tr_dim,
                        iphydp,
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -6703,6 +6760,7 @@ cs_diffusion_potential(const int                 f_id,
  *    \left( \tens{\mu}_\fij \gradv_\fij P \cdot \vect{S}_\ij  \right)
  * \f]
  *
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
  * \param[in]     fvq           pointer to finite volume quantities
  * \param[in]     init           indicator
@@ -6760,7 +6818,8 @@ cs_diffusion_potential(const int                 f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
+cs_anisotropic_diffusion_potential(const int                 f_id,
+                                   const cs_mesh_t          *m,
                                    cs_mesh_quantities_t     *fvq,
                                    int                       init,
                                    int                       inc,
@@ -6817,6 +6876,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
 
   char var_name[32];
   int tr_dim = 0;
+  int w_stride = 6;
 
   bool recompute_cocg = (iccocg) ? true : false;
 
@@ -6826,6 +6886,9 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
   cs_real_3_t *grad;
+  cs_field_t *f;
+
+  const cs_real_t *gweight = NULL;
 
   /*==========================================================================
     1. Initialization
@@ -6858,7 +6921,12 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                              &gradient_type,
                              &halo_type);
 
-  strcpy(var_name, "Work array"); var_name[31] = '\0';
+  if (f_id != -1) {
+    f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+  }
+  else
+    strcpy(var_name, "Work array"); var_name[31] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -6975,6 +7043,25 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
+    if (f_id != -1) {
+      /* Get the calculation option from the field */
+      int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+      cs_var_cal_opt_t var_cal_opt;
+      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+        if (var_cal_opt.idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            gweight = weight_f->val;
+            w_stride = weight_f->dim;
+          }
+        }
+      }
+    }
+
+    /* Compute gradient */
     cs_gradient_scalar(var_name,
                        gradient_type,
                        halo_type,
@@ -6983,6 +7070,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                        nswrgp,
                        tr_dim,
                        iphydp,
+                       w_stride,
                        iwarnp,
                        imligp,
                        epsrgp,
@@ -6992,7 +7080,7 @@ cs_anisotropic_diffusion_potential(const cs_mesh_t          *m,
                        coefap,
                        coefbp,
                        pvar,
-                       NULL, /* Weighted gradient */
+                       gweight, /* Weighted gradient */
                        grad);
 
     /* Mass flow through interior faces */

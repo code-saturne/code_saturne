@@ -367,16 +367,16 @@ else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrgrv &
   !==========
-( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,        &
-  iphydr , iwarnp ,                                                     &
-  epsrgp , climgp , extrap ,                                            &
-  rvoid  ,                                                              &
-  cvar_pr   ,                                                           &
-  coefa_p  , coefb_p  ,                                                 &
-  coefaf_p , coefbf_p ,                                                 &
-  viscf  , viscb  ,                                                     &
-  cpro_permeability_6 ,                                                 &
-  weighf , weighb ,                                                     &
+( ivarfl(ipr), init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,        &
+  iphydr , iwarnp ,                                                                  &
+  epsrgp , climgp , extrap ,                                                         &
+  rvoid  ,                                                                           &
+  cvar_pr   ,                                                                        &
+  coefa_p  , coefb_p  ,                                                              &
+  coefaf_p , coefbf_p ,                                                              &
+  viscf  , viscb  ,                                                                  &
+  cpro_permeability_6 ,                                                              &
+  weighf , weighb ,                                                                  &
   rhs   )
 
 endif
@@ -489,16 +489,16 @@ do while ( (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp) &
 
     call itrgrv &
     !==========
-  ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,        &
-    iphydr , iwarnp ,                                                     &
-    epsrgp , climgp , extrap ,                                            &
-    rvoid  ,                                                              &
-    cvar_pr   ,                                                           &
-    coefa_p  , coefb_p  ,                                                 &
-    coefaf_p , coefbf_p ,                                                 &
-    viscf  , viscb  ,                                                     &
-    cpro_permeability_6 ,                                                 &
-    weighf , weighb ,                                                     &
+    ( ivarfl(ipr), init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,        &
+    iphydr , iwarnp ,                                                                    &
+    epsrgp , climgp , extrap ,                                                           &
+    rvoid  ,                                                                             &
+    cvar_pr   ,                                                                          &
+    coefa_p  , coefb_p  ,                                                                &
+    coefaf_p , coefbf_p ,                                                                &
+    viscf  , viscb  ,                                                                    &
+    cpro_permeability_6 ,                                                                &
+    weighf , weighb ,                                                                    &
     rhs   )
 
   endif
@@ -604,15 +604,15 @@ else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrmav &
   !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   rvoid  ,                                                       &
-   presa  ,                                                       &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
-   viscf  , viscb  ,                                              &
-   cpro_permeability_6 ,                                          &
-   weighf , weighb ,                                              &
+ ( f_id0, init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp ,                                                     &
+   epsrgp , climgp , extrap ,                                            &
+   rvoid  ,                                                              &
+   presa  ,                                                              &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                             &
+   viscf  , viscb  ,                                                     &
+   cpro_permeability_6 ,                                                 &
+   weighf , weighb ,                                                     &
    imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -625,15 +625,15 @@ else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrmav &
   !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,  &
-   iphydr , iwarnp ,                                               &
-   epsrgp , climgp , extrap ,                                      &
-   rvoid  ,                                                        &
-   dpvar  ,                                                        &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                       &
-   viscf  , viscb  ,                                               &
-   cpro_permeability_6 ,                                           &
-   weighf , weighb ,                                               &
+ ( f_id0, init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp ,  &
+   iphydr , iwarnp ,                                                      &
+   epsrgp , climgp , extrap ,                                             &
+   rvoid  ,                                                               &
+   dpvar  ,                                                               &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                              &
+   viscf  , viscb  ,                                                      &
+   cpro_permeability_6 ,                                                  &
+   weighf , weighb ,                                                      &
    imasfl , bmasfl )
 
 endif

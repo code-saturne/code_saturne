@@ -435,6 +435,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                          cs_real_3_t      *restrict grad)
 {
   int tr_dim = 0;
+  int w_stride = 1;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_real_t *weight = NULL;
   cs_var_cal_opt_t var_cal_opt;
@@ -448,6 +449,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
       if (diff_id > -1) {
         cs_field_t *weight_f = cs_field_by_id(diff_id);
         weight = weight_f->val;
+        w_stride = weight_f->dim;
       }
     }
   }
@@ -464,6 +466,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      var_cal_opt.nswrgr,
                      tr_dim,
                      0, /* hyd_p_flag */
+                     w_stride,
                      var_cal_opt.iwarni,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
@@ -507,6 +510,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                             cs_real_3_t                f_ext[],
                             cs_real_3_t      *restrict grad)
 {
+  int w_stride = 1;
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -522,6 +526,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
       if (diff_id > -1) {
         cs_field_t *weight_f = cs_field_by_id(diff_id);
         weight = weight_f->val;
+        w_stride = weight_f->dim;
       }
     }
   }
@@ -534,6 +539,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      var_cal_opt.nswrgr,
                      0, /* tr_dim */
                      hyd_p_flag,
+                     w_stride,
                      var_cal_opt.iwarni,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,

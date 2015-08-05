@@ -377,6 +377,7 @@ void CS_PROCF (perinr, PERINR)
                        1,               /* n_r_sweeps */
                        tr_dim,
                        false,           /* hyd_p_flag, */
+                       1,               /* w_stride */
                        *iwarnp,
                        -1,              /* clip_mode */
                        *epsrgp,

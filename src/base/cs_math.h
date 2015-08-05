@@ -166,7 +166,7 @@ cs_math_3_square_norm(const cs_real_3_t v)
  * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
  *
  * \param[in]     s             symmetric matrix
- * \param[out]    sout          sout = s1 * s2
+ * \param[out]    sout          sout = 1/s1
  */
 /*----------------------------------------------------------------------------*/
 
@@ -221,6 +221,64 @@ cs_math_sym_33_product(const cs_real_6_t s1,
   sout[4] = s1[3]*s2[5] + s1[1]*s2[4] + s1[4]*s2[2];
   /* S13 = S31 */
   sout[5] = s1[0]*s2[5] + s1[3]*s2[4] + s1[5]*s2[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the product of three symmetric matrices.
+ * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
+ *
+ * \param[in]     s1            symmetric matrix
+ * \param[in]     s2            symmetric matrix
+ * \param[in]     s3            symmetric matrix
+ * \param[out]    sout          sout = s1 * s2 * s3
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_sym_33_double_product(const cs_real_6_t s1,
+                              const cs_real_6_t s2,
+                              const cs_real_6_t s3,
+                              cs_real_33_t     sout)
+{
+  cs_real_33_t _sout;
+  /* S11 */
+  _sout[0][0] = s1[0]*s2[0] + s1[3]*s2[3] + s1[5]*s2[5];
+  /* S22 */
+  _sout[1][1] = s1[3]*s2[3] + s1[1]*s2[1] + s1[4]*s2[4];
+  /* S33 */
+  _sout[2][2] = s1[5]*s2[5] + s1[4]*s2[4] + s1[2]*s2[2];
+  /* S12  */
+  _sout[0][1] = s1[0]*s2[3] + s1[3]*s2[1] + s1[5]*s2[4];
+  /* S21  */
+  _sout[1][0] = s2[0]*s1[3] + s2[3]*s1[1] + s2[5]*s1[4];
+  /* S23  */
+  _sout[1][2] = s1[3]*s2[5] + s1[1]*s2[4] + s1[4]*s2[2];
+  /* S32  */
+  _sout[2][1] = s2[3]*s1[5] + s2[1]*s1[4] + s2[4]*s1[2];
+  /* S13  */
+  _sout[0][2] = s1[0]*s2[5] + s1[3]*s2[4] + s1[5]*s2[2];
+  /* S31  */
+  _sout[2][0] = s2[0]*s1[5] + s2[3]*s1[4] + s2[5]*s1[2];
+
+  sout[0][0] = _sout[0][0]*s3[0] + _sout[0][1]*s3[3] + _sout[0][2]*s3[5];
+  /* S22 */
+  sout[1][1] = _sout[1][0]*s3[3] + _sout[1][1]*s3[1] + _sout[1][2]*s3[4];
+  /* S33 */
+  sout[2][2] = _sout[2][0]*s3[5] + _sout[2][1]*s3[4] + _sout[2][2]*s3[2];
+  /* S12  */
+  sout[0][1] = _sout[0][0]*s3[3] + _sout[0][1]*s3[1] + _sout[0][2]*s3[4];
+  /* S21  */
+  sout[1][0] = s3[0]*_sout[1][0] + s3[3]*_sout[1][1] + s3[5]*_sout[1][2];
+  /* S23  */
+  sout[1][2] = _sout[1][0]*s3[5] + _sout[1][1]*s3[4] + _sout[1][2]*s3[2];
+  /* S32  */
+  sout[2][1] = s3[2]*_sout[2][0] + s3[1]*_sout[2][1] + s3[4]*_sout[2][2];
+  /* S13  */
+  sout[0][2] = _sout[0][0]*s3[5] + _sout[0][1]*s3[4] + _sout[0][2]*s3[2];
+  /* S31  */
+  sout[2][0] = s3[0]*_sout[2][0] + s3[3]*_sout[2][1] + s3[5]*_sout[2][2];
+
 }
 
 /*----------------------------------------------------------------------------*/

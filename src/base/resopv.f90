@@ -1198,15 +1198,15 @@ if (arak.gt.0.d0) then
 
     call itrmav &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   frcxt  ,                                                       &
-   cvara_pr,                                                      &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                      &
-   viscf  , viscb  ,                                              &
-   vitenp ,                                                       &
-   weighf , weighb ,                                              &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp ,                                                       &
+   epsrgp , climgp , extrap ,                                              &
+   frcxt  ,                                                                &
+   cvara_pr,                                                               &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                               &
+   viscf  , viscb  ,                                                       &
+   vitenp ,                                                                &
+   weighf , weighb ,                                                       &
    imasfl , bmasfl )
 
     ! Projection du terme source pour oter la partie hydrostat de la pression
@@ -1540,16 +1540,16 @@ if (iswdyp.ge.1) then
 
     call itrgrv &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   dpvar  ,                                                       &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   vitenp ,                                                       &
-   weighf , weighb ,                                              &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp ,                                                       &
+   epsrgp , climgp , extrap ,                                              &
+   dfrcxt ,                                                                &
+   dpvar  ,                                                                &
+   coefa_dp  , coefb_dp  ,                                                 &
+   coefaf_dp , coefbf_dp ,                                                 &
+   viscf  , viscb  ,                                                       &
+   vitenp ,                                                                &
+   weighf , weighb ,                                                       &
    rhs0   )
 
   endif
@@ -1631,16 +1631,16 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
       call itrgrv &
       !==========
-   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp ,                                              &
-     epsrgp , climgp , extrap ,                                     &
-     dfrcxt ,                                                       &
-     dpvar  ,                                                       &
-     coefa_dp  , coefb_dp  ,                                        &
-     coefaf_dp , coefbf_dp ,                                        &
-     viscf  , viscb  ,                                              &
-     vitenp ,                                                       &
-     weighf , weighb ,                                              &
+   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+     iphydr , iwarnp ,                                                       &
+     epsrgp , climgp , extrap ,                                              &
+     dfrcxt ,                                                                &
+     dpvar  ,                                                                &
+     coefa_dp  , coefb_dp  ,                                                 &
+     coefaf_dp , coefbf_dp ,                                                 &
+     viscf  , viscb  ,                                                       &
+     vitenp ,                                                                &
+     weighf , weighb ,                                                       &
      adxk   )
 
     endif
@@ -1762,16 +1762,16 @@ do while (isweep.le.nswmpr.and.residu.gt.epsrsm(ipr)*rnormp)
 
     call itrgrv &
     !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   cvar_pr   ,                                                    &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   vitenp ,                                                       &
-   weighf , weighb ,                                              &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp ,                                                       &
+   epsrgp , climgp , extrap ,                                              &
+   dfrcxt ,                                                                &
+   cvar_pr   ,                                                             &
+   coefa_dp  , coefb_dp  ,                                                 &
+   coefaf_dp , coefbf_dp ,                                                 &
+   viscf  , viscb  ,                                                       &
+   vitenp ,                                                                &
+   weighf , weighb ,                                                       &
    rhs    )
 
   endif
@@ -1898,16 +1898,16 @@ else if (idften(ipr).eq.6) then
 
   call itrmav &
   !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   presa  ,                                                       &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   vitenp ,                                                       &
-   weighf , weighb ,                                              &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp ,                                                       &
+   epsrgp , climgp , extrap ,                                              &
+   dfrcxt ,                                                                &
+   presa  ,                                                                &
+   coefa_dp  , coefb_dp  ,                                                 &
+   coefaf_dp , coefbf_dp ,                                                 &
+   viscf  , viscb  ,                                                       &
+   vitenp ,                                                                &
+   weighf , weighb ,                                                       &
    imasfl , bmasfl )
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -1919,16 +1919,16 @@ else if (idften(ipr).eq.6) then
 
   call itrmav &
   !==========
- ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-   iphydr , iwarnp ,                                              &
-   epsrgp , climgp , extrap ,                                     &
-   dfrcxt ,                                                       &
-   dpvar  ,                                                       &
-   coefa_dp  , coefb_dp  ,                                        &
-   coefaf_dp , coefbf_dp ,                                        &
-   viscf  , viscb  ,                                              &
-   vitenp ,                                                       &
-   weighf , weighb ,                                              &
+ ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   iphydr , iwarnp ,                                                       &
+   epsrgp , climgp , extrap ,                                              &
+   dfrcxt ,                                                                &
+   dpvar  ,                                                                &
+   coefa_dp  , coefb_dp  ,                                                 &
+   coefaf_dp , coefbf_dp ,                                                 &
+   viscf  , viscb  ,                                                       &
+   vitenp ,                                                                &
+   weighf , weighb ,                                                       &
    imasfl , bmasfl )
 
 endif
@@ -2249,15 +2249,15 @@ if (idilat.eq.5) then
 
     call itrmav &
     !==========
-   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp ,                                              &
-     epsrgp , climgp , extrap ,                                     &
-     dfrcxt ,                                                       &
-     dpvar  ,                                                       &
-     coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,          &
-     viscf  , viscb  ,                                              &
-     tpucou ,                                                       &
-     weighf , weighb ,                                              &
+   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+     iphydr , iwarnp ,                                                       &
+     epsrgp , climgp , extrap ,                                              &
+     dfrcxt ,                                                                &
+     dpvar  ,                                                                &
+     coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                   &
+     viscf  , viscb  ,                                                       &
+     tpucou ,                                                                &
+     weighf , weighb ,                                                       &
      imasfl , bmasfl )
 
     ! The last increment is not reconstructed to fullfill exactly the continuity
@@ -2268,15 +2268,15 @@ if (idilat.eq.5) then
 
     call itrmav &
     !==========
-   ( init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
-     iphydr , iwarnp ,                                              &
-     epsrgp , climgp , extrap ,                                     &
-     dfrcxt ,                                                       &
-     ddpvar ,                                                       &
-     coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,          &
-     viscf  , viscb  ,                                              &
-     tpucou ,                                                       &
-     weighf , weighb ,                                              &
+   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+     iphydr , iwarnp ,                                                       &
+     epsrgp , climgp , extrap ,                                              &
+     dfrcxt ,                                                                &
+     ddpvar ,                                                                &
+     coefa_dp2       , coefb_p, coefaf_dp2      ,coefbf_p,                   &
+     viscf  , viscb  ,                                                       &
+     tpucou ,                                                                &
+     weighf , weighb ,                                                       &
      imasfl , bmasfl )
 
   endif
