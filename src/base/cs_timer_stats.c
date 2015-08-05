@@ -619,7 +619,7 @@ cs_timer_stats_start(int  id)
 
   /* Start timer and inactive parents */
 
-  for (int p_id = id; p_id > parent_id; p_id = (_stats + id)->parent_id) {
+  for (int p_id = id; p_id > parent_id; p_id = (_stats + p_id)->parent_id) {
 
     s = _stats + p_id;
 
