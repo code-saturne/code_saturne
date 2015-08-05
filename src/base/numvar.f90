@@ -249,6 +249,9 @@ module numvar
   !> pointer for thermal expansion coefficient
   integer, save :: ibeta
 
+  !> pointer for deduced mass fraction in case of gas mix
+  integer, save :: igasdd
+
   !> field id of the stresses at boundary  (if post-processed)
   integer, save :: iforbr
 
