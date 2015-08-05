@@ -123,7 +123,7 @@ static double _t_measure = 0.5;
 static int _n_min_products = 10;
 
 /* Pointer to global (block-based) numbering, if used */
-
+static cs_lnum_t  _row_num_size = 0;
 static cs_gnum_t  *_global_row_num = NULL;
 
 /*============================================================================
@@ -165,6 +165,7 @@ _build_block_row_num(cs_lnum_t         n_rows,
   cs_lnum_t _n_rows = n_rows;
   cs_gnum_t row_start = 1;
 
+  _row_num_size = n_rows;
   if (halo != NULL) {
     assert(n_rows == halo->n_local_elts);
     _n_rows += halo->n_elts[CS_HALO_EXTENDED];
@@ -750,7 +751,7 @@ cs_matrix_get_block_row_gnum(cs_lnum_t         n_rows,
 {
   const cs_gnum_t  *g_row_num = _global_row_num;
 
-  if (_global_row_num == NULL) {
+  if (_global_row_num == NULL || n_rows > _row_num_size) {
     _build_block_row_num(n_rows, halo);
     g_row_num = _global_row_num;
   }
