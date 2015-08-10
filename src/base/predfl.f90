@@ -283,7 +283,7 @@ enddo
 
 relaxp = relaxv(ipr)
 
-! (Test to modify if needed: must be scticter than
+! (Test to modify if needed: must be sctricly greater than
 ! the test in the conjugate gradient)
 tcrite = 10.d0*epsrsm(ipr)*rnorm
 
