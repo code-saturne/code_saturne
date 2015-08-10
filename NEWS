@@ -1,3 +1,12 @@
+Release 4.1.1 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- Fix detection of script type in runcase when line ends with "run (this
+  could lead to an error using "code_saturne create $case --copy-from $ref"
+  when the reference runcase did not include a parameters file).
 
 Release 4.1.0 (July 31 2015)
 ============================

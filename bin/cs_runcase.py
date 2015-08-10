@@ -121,7 +121,7 @@ class runcase(object):
             if j > -1:
                 line = line[0:j]
 
-            args = separate_args(line)
+            args = separate_args(line.rstrip())
             if args.count('run') == 1:
                 if args.index('run') == 1: # "<package_name> run"
                     for name in ('code_saturne', 'neptune_cfd'):
