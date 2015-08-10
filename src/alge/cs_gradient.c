@@ -384,6 +384,52 @@ _l2_norm_3(cs_lnum_t              n_elts,
 }
 
 /*----------------------------------------------------------------------------
+ * Update direction vector for lsq gradient taking into account the weight
+ * coefficients.
+ * At this step we recomputte inv_kf to avoid to store kf at the internal faces
+ *
+ * parameters:
+ *   wi   <-- Weight coefficient of cell i
+ *   wj   <-- Weight coefficient of cell j
+ *   w    <-> direction vector
+ *   a    <-- J'F/I'J'
+ *----------------------------------------------------------------------------*/
+
+static inline void
+_compute_ani_dc(double wi[],
+                double wj[],
+                double w[],
+                double a)
+{
+  int ii;
+  cs_real_6_t sum;
+  cs_real_6_t inv_wi;
+  cs_real_6_t inv_wj;
+  cs_real_33_t inv_kf;
+  double _w[3];
+
+  for (ii = 0; ii < 6; ii++)
+    sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
+
+  cs_math_sym_33_inv_cramer(wi,
+                            inv_wi);
+  cs_math_sym_33_inv_cramer(wj,
+                            inv_wj);
+
+  cs_math_sym_33_double_product(inv_wi,
+                                sum,
+                                inv_wj,
+                                inv_kf);
+  for (ii = 0; ii < 3; ii++)
+    _w[ii] = w[0]*inv_kf[ii][0]
+           + w[1]*inv_kf[ii][1]
+           + w[2]*inv_kf[ii][2];
+
+  for (ii = 0; ii < 3; ii++)
+    w[ii] = _w[ii];
+}
+
+/*----------------------------------------------------------------------------
  * Update R.H.S. for lsq gradient taking into account the weight coefficients.
  *
  * parameters:
@@ -399,7 +445,6 @@ static inline void
 _compute_ani_weighting(double wi[],
                        double wj[],
                        double w[],
-                       double a,
                        double resi[],
                        double resj[])
 {
@@ -427,7 +472,7 @@ _compute_ani_weighting(double wi[],
  * parameters:
  *   wi     <-- Weight coefficient of cell i
  *   wj     <-- Weight coefficient of cell j
- *   w      <-- R.H.S.
+ *   w      <-> R.H.S.
  *   a      <-- J'F/I'J'
  *   resi   --> Updated vector for cell i
  *   resj   --> Updated vector for cell j
@@ -441,7 +486,7 @@ _compute_ani_weighting_cocg(double wi[],
                             double a,
                             double resi[],
                             double resj[],
-                            double inv_kf[])
+                            cs_real_33_t inv_kf)
 {
   int ii;
   double _resi[3] = {0., 0., 0.};
@@ -449,19 +494,28 @@ _compute_ani_weighting_cocg(double wi[],
   cs_real_6_t sum;
   cs_real_6_t inv_wi;
   cs_real_6_t inv_wj;
+  double _w[3];
 
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
 
   cs_math_sym_33_inv_cramer(wi,
-                            &inv_wi);
+                            inv_wi);
   cs_math_sym_33_inv_cramer(wj,
-                            &inv_wj);
+                            inv_wj);
 
-  cs_math_sym_33_double_product( &inv_wi,
-                                 &sum,
-                                 &inv_wj,
-                                 inv_kf);
+  cs_math_sym_33_double_product(inv_wi,
+                                sum,
+                                inv_wj,
+                                inv_kf);
+  for (ii = 0; ii < 3; ii++)
+    _w[ii] = w[0]*inv_kf[ii][0]
+           + w[1]*inv_kf[ii][1]
+           + w[2]*inv_kf[ii][2];
+
+  for (ii = 0; ii < 3; ii++)
+    w[ii] = _w[ii];
+
   cs_math_sym_33_3_product(wi,
                            w,
                            _resi);
@@ -564,25 +618,21 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t        *m,
 
         _compute_ani_weighting_cocg(&c_weight[ii*6],
                                     &c_weight[jj*6],
-                                     dc,
-                                     pond,
-                                    &dc_i,
-                                    &dc_j,
-                                    &inv_kf);
+                                    dc,
+                                    pond,
+                                    dc_i,
+                                    dc_j,
+                                    inv_kf);
 
-        cs_real_t uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+        uddij2 = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         for (ll = 0; ll < 3; ll++) {
           for (mm = 0; mm < 3; mm++)
-            for (int kk = 0; kk < 3; kk++)
-              cocg[ii][ll][mm] += inv_kf[ll][kk]
-                                * dc_i[mm] * dc_i[kk] * uddij2;
+              cocg[ii][ll][mm] += dc_i[mm] * dc_i[ll] * uddij2;
         }
         for (ll = 0; ll < 3; ll++) {
           for (mm = 0; mm < 3; mm++)
-            for (int kk = 0; kk < 3; kk++)
-              cocg[jj][ll][mm] += inv_kf[ll][kk]
-                                * dc_j[mm] * dc_j[kk] * uddij2;
+              cocg[jj][ll][mm] += dc_j[mm] * dc_j[ll] * uddij2;
         }
 
       } /* loop on faces */
@@ -2009,7 +2059,7 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
                      const cs_real_t              coefap[],
                      const cs_real_t              coefbp[],
                      const cs_real_t              pvar[],
-                     const cs_real_t              c_weight[],
+                     cs_real_t                    c_weight[],
                      cs_real_3_t        *restrict grad,
                      cs_real_4_t        *restrict rhsv)
 {
@@ -2229,6 +2279,15 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
           for (ll = 0; ll < 3; ll++)
             dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
+          if (c_weight != NULL) {
+            if (w_stride == 6) {
+              _compute_ani_dc(&c_weight[ii*6],
+                              &c_weight[jj*6],
+                              dc,
+                              pond);
+            }
+          }
+
           pfac =   (rhsv[jj][3] - rhsv[ii][3])
                  / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
@@ -2240,9 +2299,8 @@ _lsq_scalar_gradient(const cs_mesh_t             *m,
               _compute_ani_weighting(&c_weight[ii*6],
                                      &c_weight[jj*6],
                                      fctb,
-                                     pond,
-                                     &rhsv[ii],
-                                     &rhsv[jj]);
+                                     &rhsv[ii][0],
+                                     &rhsv[jj][0]);
             }
             else {
               for (ll = 0; ll < 3; ll++)

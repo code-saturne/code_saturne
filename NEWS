@@ -5,6 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Extend weighted coefficients for lsq gradient calculation in case of
+   anisotropic diffusion (this option can be enabled with the option
+   iwgrec(ivar) = 1).
+
  - GUI: "check mesh" option is replaced by a new "preprocessor view": when
    building a new case, the GUI only shows sections relative to mesh
    selection and preprocessing, showing only the steps necessary up to
