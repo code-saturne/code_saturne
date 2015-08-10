@@ -292,6 +292,11 @@ tcrite = 10.d0*epsrsm(ipr)*rnorm
 isweep = 1
 residu = rnorm
 
+! Writing
+if (iwarni(ipr).ge.2) then
+  write(nfecra,1400)chaine(1:16),isweep,residu, relaxp
+endif
+
 do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
   ! --- Solving on the increment dpot
@@ -363,9 +368,9 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     if (iwarni(ipr).ge.2) then
       if (rnorm.ge.epzero) then
-        write(nfecra,1440) chaine(1:16),isweep,residu/rnorm, relaxp
+        write(nfecra,1400) chaine(1:16),isweep,residu/rnorm, relaxp
       else
-        write(nfecra,1440) chaine(1:16),isweep,residu, relaxp
+        write(nfecra,1400) chaine(1:16),isweep,residu, relaxp
       endif
     endif
 
@@ -443,7 +448,7 @@ deallocate(viscf, viscb)
 !--------
 
 #if defined(_CS_LANG_FR)
- 1440 format(1X,A16,' : sweep = ',I5,' norme second membre = ',E14.6,&
+ 1400 format(1X,A16,' : sweep = ',I5,' norme second membre = ',E14.6,&
              ', relaxp = ',E14.6)
  1600 format(                                                     &
 '@                                                            ',/,&
@@ -454,7 +459,7 @@ deallocate(viscf, viscb)
 
 #else
 
- 1440 format(1X,A16,' : sweep = ',I5,' right hand side norm = ',E14.6,&
+ 1400 format(1X,A16,' : sweep = ',I5,' right hand side norm = ',E14.6,&
              ', relaxp = ',E14.6)
  1600 format(                                                     &
 '@'                                                            ,/,&
