@@ -326,7 +326,7 @@ endif
 if (icorio.eq.1) then
   ! Relative velocity formulation
   ccorio = 2.d0
-elseif (iturbo.eq.1) then
+else if (iturbo.eq.1) then
   ! Mixed relative/absolute velocity formulation
   ccorio = 1.d0
 else
@@ -567,14 +567,14 @@ if (iappel.eq.1) then
       trav(2,iel) = (frcxt(2 ,iel) - grad(2,iel)) * cell_f_vol(iel)
       trav(3,iel) = (frcxt(3 ,iel) - grad(3,iel)) * cell_f_vol(iel)
     enddo
-    elseif (iphydr.eq.2) then
+  else if (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
       trav(1,iel) = (rom*gx - grdphd(1,iel) - grad(1,iel)) * cell_f_vol(iel)
       trav(2,iel) = (rom*gy - grdphd(2,iel) - grad(2,iel)) * cell_f_vol(iel)
       trav(3,iel) = (rom*gz - grdphd(3,iel) - grad(3,iel)) * cell_f_vol(iel)
     enddo
-    elseif (ippmod(icompf).ge.0) then
+  else if (ippmod(icompf).ge.0) then
     do iel = 1, ncel
       rom = crom(iel)
       trav(1,iel) = (rom*gx - grad(1,iel)) * cell_f_vol(iel)
@@ -598,7 +598,7 @@ else if(iappel.eq.2) then
       trav(2,iel) = trav(2,iel) + (frcxt(2 ,iel) - grad(2,iel))*cell_f_vol(iel)
       trav(3,iel) = trav(3,iel) + (frcxt(3 ,iel) - grad(3,iel))*cell_f_vol(iel)
     enddo
-    elseif (iphydr.eq.2) then
+  else if (iphydr.eq.2) then
     do iel = 1, ncel
       rom = crom(iel)
       trav(1,iel) = trav(1,iel) + (rom*gx - grdphd(1,iel) - grad(1,iel))*cell_f_vol(iel)
@@ -1654,7 +1654,7 @@ if (iappel.eq.1) then
    vel    ,                                                       &
    eswork )
 
-  elseif(iterns.gt.1) then
+  else if(iterns.gt.1) then
 
     call coditv &
  ( idtvar , iu     , iconvp , idiffp , ndircp ,                   &
@@ -1746,7 +1746,7 @@ if (iappel.eq.1) then
 
 ! ---> End of the construction of the total estimator:
 !       RHS resiudal of (U^{n+1}, P^{n+1}) + rho*volume*(U^{n+1} - U^n)/dt
-elseif (iappel.eq.2) then
+else if (iappel.eq.2) then
 
   inc = 1
   ! Pas de relaxation en stationnaire
@@ -1829,7 +1829,7 @@ if (iappel.eq.1) then
       do iel = 1, ncel
         c_estim(iel) = sqrt(c_estim(iel))
       enddo
-    elseif (iescal(iespre).eq.2) then
+    else if (iescal(iespre).eq.2) then
       do iel = 1, ncel
         c_estim(iel) = sqrt(c_estim(iel)*volume(iel))
       enddo
@@ -1861,14 +1861,14 @@ if (iappel.eq.1) then
 
 ! ---> Estimator on the whole Navier-Stokes:
 !      square root (norm) or square root of the sum times the volume (L2 norm)
-elseif (iappel.eq.2) then
+else if (iappel.eq.2) then
 
   call field_get_val_s(iestim(iestot), c_estim)
   if (iescal(iestot).eq.1) then
     do iel = 1, ncel
       c_estim(iel) = sqrt(c_estim(iel))
     enddo
-  elseif (iescal(iestot).eq.2) then
+  else if (iescal(iestot).eq.2) then
     do iel = 1, ncel
       c_estim(iel) = sqrt(c_estim(iel)*volume(iel))
     enddo
