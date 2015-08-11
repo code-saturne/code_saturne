@@ -5668,6 +5668,8 @@ cs_gui_linear_solvers(void)
       else if (cs_gui_strcmp(algo_choice, "gmres"))
         sles_it_type = CS_SLES_GMRES;
 
+      BFT_FREE(algo_choice);
+
       /* If choice is "automatic" or unspecified, delay
          choice to cs_sles_default, so do nothing here */
 
