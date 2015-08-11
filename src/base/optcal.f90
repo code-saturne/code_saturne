@@ -301,8 +301,8 @@ module optcal
   double precision, save :: extrag(nvarmx)
 
   !> gradient calculation
-  !>    - 1: standard
-  !>    - 0: weighted
+  !>    - 0: standard
+  !>    - 1: weighted
   integer, save :: iwgrec(nvarmx)
 
   !> \}
