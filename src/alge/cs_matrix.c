@@ -1662,8 +1662,10 @@ _create_struct_csr(bool                have_diag,
     for (face_id = 0; face_id < n_edges; face_id++) {
       ii = *face_cel_p++;
       jj = *face_cel_p++;
-      ccount[ii] += 1;
-      ccount[jj] += 1;
+      if (ii < ms->n_rows)
+        ccount[ii] += 1;
+      if (jj < ms->n_rows)
+        ccount[jj] += 1;
     }
 
   } /* if (edges != NULL) */

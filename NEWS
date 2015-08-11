@@ -4,6 +4,9 @@ Release 4.1.1 (unreleased)
 Bug fixes:
 ----------
 
+- Fix memory corruption creating CSR matrix with ghost cells (which is the
+  default when combining MPI and OpenMP parallelism).
+
 - Fix detection of script type in runcase when line ends with "run (this
   could lead to an error using "code_saturne create $case --copy-from $ref"
   when the reference runcase did not include a parameters file).
