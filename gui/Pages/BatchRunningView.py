@@ -221,7 +221,7 @@ class BatchRunningAdvancedOptionsDialogView(QDialog, Ui_BatchRunningAdvancedOpti
 
 class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterationDialogForm):
     """
-    Advanced dialog for stop the computation at a given iteration
+    Advanced dialog to stop the computation at a given iteration
     """
     def __init__(self, parent, default):
         """
@@ -253,7 +253,7 @@ class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterat
     @pyqtSignature("const QString &")
     def __slotStopIter(self, text):
         """
-        Private slot to set a iteration number to stop the code.
+        Private slot to set an iteration number to stop the code.
         """
         if self.sender().validator().state == QValidator.Acceptable:
             iter = from_qvariant(text, int)
