@@ -62,6 +62,20 @@ def any_to_str(arg):
 
 #-------------------------------------------------------------------------------
 
+def make_clean_dir(path):
+    """
+    Create a directory, or remove files (not directories) in existing directory
+    """
+
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    else:
+        list = os.listdir(path)
+        for f in list:
+            os.remove(os.path.join(path, f))
+
+#-------------------------------------------------------------------------------
+
 class RunCaseError(Exception):
     """Base class for exception handling."""
 
@@ -540,7 +554,7 @@ class domain(base_domain):
 
             # Copy source files to execution directory
 
-            os.mkdir(exec_src)
+            make_clean_dir(exec_src)
             for f in src_files:
                 src_file = os.path.join(self.src_dir, f)
                 dest_file = os.path.join(exec_src, f)
@@ -585,6 +599,7 @@ class domain(base_domain):
             if not os.path.isabs(mesh_input):
                 mesh_input = os.path.join(self.case_dir, mesh_input)
             link_path = os.path.join(self.exec_dir, 'mesh_input')
+            self.purge_result(link_path) # in case of previous run here
             self.symlink(mesh_input, link_path)
 
         if not self.exec_solver:
@@ -697,12 +712,7 @@ class domain(base_domain):
         if len(self.meshes) > 1:
             mesh_id = 0
             destdir = 'mesh_input'
-            if not os.path.isdir(destdir):
-                os.mkdir(destdir)
-            else:
-                list = os.listdir(destdir)
-                for f in list:
-                    os.remove(os.path.join(destdir,f))
+            make_clean_dir(destdir)
 
         # Run once per mesh
 
@@ -991,6 +1001,21 @@ class syrthes_domain(base_domain):
 
         self.syrthes_case = None
 
+        # Try to base Syrthes version on path used to import the syrthes module,
+        # for consistency with case creation parameters; it this is not enough,
+        # use existing environment or load one based on current configuration.
+
+        try:
+            for p in sys.path:
+                if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
+                    syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
+                    if os.path.isfile(syr_profile):
+                        source_shell_script(syr_profile)
+        except Exception:
+            pass
+
+        source_syrthes_env(self.package)
+
     #---------------------------------------------------------------------------
 
     def set_case_dir(self, case_dir):
@@ -1068,11 +1093,9 @@ class syrthes_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def prepare_data(self):
+    def init_syrthes_case(self):
         """
-        Fill SYRTHES domain structure
-        Copy data to the execution directory
-        Compile and link syrthes executable
+        Build or rebuild syrthes object
         """
 
         # Build command-line arguments
@@ -1100,22 +1123,7 @@ class syrthes_domain(base_domain):
 
         # Define syrthes case structure
 
-        # Try to base Syrthes version on path used to import the syrthes module,
-        # for consistency with case creation parameters; it this is not enough,
-        # use existing environment or load one based on current configuration.
-
-        try:
-            for p in sys.path:
-                if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
-                    syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
-                    if os.path.isfile(syr_profile):
-                        source_shell_script(syr_profile)
-        except Exception:
-            pass
-
-        source_syrthes_env(self.package)
         import syrthes
-
         self.syrthes_case = syrthes.process_cmd_line(args.split())
 
         if self.syrthes_case.logfile == None:
@@ -1127,10 +1135,27 @@ class syrthes_domain(base_domain):
 
         self.syrthes_case.read_data_file()
 
+    #---------------------------------------------------------------------------
+
+    def prepare_data(self):
+        """
+        Fill SYRTHES domain structure
+        Copy data to the execution directory
+        Compile and link syrthes executable
+        """
+
+        # Build SYRTHES case; at this stage, the number of processes
+        # may not be known, but this is not an issue here: for data
+        # preparation, SYRTHES only uses the number of processes to
+        # determine whether compilation should use MPI, and this is
+        # always true anyways in the coupled case.
+
+        self.init_syrthes_case()
+
         # Build exec_srcdir
 
         exec_srcdir = os.path.join(self.exec_dir, 'src')
-        os.makedirs(exec_srcdir)
+        make_clean_dir(exec_srcdir)
 
         # Preparation of the execution directory and compile and link executable
 
@@ -1159,9 +1184,11 @@ class syrthes_domain(base_domain):
 
     def preprocess(self):
         """
-        Read syrthes.data file
         Partition mesh for parallel run if required by user
         """
+
+        # Rebuild Syrthes case now that number of processes is known
+        self.init_syrthes_case()
 
         # Sumary of the parameters
         self.syrthes_case.dump()

@@ -119,8 +119,8 @@ class case:
         self.fsi_coupler = fsi_coupler
 
         # Mark fluid domains as coupled with Code_Aster if coupling is present.
-        # This should be improved by migrating tests to the executable, to better
-        # handle cases were only some domains are coupled.
+        # This should be improved by migrating tests to the executable,
+        # to better handle cases were only some domains are coupled.
         # For now, we assume that the first CFD domain is the coupled one.
 
         if fsi_coupler:
@@ -281,9 +281,9 @@ class case:
 
         # Code_Aster is handled in a specific manner: processes are counted
         # against the total, but the coupler is not, and processes will not by
-        # run by the same mpiexec instance (TODO: check/improve how this interacts
-        # with resource managers, so that some nodes are not oversubscribed while
-        # others are unused).
+        # run by the same mpiexec instance (TODO: check/improve how this
+        # interacts with resource managers, so that some nodes are not
+        # oversubscribed while others are unused).
 
         for d in self.ast_domains:
             np_list.append(d.get_n_procs())
@@ -408,9 +408,9 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def define_exec_dir(self, exec_basename):
+    def define_exec_dir(self):
         """
-        Create execution directory.
+        Define execution directory.
         """
 
         if self.exec_prefix != None:
@@ -419,42 +419,24 @@ class case:
                 exec_dir_name = study_name + '.' + self.name
             else:
                 exec_dir_name = self.name
-            exec_dir_name += '.' + exec_basename
+            exec_dir_name += '.' + self.run_id
             self.exec_dir = os.path.join(self.exec_prefix, exec_dir_name)
         else:
             r = os.path.join(self.case_dir, 'RESU')
             if len(self.domains) + len(self.syr_domains) + len(self.ast_domains) > 1:
                 r += '_COUPLING'
-            self.exec_dir = os.path.join(r, exec_basename)
+            self.exec_dir = os.path.join(r, self.run_id)
 
     #---------------------------------------------------------------------------
 
-    def set_exec_dir(self, path):
-        """
-        Set execution directory.
-        """
-
-        # Set execution directory
-
-        self.exec_dir = path
-
-        for d in self.domains:
-            d.set_exec_dir(self.exec_dir)
-        for d in self.syr_domains:
-            d.set_exec_dir(self.exec_dir)
-        for d in self.ast_domains:
-            d.set_exec_dir(self.exec_dir)
-
-    #---------------------------------------------------------------------------
-
-    def mk_exec_dir(self, exec_basename, force=False):
+    def set_exec_dir(self, force=False):
         """
         Create execution directory.
         """
 
         # Define execution directory name
 
-        self.define_exec_dir(exec_basename)
+        self.define_exec_dir()
 
         # Check that directory does not exist.
 
@@ -471,21 +453,26 @@ class case:
 
         # Set execution directory
 
-        self.set_exec_dir(self.exec_dir)
+        for d in self.domains:
+            d.set_exec_dir(self.exec_dir)
+        for d in self.syr_domains:
+            d.set_exec_dir(self.exec_dir)
+        for d in self.ast_domains:
+            d.set_exec_dir(self.exec_dir)
 
     #---------------------------------------------------------------------------
 
-    def set_result_dir(self, name, force=True):
+    def define_result_dir(self):
 
         r = os.path.join(self.case_dir, 'RESU')
 
         if os.path.isdir(r):
-            self.result_dir = os.path.join(r, name)
+            self.result_dir = os.path.join(r, self.run_id)
         else:
             r += '_COUPLING'
             if os.path.isdir(r):
-                self.result_dir = os.path.join(r, name)
-            else:
+                self.result_dir = os.path.join(r, self.run_id)
+            elif not force:
                 r = os.path.join(self.case_dir, 'RESU')
                 err_str = \
                     '\nResults directory: ' + r + '\n' \
@@ -494,25 +481,30 @@ class case:
                     + 'Calculation will not be run.\n'
                 raise RunCaseError(err_str)
 
-        if os.path.isdir(self.result_dir):
-            if not force:
-                err_str = \
-                    '\nResults directory: ' + self.result_dir \
-                    + ' already exists.\n' \
-                    + 'Calculation will not be run.\n'
-                raise RunCaseError(err_str)
+    #---------------------------------------------------------------------------
+
+    def set_result_dir(self, force=True):
+
+        self.define_result_dir()
+
+        if os.path.isdir(self.result_dir) and not force:
+            err_str = \
+                '\nResults directory: ' + self.result_dir \
+                + ' already exists.\n' \
+                + 'Calculation will not be run.\n'
+            raise RunCaseError(err_str)
 
         else:
             os.mkdir(self.result_dir)
 
         for d in self.domains:
-            d.set_result_dir(name, self.result_dir)
+            d.set_result_dir(self.run_id, self.result_dir)
 
         for d in self.syr_domains:
-            d.set_result_dir(name, self.result_dir)
+            d.set_result_dir(self.run_id, self.result_dir)
 
         for d in self.ast_domains:
-            d.set_result_dir(name, self.result_dir)
+            d.set_result_dir(self.run_id, self.result_dir)
 
     #---------------------------------------------------------------------------
 
@@ -1347,38 +1339,37 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
     #---------------------------------------------------------------------------
 
-    def prepare_data(self,
-                     n_procs = None,
-                     n_threads = None,
-                     mpiexec_options=None,
-                     run_id = None,
-                     force_id = False):
+    def set_run_id(self,
+                   run_id = None,
+                   force_id = False):
 
         """
-        Prepare data for calculation.
+        Set run id for calculation.
         """
-
-        # General values
 
         if run_id != None:
             self.run_id = run_id
 
         if self.run_id == None:
             now = datetime.datetime.now()
-            self.run_id = now.strftime('%Y%m%d-%H%M')
+            run_id_base = now.strftime('%Y%m%d-%H%M')
+            self.run_id = run_id_base
+            # When id not forced, choose an id not already present
+            if not force_id:
+                self.define_result_dir()
+                j = 0
+                while os.path.isdir(self.result_dir):
+                    self.run_id = run_id_base + str(j)
+                    self.define_result_dir()
 
-        for d in self.domains:
-            if hasattr(d, 'adaptation'):
-                if d.adaptation:
-                    adaptation(d.adaptation, saturne_script, self.case_dir)
+    #---------------------------------------------------------------------------
 
-        # Now that all domains are defined, set result copy mode
+    def prepare_data(self,
+                     force_id = False):
 
-        self.set_result_dir(self.run_id, force_id)
-
-        # Create working directory (reachable by all the processors)
-
-        self.mk_exec_dir(self.run_id)
+        """
+        Prepare data for calculation.
+        """
 
         # Before creating or generating file, create stage 'marker' file.
 
@@ -1391,9 +1382,100 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         os.chdir(self.exec_dir)
 
-        # Determine execution environment.
+        # Compile user subroutines if necessary
+        # (for some domain types, such as for Syrthes, this may be done later,
+        # during the general prepare_data stage).
+
+        need_compile = False
+
+        for d in self.domains:
+            if not hasattr(d, 'needs_compile'):
+                continue
+            if d.needs_compile() == True:
+                if need_compile == False: # Print banner on first pass
+                    need_compile = True
+                    msg = \
+                        " ****************************************\n" \
+                        "  Compiling user subroutines and linking\n" \
+                        " ****************************************\n\n"
+                    sys.stdout.write(msg)
+                    sys.stdout.flush()
+                d.compile_and_link()
+
+        # Setup data
+        #===========
+
+        sys.stdout.write('\n'
+                         ' ****************************\n'
+                         '  Preparing calculation data\n'
+                         ' ****************************\n\n')
+        sys.stdout.flush()
+
+        for d in self.domains:
+            d.prepare_data()
+            if len(d.error) > 0:
+                self.error = d.error
+        for d in self.syr_domains:
+            d.prepare_data()
+            if len(d.error) > 0:
+                self.error = d.error
+        for d in self.ast_domains:
+            d.prepare_data()
+            if len(d.error) > 0:
+                self.error = d.error
+
+        # Rename temporary file to indicate new status
+
+        # Remove the Salome temporary file
+
+        self.update_scripts_tmp('preparing', None)
+
+        # Rename temporary file to indicate new status
+
+        if len(self.error) == 0:
+            status = 'prepared'
+        else:
+            status = 'failed'
+
+        self.update_scripts_tmp('preparing', status)
+
+        # Standard or error exit
+
+        if len(self.error) > 0:
+            err_str = ' Error in ' + self.error + ' stage.\n\n'
+            sys.stderr.write(err_str)
+            return 1
+        else:
+            return 0
+
+    #---------------------------------------------------------------------------
+
+    def preprocess(self,
+                   n_procs = None,
+                   n_threads = None,
+                   mpiexec_options=None):
+
+        """
+        Preprocess data for and generate run script
+        """
+
+        os.chdir(self.exec_dir)
+
+        # Adaptation should go in the future
+
+        for d in self.domains:
+            if hasattr(d, 'adaptation'):
+                if d.adaptation:
+                    adaptation(d.adaptation, saturne_script, self.case_dir)
+
+        # Before creating or generating file, create stage 'marker' file.
+
+        self.update_scripts_tmp('prepared', 'preprocessing')
+
+        # Determine execution environment
+        #================================
         # (priority for n_procs, in increasing order:
-        # XML file, resource manager, method argument, user Python script).
+        # resource manager, method argument).
 
         n_procs_default = None
         if len(self.domains) == 1 and len(self.syr_domains) == 0:
@@ -1429,64 +1511,10 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         if n_procs_tot > 1:
             exec_env.resources.n_procs = n_procs_tot
 
-        # Greeting message.
-
-        msg = \
-            '\n' \
-            + '                      ' + self.package.code_name + ' is running\n' \
-            + '                      ***********************\n' \
-            + '\n' \
-            + ' Version: ' + self.package.version + '\n' \
-            + ' Path:    ' + self.package.get_dir('exec_prefix') + '\n\n' \
-            + ' Result directory:\n' \
-            + '   ' +  str(self.result_dir) + '\n\n'
-
-        if self.exec_dir != self.result_dir:
-            msg += ' Working directory (to be periodically cleaned):\n' \
-                + '   ' +  str(self.exec_dir) + '\n'
-
-        msg += '\n'
-
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-
         self.print_procs_distribution()
 
-        # Compile user subroutines if necessary
-        # (for some domain types, such as for Syrthes, this may be done later,
-        # during the general prepare_data stage).
-
-        need_compile = False
-
-        for d in self.domains:
-            if not hasattr(d, 'needs_compile'):
-                continue
-            if d.needs_compile() == True:
-                if need_compile == False: # Print banner on first pass
-                    need_compile = True
-                    msg = \
-                        " ****************************************\n" \
-                        "  Compiling user subroutines and linking\n" \
-                        " ****************************************\n\n"
-                    sys.stdout.write(msg)
-                    sys.stdout.flush()
-                d.compile_and_link()
-
-        # Setup data
-        #===========
-
-        sys.stdout.write('\n'
-                         ' ****************************\n'
-                         '  Preparing calculation data\n'
-                         ' ****************************\n\n')
-        sys.stdout.flush()
-
-        for d in self.domains:
-            d.prepare_data()
-        for d in self.syr_domains:
-            d.prepare_data()
-        for d in self.ast_domains:
-            d.prepare_data()
+        # Preprocessing
+        #==============
 
         sys.stdout.write('\n'
                          ' ***************************\n'
@@ -1541,13 +1569,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
 
         if not self.exec_solver:
             return 0
-
-        if run_id != None:
-            self.run_id = run_id
-
-        if self.exec_dir == None:
-            self.define_exec_dir(self.run_id)
-            self.set_exec_dir(self.exec_dir)
 
         os.chdir(self.exec_dir)
 
@@ -1637,15 +1658,6 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         Save calcultation results from execution directory to result
         directory.
         """
-
-        if run_id != None:
-            self.run_id = run_id
-
-        if self.exec_dir == None:
-            self.define_exec_dir(self.run_id)
-            self.set_exec_dir(self.exec_dir)
-
-        self.set_result_dir(self.run_id)
 
         os.chdir(self.exec_dir)
 
@@ -1747,17 +1759,57 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         if mpiexec_options == None:
             mpiexec_options = os.getenv('CS_MPIEXEC_OPTIONS')
 
-        if run_id != None:
-            self.run_id = run_id
+        # If preparation stage is not requested, it must have been done
+        # previously, and the id must be forced.
+
+        if not prepare_data:
+            force_id = True
+
+        # Run id and associated directories
+
+        self.set_run_id(run_id, force_id)
+
+        # Set result copy mode
+
+        self.set_result_dir(force_id)
+
+        # Set working directory
+        # (nonlocal filesystem, reachable by all the processes)
+
+        self.set_exec_dir(force_id)
+
+        # Greeting message.
+
+        msg = \
+            '\n' \
+            + '                      ' + self.package.code_name + ' is running\n' \
+            + '                      ***********************\n' \
+            + '\n' \
+            + ' Version: ' + self.package.version + '\n' \
+            + ' Path:    ' + self.package.get_dir('exec_prefix') + '\n\n' \
+            + ' Result directory:\n' \
+            + '   ' +  str(self.result_dir) + '\n\n'
+
+        if self.exec_dir != self.result_dir:
+            msg += ' Working directory (to be periodically cleaned):\n' \
+                + '   ' +  str(self.exec_dir) + '\n'
+
+        msg += '\n'
+
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
+        # Now run
 
         try:
             retcode = 0
-            if prepare_data == True:
-                retcode = self.prepare_data(n_procs,
-                                            n_threads,
-                                            mpiexec_options,
-                                            run_id,
-                                            force_id)
+            if prepare_data:
+                retcode = self.prepare_data(force_id)
+
+            if prepare_data and  retcode == 0:
+                retcode = self.preprocess(n_procs,
+                                          n_threads,
+                                          mpiexec_options)
             if run_solver == True and retcode == 0:
                 self.run_solver()
 
