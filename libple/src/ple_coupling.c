@@ -969,7 +969,7 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   base_comm,
 /*!
  * \brief Dump printout of an PLE coupling MPI set info structure.
  *
- * \param[in] w pointer to PLE coupling MPI set info structure.
+ * \param[in] s pointer to PLE coupling MPI set info structure.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -410,7 +410,7 @@ module lagran
   integer, save ::  jmp
   !> pointer to particle diameter for pointer \ref eptp
   integer, save ::  jdp
-  !> pointer to particle extent for array \ref ettp
+  !> pointer to particle extent for array \ref eptp
   integer, save ::  jdp2
   !> pointer to particle and locally undisturbed fluid flow temperature
   !> (Celsius) for pointer \ref eptp

@@ -545,7 +545,7 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix);
  * Initialize row info for a given matrix.
  *
  * parameters:
- *   row_info --> row info structure
+ *   r --> row info structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -555,7 +555,7 @@ cs_matrix_row_init(cs_matrix_row_info_t  *r);
  * Finalize row info for a given matrix.
  *
  * parameters:
- *   row_info <-> row info structure
+ *   r <-> row info structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -577,7 +577,7 @@ cs_matrix_row_finalize(cs_matrix_row_info_t  *r);
  * parameters:
  *   matrix    <-- pointer to matrix structure
  *   row_id    <-- id of row to query
- *   row_info  <-> row info structure
+ *   r         <-> row info structure
  *----------------------------------------------------------------------------*/
 
 void
@@ -812,7 +812,7 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
  * parameters:
  *   mv        <-> pointer to matrix variant
  *   mv_merge  <-- pointer to matrix variant to merge
- *   fill type <-- matrix fill type to merge from
+ *   fill_type <-- matrix fill type to merge from
  *----------------------------------------------------------------------------*/
 
 void

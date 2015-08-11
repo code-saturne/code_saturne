@@ -390,9 +390,8 @@ _cs_ksp_converged(KSP                  ksp,
  * of the option used.
  *
  * Note that this function returns a pointer directly to the iterative solver
- * management structure. This may be used to set further options,
- * for example using \ref cs_sles_petsc_set_plot_options. If needed,
- * \ref cs_sles_find may be used to obtain a pointer to the matching
+ * management structure. This may be used to set further options.
+ * If needed, \ref cs_sles_find may be used to obtain a pointer to the matching
  * \ref cs_sles_t container.
  *
  * \param[in]      f_id          associated field id, or < 0

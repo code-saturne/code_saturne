@@ -104,9 +104,9 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
  * of the option used.
  *
  * Note that this function returns a pointer directly to the iterative solver
- * management structure. This may be used to set further options,
- * for example using cs_sles_set_plot_options(). If needed, cs_sles_find()
- * may be used to obtain a pointer to the matching cs_sles_t container.
+ * management structure. This may be used to set further options.
+ * If needed, cs_sles_find() may be used to obtain a pointer to the matching
+ * cs_sles_t container.
  *
  * parameters:
  *   f_id         <-- associated field id, or < 0

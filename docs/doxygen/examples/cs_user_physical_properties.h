@@ -27,7 +27,7 @@
 /*!
   \page physical_properties Define user laws for physical properties
  
-  \section intro Introduction
+  \section cs_user_physical_properties_h_intro Introduction
 
   This page provides examples of code blocks that may be used
   to define physical variable laws. 

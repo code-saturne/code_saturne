@@ -743,15 +743,15 @@ cs_timer_stats_switch(int  id)
  * timers must be ensured by the caller.
  *
  * \param[in]  id  id of statistic
- * \param[in]  to  oldest timer value
+ * \param[in]  t0  oldest timer value
  * \param[in]  t1  most recent timer value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_timer_stats_add_diff(int  id,
-                        const cs_timer_t    *t0,
-                        const cs_timer_t    *t1)
+cs_timer_stats_add_diff(int                id,
+                        const cs_timer_t  *t0,
+                        const cs_timer_t  *t1)
 {
   if (id < 0 || id > _n_stats) return;
 

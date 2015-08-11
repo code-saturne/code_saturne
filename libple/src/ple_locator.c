@@ -2960,7 +2960,8 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
  *
  * This is useful mainly to switch between 0-based to 1-based numberings.
  *
- * \param[in, out] this_locator pointer to locator structure
+ * \param[in, out] this_locator    pointer to locator structure
+ * \param[in]      location_shift  shift value
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3518,7 +3519,7 @@ ple_locator_set_async_threshold(int threshold)
  * Functions using MPE may be defined and used, but other similar systems
  * may be used.
  *
- * \param[in] fct          pointer to logging function
+ * \param[in] log_function pointer to logging function
  * \param[in] start_p_comm point to point communication start event number
  * \param[in] end_p_comm   point to point communication end event number
  * \param[in] start_g_comm global communication start event number

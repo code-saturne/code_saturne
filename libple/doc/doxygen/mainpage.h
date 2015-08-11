@@ -41,7 +41,7 @@
   parallel codes at predifined points, and enabling parallel mapping
   of points to meshes, and transfer of variables using this mapping.
 
-  \subsection PLE Coupling API
+  \subsection ple_coupling PLE Coupling API
 
   The ple_coupling_...() functions allow identifying applications and
   defining MPI communicators necessary to the ple_locator_...()
@@ -50,7 +50,7 @@
   other synchronization data at predifined points (usually once per
   time step).
 
-  \subsection PLE Locator subset
+  \subsection ple_locator PLE Locator subset
 
   The ple_locator_...() functions allow mapping points to a mesh
   in parallel, given serial functions providing this functionnality

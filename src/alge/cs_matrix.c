@@ -5781,7 +5781,7 @@ cs_matrix_get_extra_diagonal(const cs_matrix_t  *matrix)
 /*!
  * \brief Initialize row info for a given matrix.
  *
- * \param[out]  row_info   row info structure
+ * \param[out]  r   row info structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5800,7 +5800,7 @@ cs_matrix_row_init(cs_matrix_row_info_t  *r)
 /*!
  * \brief Finalize row info for a given matrix.
  *
- * \param[in, out]  row_info   row info structure
+ * \param[in, out]  r   row info structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5831,7 +5831,7 @@ cs_matrix_row_finalize(cs_matrix_row_info_t  *r)
  *
  * \param[in]       matrix     pointer to matrix structure
  * \param[in]       row_id     id of row to query
- * \param[in, out]  row_info   row info structure
+ * \param[in, out]  r          row info structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -6592,7 +6592,7 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
  *
  * \param[in, out]  mv         pointer to matrix variant
  * \param[in]       mv_merge   pointer to matrix variant to merge
- * \param[in]       fill type  matrix fill type to merge from
+ * \param[in]       fill_type  matrix fill type to merge from
  */
 /*----------------------------------------------------------------------------*/
 

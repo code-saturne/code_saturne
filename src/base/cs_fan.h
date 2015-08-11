@@ -109,7 +109,7 @@ void CS_PROCF (tsvvtl, TSVVTL)
  * The fan's pressure characteristic curve is defined by 3 coefficients,
  * such that:
  *   delta P = C_0 + C_1.flow + C_2.flow^2
- * A tangential torque may also be defined for the 3D model.
+ * An axial torque may also be defined for the 3D model.
  *
  * parameters:
  *   fan_dim             <-- fan dimension:
@@ -123,7 +123,7 @@ void CS_PROCF (tsvvtl, TSVVTL)
  *   curve_coeffs        <-- coefficients of degre 0, 1 and 2 of
  *                           the pressure drop/flow rate
  *                           characteristic curve
- *   torque              <-- fan tangential torque
+ *   axial_torque        <-- fan axial torque
  *----------------------------------------------------------------------------*/
 
 void
@@ -134,7 +134,7 @@ cs_fan_define(int              fan_dim,
               cs_real_t        blades_radius,
               cs_real_t        hub_radius,
               const cs_real_t  curve_coeffs[3],
-              cs_real_t        torque);
+              cs_real_t        axial_torque);
 
 /*----------------------------------------------------------------------------
  * Destroy the structures associated with fans.

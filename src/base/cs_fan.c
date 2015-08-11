@@ -213,7 +213,7 @@ void CS_PROCF (tsvvtl, TSVVTL)
  * The fan's pressure characteristic curve is defined by 3 coefficients,
  * such that:
  * \f$\delta P = C_0 + C_1.flow + C_2.flow^2\f$.
- * A tangential torque may also be defined for the 3D model.
+ * An axial torque may also be defined for the 3D model.
  *
  * \param[in]    fan_dim             fan dimension:
  *                                     2: pseudo-2D (extruded mesh)
@@ -226,7 +226,7 @@ void CS_PROCF (tsvvtl, TSVVTL)
  * \param[in]    curve_coeffs        coefficients of degre 0, 1 and 2 of
  *                                   the pressure drop/flow rate
                                      characteristic curve
- * \param[in]    torque              fan tangential torque
+ * \param[in]    axial_torque        fan axial torque
  */
 /*----------------------------------------------------------------------------*/
 

@@ -217,7 +217,7 @@ cs_timer_stats_switch(int  id);
  * timers must be ensured by the caller.
  *
  * \param[in]  id  id of statistic
- * \param[in]  to  oldest timer value
+ * \param[in]  t0  oldest timer value
  * \param[in]  t1  most recent timer value
  */
 /*----------------------------------------------------------------------------*/
