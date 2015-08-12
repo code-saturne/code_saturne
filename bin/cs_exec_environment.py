@@ -1782,7 +1782,18 @@ class exec_environment:
         if sys.platform.startswith('win'):
             self.user = os.getenv('USERNAME')
         else:
-            self.user = os.getenv('USER')
+            self.user = os.getenv('LOGNAME')
+            if not self.user:
+                self.user = os.getenv('USER')
+            if not self.user:
+                try:
+                    from pwd import getpwuid
+                    getpwuid(os.getuid())[0]
+                except Exception:
+                    pass
+
+        if not self.user:
+            self.user = 'unknown'
 
         self.wdir = wdir
         if self.wdir == None:
