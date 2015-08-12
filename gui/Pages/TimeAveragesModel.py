@@ -186,7 +186,7 @@ class TimeAveragesModel(Model):
         restart = self.defaultValues()['restart']
         node = self.node_mean.xmlGetNode('time_average', id=imom)
         start = node.xmlGetInt('time_step_start')
-        timestart = node.xmlGetInt('time_start')
+        timestart = node.xmlGetDouble('time_start')
         if StartRestartModel(self.case).getRestartPath():
             restart = node.xmlGetInt('restart_from_time_average')
 
@@ -225,7 +225,7 @@ class TimeAveragesModel(Model):
         """
         self.isInList(label, self.getTimeAverageLabels())
         node = self.node_mean.xmlInitNode('time_average', label=label)
-        return node.xmlGetInt('time_start')
+        return node.xmlGetDouble('time_start')
 
 
     @Variables.undoLocal

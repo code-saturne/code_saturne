@@ -4,6 +4,8 @@ Version 4.0.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix time moment non-integer start times defined through the GUI.
+
 - Fix detection of script type in runcase when line ends with "run (this
   could lead to an error using "code_saturne create $case --copy-from $ref"
   when the reference runcase did not include a parameters file).
