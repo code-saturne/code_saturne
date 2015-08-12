@@ -478,8 +478,7 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
  * \param[in]     connect    pointer to a cs_cdo_connect_t struct.
  * \param[in]     const_val  constant value
  * \param[in]     loc_id     id related to a cs_mesh_location_t struct.
- * \param[in]     get        accessor to the value
- * \param[inout]  values     pointer to the computed values
+ * \param[in,out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
@@ -527,7 +526,7 @@ _scd_by_val(const cs_cdo_quantities_t    *quant,
  * \param[in]     quant      additional mesh quantities struct.
  * \param[in]     const_val  constant value
  * \param[in]     loc_id     id related to a cs_mesh_location_t struct.
- * \param[inout]  p_values   pointer to the computed values
+ * \param[in,out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 

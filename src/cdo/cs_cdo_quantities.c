@@ -1112,7 +1112,7 @@ cs_quant_dump(FILE             *f,
  * \brief  Compute for each vertex the dual cell volume which is also
  *
  *                sum    |celld(v) cap c| = pvol_v
- *              c\in\C_v
+ *              c in C_v
  *
  * \param[in]    connect   pointer to a cs_cdo_connect_t structure
  * \param[in]    quant     pointer to a cs_cdo_quantites_t structure

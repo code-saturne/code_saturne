@@ -246,7 +246,7 @@ _init_domain_boundaries(cs_lnum_t     n_b_faces)
 /*!
  * \brief  Destroy a cs_domain_boundary_t structure
  *
- * \param[inout]   domain    pointer to the cs_domain_t structure to free
+ * \param[in,out]  bcs       pointer to the cs_domain_t structure to free
  *
  * \return a NULL pointer
  */

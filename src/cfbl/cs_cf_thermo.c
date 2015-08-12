@@ -182,7 +182,6 @@ cs_cf_thermo_gamma(cs_real_t *gamma)
  * according to the chosen thermodynamic law using the default parameters.
  *
  * \param[in]     isuite    indicator of resumed calculation
- * \param[in]     l_size    local size
  */
 /*----------------------------------------------------------------------------*/
 

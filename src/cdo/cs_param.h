@@ -431,11 +431,11 @@ cs_param_pty_get_name(int            pty_id);
  * \brief  Retrieve the 3x3 matrix related to a general material property.
  *         This value is computed at location (x,y,z) and time t.
  *
- * \param[in]    pty_id    id related to the material property to deal with
- * \param[in]    t         time at which we evaluate the material property
- * \param[in]    xyz       location at which  we evaluate the material property
- * \param[in]    invers    true or false
- * \param[inout] matval    pointer to the 3x3 matrix to return
+ * \param[in]     pty_id    id related to the material property to deal with
+ * \param[in]     tcur      time at which we evaluate the material property
+ * \param[in]     xyz       location at which  we evaluate the material property
+ * \param[in]     invers    true or false
+ * \param[in,out] matval    pointer to the 3x3 matrix to return
  */
 /*----------------------------------------------------------------------------*/
 
@@ -506,9 +506,9 @@ cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
  *         source terms associated to an equation
  *
  * \param[in, out] stp        pointer to cs_param_source_term_t structure
- * \param[in]      st_name   name of the source term
+ * \param[in]      st_name    name of the source term
  * \param[in]      ml_id      id of the related to a cs_mesh_location_t struct.
- * \param[in]      st_type    type of source term
+ * \param[in]      type       type of source term
  * \param[in]      var_type   type of variables (scalar, vector, tensor...)
  * \param[in]      quad_type  type of quadrature rule to use
  * \param[in]      def_type   type of definition (by value, function...)
@@ -518,7 +518,7 @@ cs_param_bc_def_set(cs_param_bc_def_t       *bcpd,
 
 void
 cs_param_source_term_add(cs_param_source_term_t       *stp,
-                         const char                   *st_label,
+                         const char                   *st_name,
                          int                           ml_id,
                          cs_param_source_term_type_t   type,
                          cs_param_var_type_t           var_type,

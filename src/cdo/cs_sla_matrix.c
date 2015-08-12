@@ -378,10 +378,10 @@ _spa_gather(_spa_t     *spa,
  * \brief   Gather data from the current SPA state to update matrix structure
  *          Do not add zero entries.
  *
- * \param[in]    spa     pointer to the SPA struct.
- * \param[in]    idx     current index position
- * \param[inout] col_id  pointer to matrix->col_id array
- * \param[inout] val     pointer to matrix->sgn array
+ * \param[in]     spa     pointer to the SPA struct.
+ * \param[in]     idx     current index position
+ * \param[in,out] col_id  pointer to matrix->col_id array
+ * \param[in,out] connect pointer to matrix->sgn array
  *
  * \return the number of entries added
  */
@@ -2560,7 +2560,7 @@ cs_sla_matrix_get_diag(const cs_sla_matrix_t  *m,
 /*!
  * \brief   Sort each row by increasing colomn number
  *
- * \param[in]  mat     matrix to sort
+ * \param[in]  m       matrix to sort
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2676,9 +2676,9 @@ cs_sla_bread(const char        *name,
  *         and the solution
  *
  * \param[in]     name      name of the output file
- * \param[in]     A         system to solve
+ * \param[in]     m         system to solve
  * \param[in]     rhs       right hand side
- * \param[in]     x         solution
+ * \param[in]     sol       solution
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2946,7 +2946,7 @@ cs_sla_matrix_copy(const cs_sla_matrix_t  *a,
 /*!
  * \brief   Transpose a cs_sla_matrix_t structure
  *
- * \param[in]  mat     matrix to transpose
+ * \param[in]  a       matrix to transpose
  *
  * \return  a pointer to new allocated matrix which is transposed to mat
  */
@@ -3179,7 +3179,7 @@ cs_sla_matrix_clean(cs_sla_matrix_t   *m,
 /*!
  * \brief   Retrieve the number of non-zeros (nnz) elements in a matrix
  *
- * \param[in]  mat     matrix
+ * \param[in]  m       matrix
  *
  * \return the number of nnz
  */
@@ -3362,7 +3362,6 @@ cs_sla_matrix_resume(const char              *name,
  * \param[in]  name        either name of the file if f is NULL or description
  * \param[in]  f           pointer to a FILE struct.
  * \param[in]  m           matrix to dump
- * \param[in]  dump_level  level of information displayed
  */
 /*----------------------------------------------------------------------------*/
 

@@ -130,9 +130,9 @@ typedef struct {
  *         and the solution
  *
  * \param[in]     name      name of the output file
- * \param[in]     A         system to solve
+ * \param[in]     m         system to solve
  * \param[in]     rhs       right hand side
- * \param[in]     x         solution
+ * \param[in]     sol       solution
  */
 /*----------------------------------------------------------------------------*/
 
@@ -247,7 +247,7 @@ cs_sla_matrix_get_diag(const cs_sla_matrix_t  *m,
 /*!
  * \brief   Sort each row by increasing colomn number
  *
- * \param[in]  mat     matrix to sort
+ * \param[in]  m       matrix to sort
  */
 /*----------------------------------------------------------------------------*/
 
@@ -478,7 +478,7 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m);
  * \brief   Remove entries in a cs_sla_matrix_t structure below a given
  *          threshold. |a(i,j)| < eps * max|a(i,j)|
  *
- * \param[inout]  mat     matrix to clean
+ * \param[in,out] m       matrix to clean
  * \param[in]     eps     value of the threshold
  */
 /*----------------------------------------------------------------------------*/
@@ -491,7 +491,7 @@ cs_sla_matrix_clean(cs_sla_matrix_t   *m,
 /*!
  * \brief   Retrieve the number of non-zeros (nnz) elements in a matrix
  *
- * \param[in]  mat     matrix
+ * \param[in]  m       matrix
  *
  * \return the number of nnz
  */

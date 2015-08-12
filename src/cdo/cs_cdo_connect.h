@@ -232,7 +232,7 @@ cs_index_free(cs_connect_index_t   **pidx);
  * \brief   From 2 indexes : A -> B and B -> C create a new index A -> C
  *
  * \param[in]  nc      number of elements in C set
- * \param[in]  xab     pointer to the index A -> B
+ * \param[in]  a2b     pointer to the index A -> B
  * \param[in]  b2c     pointer to the index B -> C
  *
  *\return  a pointer to the cs_connect_index_t structure A -> C

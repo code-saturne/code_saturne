@@ -441,14 +441,14 @@ cs_voltet(const cs_real_3_t   xv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute alpha*x + beta*y = z
+ * \brief  Compute alpha*x + beta*y = p_z
  *
  * \param[in]     size    vector dimension
  * \param[in]     alpha   coefficient for x vector
  * \param[in]     x       first vector
  * \param[in]     beta    coefficient for y vector
  * \param[in]     y       second vector
- * \param[inout]  z       resulting vector (allocated if NULL)
+ * \param[in,out] p_z     resulting vector (allocated if NULL)
  * \param[in]     reset   reset z vector before computation
  */
 /*----------------------------------------------------------------------------*/
@@ -888,7 +888,7 @@ cs_toolbox_locmat_dump(int                         parent_id,
 /*!
  * \brief   Free a cs_toolbox_locmat_t structure
  *
- * \param[in]  hb    pointer to a cs_toolbox_locmat_t struct. to free
+ * \param[in]  lm    pointer to a cs_toolbox_locmat_t struct. to free
  *
  * \return  a NULL pointer
  */

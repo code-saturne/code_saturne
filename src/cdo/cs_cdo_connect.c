@@ -482,7 +482,7 @@ _free_edge_builder(_edge_builder_t  **p_builder)
  * \brief  Define the cell -> faces connectivity which is stored in a
  *         cs_sla_matrix_t structure
  *
- * \param[in]  m         pointer to a cs_mesh_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
  *
  * \return a pointer to a new allocated cs_sla_matrix_t structure
  */
@@ -703,8 +703,7 @@ _connect_info_create(cs_lnum_t     n_elts)
 /*!
  * \brief  Allocated and initialize a cs_cdo_connect_info_t structure
  *
- * \param[in]     n_elts    Size of the maximal set of entities related to
- *                          this structure
+ * \param[in]     info      Info structure
  *
  * \return  a pointer to the new allocated structure
  */
@@ -1225,7 +1224,7 @@ cs_index_free(cs_connect_index_t   **pidx)
  * \brief   From 2 indexes : A -> B and B -> C create a new index A -> C
  *
  * \param[in]  nc      number of elements in C set
- * \param[in]  xab     pointer to the index A -> B
+ * \param[in]  a2b     pointer to the index A -> B
  * \param[in]  b2c     pointer to the index B -> C
  *
  *\return  a pointer to the cs_connect_index_t structure A -> C

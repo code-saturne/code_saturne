@@ -119,7 +119,7 @@ typedef struct { /* Specific mesh quantities */
   cs_quant_t   *edge;       /* edge quantities */
   cs_dface_t   *dface;      /* for each edge belonging to a cell, two
                                contributions coming from 2 triangles
-                               s(x_cell, x_face, x_edge) for face\in\Face_edge
+                               s(x_cell, x_face, x_edge) for face in Face_edge
                                are considered.
                                Scan with the c2e connectivity */
 
@@ -181,7 +181,7 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *iq);
  *
  * \param[in]  f         FILE struct (stdout if NULL)
  * \param[in]  num       entity number related to this quantity struct.
- * \param[in]  quant     cs_quant_t structure to dump
+ * \param[in]  q         cs_quant_t structure to dump
  */
 /*----------------------------------------------------------------------------*/
 
@@ -195,7 +195,7 @@ cs_quant_dump(FILE             *f,
  * \brief  Compute for each vertex the dual cell volume which is also
  *
  *                sum    |celld(v) cap c| = pvol_v
- *              c\in\C_v
+ *              c in C_v
  *
  * \param[in]    connect   pointer to a cs_cdo_connect_t structure
  * \param[in]    quant     pointer to a cs_cdo_quantites_t structure

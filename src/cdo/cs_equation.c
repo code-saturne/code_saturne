@@ -495,7 +495,7 @@ _check_ml_name(const char   *ml_name,
 /*!
  * \brief  Print the name of the corresponding key
  *
- * \param[in] keyname    name of the key
+ * \param[in] key        name of the key
  *
  * \return a string
  */
@@ -1809,7 +1809,7 @@ cs_equation_needs_build(const cs_equation_t    *eq)
 /*!
  * \brief  Build the linear system for this equation
  *
- * \param[in]       mesh     pointer to a cs_mesh_t structure
+ * \param[in]       m        pointer to a cs_mesh_t structure
  * \param[in]       connect  pointer to a cs_cdo_connect_t structure
  * \param[in]       cdoq     pointer to a cs_cdo_quantities_t structure
  * \param[in]       tcur     current physical time of the simulation

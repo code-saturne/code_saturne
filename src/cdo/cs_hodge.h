@@ -120,12 +120,12 @@ cs_hodge_builder_free(cs_hodge_builder_t  *hcq);
 /*!
  * \brief   Build a local discrete Hodge operator using the generic COST algo.
  *
- * \param[in]    cid        cell id
- * \param[in]    connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]    quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]    h_info     pointer to a cs_param_hodge_t struct.
- * \param[inout] hloc       pointer to a cs_toolbox_locmat_t struct.
- * \param[inout] hb         pointer to a cs_hodge_builder_t struct.
+ * \param[in]     cid        cell id
+ * \param[in]     connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]     quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]     h_info     pointer to a cs_param_hodge_t struct.
+ * \param[in,out] hl         pointer to a cs_toolbox_locmat_t struct.
+ * \param[in,out] hb         pointer to a cs_hodge_builder_t struct.
  */
 /*----------------------------------------------------------------------------*/
 

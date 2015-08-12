@@ -44,7 +44,7 @@ module cs_nz_tagmr
 
   !> \defgroup numerical_1d_nz parameters of the 1-D conduction equation
 
-  !> \addtogroup numerical_1d_nz parameters of each zone
+  !> \addtogroup numerical_1d_nz
   !> \{
 
   !> \anchor znmurx
