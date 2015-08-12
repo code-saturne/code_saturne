@@ -301,7 +301,7 @@ Here is the list of examples:
 
   \section loc_var_ale Local variables
 
-  \snippet  cs_user_boundary_conditions-ale.f90 loc_var
+  \snippet  cs_user_boundary_conditions_ale-base.f90 loc_var
 
   \section init_fin_ale Initialization and finalization
 

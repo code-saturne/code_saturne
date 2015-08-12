@@ -37,7 +37,7 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     ncepdc        number of cells in head loss zone
-!> \param[in]     icepd         numbers of ncepdp cells with head loss
+!> \param[in]     icepdc        numbers of ncepdp cells with head loss
 !> \param[out]    ckupdc        head loss
 !_______________________________________________________________________________
 

@@ -65,7 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_user_cdo_post.c
+  \file cs_user_cdo_extra_op.c
 
   \brief Additional user-defined post-processing and analysis functions
 */
