@@ -97,6 +97,10 @@ module ppthch
   !> at temperature  th(j)
   double precision, save ::  ehgazg(ngazgm,npot)
 
+  !> cpgazg(ij) is the massic calorific capacity (J/kg/K) of the i-th global secies
+  !> at temperature  th(j)
+  double precision, save ::  cpgazg(ngazgm,npot)
+
   !> molar mass of an elementary gas component
   double precision, save ::  wmole(ngazem)
 

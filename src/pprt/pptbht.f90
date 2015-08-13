@@ -44,7 +44,8 @@ subroutine pptbht &
 ! nomcoe(ngazem)! a  ! <-- ! nom des constituants elementaires              !
 ! ehcoel        ! tr !  <- ! enthalpie pour chaque constituant              !
 ! (ngazem,npot) !    !     !                elementaire                     !
-! cpcoel(ngazem)! tr !  <- ! cp pour chaque constituant                     !
+! cpcoel        ! tr !  <- ! cp pour chaque constituant                     !
+! (ngazem,npot) !    !     !                elementaire                     !
 ! wmolce(ngazem)! tr !  <- ! masse molaire de chaque constituant            !
 !_______________!____!_____!________________________________________________!
 
@@ -77,7 +78,7 @@ integer          ncoel
 
 character(len=12) :: nomcoe(ngazem)
 
-double precision ehcoel(ngazem,npot) , cpcoel(ngazem)
+double precision ehcoel(ngazem,npot) , cpcoel(ngazem,npot)
 double precision wmolce (ngazem)
 
 ! Local variables
@@ -118,8 +119,8 @@ do ne = 1 , ngazem
 enddo
 
 do ne = 1 , ncoel
-  cpcoel(ne)= 0.d0
   do nt = 1, npo
+    cpcoel(ne,nt)= 0.d0
     ehcoel(ne,nt)= 0.d0
   enddo
 enddo
@@ -224,8 +225,7 @@ endif
 
 do nt = 1,npo
 
-! Determination du jeu de coefficients utilises
-
+  ! Determination du jeu de coefficients utilises
   if (th(nt) .gt. tlim(2)) then
     ind = 1
   else
@@ -234,24 +234,22 @@ do nt = 1,npo
 
   do ne = 1, ncoel
     ehcoel(ne,nt)  = coeff(ne,ind,6) + coeff(ne,ind,1) * th(nt)
-    cpcoel(ne)     =                   coeff(ne,ind,1)
+    cpcoel(ne,nt)  =                   coeff(ne,ind,1)
     cth = th(nt)
     ctc = 1.d0
 
-! Dans la table de Janaf, les COEFF sont adimensionnels (CP/R,H/R)
-
+    ! Dans la table de Janaf, les COEFF sont adimensionnels (CP/R,H/R)
     do nc = 2, 5
       cth = cth * th(nt)
       ctc = ctc * th(nt)
       ehcoel(ne,nt) = ehcoel(ne,nt)                               &
                     + coeff(ne,ind,nc) * cth / dble(nc)
-      cpcoel(ne) = cpcoel(ne) + coeff(ne,ind,nc) * ctc
+      cpcoel(ne,nt) = cpcoel(ne,nt) + coeff(ne,ind,nc) * ctc
     enddo
 
-!      Calcul du CP et du H pour chaque espece
-
+    ! Calcul du CP et du H pour chaque espece
     ehcoel(ne,nt) = ehcoel(ne,nt) * cs_physical_constants_r / wmolce(ne)
-    cpcoel(ne)    = cpcoel(ne)    * cs_physical_constants_r / wmolce(ne)
+    cpcoel(ne,nt) = cpcoel(ne,nt) * cs_physical_constants_r / wmolce(ne)
   enddo
 
 enddo

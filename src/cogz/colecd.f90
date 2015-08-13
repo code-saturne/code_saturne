@@ -80,13 +80,13 @@ integer          atgaze(ngazem,natom)
 integer          igoxy(nrgazm), igfuel(nrgazm)
 integer          ncoel
 integer          iico2 , iih2o
-integer          mode
+integer          mode, icalck
 
 double precision tmin , tmax
 double precision kabse(ngazem)
 double precision compog(ngazem,ngazgm)
-double precision ehcoel (ngazem,npot) , wmolce (ngazem)
-double precision cpcoel(ngazem)
+double precision wmolce (ngazem)
+double precision cpgaze(ngazem,npot)
 double precision coefg(ngazgm), tgaz, efgaz(ngazgm)
 double precision mfuel, mreac, epsi, nmolg, bilan
 double precision moxyd
@@ -307,55 +307,43 @@ if (indjon.eq.1) then
   call pptbht                                                     &
   !==========
  ( ncoel ,                                                        &
-  nomcoe , ehcoel , cpcoel , wmolce )
-
-  do ige = 1 ,ngaze
-    do it = 1 , npo
-      ehgaze(ige,it) = ehcoel (ige,it)
-    enddo
-  enddo
+  nomcoe , ehgaze , cpgaze , wmolce )
 
 ! ---- Calcul des masses molaires des especes globales
 !          de la tabulation temperature - enthalpie massique
 !          et des coefficients d'absorption des especes globales
 !             si RAYONNEMENT
 
+  icalck = 0
+  if ((ippmod(icod3p).eq.1.or.                           &
+       ippmod(icoebu).eq.1.or.ippmod(icoebu).eq.3.or.    &
+       ippmod(icolwc).eq.1.or.ippmod(icolwc).eq.3.or.    &
+       ippmod(icolwc).eq.5 ).and.iirayo.ge.1) then
+     icalck = 1
+  endif
+
   do igg = 1 , ngazg
     wmolg(igg) = 0.d0
     nmolg      = 0.d0
     do ige = 1 , ngaze
       wmolg(igg) = wmolg(igg)+compog(ige,igg)*wmole(ige)
-      nmolg      = nmolg    +  compog(ige,igg)
+      nmolg      = nmolg     +compog(ige,igg)
     enddo
     do it = 1,npo
       ehgazg(igg,it) = 0.d0
-      if ( ( ippmod(icod3p).eq.1 .or.                             &
-             ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.    &
-             ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.    &
-             ippmod(icolwc).eq.5 )                                &
-           .and. (iirayo.ge.1) ) then
-        ckabsg(igg) = 0.d0
-      endif
+      cpgazg(igg,it) = 0.d0
+      if (icalck.eq.1) ckabsg(igg) = 0.d0
       do ige = 1 , ngaze
         ehgazg(igg,it) = ehgazg(igg,it)                           &
              + compog(ige,igg)*wmole(ige)*ehgaze(ige,it)
-        if ( ( ippmod(icod3p).eq.1 .or.                           &
-            ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.     &
-            ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.     &
-            ippmod(icolwc).eq.5 )                                 &
-             .and. (iirayo.ge.1)  ) then
-          ckabsg(igg) = ckabsg(igg)                               &
-               + compog(ige,igg)*kabse(ige)*wmole(ige)
-        endif
+        cpgazg(igg,it) = cpgazg(igg,it)                           &
+             + compog(ige,igg)*wmole(ige)*cpgaze(ige,it)
+        if (icalck.eq.1) ckabsg(igg) = ckabsg(igg)                &
+                         + compog(ige,igg)*kabse(ige)*wmole(ige)
       enddo
       ehgazg(igg,it) = ehgazg(igg,it)/wmolg(igg)
-      if ( ( ippmod(icod3p).eq.1 .or.                             &
-          ippmod(icoebu).eq.1 .or. ippmod(icoebu).eq.3 .or.       &
-          ippmod(icolwc).eq.1 .or. ippmod(icolwc).eq.3 .or.       &
-          ippmod(icolwc).eq.5 )                                   &
-           .and. (iirayo.ge.1) ) then
-        ckabsg(igg) = ckabsg(igg)/wmolg(igg)
-      endif
+      cpgazg(igg,it) = cpgazg(igg,it)/wmolg(igg)
+      if (icalck.eq.1) ckabsg(igg) = ckabsg(igg)/wmolg(igg)
     enddo
     wmolg(igg) = wmolg(igg) / nmolg
     do ige = 1 , ngaze
