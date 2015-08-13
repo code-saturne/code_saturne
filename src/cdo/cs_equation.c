@@ -188,10 +188,10 @@ static cs_equation_algo_t _algo_info_by_default = {
 
 static cs_param_itsol_t _itsol_info_by_default = {
 #if defined(HAVE_PETSC)
-  CS_PARAM_PRECOND_ICC0,  // preconditionner
+  CS_PARAM_PRECOND_ICC0,  // preconditioner
   CS_PARAM_ITSOL_CG,      // iterative solver
 #else
-  CS_PARAM_PRECOND_DIAG,  // preconditionner
+  CS_PARAM_PRECOND_DIAG,  // preconditioner
   CS_PARAM_ITSOL_CG,      // iterative solver
 #endif
   2500,                   // max. number of iterations
@@ -321,7 +321,7 @@ _add_view(KSP          ksp)
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with Jacobi preconditionner
+ * PETSc solver using CG with Jacobi preconditioner
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
@@ -345,7 +345,7 @@ _cg_diag_setup_hook(void   *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with SSOR preconditionner
+ * PETSc solver using CG with SSOR preconditioner
  * Warning: PETSc implementation is only available in serial mode computation
  *
  * parameters:
@@ -371,7 +371,7 @@ _cg_ssor_setup_hook(void   *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with Additive Schwarz preconditionner
+ * PETSc solver using CG with Additive Schwarz preconditioner
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
@@ -395,7 +395,7 @@ _cg_as_setup_hook(void   *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with ICC preconditionner
+ * PETSc solver using CG with ICC preconditioner
  * Warning: PETSc implementation is only available in serial mode computation
  *
  * parameters:
@@ -421,7 +421,7 @@ _cg_icc_setup_hook(void    *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with GAMG preconditionner
+ * PETSc solver using CG with GAMG preconditioner
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
@@ -445,7 +445,7 @@ _cg_gamg_setup_hook(void    *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with Boomer AMG preconditionner (Hypre library)
+ * PETSc solver using CG with Boomer AMG preconditioner (Hypre library)
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure

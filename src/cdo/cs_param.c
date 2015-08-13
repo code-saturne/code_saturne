@@ -1105,11 +1105,11 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the preconditionner
+ * \brief   Get the name of the preconditioner
  *
- * \param[in] precond     type of preconditionner
+ * \param[in] precond     type of preconditioner
  *
- * \return the associated preconditionner name
+ * \return the associated preconditioner name
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1140,7 +1140,7 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid preconditionner. Stop execution."));
+              _(" Invalid preconditioner. Stop execution."));
   }
 
   return "NULL";

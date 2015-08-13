@@ -619,11 +619,11 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Get the name of the preconditionner
+ * \brief   Get the name of the preconditioner
  *
- * \param[in] precond     type of preconditionner
+ * \param[in] precond     type of preconditioner
  *
- * \return the associated preconditionner name
+ * \return the associated preconditioner name
  */
 /*----------------------------------------------------------------------------*/
 
