@@ -120,7 +120,7 @@ BEGIN_C_DECLS
   \brief  Function pointer for pre-resolution setup of a linear system's
           context.
 
-  This setup may include building a multigrid hierarcy, or a preconditioner.
+  This setup may include building a multigrid hierarchy, or a preconditioner.
 
   Use of this type of function is optional: the context is expected to
   maintain state, so that if a cs_sles_solve_t function is called before a
@@ -184,7 +184,7 @@ BEGIN_C_DECLS
   \brief  Function pointer for logging of linear solver history
           and performance data.
 
-  This function will be called for each solver when cs_sles_finalize()
+  This function will be called for each solver when \ref cs_sles_finalize
   is called.
 
   \param[in]  context   pointer to solver context
@@ -211,7 +211,7 @@ BEGIN_C_DECLS
   Function pointer for destruction of a linear system solver context.
 
   This function should free all context data, and will be called for each
-  system when cs_sles_finalize() is called.
+  system when \ref cs_sles_finalize is called.
 
   \param[in, out]  context  pointer to solver context
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-07-31 09:42+0200\n"
+"POT-Creation-Date: 2015-08-13 01:48+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3376,9 +3376,14 @@ msgstr ""
 "L'extraction de la diagonale dominance de matrices au format %s \n"
 "n'est pas encore opérationnelle."
 
+msgid "  Solver type:                       multigrid\n"
+msgstr "  Type de solveur :                  multigrille\n"
+
+msgid "  Multigrid preconditioner parameters:\n"
+msgstr "  Paramètres du préconditionneur multigrille :\n"
+
 #, c-format
 msgid ""
-"  Solver type:                       multigrid\n"
 "  Coarsening type:                   %s\n"
 "    Max fine cells per coarse cell:  %d\n"
 "    Maximum number of levels :       %d\n"
@@ -3386,7 +3391,6 @@ msgid ""
 "    P0/P1 relaxation parameter:      %g\n"
 "  Maximum number of cycles:          %d\n"
 msgstr ""
-"  Type de solveur :                  multigrille\n"
 "  Type de regroupement :             %s\n"
 "    Taille de regroupement maximal : %d\n"
 "    Nombre maximal de niveaux :      %d\n"
@@ -3398,17 +3402,15 @@ msgstr ""
 msgid ""
 "  %s:\n"
 "    Type:                            %s\n"
-"    Preconditioning:                 "
 msgstr ""
 "  %s:\n"
-"    Type:                            %s\n"
-"    Préconditionnement :             "
+"    Type :                           %s\n"
 
-msgid "none\n"
-msgstr "aucun\n"
+msgid "    Preconditioning:                 "
+msgstr "    Preconditionnement :             "
 
-msgid "diagonal\n"
-msgstr "diagonal\n"
+msgid "Jacobi\n"
+msgstr "Jacobi\n"
 
 #, c-format
 msgid "polynomial, degree %d\n"
@@ -3461,20 +3463,20 @@ msgstr ""
 "    Aggrégation : %s\n"
 
 #, c-format
-msgid "  Smoother: %s\n"
-msgstr "  Lisseur : %s\n"
+msgid "    Smoother: %s\n"
+msgstr "    Lisseur : %s\n"
 
 #, c-format
 msgid ""
-"  Descent smoother:     %s\n"
-"  Ascent smoother:      %s\n"
+"    Descent smoother:     %s\n"
+"    Ascent smoother:      %s\n"
 msgstr ""
-"  Lisseur de descente : %s\n"
-"  Lisseur de remontée : %s\n"
+"    Lisseur de descente : %s\n"
+"    Lisseur de remontée : %s\n"
 
 #, c-format
-msgid "  Coarsest level solver:       %s\n"
-msgstr "  Solveur de niveau grossier : %s\n"
+msgid "    Coarsest level solver:       %s\n"
+msgstr "    Solveur de niveau grossier : %s\n"
 
 msgid "minimum"
 msgstr "minimum"
@@ -3569,6 +3571,9 @@ msgstr ""
 " @@ Attention : multigrille algébrique pour [%s]\n"
 "    *********\n"
 "    Nombre de cycles maximal (%d) atteint\n"
+
+msgid "Multigrid"
+msgstr "Multigrille"
 
 #, c-format
 msgid ""
@@ -3758,6 +3763,10 @@ msgstr ""
 "%s [%s] : divergence après %u itérations :\n"
 "  résidu initial : %11.4e ; résidu courant : %11.4e\n"
 
+#, c-format
+msgid "  n_iter : %5d, res_abs : %11.4e\n"
+msgstr "  n_iter : %5d, res_abs : %11.4e\n"
+
 msgid " @@ Warning: non convergence\n"
 msgstr " @@ Attention : non convergence\n"
 
@@ -3787,11 +3796,17 @@ msgstr "  n_iter : %5u, res_abs : %11.4e, res_nor : %11.4e\n"
 
 #, c-format
 msgid ""
-"  Solver type:                       %s\n"
-"  Preconditioning:                   "
+"Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+"matrix using %s (%s) storage."
 msgstr ""
-"  Type de solveur :                  %s\n"
-"  Préconditionnement :               "
+
+#, c-format
+msgid "  Solver type:                       %s\n"
+msgstr "  Type de solveur :                  %s\n"
+
+#, c-format
+msgid "  Preconditioning:                   %s\n"
+msgstr "  Preconditionnement :               %s\n"
 
 #, c-format
 msgid "  Maximum number of iterations:      %d\n"
@@ -3801,6 +3816,16 @@ msgstr "  Nombre d'itérations maximal :      %d\n"
 msgid ""
 "\n"
 "  Solver type:                   %s\n"
+msgstr ""
+"\n"
+"  Type de solveur :              %s\n"
+
+#, c-format
+msgid "  Preconditioning:               %s\n"
+msgstr "  Preconditionneur :             %s\n"
+
+#, c-format
+msgid ""
 "  Number of setups:              %12d\n"
 "  Number of calls:               %12d\n"
 "  Minimum number of iterations:  %12d\n"
@@ -3809,8 +3834,6 @@ msgid ""
 "  Total setup time:              %12.3f\n"
 "  Total solution time:           %12.3f\n"
 msgstr ""
-"\n"
-"  Type de solveur :              %s\n"
 "  Nombre de préparations :       %12d\n"
 "  Number d'appels :              %12d\n"
 "  Nombre d'itérations minimal :  %12d\n"
@@ -3838,6 +3861,15 @@ msgstr ""
 #, c-format
 msgid "%s: error (%s) solving for %s"
 msgstr ""
+
+msgid "none"
+msgstr "aucun"
+
+msgid "polynomial, degree 1"
+msgstr "polynômial, degré 1"
+
+msgid "polynomial, degree 2"
+msgstr "polynômial, degré 2"
 
 #, c-format
 msgid ""
@@ -6128,9 +6160,6 @@ msgstr "courbe de Morton dans boîte englobante locale"
 msgid "Hilbert curve in local bounding box"
 msgstr "courbe de Hilbert dans boîte englobante locale"
 
-msgid "none"
-msgstr "aucun"
-
 msgid "coloring, no shared cell in block"
 msgstr "coloriage, pas de cellule partagée dans un bloc"
 
@@ -7775,6 +7804,9 @@ msgid ""
 " Stop generating the boundary condition structure."
 msgstr ""
 
+msgid " This situation is not handled yet."
+msgstr " Cette situation n'est pas encorre gérée."
+
 msgid ""
 " Invalid couple (definition type, degrees of freedom).\n"
 " Stop computing the Dirichlet values.\n"
@@ -7803,66 +7835,10 @@ msgid ""
 " Stop execution\n"
 msgstr ""
 
-#, c-format
-msgid " Invalid equation id (id = %d)\n"
+msgid " Convection term is not handled yet.\n"
 msgstr ""
 
-#, c-format
-msgid " Invalid equation id %d\n"
-msgstr ""
-
-msgid " Convection is not handled yet.\n"
-msgstr ""
-
-msgid " Transient simulation is not handled yet.\n"
-msgstr ""
-
-msgid ""
-" Stop execution.\n"
-" Can not find the id of the algebraic system\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Undefined iterative solver for solving %s equation.\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" PETSC algorithms used to solve %s are not linked.\n"
-" Please install Code_Saturne with PETSc."
-msgstr ""
-
-#, c-format
-msgid ""
-" Algorithm requested to solve %s is not implemented yet.\n"
-" Please modify your settings."
-msgstr ""
-
-msgid "Invalid space scheme. Stop creating algebraic systems \n"
-msgstr ""
-
-msgid "Invalid space scheme. Stop creating algebraic systems.\n"
-msgstr ""
-
-msgid "Invalid space scheme. Stop solving algebraic systems.\n"
-msgstr ""
-
-#, c-format
-msgid "  -t-    CDO setup runtime                    %12.3f s\n"
-msgstr ""
-
-#, c-format
-msgid "  -t-    Creation of CDO systems              %12.3f s\n"
-msgstr ""
-
-#, c-format
-msgid "  -t-    CDO solver runtime (iter: %d)        %12.3f s\n"
-msgstr ""
-
-#, c-format
-msgid "  -t-    CDO extra op. (iter: %d)             %12.3f s\n"
+msgid " Unsteady terms are not handled yet.\n"
 msgstr ""
 
 #, c-format
@@ -7887,6 +7863,205 @@ msgid ""
 msgstr ""
 
 msgid "  Undefined operation. Stop sum computation.\n"
+msgstr ""
+
+msgid "domain_walls"
+msgstr ""
+
+msgid "domain_inlets"
+msgstr ""
+
+msgid "domain_outlets"
+msgstr ""
+
+msgid "domain_symmetries"
+msgstr ""
+
+msgid " cs_domain_t structure is not allocated."
+msgstr ""
+
+#, c-format
+msgid ""
+" Problem detected during the setup.\n"
+" %d boundary faces have no boundary type."
+msgstr ""
+
+msgid ""
+" Invalid boundary by default.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid type of equation: %s\n"
+" Choices are scalar, vector or tensor."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid type of boundary condition by default: %s\n"
+" Choices are zero_value or zero_flux."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key name %s for setting a boundary by default.\n"
+" Available choices are: wall or symmetry."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid mesh location name %s.\n"
+" This mesh location is not already defined.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key name %s for setting a boundary.\n"
+" Available choices are: wall, inlet, outlet or symmetry."
+msgstr ""
+
+msgid ""
+" No variable name associated to an equation structure.\n"
+" Check your initialization."
+msgstr ""
+
+msgid ""
+" No equation name associated to an equation structure.\n"
+" Check your initialization."
+msgstr ""
+
+msgid ""
+" Invalid scheme for the space discretization.\n"
+" Please check your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Undefined iterative solver for solving %s equation.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" PETSC algorithms used to solve %s are not linked.\n"
+" Please install Code_Saturne with PETSc."
+msgstr ""
+
+#, c-format
+msgid ""
+" Algorithm requested to solve %s is not implemented yet.\n"
+" Please modify your settings."
+msgstr ""
+
+msgid ""
+" Stop setting an empty cs_equation_t structure.\n"
+" Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting equation %s.\n"
+" Please read listing for more details and modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid val %s related to key %s\n"
+" Choice between cdo_vb or cdo_fb"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid val %s related to key %s\n"
+" Choice between cost or voronoi"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid val %s related to key %s\n"
+" Choice between cs or petsc"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid val %s related to key %s\n"
+" Choice between cg, bicg, gmres or amg"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid val %s related to key %s\n"
+" Choice between jacobi, poly1, ssor, ilu0,\n"
+" icc0, amg or as"
+msgstr ""
+
+#, c-format
+msgid " Key %s is not implemented yet."
+msgstr " La clé %s n'est pas encore gérée."
+
+#, c-format
+msgid " cs_equation_t structure to set with property %s is NULL\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting a property.\n"
+" Current value: %s\n"
+" Possible choice: diffusion or time\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" cs_equation_t structure is NULL\n"
+" Can not add a boundary condition related to mesh location %s"
+msgstr ""
+
+#, c-format
+msgid " Invalid type of equation for equation %s.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting the type of definition.\n"
+" Given key: %s\n"
+" Choice among value, field, evaluator, analytic, user, law or file\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting the type of boundary condition.\n"
+" Given key: %s\n"
+" Choice among dirichlet, neumann or robin.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
+msgid ""
+" cs_equation_t structure is NULL\n"
+" Can not add a source term related to mesh location %s"
+msgstr ""
+
+#, c-format
+msgid ""
+" Type of equation for eq. %s is incompatible with the creation of a field "
+"structure.\n"
+msgstr ""
+
+msgid "vertices"
+msgstr "sommets"
+
+msgid "cells"
+msgstr "cellules"
+
+#, c-format
+msgid ""
+" Space scheme for eq. %s is incompatible with a field.\n"
+" Stop adding a cs_field_t structure.\n"
+msgstr ""
+
+msgid " Invalid mesh location id (= -1) for the current field\n"
 msgstr ""
 
 msgid "Invalid quadrature type.\n"
@@ -8003,7 +8178,10 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid " Type of property for %s is invalid with the creation of field.\n"
+msgid ""
+" Invalid key %s for setting the type of property.\n"
+" Key is one of the following: isotropic, orthotropic or anisotropic.\n"
+" Please modify your settings."
 msgstr ""
 
 #, c-format
@@ -8023,6 +8201,10 @@ msgid " Invalid type of material property."
 msgstr ""
 
 #, c-format
+msgid " Type of property for %s is invalid with the creation of field.\n"
+msgstr ""
+
+#, c-format
 msgid ""
 " Invalid id (eqal to %d).\n"
 " Cannot access to the material property definition.\n"
@@ -8037,78 +8219,7 @@ msgstr ""
 msgid " Invalid solver. Stop execution."
 msgstr ""
 
-msgid " Invalid preconditionner. Stop execution."
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid equation name %s.\n"
-" This equation is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid mesh location name %s.\n"
-" This mesh location is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid " Invalid equation id (= %d). Stop execution.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" An existing equation has already the same name %s.\n"
-" Stop adding the equation.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" No variable name associated to equation id %d\n"
-" Check your initialization.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Invalid material property name %s.\n"
-" This material property is not already defined.\n"
-msgstr ""
-
-#, c-format
-msgid " Invalid equation id (= %d)\n"
-msgstr ""
-
-msgid "Invalid space discretization scheme."
-msgstr ""
-
-msgid ""
-" The algorithm used to build the discrete Hodge operator\n"
-" related to the diffusion term doesn't need a coefficient.\n"
-" Please check your settings.\n"
-msgstr ""
-
-msgid " Invalid type of equation. This case is not managed.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Type of equation for eq. %s is incompatible with the creation of field.\n"
-" Stop adding field from CDO user equations.\n"
-msgstr ""
-
-msgid "vertices"
-msgstr "sommets"
-
-msgid "cells"
-msgstr "cellules"
-
-#, c-format
-msgid ""
-" Space scheme for eq. %s is incompatible with the creation of field.\n"
-" Stop adding field from CDO user equations.\n"
-msgstr ""
-
-msgid " Invalid mesh location id (= -1) for the current field\n"
+msgid " Invalid preconditioner. Stop execution."
 msgstr ""
 
 msgid "barycentric"
@@ -11706,3 +11817,25 @@ msgstr ""
 "    min local :                     %12.3f\n"
 "    max local :                     %12.3f\n"
 "    moyenne :                       %12.3f\n"
+
+#~ msgid ""
+#~ "  %s:\n"
+#~ "    Type:                            %s\n"
+#~ "    Preconditioning:                 "
+#~ msgstr ""
+#~ "  %s:\n"
+#~ "    Type:                            %s\n"
+#~ "    Préconditionnement :             "
+
+#~ msgid "none\n"
+#~ msgstr "aucun\n"
+
+#~ msgid "diagonal\n"
+#~ msgstr "diagonal\n"
+
+#~ msgid ""
+#~ "  Solver type:                       %s\n"
+#~ "  Preconditioning:                   "
+#~ msgstr ""
+#~ "  Type de solveur :                  %s\n"
+#~ "  Préconditionnement :               "

@@ -305,12 +305,14 @@ cs_user_linear_solvers(void)
   cs_sles_t *sles_p = cs_sles_find_or_add(CS_F_(p)->id, NULL);
   cs_sles_set_verbosity(sles_p, 4);
 
-  END_EXAMPLE_SCOPE
-
   /*! [sles_verbosity_1] */
+
+  END_EXAMPLE_SCOPE
 
   /* Example: change multigrid parameters for pressure */
   /*---------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
 
   /*! [sles_mgp_1] */
   cs_multigrid_t *mg = cs_multigrid_define(CS_F_(p)->id, NULL);
@@ -340,6 +342,8 @@ cs_user_linear_solvers(void)
      0.1);           /* requested precision multiplier coarse (default 1) */
   /*! [sles_mgp_1] */
 
+  END_EXAMPLE_SCOPE
+
   /* Set parallel grid merging options for all multigrid solvers */
   /*-------------------------------------------------------------*/
 
@@ -350,11 +354,49 @@ cs_user_linear_solvers(void)
                             1);  /* # of ranks under which we do not merge */
   /*! [sles_mg_parall] */
 
+  /* Example: conjugate gradient preconditioned by multigrid for pressure */
+  /*----------------------------------------------------------------------*/
+
+  BEGIN_EXAMPLE_SCOPE
+
+  /*! [sles_mgp_2] */
+  cs_sles_it_t *c = cs_sles_it_define(CS_F_(p)->id,
+                                      NULL,
+                                      CS_SLES_PCG,
+                                      -1,
+                                      10000);
+  cs_sles_pc_t *pc = cs_multigrid_pc_create();
+  cs_multigrid_t *mg = cs_sles_pc_get_context(pc);
+  cs_sles_it_transfer_pc(c, &pc);
+
+  assert(strcmp(cs_sles_pc_get_type(cs_sles_it_get_pc(c)), "multigrid") == 0);
+
+  cs_multigrid_set_solver_options
+    (mg,
+     CS_SLES_P_GAUSS_SEIDEL, /* descent smoother (CS_SLES_P_GAUSS_SEIDEL) */
+     CS_SLES_P_GAUSS_SEIDEL, /* ascent smoother (CS_SLES_P_GAUSS_SEIDEL) */
+     CS_SLES_PCG,            /* coarse solver (CS_SLES_P_GAUSS_SEIDEL) */
+     1,              /* n max cycles (default 1) */
+     1,              /* n max iter for descent (default 1) */
+     1,              /* n max iter for asscent (default 1) */
+     500,            /* n max iter coarse solver (default 1) */
+     0,              /* polynomial precond. degree descent (default) */
+     0,              /* polynomial precond. degree ascent (default) */
+     0,              /* polynomial precond. degree coarse (default 0) */
+     -1.0,           /* precision multiplier descent (< 0 forces max iters) */
+     -1.0,           /* precision multiplier ascent (< 0 forces max iters) */
+     1.0);           /* requested precision multiplier coarse (default 1) */
+  /*! [sles_mgp_2] */
+
+  END_EXAMPLE_SCOPE
+
   /* Set a non-default linear solver for DOM radiation. */
   /*----------------------------------------------------*/
 
   /* The solver must be set for each direction; here, we assume
      a quadrature with 32 directions is used */
+
+  BEGIN_EXAMPLE_SCOPE
 
   /*! [sles_rad_dom_1] */
   for (int i = 0; i < 32; i++) {
@@ -368,6 +410,8 @@ cs_user_linear_solvers(void)
 
   }
   /*! [sles_rad_dom_1] */
+
+  END_EXAMPLE_SCOPE
 
   /* Example: activate convergence plot for pressure */
   /*-------------------------------------------------*/
@@ -438,8 +482,8 @@ cs_user_linear_solvers(void)
 
   END_EXAMPLE_SCOPE
 
-  /* Setting global options for PETSc with GAMG preconditionner */
-  /*------------------------------------------------------------*/
+  /* Setting global options for PETSc with GAMG preconditioner */
+  /*-----------------------------------------------------------*/
 
   BEGIN_EXAMPLE_SCOPE
 
@@ -485,8 +529,8 @@ cs_user_linear_solvers(void)
 
   END_EXAMPLE_SCOPE
 
-  /* Setting global options for PETSc with HYPRE BoomerAMG preconditionner */
-  /*-----------------------------------------------------------------------*/
+  /* Setting global options for PETSc with HYPRE BoomerAMG preconditioner */
+  /*----------------------------------------------------------------------*/
 
   BEGIN_EXAMPLE_SCOPE
 

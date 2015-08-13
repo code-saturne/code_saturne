@@ -3837,19 +3837,18 @@ cs_grid_coarsen(const cs_grid_t   *f,
 {
   cs_lnum_t isym = 2;
 
-  /* In mutithreaded case, use a matrix structure alowing threading
-     without a specific renumbering, as structures are rebuilt often */
+  /* By default, always use MSR structure, as it often seems to provide the
+     best performance, and is required for the hybrid Gauss-Seidel-Jacobi
+     smoothers. In multithreaded case, we also prefer to use a matrix
+     structure allowing threading without a specific renumbering, as
+     structures are rebuilt often (so only CSR and MSR can be considered) */
 
-  cs_matrix_type_t coarse_matrix_type
-    = cs_glob_n_threads > 1 ? CS_MATRIX_CSR : CS_MATRIX_NATIVE;
+  cs_matrix_type_t coarse_matrix_type = CS_MATRIX_MSR;
   cs_matrix_variant_t *coarse_mv = NULL;
 
   cs_grid_t *c = NULL;
 
   const int *db_size = f->diag_block_size;
-
-  if (db_size[0] > 0 && cs_glob_n_threads > 1)
-    coarse_matrix_type = CS_MATRIX_MSR;
 
   assert(f != NULL);
 

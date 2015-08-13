@@ -62,6 +62,7 @@
 #include "cs_parameters.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_sles_pc.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -372,6 +373,8 @@ cs_sles_solve_native(int                  f_id,
 
   const cs_mesh_t *m = cs_glob_mesh;
 
+  bool need_msr = false;
+
   /* Check if this system has already been setup */
 
   cs_sles_t *sc = cs_sles_find_or_add(f_id, name);
@@ -396,14 +399,34 @@ cs_sles_solve_native(int                  f_id,
          "If this is not an error, increase CS_SLES_DEFAULT_N_SETUPS\n"
          "  in file %s.", CS_SLES_DEFAULT_N_SETUPS, __FILE__);
 
+    cs_sles_pc_t  *pc = NULL;
+    cs_multigrid_t *mg = NULL;
+
     if (strcmp(cs_sles_get_type(sc), "cs_sles_it_t") == 0) {
       cs_sles_it_t *c = cs_sles_get_context(sc);
       if (cs_sles_it_get_type(c) == CS_SLES_P_GAUSS_SEIDEL)
-        a = cs_matrix_msr(symmetric,
-                          diag_block_size,
-                          extra_diag_block_size);
+        need_msr = true;
+      else {
+        pc = cs_sles_it_get_pc(c);
+        if (pc != NULL) {
+          if (strcmp(cs_sles_pc_get_type(pc), "multigrid") == 0)
+            mg = cs_sles_pc_get_context(pc);
+        }
+      }
     }
-    if (a == NULL)
+    else if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
+      mg = cs_sles_get_context(sc);
+
+    if (mg != NULL) {
+      if (cs_multigrid_get_fine_solver_type(mg) == CS_SLES_P_GAUSS_SEIDEL)
+        need_msr = true;
+    }
+
+    if (need_msr)
+      a = cs_matrix_msr(symmetric,
+                        diag_block_size,
+                        extra_diag_block_size);
+    else
       a = cs_matrix_default(symmetric,
                             diag_block_size,
                             extra_diag_block_size);

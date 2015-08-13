@@ -63,6 +63,7 @@
 #include "cs_post.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_sles_pc.h"
 #include "cs_timer.h"
 #include "cs_time_plot.h"
 
@@ -116,6 +117,7 @@ typedef struct _cs_multigrid_info_t {
   cs_sles_it_type_t    type[3];             /* Descent/ascent smoother
                                                and solver type */
 
+  bool                 is_pc;               /* True if used as preconditioner */
   int                  n_max_cycles;        /* Maximum allowed cycles */
 
   int                  n_max_iter[3];       /* maximum iterations allowed
@@ -211,6 +213,15 @@ typedef struct _cs_multigrid_setup_data_t {
   cs_real_t    **rhs_vx;                /* Coarse grid "right hand sides"
                                            and corrections */
 
+  /* Options used only when used as a preconditioner */
+
+  char          *pc_name;               /* name of preconditioning system */
+
+  int            pc_verbosity;          /* preconditioner verbosity */
+
+  cs_real_t     *pc_aux;                /* preconditioner auxiliary array */
+
+
 } cs_multigrid_setup_data_t;
 
 /* Grid hierarchy */
@@ -235,6 +246,11 @@ struct _cs_multigrid_t {
                                     on the base grid */
 
   double     p0p1_relax;         /* p0/p1 relaxation_parameter */
+
+  /* Setting for use as a preconditioner */
+
+  double     pc_precision;       /* preconditioner precision */
+  double     pc_r_norm;          /* preconditioner residue normalization */
 
   /* Data for postprocessing callback */
 
@@ -295,6 +311,7 @@ _multigrid_info_init(cs_multigrid_info_t *info)
   info->type[1] = CS_SLES_PCG;
   info->type[2] = CS_SLES_PCG;
 
+  info->is_pc        = false;
   info->n_max_cycles = 100;
 
   info->n_max_iter[0] = 2;
@@ -363,9 +380,15 @@ _multigrid_level_info_init(cs_multigrid_level_info_t *info)
 static void
 _multigrid_setup_log(const cs_multigrid_t *mg)
 {
+  if (mg->info.is_pc == false)
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Solver type:                       multigrid\n"));
+  else
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  Multigrid preconditioner parameters:\n"));
+
   cs_log_printf(CS_LOG_SETUP,
-                _("  Solver type:                       multigrid\n"
-                  "  Coarsening type:                   %s\n"
+                _("  Coarsening type:                   %s\n"
                   "    Max fine cells per coarse cell:  %d\n"
                   "    Maximum number of levels :       %d\n"
                   "    Minimum number of coarse cells:  %d\n"
@@ -383,18 +406,19 @@ _multigrid_setup_log(const cs_multigrid_t *mg)
   for (int i = 0; i < 3; i++) {
     cs_log_printf(CS_LOG_SETUP,
                   _("  %s:\n"
-                    "    Type:                            %s\n"
-                    "    Preconditioning:                 "),
+                    "    Type:                            %s\n"),
                   _(stage_name[i]),
                   _(cs_sles_it_type_name[mg->info.type[i]]));
 
-    if (mg->info.poly_degree[i] < 0)
-      cs_log_printf(CS_LOG_SETUP, _("none\n"));
-    else if (mg->info.poly_degree[i] == 0)
-      cs_log_printf(CS_LOG_SETUP, _("diagonal\n"));
-    else
-      cs_log_printf(CS_LOG_SETUP, _("polynomial, degree %d\n"),
+    if (mg->info.poly_degree[i] > -1) {
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    Preconditioning:                 "));
+      if (mg->info.poly_degree[i] == 0)
+        cs_log_printf(CS_LOG_SETUP, _("Jacobi\n"));
+      else
+        cs_log_printf(CS_LOG_SETUP, _("polynomial, degree %d\n"),
                       mg->info.poly_degree[i]);
+    }
     cs_log_printf(CS_LOG_SETUP,
                   _("    Maximum number of iterations:    %d\n"
                     "    Precision multiplier:            %g\n"),
@@ -445,16 +469,16 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
 
     if (mg->info.type[0] == mg->info.type[1])
       cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("  Smoother: %s\n"),
+                    _("    Smoother: %s\n"),
                     _(descent_smoother_name));
     else
       cs_log_printf(CS_LOG_PERFORMANCE,
-                    _("  Descent smoother:     %s\n"
-                      "  Ascent smoother:      %s\n"),
+                    _("    Descent smoother:     %s\n"
+                      "    Ascent smoother:      %s\n"),
                     _(descent_smoother_name), _(ascent_smoother_name));
 
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Coarsest level solver:       %s\n"),
+                  _("    Coarsest level solver:       %s\n"),
                   _(cs_sles_it_type_name[mg->info.type[2]]));
 
   }
@@ -646,6 +670,10 @@ _multigrid_setup_data_create(void)
 
   mgd->rhs_vx_buf = NULL;
   mgd->rhs_vx = NULL;
+
+  mgd->pc_name = NULL;
+  mgd->pc_aux = NULL;
+  mgd->pc_verbosity = 0;
 
   return mgd;
 }
@@ -1851,6 +1879,195 @@ _multigrid_cycle(cs_multigrid_t       *mg,
   return cvg;
 }
 
+/*----------------------------------------------------------------------------
+ * Create a Preconditioner structure using multigrid.
+ *
+ * returns:
+ *   pointer to newly created preconditioner object.
+ *----------------------------------------------------------------------------*/
+
+static cs_multigrid_t *
+_multigrid_pc_create(void)
+{
+  cs_multigrid_t *mg = cs_multigrid_create();
+
+  cs_multigrid_set_solver_options
+    (mg,
+     CS_SLES_P_GAUSS_SEIDEL, /* descent smoothe */
+     CS_SLES_P_GAUSS_SEIDEL, /* ascent smoothe */
+     CS_SLES_P_GAUSS_SEIDEL, /* coarse smoothe */
+     1,                      /* n_max_cycles */
+     1,                      /* n_max_iter_descent, */
+     1,                      /* n_max_iter_ascent */
+     1,                      /* n_max_iter_coarse */
+     0,                      /* poly_degree_descent */
+     0,                      /* poly_degree_ascent */
+     0,                      /* poly_degree_coarse */
+     -1.0,                   /* precision_mult_descent */
+     -1.0,                   /* precision_mult_ascent */
+     1.0);                   /* precision_mult_coarse */
+
+  return mg;
+}
+
+/*----------------------------------------------------------------------------
+ * Function returning the type name of polynomial preconditioner context.
+ *
+ * parameters:
+ *   context   <-- pointer to preconditioner context
+ *   logging   <-- if true, logging description; if false, canonical name
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_multigrid_pc_get_type(const void  *context,
+                       bool         logging)
+{
+  if (logging == false) {
+    static const char t[] = "multigrid";
+    return t;
+  }
+  else {
+    static const char t[] = N_("Multigrid");
+    return t;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Function or setting of the required tolerance for multigrid as
+ * as a preconditioner.
+ *
+ * The preconditioner is considered to have converged when
+ * residue/r_norm <= precision, residue being the L2 norm of a.vx-rhs.
+ *
+ * parameters:
+ *   context       <-> pointer to multigrid context
+ *   precision     <-- preconditioner precision
+ *   r_norm        <-- residue normalization
+ *----------------------------------------------------------------------------*/
+
+static void
+_multigrid_pc_tolerance_t(void    *context,
+                          double   precision,
+                          double   r_norm)
+{
+  cs_multigrid_t  *mg = context;
+
+  mg->pc_precision = precision;
+  mg->pc_r_norm = r_norm;
+}
+
+/*----------------------------------------------------------------------------
+ * Function for setup of a multigrid preconditioner.
+ *
+ * parameters:
+ *   context   <-> pointer to preconditioner context
+ *   name      <-- pointer to name of associated linear system
+ *   a         <-- matrix
+ *   verbosity <-- associated verbosity
+ *----------------------------------------------------------------------------*/
+
+static void
+_multigrid_pc_setup(void               *context,
+                    const char         *name,
+                    const cs_matrix_t  *a,
+                    int                 verbosity)
+{
+  cs_multigrid_setup(context,  name, a, verbosity);
+
+  cs_multigrid_t  *mg = context;
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+  BFT_REALLOC(mgd->pc_name, strlen(name) + 1, char);
+  strcpy(mgd->pc_name, name);
+}
+
+/*----------------------------------------------------------------------------
+ * Function for application of a Multigrid preconditioner.
+ *
+ * In cases where it is desired that the preconditioner modify a vector
+ * "in place", x_in should be set to NULL, and x_out contain the vector to
+ * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
+ *
+ * parameters:
+ *   context       <-> pointer to preconditioner context
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   x_in          <-- input vector
+ *   x_out         <-> input/output vector
+ *
+ * returns:
+ *   preconditioner application status
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_pc_state_t
+_multigrid_pc_apply(void                *context,
+                    cs_halo_rotation_t   rotation_mode,
+                    const cs_real_t     *x_in,
+                    cs_real_t           *x_out)
+{
+  int     n_iter;
+  double  residue;
+
+  cs_multigrid_t  *mg = context;
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+  const cs_matrix_t  *a = cs_grid_get_matrix(mgd->grid_hierarchy[0]);
+
+  const cs_real_t *rhs = x_in;
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size[1];
+
+  /* If preconditioner is "in-place", use additional buffer */
+
+  if (x_in == NULL) {
+    if (mgd->pc_aux == NULL) {
+      const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size[1];
+      BFT_MALLOC(mgd->pc_aux, n_cols, cs_real_t);
+    }
+    cs_real_t *restrict _rhs = mgd->pc_aux;
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      _rhs[ii] = x_out[ii];
+    rhs = _rhs;
+  }
+
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    x_out[ii] = 0.;
+
+  cs_sles_convergence_state_t  cvg = cs_multigrid_solve(context,
+                                                        mgd->pc_name,
+                                                        a,
+                                                        mgd->pc_verbosity,
+                                                        rotation_mode,
+                                                        mg->pc_precision,
+                                                        mg->pc_r_norm,
+                                                        &n_iter,
+                                                        &residue,
+                                                        rhs,
+                                                        x_out,
+                                                        0,
+                                                        NULL);
+
+  cs_sles_pc_state_t state;
+
+  switch(cvg) {
+  case CS_SLES_DIVERGED:
+    state = CS_SLES_PC_DIVERGED;
+    break;
+  case CS_SLES_BREAKDOWN:
+    state = CS_SLES_PC_BREAKDOWN;
+    break;
+  case CS_SLES_CONVERGED:
+    state = CS_SLES_PC_CONVERGED;
+    break;
+  default:
+    state = CS_SLES_PC_MAX_ITERATION;
+  }
+
+  return state;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1978,6 +2195,9 @@ cs_multigrid_create(void)
   mg->p0p1_relax = 0.95;
 
   _multigrid_info_init(&(mg->info));
+
+  mg->pc_precision = 0.0;
+  mg->pc_r_norm = 0.0;
 
   mg->n_levels_post = 0;
 
@@ -2171,11 +2391,11 @@ cs_multigrid_set_coarsening_options(cs_multigrid_t  *mg,
  *                                          for ascent phases (0: diagonal)
  * \param[in]       poly_degree_coarse      preconditioning polynomial degree
  *                                          for coarse solver (0: diagonal)
- * \param[in]      precision_mult_descent   precision multiplier
+ * \param[in]       precision_mult_descent  precision multiplier
  *                                          for descent smoothers (levels >= 1)
- * \param[in]      precision_mult_ascent    precision multiplier
+ * \param[in]       precision_mult_ascent   precision multiplier
  *                                          for ascent smoothers
- * \param[in]      precision_mult_coarse    precision multiplier
+ * \param[in]       precision_mult_coarse   precision multiplier
  *                                          for coarsest grid
  */
 /*----------------------------------------------------------------------------*/
@@ -2218,6 +2438,33 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
   info->precision_mult[0] = precision_mult_descent;
   info->precision_mult[1] = precision_mult_ascent;
   info->precision_mult[2] = precision_mult_coarse;
+
+  for (int i = 0; i < 3; i++) {
+    if (   info->type[i] == CS_SLES_JACOBI
+        || info->type[i] == CS_SLES_P_GAUSS_SEIDEL)
+      info->poly_degree[i] = -1;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return solver type used on fine mesh.
+ *
+ * \param[in]  mg  pointer to multigrid info and context
+ *
+ * \return   type of smoother for descent (used for fine mesh)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_it_type_t
+cs_multigrid_get_fine_solver_type(const cs_multigrid_t  *mg)
+{
+  if (mg == NULL)
+    return CS_SLES_N_IT_TYPES;
+
+  const cs_multigrid_info_t  *info = &(mg->info);
+
+  return info->type[0];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2689,14 +2936,46 @@ cs_multigrid_free(void  *context)
       cs_grid_destroy(mgd->grid_hierarchy + i);
     BFT_FREE(mgd->grid_hierarchy);
 
-    BFT_FREE(mg->setup_data);
+    /* Destroy peconditioning-only arrays */
 
+    BFT_FREE(mgd->pc_name);
+    BFT_FREE(mgd->pc_aux);
+
+    BFT_FREE(mg->setup_data);
   }
 
   /* Update timers */
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a multigrid preconditioner.
+ *
+ * \return  pointer to newly created preconditioner object.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_pc_t *
+cs_multigrid_pc_create(void)
+{
+  cs_multigrid_t *mg = _multigrid_pc_create();
+
+  mg->info.is_pc = true;
+
+  cs_sles_pc_t *pc = cs_sles_pc_define(mg,
+                                       _multigrid_pc_get_type,
+                                       _multigrid_pc_setup,
+                                       _multigrid_pc_tolerance_t,
+                                       _multigrid_pc_apply,
+                                       cs_multigrid_free,
+                                       cs_multigrid_log,
+                                       cs_multigrid_copy,
+                                       cs_multigrid_destroy);
+
+  return pc;
 }
 
 /*----------------------------------------------------------------------------*/

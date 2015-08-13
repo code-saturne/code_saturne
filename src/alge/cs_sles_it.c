@@ -68,6 +68,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_sles.h"
+#include "cs_sles_pc.h"
 #include "cs_sles_it.h"
 
 /*----------------------------------------------------------------------------*/
@@ -103,9 +104,9 @@ BEGIN_C_DECLS
 
  \page sles_it Iterative linear solvers.
 
- For Krylov space solvers (all here except Jacobi), preconditioning is based
+ For Krylov space solvers, default preconditioning is based
  on a Neumann polynomial of degree \a poly_degree, with a negative value
- meaning no preconditionig, and 0 diagonal preconditioning.
+ meaning no preconditioning, and 0 diagonal preconditioning.
 
  For positive values of \a poly_degree, the preconditioning is explained here:
  \a D being the diagonal part of matrix \a A and \a X its extra-diagonal
@@ -156,13 +157,19 @@ typedef struct _cs_sles_it_setup_t {
 
   bool                 single_reduce;    /* single reduction mode for PCG */
 
-  double               initial_residue;  /* Last initial residue value */
+  double               initial_residue;  /* last initial residue value */
 
-  cs_lnum_t            n_rows;           /* Number of associated rows */
+  cs_lnum_t            n_rows;           /* number of associated rows */
+
+  const cs_matrix_t   *a;                /* pointer to matrix */
+  cs_matrix_t        *_a;                /* private pointer to matrix */
 
   const cs_real_t     *ad_inv;           /* pointer to diagonal inverse */
   cs_real_t           *_ad_inv;          /* private pointer to
                                             diagonal inverse */
+
+  void                *pc_context;       /* preconditioner context */
+  cs_sles_pc_apply_t  *pc_apply;         /* preconditioner apply */
 
 } cs_sles_it_setup_t;
 
@@ -184,14 +191,16 @@ struct _cs_sles_it_t {
 
   cs_sles_it_type_t    type;               /* Solver type */
 
-  int                  poly_degree;        /* preconditioning polynomial
-                                              degree (0: diagonal,
-                                              -1: non-preconditioned) */
   bool                 symmetric;          /* symmetric for Gauss-Seidel */
 
   bool                 update_stats;       /* do stats need to be updated ? */
 
   int                  n_max_iter;         /* maximum number of iterations */
+
+  cs_sles_pc_t        *pc;                 /* pointer to possibly shared
+                                              preconditioner object */
+  cs_sles_pc_t        *_pc;                /* pointer to owned
+                                              preconditioner object */
 
   /* Performance data */
 
@@ -227,7 +236,8 @@ struct _cs_sles_it_t {
   /* Solver setup */
 
   const struct _cs_sles_it_t  *shared;     /* pointer to context sharing some
-                                              setup data, or NULL */
+                                              setup and preconditioner data,
+                                              or NULL */
 
   cs_sles_it_add_t            *add_data;   /* additional data */
 
@@ -255,7 +265,7 @@ typedef struct _cs_sles_it_convergence_t {
 
 /*============================================================================
  *  Global variables
- *=================================================================x===========*/
+ *============================================================================*/
 
 /* Mean system rows threshold under which we use single-reduce version of PCG */
 
@@ -385,10 +395,16 @@ _convergence_test(cs_sles_it_t              *c,
         if (verbosity == 1) /* Already output if verbosity > 1 */
           bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
                      convergence->name);
-        if (verbosity <= 2) /* Already output if verbosity > 2 */
-          bft_printf(_(final_fmt),
-                     n_iter, residue, residue/convergence->r_norm);
-        bft_printf(_(" @@ Warning: non convergence\n"));
+        if (verbosity <= 2) { /* Already output if verbosity > 2 */
+          if (convergence->r_norm > 0.)
+            bft_printf(_(final_fmt),
+                       n_iter, residue, residue/convergence->r_norm);
+          else
+            bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
+                       n_iter, residue);
+        }
+        if (convergence->precision > 0.)
+          bft_printf(_(" @@ Warning: non convergence\n"));
       }
       return CS_SLES_MAX_ITERATION;
     }
@@ -632,75 +648,6 @@ _dot_products_xx_yy_xy_xz_yz(const cs_sles_it_t  *c,
 }
 
 /*----------------------------------------------------------------------------
- * Residue preconditioning Gk = C.Rk
- *
- * To increase the polynomial order with no major overhead, we may
- * "implicit" the resolution using a red-black mesh coloring.
- *
- * poly_degree:
- *   0: Gk = (1/ad).Rk
- *   1: Gk = (1/ad - (1/ad).ax.(1/ad)).Rk
- *   2: Gk = (1/ad - (1/ad).ax.(1/ad) + (1/ad).ax.(1/ad).ax.(1/ad)).Rk
- *
- * parameters:
- *   c             <-- pointer to solver context info
- *   rotation_mode <-- halo update option for rotational periodicity
- *   a             <-- linear equation matrix
- *   rk            <-- residue vector
- *   gk            --> result vector
- *   wk            --- Working array
- *----------------------------------------------------------------------------*/
-
-static void
-_polynomial_preconditionning(const cs_sles_it_t  *c,
-                             cs_halo_rotation_t   rotation_mode,
-                             const cs_matrix_t   *a,
-                             const cs_real_t     *rk,
-                             cs_real_t           *restrict gk,
-                             cs_real_t           *restrict wk)
-{
-  int deg_id;
-  cs_lnum_t ii;
-
-  const cs_sles_it_setup_t *s = c->setup_data;
-  const cs_lnum_t n_rows = s->n_rows;
-  const cs_real_t *restrict ad_inv = s->ad_inv;
-
-  if (c->poly_degree < 0) {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      gk[ii] = rk[ii];
-    return;
-  }
-
-  /* Polynomial of degree 0 (diagonal)
-   *-----------------------------------*/
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (ii = 0; ii < n_rows; ii++)
-    gk[ii] = rk[ii] * ad_inv[ii];
-
-  /* Polynomial of degree n
-   *-----------------------
-   *
-   *                  n=1                    n=2
-   * gk = ((1/ad) - (1/ad).ax.(1/ad) + (1/ad).ax.(1/ad).ax.(1/ad) + ... ).rk
-   */
-
-  for (deg_id = 1; deg_id <= c->poly_degree; deg_id++) {
-
-    /* Compute Wk = (A-diag).Gk */
-
-    cs_matrix_exdiag_vector_multiply(rotation_mode, a, gk, wk);
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      gk[ii] = (rk[ii] - wk[ii]) * ad_inv[ii];
-
-  }
-}
-
-/*----------------------------------------------------------------------------
 * Compute inverses of dense 3*3 matrices.
 *
 * parameters:
@@ -742,7 +689,9 @@ _fact_lu33(cs_lnum_t         n_blocks,
  *
  * parameters:
  *   c                <-> pointer to solver context info
+ *   name             <-- pointer to system name
  *   a                <-- matrix
+ *   verbosity        <-- verbosity level
  *   diag_block_size  <-- diagonal block size
  *   block_33_inverse <-- if diagonal block is of size 3, compute inverse of
  *                        block if true, inverse of block diagonal otherwise
@@ -750,7 +699,9 @@ _fact_lu33(cs_lnum_t         n_blocks,
 
 static void
 _setup_sles_it(cs_sles_it_t       *c,
+               const char         *name,
                const cs_matrix_t  *a,
+               int                 verbosity,
                int                 diag_block_size,
                bool                block_33_inverse)
 {
@@ -772,11 +723,30 @@ _setup_sles_it(cs_sles_it_t       *c,
   sd->single_reduce = false;
   sd->initial_residue = -1;
 
-  /* Setup diagonal inverse */
+  const cs_sles_it_t  *s = c->shared;
 
-  if (c->poly_degree >= 0) {
+  if (c->pc != NULL) {
 
-    const cs_sles_it_t  *s = c->shared;
+    if (s != NULL) {
+      if (s->setup_data == NULL)
+        s = NULL;
+    }
+
+    if (s == NULL)
+      cs_sles_pc_setup(c->pc,
+                       name,
+                       a,
+                       verbosity);
+
+    sd->pc_context = cs_sles_pc_get_context(c->pc);
+    sd->pc_apply = cs_sles_pc_get_apply_func(c->pc);
+
+  }
+
+  /* Setup diagonal inverse for Jacobi and Gauss-Seidel */
+
+  else { /* if (c->pc == NULL) */
+
     if (s != NULL) {
       if (s->setup_data == NULL)
         s = NULL;
@@ -896,11 +866,10 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -931,14 +900,12 @@ _conjugate_gradient(cs_sles_it_t              *c,
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
-  /* Polynomial preconditionning of order poly_degre */
+  /* Preconditioning */
 
-  _polynomial_preconditionning(c,
-                               rotation_mode,
-                               a,
-                               rk,
-                               gk,
-                               dk); /* dk used as work array here */
+  c->setup_data->pc_apply(c->setup_data->pc_context,
+                          rotation_mode,
+                          rk,
+                          gk);
 
   /* Descent direction */
   /*-------------------*/
@@ -999,12 +966,12 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 rk,
-                                 gk,
-                                 zk); /* zk used as work array here */
+    /* Preconditioning */
+
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            gk);
 
     /* compute residue and prepare descent parameter */
 
@@ -1100,11 +1067,10 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1136,15 +1102,12 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   for (ii = 0; ii < n_rows; ii++)
     rk[ii] -= rhs[ii];
 
-  /* Polynomial preconditionning of order poly_degre */
-  /* gk = c_1 * rk  (zk = c_1 * rk) */
+  /* Preconditionning */
 
-  _polynomial_preconditionning(c,
-                               rotation_mode,
-                               a,
-                               rk,
-                               gk,
-                               dk); /* dk used as work array here */
+  c->setup_data->pc_apply(c->setup_data->pc_context,
+                          rotation_mode,
+                          rk,
+                          gk);
 
   /* Descent direction */
   /*-------------------*/
@@ -1206,12 +1169,12 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 rk,
-                                 gk,
-                                 sk); /* sk used as work array here */
+    /* Preconditionning */
+
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            gk);
 
     cs_matrix_vector_multiply(rotation_mode, a, gk, sk);  /* sk = A.gk */
 
@@ -1302,11 +1265,10 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1489,11 +1451,10 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1679,11 +1640,10 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -1735,12 +1695,12 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 rk,
-                                 wk,
-                                 tmp); /* used as work array here */
+    /* Preconditionning */
+
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            wk);
 
     cs_matrix_vector_multiply(rotation_mode, a, wk, zk);
 
@@ -1848,11 +1808,10 @@ _jacobi(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -2003,11 +1962,10 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, true);
+  assert(c->setup_data != NULL);
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -2147,6 +2105,7 @@ _breakdown(cs_sles_it_t                 *c,
  *
  * parameters:
  *   c               <-- pointer to solver context info
+ *   name            <-- pointer to system name
  *   a               <-- matrix
  *   diag_block_size <-- block size of element ii, ii
  *   rotation_mode   <-- halo update option for rotational periodicity
@@ -2182,11 +2141,10 @@ _bi_cgstab(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -2276,12 +2234,10 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Compute zk = c.pk */
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 pk,
-                                 zk,
-                                 uk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            pk,
+                            zk);
 
     /* Compute uk = A.zk */
 
@@ -2308,12 +2264,10 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Compute zk = C.rk (zk is overwritten, vk is a working array */
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 rk,
-                                 zk,
-                                 vk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            rk,
+                            zk);
 
     /* Compute vk = A.zk and alpha */
 
@@ -2399,11 +2353,10 @@ _bicgstab2(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  assert(c->setup_data != NULL);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -2500,14 +2453,12 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(rotation_mode, a, uk, vk);
 
-    /* Compute zk = c.vk */
+    /* Preconditionning */
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 vk,
-                                 zk,
-                                 sk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            vk,
+                            zk);
 
     /* Compute gamma and alpha */
 
@@ -2531,12 +2482,10 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(rotation_mode, a, rk, sk);
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 sk,
-                                 zk,
-                                 wk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            sk,
+                            zk);
 
     ro_1 = _dot_product(c, qk, sk);
     beta = alpha*ro_1/ro_0;
@@ -2556,12 +2505,10 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(rotation_mode, a, vk, wk);
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 wk,
-                                 zk,
-                                 tk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            wk,
+                            zk);
 
     gamma = _dot_product(c, qk, wk);
     alpha = (ro_0+mprec)/(gamma+mprec);
@@ -2576,12 +2523,10 @@ _bicgstab2(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(rotation_mode, a, sk, tk);
 
-    _polynomial_preconditionning(c,
-                                 rotation_mode,
-                                 a,
-                                 tk,
-                                 zk,
-                                 vk);
+    c->setup_data->pc_apply(c->setup_data->pc_context,
+                            rotation_mode,
+                            tk,
+                            zk);
 
     _dot_products_xx_yy_xy_xz_yz(c, sk, tk, rk,
                                  &mu, &tau, &nu, &omega_1, &omega_2);
@@ -2739,14 +2684,14 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
  * On entry, vx is considered initialized.
  *
  * parameters:
- *   var_name      <-- Variable name
- *   a             <-- Matrix
- *   rotation_mode <-- Halo update option for rotational periodicity
- *   convergence   <-- Convergence information structure
- *   rhs           <-- Right hand side
- *   vx            <-> System solution
- *   aux_size      <-- Number of elements in aux_vectors (in bytes)
- *   aux_vectors   --- Optional working area (allocation otherwise)
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   rotation_mode   <-- halo update option for rotational periodicity
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
  *
  * returns:
  *   convergence state
@@ -2776,13 +2721,12 @@ _gmres(cs_sles_it_t              *c,
   int krylov_size_max = 75;
   unsigned n_iter = 0;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != NULL);
 
   const int diag_block_size = 1;
-
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
 
   const cs_lnum_t n_rows = c->setup_data->n_rows;
 
@@ -2882,12 +2826,10 @@ _gmres(cs_sles_it_t              *c,
       for (jj = 0; jj < n_rows; jj++)
         krk[jj] = dk[jj]/dot_prod;
 
-      _polynomial_preconditionning(c,
-                                   rotation_mode,
-                                   a,
-                                   krk,
-                                   gk,
-                                   dk);
+      c->setup_data->pc_apply(c->setup_data->pc_context,
+                              rotation_mode,
+                              krk,
+                              gk);
 
       /* compute w = dk <- A*vj */
 
@@ -2939,13 +2881,10 @@ _gmres(cs_sles_it_t              *c,
             fk[jj] += _krylov_vectors[kk*n_rows + jj] * gk[kk];
         }
 
-        _polynomial_preconditionning(c,
-                                     rotation_mode,
-                                     a,
-                                     fk,
-                                     gk,
-                                     bk);
-
+        c->setup_data->pc_apply(c->setup_data->pc_context,
+                                rotation_mode,
+                                fk,
+                                gk);
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (jj = 0; jj < n_rows; jj++)
@@ -3621,6 +3560,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
       cvg = _convergence_test(c, n_iter, residue, convergence);
 
     }
+    else if (n_iter >= convergence->n_iterations_max)
+      cvg = CS_SLES_MAX_ITERATION;
 
   }
 
@@ -3656,11 +3597,20 @@ _p_gauss_seidel(cs_sles_it_t              *c,
 {
   cs_sles_convergence_state_t cvg;
 
-  /* Call setup if not already done, allocate or map work arrays */
-  /*-------------------------------------------------------------*/
+  /* Check matrix storage type */
 
-  if (c->setup_data == NULL)
-    _setup_sles_it(c, a, diag_block_size, false);
+  if (cs_matrix_get_type(a) != CS_MATRIX_MSR)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Gauss-Seidel Jacobi hybrid solver only supported with a\n"
+         "matrix using %s (%s) storage."),
+       cs_matrix_type_name[CS_MATRIX_MSR],
+       _(cs_matrix_type_fullname[CS_MATRIX_MSR]));
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != NULL);
 
   /* Check for ordered variant */
 
@@ -3791,9 +3741,27 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
 
   c->type = solver_type;
 
-  c->poly_degree = poly_degree;
-  if (c->type == CS_SLES_JACOBI)
-    c->poly_degree = 0;
+  switch(c->type) {
+  case CS_SLES_JACOBI:
+  case CS_SLES_P_GAUSS_SEIDEL:
+    c->_pc = NULL;
+    break;
+  case CS_SLES_PCG:         /* specific implementation for non-preconditioned */
+    if (poly_degree < 0) {  /* version; continue (do not break) to general */
+      c->_pc = NULL;        /* case otherwise. */
+      break;
+    }
+  default:
+    if (poly_degree < 0)
+      c->_pc = cs_sles_pc_none_create();
+    else if (poly_degree == 0)
+      c->_pc = cs_sles_pc_jacobi_create();
+    else if (poly_degree == 1)
+      c->_pc =cs_sles_pc_poly_1_create();
+    else
+      c->_pc =cs_sles_pc_poly_2_create();
+  }
+  c->pc = c->_pc;
 
   c->symmetric = false;
 
@@ -3841,6 +3809,7 @@ cs_sles_it_destroy(void **context)
 {
   cs_sles_it_t *c = (cs_sles_it_t *)(*context);
   if (c != NULL) {
+    cs_sles_pc_destroy(&(c->_pc));
     cs_sles_it_free(c);
     if (c->_plot != NULL) {
       cs_time_plot_finalize(&(c->_plot));
@@ -3876,9 +3845,18 @@ cs_sles_it_copy(const void  *context)
   if (context != NULL) {
     const cs_sles_it_t *c = context;
     d = cs_sles_it_create(c->type,
-                          c->poly_degree,
+                          -1,
                           c->n_max_iter,
                           c->update_stats);
+    if (c->pc != NULL && c->_pc != NULL) {
+      d->_pc = cs_sles_pc_clone(c->_pc);
+      d->pc = d->_pc;
+    }
+    else {
+      d->_pc = c->_pc;
+      d->pc = c->pc;
+    }
+
 #if defined(HAVE_MPI)
     d->comm = c->comm;
 #endif
@@ -3906,16 +3884,12 @@ cs_sles_it_log(const void  *context,
   if (log_type == CS_LOG_SETUP) {
 
     cs_log_printf(log_type,
-                  _("  Solver type:                       %s\n"
-                    "  Preconditioning:                   "),
+                  _("  Solver type:                       %s\n"),
                   _(cs_sles_it_type_name[c->type]));
-    if (c->poly_degree < 0)
-      cs_log_printf(log_type, _("none\n"));
-    else if (c->poly_degree == 0)
-      cs_log_printf(log_type, _("diagonal\n"));
-    else
-      cs_log_printf(log_type, _("polynomial, degree %d\n"),
-                    c->poly_degree);
+    if (c->pc != NULL)
+      cs_log_printf(log_type,
+                    _("  Preconditioning:                   %s\n"),
+                    _(cs_sles_pc_get_type_name(c->pc)));
     cs_log_printf(log_type,
                   _("  Maximum number of iterations:      %d\n"),
                   c->n_max_iter);
@@ -3935,20 +3909,29 @@ cs_sles_it_log(const void  *context,
 
     cs_log_printf(log_type,
                   _("\n"
-                    "  Solver type:                   %s\n"
-                    "  Number of setups:              %12d\n"
+                    "  Solver type:                   %s\n"),
+                  _(cs_sles_it_type_name[c->type]));
+
+    if (c->pc != NULL)
+      cs_log_printf(log_type,
+                    _("  Preconditioning:               %s\n"),
+                    _(cs_sles_pc_get_type_name(c->pc)));
+    cs_log_printf(log_type,
+                  _("  Number of setups:              %12d\n"
                     "  Number of calls:               %12d\n"
                     "  Minimum number of iterations:  %12d\n"
                     "  Maximum number of iterations:  %12d\n"
                     "  Mean number of iterations:     %12d\n"
                     "  Total setup time:              %12.3f\n"
                     "  Total solution time:           %12.3f\n"),
-                  _(cs_sles_it_type_name[c->type]),
                   c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
                   c->t_setup.wall_nsec*1e-9,
                   c->t_solve.wall_nsec*1e-9);
 
   }
+
+  if (c->pc != NULL)
+    cs_sles_pc_log(c->pc, log_type);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3974,10 +3957,10 @@ cs_sles_it_setup(void               *context,
   const int diag_block_size = (cs_matrix_get_diag_block_size(a))[0];
 
   if (c->type == CS_SLES_JACOBI)
-    _setup_sles_it(c, a, diag_block_size, true);
+    _setup_sles_it(c, name, a, verbosity, diag_block_size, true);
 
   else
-    _setup_sles_it(c, a, diag_block_size, false);
+    _setup_sles_it(c, name, a, verbosity, diag_block_size, false);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4058,6 +4041,9 @@ cs_sles_it_solve(void                *context,
 
   }
 
+  if (c->pc != NULL)
+    cs_sles_pc_set_tolerance(c->pc, precision, r_norm);
+
   /* Solve sparse linear system */
 
   _convergence_init(&convergence,
@@ -4090,7 +4076,7 @@ cs_sles_it_solve(void                *context,
       break;
     case CS_SLES_PCG:
       if (! c->setup_data->single_reduce) {
-        if (c->poly_degree > -1)
+        if (c->pc != NULL)
           cvg = _conjugate_gradient(c,
                                     a,
                                     _diag_block_size,
@@ -4113,7 +4099,7 @@ cs_sles_it_solve(void                *context,
         break;
       }
       else {
-        if (c->poly_degree > -1)
+        if (c->pc != NULL)
           cvg = _conjugate_gradient_sr(c,
                                        a,
                                        _diag_block_size,
@@ -4282,6 +4268,9 @@ cs_sles_it_free(void  *context)
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
+  if (c->_pc != NULL)
+    cs_sles_pc_free(c->_pc);
+
   if (c->setup_data != NULL) {
     BFT_FREE(c->setup_data->_ad_inv);
     BFT_FREE(c->setup_data);
@@ -4340,6 +4329,66 @@ cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a preconditioner context for an iterative sparse linear
+ *        equation solver.
+ *
+ * This allows modifying parameters of a non default (Jacobi or polynomial)
+ * preconditioner.
+ *
+ * \param[in]  context   pointer to iterative solver info and context
+ *
+ * \return  pointer to preconditoner context
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_pc_t  *
+cs_sles_it_get_pc(cs_sles_it_t  *context)
+{
+  cs_sles_pc_t  *pc = NULL;
+
+  if (context != NULL) {
+    cs_sles_it_t  *c = context;
+    pc = c->pc;
+  }
+
+  return pc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a preconditioner to an iterative sparse linear equation
+ *        solver, transfering its ownership to to solver context.
+ *
+ * This allows assigning a non default (Jacobi or polynomial) preconditioner.
+ *
+ * The input pointer is set to NULL to make it clear the caller does not
+ * own the preconditioner anymore, though the context can be accessed using
+ * \ref cs_sles_it_get_cp.
+ *
+ * \param[in, out]  context   pointer to iterative solver info and context
+ * \param[in, out]  pc        pointer to preconditoner context
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_transfer_pc(cs_sles_it_t     *context,
+                       cs_sles_pc_t    **pc)
+{
+  if (context != NULL) {
+    cs_sles_it_t  *c = context;
+    c->pc = NULL;
+    cs_sles_pc_destroy(&(c->_pc));
+    if (pc != NULL) {
+      c->_pc = *pc;
+      c->pc = *pc;
+    }
+  }
+  else if (pc != NULL)
+    cs_sles_pc_destroy(pc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Associate a similar info and context object with which some setup
  *        data may be shared.
  *
@@ -4369,6 +4418,11 @@ cs_sles_it_set_shareable(cs_sles_it_t        *context,
   cs_sles_it_t  *c = context;
 
   c->shared = shareable;
+
+  c->pc = shareable->pc;
+
+  if (c->pc != c->_pc && c->_pc != NULL)
+    cs_sles_pc_destroy(&(c->_pc));
 }
 
 #if defined(HAVE_MPI)

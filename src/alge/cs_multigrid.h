@@ -34,6 +34,7 @@
 #include "cs_base.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_sles_pc.h"
 #include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
@@ -221,6 +222,19 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
                                 double              precision_mult_coarse);
 
 /*----------------------------------------------------------------------------
+ * Return solver type used on fine mesh.
+ *
+ * parameters:
+ *   mg <-- pointer to multigrid info and context
+ *
+ * returns:
+ *   type of smoother for descent (used for fine mesh)
+ *----------------------------------------------------------------------------*/
+
+cs_sles_it_type_t
+cs_multigrid_get_fine_solver_type(const cs_multigrid_t  *mg);
+
+/*----------------------------------------------------------------------------
  * Setup multigrid sparse linear equation solver.
  *
  * parameters:
@@ -302,6 +316,16 @@ cs_multigrid_free(void  *context);
 void
 cs_multigrid_log(const void  *context,
                  cs_log_t     log_type);
+
+/*----------------------------------------------------------------------------
+ * Create a multigrid preconditioner.
+ *
+ * returns:
+ *   pointer to newly created preconditioner object.
+ *----------------------------------------------------------------------------*/
+
+cs_sles_pc_t *
+cs_multigrid_pc_create(void);
 
 /*----------------------------------------------------------------------------
  * Error handler for multigrid sparse linear equation solver.

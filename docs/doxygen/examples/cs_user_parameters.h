@@ -104,6 +104,14 @@
 
   \snippet cs_user_parameters-linear_solvers.c sles_mgp_1
 
+  \subsection cs_user_parameters_h_sles_mgp_2 Example: multigrid preconditioner settings
+
+  The following example shows how to use multigrid as a preconditioner for a
+  conjugate gradient solver (for the pressure correction), and set advanced
+  settings for that multigrid preconditioner.
+
+  \snippet cs_user_parameters-linear_solvers.c sles_mgp_2
+
   \subsection cs_user_parameters_h_sles_mg_parall Multigrid parallel settings
 
   In parallel, grids may optionally be merged across neigboring ranks

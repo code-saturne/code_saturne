@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Add new preconditioning managment layer to allow for use of multigrid
+   as a preconditioner.
+
  - Extend weighted coefficients for lsq gradient calculation in case of
    anisotropic diffusion (this option can be enabled with the option
    iwgrec(ivar) = 1).

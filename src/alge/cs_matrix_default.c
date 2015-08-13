@@ -119,6 +119,13 @@ static int _tuned_matrix_id[CS_MATRIX_N_FILL_TYPES];
 static cs_matrix_structure_t *_matrix_struct_msr = NULL;
 static cs_matrix_t *_matrix_msr = NULL;
 
+/* Native matrix structure, if needed */
+
+static cs_matrix_structure_t *_matrix_struct_native = NULL;
+static cs_matrix_t *_matrix_native = NULL;
+
+/* Tuning options */
+
 static double _t_measure = 0.5;
 static int _n_min_products = 10;
 
@@ -146,6 +153,8 @@ _initialize_api(void)
     }
     _matrix_struct_msr = NULL;
     _matrix_msr = NULL;
+    _matrix_struct_native = NULL;
+    _matrix_native = NULL;
     _initialized = true;
   }
 }
@@ -190,6 +199,68 @@ _build_block_row_num(cs_lnum_t         n_rows,
                          CS_HALO_EXTENDED,
                          sizeof(cs_gnum_t),
                          _global_row_num);
+}
+
+/*----------------------------------------------------------------------------
+ * Return native matrix for a given fill type
+ *
+ * parameters:
+ *   symmetric              <-- Indicates if matrix coefficients are symmetric
+ *   diag_block_size        <-- Block sizes for diagonal, or NULL
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *
+ * returns:
+ *   pointer to native matrix adapted to fill type
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_t  *
+_p_matrix_native(bool        symmetric,
+                 const int  *diag_block_size,
+                 const int  *extra_diag_block_size)
+{
+  cs_matrix_t *m = NULL;
+
+  /* If default matrix for fill type is already native, return that */
+
+  cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
+                                                      diag_block_size,
+                                                      extra_diag_block_size);
+
+  if (_matrix_tuned[mft] != NULL) {
+    if ((_matrix_tuned[mft])->type == CS_MATRIX_NATIVE)
+      m = cs_matrix_default(symmetric,
+                            diag_block_size,
+                            extra_diag_block_size);
+  }
+
+  if (m == NULL) {
+
+    /* Create matrix if not done yet */
+
+    if (_matrix_native == NULL) {
+
+      cs_mesh_t  *mesh = cs_glob_mesh;
+
+      _matrix_struct_native
+        = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                     true,
+                                     mesh->n_cells,
+                                     mesh->n_cells_with_ghosts,
+                                     mesh->n_i_faces,
+                                     mesh->global_cell_num,
+                                     (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                     mesh->halo,
+                                     mesh->i_face_numbering);
+
+      _matrix_native = cs_matrix_create(_matrix_struct_native);
+
+    }
+
+    m = _matrix_native;
+
+  }
+
+  return m;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -243,9 +314,9 @@ void CS_PROCF(promav, PROMAV)
       _extra_diag_block_size[3] = (*iesize)*(*iesize);
     }
 
-    a = cs_matrix_default(symmetric,
-                          _diag_block_size,
-                          _extra_diag_block_size);
+    a = _p_matrix_native(symmetric,
+                         _diag_block_size,
+                         _extra_diag_block_size);
 
     cs_matrix_set_coefficients(a,
                                symmetric,
@@ -258,7 +329,7 @@ void CS_PROCF(promav, PROMAV)
   }
   else {
 
-    a = cs_matrix_default(symmetric, NULL, NULL);
+    a = _p_matrix_native(symmetric, NULL, NULL);
 
     cs_matrix_set_coefficients(a, false, NULL, NULL,
                                m->n_i_faces,
@@ -423,6 +494,11 @@ cs_matrix_finalize(void)
   if (_matrix_struct_msr != NULL)
     cs_matrix_structure_destroy(&(_matrix_struct_msr));
 
+  if (_matrix_native != NULL)
+    cs_matrix_destroy(&(_matrix_native));
+  if (_matrix_struct_native != NULL)
+    cs_matrix_structure_destroy(&(_matrix_struct_native));
+
   _initialized = false;
   _initialize_api();
   _initialized = false;
@@ -489,6 +565,28 @@ cs_matrix_update_mesh(void)
                                    mesh->i_face_numbering);
 
     _matrix_msr = cs_matrix_create(_matrix_struct_msr);
+
+  }
+
+  /* Same for native... */
+
+  if (_matrix_native != NULL) {
+
+    cs_matrix_destroy(&(_matrix_native));
+    cs_matrix_structure_destroy(&(_matrix_struct_native));
+
+    _matrix_struct_native
+      = cs_matrix_structure_create(CS_MATRIX_NATIVE,
+                                   true,
+                                   mesh->n_cells,
+                                   mesh->n_cells_with_ghosts,
+                                   mesh->n_i_faces,
+                                   mesh->global_cell_num,
+                                   (const cs_lnum_2_t *)(mesh->i_face_cells),
+                                   mesh->halo,
+                                   mesh->i_face_numbering);
+
+    _matrix_native = cs_matrix_create(_matrix_struct_native);
 
   }
 

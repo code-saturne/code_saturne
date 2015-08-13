@@ -36,6 +36,7 @@
 #include "cs_matrix.h"
 #include "cs_time_plot.h"
 #include "cs_sles.h"
+#include "cs_sles_pc.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -279,6 +280,42 @@ cs_sles_it_get_type(const cs_sles_it_t  *context);
 
 double
 cs_sles_it_get_last_initial_residue(const cs_sles_it_t  *context);
+
+/*----------------------------------------------------------------------------
+ * Return a preconditioner context for an iterative sparse linear
+ * equation solver.
+ *
+ * This allows modifying parameters of a non default (Jacobi or polynomial)
+ * preconditioner.
+ *
+ * parameters:
+ *   context <-- pointer to iterative solver info and context
+ *
+ * returns:
+ *   pointer to preconditoner context
+ *----------------------------------------------------------------------------*/
+
+cs_sles_pc_t  *
+cs_sles_it_get_pc(cs_sles_it_t  *context);
+
+/*----------------------------------------------------------------------------
+ * Assign a preconditioner to an iterative sparse linear equation
+ * solver, transfering its ownership to to solver context.
+ *
+ * This allows assigning a non default (Jacobi or polynomial) preconditioner.
+ *
+ * The input pointer is set to NULL to make it clear the caller does not
+ * own the preconditioner anymore, though the context can be accessed using
+ * cs_sles_it_get_cp().
+ *
+ * parameters:
+ *   context <->  pointer to iterative solver info and context
+ *   pc      <->  pointer to preconditoner context
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_transfer_pc(cs_sles_it_t     *context,
+                       cs_sles_pc_t    **pc);
 
 /*----------------------------------------------------------------------------
  * Associate a similar info and context object with which some setup

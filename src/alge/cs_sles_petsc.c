@@ -1102,7 +1102,7 @@ cs_sles_petsc_setup(void               *context,
 
   /* KSPSetup could be called here for better separation of setup/solve
      logging, but calling it systematically seems to cause issues
-     at least with the performance of the GAMG preconditionner
+     at least with the performance of the GAMG preconditioner
      (possibly calling unneed operations). So we avoid it for now,
      noting that the user always has to option of calling it at the
      end of the setup hook. */

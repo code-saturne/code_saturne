@@ -449,18 +449,14 @@ endif
 ! --- Right hand side residual
 residu = sqrt(cs_gdot(ncel,smbrp,smbrp))
 
-! ---> RESIDU DE NORMALISATION
-!    (NORME C.L +TERMES SOURCES+ TERMES DE NON ORTHOGONALITE)
+! --- Normalization residual
+!    (L2-norm of B.C. + source terms + non-orthogonality terms)
 
-!       Attention, lors de l'appel a promav, ici pour une variable qui
-!         n'est pas en increments et qui est supposee initialisee
-!         y compris dans le halo.
-!         Pour les variables vitesse et les tensions de Reynolds
-!         (IINVPE=2), il ne faudra donc pas annuler le halo
-!         des periodicites de rotation, mais au contraire le laisser
-!         inchange.
-!         Pour les autres variables (scalaires) IINVPE=1 permettra de
-!         tout echanger, meme si c'est superflu.
+!     Caution, when calling promav, here for a variable which is not
+!       "by increments" and is assumed initialized, including for ghost values:
+!       For Reynolds stresses (IINVPE=2), the rotational periodicty
+!       ghost values shold not be cancelled, but rather left unchanged.
+!       For other variables, IINVPE=1 will also a standard exchange.
 
 ! Allocate a temporary array
 allocate(w1(ncelet))

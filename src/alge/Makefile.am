@@ -67,7 +67,8 @@ cs_matrix_util.h \
 cs_multigrid.h \
 cs_sles.h \
 cs_sles_default.h \
-cs_sles_it.h
+cs_sles_it.h \
+cs_sles_pc.h
 
 if HAVE_PETSC
 pkginclude_HEADERS += cs_sles_petsc.h
@@ -101,6 +102,7 @@ cs_multigrid.c \
 cs_sles.c \
 cs_sles_default.c \
 cs_sles_it.c \
+cs_sles_pc.c \
 bilsca.f90 \
 bilscv.f90 \
 visort.f90
