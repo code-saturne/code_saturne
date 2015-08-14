@@ -144,7 +144,11 @@ BEGIN_C_DECLS
         partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
         - 1: true (default)
         - 0: false
-  \var  cs_turb_rans_model_t::irijnu
+  \var  cs_turb_rans_model_t::irijco
+        coupled solving of Rij
+        - 1: true
+        - 0: false (default)
+        \var  cs_turb_rans_model_t::irijnu
         pseudo eddy viscosity in the matrix of momentum equation to partially
         implicit \f$ \divv \left( \rho \tens{R} \right) \f$
         - 1: true
@@ -241,6 +245,7 @@ _turb_rans_model =
      1,     /* igrake */
      1,     /* igrari */
   -999,     /* ikecou */
+     0,     /* irijco */
      0,     /* irijnu */
      0,     /* irijrb */
      0,     /* irijec */
@@ -837,6 +842,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **igrake,
                                   int     **igrari,
                                   int     **ikecou,
+                                  int     **irijco,
                                   int     **irijnu,
                                   int     **irijrb,
                                   int     **irijec,
@@ -901,6 +907,7 @@ cs_f_turb_model_get_pointers(int     **iturb,
  *   igrake --> pointer to cs_glob_turb_rans_model->igrake
  *   igrari --> pointer to cs_glob_turb_rans_model->igrari
  *   ikecou --> pointer to cs_glob_turb_rans_model->ikecou
+ *   irijco --> pointer to cs_glob_turb_rans_model->irijco
  *   irijnu --> pointer to cs_glob_turb_rans_model->irijnu
  *   irijrb --> pointer to cs_glob_turb_rans_model->irijrb
  *   irijec --> pointer to cs_glob_turb_rans_model->irijec
@@ -918,6 +925,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **igrake,
                                   int     **igrari,
                                   int     **ikecou,
+                                  int     **irijco,
                                   int     **irijnu,
                                   int     **irijrb,
                                   int     **irijec,
@@ -933,6 +941,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
   *igrake = &(_turb_rans_model.igrake);
   *igrari = &(_turb_rans_model.igrari);
   *ikecou = &(_turb_rans_model.ikecou);
+  *irijco = &(_turb_rans_model.irijco);
   *irijnu = &(_turb_rans_model.irijnu);
   *irijrb = &(_turb_rans_model.irijrb);
   *irijec = &(_turb_rans_model.irijec);

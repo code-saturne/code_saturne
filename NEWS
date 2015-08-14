@@ -22,6 +22,17 @@ Changes:
    instead of the "check mesh" option, which did not handle batch runs
    or user subroutines.
 
+ - Add a coupled component solver for symmetric tensors for the Reynolds stress model (irijco=1).
+   * Convection diffusion brick for tensors
+   * Add a gradient of a tensor field
+   * Only iterative methode up to now, least square gradients not yet
+   * available
+   * Add the advection/diffusion matrix for a tensor field
+   * Create matrix PxP and update Jacobi
+   * Update rotation functions
+   * Restart from an uncoupled Rij tensor is possible
+   * Daly Harlow and Shir models are available
+
 Release 4.1.0 (July 31 2015)
 ============================
 

@@ -158,20 +158,37 @@ if (itytur.eq.2) then
   nfld = nfld + 1
   ifvar(nfld) = iep
 elseif (itytur.eq.3) then
-  nfld = nfld + 1
-  ifvar(nfld) = ir11
-  nfld = nfld + 1
-  ifvar(nfld) = ir22
-  nfld = nfld + 1
-  ifvar(nfld) = ir33
-  nfld = nfld + 1
-  ifvar(nfld) = ir12
-  nfld = nfld + 1
-  ifvar(nfld) = ir23
-  nfld = nfld + 1
-  ifvar(nfld) = ir13
-  nfld = nfld + 1
-  ifvar(nfld) = iep
+  if (irijco.eq.1) then
+    nfld = nfld + 1
+    ifvar(nfld) = ir11
+    nfld = nfld + 1
+    ifvar(nfld) = ir22
+    nfld = nfld + 1
+    ifvar(nfld) = ir33
+    nfld = nfld + 1
+    ifvar(nfld) = ir12
+    nfld = nfld + 1
+    ifvar(nfld) = ir23
+    nfld = nfld + 1
+    ifvar(nfld) = ir13
+    nfld = nfld + 1
+    ifvar(nfld) = iep
+  else
+    nfld = nfld + 1
+    ifvar(nfld) = ir11
+    nfld = nfld + 1
+    ifvar(nfld) = ir22
+    nfld = nfld + 1
+    ifvar(nfld) = ir33
+    nfld = nfld + 1
+    ifvar(nfld) = ir12
+    nfld = nfld + 1
+    ifvar(nfld) = ir23
+    nfld = nfld + 1
+    ifvar(nfld) = ir13
+    nfld = nfld + 1
+    ifvar(nfld) = iep
+  endif
   if (iturb.eq.32) then
     nfld = nfld + 1
     ifvar(nfld) = ial
@@ -205,10 +222,20 @@ endif
 do ii = 1, nfld
   ivar = ifvar(ii)
   if (ipass .eq. 1) then
-    if (itytur.eq.3 .and. ivar.ge.ir11 .and. ivar.le.ir13) then
-      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
-    else
-      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+    if (itytur.eq.3 ) then
+      if(irijco.eq.1) then
+        if(ivar.eq.irij) then
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
+        else if (ivar.gt.ir13) then
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+        endif
+      else
+        if (ivar.ge.ir11 .and. ivar.le.ir13) then
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
+        else
+          call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
+        endif
+      endif
     endif
     call field_init_bc_coeffs(ivarfl(ivar))
   endif

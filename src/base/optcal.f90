@@ -591,6 +591,12 @@ module optcal
   !>    - 0: false
   integer(c_int), pointer, save :: ikecou
 
+  !> Coupled solving of \f$ \tens{R} \f$
+  !>    - 1: true
+  !>    - 0: false (default)
+  integer(c_int), pointer, save :: irijco
+
+
   !> pseudo eddy viscosity in the matrix of momentum equation to partially
   !> implicit \f$ \divv \left( \rho \tens{R} \right) \f$
   !>    - 1: true
@@ -1097,14 +1103,14 @@ module optcal
 
     subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, idirsm, &
                                                  iclkep, igrhok, igrake, &
-                                                 igrari, ikecou, irijnu, &
+                                                 igrari, ikecou, irijco, irijnu, &
                                                  irijrb, irijec, idifre, &
                                                  iclsyr, iclptr)         &
       bind(C, name='cs_f_turb_rans_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
-      type(c_ptr), intent(out) :: igrake, igrari, ikecou, irijnu, irijrb
+      type(c_ptr), intent(out) :: igrake, igrari, ikecou, irijco, irijnu, irijrb
       type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
     end subroutine cs_f_turb_rans_model_get_pointers
 
@@ -1340,12 +1346,12 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok, c_igrake
-    type(c_ptr) :: c_igrari, c_ikecou, c_irijnu, c_irijrb, c_irijec, c_idifre
+    type(c_ptr) :: c_igrari, c_ikecou, c_irijco, c_irijnu, c_irijrb, c_irijec, c_idifre
     type(c_ptr) :: c_iclsyr, c_iclptr
 
     call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
                                             c_iclkep, c_igrhok, c_igrake, &
-                                            c_igrari, c_ikecou, c_irijnu, &
+                                            c_igrari, c_ikecou, c_irijco, c_irijnu, &
                                             c_irijrb, c_irijec, c_idifre, &
                                             c_iclsyr, c_iclptr)
 
@@ -1357,6 +1363,7 @@ contains
     call c_f_pointer(c_igrake, igrake)
     call c_f_pointer(c_igrari, igrari)
     call c_f_pointer(c_ikecou, ikecou)
+    call c_f_pointer(c_irijco, irijco)
     call c_f_pointer(c_irijnu, irijnu)
     call c_f_pointer(c_irijrb, irijrb)
     call c_f_pointer(c_irijec, irijec)

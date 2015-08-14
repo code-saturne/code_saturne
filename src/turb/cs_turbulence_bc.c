@@ -111,6 +111,7 @@ typedef struct {
   int  r12;    /* variable id for R_xy */
   int  r23;    /* variable id for R_yz */
   int  r13;    /* variable id for R_xz */
+  int  rij;    /* variable id for R_ij tensor (irijco=1) */
 
   int  phi;    /* variable id for phi */
   int  f_bar;  /* variable id for f_bar */
@@ -139,6 +140,7 @@ _turb_bc_id =
   -1, /* r12 */
   -1, /* r23 */
   -1, /* r13 */
+  -1, /* rij */
 
   -1, /* phi */
   -1, /* f_bar */
@@ -313,14 +315,24 @@ _inlet_bc(cs_lnum_t   face_id,
   else if (cs_glob_turb_model->itytur == 3) {
 
     double d2s3 = 2./3.;
-
-    rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
-    rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
-    rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
-    rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
-    rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
-    rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
-    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (_turb_bc_id.rij == -1) {
+      rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    }
+    else {
+      rcodcl[_turb_bc_id.rij*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] = d2s3 * k;
+      rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = 0.;
+      rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = 0.;
+      rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = 0.;
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    }
 
     if (cs_glob_turb_model->iturb == 32)
       rcodcl[_turb_bc_id.alpha*n_b_faces + face_id] = 1.;
@@ -445,6 +457,8 @@ cs_turbulence_model_init_bc_ids(void)
     _turb_bc_id.r23 = cs_field_get_key_int(CS_F_(r23), var_key_id) -1;
   if (CS_F_(r13) != NULL)
     _turb_bc_id.r13 = cs_field_get_key_int(CS_F_(r13), var_key_id) -1;
+  if (CS_F_(rij) != NULL)
+    _turb_bc_id.rij = cs_field_get_key_int(CS_F_(rij), var_key_id) -1;
 
   if (CS_F_(phi) != NULL)
     _turb_bc_id.phi = cs_field_get_key_int(CS_F_(phi), var_key_id) -1;

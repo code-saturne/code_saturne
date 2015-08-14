@@ -181,6 +181,8 @@ integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ifcvsl, ipccv
 integer          itplus, itstar
 integer          f_id  ,  iut  , ivt   , iwt, iflmab
+integer          dimrij
+logical          interleaved
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis, qimp, cfl
@@ -193,6 +195,7 @@ double precision vistot
 double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
+double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
 
 character(len=80) :: fname
 
@@ -200,6 +203,7 @@ double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, allocatable, dimension(:,:,:) :: gradts
 double precision, pointer, dimension(:,:) :: dttens, visten
 double precision, dimension(:), pointer :: tplusp, tstarp, yplbr
 double precision, pointer, dimension(:,:) :: forbr
@@ -211,14 +215,17 @@ double precision, dimension(:,:), pointer :: coefau, cofafu, cfaale, claale
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cofadp, cofbdp
+double precision, dimension(:,:), pointer :: coefats, cofafts, cofadts
+double precision, dimension(:,:,:), pointer :: cofbdts, coefbts, cofbfts
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: crom
 
 double precision, dimension(:), pointer :: viscl, visct, viscls
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cvar_s, cvara_s
 double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
+double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts
 
-! Darcy arrays
+! darcy arrays
 double precision, dimension(:), pointer :: permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
 integer fid
@@ -226,7 +233,7 @@ integer fid
 !===============================================================================
 
 !===============================================================================
-! 1. Initializations
+! 1. initializations
 !===============================================================================
 
 if (ippmod(idarcy).eq.1) then
@@ -238,17 +245,29 @@ if (ippmod(idarcy).eq.1) then
   endif
 endif
 
-! Allocate temporary arrays
+! allocate temporary arrays
 allocate(velipb(nfabor,3))
-
+if (irijco.eq.1) then
+  call field_get_dim(ivarfl(irij),dimrij , interleaved) ! dimension of Rij
+  allocate(pimpts(dimrij))
+  allocate(hextts(dimrij))
+  allocate(qimpts(dimrij))
+  allocate(cflts(dimrij))
+  do isou = 1 , dimrij
+  pimpts(isou) = 0
+  hextts(isou) = 0
+  qimpts(isou) = 0
+  cflts(isou) = 0
+  enddo
+endif
 ! coefa and coefb are required to compute the cell gradients for the wall
 !  turbulent boundary conditions.
-! So, their initial values are kept (note that at the first time step, they are
+! so, their initial values are kept (note that at the first time step, they are
 !  initialized to zero flux in inivar.f90)
 
-! velipb stores the velocity in I' of boundary cells
+! velipb stores the velocity in i' of boundary cells
 
-! Initialize variables to avoid compiler warnings
+! initialize variables to avoid compiler warnings
 
 ipccv = 0
 
@@ -256,13 +275,13 @@ rinfiv(1) = rinfin
 rinfiv(2) = rinfin
 rinfiv(3) = rinfin
 
-! pointers to y+, T+ and T* if saved
+! pointers to y+, t+ and t* if saved
 
 yplbr => null()
 tplusp => null()
 tstarp => null()
 
-! Initialization of the array storing yplus
+! initialization of the array storing yplus
 !  which is computed in clptur.f90 and/or clptrg.f90
 call field_get_id_try('yplus', f_id)
 if (f_id.ge.0) then
@@ -288,15 +307,15 @@ if (itstar.ge.0) then
   enddo
 endif
 
-! Map field arrays
+! map field arrays
 call field_get_val_v(ivarfl(iu), vel)
 call field_get_val_prev_v(ivarfl(iu), vela)
 
-! Pointers to the mass fluxes
+! pointers to the mass fluxes
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
-! Pointers to specific fields
+! pointers to specific fields
 if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
 if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
 
@@ -304,14 +323,14 @@ if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
 if (iforbr.ge.0 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
-! Pointers to velcocity BC coefficients
+! pointers to velcocity bc coefficients
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 call field_get_coefaf_v(ivarfl(iu), cofafu)
 call field_get_coefbf_v(ivarfl(iu), cofbfu)
 
 !===============================================================================
-! 2. Treatment of types of BCs given by itypfb
+! 2. treatment of types of bcs given by itypfb
 !===============================================================================
 
 if (ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1) then
@@ -343,7 +362,7 @@ call typecl &
    rcodcl , frcxt  )
 
 !===============================================================================
-! 3. Check the consistency of the BCs
+! 3. check the consistency of the bcs
 !===============================================================================
 
 call vericl                                                       &
@@ -353,21 +372,21 @@ call vericl                                                       &
    rcodcl )
 
 !===============================================================================
-! 4. Deprecated model to compute wall distance
+! 4. deprecated model to compute wall distance
 !===============================================================================
-! attention, si on s'en sert pour autre chose, disons le module X
+! attention, si on s'en sert pour autre chose, disons le module x
 !   bien faire attention dans verini avec quelles options le module
-!   X doit alors etre incompatible (perio, parall).
+!   x doit alors etre incompatible (perio, parall).
 
 iok1 = 0
 
 if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
-  ! Allocate a temporary array
+  ! allocate a temporary array
   allocate(w1(ncelet))
 
-  ! ON FERA ATTENTION EN PARALLELISME OU PERIODICITE
-  !    (UNE PAROI PEUT ETRE PLUS PROCHE EN TRAVERSANT UN BORD ...)
+  ! on fera attention en parallelisme ou periodicite
+  !    (une paroi peut etre plus proche en traversant un bord ...)
 
   do iel = 1, ncel
     w1(iel) = grand
@@ -389,7 +408,7 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
     endif
   enddo
 
-  ! Free memory
+  ! free memory
   deallocate(w1)
 
   iok = 0
@@ -405,7 +424,7 @@ if(ineedy.eq.1.and.abs(icdpar).eq.2) then
 
 endif
 
-! Normalement, on ne passe pas en parallele ici,
+! normalement, on ne passe pas en parallele ici,
 !   mais au cas ou ...
 if(irangp.ge.0) then
   call parcpt(iok1)
@@ -417,19 +436,19 @@ if(iok1.ne.0) then
 endif
 
 !===============================================================================
-! 5. Variables
+! 5. variables
 !===============================================================================
 
-! --- Variables
+! --- variables
 xxp0   = xyzp0(1)
 xyp0   = xyzp0(2)
 xzp0   = xyzp0(3)
 
-! --- Physical quantities
+! --- physical quantities
 call field_get_val_s(iprpfl(iviscl), viscl)
 call field_get_val_s(iprpfl(ivisct), visct)
 
-! --- Compressible
+! --- compressible
 if (ippmod(icompf).ge.0) then
   if(icv.gt.0) then
     ipccv  = ipproc(icv)
@@ -439,47 +458,47 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 6. Compute the temperature or the enthalpy in I' for boundary cells
-!     (thanks to the formula: Fi + GRAD(Fi).II')
+! 6. compute the temperature or the enthalpy in i' for boundary cells
+!     (thanks to the formula: fi + grad(fi).ii')
 
-!    For the coupling with SYRTHES
+!    for the coupling with syrthes
 !     theipb is used by coupbo after condli
-!    For the coupling with the 1D wall thermal module
+!    for the coupling with the 1d wall thermal module
 !     theipb is used by cou1do after condli
-!    For the radiation module
+!    for the radiation module
 !     theipb is used to compute the required flux in raypar
 
-!        CECI POURRAIT EN PRATIQUE ETRE HORS DE LA BOUCLE.
+!        ceci pourrait en pratique etre hors de la boucle.
 
 !===============================================================================
 
-! Allocate a temporary array for the gradient reconstruction
+! allocate a temporary array for the gradient reconstruction
 allocate(grad(3,ncelet))
 
-!  Pour le couplage SYRTHES ou module thermique 1D
+!  pour le couplage syrthes ou module thermique 1d
 !  -----------------------------------------------
-!  Ici, on fait une boucle "inutile"  (on ne fait quelque chose
-!    que pour icpsyr(iscal) = 1). C'est pour preparer le traitement
+!  ici, on fait une boucle "inutile"  (on ne fait quelque chose
+!    que pour icpsyr(iscal) = 1). c'est pour preparer le traitement
 !    eventuel de plusieurs temperatures (ie plusieurs couplages
-!    SYRTHES a la fois ; noter cependant que meme dans ce cas,
-!    une seule temperature sera recue de chaque couplage. En polyph,
+!    syrthes a la fois ; noter cependant que meme dans ce cas,
+!    une seule temperature sera recue de chaque couplage. en polyph,
 !    il faudrait ensuite reconstruire les enthalpies ...
 !    plus tard si necessaire).
-!  Ici, il ne peut y avoir qu'un seul scalaire avec icpsyr = 1 et
-!    ce uniquement s'il y a effectivement couplage avec SYRTHES
+!  ici, il ne peut y avoir qu'un seul scalaire avec icpsyr = 1 et
+!    ce uniquement s'il y a effectivement couplage avec syrthes
 !    (sinon, on s'est arrete dans verini)
-!  Dans le cas du couplage avec le module 1D, on utilise iscalt.
+!  dans le cas du couplage avec le module 1d, on utilise iscalt.
 
-!  Pour le rayonnement
+!  pour le rayonnement
 !  -------------------
-!  On calcule la valeur en I' s'il y a une variable
+!  on calcule la valeur en i' s'il y a une variable
 !    thermique
 
 
-!  On recherche l'unique scalaire qui convient
-!     (ce peut etre T, H, ou E (en compressible))
+!  on recherche l'unique scalaire qui convient
+!     (ce peut etre t, h, ou e (en compressible))
 
-! Compute the boundary value of the thermal scalar in I' if required
+! compute the boundary value of the thermal scalar in i' if required
 if (iscalt.gt.0) then
 
   ivar = isca(iscalt)
@@ -518,12 +537,12 @@ if (iscalt.gt.0) then
 endif
 
 !===============================================================================
-! 6.bis Compute the velocity and Renolds stesses tensor in I' for boundary cells
-!        (thanks to the formula: Fi + GRAD(Fi).II') if there are symmetry or
+! 6.bis compute the velocity and renolds stesses tensor in i' for boundary cells
+!        (thanks to the formula: fi + grad(fi).ii') if there are symmetry or
 !         wall with wall functions boundary conditions
 !===============================================================================
 
-! ---> Indicator for symmetries or wall with wall functions
+! ---> indicator for symmetries or wall with wall functions
 
 iclsym = 0
 ipatur = 0
@@ -546,13 +565,13 @@ if (irangp.ge.0) then
   call parcmx(ipatrg)
 endif
 
-! ---> Compute the velocity in I' for boundary cells
+! ---> compute the velocity in i' for boundary cells
 
 if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
 
   if (ntcabs.gt.1) then
 
-    ! Allocate a temporary array
+    ! allocate a temporary array
     allocate(gradv(3,3,ncelet))
 
     inc = 1
@@ -573,8 +592,8 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
 
     deallocate(gradv)
 
-  ! Nb: at the first time step, coefa and coefb are unknown, so the walue
-  !     in I is stored instead of the value in I'
+  ! nb: at the first time step, coefa and coefb are unknown, so the walue
+  !     in i is stored instead of the value in i'
   else
 
     do isou = 1, 3
@@ -590,75 +609,115 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
 
 endif
 
-! ---> Compute Rij in I' for boundary cells
+! ---> compute rij in i' for boundary cells
 
 if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
 
-  ! Allocate a work array to store Rij values at boundary faces
+  ! allocate a work array to store rij values at boundary faces
   allocate(rijipb(nfabor,6))
 
-  do isou = 1 , 6
-
-    if (isou.eq.1) ivar = ir11
-    if (isou.eq.2) ivar = ir22
-    if (isou.eq.3) ivar = ir33
-    if (isou.eq.4) ivar = ir12
-    if (isou.eq.5) ivar = ir23
-    if (isou.eq.6) ivar = ir13
-
-
+  if (irijco.eq.1) then
     if (ntcabs.gt.1.and.irijrb.eq.1) then
 
-      call field_get_val_s(ivarfl(ivar), cvar_s)
+      call field_get_val_v(ivarfl(irij), cvar_ts)
 
       inc = 1
       iprev = 1
-      iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
-                                 iccocg,                            &
-                                 grad)
+      ! allocate a temporary array
+      allocate(gradts(6,3,ncelet))
+
+      call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc,  &
+                                 gradts)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
-        rijipb(ifac,isou) = cvar_s(iel)               &
-                          + grad(1,iel)*diipb(1,ifac) &
-                          + grad(2,iel)*diipb(2,ifac) &
-                          + grad(3,iel)*diipb(3,ifac)
+        do isou = 1, 6
+          rijipb(ifac,isou) = cvar_ts(isou,iel)               &
+                            + gradts(isou,1,iel)*diipb(1,ifac) &
+                            + gradts(isou,2,iel)*diipb(2,ifac) &
+                            + gradts(isou,3,iel)*diipb(3,ifac)
+        enddo
       enddo
 
-    ! Nb: at the first time step, coefa and coefb are unknown, so the walue
-    !     in I is stored instead of the value in I'
+    ! nb: at the first time step, coefa and coefb are unknown, so the walue
+    !     in i is stored instead of the value in i'
     else
 
-      call field_get_val_prev_s(ivarfl(ivar), cvara_s)
+      call field_get_val_prev_v(ivarfl(irij), cvara_ts)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
-        rijipb(ifac,isou) = cvara_s(iel)
+        do isou = 1, 6
+          rijipb(ifac,isou) = cvara_ts(isou, iel)
+        enddo
       enddo
-
     endif
 
-  enddo
+  else
+    do isou = 1 , 6
+
+      if (isou.eq.1) ivar = ir11
+      if (isou.eq.2) ivar = ir22
+      if (isou.eq.3) ivar = ir33
+      if (isou.eq.4) ivar = ir12
+      if (isou.eq.5) ivar = ir23
+      if (isou.eq.6) ivar = ir13
+
+
+      if (ntcabs.gt.1.and.irijrb.eq.1) then
+
+        call field_get_val_s(ivarfl(ivar), cvar_s)
+
+        inc = 1
+        iprev = 1
+        iccocg = 1
+
+        call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
+                                   iccocg,                            &
+                                   grad)
+
+        do ifac = 1 , nfabor
+          iel = ifabor(ifac)
+          rijipb(ifac,isou) = cvar_s(iel)               &
+                            + grad(1,iel)*diipb(1,ifac) &
+                            + grad(2,iel)*diipb(2,ifac) &
+                            + grad(3,iel)*diipb(3,ifac)
+        enddo
+
+      ! nb: at the first time step, coefa and coefb are unknown, so the walue
+      !     in i is stored instead of the value in i'
+      else
+
+        call field_get_val_prev_s(ivarfl(ivar), cvara_s)
+
+        do ifac = 1 , nfabor
+          iel = ifabor(ifac)
+          rijipb(ifac,isou) = cvara_s(iel)
+        enddo
+
+      endif
+
+    enddo
+  endif
 
 endif
 
-! Free memory
+! free memory
 deallocate(grad)
 
 !===============================================================================
-! 7. Turbulence at walls:
-!       (u,v,w,k,epsilon,Rij,temperature)
+! 7. turbulence at walls:
+!       (u,v,w,k,epsilon,rij,temperature)
 !===============================================================================
-! --- On a besoin de velipb et de rijipb (et theipb pour le rayonnement)
+! --- on a besoin de velipb et de rijipb (et theipb pour le rayonnement)
 
-!     On initialise visvdr a -999.d0.
-!     Dans clptur, on amortit la viscosite turbulente sur les cellules
-!     de paroi si on a active van Driest. La valeur finale est aussi
+!     on initialise visvdr a -999.d0.
+!     dans clptur, on amortit la viscosite turbulente sur les cellules
+!     de paroi si on a active van driest. la valeur finale est aussi
 !     stockee dans visvdr.
-!     Plus loin, dans vandri, la viscosite sur les cellules
-!     de paroi sera amortie une seconde fois. On se sert alors de
+!     plus loin, dans vandri, la viscosite sur les cellules
+!     de paroi sera amortie une seconde fois. on se sert alors de
 !     visvdr pour lui redonner une valeur correcte.
 if(itytur.eq.4.and.idries.eq.1) then
   do iel=1,ncel
@@ -668,7 +727,7 @@ endif
 
 if (ipatur.ne.0) then
 
-  ! Smooth wall laws
+  ! smooth wall laws
   call clptur &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
@@ -680,7 +739,7 @@ endif
 
 if (ipatrg.ne.0) then
 
-  ! Rough wall laws
+  ! rough wall laws
   call clptrg &
   !==========
  ( nscal  , isvhb  , icodcl ,                                     &
@@ -691,10 +750,10 @@ if (ipatrg.ne.0) then
 endif
 
 !===============================================================================
-! 8. Symmetry for vectors and tensors
-!       (u,v,w,Rij)
+! 8. symmetry for vectors and tensors
+!       (u,v,w,rij)
 !===============================================================================
-!   On a besoin de velipb et de rijipb
+!   on a besoin de velipb et de rijipb
 
 do ifac = 1, nfabor
   isympa(ifac) = 1
@@ -711,10 +770,10 @@ if (iclsym.ne.0) then
 endif
 
 !===============================================================================
-! 9. Velocity: Outlet, Dirichlet and Neumann and convective outlet
+! 9. velocity: outlet, dirichlet and neumann and convective outlet
 !===============================================================================
 
-! ---> Outlet: in case of incomming mass flux, the mass flux is set to zero.
+! ---> outlet: in case of incomming mass flux, the mass flux is set to zero.
 
 isoent = 0
 isorti = 0
@@ -724,12 +783,12 @@ do ifac = 1, nfabor
 
     flumbf = bmasfl(ifac)
 
-    ! --- Physical Properties
+    ! --- physical properties
     iel = ifabor(ifac)
     visclc = viscl(iel)
     visctc = visct(iel)
 
-    ! --- Geometrical quantities
+    ! --- geometrical quantities
     distbf = distb(ifac)
 
     if (itytur.eq.3) then
@@ -742,10 +801,10 @@ do ifac = 1, nfabor
 
     if (flumbf.lt.-epzero) then
 
-      ! Dirichlet Boundary Condition
+      ! dirichlet boundary condition
       !-----------------------------
 
-      ! Coupled solving of the velocity components
+      ! coupled solving of the velocity components
 
       pimpv(1) = 0.d0
       pimpv(2) = 0.d0
@@ -762,12 +821,12 @@ do ifac = 1, nfabor
 
     else
 
-      ! Neumann Boundary Conditions
+      ! neumann boundary conditions
       !----------------------------
 
       qimp = 0.d0
 
-      ! Coupled solving of the velocity components
+      ! coupled solving of the velocity components
 
       qimpv(1) = 0.d0
       qimpv(2) = 0.d0
@@ -797,17 +856,17 @@ if (mod(ntcabs,ntlist).eq.0 .or. iwarni(iu).ge. 0) then
   endif
 endif
 
-! ---> Dirichlet and Neumann
+! ---> dirichlet and neumann
 
 do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  ! --- Physical Propreties
+  ! --- physical propreties
   visclc = viscl(iel)
   visctc = visct(iel)
 
-  ! --- Geometrical quantities
+  ! --- geometrical quantities
   distbf = distb(ifac)
 
   if (itytur.eq.3) then
@@ -816,7 +875,7 @@ do ifac = 1, nfabor
     hint = ( visclc+visctc )/distbf
   endif
 
-  ! Dirichlet Boundary Conditions
+  ! dirichlet boundary conditions
   !------------------------------
 
   if (icodcl(ifac,iu).eq.1) then
@@ -836,12 +895,12 @@ do ifac = 1, nfabor
          pimpv           , hint            , hextv )
 
 
-  ! Neumann Boundary Conditions
+  ! neumann boundary conditions
   !----------------------------
 
   elseif (icodcl(ifac,iu).eq.3) then
 
-    ! Coupled solving of the velocity components
+    ! coupled solving of the velocity components
 
     qimpv(1) = rcodcl(ifac,iu,3)
     qimpv(2) = rcodcl(ifac,iv,3)
@@ -853,12 +912,12 @@ do ifac = 1, nfabor
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          qimpv           , hint )
 
-  ! Convective Boundary Conditions
+  ! convective boundary conditions
   !-------------------------------
 
   elseif (icodcl(ifac,iu).eq.2) then
 
-    ! Coupled solving of the velocity components
+    ! coupled solving of the velocity components
 
     pimpv(1) = rcodcl(ifac,iu,1)
     cflv(1) = rcodcl(ifac,iu,2)
@@ -873,7 +932,7 @@ do ifac = 1, nfabor
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , cflv            , hint )
 
-  ! Imposed value for the convection operator, imposed flux for diffusion
+  ! imposed value for the convection operator, imposed flux for diffusion
   !----------------------------------------------------------------------
 
   elseif (icodcl(ifac,iu).eq.13) then
@@ -892,7 +951,7 @@ do ifac = 1, nfabor
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , qimpv           )
 
-  ! Convective Boundary For Marangoni Effects (generalized symmetry condition)
+  ! convective boundary for marangoni effects (generalized symmetry condition)
   !---------------------------------------------------------------------------
 
   elseif (icodcl(ifac,iu).eq.14) then
@@ -910,7 +969,7 @@ do ifac = 1, nfabor
     normal(3) = surfbo(3,ifac)/surfbn(ifac)
 
 
-    ! Coupled solving of the velocity components
+    ! coupled solving of the velocity components
 
     call set_generalized_sym_vector &
          !=========================
@@ -923,7 +982,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 10. Pressure: Dirichlet and Neumann and convective outlet
+! 10. pressure: dirichlet and neumann and convective outlet
 !===============================================================================
 
 call field_get_coefa_s(ivarfl(ipr), coefap)
@@ -936,10 +995,10 @@ do ifac = 1, nfabor
 
   iel = ifabor(ifac)
 
-  ! --- Geometrical quantities
+  ! --- geometrical quantities
   distbf = distb(ifac)
 
-  ! If a flux dt.grad P (W/m2) is set in cs_user_boundary
+  ! if a flux dt.grad p (w/m2) is set in cs_user_boundary
   if (idften(ipr).eq.1) then
     hint = dt(iel)/distbf
     if (icavit.ge.0)  hint = hint/crom(iel)
@@ -950,7 +1009,7 @@ do ifac = 1, nfabor
            + dttens(3, iel)*surfbo(3,ifac)**2              &
            ) / (surfbn(ifac)**2 * distbf)
     if (icavit.ge.0)  hint = hint/crom(iel)
-  ! Symmetric tensor diffusivity
+  ! symmetric tensor diffusivity
   elseif (idften(ipr).eq.6) then
     if (ippmod(idarcy).eq.-1) then
       visci(1,1) = dttens(1,iel)
@@ -974,7 +1033,7 @@ do ifac = 1, nfabor
       visci(3,1) = tensor_permeability(6,iel)
     endif
 
-    ! ||Ki.S||^2
+    ! ||ki.s||^2
     viscis = ( visci(1,1)*surfbo(1,ifac)       &
              + visci(1,2)*surfbo(2,ifac)       &
              + visci(1,3)*surfbo(3,ifac))**2   &
@@ -985,7 +1044,7 @@ do ifac = 1, nfabor
              + visci(3,2)*surfbo(2,ifac)       &
              + visci(3,3)*surfbo(3,ifac))**2
 
-    ! IF.Ki.S
+    ! if.ki.s
     fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
             + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
             + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
@@ -1001,8 +1060,8 @@ do ifac = 1, nfabor
 
     distfi = distb(ifac)
 
-    ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-    ! NB: eps =1.d-1 must be consistent with vitens.f90
+    ! take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
+    ! nb: eps =1.d-1 must be consistent with vitens.f90
     fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
     hint = viscis/surfbn(ifac)/fikis
@@ -1010,12 +1069,12 @@ do ifac = 1, nfabor
 
   endif
 
-  ! On doit remodifier la valeur du  Dirichlet de pression de maniere
-  !  a retrouver P*. Car dans typecl.f90 on a travaille avec la pression
-  !  totale fournie par l'utilisateur :  Ptotale= P*+ rho.g.r
-  ! En compressible, on laisse rcodcl tel quel
+  ! on doit remodifier la valeur du  dirichlet de pression de maniere
+  !  a retrouver p*. car dans typecl.f90 on a travaille avec la pression
+  !  totale fournie par l'utilisateur :  ptotale= p*+ rho.g.r
+  ! en compressible, on laisse rcodcl tel quel
 
-  ! Dirichlet Boundary Condition
+  ! dirichlet boundary condition
   !-----------------------------
 
   if (icodcl(ifac,ipr).eq.1) then
@@ -1039,7 +1098,7 @@ do ifac = 1, nfabor
 
   endif
 
-  ! Neumann Boundary Conditions
+  ! neumann boundary conditions
   !----------------------------
 
   if (icodcl(ifac,ipr).eq.3) then
@@ -1052,7 +1111,7 @@ do ifac = 1, nfabor
          coefbp(ifac), cofbfp(ifac),                         &
          qimp              , hint )
 
-  ! Convective Boundary Conditions
+  ! convective boundary conditions
   !-------------------------------
 
   elseif (icodcl(ifac,ipr).eq.2) then
@@ -1099,7 +1158,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 11. Void fraction (cavitation): Dirichlet and Neumann and convective outlet
+! 11. void fraction (cavitation): dirichlet and neumann and convective outlet
 !===============================================================================
 
 if (icavit.ge.0) then
@@ -1114,7 +1173,7 @@ if (icavit.ge.0) then
     ! hint in unused since there is no diffusion for the void fraction
     hint = 1.d0
 
-    ! Dirichlet Boundary Condition
+    ! dirichlet boundary condition
     !-----------------------------
 
     if (icodcl(ifac,ivoidf).eq.1) then
@@ -1130,7 +1189,7 @@ if (icavit.ge.0) then
 
     endif
 
-    ! Neumann Boundary Conditions
+    ! neumann boundary conditions
     !----------------------------
 
     if (icodcl(ifac,ivoidf).eq.3) then
@@ -1143,7 +1202,7 @@ if (icavit.ge.0) then
       coefbp(ifac), cofbfp(ifac),                        &
       qimp              , hint )
 
-      ! Convective Boundary Conditions
+      ! convective boundary conditions
       !-------------------------------
 
     elseif (icodcl(ifac,ivoidf).eq.2) then
@@ -1164,7 +1223,7 @@ if (icavit.ge.0) then
 endif
 
 !===============================================================================
-! 12. Turbulent quantities: Dirichlet and Neumann and convective outlet
+! 12. turbulent quantities: dirichlet and neumann and convective outlet
 !===============================================================================
 
 ! ---> k-epsilon and k-omega
@@ -1173,7 +1232,7 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
   do ii = 1, 2
 
-    !     Pour le k-omega, on met les valeurs sigma_k2 et sigma_w2 car ce terme
+    !     pour le k-omega, on met les valeurs sigma_k2 et sigma_w2 car ce terme
     !     ne concerne en pratique que les entrees (pas de pb en paroi ou en flux
     !     nul)
     if (ii.eq.1.and.itytur.eq.2) then
@@ -1181,13 +1240,13 @@ if (itytur.eq.2.or.iturb.eq.60) then
       sigma  = sigmak
     elseif (ii.eq.1.and.iturb.eq.60) then
       ivar   = ik
-      sigma  = ckwsk2 !FIXME it is not consistent with the model
+      sigma  = ckwsk2 !fixme it is not consistent with the model
     elseif (itytur.eq.2) then
       ivar   = iep
       sigma  = sigmae
     else
       ivar   = iomg
-      sigma  = ckwsw2 !FIXME it is not consistent with the model
+      sigma  = ckwsw2 !fixme it is not consistent with the model
     endif
 
     call field_get_coefa_s(ivarfl(ivar), coefap)
@@ -1199,16 +1258,16 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
       iel = ifabor(ifac)
 
-      ! --- Physical Propreties
+      ! --- physical propreties
       visclc = viscl(iel)
       visctc = visct(iel)
 
-      ! --- Geometrical quantities
+      ! --- geometrical quantities
       distbf = distb(ifac)
 
       hint = (visclc+visctc/sigma)/distbf
 
-      ! Dirichlet Boundary Condition
+      ! dirichlet boundary condition
       !-----------------------------
 
       if (icodcl(ifac,ivar).eq.1) then
@@ -1224,7 +1283,7 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
       endif
 
-      ! Neumann Boundary Conditions
+      ! neumann boundary conditions
       !----------------------------
 
       if (icodcl(ifac,ivar).eq.3) then
@@ -1237,7 +1296,7 @@ if (itytur.eq.2.or.iturb.eq.60) then
              coefbp(ifac), cofbfp(ifac),                        &
              qimp              , hint )
 
-      ! Convective Boundary Conditions
+      ! convective boundary conditions
       !-------------------------------
 
       elseif (icodcl(ifac,ivar).eq.2) then
@@ -1251,7 +1310,7 @@ if (itytur.eq.2.or.iturb.eq.60) then
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
 
-      ! Imposed value for the convection operator, imposed flux for diffusion
+      ! imposed value for the convection operator, imposed flux for diffusion
       !----------------------------------------------------------------------
 
       elseif (icodcl(ifac,ivar).eq.13) then
@@ -1272,47 +1331,32 @@ if (itytur.eq.2.or.iturb.eq.60) then
 
   enddo
 
-! ---> Rij-epsilon
+! ---> rij-epsilon
 elseif (itytur.eq.3) then
 
-  ! --> Rij
+  ! --> rij
+  if (irijco.eq.1) then
+    ivar = irij
+    call field_get_coefa_v(ivarfl(irij), coefats)
+    call field_get_coefb_v(ivarfl(irij), coefbts)
+    call field_get_coefaf_v(ivarfl(irij), cofafts)
+    call field_get_coefbf_v(ivarfl(irij), cofbfts)
+    call field_get_coefad_v(ivarfl(irij), cofadts)
+    call field_get_coefbd_v(ivarfl(irij), cofbdts)
 
-  do isou = 1, 6
-
-    if(isou.eq.1) then
-      ivar   = ir11
-    elseif(isou.eq.2) then
-      ivar   = ir22
-    elseif(isou.eq.3) then
-      ivar   = ir33
-    elseif(isou.eq.4) then
-      ivar   = ir12
-    elseif(isou.eq.5) then
-      ivar   = ir23
-    elseif(isou.eq.6) then
-      ivar   = ir13
-    endif
-
-    call field_get_coefa_s(ivarfl(ivar), coefap)
-    call field_get_coefb_s(ivarfl(ivar), coefbp)
-    call field_get_coefaf_s(ivarfl(ivar), cofafp)
-    call field_get_coefbf_s(ivarfl(ivar), cofbfp)
-    call field_get_coefad_s(ivarfl(ivar), cofadp)
-    call field_get_coefbd_s(ivarfl(ivar), cofbdp)
-
-    if (idften(ivar).eq.6) call field_get_val_v(ivsten, visten)
+    if (idften(irij).eq.6) call field_get_val_v(ivsten, visten)
 
     do ifac = 1, nfabor
 
       iel = ifabor(ifac)
 
-      ! --- Physical Propreties
+      ! --- physical propreties
       visclc = viscl(iel)
 
-      ! --- Geometrical quantities
+      ! --- geometrical quantities
       distbf = distb(ifac)
 
-      ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+      ! symmetric tensor diffusivity (daly harlow -- ggdh)\todo
       if (idften(ivar).eq.6) then
 
         visci(1,1) = visclc + visten(1,iel)
@@ -1325,7 +1369,7 @@ elseif (itytur.eq.3) then
         visci(1,3) =          visten(6,iel)
         visci(3,1) =          visten(6,iel)
 
-        ! ||Ki.S||^2
+        ! ||ki.s||^2
         viscis = ( visci(1,1)*surfbo(1,ifac)       &
                  + visci(1,2)*surfbo(2,ifac)       &
                  + visci(1,3)*surfbo(3,ifac))**2   &
@@ -1336,7 +1380,7 @@ elseif (itytur.eq.3) then
                  + visci(3,2)*surfbo(2,ifac)       &
                  + visci(3,3)*surfbo(3,ifac))**2
 
-        ! IF.Ki.S
+        ! if.ki.s
         fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
                 + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
                 + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
@@ -1352,91 +1396,261 @@ elseif (itytur.eq.3) then
 
         distfi = distb(ifac)
 
-        ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-        ! NB: eps =1.d-1 must be consistent with vitens.f90
+        ! take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
+        ! nb: eps =1.d-1 must be consistent with vitens.f90
         fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
         hint = viscis/surfbn(ifac)/fikis
 
-      ! Scalar diffusivity
+      ! scalar diffusivity
       else
         visctc = visct(iel)
         hint = (visclc+visctc*csrij/cmu)/distbf
       endif
 
-      ! Dirichlet Boundary Condition
-      !-----------------------------
+      !dimrij = 6 if irijco = 1 TODO : Rij coupled with eps
 
-      if (icodcl(ifac,ivar).eq.1) then
-        pimp = rcodcl(ifac,ivar,1)
-        hext = rcodcl(ifac,ivar,2)
+      do isou = 1, dimrij
+        ivar = irij + isou - 1
 
-        call set_dirichlet_scalar &
-             !====================
-           ( coefap(ifac), cofafp(ifac),                        &
-             coefbp(ifac), cofbfp(ifac),                        &
-             pimp              , hint              , hext )
+       ! allocate(pimpts(dimrij))
+       ! allocate(hextts(dimrij))
+       ! allocate(qimpts(dimrij))
+       ! allocate(cflts(dimrij))
+        ! Dirichlet Boundary Condition
+        !-----------------------------
 
-        ! Boundary conditions for the momentum equation
-        cofadp(ifac) = coefap(ifac)
-        cofbdp(ifac) = coefbp(ifac)
+        if (icodcl(ifac,ivar).eq.1) then
+          pimpts(isou) = rcodcl(ifac,ivar,1)
+          hextts(isou) = rcodcl(ifac,ivar,2)
+
+          call set_dirichlet_tensor &
+               !====================
+             ( coefats(:, ifac), cofafts(:,ifac),                        &
+               coefbts(:,:,ifac), cofbfts(:,:,ifac),                        &
+               pimpts            , hint              , hextts )
+
+          ! Boundary conditions for the momentum equation
+          cofadts(isou, ifac)       = coefats(isou, ifac)
+          cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
+        endif
+
+        ! Neumann Boundary Conditions
+        !----------------------------
+
+        if (icodcl(ifac,ivar).eq.3) then
+          qimpts(isou) = rcodcl(ifac,ivar,3)
+
+          call set_neumann_tensor &
+               !==================
+             ( coefats(:,ifac), cofafts(:,ifac),                        &
+               coefbts(:,:,ifac), cofbfts(:,:,ifac),                        &
+               qimpts              , hint )
+
+          ! Boundary conditions for the momentum equation
+          cofadts(isou, ifac)       = coefats(isou, ifac)
+          cofbdts(isou, isou, ifac) = coefbts(isou ,isou ,ifac)
+
+        ! Convective Boundary Conditions
+        !-------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.2) then
+          pimpts(isou) = rcodcl(ifac,ivar,1)
+          cflts(isou)  = rcodcl(ifac,ivar,2)
+
+          call set_convective_outlet_tensor &
+               !==================
+             ( coefats(:, ifac), cofafts(:, ifac),                        &
+               coefbts(:,:, ifac), cofbfts(:,:, ifac),                        &
+               pimpts              , cflts               , hint )
+          ! Boundary conditions for the momentum equation
+          cofadts(isou, ifac)       = coefats(isou, ifac)
+          cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
+
+        ! Imposed value for the convection operator, imposed flux for diffusion
+        !----------------------------------------------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.13) then
+
+          pimpts(isou) = rcodcl(ifac,ivar,1)
+          qimpts(isou) = rcodcl(ifac,ivar,3)
+
+          call set_dirichlet_conv_neumann_diff_tensor &
+               !=====================================
+             ( coefats(:, ifac), cofafts(:, ifac),                         &
+               coefbts(:,:, ifac), cofbfts(:,:, ifac),                         &
+               pimpts              , qimpts )
+
+          ! Boundary conditions for the momentum equation
+          cofadts(isou, ifac)       = coefats(isou, ifac)
+          cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
+
+        endif
+
+      enddo
+    enddo
+  else
+    do isou = 1, 6
+
+      if(isou.eq.1) then
+        ivar   = ir11
+      elseif(isou.eq.2) then
+        ivar   = ir22
+      elseif(isou.eq.3) then
+        ivar   = ir33
+      elseif(isou.eq.4) then
+        ivar   = ir12
+      elseif(isou.eq.5) then
+        ivar   = ir23
+      elseif(isou.eq.6) then
+        ivar   = ir13
       endif
 
-      ! Neumann Boundary Conditions
-      !----------------------------
+      call field_get_coefa_s(ivarfl(ivar), coefap)
+      call field_get_coefb_s(ivarfl(ivar), coefbp)
+      call field_get_coefaf_s(ivarfl(ivar), cofafp)
+      call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+      call field_get_coefad_s(ivarfl(ivar), cofadp)
+      call field_get_coefbd_s(ivarfl(ivar), cofbdp)
 
-      if (icodcl(ifac,ivar).eq.3) then
-        qimp = rcodcl(ifac,ivar,3)
+      if (idften(ivar).eq.6) call field_get_val_v(ivsten, visten)
 
-        call set_neumann_scalar &
-             !==================
-           ( coefap(ifac), cofafp(ifac),                        &
-             coefbp(ifac), cofbfp(ifac),                        &
-             qimp              , hint )
+      do ifac = 1, nfabor
 
-        ! Boundary conditions for the momentum equation
-        cofadp(ifac) = coefap(ifac)
-        cofbdp(ifac) = coefbp(ifac)
+        iel = ifabor(ifac)
 
-      ! Convective Boundary Conditions
-      !-------------------------------
+        ! --- Physical Propreties
+        visclc = viscl(iel)
 
-      elseif (icodcl(ifac,ivar).eq.2) then
-        pimp = rcodcl(ifac,ivar,1)
-        cfl = rcodcl(ifac,ivar,2)
+        ! --- Geometrical quantities
+        distbf = distb(ifac)
 
-        call set_convective_outlet_scalar &
-             !==================
-           ( coefap(ifac), cofafp(ifac),                        &
-             coefbp(ifac), cofbfp(ifac),                        &
-             pimp              , cfl               , hint )
-        ! Boundary conditions for the momentum equation
-        cofadp(ifac) = coefap(ifac)
-        cofbdp(ifac) = coefbp(ifac)
+        ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
+        if (idften(ivar).eq.6) then
 
-      ! Imposed value for the convection operator, imposed flux for diffusion
-      !----------------------------------------------------------------------
+          visci(1,1) = visclc + visten(1,iel)
+          visci(2,2) = visclc + visten(2,iel)
+          visci(3,3) = visclc + visten(3,iel)
+          visci(1,2) =          visten(4,iel)
+          visci(2,1) =          visten(4,iel)
+          visci(2,3) =          visten(5,iel)
+          visci(3,2) =          visten(5,iel)
+          visci(1,3) =          visten(6,iel)
+          visci(3,1) =          visten(6,iel)
 
-      elseif (icodcl(ifac,ivar).eq.13) then
+          ! ||Ki.S||^2
+          viscis = ( visci(1,1)*surfbo(1,ifac)       &
+                   + visci(1,2)*surfbo(2,ifac)       &
+                   + visci(1,3)*surfbo(3,ifac))**2   &
+                 + ( visci(2,1)*surfbo(1,ifac)       &
+                   + visci(2,2)*surfbo(2,ifac)       &
+                   + visci(2,3)*surfbo(3,ifac))**2   &
+                 + ( visci(3,1)*surfbo(1,ifac)       &
+                   + visci(3,2)*surfbo(2,ifac)       &
+                   + visci(3,3)*surfbo(3,ifac))**2
 
-        pimp = rcodcl(ifac,ivar,1)
-        qimp = rcodcl(ifac,ivar,3)
+          ! IF.Ki.S
+          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+                  )*surfbo(1,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+                  )*surfbo(2,ifac)                              &
+                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+                  )*surfbo(3,ifac)
 
-        call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
-           ( coefap(ifac), cofafp(ifac),                         &
-             coefbp(ifac), cofbfp(ifac),                         &
-             pimp              , qimp )
+          distfi = distb(ifac)
 
-        ! Boundary conditions for the momentum equation
-        cofadp(ifac) = coefap(ifac)
-        cofbdp(ifac) = coefbp(ifac)
+          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
+          ! NB: eps =1.d-1 must be consistent with vitens.f90
+          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
 
-      endif
+          hint = viscis/surfbn(ifac)/fikis
+
+        ! Scalar diffusivity
+        else
+          visctc = visct(iel)
+          hint = (visclc+visctc*csrij/cmu)/distbf
+        endif
+
+        ! Dirichlet Boundary Condition
+        !-----------------------------
+
+        if (icodcl(ifac,ivar).eq.1) then
+          pimp = rcodcl(ifac,ivar,1)
+          hext = rcodcl(ifac,ivar,2)
+
+          call set_dirichlet_scalar &
+               !====================
+             ( coefap(ifac), cofafp(ifac),                        &
+               coefbp(ifac), cofbfp(ifac),                        &
+               pimp              , hint              , hext )
+
+          ! Boundary conditions for the momentum equation
+          cofadp(ifac) = coefap(ifac)
+          cofbdp(ifac) = coefbp(ifac)
+        endif
+
+        ! Neumann Boundary Conditions
+        !----------------------------
+
+        if (icodcl(ifac,ivar).eq.3) then
+          qimp = rcodcl(ifac,ivar,3)
+
+          call set_neumann_scalar &
+               !==================
+             ( coefap(ifac), cofafp(ifac),                        &
+               coefbp(ifac), cofbfp(ifac),                        &
+               qimp              , hint )
+
+          ! Boundary conditions for the momentum equation
+          cofadp(ifac) = coefap(ifac)
+          cofbdp(ifac) = coefbp(ifac)
+
+        ! Convective Boundary Conditions
+        !-------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.2) then
+          pimp = rcodcl(ifac,ivar,1)
+          cfl = rcodcl(ifac,ivar,2)
+
+          call set_convective_outlet_scalar &
+               !==================
+             ( coefap(ifac), cofafp(ifac),                        &
+               coefbp(ifac), cofbfp(ifac),                        &
+               pimp              , cfl               , hint )
+          ! Boundary conditions for the momentum equation
+          cofadp(ifac) = coefap(ifac)
+          cofbdp(ifac) = coefbp(ifac)
+
+        ! Imposed value for the convection operator, imposed flux for diffusion
+        !----------------------------------------------------------------------
+
+        elseif (icodcl(ifac,ivar).eq.13) then
+
+          pimp = rcodcl(ifac,ivar,1)
+          qimp = rcodcl(ifac,ivar,3)
+
+          call set_dirichlet_conv_neumann_diff_scalar &
+               !=====================================
+             ( coefap(ifac), cofafp(ifac),                         &
+               coefbp(ifac), cofbfp(ifac),                         &
+               pimp              , qimp )
+
+          ! Boundary conditions for the momentum equation
+          cofadp(ifac) = coefap(ifac)
+          cofbdp(ifac) = coefbp(ifac)
+
+        endif
+
+      enddo
 
     enddo
-
-  enddo
+  endif
 
   ! --> epsilon
 
@@ -2843,6 +3057,99 @@ end subroutine
 !> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpts        Dirichlet value to impose
+!> \param[in]     hint          Internal exchange coefficient
+!> \param[in]     hextts        External exchange coefficient (10^30 by default)
+!_______________________________________________________________________________
+
+subroutine set_dirichlet_tensor &
+ ( coefa , cofaf, coefb , cofbf, pimpts  , hint , hextts)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use cstnum, only: rinfin
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(6), cofaf(6)
+double precision coefb(6,6), cofbf(6,6)
+double precision pimpts(6)
+double precision hint
+double precision hextts(6)
+
+! Local variables
+
+integer          isou  , jsou
+double precision heq
+
+!===============================================================================
+
+do isou = 1, 6
+
+  if (abs(hextts(isou)).gt.rinfin*0.5d0) then
+    ! Gradient BCs
+    coefa(isou) = pimpts(isou)
+    do jsou = 1, 6
+      coefb(isou,jsou) = 0.d0
+    enddo
+
+    ! Flux BCs
+    cofaf(isou) = -hint*pimpts(isou)
+    do jsou = 1, 6
+      if (jsou.eq.isou) then
+        cofbf(isou,jsou) = hint
+      else
+        cofbf(isou,jsou) = 0.d0
+      endif
+    enddo
+
+  else
+
+    heq = hint*hextts(isou)/(hint + hextts(isou))
+
+    ! Gradient BCs
+    coefa(isou) = hextts(isou)*pimpts(isou)/(hint + hextts(isou))
+    do jsou = 1, 6
+      if (jsou.eq.isou) then
+        coefb(isou,jsou) = hint/(hint + hextts(isou))
+      else
+        coefb(isou,jsou) = 0.d0
+      endif
+    enddo
+
+    ! Flux BCs
+    cofaf(isou) = -heq*pimpts(isou)
+    do jsou = 1, 6
+      if (jsou.eq.isou) then
+        cofbf(isou,jsou) = heq
+      else
+        cofbf(isou,jsou) = 0.d0
+      endif
+    enddo
+
+  endif
+
+enddo
+
+return
+end subroutine
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     pimpv         Dirichlet value to impose
 !> \param[in]     hint          Internal exchange coefficient
 !> \param[in]     hextv         External exchange coefficient (10^30 by default)
@@ -3015,6 +3322,69 @@ enddo
 
 return
 end subroutine
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     qimpts         Flux value to impose
+!> \param[in]     hint          Internal exchange coefficient
+!_______________________________________________________________________________
+
+subroutine set_neumann_tensor &
+ ( coefa , cofaf, coefb , cofbf, qimpts  , hint)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(6), cofaf(6)
+double precision coefb(6,6), cofbf(6,6)
+double precision qimpts(6)
+double precision hint
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 6
+
+  ! Gradient BCs
+  coefa(isou) = -qimpts(isou)/hint
+  do jsou = 1, 6
+    if (jsou.eq.isou) then
+      coefb(isou,jsou) = 1.d0
+    else
+      coefb(isou,jsou) = 0.d0
+    endif
+  enddo
+
+  ! Flux BCs
+  cofaf(isou) = qimpts(isou)
+  do jsou = 1, 6
+    cofbf(isou,jsou) = 0.d0
+  enddo
+
+enddo
+
+return
+end subroutine
+
 
 !===============================================================================
 
@@ -3404,6 +3774,74 @@ end subroutine
 !> \param[out]    cofaf         explicit BC coefficient for diffusive flux
 !> \param[out]    coefb         implicit BC coefficient for gradients
 !> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpts         Dirichlet value to impose
+!> \param[in]     cflts          Local Courant number used to convect
+!> \param[in]     hint          Internal exchange coefficient
+!_______________________________________________________________________________
+
+subroutine set_convective_outlet_tensor &
+ ( coefa , cofaf, coefb , cofbf, pimpts  , cflts  , hint)
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(6), cofaf(6)
+double precision coefb(6,6), cofbf(6,6)
+double precision pimpts(6), cflts(6)
+double precision hint
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 6
+
+  ! Gradient BCs
+  do jsou = 1, 6
+    if (jsou.eq.isou) then
+      coefb(isou,jsou) = cflts(isou)*(1.d0+cflts(isou))
+    else
+      coefb(isou,jsou) = 0.d0
+    endif
+  enddo
+  coefa(isou) = (1.d0-coefb(isou,isou))*pimpts(isou)
+
+  ! Flux BCs
+  cofaf(isou) = -hint*coefa(isou)
+  do jsou = 1, 6
+    if (jsou.eq.isou) then
+      cofbf(isou,jsou) = hint*(1.d0 - coefb(isou,jsou))
+    else
+      cofbf(isou,jsou) = 0.d0
+    endif
+  enddo
+
+enddo
+
+return
+end subroutine
+
+
+!===============================================================================
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
 !> \param[in]     pimpv         Dirichlet value to impose
 !> \param[in]     cflv          Local Courant number used to convect
 !> \param[in]     hint          Internal exchange coefficient
@@ -3607,5 +4045,63 @@ enddo
 
 return
 end subroutine
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[out]    coefa         explicit BC coefficient for gradients
+!> \param[out]    cofaf         explicit BC coefficient for diffusive flux
+!> \param[out]    coefb         implicit BC coefficient for gradients
+!> \param[out]    cofbf         implicit BC coefficient for diffusive flux
+!> \param[in]     pimpts         Dirichlet value to impose
+!> \param[in]     qimpts         Flux value to impose
+!_______________________________________________________________________________
+
+subroutine set_dirichlet_conv_neumann_diff_tensor &
+ ( coefa, cofaf, coefb, cofbf, pimpts, qimpts )
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+double precision coefa(6), cofaf(6)
+double precision coefb(6,6), cofbf(6,6)
+double precision pimpts(6), qimpts(6)
+
+! Local variables
+
+integer          isou  , jsou
+
+!===============================================================================
+
+do isou = 1, 6
+
+  ! BS test sur hextv ? if (abs(hextv(isou)).gt.rinfin*0.5d0) then
+
+  ! Gradient BCs
+  coefa(isou) = pimpts(isou)
+  do jsou = 1, 6
+    coefb(isou,jsou) = 0.d0
+  enddo
+
+  ! Flux BCs
+  cofaf(isou) = qimpts(isou)
+  do jsou = 1, 6
+    cofbf(isou,jsou) = 0.d0
+  enddo
+
+enddo
+
+return
+end subroutine
+
 
 !===============================================================================

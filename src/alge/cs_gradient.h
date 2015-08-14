@@ -124,6 +124,29 @@ void CS_PROCF (cgdvec, CGDVEC)
                                                  (du_i/dx_j : gradv[][i][j])  */
 );
 
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of tensor field.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cgdts, CGDTS)
+(
+ const cs_int_t         *const f_id,
+ const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
+ const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
+ const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction      */
+ const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
+ const cs_int_t         *const imligp,    /* <-- type of clipping             */
+ const cs_real_t        *const epsrgp,    /* <-- precision for iterative
+                                                 gradient calculation         */
+ const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
+ const cs_real_6_t             coefav[],  /* <-- boundary condition term      */
+ const cs_real_66_t            coefbv[],  /* <-- boundary condition term      */
+
+       cs_real_6_t             pvar[],    /* <-- gradient's base variable     */
+       cs_real_63_t            grad[]    /* <-> gradient of the variable
+                                                 (du_i/dx_j : gradv[][i][j])  */
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -226,6 +249,42 @@ cs_gradient_vector(const char                *var_name,
                    const cs_real_33_t         bc_coeff_b[],
                    cs_real_3_t      *restrict var,
                    cs_real_33_t     *restrict gradv);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of tensor.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in, out]  var             gradient's base variable
+ * \param[out]      grad            gradient
+                                    (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_tensor(const char                *var_name,
+                   cs_gradient_type_t         gradient_type,
+                   cs_halo_type_t             halo_type,
+                   int                        inc,
+                   int                        n_r_sweeps,
+                   int                        verbosity,
+                   int                        clip_mode,
+                   double                     epsilon,
+                   double                     clip_coeff,
+                   const cs_real_6_t          bc_coeff_a[],
+                   const cs_real_66_t         bc_coeff_b[],
+                   cs_real_6_t      *restrict var,
+                   cs_real_63_t     *restrict grad);
 
 /*----------------------------------------------------------------------------
  * Determine gradient type by Fortran "imrgra" value

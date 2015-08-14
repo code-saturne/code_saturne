@@ -115,6 +115,8 @@ double precision, allocatable, dimension(:) :: smbr, rovsdt
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:) :: produc
 double precision, allocatable, dimension(:,:) :: gradro
+double precision, allocatable, dimension(:,:) :: smbrts
+double precision, allocatable, dimension(:,:,:) ::rovsdtts
 
 double precision, pointer, dimension(:) :: tslage, tslagi
 double precision, dimension(:,:), pointer :: coefau
@@ -140,6 +142,10 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
 allocate(gradv(3, 3, ncelet))
+if (irijco.eq.1) then
+  allocate(smbrts(6,ncelet))
+  allocate(rovsdtts(6,6,ncelet))
+endif
 
 ! Allocate other arrays, depending on user options
 if (iturb.eq.30) then
@@ -329,29 +335,11 @@ endif
 !     We solve the equation in a routine similar to covofi.f90
 !===============================================================================
 
-do isou = 1, 6
-  if    (isou.eq.1) then
-    ivar   = ir11
-  elseif(isou.eq.2) then
-    ivar   = ir22
-  elseif(isou.eq.3) then
-    ivar   = ir33
-  elseif(isou.eq.4) then
-    ivar   = ir12
-  elseif(isou.eq.5) then
-    ivar   = ir23
-  elseif(isou.eq.6) then
-    ivar   = ir13
-  endif
-
-  if (iilagr.eq.2) then
-    iitsla = itsr11 + (isou-1)
-    tslage => tslagr(1:ncelet,iitsla)
-    tslagi => tslagr(1:ncelet,itsli)
-  endif
+if (irijco.eq.1) then
+  ivar = irij
 
   ! Rij-epsilon standard (LRR)
-  if (iturb.eq.30) then
+  if (iturb.eq.30) then !TODO
     call resrij &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    ivar   , isou   ,                                              &
@@ -366,20 +354,71 @@ do isou = 1, 6
   ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then
 
-    call resssg &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivar   , isou   ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   gradv  , gradro ,                                              &
-   ckupdc , smacel ,                                              &
-   viscf  , viscb  ,                                              &
-   tslage , tslagi ,                                              &
-   smbr   , rovsdt )
+      call resssg2 &
+      !==========
+    ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+      ivar   ,                                              &
+      icepdc , icetsm , itypsm ,                                     &
+      dt     ,                                                       &
+      gradv  , gradro ,                                              &
+      ckupdc , smacel ,                                              &
+      viscf  , viscb  ,                                              &
+      tslage , tslagi ,                                              &
+      smbrts   , rovsdtts )
   endif
+else
+  do isou = 1, 6
+    if    (isou.eq.1) then
+      ivar   = ir11
+    elseif(isou.eq.2) then
+      ivar   = ir22
+    elseif(isou.eq.3) then
+      ivar   = ir33
+    elseif(isou.eq.4) then
+      ivar   = ir12
+    elseif(isou.eq.5) then
+      ivar   = ir23
+    elseif(isou.eq.6) then
+      ivar   = ir13
+    endif
 
-enddo
+    if (iilagr.eq.2) then
+      iitsla = itsr11 + (isou-1)
+      tslage => tslagr(1:ncelet,iitsla)
+      tslagi => tslagr(1:ncelet,itsli)
+    endif
 
+    ! Rij-epsilon standard (LRR)
+    if (iturb.eq.30) then
+      call resrij &
+      !==========
+   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+     ivar   , isou   ,                                              &
+     icepdc , icetsm , itypsm ,                                     &
+     dt     ,                                                       &
+     produc , gradro ,                                              &
+     ckupdc , smacel ,                                              &
+     viscf  , viscb  ,                                              &
+     tslage , tslagi ,                                              &
+     smbr   , rovsdt )
+
+    ! Rij-epsilon SSG or EBRSM
+    elseif (iturb.eq.31.or.iturb.eq.32) then
+        call resssg &
+        !==========
+      ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+        ivar   , isou   ,                                              &
+        icepdc , icetsm , itypsm ,                                     &
+        dt     ,                                                       &
+        gradv  , gradro ,                                              &
+        ckupdc , smacel ,                                              &
+        viscf  , viscb  ,                                              &
+        tslage , tslagi ,                                              &
+        smbr   , rovsdt )
+    endif
+
+  enddo
+endif
 !===============================================================================
 ! 5. Solve Epsilon
 !===============================================================================
@@ -404,10 +443,19 @@ else
   iclip = 2
 endif
 
-call clprij &
- ( ncelet , ncel   , nvar   ,                                     &
-   iclip  )
+if (irijco.eq.1) then
+  call clprij2 &
+  !==========
+   ( ncelet , ncel   , nvar   ,                                     &
+     iclip  )
 
+else
+
+  call clprij &
+  !==========
+   ( ncelet , ncel   , nvar   ,                                     &
+     iclip  )
+endif
 
 ! Free memory
 deallocate(viscf, viscb)

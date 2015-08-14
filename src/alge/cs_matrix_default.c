@@ -300,14 +300,12 @@ void CS_PROCF(promav, PROMAV)
     int _diag_block_size[4] = {1, 1, 1, 1};
     int _extra_diag_block_size[4] = {1, 1, 1, 1};
 
-    /* TODO: update diag_block_size[] values for the general case */
     _diag_block_size[0] = *ibsize;
     _diag_block_size[1] = *ibsize;
     _diag_block_size[2] = *ibsize;
     _diag_block_size[3] = (*ibsize)*(*ibsize);
 
     if (*iesize > 1) {
-      /* TODO: update extra_diag_block_size[] values for the general case */
       _extra_diag_block_size[0] = *iesize;
       _extra_diag_block_size[1] = *iesize;
       _extra_diag_block_size[2] = *iesize;
@@ -633,6 +631,12 @@ cs_matrix_default(bool        symmetric,
       fill_type = CS_MATRIX_SCALAR_SYM;
     else
       fill_type = CS_MATRIX_SCALAR;
+  }
+  else {
+    if (symmetric)
+      fill_type = CS_MATRIX_PP_BLOCK_D_SYM;
+    else
+      fill_type = CS_MATRIX_PP_BLOCK_D;
   }
 
   if (_tuned_matrix_id[fill_type] > -1)

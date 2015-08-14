@@ -105,6 +105,7 @@ cs_sles_it.c \
 cs_sles_pc.c \
 bilsca.f90 \
 bilscv.f90 \
+bilscts.f90 \
 visort.f90
 libcsalge_la_LDFLAGS = -no-undefined
 

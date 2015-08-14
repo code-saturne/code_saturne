@@ -264,7 +264,8 @@ _matrix_tune_test(double                 t_measure,
         = (f_id >= CS_MATRIX_33_BLOCK) ? ed_block_size : NULL;
       const bool sym_coeffs
         = (   f_id == CS_MATRIX_SCALAR_SYM
-           || f_id == CS_MATRIX_33_BLOCK_D_SYM) ? true : false;
+           || f_id == CS_MATRIX_33_BLOCK_D_SYM
+           || f_id == CS_MATRIX_PP_BLOCK_D_SYM) ? true : false;
 
       /* Loop on diagonal exclusion flags */
 

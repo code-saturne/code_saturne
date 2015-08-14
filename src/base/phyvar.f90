@@ -91,7 +91,7 @@ double precision propce(ncelet,*)
 character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , iok   , iok1  , iok2  , iisct, idfm, iggafm
-integer          nn
+integer          nn    , isou
 integer          mbrom , ipcvst, ifcvsl
 integer          ipccp , ipcvis, ipcvma
 integer          iclipc
@@ -104,6 +104,7 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten, vistes
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
@@ -298,16 +299,25 @@ elseif (itytur.eq.3) then
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  call field_get_val_s(ivarfl(ir11), cvar_r11)
-  call field_get_val_s(ivarfl(ir22), cvar_r22)
-  call field_get_val_s(ivarfl(ir33), cvar_r33)
+  if (irijco.eq.1) then
+    call field_get_val_v(ivarfl(irij), cvar_rij)
 
-  do iel = 1, ncel
-    xk = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-    xe = cvar_ep(iel)
-    visct(iel) = crom(iel)*cmu*xk**2/xe
-  enddo
+    do iel = 1, ncel
+      xk = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+      xe = cvar_ep(iel)
+      visct(iel) = crom(iel)*cmu*xk**2/xe
+    enddo
+  else
+    call field_get_val_s(ivarfl(ir11), cvar_r11)
+    call field_get_val_s(ivarfl(ir22), cvar_r22)
+    call field_get_val_s(ivarfl(ir33), cvar_r33)
 
+    do iel = 1, ncel
+      xk = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+      xe = cvar_ep(iel)
+      visct(iel) = crom(iel)*cmu*xk**2/xe
+    enddo
+  endif
 elseif (iturb.eq.40) then
 
 ! 4.5 LES Smagorinsky
@@ -418,68 +428,86 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
   call field_get_val_v(ivsten, visten)
 
   if (itytur.eq.3) then
+    if (irijco.eq.1) then
+      call field_get_val_s(icrom, crom)
+      call field_get_val_s(iprpfl(iviscl), viscl)
 
-    call field_get_val_s(icrom, crom)
-    call field_get_val_s(iprpfl(iviscl), viscl)
+      call field_get_val_s(ivarfl(iep), cvar_ep)
 
-    call field_get_val_s(ivarfl(iep), cvar_ep)
+      call field_get_val_v(ivarfl(irij), cvar_rij)
 
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
+      ! EBRSM
+      if (iturb.eq.32) then
+        do iel = 1, ncel
+          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+          ttke  = trrij/cvar_ep(iel)
+          ! Durbin scale
+          xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
+          xttdrb = max(ttke,xttkmg)
+          rottke  = csrij * crom(iel) * xttdrb
 
-    ! EBRSM
-    if (iturb.eq.32) then
-      do iel = 1, ncel
-        trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-        ttke  = trrij/cvar_ep(iel)
-        ! Durbin scale
-        xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
-        xttdrb = max(ttke,xttkmg)
-        rottke  = csrij * crom(iel) * xttdrb
+          do isou = 1, 6
+            visten(isou, iel) = rottke*cvar_rij(isou, iel)
+          enddo
+        enddo
 
-        visten(1,iel) = rottke*cvar_r11(iel)
-        visten(2,iel) = rottke*cvar_r22(iel)
-        visten(3,iel) = rottke*cvar_r33(iel)
-        visten(4,iel) = rottke*cvar_r12(iel)
-        visten(5,iel) = rottke*cvar_r23(iel)
-        visten(6,iel) = rottke*cvar_r13(iel)
-      enddo
+      ! LRR or SSG
+      else
+        do iel = 1, ncel
+          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
 
-      if (iggafm.eq.1) then
-        call field_get_val_v(ivstes, vistes)
+          do isou = 1, 6
+            visten(isou, iel) = rottke*cvar_rij(isou, iel)
+          enddo
+        enddo
+      endif
+    else
+      call field_get_val_s(icrom, crom)
+      call field_get_val_s(iprpfl(iviscl), viscl)
 
+      call field_get_val_s(ivarfl(iep), cvar_ep)
+
+      call field_get_val_s(ivarfl(ir11), cvar_r11)
+      call field_get_val_s(ivarfl(ir22), cvar_r22)
+      call field_get_val_s(ivarfl(ir33), cvar_r33)
+      call field_get_val_s(ivarfl(ir12), cvar_r12)
+      call field_get_val_s(ivarfl(ir13), cvar_r13)
+      call field_get_val_s(ivarfl(ir23), cvar_r23)
+
+      ! EBRSM
+      if (iturb.eq.32) then
+        do iel = 1, ncel
+          trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+          ttke  = trrij/cvar_ep(iel)
+          ! Durbin scale
+          xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
+          xttdrb = max(ttke,xttkmg)
+          rottke  = csrij * crom(iel) * xttdrb
+
+          visten(1,iel) = rottke*cvar_r11(iel)
+          visten(2,iel) = rottke*cvar_r22(iel)
+          visten(3,iel) = rottke*cvar_r33(iel)
+          visten(4,iel) = rottke*cvar_r12(iel)
+          visten(5,iel) = rottke*cvar_r23(iel)
+          visten(6,iel) = rottke*cvar_r13(iel)
+        enddo
+
+      ! LRR or SSG
+      else
         do iel = 1, ncel
           trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
           rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
 
-          vistes(1,iel) = rottke*cvar_r11(iel)
-          vistes(2,iel) = rottke*cvar_r22(iel)
-          vistes(3,iel) = rottke*cvar_r33(iel)
-          vistes(4,iel) = rottke*cvar_r12(iel)
-          vistes(5,iel) = rottke*cvar_r23(iel)
-          vistes(6,iel) = rottke*cvar_r13(iel)
+          visten(1,iel) = rottke*cvar_r11(iel)
+          visten(2,iel) = rottke*cvar_r22(iel)
+          visten(3,iel) = rottke*cvar_r33(iel)
+          visten(4,iel) = rottke*cvar_r12(iel)
+          visten(5,iel) = rottke*cvar_r23(iel)
+          visten(6,iel) = rottke*cvar_r13(iel)
         enddo
       endif
-
-    ! LRR or SSG
-    else
-      do iel = 1, ncel
-        trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-        rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
-
-        visten(1,iel) = rottke*cvar_r11(iel)
-        visten(2,iel) = rottke*cvar_r22(iel)
-        visten(3,iel) = rottke*cvar_r33(iel)
-        visten(4,iel) = rottke*cvar_r12(iel)
-        visten(5,iel) = rottke*cvar_r23(iel)
-        visten(6,iel) = rottke*cvar_r13(iel)
-      enddo
     endif
-
   else
 
     do iel = 1, ncel

@@ -75,6 +75,7 @@ typedef enum {
   CS_ENUMF_(r12),          /*!< Reynolds stress component \f$ R_{xy} \f$ */
   CS_ENUMF_(r23),          /*!< Reynolds stress component \f$ R_{yz} \f$ */
   CS_ENUMF_(r13),          /*!< Reynolds stress component \f$ R_{xz} \f$ */
+  CS_ENUMF_(rij),          /*!< Reynolds stress tensor \f$ R_{ij} \f$ */
 
   CS_ENUMF_(phi),          /*!< \f$ \phi \f$ for \f$ \phi-f_b \f$ model */
   CS_ENUMF_(f_bar),        /*!< \f$ f_b \f$ for \f$ \phi-f_b \f$ model */

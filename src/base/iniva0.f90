@@ -109,6 +109,7 @@ double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
 
@@ -416,53 +417,97 @@ elseif(itytur.eq.3) then
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  call field_get_val_s(ivarfl(ir11), cvar_r11)
-  call field_get_val_s(ivarfl(ir22), cvar_r22)
-  call field_get_val_s(ivarfl(ir33), cvar_r33)
-  call field_get_val_s(ivarfl(ir12), cvar_r12)
-  call field_get_val_s(ivarfl(ir23), cvar_r23)
-  call field_get_val_s(ivarfl(ir13), cvar_r13)
+  if (irijco.eq.1) then
+      call field_get_val_v(ivarfl(irij), cvar_rij)
 
-  if (uref.ge.0.d0) then
 
-    trii   = (0.02d0*uref)**2
+    if (uref.ge.0.d0) then
 
-    do iel = 1, ncel
-      cvar_r11(iel) = trii
-      cvar_r22(iel) = trii
-      cvar_r33(iel) = trii
-      cvar_r12(iel) = 0.d0
-      cvar_r13(iel) = 0.d0
-      cvar_r23(iel) = 0.d0
-      xxk = 0.5d0*(cvar_r11(iel)+                             &
-           cvar_r22(iel)+cvar_r33(iel))
-      cvar_ep(iel) = xxk**1.5d0*cmu/almax
-    enddo
-    iclip = 1
-    call clprij(ncelet , ncel   , nvar    ,     &
-                iclip  )
+      trii   = (0.02d0*uref)**2
 
-  else
-
-    do iel = 1, ncel
-      cvar_r11(iel) = -grand
-      cvar_r22(iel) = -grand
-      cvar_r33(iel) = -grand
-      cvar_r12(iel) = -grand
-      cvar_r13(iel) = -grand
-      cvar_r23(iel) = -grand
-      cvar_ep(iel)  = -grand
-    enddo
-
-    if(iturb.eq.32)then
-      call field_get_val_s(ivarfl(ial), cvar_al)
       do iel = 1, ncel
-        cvar_al(iel) = 1.d0
+        cvar_rij(1,iel) = trii
+        cvar_rij(2,iel) = trii
+        cvar_rij(3,iel) = trii
+        cvar_rij(4,iel) = 0.d0
+        cvar_rij(5,iel) = 0.d0
+        cvar_rij(6,iel) = 0.d0
+        xxk = 0.5d0*(cvar_rij(1,iel)+                             &
+             cvar_rij(2,iel)+cvar_rij(3,iel))
+        cvar_ep(iel) = xxk**1.5d0*cmu/almax
       enddo
+      iclip = 1
+      call clprij2(ncelet , ncel   , nvar    ,     &
+                  iclip  )
+
+    else
+
+      do iel = 1, ncel
+        cvar_rij(1,iel) = -grand
+        cvar_rij(2,iel) = -grand
+        cvar_rij(3,iel) = -grand
+        cvar_rij(4,iel) = -grand
+        cvar_rij(5,iel) = -grand
+        cvar_rij(6,iel) = -grand
+        cvar_ep(iel)  = -grand
+      enddo
+
+      if(iturb.eq.32)then
+        call field_get_val_s(ivarfl(ial), cvar_al)
+        do iel = 1, ncel
+          cvar_al(iel) = 1.d0
+        enddo
+      endif
+
     endif
+  else
+      call field_get_val_s(ivarfl(ir11), cvar_r11)
+      call field_get_val_s(ivarfl(ir22), cvar_r22)
+      call field_get_val_s(ivarfl(ir33), cvar_r33)
+      call field_get_val_s(ivarfl(ir12), cvar_r12)
+      call field_get_val_s(ivarfl(ir23), cvar_r23)
+      call field_get_val_s(ivarfl(ir13), cvar_r13)
 
- endif
+    if (uref.ge.0.d0) then
 
+      trii   = (0.02d0*uref)**2
+
+      do iel = 1, ncel
+        cvar_r11(iel) = trii
+        cvar_r22(iel) = trii
+        cvar_r33(iel) = trii
+        cvar_r12(iel) = 0.d0
+        cvar_r13(iel) = 0.d0
+        cvar_r23(iel) = 0.d0
+        xxk = 0.5d0*(cvar_r11(iel)+                             &
+             cvar_r22(iel)+cvar_r33(iel))
+        cvar_ep(iel) = xxk**1.5d0*cmu/almax
+      enddo
+      iclip = 1
+      call clprij(ncelet , ncel   , nvar    ,     &
+                  iclip  )
+
+    else
+
+      do iel = 1, ncel
+        cvar_r11(iel) = -grand
+        cvar_r22(iel) = -grand
+        cvar_r33(iel) = -grand
+        cvar_r12(iel) = -grand
+        cvar_r13(iel) = -grand
+        cvar_r23(iel) = -grand
+        cvar_ep(iel)  = -grand
+      enddo
+
+      if(iturb.eq.32)then
+        call field_get_val_s(ivarfl(ial), cvar_al)
+        do iel = 1, ncel
+          cvar_al(iel) = 1.d0
+        enddo
+      endif
+
+    endif
+  endif
 elseif(iturb.eq.60) then
 
   call field_get_val_s(ivarfl(ik), cvar_k)

@@ -100,6 +100,10 @@ module numvar
   !> Reynolds stress component \f$ R_{zz} \f$
   integer, save :: ir13
 
+  !> \anchor irij
+  !> Reynolds stress tenso \f$ R_{ij} \f$
+  integer, save :: irij
+
   !> \anchor iphi
   !> variable \f$ \phi \f$ of the \f$ \phi-f_b \f$ model
   integer, save :: iphi

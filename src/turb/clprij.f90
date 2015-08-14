@@ -97,14 +97,12 @@ ivar2 = 0
 epz2 = epzero**2
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
-
 call field_get_val_s(ivarfl(ir11), cvar_r11)
 call field_get_val_s(ivarfl(ir22), cvar_r22)
 call field_get_val_s(ivarfl(ir33), cvar_r33)
 call field_get_val_s(ivarfl(ir12), cvar_r12)
 call field_get_val_s(ivarfl(ir13), cvar_r13)
 call field_get_val_s(ivarfl(ir23), cvar_r23)
-
 !===============================================================================
 !  ---> Stockage Min et Max pour listing
 !===============================================================================
@@ -263,7 +261,224 @@ do isou = 1, 7
                                     vmin(isou:isou), vmax(isou:isou))
 
 enddo
+return
+
+end subroutine clprij
+!-------------------------------------------------------------------------------
+
+! This file is part of Code_Saturne, a general-purpose CFD tool.
+!
+! Copyright (C) 1998-2015 EDF S.A.
+!
+! This program is free software; you can redistribute it and/or modify it under
+! the terms of the GNU General Public License as published by the Free Software
+! Foundation; either version 2 of the License, or (at your option) any later
+! version.
+!
+! This program is distributed in the hope that it will be useful, but WITHOUT
+! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+! FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+! details.
+!
+! You should have received a copy of the GNU General Public License along with
+! this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+! Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+!-------------------------------------------------------------------------------
+
+subroutine clprij2 &
+!================
+
+ ( ncelet , ncel   , nvar   ,                                     &
+   iclip  )
+
+!===============================================================================
+! FONCTION :
+! ----------
+
+! CLIPPING DE Rij ET EPSILON
+
+!-------------------------------------------------------------------------------
+! Arguments
+!ARGU                             ARGUMENTS
+!__________________.____._____.________________________________________________.
+! name             !type!mode ! role                                           !
+!__________________!____!_____!________________________________________________!
+! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
+! ncel             ! e  ! <-- ! nombre de cellules                             !
+! nvar             ! e  ! <-- ! nombre de variables                            !
+! iclip            ! e  ! <-- ! indicateur = 1 on n'utilise pas les champs au  !
+!                  !    !     !     pas de temps precedent (inivar)            !
+!                  !    !     !            sinon on peut (turrij)              !
+!__________________!____!_____!________________________________________________!
+
+!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
+!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
+!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
+!            --- tableau de travail
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use entsor
+use numvar
+use cstnum
+use parall
+use cs_c_bindings
+use field
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvar, ncelet, ncel
+integer          iclip
+
+! Local variables
+
+integer          iel, ivar, ivar1, ivar2, isou, iclptot
+integer          iclrij(7)
+double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2
+
+double precision, dimension(:), pointer :: cvar_ep, cvara_ep
+double precision, dimension(:), pointer :: cvar_var1, cvar_var2
+double precision, dimension(:,:), pointer :: cvar_rij, cvara_rij
+!===============================================================================
+
+! Initialization to avoid compiler warnings
+
+ivar = 0
+ivar1 = 0
+ivar2 = 0
+
+! Une petite valeur pour eviter des valeurs exactement nulles.
+
+epz2 = epzero**2
+
+call field_get_val_s(ivarfl(iep), cvar_ep)
+call field_get_val_v(ivarfl(irij), cvar_rij)
+
+!===============================================================================
+!  ---> Stockage Min et Max pour listing
+!===============================================================================
+
+
+do isou = 1, 7
+  iclrij(isou) = 0
+  vmin(isou) =  grand
+  vmax(isou) = -grand
+  do iel = 1, ncel
+    if (isou.lt.7) then
+      vmin(isou) = min(vmin(isou),cvar_rij(isou,iel))
+      vmax(isou) = max(vmax(isou),cvar_rij(isou,iel))
+    else
+      vmin(isou) = min(vmin(isou),cvar_ep(iel))
+      vmax(isou) = max(vmax(isou),cvar_ep(iel))
+    endif
+  enddo
+enddo
+
+! ---> Clipping (modif pour eviter les valeurs exactement nulles)
+
+if (iclip.eq.1) then
+
+  do isou = 1, 3
+
+    do iel = 1, ncel
+      if (cvar_rij(isou,iel).le.epz2) then
+        iclrij(isou) = iclrij(isou) + 1
+        cvar_rij(isou,iel) = epz2
+      endif
+    enddo
+
+  enddo
+
+  do iel = 1, ncel
+    if (abs(cvar_ep(iel)).le.epz2) then
+      iclrij(7) = iclrij(7) + 1
+      cvar_ep(iel) = max(cvar_ep(iel),epz2)
+    elseif(cvar_ep(iel).le.0.d0) then
+      iclrij(7) = iclrij(7) + 1
+      cvar_ep(iel) = abs(cvar_ep(iel))
+    endif
+  enddo
+
+else
+
+  varrel = 1.1d0
+
+  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
+
+  do isou = 1, 3
+
+    do iel = 1, ncel
+      if (abs(cvar_rij(isou,iel)).le.epz2) then
+        iclrij(isou) = iclrij(isou) + 1
+        cvar_rij(isou,iel) = max(cvar_rij(isou,iel),epz2)
+      elseif(cvar_rij(isou,iel).le.0.d0) then
+        iclrij(isou) = iclrij(isou) + 1
+        cvar_rij(isou,iel) = min(abs(cvar_rij(isou,iel)), varrel*abs(cvara_rij(isou,iel)))
+      endif
+    enddo
+
+  enddo
+
+  iclrij(7) = 0
+  do iel = 1, ncel
+    if (abs(cvar_ep(iel)).lt.epz2) then
+      iclrij(7) = iclrij(7) + 1
+      cvar_ep(iel) = max(cvar_ep(iel),epz2)
+    elseif(cvar_ep(iel).le.0.d0) then
+      iclrij(7) = iclrij(7) + 1
+      cvar_ep(iel) = min(abs(cvar_ep(iel)), varrel*abs(cvara_ep(iel)))
+    endif
+  enddo
+
+endif
+
+! On force l'inegalite de Cauchy Schwarz
+
+do isou = 4, 6
+
+  if(isou.eq.4) then
+    cvar_var1 => cvar_rij(1,:)
+    cvar_var2 => cvar_rij(2,:)
+  elseif(isou.eq.6) then
+    cvar_var1 => cvar_rij(1,:)
+    cvar_var2 => cvar_rij(3,:)
+  elseif(isou.eq.5) then
+    cvar_var1 => cvar_rij(2,:)
+    cvar_var2 => cvar_rij(3,:)
+  endif
+  und0 = 1.d0
+  do iel = 1, ncel
+    rijmin = sqrt(cvar_var1(iel)*cvar_var2(iel))
+    if (rijmin.lt.abs(cvar_rij(isou,iel))) then
+      cvar_rij(isou,iel) = sign(und0,cvar_rij(isou,iel)) * rijmin
+      iclrij(isou) = iclrij(isou) + 1
+    endif
+  enddo
+
+enddo
+
+! ---> Stockage nb de clippings pour listing
+iclptot = 0
+do isou = 1, 6
+  iclptot = iclptot + iclrij(isou)
+enddo
+call log_iteration_clipping_field(ivarfl(irij), iclptot, 0,  &
+                                    vmin(1:6), vmax(1:6))
+
+call log_iteration_clipping_field(ivarfl(iep), iclrij(7), 0,  &
+                                    vmin(7), vmax(7))
 
 return
 
-end subroutine
+end subroutine clprij2

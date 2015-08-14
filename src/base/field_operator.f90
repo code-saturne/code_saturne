@@ -130,6 +130,27 @@ module field_operator
 
     !---------------------------------------------------------------------------
 
+    !> \brief  Compute cell gradient of tensor field.
+
+    !> \param[in]   f_id             field id
+    !> \param[in]   use_previous_t   1 if values at previous time step should
+    !>                               be used, 0 otherwise
+    !> \param[in]   imrgra           gradient computation mode
+    !> \param[in]   inc              0: increment; 1: do not increment
+    !> \param[out]  grad             gradient
+
+    subroutine field_gradient_tensor(f_id, use_previous_t, imrgra, inc,        &
+                                     grad)                                     &
+      bind(C, name='cs_f_field_gradient_tensor')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value                 :: f_id, use_previous_t, imrgra, inc
+      real(kind=c_double), dimension(6,3,*) :: grad
+    end subroutine field_gradient_tensor
+
+
+    !---------------------------------------------------------------------------
+
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
     !---------------------------------------------------------------------------

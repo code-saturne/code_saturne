@@ -1898,7 +1898,54 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
         }
 
     }
+    else {
+      for (ifac = 0; ifac < n_elts[0]; ifac++) {
+        for (int isou = 0; isou < dim ; isou++) {
+          for (int jsou = 0; jsou < dim; jsou ++) {
+            f->bc_coeffs->b[ifac*dim*dim + isou*dim +jsou] = 0.;
+            if (isou == jsou) {
+              f->bc_coeffs->b[ifac*dim*dim + isou*dim +jsou] = 1.;
+            }
+          }
+        }
+      }
 
+      if (f->bc_coeffs->af != NULL) {
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          for (int isou = 0; isou < dim ; isou++) {
+            f->bc_coeffs->af[ifac*dim + isou] = 0.;
+            for (int jsou = 0; jsou < dim; jsou ++) {
+              f->bc_coeffs->bf[ifac*dim*dim + isou*dim +jsou] = 0.;
+            }
+          }
+        }
+      }
+
+      if (f->bc_coeffs->ad != NULL){
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          for (int isou = 0; isou < dim ; isou++) {
+            f->bc_coeffs->ad[ifac*dim + isou] = 0.;
+            for (int jsou = 0; jsou < dim; jsou ++) {
+              f->bc_coeffs->bd[ifac*dim*dim + isou*dim +jsou] = 0.;
+              if (isou == jsou) {
+                f->bc_coeffs->bd[ifac*dim*dim + isou*dim +jsou] = 1.;
+              }
+            }
+          }
+        }
+      }
+
+      if (f->bc_coeffs->ac != NULL) {
+        for (ifac = 0; ifac < n_elts[0]; ifac++) {
+          for (int isou = 0; isou < dim ; isou++) {
+            f->bc_coeffs->ac[ifac*dim + isou] = 0.;
+            for (int jsou = 0; jsou < dim; jsou ++) {
+              f->bc_coeffs->bc[ifac*dim*dim + isou*dim +jsou] = 0.;
+            }
+          }
+        }
+      }
+    }
   }
 
   else

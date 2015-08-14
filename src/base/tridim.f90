@@ -166,6 +166,7 @@ double precision, dimension(:), pointer :: cvar_omg, cvara_omg
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 
@@ -369,6 +370,10 @@ if (irangp.ge.0 .or. iperio.eq.1) then
         call field_get_val_v(f_id, cvar_vec)
         call synvie(cvar_vec)
 
+      else if (f_dim.gt.3) then
+
+        call field_get_val_v(f_id, cvar_vec)
+        call syntis(cvar_vec)
       else
         call csexit(1)
       endif
@@ -385,18 +390,24 @@ if (iperio.eq.1) then
   !  -- Reynolds stress tensor
 
   if (itytur.eq.3) then
+    if (irijco.eq.1) then
+      call field_get_val_v(ivarfl(irij), cvar_rij)
 
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
+      call perrte2(cvar_rij)
+    else
+      call field_get_val_s(ivarfl(ir11), cvar_r11)
+      call field_get_val_s(ivarfl(ir22), cvar_r22)
+      call field_get_val_s(ivarfl(ir33), cvar_r33)
+      call field_get_val_s(ivarfl(ir12), cvar_r12)
+      call field_get_val_s(ivarfl(ir13), cvar_r13)
+      call field_get_val_s(ivarfl(ir23), cvar_r23)
 
-    call perrte &
-  ( cvar_r11, cvar_r12, cvar_r13,           &
-    cvar_r12, cvar_r22, cvar_r23,           &
-    cvar_r13, cvar_r23, cvar_r33 )
+      call perrte &
+      !==========
+    ( cvar_r11, cvar_r12, cvar_r13,           &
+      cvar_r12, cvar_r22, cvar_r23,           &
+      cvar_r13, cvar_r23, cvar_r33 )
+    endif
   endif
 
   !  -- Note for v2f:

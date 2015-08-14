@@ -145,6 +145,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep, cvar_al
 double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_st_prv
 
 character(len=80) :: label
@@ -177,23 +178,25 @@ call field_get_val_s(iprpfl(ivisct), visct)
 call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.eq.32) call field_get_val_s(ivarfl(ial), cvar_al)
-
-call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+if(irijco.eq.1) then
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
+else
+  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
+  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
+  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
+  call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
+  call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+endif
+call field_get_coefa_s(ivarfl(ivar), coefap)
+call field_get_coefb_s(ivarfl(ivar), coefbp)
+call field_get_coefaf_s(ivarfl(ivar), cofafp)
+call field_get_coefaf_s(ivarfl(ivar), cofbfp)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
-
-call field_get_coefa_s(ivarfl(ivar), coefap)
-call field_get_coefb_s(ivarfl(ivar), coefbp)
-call field_get_coefaf_s(ivarfl(ivar), cofafp)
-call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 ! Constant Ce2, which worths Ce2 for iturb=30 and CSSGE2 for itrub=31
 if (iturb.eq.30) then
@@ -273,11 +276,17 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
                      + tslagr(iel,itsr22)                        &
                      + tslagr(iel,itsr33) )
     ! quotient k/eps
-    kseps = 0.5d0 * ( cvara_r11(iel)                           &
-                    + cvara_r22(iel)                           &
-                    + cvara_r33(iel) )                         &
-                    / cvara_ep(iel)
-
+    if (irijco.eq.1) then
+      kseps = 0.5d0 * ( cvara_rij(1,iel)                           &
+                      + cvara_rij(2,iel)                           &
+                      + cvara_rij(3,iel) )                         &
+                      / cvara_ep(iel)
+    else
+      kseps = 0.5d0 * ( cvara_r11(iel)                           &
+                      + cvara_r22(iel)                           &
+                      + cvara_r33(iel) )                         &
+                      / cvara_ep(iel)
+    endif
     smbr(iel)   = smbr(iel) + ce4 *tseps *cvara_ep(iel) /kseps
     rovsdt(iel) = rovsdt(iel) + max( (-ce4*tseps/kseps) , zero)
   enddo
@@ -341,17 +350,31 @@ if (iturb.eq.30) then
     w9(iel) = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
   enddo
 else
-  do iel = 1, ncel
-    w9(iel) = -( cvara_r11(iel)*gradv(1, 1, iel) +               &
-                 cvara_r12(iel)*gradv(2, 1, iel) +               &
-                 cvara_r13(iel)*gradv(3, 1, iel) +               &
-                 cvara_r12(iel)*gradv(1, 2, iel) +               &
-                 cvara_r22(iel)*gradv(2, 2, iel) +               &
-                 cvara_r23(iel)*gradv(3, 2, iel) +               &
-                 cvara_r13(iel)*gradv(1, 3, iel) +               &
-                 cvara_r23(iel)*gradv(2, 3, iel) +               &
-                 cvara_r33(iel)*gradv(3, 3, iel) )
-  enddo
+  if (irijco.eq.1) then
+    do iel = 1, ncel
+      w9(iel) = -( cvara_rij(1,iel)*gradv(1, 1, iel) +               &
+                   cvara_rij(4,iel)*gradv(2, 1, iel) +               &
+                   cvara_rij(6,iel)*gradv(3, 1, iel) +               &
+                   cvara_rij(4,iel)*gradv(1, 2, iel) +               &
+                   cvara_rij(2,iel)*gradv(2, 2, iel) +               &
+                   cvara_rij(5,iel)*gradv(3, 2, iel) +               &
+                   cvara_rij(6,iel)*gradv(1, 3, iel) +               &
+                   cvara_rij(5,iel)*gradv(2, 3, iel) +               &
+                   cvara_rij(3,iel)*gradv(3, 3, iel) )
+    enddo
+  else
+    do iel = 1, ncel
+      w9(iel) = -( cvara_r11(iel)*gradv(1, 1, iel) +               &
+                   cvara_r12(iel)*gradv(2, 1, iel) +               &
+                   cvara_r13(iel)*gradv(3, 1, iel) +               &
+                   cvara_r12(iel)*gradv(1, 2, iel) +               &
+                   cvara_r22(iel)*gradv(2, 2, iel) +               &
+                   cvara_r23(iel)*gradv(3, 2, iel) +               &
+                   cvara_r13(iel)*gradv(1, 3, iel) +               &
+                   cvara_r23(iel)*gradv(2, 3, iel) +               &
+                   cvara_r33(iel)*gradv(3, 3, iel) )
+    enddo
+  endif
 endif
 
 
@@ -361,7 +384,11 @@ if (iturb.eq.32) then
   do iel = 1, ncel
     ! Half-traces
     trprod = w9(iel)
-    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    if(irijco.eq.1) then
+      trrij  = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
+    else
+      trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    endif
     ! Calculation of the Durbin time scale
     xttke  = trrij/cvara_ep(iel)
     xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvara_ep(iel))
@@ -390,7 +417,11 @@ else
   do iel = 1, ncel
     ! Half-traces
     trprod = w9(iel)
-    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    if(irijco.eq.1) then
+      trrij  = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
+    else
+      trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    endif
     xttke  = trrij/cvara_ep(iel)
     ! Production (explicit)
     w1(iel) = cromo(iel)*volume(iel)*ce1/xttke*trprod
@@ -428,7 +459,12 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe(nscal, ivar, gradro, w7)
+  if(irijco.eq.1) then
+    call rijtheps(nscal, ivar, gradro, w7)
+  else
+    call rijthe(nscal, ivar, gradro, w7)
+  endif
+  !==========
 
   ! Extrapolation of source terms (2nd order in time)
   if (st_prv_id.ge.0) then

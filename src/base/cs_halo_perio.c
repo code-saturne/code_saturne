@@ -98,9 +98,14 @@ typedef struct {
 
 /* Table giving the Reynolds stress component for [i][j] */
 
+/* Warning: old fashion to store Rij */
 static const int _rij[3][3] = {{0, 3, 4},
                                {3, 1, 5},
                                {4, 5, 2}};
+
+static const int _symt[3][3] = {{0, 3, 5},
+                                {3, 1, 4},
+                                {5, 4, 2}};
 
 /*============================================================================
  * Private function definitions
@@ -377,6 +382,8 @@ _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
  * (18 components)
  * TENSOR_ijk = M_ip M_jq M_kr TENSOR_pqr
  *
+ * WARNING: old fashion to store Rij (11, 22, 33, 12, 13, 23)
+ *
  * parameters:
  *   matrix[3][4]        --> transformation matrix in homogeneous coords.
  *                           last line = [0; 0; 0; 1] (Not used here)
@@ -385,8 +392,8 @@ _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
  *----------------------------------------------------------------------------*/
 
 static void
-_apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
-                           cs_real_t   *tensor)
+_apply_tensor3sym_rotation_old(cs_real_t   matrix[3][4],
+                               cs_real_t   *tensor)
 {
   cs_lnum_t  i, j, k, p, q, r;
 
@@ -420,6 +427,59 @@ _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
     for (j = 0; j < 3; j++)
       for (k = 0; k < 3; k++)
         tensor[3*_rij[i][j] + k] = t2[i][j][k];
+
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the rotation of a third-order symmetric interleaved tensor
+ * (18 components)
+ * TENSOR_ijk = M_ip M_jq M_kr TENSOR_pqr
+ *
+ * Warning: Rij stored as (11, 22, 33, 12, 23, 13)
+ *
+ * parameters:
+ *   matrix[3][4]        --> transformation matrix in homogeneous coords.
+ *                           last line = [0; 0; 0; 1] (Not used here)
+ *   tensor              <-> incoming 3x3x3 tensor
+ *                           (in fact 3x6 due to symmetry)
+ *----------------------------------------------------------------------------*/
+
+static void
+_apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
+                           cs_real_t   *tensor)
+{
+  cs_lnum_t  i, j, k, p, q, r;
+
+  cs_real_t  t1[3][3][3], t2[3][3][3];
+
+  for (p = 0; p < 3; p++) {
+    for (q = 0; q < 3; q++) {
+      for (k = 0; k < 3; k++) {
+        t1[p][q][k] = 0.;
+        for (r = 0; r < 3; r++)
+          t1[p][q][k] += matrix[k][r] * tensor[3*_symt[p][q] + r];
+      }
+    }
+  }
+
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
+      for (k = 0; k < 3; k++) {
+        t2[i][j][k] = 0.;
+        for (p = 0; p < 3; p++) {
+          for (q = 0; q < 3; q++)
+            t2[i][j][k] += matrix[i][p] * matrix[j][q] * t1[p][q][k];
+        }
+      }
+    }
+  }
+
+  /* Output */
+
+  for (i = 0; i < 3; i++)
+    for (j = 0; j < 3; j++)
+      for (k = 0; k < 3; k++)
+        tensor[3*_symt[i][j] + k] = t2[i][j][k];
 
 }
 
@@ -492,7 +552,42 @@ CS_PROCF (perrte, PERRTE) (cs_real_t  var11[],
                                  var21, var22, var23,
                                  var31, var32, var33);
 }
+/*============================================================================
+ * Public function definitions for Fortran API
+ *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Rotate tensor values for periodic cells on extended halos.
+ *
+ * Fortran API:
+ *
+ * subroutine perrte
+ * *****************
+ *
+ * double precision var11(ncelet) : <-> : component 11 of rank 2 tensor
+ * double precision var12(ncelet) : <-> : component 12 of rank 2 tensor
+ * double precision var13(ncelet) : <-> : component 13 of rank 2 tensor
+ * double precision var21(ncelet) : <-> : component 21 of rank 2 tensor
+ * double precision var22(ncelet) : <-> : component 22 of rank 2 tensor
+ * double precision var23(ncelet) : <-> : component 23 of rank 2 tensor
+ * double precision var31(ncelet) : <-> : component 31 of rank 2 tensor
+ * double precision var32(ncelet) : <-> : component 32 of rank 2 tensor
+ * double precision var33(ncelet) : <-> : component 33 of rank 2 tensor
+ *----------------------------------------------------------------------------*/
+
+void
+CS_PROCF (perrte2, PERRTE2) (cs_real_t  var[])
+
+{
+  const cs_halo_t *halo = cs_glob_mesh->halo;
+
+  if (halo == NULL)
+    return;
+
+  cs_halo_perio_sync_var_sym_tens(halo,
+                                 CS_HALO_EXTENDED,
+                                 var);
+}
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -594,6 +689,7 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
     return;
 
   assert(halo != NULL);
+        assert(incvar == 3);
 
   _test_halo_compatibility(halo);
 
@@ -1131,7 +1227,7 @@ cs_halo_perio_rotate_rij(cs_real_t  *drdxyz)
         end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
 
         for (i = start_std; i < end_std; i++)
-          _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
+          _apply_tensor3sym_rotation_old(matrix, drdxyz + 18*i);
 
         if (halo_type == CS_HALO_EXTENDED) {
 
@@ -1139,7 +1235,7 @@ cs_halo_perio_rotate_rij(cs_real_t  *drdxyz)
           end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
 
           for (i = start_ext; i < end_ext; i++)
-            _apply_tensor3sym_rotation(matrix, drdxyz + 18*i);
+            _apply_tensor3sym_rotation_old(matrix, drdxyz + 18*i);
 
         } /* End if an extended halo exists */
 
@@ -1149,6 +1245,76 @@ cs_halo_perio_rotate_rij(cs_real_t  *drdxyz)
 
   } /* End of loop on transformations */
 }
+
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real gradient of a tensor (symmetric interleaved)
+ * between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   var       <-> symmetric tensor to update (6 values)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
+                                                                                     cs_halo_type_t    sync_mode,
+                                     cs_real_t         var[])
+{
+  int  rank_id, t_id;
+  cs_lnum_t  i, shift, start_std, end_std, start_ext, end_ext;
+
+  cs_real_t  matrix[3][4];
+
+  fvm_periodicity_type_t  perio_type = FVM_PERIODICITY_NULL;
+
+  const int  n_transforms = halo->n_transforms;
+  const cs_lnum_t  n_elts   = halo->n_local_elts;
+  const fvm_periodicity_t *periodicity = cs_glob_mesh->periodicity;
+  const int  have_rotation = cs_glob_mesh->have_rotation_perio;
+
+  if (sync_mode == CS_HALO_N_TYPES || have_rotation == 0)
+    return;
+
+  assert(halo != NULL);
+
+  _test_halo_compatibility(halo);
+
+  for (t_id = 0; t_id < n_transforms; t_id++) {
+
+    shift = 4 * halo->n_c_domains * t_id;
+
+    perio_type = fvm_periodicity_get_type(periodicity, t_id);
+
+    if (perio_type >= FVM_PERIODICITY_ROTATION) {
+
+      fvm_periodicity_get_matrix(periodicity, t_id, matrix);
+
+      for (rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+        start_std =n_elts +  halo->perio_lst[shift + 4*rank_id];
+        end_std = start_std + halo->perio_lst[shift + 4*rank_id + 1];
+
+        for (i = start_std; i < end_std; i++)
+          _apply_tensor3sym_rotation(matrix, var + 18*i);
+
+        if (sync_mode == CS_HALO_EXTENDED) {
+
+          start_ext = n_elts + halo->perio_lst[shift + 4*rank_id + 2];
+          end_ext = start_ext + halo->perio_lst[shift + 4*rank_id + 3];
+
+          for (i = start_ext; i < end_ext; i++)
+            _apply_tensor3sym_rotation(matrix, var + 18*i);
+
+        } /* End of the treatment of rotation */
+
+      } /* End if halo is extended */
+
+    } /* End of loop on ranks */
+
+  } /* End of loop on transformations for the local rank */
+}
+
 
 /*----------------------------------------------------------------------------*/
 

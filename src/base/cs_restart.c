@@ -2023,7 +2023,9 @@ cs_restart_write_section(cs_restart_t           *restart,
                                        _n_location_vals,
                                        val_type,
                                        val);
-
+//    if (sec_name[14] == "rij::bc_coeffs"){
+//       bft_printf("coucou");
+//    }
     cs_io_write_global(sec_name,
                        n_tot_vals,
                        location_id,
@@ -2868,7 +2870,279 @@ cs_restart_read_real_3_t_compat(cs_restart_t  *restart,
 
   return retval;
 }
+/*----------------------------------------------------------------------------
+ * Read a cs_real_6_t vector section from a restart file, when that
+ * section may have used a different name and been non-interleaved
+ * in a previous version.
+ *
+ * This file assumes a mesh-base location (i.e. location_id > 0)
+ *
+ * parameters:
+ *   restart     <-- associated restart file pointer
+ *   sec_name    <-- section name
+ *   old_name_x  <-- old name, x component
+ *   old_name_y  <-- old name, y component
+ *   old_name_y  <-- old name, z component
+ *   location_id <-- id of corresponding location (> 0)
+ *   val         --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
 
+int
+cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
+                                const char    *sec_name,
+                                const char    *old_name_xx,
+                                const char    *old_name_yy,
+                                const char    *old_name_zz,
+                                const char    *old_name_xy,
+                                const char    *old_name_yz,
+                                const char    *old_name_xz,
+                                int            location_id,
+                                cs_real_6_t   *val)
+{
+  int retval = CS_RESTART_SUCCESS;
+
+  assert(location_id > 0);
+
+  /* Check for section with current name */
+
+  retval = cs_restart_check_section(restart,
+                                    sec_name,
+                                    location_id,
+                                    6,
+                                    CS_TYPE_cs_real_t);
+
+  /* Check for older name series, read and return if present */
+
+  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS) {
+
+    retval = cs_restart_check_section(restart,
+                                      old_name_xx,
+                                      location_id,
+                                      1,
+                                      CS_TYPE_cs_real_t);
+
+    if (retval == CS_RESTART_SUCCESS) {
+
+      cs_real_t *buffer = NULL;
+      cs_lnum_t i;
+      cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
+
+      BFT_MALLOC(buffer, n_ents*6, cs_real_t);
+
+      retval = cs_restart_read_section(restart,
+                                       old_name_xx,
+                                       location_id,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       buffer);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_yy,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_zz,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*2);
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_xy,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*3);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_yz,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*4);
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_xz,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*5);
+
+      if (retval == CS_RESTART_SUCCESS) {
+        for (i = 0; i < n_ents; i++) {
+          val[i][0] = buffer[i];
+          val[i][1] = buffer[i + n_ents];
+          val[i][2] = buffer[i + n_ents*2];
+          val[i][3] = buffer[i + n_ents*3];
+          val[i][4] = buffer[i + n_ents*4];
+          val[i][5] = buffer[i + n_ents*5];
+        }
+      }
+
+      BFT_FREE(buffer);
+
+      return retval;
+
+    }
+  }
+
+  /* Read with current name (if the section is not found,
+     logging will refer to the current name) */
+
+  retval = cs_restart_read_section(restart,
+                                   sec_name,
+                                   location_id,
+                                   3,
+                                   CS_TYPE_cs_real_t,
+                                   val);
+
+  return retval;
+}
+/*----------------------------------------------------------------------------
+ * Read a cs_real_66_t vector section from a restart file, when that
+ * section may have used a different name and been non-interleaved
+ * in a previous version.
+ *
+ * This file assumes a mesh-base location (i.e. location_id > 0)
+ *
+ * parameters:
+ *   restart     <-- associated restart file pointer
+ *   sec_name    <-- section name
+ *   old_name_x  <-- old name, x component
+ *   old_name_y  <-- old name, y component
+ *   old_name_y  <-- old name, z component
+ *   location_id <-- id of corresponding location (> 0)
+ *   val         --> array of values
+ *
+ * returns: 0 (CS_RESTART_SUCCESS) in case of success,
+ *          or error code (CS_RESTART_ERR_xxx) in case of error
+ *----------------------------------------------------------------------------*/
+
+int
+cs_restart_read_real_66_t_compat(cs_restart_t  *restart,
+                                const char    *sec_name,
+                                const char    *old_name_xx,
+                                const char    *old_name_yy,
+                                const char    *old_name_zz,
+                                const char    *old_name_xy,
+                                const char    *old_name_yz,
+                                const char    *old_name_xz,
+                                int            location_id,
+                                cs_real_66_t   *val)
+{
+  int retval = CS_RESTART_SUCCESS;
+
+  assert(location_id > 0);
+
+  /* Check for section with current name */
+
+  retval = cs_restart_check_section(restart,
+                                    sec_name,
+                                    location_id,
+                                    6,
+                                    CS_TYPE_cs_real_t);
+
+  /* Check for older name series, read and return if present */
+
+  if (retval == CS_RESTART_ERR_N_VALS || retval == CS_RESTART_ERR_EXISTS) {
+
+    retval = cs_restart_check_section(restart,
+                                      old_name_xx,
+                                      location_id,
+                                      1,
+                                      CS_TYPE_cs_real_t);
+
+    if (retval == CS_RESTART_SUCCESS) {
+
+      cs_real_t *buffer = NULL;
+      cs_lnum_t i;
+      cs_lnum_t n_ents = (restart->location[location_id-1]).n_ents;
+
+      BFT_MALLOC(buffer, n_ents*6, cs_real_t);
+
+      retval = cs_restart_read_section(restart,
+                                       old_name_xx,
+                                       location_id,
+                                       1,
+                                       CS_TYPE_cs_real_t,
+                                       buffer);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_yy,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_zz,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*2);
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_xy,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*3);
+
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_yz,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*4);
+      if (retval == CS_RESTART_SUCCESS)
+        retval = cs_restart_read_section(restart,
+                                         old_name_xz,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t,
+                                         buffer + n_ents*5);
+
+      if (retval == CS_RESTART_SUCCESS) {
+        for (i = 0; i < n_ents; i++) {
+          val[i][0][0] = buffer[i];
+          val[i][1][1] = buffer[i + n_ents*7];
+          val[i][2][2] = buffer[i + n_ents*14];
+          val[i][3][3] = buffer[i + n_ents*21];
+          val[i][4][4] = buffer[i + n_ents*28];
+          val[i][5][5] = buffer[i + n_ents*35];
+        }
+      }
+
+      BFT_FREE(buffer);
+
+      return retval;
+
+    }
+  }
+
+  /* Read with current name (if the section is not found,
+     logging will refer to the current name) */
+  retval = cs_restart_read_section(restart,
+                                   sec_name,
+                                   location_id,
+                                   3,
+                                   CS_TYPE_cs_real_t,
+                                   val);
+
+  return retval;
+}
 /*----------------------------------------------------------------------------
  * Print statistics associated with restart files
  *----------------------------------------------------------------------------*/

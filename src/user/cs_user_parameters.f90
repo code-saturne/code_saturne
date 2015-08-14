@@ -1460,6 +1460,14 @@ if (.false.) then
   iortvm = 0
 endif
 
+
+!coupled rij
+if (.false.) then
+  irijco = 0
+endif
+
+
+
 !----
 ! Formats
 !----

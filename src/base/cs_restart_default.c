@@ -367,6 +367,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
 {
   char sec_name[128] = "";
   char old_name_x[128] = "", old_name_y[128] = "", old_name_z[128] = "";
+  char old_name_xx[128] = "", old_name_yy[128] = "", old_name_zz[128] = "";
+  char old_name_xy[128] = "", old_name_yz[128] = "", old_name_xz[128] = "";
 
   int retcode = CS_RESTART_SUCCESS;
 
@@ -416,6 +418,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
       strncpy(old_name, "R12", 127);
     else if (f == CS_F_(r23))
       strncpy(old_name, "R23", 127);
+    else if (f == CS_F_(rij))
+      strncpy(old_name, "Rij", 127);
     else if (f == CS_F_(eps))
       strncpy(old_name, "eps", 127);
     else if (f == CS_F_(alpha))
@@ -552,7 +556,36 @@ _read_field_vals_legacy(cs_restart_t  *r,
                                                 f->location_id,
                                                 (cs_real_3_t *)(f->vals[t_id]));
   }
+  else if (f->dim == 6 && retcode == CS_RESTART_ERR_EXISTS) {
 
+    if (strcmp(old_name, "Rij") == 0) {
+      snprintf(old_name_xx, 127, "r11::vals::0");
+      snprintf(old_name_yy, 127, "r22::vals::0");
+      snprintf(old_name_zz, 127, "r33::vals::0");
+      snprintf(old_name_xy, 127, "r12::vals::0");
+      snprintf(old_name_yz, 127, "r23::vals::0");
+      snprintf(old_name_xz, 127, "r13::vals::0");
+
+
+      retcode = cs_restart_check_section(r,
+                                         old_name_xx,
+                                         f->location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t);
+
+      if (retcode == CS_RESTART_SUCCESS)
+        retcode = cs_restart_read_real_6_t_compat(r,
+                                                  "rij::vals::0",
+                                                  old_name_xx,
+                                                  old_name_yy,
+                                                  old_name_zz,
+                                                  old_name_xy,
+                                                  old_name_yz,
+                                                  old_name_xz,
+                                                  f->location_id,
+                                                  (cs_real_6_t *)(f->vals[t_id]));
+    }
+  }
   return retcode;
 }
 
@@ -2120,7 +2153,8 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
   int errcount = 0;
   const int coupled_key_id = cs_field_key_id_try("coupled");
   const int n_fields = cs_field_n_fields();
-
+  char old_name_xx[128] = "", old_name_yy[128] = "", old_name_zz[128] = "";
+  char old_name_xy[128] = "", old_name_yz[128] = "", old_name_xz[128] = "";
   const int kr = cs_field_key_id_try("restart_name");
 
   /* Loop on all fields, to search for those defined on all cells
@@ -2166,7 +2200,6 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
         coupled = cs_field_get_key_int(f, coupled_key_id);
 
       for (c_id = 0; c_id < 8; c_id++) {
-
         int retval;
         char *sec_name = NULL;
         cs_real_t *c = p[c_id];
@@ -2198,13 +2231,53 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                    char);
         sprintf(sec_name, "%s::%s", name, _coeff_name[c_id]);
 
-        retval = cs_restart_read_section(r,
-                                         sec_name,
-                                         3, /* location_id */
-                                         n_loc_vals,
-                                         CS_TYPE_cs_real_t,
-                                         c);
+        retval = cs_restart_check_section(r,
+                                          sec_name,
+                                          f->location_id,
+                                          f->dim,
+                                          CS_TYPE_cs_real_t);
 
+        if ( f->dim == 6 && retval == CS_RESTART_ERR_EXISTS){
+          sprintf(sec_name, "rij::%s", _coeff_name[c_id]);
+            snprintf(old_name_xx, 127, "r11::%s", _coeff_name[c_id]);
+            snprintf(old_name_yy, 127, "r22::%s", _coeff_name[c_id]);
+            snprintf(old_name_zz, 127, "r33::%s", _coeff_name[c_id]);
+            snprintf(old_name_xy, 127, "r12::%s", _coeff_name[c_id]);
+            snprintf(old_name_yz, 127, "r23::%s", _coeff_name[c_id]);
+            snprintf(old_name_xz, 127, "r13::%s", _coeff_name[c_id]);
+          if (c_id %2 == 0) {
+            retval =  cs_restart_read_real_6_t_compat(r,
+                                                      sec_name,
+                                                      old_name_xx,
+                                                      old_name_yy,
+                                                      old_name_zz,
+                                                      old_name_xy,
+                                                      old_name_yz,
+                                                      old_name_xz,
+                                                      f->location_id,
+                                                      (cs_real_6_t *)(f->vals));
+          }
+          else {
+             retval =  cs_restart_read_real_66_t_compat(r,
+                                                        sec_name,
+                                                        old_name_xx,
+                                                        old_name_yy,
+                                                        old_name_zz,
+                                                        old_name_xy,
+                                                        old_name_yz,
+                                                        old_name_xz,
+                                                        f->location_id,
+                                                        (cs_real_66_t *)(f->vals));
+          }
+        }
+        else {
+          retval = cs_restart_read_section(r,
+                                           sec_name,
+                                           3, /* location_id */
+                                           n_loc_vals,
+                                           CS_TYPE_cs_real_t,
+                                           c);
+        }
         if (retval != CS_RESTART_SUCCESS)
           errcount += 1;
 
@@ -2264,6 +2337,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
 
     const cs_field_t  *f = cs_field_by_id(f_id);
 
+ bft_printf("coucou %s \n",f->name);
     if (   f->location_id == CS_MESH_LOCATION_CELLS
         && f->bc_coeffs != NULL) {
 
@@ -2273,7 +2347,6 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
       int n_loc_vals = 1;
 
       int32_t coeff_p[] = {0, 0, 0, 0, 0, 0, 0, 0};
-
       cs_real_t *p[] = {f->bc_coeffs->a,
                         f->bc_coeffs->b,
                         f->bc_coeffs->af,

@@ -112,6 +112,9 @@ typedef struct {
                                  k-epsilon (only for iturb=20)
                                  - 1: true (default)
                                  - 0: false */
+  int           irijco;       /* coupled solving of Rij
+                                 - 1: true
+                                 - 0: false (default) */
   int           irijnu;       /* pseudo eddy viscosity in the matrix of momentum
                                  equation to partially implicit div( rho R )
                                  - 1: true

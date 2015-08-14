@@ -681,6 +681,63 @@ _fact_lu33(cs_lnum_t         n_blocks,
 
   }
 }
+/*----------------------------------------------------------------------------
+* Compute inverses of dense P*P matrices.
+*
+* parameters:
+*   n_blocks <-- number of blocks
+*   ad       <-- diagonal part of linear equation matrix
+*   ad_inv   --> inverse of the diagonal part of linear equation matrix
+*----------------------------------------------------------------------------*/
+
+static void
+_fact_lu_pp(cs_lnum_t         n_blocks,
+            const int   db_size,
+            const cs_real_t  *ad,
+            cs_real_t        *ad_inv)
+{
+  int ii, jj, kk;
+# pragma omp parallel for if(n_blocks > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_blocks; i++) {
+
+    cs_real_t *restrict _ad_inv = &ad_inv[db_size*db_size*i];
+    const cs_real_t *restrict  _ad = &ad[db_size*db_size*i];
+
+    _ad_inv[0] = _ad[0] ;
+    //ad_inv(1,j) = ad(1,j)
+    //ad_inv(j,1) = ad(j,1)/a(1,1)
+    for (ii = 1; ii < db_size ; ii++) {
+      _ad_inv[ii] = _ad[ii] ;
+      _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
+    }
+    //ad_inv(i,i) = ad(i,i) - Somme( ad_inv(i,k)*ad_inv(k,i)) k=1 à i-1
+    for (ii = 1; ii < db_size - 1 ; ii++) {
+      _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
+      for (kk = 0 ; kk < ii ; kk++) {
+        _ad_inv[ii + ii*db_size] -= _ad_inv[ii*db_size + kk]
+                                   *_ad_inv[kk*db_size + ii] ;
+      }
+
+      for (jj = ii + 1; jj < db_size; jj++) {
+        _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj] ;
+        _ad_inv[jj*db_size + ii] = _ad[jj*db_size + ii]/_ad_inv[ii*db_size + ii] ;
+        for (kk = 0; kk < ii; kk++) {
+          _ad_inv[ii*db_size + jj] -= _ad_inv[ii*db_size + kk]
+                                     *_ad_inv[kk*db_size + jj] ;
+          _ad_inv[jj*db_size + ii] -= _ad_inv[jj*db_size + kk]
+                                     *_ad_inv[kk*db_size + ii]
+                                     /_ad_inv[ii*db_size + ii] ;
+        }
+      }
+    }
+    _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1] ;
+    for (kk = 0 ; kk < db_size - 1 ; kk++) {
+      _ad_inv[db_size*db_size - 1] -= _ad_inv[(db_size-1) + kk]
+                                     *_ad_inv[kk*db_size + db_size -1]  ;
+    }
+  }
+}
+
 
 /*----------------------------------------------------------------------------
  * Setup context for iterative linear solver.
@@ -760,7 +817,7 @@ _setup_sles_it(cs_sles_it_t       *c,
     }
     else {
 
-      if (diag_block_size != 3 || block_33_inverse == false) {
+      if (diag_block_size < 3 || block_33_inverse == false) {
 
         const cs_lnum_t n_rows = sd->n_rows;
 
@@ -775,7 +832,7 @@ _setup_sles_it(cs_sles_it_t       *c,
 
       }
 
-      else {
+      else if (diag_block_size == 3) {
 
         BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
         sd->ad_inv = sd->_ad_inv;
@@ -785,6 +842,16 @@ _setup_sles_it(cs_sles_it_t       *c,
 
         _fact_lu33(n_blocks, ad, sd->_ad_inv);
 
+      }
+      else {
+
+        BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
+        sd->ad_inv = sd->_ad_inv;
+
+        const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+        const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
+
+        _fact_lu_pp(n_blocks, diag_block_size, ad, sd->_ad_inv);
       }
 
     }
@@ -1925,6 +1992,47 @@ _fw_and_bw_lu33(const cs_real_t  mat[],
 }
 
 /*----------------------------------------------------------------------------
+ * Block Jacobi utilities.
+ * Compute forward and backward to solve an LU P*P system.
+ *
+ * parameters:
+ *   mat   <-- P*P*dim matrix
+ *   db_size <-- matrix size
+ *   x     --> solution
+ *   b     --> 1st part of RHS (c - b)
+ *   c     --> 2nd part of RHS (c - b)
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_fw_and_bw_lu_pp(const cs_real_t  mat[],
+                 const int   db_size,
+                 cs_real_t        x[],
+                 const cs_real_t  b[],
+                 const cs_real_t  c[])
+{
+  cs_real_t  aux[db_size];
+  int ii, jj;
+
+  //forward
+  for (ii = 0; ii < db_size; ii++) {
+    aux[ii] = (c[ii] - b[ii]) ;
+    for (jj = 0; jj < ii; jj++) {
+      aux[ii] -= aux[jj]*mat[ii*db_size + jj];
+    }
+  }
+  //backward
+  for (ii = db_size - 1; ii >= 0; ii-=1) {
+    x[ii] = aux[ii] ;
+    for (jj = db_size - 1; jj > ii; jj-=1) {
+      x[ii] -= x[jj]*mat[ii*db_size + jj];
+    }
+    x[ii] /= mat[ii*(db_size + 1)];
+  }
+}
+
+
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using block Jacobi.
  *
  * On entry, vx is considered initialized.
@@ -1932,6 +2040,7 @@ _fw_and_bw_lu33(const cs_real_t  mat[],
  * parameters:
  *   c             <-- pointer to solver context info
  *   a             <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
  *   rotation_mode <-- halo update option for rotational periodicity
  *   convergence   <-- convergence information structure
  *   rhs           <-- right hand side
@@ -2045,6 +2154,131 @@ _block_3_jacobi(cs_sles_it_t              *c,
     BFT_FREE(_aux_vectors);
   return cvg;
 }
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using block Jacobi.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c             <-- pointer to solver context info
+ *   a             <-- linear equation matrix
+ *   rotation_mode <-- halo update option for rotational periodicity
+ *   convergence   <-- convergence information structure
+ *   rhs           <-- right hand side
+ *   vx            --> system solution
+ *   aux_size      <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors   --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_block_P_jacobi(cs_sles_it_t              *c,
+                const cs_matrix_t         *a,
+                int                        diag_block_size,
+                cs_halo_rotation_t         rotation_mode,
+                cs_sles_it_convergence_t  *convergence,
+                const cs_real_t           *rhs,
+                cs_real_t                 *restrict vx,
+                size_t                     aux_size,
+                void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg;
+  double  res2, residue;
+  cs_real_t *_aux_vectors;
+  cs_real_t  *restrict rk, *restrict vxx;
+
+  unsigned n_iter = 0;
+
+  /* Call setup if not already done, allocate or map work arrays */
+  /*-------------------------------------------------------------*/
+  assert(c->setup_data != NULL);
+
+  const int *db_size = cs_matrix_get_diag_block_size(a);
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+  const cs_lnum_t n_blocks = c->setup_data->n_rows / diag_block_size;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 2;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      BFT_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+    else
+      _aux_vectors = aux_vectors;
+
+    rk  = _aux_vectors;
+    vxx = _aux_vectors + wa_size;
+  }
+
+  const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+
+  cvg = CS_SLES_ITERATING;
+
+  /* Current iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    n_iter += 1;
+    memcpy(rk, vx, n_rows * sizeof(cs_real_t));  /* rk <- vx */
+
+    /* Compute Vx <- Vx - (A-diag).Rk and residue. */
+
+    cs_matrix_exdiag_vector_multiply(rotation_mode, a, rk, vxx);
+
+    res2 = 0.0;
+
+#   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
+      _fw_and_bw_lu_pp(ad_inv + db_size[3]*ii,
+                      db_size[0],
+                      vx + db_size[1]*ii,
+                      vxx + db_size[1]*ii,
+                      rhs + db_size[1]*ii);
+      for (cs_lnum_t jj = 0; jj < db_size[0]; jj++) {
+        register double r = 0.0;
+        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
+          r +=    ad[ii*db_size[3] + jj*db_size[2] + kk]
+               * (vx[ii*db_size[1] + kk] - rk[ii*db_size[1] + kk]);
+        res2 += (r*r);
+      }
+    }
+
+#if defined(HAVE_MPI)
+
+    if (cs_glob_n_ranks > 1) {
+      double _sum;
+      MPI_Allreduce(&res2, &_sum, 1, MPI_DOUBLE, MPI_SUM,
+                    cs_glob_mpi_comm);
+      res2 = _sum;
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+    residue = sqrt(res2); /* Actually, residue of previous iteration */
+
+    if (n_iter == 1)
+      c->setup_data->initial_residue = residue;
+
+    /* Convergence test */
+
+    cvg = _convergence_test(c, n_iter, residue, convergence);
+
+  }
+
+  if (_aux_vectors != aux_vectors)
+    BFT_FREE(_aux_vectors);
+
+  return cvg;
+}
+
 
 /*----------------------------------------------------------------------------
  * Test for (and eventually report) breakdown.
@@ -4135,6 +4369,16 @@ cs_sles_it_solve(void                *context,
       else if (_diag_block_size == 3)
         cvg = _block_3_jacobi(c,
                               a,
+                              rotation_mode,
+                              &convergence,
+                              rhs,
+                              vx,
+                              aux_size,
+                              aux_vectors);
+      else
+        cvg = _block_P_jacobi(c,
+                              a,
+                              _diag_block_size,
                               rotation_mode,
                               &convergence,
                               rhs,

@@ -130,6 +130,12 @@ cs_f_field_gradient_vector(int                     f_id,
                            int                     inc,
                            cs_real_33_t  *restrict grad);
 
+void cs_f_field_gradient_tensor(int                     f_id,
+                                int                     use_previous_t,
+                                int                     imrgra,
+                                int                     inc,
+                                cs_real_63_t  *restrict grad);
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -403,6 +409,42 @@ cs_f_field_gradient_vector(int                     f_id,
                            grad);
 }
 
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of scalar field or component of vector or
+ * tensor field.
+ *
+ * parameters:
+ *   f_id           <-- field id
+ *   use_previous_t <-- should we use values from the previous time step ?
+ *   imrgra         <-- gradient reconstruction mode
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   recompute_cocg <-- should COCG FV quantities be recomputed ?
+ *   grad           --> gradient
+ *----------------------------------------------------------------------------*/
+
+void cs_f_field_gradient_tensor(int                     f_id,
+                                int                     use_previous_t,
+                                int                     imrgra,
+                                int                     inc,
+                                cs_real_63_t  *restrict grad)
+{
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  bool _use_previous_t = use_previous_t ? true : false;
+
+  const cs_field_t *f = cs_field_by_id(f_id);
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_field_gradient_tensor(f,
+                           _use_previous_t,
+                           gradient_type,
+                           halo_type,
+                           inc,
+                           grad);
+}
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -663,6 +705,70 @@ cs_field_interpolate(cs_field_t              *f,
     break;
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of tensor field.
+ *
+ * \param[in]       f               pointer to field
+ * \param[in]       use_previous_t  should we use values from the previous
+ *                                  time step ?
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[out]      grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void cs_field_gradient_tensor(const cs_field_t          *f,
+                              bool                       use_previous_t,
+                              cs_gradient_type_t         gradient_type,
+                              cs_halo_type_t             halo_type,
+                              int                        inc,
+                              cs_real_63_t     *restrict grad)
+{
+  cs_real_6_t *var;
+
+  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+  cs_var_cal_opt_t var_cal_opt;
+
+  // Get the calculation option from the field
+  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+  if (f->interleaved)
+    var = (use_previous_t) ? (cs_real_6_t *)(f->val_pre)
+                           : (cs_real_6_t *)(f->val);
+  else {
+    const int dim = f->dim;
+    const cs_real_t *s =  (use_previous_t) ? f->val_pre : f->val;
+    const cs_lnum_t *n_loc_elts
+      = cs_mesh_location_get_n_elts(f->location_id);
+    const cs_lnum_t _n_loc_elts = n_loc_elts[2];
+    BFT_MALLOC(var, _n_loc_elts, cs_real_3_t);
+    for (cs_lnum_t i = 0; i < _n_loc_elts; i++) {
+      for (int j = 0; j < dim; j++)
+        var[i][j] = s[j*_n_loc_elts + i];
+    }
+  }
+
+  cs_gradient_tensor(f->name,
+                     gradient_type,
+                     halo_type,
+                     inc,
+                     var_cal_opt.nswrgr,
+                     var_cal_opt.iwarni,
+                     var_cal_opt.imligr,
+                     var_cal_opt.epsrgr,
+                     var_cal_opt.climgr,
+                     (const cs_real_6_t *)(f->bc_coeffs->a),
+                     (const cs_real_66_t *)(f->bc_coeffs->b),
+                     var,
+                     grad);
+
+  if (! f->interleaved)
+    BFT_FREE(var);
+}
+
 
 /*----------------------------------------------------------------------------*/
 

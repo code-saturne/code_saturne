@@ -155,7 +155,32 @@ void
 cs_gradient_perio_init_rij(const cs_field_t  *f,
                            int               *tr_dim,
                            cs_real_3_t        grad[]);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize ghost cell values for Reynolds stress tensor gradient.
+ *
+ * We retrieve the gradient given by perinr (phyvar) for the Reynolds
+ * stress tensor in a buffer on ghost cells. then we define
+ * dpdx, dpdy and dpdz gradient (1 -> n_cells_with_ghosts).
+ *
+ * We can't implicitly take into account rotation of a gradient of a tensor
+ * variable because we have to know all components.
+ *
+ * We set idimtr to 2 for the Reynolds stress tensor.
+ *
+ * We assume that is correct to treat periodicities implicitly for the other
+ * variables when reconstructing gradients.
+ *
+ * \param[in]       f        pointer to field
+ * \param[out]      tr_dim   2 for tensor (Rij) in case of rotation, 0 otherwise
+ * \param[in, out]  grad     gradient of field
+ */
+/*----------------------------------------------------------------------------*/
 
+void
+cs_gradient_perio_init_rij_tensor(const cs_field_t  *f,
+                                  int               *tr_dim,
+                                  cs_real_63_t        grad[]);
 /*----------------------------------------------------------------------------*/
 /*!
  * Process grad buffers in case of rotation on Reynolds stress tensor.

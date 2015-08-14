@@ -307,6 +307,7 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(r12), cs_field_by_name_try("r12"));
   cs_field_pointer_map(CS_ENUMF_(r23), cs_field_by_name_try("r23"));
   cs_field_pointer_map(CS_ENUMF_(r13), cs_field_by_name_try("r13"));
+  cs_field_pointer_map(CS_ENUMF_(rij), cs_field_by_name_try("rij"));
 
   cs_field_pointer_map(CS_ENUMF_(phi), cs_field_by_name_try("phi"));
   cs_field_pointer_map(CS_ENUMF_(f_bar), cs_field_by_name_try("f_bar"));

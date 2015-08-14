@@ -108,6 +108,7 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_omg, cvar_nusa
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_tempk, cvar_var
 double precision, dimension(:), pointer :: cpro_prtot, cpro_venerg, cpro_lambda
 
@@ -379,21 +380,35 @@ if(iusini.eq.1.or.isuite.eq.1) then
   elseif(itytur.eq.3) then
 
     call field_get_val_s(ivarfl(iep), cvar_ep)
+    if (irijco.eq.1) then
+      call field_get_val_v(ivarfl(irij), cvar_rij)
 
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
+      x11min = cvar_rij(1,1)
+      x22min = cvar_rij(2,1)
+      x33min = cvar_rij(3,1)
+      xepmin = cvar_ep(1)
+      do iel = 1, ncel
+        x11min = min(x11min,cvar_rij(1,iel))
+        x22min = min(x22min,cvar_rij(2,iel))
+        x33min = min(x33min,cvar_rij(3,iel))
+        xepmin = min(xepmin,cvar_ep(iel) )
+      enddo
+    else
+      call field_get_val_s(ivarfl(ir11), cvar_r11)
+      call field_get_val_s(ivarfl(ir22), cvar_r22)
+      call field_get_val_s(ivarfl(ir33), cvar_r33)
 
-    x11min = cvar_r11(1)
-    x22min = cvar_r22(1)
-    x33min = cvar_r33(1)
-    xepmin = cvar_ep(1)
-    do iel = 1, ncel
-      x11min = min(x11min,cvar_r11(iel))
-      x22min = min(x22min,cvar_r22(iel))
-      x33min = min(x33min,cvar_r33(iel))
-      xepmin = min(xepmin,cvar_ep(iel) )
-    enddo
+      x11min = cvar_r11(1)
+      x22min = cvar_r22(1)
+      x33min = cvar_r33(1)
+      xepmin = cvar_ep(1)
+      do iel = 1, ncel
+        x11min = min(x11min,cvar_r11(iel))
+        x22min = min(x22min,cvar_r22(iel))
+        x33min = min(x33min,cvar_r33(iel))
+        xepmin = min(xepmin,cvar_ep(iel) )
+      enddo
+    endif
     if (irangp.ge.0) then
       call parmin (x11min)
       !==========
@@ -407,9 +422,11 @@ if(iusini.eq.1.or.isuite.eq.1) then
     if (x11min.ge.0.d0.and.x22min.ge.0.d0.and.                  &
          x33min.ge.0.d0.and.xepmin.ge.0.d0 ) then
       iclip = 1
-      call clprij( ncelet , ncel   , nvar   ,          &
-      !==========
-                   iclip  )
+      if (irijco.eq.0) then
+        call clprij( ncelet , ncel   , nvar   ,          &
+        !==========
+                     iclip  )
+      endif
     else
       write(nfecra,3030) x11min,x22min,x33min,xepmin
       iok = iok + 1

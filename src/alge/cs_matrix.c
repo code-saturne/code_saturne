@@ -135,7 +135,10 @@ const char  *cs_matrix_fill_type_name[] = {"CS_MATRIX_SCALAR",
                                            "CS_MATRIX_SCALAR_SYM",
                                            "CS_MATRIX_33_BLOCK_D",
                                            "CS_MATRIX_33_BLOCK_D_SYM",
-                                           "CS_MATRIX_33_BLOCK"};
+                                           "CS_MATRIX_33_BLOCK",
+                                           "CS_MATRIX_PP_BLOCK_D",
+                                           "CS_MATRIX_PP_BLOCK_D_SYM",
+                                           "CS_MATRIX_PP_BLOCK"};
 
 static char _no_exclude_diag_error_str[]
   = N_("Matrix product variant using function %s\n"
@@ -4221,7 +4224,8 @@ _matrix_check(int                    n_variants,
       = (f_id >= CS_MATRIX_33_BLOCK) ? ed_block_size : NULL;
     const cs_lnum_t _block_mult = (_d_block_size != NULL) ? d_block_size[1] : 1;
     const bool sym_coeffs = (   f_id == CS_MATRIX_SCALAR_SYM
-                             || f_id == CS_MATRIX_33_BLOCK_D_SYM) ? true : false;
+                             || f_id == CS_MATRIX_33_BLOCK_D_SYM
+                             || f_id == CS_MATRIX_PP_BLOCK_D_SYM) ? true : false;
 
     /* Loop on diagonal exclusion options */
 
@@ -4399,6 +4403,13 @@ _variant_add(const char                        *name,
       if (ed_flag != 0)
         v->vector_multiply[mft][1] = b_vector_multiply;
       break;
+    case CS_MATRIX_PP_BLOCK_D:
+    case CS_MATRIX_PP_BLOCK_D_SYM:
+      if (ed_flag != 1)
+        v->vector_multiply[mft][0] = b_vector_multiply;
+      if (ed_flag != 0)
+        v->vector_multiply[mft][1] = b_vector_multiply;
+      break;
 
     case CS_MATRIX_33_BLOCK:
       if (ed_flag != 1)
@@ -4503,6 +4514,11 @@ _set_spmv_func(cs_matrix_type_t             m_type,
         spmv[0] = _bb_mat_vec_p_l_native;
         spmv[1] = _bb_mat_vec_p_l_native;
         break;
+      case CS_MATRIX_PP_BLOCK_D:
+      case CS_MATRIX_PP_BLOCK_D_SYM:
+        spmv[0] = _b_mat_vec_p_l_native;
+        spmv[1] = _b_mat_vec_p_l_native;
+        break;
       default:
         break;
       }
@@ -4528,6 +4544,17 @@ _set_spmv_func(cs_matrix_type_t             m_type,
           break;
         case CS_MATRIX_33_BLOCK_D:
         case CS_MATRIX_33_BLOCK_D_SYM:
+          if (numbering != NULL) {
+#if defined(HAVE_OPENMP)
+            if (numbering->type == CS_NUMBERING_THREADS) {
+              spmv[0] = _b_mat_vec_p_l_native_omp;
+              spmv[1] = _b_mat_vec_p_l_native_omp;
+            }
+#endif
+          }
+          break;
+        case CS_MATRIX_PP_BLOCK_D:
+        case CS_MATRIX_PP_BLOCK_D_SYM:
           if (numbering != NULL) {
 #if defined(HAVE_OPENMP)
             if (numbering->type == CS_NUMBERING_THREADS) {
@@ -5349,6 +5376,12 @@ cs_matrix_get_fill_type(bool        symmetric,
     else
       fill_type = CS_MATRIX_SCALAR;
   }
+  else {
+    if (symmetric)
+      fill_type = CS_MATRIX_PP_BLOCK_D_SYM;
+    else
+      fill_type = CS_MATRIX_PP_BLOCK_D;
+  }
   return fill_type;
 }
 
@@ -5403,6 +5436,46 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                  diag_block_size,
                  extra_diag_block_size);
 
+  if (diag_block_size == NULL) {
+    for (int i = 0; i < 4; i++)
+      matrix->db_size[i] = 1;
+  }
+  else {
+    for (int i = 0; i < 4; i++)
+      matrix->db_size[i] = diag_block_size[i];
+  }
+
+  if (extra_diag_block_size == NULL) {
+    for (int i = 0; i < 4; i++)
+      matrix->eb_size[i] = 1;
+  }
+  else {
+    for (int i = 0; i < 4; i++)
+      matrix->eb_size[i] = extra_diag_block_size[i];
+  }
+
+  /* Set fill type */
+
+  if (matrix->eb_size[0] == 3)
+    matrix->fill_type = CS_MATRIX_33_BLOCK;
+  else if (matrix->db_size[0] == 1) {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_SCALAR_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_SCALAR;
+  }
+  else if (matrix->db_size[0] == 3) {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_33_BLOCK_D_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_33_BLOCK_D;
+  }
+  else {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_PP_BLOCK_D_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_PP_BLOCK_D;
+  }
   /* Set coefficients */
 
   if (matrix->set_coefficients != NULL) {
@@ -5556,8 +5629,34 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
        cs_matrix_type_name[matrix->type],
        cs_matrix_fill_type_name[matrix->fill_type]);
   }
-}
 
+  if (matrix->eb_size[1] == 3)
+    matrix->fill_type = CS_MATRIX_33_BLOCK;
+  else if (matrix->db_size[1] == 1) {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_SCALAR_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_SCALAR;
+  }
+  else if (matrix->db_size[1] == 3) {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_33_BLOCK_D_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_33_BLOCK_D;
+  }
+  else if (matrix->db_size[1] == 1) {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_SCALAR_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_SCALAR;
+  }
+  else {
+    if (symmetric)
+      matrix->fill_type = CS_MATRIX_PP_BLOCK_D_SYM;
+    else
+      matrix->fill_type = CS_MATRIX_PP_BLOCK_D;
+  }
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Release shared matrix coefficients.
@@ -5641,7 +5740,9 @@ cs_matrix_is_symmetric(const cs_matrix_t  *matrix)
   case CS_MATRIX_SCALAR_SYM:
   case CS_MATRIX_33_BLOCK_D_SYM:
     symmetric = true;
-  default:
+  case CS_MATRIX_PP_BLOCK_D_SYM:
+    symmetric = true;
+        default:
     break;
   }
 
@@ -6660,7 +6761,10 @@ cs_matrix_variant_test(cs_lnum_t              n_rows,
                                          CS_MATRIX_SCALAR_SYM,
                                          CS_MATRIX_33_BLOCK_D,
                                          CS_MATRIX_33_BLOCK_D_SYM,
-                                         CS_MATRIX_33_BLOCK};
+                                         CS_MATRIX_PP_BLOCK_D,
+                                         CS_MATRIX_PP_BLOCK_D_SYM,
+                                         CS_MATRIX_33_BLOCK,
+                                         CS_MATRIX_PP_BLOCK};
   cs_matrix_variant_t  *m_variant = NULL;
 
   /* Test basic flag combinations */

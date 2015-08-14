@@ -3421,7 +3421,7 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
                 vecfac = gradv[cell_id][k][0] * diipb[face_id][0]
                        + gradv[cell_id][k][1] * diipb[face_id][1]
                        + gradv[cell_id][k][2] * diipb[face_id][2];
-                pfac += coefbv[face_id][k][i] * vecfac;
+                pfac += coefbv[face_id][i][k] * vecfac;
 
                 if (i == k)
                   pfac += (coefbv[face_id][i][k] - 1.0) * pvar[cell_id][k];
@@ -3704,6 +3704,418 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   BFT_FREE(rhs);
 }
+
+/*----------------------------------------------------------------------------
+ * Initialize the gradient of a tensor for gradient reconstruction.
+ *
+ * A non-reconstructed gradient is computed at this stage.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   coefat         <-- B.C. coefficients for boundary face normals
+ *   coefbt         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   grad          --> gradient of pvar (dts_i/dx_j : grad[][i][j])
+ *----------------------------------------------------------------------------*/
+
+static void
+_initialize_tensor_gradient(const cs_mesh_t              *m,
+                            const cs_mesh_quantities_t   *fvq,
+                            cs_halo_type_t                halo_type,
+                            int                           inc,
+                            const cs_real_6_t   *restrict coefat,
+                            const cs_real_66_t  *restrict coefbt,
+                            cs_real_6_t         *restrict pvar,
+                            cs_real_63_t        *restrict grad)
+{
+  int g_id, t_id;
+  cs_lnum_t face_id;
+  cs_real_t pond;
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  /* By default, handle the gradient as a tensor
+     (i.e. we assume it is the gradient of a vector field) */
+
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)pvar, 6);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)pvar);
+  }
+
+  /* Computation without reconstruction */
+  /*------------------------------------*/
+
+  /* Initialization */
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (int i = 0; i < 6; i++) {
+      for (int j = 0; j < 3; j++)
+        grad[cell_id][i][j] = 0.0;
+    }
+  }
+
+  /* Interior faces contribution */
+
+  for (g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id, pond)
+    for (t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+        cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+
+        pond = weight[face_id];
+        cs_real_t dvol1 = 1./cell_vol[cell_id1];
+        cs_real_t dvol2 = 1./cell_vol[cell_id2];
+
+        /*
+           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                    + (1-\alpha_\ij) \varia_\cellj\f$
+                   but for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                   and for the cell \f$ \cellj \f$ we remove
+                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
+        for (int i = 0; i < 6; i++) {
+          cs_real_t pfaci = (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+          cs_real_t pfacj = - pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+          for (int j = 0; j < 3; j++) {
+            grad[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
+            grad[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+          }
+        }
+
+      } /* End of loop on faces */
+
+    } /* End of loop on threads */
+
+  } /* End of loop on thread groups */
+
+  /* Boundary face treatment */
+
+  for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#   pragma omp parallel for private(face_id)
+    for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           face_id++) {
+
+        cs_lnum_t cell_id = b_face_cells[face_id];
+
+        cs_real_t dvol = 1./cell_vol[cell_id];
+
+        /*
+           Remark: for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+         */
+        for (int i = 0; i < 6; i++) {
+          cs_real_t pfac = inc*coefat[face_id][i];
+
+          for (int k = 0; k < 6; k++) {
+            if (i == k)
+              pfac += (coefbt[face_id][i][k] - 1.0) * pvar[cell_id][k];
+            else
+              pfac += coefbt[face_id][i][k] * pvar[cell_id][k] ;
+
+          }
+
+          for (int j = 0; j < 3; j++)
+            grad[cell_id][i][j] += pfac * b_f_face_normal[face_id][j]*dvol;
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+  /* Periodicity and parallelism treatment */
+
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)grad);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the gradient of a vector with an iterative technique in order to
+ * handle non-orthoganalities (n_r_sweeps > 1).
+ *
+ * We do not take into account any volumic force here.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   var_name       <-- variable's name
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   n_r_sweeps     --> >1: with reconstruction
+ *   verbosity      --> verbosity level
+ *   epsrgp         --> precision for iterative gradient calculation
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   grad          <-> gradient of pvar (du_i/dx_j : grad[][i][j])
+ *----------------------------------------------------------------------------*/
+
+static void
+_iterative_tensor_gradient(const cs_mesh_t              *m,
+                           const cs_mesh_quantities_t   *fvq,
+                           const char                   *var_name,
+                           cs_halo_type_t                halo_type,
+                           int                           inc,
+                           int                           n_r_sweeps,
+                           int                           verbosity,
+                           double                        epsrgp,
+                           const cs_real_6_t   *restrict coefat,
+                           const cs_real_66_t  *restrict coefbt,
+                           const cs_real_6_t   *restrict pvar,
+                           cs_real_63_t        *restrict grad)
+{
+  int isweep, g_id, t_id;
+  cs_lnum_t face_id;
+  cs_real_t l2_norm, l2_residual, vecfac, pond;
+
+  cs_real_63_t *rhs;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict cell_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+  const cs_real_3_t *restrict dofij
+    = (const cs_real_3_t *restrict)fvq->dofij;
+  cs_real_33_t *restrict cocg = fvq->cocg_it;
+
+  BFT_MALLOC(rhs, n_cells_ext, cs_real_63_t);
+
+  const cs_real_t epzero = 1.e-12;
+
+  /* Gradient reconstruction to handle non-orthogonal meshes */
+  /*---------------------------------------------------------*/
+
+  /* L2 norm */
+
+  l2_norm = _l2_norm_1(18*n_cells, (cs_real_t *)grad);
+  l2_residual = l2_norm ;
+
+  if (l2_norm > epzero) {
+
+    /* Iterative process */
+    /*-------------------*/
+
+    for (isweep = 1; isweep < n_r_sweeps && l2_residual > epsrgp*l2_norm; isweep++) {
+
+      /* Computation of the Right Hand Side*/
+
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+        for (int i = 0; i < 6; i++) {
+          for (int j = 0; j < 3; j++)
+            rhs[cell_id][i][j] = -grad[cell_id][i][j];
+        }
+      }
+
+      /* Interior face treatment */
+
+      for (g_id = 0; g_id < n_i_groups; g_id++) {
+
+#       pragma omp parallel for private(face_id, pond)
+        for (t_id = 0; t_id < n_i_threads; t_id++) {
+
+          for (face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+               face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+               face_id++) {
+
+            cs_lnum_t cell_id1 = i_face_cells[face_id][0];
+            cs_lnum_t cell_id2 = i_face_cells[face_id][1];
+            pond = weight[face_id];
+
+            cs_real_t dvol1 = 1./cell_vol[cell_id1];
+            cs_real_t dvol2 = 1./cell_vol[cell_id2];
+
+            /*
+               Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                        + (1-\alpha_\ij) \varia_\cellj\f$
+                       but for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                       and for the cell \f$ \cellj \f$ we remove
+                       \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
+
+            for (int i = 0; i < 6; i++) {
+
+              /* Reconstruction part */
+              cs_real_t
+              pfaci = 0.5 * ( ( grad[cell_id1][i][0] + grad[cell_id2][i][0])
+                              * dofij[face_id][0]
+                            + ( grad[cell_id1][i][1] + grad[cell_id2][i][1])
+                              * dofij[face_id][1]
+                            + ( grad[cell_id1][i][2] + grad[cell_id2][i][2])
+                              * dofij[face_id][2]
+                            );
+              cs_real_t pfacj = pfaci;
+
+              pfaci += (1.0-pond) * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+              pfacj -=       pond * (pvar[cell_id2][i] - pvar[cell_id1][i]);
+              for (int j = 0; j < 3; j++) {
+                rhs[cell_id1][i][j] += pfaci * i_f_face_normal[face_id][j] * dvol1;
+                rhs[cell_id2][i][j] -= pfacj * i_f_face_normal[face_id][j] * dvol2;
+              }
+            }
+
+          } /* loop on faces */
+
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+      /* Boundary face treatment */
+
+      for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#       pragma omp parallel for private(face_id, vecfac)
+        for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+          for (face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               face_id++) {
+
+            cs_lnum_t cell_id = b_face_cells[face_id];
+            cs_real_t dvol = 1./cell_vol[cell_id];
+
+            for (int i = 0; i < 6; i++) {
+
+              /*
+                 Remark: for the cell \f$ \celli \f$ we remove
+                         \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+               */
+
+              cs_real_t pfac = inc*coefat[face_id][i];
+
+              for (int k = 0; k < 6; k++) {
+                /* Reconstruction part */
+                vecfac = grad[cell_id][k][0] * diipb[face_id][0]
+                       + grad[cell_id][k][1] * diipb[face_id][1]
+                       + grad[cell_id][k][2] * diipb[face_id][2];
+                pfac += coefbt[face_id][i][k] * vecfac;
+
+                if (i == k)
+                  pfac += (coefbt[face_id][i][k] - 1.0) * pvar[cell_id][k];
+                else
+                  pfac += coefbt[face_id][i][k] * pvar[cell_id][k];
+              }
+
+              for (int j = 0; j < 3; j++)
+                rhs[cell_id][i][j] += pfac * b_f_face_normal[face_id][j] * dvol;
+
+            }
+
+          } /* loop on faces */
+
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+      /* Increment of the gradient */
+
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        for (int i = 0; i < 6; i++) {
+          for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++)
+              grad[cell_id][i][j] += rhs[cell_id][i][k] * cocg[cell_id][k][j];
+          }
+        }
+      }
+
+      /* Periodicity and parallelism treatment */
+
+                        ///FIXME
+      if (m->halo != NULL) {
+                          cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
+               if (cs_glob_mesh->n_init_perio > 0)
+        cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, (cs_real_t *)grad);
+                        }
+
+      /* Convergence test (L2 norm) */
+
+                        ///FIXME
+      l2_residual = _l2_norm_1(18*n_cells, (cs_real_t *)rhs);
+
+                 } /* End of the iterative process */
+
+    /* Printing */
+
+    if (l2_residual < epsrgp*l2_norm) {
+      if (verbosity >= 2) {
+        bft_printf
+          (_(" %s: isweep = %d, normed residual: %e, norm: %e, var: %s\n"),
+           __func__, isweep, l2_residual/l2_norm, l2_norm, var_name);
+      }
+    }
+    else if (isweep >= n_r_sweeps) {
+      if (verbosity >= 0) {
+        bft_printf(_(" Warning:\n"
+                     " --------\n"
+                     "   %s; variable: %s; sweeps: %d\n"
+                     "   %*s  normed residual: %11.4e; norm: %11.4e\n"),
+                   __func__, var_name, isweep,
+                   (int)(strlen(__func__)), " ", l2_residual/l2_norm, l2_norm);
+      }
+    }
+  }
+
+  BFT_FREE(rhs);
+}
+
 
 /*----------------------------------------------------------------------------
  * Initialize gradient and right-hand side for scalar gradient reconstruction.
@@ -4552,6 +4964,62 @@ void CS_PROCF (cgdvec, CGDVEC)
                      gradv);
 }
 
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of tensor field.
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (cgdts, CGDTS)
+(
+ const cs_int_t         *const f_id,
+ const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
+ const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
+ const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction      */
+ const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
+ const cs_int_t         *const imligp,    /* <-- type of clipping             */
+ const cs_real_t        *const epsrgp,    /* <-- precision for iterative
+                                                 gradient calculation         */
+ const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
+ const cs_real_6_t             coefav[],  /* <-- boundary condition term      */
+ const cs_real_66_t            coefbv[],  /* <-- boundary condition term      */
+
+       cs_real_6_t             pvar[],    /* <-- gradient's base variable     */
+       cs_real_63_t            grad[]    /* <-> gradient of the variable
+                                                 (du_i/dx_j : gradv[][i][j])  */
+)
+{
+  char var_name[32];
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+
+  cs_gradient_type_by_imrgra(*imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  if (*f_id > -1)
+    snprintf(var_name, 31, "Field %2d", *f_id);
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
+
+  cs_gradient_tensor(var_name,
+                     gradient_type,
+                     halo_type,
+                     *inc,
+                     *n_r_sweeps,
+                     *iwarnp,
+                     *imligp,
+                     *epsrgp,
+                     *climgp,
+                     coefav,
+                     coefbv,
+                     pvar,
+                     grad);
+}
+
+
+
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -4862,6 +5330,7 @@ cs_gradient_scalar(const char                *var_name,
   BFT_FREE(rhsv);
 }
 
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute cell gradient of vector field.
@@ -5024,6 +5493,87 @@ cs_gradient_vector(const char                *var_name,
     cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
   }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute cell gradient of tensor.
+ *
+ * \param[in]       var_name        variable name
+ * \param[in]       gradient_type   gradient type
+ * \param[in]       halo_type       halo type
+ * \param[in]       inc             if 0, solve on increment; 1 otherwise
+ * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ * \param[in]       verbosity       verbosity level
+ * \param[in]       clip_mode       clipping mode
+ * \param[in]       epsilon         precision for iterative gradient calculation
+ * \param[in]       clip_coeff      clipping coefficient
+ * \param[in]       bc_coeff_a      boundary condition term a
+ * \param[in]       bc_coeff_b      boundary condition term b
+ * \param[in, out]  var             gradient's base variable
+ * \param[out]      grad           gradient
+                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_tensor(const char                *var_name,
+                   cs_gradient_type_t         gradient_type,
+                   cs_halo_type_t             halo_type,
+                   int                        inc,
+                   int                        n_r_sweeps,
+                   int                        verbosity,
+                   int                        clip_mode,
+                   double                     epsilon,
+                   double                     clip_coeff,
+                   const cs_real_6_t          bc_coeff_a[],
+                   const cs_real_66_t         bc_coeff_b[],
+                   cs_real_6_t      *restrict var,
+                   cs_real_63_t     *restrict grad)
+{
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  cs_gradient_info_t *gradient_info = NULL;
+  cs_timer_t t0, t1;
+
+  bool update_stats = true;
+
+  if (update_stats == true) {
+    t0 = cs_timer_time();
+    gradient_info = _find_or_add_system(var_name, gradient_type);
+  }
+
+  /* Compute gradient */
+    _initialize_tensor_gradient(mesh,
+                                fvq,
+                                halo_type,
+                                inc,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                var,
+                                grad);
+
+    /* If reconstructions are required */
+
+    if (n_r_sweeps > 1)
+      _iterative_tensor_gradient(mesh,
+                                 fvq,
+                                 var_name,
+                                 halo_type,
+                                 inc,
+                                 n_r_sweeps,
+                                 verbosity,
+                                 epsilon,
+                                 bc_coeff_a,
+                                 bc_coeff_b,
+                                 (const cs_real_6_t *)var,
+                                 grad);
+
+}
+
+
+
+
 
 /*----------------------------------------------------------------------------
  * Determine gradient type by Fortran "imrgra" value

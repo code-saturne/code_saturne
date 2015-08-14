@@ -81,9 +81,11 @@ reseps.f90 \
 resrij.f90 \
 resrit.f90 \
 resssg.f90 \
+resssg2.f90 \
 resv2f.f90 \
 rijech.f90 \
 rijthe.f90 \
+rijthe2.f90 \
 rotcor.f90 \
 tsepls.f90 \
 turbke.f90 \

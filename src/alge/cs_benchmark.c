@@ -774,9 +774,12 @@ cs_benchmark(int  mpi_trace_mode)
   int                    n_fill_types_sym = 2;
   cs_matrix_fill_type_t  fill_types_nsym[] = {CS_MATRIX_SCALAR,
                                               CS_MATRIX_33_BLOCK_D,
-                                              CS_MATRIX_33_BLOCK};
+                                              CS_MATRIX_33_BLOCK,
+                                              CS_MATRIX_PP_BLOCK_D,
+                                              CS_MATRIX_PP_BLOCK};
   cs_matrix_fill_type_t  fill_types_sym[] = {CS_MATRIX_SCALAR_SYM,
-                                             CS_MATRIX_33_BLOCK_D_SYM};
+                                             CS_MATRIX_33_BLOCK_D_SYM,
+                                             CS_MATRIX_PP_BLOCK_D_SYM};
   double                 fill_weights_nsym[] = {0.5, 0.4, 0.1};
   double                 fill_weights_sym[] = {0.8, 0.2};
 

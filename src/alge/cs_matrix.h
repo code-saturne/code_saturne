@@ -73,6 +73,12 @@ typedef enum {
                                  (and 3.I extradiagonal blocks) */
   CS_MATRIX_33_BLOCK,         /* Matrix with 3x3 blocks
                                  (diagonal and extra-diagonal) */
+  CS_MATRIX_PP_BLOCK_D,       /* Matrix with 6x6 diagonal blocks
+                                 (and 6.I extradiagonal blocks) */
+  CS_MATRIX_PP_BLOCK_D_SYM,   /* Symmetric matrix with 6x6 diagonal blocks
+                                 (and 6.I extradiagonal blocks) */
+  CS_MATRIX_PP_BLOCK,         /* Matrix with 6x6 blocks
+                                 (diagonal and extra-diagonal) */
   CS_MATRIX_N_FILL_TYPES      /* Number of possible matrix fill types */
 
 } cs_matrix_fill_type_t;
