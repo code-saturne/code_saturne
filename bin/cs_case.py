@@ -1543,7 +1543,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         else:
             status = 'failed'
 
-        self.update_scripts_tmp('preparing', status)
+        self.update_scripts_tmp('preprocessing', status)
 
         # Standard or error exit
 
