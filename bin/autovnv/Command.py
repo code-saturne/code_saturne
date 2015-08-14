@@ -93,7 +93,12 @@ def run_autovnv_command(_c, _log, pythondir = None):
             _l = __text("command return")
 
     except OSError, e:
-        retcode = "OSError"
+        import traceback
+        import sys
+        exc_info = sys.exc_info()
+        bt = traceback.format_exception(*exc_info):
+        _log.write(bt)
+        del exc_info
         _l = __text("unknown command")
         retcode = 0
         t1 = 0.
