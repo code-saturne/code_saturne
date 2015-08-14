@@ -176,7 +176,7 @@ endif
 nomb = npar2-npar1+1
 allocate(vagaus(nomb,3))
 
-if (idistu.eq.1) then
+if (idistu.eq.1 .and. nomb.gt.0) then
   call normalen (nomb,vagaus(:,1))
   call normalen (nomb,vagaus(:,2))
   call normalen (nomb,vagaus(:,3))

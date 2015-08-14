@@ -78,6 +78,7 @@ use atimbr
 use siream
 use ptrglo
 use turbomachinery
+use zufall
 use cs_c_bindings
 use cs_f_interfaces
 
@@ -111,7 +112,6 @@ integer          nent
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
 double precision titer1, titer2
-double precision tecrf1, tecrf2
 
 integer          ivoid(1)
 double precision rvoid(1)

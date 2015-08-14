@@ -406,14 +406,14 @@ module parall
     !> \param[in]   array     local array (size: n_elts)
     !> \param[out]  g_array   global array  (size: n_g_elts)
 
-    subroutine paragv(n_elts, n_g_elts, array, g_array)  &
+    subroutine cs_parall_allgather_r(n_elts, n_g_elts, array, g_array)  &
       bind(C, name='cs_parall_allgather_r')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: n_elts, n_g_elts
       real(c_double), dimension(*), intent(in) :: array
       real(c_double), dimension(*), intent(inout) :: g_array
-    end subroutine paragv
+    end subroutine cs_parall_allgather_r
 
     !---------------------------------------------------------------------------
 
@@ -438,6 +438,31 @@ module parall
 contains
 
   !=============================================================================
+
+  !> \brief Build a global array from each local array in each domain.
+
+  !> Local arrays are appened in order of owning MPI rank.
+  !> The size of each local array may be different.
+
+  !> Use of this function may be quite practical, but should be limited
+  !> to user functions, as it may limit scalability (especially as regards
+  !> memory usage).
+
+  !> \param[in]   n_elts    size of the local array
+  !> \param[in]   n_g_elts  size of the global array
+  !> \param[in]   array     local array (size: n_elts)
+  !> \param[out]  g_array   global array  (size: n_g_elts)
+
+  subroutine paragv(n_elts, n_g_elts, array, g_array)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: n_elts, n_g_elts
+    real(c_double), dimension(:), intent(in) :: array
+    real(c_double), dimension(:), intent(inout) :: g_array
+    call cs_parall_allgather_r(n_elts, n_g_elts, array(:), g_array(:))
+  end subroutine paragv
+
+  !---------------------------------------------------------------------------
 
   ! Initialize OpenMP-related values
 

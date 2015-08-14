@@ -169,16 +169,16 @@ if(irangp.ge.0) then
   do ient = 1, nnent
     call paragv &
  ( icvor2(ient) , icvor(ient)    ,  &
-   w1x(1,ient)  , xyzv(1,1,ient) )
+   w1x(:,ient)  , xyzv(:,1,ient) )
     call paragv &
  ( icvor2(ient) , icvor(ient)    ,  &
-   w1y(1,ient)  , xyzv(1,2,ient) )
+   w1y(:,ient)  , xyzv(:,2,ient) )
     call paragv &
  ( icvor2(ient) , icvor(ient)    ,  &
-   w1z(1,ient)  , xyzv(1,3,ient) )
+   w1z(:,ient)  , xyzv(:,3,ient) )
     call paragv &
  ( icvor2(ient) , icvor(ient)  ,  &
-   w1v(1,ient)  , visv(1,ient) )
+   w1v(:,ient)  , visv(:,ient) )
   enddo
 
 !  -> A la fin de cette etape, tous les processeurs connaissent
