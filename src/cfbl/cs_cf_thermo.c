@@ -226,9 +226,11 @@ cs_cf_thermo_default_init(int isuite)
     }
   }
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-    crom[cell_id] = *ro0;
-    cvar_en[cell_id] = e0;
+  if (isuite == 0) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      crom[cell_id] = *ro0;
+      cvar_en[cell_id] = e0;
+    }
   }
 }
 
