@@ -496,6 +496,7 @@ subroutine usipph &
 !===============================================================================
 
 use entsor, only: nfecra ! No other module should appear here
+use optcal, only: irijco ! No other module should appear here
 
 !===============================================================================
 
@@ -591,6 +592,15 @@ if (ixmlpu.eq.0) then
   iturb = 21
 
 endif
+
+
+! Coupled solver for Rij components (when iturb=30, 31 or 32)
+if (.false.) then
+
+  irijco = 0
+
+endif
+
 
 ! --- Thermal model
 !      0: none
@@ -1459,14 +1469,6 @@ endif
 if (.false.) then
   iortvm = 0
 endif
-
-
-!coupled rij
-if (.false.) then
-  irijco = 0
-endif
-
-
 
 !----
 ! Formats

@@ -131,7 +131,7 @@ integer          ii    , jj    , kk    , iiun  , iii   , jjj
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          imucpp, idftnp, iswdyp
@@ -792,7 +792,6 @@ imligp = imligr(ivar)
 ircflp = ircflu(ivar)
 ischcp = ischcv(ivar)
 isstpp = isstpc(ivar)
-iescap = 0
 idftnp = idften(ivar)
 iswdyp = iswdyn(ivar)
 iwarnp = iwarni(ivar)
@@ -815,9 +814,9 @@ call coditts &
 !==========
  ( idtvar , ivar   , iconvp , idiffp , ndircp ,                   &
    imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
-   ischcp , isstpp , iescap , idftnp , iswdyp ,          &
+   ischcp , isstpp , idftnp , iswdyp ,                            &
    iwarnp ,                                                       &
-   blencp , epsilp , epsrsp , epsrgp , climgp ,           &
+   blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
    relaxp , thetv  ,                                              &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
@@ -825,8 +824,7 @@ call coditts &
    viscf  , viscb  , viscf  , viscb  ,  viscce ,                  &
    weighf , weighb ,                                              &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbr   , cvar_var        ,                   &
-   rvoid )
+   rovsdt , smbr   , cvar_var        )
 
 ! Free memory
 deallocate(w1, w2)
