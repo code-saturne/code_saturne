@@ -2023,9 +2023,6 @@ cs_restart_write_section(cs_restart_t           *restart,
                                        _n_location_vals,
                                        val_type,
                                        val);
-//    if (sec_name[14] == "rij::bc_coeffs"){
-//       bft_printf("coucou");
-//    }
     cs_io_write_global(sec_name,
                        n_tot_vals,
                        location_id,

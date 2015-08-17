@@ -2337,7 +2337,6 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
 
     const cs_field_t  *f = cs_field_by_id(f_id);
 
- bft_printf("coucou %s \n",f->name);
     if (   f->location_id == CS_MESH_LOCATION_CELLS
         && f->bc_coeffs != NULL) {
 

@@ -1092,6 +1092,7 @@ do ifac = 1, nfabor
         fcofaf(isou) = -hint*fcoefa(isou)
         fcofbf(isou) = hint*(1.d0-fcoefb(isou))
       enddo
+
       do isou = 1, 6
         if (irijco.eq.1) then
           coefa_rij(isou, ifac)       = fcoefa(isou)

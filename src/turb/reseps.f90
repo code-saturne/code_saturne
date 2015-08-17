@@ -192,7 +192,7 @@ endif
 call field_get_coefa_s(ivarfl(ivar), coefap)
 call field_get_coefb_s(ivarfl(ivar), coefbp)
 call field_get_coefaf_s(ivarfl(ivar), cofafp)
-call field_get_coefaf_s(ivarfl(ivar), cofbfp)
+call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
