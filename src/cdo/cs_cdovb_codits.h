@@ -59,7 +59,7 @@ typedef struct _cs_cdovb_codits_t cs_cdovb_codits_t;
 /*!
  * \brief  Initialize a cs_cdovb_codits_t structure
  *
- * \param[in] eq       pointer to a cs_equation_param_t structure
+ * \param[in] eqp      pointer to a cs_equation_param_t structure
  * \param[in] m        pointer to a mesh structure
  *
  * \return a pointer to a new allocated cs_cdovb_codits_t structure

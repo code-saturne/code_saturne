@@ -581,7 +581,7 @@ _build_diffusion_system(const cs_mesh_t            *m,
  * \brief  Initialize a cs_cdovb_codits_t structure
  *
  * \param[in] eqp      pointer to a cs_equation_param_t structure
- * \param[in]  m       pointer to a mesh structure
+ * \param[in] m        pointer to a mesh structure
  *
  * \return a pointer to a new allocated cs_cdovb_codits_t structure
  */

@@ -167,13 +167,13 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q);
 /*!
  * \brief Dump a cs_cdo_quantities_t structure
  *
- * \param[in]  iq     pointer to cs_cdo_quantities_t structure
+ * \param[in]  cdoq   pointer to cs_cdo_quantities_t structure
  *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_dump(const cs_cdo_quantities_t  *iq);
+cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

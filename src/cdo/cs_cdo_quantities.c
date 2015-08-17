@@ -1088,7 +1088,7 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
  *
  * \param[in]  f         FILE struct (stdout if NULL)
  * \param[in]  num       entity number related to this quantity struct.
- * \param[in]  quant     cs_quant_t structure to dump
+ * \param[in]  q         cs_quant_t structure to dump
  */
 /*----------------------------------------------------------------------------*/
 

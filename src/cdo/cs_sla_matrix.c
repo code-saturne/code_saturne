@@ -3109,7 +3109,7 @@ cs_sla_matrix_free(cs_sla_matrix_t  *m)
  *          threshold. |a(i,j)| < eps * max|a(i,j)|
  *                                       i
  *
- * \param[inout]  mat     matrix to clean
+ * \param[in,out] m       matrix to clean
  * \param[in]     eps     value of the threshold
  */
 /*----------------------------------------------------------------------------*/

@@ -276,14 +276,14 @@ cs_index_sort(cs_connect_index_t   *x);
  *          output
  *
  * \param[in]  name  name of the dump file. Can be set to NULL
- * \param[in]  f     pointer to a FILE structure. Can be set to NULL.
+ * \param[in]  _f    pointer to a FILE structure. Can be set to NULL.
  * \param[in]  x     pointer to a cs_connect_index_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_index_dump(const char          *name,
-              FILE                *f,
+              FILE                *_f,
               cs_connect_index_t  *x);
 
 /*----------------------------------------------------------------------------*/

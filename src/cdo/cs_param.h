@@ -432,7 +432,7 @@ cs_param_pty_get_name(int            pty_id);
  *         This value is computed at location (x,y,z) and time t.
  *
  * \param[in]     pty_id    id related to the material property to deal with
- * \param[in]     tcur      time at which we evaluate the material property
+ * \param[in]     t         time at which we evaluate the material property
  * \param[in]     xyz       location at which  we evaluate the material property
  * \param[in]     invers    true or false
  * \param[in,out] matval    pointer to the 3x3 matrix to return
@@ -481,13 +481,13 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc);
 /*!
  * \brief  Set a cs_param_bc_def_t structure
  *
- * \param[in, out] bc_def     pointer to cs_param_bc_def_t struct. to set
+ * \param[in, out] bcpd       pointer to cs_param_bc_def_t struct. to set
  * \param[in]      loc_id     id related to a cs_mesh_location_t
  * \param[in]      bc_type    generic type of admissible boundary conditions
  * \param[in]      var_type   type of variables (scalar, vector, tensor...)
  * \param[in]      def_type   by value, function...
- * \param[in]      def_coef1  access to the value of the first coef
- * \param[in]      def_coef2  access to the value of the second coef (optional)
+ * \param[in]      coef1      access to the value of the first coef
+ * \param[in]      coef2      access to the value of the second coef (optional)
  */
 /*----------------------------------------------------------------------------*/
 

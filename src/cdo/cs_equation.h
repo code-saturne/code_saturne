@@ -136,14 +136,14 @@ cs_equation_last_init(cs_equation_t  *eq);
  *         to an equation
  *
  * \param[in, out]  eq       pointer to a cs_equation_t structure
- * \param[in]       key      key related to the member of eq to set
+ * \param[in]       keyname  key related to the member of eq to set
  * \param[in]       val      accessor to the value to set
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_set(cs_equation_t       *eq,
-                const char          *key,
+                const char          *keyname,
                 const void          *val);
 
 /*----------------------------------------------------------------------------*/

@@ -107,14 +107,14 @@ cs_hodge_builder_init(int   n_max_ent);
 /*!
  * \brief   Free a cs_hodge_builder_t structure
  *
- * \param[in]  hcq    pointer to the cs_hodge_builder_t struct. to free
+ * \param[in]  hb     pointer to the cs_hodge_builder_t struct. to free
  *
  * \return  a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_hodge_builder_t *
-cs_hodge_builder_free(cs_hodge_builder_t  *hcq);
+cs_hodge_builder_free(cs_hodge_builder_t  *hb);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -92,7 +92,7 @@ typedef struct {
  * \brief   Create a cs_cdo_bc_list_t structure
  *
  * \param[in]  n_elts      number of entries of the list
- * \param[in]  n_hmg_elts  number of elements attached to a homogeneous BC
+ * \param[in]  n_nhmg_elts  number of elements attached to a homogeneous BC
  *
  * \return  a new allocated pointer to a cs_cdo_bc_list_t structure
  */
