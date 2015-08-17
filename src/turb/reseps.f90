@@ -52,7 +52,8 @@
 !> \param[in]     gradro        work array for \f$ \grad{rom} \f$
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
+!>                               source terms or mass rate
+!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
 !> \param[in]     tslagr        coupling term for lagrangian
@@ -133,7 +134,7 @@ double precision prdeps, xttdrb, xttke , xttkmg
 double precision rvoid(1)
 
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:) :: w7, w9
+double precision, allocatable, dimension(:) :: w7, cprod
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
@@ -160,7 +161,7 @@ ivar = iep
 
 ! Allocate work arrays
 allocate(w1(ncelet))
-allocate(w9(ncelet))
+allocate(cprod(ncelet))
 allocate(dpvar(ncelet))
 allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
@@ -347,12 +348,12 @@ endif
 !     Rij or in SSG (use of produc or grdvit)
 if (iturb.eq.30) then
   do iel = 1, ncel
-    w9(iel) = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
+    cprod(iel) = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
   enddo
 else
   if (irijco.eq.1) then
     do iel = 1, ncel
-      w9(iel) = -( cvara_rij(1,iel)*gradv(1, 1, iel) +               &
+      cprod(iel) = -( cvara_rij(1,iel)*gradv(1, 1, iel) +               &
                    cvara_rij(4,iel)*gradv(2, 1, iel) +               &
                    cvara_rij(6,iel)*gradv(3, 1, iel) +               &
                    cvara_rij(4,iel)*gradv(1, 2, iel) +               &
@@ -364,7 +365,7 @@ else
     enddo
   else
     do iel = 1, ncel
-      w9(iel) = -( cvara_r11(iel)*gradv(1, 1, iel) +               &
+      cprod(iel) = -( cvara_r11(iel)*gradv(1, 1, iel) +               &
                    cvara_r12(iel)*gradv(2, 1, iel) +               &
                    cvara_r13(iel)*gradv(3, 1, iel) +               &
                    cvara_r12(iel)*gradv(1, 2, iel) +               &
@@ -383,7 +384,7 @@ if (iturb.eq.32) then
 
   do iel = 1, ncel
     ! Half-traces
-    trprod = w9(iel)
+    trprod = cprod(iel)
     if(irijco.eq.1) then
       trrij  = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
     else
@@ -416,7 +417,7 @@ else
 
   do iel = 1, ncel
     ! Half-traces
-    trprod = w9(iel)
+    trprod = cprod(iel)
     if(irijco.eq.1) then
       trrij  = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
     else
@@ -574,7 +575,7 @@ call codits &
 
 ! Free memory
 deallocate(w1)
-deallocate(w9)
+deallocate(cprod)
 deallocate(viscce)
 deallocate(weighf, weighb)
 
