@@ -137,7 +137,6 @@ module lagpar
   !> \}
 
   !=============================================================================
-  ! 8. Types d'interaction au bord
 
   !> \defgroup lag_typ_bnd_interaction Boundary interation type
   !> (value of \c iusclb(izone))

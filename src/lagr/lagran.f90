@@ -1116,6 +1116,26 @@ module lagran
   !> Do not change the default value
   integer, save ::  ilapoi
 
+  !> activation (=1) or not (=0) of the added-mass term.
+  !> \f[ \DP{u_p} = - \dfrac{1}{\rho_p} \grad P + \dfrac{u_s-u_p}{\tau_p}
+  !>       + g +1/2 C_A \dfrac{\rho_f}{\rho_p}
+  !>       + \left( \dfrac{Du}{Dt} -\DP{u_p} \right)
+  !> \f]
+  !> and
+  !>  \f[ \rho_f \dfrac{Du}{Dt} \simeq  - \grad P + \rho_f g \f]
+  !> with \f$ C_A = 1\f$. Then
+  !>  \f[ \DP{u_p} = - \dfrac{1}{\rho_p} \dfrac{1+C_A/2}
+  !>                                      {1+C_A/2\dfrac{\rho_f}{\rho_p}} \grad P
+  !>          + \dfrac{u_s-u_p}{\widetilde{\tau}_p}
+  !>          + g
+  !>  \f]
+  !> with
+  !> \f[ \widetilde{\tau_p} = (1 + C_A /2 \dfrac{\rho_f}{\rho_p}) \tau_p \f]
+  !>
+  integer, save ::  iadded_mass
+  !> Added-mass constant (\f$ C_A = 1\f$)
+  double precision, save ::  added_mass_const
+
   !> \}
 
   !=============================================================================

@@ -225,8 +225,20 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 
             tci = piil(ip,id) * tlag(ip,id) + vitf
 
-            force = (romf * gradpr(id,iel) / romp(ip)              &
-                 + grav(id) + fextla(ip,id)) * taup(ip)
+            if (iadded_mass.eq.0) then
+              force =                                                     &
+                ( romf * gradpr(id,iel) / romp(ip)                        &
+                + grav(id)+ fextla(ip,id)        ) * taup(ip)
+
+              ! Added-mass term?
+            else
+              force =                                                     &
+                ( romf * gradpr(id,iel) / romp(ip)                        &
+                  * (1.d0 + 0.5d0*added_mass_const)                       &
+                  / (1.d0 + 0.5d0*added_mass_const*romf/romp(ip))         &
+                + grav(id)+ fextla(ip,id)        ) * taup(ip)
+
+            endif
 
             aux1 = exp( -dtp / taup(ip))
             aux2 = exp( -dtp / tlag(ip,id))

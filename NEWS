@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Add the added-mass term in Lagrangian particle tracking (activate it
+   with iadded_mass=1).
+
  - Add new preconditioning managment layer to allow for use of multigrid
    as a preconditioner.
 

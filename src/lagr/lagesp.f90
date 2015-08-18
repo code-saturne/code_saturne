@@ -202,8 +202,8 @@ if (nordre.eq.1) then
 
   if (idepst.le.0) then
 
-  call lages1                                                     &
-  !==========
+    call lages1 &
+    !==========
    ( propce ,                                                     &
      taup   , tlag   , piil   ,                                   &
      bx     , vagaus , gradpr , romp   ,                          &

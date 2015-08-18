@@ -251,6 +251,12 @@ idirla = 0
 
 ilapoi = 0
 
+! Added-mass terme activation
+iadded_mass = 0
+
+! Added-mass constant
+added_mass_const = 1.d0
+
 !     POSTPROCESSING VARIABLE : VITESSE DU FLUIDE VU
 
 ivisv1  = 0

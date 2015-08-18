@@ -173,9 +173,19 @@ do id = 1,3
 
       rom = cromf(iel)
 
-      auxl(ip,id) =                                               &
-        ( rom *gradpr(id,iel) /romp(ip)                           &
-         +grav(id)+fextla(ip,id)       ) * taup(ip)
+      if (iadded_mass.eq.0) then
+        auxl(ip,id) =                                               &
+          ( rom *gradpr(id,iel) /romp(ip)                           &
+           +grav(id)+fextla(ip,id)       ) * taup(ip)
+      ! Added-mass term?
+      else
+        auxl(ip,id) =                                               &
+          ( rom *gradpr(id,iel) /romp(ip)                           &
+            * (1.d0 + 0.5d0*added_mass_const)                       &
+            / (1.d0 + 0.5d0*added_mass_const*rom/romp(ip))          &
+           +grav(id)+fextla(ip,id)       ) * taup(ip)
+      endif
+
 
       if (nor.eq.1) then
         if (id.eq.1) vitf = vela(1,iel)

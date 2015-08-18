@@ -258,6 +258,11 @@ do ip = 1,nbpart
 
     taup(ip) = romp(ip) / rom / fdr
 
+    ! Added-mass term?
+    if (iadded_mass.eq.1) then
+      taup(ip) = taup(ip) * (1.d0 + 0.5d0*added_mass_const*rom /romp(ip))
+    endif
+
 !--->  CALCUL UTILISATEUR DE Tp
 
     call uslatp                                                   &
