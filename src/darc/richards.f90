@@ -280,6 +280,7 @@ if (darcy_anisotropic_permeability.eq.0) then
     do iel = 1, ncel
       cpro_wgrec_s(iel) = cpro_permeability(iel)
     enddo
+    call synsca(cpro_wgrec_s)
   endif
 else if (darcy_anisotropic_permeability.eq.1) then
   allocate(weighf(2,nfac))
@@ -297,6 +298,7 @@ else if (darcy_anisotropic_permeability.eq.1) then
         cpro_wgrec_v(isou,iel) = cpro_permeability_6(isou,iel)
       enddo
     enddo
+    call syntis(cpro_wgrec_v)
   endif
 endif
 

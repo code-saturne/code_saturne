@@ -836,6 +836,7 @@ if (idiff(ipr).ge.1) then
       do iel = 1, ncel
         cpro_wgrec_s(iel) = viscap(iel)
       enddo
+      call synsca(cpro_wgrec_s)
     endif
 
   ! Tensor diffusivity
@@ -860,6 +861,7 @@ if (idiff(ipr).ge.1) then
           cpro_wgrec_v(isou,iel) = vitenp(isou,iel)
         enddo
       enddo
+      call syntis(cpro_wgrec_v)
     endif
 
   endif
