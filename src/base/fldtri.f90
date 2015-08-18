@@ -223,7 +223,7 @@ do ii = 1, nfld
   ivar = ifvar(ii)
   if (ipass .eq. 1) then
     if (itytur.eq.3 ) then
-      if(irijco.eq.1) then
+      if (irijco.eq.1) then
         if(ivar.eq.irij) then
           call field_allocate_bc_coeffs(ivarfl(ivar), .true., .true., .false.)
         else if (ivar.gt.ir13) then
@@ -236,6 +236,8 @@ do ii = 1, nfld
           call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
         endif
       endif
+    else
+      call field_allocate_bc_coeffs(ivarfl(ivar), .true., .false., .false.)
     endif
     call field_init_bc_coeffs(ivarfl(ivar))
   endif
