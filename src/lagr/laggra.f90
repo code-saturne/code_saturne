@@ -102,7 +102,7 @@ iccocg  = 1
 !===============================================================================
 ! 1. Compute pressure gradient / rho
 !===============================================================================
-
+! FIXME for iphydr = 1 and 2
 call field_gradient_scalar(ivarfl(ipr), iprev, imrgra, inc,          &
                            iccocg,                                   &
                            gradpr)
@@ -117,7 +117,17 @@ endif
 
 ! Calcul de -Grad P / Rom
 
-do iel = 1,ncel
+! Warning, in standard calculation, the computed pressure is
+! the hydrostatic pressure and not the real one
+if (iphydr.eq.0.and.ippmod(icompf).lt.0) then
+  do iel = 1, ncel
+    gradpr(1,iel) = gradpr(1,iel) + ro0*gx
+    gradpr(2,iel) = gradpr(2,iel) + ro0*gy
+    gradpr(3,iel) = gradpr(3,iel) + ro0*gz
+  enddo
+endif
+
+do iel = 1, ncel
   unsrho = 1.d0 / cromf(iel)
   gradpr(1,iel) = -gradpr(1,iel) * unsrho
   gradpr(2,iel) = -gradpr(2,iel) * unsrho
