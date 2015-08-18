@@ -883,6 +883,7 @@ if (idiff(ivar).ge.1) then
       do iel = 1, ncel
         cpro_wgrec_s(iel) = w1(iel)
       enddo
+      call synsca(cpro_wgrec_s)
     endif
 
     call viscfa &
@@ -940,6 +941,7 @@ if (idiff(ivar).ge.1) then
           cpro_wgrec_v(isou,iel) = viscce(isou,iel)
         enddo
       enddo
+      call syntis(cpro_wgrec_v)
     endif
 
     call vitens &
