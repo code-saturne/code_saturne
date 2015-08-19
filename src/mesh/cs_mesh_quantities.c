@@ -2096,6 +2096,7 @@ cs_mesh_quantities_create(void)
 
   mesh_quantities->cell_cen = NULL;
   mesh_quantities->cell_vol = NULL;
+  mesh_quantities->cell_f_vol = NULL;
   mesh_quantities->i_face_normal = NULL;
   mesh_quantities->b_face_normal = NULL;
   mesh_quantities->i_f_face_normal = NULL;
