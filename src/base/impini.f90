@@ -478,7 +478,7 @@ elseif(iturb.eq.21) then
   endif
 elseif(iturb.eq.30) then
   write(nfecra,2519)                                            &
-       almax, uref,                                             &
+       almax, uref, irijco,                                     &
        irijnu,irijrb,irijec,                                    &
        idifre,igrari,iclsyr,iclptr
 elseif(iturb.eq.31) then
@@ -660,6 +660,7 @@ write(nfecra,9900)
 '   - Rij-epsilon         (ITURB = 30)',                        /,&
 '       ALMAX  = ', e14.5,    ' (Longueur caracteristique    )',/,&
 '       UREF   = ', e14.5,    ' (Vitesse  caracteristique    )',/,&
+'       IRIJCO = ',4x,i10,    ' (Resolution couplee          )',/,&
 '       IRIJNU = ',4x,i10,    ' (Stabilisation matricielle   )',/,&
 '       IRIJRB = ',4x,i10,    ' (Reconstruction aux bords    )',/,&
 '       IRIJEC = ',4x,i10,    ' (Termes d echo de paroi      )',/,&
@@ -918,6 +919,7 @@ write(nfecra,9900)
 '   - Rij-epsilon         (ITURB = 30)',                        /,&
 '       ALMAX  = ', e14.5,    ' (Characteristic length       )',/,&
 '       UREF   = ', e14.5,    ' (Characteristic velocity     )',/,&
+'       IRIJCO = ',4x,i10,    ' (Coupled resolution          )',/,&
 '       IRIJNU = ',4x,i10,    ' (Matrix stabilization        )',/,&
 '       IRIJRB = ',4x,i10,    ' (Reconstruct at boundaries   )',/,&
 '       IRIJEC = ',4x,i10,    ' (Wall echo terms             )',/,&
