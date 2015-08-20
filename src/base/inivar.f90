@@ -156,22 +156,22 @@ do ivar = 1, nvar
       idimf = 6
     endif
     call field_get_key_int(iflid, kwgrec, f_id)
-  if (idimf.eq.6) then
-    call field_get_val_v(f_id, field_v_v)
-    do iel = 1, ncelet
-      field_v_v(1,iel) = 1.d0
-      field_v_v(2,iel) = 1.d0
-      field_v_v(3,iel) = 1.d0
-      field_v_v(4,iel) = 0.d0
-      field_v_v(5,iel) = 0.d0
-      field_v_v(6,iel) = 0.d0
-    enddo
-  else if (idimf.eq.1) then
-    call field_get_val_s(f_id, field_s_v)
-    do iel = 1, ncelet
-      field_s_v(iel) = 1.d0
-    enddo
-  endif
+    if (idimf.eq.6) then
+      call field_get_val_v(f_id, field_v_v)
+      do iel = 1, ncelet
+        field_v_v(1,iel) = 1.d0
+        field_v_v(2,iel) = 1.d0
+        field_v_v(3,iel) = 1.d0
+        field_v_v(4,iel) = 0.d0
+        field_v_v(5,iel) = 0.d0
+        field_v_v(6,iel) = 0.d0
+      enddo
+    else if (idimf.eq.1) then
+      call field_get_val_s(f_id, field_s_v)
+      do iel = 1, ncelet
+        field_s_v(iel) = 1.d0
+      enddo
+    endif
 
   endif
 enddo

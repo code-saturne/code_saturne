@@ -92,6 +92,7 @@ integer          iopchr
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
+integer          iflidp, idimf
 
 character(len=80) :: name, f_name
 
@@ -352,6 +353,31 @@ do iflid = 0, nfld-1
   endif
 enddo
 
+! Add weight field for variable to compute gradient
+iflidp = -1
+itycat = FIELD_PROPERTY
+ityloc = 1         ! variables defined on cells
+idimf  = -1        ! Field dimension
+
+do ivar = 1, nvar
+  if (iwgrec(ivar).eq.1) then
+
+    if (idiff(ivar).lt.1) cycle
+    iflid = ivarfl(ivar)
+    if (iflid.eq.iflidp) cycle
+    iflidp = iflid
+    call field_get_name(iflid, name)
+    f_name = 'gradient_weighting_'//trim(name)
+    if (idften(ivar).eq.1) then
+      idimf = 1
+    elseif (idften(ivar).eq.6) then
+      idimf = 6
+    endif
+    call field_create(f_name, itycat, ityloc, idimf, ilved, inoprv, f_id)
+    call field_set_key_int(iflid, kwgrec, f_id)
+
+  endif
+enddo
 
 !===============================================================================
 

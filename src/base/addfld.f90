@@ -82,8 +82,8 @@ implicit none
 
 integer          ii
 integer          ifcvsl, kislts, ifctsl
-integer          iflid, iflidp, iopchr, ivar
-integer          itycat, ityloc, idim1, idim3, idimf
+integer          iflid, iopchr, ivar
+integer          itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv, is_set
 integer          f_id, f_loc
 
@@ -111,35 +111,6 @@ iopchr = 1         ! Postprocessing level for variables
 !===============================================================================
 ! 1. Initialisation
 !===============================================================================
-
-! Add weight field for variable to compute gradient
-iflidp = -1
-itycat = FIELD_PROPERTY
-ityloc = 1         ! variables defined on cells
-ilved  = .true.    ! interleaved by default
-inoprv = .false.   ! variables have no previous value
-iopchr = 0         ! Postprocessing level for variables
-idimf  = -1        ! Field dimension
-
-do ivar = 1, nvar
-  if (iwgrec(ivar).eq.1) then
-
-    if (idiff(ivar).lt.1) cycle
-    iflid = ivarfl(ivar)
-    if (iflid.eq.iflidp) cycle
-    iflidp = iflid
-    call field_get_name(iflid, name)
-    f_name = 'gradient_weighting_'//trim(name)
-    if (idften(ivar).eq.1) then
-      idimf = 1
-    elseif (idften(ivar).eq.6) then
-      idimf = 6
-    endif
-    call field_create(f_name, itycat, ityloc, idimf, ilved, inoprv, f_id)
-    call field_set_key_int(iflid, kwgrec, f_id)
-
-  endif
-enddo
 
 !===============================================================================
 ! 2. Additional property fields
