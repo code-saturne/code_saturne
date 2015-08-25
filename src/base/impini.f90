@@ -631,7 +631,7 @@ write(nfecra,9900)
 '                                   (interdite en k-epsilon) )',/,&
 '                               (2: une echelle loi log      )',/,&
 '                               (3: deux echelles loi log    )',/,&
-'                               (4: invariante               )',/,&
+'                               (4: loi de paroi scalable    )',/,&
 '                               (5: deux echelles V. Driest  )',/,&
 '       IWALLT = ',4x,i10,    ' (correlation coeff. echange  )',/,&
 '                               (0: non activee              )',/,&
@@ -891,7 +891,7 @@ write(nfecra,9900)
 '                                   (forbidden for k-epsilon))',/,&
 '                               (2: one scale log law        )',/,&
 '                               (3: two scales log law       )',/,&
-'                               (4: invariant                )',/,&
+'                               (4: scalable wall function   )',/,&
 '                               (5: two scales V. Driest     )',/,&
 '       IWALLT = ',4x,i10,    ' (Exch. coeff. correlation    )',/,&
 '                               (0: not activated            )',/,&

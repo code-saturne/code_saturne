@@ -800,7 +800,7 @@ $U$ is the characteristic velocity, $\nu$ is the kinematic viscosity of the flui
  and $y$ is the mid-height of the first cell near the wall.}. If the mesh does
  not respect this condition, the results may be biased
 (particularly if thermal processes are involved). Using scalable wall-functions
-(cf. keyword {\tt ideuch}) may help avoiding this problem.\\
+(cf. keyword {\tt iwallf}) may help avoiding this problem.\\
 The v2-f model is a ``Low-Reynolds'' model, it is therefore necessary to
 make sure that the thickness of the first cell neighboring the wall is
 smaller than the thickness of the viscous sub-layer ($y^+<1$).\\
@@ -834,20 +834,24 @@ for any scalar $\varia$\\
 GGDH, AFM and DFM are only available when a second order closure is used ({\em i.e.} {\tt iturb}=30, 31, 32).
 }
 
-\motcle{ideuch}{i}{0, 1 or 2}{0 or 1}{O}{L2}
+\motcle{iwallf}{i}{0, 1, 2, 3, 4 or 5}{3}{O}{L2}
 {indicates the type of wall function is used for
  the velocity boundary conditions on a frictional wall.\\
-\hspace*{1.3cm}= 0: one-scale model\\
-\hspace*{1.3cm}= 1: two-scale model\\
-\hspace*{1.3cm}= 2: scalable wall function\\
-{\tt ideuch} is initialised to 0 for {\tt iturb}=0, 10, 40 or 41
-(laminar, mixing length, LES).\\
-{\tt ideuch} is initialised to 1 for {\tt iturb}=20, 21, 30, 31 or 60
+\hspace*{1.3cm}= 0: no wall functions\\
+\hspace*{1.3cm}= 1: one scale of friction velocities (power law)\\
+\hspace*{1.3cm}= 2: one scale of friction velocities (log law)\\
+\hspace*{1.3cm}= 3: two scales of friction velocities (log law)\\
+\hspace*{1.3cm}= 4: two scales of friction velocities (log law) - scalable wall functions\\
+\hspace*{1.3cm}= 5: two scales of friction velocities (mixing length based on V. Driest analysis)\\
+{\tt iwallf} is initialised to 2 for {\tt iturb}=10, 40, 41 or 70
+(mixing length, LES and Spalart Allmaras).\\
+{\tt iwallf} is initialised to 0 for {\tt iturb}=0, 32, 50 or 51\\
+{\tt iwallf} is initialised to 3 for {\tt iturb}=20, 21, 30, 31 or 60
 ($k-\varepsilon$, $R_{ij}-\varepsilon$ LRR, $R_{ij}-\varepsilon$ SSG and
 $k-\omega$ SST models).\\
 The v2f model ({\tt iturb}=50) is not designed to use wall functions
 (the mesh must be ``low Reynolds'').\\
-The value {\tt ideuch}=1 is not compatible with {\tt iturb}=0, 10, 40
+The value {\tt iwallf}=3 is not compatible with {\tt iturb}=0, 10, 40
 or 41 (laminar, mixing length and LES).\\
 Concerning the $k-\varepsilon$ and $R_{ij}-\varepsilon$ models, the
 two-scales model is usually at least as satisfactory as the one-scale
@@ -867,7 +871,7 @@ always useful}
 \motcle{ypluli}{r}{real number $>$ 0}{\tt 1/xkappa, 10.88}{O}{L3}
 {limit value of $y^+$ for the viscous sub-layer\\
 {\tt ypluli} depends on the chosen wall function: it is
-initialised to 10.88 for the scalable wall function ({\tt ideuch}=2),
+initialised to 10.88 for the scalable wall function ({\tt iwallf}=2),
 otherwise it is initialised to $1/\kappa\approx 2,38$\\
 In LES, {\tt ypluli} is taken by default to be 10.88\\
 always useful}
