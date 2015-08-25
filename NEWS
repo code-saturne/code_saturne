@@ -42,6 +42,9 @@ Release 4.1.0 (July 31 2015)
 Changes:
 --------
 
+ - Add 2-scales wall function (with V. Driest mixing length) and its consistant
+   wall function on scalars (keyword iwallf in the doc.).
+
  - Renamed 'efforts' to 'stress', which should be less confusing.
 
  - Change multigrid default settings based on recent performance benchmarks.
