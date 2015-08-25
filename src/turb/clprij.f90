@@ -341,12 +341,11 @@ integer          iclip
 
 ! Local variables
 
-integer          iel, ivar, ivar1, ivar2, isou, iclptot
-integer          iclrij(7)
-double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2
+integer          iel, ivar, ivar1, ivar2, isou, iclrij, iclpep
+integer          is_clipped
+double precision vmin(7), vmax(7), rijmin, varrel, und0, epz2,cvar_var1, cvar_var2
 
 double precision, dimension(:), pointer :: cvar_ep, cvara_ep
-double precision, dimension(:), pointer :: cvar_var1, cvar_var2
 double precision, dimension(:,:), pointer :: cvar_rij, cvara_rij
 !===============================================================================
 
@@ -369,7 +368,6 @@ call field_get_val_v(ivarfl(irij), cvar_rij)
 
 
 do isou = 1, 7
-  iclrij(isou) = 0
   vmin(isou) =  grand
   vmax(isou) = -grand
   do iel = 1, ncel
@@ -385,98 +383,93 @@ enddo
 
 ! ---> Clipping (modif pour eviter les valeurs exactement nulles)
 
-if (iclip.eq.1) then
+varrel = 1.1d0
 
-  do isou = 1, 3
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_val_prev_v(ivarfl(irij), cvara_rij)
+iclrij = 0
+iclpep = 0
 
-    do iel = 1, ncel
+do iel = 1, ncel
+
+  is_clipped = 0
+
+  ! First version of clipping
+  if (iclip.eq.1) then
+
+    ! Diagonal of R
+    do isou = 1, 3
       if (cvar_rij(isou,iel).le.epz2) then
-        iclrij(isou) = iclrij(isou) + 1
+        is_clipped = 1
         cvar_rij(isou,iel) = epz2
       endif
     enddo
 
-  enddo
-
-  do iel = 1, ncel
+    ! Epsilon
     if (abs(cvar_ep(iel)).le.epz2) then
-      iclrij(7) = iclrij(7) + 1
+      iclpep = iclpep + 1
       cvar_ep(iel) = max(cvar_ep(iel),epz2)
     elseif(cvar_ep(iel).le.0.d0) then
-      iclrij(7) = iclrij(7) + 1
+      iclpep = iclpep + 1
       cvar_ep(iel) = abs(cvar_ep(iel))
     endif
-  enddo
 
-else
+  ! Second version of clipping
+  else
 
-  varrel = 1.1d0
-
-  call field_get_val_prev_s(ivarfl(iep), cvara_ep)
-
-  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-
-  do isou = 1, 3
-
-    do iel = 1, ncel
+    ! Diagonal of R
+    do isou = 1, 3
       if (abs(cvar_rij(isou,iel)).le.epz2) then
-        iclrij(isou) = iclrij(isou) + 1
+        is_clipped = 1
         cvar_rij(isou,iel) = max(cvar_rij(isou,iel),epz2)
       elseif(cvar_rij(isou,iel).le.0.d0) then
-        iclrij(isou) = iclrij(isou) + 1
+        is_clipped = 1
         cvar_rij(isou,iel) = min(abs(cvar_rij(isou,iel)), varrel*abs(cvara_rij(isou,iel)))
       endif
     enddo
 
-  enddo
-
-  iclrij(7) = 0
-  do iel = 1, ncel
+    ! Epsilon
     if (abs(cvar_ep(iel)).lt.epz2) then
-      iclrij(7) = iclrij(7) + 1
+      iclpep = iclpep + 1
       cvar_ep(iel) = max(cvar_ep(iel),epz2)
     elseif(cvar_ep(iel).le.0.d0) then
-      iclrij(7) = iclrij(7) + 1
+      iclpep = iclpep + 1
       cvar_ep(iel) = min(abs(cvar_ep(iel)), varrel*abs(cvara_ep(iel)))
     endif
-  enddo
 
-endif
-
-! On force l'inegalite de Cauchy Schwarz
-
-do isou = 4, 6
-
-  if(isou.eq.4) then
-    cvar_var1 => cvar_rij(1,:)
-    cvar_var2 => cvar_rij(2,:)
-  elseif(isou.eq.6) then
-    cvar_var1 => cvar_rij(1,:)
-    cvar_var2 => cvar_rij(3,:)
-  elseif(isou.eq.5) then
-    cvar_var1 => cvar_rij(2,:)
-    cvar_var2 => cvar_rij(3,:)
   endif
-  und0 = 1.d0
-  do iel = 1, ncel
-    rijmin = sqrt(cvar_var1(iel)*cvar_var2(iel))
+
+  ! Enforced Cauchy Schwarz inequality (only for x, y, z direction)
+  do isou = 4, 6
+    if(isou.eq.4) then
+      cvar_var1 = cvar_rij(1,iel)
+      cvar_var2 = cvar_rij(2,iel)
+    elseif(isou.eq.6) then
+      cvar_var1 = cvar_rij(1,iel)
+      cvar_var2 = cvar_rij(3,iel)
+    elseif(isou.eq.5) then
+      cvar_var1 = cvar_rij(2,iel)
+      cvar_var2 = cvar_rij(3,iel)
+    endif
+    und0 = 1.d0
+
+    rijmin = sqrt(cvar_var1*cvar_var2)
     if (rijmin.lt.abs(cvar_rij(isou,iel))) then
+      is_clipped = 1
       cvar_rij(isou,iel) = sign(und0,cvar_rij(isou,iel)) * rijmin
-      iclrij(isou) = iclrij(isou) + 1
     endif
   enddo
 
+  iclrij = iclrij + is_clipped
 enddo
+
 
 ! ---> Stockage nb de clippings pour listing
-iclptot = 0
-do isou = 1, 6
-  iclptot = iclptot + iclrij(isou)
-enddo
-call log_iteration_clipping_field(ivarfl(irij), iclptot, 0,  &
+
+call log_iteration_clipping_field(ivarfl(irij), iclrij, 0,  &
                                     vmin(1:6), vmax(1:6))
 
-call log_iteration_clipping_field(ivarfl(iep), iclrij(7), 0,  &
+call log_iteration_clipping_field(ivarfl(iep), iclpep, 0,  &
                                     vmin(7), vmax(7))
 
 return
