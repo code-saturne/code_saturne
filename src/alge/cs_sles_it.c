@@ -692,52 +692,52 @@ _fact_lu33(cs_lnum_t         n_blocks,
 
 static void
 _fact_lu_pp(cs_lnum_t         n_blocks,
-            const int   db_size,
+            const int         db_size,
             const cs_real_t  *ad,
             cs_real_t        *ad_inv)
 {
-  int ii, jj, kk;
+  cs_lnum_t ii, jj, kk;
 # pragma omp parallel for if(n_blocks > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_blocks; i++) {
 
     cs_real_t *restrict _ad_inv = &ad_inv[db_size*db_size*i];
     const cs_real_t *restrict  _ad = &ad[db_size*db_size*i];
 
-    _ad_inv[0] = _ad[0] ;
-    //ad_inv(1,j) = ad(1,j)
-    //ad_inv(j,1) = ad(j,1)/a(1,1)
-    for (ii = 1; ii < db_size ; ii++) {
-      _ad_inv[ii] = _ad[ii] ;
+    _ad_inv[0] = _ad[0];
+    // ad_inv(1,j) = ad(1,j)
+    // ad_inv(j,1) = ad(j,1)/a(1,1)
+    for (ii = 1; ii < db_size; ii++) {
+      _ad_inv[ii] = _ad[ii];
       _ad_inv[ii*db_size] = _ad[ii*db_size]/_ad[0];
     }
-    //ad_inv(i,i) = ad(i,i) - Somme( ad_inv(i,k)*ad_inv(k,i)) k=1 à i-1
-    for (ii = 1; ii < db_size - 1 ; ii++) {
+    // ad_inv(i,i) = ad(i,i) - Sum( ad_inv(i,k)*ad_inv(k,i)) k=1 to i-1
+    for (ii = 1; ii < db_size - 1; ii++) {
       _ad_inv[ii + ii*db_size] = _ad[ii + ii*db_size];
-      for (kk = 0 ; kk < ii ; kk++) {
+      for (kk = 0; kk < ii; kk++) {
         _ad_inv[ii + ii*db_size] -= _ad_inv[ii*db_size + kk]
-                                   *_ad_inv[kk*db_size + ii] ;
+                                   *_ad_inv[kk*db_size + ii];
       }
 
       for (jj = ii + 1; jj < db_size; jj++) {
-        _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj] ;
-        _ad_inv[jj*db_size + ii] = _ad[jj*db_size + ii]/_ad_inv[ii*db_size + ii] ;
+        _ad_inv[ii*db_size + jj] = _ad[ii*db_size + jj];
+        _ad_inv[jj*db_size + ii] =   _ad[jj*db_size + ii]
+                                   / _ad_inv[ii*db_size + ii];
         for (kk = 0; kk < ii; kk++) {
-          _ad_inv[ii*db_size + jj] -= _ad_inv[ii*db_size + kk]
-                                     *_ad_inv[kk*db_size + jj] ;
-          _ad_inv[jj*db_size + ii] -= _ad_inv[jj*db_size + kk]
-                                     *_ad_inv[kk*db_size + ii]
-                                     /_ad_inv[ii*db_size + ii] ;
+          _ad_inv[ii*db_size + jj] -=  _ad_inv[ii*db_size + kk]
+                                      *_ad_inv[kk*db_size + jj];
+          _ad_inv[jj*db_size + ii] -=  _ad_inv[jj*db_size + kk]
+                                      *_ad_inv[kk*db_size + ii]
+                                      /_ad_inv[ii*db_size + ii];
         }
       }
     }
-    _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1] ;
-    for (kk = 0 ; kk < db_size - 1 ; kk++) {
-      _ad_inv[db_size*db_size - 1] -= _ad_inv[(db_size-1) + kk]
-                                     *_ad_inv[kk*db_size + db_size -1]  ;
+    _ad_inv[db_size*db_size -1] = _ad[db_size*db_size - 1];
+    for (kk = 0; kk < db_size - 1; kk++) {
+      _ad_inv[db_size*db_size - 1] -=  _ad_inv[(db_size-1) + kk]
+                                      *_ad_inv[kk*db_size + db_size -1];
     }
   }
 }
-
 
 /*----------------------------------------------------------------------------
  * Setup context for iterative linear solver.
@@ -750,7 +750,7 @@ _fact_lu_pp(cs_lnum_t         n_blocks,
  *   a                <-- matrix
  *   verbosity        <-- verbosity level
  *   diag_block_size  <-- diagonal block size
- *   block_33_inverse <-- if diagonal block is of size 3, compute inverse of
+ *   block_nn_inverse <-- if diagonal block size is 3 or 6, compute inverse of
  *                        block if true, inverse of block diagonal otherwise
  *----------------------------------------------------------------------------*/
 
@@ -760,7 +760,7 @@ _setup_sles_it(cs_sles_it_t       *c,
                const cs_matrix_t  *a,
                int                 verbosity,
                int                 diag_block_size,
-               bool                block_33_inverse)
+               bool                block_nn_inverse)
 {
   cs_timer_t t0;
   if (c->update_stats == true)
@@ -817,7 +817,7 @@ _setup_sles_it(cs_sles_it_t       *c,
     }
     else {
 
-      if (diag_block_size < 3 || block_33_inverse == false) {
+      if (diag_block_size < 3 || block_nn_inverse == false) {
 
         const cs_lnum_t n_rows = sd->n_rows;
 
@@ -2015,14 +2015,14 @@ _fw_and_bw_lu_pp(const cs_real_t  mat[],
 
   //forward
   for (ii = 0; ii < db_size; ii++) {
-    aux[ii] = (c[ii] - b[ii]) ;
+    aux[ii] = (c[ii] - b[ii]);
     for (jj = 0; jj < ii; jj++) {
       aux[ii] -= aux[jj]*mat[ii*db_size + jj];
     }
   }
   //backward
   for (ii = db_size - 1; ii >= 0; ii-=1) {
-    x[ii] = aux[ii] ;
+    x[ii] = aux[ii];
     for (jj = db_size - 1; jj > ii; jj-=1) {
       x[ii] -= x[jj]*mat[ii*db_size + jj];
     }

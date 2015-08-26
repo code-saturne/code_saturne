@@ -5544,36 +5544,38 @@ cs_gradient_tensor(const char                *var_name,
   }
 
   /* Compute gradient */
-    _initialize_tensor_gradient(mesh,
-                                fvq,
-                                halo_type,
-                                inc,
-                                bc_coeff_a,
-                                bc_coeff_b,
-                                var,
-                                grad);
 
-    /* If reconstructions are required */
+  _initialize_tensor_gradient(mesh,
+                              fvq,
+                              halo_type,
+                              inc,
+                              bc_coeff_a,
+                              bc_coeff_b,
+                              var,
+                              grad);
 
-    if (n_r_sweeps > 1)
-      _iterative_tensor_gradient(mesh,
-                                 fvq,
-                                 var_name,
-                                 halo_type,
-                                 inc,
-                                 n_r_sweeps,
-                                 verbosity,
-                                 epsilon,
-                                 bc_coeff_a,
-                                 bc_coeff_b,
-                                 (const cs_real_6_t *)var,
-                                 grad);
+  /* If reconstructions are required */
 
+  if (n_r_sweeps > 1)
+    _iterative_tensor_gradient(mesh,
+                               fvq,
+                               var_name,
+                               halo_type,
+                               inc,
+                               n_r_sweeps,
+                               verbosity,
+                               epsilon,
+                               bc_coeff_a,
+                               bc_coeff_b,
+                               (const cs_real_6_t *)var,
+                               grad);
+
+  if (update_stats == true) {
+    gradient_info->n_calls += 1;
+    t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(gradient_info->t_tot), &t0, &t1);
+  }
 }
-
-
-
-
 
 /*----------------------------------------------------------------------------
  * Determine gradient type by Fortran "imrgra" value
