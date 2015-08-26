@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 #
-# Batch options for LSF (example: CCRT's Platine)
-# =====================
+# Batch options for Platform LSF
+# ==============================
 #
 #BSUB -n 2
 #BSUB -W 00:05
@@ -9,7 +9,7 @@
 #BSUB -e nameandcasee.%J
 #BSUB -J nameandcase
 #
-#  -n : number of processors (optionally: nprocs_min, nprocs_max)
+#  -n : number of processes (optionally: nprocs_min, nprocs_max)
 #  -W : walltime as hh:mm
 #  -o : output file name
 #  -e : error file name

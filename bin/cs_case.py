@@ -92,6 +92,10 @@ class case:
         else:
             self.package_compute = self.package
 
+        # Determine caller script path (which may contain batch directives)
+
+        self.parent_script = cs_exec_environment.get_parent_process_path()
+
         # Set environment modules if present
 
         cs_exec_environment.set_modules(self.package_compute)
@@ -640,14 +644,14 @@ class case:
         src = sys.argv[0]
 
         if os.path.basename(src) == self.package.name:
-            return
-
-        dest = os.path.join(self.result_dir, os.path.basename(src))
+            src = self.parent_script
 
         # Copy single file
 
-        if os.path.isfile(src) and src != dest:
-            shutil.copy2(src, dest)
+        if src:
+            dest = os.path.join(self.result_dir, os.path.basename(src))
+            if os.path.isfile(src) and src != dest:
+                shutil.copy2(src, dest)
 
     #---------------------------------------------------------------------------
 

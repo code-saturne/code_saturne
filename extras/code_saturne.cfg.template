@@ -58,11 +58,11 @@
 # mpiexec_args =
 ### Option to define executable (usually none, or -exe)
 # mpiexec_exe =
-### Option to define number of ranks (e.g. ' -n ', ' -np '; trailing whitespace
-### is significant, as SLURM for example requires ' -n', for a -n<n_procs>
-### type syntax, so quotes may be used here)
+### Option to define number of ranks (e.g. ' -n ', ' -np ';
+### trailing whitespace is significant, so quotes may be used here)
 # mpiexec_n = ' -n '
-### Option to define number of ranks per node (e.g. ' -ppn 6 ', ' --ranks-per-node 16 ')
+### Option to define number of ranks per node (e.g. ' -ppn ', ' --ranks-per-node ';
+### trailing whitespace is significant, so quotes may be used here)
 # mpiexec_n_per_node =
 ### Separator after mpiexec options (':' for Blue Gene/Q without SLURM)
 # mpiexec_separator =
@@ -73,7 +73,7 @@
 # gen_hostsfile =
 ### Shell command to delete hostsfile if required
 # del_hostsfile =
-### Command to start environment (e.g. mpdboot for some MPICH2/MPICH-3 builds)
+### Command to start environment (e.g. mpdboot for some old MPICH2 builds)
 # mpiboot =
 ### Command to halt environment (e.g. mpdallexit after mpdboot)
 # mpihalt =
