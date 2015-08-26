@@ -35,7 +35,7 @@ AC_ARG_WITH(blas,
             [if test "x$withval" = "x"; then
                with_blas=yes
              fi],
-            [with_blas=check])
+            [with_blas=no])
 
 AC_ARG_WITH(blas-include,
             [AS_HELP_STRING([--with-blas-include=PATH],

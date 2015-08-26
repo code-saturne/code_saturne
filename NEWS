@@ -36,6 +36,13 @@ Changes:
    * Restart from an uncoupled Rij tensor is possible
    * Daly Harlow and Shir models are available
 
+Architectural changes
+---------------------
+
+- Do not build with BLAS by default, as only MKL is used outside of unit tests, and
+  using it requires providing its path to "--with-blas" anyways.
+
+
 Release 4.1.0 (July 31 2015)
 ============================
 
