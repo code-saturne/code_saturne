@@ -39,8 +39,6 @@ import tempfile
 
 python_version = sys.version[:3]
 
-import cs_batch
-
 #===============================================================================
 # Utility functions
 #===============================================================================
@@ -715,26 +713,6 @@ def source_syrthes_env(pkg):
 
 #-------------------------------------------------------------------------------
 
-def get_parent_process_path():
-    """
-    Retrieve parent script path, when possible
-    """
-
-    path = None
-
-    if sys.platform.startswith('win'):
-        try:
-            f = open("/proc/" + str(os.getppid()) + "/cmdline")
-            l = f.readlines()
-            l = f.read()
-            path = l.split('\x00')[1]
-        except Exception:
-            pass
-
-    return path
-
-#-------------------------------------------------------------------------------
-
 class batch_info:
 
     #---------------------------------------------------------------------------
@@ -816,7 +794,7 @@ class batch_info:
             rtime = get_command_output(cmd)
         elif self.batch_type == 'SLURM':
             cmd = "squeue -h -j $SLURM_JOBID -o %L"
-            rtime = cs_batch.parse_wall_time_slurm(get_command_output(cmd))
+            # TODO parse this
 
         return rtime
 
@@ -849,6 +827,8 @@ class resource_info(batch_info):
         # Check for resource manager
 
         # Test for SLURM (Simple Linux Utility for Resource Management).
+        # Note that we could also use SLURM_CPUS_PER_TASK to
+        # determine Open MP behavior when that is ready.
 
         s = os.getenv('SLURM_NPROCS')
         if s != None:
@@ -1266,7 +1246,9 @@ class mpi_environment:
 
         if resource_info and self.mpiexec and not self.mpiexec_n_per_node:
             if os.path.basename(self.mpiexec)[:4] == 'srun':
-                self.mpiexec_n_per_node = ' --ntasks-per-node='
+                ppn = resource_info.n_procs_per_node()
+                if ppn:
+                    self.mpiexec_n_per_node = ' --ntasks-per-node=' + str(ppn)
 
         # Initialize based on known MPI types, or default.
 
@@ -1304,18 +1286,6 @@ class mpi_environment:
                    self.mpmd = eval('MPI_MPMD_' + v)
                else:
                    self.__dict__[k] = v
-
-        # Now adjust mpiexec_n_per_node base on available info:
-        # leave value alone if digit (ppn value) already present,
-        # complete or remove string otherwise.
-
-        if self.mpiexec_n_per_node:
-            if not self.mpiexec_n_per_node[-1:].isdigit():
-                ppn = resource_info.n_procs_per_node()
-                if ppn:
-                    self.mpiexec_n_per_node += str(ppn)
-                else:
-                    self.mpiexec_n_per_node = None
 
     #---------------------------------------------------------------------------
 
@@ -1361,12 +1331,6 @@ class mpi_environment:
             suffix = mpiexec_path[i+1:]
             if suffix in ['hydra', 'gforker', 'remshell', 'smpd', 'mpd']:
                 return suffix
-
-        # If command is an external wrapper, use its base name
-
-        cmd = os.path.basename(mpiexec_path)
-        if cmd not in ['mpiexec', 'mpirun']:
-            return cmd
 
         # Use mpichversion/mpich2version preferentially
 
@@ -1437,7 +1401,7 @@ class mpi_environment:
           a single machine (the equivalent seem possible with HYDRA
           using "mpiexec -bootstrap fork")
 
-        - remshell is a very simple version of mpiexec which makes use of
+        - remsh is a very simple version of mpiexec which makes use of
           the ssh command to start processes on a collection of
           machines. It ignores the command line options which control
           the environment variables given to MPI programs.
@@ -1535,7 +1499,7 @@ class mpi_environment:
                 if ppn:
                     self.mpiexec_n_per_node = ' -ppn ' + str(ppn)
 
-        elif pm == 'remshell':
+        elif pm == 'smpd':
             hostsfile = resource_info.get_hosts_file(wdir)
             if hostsfile != None:
                 self.mpiboot += ' --file=' + hostsfile

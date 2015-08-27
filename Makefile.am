@@ -226,7 +226,6 @@ bin/cs_package.py
 dist_pkgpython_PYTHON = \
 bin/__init__.py \
 bin/cs_autovnv.py \
-bin/cs_batch.py \
 bin/cs_bdiff.py \
 bin/cs_bdump.py \
 bin/cs_case.py \

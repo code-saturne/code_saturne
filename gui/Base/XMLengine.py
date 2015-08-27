@@ -96,7 +96,7 @@ def xmlChecker(filename):
 class Dico:
     """
     This define a simple class in order to store informations about the case.
-    These informations are useful only for the current session, and are
+    These informations are usefull only for the current session, and are
     forgotten for the next one.
     """
     def __init__(self):
@@ -117,7 +117,7 @@ class Dico:
         self.data['relevant_subdir']  = "no"
         self.data['case_path']        = ""
         self.data['runcase']          = False
-        self.data['batch']            = None
+        self.data['batch_type']       = ""
         self.data['no_boundary_conditions'] = False
         self.data['salome']           = False
         self.data['package']          = None

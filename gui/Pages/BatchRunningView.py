@@ -441,15 +441,26 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                     self.case['runcase'] = cs_runcase.runcase(runcase_path,
                                                               package=self.case['package'])
 
+        # Get batch type
+
+        config = configparser.ConfigParser()
+        config.read(self.case['package'].get_configfiles())
+
+        cs_batch_type = None
+        if config.has_option('install', 'batch'):
+            cs_batch_type = config.get('install', 'batch')
+            if os.path.isabs(cs_batch_type):
+                i = cs_batch_type.rfind(".")
+                if i > -1:
+                    cs_batch_type = cs_batch_type[i+1:]
+
+        self.case['batch_type'] = cs_batch_type
+
         # Get MPI and OpenMP features
 
         self.have_mpi = False
         self.have_openmp = False
         config_features = self.case['package'].config.features
-
-        config = configparser.ConfigParser()
-        config.read(self.case['package'].get_configfiles())
-
         if config.has_option('install', 'compute_versions'):
             compute_versions = config.get('install', 'compute_versions').split(':')
             if compute_versions[0]:
@@ -474,7 +485,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.class_list = None
 
-        if self.jmdl.batch.rm_type != None:
+        if self.case['batch_type'] != None:
 
             self.groupBoxArchi.setTitle("Job and script files")
             self.labelBatch.show()
@@ -504,7 +515,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Connections
 
-        if self.jmdl.batch.rm_type != None:
+        if self.case['batch_type'] != None:
             self.connect(self.lineEditJobName, SIGNAL("textChanged(const QString &)"),
                          self.slotJobName)
             self.connect(self.spinBoxNodes, SIGNAL("valueChanged(int)"),
@@ -564,7 +575,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         else:
             setGreenColor(self.toolButtonSearchBatch, True)
 
-        if self.jmdl.batch.rm_type != None and self.case['runcase']:
+        if self.case['batch_type'] != None and self.case['runcase']:
             self.displayBatchInfo()
 
         # Script info is based on the XML model
@@ -580,8 +591,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobName.validator().state == QValidator.Acceptable:
-            self.jmdl.batch.params['job_name'] = str(v)
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_name')
+            self.jmdl.dictValues['job_name'] = str(v)
+            self.jmdl.updateBatchFile('job_name')
 
 
     @pyqtSignature("int")
@@ -589,8 +600,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_nodes'] = str(self.spinBoxNodes.text())
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_nodes')
+        self.jmdl.dictValues['job_nodes'] = str(self.spinBoxNodes.text())
+        self.jmdl.updateBatchFile('job_nodes')
 
 
     @pyqtSignature("int")
@@ -598,8 +609,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_ppn']  = str(self.spinBoxPpn.text())
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_ppn')
+        self.jmdl.dictValues['job_ppn']  = str(self.spinBoxPpn.text())
+        self.jmdl.updateBatchFile('job_ppn')
 
 
     @pyqtSignature("int")
@@ -607,8 +618,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_procs']  = str(self.spinBoxProcs.text())
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_procs')
+        self.jmdl.dictValues['job_procs']  = str(self.spinBoxProcs.text())
+        self.jmdl.updateBatchFile('job_procs')
 
 
     @pyqtSignature("int")
@@ -616,8 +627,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_threads']  = str(self.spinBoxThreads.text())
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_threads')
+        self.jmdl.dictValues['job_threads']  = str(self.spinBoxThreads.text())
+        self.jmdl.updateBatchFile('job_threads')
 
 
     @pyqtSignature("")
@@ -626,16 +637,16 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
         m_cput = self.spinBoxMinutes.value()
         s_cput = self.spinBoxSeconds.value()
-        self.jmdl.batch.params['job_walltime'] = h_cput*3600 + m_cput*60 + s_cput
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_walltime')
+        self.jmdl.dictValues['job_walltime'] = h_cput*3600 + m_cput*60 + s_cput
+        self.jmdl.updateBatchFile('job_walltime')
 
 
     @pyqtSignature("")
     def slotClass(self):
 
-        self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
-        if len(self.jmdl.batch.params['job_class']) > 0:
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_class')
+        self.jmdl.dictValues['job_class'] = str(self.comboBoxClass.currentText())
+        if len(self.jmdl.dictValues['job_class']) > 0:
+            self.jmdl.updateBatchFile('job_class')
 
 
     @pyqtSignature("const QString &")
@@ -644,8 +655,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobAccount.validator().state == QValidator.Acceptable:
-            self.jmdl.batch.params['job_account'] = str(v)
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_account')
+            self.jmdl.dictValues['job_account'] = str(v)
+            self.jmdl.updateBatchFile('job_account')
 
 
     @pyqtSignature("const QString &")
@@ -654,8 +665,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobWCKey.validator().state == QValidator.Acceptable:
-            self.jmdl.batch.params['job_wckey'] = str(v)
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_wckey')
+            self.jmdl.dictValues['job_wckey'] = str(v)
+            self.jmdl.updateBatchFile('job_wckey')
 
 
     @pyqtSignature("const QString &")
@@ -751,7 +762,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Build command line
 
-        key = self.jmdl.batch.rm_type
+        key = self.case['batch_type']
 
         batch = self.case['runcase'].path
 
@@ -760,8 +771,18 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.__updateRuncase(run_id)
             cmd = batch
             key = 'localhost'
+        elif key[0:3] == 'CCC':
+            cmd = 'msub ' + batch
+        elif key[0:5] == 'LOADL':
+            cmd = 'llsubmit ' + batch
+        elif key[0:3] == 'LSF':
+            cmd = 'bsub < ' + batch
+        elif key[0:3] == 'PBS' or key[0:3] == 'SGE':
+            cmd = 'qsub ' + batch
+        elif key[0:5] == 'SLURM':
+            cmd = 'sbatch ' + batch
         else:
-            cmd = self.jmdl.batch.submit_command_prefix() + batch
+            pass
 
         if self.case['salome'] or key == 'localhost':
             dlg = ListingDialogView(self.parent, self.case, run_title, [cmd])
@@ -812,6 +833,92 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         runcase.save()
 
 
+    def getCommandOutput(self, cmd):
+        """
+        Run a command and return it's standard output.
+        """
+        p = subprocess.Popen(cmd,
+                             shell=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
+        lines = []
+        while True:
+            l = p.stdout.readline()
+            lines.append(l.strip())
+            if len(l) == 0 and p.poll() != None:
+                break
+        output = p.communicate()
+
+        if p.returncode == 0:
+            return lines
+
+
+    def getClassList(self):
+        """
+        Layout of the second part of this page.
+        """
+
+        self.class_list = []
+
+        try:
+
+            if self.case['batch_type'][0:3] == 'CCC':
+                output = self.getCommandOutput('class')
+                for l in output[1:]:
+                    if len(l) == 0:
+                        break
+                    else:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:5] == 'LOADL':
+                output = self.getCommandOutput('llclass')
+                ignore = True
+                for l in output:
+                    if l[0:3] == '---':
+                        ignore = not ignore
+                    elif ignore == False:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:3] == 'LSF':
+                output = self.getCommandOutput('bqueues')
+                ignore = True
+                for l in output[1:]:
+                    if len(l) == 0:
+                        break
+                    else:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:3] == 'PBS':
+                output = self.getCommandOutput('qstat -q')
+                ignore = True
+                for l in output:
+                    if l[0:3] == '---':
+                        ignore = not ignore
+                    elif ignore == False:
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:3] == 'SGE':
+                output = self.getCommandOutput('qconf -sc')
+                for l in output:
+                    if l[0:1] != '#':
+                        self.class_list.append(l.split(' ')[0])
+
+            elif self.case['batch_type'][0:5] == 'SLURM':
+                output = self.getCommandOutput('sinfo -s')
+                for l in output[1:]:
+                    if len(l) == 0:
+                        break
+                    else:
+                        name = l.split(' ')[0]
+                        if name[-1:] == '*':
+                            name = name[:-1]
+                        self.class_list.append(name)
+
+        except Exception:
+            pass
+
+
     def hideBatchInfo(self):
         """
         hide all batch info before displaying a selected subset
@@ -851,15 +958,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Layout of the second part of this page.
         """
 
-        self.job_name  = self.jmdl.batch.params['job_name']
-        self.job_nodes = self.jmdl.batch.params['job_nodes']
-        self.job_ppn  = self.jmdl.batch.params['job_ppn']
-        self.job_procs = self.jmdl.batch.params['job_procs']
-        self.job_threads = self.jmdl.batch.params['job_threads']
-        self.job_walltime = self.jmdl.batch.params['job_walltime']
-        self.job_class  = self.jmdl.batch.params['job_class']
-        self.job_account  = self.jmdl.batch.params['job_account']
-        self.job_wckey  = self.jmdl.batch.params['job_wckey']
+        self.job_name  = self.jmdl.dictValues['job_name']
+        self.job_nodes = self.jmdl.dictValues['job_nodes']
+        self.job_ppn  = self.jmdl.dictValues['job_ppn']
+        self.job_procs = self.jmdl.dictValues['job_procs']
+        self.job_threads = self.jmdl.dictValues['job_threads']
+        self.job_walltime = self.jmdl.dictValues['job_walltime']
+        self.job_class  = self.jmdl.dictValues['job_class']
+        self.job_account  = self.jmdl.dictValues['job_account']
+        self.job_wckey  = self.jmdl.dictValues['job_wckey']
 
         if self.job_name != None:
             self.labelJobName.show()
@@ -912,7 +1019,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
             # Only one pass here
             if self.class_list == None:
-                self.class_list = self.jmdl.batch.get_class_list()
+                self.getClassList()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
                         self.comboBoxClass.addItem(self.tr(c), to_qvariant(c))
@@ -931,9 +1038,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.comboBoxClass.show()
 
             # update runcase (compute class specific to ivanoe)
-            self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
-            if len(self.jmdl.batch.params['job_class']) > 0:
-                self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_class')
+            self.jmdl.dictValues['job_class'] = str(self.comboBoxClass.currentText())
+            if len(self.jmdl.dictValues['job_class']) > 0:
+                self.jmdl.updateBatchFile('job_class')
 
         if self.job_account != None:
             self.labelJobAccount.show()
@@ -947,17 +1054,17 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Show Job management box
 
-        if self.jmdl.batch.rm_type == 'LOADL':
+        if self.case['batch_type'][0:5] == 'LOADL':
             self.groupBoxJob.setTitle("Load Leveler job parameters")
             self.labelJobAccount.setText(str("Group"))
             self.lineEditJobAccount.setToolTip("To obtain a list of defined groups, run <b><tt>xloadl</tt></b>, then select <i>File -> Build a Job</i>, and check the group names in the <i>Group</i> field")
-        elif self.jmdl.batch.rm_type == 'LSF':
+        elif self.case['batch_type'][0:3] == 'LSF':
             self.groupBoxJob.setTitle("LSF job parameters")
-        elif self.jmdl.batch.rm_type == 'PBS':
+        elif self.case['batch_type'][0:3] == 'PBS':
             self.groupBoxJob.setTitle("PBS job parameters")
-        elif self.jmdl.batch.rm_type == 'SGE':
+        elif self.case['batch_type'][0:3] == 'SGE':
             self.groupBoxJob.setTitle("Sun Grid Engine job parameters")
-        if self.jmdl.batch.rm_type == 'SLURM':
+        if self.case['batch_type'][0:5] == 'SLURM':
             self.groupBoxJob.setTitle("SLURM job parameters")
         else:
             self.groupBoxJob.setTitle("Batch job parameters")
@@ -966,7 +1073,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         # Update file
 
-        self.jmdl.batch.update_lines(self.case['runcase'].lines)
+        self.jmdl.updateBatchFile()
 
 
     def displayScriptInfo(self):
@@ -1033,7 +1140,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                                                           package=self.case['package'])
                 self.labelBatchName.setText(str(launcher))
                 self.hideBatchInfo()
-                if self.jmdl.batch.rm_type != None:
+                if self.case['batch_type'] != None:
                     self.displayBatchInfo()
             else:
                 title = self.tr("Warning")
