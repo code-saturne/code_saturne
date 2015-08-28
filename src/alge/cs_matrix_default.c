@@ -607,14 +607,40 @@ cs_matrix_default(bool        symmetric,
                   const int  *diag_block_size,
                   const int  *extra_diag_block_size)
 {
+  cs_matrix_fill_type_t fill_type = CS_MATRIX_SCALAR;
+  int db_size = 1, eb_size = 1;
+
   cs_matrix_t *m = NULL;
 
-  cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
-                                                      diag_block_size,
-                                                      extra_diag_block_size);
+  if (extra_diag_block_size != NULL)
+    eb_size = extra_diag_block_size[0];
+  if (diag_block_size != NULL)
+    db_size = diag_block_size[0];
+  /* Set fill type */
 
-  if (_tuned_matrix_id[mft] > -1)
-    m = _matrix_tuned[_tuned_matrix_id[mft]];
+  if (eb_size == 3)
+    fill_type = CS_MATRIX_33_BLOCK;
+  else if (db_size == 3) {
+    if (symmetric)
+      fill_type = CS_MATRIX_33_BLOCK_D_SYM;
+    else
+      fill_type = CS_MATRIX_33_BLOCK_D;
+  }
+  else if (db_size == 1) {
+    if (symmetric)
+      fill_type = CS_MATRIX_SCALAR_SYM;
+    else
+      fill_type = CS_MATRIX_SCALAR;
+  }
+  else {
+    if (symmetric)
+      fill_type = CS_MATRIX_PP_BLOCK_D_SYM;
+    else
+      fill_type = CS_MATRIX_PP_BLOCK_D;
+  }
+
+  if (_tuned_matrix_id[fill_type] > -1)
+    m = _matrix_tuned[_tuned_matrix_id[fill_type]];
 
   return m;
 }

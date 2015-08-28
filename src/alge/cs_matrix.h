@@ -67,15 +67,18 @@ typedef enum {
 
   CS_MATRIX_SCALAR,           /* Simple scalar matrix */
   CS_MATRIX_SCALAR_SYM,       /* Simple scalar symmetric matrix */
-  CS_MATRIX_BLOCK_D,          /* Matrix with diagonal blocks
-                                 (and m.I extradiagonal blocks) */
-  CS_MATRIX_BLOCK_D_66,       /* Matrix with 6x6 diagonal blocks
-                                 (and 6.I extradiagonal blocks;
-                                 subcase of CS_MATRIX_BLOCK_D, allows
-                                 separate tuning) */
-  CS_MATRIX_BLOCK_D_SYM,      /* Symmetric matrix with diagonal blocks
-                                 (and m.I extradiagonal blocks) */
-  CS_MATRIX_BLOCK,            /* Block matrix */
+  CS_MATRIX_33_BLOCK_D,       /* Matrix with 3x3 diagonal blocks
+                                 (and 3.I extradiagonal blocks) */
+  CS_MATRIX_33_BLOCK_D_SYM,   /* Symmetric matrix with 3x3 diagonal blocks
+                                 (and 3.I extradiagonal blocks) */
+  CS_MATRIX_33_BLOCK,         /* Matrix with 3x3 blocks
+                                 (diagonal and extra-diagonal) */
+  CS_MATRIX_PP_BLOCK_D,       /* Matrix with 6x6 diagonal blocks
+                                 (and 6.I extradiagonal blocks) */
+  CS_MATRIX_PP_BLOCK_D_SYM,   /* Symmetric matrix with 6x6 diagonal blocks
+                                 (and 6.I extradiagonal blocks) */
+  CS_MATRIX_PP_BLOCK,         /* Matrix with 6x6 blocks
+                                 (diagonal and extra-diagonal) */
   CS_MATRIX_N_FILL_TYPES      /* Number of possible matrix fill types */
 
 } cs_matrix_fill_type_t;
@@ -769,12 +772,13 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
  *
  *   CS_MATRIX_NATIVE  (all fill types)
  *     standard
- *     fixed           (for CS_MATRIX_??_BLOCK_D or CS_MATRIX_??_BLOCK_D_SYM)
+ *     3_3_diag        (for CS_MATRIX_33_BLOCK_D or CS_MATRIX_33_BLOCK_D_SYM)
  *     omp             (for OpenMP with compatible numbering)
  *     vector          (For vector machine with compatible numbering)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     standard
+ *     prefetch
  *     mkl             (with MKL)
  *
  *   CS_MATRIX_CSR_SYM (for CS_MATRIX_SCALAR_SYM)
@@ -783,7 +787,7 @@ cs_matrix_variant_destroy(cs_matrix_variant_t  **mv);
  *
  *   CS_MATRIX_MSR     (all fill types except CS_MATRIX_33_BLOCK)
  *     standard
- *     generic         (for CS_MATRIX_??_BLOCK_D or CS_MATRIX_??_BLOCK_D_SYM)
+ *     prefetch
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *
  * parameters:

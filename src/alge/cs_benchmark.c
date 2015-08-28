@@ -770,15 +770,17 @@ cs_benchmark(int  mpi_trace_mode)
   size_t n_cells_ext = mesh->n_cells_with_ghosts;
   size_t n_faces = mesh->n_i_faces;
 
-  int                    n_fill_types_nsym = 4;
+  int                    n_fill_types_nsym = 3;
   int                    n_fill_types_sym = 2;
   cs_matrix_fill_type_t  fill_types_nsym[] = {CS_MATRIX_SCALAR,
-                                              CS_MATRIX_BLOCK_D,
-                                              CS_MATRIX_BLOCK_D_66,
-                                              CS_MATRIX_BLOCK};
+                                              CS_MATRIX_33_BLOCK_D,
+                                              CS_MATRIX_33_BLOCK,
+                                              CS_MATRIX_PP_BLOCK_D,
+                                              CS_MATRIX_PP_BLOCK};
   cs_matrix_fill_type_t  fill_types_sym[] = {CS_MATRIX_SCALAR_SYM,
-                                             CS_MATRIX_BLOCK_D_SYM};
-  double                 fill_weights_nsym[] = {0.5, 0.3, 0.1, 0.1};
+                                             CS_MATRIX_33_BLOCK_D_SYM,
+                                             CS_MATRIX_PP_BLOCK_D_SYM};
+  double                 fill_weights_nsym[] = {0.5, 0.4, 0.1};
   double                 fill_weights_sym[] = {0.8, 0.2};
 
   /* Allocate and initialize  working arrays */

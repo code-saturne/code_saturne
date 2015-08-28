@@ -5,17 +5,10 @@ Trunk (unreleased)
 Changes:
 --------
 
- - Some renames and simplifications in matrix fill types:
-   * to make things more generic, CS_MATRIX_33_BLOCK* is replaced by
-     CS_MATRIX_BLOCK*
-   * tuning for blocks assumes 3x3 blocks, but a specific CS_MATRIX_BLOCK_D_66
-     type is added (as a subcase of CS_MATRIX_BLOCK_D) to allow for specific
-     tuning for RSM coupled component matrixes.
-
  - Add the added-mass term in Lagrangian particle tracking (activate it
    with iadded_mass=1).
 
- - Add new preconditioning management layer to allow for use of multigrid
+ - Add new preconditioning managment layer to allow for use of multigrid
    as a preconditioner.
 
  - Extend weighted coefficients for lsq gradient calculation in case of
@@ -32,14 +25,13 @@ Changes:
    instead of the "check mesh" option, which did not handle batch runs
    or user subroutines.
 
- - Add a coupled component solver for symmetric tensors for the Reynolds
-   stress model (irijco=1).
+ - Add a coupled component solver for symmetric tensors for the Reynolds stress model (irijco=1).
    * Convection diffusion brick for tensors
    * Add a gradient of a tensor field
    * Only iterative methode up to now, least square gradients not yet
-     available
+   * available
    * Add the advection/diffusion matrix for a tensor field
-   * Adapt matrix tuning fill and Jacobi and other linear solvers
+   * Create matrix PxP and update Jacobi
    * Update rotation functions
    * Restart from an uncoupled Rij tensor is possible
    * Daly Harlow and Shir models are available

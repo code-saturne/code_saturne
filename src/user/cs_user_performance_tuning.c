@@ -301,11 +301,11 @@ cs_user_matrix_tuning(void)
                                  cs_glob_mesh->i_face_numbering);
     cs_matrix_variant_set_func(mv,
                                cs_glob_mesh->i_face_numbering,
-                               CS_MATRIX_BLOCK_D,
+                               CS_MATRIX_33_BLOCK_D,
                                2,
                                "default");
 
-    cs_matrix_set_variant(CS_MATRIX_BLOCK_D, mv);
+    cs_matrix_set_variant(CS_MATRIX_33_BLOCK_D, mv);
 
     cs_matrix_variant_destroy(&mv);
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-08-21 20:10+0200\n"
+"POT-Creation-Date: 2015-08-13 01:48+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3177,12 +3177,6 @@ msgstr ""
 msgid "Block diagonal y <- (A-D).x"
 msgstr ""
 
-msgid "Block 6 diagonal y <- A.x"
-msgstr ""
-
-msgid "Block 6 diagonal y <- (A-D).x"
-msgstr ""
-
 msgid "Block diagonal symmetric y <- A.x"
 msgstr ""
 
@@ -3237,7 +3231,7 @@ msgstr ""
 msgid "Native, baseline"
 msgstr ""
 
-msgid "Native, fixed blocks"
+msgid "Native, 3x3 blocks"
 msgstr ""
 
 msgid "Native, OpenMP"
@@ -3249,6 +3243,9 @@ msgstr ""
 msgid "Native, vectorized"
 msgstr ""
 
+msgid "CSR, with prefetch"
+msgstr ""
+
 msgid "CSR, with MKL"
 msgstr ""
 
@@ -3258,7 +3255,7 @@ msgstr ""
 msgid "CSR_SYM, with MKL"
 msgstr ""
 
-msgid "MSR, generic"
+msgid "MSR, with prefetch"
 msgstr ""
 
 msgid "MSR, with MKL"
@@ -3299,40 +3296,19 @@ msgstr ""
 "===================================\n"
 
 msgid "scalar"
-msgstr "scalaire"
+msgstr ""
 
 msgid "scalar symmetric"
-msgstr "scalaire symmétrique"
+msgstr "scalaires symmétriques"
 
-msgid "block 3 diagonal"
-msgstr "à diagonale bloc 3"
+msgid "block diagonal"
+msgstr "à diagonale bloc"
 
-msgid "block 6 diagonal"
-msgstr "à diagonale bloc 6"
+msgid "block diagonal symmetric"
+msgstr "symmétriques à diagonale bloc"
 
-msgid "block 3 diagonal symmetric"
-msgstr "symmétrique à diagonale bloc 3"
-
-msgid "block 3"
-msgstr ""
-
-msgid "Block 3 diagonal y <- A.x"
-msgstr ""
-
-msgid "Block 3 diagonal y <- (A-D).x"
-msgstr ""
-
-msgid "Block 3 diagonal symmetric y <- A.x"
-msgstr ""
-
-msgid "Block 3 diagonal symmetric y <- (A-D).x"
-msgstr ""
-
-msgid "Block 3 y <- A.x"
-msgstr ""
-
-msgid "Block 3 y <- (A-D).x"
-msgstr ""
+msgid "block"
+msgstr "par blocs"
 
 #, c-format
 msgid " matrix %s coefficients assign"
