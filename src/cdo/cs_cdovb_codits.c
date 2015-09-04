@@ -317,12 +317,12 @@ _init_stiffness(cs_lnum_t                n_vertices,
  * \brief   Encode E_c cap E_v sets for all vertices of a cell using a mask
  *          of bits
  *
- * \param[in]     c_id      cell id
- * \param[in]     n_bits    number of bits in a block
- * \param[in]     n_blocks  number of blocks in a mask
- * \param[in]     connect   point to a cs_cdo_connect_t struct.
- * \param[in]     vtag      buffer of tag indicating the local vertex id
- * \param[inout]  masks     list of masks
+ * \param[in]       c_id      cell id
+ * \param[in]       n_bits    number of bits in a block
+ * \param[in]       n_blocks  number of blocks in a mask
+ * \param[in]       connect   point to a cs_cdo_connect_t struct.
+ * \param[in]       vtag      buffer of tag indicating the local vertex id
+ * \param[in, out]  masks     list of masks
  */
 /*----------------------------------------------------------------------------*/
 

@@ -130,10 +130,10 @@ static const double  _hepfd_tet_coef = 0.05/36;
  * \brief   Compute quantities used for defining the entries of the discrete
  *          Hodge for COST algo. and edge/face quantities
  *
- * \param[in]    matval   values of the tensor related to the material pty
- * \param[in]    pq       pointer to the first set of quantities
- * \param[in]    dq       pointer to the second set of quantities
- * \param[inout] hb       pointer to a _hodge_builder_t struct.
+ * \param[in]      matval   values of the tensor related to the material pty
+ * \param[in]      pq       pointer to the first set of quantities
+ * \param[in]      dq       pointer to the second set of quantities
+ * \param[in, out] hb       pointer to a _hodge_builder_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -185,12 +185,12 @@ _compute_builder(const cs_real_33_t    matval,
  * \brief   Prepare the construction of the local hodge related to cell cid
  *          in the case of the COST algo.
  *
- * \param[in]    cid        cell id
- * \param[in]    connect    pointer to a cs_cdo_connect_t struct.
- * \param[in]    quant      pointer to a cs_cdo_quantities_t struct.
- * \param[in]    h_info     pointer to a cs_param_hodge_t struct.
- * \param[inout] hloc       pointer to a cs_toolbox_locmat_t struct. to fill
- * \param[inout] hb         pointer to a cs_hodge_builder_t struct. to fill
+ * \param[in]      cid        cell id
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t struct.
+ * \param[in]      h_info     pointer to a cs_param_hodge_t struct.
+ * \param[in, out] hloc       pointer to a cs_toolbox_locmat_t struct. to fill
+ * \param[in, out] hb         pointer to a cs_hodge_builder_t struct. to fill
  */
 /*----------------------------------------------------------------------------*/
 
@@ -604,8 +604,8 @@ _init_hodge_face(const cs_cdo_connect_t     *connect,
 /*!
  * \brief   Assemble a local discrete Hodge operator
  *
- * \param[in]     hloc       pointer to a cs_toolbox_locmat_t struct.
- * \param[inout]  h_mat    pointer to a cs_sla_matrix_t
+ * \param[in]       hloc     pointer to a cs_toolbox_locmat_t struct.
+ * \param[in, out]  h_mat    pointer to a cs_sla_matrix_t
  */
 /*----------------------------------------------------------------------------*/
 

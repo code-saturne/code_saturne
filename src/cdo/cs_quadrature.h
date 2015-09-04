@@ -65,11 +65,11 @@ cs_quadrature_setup(void);
  * \brief   Compute quadrature points for an edge from v1 -> v2 (2 points)
  *          Exact for polynomial function up to order 3
  *
- * \param[in]    v1       first vertex
- * \param[in]    v2       second vertex
- * \param[in]    len      length of edge [v1, v2]
- * \param[inout] gpts     gauss points
- * \param[inout] w        weight (same weight for the two points)
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      len      length of edge [v1, v2]
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weight (same weight for the two points)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -85,11 +85,11 @@ cs_quadrature_edge_2pts(const cs_real_3_t  v1,
  * \brief   Compute quadrature points for an edge from v1 -> v2 (3 points)
  *          Exact for polynomial function up to order 5
  *
- * \param[in]    v1       first vertex
- * \param[in]    v2       second vertex
- * \param[in]    len      length of edge [v1, v2]
- * \param[inout] gpts     gauss points
- * \param[inout] w        weights
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      len      length of edge [v1, v2]
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
  */
 /*----------------------------------------------------------------------------*/
 
@@ -105,12 +105,12 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
  * \brief   Compute quadrature points for a triangle (3 points)
  *          Exact for polynomial function up to order 2
  *
- * \param[in]    v1       first vertex
- * \param[in]    v2       second vertex
- * \param[in]    v3       third vertex
- * \param[in]    area     area of triangle {v1, v2, v3}
- * \param[inout] gpts     gauss points
- * \param[inout] w        weight (same weight for the three points)
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      v3       third vertex
+ * \param[in]      area     area of triangle {v1, v2, v3}
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weight (same weight for the three points)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -127,12 +127,12 @@ cs_quadrature_tria_3pts(const cs_real_3_t   v1,
  * \brief   Compute quadrature points for a triangle (4 points)
  *          Exact for polynomial function up to order 3
  *
- * \param[in]    v1       first vertex
- * \param[in]    v2       second vertex
- * \param[in]    v3       third vertex
- * \param[in]    area     area of triangle {v1, v2, v3}
- * \param[inout] gpts     gauss points
- * \param[inout] w        weights
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      v3       third vertex
+ * \param[in]      area     area of triangle {v1, v2, v3}
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
  */
 /*----------------------------------------------------------------------------*/
 
@@ -149,12 +149,12 @@ cs_quadrature_tria_4pts(const cs_real_3_t   v1,
  * \brief   Compute quadrature points for a triangle (7 points)
  *          Exact for polynomial function up to order 5
  *
- * \param[in]    v1       first vertex
- * \param[in]    v2       second vertex
- * \param[in]    v3       third vertex
- * \param[in]    area     area of triangle {v1, v2, v3}
- * \param[inout] gpts     gauss points
- * \param[inout] w        weights
+ * \param[in]      v1       first vertex
+ * \param[in]      v2       second vertex
+ * \param[in]      v3       third vertex
+ * \param[in]      area     area of triangle {v1, v2, v3}
+ * \param[in, out] gpts     gauss points
+ * \param[in, out] w        weights
  */
 /*----------------------------------------------------------------------------*/
 
@@ -171,13 +171,13 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
  * \brief  Compute the quadrature in a tetrehedra. Exact for 2nd order
  *         polynomials (order 3).
  *
- * \param[in]     xv
- * \param[in]     xe
- * \param[in]     xf
- * \param[in]     xc
- * \param[in]     vol      volume of tetrahedron {xv, xe, xf, xc}
- * \param[inout]  gpts     4 Gauss points (size = 3*4)
- * \param[inout]  w        weight (same value for all points)
+ * \param[in]       xv       first vertex
+ * \param[in]       xe       second vertex
+ * \param[in]       xf       third vertex
+ * \param[in]       xc       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in, out]  gpts     4 Gauss points (size = 3*4)
+ * \param[in, out]  w        weight (same value for all points)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -195,13 +195,13 @@ cs_quadrature_tet_4pts(const cs_real_3_t  xv,
  * \brief  Compute the quadrature in a tetrehedra. Exact for 3rd order
  *         polynomials (order 4).
  *
- * \param[in]     xv
- * \param[in]     xe
- * \param[in]     xf
- * \param[in]     xc
- * \param[in]     vol      volume of tetrahedron {xv, xe, xf, xc}
- * \param[inout]  gpts     5 Gauss points (size = 3*5)
- * \param[inout]  weights  5 weigths related to each Gauss point
+ * \param[in]       xv       first vertex
+ * \param[in]       xe       second vertex
+ * \param[in]       xf       third vertex
+ * \param[in]       xc       fourth vertex
+ * \param[in]       vol      volume of tetrahedron {xv, xe, xf, xc}
+ * \param[in, out]  gpts     5 Gauss points (size = 3*5)
+ * \param[in, out]  weights  5 weigths related to each Gauss point
  */
 /*----------------------------------------------------------------------------*/
 

@@ -171,7 +171,7 @@ _spa_init(size_t   a_size,
 /*!
  * \brief   Free a Sparse Accumulator (SPA) for MSR and CSR type
  *
- * \param[inout]   spa    pointer to a SPA struct. to free
+ * \param[in, out]   spa    pointer to a SPA struct. to free
  *
  * \return a NULL pointer
  */
@@ -232,7 +232,7 @@ _spa_dec_init(size_t   a_size,
 /*!
  * \brief   Free a Sparse Accumulator (SPA) for MSR and CSR type
  *
- * \param[inout]   spa    pointer to a SPA struct. to free
+ * \param[in, out]   spa    pointer to a SPA struct. to free
  *
  * \return a NULL pointer
  */
@@ -257,10 +257,10 @@ _spa_dec_free(_spa_dec_t  *spa)
 /*!
  * \brief   Add the contribution of a new entry
  *
- * \param[inout]  spa     pointer to the SPA struct. to update
- * \param[in]     value   value to add
- * \param[in]     pos     position related to this value
- * \param[in]     row_id  current row
+ * \param[in, out]  spa     pointer to the SPA struct. to update
+ * \param[in]       value   value to add
+ * \param[in]       pos     position related to this value
+ * \param[in]       row_id  current row
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -293,10 +293,10 @@ _spa_add(_spa_t     *spa,
 /*!
  * \brief   Add the contribution of a new entry
  *
- * \param[inout]  spa     pointer to the SPA struct. to update
- * \param[in]     value   value to add
- * \param[in]     pos     position related to this value
- * \param[in]     row_id  current row
+ * \param[in, out]  spa     pointer to the SPA struct. to update
+ * \param[in]       value   value to add
+ * \param[in]       pos     position related to this value
+ * \param[in]       row_id  current row
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -330,10 +330,10 @@ _spa_dec_add(_spa_dec_t   *spa,
  * \brief   Gather data from the current SPA state to update matrix structure
  *          Do not add zero entries.
  *
- * \param[in]    spa      pointer to the SPA struct.
- * \param[in]    idx      current index position
- * \param[inout] col_id   pointer to matrix->col_id array
- * \param[inout] val      pointer to matrix->val array
+ * \param[in]      spa      pointer to the SPA struct.
+ * \param[in]      idx      current index position
+ * \param[in, out] col_id   pointer to matrix->col_id array
+ * \param[in, out] val      pointer to matrix->val array
  *
  * \return the number of entries added
  */
@@ -428,10 +428,10 @@ _spa_dec_gather(_spa_dec_t  *spa,
  *          Size estimation is given by E. Cohen (1997) in
  *          Structure Prediction and Computation of Sparse Matrix Product
  *
- * \param[in]    a        pointer to the matrix struct. a
- * \param[in]    b        pointer to the matrix struct. b
- * \param[inout] nnz      size_t element
- * \param[inout] stencil  size_t element
+ * \param[in]      a        pointer to the matrix struct. a
+ * \param[in]      b        pointer to the matrix struct. b
+ * \param[in, out] nnz      size_t element
+ * \param[in, out] stencil  size_t element
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -876,11 +876,11 @@ _multiply_msrdec_matrices(const cs_sla_matrix_t  *a,
  * \brief   Compute the product C = At * Diag * A
  *          where A and At are DEC matrices
  *
- * \param[in]     At   pointer to a cs_sla_matrix_t struct. (DEC type)
- * \param[in]     D    array standing for a diagonal operator
- * \param[in]     A    pointer to a cs_sla_matrix_t struct. (DEC type)
- * \param[inout]  C    pointer to a cs_sla_matrix_t storing the result
- * \param[inout]  w    work buffer
+ * \param[in]       At   pointer to a cs_sla_matrix_t struct. (DEC type)
+ * \param[in]       D    array standing for a diagonal operator
+ * \param[in]       A    pointer to a cs_sla_matrix_t struct. (DEC type)
+ * \param[in, out]  C    pointer to a cs_sla_matrix_t storing the result
+ * \param[in, out]  w    work buffer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -962,11 +962,11 @@ _decdec_AtDA(const cs_sla_matrix_t  *At,
  * \brief   Compute the product C = At * Diag * A
  *          where A and At are CSR matrices
  *
- * \param[in]     At   pointer to a cs_sla_matrix_t struct. (CSR type)
- * \param[in]     D    array standing for a diagonal operator
- * \param[in]     A    pointer to a cs_sla_matrix_t struct. (CSR type)
- * \param[inout]  C    pointer to a cs_sla_matrix_t storing the result
- * \param[inout]  w    work buffer
+ * \param[in]       At   pointer to a cs_sla_matrix_t struct. (CSR type)
+ * \param[in]       D    array standing for a diagonal operator
+ * \param[in]       A    pointer to a cs_sla_matrix_t struct. (CSR type)
+ * \param[in, out]  C    pointer to a cs_sla_matrix_t storing the result
+ * \param[in, out]  w    work buffer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1048,10 +1048,10 @@ _csrcsr_AtDA(const cs_sla_matrix_t  *At,
  * \brief   Fill a matrix resulting from an extraction of row/column for
  *          matrix in DEC format
  *
- * \param[inout]  final        pointer to the final matrix struct.
- * \param[in]     init         init matrix to work with
- * \param[in]     row_z2i_ids  zipped -> init numbering for rows
- * \param[in]     col_i2z_ids  init   -> zipped numbering for columns
+ * \param[in, out]  final        pointer to the final matrix struct.
+ * \param[in]       init         init matrix to work with
+ * \param[in]       row_z2i_ids  zipped -> init numbering for rows
+ * \param[in]       col_i2z_ids  init   -> zipped numbering for columns
  *
  * \return a pointer to the new final matrix struct
  */
@@ -1103,10 +1103,10 @@ _pack_dec(cs_sla_matrix_t         *final,
  * \brief   Fill a matrix resulting from an extraction of row/column for
  *          matrix in CSR format
  *
- * \param[inout]  final        pointer to the block matrix struct.
- * \param[in]     init         init matrix to work with
- * \param[in]     row_z2i_ids  zipped -> init numbering for rows
- * \param[in]     col_i2z_ids  init -> zipped numbering for columns
+ * \param[in, out]  final        pointer to the block matrix struct.
+ * \param[in]       init         init matrix to work with
+ * \param[in]       row_z2i_ids  zipped -> init numbering for rows
+ * \param[in]       col_i2z_ids  init -> zipped numbering for columns
  *
  * \return a pointer to the new final matrix struct
  */
@@ -1158,11 +1158,11 @@ _pack_csr(cs_sla_matrix_t         *final,
  * \brief   Fill a matrix resulting from an extraction of row/column for
  *          matrix in MSR format
  *
- * \param[inout]  final        pointer to the block matrix struct.
- * \param[in]     init         init matrix to work with
- * \param[in]     row_z2i_ids  zipped -> init numbering for rows
- * \param[in]     col_i2z_ids  init -> zipped numbering for columns
- * \param[in]     msr2csr      change matrix type
+ * \param[in, out]  final        pointer to the block matrix struct.
+ * \param[in]       init         init matrix to work with
+ * \param[in]       row_z2i_ids  zipped -> init numbering for rows
+ * \param[in]       col_i2z_ids  init -> zipped numbering for columns
+ * \param[in]       msr2csr      change matrix type
  *
  * \return a pointer to the new final matrix struct
  */
@@ -1866,10 +1866,10 @@ cs_sla_matrix_combine(double                  alpha,
 /*!
  * \brief   Compute the product C = At * Diag * A
  *
- * \param[in]     At   pointer to a cs_sla_matrix_t struct. (DEC type)
- * \param[in]     D    array standing for a diagonal operator
- * \param[in]     A    pointer to a cs_sla_matrix_t struct. (DEC type)
- * \param[inout]  w    work buffer
+ * \param[in]       At   pointer to a cs_sla_matrix_t struct. (DEC type)
+ * \param[in]       D    array standing for a diagonal operator
+ * \param[in]       A    pointer to a cs_sla_matrix_t struct. (DEC type)
+ * \param[in, out]  w    work buffer
  *
  * \return a pointer to a new cs_sla_matrix_t
  */
@@ -2032,15 +2032,15 @@ cs_sla_amxby(double                  alpha,
  *              | A  B | |X| = |F|= |AX + BY|
  *              | C  D | |Y|   |G|  |CX + DY|
  *
- * \param[in]    A     pointer to a cs_sla_matrix_t block (1,1)
- * \param[in]    B     pointer to a cs_sla_matrix_t block (1,2)
- * \param[in]    C     pointer to a cs_sla_matrix_t block (2,1)
- * \param[in]    D     pointer to a cs_sla_matrix_t block (2,2)
- * \param[in]    X     upper vector
- * \param[in]    Y     lower vector
- * \param[inout] F     upper result
- * \param[inout] G     lower result
- * \param[in]    reset reset before computation (true/false)
+ * \param[in]      A     pointer to a cs_sla_matrix_t block (1,1)
+ * \param[in]      B     pointer to a cs_sla_matrix_t block (1,2)
+ * \param[in]      C     pointer to a cs_sla_matrix_t block (2,1)
+ * \param[in]      D     pointer to a cs_sla_matrix_t block (2,2)
+ * \param[in]      X     upper vector
+ * \param[in]      Y     lower vector
+ * \param[in, out] F     upper result
+ * \param[in, out] G     lower result
+ * \param[in]      reset reset before computation (true/false)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2111,8 +2111,7 @@ cs_sla_matvec_block2(const cs_sla_matrix_t  *A,
 /*!
  * \brief   Change matrix representation from MSR to CSR
  *
- * \param[inout] a     matrix to transform
- *
+ * \param[in, out] a     matrix to transform
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2183,7 +2182,7 @@ cs_sla_matrix_msr2csr(cs_sla_matrix_t  *a)
 /*!
  * \brief   Change matrix representation from CSR to MSR
  *
- * \param[inout] a     matrix to transform
+ * \param[in, out] a     matrix to transform
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2247,7 +2246,7 @@ cs_sla_matrix_csr2msr(cs_sla_matrix_t  *a)
 /*!
  * \brief   Allocate its own pattern if shared
  *
- * \param[inout] a     matrix to transform
+ * \param[in, out] a     matrix to transform
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2422,7 +2421,7 @@ cs_sla_matrix_pack(cs_lnum_t                n_final_rows,
 /*!
  * \brief   Build diagonal index
  *
- * \param[inout]  m   matrix to work with
+ * \param[in, out]  m   matrix to work with
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2462,8 +2461,8 @@ cs_sla_matrix_diag_idx(cs_sla_matrix_t    *m)
 /*!
  * \brief   Get the diagonal entries of a given matrix.
  *
- * \param[in]    m        matrix to work with
- * \param[inout] p_diag   pointer to diag array to define (allocated if NULL)
+ * \param[in]      m        matrix to work with
+ * \param[in, out] p_diag   pointer to diag array to define (allocated if NULL)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2596,10 +2595,10 @@ cs_sla_matrix_sort(cs_sla_matrix_t  *m)
  * \brief  Read from a binary file a matrix in CSR format, its righ hand side
  *         and the solution. Matrix must have a stride equal to 1.
  *
- * \param[in]     name      name of the output file
- * \param[inout]  p_mat     system to solve
- * \param[inout]  p_rhs     right hand side
- * \param[inout]  p_sol       solution
+ * \param[in]       name      name of the output file
+ * \param[in, out]  p_mat     system to solve
+ * \param[in, out]  p_rhs     right hand side
+ * \param[in, out]  p_sol       solution
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3558,8 +3557,8 @@ cs_sla_system_dump(const char              *name,
  *          --> We assume that the local matrices are symmetric
  *          --> We assume that the assembled matrix has its columns sorted
  *
- * \param[in]     loc     pointer to a local matrix
- * \param[inout]  ass     pointer to a cs_sla_matrix_t struct. collecting data
+ * \param[in]       loc     pointer to a local matrix
+ * \param[in, out]  ass     pointer to a cs_sla_matrix_t struct. collecting data
  */
 /*----------------------------------------------------------------------------*/
 

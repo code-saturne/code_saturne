@@ -234,9 +234,9 @@ cs_domain_set_default_boundary(cs_domain_t               *domain,
 /*!
  * \brief  Add a boundary type defined on a mesh location
  *
- * \param[inout]   domain       pointer to a cs_domain_t structure
- * \param[in]      ml_name      mesh location name
- * \param[in]      bdy_name     key name of boundary to set
+ * \param[in, out]   domain       pointer to a cs_domain_t structure
+ * \param[in]        ml_name      mesh location name
+ * \param[in]        bdy_name     key name of boundary to set
  */
 /*----------------------------------------------------------------------------*/
 

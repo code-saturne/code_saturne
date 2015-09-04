@@ -83,11 +83,11 @@ typedef struct {
 /*!
  * \brief  Add a entry in the face --> edges connectivity
  *
- * \param[in]    shift     position where to add the new entry
- * \param[in]    v1_num    number of the first vertex
- * \param[in]    v2_num    number of the second vertex
- * \param[in]    builder   pointer to a _edge_builder_t structure
- * \param[inout] f2e       face --> edges connectivity
+ * \param[in]      shift     position where to add the new entry
+ * \param[in]      v1_num    number of the first vertex
+ * \param[in]      v2_num    number of the second vertex
+ * \param[in]      builder   pointer to a _edge_builder_t structure
+ * \param[in, out] f2e       face --> edges connectivity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -580,7 +580,7 @@ _build_c2f_connect(const cs_mesh_t   *mesh)
  *        c2e: cell --> edges connectivity
  *        c2v: cell --> vertices connectivity
  *
- * \param[inout]  connect     pointer to the cs_cdo_connect_t struct.
+ * \param[in, out]  connect     pointer to the cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -723,10 +723,9 @@ _connect_info_free(cs_connect_info_t    *info)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a status Int/Border 1st and 2nd level for sets of vertices,
- *         edges and faces
+ * \brief  Define a status Int/Border
  *
- * \param[inout]     connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in, out]     connect    pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 

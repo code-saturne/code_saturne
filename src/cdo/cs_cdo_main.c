@@ -93,8 +93,8 @@ static const char cs_cdoversion[] = "0.2";
 /*!
  * \brief  Setup a computation within the CDO framework
  *
- * \param[inout]  m     pointer to a cs_mesh_t struct.
- * \param[in]     mq    pointer to a cs_quantities_t struct.
+ * \param[in, out]  m     pointer to a cs_mesh_t struct.
+ * \param[in]       mq    pointer to a cs_quantities_t struct.
  *
  * \return a pointer to a cs_domain_t structure
  */
@@ -179,7 +179,7 @@ _setup(cs_mesh_t             *m,
 /*!
  * \brief   Free all structure allocated during the resolution with CDO schemes
  *
- * \param[inout]  domain  pointer to a cs_domain_t structure pointer
+ * \param[in, out]  domain  pointer to a cs_domain_t structure pointer
  */
 /*----------------------------------------------------------------------------*/
 
@@ -201,8 +201,8 @@ _finalize(cs_domain_t  **domain)
 /*!
  * \brief  Main program for running a simulation with CDO kernel
  *
- * \param[inout]  m     pointer to a cs_mesh_t struct.
- * \param[in]     mq    pointer to a cs_quantities_t struct.
+ * \param[in, out]  m     pointer to a cs_mesh_t struct.
+ * \param[in]       mq    pointer to a cs_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -197,9 +197,9 @@ cs_quant_dump(FILE             *f,
  *                sum    |celld(v) cap c| = pvol_v
  *              c in C_v
  *
- * \param[in]    connect   pointer to a cs_cdo_connect_t structure
- * \param[in]    quant     pointer to a cs_cdo_quantites_t structure
- * \param[inout] p_pvol    pvol (if NULL, allocated in this routine)
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
+ * \param[in, out] p_pvol    pvol (if NULL, allocated in this routine)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -213,9 +213,9 @@ cs_compute_pvol_vtx(const cs_cdo_connect_t     *connect,
  * \brief  Compute for each edge a related volume pvol_e which constitutes
  *         a partition of unity
  *
- * \param[in]    connect   pointer to a cs_cdo_connect_t structure
- * \param[in]    quant     pointer to a cs_cdo_quantites_t structure
- * \param[inout] p_pvol    pvol (if NULL, allocated in this routine)
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
+ * \param[in, out] p_pvol    pvol (if NULL, allocated in this routine)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -229,9 +229,9 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
  * \brief  Compute for each face a related volume pvol_f which constitutes
  *         a partition of unity
  *
- * \param[in]    connect   pointer to a cs_cdo_connect_t structure
- * \param[in]    quant     pointer to a cs_cdo_quantites_t structure
- * \param[inout] p_pvol    pvol (if NULL, allocated in this routine)
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
+ * \param[in, out] p_pvol    pvol (if NULL, allocated in this routine)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -246,11 +246,11 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
  *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
  *         weights is equal to 1.
  *
- * \param[in]    f_id      id of the face
- * \param[in]    connect   pointer to a cs_cdo_connect_t structure
- * \param[in]    quant     pointer to a cs_cdo_quantites_t structure
- * \param[in]    loc_ids   indirection to a local numbering
- * \param[inout] wf        already allocated to n_max_vbyc (reset)
+ * \param[in]      f_id      id of the face
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantites_t structure
+ * \param[in]      loc_ids   indirection to a local numbering
+ * \param[in, out] wf        already allocated to n_max_vbyc (reset)
  */
 /*----------------------------------------------------------------------------*/
 

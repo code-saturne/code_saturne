@@ -56,11 +56,11 @@ BEGIN_C_DECLS
  *         Linear interpolation. If p_crec and/or p_frec are not allocated, this
  *         done in this subroutine.
  *
- *  \param[in]    connect  pointer to the connectivity struct.
- *  \param[in]    quant    pointer to the additional quantities struct.
- *  \param[in]    dof      pointer to the field of vtx-based DoFs
- *  \param[inout] p_crec   reconstructed values at cell centers
- *  \param[inout] p_frec   reconstructed values at face centers
+ *  \param[in]      connect  pointer to the connectivity struct.
+ *  \param[in]      quant    pointer to the additional quantities struct.
+ *  \param[in]      dof      pointer to the field of vtx-based DoFs
+ *  \param[in, out] p_crec   reconstructed values at cell centers
+ *  \param[in, out] p_frec   reconstructed values at face centers
  */
 /*----------------------------------------------------------------------------*/
 
@@ -76,13 +76,12 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
  * \brief  Reconstruct by a constant vector a field of edge-based DoFs
  *         in a volume surrounding an edge
  *
- *  \param[in]    cid     cell id
- *  \param[in]    e1_id   sub-volume related to this edge id
- *  \param[in]    c2e     cell -> edges connectivity
- *  \param[in]    quant   pointer to the additional quantities struct.
- *  \param[in]    dof     pointer to the field of edge-based DoFs
- *  \param[inout] reco    value of the reconstrcuted field in this sub-volume
- *
+ *  \param[in]      cid     cell id
+ *  \param[in]      e1_id   sub-volume related to this edge id
+ *  \param[in]      c2e     cell -> edges connectivity
+ *  \param[in]      quant   pointer to the additional quantities struct.
+ *  \param[in]      dof     pointer to the field of edge-based DoFs
+ *  \param[in, out] reco    value of the reconstrcuted field in this sub-volume
  */
 /*----------------------------------------------------------------------------*/
 
@@ -98,12 +97,11 @@ cs_reco_dga_edge_dof(cs_lnum_t                    cid,
 /*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
  *
- *  \param[in]    cid     cell id
- *  \param[in]    c2e     cell -> edges connectivity
- *  \param[in]    quant   pointer to the additional quantities struct.
- *  \param[in]    dof     pointer to the field of edge-based DoFs
- *  \param[inout] reco    value of the reconstrcuted field at cell center
- *
+ *  \param[in]      cid     cell id
+ *  \param[in]      c2e     cell -> edges connectivity
+ *  \param[in]      quant   pointer to the additional quantities struct.
+ *  \param[in]      dof     pointer to the field of edge-based DoFs
+ *  \param[in, out] reco    value of the reconstrcuted field at cell center
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,10 +116,10 @@ cs_reco_ccen_edge_dof(cs_lnum_t                   cid,
 /*!
  * \brief  Reconstruct at each cell center a field of edge-based DoFs
  *
- *  \param[in]    connect   pointer to the connectivity struct.
- *  \param[in]    quant     pointer to the additional quantities struct.
- *  \param[in]    dof       pointer to the field of edge-based DoFs
- *  \param[inout] p_ccrec   pointer to the reconstructed values
+ *  \param[in]      connect   pointer to the connectivity struct.
+ *  \param[in]      quant     pointer to the additional quantities struct.
+ *  \param[in]      dof       pointer to the field of edge-based DoFs
+ *  \param[in, out] p_ccrec   pointer to the reconstructed values
  */
 /*----------------------------------------------------------------------------*/
 

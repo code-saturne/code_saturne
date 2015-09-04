@@ -121,9 +121,9 @@ _init_dinfo(cs_datatype_t   datatype)
  * \brief   Compute simple information about an array of data.
  *          >> Algorithm from Mark Hoemmen (U.C. Berkeley)
  *
- * \param[in]    n_elts    number of couples in data
- * \param[in]    data      buffer containing input data
- * \param[inout] info      pointer to a cs_data_info_t structure
+ * \param[in]      n_elts    number of couples in data
+ * \param[in]      data      buffer containing input data
+ * \param[in, out] info      pointer to a cs_data_info_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -161,9 +161,9 @@ _compute_info_double(cs_lnum_t         n_elts,
  * \brief   Compute simple information about an array of data.
  *          >> Algorithm from Mark Hoemmen (U.C. Berkeley)
  *
- * \param[in]    n_elts    number of couples in data
- * \param[in]    data      buffer containing input data
- * \param[inout] info      pointer to a cs_data_info_t structure
+ * \param[in]      n_elts    number of couples in data
+ * \param[in]      data      buffer containing input data
+ * \param[in, out] info      pointer to a cs_data_info_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -315,9 +315,9 @@ _cp3(const cs_real_3_t   u,
 /*!
  * \brief  Compute the 3x3 matrice by vector product
  *
- * \param[in]    m    a 3x3 matrix
- * \param[in]    v    a vector
- * \param[inout] mv   pointer to the vector resulting of the matrix-vector op.
+ * \param[in]      m    a 3x3 matrix
+ * \param[in]      v    a vector
+ * \param[in, out] mv   pointer to the vector resulting of the matrix-vector op.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -715,53 +715,10 @@ cs_sum(cs_lnum_t              size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a private structure for this file used for
- *         reducing round-off errors during summation
- *
- *  \param[in] ref_size    reference array dimension
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_init(cs_lnum_t      ref_size)
-{
-  double  invln2 = 1/log(2);
-  double  estimate = log(ref_size)*invln2;
-  int  power = floor(log(estimate)*invln2);
-  int  size = (1 << power);
-
-  /* Compute a number of sub sums according to a reference size */
-  _op_subsum.size = CS_MAX(2, size);
-
-  BFT_MALLOC(_op_subsum.idx, _op_subsum.size + 1, int);
-  BFT_MALLOC(_op_subsum.sums, _op_subsum.size, double);
-
-  printf("# N_SUB_SUMS      %d\n", _op_subsum.size);
-  bft_printf(" -sla- n_subsums      %d\n", _op_subsum.size);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a private structure for this file used for reducing round-off
- *         errors during summation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_finalize(void)
-{
-  assert(_op_subsum.size > 0);
-
-  BFT_FREE(_op_subsum.idx);
-  BFT_FREE(_op_subsum.sums);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Allocate or reallocate a temporary buffer structure
  *
- * \param[in]     bufsize   reference size
- * \param[inout]  p_tb      pointer to the temporary structure to allocate
+ * \param[in]       bufsize   reference size
+ * \param[in, out]  p_tb      pointer to the temporary structure to allocate
  */
 /*----------------------------------------------------------------------------*/
 
@@ -810,6 +767,49 @@ cs_tmpbuf_free(cs_tmpbuf_t  *tb)
   BFT_FREE(tb);
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a private structure for this file used for
+ *         reducing round-off errors during summation
+ *
+ *  \param[in] ref_size    reference array dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_init(cs_lnum_t      ref_size)
+{
+  double  invln2 = 1/log(2);
+  double  estimate = log(ref_size)*invln2;
+  int  power = floor(log(estimate)*invln2);
+  int  size = (1 << power);
+
+  /* Compute a number of sub sums according to a reference size */
+  _op_subsum.size = CS_MAX(2, size);
+
+  BFT_MALLOC(_op_subsum.idx, _op_subsum.size + 1, int);
+  BFT_MALLOC(_op_subsum.sums, _op_subsum.size, double);
+
+  printf("# N_SUB_SUMS      %d\n", _op_subsum.size);
+  bft_printf(" -sla- n_subsums      %d\n", _op_subsum.size);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a private structure for this file used for reducing round-off
+ *         errors during summation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_finalize(void)
+{
+  assert(_op_subsum.size > 0);
+
+  BFT_FREE(_op_subsum.idx);
+  BFT_FREE(_op_subsum.sums);
 }
 
 /*----------------------------------------------------------------------------*/

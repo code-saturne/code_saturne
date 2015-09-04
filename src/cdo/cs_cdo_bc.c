@@ -363,7 +363,7 @@ cs_cdo_bc_init(const cs_param_bc_t  *param_bc,
 /*!
  * \brief  Free a cs_cdo_bc_t structure
  *
- * \param[inout]  face_bc   pointer to a cs_cdo_bc_t structure
+ * \param[in, out]  face_bc   pointer to a cs_cdo_bc_t structure
  *
  * \return a NULL pointer
  */

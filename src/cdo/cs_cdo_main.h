@@ -55,8 +55,8 @@ BEGIN_C_DECLS
 /*!
  * \brief  Main program for running a simulation with CDO kernel
  *
- * \param[inout]  m     pointer to a cs_mesh_t struct.
- * \param[in]     mq    pointer to a cs_quantities_t struct.
+ * \param[in, out]  m     pointer to a cs_mesh_t struct.
+ * \param[in]       mq    pointer to a cs_quantities_t struct.
  */
 /*----------------------------------------------------------------------------*/
 

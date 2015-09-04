@@ -184,9 +184,9 @@ _cp3(const cs_real_3_t    u,
 /*!
  * \brief  Compute the 3x3 matrice by vector product
  *
- * \param[in]    m    a 3x3 matrix
- * \param[in]    v    a vector
- * \param[inout] mv   pointer to the vector resulting of the matrix-vector op.
+ * \param[in]      m    a 3x3 matrix
+ * \param[in]      v    a vector
+ * \param[in, out] mv   pointer to the vector resulting of the matrix-vector op.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -333,32 +333,10 @@ cs_sum(cs_lnum_t              size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a private structure for this file used for
- *         reducing round-off errors during summation
- *
- *  \param[in] ref_size    reference array dimension
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_init(cs_lnum_t      ref_size);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a private structure for this file used for reducing round-off
- *         errors during summation
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_toolbox_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Allocate or reallocate a temporary buffer structure
  *
- * \param[in]     bufsize   reference size
- * \param[inout]  p_tb      pointer to the temporary structure to allocate
+ * \param[in]       bufsize   reference size
+ * \param[in, out]  p_tb      pointer to the temporary structure to allocate
  */
 /*----------------------------------------------------------------------------*/
 
@@ -378,6 +356,28 @@ cs_tmpbuf_alloc(size_t          bufsize,
 
 cs_tmpbuf_t *
 cs_tmpbuf_free(cs_tmpbuf_t    *tb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize a private structure for this file used for
+ *         reducing round-off errors during summation
+ *
+ *  \param[in] ref_size    reference array dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_init(cs_lnum_t      ref_size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a private structure for this file used for reducing round-off
+ *         errors during summation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_toolbox_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
