@@ -121,21 +121,24 @@ BEGIN_C_DECLS
 static const char *_matrix_fill_name[CS_MATRIX_N_FILL_TYPES]
   = {N_("scalar"),
      N_("scalar symmetric"),
-     N_("block diagonal"),
-     N_("block diagonal symmetric"),
-     N_("block")};
+     N_("block 3 diagonal"),
+     N_("block 6 diagonal"),
+     N_("block 3 diagonal symmetric"),
+     N_("block 3")};
 
 static const char *_matrix_operation_name[CS_MATRIX_N_FILL_TYPES][2]
   = {{N_("y <- A.x"),
       N_("y <- (A-D).x")},
      {N_("Symmetric y <- A.x"),
       N_("Symmetric y <- (A-D).x")},
-     {N_("Block diagonal y <- A.x"),
-      N_("Block diagonal y <- (A-D).x")},
-     {N_("Block diagonal symmetric y <- A.x"),
-      N_("Block diagonal symmetric y <- (A-D).x")},
-     {N_("Block y <- A.x"),
-      N_("Block y <- (A-D).x")}};
+     {N_("Block 3 diagonal y <- A.x"),
+      N_("Block 3 diagonal y <- (A-D).x")},
+     {N_("Block 6 diagonal y <- A.x"),
+      N_("Block 6 diagonal y <- (A-D).x")},
+     {N_("Block 3 diagonal symmetric y <- A.x"),
+      N_("Block 3 diagonal symmetric y <- (A-D).x")},
+     {N_("Block 3 y <- A.x"),
+      N_("Block 3 y <- (A-D).x")}};
 
 /*============================================================================
  * Private function definitions
@@ -259,13 +262,12 @@ _matrix_tune_test(double                 t_measure,
     for (f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
       const int *_d_block_size
-        = (f_id >= CS_MATRIX_33_BLOCK_D) ? d_block_size : NULL;
+        = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
       const int *_ed_block_size
-        = (f_id >= CS_MATRIX_33_BLOCK) ? ed_block_size : NULL;
+        = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size : NULL;
       const bool sym_coeffs
         = (   f_id == CS_MATRIX_SCALAR_SYM
-           || f_id == CS_MATRIX_33_BLOCK_D_SYM
-           || f_id == CS_MATRIX_PP_BLOCK_D_SYM) ? true : false;
+           || f_id == CS_MATRIX_BLOCK_D_SYM) ? true : false;
 
       /* Loop on diagonal exclusion flags */
 
@@ -274,9 +276,6 @@ _matrix_tune_test(double                 t_measure,
       if (   v->vector_multiply[f_id][0] == NULL
           && v->vector_multiply[f_id][1] == NULL)
         continue;
-
-      m->loop_length[f_id][0] = v->loop_length[f_id][0];
-      m->loop_length[f_id][1] = v->loop_length[f_id][1];
 
       /* Measure overhead of setting coefficients if not already done */
 
@@ -648,7 +647,6 @@ _variant_init(cs_matrix_variant_t  *v)
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
     for (int j = 0; j < 2; j++) {
       v->vector_multiply[i][j] = NULL;
-      v->loop_length[i][j] = 0;
       v->matrix_vector_cost[i][j][0] = -1.;
     }
     v->matrix_assign_cost[i] = -1.;
@@ -726,7 +724,7 @@ cs_matrix_variant_tuned(double                 t_measure,
   int                    _n_fill_types_default = 3;
   cs_matrix_fill_type_t  _fill_types_default[] = {CS_MATRIX_SCALAR,
                                                   CS_MATRIX_SCALAR_SYM,
-                                                  CS_MATRIX_33_BLOCK_D};
+                                                  CS_MATRIX_BLOCK_D};
   double                 _fill_weights_default[] = {0.5, 0.25, 0.25};
 
   int                    _n_types = n_types;
@@ -905,8 +903,6 @@ cs_matrix_variant_tuned(double                 t_measure,
             for (int o_id = 0; o_id < 1; o_id++)
               r->matrix_vector_cost[fill_type][ed_flag][o_id]
                 = v->matrix_vector_cost[fill_type][ed_flag][o_id];
-            r->loop_length[fill_type][ed_flag]
-              = v->loop_length[fill_type][ed_flag];
             cur_select[f_id][ed_flag] = v_id;
           }
         }

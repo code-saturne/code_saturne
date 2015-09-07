@@ -160,10 +160,6 @@ typedef struct _cs_matrix_struct_csr_t {
 
 typedef struct _cs_matrix_coeff_csr_t {
 
-  int               n_prefetch_rows;  /* Number of rows at a time for which
-                                         the x values in y = Ax should be
-                                         prefetched (0 if no prefetch) */
-
   /* Pointers to possibly shared arrays */
 
   const cs_real_t  *val;              /* Matrix coefficients */
@@ -171,8 +167,6 @@ typedef struct _cs_matrix_coeff_csr_t {
   /* Pointers to private arrays (NULL if shared) */
 
   cs_real_t        *_val;             /* Diagonal matrix coefficients */
-
-  cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
 
   /* Pointers to auxiliary arrays used for queries */
 
@@ -228,9 +222,6 @@ typedef struct _cs_matrix_coeff_csr_sym_t {
 
 typedef struct _cs_matrix_coeff_msr_t {
 
-  int              n_prefetch_rows;   /* Number of rows at a time for which
-                                         the x values in y = Ax should be
-                                         prefetched (0 if no prefetch) */
   int              max_db_size;       /* Current max allocated block size */
   int              max_eb_size;       /* Current max allocated extradiag block size */
 
@@ -243,8 +234,6 @@ typedef struct _cs_matrix_coeff_msr_t {
 
   cs_real_t        *_d_val;           /* Diagonal matrix coefficients */
   cs_real_t        *_x_val;           /* Extra-diagonal matrix coefficients */
-
-  cs_real_t        *x_prefetch;       /* Prefetch array for x in y = Ax */
 
 } cs_matrix_coeff_msr_t;
 
@@ -282,6 +271,8 @@ struct _cs_matrix_t {
   cs_lnum_t              n_cols_ext;   /* Local number of columns + ghosts */
 
   cs_matrix_fill_type_t  fill_type;    /* Matrix fill type */
+
+  bool                   symmetric;    /* true if coefficients are symmetric */
 
   int                    db_size[4];   /* Diag Block size, including padding:
                                           0: useful block size
@@ -330,10 +321,6 @@ struct _cs_matrix_t {
 
   cs_matrix_vector_product_t        *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
 
-  /* Loop length parameter for some SpMv algorithms */
-
-  int                                loop_length[CS_MATRIX_N_FILL_TYPES][2];
-
 };
 
 /* Structure used for tuning variants */
@@ -344,10 +331,6 @@ struct _cs_matrix_variant_t {
   char                   name[32];     /* Variant name */
 
   cs_matrix_type_t       type;         /* Matrix storage and definition type */
-
-  /* Loop length parameter for some SpMv algorithms */
-
-  int                    loop_length[CS_MATRIX_N_FILL_TYPES][2];
 
   /* Function pointer arrays, with variants:
      fill_type + exclude_diagonal_flag */
