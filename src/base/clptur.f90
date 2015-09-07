@@ -1919,7 +1919,7 @@ double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables
 
-integer          ivar, f_id, isvhbl
+integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
 integer          ifccp, ifccv, ifcvsl, itplus, itstar
 
@@ -1932,7 +1932,7 @@ double precision visci(3,3), hintt(6)
 
 character(len=80) :: fname
 
-double precision, dimension(:), pointer :: val_s, crom, viscls
+double precision, dimension(:), pointer :: val_s, bval_s, crom, viscls
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cv
 
 double precision, dimension(:), pointer :: bfconv, bhconv
@@ -1940,6 +1940,8 @@ double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+
+integer, save :: kbfid = -1
 
 !===============================================================================
 
@@ -2046,6 +2048,21 @@ endif
 ! Pointers to specific fields
 if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
 if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
+if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
+
+call field_get_key_int(f_id, kbfid, b_f_id)
+
+if (b_f_id .ge. 0) then
+  call field_get_val_s(b_f_id, bval_s)
+else
+  bval_s => null()
+  ! if thermal variable has no boundary but temperature does, use it
+  if (itemp.gt.0) then
+    call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
+    if (b_f_id.ge.0) call field_get_val_s(b_f_id, bval_s)
+  endif
+endif
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -2357,7 +2374,7 @@ do ifac = 1, nfabor
             bhconv(ifac) = hflui*cp0
           endif
 
-          ! Energie (compressible module)
+          ! Energy (compressible module)
         elseif (itherm.eq.3) then
           ! If Cv is variable
           if (ifccv.ge.0) then
@@ -2379,13 +2396,13 @@ do ifac = 1, nfabor
 
     endif ! End if icodcl.eq.5
 
-    ! Save the value of T^star and T^+ for post-processing
-    if (iscal.eq.iscalt) then
+    ! Save the values of of T^star and T^+ for post-processing
+
+    if (b_f_id.ge.0 .or. iscal.eq.iscalt) then
 
       ! Wall function
       if (icodcl(ifac,ivar).eq.5) then
         phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
-
         ! Imposed flux with wall function for post-processing
       elseif (icodcl(ifac,ivar).eq.3) then
         phit = rcodcl(ifac,ivar,3)
@@ -2397,13 +2414,18 @@ do ifac = 1, nfabor
       ! T+ = (T_I - T_w) / Tet
       tplus = max((yplus-dplus), epzero)/yptp
 
+      if (b_f_id .ge. 0) bval_s(ifac) = bval_s(ifac) - tplus*tet
+
       if (itplus .ge. 0) tplusp(ifac) = tplus
       if (itstar .ge. 0) tstarp(ifac) = tet
 
-      tetmax = max(tet, tetmax)
-      tetmin = min(tet, tetmin)
-      tplumx = max(tplus,tplumx)
-      tplumn = min(tplus,tplumn)
+      if (iscal.eq.iscalt) then
+        tetmax = max(tet, tetmax)
+        tetmin = min(tet, tetmin)
+        tplumx = max(tplus,tplumx)
+        tplumn = min(tplus,tplumn)
+      endif
+
     endif
 
   endif ! smooth wall condition

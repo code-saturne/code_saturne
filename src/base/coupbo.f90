@@ -82,7 +82,7 @@ double precision hbord(nfabor),tbord(nfabor)
 
 integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          mode, flag
-integer          iepsel, iepsfa, igamag, ixmasm, ifinwa
+integer          iepsel, ifinwa
 integer          issurf
 double precision enthal, temper, energ, cvt
 
@@ -107,9 +107,6 @@ call field_get_val_s(ibrom, brom)
 ! Initialize variables to avoid compiler warnings
 
 iepsel = 0
-iepsfa = 0
-igamag = 0
-ixmasm = 0
 ifinwa = 0
 
 !===============================================================================
@@ -146,17 +143,6 @@ do inbcou = 1, nbccou
     allocate(lfcou(nbfcou))
     allocate(tfluid(nbfcou))
     allocate(hparoi(nbfcou))
-
-    ! Compressible: coupling with energy
-
-    if (ientha .eq. 2) then
-      iepsel = 1
-      iepsfa = iepsel + ncelet
-      igamag = iepsfa + nfabor
-      ixmasm = igamag + ncelet
-      ifinwa = ixmasm + ncelet
-      allocate(wa(ifinwa))
-    endif
 
     ! Loop on coupled faces to compute coefficients
 
@@ -212,13 +198,12 @@ do inbcou = 1, nbccou
 
       ! Compute e - CvT
 
+      iepsel = 1
+      ifinwa = iepsel + ncelet
+      allocate(wa(ifinwa))
+
       ! At cell centers
       call cs_cf_thermo_eps_sup(crom, wa(iepsel), ncel)
-      !========================
-
-      ! At boundary faces centers
-      call cs_cf_thermo_eps_sup(brom, wa(iepsfa), nfabor)
-      !========================
 
       do iloc = 1, nbfcou
         ifac  = lfcou(iloc)
@@ -237,6 +222,8 @@ do inbcou = 1, nbccou
           hparoi(iloc) = hparoi(iloc)*cvcst
         endif
       enddo
+
+      deallocate(wa)
 
     endif
 

@@ -456,6 +456,7 @@ ifour  = 0
 icp    = 0
 iprtot = 0
 
+itemp  = 0
 ibeta  = 0
 
 iforbr = -1

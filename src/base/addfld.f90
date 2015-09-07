@@ -81,11 +81,11 @@ implicit none
 ! Local variables
 
 integer          ii
-integer          ifcvsl, kislts, ifctsl
-integer          iflid, iopchr, ivar
+integer          ifcvsl, kislts, ifctsl, kbfid
+integer          iflid, kval, iopchr, ivar
 integer          itycat, ityloc, idim1, idim3
 logical          ilved, iprev, inoprv, is_set
-integer          f_id, f_loc
+integer          f_id, b_f_id, f_loc
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 
@@ -109,8 +109,14 @@ inoprv = .false.   ! variables have no previous value
 iopchr = 1         ! Postprocessing level for variables
 
 !===============================================================================
-! 1. Initialisation
+! 1. Initialization
 !===============================================================================
+
+call field_get_key_id("boundary_value_id", kbfid)
+
+call field_get_key_id('log', keylog)
+call field_get_key_id('post_vis', keyvis)
+call field_get_key_id('label', keylbl)
 
 !===============================================================================
 ! 2. Additional property fields
@@ -182,18 +188,18 @@ enddo
 
 ! Fields used to save postprocessing data
 
-itycat = FIELD_INTENSIVE + FIELD_PROPERTY
 ityloc = 3 ! boundary faces
 
-! If postprocessing of boundary temperature or boundary layer Nusselt required,
+itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+
+! If postprocessing of boundary layer Nusselt required,
 ! create appropriate fields; check that a thermal variable is present first
 
 if (iscalt.le.0) then
-  ipstdv(ipsttb) = 0
   ipstdv(ipstnu) = 0
 endif
 
-if (ipstdv(ipsttb).gt.0 .or. ipstdv(ipstnu).gt.0) then
+if (ipstdv(ipstnu).gt.0) then
   call field_find_or_create('tplus', itycat, ityloc, idim1, ilved, iflid)
   call field_find_or_create('tstar', itycat, ityloc, idim1, ilved, iflid)
 endif

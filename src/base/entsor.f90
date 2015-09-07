@@ -365,8 +365,8 @@ module entsor
   !> indicates the data to post-process on the boundary mesh (the boundary mesh must
   !> be associated with an active writer). \ref ipstdv "ipstdv"(key) indicates which
   !> fields should be created and output on the boundary, with \c key in
-  !> \ref ipstfo, \ref ipstyp, \ref ipsttp, \ref ipstft, \ref ipsttb, \ref ipstnu.
-  integer, save :: ipstdv(6)
+  !> \ref ipstfo, \ref ipstyp, \ref ipsttp, \ref ipstft, \ref ipstnu.
+  integer, save :: ipstdv(5)
 
   !> post-processed property: Efforts (0: none 1: all; 2: tangent; 4: normal)
   integer    ipstfo
@@ -376,11 +376,9 @@ module entsor
   integer    ipsttp
   !> post-processed property: thermal flux at the boundary (in  \f$ W\,m^{-2} \f$),
   integer    ipstft
-  !> post-processed property: boundary temperature
-  integer    ipsttb
   !> post-processed property: Nusselt
   integer    ipstnu
-  parameter (ipstfo=1, ipstyp=2, ipsttp= 3, ipstft=4, ipsttb=5, ipstnu=6)
+  parameter (ipstfo=1, ipstyp=2, ipsttp= 3, ipstft=4, ipstnu=5)
 
   !> margin in seconds on the remaining CPU time which is necessary to allow
   !> the calculation to stop automatically and write all the required results

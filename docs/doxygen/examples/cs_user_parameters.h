@@ -45,6 +45,14 @@
   Definition of user variables or properties should be defined here,
   if not already done throught the GUI.
 
+  Most definitions should be done in the \ref cs_user_parameters
+  function, which is the C equivalent of the \ref usipsu Fortran routine.
+
+  For example, to add boundary values for all scalars, the
+  following code can be added:
+
+  \snippet cs_user_parameters-base.c param_var_boundary_vals_1
+
   \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
 
   By default, Code_Saturne will use a multigrid algorithm for pressure

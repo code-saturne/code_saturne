@@ -2441,7 +2441,6 @@ write(nfecra,7532)
 
 write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
                      'ipstft', ipstdv(ipstft),                     &
-                     'ipsttb', ipstdv(ipsttb),                     &
                      'ipstnu', ipstdv(ipstnu)
 
 write(nfecra,9900)
@@ -2484,7 +2483,6 @@ write(nfecra,9900)
 '       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
 '       ',6x,'   ',4x,10x,    '   le fluide sur le bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Flux thermique au bord)',      /,&
-'       ',a6,' = ',4x,i10,    ' (Temperature    au bord)',      /,&
 '       ',a6,' = ',4x,i10,    ' (Flux thermique',               /,&
 '       ',6x,'   ',4x,10x,    '  sans dimension au bord)',      /)
 
@@ -2525,7 +2523,6 @@ write(nfecra,9900)
 '       ',a6,' = ',4x,i10,    ' (Force exerted by the',         /,&
 '       ',6x,'   ',4x,10x,    '       fluid on the boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Thermal flux   at boundary)',  /,&
-'       ',a6,' = ',4x,i10,    ' (Temperature    at boundary)',  /,&
 '       ',a6,' = ',4x,i10,    ' (Dimensionless thermal',        /,&
 '       ',6x,'   ',4x,10x,    '            flux at boundary)',  /)
 

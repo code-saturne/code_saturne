@@ -180,13 +180,14 @@ integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ifcvsl, ipccv
 integer          itplus, itstar
-integer          f_id  ,  iut  , ivt   , iwt, iflmab
-integer          dimrij
+integer          f_id, iut, ivt, iwt, iflmab
+integer          kbfid, b_f_id
+integer          dimrij, flag
 logical          interleaved
 
 double precision sigma , cpp   , rkl
 double precision hint  , hext  , pimp  , xdis, qimp, cfl
-double precision pinf  , ratio
+double precision pinf  , ratio , enthal
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision xxp0, xyp0, xzp0
@@ -222,13 +223,13 @@ double precision, dimension(:), pointer :: crom
 
 double precision, dimension(:), pointer :: viscl, visct, viscls
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cvar_s, cvara_s
+double precision, dimension(:), pointer :: bvar_s, btemp_s
 double precision, dimension(:), pointer :: cpro_visma1, cpro_visma2, cpro_visma3
 double precision, dimension(:,:), pointer :: cvar_ts, cvara_ts
 
 ! darcy arrays
 double precision, dimension(:), pointer :: permeability
 double precision, dimension(:,:), pointer :: tensor_permeability
-integer fid
 
 !===============================================================================
 
@@ -240,8 +241,8 @@ if (ippmod(idarcy).eq.1) then
   if (darcy_anisotropic_permeability.eq.0) then
     call field_get_val_s_by_name('permeability', permeability)
   else
-    call field_get_id('permeability', fid)
-    call field_get_val_v(fid, tensor_permeability)
+    call field_get_id('permeability', f_id)
+    call field_get_val_v(f_id, tensor_permeability)
   endif
 endif
 
@@ -323,11 +324,15 @@ if (idtten.ge.0) call field_get_val_v(idtten, dttens)
 
 if (iforbr.ge.0 .and. iterns.eq.1) call field_get_val_v(iforbr, forbr)
 
-! pointers to velcocity bc coefficients
+! pointers to velocity bc coefficients
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
 call field_get_coefaf_v(ivarfl(iu), cofafu)
 call field_get_coefbf_v(ivarfl(iu), cofbfu)
+
+! pointers to boundary vaiable values
+
+call field_get_key_id("boundary_value_id", kbfid)
 
 !===============================================================================
 ! 2. treatment of types of bcs given by itypfb
@@ -498,12 +503,30 @@ allocate(grad(3,ncelet))
 !  on recherche l'unique scalaire qui convient
 !     (ce peut etre t, h, ou e (en compressible))
 
-! compute the boundary value of the thermal scalar in i' if required
-if (iscalt.gt.0) then
+! compute the boundary value of required scalars
 
-  ivar = isca(iscalt)
+! Check for boundary values
 
-  if (ntcabs.gt.1 .and. itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
+do ii = 1, nscal
+
+  ivar = isca(ii)
+  f_id = ivarfl(ivar)
+
+  call field_get_key_int(f_id, kbfid, b_f_id)
+
+  if (b_f_id .ge. 0) then
+    call field_get_val_s(b_f_id, bvar_s)
+  else if (ii.eq.iscalt) then
+    bvar_s => null()
+    ! if thermal variable has no boundary but temperature does, use it
+    if (itemp.gt.0) then
+      call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
+      if (b_f_id.ge.0) call field_get_val_s(b_f_id, bvar_s)
+    endif
+    cycle ! nothing to do for this scalar
+  endif
+
+  if (itbrrb.eq.1 .and. ircflu(ivar).eq.1) then
 
     call field_get_val_s(ivarfl(ivar), cvar_s)
 
@@ -515,15 +538,45 @@ if (iscalt.gt.0) then
                                iccocg,                            &
                                grad)
 
-    do ifac = 1 , nfabor
-      iel = ifabor(ifac)
-      theipb(ifac) = cvar_s(iel) &
-                   + grad(1,iel)*diipb(1,ifac) &
-                   + grad(2,iel)*diipb(2,ifac) &
-                   + grad(3,iel)*diipb(3,ifac)
-    enddo
+    if (b_f_id .ge. 0) then
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        bvar_s(ifac) = cvar_s(iel) &
+                     + grad(1,iel)*diipb(1,ifac) &
+                     + grad(2,iel)*diipb(2,ifac) &
+                     + grad(3,iel)*diipb(3,ifac)
+      enddo
+    else
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        theipb(ifac) = cvar_s(iel) &
+                     + grad(1,iel)*diipb(1,ifac) &
+                     + grad(2,iel)*diipb(2,ifac) &
+                     + grad(3,iel)*diipb(3,ifac)
+      enddo
+    endif
 
   else
+
+    call field_get_val_prev_s(ivarfl(ivar), cvara_s)
+
+    if (b_f_id .ge. 0) then
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        bvar_s(ifac) = cvara_s(iel)
+      enddo
+    else
+      do ifac = 1 , nfabor
+        iel = ifabor(ifac)
+        theipb(ifac) = cvara_s(iel)
+      enddo
+    endif
+
+  endif
+
+  ! Special case for first time step (TODO check why)
+
+  if (ntcabs.eq.1 .and. ii.eq.iscalt) then
 
     call field_get_val_prev_s(ivarfl(ivar), cvara_s)
 
@@ -532,9 +585,17 @@ if (iscalt.gt.0) then
       theipb(ifac) = cvara_s(iel)
     enddo
 
+  ! Copy bvar_s to theipb if both theipb and bvar_s present
+
+  else if (b_f_id .ge. 0 .and. ii.eq.iscalt) then
+
+    do ifac = 1 , nfabor
+      theipb(ifac) = bvar_s(iel)
+    enddo
+
   endif
 
-endif
+enddo
 
 !===============================================================================
 ! 6.bis compute the velocity and renolds stesses tensor in i' for boundary cells
@@ -557,6 +618,7 @@ do ifac = 1, nfabor
   endif
   if (iclsym.ne.0.and.ipatur.ne.0.and.ipatrg.ne.0) goto 100
 enddo
+
 100 continue
 
 if (irangp.ge.0) then
@@ -1427,7 +1489,7 @@ elseif (itytur.eq.3) then
           call set_dirichlet_tensor &
                !====================
              ( coefats(:, ifac), cofafts(:,ifac),                        &
-               coefbts(:,:,ifac), cofbfts(:,:,ifac),                        &
+               coefbts(:,:,ifac), cofbfts(:,:,ifac),                     &
                pimpts            , hint              , hextts )
 
           ! Boundary conditions for the momentum equation
@@ -1443,8 +1505,8 @@ elseif (itytur.eq.3) then
 
           call set_neumann_tensor &
                !==================
-             ( coefats(:,ifac), cofafts(:,ifac),                        &
-               coefbts(:,:,ifac), cofbfts(:,:,ifac),                        &
+             ( coefats(:,ifac), cofafts(:,ifac),                         &
+               coefbts(:,:,ifac), cofbfts(:,:,ifac),                     &
                qimpts              , hint )
 
           ! Boundary conditions for the momentum equation
@@ -1478,7 +1540,7 @@ elseif (itytur.eq.3) then
           call set_dirichlet_conv_neumann_diff_tensor &
                !=====================================
              ( coefats(:, ifac), cofafts(:, ifac),                         &
-               coefbts(:,:, ifac), cofbfts(:,:, ifac),                         &
+               coefbts(:,:, ifac), cofbfts(:,:, ifac),                     &
                pimpts              , qimpts )
 
           ! Boundary conditions for the momentum equation
@@ -2806,7 +2868,52 @@ deallocate(velipb)
 if (allocated(rijipb)) deallocate(rijipb)
 
 !===============================================================================
-! 16. Formats
+! 16. Update of boundary temperature when saved and not a variable.
+!===============================================================================
+
+if (itemp.gt.0) then
+
+  call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
+  if (b_f_id.ge.0) then
+
+    call field_get_val_s(b_f_id, btemp_s)
+
+    ! If we also have a boundary value field for the thermal
+    ! scalar, copy its values first.
+
+    ! If we do not have a boundary value field for the thermal scalar,
+    ! then boundary values for the thermal scalar were directly
+    ! saved to the boundary temperature field, so no copy needed.
+
+    f_id = ivarfl(isca(iscalt))
+    call field_get_key_int(f_id, kbfid, b_f_id)
+    if (b_f_id .ge. 0) then
+      call field_get_val_s(b_f_id, bvar_s)
+      do ifac = 1, nfabor
+        btemp_s(ifac) = bvar_s(ifac)
+      enddo
+    endif
+
+    ! Now convert to temperature
+
+    if (itherm.eq.2) then
+
+      do ifac = 1, nfabor
+        flag = 1
+        enthal = btemp_s(ifac)
+        call usthht(flag, enthal, btemp_s(ifac))
+      enddo
+
+    else if (itherm.eq.3) then
+      ! TODO complete this
+    endif
+
+  endif
+
+endif
+
+!===============================================================================
+! 17. Formats
 !===============================================================================
 
 #if defined(_CS_LANG_FR)
@@ -2883,7 +2990,7 @@ if (allocated(rijipb)) deallocate(rijipb)
 !----
 
 return
-end subroutine
+end subroutine condli
 
 !===============================================================================
 ! Local functions
@@ -2950,7 +3057,7 @@ else
 endif
 
 return
-end subroutine
+end subroutine set_dirichlet_scalar
 
 !===============================================================================
 
@@ -3044,7 +3151,7 @@ do isou = 1, 3
 enddo
 
 return
-end subroutine
+end subroutine set_dirichlet_vector
 
 !===============================================================================
 
@@ -3138,7 +3245,8 @@ do isou = 1, 6
 enddo
 
 return
-end subroutine
+end subroutine set_dirichlet_tensor
+
 !===============================================================================
 
 !-------------------------------------------------------------------------------
@@ -3214,7 +3322,7 @@ cofbf(1,3) = hint(6)
 cofbf(3,1) = hint(6)
 
 return
-end subroutine
+end subroutine set_dirichlet_vector_ggdh
 
 !===============================================================================
 
@@ -3259,7 +3367,7 @@ cofaf = qimp
 cofbf = 0.d0
 
 return
-end subroutine
+end subroutine set_neumann_scalar
 
 !===============================================================================
 
@@ -3321,7 +3429,7 @@ do isou = 1, 3
 enddo
 
 return
-end subroutine
+end subroutine set_neumann_vector
 
 !===============================================================================
 
@@ -3383,8 +3491,7 @@ do isou = 1, 6
 enddo
 
 return
-end subroutine
-
+end subroutine set_neumann_tensor
 
 !===============================================================================
 
@@ -3466,7 +3573,7 @@ do isou = 1, 3
 enddo
 
 return
-end subroutine
+end subroutine set_neumann_vector_ggdh
 
 !===============================================================================
 
@@ -3579,7 +3686,6 @@ cofbfw = cofbf(3)
 
 return
 end subroutine set_generalized_sym_scalar
-
 
 !===============================================================================
 

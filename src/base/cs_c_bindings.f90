@@ -686,6 +686,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function mapping field pointers
+
+    subroutine cs_field_pointer_map_base()  &
+      bind(C, name='cs_field_pointer_map_base')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_field_pointer_map_base
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function returning the global dot product of 2 vectors
 
     function cs_gdot(n, x, y) result(gdot) &

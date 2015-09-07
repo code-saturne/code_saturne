@@ -392,6 +392,8 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("slope_test_upwind_id", -1, CS_FIELD_VARIABLE);
 
+  cs_field_define_key_int("boundary_value_id", -1, 0);
+
   cs_field_define_key_double("min_scalar_clipping", -1.e12, 0);
   cs_field_define_key_double("max_scalar_clipping", 1.e12, 0);
 
@@ -694,6 +696,113 @@ cs_parameters_create_added_properties(void)
 
   BFT_FREE(_user_property_defs);
   _n_user_properties = 0;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a boundary values field for a variable field.
+ *
+ * \param[in, out]  f  pointer to field structure
+ *
+ * \return  pointer to boundary values field, or NULL if not applicable
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_parameters_add_boundary_values(cs_field_t  *f)
+{
+  cs_field_t *bf = NULL;
+
+  /* Check we are on cells and don't already have such value */
+
+  if (f->location_id != CS_MESH_LOCATION_CELLS)
+    return bf;
+
+  int kbf = cs_field_key_id_try("boundary_value_id");
+
+  int bf_id = cs_field_get_key_int(f, kbf);
+  if (bf_id > -1) {
+    bf = cs_field_by_id(bf_id);
+    return bf;
+  }
+
+  /* Currently only managed for scalars or temperature property */
+
+  int ks = cs_field_key_id_try("scalar_id");
+  if (ks < 0)
+    return bf;
+
+  int scalar_id = (f->type & CS_FIELD_VARIABLE) ?
+    cs_field_get_key_int(f, ks) : -1;
+
+  if (scalar_id < 0 && strcmp(f->name, "temperature") != 0)
+    return bf;
+
+  /* Build new field */
+
+  char *b_name;
+  size_t l = strlen(f->name) + 2 + 1;
+  BFT_MALLOC(b_name, l, char);
+  snprintf(b_name, l, "%s_b", f->name);
+
+  /* Field may already have been defined */
+
+  bf = cs_field_by_name_try(b_name);
+
+  if (bf == NULL) {
+
+    int type_flag =   (f->type & (CS_FIELD_INTENSIVE | CS_FIELD_EXTENSIVE))
+                    | CS_FIELD_POSTPROCESS;
+
+    bf = cs_field_create(b_name,
+                         type_flag,
+                         CS_MESH_LOCATION_BOUNDARY_FACES,
+                         f->dim,
+                         true,
+                         false);
+
+    /* Set same label as parent */
+
+    cs_field_set_key_str(bf,
+                         cs_field_key_id("label"),
+                         cs_field_get_label(f));
+
+    /* Set same postprocessing and logging defaults as parent */
+
+    int k_log = cs_field_key_id("log");
+    cs_field_set_key_int(bf,
+                         k_log,
+                         cs_field_get_key_int(f, k_log));
+
+    int k_vis = cs_field_key_id("post_vis");
+    int f_vis = cs_field_get_key_int(f, k_vis);
+    f_vis = CS_MAX(f_vis, 1);
+    cs_field_set_key_int(bf, k_vis, f_vis);
+
+  }
+  else {
+
+    if (   f->dim != bf->dim
+        || bf->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error defining variable boundary field:\n"
+                  "  parent name:   \"%s\"\n"
+                  "  name:          \"%s\"\n"
+                  "  dimension:     %d\n\n"
+                  "An incompatible field with matching name already exists:\n"
+                  "  id:          %d\n"
+                  "  location_id: %d\n"
+                  "  dimension:   %d"),
+                f->name, bf->name, f->dim,
+                bf->id, bf->location_id, bf->dim);
+
+  }
+
+  BFT_FREE(b_name);
+
+  cs_field_set_key_int(f, kbf, bf->id);
+  cs_field_lock_key(f, kbf);
+
+  return bf;
 }
 
 /*----------------------------------------------------------------------------*/

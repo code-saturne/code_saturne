@@ -115,6 +115,61 @@ cs_user_model(void)
 
   if (cs_gui_file_is_loaded())
     return;
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add 2 scalar variables ("species" in the GUI nomenclature).
+   *
+   * Note that at this (very early) stage of the data setup, fields are
+   * not defined yet. Associated fields will be defined later (after
+   * model-defined fields) in the same order as that used here, and
+   * after user-defined variables defined throught the GUI, if used.
+   *
+   * Currently, only 1d (scalar) fields are handled.
+   *
+   * parameters for cs_parameters_add_variable():
+   *   name             <-- name of variable and associated field
+   *   dim              <-- variable dimension
+   */
+
+  if (false) {
+    cs_parameters_add_variable("species_1", 1);
+    cs_parameters_add_variable("tracer", 1);
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add the variance of a user variable.
+   *
+   * parameters for cs_parameters_add_variable_variance():
+   *   name          <-- name of variance and associated field
+   *   variable_name <-- name of associated variable
+   */
+
+  if (false) {
+    cs_parameters_add_variable_variance("variance_1",
+                                        "species_1");
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: add a user property defined on boundary faces.
+   *
+   * parameters for cs_parameters_add_property():
+   *   name        <-- name of property and associated field
+   *   dim         <-- property dimension
+   *   location_id <-- id of associated mesh location, which must be one of:
+   *                     CS_MESH_LOCATION_CELLS
+   *                     CS_MESH_LOCATION_INTERIOR_FACES
+   *                     CS_MESH_LOCATION_BOUNDARY_FACES
+   *                     CS_MESH_LOCATION_VERTICES
+   */
+
+  if (false) {
+    cs_parameters_add_property("user_b_property_1",
+                               1,
+                               CS_MESH_LOCATION_BOUNDARY_FACES);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -130,44 +185,27 @@ cs_user_model(void)
 void
 cs_user_parameters(void)
 {
+  /* Example: add boundary values for all scalars */
+  /*----------------------------------------------*/
 
-}
+  BEGIN_EXAMPLE_SCOPE
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define linear solver options.
- *
- * This function is called at the setup stage, once user and most model-based
- * fields are defined.
- *
- * Available native iterative linear solvers include conjugate gradient,
- * Jacobi, BiCGStab, BiCGStab2, and GMRES. For symmetric linear systems,
- * an algebraic multigrid solver is available (and recommended).
- *
- * External solvers may also be setup using this function, the cs_sles_t
- * mechanism alowing such through user-define functions.
- */
-/*----------------------------------------------------------------------------*/
+  /*! [param_var_boundary_vals_1] */
 
-void
-cs_user_linear_solvers(void)
-{
+  int n_fields = cs_field_n_fields();
 
-}
+  for (int f_id = 0; f_id < n_fields; f_id++) {
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define time moments.
- *
- * This function is called at the setup stage, once user and most model-based
- * fields are defined, and before fine control of field output options
- * is defined.
- */
-/*----------------------------------------------------------------------------*/
+    cs_field_t  *f = cs_field_by_id(f_id);
 
-void
-cs_user_time_moments(void)
-{
+    if (f->type & CS_FIELD_VARIABLE)
+      cs_parameters_add_boundary_values(f);
+
+  }
+
+  /*! [param_var_boundary_vals_1] */
+
+  END_EXAMPLE_SCOPE
 
 }
 

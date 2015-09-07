@@ -70,6 +70,8 @@
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_parameters.h"
+#include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 
 /*----------------------------------------------------------------------------
@@ -1111,7 +1113,7 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
 
   /* Surfacic variables output */
 
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 5; i++)
     ipstdv[i] = 0;
 
   if (_surfacic_variable_post("stress", true))
@@ -1127,8 +1129,19 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
     ipstdv[2] = 1;
   if (_surfacic_variable_post("thermal_flux", true))
     ipstdv[3] = 1;
-  if (_surfacic_variable_post("boundary_temperature", true))
-    ipstdv[4] = 1;
+  if (_surfacic_variable_post("boundary_temperature", true)) {
+    cs_field_t *f = CS_F_(t);
+    if (f == NULL) {
+      const int itherm = cs_glob_thermal_model->itherm;
+      if (itherm == 2)
+        f = CS_F_(h);
+      else if (itherm == 3)
+        f = CS_F_(energy);
+    }
+    if (f != NULL)
+      cs_parameters_add_boundary_values(f);
+  }
+
   if (_surfacic_variable_post("boundary_layer_nusselt", true))
     ipstdv[5] = 1;
 }

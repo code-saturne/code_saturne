@@ -715,8 +715,8 @@ integer nmodpp
 ! Local variables
 
 logical       ilved, inoprv
-integer       ii, jj, kscmin, kscmax, keydri
-integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl
+integer       ii, jj, kscmin, kscmax, keydri, kbfid
+integer       f_id, idim1, itycat, ityloc, iscdri, iscal, ifcvsl, b_f_id
 
 !===============================================================================
 
@@ -1330,7 +1330,6 @@ if (.false.) then
   almax = 0.5
 endif
 
-
 ! --- Scalar with a drift (key work "drift_scalar_model">0) or without drift
 !       ((key work "drift_scalar_model"=0, default option) for each USER scalar.
 !       - to specify that a scalar have a drift and need the drift computation:
@@ -1381,8 +1380,8 @@ endif
 ! =============================
 
 ! Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
-!          yplus, a boundary temperature or Nusselt number may be computed using
-!          the post_boundary_temperature or post_boundary_nusselt subroutines.
+!          yplus may be saved, or a local Nusselt number may be computed using
+!          the post_boundary_nusselt subroutine.
 !          When postprocessing of these quantities is activated, those fields
 !          are present, but if we need to compute them in the
 !          cs_user_extra_operations user subroutine without postprocessing them,
@@ -1416,7 +1415,7 @@ if (.false.) then
   call field_get_id_try('tstar', f_id)
   if (f_id.lt.0) then
     call field_create('tstar', itycat, ityloc, idim1, ilved, inoprv, f_id)
-    ! tplus postreated and in the log
+    ! tstar postreated and in the log
     call field_set_key_int(f_id, keyvis, 1)
     call field_set_key_int(f_id, keylog, 1)
   endif

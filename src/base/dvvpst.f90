@@ -517,34 +517,6 @@ else if (numtyp .eq. -2) then
 
   endif
 
-  ! Temperature at the boundary
-  ! ---------------------------
-
-  if (ipstdv(ipsttb).ne.0) then
-
-    idimt = 1        ! variable dimension
-    ientla = .true.  ! interleaved values
-    ivarpr = .false. ! defined on work array
-
-    ! Compute variable on boundary faces
-
-    call post_boundary_temperature(nfbrps, lstfbr, trafbr)
-
-    if (itherm .eq. 1) then
-      name80 = 'Boundary temperature'
-    else if (itherm .eq. 2) then
-      name80 = 'Boundary enthalpy'
-    else if (itherm .eq. 3) then
-      name80 = 'Boundary energy'
-    else
-      return
-    endif
-
-    call post_write_var(nummai, name80, idimt, ientla, ivarpr,  &
-                        ntcabs, ttcabs, rbid, rbid, trafbr)
-
-  endif ! end of test on output of wall temperature
-
   ! Nusselt at the boundary
   ! -----------------------
 

@@ -181,7 +181,7 @@ double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr
-double precision, dimension(:), allocatable :: byplus, buk, buet, buplus, bcfnns
+double precision, dimension(:), allocatable :: byplus, buk, buet, bcfnns
 
 double precision, dimension(:), pointer :: cvar_k
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
@@ -518,7 +518,6 @@ endif
 allocate(byplus(nfabor))
 allocate(buk(nfabor))
 allocate(buet(nfabor))
-allocate(buplus(nfabor))
 allocate(bcfnns(nfabor))
 
 ! --- Loop on boundary faces
@@ -1257,7 +1256,6 @@ do ifac = 1, nfabor
     byplus(ifac) = yplus
     buk(ifac) = uk
     buet(ifac) = uet
-    buplus(ifac) = uplus
     bcfnns(ifac) = cfnns
 
   endif
@@ -1280,7 +1278,7 @@ do iscal = 1, nscal
     !=================
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
-   byplus , buk    , buet   , buplus , bcfnns ,                   &
+   byplus , buk    , buet   , bcfnns ,                            &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
 
@@ -1309,7 +1307,6 @@ endif
 deallocate(byplus)
 deallocate(buk)
 deallocate(buet)
-deallocate(buplus)
 deallocate(bcfnns)
 
 !===============================================================================
@@ -1472,7 +1469,6 @@ end subroutine
 !> \param[in]     byplus        dimensionless distance to the wall
 !> \param[in]     buk           dimensionless velocity
 !> \param[in]     buet          boundary ustar value
-!> \param[in]     buplus        boundary uplus value
 !> \param[in]     bcfnns        boundary correction factor
 !> \param[in,out] hbord         exchange coefficient at boundary
 !> \param[in]     theipb        boundary temperature in \f$ \centip \f$
@@ -1486,7 +1482,7 @@ end subroutine
 subroutine clptrg_scalar &
  ( iscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
-   byplus , buk    , buet   , buplus , bcfnns ,                   &
+   byplus , buk    , buet   , bcfnns ,                            &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
 
@@ -1526,12 +1522,12 @@ integer          icodcl(nfabor,nvarcl)
 double precision rcodcl(nfabor,nvarcl,3)
 double precision byplus(nfabor)
 double precision hbord(nfabor), theipb(nfabor)
-double precision buk(nfabor), buet(nfabor), buplus(nfabor), bcfnns(nfabor)
+double precision buk(nfabor), buet(nfabor), bcfnns(nfabor)
 double precision tetmax, tetmin, tplumx, tplumn
 
 ! Local variables
 
-integer          ivar, f_id, isvhbl
+integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
 integer          ifccp, ifccv, ifcvsl, itplus, itstar
 
@@ -1545,7 +1541,7 @@ double precision visci(3,3), hintt(6)
 
 character(len=80) :: fname
 
-double precision, dimension(:), pointer :: val_s, crom, viscls
+double precision, dimension(:), pointer :: val_s, bval_s, crom, viscls
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cv
 
 double precision, dimension(:), pointer :: bfconv, bhconv
@@ -1553,6 +1549,8 @@ double precision, dimension(:), pointer :: tplusp, tstarp
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: coefaut, cofafut, cofarut, visten
 double precision, dimension(:,:,:), pointer :: coefbut, cofbfut, cofbrut
+
+integer, save :: kbfid = -1
 
 !===============================================================================
 
@@ -1649,6 +1647,21 @@ endif
 ! Pointers to specific fields
 if (ifconv.ge.0) call field_get_val_s(ifconv, bfconv)
 if (ihconv.ge.0) call field_get_val_s(ihconv, bhconv)
+
+if (kbfid.lt.0) call field_get_key_id("boundary_value_id", kbfid)
+
+call field_get_key_int(f_id, kbfid, b_f_id)
+
+if (b_f_id .ge. 0) then
+  call field_get_val_s(b_f_id, bval_s)
+else
+  bval_s => null()
+  ! if thermal variable has no boundary but temperature does, use it
+  if (itemp.gt.0) then
+    call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
+    if (b_f_id.ge.0) call field_get_val_s(b_f_id, bval_s)
+  endif
+endif
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -1946,7 +1959,9 @@ do ifac = 1, nfabor
     endif ! End if icodcl=6
 
     ! Save the value of T^star and T^+ for post-processing
-    if (iscal.eq.iscalt) then
+
+    if (b_f_id.ge.0 .or. iscal.eq.iscalt) then
+
       ! Rough wall function
       if (icodcl(ifac,ivar).eq.6) then
         phit = cofafp(ifac)+cofbfp(ifac)*theipb(ifac)
@@ -1959,13 +1974,18 @@ do ifac = 1, nfabor
 
       tet = phit/(romc*cpp*max(buet(ifac)*bcfnns(ifac),epzero))
 
+      if (b_f_id .ge. 0) bval_s(ifac) = bval_s(ifac) - tplus*tet
+
       if (itplus .ge. 0) tplusp(ifac) = tplus
       if (itstar .ge. 0) tstarp(ifac) = tet
 
-      tetmax = max(tet, tetmax)
-      tetmin = min(tet, tetmin)
-      tplumx = max(tplus,tplumx)
-      tplumn = min(tplus,tplumn)
+      if (iscal.eq.iscalt) then
+        tetmax = max(tet, tetmax)
+        tetmin = min(tet, tetmin)
+        tplumx = max(tplus,tplumx)
+        tplumn = min(tplus,tplumn)
+      endif
+
     endif
 
   endif ! rough wall condition

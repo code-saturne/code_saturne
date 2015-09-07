@@ -246,8 +246,8 @@ if (iale.eq.1) then
   type_flag = FIELD_PROPERTY
   location_id = 4 ! variables defined on vertices
 
-  call field_create(f_name, type_flag, location_id, idim3, interleaved, has_previous, &
-                  fdiale)
+  call field_create(f_name, type_flag, location_id, idim3, &
+                    interleaved, has_previous, fdiale)
   call field_set_key_int(fdiale, keyvis, 1)
   call field_set_key_int(fdiale, keylog, 1)
 
@@ -262,6 +262,24 @@ endif
 ! User-defined properties
 
 call cs_parameters_create_added_properties
+
+! Set itemp if temperature is present as a property
+
+if (itherm.eq.2 .and. itemp.eq.0) then
+  call field_get_id_try('temperature', iflid)
+  if (iflid.ge.0) then
+    do ii = 1, nproce
+      if (iflid .eq. iprpfl(ii)) then
+        itemp = ii
+        exit
+      endif
+    enddo
+  endif
+endif
+
+! Map pointers
+
+call cs_field_pointer_map_base
 
 return
 

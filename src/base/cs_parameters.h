@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_field.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -207,13 +208,11 @@ extern const cs_piso_t  *cs_glob_piso;
 void
 cs_parameters_define_field_keys(void);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define field key for condensation.
+/*----------------------------------------------------------------------------
+ * Define field key for condensation.
  *
  * Note: this should be moved in the future to a condensation-specific file.
- */
-/*----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 void
 cs_parameters_define_field_key_gas_mix(void);
@@ -308,6 +307,19 @@ cs_parameters_create_added_variables(void);
 
 void
 cs_parameters_create_added_properties(void);
+
+/*----------------------------------------------------------------------------
+ * Define a boundary values field for a variable field.
+ *
+ * parameters:
+ *   f <-- pointer to field structure
+ *
+ * returns:
+ *   pointer to boundary values field, or NULL if not applicable
+ *----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_parameters_add_boundary_values(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 

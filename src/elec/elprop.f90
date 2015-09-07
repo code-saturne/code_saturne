@@ -87,7 +87,7 @@ ipropp = nproce
 
 ! ---> Temperature en K
 
-call add_property_field('temperature', 'Temper', itemp)
+call add_property_field('temperature', 'Temperature', itemp)
 
 ! ---> Puissance volumique dissipee par effet Joule W/m3
 
