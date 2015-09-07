@@ -590,7 +590,7 @@ do ii = 1, nscal
   else if (b_f_id .ge. 0 .and. ii.eq.iscalt) then
 
     do ifac = 1 , nfabor
-      theipb(ifac) = bvar_s(iel)
+      theipb(ifac) = bvar_s(ifac)
     enddo
 
   endif
