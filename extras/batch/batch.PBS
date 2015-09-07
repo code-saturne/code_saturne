@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------
 #
-# Batch options for PBS or Torque (example: Clamart2 cluster)
+# Batch options for PBS or Torque
 # ===============================
 #
 #PBS -l nodes=4:ppn=2
@@ -10,7 +10,7 @@
 #PBS -N nameandcase
 #
 # -l nodes=    : number of nodes
-# -l ppn=      : number of process per node
+# -l ppn=      : number of processes per node
 # -l walltime= : wall clock time (hh:mm:ss)
 # -q queue     : queue name
 # -N name      : job name

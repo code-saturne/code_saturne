@@ -841,10 +841,6 @@ class MainView(object):
 
         # Update the Tree Navigator layout
 
-        if self.batch == True:
-            self.initializeBatchRunningWindow()
-            self.currentEntry = 'Prepare batch calculation'
-
         self.connect(self.case, SIGNAL("undo"), self.slotUndoRedoView)
         self.actionPrepro.setEnabled(True)
         self.actionCalculation.setEnabled(True)
@@ -1292,21 +1288,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         self.setupUi(self)
 
-        # Get batch type
-
-        config = configparser.ConfigParser()
-        config.read(cmd_package.get_configfiles())
-
-        cs_batch_type = None
-        if config.has_option('install', 'batch'):
-            cs_batch_type = config.get('install', 'batch')
-
         # create some instance variables
 
         self.cmd_case    = cmd_case
         self.salome      = cmd_salome
-        self.batch_type  = cs_batch_type
-        self.batch       = False
         self.batch_file  = cmd_package.runcase
         self.package     = cmd_package
 

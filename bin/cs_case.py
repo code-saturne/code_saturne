@@ -92,6 +92,10 @@ class case:
         else:
             self.package_compute = self.package
 
+        # Determine caller script path (which may contain batch directives)
+
+        self.parent_script = cs_exec_environment.get_parent_process_path()
+
         # Set environment modules if present
 
         cs_exec_environment.set_modules(self.package_compute)
@@ -472,7 +476,7 @@ class case:
             r += '_COUPLING'
             if os.path.isdir(r):
                 self.result_dir = os.path.join(r, self.run_id)
-            elif not force:
+            else:
                 r = os.path.join(self.case_dir, 'RESU')
                 err_str = \
                     '\nResults directory: ' + r + '\n' \
@@ -640,14 +644,14 @@ class case:
         src = sys.argv[0]
 
         if os.path.basename(src) == self.package.name:
-            return
-
-        dest = os.path.join(self.result_dir, os.path.basename(src))
+            src = self.parent_script
 
         # Copy single file
 
-        if os.path.isfile(src) and src != dest:
-            shutil.copy2(src, dest)
+        if src:
+            dest = os.path.join(self.result_dir, os.path.basename(src))
+            if os.path.isfile(src) and src != dest:
+                shutil.copy2(src, dest)
 
     #---------------------------------------------------------------------------
 
@@ -1590,7 +1594,7 @@ $appli/runSession $appli/bin/salome/driver -e -d 0 fsi_yacs_scheme.xml
         b = cs_exec_environment.batch_info()
         max_time = b.get_remaining_time()
         if max_time != None:
-            os.putenv('CS_MAXTIME', max_time)
+            os.putenv('CS_MAXTIME', str(max_time))
 
         # Tell the script it is being called through the main script
         # (implying environment modules are set and the environment loaded)
