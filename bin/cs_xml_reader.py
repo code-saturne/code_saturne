@@ -258,7 +258,7 @@ class Parser:
             if len(path) > 0:
                 name = os.path.join(path, name)
             if len(number) > 0:
-                l_args.append('--num ')
+                l_args.append('--num')
                 l_args.append(number)
             if reorient:
                 l_args.append('--reorient')
