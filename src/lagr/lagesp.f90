@@ -152,9 +152,11 @@ allocate(vagaus(nbpart,nvgaus))
 ! Random values
 
 if (idistu.eq.1) then
-  do ivf = 1,nvgaus
-    call normalen(nbpart, vagaus(:,ivf))
-  enddo
+  if (nbpart.gt.0) then
+    do ivf = 1,nvgaus
+      call normalen(nbpart, vagaus(:,ivf))
+    enddo
+  endif
 else
   do ivf = 1,nvgaus
     do ip = 1,nbpart
