@@ -74,14 +74,15 @@ double precision ckupdc(ncepdc,6)
 
 ! Local variables
 
-integer          iel, ielpdc
+integer          iel, ielpdc, poro_id
 
 double precision v, ck
 double precision romf, visccf, lcell
 
-double precision, dimension(:), allocatable :: mdiam, lporo
+double precision, dimension(:), allocatable :: mdiam
 
 double precision, dimension(:,:), pointer :: cvara_vel
+double precision, dimension(:), pointer :: lporo
 
 double precision, dimension(:), pointer :: cromf
 double precision, dimension(:), pointer :: viscl
@@ -125,7 +126,15 @@ call field_get_val_s(iprpfl(iviscl), viscl)
 ! by head losses
 !===============================================================================
 
-allocate(mdiam(ncelet), lporo(ncelet))
+allocate(mdiam(ncelet))
+
+call field_get_id_try('clogging_porosity', poro_id)
+
+if (poro_id .lt.0) then
+  allocate(lporo(ncelet))
+else
+  call field_get_val_s(poro_id, lporo)
+endif
 
 call porcel(mdiam, lporo)
 
@@ -155,7 +164,8 @@ do ielpdc = 1, ncepdc
   endif
 enddo
 
-deallocate(mdiam, lporo)
+if (poro_id .lt.0) deallocate(lporo)
+deallocate(mdiam)
 
 return
 
