@@ -164,6 +164,29 @@ void CS_PROCF (matrvv, MATRVV)
  cs_real_332_t            xa[]
 );
 
+/*----------------------------------------------------------------------------
+ * Wrapper to cs_matrix_anisotropic_diffusion_tenssor (or its counterpart for
+ * symmetric matrices)
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (matrvts, MATRVTS)
+(
+ const cs_int_t      *const iconvp,
+ const cs_int_t      *const idiffp,
+ const cs_int_t      *const ndircp,
+ const cs_int_t      *const isym,
+ const cs_real_t     *const thetap,
+ const cs_real_66_t         coefbts[],
+ const cs_real_66_t         cofbfts[],
+ const cs_real_66_t         fimp[],
+ const cs_real_t            i_massflux[],
+ const cs_real_t            b_massflux[],
+ const cs_real_t            i_visc[],
+ const cs_real_t            b_visc[],
+ cs_real_66_t               da[],
+ cs_real_662_t              xa[]
+);
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -567,6 +590,63 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t          *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build the advection/diffusion matrix for a tensor field with a
+ * tensorial diffusivity.
+ *
+ * The advection is upwind, the diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 2 times 3x3 the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     iconvp        indicator
+ *                               - 1 advection
+ *                               - 0 otherwise
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centered
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     coefbu        boundary condition array for the variable
+ *                               (implicit part - 3x3 tensor array)
+ * \param[in]     cofbfu        boundary condition array for the variable flux
+ *                               (implicit part - 3x3 tensor array)
+ * \param[in]     fimp          part of the diagonal
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at border faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra interleaved diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_anisotropic_diffusion_tensor(const cs_mesh_t          *m,
+                                       int                       iconvp,
+                                       int                       idiffp,
+                                       int                       ndircp,
+                                       double                    thetap,
+                                       const cs_real_66_t        coefbu[],
+                                       const cs_real_66_t        cofbfu[],
+                                       const cs_real_66_t        fimp[],
+                                       const cs_real_t           i_massflux[],
+                                       const cs_real_t           b_massflux[],
+                                       const cs_real_66_t        i_visc[],
+                                       const cs_real_t           b_visc[],
+                                       cs_real_66_t    *restrict da,
+                                       cs_real_662_t   *restrict xa);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build the diffusion matrix for a vector field with a
  * tensorial diffusivity (symmetric matrix).
  *
@@ -606,6 +686,52 @@ cs_sym_matrix_anisotropic_diffusion(const cs_mesh_t           *m,
                                     const cs_real_t           b_visc[],
                                     cs_real_33_t    *restrict da,
                                     cs_real_33_t    *restrict xa);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the diffusion matrix for a vector field with a
+ * tensorial diffusivity (symmetric matrix).
+ *
+ * The diffusion is not reconstructed.
+ * The matrix is split into a diagonal block (3x3 times number of cells)
+ * and an extra diagonal part (of dimension 3x3 the number of internal
+ * faces).
+ *
+ * \param[in]     m             pointer to mesh structure
+ * \param[in]     idiffp        indicator
+ *                               - 1 diffusion
+ *                               - 0 otherwise
+ * \param[in]     ndircp        indicator
+ *                               - 0 if the diagonal stepped aside
+ * \param[in]     thetap        weighting coefficient for the theta-scheme,
+ *                               - thetap = 0: explicit scheme
+ *                               - thetap = 0.5: time-centered
+ *                               scheme (mix between Crank-Nicolson and
+ *                               Adams-Bashforth)
+ *                               - thetap = 1: implicit scheme
+ * \param[in]     cofbfu        boundary condition array for the variable flux
+ *                               (implicit part - 3x3 tensor array)
+ * \param[in]     fimp          \f$ \tens{f_s}^{imp} \f$
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the matrix
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at border faces for the matrix
+ * \param[out]    da            diagonal part of the matrix
+ * \param[out]    xa            extra interleaved diagonal part of the matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
+                                           int                       idiffp,
+                                           int                       ndircp,
+                                           double                    thetap,
+                                           const cs_real_66_t        cofbfu[],
+                                           const cs_real_66_t        fimp[],
+                                           const cs_real_66_t        i_visc[],
+                                           const cs_real_t           b_visc[],
+                                           cs_real_66_t    *restrict da,
+                                           cs_real_66_t    *restrict xa);
 
 /*----------------------------------------------------------------------------*/
 

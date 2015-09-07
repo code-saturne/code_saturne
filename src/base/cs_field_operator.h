@@ -122,8 +122,6 @@ cs_field_gradient_potential(const cs_field_t          *f,
  *   gradient_type  <-- gradient type
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
- *   clip_coeff     <-- clipping coefficient
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
@@ -134,6 +132,26 @@ cs_field_gradient_vector(const cs_field_t          *f,
                          cs_halo_type_t             halo_type,
                          int                        inc,
                          cs_real_33_t     *restrict grad);
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of tensor field.
+ *
+ * parameters:
+ *   f              <-- pointer to field
+ *   use_previous_t <-- should we use values from the previous time step ?
+ *   gradient_type  <-- gradient type
+ *   halo_type      <-- halo type
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   grad           --> gradient
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_gradient_tensor(const cs_field_t          *f,
+                         bool                       use_previous_t,
+                         cs_gradient_type_t         gradient_type,
+                         cs_halo_type_t             halo_type,
+                         int                        inc,
+                         cs_real_63_t     *restrict grad);
 
 /*----------------------------------------------------------------------------
  * Interpolate field values at a given set of points.

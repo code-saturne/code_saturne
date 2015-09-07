@@ -463,20 +463,20 @@ void CS_PROCF (matrvv, MATRVV)
 
 void CS_PROCF (matrvts, MATRVTS)
 (
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   ndircp,
- const cs_int_t  *const   isym,
- const cs_real_t *const   thetap,
- const cs_real_66_t       coefbts[],
- const cs_real_66_t       cofbfts[],
- const cs_real_66_t       fimp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_66_t             da[],
- cs_real_662_t                xa[]
+ const cs_int_t      *const iconvp,
+ const cs_int_t      *const idiffp,
+ const cs_int_t      *const ndircp,
+ const cs_int_t      *const isym,
+ const cs_real_t     *const thetap,
+ const cs_real_66_t         coefbts[],
+ const cs_real_66_t         cofbfts[],
+ const cs_real_66_t         fimp[],
+ const cs_real_t            i_massflux[],
+ const cs_real_t            b_massflux[],
+ const cs_real_t            i_visc[],
+ const cs_real_t            b_visc[],
+ cs_real_66_t               da[],
+ cs_real_662_t              xa[]
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -494,10 +494,10 @@ void CS_PROCF (matrvts, MATRVTS)
                                                *thetap,
                                                cofbfts,
                                                fimp,
-                                               i_visc,
+                                               (const cs_real_66_t *)i_visc,
                                                b_visc,
                                                da,
-                                               (cs_real_66_t*) xa);
+                                               (cs_real_66_t *) xa);
 
   /* Non-symmetric matrix */
   } else {
@@ -511,10 +511,10 @@ void CS_PROCF (matrvts, MATRVTS)
                                            fimp,
                                            i_massflux,
                                            b_massflux,
-                                           i_visc,
+                                           (const cs_real_66_t *)i_visc,
                                            b_visc,
                                            da,
-                                           (cs_real_662_t*) xa);
+                                           (cs_real_662_t *) xa);
   }
 
 }
@@ -2194,6 +2194,7 @@ cs_sym_matrix_anisotropic_diffusion_tensor(const cs_mesh_t           *m,
   }
 
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -219,6 +219,21 @@ cs_halo_perio_sync_var_diag_ni(const cs_halo_t *halo,
 void
 cs_halo_perio_rotate_rij(cs_real_t  *drdxyz);
 
+/*----------------------------------------------------------------------------
+ * Synchronize values for a real gradient of a tensor (symmetric interleaved)
+ * between periodic cells.
+ *
+ * parameters:
+ *   halo      <-> halo associated with variable to synchronize
+ *   sync_mode <-- kind of halo treatment (standard or extended)
+ *   var       <-> symmetric tensor to update (6 values)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
+                                     cs_halo_type_t    sync_mode,
+                                     cs_real_t         var[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

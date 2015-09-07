@@ -423,10 +423,12 @@ _apply_tensor3sym_rotation_old(cs_real_t   matrix[3][4],
 
   /* Output */
 
-  for (i = 0; i < 3; i++)
-    for (j = 0; j < 3; j++)
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
       for (k = 0; k < 3; k++)
         tensor[3*_rij[i][j] + k] = t2[i][j][k];
+    }
+  }
 
 }
 
@@ -476,10 +478,12 @@ _apply_tensor3sym_rotation(cs_real_t   matrix[3][4],
 
   /* Output */
 
-  for (i = 0; i < 3; i++)
-    for (j = 0; j < 3; j++)
+  for (i = 0; i < 3; i++) {
+    for (j = 0; j < 3; j++) {
       for (k = 0; k < 3; k++)
         tensor[3*_symt[i][j] + k] = t2[i][j][k];
+    }
+  }
 
 }
 
@@ -552,42 +556,7 @@ CS_PROCF (perrte, PERRTE) (cs_real_t  var11[],
                                  var21, var22, var23,
                                  var31, var32, var33);
 }
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Rotate tensor values for periodic cells on extended halos.
- *
- * Fortran API:
- *
- * subroutine perrte
- * *****************
- *
- * double precision var11(ncelet) : <-> : component 11 of rank 2 tensor
- * double precision var12(ncelet) : <-> : component 12 of rank 2 tensor
- * double precision var13(ncelet) : <-> : component 13 of rank 2 tensor
- * double precision var21(ncelet) : <-> : component 21 of rank 2 tensor
- * double precision var22(ncelet) : <-> : component 22 of rank 2 tensor
- * double precision var23(ncelet) : <-> : component 23 of rank 2 tensor
- * double precision var31(ncelet) : <-> : component 31 of rank 2 tensor
- * double precision var32(ncelet) : <-> : component 32 of rank 2 tensor
- * double precision var33(ncelet) : <-> : component 33 of rank 2 tensor
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (perrte2, PERRTE2) (cs_real_t  var[])
-
-{
-  const cs_halo_t *halo = cs_glob_mesh->halo;
-
-  if (halo == NULL)
-    return;
-
-  cs_halo_perio_sync_var_sym_tens(halo,
-                                 CS_HALO_EXTENDED,
-                                 var);
-}
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1087,6 +1056,7 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
 
   } /* End of loop on transformations for the local rank */
 }
+
 /*----------------------------------------------------------------------------
  * Synchronize values for a real diagonal tensor between periodic cells.
  *
@@ -1258,7 +1228,7 @@ cs_halo_perio_rotate_rij(cs_real_t  *drdxyz)
 
 void
 cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
-                                                                                     cs_halo_type_t    sync_mode,
+                                     cs_halo_type_t    sync_mode,
                                      cs_real_t         var[])
 {
   int  rank_id, t_id;
