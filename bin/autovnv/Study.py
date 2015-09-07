@@ -114,7 +114,7 @@ class Case(object):
             run_ref = os.path.join(self.__repo, self.label, "runcase")
             self.exe, self.pkg = self.__get_exe(pkg, run_ref)
             self.subdomains = []
-            for d in domains:
+            for d in locals()['domains']:
                 if d['solver'] == self.pkg.code_name:
                     self.subdomains.append(d['domain'])
             self.resu = 'RESU_COUPLING'
@@ -195,7 +195,7 @@ class Case(object):
 
         have_gui = 1
         try:
-            f = file(ref, mode = 'r')
+            f = open(ref, mode = 'r')
         except IOError:
            print("Warning SaturneGUI does not exist: %s\n" % ref)
            have_gui = 0
@@ -215,7 +215,7 @@ class Case(object):
                        lines[i] = 'export PATH="":$PATH\n'
                    else:
                        lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-           f = file(ref, mode = 'w')
+           f = open(ref, mode = 'w')
            f.writelines(lines)
            f.close()
 
@@ -233,7 +233,7 @@ class Case(object):
             ref = os.path.join(destdir, subdir, "runcase")
 
         try:
-            f = file(ref, mode = 'r')
+            f = open(ref, mode = 'r')
         except IOError:
             print("Error: can not open %s\n" % ref)
             sys.exit(1)
@@ -252,7 +252,7 @@ class Case(object):
                     lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
                 j = lines[i].find(self.pkg.name)
 
-        f = file(ref, mode = 'w')
+        f = open(ref, mode = 'w')
         f.writelines(lines)
         f.close()
 
@@ -290,7 +290,7 @@ class Case(object):
         if self.subdomains:
             ref = os.path.join(self.__repo, self.label, "runcase")
             try:
-                f = file(ref, mode = 'r')
+                f = open(ref, mode = 'r')
                 lines = f.readlines()
                 f.close()
                 for i in range(len(lines)):
@@ -302,7 +302,7 @@ class Case(object):
                     else:
                         if re.search(r'^export PATH=', lines[i]):
                             lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-                f = file(ref, mode = 'w')
+                f = open(ref, mode = 'w')
                 f.writelines(lines)
                 f.close()
             except IOError:
@@ -389,10 +389,10 @@ class Case(object):
         # Read the runcase from the Repository
 
         try:
-            f = file(run_ref, mode = 'r')
+            f = open(run_ref, mode = 'r')
         except:
             try:
-                f = file(run_ref_win, mode = 'r')
+                f = open(run_ref_win, mode = 'r')
             except IOError:
                 print("Error: can not open %s\n" % run_ref)
                 sys.exit(1)
@@ -413,7 +413,7 @@ class Case(object):
         # Write the new runcase
 
         try:
-            f = file(run_new, mode = 'r')
+            f = open(run_new, mode = 'r')
         except IOError:
             print("Error: can not open %s\n" % run_new)
             sys.exit(1)
@@ -438,7 +438,7 @@ class Case(object):
                 elif re.search(r' cd ', lines[i]): # do not switch to batch submit directory
                     lines[i] = '# ' + lines[i]
 
-        f = file(run_new, mode = 'w')
+        f = open(run_new, mode = 'w')
         f.writelines(lines)
         f.close()
 
@@ -585,7 +585,7 @@ class Case(object):
         # 2. The result directory must be read automatically;
         #    check if there is a single result directory.
         elif rep == "":
-            if len(filter(nodot, os.listdir(result))) == 0:
+            if len(list(filter(nodot, os.listdir(result)))) == 0:
                 msg = "Study %s case %s:\nthere is no result directory in %s\nStop.\n" % \
                     (self.__study, self.label, result)
                 studies.reporting(msg)
@@ -593,7 +593,7 @@ class Case(object):
 
             # if no run_id is specified in the xml file
             # only one result directory allowed in RESU
-            if len(filter(nodot, os.listdir(result))) > 1 and self.run_id == "":
+            if len(list(filter(nodot, os.listdir(result)))) > 1 and self.run_id == "":
                 msg = "Study %s case %s:\nthere are several directories in %s\nStop.\n" % \
                     (self.__study, self.label, result)
                 studies.reporting(msg)
@@ -603,7 +603,7 @@ class Case(object):
             # if no run_id is specified in the xml file
             # the only result directory present in RESU is taken
             if rep == "":
-                rep = filter(nodot, os.listdir(result))[0]
+                rep = list(filter(nodot, os.listdir(result)))[0]
 
             rep_f = os.path.join(result, rep)
             if not os.path.isdir(rep_f):

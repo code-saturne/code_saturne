@@ -162,11 +162,11 @@ class Plot(object):
             if line and line[0] != '#':
                 j += 1
                 if xcol:
-                    self.xspan.append(float(split(line)[xcol-1])*xfois + xplus)
+                    self.xspan.append(float(line.split()[xcol-1])*xfois + xplus)
                 else:
                     self.xspan.append(j)
 
-                self.yspan.append(float(split(line)[ycol-1])*yfois + yplus)
+                self.yspan.append(float(line.split()[ycol-1])*yfois + yplus)
 
 
     def uploadErrorBar(self, errorbar):
@@ -181,8 +181,8 @@ class Plot(object):
             for line in self.f.readlines():
                 line = line.lstrip()
                 if line and line[0] != '#':
-                    error[0].append(float(split(line)[errorbar[0]-1]))
-                    error[1].append(float(split(line)[errorbar[1]-1]))
+                    error[0].append(float(line.split()[errorbar[0]-1]))
+                    error[1].append(float(line.split()[errorbar[1]-1]))
             return error
 
         elif len(errorbar) == 1:
@@ -190,7 +190,7 @@ class Plot(object):
             for line in self.f.readlines():
                 line = line.lstrip()
                 if line and line[0] != '#':
-                    error.append(float(split(line)[errorbar[0]-1]))
+                    error.append(float(line.split()[errorbar[0]-1]))
             return error
 
 #-------------------------------------------------------------------------------
@@ -220,8 +220,8 @@ class Probes(object):
         for line in f.readlines():
             line = line.lstrip()
             if line and line[0] != '#':
-                self.xspan.append(float(split(line)[xcol - 1]))
-                self.yspan.append(float(split(line)[ycol - 1]))
+                self.xspan.append(float(line.split()[xcol - 1]))
+                self.yspan.append(float(line.split()[ycol - 1]))
 
         f.close()
 
@@ -419,7 +419,7 @@ class Plotter(object):
         for line in f.readlines():
             line = line.lstrip()
             if line and line[0] != '#':
-                nbr = len(split(line))
+                nbr = len(line.split())
                 break
         f.close()
         return nbr
@@ -459,7 +459,7 @@ class Plotter(object):
                                      case.label, "RESU",
                                      dest, "monitoring", file_name)
                     if not os.path.isfile(f):
-                        raise ValueError, "\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f)
+                        raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
 
                     for ycol in range(2, self.__number_of_column(f) + 1):
                         curve = Probes(f, fig, ycol)
@@ -490,7 +490,7 @@ class Plotter(object):
                                          d, "monitoring", file_name)
 
                         if not os.path.isfile(f):
-                            raise ValueError, "\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f)
+                            raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)
@@ -508,7 +508,7 @@ class Plotter(object):
                     f = os.path.join(dd, study_label, "POST", file_name)
 
                     if not os.path.isfile(f):
-                        raise ValueError, "\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f)
+                        raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)
@@ -570,14 +570,10 @@ class Plotter(object):
         # additional matplotlib raw commands for line2D
         line = lines[0]
         for cmd in curve.cmd:
-            c = open("./tmp.py", "w")
-            c.write(cmd)
-            c.close()
             try:
-                execfile("./tmp.py")
+                eval(cmd)
             except:
                 print("Error with the matplotlib command: %s" % cmd)
-            os.remove("./tmp.py")
 
         plt.hold(True)
 
@@ -647,14 +643,10 @@ class Plotter(object):
 
         # additional matplotlib raw commands for figure
         for cmd in figure.cmd:
-            c = open("./tmp.py", "w")
-            c.write(cmd)
-            c.close()
             try:
-                execfile("./tmp.py")
+                eval(cmd)
             except:
                 print("Error with the matplotlib command: %s" % cmd)
-            os.remove("./tmp.py")
 
         # Layout
         nbrow, nbcol, hs, ri, le, ws = figure.layout()
@@ -696,14 +688,10 @@ class Plotter(object):
             idx = figure.subplots.index(p)
             ax = plt.subplot(nbrow, nbcol, idx + 1)
             for cmd in p.cmd:
-                c = open("./tmp.py", "w")
-                c.write(cmd)
-                c.close()
                 try:
-                    execfile("./tmp.py")
+                    eval(cmd)
                 except:
                     print("Error with the matplotlib command: %s" % cmd)
-                os.remove("./tmp.py")
 
 
     def __save(self, f, fmt):

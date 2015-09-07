@@ -36,14 +36,16 @@ from optparse import OptionParser
 from datetime import datetime, date
 
 import smtplib
-from email.Utils import COMMASPACE, formatdate
-from email import Encoders
 
 try: # email version 3.0 (Python2 up to 2.6)
+    from email.Utils import COMMASPACE, formatdate
+    from email import Encoders
     from email.MIMEMultipart import MIMEMultipart
     from email.MIMEBase import MIMEBase
     from email.MIMEText import MIMEText
 except Exception: # email version 4.0 (Python2 from Python 2.5)
+    from email.utils import COMMASPACE, formatdate
+    from email import encoders
     from email.mime.multipart import MIMEMultipart
     from email.mime.base import MIMEBase
     from email.mime.text import MIMEText

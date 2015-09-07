@@ -244,12 +244,12 @@ class Parser(object):
             label = str(n.attributes["label"].value)
             if label == l:
                 if str(n.attributes["status"].value) != "on":
-                    raise ValueError, "Error: the getStudyNode method is used with the study %s turned off " % l
+                    raise ValueError("Error: the getStudyNode method is used with the study %s turned off " % l)
                 node = n
                 break
 
             if not n:
-                raise ValueError, "Error: the getStudyNode does not found the node of the study %s" % l
+                raise ValueError("Error: the getStudyNode does not found the node of the study %s" % l)
 
         return node
 
@@ -642,7 +642,7 @@ class Parser(object):
             return node.attributes[k].value
         else:
             if default == None:
-                raise ValueError, "Error: attribute %s is mandatory!" % k
+                raise ValueError("Error: attribute %s is mandatory!" % k)
             else:
                 return default
 
@@ -656,7 +656,7 @@ class Parser(object):
             return tuple(float(s) for s in n[1:-1].split(','))
         else:
             if default == None:
-                raise ValueError, "Error: attribute %s is mandatory!" % k
+                raise ValueError("Error: attribute %s is mandatory!" % k)
             else:
                 return default
 

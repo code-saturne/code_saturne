@@ -258,80 +258,9 @@ def test():
     Test function.
     The pupose is to build 2 documents:
     1. a global report for all cases:
-
-    \documentclass[a4paper,11pt]{report}
-    \usepackage[latin1]{inputenc}
-    \usepackage[T1]{fontenc}
-    \usepackage[normalem]{ulem}
-    \usepackage[french]{babel}
-    \usepackage{verbatim}
-    \usepackage{graphicx}
-    \usepackage{color}
-    \begin{document}
-    \begin{tabular}{|*{5}{c|}}
-    \hline
-    \textbf{Study / Case} &\textbf{Compil} &\textbf{Run} &\textbf{Threshold} &\textbf{Diff} \\
-    \hline
-    \hline
-    03\_MASCHEK / CASE1 &\textcolor{green}{OK} &\textcolor{green}{OK} &1e-5 &\textcolor{red}{KO} \\
-    \hline
-    09\_DEBORA / CASE1 &\textcolor{green}{OK} &\textcolor{green}{OK} &1e-5 &\textcolor{red}{KO} \\
-    \hline
-    11\_ASU / CASE1 &\textcolor{green}{OK} &\textcolor{green}{OK} &No repository compare file &\textcolor{red}{KO} \\
-    \hline
-    \end{tabular}
-    \end{document}
-
-    2. a detailled report for each cases:
-
-    \documentclass[a4paper,11pt]{report}
-    \usepackage[latin1]{inputenc}
-    \usepackage[T1]{fontenc}
-    \usepackage[normalem]{ulem}
-    \usepackage[french]{babel}
-    \usepackage{verbatim}
-    \usepackage{graphicx}
-    \usepackage{color}
-    \begin{document}
-    03\_MASCHEK \ CASE1 with Threshold = 1e-5 page n 1
-    \newline\newline
-    \begin{tabular}{|*{6}{c|}}
-    \hline
-    \textbf{Variable Name} &\textbf{Diff. Max} &\textbf{Diff. Mean} &\textbf{Type} &\textbf{Repo.} &\textbf{Dest.} \\
-    \hline
-    \hline
-    cells &not given &not given &u4 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    interior\_faces &not given &not given &u4 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    boundary\_faces &not given &not given &u4 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    vertices &not given &not given &u4 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    nombre\_variables\_et\_phases &not given &not given &i4 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    ntcabs &not given &not given &i4 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    ttcabs &1.01911 &1.01911 &r8 &\textcolor{green}{OK} &\textcolor{green}{OK} \\
-    \hline
-    .
-    .
-    .
-    \end{tabular}
-
-    \newpage
-
-    09\_DEBORA \ CASE1 with Threshold = 1e-5 page n 1
-    \newline
-    \begin{tabular}{|*{6}{c|}}
-    \hline
-    .
-    .
-    .
-    \end{tabular}
-    \newpage
-    \end{document}
+    2. a detailled report for each case:
     """
+
     dest      = os.getcwd()
     doc       = Report1(dest, "r1")
     compil    = True

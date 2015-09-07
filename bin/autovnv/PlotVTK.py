@@ -223,7 +223,7 @@ class PlotVTK(object):
                                      d, "postprocessing", file_name)
 
                     if not os.path.isfile(f):
-                        raise ValueError, "\n\nThis file does not exist: %s\n\n" % f
+                        raise ValueError("\n\nThis file does not exist: %s\n\n" % f)
 
                     for nn in plots:
                         self.figures.append(Scalar(nn, self.parser, f))
@@ -675,7 +675,7 @@ class Builder(object):
     def screenshot(self, f, mode = "PNG"):
         """Save the image to png format."""
         if mode not in ["PostScript", "JPEG", "PNG", "TIFF"]:
-            raise ValueError, "format unknown: %s" % mode
+            raise ValueError("format unknown: %s" % mode)
 
         # capture what is being shown on self.renderer
         scr = vtk.vtkWindowToImageFilter()

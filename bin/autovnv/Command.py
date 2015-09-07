@@ -92,7 +92,7 @@ def run_autovnv_command(_c, _log, pythondir = None):
         elif retcode > 0:
             _l = __text("command return")
 
-    except OSError, e:
+    except OSError:
         import traceback
         import sys
         exc_info = sys.exc_info()
