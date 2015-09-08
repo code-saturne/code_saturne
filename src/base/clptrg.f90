@@ -1630,6 +1630,9 @@ endif
 
 ! pointers to T+ and T* if saved
 
+itplus = -1
+itstar = -1
+
 tplusp => null()
 tstarp => null()
 
