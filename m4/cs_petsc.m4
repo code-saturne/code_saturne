@@ -35,7 +35,7 @@ AC_ARG_WITH(petsc,
             [AS_HELP_STRING([--with-petsc=PATH],
                             [specify prefix directory for PETSc])],
             [if test "x$withval" = "x"; then
-               with_petsc=yes
+               with_petsc=no
              fi],
             [with_petsc=no])
 
