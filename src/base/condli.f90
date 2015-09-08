@@ -523,6 +523,7 @@ do ii = 1, nscal
       call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
       if (b_f_id.ge.0) call field_get_val_s(b_f_id, bvar_s)
     endif
+  else
     cycle ! nothing to do for this scalar
   endif
 
