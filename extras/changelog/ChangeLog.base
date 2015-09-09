@@ -23491,7 +23491,7 @@
 2011-10-13 17:12  Yvan Fournier <yvan.fournier@edf.fr>
 
 	* [r2673] src/alge/cs_benchmark.c: Fix operation counts and remove
-	  unneeded varibles for benchmark mode.
+	  unneeded variables for benchmark mode.
 
 2011-10-06 16:50  Yvan Fournier <yvan.fournier@edf.fr>
 

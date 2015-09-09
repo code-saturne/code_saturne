@@ -2046,7 +2046,7 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
  *   exp_mesh    <-- exportable mesh
  *   n_i_faces   <-- number of interior faces
  *   n_b_faces   <-- number of boundary faces
- *   var_dim     <-- varible dimension
+ *   var_dim     <-- variable dimension
  *   interlace   <-- for vector, interlace if 1, no interlace if 0
  *   i_face_vals <-- values at interior faces
  *   b_face_vals <-- values at boundary faces

@@ -176,7 +176,7 @@ cs_user_model(void)
 /*!
  * \brief Define or modify general numerical and physical user parameters.
  *
- * At the calling point of this function, most model-related most varibles
+ * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
  */

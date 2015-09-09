@@ -89,7 +89,7 @@ class CompressibleModel(Variables, Model):
     def setCompressibleModel(self, model):
         """
         Active or desactive the compressible model
-        Add and remove the varibles and properties associated
+        Add and remove the variables and properties associated
         """
         self.isInList(model, self.comp_choice)
         oldModel = self.node_comp['model']

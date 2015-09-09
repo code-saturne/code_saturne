@@ -380,7 +380,7 @@ cs_user_matrix_tuning(void);
 /*----------------------------------------------------------------------------
  * Define or modify general numerical and physical user parameters.
  *
- * At the calling point of this function, most model-related most varibles
+ * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so speciic settings related to those
  * fields may be set here.
  *----------------------------------------------------------------------------*/
