@@ -1143,7 +1143,7 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
   }
 
   if (_surfacic_variable_post("boundary_layer_nusselt", true))
-    ipstdv[5] = 1;
+    ipstdv[4] = 1;
 }
 
 /*----------------------------------------------------------------------------
