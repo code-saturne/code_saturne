@@ -1182,9 +1182,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
 
     utxi =  vel[cell_id][0] - uni * b_face_normal[face_id][0]
           * b_face_surf[face_id];
-    utyi =  vel[cell_id][0] - uni * b_face_normal[face_id][1]
+    utyi =  vel[cell_id][1] - uni * b_face_normal[face_id][1]
           * b_face_surf[face_id];
-    utzi =  vel[cell_id][0] - uni * b_face_normal[face_id][2]
+    utzi =  vel[cell_id][2] - uni * b_face_normal[face_id][2]
           * b_face_surf[face_id];
 
     cs_real_t v2 = cs_math_3_square_norm(vel[cell_id]);
