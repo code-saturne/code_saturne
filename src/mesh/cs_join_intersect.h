@@ -292,17 +292,19 @@ cs_join_intersect_edges(cs_join_param_t         param,
  * storing potential intersections between face bounding boxes.
  *
  * parameters:
- *  param   <--  set of user-defined parameter
- *  mesh    <--  cs_join_mesh_t structure where faces are defined
+ *   param     <-- set of user-defined parameters
+ *   join_mesh <-- cs_join_mesh_t structure where faces are defined
+ *   stats     <-> joining statistics
  *
  * returns:
- *  a new allocated pointer to a cs_join_gset_t structure storing the
- *  face - face visibility.
+ *   a new allocated pointer to a cs_join_gset_t structure storing the
+ *   face - face visibility.
  *---------------------------------------------------------------------------*/
 
 cs_join_gset_t *
 cs_join_intersect_faces(const cs_join_param_t   param,
-                        const cs_join_mesh_t   *mesh);
+                        const cs_join_mesh_t   *join_mesh,
+                        cs_join_stats_t        *stats);
 
 /*----------------------------------------------------------------------------
  * Transform face visibility into edge visibility.

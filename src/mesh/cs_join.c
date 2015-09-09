@@ -233,6 +233,7 @@ _select_entities(cs_join_t   *this_join,
  *                            the work mesh struture.
  *   p_edge_edge_vis      --> pointer to a cs_join_gset_t structure storing
  *                            the visibility between edges
+ *   stats                <-> joining statistics
  *---------------------------------------------------------------------------*/
 
 static void
@@ -242,10 +243,9 @@ _get_work_struct(cs_join_param_t         param,
                  cs_join_mesh_t        **p_work_mesh,
                  cs_join_edges_t       **p_work_edges,
                  cs_real_t              *p_work_face_normal[],
-                 cs_join_gset_t        **p_edge_edge_vis)
+                 cs_join_gset_t        **p_edge_edge_vis,
+                 cs_join_stats_t        *stats)
 {
-  double  clock_start, clock_end;
-
   cs_lnum_t  n_inter_faces = 0;
   char  *mesh_name = NULL;
   cs_real_t  *face_normal = NULL;
@@ -264,28 +264,24 @@ _get_work_struct(cs_join_param_t         param,
     distributed over the ranks containing this information.
   */
 
-  face_face_vis = cs_join_intersect_faces(param, local_mesh);
+  face_face_vis = cs_join_intersect_faces(param, local_mesh, stats);
 
   /* Define an ordered list of all implied faces without redundancy */
 
   /* TODO: check if this is necessary after cleanup done in face_face_vis */
 
-  clock_start = cs_timer_wtime();
+  cs_timer_t t0 = cs_timer_time();
 
   cs_join_gset_single_order(face_face_vis,
                             &n_inter_faces,
                             &intersect_face_gnum);
 
-  clock_end = cs_timer_wtime();
+  cs_timer_t t1 = cs_timer_time();
 
   if (param.verbosity > 1)
     bft_printf(_("\n  Sorted possible intersections between faces.\n"));
 
-  if (param.verbosity > 0)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Sorting possible intersections between faces:   %10.3g\n"),
-       clock_end - clock_start);
+  cs_timer_counter_add_diff(&(stats->t_inter_sort), &t0, &t1);
 
   /* Define a distributed cs_join_mesh_t structure to store the connectivity
      of the intersecting faces associated to their bounding boxes in
@@ -357,16 +353,14 @@ _get_work_struct(cs_join_param_t         param,
  *---------------------------------------------------------------------------*/
 
 static void
-_build_join_structures(cs_join_t            *this_join,
-                       cs_mesh_t            *mesh,
+_build_join_structures(cs_join_t           *this_join,
+                       cs_mesh_t           *mesh,
                        cs_join_mesh_t     **p_loc_jmesh,
                        cs_join_mesh_t     **p_work_jmesh,
                        cs_join_edges_t    **p_work_join_edges,
                        cs_real_t           *p_work_face_normal[],
                        cs_join_gset_t     **p_edge_edge_vis)
 {
-  double  clock_start, clock_end;
-
   char  *mesh_name = NULL;
   cs_real_t  *work_face_normal = NULL;
   cs_join_gset_t  *edge_edge_vis = NULL;
@@ -375,7 +369,7 @@ _build_join_structures(cs_join_t            *this_join,
   cs_join_param_t  param = this_join->param;
   cs_join_select_t  *selection = this_join->selection;
 
-  clock_start = cs_timer_wtime();
+  cs_timer_t t0 = cs_timer_time();
 
   /* Define a cs_join_mesh_structure from the selected connectivity */
 
@@ -407,7 +401,7 @@ _build_join_structures(cs_join_t            *this_join,
   if (param.verbosity > 0)
     cs_join_mesh_minmax_tol(param, loc_jmesh);
 
-  clock_end = cs_timer_wtime();
+  cs_timer_t t1 = cs_timer_time();
 
   if (param.visualization > 2)
     cs_join_post_dump_mesh("LocalMesh", loc_jmesh, param);
@@ -435,18 +429,13 @@ _build_join_structures(cs_join_t            *this_join,
                    &work_jmesh,
                    &work_edges,
                    &work_face_normal,
-                   &edge_edge_vis);
+                   &edge_edge_vis,
+                   &(this_join->stats));
 
   /* log performance info of previous step here only to simplify
      "pretty printing". */
 
-  if (param.verbosity > 0)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Definition of local joining mesh:               %10.3g\n"),
-       clock_end - clock_start);
-
-  bft_printf_flush();
+  cs_timer_counter_add_diff(&(this_join->stats.t_l_join_mesh), &t0, &t1);
 
   /* Return pointers */
 
@@ -455,7 +444,6 @@ _build_join_structures(cs_join_t            *this_join,
   *p_work_join_edges = work_edges;
   *p_edge_edge_vis = edge_edge_vis;
   *p_work_face_normal = work_face_normal;
-
 }
 
 /*----------------------------------------------------------------------------
@@ -496,7 +484,6 @@ _intersect_edges(cs_join_t               *this_join,
                  cs_join_eset_t         **p_vtx_eset,
                  cs_join_inter_edges_t  **p_inter_edges)
 {
-  double  clock_start, clock_end;
   cs_join_type_t  join_type = CS_JOIN_TYPE_NULL;
 
   cs_gnum_t  n_g_new_vertices = 0;
@@ -507,7 +494,7 @@ _intersect_edges(cs_join_t               *this_join,
 
   const int  n_ranks = cs_glob_n_ranks;
 
-  clock_start = cs_timer_wtime();
+  cs_timer_t t0 = cs_timer_time();
 
   /*
      Compute the intersections between edges.
@@ -525,15 +512,9 @@ _intersect_edges(cs_join_t               *this_join,
                                       &vtx_eset,
                                       &inter_set);
 
-  clock_end = cs_timer_wtime();
-
-  if (param.verbosity > 0)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Edge intersections:                             %10.3g\n"),
-       clock_end - clock_start);
-
-  clock_start = clock_end;
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(this_join->stats.t_edge_inter), &t0, &t1);
+  t0 = t1;
 
   cs_join_gset_destroy(p_edge_edge_vis);
 
@@ -637,19 +618,13 @@ _intersect_edges(cs_join_t               *this_join,
   vtx_eset->n_max_equiv = vtx_eset->n_equiv;
   BFT_REALLOC(vtx_eset->equiv_couple, 2*vtx_eset->n_equiv, cs_lnum_t);
 
-  clock_end = cs_timer_wtime();
+  t1 = cs_timer_time();
 
-  if (param.verbosity > 0) {
+  cs_timer_counter_add_diff(&(this_join->stats.t_new_vtx), &t0, &t1);
 
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Creation of new vertices:                       %10.3g\n"),
-       clock_end - clock_start);
-
+  if (param.verbosity > 0)
     bft_printf(_("\n"
                  "  Edge intersections and vertex creation done.\n"));
-
-  }
 
   /* Returns pointers */
 
@@ -950,7 +925,6 @@ _merge_vertices(cs_join_t                *this_join,
                 cs_mesh_t                *mesh)
 {
   int  i;
-  double  clock_start, clock_end, clock_m_start, clock_m_end;
 
   cs_gnum_t  new_max_vtx_gnum = init_max_vtx_gnum + n_g_new_vertices;
   cs_gnum_t  *iwm_vtx_gnum = NULL;
@@ -966,7 +940,7 @@ _merge_vertices(cs_join_t                *this_join,
   assert(work_jmesh != NULL);
   assert(work_join_edges != NULL);
 
-  clock_start = cs_timer_wtime();
+  cs_timer_t t0 = cs_timer_time();
 
   /*
     Store the initial global vertex numbering
@@ -981,20 +955,18 @@ _merge_vertices(cs_join_t                *this_join,
 
   /* Merge vertices */
 
-  clock_m_start = cs_timer_wtime();
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(this_join->stats.t_u_merge_vtx), &t0, &t1);
+  t0 = t1;
 
   cs_join_merge_vertices(param,
                          new_max_vtx_gnum,
                          work_jmesh,
                          *vtx_eset);
 
-  clock_m_end = cs_timer_wtime();
-
-  if (param.verbosity > 0)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Merging vertices:                               %10.3g\n"),
-       clock_m_end - clock_m_start);
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(this_join->stats.t_merge_vtx), &t0, &t1);
+  t0 = t1;
 
   cs_join_eset_destroy(vtx_eset);
 
@@ -1057,20 +1029,13 @@ _merge_vertices(cs_join_t                *this_join,
   cs_join_mesh_dump_edges(work_join_edges, work_jmesh);
 #endif
 
-  clock_end = cs_timer_wtime();
+  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(this_join->stats.t_u_merge_vtx), &t0, &t1);
 
   if (param.verbosity > 0) {
-
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Updating structures with vertex merging:        %10.3g\n"),
-       clock_end - clock_start - (clock_m_end - clock_m_start));
-
     bft_printf(_("\n"
                  "  Merge vertices and mesh update done.\n"));
-
     bft_printf_flush();
-
   }
 
   /* Post if required and level of verbosity is reached */
@@ -1176,14 +1141,12 @@ _split_faces(cs_join_t           *this_join,
              cs_mesh_t           *mesh,
              cs_mesh_builder_t   *mesh_builder)
 {
-  double  clock_start, clock_end;
-
   cs_join_gset_t  *history = NULL;
   cs_join_param_t  param = this_join->param;
   cs_join_select_t  *selection = this_join->selection;
   cs_gnum_t  *rank_face_gnum_index = selection->compact_rank_index;
 
-  clock_start = cs_timer_wtime();
+  cs_timer_t t0 = cs_timer_time();
 
   cs_join_split_faces(param,
                       work_face_normal,
@@ -1214,13 +1177,9 @@ _split_faces(cs_join_t           *this_join,
                                   mesh,
                                   mesh_builder);
 
-  clock_end = cs_timer_wtime();
+  cs_timer_t t1 = cs_timer_time();
 
-  if (param.verbosity > 0)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    Split old faces and reconstruct new faces:      %10.3g\n"),
-       clock_end - clock_start);
+  cs_timer_counter_add_diff(&(this_join->stats.t_split_faces), &t0, &t1);
 
   bft_printf_flush();
 
@@ -1269,9 +1228,6 @@ _print_join_info(cs_mesh_t  *mesh,
 {
   bft_printf(_("\n -------------------------------------------------------\n"
                "  Joining number %d:\n\n"), join_param.num);
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\nJoining number %d:\n\n"), join_param.num);
 
   if (join_param.perio_type != FVM_PERIODICITY_NULL) {
     double m[3][4];
@@ -1332,7 +1288,7 @@ _print_join_info(cs_mesh_t  *mesh,
  * where those are possible.
  *
  * parameters:
- *   join           <-> pointer a to cs_join_t struct. to update
+ *   join           <-> pointer to a cs_join_t structure to update
  *   mtf            <-- merge tolerance coefficient
  *   pmf            <-- pre-merge factor
  *   tcm            <-- tolerance computation mode
@@ -1442,6 +1398,150 @@ _set_advanced_param(cs_join_t   *join,
 
   join->param.max_sub_faces = max_sub_faces;
 
+}
+
+/*----------------------------------------------------------------------------
+ * Log statistics and timings for a given joining.
+ *
+ * parameters:
+ *   join   <-- pointer to a cs_join_t structure
+ *---------------------------------------------------------------------------*/
+
+static void
+_join_performance_log(const cs_join_t  *this_join)
+{
+  char buf[80];
+
+  const cs_join_stats_t  *stats = &(this_join->stats);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\nJoining number %d:\n\n"), this_join->param.num);
+
+  if (this_join->stats.n_calls > 1)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\  Number of calls (statistics are cumulative): %d:\n\n"),
+                  this_join->stats.n_calls);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  Determination of possible face intersections:\n\n"
+                  "    bounding-box tree layout: %dD\n"), stats->bbox_layout);
+
+  if (cs_glob_n_ranks > 1 || stats->n_calls > 1) {
+
+    cs_gnum_t n = CS_MAX(stats->n_calls, 1);
+
+    if (stats->n_calls > 1)
+      strncpy(buf, _("                                   rank mean"), 79);
+    else if (cs_glob_n_ranks <= 1)
+      strncpy(buf, _("                                   call mean"), 79);
+    else
+      strncpy(buf, _("                              rank/call mean"), 79);
+
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("%s      minimum      maximum\n"
+         "    depth:                        %10d | %10d | %10d\n"
+         "    number of leaves:             %10llu | %10llu | %10llu\n"
+         "    number of boxes:              %10llu | %10llu | %10llu\n"
+         "    leaves over threshold:        %10llu | %10llu | %10llu\n"
+         "    boxes per leaf:               %10d | %10d | %10d\n"
+         "    Memory footprint (kb):\n"
+         "      final search structure:     %10llu | %10llu | %10llu\n"
+         "      temporary search structure: %10llu | %10llu | %10llu\n\n"),
+       buf,
+       (unsigned long long)(stats->bbox_depth[0] / n),
+       (unsigned long long)stats->bbox_depth[1],
+       (unsigned long long)stats->bbox_depth[2],
+       (unsigned long long)(stats->n_leaves[0] / n),
+       (unsigned long long)stats->n_leaves[1],
+       (unsigned long long)stats->n_leaves[2],
+       (unsigned long long)(stats->n_boxes[0] / n),
+       (unsigned long long)stats->n_boxes[1],
+       (unsigned long long)stats->n_boxes[2],
+       (unsigned long long)(stats->n_th_leaves[0] / n),
+       (unsigned long long)stats->n_th_leaves[1],
+       (unsigned long long)stats->n_th_leaves[2],
+       (unsigned long long)(stats->n_leaf_boxes[0] / n),
+       (unsigned long long)stats->n_leaf_boxes[1],
+       (unsigned long long)stats->n_leaf_boxes[2],
+       (unsigned long long)(stats->box_mem_final[0] / n),
+       (unsigned long long)stats->box_mem_final[1],
+       (unsigned long long)stats->box_mem_final[2],
+       (unsigned long long)(stats->box_mem_required[0] / n),
+       (unsigned long long)stats->box_mem_required[1],
+       (unsigned long long)stats->box_mem_required[2]);
+
+  }
+  else
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    depth:                        %10d\n"
+         "    number of leaves:             %10llu\n"
+         "    number of boxes:              %10llu\n"
+         "    leaves over threshold:        %10llu\n"
+         "    boxes per leaf:               %10d mean [%d min, %d max]\n"
+         "    Memory footprint (kb):\n"
+         "      final search structure:     %10llu\n"
+         "      temporary search structure: %10llu\n\n"),
+       (unsigned long long)stats->bbox_depth[0],
+       (unsigned long long)stats->n_leaves[0],
+       (unsigned long long)stats->n_boxes[0],
+       (unsigned long long)stats->n_th_leaves[0],
+       (unsigned long long)stats->n_leaf_boxes[0],
+       (unsigned long long)stats->box_mem_final[0],
+       (unsigned long long)stats->box_mem_required[0]);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("  Associated times:\n"
+       "    Face bounding boxes tree construction:          %10.3g\n"
+       "    Face bounding boxes neighborhood query:         %10.3g\n"),
+     stats->t_box_build.wall_nsec*1.e-9,
+     stats->t_box_query.wall_nsec*1.e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Sorting possible intersections between faces:   %10.3g\n"),
+     stats->t_inter_sort.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Definition of local joining mesh:               %10.3g\n"),
+     stats->t_l_join_mesh.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Edge intersections:                             %10.3g\n"),
+     stats->t_edge_inter.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Creation of new vertices:                       %10.3g\n"),
+     stats->t_new_vtx.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Merging vertices:                               %10.3g\n"),
+     stats->t_merge_vtx.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Updating structures with vertex merging:        %10.3g\n"),
+     stats->t_u_merge_vtx.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("    Split old faces and reconstruct new faces:      %10.3g\n"),
+     stats->t_split_faces.wall_nsec*1e-9);
+
+  cs_log_printf
+    (CS_LOG_PERFORMANCE,
+     _("\n"
+       "  Complete treatment for joining %2d:\n"
+       "    wall clock time:                                %10.3g\n"),
+     stats->t_total.wall_nsec*1e-9);
+
+  cs_log_printf_flush(CS_LOG_PERFORMANCE);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1567,7 +1667,6 @@ void
 cs_join_all(bool  preprocess)
 {
   int  join_id;
-  double  clock_start, clock_end;
   double  full_clock_start, full_clock_end;
 
   cs_join_type_t  join_type = CS_JOIN_TYPE_NULL;
@@ -1600,7 +1699,7 @@ cs_join_all(bool  preprocess)
     if (join_param.preprocessing != preprocess)
       continue;
 
-    clock_start = cs_timer_wtime();  /* Start timer */
+    cs_timer_t t0 = cs_timer_time();  /* Start timer */
 
     /* Open log file if required */
 
@@ -1622,7 +1721,7 @@ cs_join_all(bool  preprocess)
 #endif
 
     /* Build arrays and structures required for selection;
-       will be destoyed after joining and rebuilt for each new join
+       will be destroyed after joining and rebuilt for each new join
        operation in order to take into account mesh modification  */
 
     _select_entities(this_join, mesh);
@@ -1761,29 +1860,46 @@ cs_join_all(bool  preprocess)
       bft_printf("\n");
     }
 
-    clock_end = cs_timer_wtime();
+    /* Free temporary structures */
+
+    join_select_destroy(this_join->param, &(this_join->selection));
+
+   /* Optional synchronization (to be safe) */
+
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1)
+      MPI_Barrier(cs_glob_mpi_comm);
+#endif
+
+    /* Close log file if present */
+
+    if (cs_glob_join_log != NULL) {
+      if (fclose(cs_glob_join_log) != 0)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Error closing log file for joining: %d."),
+                  this_join->param.num);
+      cs_glob_join_log = NULL;
+    }
+
+    /* Timing */
+
+    cs_timer_t t1 = cs_timer_time();
+    cs_timer_counter_add_diff(&(this_join->stats.t_total), &t0, &t1);
 
     if (mesh->verbosity > 0) {
-
       bft_printf(_("\n"
                    "  Joining %2d completed (%.3g s).\n"),
-                 join_param.num, clock_end - clock_start);
+                 join_param.num,
+                 this_join->stats.t_total.wall_nsec*1e-9);
       bft_printf_flush();
-
-      cs_log_printf
-        (CS_LOG_PERFORMANCE,
-         _("\n"
-           "  Complete treatment for joining %2d:\n"
-           "    wall clock time:                                %10.3g\n"),
-         join_param.num, clock_end - clock_start);
-
     }
 
     /* Free memory */
 
-    join_select_destroy(this_join->param, &(this_join->selection));
+    this_join->stats.n_calls += 1;
 
     if (join_param.preprocessing) {
+      _join_performance_log(this_join);
       cs_join_destroy(&this_join);
       cs_glob_join_array[join_id] = NULL;
     }
@@ -1796,25 +1912,10 @@ cs_join_all(bool  preprocess)
       this_join->param.visualization = 0;
     }
 
-#if defined(HAVE_MPI)   /* Synchronization */
-    if (cs_glob_n_ranks > 1)
-      MPI_Barrier(cs_glob_mpi_comm);
-#endif
-
     /* Set mesh modification flag */
 
     if (join_type != CS_JOIN_TYPE_NULL)
       mesh->modified = 1;
-
-    /* Close log file if present */
-
-    if (cs_glob_join_log != NULL) {
-      if (fclose(cs_glob_join_log) != 0)
-        bft_error(__FILE__, __LINE__, errno,
-                  _("Error closing log file for joining: %d."),
-                  this_join->param.num);
-      cs_glob_join_log = NULL;
-    }
 
   } /* End of loop on joinings */
 
@@ -1859,13 +1960,23 @@ cs_join_all(bool  preprocess)
 void
 cs_join_finalize()
 {
+  bool have_log = false;
+
   for (int join_id = 0; join_id < cs_glob_n_joinings; join_id++) {
-    if (cs_glob_join_array[join_id] != NULL)
+    if (cs_glob_join_array[join_id] != NULL) {
+      have_log = true;
+      _join_performance_log(cs_glob_join_array[join_id]);
       cs_join_destroy(&(cs_glob_join_array[join_id]));
+    }
   }
 
   BFT_FREE(cs_glob_join_array);
   cs_glob_n_joinings = 0;
+
+  if (have_log) {
+    cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+    cs_log_separator(CS_LOG_PERFORMANCE);
+  }
 }
 
 /*----------------------------------------------------------------------------

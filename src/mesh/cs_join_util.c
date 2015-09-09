@@ -222,6 +222,46 @@ _join_param_define(int                      join_num,
 }
 
 /*----------------------------------------------------------------------------
+ * Initialize a cs_join_stats_t structure.
+ *
+ * parameters:
+ *   join_num      <-- number of the current joining operation
+ *   fraction      <-- value of the fraction parameter
+ *   plane         <-- value of the plane parameter
+ *   perio_type    <-- periodicity type (FVM_PERIODICITY_NULL if none)
+ *   perio_matrix  <-- periodicity transformation matrix
+ *   verbosity     <-- level of verbosity required
+ *   visualization <-- level of visualization required
+ *   preprocessing <-- is joining part of the preprocessing stage ?
+ *
+ * returns:
+ *   a pointer to a cs_join_param_t structure
+ *---------------------------------------------------------------------------*/
+
+static cs_join_stats_t
+_join_stats_init(void)
+{
+  cs_join_stats_t  stats;
+
+  memset(&stats, 0, sizeof(cs_join_stats_t));
+
+  CS_TIMER_COUNTER_INIT(stats.t_box_build);
+  CS_TIMER_COUNTER_INIT(stats.t_box_query);
+  CS_TIMER_COUNTER_INIT(stats.t_inter_sort);
+
+  CS_TIMER_COUNTER_INIT(stats.t_l_join_mesh);
+  CS_TIMER_COUNTER_INIT(stats.t_edge_inter);
+  CS_TIMER_COUNTER_INIT(stats.t_new_vtx);
+  CS_TIMER_COUNTER_INIT(stats.t_merge_vtx);
+  CS_TIMER_COUNTER_INIT(stats.t_u_merge_vtx);
+  CS_TIMER_COUNTER_INIT(stats.t_split_faces);
+
+  CS_TIMER_COUNTER_INIT(stats.t_total);
+
+  return stats;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize a structure for the synchronization of single
  * elements
  *
@@ -2098,6 +2138,8 @@ cs_join_create(int                      join_number,
                                    verbosity,
                                    visualization,
                                    preprocessing);
+
+  join->stats = _join_stats_init();
 
   join->log_name = NULL;
 

@@ -42,6 +42,7 @@
 
 #include "cs_base.h"
 #include "cs_selector.h"
+#include "cs_timer.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -70,6 +71,42 @@ typedef enum {
   CS_JOIN_STATE_SPLIT
 
 } cs_join_state_t;
+
+/*----------------------------------------------------------------------------
+ * Joining statistics
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  int        n_calls;               /* number of calls */
+
+  /* Intersection determination info */
+
+  int        bbox_layout;            /* bounding box layout */
+  cs_gnum_t  bbox_depth[3];          /* box tree depth */
+  cs_gnum_t  n_leaves[3];            /* number of leaves */
+  cs_gnum_t  n_boxes[3];             /* number of boxes */
+  cs_gnum_t  n_th_leaves[3];         /* number leaves over threshold */
+  cs_gnum_t  n_leaf_boxes[3];        /* number of boxes per leaf */
+  cs_gnum_t  box_mem_final[3];       /* final box memory required */
+  cs_gnum_t  box_mem_required[3];    /* memory required */
+
+  cs_timer_counter_t  t_box_build;   /* box build times */
+  cs_timer_counter_t  t_box_query;   /* box query times */
+  cs_timer_counter_t  t_inter_sort;   /* sort intersections times */
+
+  /* other info */
+
+  cs_timer_counter_t  t_l_join_mesh;  /* build local joining mesh times */
+  cs_timer_counter_t  t_edge_inter;   /* edge intersection times */
+  cs_timer_counter_t  t_new_vtx;      /* new vertices times */
+  cs_timer_counter_t  t_merge_vtx;    /* merge vertices times */
+  cs_timer_counter_t  t_u_merge_vtx;  /* update after merge vertices times */
+  cs_timer_counter_t  t_split_faces;  /* split faces times */
+
+  cs_timer_counter_t  t_total;        /* total time */
+
+}  cs_join_stats_t;
 
 /*----------------------------------------------------------------------------
  * Set of user parameters to control the join operation
@@ -259,6 +296,8 @@ typedef struct {
 
   cs_join_param_t   param;       /* Set of parameters used to control
                                     the joining operations */
+
+  cs_join_stats_t   stats;       /* Performance statistics */
 
   cs_join_select_t  *selection;  /* Store entities implied in the joining
                                     operation */

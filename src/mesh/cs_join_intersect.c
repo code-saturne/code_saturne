@@ -2201,47 +2201,36 @@ _need_to_add_exch_inter(exch_inter_t                  inter,
 }
 
 /*----------------------------------------------------------------------------
- * Print statistics and timings for face bounding-box intersection search.
+ * Update statistics and timings for face bounding-box intersection search.
  *
  * parameters:
  *   face_neighborhood <-- pointer to face neighborhood management structure.
- *   box_wtime         <-- bounding box construction wall-clock time
+ *   box_wtime         <-- bounding box construction time
+ *   box_dim           --> dimension of bounding box layout
+ *   stats             <-> joining statistics
  *---------------------------------------------------------------------------*/
 
 static void
 _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
-                        double                     box_wtime)
+                        cs_timer_counter_t         box_time,
+                        int                       *box_dim,
+                        cs_join_stats_t           *stats)
 {
   int i;
-  int  dim;
   int  depth[3];
   cs_lnum_t  _n_leaves[3], _n_boxes[3];
   cs_lnum_t  _n_threshold_leaves[3], _n_leaf_boxes[3];
   size_t  _mem_final[3], _mem_required[3];
-  unsigned long  n_leaves[3], n_boxes[3], n_threshold_leaves[3];
-  int n_leaf_boxes[3];
-  unsigned long  mem_final[3], mem_required[3];
   double  build_wtime, build_cpu_time, query_wtime, query_cpu_time;
 
-  dim = fvm_neighborhood_get_box_stats(face_neighborhood,
-                                       depth,
-                                       _n_leaves,
-                                       _n_boxes,
-                                       _n_threshold_leaves,
-                                       _n_leaf_boxes,
-                                       _mem_final,
-                                       _mem_required);
-
-  /* Convert to unsigned long (so as to ensure correct logging
-     whether cs_lnum_t is 32 or 64-bit) */
-  for (i = 0; i < 3; i++) {
-    n_leaves[i] = _n_leaves[i];
-    n_boxes[i] = _n_boxes[i];
-    n_threshold_leaves[i] = _n_threshold_leaves[i];
-    n_leaf_boxes[i] = _n_leaf_boxes[i];
-    mem_final[i] = _mem_final[i] / 1024;
-    mem_required[i] = _mem_required[i] /1024;
-  }
+  int dim = fvm_neighborhood_get_box_stats(face_neighborhood,
+                                           depth,
+                                           _n_leaves,
+                                           _n_boxes,
+                                           _n_threshold_leaves,
+                                           _n_leaf_boxes,
+                                           _mem_final,
+                                           _mem_required);
 
   fvm_neighborhood_get_times(face_neighborhood,
                              &build_wtime,
@@ -2249,69 +2238,76 @@ _face_bbox_search_stats(const fvm_neighborhood_t  *face_neighborhood,
                              &query_wtime,
                              &query_cpu_time);
 
-  bft_printf(_("  Determination of possible face intersections:\n\n"
-               "    bounding-box tree layout: %dD\n"), dim);
+  cs_timer_counter_t  build_time, query_time;
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("  Determination of possible face intersections:\n\n"
-                  "    bounding-box tree layout: %dD\n"), dim);
+  build_time.wall_nsec = build_wtime*1e9;
+  build_time.cpu_nsec = build_cpu_time*1e9;
+  query_time.wall_nsec = query_wtime*1e9;
+  query_time.cpu_nsec = query_cpu_time*1e9;
 
-#if defined(HAVE_MPI)
+  for (i = 0; i < 3; i++) {
+    _mem_final[i] /= 1024;
+    _mem_required[i] /= 1024;
+  }
 
-  if (cs_glob_n_ranks > 1)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("                                   rank mean"
-         "      minimum      maximum\n"
-         "    depth:                        %10d | %10d | %10d\n"
-         "    number of leaves:             %10llu | %10llu | %10llu\n"
-         "    number of boxes:              %10llu | %10llu | %10llu\n"
-         "    leaves over threshold:        %10llu | %10llu | %10llu\n"
-         "    boxes per leaf:               %10d | %10d | %10d\n"
-         "    Memory footprint (kb):\n"
-         "      final search structure:     %10llu | %10llu | %10llu\n"
-         "      temporary search structure: %10llu | %10llu | %10llu\n\n"),
-       depth[0], depth[1], depth[2],
-       (unsigned long long)n_leaves[0], (unsigned long long)n_leaves[1],
-       (unsigned long long) n_leaves[2],
-       (unsigned long long)n_boxes[0], (unsigned long long)n_boxes[1],
-       (unsigned long long)n_boxes[2],
-       (unsigned long long)n_threshold_leaves[0],
-       (unsigned long long)n_threshold_leaves[1],
-       (unsigned long long)n_threshold_leaves[2],
-       n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
-       (unsigned long long)mem_final[0], (unsigned long long)mem_final[1],
-       (unsigned long long)mem_final[2],
-       (unsigned long long)mem_required[0], (unsigned long long)mem_required[1],
-       (unsigned long long)mem_required[2]);
+  *box_dim = dim;
 
-#endif /* defined(HAVE_MPI) */
+  stats->bbox_layout = CS_MAX(stats->bbox_layout, dim);
 
-  if (cs_glob_n_ranks == 1)
-    cs_log_printf
-      (CS_LOG_PERFORMANCE,
-       _("    depth:                        %10d\n"
-         "    number of leaves:             %10llu\n"
-         "    number of boxes:              %10llu\n"
-         "    leaves over threshold:        %10llu\n"
-         "    boxes per leaf:               %10d mean [%d min, %d max]\n"
-         "    Memory footprint (kb):\n"
-         "      final search structure:     %10llu\n"
-         "      temporary search structure: %10llu\n\n"),
-       depth[0], (unsigned long long)n_leaves[0], (unsigned long long)n_boxes[0],
-       (unsigned long long)n_threshold_leaves[0],
-       n_leaf_boxes[0], n_leaf_boxes[1], n_leaf_boxes[2],
-       (unsigned long long)mem_final[0], (unsigned long long)mem_required[0]);
+  if (stats->n_calls < 1) {
+    stats->bbox_depth[1] = depth[1];
+    stats->n_leaves[1] = _n_leaves[1];
+    stats->n_boxes[1] = _n_boxes[1];
+    stats->n_th_leaves[1] = _n_threshold_leaves[1];
+    stats->n_leaf_boxes[1] = _n_leaf_boxes[1];
+    stats->box_mem_final[1] = _mem_final[1];
+    stats->box_mem_required[1] = _mem_required[1];
+  }
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("  Associated times:\n"
-       "    Face bounding boxes tree construction:          %10.3g\n"
-       "    Face bounding boxes neighborhood query:         %10.3g\n"),
-     build_wtime + box_wtime, query_wtime);
+  stats->bbox_depth[0] += depth[0];
+  stats->bbox_depth[1] = CS_MIN(stats->bbox_depth[1],
+                                (cs_gnum_t)depth[1]);
+  stats->bbox_depth[2] = CS_MAX(stats->bbox_depth[2],
+                                (cs_gnum_t)depth[2]);
 
-  cs_log_printf_flush(CS_LOG_PERFORMANCE);
-  bft_printf_flush();
+  stats->n_leaves[0] += _n_leaves[0];
+  stats->n_leaves[1] = CS_MIN(stats->n_leaves[1],
+                               (cs_gnum_t)_n_leaves[1]);
+  stats->n_leaves[2] = CS_MAX(stats->n_leaves[2],
+                              (cs_gnum_t)_n_leaves[2]);
+
+  stats->n_boxes[0] += _n_boxes[0];
+  stats->n_boxes[1] = CS_MIN(stats->n_boxes[1],
+                             (cs_gnum_t)_n_boxes[1]);
+  stats->n_boxes[2] = CS_MAX(stats->n_boxes[2],
+                             (cs_gnum_t)_n_boxes[2]);
+
+  stats->n_th_leaves[0] += _n_threshold_leaves[0];
+  stats->n_th_leaves[1] = CS_MIN(stats->n_th_leaves[1],
+                                 (cs_gnum_t)_n_threshold_leaves[1]);
+  stats->n_th_leaves[2] = CS_MAX(stats->n_th_leaves[2],
+                                 (cs_gnum_t)_n_threshold_leaves[2]);
+
+  stats->n_leaf_boxes[0] += _n_leaf_boxes[0];
+  stats->n_leaf_boxes[1] = CS_MIN(stats->n_leaf_boxes[1],
+                                  (cs_gnum_t)_n_leaf_boxes[1]);
+  stats->n_leaf_boxes[2] = CS_MAX(stats->n_leaf_boxes[2],
+                                  (cs_gnum_t)_n_leaf_boxes[2]);
+
+  stats->box_mem_final[0] += _mem_final[0];
+  stats->box_mem_final[1] = CS_MIN(stats->box_mem_final[1], _mem_final[1]);
+  stats->box_mem_final[2] = CS_MAX(stats->box_mem_final[2], _mem_final[2]);
+
+  stats->box_mem_required[0] += _mem_required[0];
+  stats->box_mem_required[1] = CS_MIN(stats->box_mem_required[1],
+                                       (cs_gnum_t)_mem_required[1]);
+  stats->box_mem_required[2] = CS_MAX(stats->box_mem_required[2],
+                                       (cs_gnum_t)_mem_required[2]);
+
+  CS_TIMER_COUNTER_ADD(stats->t_box_build, stats->t_box_build, box_time);
+  CS_TIMER_COUNTER_ADD(stats->t_box_build, stats->t_box_build, build_time);
+
+  CS_TIMER_COUNTER_ADD(stats->t_box_query, stats->t_box_query, query_time);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3882,8 +3878,9 @@ cs_join_intersect_edges(cs_join_param_t         param,
  * storing potential intersections between face bounding boxes.
  *
  * parameters:
- *   param     <-- set of user-defined parameter
+ *   param     <-- set of user-defined parameters
  *   join_mesh <-- cs_join_mesh_t structure where faces are defined
+ *   stats     <-> joining statistics
  *
  * returns:
  *   a new allocated pointer to a cs_join_gset_t structure storing the
@@ -3892,18 +3889,19 @@ cs_join_intersect_edges(cs_join_param_t         param,
 
 cs_join_gset_t *
 cs_join_intersect_faces(const cs_join_param_t   param,
-                        const cs_join_mesh_t   *join_mesh)
+                        const cs_join_mesh_t   *join_mesh,
+                        cs_join_stats_t        *stats)
 {
   cs_lnum_t  i;
-  double  extents_wtime;
 
+  int  box_dim = 0;
   cs_coord_t  *f_extents = NULL;
   fvm_neighborhood_t  *face_neighborhood = NULL;
   cs_join_gset_t  *face_visibility = NULL;
 
   assert(join_mesh != NULL);
 
-  extents_wtime = cs_timer_wtime();
+  cs_timer_t  t0 = cs_timer_time();
 
 #if defined HAVE_MPI
   face_neighborhood = fvm_neighborhood_create(cs_glob_mpi_comm);
@@ -3930,7 +3928,8 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                       join_mesh->vertices,
                       f_extents + i*6);
 
-  extents_wtime = cs_timer_wtime() - extents_wtime;
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_t  extents_time = cs_timer_diff(&t0, &t1);
 
   fvm_neighborhood_by_boxes(face_neighborhood,
                             3, /* spatial dimension */
@@ -3940,9 +3939,16 @@ cs_join_intersect_faces(const cs_join_param_t   param,
                             NULL,
                             &f_extents);
 
-  if (param.verbosity > 0)
-    _face_bbox_search_stats(face_neighborhood,
-                            extents_wtime);
+  _face_bbox_search_stats(face_neighborhood,
+                          extents_time,
+                          &box_dim,
+                          stats);
+
+  if (param.verbosity > 0) {
+    bft_printf(_("  Determination of possible face intersections:\n\n"
+                 "    bounding-box tree layout: %dD\n"), box_dim);
+    bft_printf_flush();
+  }
 
   /* Retrieve face -> face visibility */
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-09-07 13:53+0200\n"
+"POT-Creation-Date: 2015-09-09 17:18+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -9944,18 +9944,6 @@ msgstr ""
 "\n"
 "  Fin du tri des intersection possibles entre faces.\n"
 
-#, c-format
-msgid "    Sorting possible intersections between faces:   %10.3g\n"
-msgstr "    Tri des intersection possibles entre faces :    %10.3g\n"
-
-#, c-format
-msgid "    Definition of local joining mesh:               %10.3g\n"
-msgstr "    Définition du maillage de recollement local :   %10.3g\n"
-
-#, c-format
-msgid "    Edge intersections:                             %10.3g\n"
-msgstr "    Intersections d'arêtes:                         %10.3g\n"
-
 msgid ""
 "\n"
 "  Joining operation is null.\n"
@@ -9977,10 +9965,6 @@ msgstr ""
 "\n"
 "  L'opération de recollement est non-conforme.\n"
 
-#, c-format
-msgid "    Creation of new vertices:                       %10.3g\n"
-msgstr "    Création de nouveaux sommets :                  %10.3g\n"
-
 msgid ""
 "\n"
 "  Edge intersections and vertex creation done.\n"
@@ -9988,24 +9972,12 @@ msgstr ""
 "\n"
 "  Intersections d'arêtes et création de sommets terminées.\n"
 
-#, c-format
-msgid "    Merging vertices:                               %10.3g\n"
-msgstr "    Fusion de sommets :                             %10.3g\n"
-
-#, c-format
-msgid "    Updating structures with vertex merging:        %10.3g\n"
-msgstr "    Mises à jour associée à la fusion de sommets :  %10.3g\n"
-
 msgid ""
 "\n"
 "  Merge vertices and mesh update done.\n"
 msgstr ""
 "\n"
 "  Fusion de sommets et mise à jour du maillage terminées.\n"
-
-#, c-format
-msgid "    Split old faces and reconstruct new faces:      %10.3g\n"
-msgstr "    Découpage et reconstruction de faces :          %10.3g\n"
 
 #, c-format
 msgid ""
@@ -10031,16 +10003,6 @@ msgstr ""
 "\n"
 " -------------------------------------------------------\n"
 "  Recollement numéro %d :\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Joining number %d:\n"
-"\n"
-msgstr ""
-"\n"
-"Recollement numéro %d:\n"
 "\n"
 
 #, c-format
@@ -10131,74 +10093,20 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "  Joining number %d is not defined.\n"
-msgstr "  Le recollement numéro %d n'est pas défini.\n"
-
-#, c-format
-msgid "Unable to open file: \"%s\" for logging."
-msgstr "Impossibile d'ouvrir le fichier : \"%s\" pour la trace."
-
-#, c-format
 msgid ""
 "\n"
-"  Number of faces to treat locally: %10d\n"
-msgstr ""
-
-msgid ""
-"\n"
-"Stop joining algorithm: no face selected...\n"
-msgstr ""
-"\n"
-"Arrêt du recollement: aucune face sélectionnée...\n"
-
-msgid " After joining"
-msgstr " Après recollement"
-
-#, c-format
-msgid ""
-"\n"
-"  Joining %2d completed (%.3g s).\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"  Complete treatment for joining %2d:\n"
-"    wall clock time:                                %10.3g\n"
-msgstr ""
-"\n"
-"  Traitement complet pour le recollement %2d\n"
-"    temps écoulé :                                  %10.3g\n"
-
-#, c-format
-msgid "Error closing log file for joining: %d."
-msgstr "Erreur à la fermeture du fichier de traces pour le recollement : %d."
-
-#, c-format
-msgid ""
-"\n"
-"  All joining operations successfully finished:\n"
-"\n"
-"    Wall clock time:            %10.3g\n"
+"Joining number %d:\n"
 "\n"
 msgstr ""
 "\n"
-"  Fin des étapes de recollement :\n"
-"\n"
-"    Temps écoulé :              %10.3g\n"
+"Recollement numéro %d:\n"
 "\n"
 
 #, c-format
 msgid ""
-"\n"
-"Joining operations time summary:\n"
-"  wall clock time:            %10.3g\n"
+"\\  Number of calls (statistics are cumulative): %d:\n"
 "\n"
 msgstr ""
-"\n"
-"Temps associés aux étapes de recollement :\n"
-"  temps écoulé :              %10.3g\n"
-"\n"
 
 #, c-format
 msgid ""
@@ -10210,9 +10118,18 @@ msgstr ""
 "\n"
 "    répartition de l'arbre de boîtes englobantes : %dD\n"
 
+msgid "                                   rank mean"
+msgstr "                          moyenne sur les rangs"
+
+msgid "                                   call mean"
+msgstr "                         moyenne sur les appels"
+
+msgid "                              rank/call mean"
+msgstr "                       moyenne (rangs et appels)"
+
 #, c-format
 msgid ""
-"                                   rank mean      minimum      maximum\n"
+"%s      minimum      maximum\n"
 "    depth:                        %10d | %10d | %10d\n"
 "    number of leaves:             %10llu | %10llu | %10llu\n"
 "    number of boxes:              %10llu | %10llu | %10llu\n"
@@ -10223,7 +10140,7 @@ msgid ""
 "      temporary search structure: %10llu | %10llu | %10llu\n"
 "\n"
 msgstr ""
-"                               moyenne des rangs      minimum      maximum\n"
+"%s      minimum      maximum\n"
 "    profondeur :                      %10d | %10d | %10d\n"
 "    nombre de feuilles :              %10llu | %10llu | %10llu\n"
 "    nombre de boîtes :                %10llu | %10llu | %10llu\n"
@@ -10265,6 +10182,104 @@ msgstr ""
 "  Temps associés :\n"
 "    Construction des boîtes englobantes de faces :  %10.3g\n"
 "    Recherche des boîtes englobantes voisines :     %10.3g\n"
+
+#, c-format
+msgid "    Sorting possible intersections between faces:   %10.3g\n"
+msgstr "    Tri des intersection possibles entre faces :    %10.3g\n"
+
+#, c-format
+msgid "    Definition of local joining mesh:               %10.3g\n"
+msgstr "    Définition du maillage de recollement local :   %10.3g\n"
+
+#, c-format
+msgid "    Edge intersections:                             %10.3g\n"
+msgstr "    Intersections d'arêtes:                         %10.3g\n"
+
+#, c-format
+msgid "    Creation of new vertices:                       %10.3g\n"
+msgstr "    Création de nouveaux sommets :                  %10.3g\n"
+
+#, c-format
+msgid "    Merging vertices:                               %10.3g\n"
+msgstr "    Fusion de sommets :                             %10.3g\n"
+
+#, c-format
+msgid "    Updating structures with vertex merging:        %10.3g\n"
+msgstr "    Mises à jour associée à la fusion de sommets :  %10.3g\n"
+
+#, c-format
+msgid "    Split old faces and reconstruct new faces:      %10.3g\n"
+msgstr "    Découpage et reconstruction de faces :          %10.3g\n"
+
+#, c-format
+msgid ""
+"\n"
+"  Complete treatment for joining %2d:\n"
+"    wall clock time:                                %10.3g\n"
+msgstr ""
+"\n"
+"  Traitement complet pour le recollement %2d\n"
+"    temps écoulé :                                  %10.3g\n"
+
+#, c-format
+msgid "  Joining number %d is not defined.\n"
+msgstr "  Le recollement numéro %d n'est pas défini.\n"
+
+#, c-format
+msgid "Unable to open file: \"%s\" for logging."
+msgstr "Impossibile d'ouvrir le fichier : \"%s\" pour la trace."
+
+#, c-format
+msgid ""
+"\n"
+"  Number of faces to treat locally: %10d\n"
+msgstr ""
+
+msgid ""
+"\n"
+"Stop joining algorithm: no face selected...\n"
+msgstr ""
+"\n"
+"Arrêt du recollement: aucune face sélectionnée...\n"
+
+msgid " After joining"
+msgstr " Après recollement"
+
+#, c-format
+msgid "Error closing log file for joining: %d."
+msgstr "Erreur à la fermeture du fichier de traces pour le recollement : %d."
+
+#, c-format
+msgid ""
+"\n"
+"  Joining %2d completed (%.3g s).\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"  All joining operations successfully finished:\n"
+"\n"
+"    Wall clock time:            %10.3g\n"
+"\n"
+msgstr ""
+"\n"
+"  Fin des étapes de recollement :\n"
+"\n"
+"    Temps écoulé :              %10.3g\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"Joining operations time summary:\n"
+"  wall clock time:            %10.3g\n"
+"\n"
+msgstr ""
+"\n"
+"Temps associés aux étapes de recollement :\n"
+"  temps écoulé :              %10.3g\n"
+"\n"
 
 #, c-format
 msgid ""
