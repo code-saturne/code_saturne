@@ -502,38 +502,11 @@ if (iecaux.eq.1) then
   iecr = 0
 
   if (ineedy.eq.1) then
-!     Ancien mode de calcul. On ecrit aussi la distance a la paroi,
-!       au cas ou on fait une suite en ICDPAR=1.
-    if (abs(icdpar).eq.2) then
-      iecr   = 1
-      itysup = 1
-      nbval  = 1
-      rubriq = 'num_fac_par_ce_phase01'
-      call restart_write_section_int_t(rp,rubriq,itysup,nbval,ifapat)
-!     Pour la distance reelle, on a besoin d'un tableau provisoire
-      allocate(w1(ncelet))
-      do iel = 1, ncel
-        ifac = ifapat(iel)
-        w1(iel) = sqrt( (cdgfbo(1,ifac)-xyzcen(1,iel))**2 &
-                      + (cdgfbo(2,ifac)-xyzcen(2,iel))**2 &
-                      + (cdgfbo(3,ifac)-xyzcen(3,iel))**2 )
-      enddo
-      iecr   = 1
-      itysup = 1
-      nbval  = 1
-      rubriq = 'dist_fac_par_ce_phase01'
-      call restart_write_section_real_t(rp,rubriq,itysup,nbval,w1)
-      ! Free memory
-      deallocate(w1)
-
-!     Nouveau mode de calcul
-    elseif (abs(icdpar).eq.1) then
-      iecr   = 1
-      itysup = 1
-      nbval  = 1
-      rubriq = 'dist_fac_par_ce_phase01'
-      call restart_write_section_real_t(rp,rubriq,itysup,nbval,dispar)
-    endif
+    iecr   = 1
+    itysup = 1
+    nbval  = 1
+    rubriq = 'dist_fac_par_ce_phase01'
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,dispar)
   endif
 
   if (iecr.ne.0) then

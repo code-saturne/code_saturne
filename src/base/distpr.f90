@@ -138,8 +138,7 @@ nittot = 0
 ndircp = 0
 
 do ifac = 1, nfabor
-  if(itypfb(ifac).eq.iparoi .or.                            &
-     itypfb(ifac).eq.iparug) then
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
 
     ! Dirichlet Boundary Condition
     !-----------------------------
@@ -371,7 +370,7 @@ if (irangp.ge.0) then
   call parmax(dismax)
 endif
 
-write(nfecra,1000)dismin, dismax, nittot
+write(nfecra,1000) dismin, dismax, nittot
 
 ! Free memory
 deallocate(viscf, viscb)

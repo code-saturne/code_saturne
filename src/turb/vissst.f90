@@ -61,7 +61,7 @@ subroutine vissst
 
 use paramx
 use cstnum
-use pointe, only: s2kw, divukw, ifapat, dispar
+use pointe, only: s2kw, divukw, dispar
 use numvar
 use optcal
 use cstphy
@@ -158,23 +158,9 @@ deallocate(gradv)
 ! Allocate a work array
 allocate(w1(ncelet))
 
-if(abs(icdpar).eq.2) then
-  do iel = 1 , ncel
-    ifacpt = ifapat(iel)
-    if (ifacpt.gt.0) then
-      w1(iel) =  (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2           &
-               + (cdgfbo(2,ifacpt)-xyzcen(2,iel))**2           &
-               + (cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
-      w1(iel) = sqrt(w1(iel))
-    else
-      w1(iel) = grand
-    endif
-  enddo
-else
-  do iel = 1 , ncel
-    w1(iel) =  max(dispar(iel),epzero)
-  enddo
-endif
+do iel = 1 , ncel
+  w1(iel) =  max(dispar(iel), epzero)
+enddo
 
 !===============================================================================
 ! 4.  Calculation of viscosity

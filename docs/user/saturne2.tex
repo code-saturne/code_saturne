@@ -1812,8 +1812,7 @@ wall is made at the most once for all a the beginning of the calculation; it is
 therefore not compatible with moving walls. Please contact the development team
 if you need to override this limitation.}
 
-
-The following options are related to {\tt icdpar}=1 or -1. The options of
+The following options are related to {\tt icdpar} $\neq$\ 0. The options of
 level 2 are described first. Some options are used only in the case of
 the calculation of the non-dimensional distance to the wall $y^+$ (LES model with
 van Driest damping). Most of the following keywords are simple copies of the
@@ -1822,94 +1821,94 @@ specific value in the case of the calculation of the distance to the wall.\\
 
 \motcle{iwarny}{i}{integer}{0}{O}{L2}
 {specifies the level of the output writing concerning the calculation of the
-distance to the wall with {\tt icdpar}=1 or -1. The higher the value, the more
+distance to the wall with {\tt icdpar} $\neq$\ 0. The higher the value, the more
 detailed the outputs\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{ntcmxy}{i}{positive integer}{1000}{O}{L2}
 {number of pseudo-time iterations for the calculation of the non-dimensional
 distance to the wall $y^+$\\
-useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 
 \motcle{nitmay}{i}{integer  $>$ 0}{10000}{O}{L3}
 {maximum number of iterations for the solution of the linear systems\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{nswrsy}{i}{positive integer}{1}{O}{L3}
 {number of iterations for the reconstruction of the right-hand members:
 corresponds to {\tt nswrsm}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{nswrgy}{i}{positive integer}{100}{O}{L3}
 {number of iterations for the gradient reconstruction: corresponds to {\tt nswrgr}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{imligy}{i}{-1, 0 or 1}{-1 or 1}{O}{L3}
 {type of gradient limitation: corresponds to {\tt imligr}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{ircfly}{i}{0 or 1}{1}{O}{L3}
 {indicates the reconstruction of the convective and diffusive fluxes at
 the faces: corresponds to {\tt ircflu}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{ischcy}{i}{0 or 1}{1}{O}{L3}
 {indicates type of second-order convective scheme: corresponds to {\tt ischcv}\\
-useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 
 \motcle{isstpy}{i}{0 or 1}{0}{O}{L3}
 {indicates if a ``slope test'' should be used for a second-order convective
 scheme: corresponds to {\tt isstpc}\\
-useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 
 \motcle{imgrpy}{i}{0 or 1}{0}{O}{L3}
 {indicates whether the algebraic
 multi-grid method should be used ({\tt imgr(ivar)}=1) or not (0): corresponds
 to {\tt imgr}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{blency}{r}{0 $\leqslant$ real $\leqslant$ 1}{0}{O}{L3}
 {proportion of second-order convective scheme: corresponds to {\tt blencv}\\
-useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 
 \motcle{epsily}{r}{real number $>$ 0}{$10^{-8}$}{O}{L3}
 {relative precision for the solution of the linear systems:
 corresponds to {\tt epsilo}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{epsrgy}{r}{real number $>$ 0}{$10^{-5}$}{O}{L3}
 {relative precision for the iterative gradient reconstruction:
 corresponds to {\tt epsrgr}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{epsrsy}{r}{real number $>$ 0}{$10^{-5}$}{O}{L3}
 {relative precision for the right-hand side reconstruction:
 corresponds to {\tt epsrsm}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{climgy}{r}{real number $>$ 0}{1.5}{O}{L3}
 {limitation factor of the gradients: corresponds to {\tt climgr}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{extray}{r}{0, 0.5 or 1}{0}{O}{L3}
 {extrapolation coefficient of the gradients at the boundaries:
 corresponds to {\tt extrag}\\
-useful when {\tt icdpar}=1 or -1}
+useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{coumxy}{r}{strictly positive real number}{5000}{O}{L3}
 {Target Courant number for the calculation of the non-dimensional distance
 to the wall\\
-useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 
 \motcle{epscvy}{r}{strictly positive real number}{$10^{-8}$}{O}{L3}
 {relative precision for the convergence of the pseudo-transient regime
 for the calculation of the non-dimensional distance to the wall\\
-useful when {\tt icdpar}=1 or -1  for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0  for the calculation of $y^+$}
 
 \motcle{yplmxy}{r}{real number}{200}{O}{L3}
 {value of the non-dimensional distance to the wall above which the
 calculation of the distance is not necessary (for the damping)\\
-useful when {\tt icdpar}=1 or -1 for the calculation of $y^+$}
+useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 
 
 %==================================

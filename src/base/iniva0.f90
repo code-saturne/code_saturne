@@ -651,20 +651,7 @@ do ii = 1, nfld
 enddo
 
 !===============================================================================
-! 9.  INITIALISATION DU NUMERO DE LA FACE DE PAROI 5 LA PLUS PROCHE
-!===============================================================================
-
-!     Si IFAPAT existe,
-!     on suppose qu'il faut le (re)calculer : on init le tab a -1.
-
-if (ineedy.gt.0 .and. abs(icdpar).eq.2) then
-  do iel = 1, ncel
-    ifapat(iel) = -1
-  enddo
-endif
-
-!===============================================================================
-! 10.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
+! 8.  INITIALISATION DE LA FORCE EXTERIEURE QUAND IPHYDR=1
 !===============================================================================
 
 if(iphydr.eq.1) then
@@ -676,7 +663,7 @@ if(iphydr.eq.1) then
 endif
 
 !===============================================================================
-! 11.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
+! 9.  INITIALISATION DE LA PRESSION HYDROSTATIQUE QUAND IPHYDR=2
 !===============================================================================
 
 if(iphydr.eq.2) then
@@ -686,7 +673,7 @@ if(iphydr.eq.2) then
 endif
 
 !===============================================================================
-! 12.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
+! 10.  INITIALISATIONS EN ALE OU MAILLAGE MOBILE
 !===============================================================================
 
 if (iale.eq.1) then

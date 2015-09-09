@@ -272,6 +272,7 @@ cs_wall_functions.c \
 csprnt.f90 \
 diffst.f90 \
 distpr.f90 \
+distpr2.f90 \
 distyp.f90 \
 driflu.f90 \
 dttvar.f90 \

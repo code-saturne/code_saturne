@@ -97,13 +97,13 @@ module pointe
 
   !> distance between the center of a given volume and the closest wall,
   !> when it is necessary (\f$R_{ij}-\varepsilon\f$ with wall echo,
-  !> LES with van Driest-wall damping, or \f$k-\omega\f$ (SST) turbulence model)
-  !> and when \c icdpar=1. The distance between the center of the cell
+  !> LES with van Driest-wall damping, or \f$k-\omega\f$ (SST) turbulence model).
+  !> The distance between the center of the cell
   !> \c iel and the closest wall is \c dispar(iel)
   double precision, allocatable, dimension(:)   :: dispar
 
   !> non-dimensional distance \f$y^+\f$ between a given volume and the closest wall,
-  !> when it is necessary (LES with van Driest-wall damping) and when \c icdpar=1.
+  !> when it is necessary (LES with van Driest-wall damping).
   !> The adimensional distance \f$y^+\f$ between the center of the cell \c iel
   !> and the closest wall is therefore \c yplpar(iel1)
   double precision, allocatable, dimension(:)   :: yplpar
@@ -137,15 +137,6 @@ module pointe
   !> to identify boundary zones associated with boundary faces
   !> (radiative transfer)
   integer, allocatable, dimension(:) :: izfrad
-
-  !> number of the wall face (type \c itypfb=iparoi or \c iparug)
-  !> which is closest to the center of a given volume when necessary
-  !> (\f$R_{ij}-\varepsilon\f$ with wall echo, LES with van Driest-wall damping,
-  !> or \f$k-\omega\f$ (SST) turbulence model) and when \c icdpar=2.
-  !> The number of the wall face which is the closest to
-  !> the center of the cell \c iel is \c ifapat(iel1).
-  !> This calculation method is not compatible with parallelism and periodicity
-  integer, allocatable, dimension(:) :: ifapat
 
   !> the index of the structure, (\c idfstr(ifac) where \c ifac is the index
   !> of the face), 0 if the face is not coupled to any structure.
@@ -472,15 +463,12 @@ contains
 
     ! Wall-distance calculation
 
-    if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
+    if (ineedy.eq.1) then
       allocate(dispar(ncelet))
       if (     (itytur.eq.4 .and. idries.eq.1) &
           .or. (iilagr.ge.1 .and. iroule.eq.2) ) then
         allocate(yplpar(ncelet))
       endif
-    endif
-    if (ineedy.eq.1 .and. abs(icdpar).eq.2) then
-      allocate(ifapat(ncelet))
     endif
 
     ! Friction velocity on boundary faces
@@ -563,18 +551,6 @@ contains
       enddo
     endif
 
-    if (allocated(ifapat)) then
-      do iel = 1, ncel
-        buffer(iel) = dble(ifapat(iel))
-      enddo
-      deallocate(ifapat)
-      call synsca (buffer)
-      allocate(ifapat(ncelet))
-      do iel = 1, ncelet
-        ifapat(iel) = nint(buffer(iel))
-      enddo
-    endif
-
     ! Temporary storage arrays for k-omega model
 
     if (allocated(s2kw)) then
@@ -643,7 +619,6 @@ contains
     if (allocated(izft1d)) deallocate(izft1d)
     if (allocated(dispar)) deallocate(dispar)
     if (allocated(yplpar)) deallocate(yplpar)
-    if (allocated(ifapat)) deallocate(ifapat)
     if (allocated(uetbor)) deallocate(uetbor)
     if (allocated(s2kw)) deallocate(s2kw, divukw)
     if (allocated(straio))  deallocate(straio)

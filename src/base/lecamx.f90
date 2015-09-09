@@ -657,68 +657,32 @@ call time_moment_restart_read(rp)
 ilu = 0
 nberro = 0
 
-!     MODE DE CALCUL DIRECT (NON COMPATIBLE PARALLELISME ET PERIODICITE)
+! On la lit si on en a besoin uniquement.
 
-if (abs(icdpar).eq.2) then
+! Si l'utilisateur a force le recalcul, on ne la lit pas
+!   il faudra la mettre a jour (sauf si zero pas de temps).
 
-!     On la lit si on en a besoin uniquement.
+! Sinon, on cherche a la lire.
+!   On pourrait la relire aussi quand le nombre de faces a
+!   change, mais il vaut mieux la recalculer au cas ou des faces de
+!   paroi auraient disparu
+!   Si on arrive a la lire, on note qu'elle est a jour (sauf si ALE).
 
-!     Si l'utilisateur a force le recalcul, on ne la lit pas
-!       il faudra la mettre a jour (sauf si zero pas de temps).
-
-!     Sinon, on cherche a la lire.
-
-!     On ne relit les numeros des faces de bord que si on a toujours
-!       le meme nombre de faces de bord (sinon, la numerotation a change)
-  if (ineedy.eq.1) then
-    if (icdpar.eq.2.or.inpdt0.eq.1) then
-      if (nfabok.eqv..true.) then
-
-        itysup = 1
-        nbval  = 1
-        rubriq = 'num_fac_par_ce_phase01'
-        call restart_read_section_int_t(rp,rubriq,itysup,nbval,   &
-                                        ifapat,ierror)
-        nberro=nberro+ierror
-        ilu   = ilu + 1
-
+if (ineedy.eq.1) then
+  if (icdpar.gt.0 .or. inpdt0.eq.1) then
+    if (nfabok.eqv..true.) then
+      itysup = 1
+      nbval  = 1
+      rubriq = 'dist_fac_par_ce_phase01'
+      call restart_read_section_real_t(rp,rubriq,itysup,nbval,dispar,  &
+                                       ierror)
+      nberro=nberro+ierror
+      if (ierror.eq.0 .and. iale.eq.0 ) then
+        imajdy = 1
       endif
+      ilu   = ilu + 1
     endif
   endif
-
-
-!     MODE DE CALCUL PAR EQUATION DE DIFFUSION
-
-elseif (abs(icdpar).eq.1) then
-
-!     On la lit si on en a besoin uniquement.
-
-!     Si l'utilisateur a force le recalcul, on ne la lit pas
-!       il faudra la mettre a jour (sauf si zero pas de temps).
-
-!     Sinon, on cherche a la lire.
-!       On pourrait la relire aussi quand le nombre de faces a
-!       change, mais il vaut mieux la recalculer au cas ou des faces de
-!       paroi auraient disparu
-!       Si on arrive a la lire, on note qu'elle est a jour (sauf si ALE).
-
-  if (ineedy.eq.1) then
-    if (icdpar.eq.1.or.inpdt0.eq.1) then
-      if (nfabok.eqv..true.) then
-        itysup = 1
-        nbval  = 1
-        rubriq = 'dist_fac_par_ce_phase01'
-        call restart_read_section_real_t(rp,rubriq,itysup,nbval,dispar,  &
-                                         ierror)
-        nberro=nberro+ierror
-        if (ierror.eq.0 .and. iale.eq.0 ) then
-          imajdy = 1
-        endif
-        ilu   = ilu + 1
-      endif
-    endif
-  endif
-
 endif
 
 if (nberro.ne.0) then
@@ -730,7 +694,6 @@ if (ilu.ne.0) then
   car54 = ' Fin de la lecture de la distance a la paroi          '
   write(nfecra,1110)car54
 endif
-
 
 !===============================================================================
 ! 10.  FORCE EXTERIEURE

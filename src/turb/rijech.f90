@@ -143,82 +143,64 @@ d2s3   = 2.d0/3.d0
 ! 2.Calculation in the orthogonal straights cells in corresponding walls
 !===============================================================================
 
-!     We store the components in the work tables W2, W3 and W4
+!  We store the components in the work tables W2, W3 and W4
 
-if(abs(icdpar).eq.2) then
+!     The orthogonal straght is defined as -gradient of the distance
+!       to the wall
 
-!     We know the corresponding wall face
+!       The distance to the wall worth 0 at the wall
+!         by definition and obey a flux nowhere else
 
-    do iel = 1, ncel
-      ifacpt = ifapat(iel)
-      unssur = 1.d0/surfbn(ifacpt)
-      w2(iel)= surfbo(1,ifacpt)*unssur
-      w3(iel)= surfbo(2,ifacpt)*unssur
-      w4(iel)= surfbo(3,ifacpt)*unssur
-    enddo
+! Allocate temporary arrays
+allocate(coefax(nfabor), coefbx(nfabor))
 
-elseif(abs(icdpar).eq.1) then
-
-  !     The orthogonal straght is defined as -gradient of the distance
-  !       to the wall
-
-  !       The distance to the wall worth 0 at the wall
-  !         by definition and obey a flux nowhere else
-
-  ! Allocate temporary arrays
-  allocate(coefax(nfabor), coefbx(nfabor))
-
-  do ifac = 1, nfabor
-    if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-      coefax(ifac) = 0.0d0
-      coefbx(ifac) = 0.0d0
-    else
-      coefax(ifac) = 0.0d0
-      coefbx(ifac) = 1.0d0
-    endif
-  enddo
-
-  !       Calculation of gradient
-
-  ! Allcoate a temporary array for the gradient calculation
-  allocate(grad(3,ncelet))
-
-  if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(dispar)
+do ifac = 1, nfabor
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+    coefax(ifac) = 0.0d0
+    coefbx(ifac) = 0.0d0
+  else
+    coefax(ifac) = 0.0d0
+    coefbx(ifac) = 1.0d0
   endif
+enddo
 
-  inc    = 1
-  iccocg = 1
-  f_id0  = -1
+!       Calculation of gradient
 
-  call gradient_s                                                 &
- ( f_id0  , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
-   epsrgy , climgy , extray ,                                     &
-   dispar , coefax , coefbx ,                                     &
-   grad   )
+! Allocate a temporary array for the gradient calculation
+allocate(grad(3,ncelet))
 
-  ! Free memory
-  deallocate(coefax, coefbx)
-
-  !     Normalization (warning, the gradient may be sometimes equal to 0)
-
-  do iel = 1 ,ncel
-    xnorme = max(sqrt(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2),epzero)
-    w2(iel) = -grad(1,iel)/xnorme
-    w3(iel) = -grad(2,iel)/xnorme
-    w4(iel) = -grad(3,iel)/xnorme
-  enddo
-
-  ! Free memory
-  deallocate(grad)
-
+if (irangp.ge.0.or.iperio.eq.1) then
+  call synsca(dispar)
 endif
+
+inc    = 1
+iccocg = 1
+f_id0  = -1
+
+call gradient_s                                                  &
+( f_id0  , imrgra , inc    , iccocg , nswrgy , imligy , iwarny , &
+  epsrgy , climgy , extray ,                                     &
+  dispar , coefax , coefbx ,                                     &
+  grad   )
+
+! Free memory
+deallocate(coefax, coefbx)
+
+!     Normalization (warning, the gradient may be sometimes equal to 0)
+
+do iel = 1 ,ncel
+  xnorme = max(sqrt(grad(1,iel)**2+grad(2,iel)**2+grad(3,iel)**2),epzero)
+  w2(iel) = -grad(1,iel)/xnorme
+  w3(iel) = -grad(2,iel)/xnorme
+  w4(iel) = -grad(3,iel)/xnorme
+enddo
+
+! Free memory
+deallocate(grad)
 
 !===============================================================================
 ! 2. Calculation of work variables
 !===============================================================================
-
-
 
 ! ---> Production and k
 
@@ -227,8 +209,6 @@ do iel = 1 , ncel
   xk          = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
   epsk(iel)   = cvara_ep(iel)/xk
 enddo
-
-
 
 ! ---> Tension rating
 
@@ -417,34 +397,17 @@ do kk = 1, 3
 
 enddo
 
-
 ! ---> Distance to the wall and amortization function: W3
 !      For each calculation mode: same code, test
 !      Apart from the loop
 
-if(abs(icdpar).eq.2) then
-  do iel = 1 , ncel
-    ifacpt = ifapat(iel)
-    distxn =                                                      &
-          (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2                     &
-         +(cdgfbo(2,ifacpt)-xyzcen(2,iel))**2                     &
-         +(cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
-    distxn = sqrt(distxn)
-    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
-    aa = 1.d0
-    bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
-    w3(iel) = min(aa, bb)
-  enddo
-else
-  do iel = 1 , ncel
-    distxn =  max(dispar(iel),epzero)
-    trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
-    aa = 1.d0
-    bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
-    w3(iel) = min(aa, bb)
-  enddo
-endif
-
+do iel = 1, ncel
+  distxn =  max(dispar(iel),epzero)
+  trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+  aa = 1.d0
+  bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
+  w3(iel) = min(aa, bb)
+enddo
 
 ! ---> Increment of source term
 
@@ -455,7 +418,6 @@ enddo
 ! Allocate temporary arrays
 deallocate(produk, epsk)
 deallocate(w2, w3, w4, w6)
-
 
 return
 end subroutine

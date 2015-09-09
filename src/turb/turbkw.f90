@@ -69,7 +69,7 @@ use cstnum
 use cstphy
 use optcal
 use lagran
-use pointe, only: s2kw, divukw, ifapat, dispar
+use pointe, only: s2kw, divukw, dispar
 use parall
 use mesh
 use field
@@ -258,19 +258,9 @@ deallocate(gradk, grado)
 ! 2.2. Compute the weight f1 (stored in xf1)
 !===============================================================================
 
-if (abs(icdpar).eq.2) then
-  do iel = 1, ncel
-    ifacpt = ifapat(iel)
-    w2(iel) = (cdgfbo(1,ifacpt)-xyzcen(1,iel))**2 &
-            + (cdgfbo(2,ifacpt)-xyzcen(2,iel))**2 &
-            + (cdgfbo(3,ifacpt)-xyzcen(3,iel))**2
-    w2(iel) = sqrt(w2(iel))
-  enddo
-else
-  do iel = 1, ncel
-    w2(iel) = max(dispar(iel),epzero)
-  enddo
-endif
+do iel = 1, ncel
+  w2(iel) = max(dispar(iel),epzero)
+enddo
 
 ! En cas d'ordre 2 on utilise les valeurs en n car le terme en (1-f1)*gdkgdw
 ! sera dans PROPCE. Du coup, on aura quand meme certaines "constantes"

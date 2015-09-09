@@ -270,8 +270,7 @@ endif
 
 !     Si la distance a la paroi doit etre mise a jour, on l'initialise a GRAND
 !     des maintenant (pour le premier passage dans phyvar en k-omega)
-if(ipass.eq.1.and.ineedy.eq.1.and.abs(icdpar).eq.1.and.           &
-                                  imajdy.eq.0) then
+if (ipass.eq.1 .and. ineedy.eq.1 .and. imajdy.eq.0) then
   do iel = 1, ncel
     dispar(iel) = grand
   enddo
@@ -1283,43 +1282,40 @@ do while (iterns.le.nterup)
     !  parois qui deviennent autre chose)
 
     ! Nombre de faces de paroi
-    if(ipass.eq.1) then
-      if(ineedy.eq.1) then
+    if (ipass.eq.1) then
+      if (ineedy.eq.1) then
         infpar = 0
         do ifac = 1, nfabor
           if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
             infpar = infpar+1
           endif
         enddo
-        if(irangp.ge.0) then
+        if (irangp.ge.0) then
           call parcpt(infpar)
         endif
       endif
     endif
 
-
     !     On calcule la distance a la paroi
     !          si elle doit etre mise a jour
     !       et si on en a besoin,
     !       et si on a choisi ce mode de calcul,
-    if( imajdy.eq.0.and.ineedy.eq.1.and.abs(icdpar).eq.1) then
+    if (imajdy.eq.0 .and. ineedy.eq.1) then
 
-      !     S'il n'y a pas de paroi, on garde l'initialisation a GRAND
-      if(infpar.eq.0) then
+      !  S'il n'y a pas de paroi, on garde l'initialisation a GRAND
+      if (infpar.eq.0) then
         imajdy = 1
-
-        !     S'il y a des parois, il faut calculer
+        ! If we have walls, we must compute
       else
-
-
-        !     On doit conserver la memoire de memcli a cause de 'uetbor'
-        !       dans DISTYP (uniquement en LES avec van Driest mais tant pis)
-
-        call distpr(itypfb, dispar)
-
+        ! On doit conserver la memoire de memcli a cause de 'uetbor'
+        ! dans distyp (uniquement en LES avec van Driest mais tant pis)
+        if (abs(icdpar).eq.1) then
+          call distpr(itypfb, dispar)
+        else if (abs(icdpar).eq.2) then
+          call distpr2(itypfb, dispar)
+        endif
         !     La distance n'a plus a etre mise a jour sauf en ALE
         if (iale.eq.0) imajdy = 1
-
       endif
     endif
 
@@ -1332,32 +1328,28 @@ do while (iterns.le.nterup)
 
   !     On calcule y+ si on en a besoin
 
-  if( (itytur.eq.4.and.idries.eq.1)                 &
-       .or. (iilagr.ge.1 .and. iroule.eq.2) ) then
+  if (     (itytur.eq.4 .and. idries.eq.1)                 &
+      .or. (iilagr.ge.1 .and. iroule.eq.2)) then
 
     !       On calcule si on a demande ce mode de calcul
     !               et s'il y a des parois (si pas de paroi, pas de y+)
-    if(abs(icdpar).eq.1.and.infpar.gt.0) then
 
-      !     On doit conserver la memoire de memcli a cause de 'uetbor'
-      !       dans DISTYP
-
+    if (abs(infpar).gt.0) then
       call distyp(itypfb, dispar, yplpar)
-
     endif
 
   endif
 
   if (itytur.eq.4 .and. idries.eq.1) then
 
-    !     Pas d'amortissement si pas de paroi
+    ! Pas d'amortissement si pas de paroi
     if (infpar.gt.0) then
-      call vandri(itypfb, ifapat, visvdr, yplpar)
+      call vandri(itypfb, visvdr, yplpar)
     endif
 
   endif
 
-  if(ineedy.eq.1.and.iwarny.ge.1) then
+  if (ineedy.eq.1.and.iwarny.ge.1) then
     call dmtmps(tdist2)
     tditot = tdist2-tdist1
     write(nfecra,4010)tditot

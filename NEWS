@@ -5,6 +5,12 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - When using old (non-parallel) algorithm to compute wall distance, save
+   distance in same array as for main algorithm.
+
+ - Added optional saving of scalar variable boundary values as fields
+   (also done for temperature when a property).
+
  - Some renames and simplifications in matrix fill types:
    * to make things more generic, CS_MATRIX_33_BLOCK* is replaced by
      CS_MATRIX_BLOCK*
@@ -49,7 +55,6 @@ Architectural changes
 
 - Do not build with BLAS by default, as only MKL is used outside of unit tests, and
   using it requires providing its path to "--with-blas" anyways.
-
 
 Release 4.1.0 (July 31 2015)
 ============================

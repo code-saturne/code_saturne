@@ -377,71 +377,7 @@ call vericl                                                       &
    rcodcl )
 
 !===============================================================================
-! 4. deprecated model to compute wall distance
-!===============================================================================
-! attention, si on s'en sert pour autre chose, disons le module x
-!   bien faire attention dans verini avec quelles options le module
-!   x doit alors etre incompatible (perio, parall).
-
-iok1 = 0
-
-if(ineedy.eq.1.and.abs(icdpar).eq.2) then
-
-  ! allocate a temporary array
-  allocate(w1(ncelet))
-
-  ! on fera attention en parallelisme ou periodicite
-  !    (une paroi peut etre plus proche en traversant un bord ...)
-
-  do iel = 1, ncel
-    w1(iel) = grand
-  enddo
-
-  do ifac = 1, nfabor
-    icodcu = icodcl(ifac,iu)
-    if( icodcu.eq.5 .or. icodcu.eq.6 ) then
-      do iel = 1, ncel
-        xdis =                                                &
-              (cdgfbo(1,ifac)-xyzcen(1,iel))**2                   &
-             +(cdgfbo(2,ifac)-xyzcen(2,iel))**2                   &
-             +(cdgfbo(3,ifac)-xyzcen(3,iel))**2
-        if(w1(iel).gt.xdis) then
-          w1(iel) = xdis
-          ifapat(iel) = ifac
-        endif
-      enddo
-    endif
-  enddo
-
-  ! free memory
-  deallocate(w1)
-
-  iok = 0
-  do iel = 1, ncel
-    if(ifapat(iel).le.0)then
-      iok = iok + 1
-    endif
-  enddo
-  if(iok.gt.0) then
-    write(nfecra,1000) irijec, idries
-    iok1 = 1
-  endif
-
-endif
-
-! normalement, on ne passe pas en parallele ici,
-!   mais au cas ou ...
-if(irangp.ge.0) then
-  call parcpt(iok1)
-endif
-
-if(iok1.ne.0) then
-  call csexit (1)
-  !==========
-endif
-
-!===============================================================================
-! 5. variables
+! 4. variables
 !===============================================================================
 
 ! --- variables
@@ -463,7 +399,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 !===============================================================================
-! 6. compute the temperature or the enthalpy in i' for boundary cells
+! 5. compute the temperature or the enthalpy in i' for boundary cells
 !     (thanks to the formula: fi + grad(fi).ii')
 
 !    for the coupling with syrthes
@@ -599,9 +535,9 @@ do ii = 1, nscal
 enddo
 
 !===============================================================================
-! 6.bis compute the velocity and renolds stesses tensor in i' for boundary cells
-!        (thanks to the formula: fi + grad(fi).ii') if there are symmetry or
-!         wall with wall functions boundary conditions
+! 6. compute the velocity and Reynolds stesses tensor in i' for boundary cells
+!     (thanks to the formula: fi + grad(fi).ii') if there are symmetry or
+!      wall with wall functions boundary conditions
 !===============================================================================
 
 ! ---> indicator for symmetries or wall with wall functions
@@ -2919,67 +2855,11 @@ endif
 
 #if defined(_CS_LANG_FR)
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE L''ENTREE DES COND. LIM.      ',/,&
-'@    =========                                               ',/,&
-'@      INCOHERENCE ENTRE OPTIONS DE CALCUL ET COND. LIM.     ',/,&
-'@                                                            ',/,&
-'@      la prise en compte des termes d''echo de paroi        ',/,&
-'@      du modele de turbulence Rij-epsilon est activee       ',/,&
-'@      IRIJEC = ',I10,'                                      ',/,&
-'@      Ou bien l amortissement de la viscosite turbulente    ',/,&
-'@      est active IDRIES = ',I10,'en LES                     ',/,&
-'@    mais aucune face de bord de type paroi n''est detectee. ',/,&
-'@    L''incoherence indiquee ci-dessus n''est pas bloquante  ',/,&
-'@      mais peut resulter d''une erreur lors de la           ',/,&
-'@      specification des conditions aux limites.             ',/,&
-'@                                                            ',/,&
-'@    Par securite, le calcul ne sera pas execute.            ',/,&
-'@                                                            ',/,&
-'@    Verifier les conditions aux limites dans                ',/,&
-'@      cs_user_boundary si le domaine comporte des parois.   ',/,&
-'@    Eliminer l''option IRIJEC de usipsu si le domaine ne    ',/,&
-'@      comporte pas de paroi (ou conditions ICODCL = 5 en    ',/,&
-'@      vitesse).                                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  3010 format(                                                           &
  'Debit entrant retenu en ',I10   ,                  &
                                       ' faces de sortie sur ',I10)
 #else
 
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE BOUNDARY CONDITIONS SPECIFICATION ',/,&
-'@    =========                                               ',/,&
-'@      INCOHERENCY BETWEEN CALCULATION OPTIONS AND BOUND COND',/,&
-'@                                                            ',/,&
-'@      The wall-echo terms of the Rij-epsilon turbulence     ',/,&
-'@      model are taken into account                          ',/,&
-'@      IRIJEC = ',I10,'                                      ',/,&
-'@      Or the Van Driest damping of the turbulent viscosity  ',/,&
-'@      is active IDRIES = ',I10,'in LES                      ',/,&
-'@    but no wall boundary face is detected.                  ',/,&
-'@    This incoherency is not blocking but may result from    ',/,&
-'@      an error during the boundary conditions               ',/,&
-'@      specification.                                        ',/,&
-'@                                                            ',/,&
-'@    By safety, the calculation will not be run.             ',/,&
-'@                                                            ',/,&
-'@    Verify the boundary conditions in cs_user_boundary in   ',/,&
-'@      if the domain has any walls.                          ',/,&
-'@    Remove the option IRIJEC from usipsu if the domain does ',/,&
-'@      not have any wall (or conditions ICODCL = 5 for the   ',/,&
-'@      velocity).                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  3010 format(                                                           &
  'Incoming flow detained for ', I10   ,              &
                                           ' outlet faces on ',I10)

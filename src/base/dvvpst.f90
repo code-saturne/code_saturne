@@ -146,7 +146,7 @@ if (numtyp .eq. -1) then
 
   ! Wall distance (if LES+VanDriest or Rij+Echo or K-w SST)
 
-  if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
+  if (ineedy.eq.1) then
 
     idimt = 1
     ientla = .true.
@@ -159,7 +159,7 @@ if (numtyp .eq. -1) then
 
   ! Yplus (if LES+VanDriest)
 
-  if (ineedy.eq.1 .and. abs(icdpar).eq.1) then
+  if (ineedy.eq.1) then
 
     if (itytur.eq.4.and.idries.eq.1) then
 
