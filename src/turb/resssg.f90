@@ -343,7 +343,7 @@ if (ncesmp.gt.0) then
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , cvara_var       , smacel(:,ivar)   , smacel(:,ipr) ,  &
+   cell_f_vol , cvara_var       , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   ,  rovsdt , w1 )
 
   ! If we extrapolate the source terms we put Gamma Pinj in the previous st
@@ -368,7 +368,7 @@ endif
 
 do iel=1,ncel
   rovsdt(iel) = rovsdt(iel)                                       &
-            + istat(ivar)*(crom(iel)/dt(iel))*volume(iel)
+            + istat(ivar)*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
 
 
@@ -582,9 +582,9 @@ do iel=1,ncel
            +   cssgr5*trrij* aikrjk
     epsij = -d2s3*cvara_ep(iel)*deltij
 
-    w1(iel) = cromo(iel)*volume(iel)*(pij+phiij1+phiij2+epsij)
+    w1(iel) = cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
 
-    w2(iel) = volume(iel)/trrij*crom(iel)*(                              &
+    w2(iel) = cell_f_vol(iel)/trrij*crom(iel)*(                              &
            cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0) )
 
   ! EBRSM
@@ -636,7 +636,7 @@ do iel=1,ncel
     !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1
     alpha3 = cvar_al(iel)**3
 
-    w1(iel) = volume(iel)*crom(iel)*(                             &
+    w1(iel) = cell_f_vol(iel)*crom(iel)*(                             &
                xprod(iii,jjj)                                     &
             + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
             - (1.d0-alpha3)*epsijw - alpha3*epsij)
@@ -646,7 +646,7 @@ do iel=1,ncel
     ! The term below corresponds to the implicit part of SSG
     ! in the context of elliptical weighting, it is multiplied by
     ! \f$ \alpha^3 \f$
-    w2(iel) = volume(iel)*crom(iel)*(                             &
+    w2(iel) = cell_f_vol(iel)*crom(iel)*(                             &
               cebms1*cvara_ep(iel)/trrij*alpha3                       &
              +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
     ! Implicitation of epsijw
