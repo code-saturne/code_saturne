@@ -776,4 +776,220 @@ deallocate(lstelt)
 return
 end subroutine cs_user_turbulence_source_terms
 
+!===============================================================================
 
+
+!===============================================================================
+! Purpose:
+! -------
+
+!> \brief Additional right-hand side source terms for turbulence models and
+!>irijco =1
+!>
+!> \section cs_user_turbulence_source_terms_use  Usage
+!>
+!> The additional source term is decomposed into an explicit part (crvexp) and
+!> an implicit part (crvimp) that must be provided here.
+!> The resulting equations solved by the code are:
+!> \f[
+!>  \rho \norm{\vol{\celli}} \DP{\varia} + ....
+!>   = \tens{crvimp} \varia + \vect{crvexp}
+!> \f]
+!> where \f$ \varia \f$ is the turbulence field of index \c f_id
+!>
+!> Note that crvexp, crvimp are defined after the Finite Volume
+!> integration over the cells, so they include the "volume" term. More precisely:
+!>   - crvexp is expressed in kg.m2/s2
+!>   - crvimp is expressed in kg/s
+!>
+!> The crvexp, crvimp arrays are already initialized to 0 before
+!> entering the routine. It is not needed to do it in the routine (waste of CPU time).
+!>
+!> For stability reasons, Code_Saturne will not add -crvimp directly to the
+!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
+!> treated implicitely only if it strengthens the diagonal of the matrix.
+!> However, when using the second-order in time scheme, this limitation cannot
+!> be done anymore and -crvimp is added directly. The user should therefore test
+!> the negativity of crvimp by himself.
+!>
+!> When using the second-order in time scheme, one should supply:
+!>   - crvexp at time n
+!>   - crvimp at time n+1/2
+!>
+!> The selection of cells where to apply the source terms is based on a getcel
+!> command. For more info on the syntax of the \ref getcel command, refer to the
+!> user manual or to the comments on the similar command \ref getfbr in the routine
+!> \ref cs_user_boundary_conditions.
+!
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nvar          total number of variables
+!> \param[in]     nscal         total number of scalars
+!> \param[in]     ncepdp        number of cells with head loss terms
+!> \param[in]     ncesmp        number of cells with mass source terms
+!> \param[in]     f_id          field index of the current turbulent variable
+!> \param[in]     icepdc        index number of cells with head loss terms
+!> \param[in]     icetsm        index number of cells with mass source terms
+!> \param[in]     itypsm        type of mass source term for each variable
+!>                               (see \ref cs_user_mass_source_terms)
+!> \param[in]     ckupdc        head loss coefficient
+!> \param[in]     smacel        value associated to each variable in the mass
+!>                               source terms or mass rate (see
+!>                               \ref cs_user_mass_source_terms)
+!> \param[out]    crvexp        explicit part of the source term
+!> \param[out]    crvimp        implicit part of the source term
+!_______________________________________________________________________________
+
+subroutine cs_user_turbulence_source_terms2 &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   f_id   ,                                                       &
+   icepdc , icetsm , itypsm ,                                     &
+   ckupdc , smacel ,                                              &
+   crvexp , crvimp )
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use entsor
+use optcal
+use cstphy
+use parall
+use period
+use mesh
+use field
+use cs_f_interfaces
+use cs_c_bindings
+
+!===============================================================================
+
+implicit none
+
+! Arguments
+
+integer          nvar   , nscal
+integer          ncepdp , ncesmp
+integer          f_id
+
+integer          icepdc(ncepdp)
+integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
+
+double precision dt(ncelet)
+double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
+double precision crvexp(6,ncelet), crvimp(6,6,ncelet)
+
+! Local variables
+
+integer          iel,isou
+double precision ff, tau
+
+type(var_cal_opt) vcopt
+
+character(len=80) :: fname
+
+integer, allocatable, dimension(:) :: lstelt
+double precision, dimension(:), pointer ::  cpro_rom
+double precision, dimension(:), pointer ::  cvar_var
+
+!===============================================================================
+
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
+!===============================================================================
+
+if (.true.) return
+
+!===============================================================================
+! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
+
+
+!===============================================================================
+! 1. Initialization
+!===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
+
+! --- Get the density array in cpro_rom
+call field_get_val_s(icrom, cpro_rom)
+
+! --- Get the array of the current turbulent variable and its name
+call field_get_val_s(f_id, cvar_var)
+call field_get_name(f_id, fname)
+
+! --- Get variable calculation options
+call field_get_key_struct_var_cal_opt(f_id, vcopt)
+
+if (vcopt%iwarni.ge.1) then
+  write(nfecra,1000)
+endif
+
+!===============================================================================
+! 2. Example of arbitrary additional source term for turbulence models
+!    (Source term on the TKE 'k' here)
+
+!      Source term for cvar_var:
+!         rho cell_f_vol d(cvar_var)/dt       = ...
+!                        ... - rho*cell_f_vol*ff - rho*cell_f_vol*cvar_var/tau
+
+!      With ff=3.d0 and tau = 4.d0
+
+!===============================================================================
+
+! NB the turbulence variable names are:
+! - 'k' and 'epsilon' for the k-epsilon models
+! - 'r11', 'r22', 'r33', 'r12', 'r13', 'r23' and 'epsilon'
+!    for the Rij-epsilon LRR and SSG
+! - 'r11', 'r22', 'r33', 'r12', 'r13', 'r23', 'epsilon' and 'alpha' for the EBRSM
+! - 'k', 'epsilon', 'phi' and 'f_bar' for the phi-model
+! - 'k', 'epsilon', 'phi' and 'alpha' for the Bl-v2-k model
+! - 'k' and 'omega' for the k-omega turbulence model
+! - 'nu_tilda' for the Spalart Allmaras model
+
+if (.false.) then
+  if (trim(fname).eq.'k') then
+
+    ff  = 3.d0
+    tau = 4.d0
+
+    ! --- Explicit source terms
+    do iel = 1, ncel
+      do isou = 1, 6
+        crvexp(isou,iel) = -cpro_rom(iel)*cell_f_vol(iel)*ff
+      enddo
+    enddo
+
+    ! --- Implicit source terms
+    !        crvimp is already initialized to 0, no need to set it here
+    do iel = 1, ncel
+      do isou = 1, 6
+        crvimp(isou,isou,iel) = -cpro_rom(iel)*cell_f_vol(iel)/tau
+      enddo
+    enddo
+
+  endif
+endif
+
+!--------
+! Formats
+!--------
+
+ 1000 format(' User source terms for turbulence model',/)
+
+!----
+! End
+!----
+
+! Deallocate the temporary array
+deallocate(lstelt)
+
+return
+end subroutine cs_user_turbulence_source_terms2

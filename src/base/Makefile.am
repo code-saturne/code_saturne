@@ -185,6 +185,7 @@ calhyd.f90 \
 caltri.f90 \
 catsma.f90 \
 catsmv.f90 \
+catsmt.f90 \
 clca66.f90 \
 clpsca.f90 \
 clptrg.f90 \

@@ -34,8 +34,8 @@
 !> - isou=2 for \f$ R_{22} \f$
 !> - isou=3 for \f$ R_{33} \f$
 !> - isou=4 for \f$ R_{12} \f$
-!> - isou=5 for \f$ R_{13} \f$
-!> - isou=6 for \f$ R_{23} \f$
+!> - isou=5 for \f$ R_{23} \f$
+!> - isou=6 for \f$ R_{13} \f$
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -177,10 +177,7 @@ double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 double precision, dimension(:), pointer :: viscl
 double precision, dimension(:,:), pointer:: c_st_prv
 
-type pmapper_double_r1
-   double precision, dimension(:),  pointer :: p !< rank 1 array pointer
-end type pmapper_double_r1
-type(pmapper_double_r1), allocatable, dimension(:,:) :: cvara_r
+double precision, allocatable, dimension(:,:,:) :: cvara_r !TODO : with pmapper_double_r3
 
 !===============================================================================
 
@@ -275,13 +272,18 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
 
 
   ! Build the interleaved Reynolds tensor
-  allocate(cvara_r(3,3))
-  do ii = 1, 3
-    do kk = 1, 3
-      call field_get_val_prev_s(ivarfl(ivar_r(ii,kk)), cvara_r(ii,kk)%p)
-    enddo
+  allocate(cvara_r(3,3,ncel))
+  do iel = 1, ncel
+    cvara_r(1,1,iel) = cvara_var(1,iel)
+    cvara_r(2,2,iel) = cvara_var(2,iel)
+    cvara_r(3,3,iel) = cvara_var(3,iel)
+    cvara_r(1,2,iel) = cvara_var(4,iel)
+    cvara_r(2,3,iel) = cvara_var(5,iel)
+    cvara_r(1,3,iel) = cvara_var(6,iel)
+    cvara_r(2,1,iel) = cvara_var(4,iel)
+    cvara_r(3,2,iel) = cvara_var(5,iel)
+    cvara_r(3,1,iel) = cvara_var(6,iel)
   enddo
-
 
   ! Coefficient of the "Coriolis-type" term
   if (icorio.eq.1) then
@@ -297,16 +299,16 @@ endif
 !===============================================================================
 ! 2. User source terms
 !===============================================================================
-do isou = 1, dimrij
-  call cs_user_turbulence_source_terms &
-  !===================================
-   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-     ivarfl(ivar +isou -1)    ,                                              &
-     icepdc , icetsm , itypsm ,                                     &
-     ckupdc , smacel ,                                              &
-     smbr(isou,:)   , rovsdt(isou,isou,:) )
+call cs_user_turbulence_source_terms2 &
+!===================================
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(ivar)    ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
+   ckupdc , smacel ,                                              &
+   smbr   , rovsdt )
 
   !     If we extrapolate the source terms
+do isou = 1, dimrij
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       !       Save for exchange
@@ -353,12 +355,12 @@ do isou = 1, dimrij
     iiun = 1
 
     ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma (*theta)
-    call catsma &
+    call catsmt &
     !==========
-   ( ncelet , ncel   , ncesmp , iiun   , isto2t , thetv  ,          &
-     icetsm , itypsm(:,ivar + isou - 1)  ,                          &
-     volume , cvara_var(isou,:)       , smacel(:,ivar+isou-1)   , smacel(:,ipr) ,  &
-     smbr(isou,:)   ,  rovsdt(isou,isou,:) , w1 )
+   ( ncelet , ncel   , ncesmp , iiun     , isto2t , thetv  ,          &
+     icetsm , itypsm(:,ivar + isou - 1)  ,                            &
+     volume , cvara_var  , smacel(:,ivar+isou-1)  , smacel(:,ipr) ,   &
+     smbr   ,  rovsdt    , w1 )
 
     ! If we extrapolate the source terms we put Gamma Pinj in the previous st
     if (st_prv_id.ge.0) then
@@ -476,8 +478,8 @@ do iel=1,ncel
         do jj = ii, 3
           do kk = 1, 3
             xprod(ii,jj) = xprod(ii,jj)                             &
-                     - ccorio*( matrot(ii,kk)*cvara_r(jj,kk)%p(iel) &
-                     + matrot(jj,kk)*cvara_r(ii,kk)%p(iel) )
+                     - ccorio*( matrot(ii,kk)*cvara_r(jj,kk,iel) &
+                     + matrot(jj,kk)*cvara_r(ii,kk,iel) )
           enddo
         enddo
       enddo
