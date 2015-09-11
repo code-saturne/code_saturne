@@ -290,7 +290,7 @@ if (ipart .eq. -1) then
 
     do iloc = 1, ncelps
       iel = lstcel(iloc)
-      scel(iloc) = cmom_2(iel) - (cmom_1(iel))
+      scel(iloc) = cmom_2(iel) - (cmom_1(iel))**2
     enddo
 
     idimt = 1        ! 1: scalar, 3: vector, 6/9: symm/non-symm tensor
