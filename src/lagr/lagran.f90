@@ -1118,8 +1118,8 @@ module lagran
 
   !> activation (=1) or not (=0) of the added-mass term.
   !> \f[ \DP{u_p} = - \dfrac{1}{\rho_p} \grad P + \dfrac{u_s-u_p}{\tau_p}
-  !>       + g +1/2 C_A \dfrac{\rho_f}{\rho_p}
-  !>       + \left( \dfrac{Du}{Dt} -\DP{u_p} \right)
+  !>       + g
+  !>       +1/2 C_A \dfrac{\rho_f}{\rho_p} \left( \dfrac{Du}{Dt}-\DP{u_p} \right)
   !> \f]
   !> and
   !>  \f[ \rho_f \dfrac{Du}{Dt} \simeq  - \grad P + \rho_f g \f]
