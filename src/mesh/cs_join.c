@@ -281,10 +281,11 @@ _get_work_struct(cs_join_param_t         param,
   if (param.verbosity > 1)
     bft_printf(_("\n  Sorted possible intersections between faces.\n"));
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Sorting possible intersections between faces:   %10.3g\n"),
-     clock_end - clock_start);
+  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Sorting possible intersections between faces:   %10.3g\n"),
+       clock_end - clock_start);
 
   /* Define a distributed cs_join_mesh_t structure to store the connectivity
      of the intersecting faces associated to their bounding boxes in
@@ -439,10 +440,11 @@ _build_join_structures(cs_join_t            *this_join,
   /* log performance info of previous step here only to simplify
      "pretty printing". */
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Definition of local joining mesh:               %10.3g\n"),
-     clock_end - clock_start);
+  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Definition of local joining mesh:               %10.3g\n"),
+       clock_end - clock_start);
 
   bft_printf_flush();
 
@@ -525,10 +527,11 @@ _intersect_edges(cs_join_t               *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Edge intersections:                             %10.3g\n"),
-     clock_end - clock_start);
+  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Edge intersections:                             %10.3g\n"),
+       clock_end - clock_start);
 
   clock_start = clock_end;
 
@@ -636,14 +639,17 @@ _intersect_edges(cs_join_t               *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Creation of new vertices:                       %10.3g\n"),
-     clock_end - clock_start);
+  if (param.verbosity > 0) {
 
-  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Creation of new vertices:                       %10.3g\n"),
+       clock_end - clock_start);
+
     bft_printf(_("\n"
                  "  Edge intersections and vertex creation done.\n"));
+
+  }
 
   /* Returns pointers */
 
@@ -984,11 +990,11 @@ _merge_vertices(cs_join_t                *this_join,
 
   clock_m_end = cs_timer_wtime();
 
-
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Merging vertices:                               %10.3g\n"),
-     clock_m_end - clock_m_start);
+  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Merging vertices:                               %10.3g\n"),
+       clock_m_end - clock_m_start);
 
   cs_join_eset_destroy(vtx_eset);
 
@@ -1053,15 +1059,19 @@ _merge_vertices(cs_join_t                *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Updating structures with vertex merging:        %10.3g\n"),
-     clock_end - clock_start - (clock_m_end - clock_m_start));
+  if (param.verbosity > 0) {
 
-  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Updating structures with vertex merging:        %10.3g\n"),
+       clock_end - clock_start - (clock_m_end - clock_m_start));
+
     bft_printf(_("\n"
                  "  Merge vertices and mesh update done.\n"));
-  bft_printf_flush();
+
+    bft_printf_flush();
+
+  }
 
   /* Post if required and level of verbosity is reached */
 
@@ -1206,10 +1216,11 @@ _split_faces(cs_join_t           *this_join,
 
   clock_end = cs_timer_wtime();
 
-  cs_log_printf
-    (CS_LOG_PERFORMANCE,
-     _("    Split old faces and reconstruct new faces:      %10.3g\n"),
-     clock_end - clock_start);
+  if (param.verbosity > 0)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("    Split old faces and reconstruct new faces:      %10.3g\n"),
+       clock_end - clock_start);
 
   bft_printf_flush();
 

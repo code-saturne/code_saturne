@@ -4,6 +4,9 @@ Version 4.0.3 (unreleased)
 Bug fixes:
 ----------
 
+- Do not output joining statistics for each time step in performance.log for
+  transient turbomachinery computations.
+
 - Fix time moment non-integer start times defined through the GUI.
 
 - Fix detection of script type in runcase when line ends with "run (this
