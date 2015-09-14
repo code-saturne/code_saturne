@@ -61,6 +61,10 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
+/* Align to 64-bit size for better performance */
+
+#define CS_ALIGN_SIZE(s) (((s-1)/8+1)*8)
+
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -107,7 +111,7 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
                        size_t                index)
 {
   size_t i;
-  size_t key_size = strlen(key);
+  size_t key_size = CS_ALIGN_SIZE(strlen(key) + 1);
 
   /* Resize map arrays if necessary */
 
@@ -127,9 +131,9 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
     }
   }
 
-  if (m->keys_size + key_size + 1 >= m->max_keys_size) {
+  if (m->keys_size + key_size >= m->max_keys_size) {
 
-    size_t min_size = m->keys_size + key_size + 1;
+    size_t min_size = m->keys_size + key_size;
     size_t prev_size = m->max_keys_size;
     char *old_addr = m->keys;
     ptrdiff_t addr_shift = 0;
@@ -165,7 +169,7 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
   m->id[index] = id;
   m->reverse_id[m->size] = index;
 
-  m->keys_size += key_size + 1;
+  m->keys_size += key_size;
 
   m->size += 1;
 }
