@@ -97,10 +97,11 @@ def run_autovnv_command(_c, _log, pythondir = None):
         import sys
         exc_info = sys.exc_info()
         bt = traceback.format_exception(*exc_info)
-        _log.write(bt)
+        for l in bt:
+            _log.write(l)
+        retcode = 0
         del exc_info
         _l = __text("unknown command")
-        retcode = 0
         t1 = 0.
         t2 = 0.
 
