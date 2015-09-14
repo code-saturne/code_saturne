@@ -2408,7 +2408,7 @@ void CS_PROCF (csivis, CSIVIS) (void)
           if (_scalar_properties_choice(i+1, &choice1))
             if (iscalt != i+1)
               cs_field_set_key_int(f, kivisl, choice1 - 1);
-          // for darcy we impose variable property
+          // for Darcy we impose variable property
           if (cs_gui_strcmp(vars->model, "darcy_model"))
             if (iscalt != i+1)
               cs_field_set_key_int(f, kivisl, 0);
@@ -4634,7 +4634,6 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
   int n_fields = cs_field_n_fields();
   const int kivisl = cs_field_key_id("scalar_diffusivity_id");
   const int kscavr = cs_field_key_id("first_moment_id");
-  const int keysca = cs_field_key_id("scalar_diffusivity_id");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
@@ -4660,7 +4659,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       }
 
       if (user_law) {
-        int diff_id = cs_field_get_key_int(f, keysca);
+        int diff_id = cs_field_get_key_int(f, kivisl);
         cs_field_t *c_prop = NULL;
         if (diff_id > -1)
           c_prop = cs_field_by_id(diff_id);
@@ -5361,7 +5360,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
 
       int user_id = -1;
       int n_fields = cs_field_n_fields();
-      const int keysca = cs_field_key_id("scalar_diffusivity_id");
+      const int kivisl = cs_field_key_id("scalar_diffusivity_id");
 
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t *f = cs_field_by_id(f_id);
@@ -5381,7 +5380,7 @@ void CS_PROCF (uidapp, UIDAPP) (const cs_int_t  *permeability,
           strcpy(diffname, f->name);
           strcat(diffname, "_diffusivity");
 
-          int diff_id = cs_field_get_key_int(f, keysca);
+          int diff_id = cs_field_get_key_int(f, kivisl);
           cs_field_t *c_prop = NULL;
           if (diff_id >= 0)
             c_prop = cs_field_by_id(diff_id);
