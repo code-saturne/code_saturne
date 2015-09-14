@@ -524,7 +524,7 @@ class Case(object):
 
         if args != None:
             cmd += (" " + args)
-            l = string.split(args)
+            l = args.split()
             try:
                 i = l.index('--threshold')
                 self.threshold = l[i+1]
