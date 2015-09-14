@@ -115,13 +115,13 @@ double precision, pointer, dimension(:) :: prhyd
 logical          interleaved, must_return
 
 integer          iel   , ifac  , inod  , ivar  , iscal , iappel, n_fans
-integer          ncv   , iok   , ifld  , nfld  , f_id  , f_dim  , f_type
+integer          iok   , ifld  , nfld  , f_id  , f_dim  , f_type
 integer          nbccou
 integer          ntrela
 integer          icmst
 
 integer          isvhb, iz
-integer          ii    , ientha, ippcv , ikpdc
+integer          ii    , ippcv , ikpdc
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
 integer          nbzfmx, nozfmx
@@ -1180,42 +1180,20 @@ do while (iterns.le.nterup)
   !     FACILEMENT (I.E. SANS RECALCULS INUTILES) LES TERMES A
   !     ENVOYER POUR LES COUPLAGES AUX BORDS (TYPE SYRTHES)
 
-
-  ! On indique si la variable couplee est l'enthalpie
-  ientha = 0
-  if(iscalt.gt.0) then
-    if(itherm.eq.2) then
-      ientha = 1
-    endif
-  endif
-
-  ! Compressible : on indique si la variable couple est l'energie
-
-  if (ippmod(icompf).ge.0) then
-    if(iscalt.gt.0) then
-      if(itherm.eq.3) then
-        ientha = 2
-      endif
-    endif
-  endif
-
   ! En compressible et si on couple ave l'energie
   ! on recupere le Cv de la phase couplee
 
-  if ( ippmod(icompf).ge.0 .and. ientha .eq. 2 ) then
+  if (itherm .eq. 3) then
 
     if(icv.gt.0) then
       ippcv = ipproc(icv)
-      ncv   = ncelet
       cvcst = 0.d0
     else
       ippcv = 1
-      ncv   = 1
       cvcst = cv0
     endif
   else
     ippcv = 1
-    ncv   = 1
     cvcst = 0.d0
   endif
 
@@ -1223,17 +1201,14 @@ do while (iterns.le.nterup)
   !  constant ou variable
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-    call coupbo &
-  ( ncv    , ientha ,                                              &
-    cvcst  , propce(:,ippcv),                                      &
-    hbord  , theipb )
+    call coupbo(itherm, cvcst, hbord, theipb)
 
     if (nfpt1t.gt.0) then
       call cou1do &
     ( nvar   , nscal  , nfpt1d ,                                   &
-      ientha , ifpt1d , iclt1d ,                                   &
+      ifpt1d , iclt1d ,                                            &
       tppt1d , tept1d , hept1d , fept1d ,                          &
-      xlmbt1 , rcpt1d , dtpt1d , dt     ,                          &
+      xlmbt1 , rcpt1d , dtpt1d , dt     , cvcst  ,                 &
       hbord  , theipb )
     endif
 

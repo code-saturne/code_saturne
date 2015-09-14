@@ -94,12 +94,11 @@ double precision rcodcl(nfabor,nvarcl,3)
 
 integer          ll, nbccou, inbcou, inbcoo, nbfcou
 integer          ifac, iloc, iscal
-integer          mode, flag
+integer          mode
 integer          issurf
-double precision temper, enthal
 
 integer, dimension(:), allocatable :: lfcou
-double precision, dimension(:), allocatable :: thpar
+double precision, dimension(:), allocatable :: thpar, h_b
 
 !===============================================================================
 
@@ -110,7 +109,6 @@ double precision, dimension(:), allocatable :: thpar
 ! Get number of coupling cases
 
 call nbcsyr (nbccou)
-!==========
 
 !---> Loop on couplings: get "tparoi" array for each coupling and apply
 !                        matching boundary condition.
@@ -123,7 +121,6 @@ do inbcou = 1, nbccou
   ! This is a surface coupling if issurf = 1
 
   call tsursy(inbcoo, issurf)
-  !==========
 
   if (issurf.eq.1) then
 
@@ -132,21 +129,19 @@ do inbcou = 1, nbccou
     ! Number of boundary faces per coupling case
 
     call nbesyr(inbcoo, mode, nbfcou)
-    !==========
 
-    ! Memory management to receive array
+    ! Memory management to receive arrays
+
     allocate(lfcou(nbfcou))
     allocate(thpar(nbfcou))
 
     ! Read wall temperature and interpolate if necessary.
 
     call varsyi(inbcou, mode, thpar)
-    !==========
 
     ! Prescribe wall temperature
     inbcoo = inbcou
     call leltsy(inbcoo, mode, lfcou)
-    !==========
 
     do iscal = 1, nscal
 
@@ -195,17 +190,25 @@ do inbcou = 1, nbccou
 
         if (iscal.eq.iscalt .and. itherm.eq.2) then
 
-          do iloc = 1, nbfcou
+          allocate(h_b(nfabor))
 
-            ifac = lfcou(iloc)
-
-            temper = rcodcl(ifac,ll,1)
-            flag   = -1
-            call usthht(flag, enthal, temper)
-            !==========
-            rcodcl(ifac,ll,1) = enthal
-
+          do iloc = 1, nfabor
+            h_b(iloc) = 0
           enddo
+
+          do iloc = 1, nbfcou
+            ifac = lfcou(iloc)
+            h_b(ifac) = thpar(iloc)
+          enddo
+
+          call b_h_to_t(h_b, h_b)
+
+          do iloc = 1, nbfcou
+            ifac = lfcou(iloc)
+            rcodcl(ifac,ll,1) = h_b(ifac)
+          enddo
+
+          deallocate(h_b)
 
         endif
 
@@ -219,6 +222,7 @@ do inbcou = 1, nbccou
   endif ! This coupling is a surface coupling
 
 enddo ! Loop on all syrthes couplings
+
 
 !===============================================================================
 ! End of boundary couplings

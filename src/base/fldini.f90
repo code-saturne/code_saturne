@@ -566,6 +566,9 @@ if (ippmod(igmix).ge.0) then
 
 endif
 
+! Some C mappings
+call cs_field_pointer_map_boundary
+
 return
 
 end subroutine

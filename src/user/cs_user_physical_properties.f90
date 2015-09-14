@@ -121,6 +121,7 @@ use ppthch
 use ppincl
 use field
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -860,6 +861,7 @@ use ppincl
 use elincl
 use field
 use mesh
+use cs_c_bindings
 
 !===============================================================================
 
@@ -877,7 +879,6 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          iel, ifcvsl
-integer          mode
 
 double precision tp
 double precision xkr   , xbr
@@ -982,31 +983,16 @@ if (ippmod(ieljou).ge.1) then
 !                                scalar_diffusivity_id est >= 0 pour
 !                                les scalaires iscalt, ipotr, ipoti
 
-
-
 !       Calcul de la temperature a partir de l'enthalpie
 !       ------------------------------------------------
 
 !       Ceci depend largement des choix utilisateur en
 !         matiere de loi H-T (T en Kelvin)
 
-!       On demande de fournir cette loi dans le sous programme usthht
-!          (users/usthht.f90)
-!           usthht fournit en particulier un exemple d'interpolation
-!            a partir d'une tabulation utilisateur
-!           usthht en mode T->H sera utilise pour l'initialisation
-!            de l'enthalpie dans useliv.
-
-!       mode = 1 : h => ivarfl(isca(ihm)) -> t => iprpfl(itemp)
-  mode = 1
-
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_scalt)
   call field_get_val_s(iprpfl(itemp), cpro_temp)
 
-  do iel = 1, ncel
-    call usthht (mode,cvar_scalt(iel),cpro_temp(iel))
-  enddo
-
+  call c_h_to_t(cvar_scalt, cpro_temp)
 
 !       Masse volumique au centre des cellules
 !       --------------------------------------

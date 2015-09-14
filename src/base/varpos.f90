@@ -598,6 +598,8 @@ endif
 !===============================================================================
 
 call cs_field_pointer_map_base
+call cs_field_pointer_map_boundary
+
 call cs_turbulence_model_init_bc_ids
 
 return

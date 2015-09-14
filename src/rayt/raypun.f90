@@ -227,7 +227,7 @@ call viscfa(imvisf, ckmel, viscf, viscb)
 ! 3.  RESOLUTION
 !===============================================================================
 
-!     Parametre pour schemas en temps et stationnaire
+! Parametre pour schemas en temps et stationnaire
 thetap = 1.d0
 idtva0 = 0
 

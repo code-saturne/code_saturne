@@ -1660,9 +1660,9 @@ if (b_f_id .ge. 0) then
 else
   bval_s => null()
   ! if thermal variable has no boundary but temperature does, use it
-  if (itemp.gt.0) then
-    call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
-    if (b_f_id.ge.0) call field_get_val_s(b_f_id, bval_s)
+  if (itherm.eq.2 .and. itempb.ge.0) then
+    b_f_id = itempb
+    call field_get_val_s(b_f_id, bval_s)
   endif
 endif
 

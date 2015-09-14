@@ -23,8 +23,8 @@
 subroutine coupbo &
 !================
 
- ( ncv    , ientha ,                                              &
-   cvcst  , cv     ,                                              &
+ ( itherm ,                                                       &
+   cvcst  ,                                                       &
    hbord  , tbord  )
 
 !===============================================================================
@@ -38,12 +38,9 @@ subroutine coupbo &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncv              ! i  ! <-- ! dimension de cv (ncelet ou 1)                  !
-! ientha           ! i  ! <-- ! 1 si tparoi est une enthalpie                  !
-!                  ! i  ! <-- ! 2 si tparoi est une energie                    !
-!                  !    !     !    (compressible)                              !
+! itherm           ! i  ! <-- ! 1: tparoi is a temperature ; 2: enthalpy       !
+!                  !    !     ! 3: total energy (compressible)                 !
 ! cvcst            ! r  ! <-- ! chaleur specifique si constante                !
-! cv(ncv)          ! ra ! <-- ! chaleur specifique si variable                 !
 ! hbord(nfabor)    ! ra ! <-- ! coefficients d'echange aux bords               !
 ! tbord(nfabor)    ! ra ! <-- ! temperatures aux bords                         !
 !__________________!____!_____!________________________________________________!
@@ -71,11 +68,10 @@ implicit none
 
 ! Arguments
 
-integer          ncv    , ientha
+integer          itherm
 
 double precision cvcst
 
-double precision cv(ncv)
 double precision hbord(nfabor),tbord(nfabor)
 
 ! Local variables
@@ -84,23 +80,16 @@ integer          nbccou, inbcou, inbcoo, nbfcou, ifac, iloc, iel
 integer          mode, flag
 integer          iepsel, ifinwa
 integer          issurf
-double precision enthal, temper, energ, cvt
+double precision energ, cvt
 
 integer, dimension(:), allocatable :: lfcou
 double precision, dimension(:), allocatable :: tfluid, hparoi, wa
 double precision, dimension(:,:), pointer :: vel
-double precision, dimension(:), pointer :: cpro_cp
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cpro_rho
 
 !===============================================================================
 
 ! Map field arrays
-call field_get_val_v(ivarfl(iu), vel)
-if(icp.gt.0 .and. ientha.eq.1) then
-  call field_get_val_s(iprpfl(icp), cpro_cp)
-endif
-call field_get_val_s(icrom, crom)
-call field_get_val_s(ibrom, brom)
 
 !===============================================================================
 
@@ -116,7 +105,50 @@ ifinwa = 0
 ! Get number of coupling cases
 
 call nbcsyr(nbccou)
-!==========
+
+flag = 0
+do inbcou = 1, nbccou
+  inbcoo = inbcou
+  call tsursy(inbcoo, issurf)
+  if (issurf.eq.1) then
+    flag = 1
+    exit
+  endif
+enddo
+
+if (flag.eq.0) return
+
+! Memory management to build arrays (large enough for all cases)
+
+allocate(lfcou(nfabor))
+allocate(tfluid(nfabor))
+allocate(hparoi(nfabor))
+
+! Prepare conversion to temperature for enthalpy or energy
+! (check for surface couplings to make sure it is needed,
+! exit earlier otherwise)
+
+if (itherm.eq.2) then
+
+  if (icp.gt.0) then
+    call field_get_val_s(iprpfl(icp), cpro_cp)
+  endif
+  ! Temperature near boundary faces
+  allocate(wa(nfabor))
+  call b_h_to_t(tbord, wa)
+
+else if (itherm.eq.3) then
+
+  call field_get_val_v(ivarfl(iu), vel)
+  if (icv.gt.0) then
+    call field_get_val_s(iprpfl(icv), cpro_cv)
+  endif
+  call field_get_val_s(icrom, cpro_rho)
+  ! Epsilon sup for perfect gas at cells
+  allocate(wa(ncelet))
+  call cs_cf_thermo_eps_sup(cpro_rho, wa, ncel)
+
+endif
 
 !---> Loop on couplings
 
@@ -128,7 +160,6 @@ do inbcou = 1, nbccou
   ! This is a surface coupling if issurf = 1
 
   call tsursy(inbcoo, issurf)
-  !==========
 
   if (issurf.eq.1) then
 
@@ -137,28 +168,23 @@ do inbcou = 1, nbccou
     ! Number of boundary faces per coupling case
 
     call nbesyr(inbcoo, mode, nbfcou)
-    !==========
-
-    ! Memory management to build arrays
-    allocate(lfcou(nbfcou))
-    allocate(tfluid(nbfcou))
-    allocate(hparoi(nbfcou))
 
     ! Loop on coupled faces to compute coefficients
 
     inbcoo = inbcou
     call leltsy(inbcoo, mode, lfcou)
-    !==========
 
-    do iloc = 1, nbfcou
+    if (itherm.eq.1) then
 
-      ifac = lfcou(iloc)
+      do iloc = 1, nbfcou
 
-      ! Saved fluid temperatures and exchange coefficients
-      tfluid(iloc) = tbord(ifac)
-      hparoi(iloc) = hbord(ifac)
+        ifac = lfcou(iloc)
 
-    enddo
+        ! Saved fluid temperatures and exchange coefficients
+        tfluid(iloc) = tbord(ifac)
+        hparoi(iloc) = hbord(ifac)
+
+      enddo
 
     ! In enthalpy formulation, transform to temperatures for SYRTHES
     !  To conserve flux Phi = (lambda/d     ) Delta T
@@ -166,25 +192,35 @@ do inbcou = 1, nbccou
     !  we multiply hbord = lambda/(d Cp) by Cp in the adjacent cell.
     !  Conservation is not guaranteed, so we add a warning.
 
-    if (ientha.eq.1) then
+    else if (itherm.eq.2) then
 
-      write(nfecra,1000)
-      flag = 1
       do iloc = 1, nbfcou
+
+        ifac = lfcou(iloc)
+
+        ! Saved fluid temperatures and exchange coefficients
+        tfluid(iloc) = tbord(ifac)
+        hparoi(iloc) = hbord(ifac)
+
+      enddo
+
+      allocate(wa(nfabor))
+
+      call b_h_to_t(tbord, wa)
+
+      do iloc = 1, nbfcou
+
         ifac = lfcou(iloc)
         iel  = ifabor(ifac)
-        enthal = tfluid(iloc)
-        call usthht(flag, enthal, temper)
-        !==========
-        tfluid(iloc) = temper
+        tfluid(iloc) = wa(ifac)
         if (icp.gt.0) then
-          hparoi(iloc) = hparoi(iloc)*cpro_cp(iel)
+          hparoi(iloc) = hbord(ifac)*cpro_cp(iel)
         else
-          hparoi(iloc) = hparoi(iloc)*cp0
+          hparoi(iloc) = hbord(ifac)*cp0
         endif
       enddo
 
-    else if (ientha.eq.2) then
+    else if (itherm.eq.3) then
 
       ! In energy formulation, transform to temperatures for SYRTHES
       !  To conserve flux Phi = (lambda/d     ) Delta T
@@ -198,32 +234,23 @@ do inbcou = 1, nbccou
 
       ! Compute e - CvT
 
-      iepsel = 1
-      ifinwa = iepsel + ncelet
-      allocate(wa(ifinwa))
-
-      ! At cell centers
-      call cs_cf_thermo_eps_sup(crom, wa(iepsel), ncel)
-
       do iloc = 1, nbfcou
         ifac  = lfcou(iloc)
         iel   = ifabor(ifac)
-        energ = tfluid(iloc)
+        energ = tbord(ifac)
         cvt   = energ                                               &
                       -(0.5d0*(  vel(1,iel)**2                      &
                                + vel(2,iel)**2                      &
                                + vel(3,iel)**2)                     &
-                        + wa(iepsel+iel-1)           )
-        if (ncv.eq.ncelet) then
-          tfluid(iloc) = cvt/cv(iel)
-          hparoi(iloc) = hparoi(iloc)*cv(iel)
+                        + wa(iel) )
+        if (icv.gt.0) then
+          tfluid(iloc) = cvt/cpro_cv(iel)
+          hparoi(iloc) = hbord(ifac)*cpro_cv(iel)
         else
           tfluid(iloc) = cvt/cvcst
-          hparoi(iloc) = hparoi(iloc)*cvcst
+          hparoi(iloc) = hbord(ifac)*cvcst
         endif
       enddo
-
-      deallocate(wa)
 
     endif
 
@@ -231,44 +258,23 @@ do inbcou = 1, nbccou
 
     inbcoo = inbcou
     call varsyo(inbcoo, mode, lfcou, tfluid, hparoi)
-    !==========
-
-    ! Free memory
-    if (ientha .eq. 2) deallocate(wa)
-    deallocate(hparoi)
-    deallocate(tfluid)
-    deallocate(lfcou)
 
   endif ! This coupling is a surface coupling
 
 enddo ! Loop on all syrthes couplings
+
+! Free memory
+
+if (itherm .gt. 1) deallocate(wa)
+
+deallocate(hparoi)
+deallocate(tfluid)
+deallocate(lfcou)
 
 !===============================================================================
 ! End of boundary couplings
 !===============================================================================
 
 return
-
-! Formats
-
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@ @@ ATTENTION : COUPLAGE SYRTHES AVEC CALCUL EN ENTHALPIE   ',/,&
-'@    =========                                               ',/,&
-'@      OPTION NON VALIDEE - CONTACTER L''EQUIPE DE DVPT      ',/,&
-'@                                                            ')
-
-#else
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@ @@ WARNING: SYRTHES COUPLING WITH ENTHALPY CALCULATION     ',/,&
-'@    ========                                                ',/,&
-'@      OPTION NOT VALIDATED - CONTACT THE SUPPORT            ',/,&
-'@                                                            ')
-
-#endif
 
 end subroutine

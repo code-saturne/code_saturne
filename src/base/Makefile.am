@@ -181,6 +181,9 @@ addfld.f90 \
 alelav.f90 \
 alemav.f90 \
 altycl.f90 \
+b_t_to_h.f90 \
+b_h_to_t.f90 \
+c_h_to_t.f90 \
 calhyd.f90 \
 caltri.f90 \
 catsma.f90 \

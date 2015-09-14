@@ -461,6 +461,7 @@ ibeta  = 0
 
 iforbr = -1
 iyplbr = -1
+itempb = -1
 
 ! --- Ici tout numvar est initialise.
 

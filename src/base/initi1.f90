@@ -105,17 +105,15 @@ enddo
 !===============================================================================
 
 call iniusi
-!==========
 
 call ppini1
-!==========
 
 ! Radiative model options
 call rayopt
-!==========
+
+! Additional fields
 
 call addfld
-!==========
 
 ! Time moments
 
@@ -133,7 +131,6 @@ enddo
 
 if (iihmpr.eq.1) then
   call csenso                                                   &
-  !==========
      ( nvppmx, ncapt,  nthist, frhist, ntlist, iecaux,          &
        ihisvr, tplfmt, xyzcap )
 endif
@@ -144,12 +141,10 @@ ttsuit = -1.d0
 wtsuit = -1.d0
 
 call dflsui(ntsuit, ttsuit, wtsuit);
-!==========
 
 ! Lagrangian model options
 
 call lagopt
-!==========
 
 !===============================================================================
 ! 3. DEFINITION DES COUPLAGES AVEC SYRTHES
@@ -160,33 +155,27 @@ call lagopt
 
 if (iihmpr.eq.1) then
   call uisyrc
-  !==========
 endif
 
 call ussyrc
-!==========
 
 call ussatc
-!==========
 
 !===============================================================================
 ! 4. MODIFS APRES USINI1
 !===============================================================================
 
 call modini
-!==========
 
 !===============================================================================
-! 5. Initial definition of fields
+! 5. Some additional fields and mappings
 !===============================================================================
 
 call fldini
-!==========
 
 call gui_postprocess_fields
 
 call usipes(nmodpp)
-!==========
 
 call gui_linear_solvers
 call user_linear_solvers
@@ -218,7 +207,6 @@ enddo
 iok = 0
 
 call verini (iok)
-!==========
 
 if(iok.gt.0) then
   write(nfecra,9999)iok
@@ -283,7 +271,6 @@ endif
 !===============================================================================
 
 call impini
-!==========
 
 return
 end subroutine

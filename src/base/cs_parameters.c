@@ -740,9 +740,9 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
   /* Build new field */
 
   char *b_name;
-  size_t l = strlen(f->name) + 2 + 1;
+  size_t l = strlen("boundary_") + strlen(f->name) + 1;
   BFT_MALLOC(b_name, l, char);
-  snprintf(b_name, l, "%s_b", f->name);
+  snprintf(b_name, l, "boundary_%s", f->name);
 
   /* Field may already have been defined */
 

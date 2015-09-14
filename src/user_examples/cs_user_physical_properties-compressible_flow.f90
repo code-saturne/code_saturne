@@ -271,13 +271,6 @@ enddo
 !    of the temperature. All variables are evaluated at the cell centers.
 !===============================================================================
 
-! Warning:
-! =======
-! do not discard the call to the subroutine 'usthht' at the end of this
-! example: its purpose is to calculate the isochoric specific heat.
-! Indeed, this variable needs to be computed from the isobaric specific heat
-! using the thermodynamics laws.
-
 !     To refer to the user-defined scalar number 2 instead, for example, use
 !     ivart = isca(2)
 
@@ -289,7 +282,7 @@ call field_get_val_s(ivarfl(ivart), cvar_scalt)
 
 if (icp.gt.0) call field_get_val_s(iprpfl(icp), cpro_cp)
 
-! --- Stop if the iobaric or iochoric specific heat (cpro_cp or cpro_cv) has not
+! --- Stop if the isobaric or isochoric specific heat (cpro_cp or cpro_cv) has not
 !     been defined as variable
 
 if (icp.le.0) then
@@ -324,7 +317,6 @@ enddo
 call field_get_val_s(iprpfl(icv), cpro_cv)
 call cs_cf_thermo_cv(cpro_cp, cpro_cv, ncel)
 !< [example_3]
-
 
 !===============================================================================
 ! Ex. 4: molecular thermal conductivity varying with temperature

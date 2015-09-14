@@ -24,6 +24,7 @@
 ! Function:
 ! --------
 !> \file cs_coal_thfieldconv1.f90
+!>
 !> \brief Calculation of the gas temperature
 !>        Function with gas enthalpy and concentrations
 !-------------------------------------------------------------------------------
@@ -34,30 +35,15 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     ncelet          number of extended (real + ghost) cells
-!> \param[in]     ncel            number of cells
+!> \param[in]     location_id     mesh location id (cells or boundary faces)
 !> \param[in]     eh              gas enthalpy
 !>                                (j/kg of gaseous mixture)
-!> \param[in]     fuel1           mass fraction CHx1
-!> \param[in]     fuel2           mass fraction CHx2
-!> \param[in]     fuel3           mass fraction CO
-!> \param[in]     fuel4           mass fraction H2S
-!> \param[in]     fuel5           mass fraction H2
-!> \param[in]     fuel6           mass fraction HCN
-!> \param[in]     fuel7           mass fraction NH3
-!> \param[in]     oxyd            mass fraction O2
-!> \param[in]     prod1           mass fraction CO2
-!> \param[in]     prod2           mass fraction H2O
-!> \param[in]     prod3           mass fraction SO2
-!> \param[in]     xiner           mass fraction N2
 !> \param[in,out] tp              gas temperature in kelvin
 !______________________________________________________________________________!
 
 subroutine cs_coal_thfieldconv1 &
- ( ncelet , ncel   ,                                              &
+ ( location_id     ,                                              &
    eh     ,                                                       &
-   fuel1  , fuel2  , fuel3  , fuel4 , fuel5 , fuel6 , fuel7 ,     &
-   oxyd   , prod1  , prod2  , prod3 , xiner ,                     &
    tp     )
 
 !==============================================================================
@@ -76,7 +62,10 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use mesh
 use field
+use cs_c_bindings
+use pointe
 
 !===============================================================================
 
@@ -84,55 +73,72 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+integer          location_id
 
-double precision eh(ncelet)
-double precision fuel1(ncelet), fuel2(ncelet), fuel3(ncelet)
-double precision fuel4(ncelet), fuel5(ncelet), fuel6(ncelet) , fuel7(ncelet)
-double precision oxyd(ncelet), xiner(ncelet)
-double precision prod1(ncelet),prod2(ncelet),prod3(ncelet)
-double precision tp(ncelet)
+double precision eh(*)
+double precision tp(*)
 
 ! Local variables
 
-integer          i, iel, icha
+integer          i, iel, ifac, ielt, nelt, icha
 
 double precision ychx10 , ychx20 , ehchx1 , ehchx2
 double precision den1   , den2 , eh0 , eh1
+double precision f1mc(ncharm), f2mc(ncharm)
 
-integer          iok
-double precision , dimension ( : , : )     , allocatable :: f1mc,f2mc
-double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m
 double precision, dimension(:), pointer :: x1
+double precision, dimension(:), pointer :: fuel1, fuel2, fuel3, fuel4, fuel5
+double precision, dimension(:), pointer :: fuel6, fuel7, oxyd
+double precision, dimension(:), pointer :: prod1, prod2, prod3 , xiner
+type(pmapper_double_r1), dimension(:), allocatable :: cvar_f1m, cvar_f2m
 
 !===============================================================================
+
+call field_get_val_s(iprpfl(iym1(ichx1)), fuel1)
+call field_get_val_s(iprpfl(iym1(ichx2)), fuel2)
+call field_get_val_s(iprpfl(iym1(ico  )), fuel3)
+call field_get_val_s(iprpfl(iym1(ih2s )), fuel4)
+call field_get_val_s(iprpfl(iym1(ihy  )), fuel5)
+call field_get_val_s(iprpfl(iym1(ihcn )), fuel6)
+call field_get_val_s(iprpfl(iym1(inh3 )), fuel7)
+call field_get_val_s(iprpfl(iym1(io2  )), oxyd)
+call field_get_val_s(iprpfl(iym1(ico2 )), prod1)
+call field_get_val_s(iprpfl(iym1(ih2o )), prod2)
+call field_get_val_s(iprpfl(iym1(iso2 )), prod3)
+call field_get_val_s(iprpfl(iym1(in2  )), xiner)
 
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)
 
-!===============================================================================
-! Deallocation dynamic arrays
-!----
-allocate(f1mc(1:ncel,1:ncharb),f2mc(1:ncel,1:ncharb),stat=iok)
-!----
-if ( iok > 0  ) then
-  write(nfecra,*) ' Memory allocation error inside: '
-  write(nfecra,*) '    cs_coal_thfieldconv1         '
+if (location_id .eq. MESH_LOCATION_CELLS) then
+  nelt = ncel
+else if (location_id .eq. MESH_LOCATION_BOUNDARY_FACES) then
+  nelt = nfabor
+else
   call csexit(1)
 endif
+
+ifac = -1
+
 !===============================================================================
 
+allocate(cvar_f1m(ncharb))
+allocate(cvar_f2m(ncharb))
 do icha = 1, ncharb
-  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m)
-  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m)
-  do iel = 1, ncel
-    f1mc(iel,icha) = cvar_f1m(iel) / x1(iel)
-    f2mc(iel,icha) = cvar_f2m(iel) / x1(iel)
-  enddo
+  call field_get_val_s(ivarfl(isca(if1m(icha))), cvar_f1m(icha)%p)
+  call field_get_val_s(ivarfl(isca(if2m(icha))), cvar_f2m(icha)%p)
 enddo
 
 i = npo-1
-do iel = 1, ncel
+
+do ielt = 1, nelt
+
+  if (location_id .eq. MESH_LOCATION_CELLS) then
+    iel = ielt
+  else
+    ifac = ielt
+    iel = ifabor(ifac)
+  endif
 
 ! --- Calculation of enthalpy of the gaseous species CHx1m
 !                                            and CHx2m at TH(NPO)
@@ -142,6 +148,9 @@ do iel = 1, ncel
   ychx20 = zero
   do icha = 1, ncharb
 
+    f1mc(icha) = cvar_f1m(icha)%p(iel) / x1(iel)
+    f2mc(icha) = cvar_f2m(icha)%p(iel) / x1(iel)
+
     den1   = 1.d0                                                  &
          / ( a1(icha)*wmole(ichx1c(icha))                          &
             +b1(icha)*wmole(ico)                                   &
@@ -150,10 +159,10 @@ do iel = 1, ncel
             +e1(icha)*wmole(ihcn)                                  &
             +f1(icha)*wmole(inh3) )
     ychx10 = ychx10                                                &
-            +den1*(f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha)) )
+            +den1*(f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
     ehchx1 = ehchx1                                                &
             +den1*( ehgaze(ichx1c(icha),i+1)                       &
-                   *f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha)) )
+                   *f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
     den2   = 1.d0                                                  &
          / ( a2(icha)*wmole(ichx2c(icha))                          &
             +b2(icha)*wmole(ico)                                   &
@@ -162,17 +171,17 @@ do iel = 1, ncel
             +e2(icha)*wmole(ihcn)                                  &
             +f2(icha)*wmole(inh3) )
     ychx20 = ychx20                                                &
-            +den2 *(f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+            +den2 *(f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
     ehchx2 = ehchx2 + den2 *                                       &
          ( ehgaze(ichx2c(icha),i+1)                                &
-          *f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+          *f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
   enddo
-  if ( ychx10.gt.epzero ) then
+  if (ychx10.gt.epzero) then
     ehchx1 = ehchx1 / ychx10
   else
     ehchx1 = ehgaze(ichx1,i+1)
   endif
-  if ( ychx20.gt.epzero ) then
+  if (ychx20.gt.epzero) then
     ehchx2 = ehchx2 / ychx20
   else
     ehchx2 = ehgaze(ichx2,i+1)
@@ -193,11 +202,19 @@ do iel = 1, ncel
        +prod3(iel)*ehgaze(iso2,i+1)                        &
        +xiner(iel)*ehgaze(in2 ,i+1)
 
-  if ( eh(iel).ge.eh1 ) tp(iel)= th(i+1)
+  if (eh(ielt).ge.eh1) tp(ielt) = th(i+1)
 enddo
 
 i = 1
-do iel = 1, ncel
+
+do ielt = 1, nelt
+
+  if (location_id .eq. MESH_LOCATION_CELLS) then
+    iel = ielt
+  else
+    ifac = ielt
+    iel = ifabor(ifac)
+  endif
 
   ! --- Calculation of enthalpy of the gaseous species CHx1m
   !                                            and CHx2m at TH(1)
@@ -206,6 +223,8 @@ do iel = 1, ncel
   ychx10 = zero
   ychx20 = zero
   do icha = 1, ncharb
+    f1mc(icha) = cvar_f1m(icha)%p(iel) / x1(iel)
+    f2mc(icha) = cvar_f2m(icha)%p(iel) / x1(iel)
     den1   = 1.d0                                                    &
          / ( a1(icha)*wmole(ichx1c(icha))                            &
             +b1(icha)*wmole(ico)                                     &
@@ -214,10 +233,10 @@ do iel = 1, ncel
             +e1(icha)*wmole(ihcn)                                    &
             +f1(icha)*wmole(inh3) )
     ychx10 = ychx10                                                  &
-            +den1*(f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha)) )
+            +den1*(f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
     ehchx1 = ehchx1                                                  &
             +den1*( ehgaze(ichx1c(icha),i)                           &
-                   *f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha)) )
+                   *f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
     den2   = 1.d0                                                     &
          / ( a2(icha)*wmole(ichx2c(icha))                             &
             +b2(icha)*wmole(ico)                                      &
@@ -226,17 +245,17 @@ do iel = 1, ncel
             +e2(icha)*wmole(ihcn)                                     &
             +f2(icha)*wmole(inh3) )
     ychx20 = ychx20                                                   &
-            +den2*(f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+            +den2*(f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
     ehchx2 = ehchx2                                                   &
             +den2*( ehgaze(ichx2c(icha),i)                            &
-                   *f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+                   *f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
   enddo
-  if ( ychx10.gt.epzero ) then
+  if (ychx10.gt.epzero) then
     ehchx1 = ehchx1 / ychx10
   else
     ehchx1 = ehgaze(ichx1,i)
   endif
-  if ( ychx20.gt.epzero ) then
+  if (ychx20.gt.epzero) then
     ehchx2 = ehchx2 / ychx20
   else
     ehchx2 = ehgaze(ichx2,i)
@@ -257,13 +276,21 @@ do iel = 1, ncel
         +prod3(iel)*ehgaze(iso2,i)                          &
         +xiner(iel)*ehgaze(in2 ,i)
 
-  if ( eh(iel) .le. eh0 ) tp(iel)= th(i)
+  if (eh(ielt) .le. eh0 ) tp(ielt)= th(i)
 
 enddo
 
 
 do i = 1, npo-1
-  do iel = 1, ncel
+
+  do ielt = 1, nelt
+
+    if (location_id .eq. MESH_LOCATION_CELLS) then
+      iel = ielt
+    else
+      ifac = ielt
+      iel = ifabor(ifac)
+    endif
 
     ! --- Calculation of enthalpy of the gaseous species CHx1m
     !                                            and CHx2m for TH(I)
@@ -271,6 +298,10 @@ do i = 1, npo-1
     ehchx2 = zero
     ychx10 = zero
     ychx20 = zero
+    do icha = 1, ncharb
+      f1mc(icha) = cvar_f1m(icha)%p(iel) / x1(iel)
+      f2mc(icha) = cvar_f2m(icha)%p(iel) / x1(iel)
+    enddo
     do icha = 1, ncharb
       den1   = 1.d0                                                 &
              / ( a1(icha)*wmole(ichx1c(icha))                       &
@@ -280,10 +311,10 @@ do i = 1, npo-1
                 +e1(icha)*wmole(ihcn)                               &
                 +f1(icha)*wmole(inh3) )
       ychx10 = ychx10                                               &
-              +den1*f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha))
+              +den1*f1mc(icha)*a1(icha)*wmole(ichx1c(icha))
       ehchx1 = ehchx1                                               &
               +den1*( ehgaze(ichx1c(icha),i)                        &
-                     *f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha)) )
+                     *f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
       den2   = 1.d0                                                 &
              / ( a2(icha)*wmole(ichx2c(icha))                       &
                 +b2(icha)*wmole(ico)                                &
@@ -292,17 +323,17 @@ do i = 1, npo-1
                 +e2(icha)*wmole(ihcn)                               &
                 +f2(icha)*wmole(inh3) )
       ychx20 = ychx20                                               &
-              +den2*(f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+              +den2*(f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
       ehchx2 = ehchx2                                               &
               +den2*( ehgaze(ichx2c(icha),i)                        &
-                     *f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+                     *f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
     enddo
-    if ( ychx10.gt.epzero ) then
+    if (ychx10.gt.epzero) then
       ehchx1 = ehchx1 / ychx10
     else
       ehchx1 = ehgaze(ichx1,i)
     endif
-    if ( ychx20.gt.epzero ) then
+    if (ychx20.gt.epzero) then
       ehchx2 = ehchx2 / ychx20
     else
       ehchx2 = ehgaze(ichx2,i)
@@ -335,10 +366,10 @@ do i = 1, npo-1
               +e1(icha)*wmole(ihcn)                                   &
               +f1(icha)*wmole(inh3) )
       ychx10 = ychx10                                                 &
-              +den1*f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha))
+              +den1*f1mc(icha)*a1(icha)*wmole(ichx1c(icha))
       ehchx1 = ehchx1                                                 &
               +den1*( ehgaze(ichx1c(icha),i+1)                        &
-                     *f1mc(iel,icha)*a1(icha)*wmole(ichx1c(icha)) )
+                     *f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
       den2   = 1.d0                                                   &
              / ( a2(icha)*wmole(ichx2c(icha))                         &
                 +b2(icha)*wmole(ico)                                  &
@@ -347,17 +378,17 @@ do i = 1, npo-1
                 +e2(icha)*wmole(ihcn)                                 &
                 +f2(icha)*wmole(inh3) )
       ychx20 = ychx20                                                 &
-              +den2*f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha))
+              +den2*f2mc(icha)*a2(icha)*wmole(ichx2c(icha))
       ehchx2 = ehchx2                                                 &
               +den2*( ehgaze(ichx2c(icha),i+1)                        &
-                     *f2mc(iel,icha)*a2(icha)*wmole(ichx2c(icha)) )
+                     *f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
     enddo
-    if ( ychx10.gt.epzero ) then
+    if (ychx10.gt.epzero) then
       ehchx1 = ehchx1 / ychx10
     else
       ehchx1 = ehgaze(ichx1,i+1)
     endif
-    if ( ychx20.gt.epzero ) then
+    if (ychx20.gt.epzero) then
       ehchx2 = ehchx2 / ychx20
     else
       ehchx2 = ehgaze(ichx2,i+1)
@@ -376,9 +407,9 @@ do i = 1, npo-1
          +prod3(iel)*ehgaze(iso2,i+1)                          &
          +xiner(iel)*ehgaze(in2 ,i+1)
 
-    if ( eh(iel).ge.eh0 .and. eh(iel).le.eh1 ) then
-      tp(iel)= th(i) + (eh(iel)-eh0) *                         &
-                        (th(i+1)-th(i))/(eh1-eh0)
+    if (eh(ielt).ge.eh0 .and. eh(ielt).le.eh1) then
+      tp(ielt)= th(i) + (  eh(ielt)-eh0)                       &
+                         * (th(i+1)-th(i))/(eh1-eh0)
     endif
   enddo
 enddo

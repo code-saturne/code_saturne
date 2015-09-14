@@ -116,6 +116,7 @@ use ppincl
 use ppcpfu
 use cs_fuel_incl
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -305,15 +306,7 @@ enddo
 
 ipcte1 = ipproc(itemp1)
 
-call cs_fuel_thfieldconv1 &
-!========================
- ( ncelet , ncel   ,                                              &
-   enth   ,                                                       &
-   propce(1,ipcyf1), propce(1,ipcyf2), propce(1,ipcyf3),          &
-   propce(1,ipcyf4), propce(1,ipcyf5), propce(1,ipcyf6),          &
-   propce(1,ipcyf7), propce(1,ipcyox), propce(1,ipcyp1),          &
-   propce(1,ipcyp2), propce(1,ipcyp3), propce(1,ipcyin),          &
-   propce(1,ipcte1) )
+call cs_fuel_thfieldconv1(MESH_LOCATION_CELLS, enth, propce(:,ipcte1))
 
 do iel = 1, ncel
   wmolme = propce(iel,ipcyf1)/wmole(ifo0)                         &

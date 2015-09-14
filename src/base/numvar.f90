@@ -262,6 +262,8 @@ module numvar
   !>  field id of \f$y^+\f$ at boundary (if post-processed)
   integer, save :: iyplbr
 
+  !>  field id of temperature at boundary
+  integer, save ::  itempb
   !> \}
   !----------------------------------------------------------------------------
   ! Numerical properties

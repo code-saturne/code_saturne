@@ -122,13 +122,13 @@ static char  ** _cs_gui_var_rayt = NULL;
  * Return integer parameters for radiation
  *
  *   parameters:
- *    param    -->   name of parameter
- *    keyword  <--   value of parameter
+ *    param    <--   name of parameter
+ *    keyword  -->   value of parameter
  *----------------------------------------------------------------------------*/
 
 static void
-_radiative_transfer_int(const char *const param,
-                              int *const keyword)
+_radiative_transfer_int(const char  *param,
+                              int  *keyword)
 {
   char *path;
   int value = 0;
@@ -149,13 +149,13 @@ _radiative_transfer_int(const char *const param,
  * Return float parameters for radiation
  *
  *   parameters:
- *    param    -->   name of parameter
- *    keyword  <--   value of parameter
+ *    param    <--   name of parameter
+ *    keyword  -->   value of parameter
  *----------------------------------------------------------------------------*/
 
 static void
-_radiative_transfer_double(const char   *const param,
-                                 double *const keyword)
+_radiative_transfer_double(const char  *param,
+                           double      *keyword)
 {
   char *path;
   double value;
@@ -176,13 +176,13 @@ _radiative_transfer_double(const char   *const param,
  * Return value of the parameter of the character type for radiation
  *
  *   parameters:
- *    param    -->   name of parameter
- *    keyword  <--   value of parameter
+ *    param    <--   name of parameter
+ *    keyword  -->   value of parameter
  *----------------------------------------------------------------------------*/
 
 static void
-_radiative_transfer_char(const char *const param,
-                               int  *const keyword)
+_radiative_transfer_char(const char  *param,
+                               int   *keyword)
 {
   char *path;
   int result;
@@ -204,14 +204,14 @@ _radiative_transfer_char(const char *const param,
  * Return status and label of the property for post treatment of radiation
  *
  * parameters:
- *   name  --> name of property
- *   value <-- value of status
+ *   name  <-- name of property
+ *   value --> value of status
  *----------------------------------------------------------------------------*/
 
 static char *
-_radiative_transfer_char_post(const char *const name,
-                              int        *const list_value,
-                              int        *const record_value)
+_radiative_transfer_char_post(const char  *name,
+                              int         *list_value,
+                              int         *record_value)
 {
   char *path = NULL;
   char *path1 = NULL;
@@ -258,13 +258,13 @@ _radiative_transfer_char_post(const char *const name,
  * Return value of the type of absorption coefficient for radiation
  *
  *   parameters:
- *    param    -->   name of parameter "absorption coefficient"
- *    keyword  <--   value of the type of the coefficent
+ *    param    <--   name of parameter "absorption coefficient"
+ *    keyword  -->   value of the type of the coefficent
  *----------------------------------------------------------------------------*/
 
 static void
-_radiative_transfer_type(const char *const param,
-                                     int  *const keyword)
+_radiative_transfer_type(const char  *param,
+                         int         *keyword)
 {
   char *path;
   char *type;
@@ -301,16 +301,16 @@ _radiative_transfer_type(const char *const param,
 /*----------------------------------------------------------------------------
  *  Return value of radiative variable
  *
- *   parameters:
- *    label    -->   label of boundary nature
- *    param    -->   name of the  variable
- *    value    <--   value of the variable
+ *  parameters:
+ *    label <-- label of boundary nature
+ *    param <-- name of the  variable
+ *    value --> value of the variable
  *----------------------------------------------------------------------------*/
 
 static void
-_radiative_boundary(const   char *const label,
-                    const   char *const param,
-                          double *const value)
+_radiative_boundary(const char  *label,
+                    const char  *param,
+                    double      *value)
 {
   char *path = NULL;
   double res = 0.0;
@@ -336,8 +336,8 @@ _radiative_boundary(const   char *const label,
 /*----------------------------------------------------------------------------
  *  Return int value of the type of radiative condition
  *
- *   parameters:
- *    label    -->   label of boundary "wall"
+ *  parameters:
+ *    label    <--   label of boundary "wall"
  *    itpimp   <--   if wall faces with imposed temperature
  *    ipgrno   <--   if grey or black wall faces
  *    iprefl   <--   if reflecting wall faces
@@ -346,12 +346,12 @@ _radiative_boundary(const   char *const label,
  *----------------------------------------------------------------------------*/
 
 static int
-_radiative_boundary_type(const char *const label,
-                                 const int itpimp,
-                                 const int ipgrno,
-                                 const int iprefl,
-                                 const int ifgrno,
-                                 const int ifrefl)
+_radiative_boundary_type(const char  *label,
+                         int          itpimp,
+                         int          ipgrno,
+                         int          iprefl,
+                         int          ifgrno,
+                         int          ifrefl)
 {
   char *path = NULL;
   char *type = NULL;
@@ -427,14 +427,14 @@ _radiative_boundary_output_zone_max(void)
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
-                                int *const isuird,
-                                int *const i_quad,
-                                int *const ndirec,
-                                int *const nfreqr,
-                                int *const idiver,
-                                int *const iimpar,
-                                int *const iimlum)
+void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
+                                int  *isuird,
+                                int  *i_quad,
+                                int  *ndirec,
+                                int  *nfreqr,
+                                int  *idiver,
+                                int  *iimpar,
+                                int  *iimlum)
 {
     char *model = NULL;
 
@@ -478,11 +478,11 @@ void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiray4, UIRAY4) (int *const iirayo)
+void CS_PROCF (uiray4, UIRAY4) (int  *iirayo)
 {
   const int n_rad_b_f = 8;
 
-  const char *const b_rad_names[8] = {
+  const char  *b_rad_names[8] = {
     "wall_temp",
     "flux_incident",
     "thickness",
@@ -540,26 +540,26 @@ void CS_PROCF (uiray4, UIRAY4) (int *const iirayo)
 
 void CS_PROCF (uiray2, UIRAY2)
 (
- const    int *const itypfb,
- const    int *const iparoi,
- const    int *const iparug,
- const    int *const ivart,
-          int *const izfrdp,
-          int *const isothp,
- const    int *const itpimp,
- const    int *const ipgrno,
- const    int *const iprefl,
- const    int *const ifgrno,
- const    int *const ifrefl,
- const    int *const nozppm,
- const    int *const nfabor,
- const    int *const nvar,
-       double *const epsp,
-       double *const epap,
-       double *const tintp,
-       double *const textp,
-       double *const xlamp,
-       double *const rcodcl
+ const    int  *itypfb,
+ const    int  *iparoi,
+ const    int  *iparug,
+ const    int  *ivart,
+          int  *izfrdp,
+          int  *isothp,
+ const    int  *itpimp,
+ const    int  *ipgrno,
+ const    int  *iprefl,
+ const    int  *ifgrno,
+ const    int  *ifrefl,
+ const    int  *nozppm,
+ const    int  *nfabor,
+ const    int  *nvar,
+       double  *epsp,
+       double  *epap,
+       double  *tintp,
+       double  *textp,
+       double  *xlamp,
+       double  *rcodcl
 )
 {
   int zones = 0;
@@ -753,9 +753,9 @@ void CS_PROCF (uiray2, UIRAY2)
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const ncel,
-                                         int *const imodak)
+void CS_PROCF (uiray3, UIRAY3) (      double  *ck,
+                                const    int  *ncel,
+                                         int  *imodak)
 {
     double value = 0.;
     int i, type = 0;
@@ -789,9 +789,8 @@ void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
  *
  * Fortran Interface:
  *
- * SUBROUTINE MEMUI2
+ * subroutine memui2
  * *****************
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (memui2, MEMUI2) (void)

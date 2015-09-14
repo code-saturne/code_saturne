@@ -45,65 +45,61 @@ BEGIN_C_DECLS
  *
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiray1, UIRAY1) (int *const iirayo,
-                                int *const isuird,
-                                int *const i_quad,
-                                int *const ndirec,
-                                int *const nfreqr,
-                                int *const idiver,
-                                int *const iimpar,
-                                int *const iimlum);
+void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
+                                int  *isuird,
+                                int  *i_quad,
+                                int  *ndirec,
+                                int  *nfreqr,
+                                int  *idiver,
+                                int  *iimpar,
+                                int  *iimlum);
 
+/*----------------------------------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (uiray2, UIRAY2) (const    int  *itypfb,
+                                const    int  *iparoi,
+                                const    int  *iparug,
+                                const    int  *ivart,
+                                         int  *izfrdp,
+                                         int  *isothp,
+                                const    int  *itpimp,
+                                const    int  *ipgrno,
+                                const    int  *iprefl,
+                                const    int  *ifgrno,
+                                const    int  *ifrefl,
+                                const    int  *nzoppm,
+                                const    int  *nfabor,
+                                const    int  *nvar,
+                                      double  *epsp,
+                                      double  *epap,
+                                      double  *tintp,
+                                      double  *textp,
+                                      double  *xlamp,
+                                      double  *rcodcl);
 
 /*----------------------------------------------------------------------------
  *
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (uiray2, UIRAY2) (const    int *const itypfb,
-                                const    int *const iparoi,
-                                const    int *const iparug,
-                                const    int *const ivart,
-                                         int *const izfrdp,
-                                         int *const isothp,
-                                const    int *const itpimp,
-                                const    int *const ipgrno,
-                                const    int *const iprefl,
-                                const    int *const ifgrno,
-                                const    int *const ifrefl,
-                                const    int *const nzoppm,
-                                const    int *const nfabor,
-                                const    int *const nvar,
-                                      double *const epsp,
-                                      double *const epap,
-                                      double *const tintp,
-                                      double *const textp,
-                                      double *const xlamp,
-                                      double *const rcodcl);
-
+void CS_PROCF (uiray3, UIRAY3) (      double  *ck,
+                                const    int  *ncel,
+                                         int  *imodak);
 /*----------------------------------------------------------------------------
  *
  *----------------------------------------------------------------------------*/
 
-
-void CS_PROCF (uiray3, UIRAY3) (      double *const ck,
-                                const    int *const ncel,
-                                         int *const imodak);
-/*----------------------------------------------------------------------------
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiray4, UIRAY4) (int *const iirayo);
-
+void CS_PROCF (uiray4, UIRAY4) (int  *iirayo);
 
 /*-----------------------------------------------------------------------------
  * Free memory: clean global private variables.
  *
  * Fortran Interface:
  *
- * SUBROUTINE MEMUI2
+ * subroutine memui2
  * *****************
- *
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (memui2, MEMUI2) (void);

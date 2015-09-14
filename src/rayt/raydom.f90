@@ -106,7 +106,7 @@ integer          idverl
 integer          iflux(nozrdm)
 integer          ngg, i
 double precision epsrgp, climgp, extrap
-double precision aa, bb, ckmin, ckmax, unspi, xlimit, flunmn
+double precision aa, bb, ckmin, unspi, xlimit, flunmn
 double precision flux(nozrdm)
 double precision vv, sf, xlc, xkmin, pp
 
@@ -145,7 +145,7 @@ save       ipadom
 allocate(viscf(nfac), viscb(ndimfb))
 allocate(smbrs(ncelet), rovsdt(ncelet))
 
-! Allocate specific arrays for the radiative transfert module
+! Allocate specific arrays for the radiative transfer module
 allocate(tempk(ncelet,nrphas))
 allocate(coefap(ndimfb), coefbp(ndimfb))
 allocate(cofafp(ndimfb), cofbfp(ndimfb))
@@ -276,26 +276,9 @@ if (itherm.eq.1) then
 !---> Enthalpy transport (flurdb is a temporary array)
 else if (itherm.eq.2) then
 
-  mode = 1
+  call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
-  if (ippmod(iphpar).le.1) then
-
-    call usray4 &
-    ( nvar   , nscal  ,                                            &
-      mode   ,                                                     &
-      itypfb ,                                                     &
-      dt     ,                                                     &
-      tparo  , flurdb , tempk(1,1)  )
-
-  else
-
-    call ppray4 &
-  ( mode   ,                                                       &
-    itypfb ,                                                       &
-    propce ,                                                       &
-    tparo  , flurdb , tempk(1,1)  )
-
-  endif
+  call c_h_to_t(cvara_scalt, tempk(:,1))
 
   if (ippmod(iccoal).ge.0) then
 

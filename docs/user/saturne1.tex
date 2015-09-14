@@ -7149,7 +7149,7 @@ subroutine \texttt{cs\_user\_boundary\_conditions} will be modified by the radia
 according to the data given in \texttt{cs\_user\_radiative\_transfer\_bcs.f90} (cf. \S\ref{sec:fvm_selector}).\\
 A zone number must be given to each boundary face \footnote{This must be less
  than the maximum allowable by the code, \texttt{nozrdm}. This is fixed at 2000
- in \texttt{radiat} and cannot be modified.}and, specifically for
+ in \texttt{radiat} and cannot be modified.} and, specifically for
 the walls, a boundary condition type and an initialisation temperature
 (in Kelvin). The initialisation temperature is only used to make the
 solving implicit at the first time step. The zone number allows assigning
@@ -7251,39 +7251,6 @@ equation of radiative transfer and net radiative flux calculation, in
 coherence with the luminance at the boundary faces, when the user wants
 to give it a particular value. In most cases, the given examples do not
 need to be modified.
-
-%==================================
-\subsubsection{Encapsulation of the temperature-enthalpy conversion}
-%==================================
-
-\noindent
-\textit{Subroutine called every time step.}
-
-The user subroutine \texttt{usray4} is used to call the user subroutine \texttt{usthht}. \texttt{usthht} is used to encapsulate a simple enthalpy-temperature
-conversion law and its inverse. The user
-can implement his own conversion formulas into it. \\
-This subroutine is useless when the thermal scalar is the temperature.\\
-\noindent
-
-{\em WARNING: when a specific physics is activated, it is forbidden to use this
-subroutine. In this case, {\em \texttt{usray4}} is replaced by {\em
-\texttt{ppray4}}, which is not a user subroutine.}\\
-
-\noindent
-The value of the argument \texttt{mode} allows to know in which direction the
-conversion will be made:
-\begin{list}{$\bullet$}{}
-
-\item \texttt{\textbf{mode = 1}}: the fluid enthalpy in the cell must be
-      converted into temperature (in Kelvin),
-
-\item \texttt{\textbf{mode = -1}}: the wall temperature (\texttt{text}
-      or \texttt{tparoi}, in Kelvin) must be converted into enthalpy.
-
-\end{list}
-%
-{\em WARNING: the value of \texttt{mode} is passed as argument and must not be
-modified by the user.}\\
 
 %==================================
 \subsubsection{Input of radiative transfer parameters}

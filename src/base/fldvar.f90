@@ -313,6 +313,7 @@ call add_user_scalar_fields
 ! Map pointers
 
 call cs_field_pointer_map_base
+call cs_field_pointer_map_boundary
 
 ! ---> Verifications
 

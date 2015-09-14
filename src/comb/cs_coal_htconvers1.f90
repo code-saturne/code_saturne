@@ -83,18 +83,23 @@ integer          i , icha
 double precision ychx10 , ychx20 , ehchx1 , ehchx2
 double precision den1   , den2
 double precision eh0 , eh1
+
 !===============================================================================
 ! 1. Calculation of temperature from enthalpy
 !===============================================================================
-if ( mode .eq. 1 ) then
+
+if (mode .eq. 1) then
 
   i = npo
-! --- Calculation of enthalpy of the gaseous species CHx1m
-!                                            and CHx2m at TH(NPO)
+
+  ! Calculation of enthalpy of the gaseous species CHx1m
+  !                                            and CHx2m at TH(NPO)
+
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
   ychx20 = zero
+
   do icha = 1, ncharb
     den1   = 1.d0                                                 &
          / ( a1(icha)*wmole(ichx1c(icha))                         &
@@ -121,16 +126,18 @@ if ( mode .eq. 1 ) then
          ( ehgaze(ichx2c(icha),i)*                                &
          f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
   enddo
-  if ( ychx10.gt.epzero ) then
+
+  if (ychx10.gt.epzero) then
     ehchx1 = ehchx1 / ychx10
   else
     ehchx1 = ehgaze(ichx1,i)
   endif
-  if ( ychx20.gt.epzero ) then
+  if (ychx20.gt.epzero) then
     ehchx2 = ehchx2 / ychx20
   else
     ehchx2 = ehgaze(ichx2,i)
   endif
+
 ! --- Eventual clipping of temperature at TH(NPO) if EH > EH1
   eh1 = xesp(ichx1)*ehchx1                                         &
        + xesp(ichx2)*ehchx2                                        &
@@ -145,55 +152,54 @@ if ( mode .eq. 1 ) then
        + xesp(inh3 )*ehgaze(inh3 ,i)                               &
        + xesp(in2  )*ehgaze(in2  ,i)
 
-  if ( eh .ge. eh1 ) then
+  if (eh .ge. eh1) then
     tp = th(i)
     goto 501
   endif
 
   i = 1
-! --- Calculation of enthalpy of the gaseous species CHx1m
-!                                            and CHx2m at TH(1)
+
+  ! Calculation of enthalpy of the gaseous species CHx1m
+  !                                             and CHx2m at TH(1)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
   ychx20 = zero
+
   do icha = 1, ncharb
-    den1   = 1.d0                                                 &
-         / ( a1(icha)*wmole(ichx1c(icha))                         &
-            +b1(icha)*wmole(ico )                                 &
-            +c1(icha)*wmole(ih2o)                                 &
-            +d1(icha)*wmole(ih2s)                                 &
-            +e1(icha)*wmole(ihcn)                                 &
+    den1   = 1.d0                                                      &
+         / ( a1(icha)*wmole(ichx1c(icha))                              &
+            +b1(icha)*wmole(ico )                                      &
+            +c1(icha)*wmole(ih2o)                                      &
+            +d1(icha)*wmole(ih2s)                                      &
+            +e1(icha)*wmole(ihcn)                                      &
             +f1(icha)*wmole(inh3) )
-    ychx10 = ychx10 + den1 *                                      &
-     ( f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
-    ehchx1 = ehchx1 + den1 *                                      &
-     ( ehgaze(ichx1c(icha),i)*                                    &
-       f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
-    den2   = 1.d0                                                 &
+    ychx10 = ychx10 + den1*(f1mc(icha)*a1(icha)*wmole(ichx1c(icha)))
+    ehchx1 = ehchx1 + den1*(   ehgaze(ichx1c(icha),i)                  &
+                            * f1mc(icha)*a1(icha)*wmole(ichx1c(icha)))
+    den2   = 1.d0                                                      &
          / ( a2(icha)*wmole(ichx2c(icha))                         &
             +b2(icha)*wmole(ico )                                 &
             +c2(icha)*wmole(ih2o)                                 &
             +d2(icha)*wmole(ih2s)                                 &
             +e2(icha)*wmole(ihcn)                                 &
             +f2(icha)*wmole(inh3) )
-    ychx20 = ychx20 + den2 *                                      &
-     ( f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
-    ehchx2 = ehchx2 + den2 *                                      &
-     ( ehgaze(ichx2c(icha),i)*                                    &
-       f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
+    ychx20 = ychx20 + den2*(f2mc(icha)*a2(icha)*wmole(ichx2c(icha)))
+    ehchx2 = ehchx2 + den2*(  ehgaze(ichx2c(icha),i)                   &
+                            * f2mc(icha)*a2(icha)*wmole(ichx2c(icha)))
   enddo
-  if ( ychx10.gt.epzero ) then
+  if (ychx10.gt.epzero) then
     ehchx1 = ehchx1 / ychx10
   else
     ehchx1 = ehgaze(ichx1,i)
   endif
-  if ( ychx20.gt.epzero ) then
+  if (ychx20.gt.epzero) then
     ehchx2 = ehchx2 / ychx20
   else
     ehchx2 = ehgaze(ichx2,i)
   endif
-! --- Eventual clipping of temperature at TH(1) if EH < EH0
+
+  ! --- Eventual clipping of temperature at TH(1) if EH < EH0
   eh0 = xesp(ichx1)*ehchx1                                        &
       + xesp(ichx2)*ehchx2                                        &
       + xesp(ico  )*ehgaze(ico  ,i)                               &
@@ -212,51 +218,50 @@ if ( mode .eq. 1 ) then
     goto 501
   endif
 
-
  500    continue
   i = i + 1
+
 ! --- Calculation of enthalpy of the gaseous species CHx1m
 !                                            and CHx2m for TH(I-1)
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
   ychx20 = zero
+
   do icha = 1, ncharb
-    den1   = 1.d0                                                 &
-         / ( a1(icha)*wmole(ichx1c(icha))                         &
-            +b1(icha)*wmole(ico )                                 &
-            +c1(icha)*wmole(ih2o)                                 &
-            +d1(icha)*wmole(ih2s)                                 &
-            +e1(icha)*wmole(ihcn)                                 &
+    den1   = 1.d0                                                       &
+         / ( a1(icha)*wmole(ichx1c(icha))                               &
+            +b1(icha)*wmole(ico )                                       &
+            +c1(icha)*wmole(ih2o)                                       &
+            +d1(icha)*wmole(ih2s)                                       &
+            +e1(icha)*wmole(ihcn)                                       &
             +f1(icha)*wmole(inh3) )
-    ychx10 = ychx10 + den1 *                                      &
-      ( f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
-    ehchx1 = ehchx1 + den1 *                                      &
-      ( ehgaze(ichx1c(icha),i-1)*                                 &
-        f1mc(icha)*a1(icha)*wmole(ichx1c(icha)) )
-    den2   = 1.d0                                                 &
-          / ( a2(icha)*wmole(ichx2c(icha))                         &
-             +b2(icha)*wmole(ico )                                 &
-             +c2(icha)*wmole(ih2o)                                 &
-             +d2(icha)*wmole(ih2s)                                 &
-             +e2(icha)*wmole(ihcn)                                 &
+    ychx10 = ychx10 + den1*(f1mc(icha)*a1(icha)*wmole(ichx1c(icha)))
+    ehchx1 = ehchx1 + den1*(   ehgaze(ichx1c(icha),i-1)                 &
+                            * f1mc(icha)*a1(icha)*wmole(ichx1c(icha)))
+    den2   = 1.d0                                                       &
+          / ( a2(icha)*wmole(ichx2c(icha))                              &
+             +b2(icha)*wmole(ico )                                      &
+             +c2(icha)*wmole(ih2o)                                      &
+             +d2(icha)*wmole(ih2s)                                      &
+             +e2(icha)*wmole(ihcn)                                      &
              +f2(icha)*wmole(inh3) )
-    ychx20 = ychx20 + den2 *                                      &
-       ( f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
-    ehchx2 = ehchx2 + den2 *                                      &
-       ( ehgaze(ichx2c(icha),i-1)*                                &
-         f2mc(icha)*a2(icha)*wmole(ichx2c(icha)) )
+    ychx20 = ychx20 + den2*(f2mc(icha)*a2(icha)*wmole(ichx2c(icha)))
+    ehchx2 = ehchx2 + den2*(  ehgaze(ichx2c(icha),i-1)                  &
+                            * f2mc(icha)*a2(icha)*wmole(ichx2c(icha)))
   enddo
-  if ( ychx10.gt.epzero ) then
+
+  if (ychx10.gt.epzero) then
     ehchx1 = ehchx1 / ychx10
   else
     ehchx1 = ehgaze(ichx1,i-1)
   endif
-  if ( ychx20.gt.epzero ) then
+  if (ychx20.gt.epzero) then
     ehchx2 = ehchx2 / ychx20
   else
     ehchx2 = ehgaze(ichx2,i-1)
   endif
+
   eh0 = xesp(ichx1)*ehchx1                                          &
       + xesp(ichx2)*ehchx2                                          &
       + xesp(ico  )*ehgaze(ico  ,i-1)                               &
@@ -269,8 +274,10 @@ if ( mode .eq. 1 ) then
       + xesp(iso2 )*ehgaze(iso2 ,i-1)                               &
       + xesp(inh3 )*ehgaze(inh3 ,i-1)                               &
       + xesp(in2  )*ehgaze(in2  ,i-1)
-! --- Calculation of the enthalpy of the gaseous species CHx1m
-!                                            and CHx2m at TH(I)
+
+  ! Calculation of the enthalpy of the gaseous species CHx1m
+  !                                                and CHx2m at TH(I)
+
   ehchx1 = zero
   ehchx2 = zero
   ychx10 = zero
@@ -331,10 +338,13 @@ if ( mode .eq. 1 ) then
     goto 501
   endif
   goto 500
+
  501    continue
+
 !===============================================================================
 ! 2. Calculation of the enthalpy from temperature
 !===============================================================================
+
 else if ( mode .eq. -1 ) then
 
   i = npo
@@ -579,6 +589,7 @@ else
   write(nfecra,1000) mode
   call csexit(1)
 endif
+
 !--------
 ! Formats
 !--------

@@ -61,7 +61,6 @@ pppdfr.f90 \
 ppphyv.f90 \
 ppprcl.f90 \
 ppprop.f90 \
-ppray4.f90 \
 pptbht.f90 \
 pptssc.f90 \
 pptycl.f90 \

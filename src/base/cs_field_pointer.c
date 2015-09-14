@@ -329,8 +329,6 @@ cs_field_pointer_map_base(void)
 
   cs_field_pointer_map(CS_ENUMF_(rho),
                        cs_field_by_name_try("density"));
-  cs_field_pointer_map(CS_ENUMF_(rho_b),
-                       cs_field_by_name_try("boundary_density"));
 
   cs_field_pointer_map(CS_ENUMF_(cp),
                        cs_field_by_name_try("specific_heat"));
@@ -344,6 +342,22 @@ cs_field_pointer_map_base(void)
                        cs_field_by_name_try("porosity"));
   cs_field_pointer_map(CS_ENUMF_(t_poro),
                        cs_field_by_name_try("tensorial_porosity"));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map some boundary fields to enumerated pointers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_boundary(void)
+{
+  cs_field_pointer_map(CS_ENUMF_(t_b),
+                       cs_field_by_name_try("boundary_temperature"));
+
+  cs_field_pointer_map(CS_ENUMF_(rho_b),
+                       cs_field_by_name_try("boundary_density"));
 }
 
 /*----------------------------------------------------------------------------*/

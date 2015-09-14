@@ -90,7 +90,8 @@ typedef enum {
   CS_ENUMF_(void_f),       /*!< void fraction */
 
   CS_ENUMF_(h),            /*!< enthalpy */
-  CS_ENUMF_(t),            /*!< temperature */
+  CS_ENUMF_(t),            /*!< temperature*/
+  CS_ENUMF_(t_b),          /*!< temperature (at boundary faces)*/
   CS_ENUMF_(energy),       /*!< total energy */
 
   CS_ENUMF_(rho),          /*!< density (at cells) */
@@ -245,6 +246,13 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
 
 void
 cs_field_pointer_map_base(void);
+
+/*----------------------------------------------------------------------------
+ * Map some boundary fields to enumerated pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_pointer_map_boundary(void);
 
 /*----------------------------------------------------------------------------
  * Map base fields to enumerated pointers for atmospheric models

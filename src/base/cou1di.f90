@@ -32,7 +32,7 @@ subroutine cou1di &
 ! FONCTION :
 ! ---------
 
-! LECTURE DE DONNEES RELATIVES A UN COUPLAGE AVEC SYRTHES
+! LECTURE DE DONNEES RELATIVES A UN COUPLAGE PAROI 1D
 
 !-------------------------------------------------------------------------------
 !ARGU                             ARGUMENTS
@@ -97,8 +97,7 @@ double precision rcodcl(nfabor,nvarcl,3)
 integer          ii , ivar
 integer          ifac
 integer          icldef
-integer          mode
-double precision temper, enthal
+double precision, dimension(:), allocatable :: h_b
 
 !===============================================================================
 
@@ -127,17 +126,25 @@ enddo
 
 if (isvtb.eq.iscalt .and. itherm.eq.2) then
 
-  do ii = 1, nfpt1d
+  allocate(h_b(nfabor))
 
-    ifac = ifpt1d(ii)
-
-    temper = rcodcl(ifac,ivar,1)
-    mode   = -1
-    call usthht(mode,enthal,temper)
-    !==========
-    rcodcl(ifac,ivar,1) = enthal
-
+  do ii = 1, nfabor
+    h_b(ii) = 0
   enddo
+
+  do ii = 1, nfpt1d
+    ifac = ifpt1d(ii)
+    h_b(ifac) = tppt1d(ii)
+  enddo
+
+  call b_t_to_h(h_b, h_b)
+
+  do ii = 1, nfpt1d
+    ifac = ifpt1d(ii)
+    rcodcl(ifac,ivar,1) = h_b(ifac)
+  enddo
+
+  deallocate(h_b)
 
 endif
 

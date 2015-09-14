@@ -71,6 +71,7 @@ use ihmpre
 use cplsat
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -251,6 +252,12 @@ do ii = 1, nvar
     call field_set_key_int(f_id, kislts, ifctsl)
   endif
 enddo
+
+! Some mappings
+
+call cs_field_pointer_map_boundary
+
+call field_get_id_try('boundary_temperature', itempb)
 
 !---
 ! Formats

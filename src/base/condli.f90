@@ -149,6 +149,7 @@ use field
 use field_operator
 use turbomachinery
 use darcy_module
+use cs_c_bindings
 
 !===============================================================================
 
@@ -174,20 +175,18 @@ integer          ifac  , iel   , ivar
 integer          isou  , jsou  , ii
 integer          ihcp  , iscal
 integer          inc   , iprev , iccocg
-integer          iok   , iok1
-integer          icodcu
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          ifcvsl, ipccv
 integer          itplus, itstar
 integer          f_id, iut, ivt, iwt, iflmab
 integer          kbfid, b_f_id
-integer          dimrij, flag
+integer          dimrij
 logical          interleaved
 
 double precision sigma , cpp   , rkl
-double precision hint  , hext  , pimp  , xdis, qimp, cfl
-double precision pinf  , ratio , enthal
+double precision hint  , hext  , pimp  , qimp, cfl
+double precision pinf  , ratio
 double precision hintt(6)
 double precision flumbf, visclc, visctc, distbf, srfbn2
 double precision xxp0, xyp0, xzp0
@@ -200,7 +199,6 @@ double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
 
 character(len=80) :: fname
 
-double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: velipb, rijipb
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:,:,:) :: gradv
@@ -340,7 +338,6 @@ call field_get_key_id("boundary_value_id", kbfid)
 
 if (ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1) then
   call pptycl &
-  !==========
  ( nvar   ,                                                       &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
@@ -349,7 +346,6 @@ endif
 
 if (iale.eq.1) then
   call altycl &
-  !==========
  ( itypfb , ialtyb , icodcl , impale ,                            &
    dt     ,                                                       &
    rcodcl , xyzno0 )
@@ -357,11 +353,9 @@ endif
 
 if (imobil.eq.1 .or. iturbo.eq.1 .or. iturbo.eq.2) then
   call mmtycl(itypfb, rcodcl)
-  !==========
 endif
 
 call typecl &
-!==========
  ( nvar   , nscal  ,                                              &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl , frcxt  )
@@ -371,7 +365,6 @@ call typecl &
 !===============================================================================
 
 call vericl                                                       &
-!==========
  ( nvar   , nscal  ,                                              &
    itypfb , icodcl ,                                              &
    rcodcl )
@@ -455,9 +448,9 @@ do ii = 1, nscal
   else if (ii.eq.iscalt) then
     bvar_s => null()
     ! if thermal variable has no boundary but temperature does, use it
-    if (itemp.gt.0) then
-      call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
-      if (b_f_id.ge.0) call field_get_val_s(b_f_id, bvar_s)
+    if (itempb.ge.0) then
+      b_f_id = itempb
+      call field_get_val_s(b_f_id, bvar_s)
     endif
   else
     cycle ! nothing to do for this scalar
@@ -728,7 +721,6 @@ if (ipatur.ne.0) then
 
   ! smooth wall laws
   call clptur &
-  !==========
  ( nscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
    velipb , rijipb , visvdr ,                                     &
@@ -740,7 +732,6 @@ if (ipatrg.ne.0) then
 
   ! rough wall laws
   call clptrg &
-  !==========
  ( nscal  , isvhb  , icodcl ,                                     &
    rcodcl ,                                                       &
    velipb , rijipb , visvdr ,                                     &
@@ -761,7 +752,6 @@ enddo
 if (iclsym.ne.0) then
 
   call clsyvt &
-  !==========
  ( nscal  , icodcl ,                                              &
    rcodcl ,                                                       &
    velipb , rijipb )
@@ -810,7 +800,6 @@ do ifac = 1, nfabor
       pimpv(3) = 0.d0
 
       call set_dirichlet_vector &
-           !====================
          ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
            coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
            pimpv           , hint            , rinfiv )
@@ -832,7 +821,6 @@ do ifac = 1, nfabor
       qimpv(3) = 0.d0
 
       call set_neumann_vector &
-           !==================
          ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
            coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
            qimpv           , hint )
@@ -888,7 +876,6 @@ do ifac = 1, nfabor
     hextv(3) = rcodcl(ifac,iw,2)
 
     call set_dirichlet_vector &
-         !====================
        ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , hint            , hextv )
@@ -906,7 +893,6 @@ do ifac = 1, nfabor
     qimpv(3) = rcodcl(ifac,iw,3)
 
     call set_neumann_vector &
-         !==================
        ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          qimpv           , hint )
@@ -926,7 +912,6 @@ do ifac = 1, nfabor
     cflv(3) = rcodcl(ifac,iw,2)
 
     call set_convective_outlet_vector &
-         !==================
        ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , cflv            , hint )
@@ -945,7 +930,6 @@ do ifac = 1, nfabor
     qimpv(3) = rcodcl(ifac,iw,3)
 
     call set_dirichlet_conv_neumann_diff_vector &
-         !=====================================
        ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , qimpv           )
@@ -971,7 +955,6 @@ do ifac = 1, nfabor
     ! coupled solving of the velocity components
 
     call set_generalized_sym_vector &
-         !=========================
        ( coefau(:,ifac)  , cofafu(:,ifac)  ,             &
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , qimpv            , hint , normal )
@@ -1090,7 +1073,6 @@ do ifac = 1, nfabor
     endif
 
     call set_dirichlet_scalar &
-         !===================
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , hint             , hext )
@@ -1105,7 +1087,6 @@ do ifac = 1, nfabor
     qimp = rcodcl(ifac,ipr,3)
 
     call set_neumann_scalar &
-         !=================
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          qimp              , hint )
@@ -1119,7 +1100,6 @@ do ifac = 1, nfabor
     cfl = rcodcl(ifac,ipr,2)
 
     call set_convective_outlet_scalar &
-         !===========================
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , cfl               , hint )
@@ -1133,7 +1113,6 @@ do ifac = 1, nfabor
     ratio = rcodcl(ifac,ipr,2)
 
     call set_affine_function_scalar &
-         !=========================
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pinf        , ratio       , hint                    )
@@ -1147,7 +1126,6 @@ do ifac = 1, nfabor
     qimp = rcodcl(ifac,ipr,3)
 
     call set_dirichlet_conv_neumann_diff_scalar &
-         !=====================================
        ( coefap(ifac), cofafp(ifac),                         &
          coefbp(ifac), cofbfp(ifac),                         &
          pimp              , qimp )
@@ -1181,7 +1159,6 @@ if (icavit.ge.0) then
       hext = rcodcl(ifac,ivoidf,2)
 
       call set_dirichlet_scalar &
-      !====================
     ( coefap(ifac), cofafp(ifac),                        &
       coefbp(ifac), cofbfp(ifac),                        &
       pimp              , hint              , hext )
@@ -1196,7 +1173,6 @@ if (icavit.ge.0) then
       qimp = rcodcl(ifac,ivoidf,3)
 
       call set_neumann_scalar &
-      !==================
     ( coefap(ifac), cofafp(ifac),                        &
       coefbp(ifac), cofbfp(ifac),                        &
       qimp              , hint )
@@ -1210,7 +1186,6 @@ if (icavit.ge.0) then
       cfl = rcodcl(ifac,ivoidf,2)
 
       call set_convective_outlet_scalar &
-      !==================
     ( coefap(ifac), cofafp(ifac),                        &
       coefbp(ifac), cofbfp(ifac),                        &
       pimp              , cfl               , hint )
@@ -1275,7 +1250,6 @@ if (itytur.eq.2.or.iturb.eq.60) then
         hext = rcodcl(ifac,ivar,2)
 
         call set_dirichlet_scalar &
-             !====================
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , hint              , hext )
@@ -1290,7 +1264,6 @@ if (itytur.eq.2.or.iturb.eq.60) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              qimp              , hint )
@@ -1304,7 +1277,6 @@ if (itytur.eq.2.or.iturb.eq.60) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
@@ -1318,7 +1290,6 @@ if (itytur.eq.2.or.iturb.eq.60) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -1424,7 +1395,6 @@ elseif (itytur.eq.3) then
           hextts(isou) = rcodcl(ifac,ivar,2)
 
           call set_dirichlet_tensor &
-               !====================
              ( coefats(:, ifac), cofafts(:,ifac),                        &
                coefbts(:,:,ifac), cofbfts(:,:,ifac),                     &
                pimpts            , hint              , hextts )
@@ -1441,7 +1411,6 @@ elseif (itytur.eq.3) then
           qimpts(isou) = rcodcl(ifac,ivar,3)
 
           call set_neumann_tensor &
-               !==================
              ( coefats(:,ifac), cofafts(:,ifac),                         &
                coefbts(:,:,ifac), cofbfts(:,:,ifac),                     &
                qimpts              , hint )
@@ -1458,7 +1427,6 @@ elseif (itytur.eq.3) then
           cflts(isou)  = rcodcl(ifac,ivar,2)
 
           call set_convective_outlet_tensor &
-               !==================
              ( coefats(:, ifac), cofafts(:, ifac),                        &
                coefbts(:,:, ifac), cofbfts(:,:, ifac),                        &
                pimpts              , cflts               , hint )
@@ -1475,7 +1443,6 @@ elseif (itytur.eq.3) then
           qimpts(isou) = rcodcl(ifac,ivar,3)
 
           call set_dirichlet_conv_neumann_diff_tensor &
-               !=====================================
              ( coefats(:, ifac), cofafts(:, ifac),                         &
                coefbts(:,:, ifac), cofbfts(:,:, ifac),                     &
                pimpts              , qimpts )
@@ -1584,7 +1551,6 @@ elseif (itytur.eq.3) then
           hext = rcodcl(ifac,ivar,2)
 
           call set_dirichlet_scalar &
-               !====================
              ( coefap(ifac), cofafp(ifac),                        &
                coefbp(ifac), cofbfp(ifac),                        &
                pimp              , hint              , hext )
@@ -1601,7 +1567,6 @@ elseif (itytur.eq.3) then
           qimp = rcodcl(ifac,ivar,3)
 
           call set_neumann_scalar &
-               !==================
              ( coefap(ifac), cofafp(ifac),                        &
                coefbp(ifac), cofbfp(ifac),                        &
                qimp              , hint )
@@ -1618,7 +1583,6 @@ elseif (itytur.eq.3) then
           cfl = rcodcl(ifac,ivar,2)
 
           call set_convective_outlet_scalar &
-               !==================
              ( coefap(ifac), cofafp(ifac),                        &
                coefbp(ifac), cofbfp(ifac),                        &
                pimp              , cfl               , hint )
@@ -1635,7 +1599,6 @@ elseif (itytur.eq.3) then
           qimp = rcodcl(ifac,ivar,3)
 
           call set_dirichlet_conv_neumann_diff_scalar &
-               !=====================================
              ( coefap(ifac), cofafp(ifac),                         &
                coefbp(ifac), cofbfp(ifac),                         &
                pimp              , qimp )
@@ -1733,7 +1696,6 @@ elseif (itytur.eq.3) then
       hext = rcodcl(ifac,ivar,2)
 
       call set_dirichlet_scalar &
-           !====================
          ( coefap(ifac), cofafp(ifac),                        &
            coefbp(ifac), cofbfp(ifac),                        &
            pimp              , hint              , hext )
@@ -1748,7 +1710,6 @@ elseif (itytur.eq.3) then
       qimp = rcodcl(ifac,ivar,3)
 
       call set_neumann_scalar &
-           !==================
          ( coefap(ifac), cofafp(ifac),                        &
            coefbp(ifac), cofbfp(ifac),                        &
            qimp              , hint )
@@ -1762,7 +1723,6 @@ elseif (itytur.eq.3) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                      &
              coefbp(ifac), cofbfp(ifac),                      &
              pimp              , cfl               , hint )
@@ -1777,7 +1737,6 @@ elseif (itytur.eq.3) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -1813,7 +1772,6 @@ elseif (itytur.eq.3) then
         hext = rcodcl(ifac,ivar,2)
 
         call set_dirichlet_scalar &
-             !====================
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , hint              , hext )
@@ -1828,7 +1786,6 @@ elseif (itytur.eq.3) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              qimp              , hint )
@@ -1842,7 +1799,6 @@ elseif (itytur.eq.3) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                        &
              coefbp(ifac), cofbfp(ifac),                        &
              pimp              , cfl               , hint )
@@ -1856,7 +1812,6 @@ elseif (itytur.eq.3) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -1912,7 +1867,6 @@ elseif (itytur.eq.5) then
         hext = rcodcl(ifac,ivar,2)
 
         call set_dirichlet_scalar &
-             !====================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
@@ -1927,7 +1881,6 @@ elseif (itytur.eq.5) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
@@ -1941,7 +1894,6 @@ elseif (itytur.eq.5) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
@@ -1955,7 +1907,6 @@ elseif (itytur.eq.5) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -1997,7 +1948,6 @@ elseif (itytur.eq.5) then
         hext = rcodcl(ifac,ivar,2)
 
         call set_dirichlet_scalar &
-             !====================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
@@ -2012,7 +1962,6 @@ elseif (itytur.eq.5) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
@@ -2026,7 +1975,6 @@ elseif (itytur.eq.5) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
@@ -2040,7 +1988,6 @@ elseif (itytur.eq.5) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -2080,7 +2027,6 @@ elseif (itytur.eq.5) then
         hext = rcodcl(ifac,ivar,2)
 
         call set_dirichlet_scalar &
-             !====================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
@@ -2095,7 +2041,6 @@ elseif (itytur.eq.5) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
@@ -2109,7 +2054,6 @@ elseif (itytur.eq.5) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
@@ -2123,7 +2067,6 @@ elseif (itytur.eq.5) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -2167,7 +2110,6 @@ elseif (iturb.eq.70) then
       hext = rcodcl(ifac,ivar,2)
 
       call set_dirichlet_scalar &
-           !====================
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
            pimp              , hint              , hext )
@@ -2182,7 +2124,6 @@ elseif (iturb.eq.70) then
       qimp = rcodcl(ifac,ivar,3)
 
       call set_neumann_scalar &
-           !==================
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
            qimp              , hint )
@@ -2196,7 +2137,6 @@ elseif (iturb.eq.70) then
       cfl = rcodcl(ifac,ivar,2)
 
       call set_convective_outlet_scalar &
-           !==================
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
            pimp              , cfl               , hint )
@@ -2210,7 +2150,6 @@ elseif (iturb.eq.70) then
       qimp = rcodcl(ifac,ivar,3)
 
       call set_dirichlet_conv_neumann_diff_scalar &
-           !=====================================
          ( coefap(ifac), cofafp(ifac),                         &
            coefbp(ifac), cofbfp(ifac),                         &
            pimp              , qimp )
@@ -2380,7 +2319,6 @@ if (nscal.ge.1) then
         hext = rcodcl(ifac,ivar,2)
 
         call set_dirichlet_scalar &
-             !====================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , hint              , hext )
@@ -2475,7 +2413,6 @@ if (nscal.ge.1) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_neumann_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              qimp              , hint )
@@ -2525,7 +2462,6 @@ if (nscal.ge.1) then
         cfl = rcodcl(ifac,ivar,2)
 
         call set_convective_outlet_scalar &
-             !==================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , cfl               , hint )
@@ -2539,7 +2475,6 @@ if (nscal.ge.1) then
         qimp = rcodcl(ifac,ivar,3)
 
         call set_dirichlet_conv_neumann_diff_scalar &
-             !=====================================
            ( coefap(ifac), cofafp(ifac),                         &
              coefbp(ifac), cofbfp(ifac),                         &
              pimp              , qimp )
@@ -2602,7 +2537,6 @@ if (nscal.ge.1) then
           hextv(3) = rcodcl(ifac,iwt,2)
 
           call set_dirichlet_vector_ggdh &
-               !========================
              ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
                coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                pimpv            , hintt            , hextv )
@@ -2625,7 +2559,6 @@ if (nscal.ge.1) then
           qimpv(3) = rcodcl(ifac,iwt,3)
 
           call set_neumann_vector_ggdh &
-          !===========================
              ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
                coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                qimpv            , hintt )
@@ -2651,7 +2584,6 @@ if (nscal.ge.1) then
           cflv(3) = rcodcl(ifac,iwt,2)
 
           call set_convective_outlet_vector_ggdh &
-          !=====================================
              ( coefaut(:,ifac)  , cofafut(:,ifac)  ,           &
                coefbut(:,:,ifac), cofbfut(:,:,ifac),           &
                pimpv            , cflv             , hintt )
@@ -2716,7 +2648,6 @@ if (iale.eq.1) then
       hextv(3) = rcodcl(ifac,iwma,2)
 
       call set_dirichlet_vector &
-           !====================
          ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
            clbale(:,:,ifac), cfbale(:,:,ifac),             &
            pimpv           , hint            , hextv )
@@ -2733,7 +2664,6 @@ if (iale.eq.1) then
       qimpv(3) = rcodcl(ifac,iwma,3)
 
       call set_neumann_vector &
-           !==================
          ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
            clbale(:,:,ifac), cfbale(:,:,ifac),             &
            qimpv           , hint )
@@ -2754,7 +2684,6 @@ if (iale.eq.1) then
       cflv(3) = rcodcl(ifac,iwma,2)
 
       call set_convective_outlet_vector &
-           !==================
          ( claale(:,ifac)  , cfaale(:,ifac)  ,             &
            clbale(:,:,ifac), cfbale(:,:,ifac),             &
            pimpv           , cflv            , hint )
@@ -2808,43 +2737,25 @@ if (allocated(rijipb)) deallocate(rijipb)
 ! 16. Update of boundary temperature when saved and not a variable.
 !===============================================================================
 
-if (itemp.gt.0) then
+if (itherm.eq.2 .and. itempb.gt.0) then
 
-  call field_get_key_int(iprpfl(itemp), kbfid, b_f_id)
-  if (b_f_id.ge.0) then
+  call field_get_val_s(itempb, btemp_s)
 
-    call field_get_val_s(b_f_id, btemp_s)
+  ! If we also have a boundary value field for the thermal
+  ! scalar, copy its values first.
 
-    ! If we also have a boundary value field for the thermal
-    ! scalar, copy its values first.
+  ! If we do not have a boundary value field for the thermal scalar,
+  ! then boundary values for the thermal scalar were directly
+  ! saved to the boundary temperature field, so no copy is needed.
 
-    ! If we do not have a boundary value field for the thermal scalar,
-    ! then boundary values for the thermal scalar were directly
-    ! saved to the boundary temperature field, so no copy needed.
+  f_id = ivarfl(isca(iscalt))
+  call field_get_key_int(f_id, kbfid, b_f_id)
 
-    f_id = ivarfl(isca(iscalt))
-    call field_get_key_int(f_id, kbfid, b_f_id)
-    if (b_f_id .ge. 0) then
-      call field_get_val_s(b_f_id, bvar_s)
-      do ifac = 1, nfabor
-        btemp_s(ifac) = bvar_s(ifac)
-      enddo
-    endif
-
-    ! Now convert to temperature
-
-    if (itherm.eq.2) then
-
-      do ifac = 1, nfabor
-        flag = 1
-        enthal = btemp_s(ifac)
-        call usthht(flag, enthal, btemp_s(ifac))
-      enddo
-
-    else if (itherm.eq.3) then
-      ! TODO complete this
-    endif
-
+  if (b_f_id .ge. 0) then
+    call field_get_val_s(b_f_id, bvar_s)
+    call b_h_to_t(bvar_s, btemp_s)
+  else
+    call b_h_to_t(btemp_s, btemp_s)
   endif
 
 endif

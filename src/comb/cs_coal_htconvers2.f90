@@ -205,7 +205,6 @@ elseif( ihflt2.ne.0 ) then
 
     write(nfecra,1000) mode
     call csexit (1)
-    !==========
 
   endif
 
@@ -219,17 +218,16 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
-'@ @@ WARNING : Error in cs_coal_htconver2             ',/,&
-'@    =========                                               ',/,&
-'@    Incorrecte value of the argument mode                   ',/,&
+'@ @@ Error: in cs_coal_htconver2                             ',/,&
+'@    ======                                                  ',/,&
+'@    Incorrect value of the argument mode                    ',/,&
 '@    it must be an integer equal to 1 or -1                  ',/,&
-'@    it worths here ',I10                                     ,/,&
+'@    its value here is ', i10                                ,/,&
 '@                                                            ',/,&
 '@  The calculation can not run.                              ',/,&
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
 
 !----
 ! End

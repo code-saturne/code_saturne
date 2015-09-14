@@ -122,16 +122,17 @@ double precision propce(ncelet,*)
 double precision rcodcl(ndimfb,nvarcl,3)
 
 ! Local variables
+
 integer          iok, ifac, iel, ideb, ivart
 integer          mode, ifvu, ii, izonem, izone
 integer          nrferr(14), icoerr(15)
-integer          ivahg
+integer          ivahg, nlst
 
 double precision tmin , tmax   , tx
 double precision xmtk
 double precision rvferr(25)
 
-integer, allocatable, dimension(:) :: isothm
+integer, allocatable, dimension(:) :: isothm, lstfac
 
 double precision, allocatable, dimension(:) :: tempk, thwall
 double precision, allocatable, dimension(:) :: text, tint
@@ -150,7 +151,7 @@ save       ipacli
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(isothm(nfabor))
+allocate(isothm(nfabor), lstfac(nfabor))
 allocate(tempk(ncelet), thwall(ndimfb))
 allocate(text(nfabor), tint(nfabor))
 
@@ -277,8 +278,6 @@ if (ipacli.eq.1 .and. isuird.eq.0) then
 
   ! Tparoi en Kelvin et QINCID en W/m2
   do ifac = 1, nfabor
-    tparo(ifac) = tint(ifac)
-    bqinci(ifac) = stephn*tint(ifac)**4
     if (itypfb(ifac).eq.iparoi.or.itypfb(ifac).eq.iparug) then
       tparo(ifac) = tint(ifac)
       bqinci(ifac) = stephn*tint(ifac)**4
@@ -643,11 +642,9 @@ enddo
 ! 4. STOCKAGE DE LA TEMPERATURE (en Kelvin) dans TEMPK(IEL)
 !===============================================================================
 
+call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
+
 if (itherm.eq.1) then
-
-  !---> ON REMPLIT TEMPK
-
-  call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
   if (itpscl.eq.2) then
     do iel = 1, ncel
@@ -661,30 +658,7 @@ if (itherm.eq.1) then
 
 elseif (itherm.eq.2) then
 
-  !---> LECTURES DES DONNEES UTILISATEURS (TBORD est un auxiliaire)
-
-  mode = 1
-
-  if (ippmod(iphpar).le.1) then
-
-    call usray4 &
- ( nvar   , nscal  ,                                              &
-   mode   ,                                                       &
-   itypfb ,                                                       &
-   dt     ,                                                       &
-   tparo  , thwall , tempk  )
-      ! Resultat : T en K
-
-  else
-
-    call ppray4 &
- ( mode   ,                                                       &
-   itypfb ,                                                       &
-   propce ,                                                       &
-   tparo  , thwall , tempk  )
-      ! Resultat : T en K
-
-  endif
+  call c_h_to_t(cvara_scalt, tempk) ! Resultat : T en K
 
 endif
 
@@ -707,9 +681,7 @@ if (ideb.eq.1) then
 
   do ifac = 1, nfabor
     if (isothm(ifac).ne.-1) then
-      bfconv(ifac) =                               &
-      bhconv(ifac)*(tempk(ifabor(ifac))-           &
-      tparo(ifac))
+      bfconv(ifac) = bhconv(ifac)*(tempk(ifabor(ifac))-tparo(ifac))
     endif
   enddo
 
@@ -803,28 +775,15 @@ elseif (itherm.eq.2) then
 
   if (mode.eq.-1) then
 
-    if (ippmod(iphpar).le.1) then
+    nlst = 0
+    do ifac = 1, nfabor
+      if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+        nlst = nlst+1
+        lstfac(nlst) = ifac
+      endif
+    enddo
 
-      call usray4 &
-    ( nvar   , nscal  ,                                              &
-      mode   ,                                                       &
-      itypfb ,                                                       &
-      dt     ,                                                       &
-      tparo  , bfnet  ,                                              &
-      tempk  )
-      ! HPAROI
-
-    else
-
-      call ppray4 &
-    ( mode   ,                                                       &
-      itypfb ,                                                       &
-      propce ,                                                       &
-      tparo  , bfnet  ,                                              &
-      tempk  )
-      ! HPAROI
-
-    endif
+    call b_t_to_h(nlst, lstfac, tparo, bfnet)
 
   endif
 
@@ -838,26 +797,15 @@ elseif (itherm.eq.2) then
 
   if (mode.eq.-1) then
 
-    if (ippmod(iphpar).le.1) then
+    nlst = 0
+    do ifac = 1, nfabor
+      if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+        nlst = nlst+1
+        lstfac(nlst) = ifac
+      endif
+    enddo
 
-      call usray4 &
-    ( nvar   , nscal  ,                                              &
-      mode   ,                                                       &
-      itypfb ,                                                       &
-      dt     ,                                                       &
-      text   , thwall , tempk  )
-      ! HEXT
-
-    else
-
-      call ppray4 &
-    ( mode   ,                                                       &
-      itypfb ,                                                       &
-      propce ,                                                       &
-      text   , thwall , tempk  )
-      ! HEXT
-
-    endif
+    call b_t_to_h(nlst, lstfac, text, thwall)
 
   endif
 
@@ -904,7 +852,7 @@ elseif (itherm.eq.2) then
 endif
 
 ! Free memory
-deallocate(isothm)
+deallocate(isothm,lstfac)
 deallocate(tempk,thwall)
 deallocate(text, tint)
 

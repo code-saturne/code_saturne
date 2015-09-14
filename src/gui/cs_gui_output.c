@@ -66,6 +66,7 @@
 #include "cs_base.h"
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
+#include "cs_mesh_location.h"
 #include "cs_selector.h"
 #include "cs_post.h"
 #include "cs_field.h"
@@ -108,6 +109,66 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a boundary temperatures field in case of enthalpy only
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_wall_temperature(void)
+{
+  cs_field_t *bf = NULL;
+
+  /* Build new field */
+
+  char b_name[] = "boundary_temperature";
+
+  /* Field may already have been defined */
+
+  bf = cs_field_by_name_try(b_name);
+
+  if (bf == NULL) {
+
+    int type_flag = CS_FIELD_INTENSIVE | CS_FIELD_POSTPROCESS;
+
+    bf = cs_field_create(b_name,
+                         type_flag,
+                         CS_MESH_LOCATION_BOUNDARY_FACES,
+                         1,
+                         true,
+                         false);
+
+    /* Set label */
+
+    cs_field_set_key_str(bf,
+                         cs_field_key_id("label"),
+                         "Temperature");
+
+    /* Activate postprocessing and logging */
+
+    int k_log = cs_field_key_id("log");
+    cs_field_set_key_int(bf, k_log, 1);
+
+    int k_vis = cs_field_key_id("post_vis");
+    cs_field_set_key_int(bf, k_vis, 1);
+
+  }
+  else {
+
+    if (   1 != bf->dim
+        || bf->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error defining variable \"boundary_temperature\" field:\n"
+                  "An incompatible field with matching name already exists:\n"
+                  "  id:          %d\n"
+                  "  location_id: %d\n"
+                  "  dimension:   %d"),
+                bf->id, bf->location_id, bf->dim);
+
+  }
+}
 
 /*============================================================================
  * Private function definitions
@@ -1131,15 +1192,13 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
     ipstdv[3] = 1;
   if (_surfacic_variable_post("boundary_temperature", true)) {
     cs_field_t *f = CS_F_(t);
-    if (f == NULL) {
-      const int itherm = cs_glob_thermal_model->itherm;
-      if (itherm == 2)
-        f = CS_F_(h);
-      else if (itherm == 3)
-        f = CS_F_(energy);
-    }
     if (f != NULL)
       cs_parameters_add_boundary_values(f);
+    else {
+      const int itherm = cs_glob_thermal_model->itherm;
+      if (itherm == 2)
+        _add_wall_temperature();
+    }
   }
 
   if (_surfacic_variable_post("boundary_layer_nusselt", true))
