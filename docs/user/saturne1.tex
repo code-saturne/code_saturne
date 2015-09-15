@@ -802,7 +802,8 @@ indicate a required argument, $[ ]$ to indicate an optional argument).
 
 The \texttt{time\_step\_limit} differs from the \texttt{max\_time\_step} command,
 in the sense that it allows reducing the maximum number of time steps,
-but not increasing it.
+but not increasing it. Also, in the case of a restart, it refers to the
+number of additional tile steps, not to the number of absolute time steps.
 
 Note that for the \texttt{postprocess\_time\_*} options, the last argument
 (\texttt{writer\_id}} is optional. If not defined, or 0, postprocessing
