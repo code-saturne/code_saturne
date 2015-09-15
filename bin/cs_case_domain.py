@@ -491,7 +491,12 @@ class domain(base_domain):
         try:
             os.symlink(target, link)
         except AttributeError:
-            shutil.copy2(target, link)
+            if not os.path.isdir(target):
+                shutil.copy2(target, link)
+            else:
+                if os.path.isdir(link):
+                    shutil.rmtree(link)
+                shutil.copytree(target, link)
 
     #---------------------------------------------------------------------------
 

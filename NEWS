@@ -5,6 +5,8 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix for restart on Windows.
+
 - Do not output joining statistics for each time step in performance.log for
   transient turbomachinery computations.
 
