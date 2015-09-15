@@ -80,7 +80,7 @@ double precision tp(*)
 
 ! Local variables
 
-integer          i, iel, ifac, ielt, nelt, icha
+integer          i, iel, ielt, nelt, icha
 
 double precision ychx10 , ychx20 , ehchx1 , ehchx2
 double precision den1   , den2 , eh0 , eh1
@@ -118,8 +118,6 @@ else
   call csexit(1)
 endif
 
-ifac = -1
-
 !===============================================================================
 
 allocate(cvar_f1m(ncharb))
@@ -136,8 +134,7 @@ do ielt = 1, nelt
   if (location_id .eq. MESH_LOCATION_CELLS) then
     iel = ielt
   else
-    ifac = ielt
-    iel = ifabor(ifac)
+    iel = ifabor(ielt)
   endif
 
 ! --- Calculation of enthalpy of the gaseous species CHx1m
@@ -212,8 +209,7 @@ do ielt = 1, nelt
   if (location_id .eq. MESH_LOCATION_CELLS) then
     iel = ielt
   else
-    ifac = ielt
-    iel = ifabor(ifac)
+    iel = ifabor(ielt)
   endif
 
   ! --- Calculation of enthalpy of the gaseous species CHx1m
@@ -288,8 +284,7 @@ do i = 1, npo-1
     if (location_id .eq. MESH_LOCATION_CELLS) then
       iel = ielt
     else
-      ifac = ielt
-      iel = ifabor(ifac)
+      iel = ifabor(ielt)
     endif
 
     ! --- Calculation of enthalpy of the gaseous species CHx1m
