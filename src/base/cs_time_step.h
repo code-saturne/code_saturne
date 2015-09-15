@@ -137,6 +137,24 @@ extern const cs_time_step_options_t  *cs_glob_time_step_options;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_time_step
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_time_step_t *
+cs_get_glob_time_step(void);
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_time_step_options
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_time_step_options_t *
+cs_get_glob_time_step_options(void);
+
+/*----------------------------------------------------------------------------
  * Define whether time step is variable or not
  *
  * parameters:

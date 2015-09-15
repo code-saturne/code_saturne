@@ -250,7 +250,7 @@ allocate(izft1d(nfabor))
 if (iihmpr.eq.1) then
   call uikpdc &
 ( iappel ,          &
-  ncelet , ncepdc , &
+  ncepdc ,          &
   ivoid  ,          &
   rvoid  )
 endif
@@ -510,7 +510,7 @@ call iniva0(nvar, nscal, dt, propce, frcxt, prhyd)
 if (iporos.ge.1) then
 
   if (iihmpr.eq.1) then
-    call uiporo(ncelet, iporos)
+    call uiporo(iporos)
   endif
   call usporo
 
@@ -764,7 +764,7 @@ if (ncpdct.gt.0) then
   endif
 
   if (iihmpr.eq.1) then
-    call uikpdc(iappel, ncelet, ncepdc, icepdc, ckupdc)
+    call uikpdc(iappel, ncepdc, icepdc, ckupdc)
   endif
 
   call cs_user_head_losses &
@@ -967,10 +967,7 @@ if (itrale.gt.0) then
   ! Sortie postprocessing de profils 1D
 
   if (iihmpr.eq.1) then
-    call uiprof                                                   &
-  ( ncelet , ncel,                                                &
-    ntmabs, ntcabs, ttcabs, ttmabs, ttpabs,                       &
-    xyzcen)
+    call uiprof()
   endif
 
   call cs_f_user_extra_operations &

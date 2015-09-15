@@ -89,6 +89,10 @@
 #include "cs_turbomachinery.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
+#include "cs_turbulence_model.h"
+#include "cs_wall_functions.h"
+#include "cs_physical_constants.h"
+#include "cs_stokes_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -269,13 +273,13 @@ _thermal_table_needed(const char *name)
 static void
 _physical_property(const char       *param,
                    const char       *symbol,
-                   const cs_lnum_t  *ncel,
-                   const cs_lnum_t  *ncelet,
-                   const cs_int_t   *icp,
-                   const cs_real_t  *p0,
-                   const cs_real_t  *ro0,
-                   const cs_real_t  *cp0,
-                   const cs_real_t  *viscl0,
+                   const cs_lnum_t  ncel,
+                   const cs_lnum_t  ncelet,
+                   const cs_int_t   icp,
+                   const cs_real_t  p0,
+                   const cs_real_t  ro0,
+                   const cs_real_t  cp0,
+                   const cs_real_t  viscl0,
                    const cs_real_t  *visls0,
                    double            values[])
 {
@@ -321,26 +325,26 @@ _physical_property(const char       *param,
       mei_tree_insert(ev_law, "y", 0.0);
       mei_tree_insert(ev_law," z", 0.0);
 
-      mei_tree_insert(ev_law, "p0", *p0);
+      mei_tree_insert(ev_law, "p0", p0);
 
       if (cs_gui_strcmp(param, "density"))
       {
-        mei_tree_insert(ev_law, "rho0", *ro0);
+        mei_tree_insert(ev_law, "rho0", ro0);
       }
       else if (cs_gui_strcmp(param, "molecular_viscosity")) {
-        mei_tree_insert(ev_law, "rho0", *ro0);
-        mei_tree_insert(ev_law, "mu0", *viscl0);
+        mei_tree_insert(ev_law, "rho0", ro0);
+        mei_tree_insert(ev_law, "mu0", viscl0);
         mei_tree_insert(ev_law, "rho", 0.0);
         if (cs_gui_strcmp(vars->model, "compressible_model"))
           mei_tree_insert(ev_law, "t0", 0.0);
       }
       else if (cs_gui_strcmp(param, "specific_heat")) {
-        mei_tree_insert(ev_law, "cp0", *cp0);
+        mei_tree_insert(ev_law, "cp0", cp0);
       }
       else if (cs_gui_strcmp(param, "thermal_conductivity")) {
         /* for the Temperature, the diffusivity factor is not divided by Cp */
         if (itherm != 1)
-          mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]*(*cp0));
+          mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]*(cp0));
         else
           mei_tree_insert(ev_law, "lambda0", visls0[iscalt-1]);
       }
@@ -386,7 +390,7 @@ _physical_property(const char       *param,
       cs_field_t *c_rho = CS_F_(rho);
       cs_field_t *c_t = CS_F_(t);
 
-      for (iel = 0; iel < *ncel; iel++) {
+      for (iel = 0; iel < ncel; iel++) {
 
         mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
         mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
@@ -412,10 +416,10 @@ _physical_property(const char       *param,
           const cs_thermal_model_t  *tm = cs_glob_thermal_model;
           if (tm->itherm == 1)
             values[iel] = mei_tree_lookup(ev_law, symbol);
-          else if (*icp > 0)
+          else if (icp > 0)
             values[iel] = mei_tree_lookup(ev_law, symbol) / c_cp->val[iel];
           else
-            values[iel] = mei_tree_lookup(ev_law, symbol) / *cp0;
+            values[iel] = mei_tree_lookup(ev_law, symbol) / cp0;
         }
         else {
           values[iel] = mei_tree_lookup(ev_law, symbol);
@@ -468,9 +472,9 @@ _physical_property(const char       *param,
     cs_field_t *c_pres = CS_F_(p);
 
     cs_real_t *ptot;
-    BFT_MALLOC(ptot, *ncelet, cs_real_t);
-    for (iel = 0; iel < *ncelet; iel++)
-      ptot[iel] = c_pres->val[iel] + *p0;
+    BFT_MALLOC(ptot, ncelet, cs_real_t);
+    for (iel = 0; iel < ncelet; iel++)
+      ptot[iel] = c_pres->val[iel] + p0;
 
     cs_field_t *_th_f[] = {CS_F_(t), CS_F_(h), CS_F_(energy)};
 
@@ -478,7 +482,7 @@ _physical_property(const char       *param,
       if (_th_f[i]) {
         if ((_th_f[i])->type & CS_FIELD_VARIABLE) {
           cs_phys_prop_compute(property,
-                              *ncel, ptot, _th_f[i]->val, c_prop->val);
+                              ncel, ptot, _th_f[i]->val, c_prop->val);
           break;
         }
       }
@@ -497,11 +501,11 @@ static void
 _compressible_physical_property(const char       *param,
                                 const char       *symbol,
                                 const cs_int_t    idx,
-                                const cs_lnum_t  *ncel,
+                                const cs_lnum_t  ncel,
                                 const cs_int_t   *itempk,
-                                const cs_real_t  *p0,
-                                const cs_real_t  *t0,
-                                const cs_real_t  *ro0,
+                                const cs_real_t  p0,
+                                const cs_real_t  t0,
+                                const cs_real_t  ro0,
                                 const cs_real_t  *visls0,
                                 const cs_real_t  *viscv0)
 {
@@ -543,12 +547,12 @@ _compressible_physical_property(const char       *param,
       mei_tree_insert(ev_law, "y", 0.0);
       mei_tree_insert(ev_law," z", 0.0);
 
-      mei_tree_insert(ev_law, "p0", *p0);
-      mei_tree_insert(ev_law, "t0", *t0);
+      mei_tree_insert(ev_law, "p0", p0);
+      mei_tree_insert(ev_law, "t0", t0);
 
       if (cs_gui_strcmp(param, "thermal_conductivity")) {
         mei_tree_insert(ev_law, "lambda0", visls0[*itempk -1]);
-        mei_tree_insert(ev_law, "rho0", *ro0);
+        mei_tree_insert(ev_law, "rho0", ro0);
       }
       else if (cs_gui_strcmp(param, "volume_viscosity")) {
         mei_tree_insert(ev_law, "viscv0", *viscv0);
@@ -584,7 +588,7 @@ _compressible_physical_property(const char       *param,
 
       cs_field_t *f = CS_F_(energy);
 
-      for (cs_lnum_t iel = 0; iel < *ncel; iel++) {
+      for (cs_lnum_t iel = 0; iel < ncel; iel++) {
         mei_tree_insert(ev_law, "x", cell_cen[iel][0]);
         mei_tree_insert(ev_law, "y", cell_cen[iel][1]);
         mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
@@ -2133,45 +2137,44 @@ _get_rotor_face_joining(const char  *keyword,
  *
  * Fortran Interface:
  *
- * subroutine csther (itherm, itpscl)
+ * subroutine csther ()
  * *****************
  *
- * integer          itherm  --> thermal model
- * integer          itpscl  --> temperature scale if itherm = 1
  *----------------------------------------------------------------------------*/
 
 
-void CS_PROCF (csther, CSTHER) (int  *itherm,
-                                int  *itpscl)
+void CS_PROCF (csther, CSTHER) (void)
 {
+  cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
+
   switch(cs_gui_thermal_model()) {
   case 10:
-    *itherm = 1;
-    *itpscl = 2;
+    thermal->itherm = 1;
+    thermal->itpscl = 2;
     break;
   case 11:
-    *itherm = 1;
-    *itpscl = 1;
+    thermal->itherm = 1;
+    thermal->itpscl = 1;
     break;
   case 12:
-    *itherm = 1;
-    *itpscl = 2;
+    thermal->itherm = 1;
+    thermal->itpscl = 2;
     break;
   case 13:
-    *itherm = 1;
-    *itpscl = 2;
+    thermal->itherm = 1;
+    thermal->itpscl = 2;
     break;
   case 20:
-    *itherm = 2;
-    *itpscl = 1;
+    thermal->itherm = 2;
+    thermal->itpscl = 1;
     break;
   case 30:
-    *itherm = 3;
-    *itpscl = 1;
+    thermal->itherm = 3;
+    thermal->itpscl = 1;
     break;
   default:
-    *itherm = 0;
-    *itpscl = 0;
+    thermal->itherm = 0;
+    thermal->itpscl = 0;
     break;
   }
 }
@@ -2191,11 +2194,7 @@ void CS_PROCF (csther, CSTHER) (int  *itherm,
  * DOUBLE PRECISION XLOMLG  -->   mixing_length_scale
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csturb, CSTURB) (int    *iturb,
-                                int    *iwallf,
-                                int    *igrake,
-                                int    *igrari,
-                                double *xlomlg)
+void CS_PROCF (csturb, CSTURB) (void)
 {
   char *model = NULL;
   char *flux_model = NULL;
@@ -2204,63 +2203,72 @@ void CS_PROCF (csturb, CSTURB) (int    *iturb,
   if (model == NULL)
     return;
 
+  int iwallf = -1;
+  cs_turb_model_t *turb_mdl = cs_get_glob_turb_model();
+  cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
+
   if (cs_gui_strcmp(model, "off"))
-    *iturb = 0;
+    turb_mdl->iturb = 0;
   else if (cs_gui_strcmp(model, "mixing_length")) {
-    *iturb = 10;
-    _option_turbulence_double("mixing_length_scale", xlomlg);
+    turb_mdl->iturb = 10;
+    _option_turbulence_double("mixing_length_scale", &(rans_mdl->xlomlg));
   } else if (cs_gui_strcmp(model, "k-epsilon")) {
-    *iturb = 20;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+    turb_mdl->iturb = 20;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
-    *iturb = 21;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+    turb_mdl->iturb = 21;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "Rij-epsilon")) {
-    *iturb = 30;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+    turb_mdl->iturb = 30;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
   } else if (cs_gui_strcmp(model, "Rij-SSG")) {
-    *iturb = 31;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+    turb_mdl->iturb = 31;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
   } else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-    *iturb = 32;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrari);
+    turb_mdl->iturb = 32;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrari));
   } else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
-    *iturb = 40;
+    turb_mdl->iturb = 40;
   } else if (cs_gui_strcmp(model, "LES_dynamique")) {
-    *iturb = 41;
+    turb_mdl->iturb = 41;
   } else if (cs_gui_strcmp(model, "LES_WALE")) {
-    *iturb = 42;
+    turb_mdl->iturb = 42;
   } else if (cs_gui_strcmp(model, "v2f-phi")) {
-    *iturb = 50;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+    turb_mdl->iturb = 50;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-    *iturb = 51;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+    turb_mdl->iturb = 51;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "k-omega-SST")) {
-    *iturb = 60;
-    cs_gui_advanced_options_turbulence("wall_function", iwallf);
-    cs_gui_advanced_options_turbulence("gravity_terms", igrake);
+    turb_mdl->iturb = 60;
+    cs_gui_advanced_options_turbulence("wall_function", &iwallf);
+    cs_gui_advanced_options_turbulence("gravity_terms", &(rans_mdl->igrake));
   } else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-    *iturb = 70;
+    turb_mdl->iturb = 70;
   } else
     bft_error(__FILE__, __LINE__, 0,
         _("Invalid turbulence model: %s.\n"), model);
 
+  cs_wall_functions_t *wall_fnt = cs_get_glob_wall_functions();
+
+  if (iwallf !=-1) {
+    wall_fnt->iwallf = (cs_wall_f_type_t)iwallf;  // TODO mettre un switch case?
+  }
 #if _XML_DEBUG_
   bft_printf("==>CSTURB\n");
   bft_printf("--model: %s\n", model);
-  bft_printf("--iturb = %i\n", *iturb);
-  bft_printf("--igrake = %i\n", *igrake);
-  bft_printf("--igrari = %i\n", *igrari);
-  bft_printf("--iwallf = %i\n", *iwallf);
-  bft_printf("--xlomlg = %f\n", *xlomlg);
+  bft_printf("--iturb = %i\n", turb_mdl->iturb);
+  bft_printf("--igrake = %i\n", rans_mdl->igrake);
+  bft_printf("--igrari = %i\n", rans_mdl->igrari);
+  bft_printf("--iwallf = %i\n", wall_fnt->iwallf);
+  bft_printf("--xlomlg = %f\n", rans_mdl->xlomlg);
 #endif
 
   BFT_FREE(model);
@@ -2278,16 +2286,17 @@ void CS_PROCF (csturb, CSTURB) (int    *iturb,
  * INTEGER          ICP     -->   specific heat variable or constant indicator
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cscpva, CSCPVA) (int *icp)
+void CS_PROCF (cscpva, CSCPVA) (void)
 {
   int choice;
+  cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
 
   if (_properties_choice_id("specific_heat", &choice))
-    *icp = choice;
+    phys_pp->icp = choice;
 
 #if _XML_DEBUG_
   bft_printf("==>CSCPVA\n");
-  bft_printf("--icp = %i\n", *icp);
+  bft_printf("--icp = %i\n", phys_pp->icp);
 #endif
 }
 
@@ -2432,34 +2441,34 @@ void CS_PROCF (csivis, CSIVIS) (void)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIDTV (IDTVAR)
+ * SUBROUTINE CSIDTV ()
  * *****************
  *
- * INTEGER          IDTVAR  -->   fixed or variable time step
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csidtv, CSIDTV) (int *idtvar)
+void CS_PROCF (csidtv, CSIDTV) (void)
 {
   double param;
   int steady = 0;
+  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
 
   _get_steady_status(&steady);
   if (steady) {
     char *algo_choice = _velocity_pressure_algo_choice();
     if (cs_gui_strcmp(algo_choice, "simple"))
-      *idtvar = -1;
+      time_opt->idtvar = -1;
     else
-      *idtvar = 2;
+      time_opt->idtvar = 2;
     BFT_FREE(algo_choice);
   } else {
-    param = (double) *idtvar;
+    param = (double) time_opt->idtvar;
     _time_parameters("time_passing", &param);
-    *idtvar = (int) param;
+    time_opt->idtvar = (int) param;
   }
 
 #if _XML_DEBUG_
   bft_printf("==>CSIDTV\n");
-  bft_printf("--idtvar = %i\n", *idtvar);
+  bft_printf("--idtvar = %i\n", time_opt->idtvar);
 #endif
 }
 
@@ -2468,16 +2477,16 @@ void CS_PROCF (csidtv, CSIDTV) (int *idtvar)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSIPHY (IPHYDR)
+ * SUBROUTINE CSIPHY ()
  * *****************
  *
- * INTEGER          IPHYDR  -->   hydrostatic pressure
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csiphy, CSIPHY) (int *iphydr)
+void CS_PROCF (csiphy, CSIPHY) (void)
 {
   char *path = NULL;
   int   result;
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
 
   path = cs_xpath_short_path();
   cs_xpath_add_element(&path, "numerical_parameters");
@@ -2485,13 +2494,13 @@ void CS_PROCF (csiphy, CSIPHY) (int *iphydr)
   cs_xpath_add_attribute(&path, "status");
 
   if (cs_gui_get_status(path, &result))
-    *iphydr = result;
+    stokes->iphydr = result;
 
   BFT_FREE(path);
 
 #if _XML_DEBUG_
   bft_printf("==>CSIPHY\n");
-  bft_printf("--iphydr = %i\n", *iphydr);
+  bft_printf("--iphydr = %i\n", stokes->iphydr);
 #endif
 }
 
@@ -2560,92 +2569,72 @@ void CS_PROCF (csisui, CSISUI) (int *ntsuit,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTIME (INPDT0, IPTLTO, NTMABS, DTREF,
- * *****************  DTMIN,  DTMAX,  COUMAX, FOUMAX, VARRDT)
+ * SUBROUTINE CSTIME ()
  *
- * INTEGER          INPDT0  -->   zero time step
- * INTEGER          IPTLTO  -->   thermal time step control
- * INTEGER          NTMABS  -->   iterations numbers
- * INTEGER          IDTVAR  -->   time steps'options
- * DOUBLE PRECISION DTREF   -->   time step
- * DOUBLE PRECISION DTMIN   -->   minimal time step
- * DOUBLE PRECISION DTMAX   -->   maximal time step
- * DOUBLE PRECISION COUMAX  -->   maximal courant number
- * DOUBLE PRECISION FOUMAX  -->   maximal fournier number
- * DOUBLE PRECISION VARRDT  -->   max time step variation between 2 iterations
- * DOUBLE PRECISION RELXST  -->   relaxation coefficient id idtvar = -1
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstime, CSTIME) (int    *inpdt0,
-                                int    *iptlro,
-                                int    *ntmabs,
-                                int    *idtvar,
-                                double *dtref,
-                                double *dtmin,
-                                double *dtmax,
-                                double *coumax,
-                                double *foumax,
-                                double *varrdt,
-                                double *relxst)
+void CS_PROCF (cstime, CSTIME) (void)
 {
   double value;
   /* Default values for time step factor */
   double cdtmin = 0.1, cdtmax = 1000.;
+  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
+  cs_time_step_t *time_stp = cs_get_glob_time_step();
 
-  if (*idtvar == -1) {
-    _steady_parameters("relaxation_coefficient", relxst);
+  if (time_opt->idtvar == -1) {
+    _steady_parameters("relaxation_coefficient", &(time_opt->relxst));
 
-    value =(double) *inpdt0;
+    value =(double) time_opt->inpdt0;
     _steady_parameters("zero_iteration", &value);
-    *inpdt0 = (int) value;
+    time_opt->inpdt0 = (int) value;
 
-    value =(double) *ntmabs;
+    value =(double) time_stp->nt_max;
     _steady_parameters("iterations", &value);
-    *ntmabs = (int) value;
+    time_stp->nt_max = (int) value;
   } else {
-    _time_parameters("time_step_ref", dtref);
+    _time_parameters("time_step_ref", &(time_opt->dtref));
     _time_parameters("time_step_min_factor", &cdtmin);
     _time_parameters("time_step_max_factor", &cdtmax);
-    _time_parameters("max_courant_num", coumax);
-    _time_parameters("max_fourier_num", foumax);
-    _time_parameters("time_step_var", varrdt);
+    _time_parameters("max_courant_num", &(time_opt->coumax));
+    _time_parameters("max_fourier_num", &(time_opt->foumax));
+    _time_parameters("time_step_var", &(time_opt->varrdt));
 
-    *dtmin = cdtmin*(*dtref);
-    *dtmax = cdtmax*(*dtref);
+    time_opt->dtmin = cdtmin * time_opt->dtref;
+    time_opt->dtmax = cdtmax * time_opt->dtref;
 
     /* We keep these two lines in case we read an old XML file... */
-    _time_parameters("time_step_min", dtmin);
-    _time_parameters("time_step_max", dtmax);
+    _time_parameters("time_step_min", &(time_opt->dtmin));
+    _time_parameters("time_step_max", &(time_opt->dtmax));
 
-    value =(double) *ntmabs;
+    value =(double) time_stp->nt_max;
     _time_parameters("iterations", &value);
-    *ntmabs = (int) value;
+    time_stp->nt_max = (int) value;
 
-    value =(double) *inpdt0;
+    value =(double) time_opt->inpdt0;
     _time_parameters("zero_time_step", &value);
-    *inpdt0 = (int) value;
+    time_opt->inpdt0 = (int) value;
 
-    value =(double) *iptlro;
+    value =(double) time_opt->iptlro;
     _time_parameters("thermal_time_step", &value);
-    *iptlro = (int) value;
+    time_opt->iptlro = (int) value;
   }
 
 #if _XML_DEBUG_
   bft_printf("==>CSTIME\n");
-  bft_printf("--idtvar = %i\n", *idtvar);
-  if (*idtvar == -1) {
-    bft_printf("--inpdt0 = %i\n", *inpdt0);
-    bft_printf("--relxst = %f\n", *relxst);
+  bft_printf("--idtvar = %i\n", time_opt->idtvar);
+  if (time_opt->idtvar == -1) {
+    bft_printf("--inpdt0 = %i\n", time_opt->inpdt0);
+    bft_printf("--relxst = %f\n", time_opt->relxst);
   } else {
-    bft_printf("--inpdt0 = %i\n", *inpdt0);
-    bft_printf("--iptlro = %i\n", *iptlro);
-    bft_printf("--ntmabs = %i\n", *ntmabs);
-    bft_printf("--dtref = %f\n",  *dtref);
-    bft_printf("--dtmin = %f\n",  *dtmin);
-    bft_printf("--dtmax = %f\n",  *dtmax);
-    bft_printf("--coumax = %f\n", *coumax);
-    bft_printf("--foumax = %f\n", *foumax);
-    bft_printf("--varrdt = %f\n", *varrdt);
+    bft_printf("--inpdt0 = %i\n", time_opt->inpdt0);
+    bft_printf("--iptlro = %i\n", time_opt->iptlro);
+    bft_printf("--ntmabs = %i\n", time_stp->nt_max);
+    bft_printf("--dtref = %f\n",  time_opt->dtref);
+    bft_printf("--dtmin = %f\n",  time_opt->dtmin);
+    bft_printf("--dtmax = %f\n",  time_opt->dtmax);
+    bft_printf("--coumax = %f\n", time_opt->coumax);
+    bft_printf("--foumax = %f\n", time_opt->foumax);
+    bft_printf("--varrdt = %f\n", time_opt->varrdt);
   }
 #endif
 }
@@ -2717,21 +2706,21 @@ void CS_PROCF (uinum1, UINUM1) (double  *blencv,
 
 #if _XML_DEBUG_
   bft_printf("==>UINUM1\n");
-  for (f_id = 0; f_id < n_fields; f_id++) {
+  for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
       j = cs_field_get_key_int(f, var_key_id) -1;
-      bft_printf("-->variable[%i] = %s\n", i, f->name);
-      bft_printf("--blencv = %f\n", blencv[i]);
-      bft_printf("--epsilo = %g\n", epsilo[i]);
-      bft_printf("--cdtvar = %g\n", cdtvar[i]);
-      bft_printf("--nitmax = %i\n", nitmax[i]);
-      bft_printf("--ischcv = %i\n", ischcv[i]);
-      bft_printf("--isstpc = %i\n", isstpc[i]);
-      bft_printf("--ircflu = %i\n", ircflu[i]);
-      bft_printf("--nswrsm = %i\n", nswrsm[i]);
-      bft_printf("--imgr = %i\n"  , imgr[i]);
-      bft_printf("--iresol = %i\n", iresol[i]);
+      bft_printf("-->variable[%i] = %s\n", j, f->name);
+      bft_printf("--blencv = %f\n", blencv[j]);
+      bft_printf("--epsilo = %g\n", epsilo[j]);
+      bft_printf("--cdtvar = %g\n", cdtvar[j]);
+      //bft_printf("--nitmax = %i\n", nitmax[j]);
+      bft_printf("--ischcv = %i\n", ischcv[j]);
+      bft_printf("--isstpc = %i\n", isstpc[j]);
+      bft_printf("--ircflu = %i\n", ircflu[j]);
+      bft_printf("--nswrsm = %i\n", nswrsm[j]);
+      //bft_printf("--imgr = %i\n"  , imgr[j]);
+      //bft_printf("--iresol = %i\n", iresol[j]);
     }
   }
 #endif
@@ -2742,37 +2731,32 @@ void CS_PROCF (uinum1, UINUM1) (double  *blencv,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNUM2 (IVISSE, RELAXP, IPUCOU, EXTRAG, IMRGRA, IMGRPR)
+ * SUBROUTINE CSNUM2 (RELAXP, EXTRAG, IMRGRA)
  * *****************
- * INTEGER          IVISSE  -->   gradient transposed
  * DOUBLE PRECISION RELAXP  -->   pressure relaxation
- * INTEGER          IPUCOU  -->   velocity pressure coupling
  * DOUBLE PRECISION EXTRAG  -->   wall pressure extrapolation
  * INTEGER          IMRGRA  -->   gradient reconstruction
- * INTEGER          IMGRPR  -->   multigrid algorithm for pressure
- * INTEGER          NTERUP  -->   piso sweep number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnum2, CSNUM2)(   int *ivisse,
-                               double *relaxp,
-                                  int *ipucou,
+void CS_PROCF (csnum2, CSNUM2)(double *relaxp,
                                double *extrag,
-                                  int *imrgra,
-                                  int *nterup)
+                                  int *imrgra)
 {
-  _numerical_int_parameters("gradient_transposed", ivisse);
-  _numerical_int_parameters("velocity_pressure_coupling", ipucou);
+  cs_piso_t *piso = cs_get_glob_piso();
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  _numerical_int_parameters("gradient_transposed", &(stokes->ivisse));
+  _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
   _numerical_int_parameters("gradient_reconstruction", imrgra);
-  _numerical_int_parameters("piso_sweep_number", nterup);
+  _numerical_int_parameters("piso_sweep_number", &(piso->nterup));
   cs_gui_numerical_double_parameters("wall_pressure_extrapolation", extrag);
   cs_gui_numerical_double_parameters("pressure_relaxation", relaxp);
 
 #if _XML_DEBUG_
   bft_printf("==>CSNUM2\n");
-  bft_printf("--ivisse = %i\n", *ivisse);
-  bft_printf("--ipucou = %i\n", *ipucou);
+  bft_printf("--ivisse = %i\n", stokes->ivisse);
+  bft_printf("--ipucou = %i\n", stokes->ipucou);
   bft_printf("--imrgra = %i\n", *imrgra);
-  bft_printf("--nterup = %i\n", *nterup);
+  bft_printf("--nterup = %i\n", piso->nterup);
   bft_printf("--extrag = %f\n", *extrag);
   bft_printf("--relaxp = %f\n", *relaxp);
 #endif
@@ -2784,21 +2768,9 @@ void CS_PROCF (csnum2, CSNUM2)(   int *ivisse,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
-                                int        *irovar,
-                                int        *ivivar,
-                                int        *icorio,
-                                double     *gx,
-                                double     *gy,
-                                double     *gz,
-                                double     *ro0,
-                                double     *viscl0,
-                                double     *viscv0,
-                                double     *visls0,
-                                double     *cp0,
-                                double     *t0,
-                                double     *p0,
-                                double     *xmasmr,
-                                int        *itempk)
+                                    double *viscv0,
+                                    double *visls0,
+                                const int  *itempk)
 {
   int choice;
   char *material = NULL;
@@ -2809,9 +2781,11 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   const int itherm = cs_glob_thermal_model->itherm;
   /* const int iscalt = cs_glob_thermal_model->iscalt; */
 
-  _gravity_value("gravity_x", gx);
-  _gravity_value("gravity_y", gy);
-  _gravity_value("gravity_z", gz);
+cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
+
+  _gravity_value("gravity_x", &(phys_cst->gx));
+  _gravity_value("gravity_y", &(phys_cst->gy));
+  _gravity_value("gravity_z", &(phys_cst->gz));
 
   cs_real_t w_x, w_y, w_z;
   w_x = 0.;
@@ -2824,30 +2798,31 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
 
   if (w_x*w_x + w_y*w_y + w_z*w_z > 0.) {
     cs_rotation_define(w_x, w_y, w_z, 0, 0, 0);
-    *icorio = 1;
+    phys_cst->icorio = 1;
   }
   else
-    *icorio = 0;
+    phys_cst->icorio = 0;
 
-  cs_gui_reference_initialization("pressure", p0);
+  cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
+  cs_gui_reference_initialization("pressure", &(phys_pp->p0));
 
   /* Variable rho and viscl */
   if (*nmodpp == 0) {
     if (_properties_choice_id("density", &choice))
-      *irovar = choice;
+      phys_pp->irovar = choice;
 
     if (_properties_choice_id("molecular_viscosity", &choice))
-      *ivivar = choice;
+      phys_pp->ivivar = choice;
   }
   if (cs_gui_strcmp(vars->model, "compressible_model"))
     if (_properties_choice_id("molecular_viscosity", &choice))
-      *ivivar = choice;
+      phys_pp->ivivar = choice;
 
   // Read T0 in each case for user
-  cs_gui_reference_initialization("temperature", t0);
+  cs_gui_reference_initialization("temperature", &(phys_pp->t0));
 
   if (cs_gui_strcmp(vars->model, "compressible_model"))
-    cs_gui_reference_initialization("mass_molar", xmasmr);
+    cs_gui_reference_initialization("mass_molar", &(phys_pp->xmasmr));
 
   if (cs_gui_strcmp(vars->model, "thermal_scalar")) {
     material = _thermal_table_choice("material");
@@ -2882,22 +2857,31 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
 
   /* ro0, viscl0, cp0, isls0[iscalt-1] si tables */
   if (_thermal_table_needed("density") == 0)
-    cs_gui_properties_value("density", ro0);
+    cs_gui_properties_value("density", &phys_pp->ro0);
   else
     cs_phys_prop_compute(CS_PHYS_PROP_DENSITY,
-                         1, p0, t0, ro0);
+                         1,
+                         &phys_pp->p0,
+                         &phys_pp->t0,
+                         &phys_pp->ro0);
 
   if (_thermal_table_needed("molecular_viscosity") == 0)
-    cs_gui_properties_value("molecular_viscosity", viscl0);
+    cs_gui_properties_value("molecular_viscosity", &phys_pp->viscl0);
   else
     cs_phys_prop_compute(CS_PHYS_PROP_DYNAMIC_VISCOSITY,
-                         1, p0, t0, viscl0);
+                         1,
+                         &phys_pp->p0,
+                         &phys_pp->t0,
+                         &phys_pp->viscl0);
 
   if (_thermal_table_needed("specific_heat") == 0)
-    cs_gui_properties_value("specific_heat", cp0);
+    cs_gui_properties_value("specific_heat", &phys_pp->cp0);
   else
     cs_phys_prop_compute(CS_PHYS_PROP_ISOBARIC_HEAT_CAPACITY,
-                         1, p0, t0, cp0);
+                         1,
+                         &phys_pp->p0,
+                         &phys_pp->t0,
+                         &phys_pp->cp0);
 
   if (cs_gui_strcmp(vars->model, "compressible_model")) {
     cs_gui_properties_value("volume_viscosity", viscv0);
@@ -2909,18 +2893,18 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   bft_printf("--gx = %f \n",*gx);
   bft_printf("--gy = %f \n",*gy);
   bft_printf("--gz = %f \n",*gz);
-  bft_printf("--omegax = %f \n",*omegax);
-  bft_printf("--omegay = %f \n",*omegay);
-  bft_printf("--omegaz = %f \n",*omegaz);
-  bft_printf("--rho = %g , variable %i\n", *ro0, *irovar);
-  bft_printf("--mu = %g , variable %i \n", *viscl0, *ivivar);
-  bft_printf("--icorio = %i \n", *icorio);
-  bft_printf("--Cp = %g \n", *cp0);
-  bft_printf("--T0 = %f \n", *t0);
-  bft_printf("--P0 = %f \n", *p0);
+  //bft_printf("--omegax = %f \n",*omegax);
+  //bft_printf("--omegay = %f \n",*omegay);
+  //bft_printf("--omegaz = %f \n",*omegaz);
+  bft_printf("--icorio = %i \n", cs_glob_physical_constants->icorio);
+  bft_printf("--rho = %g , variable %i\n", cs_glob_fluid_properties->ro0, cs_glob_fluid_properties->irovar);
+  bft_printf("--mu = %g , variable %i \n", cs_glob_fluid_properties->viscl0, cs_glob_fluid_properties->ivivar);
+  bft_printf("--Cp = %g \n", cs_glob_fluid_properties->cp0);
+  bft_printf("--T0 = %f \n", cs_glob_fluid_properties->t0);
+  bft_printf("--P0 = %f \n", cs_glob_fluid_properties->p0);
   if (cs_gui_strcmp(vars->model, "compressible_model")) {
     bft_printf("--viscv0 = %g \n", *viscv0);
-    bft_printf("--xmasmr = %f \n", *xmasmr);
+    bft_printf("--xmasmr = %f \n", cs_glob_fluid_properties->xmasmr);
   }
 #endif
 }
@@ -2930,15 +2914,13 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
  *
  * Fortran Interface:
  *
- * subroutine cssca2 (iturb, iturt)
+ * subroutine cssca2 (iturt)
  * *****************
  *
- * integer          iturb    <--  turbulence model
  * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
-                                int        *iturt)
+void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
 {
 #if _XML_DEBUG_
   bft_printf("==>CSSCA2\n");
@@ -2967,7 +2949,7 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
           cs_field_set_key_double(f, kscmin, scal_min);
           cs_field_set_key_double(f, kscmax, scal_max);
 
-          if (*iturb/10 == 3) {
+          if (cs_glob_turb_model->iturb/10 == 3) {
             int turb_mdl;
             _variable_turbulent_flux_model(f->name, &turb_mdl);
             iturt[i] = turb_mdl;
@@ -3000,7 +2982,7 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
     cs_field_set_key_double(f, kscmax, scal_max);
     int i = cs_field_get_key_int(f, keysca) - 1;
 
-    if (*iturb/10 == 3) {
+    if (cs_glob_turb_model->iturb/10 == 3) {
       int turb_mdl;
       _variable_turbulent_flux_model(f->name, &turb_mdl);
       iturt[i] = turb_mdl;
@@ -3016,10 +2998,7 @@ void CS_PROCF (cssca2, CSSCA2) (const int  *iturb,
  * Read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
-                                double     *t0,
-                                double     *p0,
-                                double     *cp0)
+void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
 {
   double result, coeff, density;
 
@@ -3040,11 +3019,12 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
         cs_gui_properties_value("thermal_conductivity", &visls0[i]);
       else
         cs_phys_prop_compute(CS_PHYS_PROP_THERMAL_CONDUCTIVITY,
-                             1, p0, t0, &visls0[i]);
+                             1, &(cs_glob_fluid_properties->p0),
+                             &(cs_glob_fluid_properties->t0), &visls0[i]);
 
       /* for the Temperature, the diffusivity factor is not divided by Cp */
       if (itherm != 1)
-        visls0[i] = visls0[i] / *cp0;
+        visls0[i] = visls0[i] / cs_glob_fluid_properties->cp0;
     }
   }
 
@@ -3069,7 +3049,8 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
             if (result <= 0)
               bft_error(__FILE__, __LINE__, 0,
                         _("mass molar value is zero or not found in the xml file.\n"));
-            density = *p0 * result / (8.31446 *(*t0));
+            density = cs_glob_fluid_properties->p0 *
+                      result / (8.31446 *(cs_glob_fluid_properties->t0));
           }
           else
             cs_gui_properties_value("density", &density);
@@ -3082,10 +3063,10 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
           _scalar_diffusion_value(i+1, &coeff);
           visls0[i] = coeff * density;
         }
-      }
 #if _XML_DEBUG_
-      bft_printf("--visls0[%i] = %f\n", i, visls0[i]);
+        bft_printf("--visls0[%i] = %f\n", i, visls0[i]);
 #endif
+      }
     }
   }
 }
@@ -3095,34 +3076,32 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0,
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSTINI (UREF, ALMAX)
+ * SUBROUTINE CSTINI ()
  * *****************
  *
- * INTEGER          UREF   -->   reference velocity
- * INTEGER          ALMAX  -->   reference length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cstini, CSTINI) (double *uref,
-                                double *almax)
+void CS_PROCF (cstini, CSTINI) (void)
 {
   char* length_choice = NULL;
+  cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
 
-  *uref = 1.; /* default if not specified */
+  rans_mdl->uref = 1.; /* default if not specified */
 
-  cs_gui_reference_initialization("velocity", uref);
+  cs_gui_reference_initialization("velocity", &(rans_mdl->uref));
 
   length_choice = _reference_length_initialization_choice();
 
   if (length_choice != NULL) {
     if (cs_gui_strcmp(length_choice, "prescribed"))
-      cs_gui_reference_initialization("length", almax);
+      cs_gui_reference_initialization("length", &(rans_mdl->almax));
     BFT_FREE(length_choice);
   }
 
 #if _XML_DEBUG_
   bft_printf("==>CSTINI\n");
-  bft_printf("--almax = %f\n", *almax);
-  bft_printf("--uref  = %f\n", *uref);
+  bft_printf("--almax = %f\n", rans_mdl->almax);
+  bft_printf("--uref  = %f\n", rans_mdl->uref);
 #endif
 }
 
@@ -3185,12 +3164,10 @@ void CS_PROCF (uiipsu, UIIPSU) (int *iporos)
  * SUBROUTINE UIPORO
  * *****************
  *
- * integer          ncelet   <--  number of cells with halo
  * integer          iporos   <--  porosity model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiporo, UIPORO) (const cs_lnum_t  *ncelet,
-                                const int        *iporos)
+void CS_PROCF (uiporo, UIPORO) (const int        *iporos)
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_3_t *restrict cell_cen
@@ -3223,7 +3200,7 @@ void CS_PROCF (uiporo, UIPORO) (const cs_lnum_t  *ncelet,
     }
   }
 
-  for (cs_lnum_t iel = 0; iel < *ncelet; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells_ext; iel++) {
     porosi[iel] = 1.;
     if (ftporo != NULL) {
       porosf[iel][0] = 1.;
@@ -3345,9 +3322,9 @@ void CS_PROCF (uiporo, UIPORO) (const cs_lnum_t  *ncelet,
  * double precision tsimp    -->  implicit source terms
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t *restrict vel,
-                              cs_real_3_t       *restrict tsexp,
-                              cs_real_33_t      *restrict tsimp)
+void CS_PROCF(uitsnv, UITSNV)(const cs_real_3_t  *restrict vel,
+                                    cs_real_3_t  *restrict tsexp,
+                                    cs_real_33_t *restrict tsimp)
 {
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_t *restrict cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
@@ -3706,40 +3683,29 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
  * subroutine uiiniv
  * *****************
  *
- * integer          ncelet   <--  number of cells with halo
  * integer          isuite   <--  restart indicator
  * integer          idarcy   <--  darcy module activation
  * integer          iccfth   -->  type of initialization (compressible model)
- * double precision ro0      <--  value of density if IROVAR=0
- * double precision cp0      <--  value of specific heat if ICP=0
- * double precision viscl0   <--  value of viscosity if IVIVAR=0
- * double precision uref     <--  value of reference velocity
- * double precision almax    <--  value of reference length
- * double precision xyzcen   <--  cell's gravity center
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
-                              const int          *isuite,
+void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                               const int          *idarcy,
-                              int                *iccfth,
-                              const cs_real_t    *ro0,
-                              const cs_real_t    *cp0,
-                              const cs_real_t    *viscl0,
-                              const cs_real_t    *uref,
-                              const cs_real_t    *almax,
-                              const cs_real_t    *xyzcen)
+                              int                *iccfth)
 {
   /* Coal combustion: the initialization of the model scalar are not given */
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
 
   cs_lnum_t icel, iel;
-  int zones            = 0;
-  cs_lnum_t cells            = 0;
-  int ccfth            = 0;
-  cs_lnum_t *cells_list      = NULL;
-  char *path           = NULL;
-  char *path1          = NULL;
-  char *status         = NULL;
-  char *zone_id        = NULL;
+  int zones             = 0;
+  cs_lnum_t cells       = 0;
+  int ccfth             = 0;
+  cs_lnum_t *cells_list = NULL;
+  char *path            = NULL;
+  char *path1           = NULL;
+  char *status          = NULL;
+  char *zone_id         = NULL;
 
   cs_var_t  *vars = cs_glob_var;
 
@@ -3764,7 +3730,7 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
     if (cs_gui_strcmp(status, "on")) {
 
       zone_id = _volumic_zone_id(i);
-      cells_list = _get_cells_list(zone_id, *ncelet, &cells);
+      cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
       if (*isuite == 0) {
         char *path_velocity = cs_xpath_init_path();
@@ -3798,9 +3764,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
           for (icel = 0; icel < cells; icel++) {
             iel = cells_list[icel];
-            mei_tree_insert(ev_formula_uvw, "x", xyzcen[3 * iel + 0]);
-            mei_tree_insert(ev_formula_uvw, "y", xyzcen[3 * iel + 1]);
-            mei_tree_insert(ev_formula_uvw, "z", xyzcen[3 * iel + 2]);
+            mei_tree_insert(ev_formula_uvw, "x", cell_cen[iel][0]);
+            mei_tree_insert(ev_formula_uvw, "y", cell_cen[iel][1]);
+            mei_tree_insert(ev_formula_uvw, "z", cell_cen[iel][2]);
             mei_evaluate(ev_formula_uvw);
             if (c_vel->interleaved) {
               c_vel->val[3 * iel    ] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
@@ -3808,9 +3774,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
               c_vel->val[3 * iel + 2] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
             }
             else {
-              c_vel->val[                iel] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
-              c_vel->val[    (*ncelet) + iel] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
-              c_vel->val[2 * (*ncelet) + iel] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
+              c_vel->val[                  iel] = mei_tree_lookup(ev_formula_uvw, "velocity[0]");
+              c_vel->val[    n_cells_ext + iel] = mei_tree_lookup(ev_formula_uvw, "velocity[1]");
+              c_vel->val[2 * n_cells_ext + iel] = mei_tree_lookup(ev_formula_uvw, "velocity[2]");
             }
           }
           mei_tree_destroy(ev_formula_uvw);
@@ -3822,7 +3788,7 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
               if (c_vel->interleaved)
                 c_vel->val[3 * iel + j] = 0.0;
               else
-                c_vel->val[j * (*ncelet) + iel] = 0.0;
+                c_vel->val[j * n_cells_ext + iel] = 0.0;
             }
           }
         }
@@ -3848,9 +3814,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
             ev_formula = _init_mei_tree(formula, "pressure");
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel];
-              mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-              mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-              mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+              mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+              mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+              mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
               mei_evaluate(ev_formula);
               c->val[iel] = mei_tree_lookup(ev_formula, "pressure");
             }
@@ -3877,11 +3843,11 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
           if (formula_turb != NULL) {
             mei_tree_t *ev_formula_turb = mei_tree_new(formula_turb);
-            mei_tree_insert(ev_formula_turb, "rho0", *ro0);
-            mei_tree_insert(ev_formula_turb, "mu0", *viscl0);
-            mei_tree_insert(ev_formula_turb, "cp0", *cp0);
-            mei_tree_insert(ev_formula_turb, "uref", *uref);
-            mei_tree_insert(ev_formula_turb, "almax", *almax);
+            mei_tree_insert(ev_formula_turb, "rho0", cs_glob_fluid_properties->ro0);
+            mei_tree_insert(ev_formula_turb, "mu0", cs_glob_fluid_properties->viscl0);
+            mei_tree_insert(ev_formula_turb, "cp0", cs_glob_fluid_properties->cp0);
+            mei_tree_insert(ev_formula_turb, "uref", cs_glob_turb_rans_model->uref);
+            mei_tree_insert(ev_formula_turb, "almax", cs_glob_turb_rans_model->almax);
             mei_tree_insert(ev_formula_turb, "x", 0.0);
             mei_tree_insert(ev_formula_turb, "y", 0.0);
             mei_tree_insert(ev_formula_turb, "z", 0.0);
@@ -3911,9 +3877,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_turb);
                 c_k->val[iel]   = mei_tree_lookup(ev_formula_turb, "k");
                 c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
@@ -3937,9 +3903,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_turb);
                 c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
                 c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
@@ -3970,9 +3936,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_turb);
                 c_r11->val[iel] = mei_tree_lookup(ev_formula_turb, "r11");
                 c_r22->val[iel] = mei_tree_lookup(ev_formula_turb, "r22");
@@ -3999,9 +3965,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_turb);
                 c_k->val[iel]   = mei_tree_lookup(ev_formula_turb, "k");
                 c_eps->val[iel] = mei_tree_lookup(ev_formula_turb, "epsilon");
@@ -4022,9 +3988,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_turb);
                 c_k->val[iel]   = mei_tree_lookup(ev_formula_turb, "k");
                 c_ome->val[iel] = mei_tree_lookup(ev_formula_turb, "omega");
@@ -4042,9 +4008,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
 
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_turb, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_turb, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_turb, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_turb, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_turb, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_turb, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_turb);
                 c_nu->val[iel] = mei_tree_lookup(ev_formula_turb, "nu_tilda");
               }
@@ -4117,9 +4083,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
           if (*isuite == 0) {
             for (icel = 0; icel < cells; icel++) {
               iel = cells_list[icel];
-              mei_tree_insert(ev_formula_sca, "x", xyzcen[3 * iel + 0]);
-              mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
-              mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
+              mei_tree_insert(ev_formula_sca, "x", cell_cen[iel][0]);
+              mei_tree_insert(ev_formula_sca, "y", cell_cen[iel][1]);
+              mei_tree_insert(ev_formula_sca, "z", cell_cen[iel][2]);
               mei_evaluate(ev_formula_sca);
               c->val[iel] = mei_tree_lookup(ev_formula_sca, c->name);
             }
@@ -4175,9 +4141,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_sca, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_sca, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_sca, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_sca, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_sca, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_sca, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_sca);
                 f->val[iel] = mei_tree_lookup(ev_formula_sca, f->name);
               }
@@ -4246,9 +4212,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula_meteo, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula_meteo, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula_meteo, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula_meteo, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula_meteo, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula_meteo, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula_meteo);
                 c->val[iel] = mei_tree_lookup(ev_formula_meteo, name);
               }
@@ -4308,9 +4274,9 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
             if (*isuite == 0) {
               for (icel = 0; icel < cells; icel++) {
                 iel = cells_list[icel];
-                mei_tree_insert(ev_formula, "x", xyzcen[3 * iel + 0]);
-                mei_tree_insert(ev_formula, "y", xyzcen[3 * iel + 1]);
-                mei_tree_insert(ev_formula, "z", xyzcen[3 * iel + 2]);
+                mei_tree_insert(ev_formula, "x", cell_cen[iel][0]);
+                mei_tree_insert(ev_formula, "y", cell_cen[iel][1]);
+                mei_tree_insert(ev_formula, "z", cell_cen[iel][2]);
                 mei_evaluate(ev_formula);
                 c->val[iel] = mei_tree_lookup(ev_formula, name[j]);
               }
@@ -4334,7 +4300,7 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
         double initial_value;
         for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
           const cs_field_t *f = cs_field_by_id(f_id);
-          cs_gui_variable_initial_value(f->name, zone_id, &initial_value);
+          _variable_initial_value(f->name, zone_id, &initial_value);
           bft_printf("--initial value for %s: %f\n", f->name, initial_value);
         }
       }
@@ -4355,18 +4321,17 @@ void CS_PROCF(uiiniv, UIINIV)(const cs_lnum_t    *ncelet,
  * *****************
  *
  * integer          iappel   <--  number of calls during a time step
- * integer          ncelet   <--  number of cells with halo
  * integer          ncepdp  -->   number of cells with head losses
  * integer          icepdc  -->   ncepdp cells number with head losses
  * double precision ckupdc  -->   head losses matrix
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
-                              const int*   ncelet,
                                     int    ncepdp[],
                                     int    icepdc[],
                                     double ckupdc[])
 {
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t i, j, iel, ielpdc, ikpdc;
   int zones = 0;
   cs_lnum_t cells = 0;
@@ -4401,7 +4366,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on"))
       {
         zone_id = _volumic_zone_id(i);
-        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
         for (j=0; j < cells; j++)
         {
@@ -4441,7 +4406,7 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
       if (cs_gui_strcmp(status, "on")) {
 
         zone_id = _volumic_zone_id(i);
-        cells_list = _get_cells_list(zone_id, *ncelet, &cells);
+        cells_list = _get_cells_list(zone_id, n_cells_ext, &cells);
 
         k11 = _c_head_losses(zone_id, "kxx");
         k22 = _c_head_losses(zone_id, "kyy");
@@ -4484,9 +4449,9 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
                   + c_vel->val_pre[3 * iel + 2] * c_vel->val_pre[3 * iel + 2];
           }
           else {
-            vit = c_vel->val_pre[                iel] * c_vel->val_pre[                iel] +
-                  c_vel->val_pre[    (*ncelet) + iel] * c_vel->val_pre[    (*ncelet) + iel] +
-                  c_vel->val_pre[2 * (*ncelet) + iel] * c_vel->val_pre[2 * (*ncelet) + iel];
+            vit = c_vel->val_pre[                  iel] * c_vel->val_pre[                  iel] +
+                  c_vel->val_pre[    n_cells_ext + iel] * c_vel->val_pre[    n_cells_ext + iel] +
+                  c_vel->val_pre[2 * n_cells_ext + iel] * c_vel->val_pre[2 * n_cells_ext + iel];
           }
           vit = sqrt(vit);
           ckupdc[0 * (*ncepdp) + ielpdc] = 0.5 * c11 * vit;
@@ -4521,37 +4486,19 @@ void CS_PROCF(uikpdc, UIKPDC)(const int*   iappel,
  * subroutine uiphyv
  * *****************
  *
- * integer          ncel     <--  number of cells whithout halo
- * integer          ncelet   <--  number of cells whith halo
- * integer          icp      <--  pointer for specific heat Cp
- * integer          irovar   <--  =1 if rho variable, =0 if rho constant
- * integer          ivivar   <--  =1 if mu variable, =0 if mu constant
  * integer          iviscv   <--  pointer for volumic viscosity viscv
  * integer          itempk   <--  pointer for temperature (in K)
- * double precision p0       <--  pressure reference value
- * double precision t0       <--  temperature reference value
- * double precision ro0      <--  density reference value
- * double precision cp0      <--  specific heat reference value
- * double precision viscl0   <--  dynamic viscosity reference value
  * double precision visls0   <--  diffusion coefficient of the scalars
  * double precision viscv0   <--  volumic viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
-                              const cs_int_t  *ncelet,
-                              const cs_int_t  *icp,
-                              const cs_int_t  *irovar,
-                              const cs_int_t  *ivivar,
-                              const cs_int_t  *iviscv,
+void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
                               const cs_int_t  *itempk,
-                              const cs_real_t *p0,
-                              const cs_real_t *t0,
-                              const cs_real_t *ro0,
-                              const cs_real_t *cp0,
-                              const cs_real_t *viscl0,
                               const cs_real_t *visls0,
                               const cs_real_t *viscv0)
 {
+  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
   char *path = NULL;
@@ -4565,30 +4512,39 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
 
   /* law for density */
   if (!cs_gui_strcmp(vars->model, "compressible_model")) {
-      if (*irovar == 1) {
+      if (cs_glob_fluid_properties->irovar == 1) {
           cs_field_t *c_rho = CS_F_(rho);
           _physical_property("density", "density",
-                             ncel, ncelet, icp,
-                             p0, ro0, cp0, viscl0, visls0,
+                             n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                             cs_glob_fluid_properties->p0,
+                             cs_glob_fluid_properties->ro0,
+                             cs_glob_fluid_properties->cp0,
+                             cs_glob_fluid_properties->viscl0, visls0,
                              c_rho->val);
       }
   }
 
   /* law for molecular viscosity */
-  if (*ivivar == 1) {
+  if (cs_glob_fluid_properties->ivivar == 1) {
     cs_field_t *c_mu = CS_F_(mu);
     _physical_property("molecular_viscosity", "molecular_viscosity",
-                       ncel, ncelet, icp,
-                       p0, ro0, cp0, viscl0, visls0,
+                       n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                       cs_glob_fluid_properties->p0,
+                       cs_glob_fluid_properties->ro0,
+                       cs_glob_fluid_properties->cp0,
+                       cs_glob_fluid_properties->viscl0, visls0,
                        c_mu->val);
   }
 
   /* law for specific heat */
-  if (*icp > 0) {
+  if (cs_glob_fluid_properties->icp > 0) {
     cs_field_t *c_cp = CS_F_(cp);
     _physical_property("specific_heat", "specific_heat",
-                       ncel, ncelet, icp,
-                       p0, ro0, cp0, viscl0, visls0,
+                       n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                       cs_glob_fluid_properties->p0,
+                       cs_glob_fluid_properties->ro0,
+                       cs_glob_fluid_properties->cp0,
+                       cs_glob_fluid_properties->viscl0, visls0,
                        c_cp->val);
   }
 
@@ -4607,8 +4563,11 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
           if (cond_diff_id > -1) {
             cond_dif = cs_field_by_id(cond_diff_id);
             _physical_property("thermal_conductivity", "thermal_conductivity",
-                               ncel, ncelet, icp,
-                               p0, ro0, cp0, viscl0, visls0,
+                               n_cells, n_cells_ext, cs_glob_fluid_properties->icp,
+                               cs_glob_fluid_properties->p0,
+                               cs_glob_fluid_properties->ro0,
+                               cs_glob_fluid_properties->cp0,
+                               cs_glob_fluid_properties->viscl0, visls0,
                                cond_dif->val);
           }
           break;
@@ -4622,9 +4581,11 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
       cs_field_t *c = cs_field_by_name_try("volume_viscosity");
       _compressible_physical_property("volume_viscosity",
                                       "volume_viscosity", c->id,
-                                      ncel,
+                                      n_cells,
                                       itempk,
-                                      p0, t0, ro0,
+                                      cs_glob_fluid_properties->p0,
+                                      cs_glob_fluid_properties->t0,
+                                      cs_glob_fluid_properties->ro0,
                                       visls0, viscv0);
     }
   }
@@ -4717,9 +4678,9 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
           /* for each cell, update the value of the table of symbols for each scalar
              (including the thermal scalar), and evaluate the interpreter */
 
-          if (*irovar == 1) {
+          if (cs_glob_fluid_properties->irovar == 1) {
             cs_field_t *c_rho = CS_F_(rho);
-            for (iel = 0; iel < *ncel; iel++) {
+            for (iel = 0; iel < n_cells; iel++) {
               for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
                 const cs_field_t  *f2 = cs_field_by_id(f_id2);
                 if (f2->type & CS_FIELD_USER)
@@ -4736,7 +4697,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
             }
           }
           else {
-            for (iel = 0; iel < *ncel; iel++) {
+            for (iel = 0; iel < n_cells; iel++) {
               for (int f_id2 = 0; f_id2 < n_fields; f_id2++) {
                 const cs_field_t  *f2 = cs_field_by_id(f_id2);
                 if (f2->type & CS_FIELD_USER)
@@ -4749,7 +4710,7 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
               mei_tree_insert(ev_law, "z", cell_cen[iel][2]);
 
               mei_evaluate(ev_law);
-              c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * (*ro0);
+              c_prop->val[iel] = mei_tree_lookup(ev_law, tmp) * cs_glob_fluid_properties->ro0;
             }
           }
           BFT_FREE(tmp);
@@ -4778,11 +4739,11 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
         cs_xpath_add_element(&path, "formula");
         cs_xpath_add_function_text(&path);
 
-        law_Ds = cs_gui_get_text_value(path);
+        law = cs_gui_get_text_value(path);
         bft_printf("--law for the coefficient of diffusity of the scalar %s: %s\n",
-                   f->name, law_Ds);
+                   f->name, law);
         BFT_FREE(path);
-        BFT_FREE(law_Ds);
+        BFT_FREE(law);
       }
     }
   }
@@ -4797,25 +4758,15 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *ncel,
  * SUBROUTINE UIPROF
  * *****************
  *
- * INTEGER          NCELET   <--  number of cells with halo
- * INTEGER          NCEL     <--  number of cells without halo
- * INTEGER          NTMABS   <--  max iterations numbers
- * INTEGER          NTCABS   <--  current iteration number
- * DOUBLE PRECISION TTCABS   <--  current physical time
- * DOUBLE PRECISION TTMABS   <--  max physical time
- * DOUBLE PRECISION TTPABS   <--  physical time at calculation beginning
- * DOUBLE PRECISION XYZCEN   <--  cell's gravity center
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
-                                const cs_lnum_t  *ncel,
-                                const int        *ntmabs,
-                                const int        *ntcabs,
-                                const double     *ttcabs,
-                                const double     *ttmabs,
-                                const double     *ttpabs,
-                                const double     *xyzcen)
+void CS_PROCF (uiprof, UIPROF) (void)
 {
+  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+
   FILE *file = NULL;
   char *filename = NULL;
   char *title = NULL;
@@ -4857,13 +4808,14 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
 
     if (cs_gui_strcmp(output_type, "time_value")) {
       time_output = _get_profile_coordinate(i, "output_frequency");
-      int ifreqs = (int)((*ttcabs - *ttpabs) / time_output);
-      if ((ifreqs > ipass) || (*ttcabs >= *ttmabs && *ttmabs > 0.))
+      int ifreqs = (int)((cs_glob_time_step->t_cur - cs_glob_time_step->t_prev) / time_output);
+      if ((ifreqs > ipass) || (cs_glob_time_step->t_cur >= cs_glob_time_step->t_max &&
+                               cs_glob_time_step->t_max > 0.))
         status = true;
     } else {
       output_frequency = (int) _get_profile_coordinate(i, "output_frequency");
-      if (   (*ntmabs == *ntcabs)
-          || (output_frequency > 0 && (*ntcabs % output_frequency) == 0))
+      if (   (cs_glob_time_step->nt_max == cs_glob_time_step->nt_cur)
+          || (output_frequency > 0 && (cs_glob_time_step->nt_cur % output_frequency) == 0))
         status = true;
     }
     BFT_FREE(output_type);
@@ -4913,7 +4865,7 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
 
           /* Extension creation : format stored in 'buffer' */
 
-          sprintf(buf1, "_%.4i", *ntcabs);
+          sprintf(buf1, "_%.4i", cs_glob_time_step->nt_cur);
 
           BFT_REALLOC(filename, strlen(filename) + strlen(buf1) + 1, char);
 
@@ -4936,8 +4888,8 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
 
         if (output_format == 0) {
           fprintf(file, "# Code_Saturne results 1D profile\n#\n");
-          fprintf(file, "# Iteration output: %i\n", *ntcabs);
-          fprintf(file, "# Time output:     %12.5e\n#\n", *ttcabs);
+          fprintf(file, "# Iteration output: %i\n", cs_glob_time_step->nt_cur);
+          fprintf(file, "# Time output:     %12.5e\n#\n", cs_glob_time_step->t_cur);
           fprintf(file, "#TITLE: %s\n", title);
           fprintf(file, "#COLUMN_TITLES: Distance | X | Y | Z");
           for (ii = 0 ; ii < nvar_prop ; ii++) {
@@ -4990,7 +4942,7 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
           z1 = xyz[2];
         }
 
-        CS_PROCF(findpt, FINDPT)(ncelet,  ncel,    xyzcen,
+        CS_PROCF(findpt, FINDPT)(&n_cells_ext, &n_cells, cell_cen,
                                 &xyz[0], &xyz[1], &xyz[2],
                                 &iel,    &irangv);
 
@@ -5001,9 +4953,9 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
           if (cs_glob_rank_id == irangv) {
 
             iel--;
-            xx = xyzcen[3 * iel + 0];
-            yy = xyzcen[3 * iel + 1];
-            zz = xyzcen[3 * iel + 2];
+            xx = cell_cen[3 * iel + 0];
+            yy = cell_cen[3 * iel + 1];
+            zz = cell_cen[3 * iel + 2];
             array[1] = xx;
             array[2] = yy;
             array[3] = zz;
@@ -5024,7 +4976,7 @@ void CS_PROCF (uiprof, UIPROF) (const cs_lnum_t  *ncelet,
                   if (f->interleaved && f->dim > 1)
                     array[iii+4] = f->val[f->dim * iel + idim];
                   else
-                    array[iii+4] = f->val[iel + idim * (*ncelet)];
+                    array[iii+4] = f->val[iel + idim * n_cells_ext];
                 }
                 else
                   array[iii+4] = f->val[iel];
@@ -6120,7 +6072,6 @@ cs_gui_time_moments(void)
   }
 #if _XML_DEBUG_
   bft_printf("==>UIMOYT\n");
-  }
 #endif
 }
 

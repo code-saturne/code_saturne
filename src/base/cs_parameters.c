@@ -353,6 +353,19 @@ cs_f_piso_get_pointers(int     **nterup,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide acces to cs_glob_piso
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_piso_t *
+cs_get_glob_piso(void)
+{
+  return &_piso;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define general field keys.

@@ -576,8 +576,7 @@ if (ncpdct.gt.0) then
 
   if (iihmpr.eq.1) then
     call uikpdc &
-  ( iappel, ncelet, ncepdc,             &
-    icepdc, ckupdc)
+  ( iappel, ncepdc, icepdc, ckupdc)
   endif
 
   call cs_user_head_losses &

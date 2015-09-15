@@ -159,9 +159,7 @@ endif
 if (iihmpr.eq.1) then
   call uiphyv &
   !===========
-( ncel   , ncelet , icp    , irovar , ivivar ,                    &
-  iviscv , itempk ,                                               &
-  p0     , t0     , ro0    , cp0    , viscl0 , visls0 , viscv0 )
+( iviscv , itempk , visls0 , viscv0 )
 
   if (ippmod(idarcy).ge.0) then
     call uidapp                                                           &
@@ -593,11 +591,9 @@ if (iale.eq.1.and.ntcabs.eq.0) then
 
     call uivima &
     !==========
-  ( ncel,                             &
-    propce(1,ipproc(ivisma(1))),      &
+  ( propce(1,ipproc(ivisma(1))),      &
     propce(1,ipproc(ivisma(2))),      &
-    propce(1,ipproc(ivisma(3))),      &
-    xyzcen, dtref, ttcabs, ntcabs )
+    propce(1,ipproc(ivisma(3))) )
 
   endif
 

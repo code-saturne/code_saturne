@@ -78,24 +78,14 @@ void CS_PROCF (uialin, UIALIN) (int    *const iale,
  * SUBROUTINE uivima
  * *****************
  *
- * ncel     -->  number of cells whithout halo
  * viscmx   <--  VISCMX
  * viscmy   <--  VISCMY
  * viscmz   <--  VISCMZ
- * xyzcen   -->  cell's gravity center
- * dtref    -->  time step
- * ttcabs   --> current time
- * ntcabs   --> current iteration number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uivima, UIVIMA) ( const cs_int_t *const ncel,
-                                 double         *const viscmx,
+void CS_PROCF (uivima, UIVIMA) ( double         *const viscmx,
                                  double         *const viscmy,
-                                 double         *const viscmz,
-                                 const double   *const xyzcen,
-                                 double *const         dtref,
-                                 double *const         ttcabs,
-                                 const    int *const   ntcabs);
+                                 double         *const viscmz);
 
 /*-----------------------------------------------------------------------------
  * uialcl

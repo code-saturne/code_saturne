@@ -901,6 +901,15 @@ void CS_PROCF (hturbp, HTURBP)
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ *! \brief Provide acces to cs_glob_wall_functions
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_wall_functions_t *
+cs_get_glob_wall_functions(void);
+
 /*! \brief  Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
 
 */

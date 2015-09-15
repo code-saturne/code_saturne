@@ -128,6 +128,15 @@ extern const cs_stokes_model_t  *cs_glob_stokes_model;
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_stokes_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_stokes_model_t *
+cs_get_glob_stokes_model(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -125,11 +125,11 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call csther(itherm, itpscl)
+  call csther()
 
-  call csturb(iturb, iwallf, igrake, igrari, xlomlg)
+  call csturb()
 
-  call cscpva(icp)
+  call cscpva()
 
 endif
 
@@ -260,9 +260,9 @@ endif
 
 if (iihmpr.eq.1) then
 
-  call csidtv(idtvar)
+  call csidtv()
 
-  call csiphy(iphydr)
+  call csiphy()
 
   ! Postprocessing
 
@@ -293,9 +293,7 @@ if (iihmpr.eq.1) then
   call csisui(ntsuit, ileaux, iccvfg)
 
 !     Pas de temps (seulement NTMABS, DTREF, INPDT0)
-  call cstime                                                     &
-             (inpdt0, iptlro, ntmabs, idtvar, dtref, dtmin,       &
-              dtmax, coumax, foumax, varrdt, relxst)
+  call cstime()
 
 !      Options numériques locales
 
@@ -306,29 +304,24 @@ if (iihmpr.eq.1) then
 !     Options numériques globales
   relaxp = -999.d0
   extrap = 0.d0
-  call csnum2 (ivisse, relaxp, ipucou, extrap, imrgra, nterup)
+  call csnum2 (relaxp, extrap, imrgra)
   extrag(ipr) = extrap
   if (idtvar.ge.0) relaxv(ipr) = relaxp
 
 !     Gravite, prop. phys
-  call csphys                                                         &
-             (nmodpp,                                                 &
-              irovar, ivivar, icorio,                                 &
-              gx, gy, gz,                                             &
-              ro0, viscl0, viscv0, visls0, cp0, t0, p0,               &
-              xmasmr, itempk)
+  call csphys(nmodpp,itempk)
 
 !     Scamin, scamax, turbulent flux model
-  call cssca2(itytur, iturt)
+  call cssca2(iturt)
 
   ! Diffusivites
-  call cssca3(visls0, t0, p0, cp0)
+  call cssca3(visls0)
 
 !     Init turb (uref, almax) si necessaire (modele RANS)
   if (itytur.eq.2 .or. itytur.eq.3 .or.             &
       itytur.eq.5 .or. itytur.eq.6 .or.             &
       itytur.eq.7) then
-    call cstini(uref, almax)
+    call cstini()
   endif
 
   call uiipsu(iporos)

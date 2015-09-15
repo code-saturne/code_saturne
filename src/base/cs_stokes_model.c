@@ -292,6 +292,19 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide acces to cs_glob_stokes_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_stokes_model_t *
+cs_get_glob_stokes_model(void)
+{
+  return &_stokes_model;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

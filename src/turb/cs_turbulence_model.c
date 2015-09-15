@@ -1030,6 +1030,46 @@ cs_f_turb_complete_constants(void)
  * Public function definitions
  *============================================================================*/
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_turb_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_turb_model_t *
+cs_get_glob_turb_model(void)
+{
+  return &_turb_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_turb_rans_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_turb_rans_model_t *
+cs_get_glob_turb_rans_model(void)
+{
+  return &_turb_rans_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_turb_les_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_turb_les_model_t *
+cs_get_glob_turb_les_model(void)
+{
+  return &_turb_les_model;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

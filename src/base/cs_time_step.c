@@ -312,6 +312,32 @@ cs_f_time_step_options_get_pointers(int    **inpdt0,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Provide acces to cs_glob_time_step
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_time_step_t *
+cs_get_glob_time_step(void)
+{
+  return &_time_step;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide acces to cs_glob_time_step_options
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_time_step_options_t *
+cs_get_glob_time_step_options(void)
+{
+  return &_time_step_options;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define whether time step is variable or not
  *
  * \param[in]  is_variable  0 if time step is variable in time, 1 if it is fixed

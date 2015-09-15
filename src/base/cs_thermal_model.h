@@ -99,6 +99,15 @@ extern const cs_thermal_model_t  *cs_glob_thermal_model;
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_thermal_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_thermal_model_t *
+cs_get_glob_thermal_model(void);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

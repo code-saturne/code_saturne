@@ -199,6 +199,15 @@ extern const cs_piso_t  *cs_glob_piso;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_piso
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_piso_t *
+cs_get_glob_piso(void);
+
+/*----------------------------------------------------------------------------
  * Define general field keys.
  *
  * A recommended practice for different submodules would be to use

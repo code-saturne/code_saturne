@@ -113,6 +113,14 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::icv
         property index of the isochoric specific heat
         - 0: uniform isochoric specific heat (no property field defined)
+  \var  cs_fluid_properties_t::irovar
+        variable density field \f$ \rho \f$:
+        - 0: false
+        - 1: true
+  \var  cs_fluid_properties_t::ivivar
+        variable viscosity field \f$ \rho \f$:
+        - 0: false
+        - 1: true
   \var  cs_fluid_properties_t::ro0
         reference density
 
@@ -267,6 +275,8 @@ static cs_fluid_properties_t  _fluid_properties = {
   .ieos     = -1,
   .icp      = 0,
   .icv      = 0,
+  .irovar   = 0,
+  .ivivar   = 0,
   .ro0      = 1.17862,
   .viscl0   = 1.83337e-5,
   .p0       = 1.01325e5,
@@ -288,10 +298,9 @@ static cs_fluid_properties_t  _fluid_properties = {
  * Global variables
  *============================================================================*/
 
-const
-cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
+const cs_physical_constants_t  *cs_glob_physical_constants = &_physical_constants;
 
-cs_fluid_properties_t  * const cs_glob_fluid_properties = &_fluid_properties;
+const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -312,6 +321,8 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    int     **ieos,
                                    int     **icp,
                                    int     **icv,
+                                   int     **irovar,
+                                   int     **ivivar,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
@@ -374,6 +385,8 @@ cs_f_physical_constants_get_pointers(double  **r,
  *   ieos     --> pointer to cs_glob_fluid_properties->ieos
  *   icp      --> pointer to cs_glob_fluid_properties->icp
  *   icv      --> pointer to cs_glob_fluid_properties->icv
+ *   irovar   --> pointer to cs_glob_fluid_properties->irovar
+ *   ivivar   --> pointer to cs_glob_fluid_properties->ivivar
  *   ro0      --> pointer to cs_glob_fluid_properties->ro0
  *   viscl0   --> pointer to cs_glob_fluid_properties->viscl0
  *   p0       --> pointer to cs_glob_fluid_properties->p0
@@ -395,6 +408,8 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    int     **ieos,
                                    int     **icp,
                                    int     **icv,
+                                   int     **irovar,
+                                   int     **ivivar,
                                    double  **ro0,
                                    double  **viscl0,
                                    double  **p0,
@@ -414,6 +429,8 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *ieos     = &(_fluid_properties.ieos);
   *icp      = &(_fluid_properties.icp);
   *icv      = &(_fluid_properties.icv);
+  *irovar   = &(_fluid_properties.irovar);
+  *ivivar   = &(_fluid_properties.ivivar);
   *ro0      = &(_fluid_properties.ro0);
   *viscl0   = &(_fluid_properties.viscl0);
   *p0       = &(_fluid_properties.p0);
@@ -435,6 +452,32 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide acces to cs_glob_physical_constants
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_physical_constants_t *
+cs_get_glob_physical_constants(void)
+{
+  return &_physical_constants;
+}
+
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide acces to cs_glob_fluid_properties
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_fluid_properties_t *
+cs_get_glob_fluid_properties(void)
+{
+  return &_fluid_properties;
+}
 
 /*----------------------------------------------------------------------------*/
 

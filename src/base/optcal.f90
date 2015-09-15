@@ -75,16 +75,6 @@ module optcal
   !>    - 6: symmetric tensor diffusivity
   integer, save :: idften(nvarmx)
 
-  !> variable density field \f$ \rho \f$:
-  !>    - 1: true
-  !>    - 0: false
-  integer, save :: irovar
-
-  !> variable viscosity field \f$ \mu \f$:
-  !>    - 1: true
-  !>    - 0: false
-  integer, save :: ivivar
-
   !> \}
 
   !----------------------------------------------------------------------------

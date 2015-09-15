@@ -68,6 +68,8 @@ typedef struct {
   int           icp;          /* property index of the isobaric specific heat */
   int           icv;          /* property index of the isochoric specific
                                  heat */
+  int           irovar;       /* variable density field */
+  int           ivivar;       /* variable viscosity field */
   double        ro0;          /* reference density */
   double        viscl0;       /* reference molecular dynamic viscosity */
   double        p0;           /* reference pressure for the total pressure */
@@ -102,11 +104,29 @@ extern const cs_physical_constants_t  *cs_glob_physical_constants;
 
 /* Pointer to main fluid properties structure */
 
-extern cs_fluid_properties_t  * const cs_glob_fluid_properties;
+extern const cs_fluid_properties_t  *cs_glob_fluid_properties;
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_physical_constants
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_physical_constants_t *
+cs_get_glob_physical_constants(void);
+
+/*----------------------------------------------------------------------------
+ * Provide acces to cs_glob_fluid_properties
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_fluid_properties_t *
+cs_get_glob_fluid_properties(void);
 
 /*----------------------------------------------------------------------------*/
 

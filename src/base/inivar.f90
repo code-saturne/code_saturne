@@ -181,10 +181,7 @@ enddo
 
 if (iihmpr.eq.1) then
 
-  call uiiniv (ncelet, isuite, ippmod(idarcy),     &
-               ithvar,                             &
-               ro0, cp0, viscl0, uref,             &
-               almax, xyzcen)
+  call uiiniv (isuite, ippmod(idarcy), ithvar)
 
 endif
 

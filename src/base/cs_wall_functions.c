@@ -129,7 +129,7 @@ BEGIN_C_DECLS
 static cs_wall_functions_t  _wall_functions =
   {-999, -999, 0, -1e13};
 
-const cs_wall_functions_t  *cs_glob_wall_functions = &_wall_functions;
+const cs_wall_functions_t  * cs_glob_wall_functions = &_wall_functions;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -250,6 +250,18 @@ void CS_PROCF (hturbp, HTURBP)
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ *! \brief Provide acces to cs_glob_wall_functions
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_wall_functions_t *
+cs_get_glob_wall_functions(void)
+{
+  return &_wall_functions;
+}
 
 /*----------------------------------------------------------------------------*/
 

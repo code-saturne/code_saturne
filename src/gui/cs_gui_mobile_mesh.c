@@ -55,6 +55,7 @@
 #include "cs_mesh.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
+#include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -764,25 +765,18 @@ get_uistr2_data(const char    *label,
 /*----------------------------------------------------------------------------
  *  uivima
  *
- * ncel     -->  number of cells whithout halo
  * viscmx   <--  VISCMX
  * viscmy   <--  VISCMY
  * viscmz   <--  VISCMZ
- * xyzcen   -->  cell's gravity center
- * dtref    -->  time step
- * ttcabs   --> current time
- * ntcabs   --> current iteration number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
-                                double         *const viscmx,
+void CS_PROCF (uivima, UIVIMA) (double         *const viscmx,
                                 double         *const viscmy,
-                                double         *const viscmz,
-                                const double   *const xyzcen,
-                                double         *const dtref,
-                                double         *const ttcabs,
-                                const int      *const ntcabs)
+                                double         *const viscmz)
 {
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)cs_glob_mesh_quantities->cell_cen;
+  const cs_lnum_t n_cells     = cs_glob_mesh->n_cells;
   int          iel            = 0;
   const char*  symbols[3]     = { "x", "y", "z" };
   const char*  variables[3]   = { "mesh_viscosity_1",
@@ -801,7 +795,7 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
 
   if (!aleFormula) {
     bft_printf("Warning : Formula is null for ale. Use constant value\n");
-    for (iel = 0; iel < *ncel; iel++) {
+    for (iel = 0; iel < n_cells; iel++) {
       viscmx[iel] = 1.;
       if (isOrthotrop) {
         viscmy[iel] = 1.;
@@ -814,15 +808,17 @@ void CS_PROCF (uivima, UIVIMA) (const cs_int_t *const ncel,
     /* Init mei */
     ev = cs_gui_init_mei_tree(aleFormula, variables,
                               variable_nbr, symbols, 0, 3,
-                              *dtref, *ttcabs, *ntcabs);
+                              cs_glob_time_step_options->dtref,
+                              cs_glob_time_step->t_cur,
+                              cs_glob_time_step->nt_cur);
 
     /* for each cell, update the value of the table of symbols for each scalar
        (including the thermal scalar), and evaluate the interpreter */
-    for (iel = 0; iel < *ncel; iel++) {
+    for (iel = 0; iel < n_cells; iel++) {
       /* insert symbols */
-      mei_tree_insert(ev, "x", xyzcen[3 * iel + 0]);
-      mei_tree_insert(ev, "y", xyzcen[3 * iel + 1]);
-      mei_tree_insert(ev, "z", xyzcen[3 * iel + 2]);
+      mei_tree_insert(ev, "x", cell_cen[iel][0]);
+      mei_tree_insert(ev, "y", cell_cen[iel][1]);
+      mei_tree_insert(ev, "z", cell_cen[iel][2]);
 
       mei_evaluate(ev);
 

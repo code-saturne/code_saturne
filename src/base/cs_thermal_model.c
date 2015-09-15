@@ -164,6 +164,19 @@ cs_f_thermal_model_get_pointers(int     **itherm,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ *!
+ * \brief Provide acces to cs_glob_thermal_model
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_thermal_model_t *
+cs_get_glob_thermal_model(void)
+{
+  return &_thermal_model;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

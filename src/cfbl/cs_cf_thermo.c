@@ -93,12 +93,13 @@ BEGIN_C_DECLS
 void
 cs_cf_set_thermo_options(void)
 {
+  cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
   int ieos = cs_glob_fluid_properties->ieos;
   if (ieos == 1 || ieos == 2) {
     /* Calculation options: constant Cp and Cv (perfect or stiffened gas)
        specific heat Cv0 is calculated in a subsequent section (from Cp0) */
-    cs_glob_fluid_properties->icp = 0;
-    cs_glob_fluid_properties->icv = 0;
+    phys_pp->icp = 0;
+    phys_pp->icv = 0;
   }
 }
 
