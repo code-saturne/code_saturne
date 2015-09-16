@@ -197,7 +197,7 @@ if (iirayo.gt.0) then
   call field_set_key_str(iqinci, keylbl, 'Incident_flux')
 
   if (imoadf.ge.1) then
-    call field_create('Spectral_rad_incident_flux',  &
+    call field_create('spectral_rad_incident_flux',  &
                       itycat, ityloc, nwsgg, ilved, inoprv, iqinsp)
     call field_set_key_str(iqinsp, keylbl, 'Spectral_incident_flux')
   endif
