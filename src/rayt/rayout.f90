@@ -75,9 +75,12 @@ implicit none
 ! Local variables
 
 character        rubriq*64
-integer          itysup, nbval
+integer          itysup, nbval, ifac
 integer          ival(1)
 double precision rval(1)
+
+double precision, dimension(:), pointer :: btemp_s
+double precision, allocatable, dimension(:) :: tb_save
 
 type(c_ptr) :: rp
 
@@ -122,7 +125,21 @@ call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
 ! Boundary values
 
-call restart_write_field_vals(rp, itparo, 0)
+if (itpscl.eq.1) then
+  call restart_write_field_vals(rp, itempb, 0)
+else
+  allocate(tb_save(nfabor))
+  call field_get_val_s(itempb, btemp_s)
+  do ifac = 1, nfabor
+    tb_save(ifac) = btemp_s(ifac) + tkelvi
+  enddo
+  rubriq = 'boundary_temperature'
+  itysup = 3
+  nbval = 1
+  call restart_write_section_real_t(rp,rubriq,itysup,nbval,tb_save)
+  deallocate(tb_save)
+endif
+
 call restart_write_field_vals(rp, iqinci, 0)
 call restart_write_field_vals(rp, ihconv, 0)
 call restart_write_field_vals(rp, ifconv, 0)

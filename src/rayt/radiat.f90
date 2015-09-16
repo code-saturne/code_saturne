@@ -94,7 +94,6 @@ module radiat
                     ilumin
 
   !--> field ids for specific  boundary fields
-  !                       ITPARO --> temperature de paroi
   !                       IQINCI --> densite de flux incident radiatif
   !                       IXLAM  --> conductivite thermique de la paroi
   !                       IEPA   --> epaisseur de la paroi
@@ -104,7 +103,6 @@ module radiat
   !                       IHCONV --> Coef d'echange fluide
   !                       IQINSP --> densite de flux incident radiatif spectral
 
-  integer, save ::  itparo = -1
   integer, save ::  iqinci = -1
   integer, save ::  ixlam  = -1
   integer, save ::  iepa   = -1

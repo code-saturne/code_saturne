@@ -75,7 +75,7 @@ integer       irphas
 integer       ippok
 integer       nprayc, nprprv
 integer       itycat, ityloc
-logical       ilved, inoprv
+logical       ilved, inoprv, kset
 
 integer(c_int) :: n_r_phases
 
@@ -110,6 +110,9 @@ ippok = 0
 
 ilved  = .true.   ! not interleaved by default
 inoprv = .false.  ! variables have no previous value
+
+call field_get_key_id('log', keylog)
+call field_get_key_id('post_vis', keyvis)
 
 !===============================================================================
 ! 1. RESERVATION D'UNE PLACE DANS PROPCE SI RAYONNEMENT
@@ -188,9 +191,15 @@ if (iirayo.gt.0) then
   itycat = FIELD_INTENSIVE + FIELD_PROPERTY
   ityloc = 3 ! boundary faces
 
-  call field_create('wall_temperature',  &
-                    itycat, ityloc, 1, ilved, inoprv, itparo)
-  call field_set_key_str(itparo, keylbl, 'Wall_temp')
+  call field_get_id_try('boundary_temperature', itempb)
+  if (itempb.lt.0) then
+    call field_create('boundary_temperature',  &
+                      itycat, ityloc, 1, ilved, inoprv, itempb)
+  endif
+  call field_is_key_set(itempb, keylog, kset)
+  if (kset .eqv. .false.) call field_set_key_int(itempb, keylog, 1)
+  call field_is_key_set(itempb, keyvis, kset)
+  if (kset .eqv. .false.) call field_set_key_int(itempb, keyvis, 1)
 
   call field_create('rad_incident_flux',  &
                     itycat, ityloc, 1, ilved, inoprv, iqinci)

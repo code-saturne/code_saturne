@@ -584,9 +584,6 @@ cs_field_pointer_map_radiation(int  n_r_phases)
 
   }
 
-  cs_field_pointer_map(CS_ENUMF_(tparo),
-                       cs_field_by_name_try("wall_temperature"));
-
   cs_field_pointer_map(CS_ENUMF_(qinci),
                        cs_field_by_name_try("rad_incident_flux"));
 

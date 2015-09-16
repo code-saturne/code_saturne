@@ -5,6 +5,9 @@ Trunk (unreleased)
 Changes:
 --------
 
+ - Merge general boundary temperature handling with the radiative
+   "wall temperature", for unified logging and post-processing.
+
  - When using old (non-parallel) algorithm to compute wall distance, save
    distance in same array as for main algorithm.
 

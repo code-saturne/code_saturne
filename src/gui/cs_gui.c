@@ -2359,7 +2359,7 @@ void CS_PROCF (uithsc, UITHSC) (void)
 
   BFT_FREE(label);
 
-  BFT_MALLOC(vars->model, strlen("thermal_scalar")+1, char);
+  BFT_REALLOC(vars->model, strlen("thermal_scalar")+1, char);
   strcpy(vars->model, "thermal_scalar");
 }
 

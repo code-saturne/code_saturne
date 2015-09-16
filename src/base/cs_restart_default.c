@@ -463,7 +463,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (f == CS_F_(mu_t))
       strncpy(old_name, "visct", 127);
 
-    else if (f == CS_F_(tparo))
+    else if (f == CS_F_(t_b))
       strncpy(old_name, "tparoi_fb", 127);
     else if (f == CS_F_(qinci))
       strncpy(old_name, "qincid_fb", 127);

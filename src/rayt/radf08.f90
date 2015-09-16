@@ -89,20 +89,30 @@ double precision tref,xh2oref,rt,rx,kmloc
 double precision, allocatable, dimension(:) ::     y,tsto,ysto
 double precision, allocatable, dimension(:,:,:) :: asto,ksto2
 
-double precision, dimension(:), pointer :: tpaadf ! Points to the walls
+double precision, dimension(:), pointer :: tpaadf, b_temp ! wall temperature
+
 ! temperature table
 
 data ipass /0/
 
 save ipass,ksto2,asto,ntsto,nysto,tsto,ysto ! These local values must be stored.
 ! Otherwise they have to be read again for every iteration cycle.
+
 !===============================================================================
 ! 0 - GESTION MEMOIRE
 !===============================================================================
 
 allocate(y(ncelet))
 
-call field_get_val_s(itparo,tpaadf)
+if (itpscl.eq.2) then
+  call field_get_val_s(itempb,b_temp)
+  allocate(tpaadf(nfabor))
+  do ifac = 1, nfabor
+    tpaadf(ifac) = b_temp(ifac) + tkelvi
+  enddo
+else
+  call field_get_val_s(itempb,tpaadf)
+endif
 
 !===============================================================================
 !  1 - COEFFICIENT D'ABSORPTION DU MELANGE GAZEUX (m-1)
@@ -233,7 +243,7 @@ do ifac = 1, nfabor
      ix=l-1
      rx=(y(iel)-ysto(ix))/(ysto(ix+1)-ysto(ix))
   endif
-! Absortion Coeffcient
+! Absortion Coefficient
   do i=1,nwsgg
     alocbo(ifac,i)=(1._8-rt)*(1._8-rx)*asto(i,ix,it)+(1._8-rt)*(rx)*           &
                    asto(i,ix+1,it)+rt*(1._8-rx)*asto(i,ix,it+1)+               &
@@ -241,6 +251,10 @@ do ifac = 1, nfabor
                    ! Local weight of the i-th grey gas
   enddo
 enddo
+
+if (itpscl.eq.2) then
+  deallocate(tpaadf)
+endif
 
 return
 

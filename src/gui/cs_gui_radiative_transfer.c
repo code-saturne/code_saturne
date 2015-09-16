@@ -436,42 +436,40 @@ void CS_PROCF (uiray1, UIRAY1) (int  *iirayo,
                                 int  *iimpar,
                                 int  *iimlum)
 {
-    char *model = NULL;
+  char *model = NULL;
 
-    model = cs_gui_get_thermophysical_model("radiative_transfer");
+  model = cs_gui_get_thermophysical_model("radiative_transfer");
 
-    if (cs_gui_strcmp(model, "off"))
-        *iirayo = 0;
-    else if (cs_gui_strcmp(model, "dom"))
-        *iirayo = 1;
-    else if (cs_gui_strcmp(model, "p-1"))
-        *iirayo = 2;
+  if (cs_gui_strcmp(model, "off"))
+    *iirayo = 0;
+  else if (cs_gui_strcmp(model, "dom"))
+    *iirayo = 1;
+  else if (cs_gui_strcmp(model, "p-1"))
+    *iirayo = 2;
 
-    if (*iirayo)
-    {
-        _radiative_transfer_char("restart", isuird);
-        _radiative_transfer_int("quadrature", i_quad);
-        _radiative_transfer_int("directions_number", ndirec);
-        _radiative_transfer_int("frequency", nfreqr);
-        _radiative_transfer_int("thermal_radiative_source_term", idiver);
-        _radiative_transfer_int("temperature_listing_printing", iimpar);
-        _radiative_transfer_int("intensity_resolution_listing_printing", iimlum);
-    }
+  if (*iirayo) {
+    _radiative_transfer_char("restart", isuird);
+    _radiative_transfer_int("quadrature", i_quad);
+    _radiative_transfer_int("directions_number", ndirec);
+    _radiative_transfer_int("frequency", nfreqr);
+    _radiative_transfer_int("thermal_radiative_source_term", idiver);
+    _radiative_transfer_int("temperature_listing_printing", iimpar);
+    _radiative_transfer_int("intensity_resolution_listing_printing", iimlum);
+  }
 #if _XML_DEBUG_
-    bft_printf("==>UIRAY1\n");
-    bft_printf("--rayonnement : %s  (iirayo = %i)\n", model, *iirayo);
-    if (*iirayo)
-    {
-        bft_printf("--isuird = %d\n", *isuird);
-        bft_printf("--quadra = %d\n", *i_quad);
-        bft_printf("--ndirec = %d\n", *ndirec);
-        bft_printf("--nfreqr = %d\n", *nfreqr);
-        bft_printf("--idiver = %d\n", *idiver);
-        bft_printf("--iimpar = %d\n", *iimpar);
-        bft_printf("--iimlum = %d\n", *iimlum);
-    }
+  bft_printf("==>UIRAY1\n");
+  bft_printf("--rayonnement : %s  (iirayo = %i)\n", model, *iirayo);
+  if (*iirayo) {
+    bft_printf("--isuird = %d\n", *isuird);
+    bft_printf("--quadra = %d\n", *i_quad);
+    bft_printf("--ndirec = %d\n", *ndirec);
+    bft_printf("--nfreqr = %d\n", *nfreqr);
+    bft_printf("--idiver = %d\n", *idiver);
+    bft_printf("--iimpar = %d\n", *iimpar);
+    bft_printf("--iimlum = %d\n", *iimlum);
+  }
 #endif
-    BFT_FREE(model);
+  BFT_FREE(model);
 }
 
 /*----------------------------------------------------------------------------
@@ -493,7 +491,7 @@ void CS_PROCF (uiray4, UIRAY4) (int  *iirayo)
     "coeff_ech_conv"};
 
   cs_field_t * b_rad_f[8] = {
-    CS_F_(tparo),
+    CS_F_(t_b),
     CS_F_(qinci),
     CS_F_(epa),
     CS_F_(xlam),
@@ -598,48 +596,48 @@ void CS_PROCF (uiray2, UIRAY2)
     /* nature, label and description (color or group)
        of the ith initialization zone */
 
-        ith_zone = izone + 1;
+      ith_zone = izone + 1;
 
-        nature = cs_gui_boundary_zone_nature(ith_zone);
+      nature = cs_gui_boundary_zone_nature(ith_zone);
 
-        label = cs_gui_boundary_zone_label(ith_zone);
+      label = cs_gui_boundary_zone_label(ith_zone);
 
-        BFT_MALLOC(boundary->label[izone], strlen(label)+1, char);
-        strcpy(boundary->label[izone], label);
+      BFT_MALLOC(boundary->label[izone], strlen(label)+1, char);
+      strcpy(boundary->label[izone], label);
 
-        BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
-        strcpy(boundary->nature[izone], nature);
+      BFT_MALLOC(boundary->nature[izone], strlen(nature)+1, char);
+      strcpy(boundary->nature[izone], nature);
 
-        /* Default initialization: these values are the same that in raycli
-           but given on each face in raycli whereas here one does not
-           necessarily have boundary faces (parallism) -> duplication */
-        boundary->type[izone] = -1;
-        boundary->output_zone[izone] = -1;
-        boundary->emissivity[izone] = -1.e12;
-        boundary->thickness[izone] = -1.e12;
-        boundary->thermal_conductivity[izone] = -1.e12;
-        boundary->external_temp[izone] = -1.e12;
-        boundary->internal_temp[izone] = -1.e12;
-        boundary->conduction_flux[izone] = 1.e30;
+      /* Default initialization: these values are the same that in raycli
+         but given on each face in raycli whereas here one does not
+         necessarily have boundary faces (parallism) -> duplication */
+      boundary->type[izone] = -1;
+      boundary->output_zone[izone] = -1;
+      boundary->emissivity[izone] = -1.e12;
+      boundary->thickness[izone] = -1.e12;
+      boundary->thermal_conductivity[izone] = -1.e12;
+      boundary->external_temp[izone] = -1.e12;
+      boundary->internal_temp[izone] = -1.e12;
+      boundary->conduction_flux[izone] = 1.e30;
 
-        if (cs_gui_strcmp(nature, "wall")) {
-          boundary->type[izone] = _radiative_boundary_type(label,
-                                                           *itpimp, *ipgrno, *iprefl,
-                                                           *ifgrno, *ifrefl);
-          tmp = (double) boundary->output_zone[izone];
-          _radiative_boundary(label, "output_zone", &tmp);
-          boundary->output_zone[izone] = (int) tmp;
-          _radiative_boundary(label, "emissivity", &boundary->emissivity[izone]);
-          _radiative_boundary(label, "thickness", &boundary->thickness[izone]);
-          _radiative_boundary(label, "wall_thermal_conductivity", &boundary->thermal_conductivity[izone]);
-          _radiative_boundary(label, "external_temperature_profile", &boundary->external_temp[izone]);
-          _radiative_boundary(label, "internal_temperature_profile", &boundary->internal_temp[izone]);
-          _radiative_boundary(label, "flux", &boundary->conduction_flux[izone]);
+      if (cs_gui_strcmp(nature, "wall")) {
+        boundary->type[izone] = _radiative_boundary_type(label,
+                                                         *itpimp, *ipgrno, *iprefl,
+                                                         *ifgrno, *ifrefl);
+        tmp = (double) boundary->output_zone[izone];
+        _radiative_boundary(label, "output_zone", &tmp);
+        boundary->output_zone[izone] = (int) tmp;
+        _radiative_boundary(label, "emissivity", &boundary->emissivity[izone]);
+        _radiative_boundary(label, "thickness", &boundary->thickness[izone]);
+        _radiative_boundary(label, "wall_thermal_conductivity", &boundary->thermal_conductivity[izone]);
+        _radiative_boundary(label, "external_temperature_profile", &boundary->external_temp[izone]);
+        _radiative_boundary(label, "internal_temperature_profile", &boundary->internal_temp[izone]);
+        _radiative_boundary(label, "flux", &boundary->conduction_flux[izone]);
 
-        } /* if (cs_gui_strcmp(nature, "wall")) */
+      } /* if (cs_gui_strcmp(nature, "wall")) */
 
-        BFT_FREE(nature);
-        BFT_FREE(label);
+      BFT_FREE(nature);
+      BFT_FREE(label);
 
     }  /* for izones */
 
@@ -653,10 +651,8 @@ void CS_PROCF (uiray2, UIRAY2)
                                        boundaries->label[izone],
                                        *nfabor, *nozppm, &faces);
 
-    if (cs_gui_strcmp(boundary->nature[izone], "wall"))
-    {
-      for (n = 0; n < faces; n++)
-      {
+    if (cs_gui_strcmp(boundary->nature[izone], "wall")) {
+      for (n = 0; n < faces; n++) {
         ifbr = faces_list[n];
 
         if (itypfb[ifbr] != *iparoi && itypfb[ifbr] != *iparug)
@@ -669,13 +665,11 @@ void CS_PROCF (uiray2, UIRAY2)
 
         izfrdp[ifbr] = boundary->output_zone[izone];
         isothp[ifbr] = boundary->type[izone];
-        if (isothp[ifbr] == *itpimp)
-        {
+        if (isothp[ifbr] == *itpimp) {
           epsp[ifbr] = boundary->emissivity[izone];
           tintp[ifbr] = boundary->internal_temp[izone];
         }
-        else if (isothp[ifbr] == *ipgrno)
-        {
+        else if (isothp[ifbr] == *ipgrno) {
           xlamp[ifbr] = boundary->thermal_conductivity[izone];
           epap[ifbr] = boundary->thickness[izone];
           textp[ifbr] = boundary->external_temp[izone];

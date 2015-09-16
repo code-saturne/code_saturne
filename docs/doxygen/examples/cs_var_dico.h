@@ -221,6 +221,7 @@
   -                        | call field_get_val_v(\ref numvar::iforbr "iforbr", bpro_forbr)            |cs_field_by_name("boundary_forces")| Field id of the stresses at boundary
   -                        | call field_get_val_s(\ref numvar::iyplbr "iyplbr", bpro_yplus)            |cs_field_by_name("yplus")          | Field id of \f$y^+\f$ at boundary
   -                        | call field_get_val_v(\ref numvar::idtten "idtten", dttens)                |cs_field_by_name("dttens")         | Field id for the dttens tensor</tt>
+  -                        | call field_get_val_s(\ref numvar::itempb "itempb", t_b)                   | CS_F_(t_b)->val[b_face_id]        | Boundary temperature
 
 
   \section cs_var_dico_part Specific physics
@@ -316,7 +317,6 @@
   propce(iel,\ref radiat::iabso "iabso"(iesp))                              | CS_FI_(rad_abs,iesp-1)->val[cell_id] | Radiative absorption
   propce(iel,\ref radiat::iemi "iemi"(iesp))                                | CS_FI_(rad_emi,iesp-1)->val[cell_id] | Radiative emission
   propce(iel,\ref radiat::icak "icak"(iesp))                                | CS_FI_(rad_cak,iesp-1)->val[cell_id] | Radiative absorption coefficient
-  call field_get_val_s(\ref radiat::itparo "itparo", btparo) \n btparo(iel) | CS_F_(tparo)->val[cell_id]           | Wall temperature
   call field_get_val_s(\ref radiat::iqinci "iqinci", bqinci) \n bqinci(iel) | CS_F_(qinci)->val[cell_id]           | Radiative incident radiative flux density
   call field_get_val_s(\ref radiat::ixlam "ixlam", bxlam) \n bxlam(iel)     | CS_F_(xlam)->val[cell_id]            | Wall thermal conductivity
   call field_get_val_s(\ref radiat::iepa "iepa", bepa) \n bepa(iel)         | CS_F_(epa)->val[cell_id]             | Wall thickness

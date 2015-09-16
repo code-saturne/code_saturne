@@ -2736,7 +2736,7 @@ cs_gui_get_activ_thermophysical_model(void)
     isactiv = 1;
     return isactiv;
   } else {
-    vars->model = NULL;
+    BFT_FREE(vars->model);
     vars->model_value = NULL;
   }
 

@@ -101,14 +101,14 @@ double precision propce(ncelet,*)
 integer          iappel
 integer          ifac   , iel    , iok    , izone  , isou   , jsou
 integer          inc    , iccocg , iwarnp , imligp , nswrgp
-integer          mode   , icla   , ipcla  , f_id0
+integer          icla   , ipcla  , f_id0
 integer          idverl
 integer          iflux(nozrdm)
 integer          ngg, i
 double precision epsrgp, climgp, extrap
 double precision aa, bb, ckmin, unspi, xlimit, flunmn
 double precision flux(nozrdm)
-double precision vv, sf, xlc, xkmin, pp
+double precision vv, sf, xlc, xkmin, pp, xptk
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbrs, rovsdt
@@ -124,9 +124,9 @@ double precision, allocatable, dimension(:) :: flurds, flurdb
 double precision, allocatable, dimension(:,:) :: kgi,agi,agbi,iabparh2,iempexh2,iempimh2
 double precision, allocatable, dimension(:)   :: iqxpar,iqypar,iqzpar
 double precision, allocatable, dimension(:)   :: iabgaz,iabpar,iemgex,iempex,ilutot
-double precision, allocatable, dimension(:)   :: iqpato,iemgim,iempim
+double precision, allocatable, dimension(:)   :: iqpato,iemgim,iempim,tparo
 
-double precision, dimension(:), pointer :: tparo, bqinci
+double precision, dimension(:), pointer :: bqinci, b_temp
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvara_yfol
@@ -154,9 +154,10 @@ allocate(flurds(nfac), flurdb(ndimfb))
 ! Allocate work arrays
 allocate(ckmel(ncelet)) ! Absorption coeffcient of the bulk phase
 allocate(dcp(ncelet))   ! Specific heat capacity of the bulk phase
+allocate(tparo(nfabor))
 
 ! Map field arrays
-call field_get_val_s(itparo, tparo)     ! Wall temperature
+call field_get_val_s(itempb,b_temp)     ! Boundary temperature
 call field_get_val_s(iqinci, bqinci)    ! Irradiating flux density
 call field_get_val_s(ixlam, bxlam)      ! Heat conduction coeffcient of walls
 call field_get_val_s(iepa, bepa)        ! Thickness of walls
@@ -189,6 +190,22 @@ allocate(ilutot(ncelet))                ! Total emitted intensity
 allocate(iqpato(nfabor))                ! Irradiating  flux density at walls
 ! Careful: Should not be mixed up with bqinci
 allocate(agbi(nfabor,nwsgg))            ! Weight of the i-th grey gas at walls
+
+! Wall temperature
+
+if (itpscl.eq.2) then
+  xptk = tkelvi
+else
+  xptk =0
+endif
+
+do ifac = 1, nfabor
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+    tparo(ifac) = b_temp(ifac) + xptk
+  else
+    tparo(ifac) = 0.d0
+  endif
+enddo
 
 !===============================================================================
 ! 1. Initializations
@@ -1116,11 +1133,11 @@ endif
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbrs, rovsdt)
-deallocate(ckmel)
 deallocate(tempk)
 deallocate(coefap, coefbp)
 deallocate(cofafp, cofbfp)
 deallocate(flurds, flurdb)
+deallocate(ckmel, dcp, tparo)
 deallocate(kgi,agi,agbi)
 deallocate(iqxpar,iqypar,iqzpar)
 deallocate(iabgaz,iabpar,iemgex,iempex,ilutot)

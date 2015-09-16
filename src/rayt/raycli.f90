@@ -126,7 +126,7 @@ double precision rcodcl(ndimfb,nvarcl,3)
 integer          iok, ifac, iel, ideb, ivart
 integer          mode, ifvu, ii, izonem, izone
 integer          nrferr(14), icoerr(15)
-integer          ivahg, nlst
+integer          ivahg, nlst, icodw
 
 double precision tmin , tmax   , tx
 double precision xmtk
@@ -134,10 +134,10 @@ double precision rvferr(25)
 
 integer, allocatable, dimension(:) :: isothm, lstfac
 
-double precision, allocatable, dimension(:) :: tempk, thwall
+double precision, allocatable, dimension(:) :: tempk, thwall, tparo
 double precision, allocatable, dimension(:) :: text, tint
 double precision, dimension(:), pointer :: bhconv, bfconv
-double precision, dimension(:), pointer :: tparo, bqinci
+double precision, dimension(:), pointer :: b_temp, bqinci
 double precision, dimension(:), pointer :: bxlam, bepa, beps, bfnet
 
 double precision, dimension(:), pointer :: cvara_scalt
@@ -154,9 +154,10 @@ save       ipacli
 allocate(isothm(nfabor), lstfac(nfabor))
 allocate(tempk(ncelet), thwall(ndimfb))
 allocate(text(nfabor), tint(nfabor))
+allocate(tparo(nfabor))
 
 ! Map field arrays
-call field_get_val_s(itparo, tparo)
+call field_get_val_s(itempb, b_temp)
 call field_get_val_s(iqinci, bqinci)
 call field_get_val_s(ixlam, bxlam)
 call field_get_val_s(iepa, bepa)
@@ -185,6 +186,24 @@ tmax = grand + tkelvi
 !         T  = T    * (1 + tx *((DeltaT/T   ) / |DeltaT/T   |))
 
 tx = 0.1d0
+
+! Temperature scale
+
+if (itpscl.eq.2) then
+  xmtk = -tkelvi
+else if (itpscl.eq.1) then
+  xmtk = 0.d0
+endif
+
+! Wall temperature
+
+do ifac = 1, nfabor
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+    tparo(ifac) = b_temp(ifac) - xmtk
+  else
+    tparo(ifac) = 0.d0
+  endif
+enddo
 
 !---> Default initialization
 do ifac = 1, nfabor
@@ -618,19 +637,24 @@ endif
 ! ICODCL et EPS (quand il est nul)
 
 do ifac = 1, nfabor
+  if (itypfb(ifac).eq.iparug) then
+    icodw = 6
+  else
+    icodw = 5
+  endif
   if (isothm(ifac).eq.itpimp) then
-    icodcl(ifac,ivart) = 5
-    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
+    icodcl(ifac,ivart) = icodw
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = icodw
   elseif (isothm(ifac).eq.ipgrno) then
-    icodcl(ifac,ivart) = 5
-    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
+    icodcl(ifac,ivart) = icodw
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = icodw
   elseif (isothm(ifac).eq.iprefl) then
-    icodcl(ifac,ivart) = 5
-    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
+    icodcl(ifac,ivart) = icodw
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = icodw
     beps(ifac) = 0.d0
   elseif (isothm(ifac).eq.ifgrno) then
-    icodcl(ifac,ivart) = 5
-    if (ihgas.ge.0) icodcl(ifac,ivahg) = 5
+    icodcl(ifac,ivart) = icodw
+    if (ihgas.ge.0) icodcl(ifac,ivahg) = icodw
   elseif (isothm(ifac).eq.ifrefl) then
     icodcl(ifac,ivart) = 3
     if (ihgas.ge.0) icodcl(ifac,ivahg) = 3
@@ -723,12 +747,6 @@ endif
 !===============================================================================
 
 if (itherm.eq.1) then
-
-  if (itpscl.eq.2) then
-    xmtk = -tkelvi
-  else if (itpscl.eq.1) then
-    xmtk = 0.d0
-  endif
 
   do ifac = 1, nfabor
 
@@ -851,10 +869,23 @@ elseif (itherm.eq.2) then
 
 endif
 
+! Update boundary temperature field
+
+do ifac = 1, nfabor
+  if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
+    if (itpscl.eq.2) then
+      b_temp(ifac) = tparo(ifac) - tkelvi
+    else
+      b_temp(ifac) = tparo(ifac)
+    endif
+  endif
+enddo
+
 ! Free memory
 deallocate(isothm,lstfac)
 deallocate(tempk,thwall)
 deallocate(text, tint)
+deallocate(tparo)
 
 !--------
 ! Formats

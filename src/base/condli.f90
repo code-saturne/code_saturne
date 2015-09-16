@@ -147,6 +147,7 @@ use cplsat
 use mesh
 use field
 use field_operator
+use radiat
 use turbomachinery
 use darcy_module
 use cs_c_bindings
@@ -196,6 +197,7 @@ double precision rinfiv(3), pimpv(3), qimpv(3), hextv(3), cflv(3)
 double precision visci(3,3), fikis, viscis, distfi
 double precision temp
 double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
+double precision, allocatable, dimension(:) :: tb_save
 
 character(len=80) :: fname
 
@@ -331,6 +333,17 @@ call field_get_coefbf_v(ivarfl(iu), cofbfu)
 ! pointers to boundary vaiable values
 
 call field_get_key_id("boundary_value_id", kbfid)
+
+! In case of radiative model, save boundary temperature
+! to reduce enthalpy -> temperature conversion error.
+
+if (itherm.eq.2 .and. iirayo.ge.1) then
+  allocate(tb_save(nfabor))
+  call field_get_val_s(itempb, btemp_s)
+  do ifac = 1, nfabor
+    tb_save(ifac) = btemp_s(ifac)
+  enddo
+endif
 
 !===============================================================================
 ! 2. treatment of types of bcs given by itypfb
@@ -2344,23 +2357,23 @@ if (nscal.ge.1) then
         !     donc :
 
         !       lorsque la variable transportee est la temperature
-        !         ABS(ISCSTH(II)).EQ.1 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT
-        !         puisque HINT = VISLS * CP / DISTBR
+        !         abs(iscsth(ii)).eq.1 : hconv(ifa,iph) = hint
+        !         puisque hint = visls * cp / distbr
         !                      = lambda/distance en W/(m2 K)
 
         !       lorsque la variable transportee est l'enthalpie
-        !         ISCSTH(II).EQ.2 : RA(IHCONV-1+IFAC+NFABOR*(IPH-1)) = HINT*CPR
+        !         iscsth(ii).eq.2 : hcov(ifac,iph) = hint*cpr
         !         avec
-        !            IF(ICP.GT.0) THEN
-        !              CPR = CPRO_CP(IEL)
-        !            ELSE
-        !              CPR = CP0
-        !            ENDIF
-        !         puisque HINT = VISLS / DISTBR
-        !                      = lambda/(CP * distance)
+        !            if(icp.gt.0) then
+        !              cpr = cpro_cp(iel)
+        !            else
+        !              cpr = cp0
+        !            endif
+        !         puisque hint = visls / distbr
+        !                      = lambda/(cp * distance)
 
         !       lorsque la variable transportee est l'energie
-        !         ISCSTH(II).EQ.3 :
+        !         iscsth(ii).eq.3 :
         !         on procede comme pour l'enthalpie avec CV au lieu de CP
         !         (rq : il n'y a pas d'hypothese, sf en non orthogonal :
         !               le flux est le bon et le coef d'echange aussi)
@@ -2383,7 +2396,7 @@ if (nscal.ge.1) then
               bhconv(ifac) = hint*cp0
             endif
 
-          ! Energie (compressible module)
+          ! Total energy (compressible module)
           elseif (itherm.eq.3) then
             ! If Cv is variable
             if (ipccv.gt.0) then
@@ -2756,6 +2769,21 @@ if (itherm.eq.2 .and. itempb.gt.0) then
     call b_h_to_t(bvar_s, btemp_s)
   else
     call b_h_to_t(btemp_s, btemp_s)
+  endif
+
+  ! In case of radiative model, restore saved boundary temperature
+  ! for prescribed wall values so as to reduce
+  ! enthalpy -> temperature conversion error.
+
+  if (itherm.eq.2 .and. iirayo.ge.1) then
+    ii = isca(iscalt)
+    call field_get_val_s(itempb, btemp_s)
+    do ifac = 1, nfabor
+      if (icodcl(ifac,ii).eq.iparoi .or. icodcl(ifac,ii).eq.iparug) then
+        btemp_s(ifac) = tb_save(ifac)
+      endif
+    enddo
+    deallocate(tb_save)
   endif
 
 endif

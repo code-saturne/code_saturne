@@ -838,6 +838,11 @@ if (nscal.gt.0) then
 
 endif
 
+! Temperature scale
+
+if (itherm.ge.1 .and. itpscl.le.0) then
+  itpscl = 1
+endif
 
 ! ---> ISCACP
 !      Si l'utilisateur n'a pas modifie ISCACP, on prend par defaut :

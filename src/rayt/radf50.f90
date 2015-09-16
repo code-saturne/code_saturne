@@ -89,18 +89,28 @@ double precision, allocatable, dimension(:) :: tsto,xh2osto
 double precision, allocatable, dimension(:,:) :: ksto1
 double precision, allocatable, dimension(:,:,:) :: asto,ksto2
 
-double precision, dimension(:), pointer :: tpaadf ! Points to the walls
+double precision, dimension(:), pointer :: tpaadf, b_temp ! wall temperature
+
 ! temperature table
 
 data ipass /0/
 
 save ipass,ksto1,ksto2,asto,ntsto,nxh2osto,tsto,xh2osto ! These local values
 ! Otherwise they have to be read again for every iteration cycle.
+
 !===============================================================================
 ! 0 - GESTION MEMOIRE
 !===============================================================================
 
-call field_get_val_s(itparo,tpaadf)
+if (itpscl.eq.2) then
+  call field_get_val_s(itempb,b_temp)
+  allocate(tpaadf(nfabor))
+  do ifac = 1, nfabor
+    tpaadf(ifac) = b_temp(ifac) + tkelvi
+  enddo
+else
+  call field_get_val_s(itempb,tpaadf)
+endif
 
 !===============================================================================
 !  1 - COEFFICIENT D'ABSORPTION DU MELANGE GAZEUX (m-1)
@@ -232,6 +242,10 @@ do ifac=1,nfabor
     ! Local weight of the i-th grey gas
   enddo
 enddo
+
+if (itpscl.eq.2) then
+  deallocate(tpaadf)
+endif
 
 return
 

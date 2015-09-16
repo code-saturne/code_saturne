@@ -62,6 +62,7 @@ use cpincl
 use ppincl
 use radiat
 use field
+use mesh
 use cs_c_bindings
 
 !===============================================================================
@@ -72,15 +73,17 @@ implicit none
 
 ! Local variables
 
-character        rubriq*64
+character        rubriq*64, old_name*64
 character        ficsui*32
 integer          iok
 
-integer          ierror , itysup , nbval
+integer          ierror , itysup , nbval, ifac
 integer          nberro , ivers
 integer          ival(1)
 
 logical(kind=c_bool) :: ncelok, nfaiok, nfabok, nsomok
+
+double precision, dimension(:), pointer :: btemp_s
 
 type(c_ptr) :: rp
 
@@ -136,8 +139,21 @@ if (isuird.eq.1) then
 
   ! Aux faces de bord
 
-  call restart_read_field_vals(rp, itparo, 0, ierror)
+  call field_get_val_s(itempb, btemp_s)
+  rubriq = 'boundary_temperature'
+  old_name = 'wall_temperature'
+  itysup = 3
+  nbval = 1
+  call restart_read_real_t_compat(rp, rubriq, old_name,          &
+                                  itysup, nbval,                &
+                                  btemp_s, ierror)
   nberro=nberro+ierror
+
+  if (itpscl.eq.2) then
+    do ifac = 1, nfabor
+      btemp_s(ifac) = btemp_s(ifac) - tkelvi
+    enddo
+  endif
 
   call restart_read_field_vals(rp, iqinci, 0, ierror)
   nberro=nberro+ierror

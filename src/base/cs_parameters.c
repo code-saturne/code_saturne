@@ -710,6 +710,7 @@ cs_parameters_create_added_properties(void)
   BFT_FREE(_user_property_defs);
   _n_user_properties = 0;
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define a boundary values field for a variable field.
@@ -747,7 +748,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
   int scalar_id = (f->type & CS_FIELD_VARIABLE) ?
     cs_field_get_key_int(f, ks) : -1;
 
-  if (scalar_id < 0 && strcmp(f->name, "temperature") != 0)
+  if (scalar_id < 0&& strcmp(f->name, "temperature") != 0)
     return bf;
 
   /* Build new field */
@@ -814,6 +815,94 @@ cs_parameters_add_boundary_values(cs_field_t  *f)
 
   cs_field_set_key_int(f, kbf, bf->id);
   cs_field_lock_key(f, kbf);
+
+  return bf;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a boundary values field for temperature, if applicable.
+ *
+ * \param[in, out]  f  pointer to field structure
+ *
+ * \return  pointer to boundary values field, or NULL if not applicable
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_parameters_add_boundary_temperature(void)
+{
+  cs_field_t *bf = NULL;
+
+  /* Check if we already have a temperature variable field
+    (temperature or enthalpy */
+
+  cs_field_t *f = cs_field_by_name_try("temperature");
+
+  if (f != NULL)
+    bf = cs_parameters_add_boundary_values(f);
+
+  else {
+
+    f = cs_field_by_name_try("enthalpy");
+
+    if (f != NULL) {
+      if (   f->location_id != CS_MESH_LOCATION_CELLS
+          || (f->type & CS_FIELD_VARIABLE) == 0)
+        f = NULL;
+    }
+
+    /* If we have a compatible cell enthalpy field,
+       use if to define default output options */
+
+    if (f != NULL) {
+
+      char b_name[] = "boundary_temperature";
+
+      bf = cs_field_by_name_try(b_name);
+
+      if (bf == NULL) {
+
+        int type_flag =   (f->type & (CS_FIELD_INTENSIVE | CS_FIELD_EXTENSIVE))
+                           | CS_FIELD_POSTPROCESS;
+
+        bf = cs_field_create(b_name,
+                             type_flag,
+                             CS_MESH_LOCATION_BOUNDARY_FACES,
+                             f->dim,
+                             true,
+                             false);
+
+        /* Set same postprocessing and logging defaults as enthalpy */
+
+        int k_log = cs_field_key_id("log");
+        cs_field_set_key_int(bf,
+                             k_log,
+                             cs_field_get_key_int(f, k_log));
+
+        int k_vis = cs_field_key_id("post_vis");
+        int f_vis = cs_field_get_key_int(f, k_vis);
+        f_vis = CS_MAX(f_vis, 1);
+        cs_field_set_key_int(bf, k_vis, f_vis);
+
+      }
+      else {
+
+        if (   1 != bf->dim
+            || bf->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+          bft_error(__FILE__, __LINE__, 0,
+                    _("Error defining variable \"boundary_temperature\" field:\n"
+                      "An incompatible field with matching name already exists:\n"
+                      "  id:          %d\n"
+                      "  location_id: %d\n"
+                      "  dimension:   %d"),
+                    bf->id, bf->location_id, bf->dim);
+
+      }
+
+    }
+
+  }
 
   return bf;
 }
