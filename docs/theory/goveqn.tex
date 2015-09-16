@@ -123,17 +123,17 @@ the \textbf{momentum} equation is obtained:
 \begin{equation}\label{eq:momentum}
 \dfrac{\partial }{\partial t}(\rho \vect{u})
 +\divv \left( \vect{u}\otimes \rho \vect{u} \right)
-=\divv \left( \tens{\sigma} \right) +\rho \vect{g} +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
+=\divv \left( \tens{\sigma} \right) +\rho \vect{g} +\vect{ST}_{\vect{u}}-\rho\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
 \end{equation}
 %
-where $\vect{ST}_{\vect{u}}$ and $\tens{K}\,\vect{u}$ stand for explicit and implicit additional
-momentum Source Terms
+where $\vect{ST}_{\vect{u}}$ and $\rho\tens{K}\,\vect{u}$ stand for an additional
+momentum Source Terms (head loss, treated as implicit by default)
 \nomenclature[rstut1]{$\vect{ST}_{\vect{u}}$}{explicit additional momemtum source terms \nomunit{$kg.m^{-2}.s^{-2}$}}
-\nomenclature[rkt2]{$\tens{K}$}{tensor of the velocity head loss \nomunit{$kg.m^{-3}.s^{-1}$}}
+\nomenclature[rkt2]{$\tens{K}$}{tensor of the velocity head loss \nomunit{$s^{-1}$}}
 \nomenclature[gsigmat2]{$\tens{\sigma}$}{total stress tensor \nomunit{$Pa$}}
  which may be prescribed by the user (head loss, $\Gamma \vect{u}^{in}$
 contribution associated with a user-prescribed mass source term...).
-Note that $\tens{K}$ is a symmetric positive tensor, by definition.
+Note that $\tens{K}$ is a symmetric positive tensor, by definition , so that its contribution to the kinetic energy balance is negative.
 
 In order to make the set of Equations \eqref{eq:mass} and \eqref{eq:momentum} closed, the Newtonian state law
 linking the deviatoric part of the stress tensor $\tens{\sigma}$ to the velocity field (more precisely to the rate of strain tensor $\tens{S}$)
@@ -185,7 +185,7 @@ it with the continuity Equation \eqref{eq:mass} give the Navier-Stokes equations
 &=& - \grad P
 + \divv \left( \mu  \left[ \gradt \, \vect{u} + \transpose{\gradt \, \vect{u}} - \dfrac{2}{3} \trace \left(\gradt \, \vect{u} \right) \tens{Id} \right]   \right)
 +\rho \vect{g}
- +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
+ +\vect{ST}_{\vect{u}}-\rho\tens{K}\,\vect{u} + \Gamma \vect{u}^{in},
 \end{array}
 \right.
 \end{equation}
@@ -220,7 +220,7 @@ Then the Navier-Stokes equations read in non-conservative form:
 &=& - \grad P
 + \divv \left( \mu  \left[ \gradt \, \vect{u} + \transpose{\gradt \, \vect{u}} - \dfrac{2}{3} \trace \left(\gradt \, \vect{u} \right) \tens{Id} \right]   \right)
 + \rho \vect{g}
- +\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right),
+ +\vect{ST}_{\vect{u}}-\rho\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right),
 \end{array}
 \right.
 \end{equation}
@@ -251,7 +251,7 @@ The Reynolds average operator $\overline{\left( \cdot\right)}$ is applied to Nav
 - \divv \left(\rho \tens{R} \right) \\
 &+&
 \displaystyle
-\vect{ST}_{\vect{u}}-\tens{K}\,\overline{\vect{u}} + \Gamma \left( \overline{\vect{u}}^{in} - \overline{\vect{u}} \right),
+\vect{ST}_{\vect{u}}-\rho\tens{K}\,\overline{\vect{u}} + \Gamma \left( \overline{\vect{u}}^{in} - \overline{\vect{u}} \right),
 \end{array}
 \right.
 \end{equation}
@@ -310,7 +310,7 @@ Applying the latter filter to the Navier-Stokes Equations \eqref{eq:navier_stoke
 + \divv \left( 2 \mu  \deviator{\widetilde{\tens{S}}}   \right)
 + \rho \vect{g}
 - \divv \left( \rho \widetilde{\vect{u}^\prime \otimes \vect{u}^\prime } \right)
- +\vect{ST}_{\vect{u}}-\tens{K}\,\widetilde{\vect{u}} + \Gamma \left( \widetilde{\vect{u}}^{in} - \widetilde{\vect{u}} \right),
+ +\vect{ST}_{\vect{u}}-\rho\tens{K}\,\widetilde{\vect{u}} + \Gamma \left( \widetilde{\vect{u}}^{in} - \widetilde{\vect{u}} \right),
 \end{array}
 \right.
 \end{equation}
@@ -348,7 +348,7 @@ read:
 - \divv \left(\rho \tens{R} - 2 \mu_T \deviator{\tens{S}} \right)
 + \left( \rho -\rho_0 \right)\vect{g}
 \\
- &+&\vect{ST}_{\vect{u}}-\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right).
+ &+&\vect{ST}_{\vect{u}}-\rho\tens{K}\,\vect{u} + \Gamma \left( \vect{u}^{in} - \vect{u} \right).
 \end{array}
 \right.
 \end{equation}

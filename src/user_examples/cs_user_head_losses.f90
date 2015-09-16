@@ -53,7 +53,7 @@
 !>
 !> It appears on the momentum as follows:
 !>    rho du/dt = - grad p + head_loss        (+ other terms)
-!>                      with head_loss = - rho ckupdc u ( en kg/(m2 s))
+!>                      with head_loss = - rho ckupdc u (in kg/(m2 s))
 !>
 !> For a distributed head loss,
 !>
@@ -70,11 +70,11 @@
 !>    let ksil = dhs/(0.5 rho u**2) given by the litterature
 !>    (dhs is the singular head loss)
 !>
-!>    the source term tspdc is equal to dhs/l = - ksil/l *(0.5 rho u**2)
+!>    the source term tspdc is equal to dhs/L = - ksil/L *(0.5 rho u**2)
 !>
-!>    we have ckupdc = 0.5 ksis/l abs(u)
+!>    we have ckupdc = 0.5 ksil/L abs(u)
 !>
-!>    where l is the length over which we have chosen to represent the
+!>    where L is the length over which we have chosen to represent the
 !>    singular head loss
 !>
 !>
@@ -94,7 +94,7 @@
 !______________________________________________________________________________!
 !> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     iappel        stage in the code
-!> \param[in]     icepd         numbers of ncepdp cells with head loss
+!> \param[in]     icepdc        numbers of ncepdp cells with head loss
 !> \param[in]     izcpdc        cells zone for head loss definition
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        work array for head loss
@@ -122,13 +122,13 @@ use period
 use mesh
 use field
 
-!==============================================================================
+!===============================================================================
 
-!< [arg]
 implicit none
 
 ! Arguments
 
+!< [arg]
 integer          ncepdp
 integer          iappel
 
@@ -138,9 +138,10 @@ integer          izcpdc(ncel)
 double precision dt(ncelet)
 double precision ckupdc(ncepdp,6)
 !< [arg]
-!< [loc_var_dec]
+
 ! Local variables
 
+!< [loc_var_dec]
 integer          iel, ielpdc, ikpdc
 integer          ilelt, nlelt
 integer          izone

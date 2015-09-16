@@ -236,7 +236,7 @@ module paramx
   integer    nestmx
   parameter (nestmx=4)
 
-  !> error estimator for Navier-Stokes.
+  !> Error estimator for Navier-Stokes.
   !> iest = iespre: prediction, (default name: EsPre).
   !> After the velocity prediction step (yielding \f$\vect{u}^*\f$), the
   !> estimator \f$\eta^{\,pred}_{\,i,k}(\vect{u}^*)\f$, local variable calculated
@@ -266,7 +266,7 @@ module paramx
   !> reconstruction methods are perfect and the associated system is solved exactly.
   integer   iespre
 
-  !> error estimator for Navier-Stokes.
+  !> Error estimator for Navier-Stokes.
   !> iest = iesder: drift  (default name: EsDer).
   !> The estimator \f$\eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1})\f$ is based on the
   !> following quantity (intrinsic to the code):
@@ -282,7 +282,8 @@ module paramx
   !> solved exactly.
   integer   iesder
 
-  !> error estimator for Navier-Stokes.  iest = iescor: correction, (default name: EsCor).
+  !> Error estimator for Navier-Stokes.
+  !> iest = iescor: correction, (default name: EsCor).
   !> The estimator \f$ \eta^{\,corr}_{\,i,k}(\vect{u}^{\,n+1})\f$ comes directly
   !> from the mass flow calculated with the updated velocity field:
   !> \f{eqnarray*}{
@@ -301,7 +302,7 @@ module paramx
   !> centers is made in a set of  functions with null divergence.
   integer   iescor
 
-  !> error estimator for Navier-Stokes. iest = iestot: total, (default name: EsTot).
+  !> Error estimator for Navier-Stokes. iest = iestot: total, (default name: EsTot).
   !> The estimator \f$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})\f$, local variable
   !> calculated at every cell \f$\Omega_i\f$, is based on the quantity
   !> \f$\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})\f$, which represents the

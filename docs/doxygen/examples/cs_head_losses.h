@@ -53,7 +53,7 @@
   ckupdc is the local head loss term.
 
  It appears on the momentum as follows:
-     \f[ \rho \frac{d \vect{u}}{d t} = - \grad p + \vect{headloss} \: (+\: \text{other terms})\f]
+     \f[ \rho \der{\vect{u}}{t} = - \grad p + \vect{headloss} \: (+\: \text{other terms})\f]
                       with  \f[ \vect{headloss} = - \rho \tens{ckupdc}\cdot \vect{u} \,\:  (\text{in } kg\cdot m^{-2} \cdot s^{-1})\f]
 
  For a distributed head loss, let \f${ \tens{\xi_l} = \dfrac{\tens{dh_l}}{(0.5 \rho  u^2)}}\f$ given by the litterature
@@ -61,15 +61,15 @@
 
     the source term \c tspdc is equal to \f$\tens{dh_l} = - \tens{\xi_l}(0.5\rho\vect{u}^2)\f$
 
-    we have \f$ \tens{ckupdc} = 0.5\tens{\xi_l}|\vect{U|} \f$
+    we have \f$ \tens{ckupdc} = 0.5\tens{\xi_l}|\vect{U}| \f$
 
 
- For a singular head loss, let \f$\tens{\xi_l} = \dfrac{\tens{dh_s}}{(0.5\rho\vect{u}^2)}\f$ given by the litterature
+ For a singular head loss, let \f$\tens{\xi_l} = \dfrac{\tens{dh_s}}{0.5\rho\vect{u}^2}\f$ given by the litterature
     (\f$\tens{dh_s} \f$ is the singular head loss)
 
-    the source term \c tspdc is equal to \f[\frac{\tens{dh_s}}{l} = - \frac{\tens{\xi_l}}{l} (0.5 \rho\vect{u}^2)\f]. We have \f[\tens{ckupdc} = 0.5\frac{\tens{\xi_s}}{l}|\vect{u}|\f]
+    the source term \c tspdc is equal to \f[\frac{\tens{dh_s}}{L} = - \frac{\tens{\xi_l}}{L} (0.5 \rho\vect{u}^2)\f]. We have \f[\tens{ckupdc} = 0.5\frac{\tens{\xi_s}}{L}|\vect{u}|\f]
 
-    where \f$ l \f$ is the length over which we have chosen to represent the
+    where \f$ L \f$ is the length over which we have chosen to represent the
     singular head loss.
 
 
