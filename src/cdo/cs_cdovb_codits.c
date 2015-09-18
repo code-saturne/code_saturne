@@ -135,6 +135,81 @@ static const cs_real_t  cs_weak_penalization_weight = 0.01;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute a local dense matrix-vector product
+ *          matvec has been previously allocated
+ *
+ * \param[in]      loc    local matrix to use
+ * \param[in]      vec    local vector to use
+ * \param[in, out] matvec result of the local matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_loc_matvec(const cs_toolbox_locmat_t  *loc,
+            const cs_real_t            *vec,
+            cs_real_t                  *matvec)
+{
+  /* Sanity checks */
+  assert(loc != NULL && vec != NULL && matvec != NULL);
+
+  cs_real_t  v = vec[0];
+  for (int j = 0; j < loc->n_ent; j++)
+    matvec[j] = v*loc->mat[j*loc->n_ent];
+
+  for (int i = 1; i < loc->n_ent; i++) {
+    v = vec[i];
+    for (int j = 0; j < loc->n_ent; j++)
+      matvec[j] += v*loc->mat[j*loc->n_ent + i];
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define a new matrix by adding a local matrix with its transpose.
+ *          Keep the transposed matrix for future use/
+ *
+ * \param[in, out] loc   local matrix to transpose and add
+ * \param[in, out] tr    transposed of the local matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_transpose(cs_toolbox_locmat_t  *loc,
+               cs_toolbox_locmat_t  *tr)
+{
+  /* Sanity check */
+  assert(loc != NULL && tr != NULL && tr->n_max_ent == loc->n_max_ent);
+
+  if (loc->n_ent < 1)
+    return;
+
+  tr->n_ent = loc->n_ent;
+
+  for (int i = 0; i < loc->n_ent; i++) {
+
+    int  ii = i*loc->n_ent + i;
+
+    tr->ids[i] = loc->ids[i];
+    tr->mat[ii] = loc->mat[ii];
+    loc->mat[ii] *= 2;
+
+    for (int j = i+1; j < loc->n_ent; j++) {
+
+      int  ij = i*loc->n_ent + j;
+      int  ji = j*loc->n_ent + i;
+
+      tr->mat[ji] = loc->mat[ij];
+      tr->mat[ij] = loc->mat[ji];
+      loc->mat[ij] += tr->mat[ij];
+      loc->mat[ji] += tr->mat[ji];
+
+    }
+  }
+
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Update the stiffness matrix "Ad" for the diffusion term and
  *          its right hand side (rhs).
  *          rhs potentially collects these contributions:
@@ -169,8 +244,10 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
 
   short int  *loc_v_id = NULL, *loc_e_id = NULL;
   cs_real_3_t  *dfv = NULL, *pev = NULL; // dual face and primal edge vectors
-  cs_real_t  *v_coef = NULL, *over_pec_vol = NULL;
+  cs_real_t  *v_coef = NULL, *over_pec_vol = NULL, *dir_vals = NULL;
+  cs_real_t  *_vec = NULL, *_matvec = NULL;
   cs_toolbox_locmat_t  *ntrgrd = cs_toolbox_locmat_create(connect->n_max_vbyc);
+  cs_toolbox_locmat_t  *transp = NULL;
 
   const cs_sla_matrix_t  *e2v = connect->e2v;
   const cs_sla_matrix_t  *f2e = connect->f2e;
@@ -189,6 +266,22 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
               " a weak enforcement of the boundary conditions is requested.");
 
   beta = h_info.coef;
+
+  if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+
+    const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
+
+    BFT_MALLOC(dir_vals, quant->n_vertices, cs_real_t);
+    for (i = 0; i < quant->n_vertices; i++)
+      dir_vals[i] = 0.;
+    for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
+      dir_vals[vtx_dir->elt_ids[i]] = builder->dir_val[i];
+
+    BFT_MALLOC(_vec, connect->n_max_vbyc, cs_real_t);
+    BFT_MALLOC(_matvec, connect->n_max_vbyc, cs_real_t);
+
+    transp = cs_toolbox_locmat_create(connect->n_max_vbyc);
+  }
 
   /* Initialize v_coef */
   BFT_MALLOC(v_coef, quant->n_vertices, cs_real_t);
@@ -336,7 +429,26 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
     } // border face edges
 
     /* Assemble contributions coming from local normal trace operator */
-    cs_sla_assemble_msr(ntrgrd, full_matrix);
+    if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+
+      /* ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
+      _add_transpose(ntrgrd, transp);
+
+      cs_sla_assemble_msr_sym(ntrgrd, full_matrix);
+
+      /* Modify RHS according to the add of transp */
+      for (j = 0; j < ntrgrd->n_ent; j++)
+        _vec[j] = dir_vals[ntrgrd->ids[j]];
+
+      _loc_matvec(transp, _vec, _matvec);
+
+      for (j = 0; j < ntrgrd->n_ent; j++)
+        full_rhs[ntrgrd->ids[j]] += _matvec[j];
+
+    }
+    else
+      cs_sla_assemble_msr(ntrgrd, full_matrix);
+
 
   } // Dirichlet faces
 
@@ -357,6 +469,14 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
   }
 
   /* Free memory */
+  if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
+    cs_toolbox_locmat_free(transp);
+
+    BFT_FREE(_vec);
+    BFT_FREE(_matvec);
+    BFT_FREE(dir_vals);
+  }
+
   cs_toolbox_locmat_free(ntrgrd);
 
   BFT_FREE(v_coef);
@@ -484,6 +604,7 @@ _compute_rhs(const cs_mesh_t            *m,
       break;
 
     case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
       // Nothing done here. RHS is modified later, at the same time as matrix
       break;
 
@@ -834,6 +955,7 @@ _build_diffusion_system(const cs_mesh_t            *m,
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     assert(builder->n_vertices == builder->n_dof_vertices); /* Sanity check */
     _enforce_weak_nitsche(m, connect, quant, builder, tcur,
                           full_matrix,
