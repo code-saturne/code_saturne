@@ -547,6 +547,8 @@ _print_eqkey(eqkey_t  key)
   default:
     assert(0);
   }
+
+  return NULL; // avoid a warning
 }
 
 /*----------------------------------------------------------------------------*/
@@ -570,6 +572,8 @@ _print_stkey(stkey_t  key)
   default:
     assert(0);
   }
+
+  return NULL; // avoid a warning
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1457,7 +1461,6 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->itsol_info.resid_normalized = true;
     else if (strcmp(val, "false") == 0)
       eqp->itsol_info.resid_normalized = false;
-
     break;
 
   case EQKEY_VERBOSITY: // "verbosity"
@@ -1575,7 +1578,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_equation_t structure is NULL\n"
-                " Can not add a boundary condition related to mesh location %s"),
+                " Cannot add a boundary condition related to mesh location %s"),
               ml_name);
 
   cs_equation_param_t  *eqp = eq->param;
@@ -1585,7 +1588,7 @@ cs_equation_add_bc(cs_equation_t    *eq,
   assert(bc != NULL);
 
   /* Add a new definition */
-  int  def_id = bc->n_defs;
+  int def_id = bc->n_defs;
   bc->n_defs += 1;
   BFT_REALLOC(bc->defs, bc->n_defs, cs_param_bc_def_t);
 
@@ -1659,7 +1662,6 @@ cs_equation_add_bc(cs_equation_t    *eq,
                       var_type,
                       def_type,
                       val, NULL); // coef2 is not used up to now
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1889,7 +1891,7 @@ cs_equation_source_term_set(cs_equation_t    *eq,
 void
 cs_equation_create_field(cs_equation_t    *eq)
 {
-  int  dim, location_id;
+  int  dim = 0, location_id = -1; // initialize values to avoid a warning
 
   int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE;
 
@@ -2031,6 +2033,7 @@ cs_equation_build_system(const cs_mesh_t            *m,
   /* Get information on the matrix related to this linear system */
   cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
 
+  bft_printf("\n Sparse Linear Algebra (SLA) sumup:\n");
   bft_printf("\t<%s/SLA> A.size         %d\n", eqn, sla_mat->n_rows);
   bft_printf("\t<%s/SLA> A.nnz          %lu\n", eqn, minfo.nnz);
   bft_printf("\t<%s/SLA> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
@@ -2130,7 +2133,6 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
                       0,      // aux. size
                       NULL);  // aux. buffers
 
-  bft_printf("\n Iterative solver convergence sumup:\n");
   bft_printf("\t<%s/SLA> code        %d\n", eq->name, cvg);
   bft_printf("\t<%s/SLA> n_iters     %d\n", eq->name, ret.iter);
   bft_printf("\t<%s/SLA> residual    % -8.4e\n", eq->name, ret.residual);

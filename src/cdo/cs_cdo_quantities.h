@@ -86,7 +86,7 @@ typedef struct { /* TODO: remove what is the less necessary in order to
   cs_lnum_t  parent_id[2];  /* parent entity id of (primal) faces */
   double     meas[2];       /* length or area related to each parent */
   double     unitv[6];      /* unitary vector related to each parent */
-  double     vect[3];       /* dual face vector (TO REMOVE) */
+  double     vect[3];       /* dual face vector */
 
 } cs_dface_t;
 

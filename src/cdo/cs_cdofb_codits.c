@@ -378,7 +378,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
           x_bc[i] = 0;
         for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border
           x_bc[m->n_i_faces + dir_faces->elt_ids[i]] = builder->dir_val[i];
-      
+
         cs_sla_matvec(full_matrix, x_bc, &contrib, true);
         for (i = 0; i < builder->n_faces; i++)
           face_rhs[i] -= contrib[i];
@@ -410,7 +410,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
       assert(builder->n_faces == builder->n_dof_faces); /* Sanity check */
 
       cs_real_t  pena_coef = 0.01/cs_get_eps_machine();
-     
+
       for (i = 0; i < dir_faces->n_nhmg_elts; i++)
         face_rhs[dir_faces->elt_ids[i]] += pena_coef * builder->dir_val[i];
 

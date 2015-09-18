@@ -281,7 +281,7 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
           break;
         default:
           bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-          
+
         } /* Quad rule */
 
         values[v1_id] += add1;

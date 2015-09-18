@@ -69,7 +69,7 @@ struct _subsum_t {
 
 static struct _subsum_t  _op_subsum;
 
-static const double  _tools_oversix = 1/6.0;
+static const double  _oversix = 1/6.0;
 static const double  _overdim = 1/3.0;
 
 /*============================================================================
@@ -199,7 +199,7 @@ _compute_info_int32(cs_lnum_t         n_elts,
 }
 
 /*============================================================================
- * Inline Public function prototypes for frequent usage
+ * Inline public function prototypes for frequent usage
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -449,7 +449,7 @@ cs_eigen_mat33(const cs_real_33_t  m,
         n[j][i] = n[i][j];
       }
     }
-    
+
     /* r should be between -1 and 1 but truncation error and bad conditionning
        can lead to slighty under/over-shoot */
     cs_real_t  r = 0.5 * _detmat33(n);
@@ -539,7 +539,7 @@ cs_voltet(const cs_real_3_t   xv,
   _lenunit3(xe, xf, &lef, &uef);
   _lenunit3(xe, xc, &lec, &uec);
   _cp3(uev, uef, &ucp);
-  vol = _tools_oversix * lev * lef * lec * fabs(_dp3(ucp, uec));
+  vol = _oversix * lev * lef * lec * fabs(_dp3(ucp, uec));
 
   return  vol;
 }

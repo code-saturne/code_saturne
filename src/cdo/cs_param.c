@@ -1176,7 +1176,7 @@ cs_param_get_bc_name(cs_param_bc_type_t  bc)
   case CS_PARAM_BC_NEUMANN:
     return "Neumann";
   case CS_PARAM_BC_ROBIN:
-    return "Robin";    
+    return "Robin";
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid BC type. Stop execution."));

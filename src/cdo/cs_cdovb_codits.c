@@ -126,7 +126,7 @@ struct _cs_cdovb_codits_t {
  *============================================================================*/
 
 // Advanceed developper parameters
-static const cs_real_t  cs_weak_nitsche_pena_coef = 500; 
+static const cs_real_t  cs_weak_nitsche_pena_coef = 500;
 static const cs_real_t  cs_weak_penalization_weight = 0.01;
 
 /*============================================================================
@@ -251,7 +251,7 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
       loc_v_id[v_id] = _id;
       ntrgrd->ids[_id] = v_id;
     }
-   
+
     /* Initialize buffers related to vertices */
     ntrgrd->n_ent = _id;
 
@@ -293,7 +293,7 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
       /* Sanity checks */
       assert(_e != -1 && _v1 != -1 && _v2 != -1);
 
-      surf = cs_surftri(&(m->vtx_coord[3*v1_id]), qe.center, qf.center); 
+      surf = cs_surftri(&(m->vtx_coord[3*v1_id]), qe.center, qf.center);
       v_coef[v1_id] += surf*f_coef;
       v_coef[v2_id] += surf*f_coef;
 
@@ -323,7 +323,7 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
         for (k = 0; k < 3; k++)
           reco_val[k] += over_c_vol*(dfv[_ek][k] - dp*dfv[_e][k]);
 
-        cs_real_t  contrib = _dp3(mn, reco_val)*surf; 
+        cs_real_t  contrib = _dp3(mn, reco_val)*surf;
 
         /* Update the coefficients of the local normal trace operator */
         ntrgrd->mat[_v1*ntrgrd->n_ent + _vj1] += sgn_j1 * contrib;
