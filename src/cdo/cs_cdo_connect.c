@@ -684,17 +684,13 @@ _connect_info_create(cs_lnum_t     n_elts)
 
   BFT_MALLOC(info, 1, cs_connect_info_t);
 
-  BFT_MALLOC(info->flag, n_elts, short int);
+  BFT_MALLOC(info->flag, n_elts, cs_flag_t);
   for (i = 0; i < n_elts; i++)
     info->flag[i] = 0;
 
-  info->n = n_elts;
-  info->n_in = 0;
-  info->n_bd = 0;
-  info->n_ii = 0;
-  info->n_ib = 0;
-  info->n_bb = 0;
-  info->n_bi = 0;
+  info->n_ent = n_elts;
+  info->n_ent_in = 0;
+  info->n_ent_bd = 0;
 
   return info;
 }
@@ -725,20 +721,19 @@ _connect_info_free(cs_connect_info_t    *info)
 /*!
  * \brief  Define a status Int/Border
  *
- * \param[in, out]     connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]       m        pointer to a cs_mesh_t structure
+ * \param[in, out]  connect  pointer to a cs_cdo_connect_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_define_connect_info(cs_cdo_connect_t     *connect)
+_define_connect_info(const cs_mesh_t    *m,
+                     cs_cdo_connect_t   *connect)
 {
-  int  i, j, nn, v_id, e_id, f_id, c_id, count;
-  short int  flag1, flag2;
+  int  i, j, v_id, e_id, f_id, c_id;
 
-  cs_connect_index_t  *v2v = NULL, *v2e = NULL, *e2v = NULL;
   cs_connect_info_t  *vi = NULL, *ei = NULL, *fi = NULL, *ci = NULL;
 
-  const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  n_vertices = connect->v2e->n_rows;
   const cs_lnum_t  n_edges = connect->e2f->n_rows;
   const cs_lnum_t  n_faces = connect->f2e->n_rows;
@@ -750,33 +745,36 @@ _define_connect_info(cs_cdo_connect_t     *connect)
   fi = _connect_info_create(n_faces);
   ci = _connect_info_create(n_cells);
 
-  /* By default all entities are set "interior" */
+  /* By default all entities are set to the flag CS_CDO_CONNECT_IN (interior) */
   for (i = 0; i < n_vertices; i++)
     vi->flag[i] = CS_CDO_CONNECT_IN;
-
   for (i = 0; i < n_edges; i++)
     ei->flag[i] = CS_CDO_CONNECT_IN;
-
   for (i = 0; i < n_faces; i++)
     fi->flag[i] = CS_CDO_CONNECT_IN;
-
   for (i = 0; i < n_cells; i++)
     ci->flag[i] = CS_CDO_CONNECT_IN;
 
-  /* Loop on border faces => flag all border entities */
+  /* Loop on border faces and flag all border entities
+     -> cells, faces, edges and vertices */
   for (f_id = m->n_i_faces; f_id < n_faces; f_id++) {
 
+    /* Flag related face */
     fi->flag[f_id] = CS_CDO_CONNECT_BD;
     assert(connect->f2c->idx[f_id+1]-connect->f2c->idx[f_id]==1);
+
+    /* Flag related cell */
     c_id = connect->f2c->col_id[connect->f2c->idx[f_id]];
     ci->flag[c_id] = CS_CDO_CONNECT_BD;
 
     for (i = connect->f2e->idx[f_id]; i < connect->f2e->idx[f_id+1]; i++) {
 
+      /* Flag related edges */
       e_id = connect->f2e->col_id[i];
       ei->flag[e_id] = CS_CDO_CONNECT_BD;
       for (j = connect->e2v->idx[e_id]; j < connect->e2v->idx[e_id+1]; j++) {
 
+        /* Flag related edges */
         v_id = connect->e2v->col_id[j];
         vi->flag[v_id] = CS_CDO_CONNECT_BD;
 
@@ -789,113 +787,29 @@ _define_connect_info(cs_cdo_connect_t     *connect)
   /* Count number of border vertices */
   for (i = 0; i < n_vertices; i++)
     if (vi->flag[i] & CS_CDO_CONNECT_BD)
-      vi->n_bd++;
-  vi->n_in = vi->n - vi->n_bd;
+      vi->n_ent_bd++;
+  vi->n_ent_in = vi->n_ent - vi->n_ent_bd;
 
   /* Count number of border edges */
   for (i = 0; i < n_edges; i++)
     if (ei->flag[i] & CS_CDO_CONNECT_BD)
-      ei->n_bd++;
-  ei->n_in = ei->n - ei->n_bd;
+      ei->n_ent_bd++;
+  ei->n_ent_in = ei->n_ent - ei->n_ent_bd;
 
   /* Count number of border faces */
   for (i = 0; i < n_faces; i++)
     if (fi->flag[i] & CS_CDO_CONNECT_BD)
-      fi->n_bd++;
-  fi->n_in = fi->n - fi->n_bd;
-  assert(m->n_i_faces == fi->n_in);
+      fi->n_ent_bd++;
+  fi->n_ent_in = fi->n_ent - fi->n_ent_bd;
+
+  /* Sanity check */
+  assert(m->n_i_faces == fi->n_ent_in);
 
   /* Count number of border cells */
   for (i = 0; i < n_cells; i++)
     if (ci->flag[i] & CS_CDO_CONNECT_BD)
-      ci->n_bd++;
-  ci->n_in = ci->n - ci->n_bd;
-
-  /* Build v -> v connectivity */
-  v2e = cs_index_map(n_vertices, connect->v2e->idx, connect->v2e->col_id);
-  e2v = cs_index_map(n_edges, connect->e2v->idx, connect->e2v->col_id);
-  v2v = cs_index_compose(n_vertices, v2e, e2v);
-
-  /* Compute second level interior/border for vertices */
-  for (i = 0; i < n_vertices; i++) {
-
-    nn = v2v->idx[i+1] - v2v->idx[i], count = 0;
-    for (j = v2v->idx[i]; j < v2v->idx[i+1]; j++)
-      if (vi->flag[v2v->ids[j]] & CS_CDO_CONNECT_BD)
-        count++;
-
-    if (vi->flag[i] & CS_CDO_CONNECT_BD) { /* Border vertices */
-      if (count == nn) vi->flag[i] |= CS_CDO_CONNECT_BB, vi->n_bb++;
-      else             vi->flag[i] |= CS_CDO_CONNECT_BI;
-    }
-    else if (vi->flag[i] & CS_CDO_CONNECT_IN) { /* Interior vertices */
-      if (count == 0) vi->flag[i] |= CS_CDO_CONNECT_II, vi->n_ii++;
-      else            vi->flag[i] |= CS_CDO_CONNECT_IB;
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Vertex %d is neither interior nor border.\n"
-                  " Stop execution\n"), i+1);
-
-  } /* End of loop on vertices */
-
-  vi->n_bi = vi->n_bd - vi->n_bb;
-  vi->n_ib = vi->n_in - vi->n_ii;
-
-  cs_index_free(&v2v);
-  cs_index_free(&v2e);
-  cs_index_free(&e2v);
-
-  /* Set of edges */
-  for (i = 0; i < n_edges; i++) {
-
-    j = connect->e2v->idx[i];
-    flag1 = vi->flag[connect->e2v->col_id[j  ]];
-    flag2 = vi->flag[connect->e2v->col_id[j+1]];
-
-    if (ei->flag[i] == CS_CDO_CONNECT_IN) {
-      if ( (flag1 & CS_CDO_CONNECT_II) && (flag2 & CS_CDO_CONNECT_II) )
-        ei->flag[i] |= CS_CDO_CONNECT_II, ei->n_ii++;
-      else
-        ei->flag[i] |= CS_CDO_CONNECT_IB;
-    }
-    else if (ei->flag[i] == CS_CDO_CONNECT_BD) {
-      if ( (flag1 & CS_CDO_CONNECT_BB) && (flag2 & CS_CDO_CONNECT_BB) )
-        ei->flag[i] |= CS_CDO_CONNECT_BB, ei->n_bb++;
-      else
-        ei->flag[i] |= CS_CDO_CONNECT_BI;
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Edge %d is neither interior nor border.\n"
-                  " Stop execution\n"), i+1);
-  } /* Loop on edges */
-
-  ei->n_ib = ei->n_in - ei->n_ii;
-  ei->n_bi = ei->n_bd - ei->n_bb;
-
-  /* Set of faces */
-  for (f_id = 0; f_id < n_faces; f_id++) {
-
-    nn = connect->f2e->idx[f_id+1] - connect->f2e->idx[f_id];
-    count = 0;
-    for (j = connect->f2e->idx[f_id]; j < connect->f2e->idx[f_id+1]; j++) {
-      if (ei->flag[connect->f2e->col_id[j]] & CS_CDO_CONNECT_BD)
-        count++;
-    }
-
-    if (fi->flag[f_id] & CS_CDO_CONNECT_IN) {
-      if (count == 0) fi->flag[f_id] |= CS_CDO_CONNECT_II;
-      else            fi->flag[f_id] |= CS_CDO_CONNECT_IB;
-    }
-    else
-      /* Border faces are built from only border edges. Second level tag
-         is therfore not useful */
-      assert(fi->flag[f_id] & CS_CDO_CONNECT_BD && count == nn);
-
-} /* Loop on faces */
-
-  fi->n_ib = fi->n_in - fi->n_ii;
+      ci->n_ent_bd++;
+  ci->n_ent_in = ci->n_ent - ci->n_ent_bd;
 
   /* Return pointers */
   connect->v_info = vi;
@@ -919,42 +833,16 @@ _define_connect_info(cs_cdo_connect_t     *connect)
 const char *
 cs_cdo_connect_flagname(short int  flag)
 {
-  short int  _flag = 0;
-
-  /* Second level is prior */
-  if (flag & CS_CDO_CONNECT_II) _flag = CS_CDO_CONNECT_II;
-  if (flag & CS_CDO_CONNECT_IB) _flag = CS_CDO_CONNECT_IB;
-  if (flag & CS_CDO_CONNECT_BB) _flag = CS_CDO_CONNECT_BB;
-  if (flag & CS_CDO_CONNECT_BI) _flag = CS_CDO_CONNECT_BI;
-
-  if (_flag == 0) { /* Second level */
-    if (flag & CS_CDO_CONNECT_IN) _flag = CS_CDO_CONNECT_IN;
-    if (flag & CS_CDO_CONNECT_BD) _flag = CS_CDO_CONNECT_BD;
-  }
-
-  switch (_flag) {
+  switch (flag) {
 
   case CS_CDO_CONNECT_BD:
-    return " Bd ";
+    return " Border  ";
     break;
   case CS_CDO_CONNECT_IN:
-    return " In ";
-    break;
-  case CS_CDO_CONNECT_II:
-    return "InIn";
-    break;
-  case CS_CDO_CONNECT_IB:
-    return "InBd";
-    break;
-  case CS_CDO_CONNECT_BI:
-    return "BdIn";
-    break;
-  case CS_CDO_CONNECT_BB:
-    return "BdBd";
+    return " Interior";
     break;
   default:
-    return "Full";
-
+    return " Undefined";
   }
 
 }
@@ -996,7 +884,7 @@ cs_cdo_connect_build(const cs_mesh_t      *m)
 
   /* Build status flag: interior/border and related connection to
      interior/border entities */
-  _define_connect_info(connect);
+  _define_connect_info(m, connect);
 
   /* Max number of entities (vertices, edges and faces) by cell */
   _compute_max_ent(connect);
@@ -1070,31 +958,27 @@ cs_cdo_connect_resume(const cs_cdo_connect_t  *connect)
   if (connect->v_info != NULL) {
     i = connect->v_info;
     bft_printf("\n");
-    bft_printf("                     |   full  |  intern |  border |  in/in  |"
-               "  in/bd  |  bd/bd  |  bd/in  |\n");
-    bft_printf("  --dim-- n_vertices |"
-               " %7d | %7d | %7d | %7d | %7d | %7d | %7d |\n",
-               i->n, i->n_in, i->n_bd, i->n_ii, i->n_ib, i->n_bb, i->n_bi);
+    bft_printf("                     |   full  |  intern |  border |\n");
+    bft_printf("  --dim-- n_vertices | %7d | %7d | %7d |\n",
+               i->n_ent, i->n_ent_in, i->n_ent_bd);
   }
   if (connect->e_info != NULL) {
     i = connect->e_info;
-    bft_printf("  --dim-- n_edges    |"
-               " %7d | %7d | %7d | %7d | %7d | %7d | %7d |\n",
-               i->n, i->n_in, i->n_bd, i->n_ii, i->n_ib, i->n_bb, i->n_bi);
+    bft_printf("  --dim-- n_edges    | %7d | %7d | %7d |\n",
+               i->n_ent, i->n_ent_in, i->n_ent_bd);
   }
   if (connect->f_info != NULL) {
     i = connect->f_info;
-    bft_printf("  --dim-- n_faces    |"
-               " %7d | %7d | %7d | %7d | %7d | %7d | %7d |\n",
-               i->n, i->n_in, i->n_bd, i->n_ii, i->n_ib, i->n_bb, i->n_bi);
+    bft_printf("  --dim-- n_faces    | %7d | %7d | %7d |\n",
+               i->n_ent, i->n_ent_in, i->n_ent_bd);
   }
   if (connect->c_info != NULL) {
     i = connect->c_info;
-    bft_printf("  --dim-- n_cells    |"
-               " %7d | %7d | %7d |\n", i->n, i->n_in, i->n_bd);
+    bft_printf("  --dim-- n_cells    | %7d | %7d | %7d |\n",
+               i->n_ent, i->n_ent_in, i->n_ent_bd);
   }
-
   bft_printf("\n");
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -50,12 +50,6 @@ BEGIN_C_DECLS
 #define CS_CDO_CONNECT_IN    (1 << 0)  /* Interior entity */
 #define CS_CDO_CONNECT_BD    (1 << 1)  /* Border entity */
 
-/* Second level of information */
-#define CS_CDO_CONNECT_II    (1 << 2)  /* Interior ent. connected to interior */
-#define CS_CDO_CONNECT_IB    (1 << 3)  /* Interior ent. connected to border   */
-#define CS_CDO_CONNECT_BI    (1 << 4)  /* Border   ent. connected to interior */
-#define CS_CDO_CONNECT_BB    (1 << 5)  /* Border   ent. connected to border   */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -71,15 +65,11 @@ typedef struct {
 
 typedef struct {
 
-  short int   *flag;   /* CS_CONNECT_(IN/BD/II/IB/BB/BI) */
+  cs_flag_t  *flag;   // CS_CDO_CONNECT_IN/BD
 
-  cs_lnum_t  n;    /* full number of entities */
-  cs_lnum_t  n_in; /* Interior entity */
-  cs_lnum_t  n_bd; /* Border entity */
-  cs_lnum_t  n_ii; /* Interior entity connected only to interior entity */
-  cs_lnum_t  n_ib; /* Interior entity connected to at least one border entity */
-  cs_lnum_t  n_bb; /* Border entity connected only to border entity */
-  cs_lnum_t  n_bi; /* Border entity connected to at least one interior entity */
+  cs_lnum_t   n_ent;     // number of entities
+  cs_lnum_t   n_ent_in;  // number of interior entities
+  cs_lnum_t   n_ent_bd;  // number of border entities
 
 } cs_connect_info_t;
 
@@ -96,18 +86,17 @@ typedef struct { /* Connectivity structure */
   cs_sla_matrix_t   *c2f;  // cell --> faces connectivity
 
   /* Specific CDO connect : not oriented (same spirit as Code_Saturne
-     historical connectivity. Use this connectivity  to scan dual quantities
-  */
-  cs_connect_index_t  *c2e;  /* cell -> edges connectivity */
-  cs_connect_index_t  *c2v;  /* cell -> vertices connectivity */
+     historical connectivity).
+     Use this connectivity to scan dual quantities */
+  cs_connect_index_t  *c2e;  // cell -> edges connectivity
+  cs_connect_index_t  *c2v;  // cell -> vertices connectivity
 
   /* Max. connectitivy size for cells */
   cs_lnum_t  n_max_vbyc;    // max. number of vertices in a cell
   cs_lnum_t  n_max_ebyc;    // max. number of edges in a cell
   cs_lnum_t  n_max_fbyc;    // max. number of faces in a cell
 
-  cs_lnum_t  max_set_size;  /* max between n_vertices, n_edges, n_faces
-                               and n_cells */
+  cs_lnum_t  max_set_size;  // max(n_vertices, n_edges, n_faces, n_cells)
 
   /* Status internal or border entity */
   cs_connect_info_t  *v_info;  // count of interior/border vertices
