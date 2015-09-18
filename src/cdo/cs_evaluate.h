@@ -67,6 +67,7 @@ BEGIN_C_DECLS
  * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
  * \param[in]      def_type   type of definition
  * \param[in]      quad_type  type of quadrature (not always used)
+ * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
  * \param[in]      def        access to the definition of the values
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
@@ -81,6 +82,7 @@ cs_evaluate(const cs_mesh_t              *m,
             int                           loc_id,
             cs_param_def_type_t           def_type,
             cs_quadra_type_t              quad_type,
+            bool                          use_subdiv,
             cs_def_t                      def,
             double                       *p_values[]);
 

@@ -200,7 +200,7 @@ static cs_param_itsol_t _itsol_info_by_default = {
   false                   // normalization of the residual (true or false)
 };
 
-/* List of key stored within a enum structure */
+/* List of available keys for setting an equation */
 typedef enum {
 
   EQKEY_HODGE_DIFF_ALGO,
@@ -219,6 +219,14 @@ typedef enum {
 
 } eqkey_t;
 
+/* List of keys for setting a source term */
+typedef enum {
+
+  STKEY_POST,
+  STKEY_QUADRATURE,
+  STKEY_ERROR
+
+} stkey_t;
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -247,7 +255,7 @@ struct _cs_equation_t {
                              steps afterthe resolution of the linear systems
                              (post, balance...) */
 
-  bool   do_build;       /* false => keep the system as it is */
+  bool    do_build;       /* false => keep the system as it is */
 
   /* Algebraic system */
   cs_matrix_structure_t    *ms;      /* matrix structure (how are stored
@@ -493,7 +501,7 @@ _check_ml_name(const char   *ml_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print the name of the corresponding key
+ * \brief  Print the name of the corresponding equation key
  *
  * \param[in] key        name of the key
  *
@@ -502,7 +510,7 @@ _check_ml_name(const char   *ml_name,
 /*----------------------------------------------------------------------------*/
 
 static const char *
-_print_key(eqkey_t  key)
+_print_eqkey(eqkey_t  key)
 {
   switch (key) {
   case EQKEY_HODGE_DIFF_ALGO:
@@ -536,17 +544,40 @@ _print_key(eqkey_t  key)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the corresponding enum from the name of a key. If not found,
- *         print an error message
+ * \brief  Print the name of the corresponding source term key
+ *
+ * \param[in] key        name of the key
+ *
+ * \return a string
+ */
+/*----------------------------------------------------------------------------*/
+
+static const char *
+_print_stkey(stkey_t  key)
+{
+  switch (key) {
+  case STKEY_POST:
+    return "post";
+  case STKEY_QUADRATURE:
+    return "quadrature";
+  default:
+    assert(0);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the corresponding enum from the name of an equation key.
+ *         If not found, print an error message
  *
  * \param[in] keyname    name of the key
  *
- * \return a cs_equation_key_t
+ * \return a eqkey_t
  */
 /*----------------------------------------------------------------------------*/
 
 static eqkey_t
-_get_key(const char *keyname)
+_get_eqkey(const char *keyname)
 {
   eqkey_t  key = EQKEY_ERROR;
 
@@ -578,6 +609,30 @@ _get_key(const char *keyname)
     key = EQKEY_SPACE_SCHEME;
   else if (strcmp(keyname, "verbosity") == 0)
     key = EQKEY_VERBOSITY;
+
+  return key;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the corresponding enum from the name of a source term key.
+ *         If not found, print an error message
+ *
+ * \param[in] keyname    name of the key
+ *
+ * \return a stkey_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static stkey_t
+_get_stkey(const char *keyname)
+{
+  stkey_t  key = STKEY_ERROR;
+
+  if (strcmp(keyname, "post") == 0)
+    key = STKEY_POST;
+  else if (strcmp(keyname, "quadrature") == 0)
+    key = STKEY_QUADRATURE;
 
   return key;
 }
@@ -870,8 +925,9 @@ cs_equation_resume(const cs_equation_t  *eq)
                  cs_param_get_var_type_name(st_info.var_type),
                  cs_param_get_def_type_name(st_info.def_type));
       if (eqp->verbosity > 0)
-        bft_printf("\t--> Quadrature type: %s\n",
-                   cs_quadrature_get_type_name(st_info.quad_type));
+        bft_printf("\t--> Quadrature type: %s; Use subdivision: %s\n",
+                   cs_quadrature_get_type_name(st_info.quad_type),
+                   cs_base_strtf(st_info.use_subdiv));
 
     } // Loop on source terms
 
@@ -1216,13 +1272,13 @@ cs_equation_set(cs_equation_t       *eq,
     cs_timer_stats_start(eq->main_ts_id);
 
   cs_equation_param_t  *eqp = eq->param;
-  eqkey_t  key = _get_key(keyname);
+  eqkey_t  key = _get_eqkey(keyname);
 
   if (key == EQKEY_ERROR) {
     bft_printf("\n\n Current key: %s\n", keyname);
     bft_printf(" Possible keys: ");
     for (int i = 0; i < EQKEY_ERROR; i++) {
-      bft_printf("%s ", _print_key(i));
+      bft_printf("%s ", _print_eqkey(i));
       if (i > 0 && i % 3 == 0)
         bft_printf("\n\t");
     }
@@ -1680,9 +1736,77 @@ cs_equation_source_term_set(cs_equation_t    *eq,
                             const char       *keyname,
                             const char       *keyval)
 {
-  // TODO
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop setting an empty cs_equation_t structure.\n"
+                " Please check your settings.\n"));
 
-  return;
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Look for the requested source term */
+  int  st_id = -1;
+  for (int id = 0; id < eqp->n_source_terms; id++) {
+    if (strcmp(eqp->source_terms[id].name, st_name) == 0) {
+      st_id = id;
+      break;
+    }
+  }
+
+  if (st_id == -1) // Error
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Cannot find source term %s.\n"
+                " Please check your settings.\n"), st_name);
+
+  stkey_t  key = _get_stkey(keyname);
+
+  if (key == STKEY_ERROR) {
+    bft_printf("\n\n Current key: %s\n", keyname);
+    bft_printf(" Possible keys: ");
+    for (int i = 0; i < STKEY_ERROR; i++) {
+      bft_printf("%s ", _print_stkey(i));
+      if (i > 0 && i % 3 == 0)
+        bft_printf("\n\t");
+    }
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting source term %s.\n"
+                " Please read listing for more details and"
+                " modify your settings."), st_name);
+
+  } /* Error message */
+
+  switch(key) {
+
+  case STKEY_POST:
+    eqp->source_terms[st_id].post = atoi(keyval);
+    break;
+
+  case STKEY_QUADRATURE:
+    if (strcmp(keyval, "subdiv") == 0)
+      eqp->source_terms[st_id].use_subdiv = true;
+    else if (strcmp(keyval, "bary") == 0)
+      eqp->source_terms[st_id].quad_type = CS_QUADRATURE_BARY;
+    else if (strcmp(keyval, "higher") == 0)
+      eqp->source_terms[st_id].quad_type = CS_QUADRATURE_HIGHER;
+    else if (strcmp(keyval, "highest") == 0)
+      eqp->source_terms[st_id].quad_type = CS_QUADRATURE_HIGHEST;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value for setting the quadrature behaviour"
+                  " of a source term.\n"
+                  " Choices are among subdiv, bary, higher, highest."));
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Key %s is not implemented yet."), keyname);
+
+  } /* Switch on keys */
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/

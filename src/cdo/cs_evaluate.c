@@ -198,6 +198,7 @@ _analytic_quad_tet5(double              tcur,
  * \param[in]      tcur       current physical time of the simulation
  * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
  * \param[in]      quad_type  type of quadrature to use
+ * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -210,124 +211,86 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
                       double                        tcur,
                       int                           loc_id,
                       cs_quadra_type_t              quad_type,
+                      bool                          use_subdiv,
                       double                        values[])
 {
-  cs_lnum_t  i, j, k, e_id, f_id, c_id, v1_id, v2_id;
+  cs_lnum_t  i, j, k, id, e_id, f_id, c_id, v1_id, v2_id, n_elts;
   cs_real_3_t  xc, xv1, xv2;
   cs_quant_t  e, f;
 
   double  add1 = 0.0, add2 = 0.0;
 
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(loc_id);
+  const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(loc_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
-  /* Compute dual volumes */
+  if (elt_ids == NULL)
+    n_elts = quant->n_cells;
+  else
+    n_elts = n_loc_elts[0];
 
-  if (elt_ids == NULL) { // All cells are selected
-
-    for (c_id = 0; c_id < quant->n_cells; c_id++) {
-
-      for (k = 0; k < 3; k++)
-        xc[k] = quant->cell_centers[3*c_id+k];
-
-      for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
-
-        f_id = c2f->col_id[i];
-        f = quant->face[f_id]; /* Get quantities related to this edge */
-
-        for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
-
-          e_id = f2e->col_id[j];
-          e = quant->edge[e_id]; /* Get quantities related to this edge */
-          v1_id = connect->e2v->col_id[2*e_id];
-          v2_id = connect->e2v->col_id[2*e_id+1];
-
-          for (k = 0; k < 3; k++) {
-            xv1[k] = m->vtx_coord[3*v1_id+k];
-            xv2[k] = m->vtx_coord[3*v2_id+k];
-          }
-
-          switch(quad_type) {
-
-          case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-            add1 = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
-            add2 = _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
-            break;
-          case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-            add1 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
-            add2 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
-            break;
-          case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-            add1 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
-            add2 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
-            break;
-          default:
-            bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-          } /* Quad rule */
-
-          values[v1_id] += add1;
-          values[v2_id] += add2;
-
-        } // edges
-      } // faces
-    } // cells
-
+  if (!use_subdiv) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(" Force subdivision into tetrahedra for evaluating the\n"
+               " integral over dual cells of an expression defined by\n"
+               " analytic function.\n");
   }
-  else { // selection
 
-    for (i = 0; i < n_elts[0]; i++) {
+  /* Compute dual volumes */
+  for (id = 0; id < n_elts; id++) {
 
-      c_id = elt_ids[i];
-      for (k = 0; k < 3; k++)
-        xc[k] = quant->cell_centers[3*c_id+k];
+    if (elt_ids == NULL)
+      c_id = id;
+    else
+      c_id = elt_ids[id];
 
-      for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
+    for (k = 0; k < 3; k++)
+      xc[k] = quant->cell_centers[3*c_id+k];
 
-        f_id = c2f->col_id[i];
-        f = quant->face[f_id]; /* Get quantities related to this edge */
+    for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
-        for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
+      f_id = c2f->col_id[i];
+      f = quant->face[f_id]; /* Get quantities related to this edge */
 
-          e_id = f2e->col_id[j];
-          e = quant->edge[e_id]; /* Get quantities related to this edge */
-          v1_id = connect->e2v->col_id[2*e_id];
-          v2_id = connect->e2v->col_id[2*e_id+1];
+      for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
 
-          for (k = 0; k < 3; k++) {
-            xv1[k] = m->vtx_coord[3*v1_id+k];
-            xv2[k] = m->vtx_coord[3*v2_id+k];
-          }
+        e_id = f2e->col_id[j];
+        e = quant->edge[e_id]; /* Get quantities related to this edge */
+        v1_id = connect->e2v->col_id[2*e_id];
+        v2_id = connect->e2v->col_id[2*e_id+1];
 
-          switch(quad_type) {
+        for (k = 0; k < 3; k++) {
+          xv1[k] = m->vtx_coord[3*v1_id+k];
+          xv2[k] = m->vtx_coord[3*v2_id+k];
+        }
 
-          case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-            add1 = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
-            add2 = _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
-            break;
-          case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-            add1 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
-            add2 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
-            break;
-          case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-            add1 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
-            add2 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
-            break;
-          default:
-            bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+        switch(quad_type) {
 
-          } /* Quad rule */
+        case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
+          add1 = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
+          add2 = _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
+          break;
+        case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
+          add1 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
+          add2 = _analytic_quad_tet4(tcur, xv1, e.center, f.center, xc, ana);
+          break;
+        case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
+          add1 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
+          add2 = _analytic_quad_tet5(tcur, xv1, e.center, f.center, xc, ana);
+          break;
+        default:
+          bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
+          
+        } /* Quad rule */
 
-          values[v1_id] += add1;
-          values[v2_id] += add2;
+        values[v1_id] += add1;
+        values[v2_id] += add2;
 
-        } // edges
-      } // faces
-    } // cells
+      } // edges
+    } // faces
 
-  } /* partial selection */
+  } // Loop on cells
 
 }
 
@@ -343,6 +306,7 @@ _scd_by_analytic_func(const cs_mesh_t              *m,
  * \param[in]      tcur       current physical time of the simulation
  * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
  * \param[in]      quad_type  type of quadrature to use
+ * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
  * \param[in, out] values     pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
@@ -355,75 +319,36 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
                       double                        tcur,
                       int                           loc_id,
                       cs_quadra_type_t              quad_type,
+                      bool                          use_subdiv,
                       double                        values[])
 {
-  cs_lnum_t  i, j, k, e_id, f_id, c_id, v1_id, v2_id;
+  cs_lnum_t  i, j, k, id, e_id, f_id, c_id, v1_id, v2_id, n_elts;
   cs_real_3_t  xc, xv1, xv2;
   cs_quant_t  f, e;
 
   double  add = 0.0;
 
-  const cs_lnum_t  *n_elts = cs_mesh_location_get_n_elts(loc_id);
+  const cs_lnum_t  *n_loc_elts = cs_mesh_location_get_n_elts(loc_id);
   const cs_lnum_t  *elt_ids = cs_mesh_location_get_elt_list(loc_id);
   const cs_sla_matrix_t  *c2f = connect->c2f;
   const cs_sla_matrix_t  *f2e = connect->f2e;
 
-  /* Computation on elementary simplices */
-  if (elt_ids == NULL) { // All cells are selected
+  if (elt_ids == NULL)
+    n_elts = quant->n_cells;
+  else
+    n_elts = n_loc_elts[0];
 
-    for (c_id = 0; c_id < quant->n_cells; c_id++) {
+  for (id = 0; id < n_elts; id++) {
 
-      for (k = 0; k < 3; k++)
-        xc[k] = quant->cell_centers[3*c_id+k];
+    if (elt_ids == NULL)
+      c_id = id;
+    else
+      c_id = elt_ids[id];
 
-      for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
+    for (k = 0; k < 3; k++)
+      xc[k] = quant->cell_centers[3*c_id+k];
 
-        f_id = c2f->col_id[i];
-        f = quant->face[f_id]; /* Get quantities related to this face */
-
-        for (j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) { // Loop on edges
-
-          e_id = f2e->col_id[j];
-          e = quant->edge[e_id];
-          v1_id = connect->e2v->col_id[2*e_id];
-          v2_id = connect->e2v->col_id[2*e_id+1];
-
-          for (k = 0; k < 3; k++) {
-            xv1[k] = m->vtx_coord[3*v1_id+k];
-            xv2[k] = m->vtx_coord[3*v2_id+k];
-          }
-
-          switch(quad_type) {
-
-          case CS_QUADRATURE_BARY: /* Barycenter of the tetrahedral subdiv. */
-            add  = _analytic_quad_tet1(tcur, xv1, e.center, f.center, xc, ana);
-            add += _analytic_quad_tet1(tcur, xv2, e.center, f.center, xc, ana);
-            break;
-          case CS_QUADRATURE_HIGHER: /* Quadrature with a unique weight */
-            add = _analytic_quad_tet4(tcur, xv1, xv2, f.center, xc, ana);
-            break;
-          case CS_QUADRATURE_HIGHEST: /* Most accurate quadrature available */
-            add = _analytic_quad_tet5(tcur, xv1, xv2, f.center, xc, ana);
-            break;
-          default:
-            bft_error(__FILE__, __LINE__, 0, _("Invalid quadrature type.\n"));
-
-          } /* Quad rule */
-
-          values[c_id] += add;
-
-        } // edges
-      } // faces
-    } // cells
-
-  }
-  else { // selection
-
-    for (i = 0; i < n_elts[0]; i++) {
-
-      c_id = elt_ids[i];
-      for (k = 0; k < 3; k++)
-        xc[k] = quant->cell_centers[3*c_id+k];
+    if (use_subdiv) {
 
       for (i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) { // Loop on faces
 
@@ -463,9 +388,26 @@ _scp_by_analytic_func(const cs_mesh_t              *m,
 
         } // edges
       } // faces
-    } // cells
 
-  } /* partial selection */
+    }
+    else { // Do not use subdivision into tetrahedra
+
+      cs_get_t  evaluation;
+
+      if (quad_type != CS_QUADRATURE_BARY) {
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf(" Subdivision into tetrahedra is not used for evaluating\n"
+                   " the integral over cells of an expression defined by\n"
+                   " analytic function but the type of quadrature needs one.\n"
+                   " Modify the quadrature type and used bary.\n");
+      }
+
+      ana(tcur, xc, &evaluation);
+      values[c_id] += evaluation.val * quant->cell_vol[c_id];
+
+    } // subdivision or not
+
+  } // Loop on cells
 
 }
 
@@ -577,6 +519,7 @@ _scp_by_val(const cs_cdo_quantities_t    *quant,
  * \param[in]      loc_id     id related to a cs_mesh_location_t struct.
  * \param[in]      def_type   type of definition
  * \param[in]      quad_type  type of quadrature (not always used)
+ * \param[in]      use_subdiv consider or not the subdivision into tetrahedra
  * \param[in]      def        access to the definition of the values
  * \param[in, out] p_values   pointer to the computed values (allocated if NULL)
  */
@@ -591,6 +534,7 @@ cs_evaluate(const cs_mesh_t              *m,
             int                           loc_id,
             cs_param_def_type_t           def_type,
             cs_quadra_type_t              quad_type,
+            bool                          use_subdiv,
             cs_def_t                      def,
             double                       *p_values[])
 {
@@ -638,12 +582,14 @@ cs_evaluate(const cs_mesh_t              *m,
       _scd_by_analytic_func(m, quant, connect,
                             def.analytic,
                             tcur,
-                            loc_id, quad_type, values);
+                            loc_id, quad_type, use_subdiv,
+                            values);
     else if (dof_flag == scp)
       _scp_by_analytic_func(m, quant, connect,
                             def.analytic,
                             tcur,
-                            loc_id, quad_type, values);
+                            loc_id, quad_type, use_subdiv,
+                            values);
     else
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid type of definition. Stop evaluation.\n"

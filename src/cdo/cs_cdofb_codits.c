@@ -271,6 +271,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
                   st.ml_id,
                   st.def_type,
                   st.quad_type,
+                  st.use_subdiv,
                   st.def,             // definition of the explicit part
                   &contrib);          // updated inside this function
 

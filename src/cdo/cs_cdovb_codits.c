@@ -213,7 +213,7 @@ _compute_rhs(const cs_mesh_t            *m,
 
   /* SOURCE TERMS */
 
-  if (eqp->n_source_terms > 0) { /* Add contribution from source term */
+  if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
 
     for (i = 0; i < eqp->n_source_terms; i++) {
 
@@ -233,6 +233,7 @@ _compute_rhs(const cs_mesh_t            *m,
                   st.ml_id,
                   st.def_type,
                   st.quad_type,
+                  st.use_subdiv,
                   st.def,             // definition of the explicit part
                   &contrib);          // updated inside this function
 

@@ -248,17 +248,18 @@ typedef enum {
 
 typedef struct {
 
-  char                   *restrict name;  /* short description of the source term */
+  char  *restrict name;   /* short description of the source term */
 
-  int                          ml_id;  /* id of the related mesh location
-                                                structure */
-  bool                         post;
+  int             ml_id;  /* id of the related mesh location structure */
+  int             post;   /* -1: no post, 0: at the beginning,
+                              n: at each 'n' iterations */
 
   /* Specification related to the way of computing the source term */
-  cs_param_source_term_type_t  type;      /* mass, head loss... */
-  cs_param_var_type_t          var_type;  /* scalar, vector... */
-  cs_param_def_type_t          def_type;  /* by value, by function... */
-  cs_quadra_type_t             quad_type; /* barycentric, higher, highest */
+  cs_param_source_term_type_t  type;       // mass, head loss...
+  cs_param_var_type_t          var_type;   // scalar, vector...
+  cs_param_def_type_t          def_type;   // by value, by function...
+  cs_quadra_type_t             quad_type;  // barycentric, higher, highest
+  bool                         use_subdiv; // use a subdivision into tetrahedra
 
   /* Values if one needs an implicit and explicit part
      implicit part comes first */

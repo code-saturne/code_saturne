@@ -969,6 +969,7 @@ cs_param_source_term_add(cs_param_source_term_t       *stp,
   stp->var_type = var_type;
   stp->quad_type = quad_type;
   stp->def_type = def_type;
+  stp->use_subdiv = false; // default behaviour
 
   _set_def(def_type, var_type, val, &(stp->def));
 }
