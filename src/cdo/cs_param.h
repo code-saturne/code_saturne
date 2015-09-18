@@ -174,6 +174,17 @@ typedef struct {
 /* BOUNDARY CONDITIONS */
 /* =================== */
 
+/* Physic-driven boundary */
+typedef enum {
+
+  CS_PARAM_BOUNDARY_WALL,
+  CS_PARAM_BOUNDARY_INLET,
+  CS_PARAM_BOUNDARY_OUTLET,
+  CS_PARAM_BOUNDARY_SYMMETRY,
+  CS_PARAM_N_BOUNDARY_TYPES
+
+} cs_param_boundary_type_t;
+
 /* Mathematical boundary conditions */
 typedef enum {
 
@@ -186,16 +197,18 @@ typedef enum {
 
 } cs_param_bc_type_t;
 
-/* Physic-driven boundary */
+/* Choice between different method to enforce the BCs */
 typedef enum {
 
-  CS_PARAM_BOUNDARY_WALL,
-  CS_PARAM_BOUNDARY_INLET,
-  CS_PARAM_BOUNDARY_OUTLET,
-  CS_PARAM_BOUNDARY_SYMMETRY,
-  CS_PARAM_N_BOUNDARY_TYPES
+  CS_PARAM_BC_ENFORCE_STRONG,       /* Strong enforcement of the BCs */
+  CS_PARAM_BC_ENFORCE_WEAK_PENA,    /* Weak enforcement with a strong
+                                       penalization coefficient */
+  CS_PARAM_BC_ENFORCE_WEAK_NITSCHE, /* Weak enforcement using Nitsche method */
+  CS_PARAM_BC_ENFORCE_WEAK_SYM,     /* Weak enforcement using symmetric Nitsche
+                                       method */
+  CS_PARAM_N_BC_ENFORCEMENTS
 
-} cs_param_boundary_type_t;
+} cs_param_bc_enforce_t;
 
 /* Definition of the value of a boundary condition (BC)
    One or two values may be needed according to the type of BC.
@@ -221,13 +234,14 @@ typedef struct {
 
 typedef struct {
 
-  cs_param_bc_type_t   default_bc;
-  bool                 strong_enforcement;
-  double               penalty_coef; // TODO: preliminary step
-  cs_quadra_type_t     quad_type;    // barycentric, higher, highest...
+  cs_param_bc_type_t     default_bc;   // BC used by default
+  cs_param_bc_enforce_t  enforcement;  // type of boundary enforcement
+  cs_quadra_type_t       quad_type;    // barycentric, higher, highest...
+  bool                   use_subdiv;   /* subdivide or not into tetrahedra for
+                                          evaluating BC values */
 
-  int                  n_defs;
-  cs_param_bc_def_t   *defs;
+  int                    n_defs;
+  cs_param_bc_def_t     *defs;
 
 } cs_param_bc_t;
 
@@ -631,6 +645,31 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver);
 const char *
 cs_param_get_precond_name(cs_param_precond_type_t  precond);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of boundary condition
+ *
+ * \param[in] bc_type     type of boundary condition
+ *
+ * \return the associated bc name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_name(cs_param_bc_type_t  bc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of enforcement of the boundary condition
+ *
+ * \param[in] bc_enforce    type of enforcement of boundary conditions
+ *
+ * \return the associated name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
 
 /*----------------------------------------------------------------------------*/
 

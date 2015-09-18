@@ -578,6 +578,20 @@ cs_sla_system_dump(const char              *name,
 /*----------------------------------------------------------------------------*/
 
 void
+cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
+                        cs_sla_matrix_t            *ass);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Assemble a MSR matrix from local contributions
+ *          --> We assume that the assembled matrix has its columns sorted
+ *
+ * \param[in]       loc     pointer to a local matrix
+ * \param[in, out]  ass     pointer to a cs_sla_matrix_t struct. collecting data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
 cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
                     cs_sla_matrix_t            *ass);
 

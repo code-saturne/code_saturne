@@ -3563,8 +3563,8 @@ cs_sla_system_dump(const char              *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
-                    cs_sla_matrix_t            *ass)
+cs_sla_assemble_msr_sym(const cs_toolbox_locmat_t  *loc,
+                        cs_sla_matrix_t            *ass)
 {
   int  i, j, k_ij, k_ji;
 
@@ -3605,6 +3605,73 @@ cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
         ass->val[start_j+k_ji] += val_ij;
 
       } /* loc[ij] != 0.0 */
+
+    } /* Loop on j (Add extra-diag terms) */
+
+  } /* Loop on i (Add diagonal term) */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Assemble a MSR matrix from local contributions
+ *          --> We assume that the assembled matrix has its columns sorted
+ *
+ * \param[in]       loc     pointer to a local matrix
+ * \param[in, out]  ass     pointer to a cs_sla_matrix_t struct. collecting data
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sla_assemble_msr(const cs_toolbox_locmat_t  *loc,
+                    cs_sla_matrix_t            *ass)
+{
+  int  i, j, k_ij, k_ji;
+
+  const int  n_ent = loc->n_ent;
+
+  assert(ass->type == CS_SLA_MAT_MSR);
+  assert(ass->flag & CS_SLA_MATRIX_SORTED);
+
+  /* Assemble local contributions into ass */
+  for (i = 0; i < n_ent; i++) {
+
+    short int  pos_i = i*n_ent;
+    cs_lnum_t  i_id = loc->ids[i];
+    cs_lnum_t  start_i = ass->idx[i_id];
+    size_t  n_i_ents = ass->idx[i_id+1] - start_i; // arg. binary search
+
+    /* Add diagonal term : loc(i,i) */
+    ass->diag[i_id] += loc->mat[pos_i+i];
+
+    /* Add extra-diagonal terms */
+    for (j = i+1; j < n_ent; j++) {
+
+      int  j_id = loc->ids[j];
+      double  val_ij = loc->mat[pos_i+j];
+
+      if (fabs(val_ij) > cs_base_zthreshold) { /* Not zero */
+
+        /* First add: loc(i,j) */
+        k_ij = cs_search_binary(n_i_ents, j_id, &(ass->col_id[start_i]));
+        assert(k_ij > -1);
+        ass->val[start_i+k_ij] += val_ij;
+
+      } /* loc[ij] != 0.0 */
+
+      double  val_ji = loc->mat[j*n_ent+i];
+
+      if (fabs(val_ji) > cs_base_zthreshold) { /* Not zero */
+
+        cs_lnum_t  start_j = ass->idx[j_id];
+        size_t  n_j_ents = ass->idx[j_id+1] - start_j;
+
+        /* Second add: loc(j,i) */
+        k_ji = cs_search_binary(n_j_ents, i_id, &(ass->col_id[start_j]));
+        assert(k_ji > -1);
+        ass->val[start_j+k_ji] += val_ji;
+
+      } /* loc[ji] != 0.0 */
 
     } /* Loop on j (Add extra-diag terms) */
 

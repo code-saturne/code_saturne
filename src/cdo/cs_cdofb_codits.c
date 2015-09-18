@@ -99,9 +99,9 @@ struct  _cs_cdofb_codits_t {
 
    */
 
-  bool                strong_bc; // strong enforcement of boundary conditions
-  cs_cdo_bc_t        *face_bc;   // list of faces sorted by type of BCs
-  cs_real_t          *dir_val;   // size: face_bc->dir->n_nhmg_elts
+  cs_param_bc_enforce_t  enforce; // type of enforcement of BCs
+  cs_cdo_bc_t           *face_bc; // list of faces sorted by type of BCs
+  cs_real_t             *dir_val; // size: face_bc->dir->n_nhmg_elts
 
   /* Indirection between zipped numbering (without BC) and initial numbering
      Allocated only if the boundary conditions are strongly enforced.
@@ -232,9 +232,9 @@ _build_diffusion_system(const cs_mesh_t             *m,
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_fbyc);
 
   const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
   const cs_equation_param_t  *eqp = builder->eqp;
   const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
-  const cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
 
   /* Sanity check */
   assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
@@ -243,13 +243,12 @@ _build_diffusion_system(const cs_mesh_t             *m,
   /* Buffers stored in builder->work */
   double  *contrib = builder->work;                     // size: n_faces
   double  *face_rhs = builder->work + builder->n_faces; // size: n_faces
-  double  *x_bc = builder->work + 2*builder->n_faces;   // size: n_faces
+
+  for (i = 0; i < 2*builder->n_faces; i++)
+    builder->work[i] = 0;
 
   for (i = 0; i < n_cells; i++)
     builder->source_terms[i] = 0;
-
-  for (i = 0; i < 3*builder->n_faces; i++)
-    builder->work[i] = 0;
 
   /* Compute the contribution from source terms */
   if (eqp->n_source_terms) { /* Add contribution from source term */
@@ -334,7 +333,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
     }
 
     /* Assemble local matrices */
-    cs_sla_assemble_msr(_a, full_matrix);
+    cs_sla_assemble_msr_sym(_a, full_matrix);
 
     /* Assemble RHS (source term contribution) */
     for (i = 0; i < _a->n_ent; i++)
@@ -343,7 +342,7 @@ _build_diffusion_system(const cs_mesh_t             *m,
   } /* End of loop on cells */
 
   /* Clean entries of the operators */
-  cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
+  // cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
 
   /* Free memory */
   BFT_FREE(BHCtc);
@@ -364,36 +363,75 @@ _build_diffusion_system(const cs_mesh_t             *m,
                             dir_faces,
                             builder->dir_val);
 
-    for (i = 0; i < builder->n_faces; i++)
-      x_bc[i] = 0;
-    for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
-      x_bc[m->n_i_faces + dir_faces->elt_ids[i]] = builder->dir_val[i];
+  } // Dirichlet BCs with non-homogeneous values
 
-    cs_sla_matvec(full_matrix, x_bc, &contrib, true);
-    for (i = 0; i < builder->n_faces; i++)
-      face_rhs[i] -= contrib[i];
+  /* Modify the system according to the type of boundary enforcement */
+  switch (builder->enforce) {
 
-  }
+  case CS_PARAM_BC_ENFORCE_STRONG:
+    {
+      if (dir_faces->n_nhmg_elts > 0) {
 
-  /* Reduce system size if there is a strong enforcement of the BCs */
-  if (builder->n_dof_faces < builder->n_faces) {
+        double  *x_bc = builder->work + 2*builder->n_faces;  // size: n_faces
 
-    /* Define new rhs */
-    for (i = 0; i < builder->n_dof_faces; i++)
-      rhs[i] = face_rhs[builder->f_z2i_ids[i]];
+        for (i = 0; i < builder->n_faces; i++)
+          x_bc[i] = 0;
+        for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border
+          x_bc[m->n_i_faces + dir_faces->elt_ids[i]] = builder->dir_val[i];
+      
+        cs_sla_matvec(full_matrix, x_bc, &contrib, true);
+        for (i = 0; i < builder->n_faces; i++)
+          face_rhs[i] -= contrib[i];
 
-    final_matrix = cs_sla_matrix_pack(builder->n_dof_faces,  // n_block_rows
-                                      builder->n_dof_faces,  // n_block_cols
-                                      full_matrix,       // full matrix */
-                                      builder->f_z2i_ids,    // row_z2i_ids
-                                      builder->f_i2z_ids,    // col_i2z_ids
-                                      true);             // keep sym.
+      } // Dirichlet BCs
 
-     /* Free buffers */
-   full_matrix = cs_sla_matrix_free(full_matrix);
+      if (builder->n_dof_faces < builder->n_faces) { /* Reduce system size */
 
-  }
-  else {
+        for (i = 0; i < builder->n_dof_faces; i++)
+          rhs[i] = face_rhs[builder->f_z2i_ids[i]];
+
+        final_matrix = cs_sla_matrix_pack(builder->n_dof_faces,  // n_block_rows
+                                          builder->n_dof_faces,  // n_block_cols
+                                          full_matrix,           // full matrix
+                                          builder->f_z2i_ids,    // row_z2i_ids
+                                          builder->f_i2z_ids,    // col_i2z_ids
+                                          true);                 // keep sym.
+
+        /* Free buffers */
+        full_matrix = cs_sla_matrix_free(full_matrix);
+
+      }
+
+    }
+    break;
+
+  case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+    {
+      assert(builder->n_faces == builder->n_dof_faces); /* Sanity check */
+
+      cs_real_t  pena_coef = 0.01/cs_get_eps_machine();
+     
+      for (i = 0; i < dir_faces->n_nhmg_elts; i++)
+        face_rhs[dir_faces->elt_ids[i]] += pena_coef * builder->dir_val[i];
+
+      for (i = 0; i < dir_faces->n_nhmg_elts; i++)
+        full_matrix->diag[dir_faces->elt_ids[i]] += pena_coef;
+
+      // DBG
+      printf(" Weak enforcement with penalization coefficient %5.3e\n",
+             pena_coef);
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " This kind of BC enforcement is not implemented yet.\n"
+              " Please modify your settings.");
+
+  } // End of switch on bc enforcement
+
+  if (builder->n_faces == builder->n_dof_faces) {
     final_matrix = full_matrix;
     memcpy(rhs, face_rhs, sizeof(cs_real_t)*builder->n_faces);
   }
@@ -420,6 +458,8 @@ void *
 cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
                      const cs_mesh_t            *m)
 {
+  cs_lnum_t  i;
+
   /* Sanity checks */
   assert(eqp != NULL);
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
@@ -432,7 +472,7 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
   /* Set of parameters related to this algebraic system */
   builder->eqp = eqp;
 
-  /* Dimensions: By default, we set number of DoFs as if there is a
+  /* Dimensions: By default, we set number of DoFs as if there is no
      strong enforcement of the BCs */
   builder->n_cells = m->n_cells;
   builder->n_faces = m->n_i_faces + m->n_b_faces;
@@ -441,24 +481,35 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
   /* Set members and structures related to the management of the BCs */
   const cs_param_bc_t  *bc_param = eqp->bc;
 
-  builder->strong_bc = bc_param->strong_enforcement;
-
   /* Translate user-defined information about BC into a structure well-suited
      for computation. We make the distinction between homogeneous and
      non-homogeneous BCs.
   */
   builder->face_bc = cs_cdo_bc_init(bc_param, m->n_b_faces);
 
-  cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
-
   /* Strong enforcement means that we need an indirection list between the
      compress (or zip) and initial numbering of vertices */
+  builder->enforce = bc_param->enforcement;
+
+  if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_PENA)
+    bft_error(__FILE__, __LINE__, 0,
+              " CDO face-based schemes and weak enforcement by a strong"
+              " penalization are not compatible yet.\n"
+              " Please modify your settings.");
+
   builder->f_z2i_ids = NULL; // zipped --> initial ids
   builder->f_i2z_ids = NULL; // initial --> zipped ids
 
-  if (builder->strong_bc && dir_faces->n_elts > 0) {
+  cs_cdo_bc_list_t  *dir_faces = builder->face_bc->dir;
 
-    cs_lnum_t  i, cur_id = 0;
+  BFT_MALLOC(builder->dir_val, dir_faces->n_nhmg_elts, cs_real_t);
+  for (i = 0; i < dir_faces->n_nhmg_elts; i++)
+    builder->dir_val[i] = 0.0;
+
+  if (builder->enforce == CS_PARAM_BC_ENFORCE_STRONG &&
+      dir_faces->n_elts > 0) {
+
+    cs_lnum_t  cur_id = 0;
     _Bool  *is_kept = NULL;
 
     builder->n_dof_faces = builder->n_faces - dir_faces->n_elts;
@@ -485,10 +536,6 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
 
     BFT_FREE(is_kept);
 
-    BFT_MALLOC(builder->dir_val, dir_faces->n_nhmg_elts, cs_real_t);
-    for (i = 0; i < dir_faces->n_nhmg_elts; i++)
-      builder->dir_val[i] = 0.0;
-
   } /* Strong enforcement of BCs */
 
   /* Contribution in each cell of the source terms */
@@ -498,7 +545,10 @@ cs_cdofb_codits_init(const cs_equation_param_t  *eqp,
   BFT_MALLOC(builder->face_values, builder->n_faces, cs_real_t);
 
   /* Work buffers */
-  BFT_MALLOC(builder->work, 3*builder->n_faces, double);
+  if (builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
+    BFT_MALLOC(builder->work, 3*builder->n_faces, double);
+  else
+    BFT_MALLOC(builder->work, 2*builder->n_faces, double);
 
   return builder;
 }
@@ -635,7 +685,7 @@ cs_cdofb_codits_update_field(const cs_cdo_connect_t     *connect,
     memcpy(_builder->face_values, solu, _builder->n_faces*sizeof(cs_real_t));
 
   /* Take into account Dirichlet BCs */
-  if (_builder->strong_bc)
+  if (_builder->enforce == CS_PARAM_BC_ENFORCE_STRONG)
     for (i = 0; i < dir_faces->n_nhmg_elts; i++) // interior then border faces
       _builder->face_values[quant->n_i_faces + dir_faces->elt_ids[i]]
         = _builder->dir_val[i];

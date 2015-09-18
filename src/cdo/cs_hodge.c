@@ -800,7 +800,6 @@ cs_hodge_cost_build_local(int                         cid,
                           cs_hodge_builder_t         *hb)
 {
   int  i, j, k;
-  double  val_kk, contrib;
 
   const double  invcvol = 1 / quant->cell_vol[cid];
   const double  invcvol2 = invcvol*invcvol;
@@ -823,15 +822,14 @@ cs_hodge_cost_build_local(int                         cid,
   for (k = 0; k < hl->n_ent; k++) { /* Loop over sub-volumes */
 
     int  kk =  k*hl->n_ent+k;
+    double  val_kk = beta * hb->qmq[kk] * hb->invsvol[k];
 
     for (i = 0; i < hl->n_ent; i++) { /* Loop on cell entities I */
 
       int  ik = i*hl->n_ent+k;
       double  Tik = hb->T[ik];
 
-      val_kk = beta * hb->qmq[kk] * hb->invsvol[k];
-      contrib = Tik*val_kk - 2*hb->qmq[ik];
-      hl->mat[i*hl->n_ent+i] += Tik*contrib;
+      hl->mat[i*hl->n_ent+i] += Tik*(Tik*val_kk - 2*hb->qmq[ik]);
 
       for (j = i + 1; j < hl->n_ent; j++) { /* Loop on cell entities J */
 
@@ -850,17 +848,16 @@ cs_hodge_cost_build_local(int                         cid,
   for (i = 0; i < hl->n_ent; i++) {/* Loop on cell entities I */
 
     int  ii = i*hl->n_ent+i;
-    double  mii = hb->qmq[ii];
-    double  miis = mii*hb->invsvol[i];
+    double  miis = hb->qmq[ii]*hb->invsvol[i];
 
-    hl->mat[ii] = coef1*hl->mat[ii] + coef3*mii + beta2*miis;
+    hl->mat[ii] = coef1*hl->mat[ii] + coef3*hb->qmq[ii] + beta2*miis;
 
     for (j = i + 1; j < hl->n_ent; j++) { /* Loop on cell entities J */
 
       int  jj = j*hl->n_ent+j, ij = i*hl->n_ent+j, ji = j*hl->n_ent+i;
-      double mjjs = hb->qmq[jj]*hb->invsvol[j];
+      double  mjjs = hb->qmq[jj]*hb->invsvol[j];
+      double  contrib =  hb->T[ij]*mjjs + hb->T[ji]*miis;
 
-      contrib = hb->T[ij]*mjjs + hb->T[ji]*miis;
       hl->mat[ij] = coef1*hl->mat[ij] + coef2*hb->qmq[ij] - coef4*contrib;
       hl->mat[ji] = hl->mat[ij];
 

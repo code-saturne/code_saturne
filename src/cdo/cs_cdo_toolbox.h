@@ -197,6 +197,19 @@ _mv3(const cs_real_33_t   m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the determinant of a 3x3 matrix
+ *
+ * \param[in]  m    3x3 matrix
+ *
+ * \return the determinant
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_detmat33(const cs_real_33_t   m);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Inverse a 3x3 matrix
  *
  * \param[in]  in    matrix to inverse
@@ -211,6 +224,24 @@ _invmat33(const cs_real_33_t   in,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
+ *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *         Communication of the ACM (April 1961)
+ *         -> Wikipedia article entitled "Eigenvalue algorithm"
+ *
+ * \param[in]  m          3x3 matrix
+ * \param[out] eig_ratio  max/min
+ * \param[out] eig_max    max. eigenvalue
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_eigen_mat33(const cs_real_33_t  m,
+               cs_real_t          *eig_ratio,
+               cs_real_t          *eig_max);
 
 /*----------------------------------------------------------------------------*/
 /*!

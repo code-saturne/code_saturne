@@ -872,7 +872,7 @@ cs_param_pty_finalize(void)
  *
  * \param[in]  default_bc     default boundary condition
  *
- * \return a pointer to the new structure (free with cs_param_eq_t)
+ * \return a pointer to the new structure (free with cs_equation_param_t)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -882,9 +882,12 @@ cs_param_bc_create(cs_param_bc_type_t  default_bc)
   cs_param_bc_t  *bc = NULL;
 
   BFT_MALLOC(bc, 1, cs_param_bc_t);
+
   bc->default_bc = default_bc;
-  bc->strong_enforcement = true;
-  bc->penalty_coef = 0.;
+  /* Initialization by default */
+  bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+  bc->quad_type = CS_QUADRATURE_BARY;
+  bc->use_subdiv = false;
 
   bc->n_defs = 0;
   bc->defs = NULL;
@@ -1145,6 +1148,74 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   }
 
   return "NULL";
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of boundary condition
+ *
+ * \param[in] bc_type     type of boundary condition
+ *
+ * \return the associated bc name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_name(cs_param_bc_type_t  bc)
+{
+  switch(bc) {
+
+  case CS_PARAM_BC_HMG_DIRICHLET:
+    return "Homogeneous Dirichlet";
+    break;
+  case CS_PARAM_BC_DIRICHLET:
+    return "Dirichlet";
+    break;
+  case CS_PARAM_BC_HMG_NEUMANN:
+    return "Homogeneous Neumann";
+  case CS_PARAM_BC_NEUMANN:
+    return "Neumann";
+  case CS_PARAM_BC_ROBIN:
+    return "Robin";    
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid BC type. Stop execution."));
+  }
+
+  return "NULL"; // avoid a warning
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of enforcement of the boundary condition
+ *
+ * \param[in] bc_enforce    type of enforcement of boundary conditions
+ *
+ * \return the associated name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
+{
+  switch(type) {
+
+  case CS_PARAM_BC_ENFORCE_STRONG:
+    return "strong";
+    break;
+  case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+    return "weak with a big penalization coefficient";
+    break;
+  case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+    return "weak using the Nitsche method";
+  case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+    return "weak using the symmetrized Nitsche method";
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of enforcement. Stop execution."));
+  }
+
+  return "NULL"; // avoid a warning
 }
 
 /*----------------------------------------------------------------------------*/

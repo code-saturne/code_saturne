@@ -215,6 +215,8 @@ typedef enum {
   EQKEY_SOLVER_FAMILY,
   EQKEY_SPACE_SCHEME,
   EQKEY_VERBOSITY,
+  EQKEY_BC_ENFORCEMENT,
+  EQKEY_BC_QUADRATURE,
   EQKEY_ERROR
 
 } eqkey_t;
@@ -537,6 +539,11 @@ _print_eqkey(eqkey_t  key)
     return "space_scheme";
   case EQKEY_VERBOSITY:
     return "verbosity";
+  case EQKEY_BC_ENFORCEMENT:
+    return "bc_enforcement";
+  case EQKEY_BC_QUADRATURE:
+    return "bc_quadrature";
+
   default:
     assert(0);
   }
@@ -609,6 +616,12 @@ _get_eqkey(const char *keyname)
     key = EQKEY_SPACE_SCHEME;
   else if (strcmp(keyname, "verbosity") == 0)
     key = EQKEY_VERBOSITY;
+  else if (strncmp(keyname, "bc", 2) == 0) { /* key begins with bc */
+    if (strcmp(keyname, "bc_enforcement") == 0)
+      key = EQKEY_BC_ENFORCEMENT;
+    else if (strcmp(keyname, "bc_quadrature") == 0)
+      key = EQKEY_BC_QUADRATURE;
+  }
 
   return key;
 }
@@ -873,37 +886,57 @@ cs_equation_resume(const cs_equation_t  *eq)
              eq->name, eq->varname);
   bft_printf(lsepline);
 
+  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
+    bft_printf("  <%s/Space scheme>  CDO vertex-based\n", eq->name);
+  else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
+    bft_printf("  <%s/Space scheme>  CDO face-based\n", eq->name);
+
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
   bool  diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
   bool  source_term = (eqp->n_source_terms > 0) ? true : false;
 
-  bft_printf("  <Equation>  unsteady [%s], convection [%s], diffusion [%s],"
+  bft_printf("  <%s/Terms>  unsteady [%s], convection [%s], diffusion [%s],"
              " source term [%s]\n",
-             cs_base_strtf(unsteady), cs_base_strtf(convection),
+             eq->name, cs_base_strtf(unsteady), cs_base_strtf(convection),
              cs_base_strtf(diffusion), cs_base_strtf(source_term));
 
-  if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
-    bft_printf("  <Equation>  space discretization CDO vertex-based\n");
-  else if (eqp->space_scheme == CS_SPACE_SCHEME_CDOFB)
-    bft_printf("  <Equation>  space discretization CDO face-based\n");
+  /* Boundary conditions */
+  if (eqp->verbosity > 0) {
+    cs_param_bc_t  *bcp = eqp->bc;
+
+    bft_printf("  <%s/Boundary Conditions>\n", eq->name);
+    bft_printf("\t<BC> Default BC: %s\n",
+               cs_param_get_bc_name(bcp->default_bc));
+    if (eqp->verbosity > 1)
+      bft_printf("\t<BC> Enforcement: %s\n",
+                 cs_param_get_bc_enforcement_name(bcp->enforcement));
+    bft_printf("\t<BC> Number of BCs defined: %d\n", bcp->n_defs);
+    if (eqp->verbosity > 1) {
+      for (int id = 0; id < bcp->n_defs; id++)
+        bft_printf("\t<BC> Location: %s; Type: %s; Definition type: %s\n",
+                   cs_mesh_location_get_name(bcp->defs[id].loc_id),
+                   cs_param_get_bc_name(bcp->defs[id].bc_type),
+                   cs_param_get_def_type_name(bcp->defs[id].def_type));
+    }
+  }
 
   if (eqp->flag & CS_EQUATION_DIFFUSION) {
 
     const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
 
-    bft_printf("\n  <Equation/Diffusion term>\n");
-    bft_printf("\t--> Property related to the diffusion term: %s\n",
+    bft_printf("\n  <%s/Diffusion term>\n", eq->name);
+    bft_printf("\t<Diffusion> Property: %s\n",
                cs_param_pty_get_name(h_info.pty_id));
 
     if (eqp->verbosity > 0) {
-      bft_printf("\t--> Hodge operator: %s / %s\n",
+      bft_printf("\t<Diffusion> Hodge operator: %s / %s\n",
                  cs_param_hodge_get_type_name(h_info),
                  cs_param_hodge_get_algo_name(h_info));
-      bft_printf("\t--> Inversion of the material property: %s\n",
+      bft_printf("\t<Diffusion> Inversion of property: %s\n",
                  cs_base_strtf(h_info.inv_pty));
       if (h_info.algo == CS_PARAM_HODGE_ALGO_COST)
-        bft_printf("\t--> Coefficient value for COST algo: %.3e\n",
+        bft_printf("\t<Diffusion> Value of the Hodge coefficient: %.3e\n",
                    h_info.coef);
     }
 
@@ -911,21 +944,20 @@ cs_equation_resume(const cs_equation_t  *eq)
 
   if (eqp->n_source_terms > 0) {
 
-    bft_printf("\n  <Equation/Source terms>\n");
+    bft_printf("\n  <%s/Source terms>\n", eq->name);
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++) {
 
       cs_param_source_term_t  st_info = eqp->source_terms[s_id];
 
-      bft_printf("\t--> Source term name: %s\n",
-                 cs_param_source_term_get_name(st_info));
-      bft_printf("\t--> Related mesh location: %s\n",
+      bft_printf("\t<ST> name: %s\n", cs_param_source_term_get_name(st_info));
+      bft_printf("\t<ST> mesh location: %s\n",
                  cs_mesh_location_get_name(st_info.ml_id));
-      bft_printf("\t--> Type: %s; Variable type: %s; Definition type: %s\n",
+      bft_printf("\t<ST> Type: %s; Variable type: %s; Definition type: %s\n",
                  cs_param_source_term_get_type_name(st_info),
                  cs_param_get_var_type_name(st_info.var_type),
                  cs_param_get_def_type_name(st_info.def_type));
       if (eqp->verbosity > 0)
-        bft_printf("\t--> Quadrature type: %s; Use subdivision: %s\n",
+        bft_printf("\t<ST> Quadrature type: %s; Use subdivision: %s\n",
                    cs_quadrature_get_type_name(st_info.quad_type),
                    cs_base_strtf(st_info.use_subdiv));
 
@@ -936,18 +968,18 @@ cs_equation_resume(const cs_equation_t  *eq)
   /* Iterative solver information */
   const cs_param_itsol_t   itsol = eqp->itsol_info;
 
-  bft_printf("\n  <Equation/Iterative Solver Parameters>");
+  bft_printf("\n  <%s/Sparse Linear Algebra>", eq->name);
   if (eqp->algo_info.type == CS_EQUATION_ALGO_CS_ITSOL)
     bft_printf(" Code_Saturne iterative solvers\n");
   else if (eqp->algo_info.type == CS_EQUATION_ALGO_PETSC_ITSOL)
     bft_printf(" PETSc iterative solvers\n");
-  bft_printf("\t-sla- Solver.MaxIter     %d\n", itsol.n_max_iter);
-  bft_printf("\t-sla- Solver.Name        %s\n",
+  bft_printf("\t<SLA> Solver.MaxIter     %d\n", itsol.n_max_iter);
+  bft_printf("\t<SLA> Solver.Name        %s\n",
              cs_param_get_solver_name(itsol.solver));
-  bft_printf("\t-sla- Solver.Precond     %s\n",
+  bft_printf("\t<SLA> Solver.Precond     %s\n",
              cs_param_get_precond_name(itsol.precond));
-  bft_printf("\t-sla- Solver.Eps        % -10.6e\n", itsol.eps);
-  bft_printf("\t-sla- Solver.Normalized  %s\n",
+  bft_printf("\t<SLA> Solver.Eps        % -10.6e\n", itsol.eps);
+  bft_printf("\t<SLA> Solver.Normalized  %s\n",
              cs_base_strtf(itsol.resid_normalized));
 
 }
@@ -1430,6 +1462,42 @@ cs_equation_set(cs_equation_t       *eq,
 
   case EQKEY_VERBOSITY: // "verbosity"
     eqp->verbosity = atoi(val);
+    break;
+
+  case EQKEY_BC_ENFORCEMENT:
+    if (strcmp(val, "strong") == 0)
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
+    else if (strcmp(val, "penalization") == 0)
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
+    else if (strcmp(val, "weak") == 0)
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
+    else if (strcmp(val, "weak_sym") == 0)
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid value %s related to key %s\n"
+                  " Choice between strong, penalization, weak or\n"
+                  " weak_sym."), _val, keyname);
+    }
+    break;
+
+  case EQKEY_BC_QUADRATURE:
+    if (strcmp(val, "subdiv") == 0)
+      eqp->bc->use_subdiv = true;
+    else if (strcmp(val, "bary") == 0)
+      eqp->bc->quad_type = CS_QUADRATURE_BARY;
+    else if (strcmp(val, "higher") == 0)
+      eqp->bc->quad_type = CS_QUADRATURE_HIGHER;
+    else if (strcmp(val, "highest") == 0)
+      eqp->bc->quad_type = CS_QUADRATURE_HIGHEST;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value %s for setting the quadrature behaviour"
+                  " of boundary conditions.\n"
+                  " Choices are among subdiv, bary, higher and highest."), _val);
+    }
     break;
 
   default:
@@ -1950,6 +2018,8 @@ cs_equation_build_system(const cs_mesh_t            *m,
 {
   cs_sla_matrix_t  *sla_mat = NULL;
 
+  const char *eqn = eq->name;
+
   if (eq->pre_ts_id > -1)
     cs_timer_stats_start(eq->pre_ts_id);
 
@@ -1961,13 +2031,12 @@ cs_equation_build_system(const cs_mesh_t            *m,
   /* Get information on the matrix related to this linear system */
   cs_sla_matrix_info_t  minfo = cs_sla_matrix_analyse(sla_mat);
 
-  bft_printf("\n  <Linear system for equation %s>\n", eq->name);
-  bft_printf(" -sla- A.size         %d\n", sla_mat->n_rows);
-  bft_printf(" -sla- A.nnz          %lu\n", minfo.nnz);
-  bft_printf(" -sla- A.FillIn       %5.2e %%\n", minfo.fillin);
-  bft_printf(" -sla- A.StencilMin   %d\n", minfo.stencil_min);
-  bft_printf(" -sla- A.StencilMax   %d\n", minfo.stencil_max);
-  bft_printf(" -sla- A.StencilMean  %5.2e\n", minfo.stencil_mean);
+  bft_printf("\t<%s/SLA> A.size         %d\n", eqn, sla_mat->n_rows);
+  bft_printf("\t<%s/SLA> A.nnz          %lu\n", eqn, minfo.nnz);
+  bft_printf("\t<%s/SLA> A.FillIn       %5.2e %%\n", eqn, minfo.fillin);
+  bft_printf("\t<%s/SLA> A.StencilMin   %d\n", eqn, minfo.stencil_min);
+  bft_printf("\t<%s/SLA> A.StencilMax   %d\n", eqn, minfo.stencil_max);
+  bft_printf("\t<%s/SLA> A.StencilMean  %5.2e\n", eqn, minfo.stencil_mean);
 
   /* Map a cs_sla_matrix_t structure into a cs_matrix_t structure */
   assert(sla_mat->type == CS_SLA_MAT_MSR);
@@ -2061,12 +2130,13 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
                       0,      // aux. size
                       NULL);  // aux. buffers
 
-  bft_printf("\n <iterative solver convergence sumup>\n");
-  bft_printf(" -sla- code        %d\n", cvg);
-  bft_printf(" -sla- n_iters     %d\n", ret.iter);
-  bft_printf(" -sla- residual    % -8.4e\n", ret.residual);
-  printf("# n_iters = %d with a residual norm = %8.5e\n",
-         ret.iter, ret.residual);
+  bft_printf("\n Iterative solver convergence sumup:\n");
+  bft_printf("\t<%s/SLA> code        %d\n", eq->name, cvg);
+  bft_printf("\t<%s/SLA> n_iters     %d\n", eq->name, ret.iter);
+  bft_printf("\t<%s/SLA> residual    % -8.4e\n", eq->name, ret.residual);
+
+  printf("# n_iters = %d with a residual norm = %8.5e for %s\n",
+         ret.iter, ret.residual, eq->name);
 
   if (eq->solve_ts_id > -1)
     cs_timer_stats_stop(eq->solve_ts_id);

@@ -333,6 +333,26 @@ _mv3(const cs_real_33_t  m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the determinant of a 3x3 matrix
+ *
+ * \param[in]  m    matrix
+ *
+ * \return the determinant
+ */
+/*----------------------------------------------------------------------------*/
+
+inline cs_real_t
+_detmat33(const cs_real_33_t   m)
+{
+  cs_real_t  com0 = m[1][1]*m[2][2] - m[2][1]*m[1][2];
+  cs_real_t  com1 = m[2][1]*m[0][2] - m[0][1]*m[2][2];
+  cs_real_t  com2 = m[0][1]*m[1][2] - m[1][1]*m[0][2];
+
+  return m[0][0]*com0 + m[1][0]*com1 + m[2][0]*com2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Inverse a 3x3 matrix
  *
  * \param[in]  in    matrix to inverse
@@ -371,6 +391,91 @@ _invmat33(const cs_real_33_t   in,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the eigenvalues of a 3x3 matrix which is symmetric and real
+ *         -> Oliver K. Smith "eigenvalues of a symmetric 3x3 matrix",
+ *         Communication of the ACM (April 1961)
+ *         -> Wikipedia article entitled "Eigenvalue algorithm"
+ *
+ * \param[in]  m          3x3 matrix
+ * \param[out] eig_ratio  max/min
+ * \param[out] eig_max    max. eigenvalue
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_eigen_mat33(const cs_real_33_t  m,
+               cs_real_t          *eig_ratio,
+               cs_real_t          *eig_max)
+{
+  cs_real_t  e, e1, e2, e3;
+
+  /* Sanity check */
+  e1 = m[0][1]-m[1][0], e2 = m[0][2]-m[2][0], e3 = m[1][2]-m[2][1];
+  assert(e1*e1 + e2*e2 + e3*e3 <= 0.0);
+
+  cs_real_t  p1 = m[0][1]*m[0][1] + m[0][2]*m[0][2] + m[1][2]*m[1][2];
+
+  if (p1 <= 0.0) { // m is diagonal
+
+    e1 = m[0][0], e2 = m[1][1], e3 = m[2][2];
+    if (e3 < e2) e = e3, e3 = e2, e2 = e;
+    if (e3 < e1) e = e3, e3 = e1, e1 = e2, e2 = e;
+    else {
+      if (e2 < e1) e = e2, e2 = e1, e1 = e;
+    }
+
+  }
+  else { // m is not diagonal
+
+    cs_real_t  theta;
+    cs_real_33_t  n;
+
+    cs_real_t  tr = _overdim*(m[0][0] + m[1][1] + m[2][2]);
+
+    e1 = m[0][0] - tr, e2 = m[1][1] - tr, e3 = m[2][2] - tr;
+    cs_real_t  p2 = e1*e1 + e2*e2 + e3*e3 + 2*p1;
+
+    assert(p2 > 0);
+    cs_real_t  p = sqrt(p2*_oversix);
+    cs_real_t  ovp = 1./p;
+
+    for (int  i = 0; i < 3; i++) {
+      n[i][i] = ovp * (m[i][i] - tr);
+      for (int j = i + 1; j < 3; j++) {
+        n[i][j] = ovp*m[i][j];
+        n[j][i] = n[i][j];
+      }
+    }
+    
+    /* r should be between -1 and 1 but truncation error and bad conditionning
+       can lead to slighty under/over-shoot */
+    cs_real_t  r = 0.5 * _detmat33(n);
+    cs_real_t  pi = 4*atan(1.0);
+
+    if (r <= -1)
+      theta = _overdim*pi;
+    else if (r >= 1)
+      theta = 0.;
+    else
+      theta = _overdim*acos(r);
+
+    // eigenvalues computed should satisfy e1 < e2 < e3
+    e3 = tr + 2*p*cos(theta);
+    e1 = tr + 2*p*cos(theta + 2*pi*_overdim);
+    e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
+  }
+
+  /* Debug */
+  printf(" --msg-- Computed eigenvalues %5.3e < %5.3e < %5.3e\n", e1, e2, e3);
+
+  /* Return values */
+  assert(fabs(e1) > 0);
+  *eig_ratio = e3/e1;
+  *eig_max = e3;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
