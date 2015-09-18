@@ -309,7 +309,7 @@ if (iihmpr.eq.1) then
   if (idtvar.ge.0) relaxv(ipr) = relaxp
 
 !     Gravite, prop. phys
-  call csphys(nmodpp,itempk)
+  call csphys(nmodpp, viscv0, visls0, itempk)
 
 !     Scamin, scamax, turbulent flux model
   call cssca2(iturt)

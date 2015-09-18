@@ -2781,7 +2781,7 @@ void CS_PROCF (csphys, CSPHYS) (const int  *nmodpp,
   const int itherm = cs_glob_thermal_model->itherm;
   /* const int iscalt = cs_glob_thermal_model->iscalt; */
 
-cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
+  cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
 
   _gravity_value("gravity_x", &(phys_cst->gx));
   _gravity_value("gravity_y", &(phys_cst->gy));
