@@ -562,6 +562,7 @@ cs_control_check_file(void)
 
     _parse_control_file(buffer, f_size);
 
+    BFT_FREE(buffer);
   }
 
   if (_flush_log_nt == ts->nt_cur) {
