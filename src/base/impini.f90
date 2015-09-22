@@ -1852,8 +1852,6 @@ endif
 '            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*',        /,&
 '              - rho_n div (mu+mu_t)_n grad u* + grad P_n',     /,&
 '              - reste du smb(u_n, P_n, autres variables_n)',   /,&
-!     &'            Idealement nul quand les methodes de reconstruction
-!     &'                sont parfaites et le systeme est resolu exactement
 ' ',i2,' =IESDER : derive',                                     /,&
 '            L''estimateur est base sur la grandeur',           /,&
 '            I = div (flux de masse corrige apres etape',       /,&
@@ -1984,7 +1982,7 @@ endif
 '            The estimatore is based on the quantity',          /,&
 '            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*',        /,&
 '              - rho_n div (mu+mu_t)_n grad u* + grad P_n',     /,&
-'              - remainder of rhs(u_n, P_n, other variables_n)',  &
+'              - remainder of rhs(u_n, P_n, other variables_n)',/,&
 ' ',i2,' =IESDER: drift',                                       /,&
 '            The estimator is based on quantity',               /,&
 '            I = div (mass flow corrected after pressure step)',/,&

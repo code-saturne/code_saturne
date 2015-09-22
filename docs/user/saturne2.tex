@@ -1590,7 +1590,7 @@ the hydrostatic pressure must be recalculated at the outlet boundary
 conditions: see {\tt icalhy}.\\
 On meshes of insufficient quality, in order to
 improve the convergence, it may be useful to increase the number of
-iterations for the reconstruction of the pressure right-hand member,
+iterations for the reconstruction of the pressure right-hand side,
 {\em i.e.} \mbox{\tt nswrsm(ipr)}.\\
 If head losses are present just along an outlet boundary, it is necessary to
 specify {\tt icalhy}=0 in order to deactivate the recalculation of the hydrostatic
@@ -1650,29 +1650,36 @@ analysis. Also, their use is compatible neither with a second-order time scheme
 nor with a calculation with a frozen velocity field.
 
 {\tt \bf iest = iespre\index{iespre}: prediction} (default name: EsPre).
-After the velocity prediction step (yielding $\vect{u}^*$), the
-estimator $\eta^{\,pred}_{\,i,k}(\vect{u}^*)$, local variable calculated
+After the velocity prediction step (yielding $\vect{\widetilde{u}}$), the
+estimator $\eta^{\,pred}_{\,i,k}(\vect{\widetilde{u}})$, local variable calculated
 at every cell $\Omega_i$, is created from $\vect{\mathcal
-R}^{\,pred}(\vect{u}^*)$, which represents the residual of the equation
+R}^{\,pred}(\vect{\widetilde{u}})$, which represents the residual of the equation
 solved during this step:
-\begin{eqnarray*}
-\vect{\mathcal R}^{\,pred}(\vect{u}^*)&= & \rho^n \frac{\vect{u}^*-\vect{u}^n}{\Delta t}
-              + \rho^n \vect{u}^n \cdot \tens{grad}(\vect{u}^*)
-              - div \left((\mu+\mu_t)^n \tens{grad}(\vect{u}^*) \right)
+\begin{equation*}
+\begin{array}{r c l}
+\vect{\mathcal{R}}^{\,pred}(\vect{\widetilde{u}})&= & \rho^n
+    \dfrac{\vect{\widetilde{u}}-\vect{u}^n}{\Delta t}
+  + \gradt \left(\vect{\widetilde{u}} \right) \cdot \left(\rho  \vect{u}\right)^n
+              - \divv \left((\mu+\mu_t)^n \gradt(\vect{\widetilde{u}}) \right)
               + \grad(P^n)     \\
-              &- &\text{rest of the right-hand member}
-                        \,(\vect{u}^n, P^n, \text{other variables}^n)
-\end{eqnarray*}
+              &- &\text{rest of the right-hand side}
+                        (\vect{u}^n, P^n, \text{other variables}^n)
+\end{array}
+\end{equation*}
+
 By definition:
-$$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,pred}(\vect{u}^*)||
-_{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
-\hspace*{0.5cm}$\bullet$ The first family, $k=1$, suppresses the
+$$ \eta^{\,pred}_{\,i,k}(\vect{\widetilde{u}})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,pred}(\vect{\widetilde{u}})||
+_{{\mathbb{L}}^{2}(\Omega_i)}$$
+%
+\begin{itemize}
+\item The first family, $k=1$, suppresses the
 volume $|\Omega_i|$ which intrinsically appears with the norm
-${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\
-\hspace*{0.5cm}$\bullet$ The second family, $k=2$, exactly represents the norm
-${{I\hspace{-.25em}L}^{2}(\Omega_i)}$. The size of the cell therefore
-appears in its calculation and induces a weighting effect.\\
-$ \eta^{\,pred}_{\,i,k}(\vect{u}^*)$  is ideally equal to zero when the
+${{\mathbb{L}}^{2}(\Omega_i)}$.
+\item The second family, $k=2$, exactly represents the norm
+${{\mathbb{L}}^{2}(\Omega_i)}$. The size of the cell therefore
+appears in its calculation and induces a weighting effect.
+\end{itemize}
+$ \eta^{\,pred}_{\,i,k}(\vect{\widetilde{u}})$  is ideally equal to zero when the
 reconstruction methods are perfect and the associated system is
 solved exactly.
 
@@ -1711,35 +1718,40 @@ the projection from the mass flux at the faces to the velocity at the cell
 centers is made in a set of  functions with null divergence.
 
 {\tt \bf iest = iestot\index{iestot}: total} (default name: EsTot).
-The estimator $ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})$, local variable
+The estimator $ \eta^{tot}_{\,i,k}(\vect{u}^{n+1})$, local variable
 calculated at every cell $\Omega_i$, is based on the quantity
-$\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})$, which represents the
+$\vect{\mathcal R}^{tot}(\vect{u}^{\,n+1})$, which represents the
 residual of the equation using the updated values of
 $\vect{u}$ and $P$:
-\begin{eqnarray*}
-\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})&= & \rho^n \frac{\vect{u}^{\,n+1}-\vect{u}^n}{\Delta t}
-              + \rho^n \vect{u}^{\,n+1} \cdot \tens{grad}(\vect{u}^{\,n+1})
-              - div \left((\mu+\mu_t)^n \tens{grad}(\vect{u}^{\,n+1}) \right)
-              + \grad(P^{\,n+1})     \\
-              &- &\text{rest of the right-hand member}
-                        \,(\vect{u}^{\,n+1}, P^{\,n+1}, \text{other variables}^n)
-\end{eqnarray*}
+\begin{equation*}
+\begin{array}{@{}r@{\,} c@{\,} l}
+\vect{\mathcal{R}}^{tot}({\vect{u}^{n+1}})&= & \rho^n
+    \dfrac{{\vect{u}^{n+1}}-\vect{u}^n}{\Delta t}
+  + \gradt \left({\vect{u}^{n+1}} \right) \cdot {\left(\rho  \vect{u}\right)}^{n+1}
+              - \divv \left((\mu+\mu_t)^n \gradt({\vect{u}^{n+1}}) \right)
+              + \grad({P^{n+1}})     \\
+              &- &\text{rest of the right-hand side}
+                        ({\vect{u}^{n+1}}, {P^{n+1}}, \text{other variables}^n)
+\end{array}
+\end{equation*}
+%
 By definition:
-$$ \eta^{\,tot}_{\,i,k}(\vect{u}^{\,n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{\,tot}(\vect{u}^{\,n+1})||
-_{{I\hspace{-.25em}L}^{2}(\Omega_i)}$$
+$$ \eta^{tot}_{i,k}(\vect{u}^{n+1})= {|\Omega_i|}^{\,(k-2)/2}\ ||\vect{\mathcal R}^{tot}(\vect{u}^{\,n+1})||
+_{\mathbb{L}^{2}(\Omega_i)}$$
 
 The mass flux in the convective term is recalculated from $\vect{u}^{n+1}$
 expressed at the cell centres (and not taken from the updated mass flow at the
 faces).\\
 
-As for the prediction estimator:\\
-\hspace*{0.5cm}$\bullet$ The first family, $k=1$, suppresses the
+As for the prediction estimator:
+\begin{itemize}
+\item The first family, $k=1$, suppresses the
 volume $|\Omega_i|$ which intrinsicly appears  with the norm
-${{I\hspace{-.25em}L}^{2}(\Omega_i)}$.\\
-\hspace*{0.5cm}$\bullet$ The second family, $k=2$, exactly represents the norm
-${{I\hspace{-.25em}L}^{2}(\Omega_i)}$. The size of the cell therefore
-appears in its calculation and induces a weighting effect.\\
-
+${\mathbb{L}^{2}(\Omega_i)}$.
+\item The second family, $k=2$, exactly represents the norm
+${\mathbb{L}^{2}(\Omega_i)}$. The size of the cell therefore
+appears in its calculation and induces a weighting effect.
+\end{itemize}
 
 The estimators are evaluated depending on the values of {\tt iescal}.
 
@@ -1750,12 +1762,12 @@ for the error estimator {\tt iest} ({\tt iespre}, {\tt iesder}, {\tt iescor} or
 {\tt iestot}), for
 the Navier-Stokes equation:\\
  {\tt iescal} = 0: estimator not calculated, \\
- {\tt iescal} = 1: the estimator $ \eta^{\,* }_{\,i,1}$ is calculated,
+ {\tt iescal} = 1: the estimator $ \eta^{*}_{i,1}$ is calculated,
                    without contribution of the volume, \\
- {\tt iescal} = 2: the estimator $ \eta^{\,* }_{\,i,2}$ is calculated,
+ {\tt iescal} = 2: the estimator $ \eta^{*}_{i,2}$ is calculated,
                    with contribution of the volume ("norm $L^2$"),
                    except for {\tt iescor}, for which
-                   $|\Omega_i|\ \eta^{\,corr}_{\,i,1}\ $
+                   $|\Omega_i|\ \eta^{corr}_{i,1}\ $
                    is calculated.
 
 The names of the estimators appearing in the listing and the post-processing are
@@ -1835,7 +1847,7 @@ useful when {\tt icdpar} $\neq$\ 0 for the calculation of $y^+$}
 useful when {\tt icdpar} $\neq$\ 0}
 
 \motcle{nswrsy}{i}{positive integer}{1}{O}{L3}
-{number of iterations for the reconstruction of the right-hand members:
+{number of iterations for the reconstruction of the right-hand sides:
 corresponds to {\tt nswrsm}\\
 useful when {\tt icdpar} $\neq$\ 0}
 
@@ -1980,7 +1992,7 @@ always useful}
 
 \motcle{nswrsm}{ia}{positive integer}{1, 2, 5 or 10}{O}{L3}
 {for each unknown {\tt ivar}, {\tt nswrsm(ivar)} indicates the number of iterations for the
-reconstruction of the right-hand members of the equations\\
+reconstruction of the right-hand sides of the equations\\
 with a first-order scheme in time
 (standard case), the default values are 2 for pressure and 1 for the
 other variables. With a second-order scheme in time ({\tt ischtp}=2) or LES, the
