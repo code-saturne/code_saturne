@@ -4,6 +4,7 @@ Trunk (unreleased)
 
 Changes:
 --------
+ - Merge the bad cell and the mesh quality criterion for offsetting.
 
  - Merge general boundary temperature handling with the radiative
    "wall temperature", for unified logging and post-processing.

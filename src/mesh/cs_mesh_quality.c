@@ -412,12 +412,14 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     /* Compute center offsetting coefficient */
     /*---------------------------------------*/
 
-    for (i = 0; i < dim; i++) {
+		for (i = 0; i < dim; i++) {
       v1[i] = mesh_quantities->dofij[face_id*3 + i];
-      v2[i] = cell_center2[i] - cell_center1[i];
-    }
+      v2[i] = mesh_quantities->i_face_normal[face_id*3 + i];
+		}
+    double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
 
-    offsetting[face_id] = _MODULE_3D(v1) / _MODULE_3D(v2);
+    offsetting[cell1] = CS_MAX(offsetting[cell1], of_s / mesh_quantities->cell_vol[cell1]);
+    offsetting[cell2] = CS_MAX(offsetting[cell2], of_s / mesh_quantities->cell_vol[cell2]);
 
   } /* End of loop on faces */
 
@@ -989,9 +991,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
 
     /* Only defined on internal faces */
 
-    BFT_MALLOC(working_array, 2*n_i_faces, double);
+    BFT_MALLOC(working_array, n_i_faces + n_cells_wghosts, double);
 
-    for (i = 0; i < 2*n_i_faces; i++)
+    for (i = 0; i < n_i_faces + n_cells_wghosts; i++)
       working_array[i] = 0.;
 
     weighting = working_array;
@@ -1008,9 +1010,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                  "weighting coefficient:\n\n"));
     _int_face_histogram(mesh, weighting);
 
-    bft_printf(_("\n  Histogram of the interior faces "
+    bft_printf(_("\n  Histogram of the cells "
                  "off-centering coefficient:\n\n"));
-    _int_face_histogram(mesh, offsetting);
+    _histogram(n_cells, offsetting);
 
     /* Post processing */
 
@@ -1044,34 +1046,16 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                  NULL);
 
       }
-      if (face_to_cell != NULL) {
-
-        _cell_from_max_face(mesh, 0., offsetting, NULL, face_to_cell);
-        cs_post_write_var(-1,
-                          "Offset_c_max",
-                          1,
-                          false,
-                          true,
-                          CS_POST_TYPE_cs_real_t,
-                          face_to_cell,
-                          NULL,
-                          NULL,
-                          NULL);
-
-      }
-      if (face_to_vtx != NULL) {
-
-        _vtx_from_max_face(mesh, 0., offsetting, NULL, face_to_vtx);
-        cs_post_write_vertex_var(-1,
-                                 "Offset_v_max",
-                                 1,
-                                 false,
-                                 true,
-                                 CS_POST_TYPE_cs_real_t,
-                                 face_to_vtx,
-                                 NULL);
-
-      }
+      cs_post_write_var(-1,
+                        "Offset_c_max",
+                        1,
+                        false,
+                        true,
+                        CS_POST_TYPE_cs_real_t,
+                        offsetting,
+                        NULL,
+                        NULL,
+                        NULL);
 
     } /* End of post-processing on volume */
 
