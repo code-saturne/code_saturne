@@ -354,7 +354,6 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
                               cs_real_t                    offsetting[])
 {
   cs_int_t  i, face_id, cell1, cell2;
-  cs_real_t  intersection;
   cs_real_t  cell_center1[3], cell_center2[3];
   cs_real_t  face_center[3], face_normal[3];
   cs_real_t  v0[3], v1[3], v2[3];
@@ -413,17 +412,9 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
     /* Compute center offsetting coefficient */
     /*---------------------------------------*/
 
-    /* Compute intersection between face and segment defined by the two cell
-       centers */
-
     for (i = 0; i < dim; i++) {
-
-      intersection =  (1 - weighting[face_id]) * cell_center1[i]
-                    + weighting[face_id] * cell_center2[i];
-
-      v1[i] = intersection - face_center[i];
+      v1[i] = mesh_quantities->dofij[face_id*3 + i];
       v2[i] = cell_center2[i] - cell_center1[i];
-
     }
 
     offsetting[face_id] = _MODULE_3D(v1) / _MODULE_3D(v2);

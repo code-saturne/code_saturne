@@ -163,8 +163,8 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     i_face_ortho = cos_alpha;
 
     if (i_face_ortho < 0.1) {
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_ORTHO_NORM;
-      bad_cell_flag[cell2] = bad_cell_flag[cell2] | CS_BAD_CELL_ORTHO_NORM;
+      bad_cell_flag[cell1] |= CS_BAD_CELL_ORTHO_NORM;
+      bad_cell_flag[cell2] |= CS_BAD_CELL_ORTHO_NORM;
     }
   }
 
@@ -199,7 +199,7 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     b_face_ortho = cos_alpha;
 
     if (b_face_ortho < 0.1)
-      bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_ORTHO_NORM;
+      bad_cell_flag[cell1] |= CS_BAD_CELL_ORTHO_NORM;
   }
 
   if (mesh->halo != NULL)
@@ -244,10 +244,10 @@ _compute_offsetting(const cs_mesh_t             *mesh,
 
     v_of = &(mesh_quantities->dofij[face_id*3]);
     v_n = &(mesh_quantities->i_face_normal[face_id*3]);
-    of_n = fabs(_DOT_PRODUCT_3D(v_of, v_n));
+    of_n = _MODULE_3D(v_of) * _MODULE_3D(v_n);
 
-    off_1 = 1 - pow(of_n / mesh_quantities->cell_vol[cell1], 1/3.);
-    off_2 = 1 - pow(of_n / mesh_quantities->cell_vol[cell2], 1/3.);
+    off_1 = 1. - of_n / mesh_quantities->cell_vol[cell1];
+    off_2 = 1. - of_n / mesh_quantities->cell_vol[cell2];
 
     if (off_1 < 0.1)
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_OFFSET;

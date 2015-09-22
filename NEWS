@@ -4,6 +4,8 @@ Version 4.0.3 (unreleased)
 Bug fixes:
 ----------
 
+- Fix in bad cell detection and mesh quality criterion for offsetting.
+
 - GUI: fix radiative boundary condition check issue for flux conditions.
 
 - Fix for restart on Windows (issue #141).

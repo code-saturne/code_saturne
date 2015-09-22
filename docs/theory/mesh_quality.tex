@@ -59,25 +59,31 @@ a combination of warping, anisotropy and refinement variation.
 
 For a finite volume solver, the mesh cells should be as ``orthogonal'' as
 possible. Consequently, the compliance with this criterion is of particular
-interest in order to avoid the degradation of the solution quality.\\
+interest in order to avoid the degradation of the solution quality.
+
 A cell's non-orthogonality relative to a face is evaluated as:
-\[Q_{ortho} = \frac{\vec{d}.\vec{S}}{||\vec{d}||~||\vec{S}||}\]
-where \(\vec{d}\) is a distance vector between two consecutive cell centers and
-\(\vec{S}\) is the surface vector normal to the face.\\
-Orthogonal cells have a value of \(Q_{ortho}\) which tends towards $1.0$.
-Therefore, a cell is flagged bad if \(Q_{ortho} < 0.1\) for any of its faces.
+\begin{equation}
+Q^{ortho}_{\fij} = \dfrac{\vect{\centi\centj} \cdot \vect{S}_{\ij}}{\norm{\vect{\centi \centj}} ~ \norm{\vect{S}_{\ij}}}
+\end{equation}
+where $\vect{\centi\centj}$ is a distance vector between two consecutive cell centers and
+$\vect{S}_{\ij}$ is the surface vector normal to the face.
+
+Orthogonal cells have a value of $Q^{ortho}_{\face}$ which tends towards $1.0$ for all the faces.
+Therefore, a cell is flagged bad if $Q^{ortho}_{\face} < 0.1$ for any of its faces.
 
 \subsection*{Cell offset}
 
 A cell's offset (relative to a face) is evaluated in a manner consistent with
 iterative gradient recontruction:
-\[Q_{offset} = 1 - \left(\frac{|\vec{OF}.\vec{S}|}{V}\right)^{1/3}\]
-where \(S\) is the cell's volume, \(\vec{S}\) is the surface normal to the face, and
-\(\vec{OF}\) is the difference between the face's center and its
+\begin{equation}
+Q^{offset}_{\fij} = 1 - \dfrac{ \norm{\vect{\cento \centf}} \norm{ \vect{S}_{\ij}}}{ \norm{\vol{\celli}} }
+\end{equation}
+where $\vol{\celli}$ is the cell's volume, $\vect{S}_{\ij}$ is the surface normal to the face, and
+$\vect{\cento \centf}$ is the difference between the face's center and its
 intersection with the segment joining adjacent cell centers.
 
-Orthogonal cells have a value of \(Q_{offset}\) which tends towards $1.0$.
-Therefore, a cell is flagged bad if \(Q_{offset} < 0.1\) for any of its faces.
+Orthogonal cells have a value of $Q^{offset}$ which tends towards $1.0$.
+Therefore, a cell is flagged bad if $ Q^{offset} < 0.1$ for any of its faces.
 
 \subsection*{Cell distorsion}
 
