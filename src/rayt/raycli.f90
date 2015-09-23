@@ -326,7 +326,7 @@ call cs_user_radiative_transfer_bcs &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
   dt     , rcodcl ,                                              &
-  thwall , bfnet ,  bfconv ,                                     &
+  thwall , bfnet ,  bhconv ,                                     &
   bfconv , bxlam , bepa   , beps ,                               &
   text   , tint   )
 

@@ -4,7 +4,9 @@ Version 4.0.3 (unreleased)
 Bug fixes:
 ----------
 
-- Fix in error estimator of the "derive" (pressure drift)
+- Fix bad argument in call of the user function for radiative bcs.
+
+- Fix in error estimator of the "derive" (pressure drift).
 
 - Fix in bad cell detection and mesh quality criterion for offsetting.
 
