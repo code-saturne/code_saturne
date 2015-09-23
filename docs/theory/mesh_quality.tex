@@ -76,7 +76,7 @@ Therefore, a cell is flagged bad if $Q^{ortho}_{\face} < 0.1$ for any of its fac
 A cell's offset (relative to a face) is evaluated in a manner consistent with
 iterative gradient recontruction:
 \begin{equation}
-Q^{offset}_{\fij} = 1 - \dfrac{ \norm{\vect{\cento \centf}} \norm{ \vect{S}_{\ij}}}{ \norm{\vol{\celli}} }
+Q^{offset}_{\fij} = 1 - \sqrt[3]{\dfrac{ \norm{\vect{\cento \centf}} \norm{ \vect{S}_{\ij}}}{ \norm{\vol{\celli}} }}
 \end{equation}
 where $\vol{\celli}$ is the cell's volume, $\vect{S}_{\ij}$ is the surface normal to the face, and
 $\vect{\cento \centf}$ is the difference between the face's center and its

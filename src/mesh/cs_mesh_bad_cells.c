@@ -242,8 +242,8 @@ _compute_offsetting(const cs_mesh_t             *mesh,
     v_n = &(mesh_quantities->i_face_normal[face_id*3]);
     of_n = _MODULE_3D(v_of) * _MODULE_3D(v_n);
 
-    off_1 = 1. - of_n / mesh_quantities->cell_vol[cell1];
-    off_2 = 1. - of_n / mesh_quantities->cell_vol[cell2];
+    off_1 = 1 - pow(of_n / mesh_quantities->cell_vol[cell1], 1/3.);
+    off_2 = 1 - pow(of_n / mesh_quantities->cell_vol[cell2], 1/3.);
 
     if (off_1 < 0.1)
       bad_cell_flag[cell1] = bad_cell_flag[cell1] | CS_BAD_CELL_OFFSET;
