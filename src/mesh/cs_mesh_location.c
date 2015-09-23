@@ -360,7 +360,7 @@ _build_by_ml_ids(cs_mesh_location_t  *ml)
       for (i = 0; i < n_elts_max; i++) {
         if (flag[i])
           flag[i] = false;
-        else 
+        else
           flag[i] = true;
       }
     }
