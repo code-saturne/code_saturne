@@ -130,9 +130,9 @@ endif
 !     Interdits en compressible
 
 if( (iescal(iespre).ne.0) .or.                            &
-     (iescal(iesder).ne.0) .or.                            &
-     (iescal(iescor).ne.0) .or.                            &
-     (iescal(iestot).ne.0) ) then
+    (iescal(iesder).ne.0) .or.                            &
+    (iescal(iescor).ne.0) .or.                            &
+    (iescal(iestot).ne.0) ) then
   write(nfecra,4000)
   call csexit (1)
 endif

@@ -181,7 +181,6 @@ integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          iinvpe, indhyd
 integer          itypfl
-integer          iesdep
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar
@@ -238,6 +237,7 @@ double precision, dimension(:), pointer :: brom, crom, croma
 double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: cpro_wgrec_s
+double precision, dimension(:), pointer :: c_estim_der
 double precision, allocatable, dimension(:) :: surfbm
 
 !===============================================================================
@@ -1824,13 +1824,13 @@ call field_set_key_struct_solving_info(ivarfl(ipr), sinfo)
 ! --- Compute the indicator, taken the volume into account (L2 norm)
 !     or not
 if(iescal(iesder).gt.0) then
-  iesdep = ipproc(iestim(iesder))
+  call field_get_val_s(iestim(iesder), c_estim_der)
   do iel = 1, ncel
-    propce(iel,iesdep) = abs(rhs(iel))/volume(iel)
+    c_estim_der(iel) = abs(rhs(iel))/volume(iel)
   enddo
   if(iescal(iesder).eq.2) then
     do iel = 1, ncel
-      propce(iel,iesdep) = propce(iel,iesdep)*sqrt(volume(iel))
+      c_estim_der(iel) = c_estim_der(iel)*sqrt(volume(iel))
     enddo
   endif
 endif
