@@ -5,6 +5,8 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bad argument in call of the user function for radiative bcs.
+
 - Fix in bad cell detection and mesh quality criterion for offsetting.
 
 - GUI: fix radiative boundary condition check issue for flux conditions.
