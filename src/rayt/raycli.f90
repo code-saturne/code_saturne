@@ -313,7 +313,7 @@ call usray2 &
   icodcl , izfrad , isothm ,                                     &
   tmin   , tmax   , tx     ,                                     &
   dt     , rtp    , rtpa   , propce , propfa , propfb , rcodcl , &
-  thwall , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ifconv)) , &
+  thwall , propfb(1,ipprob(ifnet)) ,  propfb(1,ipprob(ihconv)) , &
   propfb(1,ipprob(ifconv)) , propfb(1,ipprob(ixlam)),            &
   propfb(1,ipprob(iepa))   , propfb(1,ipprob(ieps)) ,            &
   text   , tint   )

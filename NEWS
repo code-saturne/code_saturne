@@ -4,6 +4,8 @@ Version 3.0.8 (unreleased)
 Bug fixes:
 ----------
 
+- Fix bad argument in call of the user function for radiative bcs.
+
 - Fix in bad cell detection and mesh quality criterion for offsetting.
 
 Release 3.0.7 (15 May 2015)
