@@ -694,9 +694,9 @@ cs_param_pty_resume_all(void)
   int  pty_id;
 
   bft_printf("\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("  Resume the definition of material properties\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
 
   for (pty_id = 0; pty_id < cs_param_n_properties; pty_id++) {
 

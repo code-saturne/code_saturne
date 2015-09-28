@@ -1126,10 +1126,10 @@ cs_param_eq_resume_all(void)
     const cs_param_itsol_t   itsol = eq->itsol_info;
 
     bft_printf("\n");
-    bft_printf(lsepline);
+    bft_printf("%s", lsepline);
     bft_printf("  Resume settings for %s eq. (variable %s)\n",
                eq->name, eq->varname);
-    bft_printf(lsepline);
+    bft_printf("%s", lsepline);
 
     _Bool  unsteady = (eq->flag & CS_PARAM_EQ_UNSTEADY) ? true : false;
     _Bool  convection = (eq->flag & CS_PARAM_EQ_CONVECTION) ? true : false;

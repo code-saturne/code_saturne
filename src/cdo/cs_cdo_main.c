@@ -330,9 +330,9 @@ _solve(const cs_mesh_t              *m,
     cs_space_scheme_t  space_scheme = cs_param_eq_get_space_scheme(eq_id);
 
     bft_printf("\n");
-    bft_printf(lsepline);
+    bft_printf("%s", lsepline);
     bft_printf("  Solve equation %s\n", cs_param_eq_get_name(eq_id));
-    bft_printf(lsepline);
+    bft_printf("%s", lsepline);
 
     /* Up to now only this type of equation is handled */
     assert(cs_param_eq_get_type(eq_id) == CS_PARAM_EQ_TYPE_SCAL);
@@ -420,9 +420,9 @@ cs_cdo_main(cs_mesh_t             *m,
 
   /* Output information */
   bft_printf("\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("     Start CDO Module  *** Experimental ***\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
 
   /* Determine which location are already built */
