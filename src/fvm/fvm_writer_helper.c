@@ -2241,6 +2241,13 @@ fvm_writer_field_helper_step_nl(fvm_writer_field_helper_t   *helper,
     }
 
   }
+  else {
+
+    /* If we have reached the end of the section, reset start_id */
+
+    h->start_id = 0;
+
+  }
 
   /* Set return values */
 
