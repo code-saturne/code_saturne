@@ -376,5 +376,19 @@ cs_eos_la_LDFLAGS = -module -avoid-version
 
 endif
 
+if HAVE_COOLPROP
+cs_coolprop_la_CPPFLAGS = \
+-I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/bft \
+$(COOLPROP_CPPFLAGS) $(MPI_CPPFLAGS)
+pkginclude_HEADERS += cs_coolprop.hxx
+pkglib_LTLIBRARIES += cs_coolprop.la
+cs_coolprop_la_SOURCES = cs_coolprop.cxx
+cs_coolprop_la_LDFLAGS = -module -avoid-version
+
+endif
+
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

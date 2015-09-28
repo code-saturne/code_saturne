@@ -73,6 +73,10 @@
 #include <freesteam/region4.h>
 #endif
 
+#if defined(HAVE_COOLPROP)
+#include "cs_coolprop.hxx"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -104,7 +108,9 @@ typedef struct {
   char        *phas;                 /* phase choice (liquid/gas) */
   int          type;                 /* 0 for user
                                       * 1 for freesteam
-                                      * 2 (other) */
+                                      * 2 for eos
+                                      * 3 for coolprop
+                                      */
 
   cs_phys_prop_thermo_plane_type_t   thermo_plane;
 
@@ -133,6 +139,15 @@ typedef void
                      double                             var2[],
                      cs_real_t                          val[]);
 
+typedef void
+(cs_phys_prop_coolprop_t)(char                              *CoolPropMaterial,
+                          cs_phys_prop_thermo_plane_type_t   thermo_plane,
+                          cs_phys_prop_type_t                property,
+                          const cs_lnum_t                    n_vals,
+                          double                             var1[],
+                          double                             var2[],
+                          cs_real_t                          val[]);
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -141,10 +156,17 @@ cs_thermal_table_t *cs_glob_thermal_table = NULL;
 
 #if defined(HAVE_DLOPEN) && defined(HAVE_EOS)
 
-static void                *_cs_eos_dl_lib = NULL;
-static cs_eos_create_t     *_cs_eos_create = NULL;
-static cs_eos_destroy_t    *_cs_eos_destroy = NULL;
-static cs_phys_prop_eos_t  *_cs_phys_prop_eos = NULL;
+static void                     *_cs_eos_dl_lib = NULL;
+static cs_eos_create_t          *_cs_eos_create = NULL;
+static cs_eos_destroy_t         *_cs_eos_destroy = NULL;
+static cs_phys_prop_eos_t       *_cs_phys_prop_eos = NULL;
+
+#endif
+
+#if defined(HAVE_DLOPEN) && defined(HAVE_COOLPROP)
+
+static void                     *_cs_coolprop_dl_lib = NULL;
+static cs_phys_prop_coolprop_t  *_cs_phys_prop_coolprop = NULL;
 
 #endif
 
@@ -204,6 +226,40 @@ _get_eos_dl_function_pointer(const char  *name)
 
 #endif
 
+#if defined(HAVE_DLOPEN) && defined(HAVE_COOLPROP)
+
+/*----------------------------------------------------------------------------
+ * Get a shared library function pointer for a writer plugin
+ *
+ * parameters:
+ *   name             <-- name of function symbol in library
+ *
+ * returns:
+ *   pointer to function in shared library
+ *----------------------------------------------------------------------------*/
+
+static void *
+_get_coolprop_dl_function_pointer(const char  *name)
+{
+  void  *retval = NULL;
+  char  *error = NULL;
+
+  assert(_cs_coolprop_dl_lib != NULL);
+
+  dlerror();    /* Clear any existing error */
+
+  retval = dlsym(_cs_coolprop_dl_lib, name);
+  error = dlerror();
+
+  if (error != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error calling dlsym: %s\n"), error);
+
+  return retval;
+}
+
+#endif
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -242,6 +298,39 @@ cs_thermal_table_set(const char *material,
       cs_glob_thermal_table->type = 1;
     else
       cs_glob_thermal_table->type = 0;
+  }
+  else if (strcmp(method, "CoolProp") == 0) {
+    BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +1,    char);
+    strcpy(cs_glob_thermal_table->reference, reference);
+    cs_glob_thermal_table->type = 3;
+#if defined(HAVE_COOLPROP)
+    {
+      char  *lib_path = NULL;
+      const char *pkglibdir = cs_base_get_pkglibdir();
+
+      /* Open from shared library */
+      BFT_MALLOC(lib_path,
+                 strlen(pkglibdir) + 1 + 3 + strlen("cs_coolprop") + 3 + 1,
+                 char);
+      sprintf(lib_path, "%s%c%s.so", pkglibdir, DIR_SEPARATOR, "cs_coolprop");
+      _cs_coolprop_dl_lib = dlopen(lib_path, RTLD_LAZY);
+      BFT_FREE(lib_path);
+
+      /* Load symbols from shared library */
+
+      if (_cs_coolprop_dl_lib == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error loading %s: %s."), lib_path, dlerror());
+
+      /* Function pointers need to be double-casted so as to first convert
+         a (void *) type to a memory address and then convert it back to the
+         original type. Otherwise, the compiler may issue a warning.
+         This is a valid ISO C construction. */
+
+      _cs_phys_prop_coolprop = (cs_phys_prop_coolprop_t *)  (intptr_t)
+        _get_coolprop_dl_function_pointer("cs_phys_prop_coolprop");
+    }
+#endif
   }
   else {
     BFT_MALLOC(cs_glob_thermal_table->method,    strlen(method) +5,    char);
@@ -308,6 +397,14 @@ cs_thermal_table_finalize(void)
       _cs_phys_prop_eos = NULL;
     }
 #endif
+#if defined(HAVE_COOLPROP)
+    if (cs_glob_thermal_table->type == 3) {
+      if (dlclose(_cs_coolprop_dl_lib) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Error unloading library: %s."), dlerror());
+      _cs_phys_prop_coolprop = NULL;
+    }
+#endif
     BFT_FREE(cs_glob_thermal_table->material);
     BFT_FREE(cs_glob_thermal_table->method);
     BFT_FREE(cs_glob_thermal_table->phas);
@@ -359,6 +456,17 @@ cs_phys_prop_compute(cs_phys_prop_type_t                property,
                       var1,
                       val_compute,
                       val);
+  }
+#endif
+#if defined(HAVE_COOLPROP)
+  else if (cs_glob_thermal_table->type == 3) {
+    _cs_phys_prop_coolprop(cs_glob_thermal_table->material,
+                           cs_glob_thermal_table->thermo_plane,
+                           property,
+                           n_vals,
+                           var1,
+                           val_compute,
+                           val);
   }
 #endif
   BFT_FREE(val_compute);

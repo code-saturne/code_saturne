@@ -87,6 +87,10 @@ class FluidCharacteristicsModel(Variables, Model):
         if cfg.libs['freesteam'].have != "no":
             self.freesteam = 1
 
+        self.coolprop = 0
+        if cfg.libs['coolprop'].have != "no":
+            self.coolprop = 1
+
 
     def __nodeFromTag(self, name):
         """
@@ -234,10 +238,10 @@ class FluidCharacteristicsModel(Variables, Model):
 
         # suppress phas choice if not EOS
         if method == self.defaultFluidCharacteristicsValues()['method'] or \
-           method == "freesteam":
+           method == "freesteam" or method == "CoolProp":
             nodem = self.node_fluid.xmlGetNode('phas')
             if nodem:
-                nodem .xmlRemoveNode()
+                nodem.xmlRemoveNode()
 
 
     @Variables.undoGlobal
@@ -253,14 +257,16 @@ class FluidCharacteristicsModel(Variables, Model):
                self.ava = eosAva.EosAvailable()
                self.ava.setMethods(material)
                self.setMethod(self.ava.whichMethods()[0])
+            elif self.coolprop == 1:
+                self.setMethod("CoolProp")
             else:
                 self.setMethod("freesteam")
             # suppress phas choice if not EOS
             if self.getMethod() == self.defaultFluidCharacteristicsValues()['method'] or \
-               self.getMethod() == "freesteam":
+               self.getMethod() == "freesteam" or self.getMethod() == "CoolProp":
                 nodem = self.node_fluid.xmlGetNode('phas')
                 if nodem:
-                   nodem .xmlRemoveNode()
+                   nodem.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -277,17 +283,20 @@ class FluidCharacteristicsModel(Variables, Model):
             if self.freesteam == 1:
                 if self.getMethod() == "freesteam":
                     reference = "freesteam"
+            if self.coolprop == 1:
+                if self.getMethod() == "CoolProp":
+                    reference = "CoolProp"
             if EOS == 1:
-                if self.getMethod() != "freesteam":
+                if self.getMethod() != "freesteam" and self.getMethod() != "CoolProp":
                     phas = self.getFieldNature()
                     self.ava = eosAva.EosAvailable()
                     self.ava.setMethods(material)
                     self.ava.setReferences(material, self.getMethod())
                     ref = self.ava.whichReferences()
 
-                    if phas == "liquid" :
+                    if phas == "liquid":
                         reference = ref[0]
-                    elif phas == "gas" :
+                    elif phas == "gas":
                         reference = ref[1]
         # update XML
         childNode = self.node_fluid.xmlInitChildNode('reference')

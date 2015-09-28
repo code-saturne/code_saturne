@@ -49,6 +49,16 @@ else :
    import eosAva
 
 #-------------------------------------------------------------------------------
+# Coolprop
+#-------------------------------------------------------------------------------
+
+CPROP = 1
+try:
+   import CoolProp
+except:
+   CPROP = 0
+
+#-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
 
@@ -199,6 +209,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if EOS == 1:
             self.ava = eosAva.EosAvailable()
 
+        if CPROP == 1:
+            self.CoolProp = CoolProp.__fluids__
+
         import cs_config
         cfg = cs_config.config()
         self.freesteam = 0
@@ -297,7 +310,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
-        if (self.freesteam == 0 and EOS == 0) or \
+        if (self.freesteam == 0 and EOS == 0 and CPROP == 0) or \
             self.m_th.getThermalScalarModel() == "off" or \
             mdl_joule != 'off' or mdl_comp != 'off':
             self.groupBoxTableChoice.hide()
@@ -313,8 +326,18 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     if fli not in tmp:
                         tmp.append(fli)
                         self.modelMaterial.addItem(self.tr(fli), fli)
+
             if self.freesteam == 1 and EOS == 0:
                 self.modelMaterial.addItem(self.tr('Water'), 'Water')
+
+            if CPROP == 1 and EOS == 0:
+                for fli in self.CoolProp:
+                    if self.freesteam == 1:
+                        if fli != 'Water':
+                            self.modelMaterial.addItem(self.tr(fli), fli)
+                    else:
+                        self.modelMaterial.addItem(self.tr(fli), fli)
+
             material = self.mdl.getMaterials()
             self.modelMaterial.setItem(str_model=material)
             self.updateMethod()
@@ -561,11 +584,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 fls = self.ava.whichMethods()
                 for fli in fls:
                     self.modelMethod.addItem(self.tr(fli),fli)
-                if self.mdl.getMethod() != "freesteam":
+                if self.mdl.getMethod() != "freesteam" and self.mdl.getMethod() != "CoolProp":
                     self.comboBoxPhas.show()
                     self.labelPhas.show()
             if self.freesteam == 1 and self.mdl.getMaterials() == "Water":
                 self.modelMethod.addItem(self.tr("freesteam"), "freesteam")
+
+            if CPROP == 1 and self.mdl.getMaterials() in self.CoolProp:
+                self.modelMethod.addItem(self.tr("CoolProp"), "CoolProp")
 
         # update comboBoxMethod
         method = self.mdl.getMethod()
@@ -615,7 +641,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.comboBoxPhas.hide()
         self.labelPhas.hide()
         if self.mdl.getMaterials() != "user_material" and \
-           self.mdl.getMethod() != "freesteam":
+           self.mdl.getMethod() != "freesteam" and \
+           self.mdl.getMethod() != "CoolProp":
             self.comboBoxPhas.show()
             self.labelPhas.show()
 
