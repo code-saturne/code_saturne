@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2015-09-13 06:34+0200\n"
+"POT-Creation-Date: 2015-09-28 18:28+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5940,6 +5940,20 @@ msgstr ""
 "  dimension :   %d"
 
 #, c-format
+msgid ""
+"Error defining variable \"boundary_temperature\" field:\n"
+"An incompatible field with matching name already exists:\n"
+"  id:          %d\n"
+"  location_id: %d\n"
+"  dimension:   %d"
+msgstr ""
+"Erreur à la définition du champ \"boundary_temperature\" au bord :\n"
+"Un champ incompatible avec le même nom existe déjà :\n"
+"  id :          %d\n"
+"  location_id : %d\n"
+"  dimension :   %d"
+
+#, c-format
 msgid "Error unloading library: %s."
 msgstr "Erreur au déchargement de la bibliothèque : %s."
 
@@ -7869,18 +7883,6 @@ msgid ""
 " is not defined in the edge structure.\n"
 msgstr ""
 
-#, c-format
-msgid ""
-" Vertex %d is neither interior nor border.\n"
-" Stop execution\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" Edge %d is neither interior nor border.\n"
-" Stop execution\n"
-msgstr ""
-
 msgid " Convection term is not handled yet.\n"
 msgstr ""
 
@@ -8043,6 +8045,20 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+" Invalid value %s related to key %s\n"
+" Choice between strong, penalization, weak or\n"
+" weak_sym."
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key value %s for setting the quadrature behaviour of boundary "
+"conditions.\n"
+" Choices are among subdiv, bary, higher and highest."
+msgstr ""
+
+#, c-format
 msgid " Key %s is not implemented yet."
 msgstr " La clé %s n'est pas encore gérée."
 
@@ -8060,7 +8076,7 @@ msgstr ""
 #, c-format
 msgid ""
 " cs_equation_t structure is NULL\n"
-" Can not add a boundary condition related to mesh location %s"
+" Cannot add a boundary condition related to mesh location %s"
 msgstr ""
 
 #, c-format
@@ -8087,6 +8103,23 @@ msgstr ""
 msgid ""
 " cs_equation_t structure is NULL\n"
 " Can not add a source term related to mesh location %s"
+msgstr ""
+
+#, c-format
+msgid ""
+" Cannot find source term %s.\n"
+" Please check your settings.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" Invalid key for setting source term %s.\n"
+" Please read listing for more details and modify your settings."
+msgstr ""
+
+msgid ""
+" Invalid key value for setting the quadrature behaviour of a source term.\n"
+" Choices are among subdiv, bary, higher, highest."
 msgstr ""
 
 #, c-format
@@ -8219,7 +8252,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" An existing property has already the same name %s.\n"
+" An existing property already has the same name %s.\n"
 " Stop adding the material property.\n"
 msgstr ""
 
@@ -8266,6 +8299,12 @@ msgid " Invalid solver. Stop execution."
 msgstr ""
 
 msgid " Invalid preconditioner. Stop execution."
+msgstr ""
+
+msgid " Invalid BC type. Stop execution."
+msgstr ""
+
+msgid " Invalid type of enforcement. Stop execution."
 msgstr ""
 
 msgid "barycentric"
@@ -9665,20 +9704,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Error defining variable \"boundary_temperature\" field:\n"
-"An incompatible field with matching name already exists:\n"
-"  id:          %d\n"
-"  location_id: %d\n"
-"  dimension:   %d"
-msgstr ""
-"Erreur à la définition du champ \"boundary_temperature\" au bord :\n"
-"Un champ incompatible avec le même nom existe déjà :\n"
-"  id :          %d\n"
-"  location_id : %d\n"
-"  dimension :   %d"
-
-#, c-format
-msgid ""
 "Coordinate %s of the monitoring probe number %i not found.\n"
 "Xpath: %s\n"
 msgstr ""
@@ -9876,7 +9901,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-" Error in _bdy_treatment: in the face number %d \n"
+" Error in %s: in the face number %d \n"
 "no deposited particle found to form a cluster \n"
 "using the surface coverage %e (scov_cdf %e) \n"
 "The particle used thus belongs to another face (%d) \n"
@@ -10118,7 +10143,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"  Number of calls (statistics are cumulative): %d:\n"
+"\\  Number of calls (statistics are cumulative): %d:\n"
 "\n"
 msgstr ""
 
@@ -11230,11 +11255,11 @@ msgstr ""
 
 msgid ""
 "\n"
-"  Histogram of the interior faces off-centering coefficient:\n"
+"  Histogram of the cells off-centering coefficient:\n"
 "\n"
 msgstr ""
 "\n"
-"  Histogramme des coefficients de décentrement des faces internes :\n"
+"  Histogramme du coefficient de décentrement des cellules:\n"
 "\n"
 
 msgid ""
