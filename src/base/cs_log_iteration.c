@@ -1280,10 +1280,10 @@ _log_clips(void)
                       name,
                       max_name_width,
                      _clips[clip_id].dim,
-                     _clips_count[v_idx*2],
-                     _clips_count[v_idx*2 + 1],
-                     _clips_vmin + v_idx,
-                     _clips_vmax + v_idx);
+                     vcount[v_idx*2],
+                     vcount[v_idx*2 + 1],
+                     vmin + v_idx,
+                     vmax + v_idx);
     }
 
   }
