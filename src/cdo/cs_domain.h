@@ -144,14 +144,14 @@ cs_domain_free(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume a cs_domain_t structure
+ * \brief  Summarize a cs_domain_t structure
  *
  * \param[in, out]   domain    pointer to the cs_domain_t structure to free
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_resume(cs_domain_t   *domain);
+cs_domain_summary(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

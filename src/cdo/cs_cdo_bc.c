@@ -38,8 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_mesh_location.h"
 

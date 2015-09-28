@@ -530,9 +530,9 @@ cs_sla_matrix_analyse(const cs_sla_matrix_t   *m);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_matrix_resume(const char              *name,
-                     FILE                    *f,
-                     const cs_sla_matrix_t   *m);
+cs_sla_matrix_summary(const char              *name,
+                      FILE                    *f,
+                      const cs_sla_matrix_t   *m);
 
 /*----------------------------------------------------------------------------*/
 /*!

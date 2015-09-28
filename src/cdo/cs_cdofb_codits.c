@@ -42,8 +42,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_log.h"
 #include "cs_search.h"

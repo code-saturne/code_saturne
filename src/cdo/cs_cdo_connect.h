@@ -154,14 +154,14 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume connectivity information
+ * \brief  Summary of connectivity information
  *
  * \param[in]  connect     pointer to cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_connect_resume(const cs_cdo_connect_t  *connect);
+cs_cdo_connect_summary(const cs_cdo_connect_t  *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

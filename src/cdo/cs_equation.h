@@ -96,14 +96,14 @@ cs_equation_free(cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume a cs_equation_t structure
+ * \brief  Summary of a cs_equation_t structure
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_resume(const cs_equation_t  *eq);
+cs_equation_summary(const cs_equation_t  *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!

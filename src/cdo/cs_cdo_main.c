@@ -37,11 +37,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_error.h>
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_error.h"
+#include "bft_mem.h"
+#include "bft_printf.h"
 
-#include <fvm_defs.h>
+#include "fvm_defs.h"
 
 #include "cs_base.h"
 #include "cs_timer.h"
@@ -159,10 +159,10 @@ _setup(cs_mesh_t             *m,
   /* Last setup stage */
   cs_domain_last_init(domain);
 
-  /* Resume the settings */
-  cs_cdo_connect_resume(domain->connect);
-  cs_param_pty_resume_all();
-  cs_domain_resume(domain);
+  /* Sumary of the settings */
+  cs_cdo_connect_summary(domain->connect);
+  cs_param_pty_summary_all();
+  cs_domain_summary(domain);
 
   /* Initialize post-processing */
   cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
@@ -223,9 +223,9 @@ cs_cdo_main(cs_mesh_t             *m,
 
   /* Output information */
   bft_printf("\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("\tStart CDO Module  *** Experimental ***\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("\n -msg- Version.Tag  %s\n", cs_cdoversion);
 
   /* Create algebraic systems */
@@ -299,9 +299,9 @@ cs_cdo_main(cs_mesh_t             *m,
                 time_count.wall_nsec*1e-9);
 
   bft_printf("\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("\tExit CDO Module\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   printf("\n  --> Exit CDO module\n\n");
 
   return;

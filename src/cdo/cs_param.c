@@ -38,8 +38,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_mesh_location.h"
 #include "cs_field.h"
@@ -383,7 +383,7 @@ cs_param_pty_add(const char      *name,
 
   if (pty_id > -1) {
     cs_base_warn(__FILE__, __LINE__);
-    bft_printf(_(" An existing property has already the same name %s.\n"
+    bft_printf(_(" An existing property already has the same name %s.\n"
                  " Stop adding the material property.\n"), name);
     return;
   }
@@ -767,19 +767,19 @@ cs_param_pty_get_val(int            pty_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume all the cs_param_pty_t structures
+ * \brief  Summary of all the cs_param_pty_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_pty_resume_all(void)
+cs_param_pty_summary_all(void)
 {
   int  pty_id;
 
   bft_printf("\n");
-  bft_printf(lsepline);
-  bft_printf("\tResume the definition of material properties\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
+  bft_printf("\tSummary of the definition of material properties\n");
+  bft_printf("%s", lsepline);
 
   for (pty_id = 0; pty_id < cs_param_n_properties; pty_id++) {
 

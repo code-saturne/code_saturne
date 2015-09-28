@@ -39,8 +39,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include <bft_mem.h>
-#include <bft_printf.h>
+#include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_order.h"
 #include "cs_sort.h"
@@ -935,14 +935,14 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume connectivity information
+ * \brief  Summary of connectivity information
  *
  * \param[in]  connect     pointer to cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_connect_resume(const cs_cdo_connect_t  *connect)
+cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
 {
   cs_connect_info_t  *i = NULL;
 

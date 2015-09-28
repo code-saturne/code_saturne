@@ -3271,9 +3271,9 @@ cs_sla_matrix_analyse(const cs_sla_matrix_t   *m)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sla_matrix_resume(const char              *name,
-                     FILE                    *f,
-                     const cs_sla_matrix_t   *m)
+cs_sla_matrix_summary(const char              *name,
+                      FILE                    *f,
+                      const cs_sla_matrix_t   *m)
 {
   cs_sla_matrix_info_t  minfo;
   cs_data_info_t  dinfo;
@@ -3288,10 +3288,10 @@ cs_sla_matrix_resume(const char              *name,
 
     else {
 
-      int len = strlen(name) + strlen("-resume.log") + 1;
+      int len = strlen(name) + strlen("-summary.log") + 1;
 
       BFT_MALLOC(filename, len, char);
-      sprintf(filename,"%s-resume.log", name);
+      sprintf(filename,"%s-summary.log", name);
       _f = fopen(filename,"w");
       close_file = true;
     }

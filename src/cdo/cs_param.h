@@ -463,12 +463,12 @@ cs_param_pty_get_val(int            pty_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume all the cs_param_pty_t structures
+ * \brief  Summary of all the cs_param_pty_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_param_pty_resume_all(void);
+cs_param_pty_summary_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

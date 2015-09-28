@@ -870,14 +870,14 @@ cs_equation_free(cs_equation_t  *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume a cs_equation_t structure
+ * \brief  Summary of a cs_equation_t structure
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_resume(const cs_equation_t  *eq)
+cs_equation_summary(const cs_equation_t  *eq)
 {
   if (eq == NULL)
     return;
@@ -885,10 +885,10 @@ cs_equation_resume(const cs_equation_t  *eq)
   const cs_equation_param_t  *eqp = eq->param;
 
   bft_printf("\n");
-  bft_printf(lsepline);
-  bft_printf("\tResume settings for %s eq. (variable %s)\n",
+  bft_printf("%s", lsepline);
+  bft_printf("\tSummary of settings for %s eq. (variable %s)\n",
              eq->name, eq->varname);
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
 
   if (eqp->space_scheme == CS_SPACE_SCHEME_CDOVB)
     bft_printf("  <%s/Space scheme>  CDO vertex-based\n", eq->name);

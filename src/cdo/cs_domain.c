@@ -397,23 +397,23 @@ cs_domain_free(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Resume a cs_domain_t structure
+ * \brief  Summary of a cs_domain_t structure
  *
  * \param[in, out]   domain    pointer to the cs_domain_t structure to free
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_resume(cs_domain_t   *domain)
+cs_domain_summary(cs_domain_t   *domain)
 {
   if (domain == NULL)
     return;
 
   /* Output information */
   bft_printf("\n");
-  bft_printf(lsepline);
-  bft_printf("\tResume domain settings\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
+  bft_printf("\tSummary of domain settings\n");
+  bft_printf("%s", lsepline);
 
   cs_domain_boundary_t  *bdy = domain->boundaries;
 
@@ -442,9 +442,9 @@ cs_domain_resume(cs_domain_t   *domain)
   bft_printf("  >> Number of faces with a symmetry boundary:  %d\n",
              bdy->n_elts[CS_PARAM_BOUNDARY_SYMMETRY]);
 
-  /* Resume each equation */
+  /* Summary for each equation */
   for (int  eq_id = 0; eq_id < domain->n_equations; eq_id++)
-    cs_equation_resume(domain->equations[eq_id]);
+    cs_equation_summary(domain->equations[eq_id]);
 
 }
 
@@ -766,9 +766,9 @@ cs_domain_solve(cs_domain_t  *domain,
 {
   /* Output information */
   bft_printf("\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("\tSolve equations for iteration %5d\n", time_iter);
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
 
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
 
@@ -815,9 +815,9 @@ cs_domain_extra_operations(cs_domain_t   *domain,
   assert(domain != NULL);
 
   bft_printf("\n");
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
   bft_printf("\tExtra operations for iteration %5d\n", time_iter);
-  bft_printf(lsepline);
+  bft_printf("%s", lsepline);
 
   /* Pre-defined extra-operations */
   if (time_iter == -1) { // Before the time stepping loop
