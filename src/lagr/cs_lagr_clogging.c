@@ -229,18 +229,15 @@ cs_lagr_clogging_barrier(const void                     *particle,
   cs_real_t mean_nb_cont;
 
   cs_lnum_t  dim_aux = 1, contact_count[1];
-  cs_real_t  dim_aux_r = 1.0, contact_count_r[1];
-  cs_lnum_t  param1;
-  cs_real_t  param2, value;
-  cs_lnum_t  k,i;
+  cs_real_t  contact_count_r[1];
+  cs_real_t  value;
+  cs_lnum_t  i;
 
   /* Computation of the number of particles in contact with */
   /* the depositing particle */
 
   /* Assuming monodispersed calculation */
 
-  double p_stat_weight
-    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT);
   double p_diameter
     = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_DIAMETER);
   cs_real_t depositing_radius = p_diameter * 0.5;

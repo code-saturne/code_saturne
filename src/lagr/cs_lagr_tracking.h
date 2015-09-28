@@ -157,11 +157,6 @@ typedef struct {
 
 } cs_lagr_attribute_map_t;
 
-/* Linked list */
-/* ----------- */
-
-typedef struct _cs_lagr_tracking_list_t cs_lagr_tracking_list_t;
-
 /* Particle set */
 /* ------------ */
 
@@ -183,15 +178,9 @@ typedef struct {
 
   cs_lnum_t  n_particles_max;
 
-  cs_lnum_t  first_used_id;
-  cs_lnum_t  first_free_id;
-
   const cs_lagr_attribute_map_t  *p_am;       /* particle attributes maps
                                                  (p_am + i for time n-i) */
   unsigned char                  *p_buffer;   /* Particles data buffer */
-
-  cs_lagr_tracking_list_t        *used_id;    /* active particles list,
-                                                 or NULL for secondary sets */
 
 } cs_lagr_particle_set_t;
 
@@ -356,8 +345,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_int_t        *p_scheme_order,
                           const cs_int_t  *iencckbd,
                           const cs_int_t  *inclg,
                           const cs_int_t  *inclgt,
-                          const cs_int_t  *iclogt,
-                          const cs_int_t  *iclogh,
                           const cs_int_t  *iscovc,
                           const cs_int_t  *ihdepm,
                           const cs_int_t  *ihdepv,

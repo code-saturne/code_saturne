@@ -110,16 +110,17 @@ enum {
   CS_LAGR_ISYMTL = 14,
 };
 
-/* State where a particle can be. */
+/* State where a particle can be.
+   (order is chosen so as to make tests simpler; inside domain first, outside after) */
 
-enum {
-  CS_LAGR_PART_TO_DELETE = 0,
-  CS_LAGR_PART_TO_SYNC   = 1,
-  CS_LAGR_PART_TREATED   = 2,
-  CS_LAGR_PART_STUCK     = 3,
-  CS_LAGR_PART_OUT       = 4,
-  CS_LAGR_PART_ERR       = 5
-};
+typedef enum {
+  CS_LAGR_PART_TO_SYNC,
+  CS_LAGR_PART_TREATED,
+  CS_LAGR_PART_STUCK,
+  CS_LAGR_PART_OUT,
+  CS_LAGR_PART_TO_DELETE,
+  CS_LAGR_PART_ERR
+} cs_lagr_tracking_state_t;
 
 /* Physical state where a particle can be. */
 
@@ -186,25 +187,14 @@ typedef enum {
 
 typedef struct {
 
-  cs_real_t  start_coords[3];  /* starting coordinates for next displacement */
+  cs_real_t  start_coords[3];       /* starting coordinates for
+                                       next displacement */
 
-  cs_lnum_t  last_face_num;    /* last face number encountered */
+  cs_lnum_t  last_face_num;         /* last face number encountered */
 
-  int        state;            /* CS_LAGR_PART_TO_DELETE, CS_LAGR_PART_TO_SYNC,
-                                  CS_LAGR_PART_TREATED, CS_LAGR_PART_STUCK,
-                                  CS_LAGR_PART_OUT, or CS_LAGR_PART_ERR */
+  cs_lagr_tracking_state_t  state;  /* current state */
 
 } cs_lagr_tracking_info_t;
-
-/* Linked list */
-/* ----------- */
-
-struct _cs_lagr_tracking_list_t {
-
-  cs_lnum_t   prev_id;  /* id in particle set of the previous particle */
-  cs_lnum_t   next_id;  /* id in particle set of the next particle */
-
-};
 
 /* Particle data value */
 /*---------------------*/
@@ -241,7 +231,6 @@ typedef struct {
   /* Buffer used to exchange particle between communicating ranks */
 
   size_t      send_buf_size;  /* Current maximum send buffer size */
-  size_t      recv_buf_size;  /* Current maximum send buffer size */
   size_t      extents;        /* Extents for particle set */
 
   cs_lnum_t  *send_count;     /* number of particles to send to
@@ -253,7 +242,6 @@ typedef struct {
   cs_lnum_t  *recv_shift;
 
   unsigned char  *send_buf;
-  unsigned char  *recv_buf;
 
 #if defined(HAVE_MPI)
   MPI_Request  *request;
@@ -780,59 +768,6 @@ _apply_vector_rotation(const cs_real_t   matrix[3][4],
   v[2] = matrix[2][0]*v_in[0] + matrix[2][1]*v_in[1] + matrix[2][2]*v_in[2];
 }
 
-/*----------------------------------------------------------------------------
- * Remove a particle from a particle set.
- *
- * parameters:
- *   set <->  particles set
- *   id  <-- id of particle to remove
- *----------------------------------------------------------------------------*/
-
-static void
-_remove_particle(cs_lagr_particle_set_t   *set,
-                 cs_lnum_t                 id)
-{
-  /* Remove particle from "used particle list" */
-
-  cs_lnum_t prev_id = set->used_id[id].prev_id;
-  cs_lnum_t next_id = set->used_id[id].next_id;
-
-  if (prev_id != -1)
-    set->used_id[prev_id].next_id = next_id;
-  else
-    set->first_used_id = next_id;
-
-  if (next_id != set->n_particles_max && next_id != -1)
-    set->used_id[next_id].prev_id = prev_id;
-
-  /* Add particle to "free particle list" */
-
-  if (id < set->first_free_id) {
-
-    cs_lnum_t old_first_free = set->first_free_id;
-    cs_lnum_t old_first_free_prev = set->used_id[old_first_free].prev_id;
-
-    set->first_free_id = id;
-
-    set->used_id[set->first_free_id].next_id = old_first_free;
-    set->used_id[set->first_free_id].prev_id = old_first_free_prev;
-
-    set->used_id[old_first_free].prev_id = id;
-
-  }
-  else { /* We place the particle just behind the first free particle. */
-
-    cs_lnum_t first_free = set->first_free_id;
-    cs_lnum_t old_next = set->used_id[first_free].next_id;
-
-    set->used_id[first_free].next_id = id;
-
-    set->used_id[id].next_id = old_next;
-    set->used_id[id].prev_id = first_free;
-
-  }
-}
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
@@ -983,8 +918,6 @@ _create_particle_set(int                             time_id,
                      const cs_lagr_attribute_map_t  *p_am)
 
 {
-  cs_lnum_t  i;
-
   cs_lagr_particle_set_t  *new_set = NULL;
 
   if (n_particles_max == 0)
@@ -998,21 +931,6 @@ _create_particle_set(int                             time_id,
 
   new_set->n_particles_max = n_particles_max;
   new_set->n_particles = 0;
-
-  if (time_id == 0) {
-    BFT_MALLOC(new_set->used_id, n_particles_max, cs_lagr_tracking_list_t);
-    new_set->first_used_id = -1;
-    new_set->first_free_id = 0;
-    for (i = 0; i < n_particles_max; i++) {
-      new_set->used_id[i].prev_id = i-1;
-      new_set->used_id[i].next_id = i+1;
-    }
-  }
-  else {
-    new_set->used_id = NULL;
-    new_set->first_used_id = -1;
-    new_set->first_free_id = -1;
-  }
 
   assert(n_particles_max >= 1);
 
@@ -1037,7 +955,6 @@ _destroy_particle_set(cs_lagr_particle_set_t *set)
   if (set == NULL)
     return set;
 
-  BFT_FREE(set->used_id);
   BFT_FREE(set->p_buffer);
 
   BFT_FREE(set);
@@ -1147,11 +1064,6 @@ _resize_particle_set(cs_lagr_particle_set_t   *particle_set,
                 particle_set->n_particles_max * particle_set->p_am->extents,
                 unsigned char);
 
-    if (particle_set->time_id == 0)
-      BFT_REALLOC(particle_set->used_id,
-                  particle_set->n_particles_max,
-                  cs_lagr_tracking_list_t);
-
     retval = 1;
   }
 
@@ -1198,13 +1110,9 @@ _create_lagr_halo(size_t  extents)
   BFT_MALLOC(lagr_halo->recv_count, halo->n_c_domains, cs_lnum_t);
 
   lagr_halo->send_buf_size = CS_LAGR_MIN_COMM_BUF_SIZE;
-  lagr_halo->recv_buf_size = CS_LAGR_MIN_COMM_BUF_SIZE;
 
   BFT_MALLOC(lagr_halo->send_buf,
              lagr_halo->send_buf_size * extents,
-             unsigned char);
-  BFT_MALLOC(lagr_halo->recv_buf,
-             lagr_halo->recv_buf_size * extents,
              unsigned char);
 
 #if defined(HAVE_MPI)
@@ -1320,7 +1228,6 @@ _delete_lagr_halo(cs_lagr_halo_t   **halo)
 #endif
 
     BFT_FREE(h->send_buf);
-    BFT_FREE(h->recv_buf);
 
     BFT_FREE(*halo);
   }
@@ -1333,45 +1240,37 @@ _delete_lagr_halo(cs_lagr_halo_t   **halo)
  * parameters:
  *   lag_halo         <->  pointer to a cs_lagr_halo_t structure
  *   n_send_particles <-- number of particles to send
- *   n_recv_particles <-- number of particles to receive
  *----------------------------------------------------------------------------*/
 
 static void
 _resize_lagr_halo(cs_lagr_halo_t  *lag_halo,
-                  cs_lnum_t        n_send_particles,
-                  cs_lnum_t        n_recv_particles)
+                  cs_lnum_t        n_send_particles)
 {
-  size_t n_target[] = {n_send_particles, n_recv_particles};
-  size_t *n_halo[] = {&(lag_halo->send_buf_size),
-                      &(lag_halo->recv_buf_size)};
-  unsigned char **buf[] = {&(lag_halo->send_buf),
-                           &(lag_halo->recv_buf)};
+  cs_lnum_t n_halo = lag_halo->send_buf_size;
 
   size_t tot_extents = lag_halo->extents;
 
-  for (int i = 0; i < 2; i++) {
+  /* If increase is required */
 
-    /* If increase is required */
-
-    if (*(n_halo[i]) < n_target[i]) {
-      if (*(n_halo[i]) < CS_LAGR_MIN_COMM_BUF_SIZE)
-        *(n_halo[i]) = CS_LAGR_MIN_COMM_BUF_SIZE;
-      while (*(n_halo[i]) < n_target[i])
-        *(n_halo[i]) *= 2;
-      BFT_REALLOC(*(buf[i]), *(n_halo[i])*tot_extents, unsigned char);
-    }
-
-    /* If decrease is allowed, do it progressively, and with a wide
-       margin, so as to avoid re-increasing later if possible */
-
-    else if (*(n_halo[i]) > n_target[i]*16) {
-      *(n_halo[i]) /= 8;
-      BFT_REALLOC(*(buf[i]), *(n_halo[i])*tot_extents, unsigned char);
-    }
-
-    /* Otherwise, keep current size */
-
+  if (n_halo < n_send_particles) {
+    if (n_halo < CS_LAGR_MIN_COMM_BUF_SIZE)
+      n_halo = CS_LAGR_MIN_COMM_BUF_SIZE;
+    while (n_halo < n_send_particles)
+      n_halo *= 2;
+    lag_halo->send_buf_size = n_halo;
+    BFT_REALLOC(lag_halo->send_buf, n_halo*tot_extents, unsigned char);
   }
+
+  /* If decrease is allowed, do it progressively, and with a wide
+     margin, so as to avoid re-increasing later if possible */
+
+  else if (n_halo > n_send_particles*16) {
+    n_halo /= 8;
+    lag_halo->send_buf_size = n_halo;
+    BFT_REALLOC(lag_halo->send_buf, n_halo*tot_extents, unsigned char);
+  }
+
+  /* Otherwise, keep current size */
 }
 
 /*----------------------------------------------------------------------------
@@ -1657,8 +1556,6 @@ _destroy_bdy_cond_struct(cs_lagr_bdy_condition_t  *bdy_cond)
  *   particle                 <-- pointer to particle data
  *   attr_map                 <-- pointer to attribute map
  *   error_type               <-- error code
- *   p_n_failed_particles     <->
- *   p_failed_particle_weight <->
  *   msg                      <-- error message
  *----------------------------------------------------------------------------*/
 
@@ -1666,18 +1563,9 @@ static void
 _manage_error(cs_lnum_t                       failsafe_mode,
               void                           *particle,
               const cs_lagr_attribute_map_t  *attr_map,
-              cs_lagr_tracking_error_t        error_type,
-              cs_lnum_t                      *p_n_failed_particles,
-              cs_real_t                      *p_failed_particle_weight)
+              cs_lagr_tracking_error_t        error_type)
 {
-  cs_lnum_t  n_failed_particles = *p_n_failed_particles;
-  cs_real_t  failed_particle_weight = *p_failed_particle_weight;
-
   cs_lagr_particle_set_lnum(particle, attr_map, CS_LAGR_CELL_NUM, 0);
-
-  n_failed_particles++;
-  failed_particle_weight
-    += cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_STAT_WEIGHT);
 
   if (failsafe_mode == 1) {
     switch (error_type) {
@@ -1689,11 +1577,6 @@ _manage_error(cs_lnum_t                       failsafe_mode,
       break;
     }
   }
-
-  /* Return pointers */
-
-  *p_n_failed_particles = n_failed_particles;
-  *p_failed_particle_weight = failed_particle_weight;
 }
 
 /*----------------------------------------------------------------------------
@@ -1706,37 +1589,21 @@ _manage_error(cs_lnum_t                       failsafe_mode,
 static bool
 _continue_displacement(void)
 {
-  cs_lnum_t  i, j;
-  cs_lnum_t  _test = 1, test = 1;
+  int test = 0;
 
   const cs_lagr_particle_set_t  *set = _particle_set;
   const cs_lnum_t  n_particles = set->n_particles;
 
-  for (i = 0, j = set->first_used_id; i < n_particles; i++) {
-    if (_get_tracking_info(set, j)->state == CS_LAGR_PART_TO_SYNC) {
-      _test = 0;
+  for (cs_lnum_t i = 0; i < n_particles; i++) {
+    if (_get_tracking_info(set, i)->state == CS_LAGR_PART_TO_SYNC) {
+      test = 1;
       break;
     }
-    j = set->used_id[j].next_id;
   }
 
-  if (cs_glob_n_ranks == 1)
-    test = _test;
+  cs_parall_max(1, CS_INT_TYPE, &test);
 
-  else {
-
-    assert(cs_glob_n_ranks > 1);
-
-#if defined(HAVE_MPI)
-    /*  MPI_Allreduce(&_test, &test, 1, CS_MPI_INT, MPI_MAX,
-        cs_glob_mpi_comm); */
-    MPI_Allreduce(&_test, &test, 1, CS_MPI_INT, MPI_MIN,
-                  cs_glob_mpi_comm);
-#endif /* HAVE_MPI */
-
-  }
-
-  if (test == 0)
+  if (test == 1)
     return true;
   else
     return false;
@@ -2020,6 +1887,54 @@ _test_wall_cell(const void                     *particle,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute the contribution of a particle to the boundary mass flux.
+ *
+ * Used for the deposition model.
+ *
+ * parameters:
+ *   particle_set     <-- pointer to particle set structure
+ *   particle_id      <-- pointer to particle id
+ *   sign             <-- -1 to remove contribution, 1 to add it
+ *   b_face_surf      <-- boundary face surface
+ *   part_b_mass_flux <-> particle mass flux array
+ *----------------------------------------------------------------------------*/
+
+static void
+_b_mass_contribution(const cs_lagr_particle_set_t   *particles,
+                     cs_lnum_t                       particle_id,
+                     const cs_real_t                 sign,
+                     const cs_real_t                 b_face_surf[],
+                     cs_real_t                       part_b_mass_flux[])
+{
+  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
+  const unsigned char *particle
+    = particles->p_buffer + p_am->extents * particle_id;
+
+  cs_lnum_t depo_flag
+    = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
+
+  if (   depo_flag == CS_LAGR_PART_ROLLING
+      || depo_flag == CS_LAGR_PART_DEPOSITED) {
+
+    cs_lnum_t neighbor_face_id
+      = cs_lagr_particle_get_lnum(particle, p_am,
+                                  CS_LAGR_NEIGHBOR_FACE_ID);
+
+    assert(neighbor_face_id > -1);
+
+    cs_real_t cur_stat_weight
+      = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+    cs_real_t cur_mass
+      = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+    cs_real_t face_area = b_face_surf[neighbor_face_id];
+
+    part_b_mass_flux[neighbor_face_id]
+      += sign * cur_stat_weight * cur_mass / face_area;
+
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Handle particles moving to boundary
  *
  * parameters:
@@ -2038,8 +1953,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     cs_real_t                 *boundary_stat,
                     cs_lnum_t                  boundary_zone,
                     cs_lnum_t                 *p_move_particle,
-                    cs_lnum_t                 *p_n_failed_particles,
-                    cs_real_t                 *p_failed_particle_weight,
                     const cs_lnum_t           *iensi3,
                     const cs_lnum_t           *inbr,
                     const cs_lnum_t           *inbrbd,
@@ -2057,15 +1970,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                     const cs_lnum_t           *iencckbd,
                     const cs_lnum_t           *inclg,
                     const cs_lnum_t           *inclgt,
-                    const cs_lnum_t           *iclogt,
-                    const cs_lnum_t           *iclogh,
                     const cs_lnum_t           *iscovc,
                     const cs_lnum_t           *ihdepm,
                     const cs_lnum_t           *ihdepv,
                     const cs_lnum_t           *ihsum,
                     const cs_lnum_t           *nusbor,
                     cs_lnum_t                  iusb[],
-                    cs_real_t                 *part_b_mass_flux,
                     const cs_real_t            tprenc[],
                     const cs_real_t            visref[],
                     const cs_real_t            enc1[],
@@ -2088,11 +1998,9 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
   cs_real_t  s = 0.0;
   cs_lnum_t  move_particle = *p_move_particle;
-  cs_lnum_t  n_failed_particles = *p_n_failed_particles;
-  cs_real_t  failed_particle_weight = *p_failed_particle_weight;
 
   cs_lnum_t  face_id = face_num - 1;
-  cs_lnum_t  particle_state = -999;
+  cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
 
@@ -2382,7 +2290,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         }
         else {
 
-          cs_lnum_t i, j, one = 1;
+          cs_lnum_t i, one = 1;
           cs_real_t random;
           cs_real_t scov_cdf;
           void *cur_part = NULL;
@@ -2396,13 +2304,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
           scov_cdf = 0.;
 
-          k = 0;
+          for (i = 0; i < particles->n_particles; i++) {
 
-          for (i = 0, j = particles->first_used_id;
-               i < particles->n_particles;
-               i++) {
+            if (_get_tracking_info(particles, i)->state >= CS_LAGR_PART_OUT)
+              continue;
 
-            cur_part = (void *)(particles->p_buffer + p_am->extents * j);
+            cur_part = (void *)(particles->p_buffer + p_am->extents * i);
 
             cs_lnum_t cur_part_depo
               = cs_lagr_particle_get_lnum(cur_part, p_am,
@@ -2423,10 +2330,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                           *  cur_part_stat_weight / face_area;
               if (scov_cdf >= scov_rand)
                 break;
-              else
-                k += 1;
             }
-            j = particles->used_id[j].next_id;
           }
 
           cs_lnum_t cur_part_close_face_id
@@ -2439,10 +2343,11 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
           if (cur_part_close_face_id != face_id) {
             bft_error(__FILE__, __LINE__, 0,
-                      _(" Error in _bdy_treatment: in the face number %d \n"
+                      _(" Error in %s: in the face number %d \n"
                         "no deposited particle found to form a cluster \n"
                         "using the surface coverage %e (scov_cdf %e) \n"
                         "The particle used thus belongs to another face (%d) \n"),
+                      __func__,
                       particle_close_face_id, *surface_coverage,
                       scov_cdf, cur_part_close_face_id);
           }
@@ -2797,33 +2702,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Return pointer */
 
   *p_move_particle = move_particle;
-  *p_n_failed_particles = n_failed_particles;
-  *p_failed_particle_weight = failed_particle_weight;
-
-  /* Particulate boundary mass flux (contribution of rolling particles
-     will be added  at the end of their movement) */
-
-  if (*iensi3 > 0) {
-
-    if  (   bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO1
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPO2
-         || bdy_conditions->b_zone_natures[boundary_zone] == CS_LAGR_IDEPFA) {
-      if (cs_glob_lagr_params->resuspension == 1) {
-        if (p_am->size[CS_LAGR_DEPOSITION_FLAG] > 0) {
-          cs_lnum_t deposition_flag
-            = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG);
-          if (deposition_flag == CS_LAGR_PART_DEPOSITED && part_b_mass_flux != NULL)
-            part_b_mass_flux[face_id]
-              += particle_stat_weight * particle_mass / face_area;
-        }
-      }
-      else {
-          if (part_b_mass_flux != NULL)
-          part_b_mass_flux[face_id]
-            += particle_stat_weight * particle_mass / face_area;
-        }
-    }
-  }
 
   /* FIXME: Post-treatment not yet implemented... */
 
@@ -2859,8 +2737,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     }
   }
 
-  assert(particle_state > -1);
-
   return particle_state;
 }
 
@@ -2874,8 +2750,6 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
  *   scheme_order             <-- current order of the scheme used for
  *                                the lagrangian algorithm (1 or 2)
  *   failsafe_mode            <-- with (0) / without (1) failure capability
- *   p_n_failed_particles     <-> number of failed particles
- *   p_failed_particle_weight <-> stat. weight of the failed particles
  *
  * returns:
  *   a state associated to the status of the particle (treated, to be deleted,
@@ -2889,8 +2763,6 @@ _local_propagation(void                           *particle,
                    int                             scheme_order,
                    int                             failsafe_mode,
                    cs_real_t                       boundary_stat[],
-                   cs_lnum_t                      *p_n_failed_particles,
-                   cs_real_t                      *p_failed_particle_weight,
                    const cs_lnum_t                *iensi3,
                    const cs_lnum_t                *inbr,
                    const cs_lnum_t                *inbrbd,
@@ -2908,8 +2780,6 @@ _local_propagation(void                           *particle,
                    const cs_lnum_t                *iencckbd,
                    const cs_lnum_t                *inclg,
                    const cs_lnum_t                *inclgt,
-                   const cs_lnum_t                *iclogt,
-                   const cs_lnum_t                *iclogh,
                    const cs_lnum_t                *iscovc,
                    const cs_lnum_t                *ihdepm,
                    const cs_lnum_t                *ihdepv,
@@ -2918,7 +2788,6 @@ _local_propagation(void                           *particle,
                    cs_lnum_t                       iusb[],
                    cs_real_t                       visc_length[],
                    cs_real_t                       dlgeo[],
-                   cs_real_t                      *part_b_mass_flux,
                    const cs_field_t               *u,
                    const cs_real_t                 tprenc[],
                    const cs_real_t                 visref[],
@@ -2935,7 +2804,7 @@ _local_propagation(void                           *particle,
 
   cs_lnum_t  n_loops = displacement_step_id;
   cs_lnum_t  move_particle = CS_LAGR_PART_MOVE_ON;
-  cs_lnum_t  particle_state = CS_LAGR_PART_TO_SYNC;
+  cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -2948,9 +2817,6 @@ _local_propagation(void                           *particle,
   cs_lagr_bdy_condition_t  *bdy_conditions = _lagr_bdy_conditions;
   cs_lnum_t  *cell_face_idx = builder->cell_face_idx;
   cs_lnum_t  *cell_face_lst = builder->cell_face_lst;
-
-  cs_lnum_t  n_failed_particles = *p_n_failed_particles;
-  cs_real_t  failed_particle_weight = *p_failed_particle_weight;
 
   cs_lagr_tracking_info_t *p_info = (cs_lagr_tracking_info_t *)particle;
 
@@ -2969,39 +2835,10 @@ _local_propagation(void                           *particle,
   }
 
   if (lagr_params->deposition > 0) {
-
     neighbor_face_id
       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
     particle_yplus
       = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
-
-    /* Remove contribution from rolling particles to boundary mass flux
-       at the beginning of their movement, so as to later add it at the
-       end of their movement */
-
-    if (displacement_step_id == 0 && move_particle == CS_LAGR_PART_MOVE_ON) {
-
-      if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-          == CS_LAGR_PART_ROLLING) {
-
-        assert(*neighbor_face_id > -1);
-
-        if (part_b_mass_flux != NULL) {
-          cs_real_t cur_stat_weight
-            = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
-          cs_real_t cur_mass
-            = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-          cs_real_t face_area
-            = fvq->b_face_surf[*neighbor_face_id];
-
-          part_b_mass_flux[*neighbor_face_id]
-            -= cur_stat_weight * cur_mass / face_area;
-        }
-
-      }
-
-    }
-
   }
   else {
     neighbor_face_id = NULL;
@@ -3030,9 +2867,7 @@ _local_propagation(void                           *particle,
       _manage_error(failsafe_mode,
                     particle,
                     p_am,
-                    CS_LAGR_TRACKING_ERR_MAX_LOOPS,
-                    &n_failed_particles,
-                    &failed_particle_weight);
+                    CS_LAGR_TRACKING_ERR_MAX_LOOPS);
 
       move_particle  = CS_LAGR_PART_MOVE_OFF;
       particle_state = CS_LAGR_PART_ERR;
@@ -3398,8 +3233,6 @@ _local_propagation(void                           *particle,
                               boundary_stat,
                               bdy_conditions->b_face_zone_num[face_num-1]-1,
                               &move_particle,
-                              &n_failed_particles,
-                              &failed_particle_weight,
                               iensi3,
                               inbr,
                               inbrbd,
@@ -3417,15 +3250,12 @@ _local_propagation(void                           *particle,
                               iencckbd,
                               inclg,
                               inclgt,
-                              iclogt,
-                              iclogh,
                               iscovc,
                               ihdepm,
                               ihdepv,
                               ihsum,
                               nusbor,
                               iusb,
-                              part_b_mass_flux,
                               tprenc,
                               visref,
                               enc1,
@@ -3445,44 +3275,8 @@ _local_propagation(void                           *particle,
 
   } /* End of while : local displacement */
 
-  /* Add contribution from rolling particles to boundary mass flux
-     at the beginning of their movement. */
-
-  if (lagr_params->deposition > 0) {
-
-    if (   move_particle == CS_LAGR_PART_MOVE_OFF
-        && particle_state != CS_LAGR_PART_OUT
-        && particle_state != CS_LAGR_PART_ERR) {
-
-      if (   cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_DEPOSITION_FLAG)
-           == CS_LAGR_PART_ROLLING) {
-
-        assert(*neighbor_face_id > -1);
-
-        if (part_b_mass_flux != NULL) {
-          cs_real_t cur_stat_weight
-            = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
-          cs_real_t cur_mass
-            = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
-          cs_real_t face_area = fvq->b_face_surf[*neighbor_face_id];
-
-          part_b_mass_flux[*neighbor_face_id]
-            += cur_stat_weight * cur_mass / face_area;
-        }
-
-      }
-
-    }
-
-  }
-
   assert(   move_particle != CS_LAGR_PART_MOVE_ON
          || particle_state != CS_LAGR_PART_TO_SYNC);
-
-  /* Return pointers */
-
-  *p_n_failed_particles = n_failed_particles;
-  *p_failed_particle_weight = failed_particle_weight;
 
   return particle_state;
 }
@@ -3565,26 +3359,29 @@ _exchange_counter(const cs_halo_t  *halo,
 }
 
 /*----------------------------------------------------------------------------
- * Exchange counters on the number of particles to send and to receive
+ * Exchange particles
  *
  * parameters:
- *  halo     <-- pointer to a cs_halo_t structure
- *  lag_halo <-> pointer to a cs_lagr_halo_t structure
+ *  halo      <-- pointer to a cs_halo_t structure
+ *  lag_halo  <-> pointer to a cs_lagr_halo_t structure
+ *  particles <-- set of particles to update
  *----------------------------------------------------------------------------*/
 
 static void
-_exchange_particles(const cs_halo_t  *halo,
-                    cs_lagr_halo_t   *lag_halo)
+_exchange_particles(const cs_halo_t         *halo,
+                    cs_lagr_halo_t          *lag_halo,
+                    cs_lagr_particle_set_t  *particles)
 {
-  cs_lnum_t  shift;
-
   void  *recv_buf = NULL, *send_buf = NULL;
 
   int local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
 
   const size_t tot_extents = lag_halo->extents;
 
+  cs_lnum_t  n_recv_particles = 0;
+
 #if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
 
     int  rank;
@@ -3595,14 +3392,16 @@ _exchange_particles(const cs_halo_t  *halo,
 
     for (rank = 0; rank < halo->n_c_domains; rank++) {
 
-      shift = lag_halo->recv_shift[rank];
+      cs_lnum_t shift =   particles->n_particles
+                        + lag_halo->recv_shift[rank];
 
       if (lag_halo->recv_count[rank] == 0)
         recv_buf = NULL;
       else
-        recv_buf = lag_halo->recv_buf + tot_extents*shift;
+        recv_buf = particles->p_buffer + tot_extents*shift;
 
-      if (halo->c_domain_rank[rank] != local_rank)
+      if (halo->c_domain_rank[rank] != local_rank) {
+        n_recv_particles += lag_halo->recv_count[rank];
         MPI_Irecv(recv_buf,
                   lag_halo->recv_count[rank],
                   _cs_mpi_particle_type,
@@ -3610,6 +3409,7 @@ _exchange_particles(const cs_halo_t  *halo,
                   halo->c_domain_rank[rank],
                   cs_glob_mpi_comm,
                   &(lag_halo->request[request_count++]));
+      }
       else
         local_rank_id = rank;
 
@@ -3630,7 +3430,7 @@ _exchange_particles(const cs_halo_t  *halo,
 
       if (halo->c_domain_rank[rank] != local_rank) {
 
-        shift = lag_halo->send_shift[rank];
+        cs_lnum_t shift = lag_halo->send_shift[rank];
         if (lag_halo->send_count[rank] == 0)
           send_buf = NULL;
         else
@@ -3659,117 +3459,178 @@ _exchange_particles(const cs_halo_t  *halo,
 
   if (halo->n_transforms > 0) {
     if (local_rank_id > -1) {
-      cs_lnum_t  recv_shift = lag_halo->recv_shift[local_rank_id];
+
+      cs_lnum_t  recv_shift =   particles->n_particles
+                              + lag_halo->recv_shift[local_rank_id];
       cs_lnum_t  send_shift = lag_halo->send_shift[local_rank_id];
 
       assert(   lag_halo->recv_count[local_rank_id]
              == lag_halo->send_count[local_rank_id]);
 
+      n_recv_particles += lag_halo->send_count[local_rank_id];
+
       for (cs_lnum_t i = 0; i < lag_halo->send_count[local_rank_id]; i++)
-        memcpy(lag_halo->recv_buf + tot_extents*(recv_shift + i),
+        memcpy(particles->p_buffer + tot_extents*(recv_shift + i),
                lag_halo->send_buf + tot_extents*(send_shift + i),
                tot_extents);
+
     }
   }
+
+  /* Update particle count and weight */
+
+  cs_real_t tot_weight = 0.;
+
+  for (cs_lnum_t i = 0; i < n_recv_particles; i++) {
+
+    cs_real_t cur_part_stat_weight
+      = cs_lagr_particles_get_real(particles,
+                                   particles->n_particles + i,
+                                   CS_LAGR_STAT_WEIGHT);
+
+    tot_weight += cur_part_stat_weight;
+
+  }
+
+  particles->n_particles += n_recv_particles;
+  particles->weight += tot_weight;
 }
 
 /*----------------------------------------------------------------------------
- * Update cs_lagr_particle_set structures after a parallel and/or periodic
- * exchange between communicating ranks.
+ * Determine particle halo sizes
  *
  * parameters:
- *   n_recv_particles <-- number of particles received during the exchange
- *   lag_halo         <-- pointer to a cs_lagr_halo_t structure
- *   particles        <-- set of particle data to update
+ *   mesh      <-- pointer to associated mesh
+ *   lag_halo  <-> pointer to particle halo structure to update
+ *   particles <-- set of particles to update
  *----------------------------------------------------------------------------*/
 
 static void
-_update_particle_set(cs_lnum_t                n_recv_particles,
-                     cs_lagr_halo_t          *lag_halo,
-                     cs_lagr_particle_set_t  *particles)
+_lagr_halo_count(const cs_mesh_t               *mesh,
+                 cs_lagr_halo_t                *lag_halo,
+                 const cs_lagr_particle_set_t  *particles)
 {
-  cs_lnum_t  i, new_id;
-  const size_t extents = particles->p_am->extents;
-  const unsigned char *recv_buf = lag_halo->recv_buf;
+  cs_lnum_t  i, ghost_id;
 
-  assert(extents == lag_halo->extents);
+  cs_lnum_t  n_recv_particles = 0, n_send_particles = 0;
 
-  for (i = 0; i < n_recv_particles; i++) {
+  const cs_halo_t  *halo = mesh->halo;
 
-    const unsigned char *new_part = recv_buf + extents*i;
+  /* Initialization */
 
-    new_id = particles->first_free_id;
-
-    /* Note: used and free ids for current and previous data are the same */
-
-    if (particles->used_id[new_id].next_id != -1) {
-      particles->first_free_id = particles->used_id[new_id].next_id;
-    }
-    else {
-      particles->first_free_id = new_id + 1;
-      particles->used_id[particles->first_free_id].next_id = -1;
-    }
-
-    /* Add new_particle at the beginning of the "used list"
-       Update first_used_id */
-
-    if (particles->first_used_id != -1)
-      particles->used_id[particles->first_used_id].prev_id = new_id;
-
-    memcpy(particles->p_buffer + extents*new_id,
-           new_part,
-           extents);
-
-    particles->used_id[new_id].prev_id = -1;
-    particles->used_id[new_id].next_id = particles->first_used_id;
-
-    particles->first_used_id = new_id;
+  for (i = 0; i < halo->n_c_domains; i++) {
+    lag_halo->send_count[i] = 0;
+    lag_halo->recv_count[i] = 0;
   }
+
+  /* Loop on particles to count number of particles to send on each rank */
+
+  for (i = 0; i < particles->n_particles; i++) {
+
+    if (_get_tracking_info(particles, i)->state == CS_LAGR_PART_TO_SYNC) {
+
+      ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM)
+                 - mesh->n_cells - 1;
+
+      assert(ghost_id >= 0);
+      lag_halo->send_count[lag_halo->rank[ghost_id]] += 1;
+
+    }
+
+  } /* End of loop on particles */
+
+  /* Exchange counters */
+
+  _exchange_counter(halo, lag_halo);
+
+  for (i = 0; i < halo->n_c_domains; i++) {
+    n_recv_particles += lag_halo->recv_count[i];
+    n_send_particles += lag_halo->send_count[i];
+  }
+
+  lag_halo->send_shift[0] = 0;
+  lag_halo->recv_shift[0] = 0;
+
+  for (i = 1; i < halo->n_c_domains; i++) {
+
+    lag_halo->send_shift[i] =  lag_halo->send_shift[i-1]
+                             + lag_halo->send_count[i-1];
+
+    lag_halo->recv_shift[i] =  lag_halo->recv_shift[i-1]
+                             + lag_halo->recv_count[i-1];
+
+  }
+
+  /* Resize halo only if needed */
+
+  _resize_lagr_halo(lag_halo, n_send_particles);
 }
 
 /*----------------------------------------------------------------------------
- * Synchronize particle displacement over the ranks.
+ * Update particle sets, including halo synchronization.
  *
  * parameters:
- *  lag_halo  <--  pointer to a cs_lagr_halo_t structure
- *  particles <--  set of particles to update
+ *   particles <-> set of particles to update
  *----------------------------------------------------------------------------*/
 
 static void
-_sync_particle_set(cs_lagr_halo_t           *lag_halo,
-                   cs_interface_set_t       *face_ifs,
-                   cs_lagr_particle_set_t   *particles)
+_sync_particle_set(cs_lagr_particle_set_t  *particles)
 {
-  cs_lnum_t  i, j, k, tr_id, rank, shift, ghost_id;
+  cs_lnum_t  i, k, tr_id, rank, shift, ghost_id;
   cs_real_t matrix[3][4];
 
   cs_lnum_t  n_recv_particles = 0;
+  cs_lnum_t  particle_count = 0;
 
+  cs_lnum_t  n_exit_particles = 0;
+  cs_lnum_t  n_failed_particles = 0;
+
+  cs_real_t  exit_weight = 0.0;
+  cs_real_t  fail_weight = 0.0;
+  cs_real_t  tot_weight = 0.0;
+
+  cs_lagr_track_builder_t  *builder = _particle_track_builder;
+  cs_lagr_halo_t  *lag_halo = builder->halo;
+
+  const cs_lagr_attribute_map_t *p_am = particles->p_am;
   const size_t extents = particles->p_am->extents;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_halo_t  *halo = mesh->halo;
   const fvm_periodicity_t *periodicity = mesh->periodicity;
+  const cs_interface_set_t  *face_ifs = builder->face_ifs;
 
-  for (i = 0; i < halo->n_c_domains; i++){
-    n_recv_particles += lag_halo->recv_count[i];
-    lag_halo->send_count[i] = 0;
+  if (halo != NULL) {
+
+    _lagr_halo_count(mesh, lag_halo, particles);
+
+    for (i = 0; i < halo->n_c_domains; i++) {
+      n_recv_particles += lag_halo->recv_count[i];
+      lag_halo->send_count[i] = 0;
+    }
   }
 
-  /* Fill send_buf for particle set */
+  /* Loop on particles, transferring particles to synchronize to send_buf
+     for particle set, and removing particles that otherwise exited the domain */
 
-  for (i = 0, j = particles->first_used_id; i < particles->n_particles; i++) {
+  for (i = 0; i < particles->n_particles; i++) {
 
-    cs_lnum_t next_id = particles->used_id[j].next_id;
+    cs_lagr_tracking_state_t cur_part_state
+      = _get_tracking_info(particles, i)->state;
 
-    if (_get_tracking_info(particles, j)->state == CS_LAGR_PART_TO_SYNC) {
+    cs_real_t cur_part_stat_weight
+      = cs_lagr_particles_get_real(particles, i, CS_LAGR_STAT_WEIGHT);
 
-      ghost_id =   cs_lagr_particles_get_lnum(particles, j, CS_LAGR_CELL_NUM)
+    /* Particle changes doamin */
+
+    if (cur_part_state == CS_LAGR_PART_TO_SYNC) {
+
+      ghost_id =   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM)
                  - halo->n_local_elts - 1;
       rank = lag_halo->rank[ghost_id];
       tr_id = lag_halo->transform_id[ghost_id];
 
-      cs_lagr_particles_set_lnum(particles, j, CS_LAGR_CELL_NUM,
+      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_CELL_NUM,
                                  lag_halo->dist_cell_num[ghost_id]);
 
       shift = lag_halo->send_shift[rank] + lag_halo->send_count[rank];
@@ -3778,7 +3639,7 @@ _sync_particle_set(cs_lagr_halo_t           *lag_halo,
 
       if (tr_id >= 0) { /* Same initialization as in previous algorithm */
 
-        _tracking_info(particles, j)->last_face_num = 0;
+        _tracking_info(particles, i)->last_face_num = 0;
 
       }
 
@@ -3819,7 +3680,7 @@ _sync_particle_set(cs_lagr_halo_t           *lag_halo,
 
             id = cs_search_binary
                    (n_entities,
-                    _get_tracking_info(particles, j)->last_face_num  - 1,
+                    _get_tracking_info(particles, i)->last_face_num  - 1,
                     local_num);
 
             if (id == -1)
@@ -3828,7 +3689,7 @@ _sync_particle_set(cs_lagr_halo_t           *lag_halo,
 
             dist_num = cs_interface_get_match_ids(interface);
 
-            _tracking_info(particles, j)->last_face_num = dist_num[id] + 1;
+            _tracking_info(particles, i)->last_face_num = dist_num[id] + 1;
 
           }
 
@@ -3855,14 +3716,14 @@ _sync_particle_set(cs_lagr_halo_t           *lag_halo,
         /* Apply transformation to the coordinates in any case */
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
-                              cs_lagr_particles_attr(particles, j,
+                              cs_lagr_particles_attr(particles, i,
                                                      CS_LAGR_COORDS));
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
-                              _tracking_info(particles, j)->start_coords);
+                              _tracking_info(particles, i)->start_coords);
 
         _apply_vector_transfo((const cs_real_t (*)[4])matrix,
-                              cs_lagr_particles_attr_n(particles, j, 1,
+                              cs_lagr_particles_attr_n(particles, i, 1,
                                                        CS_LAGR_COORDS));
 
         /* Apply rotation to velocity vectors in case of rotation */
@@ -3872,21 +3733,21 @@ _sync_particle_set(cs_lagr_halo_t           *lag_halo,
           /* Rotation of the velocity */
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr(particles, j,
+                                 cs_lagr_particles_attr(particles, i,
                                                         CS_LAGR_VELOCITY));
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr_n(particles, j, 1,
+                                 cs_lagr_particles_attr_n(particles, i, 1,
                                                           CS_LAGR_VELOCITY));
 
           /* Rotation of the velocity seen */
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr(particles, j,
+                                 cs_lagr_particles_attr(particles, i,
                                                         CS_LAGR_VELOCITY_SEEN));
 
           _apply_vector_rotation((const cs_real_t (*)[4])matrix,
-                                 cs_lagr_particles_attr_n(particles, j, 1,
+                                 cs_lagr_particles_attr_n(particles, i, 1,
                                                           CS_LAGR_VELOCITY_SEEN));
 
         } /* Specific treatment in case of rotation for the velocities */
@@ -3894,143 +3755,69 @@ _sync_particle_set(cs_lagr_halo_t           *lag_halo,
       } /* End of periodicity treatment */
 
       memcpy(lag_halo->send_buf + extents*shift,
-             particles->p_buffer + extents*j,
+             particles->p_buffer + extents*i,
              extents);
 
       lag_halo->send_count[rank] += 1;
 
-      /* Pick out the particle from the particle_set */
-
-      _remove_particle(particles, j);
+      /* Remove the particle from the local set (do not copy it) */
 
     } /* TO_SYNC */
 
-    j = next_id;
+    /* Particle remains in domain */
 
-  } /* End of loop on particles */
+    else if (cur_part_state < CS_LAGR_PART_OUT) {
 
-  /* Exchange particles, then update set */
+      if (particle_count < i)
+        memcpy(particles->p_buffer + p_am->extents*particle_count,
+               particles->p_buffer + p_am->extents*i,
+               p_am->extents);
 
-  _exchange_particles(halo, lag_halo);
-
-  _update_particle_set(n_recv_particles, lag_halo, particles);
-}
-
-/*----------------------------------------------------------------------------
- * Move particles between communicating ranks and
- * update particle set structures
- *----------------------------------------------------------------------------*/
-
-static void
-_lagr_halo_sync(void)
-{
-  cs_lnum_t  i, j, ghost_id;
-  cs_lnum_t  delta_particles;
-
-  cs_lnum_t  n_recv_particles = 0, n_send_particles = 0;
-  cs_lagr_particle_set_t  *particles = _particle_set;
-  cs_lagr_track_builder_t  *builder = _particle_track_builder;
-  cs_lagr_halo_t  *lag_halo = builder->halo;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_halo_t  *halo = mesh->halo;
-
-  /* Check this because this assumption is done. */
-
-#if 0
-  bft_printf("\n Particle set before sync\n");
-  cs_lagr_particle_set_dump(particles);
-#endif
-
-  /* Initialization */
-
-  for (i = 0; i < halo->n_c_domains; i++) {
-    lag_halo->send_count[i] = 0;
-    lag_halo->recv_count[i] = 0;
-  }
-
-  /* Loop on particles to count number of particles to send on each rank */
-
-  for (i = 0, j = particles->first_used_id; i < particles->n_particles; i++) {
-
-    cs_lnum_t next_id = particles->used_id[j].next_id;
-
-    if (_get_tracking_info(particles, j)->state == CS_LAGR_PART_TO_SYNC) {
-
-      ghost_id =   cs_lagr_particles_get_lnum(particles, j, CS_LAGR_CELL_NUM)
-                 - mesh->n_cells - 1;
-
-      assert(ghost_id >= 0);
-      lag_halo->send_count[lag_halo->rank[ghost_id]] += 1;
+      particle_count += 1;
+      tot_weight += cur_part_stat_weight;
 
     }
 
-    j = next_id;
+    /* Particle exits domain */
+
+    else if (cur_part_state < CS_LAGR_PART_ERR) {
+      n_exit_particles++;
+      exit_weight += cur_part_stat_weight;
+    }
+
+    else {
+      n_failed_particles++;
+      fail_weight += cur_part_stat_weight;
+    }
 
   } /* End of loop on particles */
 
-  /* Exchange counters */
+  particles->n_particles = particle_count;
+  particles->weight = tot_weight;
 
-  _exchange_counter(halo, lag_halo);
+  particles->n_part_out += n_exit_particles;
+  particles->weight_out += exit_weight;
 
-  for (i = 0; i < halo->n_c_domains; i++) {
-    n_recv_particles += lag_halo->recv_count[i];
-    n_send_particles += lag_halo->send_count[i];
-  }
+  particles->n_failed_part += n_failed_particles;
+  particles->weight_failed = fail_weight;
 
-  delta_particles = n_recv_particles - n_send_particles;
+  /* Exchange particles, then update set */
 
-  /* Particle set should be large enough for set plus at least one
-     free position (to handle linked list logic) */
-
-  _resize_particle_set(particles,
-                       particles->n_particles + delta_particles + 1);
-
-  lag_halo->send_shift[0] = 0;
-  lag_halo->recv_shift[0] = 0;
-
-  for (i = 1; i < halo->n_c_domains; i++) {
-
-    lag_halo->send_shift[i] =  lag_halo->send_shift[i-1]
-                             + lag_halo->send_count[i-1];
-
-    lag_halo->recv_shift[i] =  lag_halo->recv_shift[i-1]
-                             + lag_halo->recv_count[i-1];
-
-  }
-
-  /* Resize halo only if needed */
-
-  _resize_lagr_halo(lag_halo, n_send_particles, n_recv_particles);
-
-  /* Get the updated particle set after synchronization */
-
-  _sync_particle_set(lag_halo, builder->face_ifs, particles);
-
-  particles->n_particles += delta_particles;
-
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (cs_glob_rank_id == 1) {
-    bft_printf(" delta part = %d\n", delta_particles);
-    bft_printf(" particles -> npart = %d\n", particles->n_particles);
-  }
-#endif
-
-#if 0
-  bft_printf("\n Particle set after sync\n");
-  cs_lagr_particle_set_dump(particles);
-#endif
+  if (halo != NULL)
+    _exchange_particles(halo, lag_halo, particles);
 }
 
 /*----------------------------------------------------------------------------
  * Prepare for particle movement phase
  *
  * parameters:
- *   particles <-> pointer to particles structure
+ *   particles        <-> pointer to particle set structure
+ *   part_b_mass_flux <-> particle mass flux array, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_initialize_displacement(cs_lagr_particle_set_t  *particles)
+_initialize_displacement(cs_lagr_particle_set_t  *particles,
+                         cs_real_t                part_b_mass_flux[])
 {
   cs_lnum_t  i;
 
@@ -4038,12 +3825,11 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
 
   const cs_lagr_attribute_map_t  *am = particles->p_am;
 
+  const cs_real_t  *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+
   /* Prepare tracking info */
 
   for (i = 0; i < particles->n_particles; i++) {
-
-    particles->used_id[i].prev_id = i-1;
-    particles->used_id[i].next_id = i+1;
 
     cs_lnum_t cur_part_cell_num
       = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_CELL_NUM);
@@ -4074,18 +3860,17 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
       cs_lagr_particles_set_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG,
                                  CS_LAGR_PART_IN_FLOW);
 
-  }
+    /* Remove contribution from deposited or rolling particles
+       to boundary mass flux at the beginning of their movement. */
 
-  if (particles->n_particles > 0) {
-    particles->first_used_id = 0;
-    particles->used_id[0].prev_id = -1;
-    particles->used_id[particles->n_particles - 1].next_id = -1;
-  }
-  else
-    particles->first_used_id = -1;
+    else if (lagr_params->deposition > 0 && part_b_mass_flux != NULL)
+      _b_mass_contribution(particles,
+                           i,
+                           -1.0,
+                           b_face_surf,
+                           part_b_mass_flux);
 
-  particles->first_free_id = particles->n_particles;
-  particles->used_id[particles->first_free_id].next_id = -1;
+  }
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Particle set after %s\n", __func__);
@@ -4094,71 +3879,120 @@ _initialize_displacement(cs_lagr_particle_set_t  *particles)
 }
 
 /*----------------------------------------------------------------------------
- * Update particle set structures: transform list to array.
+ * Update particle set structures: compact array.
  *
  * parameters:
- *   particles <-> pointer to particle set
+ *   particles        <-> pointer to particle set structure
+ *   part_b_mass_flux <-> particle mass flux array, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_finalize_displacement(cs_lagr_particle_set_t  *particles)
+_finalize_displacement(cs_lagr_particle_set_t  *particles,
+                       cs_real_t                part_b_mass_flux[])
 {
-  cs_lnum_t  i, j;
-
+  const cs_lagr_param_t *lagr_params = cs_glob_lagr_params;
   const cs_lagr_attribute_map_t  *p_am = particles->p_am;
+  const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
+  const cs_real_t  *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
-  const cs_lnum_t  n_particles = particles->n_particles;
+  const cs_lnum_t n_particles = particles->n_particles;
 
+  cs_lnum_t *cell_idx;
   unsigned char *swap_buffer;
   size_t swap_buffer_size = p_am->extents * ((size_t)n_particles);
 
+  BFT_MALLOC(cell_idx, n_cells+1, cs_lnum_t);
   BFT_MALLOC(swap_buffer, swap_buffer_size, unsigned char);
 
-  /* For particle state */
+  /* Cell index (count first) */
 
-  for (i = 0, j = particles->first_used_id; i < n_particles; i++) {
+  for (cs_lnum_t i = 0; i < n_cells+1; i++)
+    cell_idx[i] = 0;
 
-    cs_lnum_t cur_part_state = _get_tracking_info(particles, j)->state;
+  /* Copy unordered particle data to buffer */
 
-    if  (cur_part_state == CS_LAGR_PART_ERR)
-      cs_lagr_particles_set_lnum(particles, j, CS_LAGR_CELL_NUM, 0);
+  for (cs_lnum_t i = 0; i < n_particles; i++) {
 
-#if defined(DEBUG) || !defined(NDEBUG)
+    cs_lnum_t cur_part_state = _get_tracking_info(particles, i)->state;
 
-    assert(cur_part_state != CS_LAGR_PART_TO_DELETE);
-    assert(cur_part_state != CS_LAGR_PART_OUT);
-    assert(cur_part_state != CS_LAGR_PART_ERR);
-    assert(cur_part_state != CS_LAGR_PART_TO_SYNC);
+    assert(   cur_part_state < CS_LAGR_PART_OUT
+           && cur_part_state != CS_LAGR_PART_TO_SYNC);
 
-#endif
+    cs_lnum_t cell_num = cs_lagr_particles_get_lnum(particles, i,
+                                                    CS_LAGR_CELL_NUM);
+
+    assert(cell_num != 0);
+
+    if (cell_num < 0)
+      cell_num = - cell_num;
+
+    cs_lnum_t cell_id = cell_num - 1;
 
     memcpy(swap_buffer + p_am->extents*i,
-           particles->p_buffer + p_am->extents*j,
+           particles->p_buffer + p_am->extents*i,
            p_am->extents);
 
-    j = particles->used_id[j].next_id;
+    cell_idx[cell_id+1] += 1;
 
   }
 
-  memcpy(particles->p_buffer, swap_buffer, swap_buffer_size);
+  /* Convert count to index */
+
+  for (cs_lnum_t i = 1; i < n_cells; i++)
+    cell_idx[i+1] += cell_idx[i];
+
+  assert(n_particles == cell_idx[n_cells]);
+
+  /* Now copy particle data and update some statistics */
+
+  const cs_lnum_t p_extents = particles->p_am->extents;
+  const cs_lnum_t cell_num_displ = particles->p_am->displ[0][CS_LAGR_CELL_NUM];
+
+  for (cs_lnum_t i = 0; i < n_particles; i++) {
+
+    cs_lnum_t cell_num
+      = *((const cs_lnum_t *)(swap_buffer + p_extents*i + cell_num_displ));
+
+    assert(cell_num != 0);
+
+    if (cell_num < 0)
+      cell_num = - cell_num;
+
+    cs_lnum_t cell_id = cell_num - 1;
+
+    cs_lnum_t particle_id = cell_idx[cell_id];
+
+    cell_idx[cell_id] += 1;
+
+    memcpy(particles->p_buffer + p_am->extents*particle_id,
+           swap_buffer + p_am->extents*i,
+           p_am->extents);
+
+    /* Add contribution from deposited or rolling particles
+       to boundary mass flux at the end of their movement. */
+
+    if (lagr_params->deposition > 0 && part_b_mass_flux != NULL)
+      _b_mass_contribution(particles,
+                           particle_id,
+                           1.0,
+                           b_face_surf,
+                           part_b_mass_flux);
+
+  }
 
   BFT_FREE(swap_buffer);
+  BFT_FREE(cell_idx);
 
   /* Shift from 0-based to 1-based (temporary) */
 
   if (p_am->count[0][CS_LAGR_NEIGHBOR_FACE_ID] > 0) {
-    for (i = 0; i < n_particles; i++) {
+    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
       const cs_lnum_t n_face_num
         = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID) + 1;
-        cs_lagr_particles_set_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID,
-                                   n_face_num);
+      cs_lagr_particles_set_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID,
+                                 n_face_num);
     }
   }
-
-  /* Also mark list as not used */
-
-  particles->first_used_id = -1;
-  particles->first_free_id = -1;
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n Particle set after %s\n", __func__);
@@ -4967,8 +4801,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                           const cs_lnum_t  *iencckbd,
                           const cs_lnum_t  *inclg,
                           const cs_lnum_t  *inclgt,
-                          const cs_lnum_t  *iclogt,
-                          const cs_lnum_t  *iclogh,
                           const cs_lnum_t  *iscovc,
                           const cs_lnum_t  *ihdepm,
                           const cs_lnum_t  *ihdepv,
@@ -4983,18 +4815,9 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                           const cs_real_t   enc2[],
                           const cs_real_t  *tkelvi)
 {
-  cs_lnum_t  i, j;
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   int        n_displacement_steps = 0;
-
-  cs_lnum_t  n_delete_particles = 0;
-  cs_lnum_t  n_failed_particles = 0;
-
-  cs_real_t  failed_particle_weight = 0.0;
-  cs_real_t  r_weight = 0.0;
-  cs_real_t  tot_weight = 0.0;
 
   cs_lnum_t  scheme_order = *p_scheme_order;
   cs_lagr_particle_set_t  *particles = _particle_set;
@@ -5031,12 +4854,12 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
   particles->n_failed_part = 0;
   particles->weight_failed = 0.0;
 
-  _initialize_displacement(particles);
+  _initialize_displacement(particles, part_b_mass_flux);
 
   /* Shift from 1-based to 0-based (temporary) */
 
   if (p_am->count[0][CS_LAGR_NEIGHBOR_FACE_ID] > 0) {
-    for (i = 0; i < particles->n_particles; i++) {
+    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
       const cs_lnum_t n_face_id
         = cs_lagr_particles_get_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID) - 1;
         cs_lagr_particles_set_lnum(particles, i, CS_LAGR_NEIGHBOR_FACE_ID,
@@ -5048,27 +4871,17 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
   while (_continue_displacement()) {
 
-    n_delete_particles = 0;
-    n_failed_particles = 0;
-
-    r_weight = 0.0;
-    tot_weight = 0.0;
-    failed_particle_weight = 0.0;
-
-    assert(particles->first_free_id != -1);
-
     /* Local propagation */
 
-    for (i = 0, j = particles->first_used_id; i < particles->n_particles; i++) {
+    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
 
-      unsigned char *particle = particles->p_buffer + p_am->extents * j;
-
-      cs_lnum_t next_id = particles->used_id[j].next_id;
+      unsigned char *particle = particles->p_buffer + p_am->extents * i;
 
       /* Local copies of the current and previous particles state vectors
          to be used in case of the first pass of _local_propagation fails */
 
-      cs_lnum_t cur_part_state = _get_tracking_info(particles, j)->state;
+      cs_lagr_tracking_state_t cur_part_state
+        = _get_tracking_info(particles, i)->state;
 
       if (cur_part_state == CS_LAGR_PART_TO_SYNC) {
 
@@ -5080,8 +4893,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                             scheme_order,
                                             failsafe_mode,
                                             boundary_stat,
-                                            &n_failed_particles,
-                                            &failed_particle_weight,
                                             iensi3,
                                             inbr,
                                             inbrbd,
@@ -5099,8 +4910,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                             iencckbd,
                                             inclg,
                                             inclgt,
-                                            iclogt,
-                                            iclogh,
                                             iscovc,
                                             ihdepm,
                                             ihdepv,
@@ -5109,7 +4918,6 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                             iusb,
                                             visc_length,
                                             dlgeo,
-                                            part_b_mass_flux,
                                             u,
                                             tprenc,
                                             visref,
@@ -5117,70 +4925,24 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
                                             enc2,
                                             *tkelvi);
 
-        _tracking_info(particles, j)->state = cur_part_state;
+        _tracking_info(particles, i)->state = cur_part_state;
 
       }
-
-      assert(next_id == particles->used_id[j].next_id);
-
-      j = next_id;
 
     } /* End of loop on particles */
 
-    /* Update of the particle set structure. Delete particles. */
+    /* Update of the particle set structure. Delete exited particles,
+       update for particles which change domain. */
 
-    for (i = 0, j = particles->first_used_id; i < particles->n_particles; i++) {
+    _sync_particle_set(particles);
 
-      cs_lnum_t next_id = particles->used_id[j].next_id;
-
-      cs_lnum_t cur_part_state = _get_tracking_info(particles, j)->state;
-
-      cs_real_t cur_part_stat_weight
-        = cs_lagr_particles_get_real(particles, j, CS_LAGR_STAT_WEIGHT);
-
-      if (   cur_part_state == CS_LAGR_PART_TO_DELETE
-          || cur_part_state == CS_LAGR_PART_OUT
-          || cur_part_state == CS_LAGR_PART_ERR) {
-
-        _remove_particle(particles, j);
-
-        n_delete_particles++;
-
-        r_weight += cur_part_stat_weight;
-
-      }
-      else {
-
-        tot_weight += cur_part_stat_weight;
-
-      }
-
-      /* next_id was saved before potentially calling _remove_particle() */
-
-      j = next_id;
-
-    }
-
-    particles->n_particles -= n_delete_particles;
-
-    particles->weight = tot_weight;
-
-    particles->n_part_out += n_delete_particles;
-    particles->weight_out += r_weight;
-
-    particles->n_failed_part += n_failed_particles;
-    particles->weight_failed = failed_particle_weight;
+#if 0
+    bft_printf("\n Particle set after sync\n");
+    cs_lagr_particle_set_dump(particles);
+#endif
 
     /*  assert(j == -1);  After a loop on particles, next_id of the last
         particle must not be defined */
-
-    if (mesh->halo != NULL) {
-
-      /* Synchronisation of a selection of particles for parallelism and
-         periodicity. Number of particles on the local rank may change. */
-
-      _lagr_halo_sync();
-    }
 
     n_displacement_steps++;
 
@@ -5190,18 +4952,16 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
   if (lagr_params->deposition > 0) {
 
-    for (i = 0, j = particles->first_used_id; i < particles->n_particles; i++) {
+    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
 
-      unsigned char *particle = particles->p_buffer + p_am->extents * j;
-
-      cs_lnum_t next_id = particles->used_id[j].next_id;
+      unsigned char *particle = particles->p_buffer + p_am->extents * i;
 
       cs_lnum_t *cur_neighbor_face_id
         = cs_lagr_particle_attr(particle, p_am, CS_LAGR_NEIGHBOR_FACE_ID);
       cs_real_t *cur_part_yplus
         = cs_lagr_particle_attr(particle, p_am, CS_LAGR_YPLUS);
 
-      if (   cs_lagr_particles_get_lnum(particles, j, CS_LAGR_DEPOSITION_FLAG)
+      if (   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
           == 0)
         _test_wall_cell(particle, p_am, visc_length, dlgeo,
                         cur_part_yplus, cur_neighbor_face_id);
@@ -5216,20 +4976,20 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
       if (lagr_params->resuspension > 0) {
 
-        if (   cs_lagr_particles_get_lnum(particles, j, CS_LAGR_DEPOSITION_FLAG)
+        if (   cs_lagr_particles_get_lnum(particles, i, CS_LAGR_DEPOSITION_FLAG)
             == CS_LAGR_PART_ROLLING) {
 
           const cs_real_t *cur_part_coord
-            = cs_lagr_particles_attr_n_const(particles, j, 0, CS_LAGR_COORDS);
+            = cs_lagr_particles_attr_n_const(particles, i, 0, CS_LAGR_COORDS);
           const cs_real_t *prev_part_coord
-            = cs_lagr_particles_attr_n_const(particles, j, 1, CS_LAGR_COORDS);
+            = cs_lagr_particles_attr_n_const(particles, i, 1, CS_LAGR_COORDS);
 
           double traj[3] = {cur_part_coord[0] - prev_part_coord[0],
                             cur_part_coord[1] - prev_part_coord[1],
                             cur_part_coord[2] - prev_part_coord[2]};
 
           cs_real_t *cur_part_displacement_norm
-            = cs_lagr_particles_attr(particles, j, CS_LAGR_DISPLACEMENT_NORM);
+            = cs_lagr_particles_attr(particles, i, CS_LAGR_DISPLACEMENT_NORM);
 
           *cur_part_displacement_norm += _get_norm(traj);
 
@@ -5237,12 +4997,10 @@ CS_PROCF (dplprt, DPLPRT)(cs_lnum_t        *p_scheme_order,
 
       }
 
-      j = next_id;
-
     }
   }
 
-  _finalize_displacement(particles);
+  _finalize_displacement(particles, part_b_mass_flux);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -5438,42 +5196,18 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
 {
   if (particles != NULL) {
 
-    cs_lnum_t  i, j;
-
     bft_printf("Particle set\n");
     bft_printf("------------\n");
     bft_printf("  n_particles:      %10d\n", particles->n_particles);
     bft_printf("  n_particles_max:  %10d\n", particles->n_particles_max);
 
-    if (particles->n_particles > 0 && particles->first_used_id > 0) {
+    bft_printf_flush();
 
-      bft_printf("  first_used_id:    %10d\n", particles->first_used_id);
-      bft_printf("  first_free_id:    %10d\n", particles->first_free_id);
-      bft_printf_flush();
-
-      if (particles->n_particles > 0) {
-        for (i = 0, j = particles->first_used_id;
-             i < particles->n_particles && j > -1;
-             i++) {
-          bft_printf("  dump_particle_set i j = %d %d \n", i, j);
-          _dump_particle(particles, j);
-          j = particles->used_id[j].next_id;
-        }
-        assert(j == -1); /* The next_id is not defined for the last particle
-                            of the particle set */
-      }
-
+    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
+      bft_printf("  dump_particle_set i = %d \n", i);
+      _dump_particle(particles, i);
     }
-    else {
 
-      bft_printf_flush();
-
-      for (i = 0; i < particles->n_particles; i++) {
-        bft_printf("  dump_particle_set i = %d \n", i);
-        _dump_particle(particles, i);
-      }
-
-    }
   }
   bft_printf_flush();
 }

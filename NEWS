@@ -4,6 +4,11 @@ Trunk (unreleased)
 
 Changes:
 --------
+
+ - Simplify Lagrangian particle tracking, removing a linked list.
+   This is transparent for the user, except for a possible differences
+   in particle numbering.
+
  - Merge the bad cell and the mesh quality criterion for offsetting.
 
  - Merge general boundary temperature handling with the radiative

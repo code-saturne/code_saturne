@@ -673,7 +673,7 @@ if (nor.eq.1) then
    inbr     , inbrbd   , iflm     , iflmbd   , iang     ,         &
    iangbd   , ivit     , ivitbd   , iencnb   , iencma   ,         &
    iencdi   , iencck   , iencnbbd , iencmabd , iencdibd ,         &
-   iencckbd , inclg    , inclgt   , iclogt   , iclogh   , iscovc, &
+   iencckbd , inclg    , inclgt   , iscovc,                       &
    ihdepm   , ihdepv   , ihsum    , nusbor   , iusb     , vislen, &
    dlgeo    , tprenc   , visref   , enc1     ,                    &
    enc2     , tkelvi)
