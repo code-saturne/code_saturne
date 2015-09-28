@@ -147,6 +147,26 @@ data       ipacli /0/
 save       ipacli
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine b_t_to_h(nlst, lstfac, t_b, h_b)
+
+    use mesh, only: nfabor
+    implicit none
+
+    integer :: nlst
+    integer, dimension(nlst) :: lstfac
+    double precision, dimension(nfabor), intent(in) :: t_b
+    double precision, dimension(nfabor), intent(out), target :: h_b
+
+  end subroutine b_t_to_h
+
+ end interface
+
+!===============================================================================
 ! 1. Initializations
 !===============================================================================
 

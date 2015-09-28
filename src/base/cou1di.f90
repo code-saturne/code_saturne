@@ -101,6 +101,23 @@ double precision, dimension(:), allocatable :: h_b
 
 !===============================================================================
 
+interface
+
+  subroutine b_t_to_h(nlst, lstfac, t_b, h_b)
+
+    use mesh, only: nfabor
+    implicit none
+
+    integer :: nlst
+    integer, dimension(nlst) :: lstfac
+    double precision, dimension(nfabor), intent(in) :: t_b
+    double precision, dimension(nfabor), intent(out), target :: h_b
+
+  end subroutine b_t_to_h
+
+ end interface
+
+!===============================================================================
 
 ! Sans specification, une face couplee est une face de type paroi
 
@@ -137,7 +154,7 @@ if (isvtb.eq.iscalt .and. itherm.eq.2) then
     h_b(ifac) = tppt1d(ii)
   enddo
 
-  call b_t_to_h(h_b, h_b)
+  call b_t_to_h(nfpt1d, ifpt1d, h_b, h_b)
 
   do ii = 1, nfpt1d
     ifac = ifpt1d(ii)

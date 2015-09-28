@@ -47,7 +47,7 @@
 
 
 subroutine b_t_to_h            &
- ( nlst,  lstfac, t_b , h_b )
+ ( nlst, lstfac, t_b , h_b )
 
 !===============================================================================
 ! Module files

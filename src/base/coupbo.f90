@@ -88,6 +88,24 @@ double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv, cpro_rho
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine b_h_to_t(h_b, t_b)
+
+    use mesh, only: nfabor
+    implicit none
+
+    double precision, dimension(nfabor), intent(in) :: h_b
+    double precision, dimension(nfabor), intent(out), target :: t_b
+
+  end subroutine b_h_to_t
+
+ end interface
+
+!===============================================================================
 
 ! Map field arrays
 
