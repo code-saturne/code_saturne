@@ -1600,7 +1600,7 @@ class mpi_environment:
             info_name = os.path.join(os.path.dirname(absname),
                                      'ompi_info')
         else:
-            info_name = ''
+            info_name = 'ompi_info'
 
         # Determine processor count and MPMD handling
 
@@ -1625,16 +1625,15 @@ class mpi_environment:
 
         if resource_info != None:
             known_manager = False
-            if os.path.isfile(info_name):
-                rc_mca_by_type = {'SLURM':' slurm ',
-                                  'LSF':' lsf ',
-                                  'LOADL':' loadleveler ',
-                                  'PBS':' tm ',
-                                  'SGE':' gridengine '}
-                if resource_info.manager in rc_mca_by_type:
-                    info = get_command_output(info_name)
-                    if info.find(rc_mca_by_type[resource_info.manager]) > -1:
-                        known_manager = True
+            rc_mca_by_type = {'SLURM':' slurm ',
+                              'LSF':' lsf ',
+                              'LOADL':' loadleveler ',
+                              'PBS':' tm ',
+                              'SGE':' gridengine '}
+            if resource_info.manager in rc_mca_by_type:
+                info = get_command_output(info_name)
+                if info.find(rc_mca_by_type[resource_info.manager]) > -1:
+                    known_manager = True
             if known_manager == False:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
