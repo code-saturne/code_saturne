@@ -685,8 +685,8 @@ linestyle, for example \texttt{fmt="r--"} for a dashed red line;
 \texttt{xcol};
 \item \texttt{yfois}: real to multiply to all values of the column
 \texttt{ycol};
-\item \texttt{xerr}: draw horizontal error bar (see section \ref{sec:err});
-\item \texttt{yerr}: draw vertical error bar (see section \ref{sec:err});
+\item \texttt{xerr} or \texttt{xerrp}: draw horizontal error bar (see section \ref{sec:err});
+\item \texttt{yerr} or \texttt{yerrp}: draw vertical error bar (see section \ref{sec:err});
 \item some standard options of 2D lines can be added, for example
 \texttt{markevery="2"} or \texttt{markersize="3.5"}. These options
 are summarized in the table \ref{table:curves}. Note that the options
@@ -842,12 +842,13 @@ should be used with the markup \texttt{<plot>} as illustrated below:
 
 \subsubsection{Curves with error bar}\label{sec:err}
 
-In order to draw horizontal and vertical error bar, it is possible to
+In order to draw horizontal and vertical error bars, it is possible to
 specify to the markup \texttt{<plot>} the attributes \texttt{xerr} and
-\texttt{yerr} respectively. The value of theses attributes could be:
+\texttt{yerr} respectively (or \texttt{xerrp} and \texttt{yerrp}). The
+value of these attributes could be:
 \begin{list}{$\bullet$}{}
-\item a single column number where the average uncertainty is in the file of
-data:
+\item the number of the column, in the file of data, that contains the total
+absolute uncertainty spans:
 \small
 \begin{verbatim}
 <measurement file='axis.dat' path =''>
@@ -855,8 +856,8 @@ data:
 </measurement>
 \end{verbatim}
 \normalsize
-\item a sequence of two column numbers where the minimum and the maximum
-of the uncertainty are in the file of data:
+\item the numbers of the two columns, in the file of data, that contain the
+absolute low spans and absolute high spans of uncertainty:
 \small
 \begin{verbatim}
 <data file='profile.dat' dest="">
@@ -864,21 +865,16 @@ of the uncertainty are in the file of data:
 </data>
 \end{verbatim}
 \normalsize
-\end{list}
-
-\underline{Notes:}
-
-The attributes \texttt{xerr} and \texttt{yerr} could not be both at the same
-time in the markup \texttt{plot}. If horizontal and vertical bars has be
-drawn together, repeat the markup \texttt{plot} like this:
+\item a single real value equal to the percentage of uncertainty that should be
+applied to the considered data set:
 \small
 \begin{verbatim}
-<measurement file='axis.dat' path =''>
-    <plot fig='1' xcol='1' ycol='3' legend='Experimental data' xerr='2' />
-    <plot fig='1' xcol='1' ycol='3' yerr='4' />
-</measurement>
+<data file='profile.dat' dest="">
+    <plot fig='1' xcol='1' ycol='2' legend='computation' yerrp='2.' />
+</data>
 \end{verbatim}
 \normalsize
+\end{list}
 
 \subsubsection{Monitoring points or probes}
 

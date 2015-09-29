@@ -124,18 +124,32 @@ class Plot(object):
         except:
             yerr = None
 
+        try:
+            xerrp = float(parser.getAttribute(node, "xerrp"))
+        except:
+            xerrp = None
+
+        try:
+            yerrp = float(parser.getAttribute(node, "yerrp"))
+        except:
+            yerrp = None
+
         self.f.close()
 
         # Error Bar
         self.f = open(file, 'r')
-        self.xerr = self.uploadErrorBar(xerr)
-        self.yerr = self.uploadErrorBar(yerr)
+        self.xerr = self.uploadErrorBar(xerr, xerrp, xcol)
+        self.f.close()
+
+        self.f = open(file, 'r')
+        self.yerr = self.uploadErrorBar(yerr, yerrp, ycol)
         self.f.close()
 
         # List of additional matplotlib commands
         for k, v in parser.getAttributes(node).items():
             if k not in ('fig', 'fmt', 'legend', 'xcol', 'ycol', \
-                         'xplus', 'yplus', 'xfois', 'yfois', 'xerr', 'yerr'):
+                         'xplus', 'yplus', 'xfois', 'yfois', \
+                         'xerr', 'yerr', 'xerrp', 'yerrp'):
                 self.cmd.append("plt.setp(lines, " + k + "=" + v + ")")
 
         self.cmd += parser.getPltCommands(node)
@@ -169,32 +183,50 @@ class Plot(object):
                 self.yspan.append(float(line.split()[ycol-1])*yfois + yplus)
 
 
-    def uploadErrorBar(self, errorbar):
+    def uploadErrorBar(self, errorbar, errorp, col):
         """
-        load and parse data for Measurement incertitude
+        load and parse data for Measurement uncertainty
         """
-        if errorbar == None:
+        if errorbar == None and errorp == None:
             return None
 
-        elif len(errorbar) == 2:
-            error = [ [], [] ]
-            for line in self.f.readlines():
-                line = line.lstrip()
-                if line and line[0] != '#':
-                    error[0].append(float(line.split()[errorbar[0]-1]))
-                    error[1].append(float(line.split()[errorbar[1]-1]))
-            return error
+        elif errorbar:
+            if errorp:
+                print("Warning: ambiguous definitions of error bars for "
+                      "one data set, percentage and set of error values.\n"
+                      "The error definition by percentage will be ignored.")
 
-        elif len(errorbar) == 1:
-            error = []
-            for line in self.f.readlines():
-                line = line.lstrip()
-                if line and line[0] != '#':
-                    error.append(float(line.split()[errorbar[0]-1]))
-            return error
+            if len(errorbar) == 2:
+                error = [ [], [] ]
+                for line in self.f.readlines():
+                    line = line.lstrip()
+                    if line and line[0] != '#':
+                        error[0].append(float(line.split()[errorbar[0]-1]))
+                        error[1].append(float(line.split()[errorbar[1]-1]))
+                return error
+
+            elif len(errorbar) == 1:
+                error = []
+                for line in self.f.readlines():
+                    line = line.lstrip()
+                    if line and line[0] != '#':
+                        error.append(float(line.split()[errorbar[0]-1]))
+                return error
+        elif errorp:
+            if col == 0:
+                print("Error: can not compute errors by percentage of an "
+                      "unspecified data set (column number missing).\n")
+                sys.exit(1)
+            else:
+                error = []
+                for line in self.f.readlines():
+                    line = line.lstrip()
+                    if line and line[0] != '#':
+                        error.append(errorp/100.*float(line.split()[col-1]))
+                return error
 
 #-------------------------------------------------------------------------------
-# Curve or plot for monitorig point (probe)
+# Curve or plot for monitoring point (probe)
 #-------------------------------------------------------------------------------
 
 class Probes(object):
@@ -544,27 +576,25 @@ class Plotter(object):
         """
         Draw a single curve.
         """
+
+        # data sets x and y
         xspan = curve.xspan
         yspan = curve.yspan
 
-        if curve.measurement():
-            if curve.xerr:
-                lines = ax.errorbar(xspan, yspan,
-                                    xerr=curve.xerr,
-                                    fmt=curve.fmt,
-                                    label=curve.legend)
-            if curve.yerr:
-                lines = ax.errorbar(xspan, yspan,
-                                    yerr=curve.yerr,
-                                    fmt=curve.fmt,
-                                    label=curve.legend)
-            else:
-                lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
+        # data sets errors on x and y
+        xerr = curve.xerr
+        yerr = curve.yerr
+
+        # draw curve with error bars
+        if xerr or yerr:
+            lines = ax.errorbar(xspan, yspan,
+                                xerr=xerr,
+                                yerr=yerr,
+                                fmt=curve.fmt,
+                                label=curve.legend)
+        # draw curve only
         else:
-            if curve.fmt:
-                lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
-            else:
-                lines = ax.plot(xspan, yspan, label=curve.legend)
+            lines = ax.plot(xspan, yspan, curve.fmt, label=curve.legend)
 
 
         # additional matplotlib raw commands for line2D
