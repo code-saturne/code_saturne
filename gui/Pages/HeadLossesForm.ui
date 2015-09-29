@@ -1,36 +1,37 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>HeadLossesForm</class>
- <widget class="QWidget" name="HeadLossesForm" >
-  <property name="geometry" >
+ <widget class="QWidget" name="HeadLossesForm">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>369</width>
-    <height>440</height>
+    <width>407</width>
+    <height>437</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" >
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBoxZones" >
-     <property name="maximumSize" >
+    <widget class="QGroupBox" name="groupBoxZones">
+     <property name="maximumSize">
       <size>
        <width>16777215</width>
        <height>150</height>
       </size>
      </property>
-     <property name="title" >
+     <property name="title">
       <string>Select volume zone for head losses </string>
      </property>
-     <layout class="QGridLayout" >
-      <item row="0" column="0" >
-       <widget class="QTreeView" name="treeView" >
-        <property name="indentation" >
+     <layout class="QGridLayout">
+      <item row="0" column="0">
+       <widget class="QTreeView" name="treeView">
+        <property name="indentation">
          <number>0</number>
         </property>
-        <property name="rootIsDecorated" >
+        <property name="rootIsDecorated">
          <bool>false</bool>
         </property>
        </widget>
@@ -39,17 +40,17 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBoxDef" >
-     <property name="title" >
+    <widget class="QGroupBox" name="groupBoxDef">
+     <property name="title">
       <string>Tensor coefficients</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2" >
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <spacer name="horizontalSpacer_2" >
-        <property name="orientation" >
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>1</width>
           <height>18</height>
@@ -58,10 +59,10 @@
        </spacer>
       </item>
       <item>
-       <layout class="QGridLayout" name="gridLayout" >
-        <item row="0" column="0" >
-         <widget class="QLabel" name="label_17" >
-          <property name="font" >
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_17">
+          <property name="font">
            <font>
             <family>Sans Serif</family>
             <pointsize>9</pointsize>
@@ -70,24 +71,24 @@
             <bold>false</bold>
            </font>
           </property>
-          <property name="styleSheet" >
-           <string notr="true" >font: 9pt "Sans Serif";abd</string>
+          <property name="styleSheet">
+           <string notr="true">font: 9pt &quot;Sans Serif&quot;;abd</string>
           </property>
-          <property name="text" >
-           <string>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+          <property name="text">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Head losses coefficients: K&lt;span style=" vertical-align:sub;">ii &lt;/span>= 0.5 &lt;span style=" font-family:'Symbol,serif';">a&lt;/span>&lt;span style=" vertical-align:sub;">ii &lt;/span>|U|&lt;/p>&lt;/body>&lt;/html></string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Head losses coefficients(m&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt;):  &lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;r &lt;/span&gt;dU&lt;span style=&quot; vertical-align:sub;&quot;&gt;i &lt;/span&gt;/dt = -0.5 &lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;r a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ij &lt;/span&gt;|U| U&lt;span style=&quot; vertical-align:sub;&quot;&gt;j&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1" >
-         <spacer name="horizontalSpacer" >
-          <property name="orientation" >
+        <item row="0" column="1">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
-          <property name="sizeHint" stdset="0" >
+          <property name="sizeHint" stdset="0">
            <size>
             <width>76</width>
             <height>20</height>
@@ -95,28 +96,28 @@ p, li { white-space: pre-wrap; }
           </property>
          </spacer>
         </item>
-        <item row="1" column="0" colspan="2" >
-         <layout class="QHBoxLayout" name="horizontalLayout" >
+        <item row="1" column="0" colspan="2">
+         <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
-           <widget class="QLabel" name="label_2" >
-            <property name="text" >
-             <string>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Symbol,serif';">a&lt;/span>&lt;span style=" vertical-align:sub;">XX&lt;/span>&lt;/p>&lt;/body>&lt;/html></string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;XX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit" />
+           <widget class="QLineEdit" name="lineEdit"/>
           </item>
           <item>
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>13</width>
               <height>20</height>
@@ -125,25 +126,25 @@ p, li { white-space: pre-wrap; }
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="label_3" >
-            <property name="text" >
-             <string>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Symbol,serif';">a&lt;/span>&lt;span style=" vertical-align:sub;">YY&lt;/span>&lt;/p>&lt;/body>&lt;/html></string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;YY&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_2" />
+           <widget class="QLineEdit" name="lineEdit_2"/>
           </item>
           <item>
            <spacer>
-            <property name="orientation" >
+            <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
-            <property name="sizeHint" stdset="0" >
+            <property name="sizeHint" stdset="0">
              <size>
               <width>13</width>
               <height>20</height>
@@ -152,29 +153,29 @@ p, li { white-space: pre-wrap; }
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="label_4" >
-            <property name="text" >
-             <string>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Symbol,serif';">a&lt;/span>&lt;span style=" vertical-align:sub;">ZZ&lt;/span>&lt;/p>&lt;/body>&lt;/html></string>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;a&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ZZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="lineEdit_3" />
+           <widget class="QLineEdit" name="lineEdit_3"/>
           </item>
          </layout>
         </item>
        </layout>
       </item>
       <item>
-       <spacer name="horizontalSpacer_3" >
-        <property name="orientation" >
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0" >
+        <property name="sizeHint" stdset="0">
          <size>
           <width>6</width>
           <height>13</height>
@@ -186,57 +187,57 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_3" >
-     <property name="enabled" >
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="enabled">
       <bool>true</bool>
      </property>
-     <property name="title" >
+     <property name="title">
       <string>Reference frame transformation matrix</string>
      </property>
-     <property name="checkable" >
+     <property name="checkable">
       <bool>true</bool>
      </property>
-     <property name="checked" >
+     <property name="checked">
       <bool>true</bool>
      </property>
-     <layout class="QGridLayout" name="_5" >
-      <item row="0" column="0" >
-       <widget class="QFrame" name="frameTransfo" >
-        <property name="frameShape" >
+     <layout class="QGridLayout" name="_5">
+      <item row="0" column="0">
+       <widget class="QFrame" name="frameTransfo">
+        <property name="frameShape">
          <enum>QFrame::NoFrame</enum>
         </property>
-        <property name="frameShadow" >
+        <property name="frameShadow">
          <enum>QFrame::Raised</enum>
         </property>
-        <property name="lineWidth" >
+        <property name="lineWidth">
          <number>0</number>
         </property>
-        <layout class="QGridLayout" name="_6" >
-         <item row="0" column="0" >
-          <widget class="QLabel" name="label" >
-           <property name="font" >
+        <layout class="QGridLayout" name="_6">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="font">
             <font>
              <family>LMRoman10</family>
              <pointsize>10</pointsize>
              <italic>true</italic>
             </font>
            </property>
-           <property name="text" >
+           <property name="text">
             <string>Reference frame: (x, y, z )     Local frame: (X, Y, Z)</string>
            </property>
-           <property name="alignment" >
+           <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
-         <item row="1" column="0" >
-          <layout class="QGridLayout" name="_7" >
-           <item row="0" column="0" >
+         <item row="1" column="0">
+          <layout class="QGridLayout" name="_7">
+           <item row="0" column="0">
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
                <height>20</height>
@@ -244,24 +245,24 @@ p, li { white-space: pre-wrap; }
              </property>
             </spacer>
            </item>
-           <item row="0" column="1" >
-            <layout class="QGridLayout" name="_8" >
-             <item row="0" column="0" >
-              <widget class="QLabel" name="label_18" >
-               <property name="text" >
+           <item row="0" column="1">
+            <layout class="QGridLayout" name="_8">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_18">
+               <property name="text">
                 <string>X =</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="1" >
-              <widget class="QLineEdit" name="lineEdit_4" >
-               <property name="minimumSize" >
+             <item row="0" column="1">
+              <widget class="QLineEdit" name="lineEdit_4">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -269,9 +270,9 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="2" >
-              <widget class="QLabel" name="label_19" >
-               <property name="font" >
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_19">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
@@ -280,20 +281,20 @@ p, li { white-space: pre-wrap; }
                  <bold>false</bold>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>x +</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="3" >
-              <widget class="QLineEdit" name="lineEdit_5" >
-               <property name="minimumSize" >
+             <item row="0" column="3">
+              <widget class="QLineEdit" name="lineEdit_5">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -301,29 +302,29 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="4" >
-              <widget class="QLabel" name="label_20" >
-               <property name="font" >
+             <item row="0" column="4">
+              <widget class="QLabel" name="label_20">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>y +</string>
                </property>
               </widget>
              </item>
-             <item row="0" column="5" >
-              <widget class="QLineEdit" name="lineEdit_6" >
-               <property name="minimumSize" >
+             <item row="0" column="5">
+              <widget class="QLineEdit" name="lineEdit_6">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -331,36 +332,36 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="0" column="6" >
-              <widget class="QLabel" name="label_21" >
-               <property name="font" >
+             <item row="0" column="6">
+              <widget class="QLabel" name="label_21">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>z </string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0" >
-              <widget class="QLabel" name="label_22" >
-               <property name="text" >
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_22">
+               <property name="text">
                 <string>Y =</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="1" >
-              <widget class="QLineEdit" name="lineEdit_8" >
-               <property name="minimumSize" >
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEdit_8">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -368,29 +369,29 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="1" column="2" >
-              <widget class="QLabel" name="label_23" >
-               <property name="font" >
+             <item row="1" column="2">
+              <widget class="QLabel" name="label_23">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>x +</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="3" >
-              <widget class="QLineEdit" name="lineEdit_9" >
-               <property name="minimumSize" >
+             <item row="1" column="3">
+              <widget class="QLineEdit" name="lineEdit_9">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -398,29 +399,29 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="1" column="4" >
-              <widget class="QLabel" name="label_24" >
-               <property name="font" >
+             <item row="1" column="4">
+              <widget class="QLabel" name="label_24">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>y +</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="5" >
-              <widget class="QLineEdit" name="lineEdit_7" >
-               <property name="minimumSize" >
+             <item row="1" column="5">
+              <widget class="QLineEdit" name="lineEdit_7">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -428,36 +429,36 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="1" column="6" >
-              <widget class="QLabel" name="label_25" >
-               <property name="font" >
+             <item row="1" column="6">
+              <widget class="QLabel" name="label_25">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>z</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="0" >
-              <widget class="QLabel" name="label_26" >
-               <property name="text" >
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_26">
+               <property name="text">
                 <string>Z =</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="1" >
-              <widget class="QLineEdit" name="lineEdit_11" >
-               <property name="minimumSize" >
+             <item row="2" column="1">
+              <widget class="QLineEdit" name="lineEdit_11">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -465,29 +466,29 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="2" >
-              <widget class="QLabel" name="label_27" >
-               <property name="font" >
+             <item row="2" column="2">
+              <widget class="QLabel" name="label_27">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>x +</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="3" >
-              <widget class="QLineEdit" name="lineEdit_12" >
-               <property name="minimumSize" >
+             <item row="2" column="3">
+              <widget class="QLineEdit" name="lineEdit_12">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -495,29 +496,29 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="4" >
-              <widget class="QLabel" name="label_28" >
-               <property name="font" >
+             <item row="2" column="4">
+              <widget class="QLabel" name="label_28">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>y +</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="5" >
-              <widget class="QLineEdit" name="lineEdit_10" >
-               <property name="minimumSize" >
+             <item row="2" column="5">
+              <widget class="QLineEdit" name="lineEdit_10">
+               <property name="minimumSize">
                 <size>
                  <width>50</width>
                  <height>0</height>
                 </size>
                </property>
-               <property name="maximumSize" >
+               <property name="maximumSize">
                 <size>
                  <width>50</width>
                  <height>16777215</height>
@@ -525,28 +526,28 @@ p, li { white-space: pre-wrap; }
                </property>
               </widget>
              </item>
-             <item row="2" column="6" >
-              <widget class="QLabel" name="label_29" >
-               <property name="font" >
+             <item row="2" column="6">
+              <widget class="QLabel" name="label_29">
+               <property name="font">
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
                  <italic>true</italic>
                 </font>
                </property>
-               <property name="text" >
+               <property name="text">
                 <string>z</string>
                </property>
               </widget>
              </item>
             </layout>
            </item>
-           <item row="0" column="2" >
+           <item row="0" column="2">
             <spacer>
-             <property name="orientation" >
+             <property name="orientation">
               <enum>Qt::Horizontal</enum>
              </property>
-             <property name="sizeHint" stdset="0" >
+             <property name="sizeHint" stdset="0">
               <size>
                <width>40</width>
                <height>20</height>
@@ -563,11 +564,11 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item>
-    <spacer name="spacer" >
-     <property name="orientation" >
+    <spacer name="spacer">
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>17</width>
        <height>152</height>
