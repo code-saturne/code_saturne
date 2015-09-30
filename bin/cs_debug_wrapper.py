@@ -47,7 +47,11 @@ rank_id = -1
 debuggers = {"gdb": "GNU gdb debugger",
              "ddd": "Data Display Debugger",
              "emacs": "Emacs with gdb debugger",
-             "emacs23": "Emacs 23 or older with gdb debugger"}
+             "emacs23": "Emacs 23 or older with gdb debugger",
+             "kdbg": "KDbg",
+             "kdevelop": "Kdevelop",
+             "gede": "Gede",
+             "nemiver": "Nemiver"}
 
 #-------------------------------------------------------------------------------
 # Enquote arguments if required
@@ -86,7 +90,7 @@ def print_help():
 
     help_string = \
 """
-This a a debugger launcher wrapper. Usage:
+This is a debugger launcher wrapper. Usage:
 
 %s [debugger opts] [mpiexec opts] [valgrind opts] --program=<program> [arguments]
 
@@ -100,6 +104,8 @@ Debugger options:
   --debugger=DEBUGGER    Allows selection of the debugger
   --debugger=list        Lists debuggers supported by this script
   --asan-bp              Adds a breakpoint for gcc's Address-Sanitizer
+  --back-end=GDB         Path to debugger back-end (for graphical front-ends)
+  --breakpoints=LIST     Comma-separated list of breakpoints to insert
 
   Other, standard options specific to each debugger may also be
   used, as long as they do not conflict with options in this script.
@@ -308,6 +314,62 @@ def gen_cmd_file(cmds):
     return f_name
 
 #-------------------------------------------------------------------------------
+# Run gdb-based or compatible debugger with minimal options
+#-------------------------------------------------------------------------------
+
+def run_minimal_debug(path, args=None,
+                      debugger='gdb', debugger_opts=None,
+                      debugger_ui='terminal'):
+    """
+    Run gdb-based or compatible debugger with minimal options.
+    This is useful for debuggers such as KDevelop and Nemiver, whose
+    command lines do not allow passing GDB options or command files.
+    """
+
+    print("ici", debugger_ui)
+
+    # Start building debugger command options
+
+    cmd = [debugger]
+
+    gdb = 'gdb'
+    if debugger_opts:
+        for o in debugger_opts:
+            if o.find('--back-end=') == 0: # Specify back-end
+                gdb = o[o.find('=')+1:]
+
+    if debugger_ui == 'kdevelop':
+        cmd += ['--debug', gdb]
+        cmd += [path]
+        if args:
+            cmd += args
+        print(cmd)
+
+    if debugger_ui == 'kdbg':
+        if args:
+            cmd += ['-a'] + args
+        cmd += [path]
+
+    if debugger_ui == 'gede':
+        cmd += ['--args', path]
+        if args:
+            cmd += args
+
+    elif debugger_ui == 'nemiver':
+        if gdb != 'gdb':
+            cmd += ['--gdb-binary=' + gdb]
+        cmd += [path]
+        if args:
+            cmd += args
+
+    else:
+        cmd += [path]
+        if args:
+            cmd += args
+
+    return subprocess.call(cmd)
+
+#-------------------------------------------------------------------------------
 # Run gdb-based or compatible debugger.
 #-------------------------------------------------------------------------------
 
@@ -358,6 +420,8 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     # Add debugger options, with a specific handling of
     # existing debugger command files
 
+    gdb = 'gdb'
+
     debugger_command_file = None
 
     if debugger_opts:
@@ -368,6 +432,11 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
             elif file_next:
                 debugger_command_file = cmd
                 file_next = False
+            elif o.find('--back-end=') == 0: # Specify back-end
+                gdb = o[o.find('=')+1:]
+            elif o.find('--breakpoints=') == 0: # Specify breakpoints
+                for bp in o[o.find('=')+1:].split(','):
+                    cmds.append('b ' + bp)
             elif o == '--asan-bp': # gcc Adress sanitizer breakpoints
                 cmds.append('b __asan_report_error')
             else:
@@ -407,9 +476,12 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     elif debugger_ui == 'ddd':
         cmd.insert(0, debugger)
+        if gdb != 'gdb':
+            cmd.insert(1, gdb)
+            cmd.insert(1, '--debugger')
 
     elif debugger_ui == 'emacs' or debugger_ui == 'emacs23':
-        cmd_string = r'"(gdb \"' + 'gdb'
+        cmd_string = r'"(gdb \"' + gdb
         if debugger_ui == 'emacs23': # emacs 23 or older
             cmd_string += ' --annotate=3'
         else:
@@ -566,8 +638,8 @@ def run_debug(cmds):
     if cmds['debugger']:
         debugger = cmds['debugger'][0]
         dbg_name = os.path.basename(debugger)
-        if dbg_name.find("ddd") > -1:
-            debugger_ui = 'ddd'
+        if dbg_name in debuggers.keys() and dbg_name != 'gdb':
+            debugger_ui = dbg_name
         elif dbg_name.find("emacs23") > -1:
             debugger_ui = 'emacs23'
         elif dbg_name.find("emacs") > -1:
@@ -592,14 +664,21 @@ def run_debug(cmds):
                               debugger_ui = debugger_ui)
 
     elif 'debugger' in cmds.keys():
-        p = run_gdb_debug(path = cmds['program'][0],
-                          args = cmds['program'][1:],
-                          gdb_cmds = None,
-                          debugger = cmds['debugger'][0],
-                          debugger_opts = cmds['debugger'][1:],
-                          debugger_ui = debugger_ui)
-        p.communicate()
-        return p.returncode
+        if debugger in ['kdbg', 'kdevelop', 'gede', 'nemiver']:
+            return run_minimal_debug(path = cmds['program'][0],
+                                     args = cmds['program'][1:],
+                                     debugger = cmds['debugger'][0],
+                                     debugger_opts = cmds['debugger'][1:],
+                                     debugger_ui = debugger_ui)
+        else:
+            p = run_gdb_debug(path = cmds['program'][0],
+                              args = cmds['program'][1:],
+                              gdb_cmds = None,
+                              debugger = cmds['debugger'][0],
+                              debugger_opts = cmds['debugger'][1:],
+                              debugger_ui = debugger_ui)
+            p.communicate()
+            return p.returncode
 
     elif valgrind in cmds.keys():
         return run_valgrind(path = cmds['program'][0],
