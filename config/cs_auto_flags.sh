@@ -280,7 +280,7 @@ elif test "x$cs_gcc" = "xclang"; then
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_prf="-p"
-  cflags_default_omp="-openmp"
+  cflags_default_omp="-fopenmp=libomp"
 
 # Otherwise, are we using pathcc ?
 #---------------------------------
@@ -619,7 +619,7 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_prf="-p"
-  cxxflags_default_omp="-openmp"
+  cxxflags_default_omp="-fopenmp=libomp"
 
 # Otherwise, are we using pgcc ?
 #-------------------------------
