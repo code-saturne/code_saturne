@@ -23,14 +23,14 @@
 %===============================================
 \section{ Gas combustion}
 %===============================================
-  
+
 Flames with gaseous fuels can be categorized in premix, diffusion or
 partial-premix.
 
 %=======================================
 \subsection{Premix: Eddy Break Up}
 %=======================================
- 
+
 The original Spalding model \cite{Spalding:1971a} was written for a situation where the whole
 boiler is filled with the same mixture (only one inlet); the motto of which is
 \textit{"If it mixes, it burns"}. If the chemistry is fast vs. mixing, fluid
@@ -39,7 +39,7 @@ by a progress variable (valued 0 in fresh gases and 1 in burnt ones) with a
 source term: the reaction one. The mixture of totally fresh or totally burnt
 gases, called intermittency, leads to a maximal variance of the progress
 variable determined by the mean value of the progress variable.
- 
+
 \begin{equation}
 C"^{2}_{\mbox{\footnotesize max}} = (C_{\mbox{\footnotesize moy}} -C_{\mbox{\footnotesize min}}).(C_{\mbox{\footnotesize max}}-C_{\mbox{\footnotesize moy}}) = C_{\mbox{\footnotesize moy}} . (1-C_{\mbox{\footnotesize moy}})
 \end{equation}
@@ -49,11 +49,11 @@ induces the conversion of fresh gases in burnt ones. So the source term for the
 (mean) progress variable is the dissipation of its (algebraic) variance. Be
 careful: in \CS~ the variable chosen to describe the reaction is the mass
 fraction of fresh gases (valued 1 in fresh and 0 in burnt), so:
- 
+
 \begin{equation}
 S(Y_{\mbox{\footnotesize fg}}) = - C_{\mbox{\small ebu}}~\frac{\epsilon}{k} \displaystyle\left[~\rho ~Y_{\mbox{\footnotesize fg}} \left(1-Y_{\mbox{\footnotesize fg}}\right)\right]
 \end{equation}
-  
+
 Where $C_{\mbox{\small ebu}}$ is a constant, supposedly "universal", fitted
 around $1.6$ (only advanced users may adjust this value).\\
 Some improvements have been proposed, and largely used, for situations with
@@ -95,16 +95,16 @@ enthalpy. By this way every heat loss removed from the mean enthalpy is charged
 to the hottest gases.
 
 \begin{equation}
-\tilde h = Y_{\mbox{\footnotesize fg}}~.~h_{\mbox{\footnotesize fg}}( \tilde f) + (1-Y_{\mbox{\footnotesize fg}})~.~h_{\mbox{\footnotesize bg}} \quad \Leftrightarrow \quad  
-                  h_{\mbox{\footnotesize bg}}  = \frac{ \tilde h-Y_{\mbox{\footnotesize fg}}~.~h_{\mbox{\footnotesize fg}}(\tilde f) }{ 1-Y_{\mbox{\footnotesize fg}} }  
+\tilde h = Y_{\mbox{\footnotesize fg}}~.~h_{\mbox{\footnotesize fg}}( \tilde f) + (1-Y_{\mbox{\footnotesize fg}})~.~h_{\mbox{\footnotesize bg}} \quad \Leftrightarrow \quad
+                  h_{\mbox{\footnotesize bg}}  = \frac{ \tilde h-Y_{\mbox{\footnotesize fg}}~.~h_{\mbox{\footnotesize fg}}(\tilde f) }{ 1-Y_{\mbox{\footnotesize fg}} }
 \end{equation}
 %
-where $\tilde f$ is here the local mean of the mixture fraction or a constant value ({\small in the regular EBU model}).  
+where $\tilde f$ is here the local mean of the mixture fraction or a constant value ({\small in the regular EBU model}).
 
 %================================================
 \subsection{Diffusion: PDF with 3 points chemistry}
 %================================================
- 
+
 In diffusion model, the combustion is assumed to be limited only by mixing
 (between air and fuel), so the reaction is assumed to reach instantaneously its
 equilibrium state and the temperature and concentrations can be computed for
@@ -114,7 +114,7 @@ stoechiometric, the burnt gases contains only final products (none unburnt like
 CO, except definition of product including a specified ratio of CO).  As a
 consequence, every concentration is a piecewise linear function of the mixture
 fraction (subroutines: \fort{d3pphy, d3pint, cpcym, fucym}).
- 
+
 \begin{eqnarray}
 \displaystyle 0         \le f \le f_{\mbox{\footnotesize s}} &;& Y_{i}(f) = Y_{\mbox{\footnotesize air}} + \quad \frac{f}{f_{\mbox{\footnotesize s}}} ~~ (Y_{\mbox{s}}-Y_{\mbox{\footnotesize air}})  \\
 \displaystyle f_{\mbox{\footnotesize s}} \le f \le 1         &;& Y_{i}(f) = Y_{\mbox{\footnotesize s}}~~ + \frac{f-f_{\mbox{\footnotesize s}}}{1-f_{\mbox{\footnotesize s}}}~(Y_{\mbox{\footnotesize fuel}}-Y_{\mbox{\footnotesize s}})
@@ -126,7 +126,7 @@ fraction (subroutines: \fort{d3pphy, d3pint, cpcym, fucym}).
 \caption{Mass fraction of global species are piecewise linear with mixture fraction.}
 \end{figure}
 %========================================
-  
+
 Where $f_{\mbox{\footnotesize s}}$ is the stoechiometric mixture fraction, $Y_s$
 the concentrations in products of the complete reaction of a stoechiometric
 mixture (in such products, the chemical reaction is no more possible :
@@ -140,7 +140,7 @@ mixture fraction are used to fit parameter of a Probability Density Function,
 with a presumed form, for the mixture fraction. In \CS~ the shape proposed by
 \cite{Borghi:1978a} with a rectangle and Dirac's peak is used (subroutines \fort{copdf,
   cppdf, fupdf}).
- 
+
 %========================================
 \begin{figure}[!htcb]
 \centerline{\includegraphics[width=0.8\textwidth]{Pf}}
@@ -148,7 +148,7 @@ with a presumed form, for the mixture fraction. In \CS~ the shape proposed by
 \caption{Examples of presumed PDF: cheapest form.}
 \end{figure}
 %========================================
-  
+
 The determination of the mean concentration is done by integrating the local
 concentration weighted by the probability density function. As a matter of fact,
 integrating the product of a piecewise linear function by a constant (height of
@@ -167,7 +167,7 @@ unkwnon at $f_{\mbox{\footnotesize s}}$) and the resulting mean enthalpy
 equation for the mean enthalpy (which takes in account radiation and other heat
 fluxes), $h_{\mbox{\footnotesize s}}$ is determined and, consequently the
 temperature at fs and the mean temperature can be computed.
- 
+
 %========================================
 \begin{figure}[!htbp]
 \centerline{\includegraphics[width=0.8\textwidth]{hf}}
@@ -192,8 +192,8 @@ hereafter.
 \begin{eqnarray}
 %---------------
 \int_{0}^1 h(f) . P(f) df &=& D_0.h_{\mbox{\small Ox}} + D_1.h_{\mbox{\footnotesize fuel}} \qquad \qquad\nonumber \\
-                          &+& H. h_{\mbox{\small Ox}} . (f_{2,\ell}-f_{1,\ell}) 
-                           +  H.(h_{\mbox{\footnotesize s}}-h_{\mbox{\footnotesize air}})~ 
+                          &+& H. h_{\mbox{\small Ox}} . (f_{2,\ell}-f_{1,\ell})
+                           +  H.(h_{\mbox{\footnotesize s}}-h_{\mbox{\footnotesize air}})~
 \left\{ \frac{f_{2,\ell}^2-f_{1,\ell}^2}{2~f_{\mbox{\footnotesize s}}} \right\}\label{Eqs_00C} \\
                           &+& H . \frac{f_{\mbox{\footnotesize s}}.h_{\mbox{\footnotesize fuel}}-h_{\mbox{\footnotesize s}}}{f_{\mbox{\footnotesize s}}-1} . (f_{2,r}-f_{1,r}) + H. (h_{\mbox{\footnotesize s}}-h_{\mbox{\footnotesize fuel}})
 \displaystyle \left\{ \displaystyle \frac{f_{2,r}^2-f_{1,r}^2}{2~(f_{\mbox{\footnotesize s}}-1)} \right\}\nonumber
@@ -203,14 +203,14 @@ hereafter.
 \begin{eqnarray}
 %---------------
 \int_{0}^1 h(f) . P(f) df &=& D_0.h_{\mbox{\small Ox}} + D_1.h_{\mbox{\footnotesize fuel}} \qquad\qquad\nonumber \\
-                          &+& \underbrace{H ~ h_{\mbox{\small Ox}} ~ (f_{2,\ell}-f_{1,\ell}) 
+                          &+& \underbrace{H ~ h_{\mbox{\small Ox}} ~ (f_{2,\ell}-f_{1,\ell})
                            -  H ~ h_{\mbox{\small Ox}}
 \displaystyle{     ~\frac{(f_{2,\ell}^2-f_{1,\ell}^2)}{2~f_{\mbox{\footnotesize s}}} } }_{\displaystyle H_{\small Ox}~;~\mbox{2 terms}}\qquad\qquad\nonumber \\
-                          &+& \underbrace{H ~ ~h_{\mbox{\footnotesize fuel}} ~\frac{ f_{\mbox{\footnotesize s}} 
+                          &+& \underbrace{H ~ ~h_{\mbox{\footnotesize fuel}} ~\frac{ f_{\mbox{\footnotesize s}}
                                               ~(f_{2,r}-f_{1,r}) }{ (f_{\mbox{\footnotesize s}}-1) }
                             - H ~ h_{\mbox{\footnotesize fuel}} ~ \displaystyle{\frac{(f_{2,r}^2-f_{1,r}^2)}{2.(f_{\mbox{\footnotesize s}}-1)} } }_{   \displaystyle H_{\mbox{\small fuel}}~;~\mbox{2 terms} }\qquad\qquad \\
                           &+& \underbrace{ H . h_{\mbox{\footnotesize s}} ~
-\displaystyle \left\{ \frac{(f_{2,\ell}^2-f_{1,\ell}^2)}{2~f_{\mbox{\footnotesize s}}} 
+\displaystyle \left\{ \frac{(f_{2,\ell}^2-f_{1,\ell}^2)}{2~f_{\mbox{\footnotesize s}}}
                 -\frac{(f_{2,r}-f_{1,r})          }{(f_{\mbox{\footnotesize s}}-1)}
                 +\frac{(f_{2,r}^2-f_{1,r}^2)}{2~(f_{\mbox{\footnotesize s}}-1)} \right\} }_{\displaystyle H^{*}~;~\mbox{last terms}} \qquad\qquad\nonumber
 %---------------
@@ -223,11 +223,11 @@ pure fuel, $f_1$ begin of rectangle, $f_2$ end of rectangle, $H$ heigth of recta
 This expression for enthalpy includes a last term linear in
 $h_{\mbox{\footnotesize s}}$ , identification with the transported enthalpy
 (solved with source term for radiation and so on) allows to determine its value:
-  
+
 \begin{eqnarray}
 \int_{0}^1 h(f) . P(f) df =\tilde{h} \quad  \Leftrightarrow &&
-                    h_{s} =\frac{\tilde{h}- [ D_0.h_{\mbox{\small air}} + D_1.h_{\mbox{\small fuel}}+\{ H_{\mbox{\small Ox}} + H_{\mbox{\small fuel}}\} ]}{H^{*}} 
-\end{eqnarray} 
+                    h_{s} =\frac{\tilde{h}- [ D_0.h_{\mbox{\small air}} + D_1.h_{\mbox{\small fuel}}+\{ H_{\mbox{\small Ox}} + H_{\mbox{\small fuel}}\} ]}{H^{*}}
+\end{eqnarray}
 
 %================================================
 \subsection{Partial premix: Libby Williams models}
@@ -251,7 +251,7 @@ models, moreover the limitation by the chemistry is needed (for stability studie
 Originally, Libby \& Williams proposed a presumed PDF made of two Dirac's peaks,
 Ribert showed that this PDF could be determined with only the mean and the
 variance of the mixture fraction and a reactive variable (by now, the mass
-fraction of fuel is used). Then some undeterminations seem awkward and Robin 
+fraction of fuel is used). Then some undeterminations seem awkward and Robin
 \emph{et al.} propose a four Dirac's peaks PDF whose parameters are determined with the
 same variables and the solved ({\small transported}) covariance (of the reactive
 variable and the mixture fraction) as an extra solved field. With the condition
@@ -262,7 +262,7 @@ With two peaks distribution, the two-variable PDF is restricted to one line,
 crossing the mean state and the slope of which is the ratio of
 variances (choice of the sign is user free, ... but relevant: expertise is needed). The correlation between variables is unity.
 On this line the distribution is supposed to obey a modified Curl model \cite{Curl:1963a}.
- 
+
 %========================================
 \begin{figure}[!htpb]
 \centerline{\includegraphics[width= 0.8\textwidth]{LW2}}
@@ -280,7 +280,7 @@ particle nearer of stoechiometry being able to burn -then destroy Yf- faster tha
 \caption{PDF form in LWP approach: succesive modified Curl distributions.}
 \end{figure}
 %========================================
-  
+
 In adiabatic conditions, the temperature can be computed for every pair $(f,Yfuel)$, allowing the determination of the kinetic constant.
 
 As previously, with heat losses, it is assumed that the hottest gases have lost
@@ -293,7 +293,7 @@ products, then the enthalpy and temperature in the peaks conditions and, \emph{i
 %=====================================
 \subsection{Numerical Recipies for PDF}
 %=====================================
-  
+
 Some applied mathematics are involved in pdf parameters determination (rectangle
 and modified Curl) and for integration (species
 mass fraction, temperature, density and so on).
@@ -305,7 +305,7 @@ Curl; for similar mean during variance dissipation).
 %======================================================================
 \subsubsection{Rectangle and Dirac's peaks probability density function}
 %======================================================================
- 
+
 This type of pdf is used in diffusion flames both for gas combustion or
 dispersed fuel ones (coal and heavy fuel oil). In gas mixture, the pdf is build
 for an equivalence ratio for fuel (inert scalar variable) ranging on [0, 1]. For
@@ -322,7 +322,7 @@ rectangle, rectangle and one Dirac's peak at one boundary, two Dirac's peak at
 boundaries and rectangle) and then, the three pertinent parameters (three
 conditions given by momenta $m_{0}=1, m_{1}=\text{mean},
 m_{2}=\text{mean}^{2}+\text{variance}$).
-  
+
 %==================
 \begin{enumerate}
 \item For a lonesome rectangle Dirac's peak intensity is null, the three
@@ -370,20 +370,20 @@ f_2 = 0 ~;~ f_3 = 1 ~;~ D_0 = 3.\widetilde{f^2}-4.\tilde{f}+1 ~;~ D_1 = 3.\widet
   otherwise) and a rectangle.
 \begin{eqnarray}
 %---------------
-\tilde{f} \le \frac{1}{2} & \Rightarrow & D_1 = 0 ~;~ f_2 = 0 ~;~ f_3 = \frac{3.\widetilde{f^2}}{2.\tilde{f}} ~;~ D_0 = 1-2. \left(\frac{\tilde{f}}{f_3} \right)  \\ 
+\tilde{f} \le \frac{1}{2} & \Rightarrow & D_1 = 0 ~;~ f_2 = 0 ~;~ f_3 = \frac{3.\widetilde{f^2}}{2.\tilde{f}} ~;~ D_0 = 1-2. \left(\frac{\tilde{f}}{f_3} \right)  \\
 \tilde{f} \ge \frac{1}{2} & \Rightarrow & D_0 = 0 ~;~ f_3 = 1 ~;~ f_2 = \frac{3.\widetilde{f^2}-4.\tilde{f}+1}{2.(\tilde{f}-1)} ~;~ D_1 = \frac{2.\tilde{f}-1-f_2}{1-f_2} \nonumber
 \end{eqnarray}
 \item every time, the height of the rectangle obeys the same relation :
 \begin{equation}
 h = \frac{1-D_0-D_1}{f_3-f_2}
-\end{equation} 
+\end{equation}
 \end{enumerate}
 %==================
 
 %================================
 \subsubsection{Curl distribution}
 %================================
- 
+
 The Curl distribution is only composed of two Dirac's peaks. Such a distribution
 needs four parameters (two positions and two amplitudes), only two moments (mean
 and variance) are known, the completness is the third, so an extra assumption is
@@ -396,7 +396,7 @@ regular Curl distribution is implemented and used (discrepancies in species mass
 fractions using the modified Curl are not worthy of this option introduction).
 Looking for $P_1$ and $P_2$ the amplitudes, and $f_1$ and $f_2$ the positions,
 with constraints from completeness, mean and variance, it comes :
- 
+
 \begin{eqnarray}
 %---------------
 \label{eq:P1P2}
@@ -415,7 +415,7 @@ each phases) is:
 && P_1 = 1-\tilde{f} ; P_2=\tilde{f}                                                  \nonumber \\
 && f_1 = \tilde{f}.\left\{~ 1-\sqrt{\frac{\widetilde{f"^2}}{\tilde{f}.(1-\tilde{f})}} ~\right\} \label{Eqs_xx6}
 %---------------
-\end{eqnarray} 
+\end{eqnarray}
 Obviously, maximal value of variance induces Dirac's peak positionned at boundaries.
 
 Formulae in \eqref{eq:P1P2} can be used to determine the peak's magnitude if any
@@ -428,7 +428,7 @@ constraint for a modified Curl model, it comes :
 &&\widetilde{f{''}^3} =2 . \widetilde{f{''}^2}^2 . \frac{1-2.\tilde{f}}{\tilde{f}.(1-\tilde{f})+\widetilde{f{''}^2}}  \label{Eqs_xx8}\\
 &&P_1^2~\left\{~          4+\frac{\widetilde{f{''}^3}^2}{\widetilde{f{''}^2}^3}~\right\}
                  -P_1~\left\{~ 4+\frac{\widetilde{f{''}^3}^2}{\widetilde{f{''}^2}^3}~\right\}+1=0 \label{Eqs_xx9}
-\end{eqnarray}   
+\end{eqnarray}
 Some numerical evaluations don't show large discrepancies ({\small among mass fraction or temperature}) so this option is not currently available.
 
 \newpage

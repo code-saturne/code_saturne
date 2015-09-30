@@ -1,12 +1,12 @@
 \renewcommand{\arraystretch}{2.0}
 \section{Tensorial and index notations}
-In a fixed reference frame $ \left( \vect{e}_1 , \, \vect{e}_2 , \, \vect{e}_3  \right)$, taking the Einstein convention on indices into account:  
+In a fixed reference frame $ \left( \vect{e}_1 , \, \vect{e}_2 , \, \vect{e}_3  \right)$, taking the Einstein convention on indices into account:
 %
 \begin{description}
-\item[$0^{th}$ order tensor: ] scalar $T$ 
-\item[$1^{st}$ order tensor: ] vector $\vect{u} = u_i \, \vect{e}_i  $ 
-\item[$2^{nd}$ order tensor: ] matrix $\tens{ \sigma} =  \sigma_{ij}  \,\vect{e}_i \otimes \vect{e}_j$ 
-\item[$3^{rd}$ order tensor: ] $\vect{\tens{a}} = a_{ijk} \, \vect{e}_i \otimes \vect{e}_j  \otimes \vect{e}_k$ 
+\item[$0^{th}$ order tensor: ] scalar $T$
+\item[$1^{st}$ order tensor: ] vector $\vect{u} = u_i \, \vect{e}_i  $
+\item[$2^{nd}$ order tensor: ] matrix $\tens{ \sigma} =  \sigma_{ij}  \,\vect{e}_i \otimes \vect{e}_j$
+\item[$3^{rd}$ order tensor: ] $\vect{\tens{a}} = a_{ijk} \, \vect{e}_i \otimes \vect{e}_j  \otimes \vect{e}_k$
 \item[\textcolor{white}{$3^{rd}$ order } $ \vdots $]
 \item[$ n^{th} $ order tensor: ]$a^{(n)} = a_{i_1 i_2 \cdots i_n} \, \vect{e}_{i_1} \otimes \vect{e}_{i_2} \otimes \cdots  \otimes \vect{e}_{i_n}$
 \end{description}
@@ -25,26 +25,26 @@ dot product&$.$ & $\vect{u} $&$ . $&$\vect{u} $&$ = $&$ u_i u_i  $ \\
 double dot &$ : $&$ \tens{\sigma} $&$ : $&$ \tens{\sigma} $&$ = $&$ \sigma_{ij} \sigma_{ij}    $ \\
        product& &$ a^{(n)} $&$ : $&$ b^{(m)} $&$ = $&$ a_{i_1  \cdots i_{n-2}kl} b_{k l j_3  \cdots j_m} $&$ \vect{e}_{i_1} \otimes \cdots \otimes \vect{e}_{i_{n-2}} \otimes \vect{e}_{j_3} \otimes \cdots \otimes \vect{e}_{j_m} $ \\
 \hline
-vectorial product & 
+vectorial product &
 $
 \begin{array}{c}
  \times \\
 \textrm{ \emph{or} } \\
 \wedge
 \end{array}
-$ 
+$
 &$ \vect{u} $&$ \times $&$ \vect{v} $&$ = $&
 $ \left( \begin{array}{c}
 u_1\\
 u_2 \\
 u_3
-\end{array} \right) \times 
+\end{array} \right) \times
 \left( \begin{array}{c}
 v_1\\
 v_2 \\
 v_3
 \end{array} \right)  $
-&$ = 
+&$ =
 \left( \begin{array}{c}
 u_2 v_3 - u_3 v_2\\
 u_3 v_1 - u_1 v_3 \\
@@ -76,7 +76,7 @@ u_1 v_2 - u_2 v_1
 %
 %
 %
-\newpage 
+\newpage
 \begin{table}[!htb]
 \centering
 \begin{tabular}{l | c | l | l @{}l@{\,} l  }
@@ -96,8 +96,8 @@ Laplacian & $\Delta$  & $ \Delta a^{(n)} = \divv^{(n)} \left\{ \nabla^{(n+1)} \l
 & $\nabla^2$ && $ \Delta^{(n)} a^{(n)}  $&$ = $&$ \dfrac{ \partial^2  a^{(n)}}{\partial x_{i_{n+1}} \partial x_{i_{n+1}}} $\\
 &&&&$ = $&$ \dfrac{ \partial^2 a_{i_1  \cdots i_n}}{ \partial x_{i_{n+1}} \partial x_{i_{n+1}}} \vect{e}_{i_1} \otimes \cdots \otimes \vect{e}_{i_{n}} $ \\
 \hline
-rotational &  
-$   
+rotational &
+$
 \begin{array}{c}
 \vect{\nabla} \times\\
 \textrm{ \emph{or} } \\
@@ -108,19 +108,19 @@ $
 \frac{\partial }{\partial x_1}\\
 \frac{\partial }{\partial x_2}\\
 \frac{\partial }{\partial x_3}
-\end{array} \right) 
+\end{array} \right)
 $&$ \times $&$
 \left( \begin{array}{c}
 u_1\\
 u_2 \\
 u_3
-\end{array} \right)  
- = 
+\end{array} \right)
+ =
 \left( \begin{array}{c}
 \frac{\partial u_3}{\partial x_2} - \frac{\partial u_2}{\partial x_3}\\
 \frac{\partial u_1}{\partial x_3} - \frac{\partial u_3}{\partial x_1} \\
 \frac{\partial u_2}{\partial x_1} -\frac{\partial u_1}{\partial x_2}
-\end{array} \right)  
+\end{array} \right)
 $
 \end{tabular}
 \caption{Differential operators.}

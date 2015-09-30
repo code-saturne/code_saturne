@@ -219,7 +219,7 @@ The following rules should be followed:
 \item Index arrays used with $0$ to $n-1$ numbering should be named
   using a \verb=idx_= or \verb=index_= prefix or suffix, while
   similar arrays using a $0$ to $n-1$ numbering (usually those that may be
-  also used in Fortran code) should be named using a \verb=pos_= 
+  also used in Fortran code) should be named using a \verb=pos_=
   prefix or suffix.
 
 \end{itemize}
@@ -378,7 +378,7 @@ file.
       while the file was not), and Fortran wrappers for several C
       functions defined in a single C file are also usually defined
       in a single source, as they are a consistent whole.
- 
+
 \item exactly 6 characters per routine name, with no underscores.
       As Fortran 95 allows longer identifiers, the 6 character limit is
       obsolete, buy avoiding \texttt{\_} characters is still recommended
@@ -394,7 +394,7 @@ file.
       Also, for routine names with underscores, the \texttt{CS\_PROCF}
       macro must not be used. ISO C bindings must be used instead.
 
-\item at least 2 characters per variable names 
+\item at least 2 characters per variable names
       (banish variables \texttt{i}, \texttt{j}, or \texttt{k},
        preferring \texttt{ii}, \texttt{jj}, or \texttt{kk}, as this makes
        searching under a text editor easier for non-experts).

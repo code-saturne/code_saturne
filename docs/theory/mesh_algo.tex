@@ -701,19 +701,19 @@ triangulate both faces independently.
 \section*{Unwarping algorithm\label{sec:unwarping}}
 %-------------------------------------------------------------------------------
 
-The unwarping algorithm is a smoother, its 
+The unwarping algorithm is a smoother, its
 principle is to mitigate the local defects by averaging
 the mesh quality. It moves vertices using an iterative
-process which is expected to converge to a mesh with better averaged 
+process which is expected to converge to a mesh with better averaged
 warping criteria.
 \section*{Warping criterion in \CS\label{sec:warping_criterion}}
-The warp face quality criterion in \CS represents the non coplanarity 
+The warp face quality criterion in \CS represents the non coplanarity
 in space of $N$ points $P_{i=1:N}$ $(N > 3)$.
 
-Let $f$ be the face defined by $P_{i=1:Nbv(f)}$, the center 
+Let $f$ be the face defined by $P_{i=1:Nbv(f)}$, the center
 of gravity $O_{f}$ and $\overrightarrow{n_{f}}$ the face normal, the warping
 criterion is calculated for each face by the ``maximum'' angle between
-$\overrightarrow{P_{i}P_{i+1}}$ and $\overrightarrow{n_{f}}^{\perp}$ 
+$\overrightarrow{P_{i}P_{i+1}}$ and $\overrightarrow{n_{f}}^{\perp}$
 $\forall i\in [1,Nbv(f)]$ where $P_{Nbv(f)+1} = P_{1}$. For consistency
 purposes, the warping criterion $warp_{f}$ is defined in degree for each
 face of the mesh $\mathcal{M}$ as:
@@ -729,12 +729,12 @@ faces using an iterating process. At each iteration the algorithm tries to
 approach vertices from the midplane of the face without increasing the warping
 of the neighbours faces.
 
-The displacement is calculated by projecting vertices onto 
+The displacement is calculated by projecting vertices onto
 the plane defined by $\overrightarrow{n_{f}}$ and the center of gravity $O$.
 
 For the face $f$, $\forall i \in [1,Nbv(f)]$, the vertices $P_{i}$ are displaced
-by the vector $\lambda^{f}_{P_{i}}$ 
-$$\forall i \in [1,Nbv(f)], \qquad \lambda_{P_{i}}^{f} 
+by the vector $\lambda^{f}_{P_{i}}$
+$$\forall i \in [1,Nbv(f)], \qquad \lambda_{P_{i}}^{f}
 = (\overrightarrow{P_{i}O_{f}}.\overrightarrow{n_{f}})
 \overrightarrow{n_{f}}$$
 
@@ -755,15 +755,15 @@ The weighting coefficients shown below allow us to reduce the conflicting
 contributions and equilibrate the contributions between small and large faces.
 \paragraph*{Face weighting}
 Every iteration, for each face the warping criterion is computed.
-It is used to give more weight to the warp faces. After the renormalisation of the 
+It is used to give more weight to the warp faces. After the renormalisation of the
 warping criterion, a new displacement formula is obtained:
 
 $$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
-\lambda_{P_{i}}^{f}=\sum_{j=1:Nbf(P_{i})} 
+\lambda_{P_{i}}^{f}=\sum_{j=1:Nbf(P_{i})}
 \frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} warp_{f}}\lambda^{f_{j}}_{P_{i}}$$
 
 \paragraph*{Vertex weighting}
-Every iteration, for each vertex $P \in \mathcal{M} $, 
+Every iteration, for each vertex $P \in \mathcal{M} $,
 the vertex tolerance is computed:
 $$\forall P \in \mathcal{M}, \qquad
 vtxtol_{P} = \frac{\min_{P \in nb(P)} PP\prime}
@@ -772,7 +772,7 @@ where $nb(Q)$ are the first neighbors of the point $Q$.
 
 This criterion is used to reduce the vertex displacement when a vertex lies
 on an edge much smaller than the average length. Another vertex tolerance
-may have been chosen. For example a more ``local coefficient'' can be 
+may have been chosen. For example a more ``local coefficient'' can be
 defined as:
 $$\forall P \in \mathcal{M}, \qquad
 vtxtol_{P}^{local} = \frac{\min_{P\prime \in nb(P)} PP\prime}
@@ -783,11 +783,11 @@ That is why the first definition is used in \CS.
 The unwarping displacement is updated as below:
 
 $$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
-\lambda_{P_{i}}^{f}=vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})} 
+\lambda_{P_{i}}^{f}=vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})}
 \frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} warp_{f}}\lambda^{f_{j}}_{P_{i}}$$
 
 \paragraph*{Movement coefficient}
-To ensure a better convergence, all vertices' movements are multiplied by a scale 
+To ensure a better convergence, all vertices' movements are multiplied by a scale
 factor $Cm$ (where $Cm \leqslant 1$). This coefficient helps to converge to the
 best solution by preventing a too big movement in the wrong direction.
 In \CS the default value is set to $0.10$.
@@ -795,9 +795,9 @@ In \CS the default value is set to $0.10$.
 The unwarping displacement is then:
 
 $$\forall f \in \mathcal{M}, \; \forall i \in [1,Nbv(f)], \qquad
-\lambda_{P_{i}}^{f}=Cm*vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})} 
+\lambda_{P_{i}}^{f}=Cm*vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})}
 \frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} warp_{f}}\lambda^{f_{j}}_{P_{i}}$$
- 
+
 \paragraph*{Maximum displacement}
 To reduce the ``cell reversal'' risk, the maximum displacement is limited for
 each vertex $P \in \mathcal{M}$ to $Md = 0.10\,\min_{P \in nb(P)} PP\prime$.
@@ -808,7 +808,7 @@ Finally, the complete unwarping displacement formula is defined as:
 \begin{split}
 \forall f \in \mathcal{M},& \; \forall i \in [1,Nbv(f)], \qquad \\
 &\lambda_{P_{i}}^{f}=\min(Cm*vtxtol_{P_{i}}\sum_{j=1:Nbf(P_{i})}
-\frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}} 
+\frac{warp_{f_{j}}}{\max_{f \in \mathcal{M}}
 warp_{f}}\lambda^{f_{j}}_{P_{i}},\; Md)
 \end{split}
 \end{equation*}
@@ -834,7 +834,7 @@ It means that the current iteration degrades the previous one.
 The obtained mesh is the result of the $(i-1)^{th}$ iteration.
 
 \paragraph*{$3^{rd}$ case: the maximum number of iterations is reached}
-The algorithm stops after $N_{max}$ iterations ($51$ by default in \CS). 
+The algorithm stops after $N_{max}$ iterations ($51$ by default in \CS).
 
 \subsection*{Specific treatment for boundary faces
 \label{sec:unwarping_boundary}}
@@ -849,7 +849,7 @@ faces sharing this vertex.
 This function fixes a vertex if one of its feature angles is less than
 $cos(\theta)$ where $\theta$ is the maximum feature angle (in degrees)
 defined by the user.
-In fact, if $\theta = 0^{\circ}$ all boundary vertices will be fixed, and 
+In fact, if $\theta = 0^{\circ}$ all boundary vertices will be fixed, and
 if $\theta = 90^{\circ}$ all boundary vertices will be free.
 
 Fixing all boundary vertices ensures the geometry is preserved, but reduces
