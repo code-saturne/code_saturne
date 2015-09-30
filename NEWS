@@ -5,6 +5,8 @@ Version 4.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fix restart using RSM model and pre-4.0 restart file.
+
 - Fix missing sum for parallel logging of clipping info.
 
 Version 4.0.3 (23 Sep 2015)

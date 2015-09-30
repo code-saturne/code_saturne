@@ -412,8 +412,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
       strncpy(old_name, "R33", 127);
     else if (f == CS_F_(r12))
       strncpy(old_name, "R12", 127);
-    else if (f == CS_F_(r12))
-      strncpy(old_name, "R12", 127);
+    else if (f == CS_F_(r13))
+      strncpy(old_name, "R13", 127);
     else if (f == CS_F_(r23))
       strncpy(old_name, "R23", 127);
     else if (f == CS_F_(eps))
