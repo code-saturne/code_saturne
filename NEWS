@@ -5,6 +5,8 @@ Version 4.1.2 (unreleased)
 Bug fixes:
 ----------
 
+- Fix restart using RSM model and pre-4.0 restart file.
+
 - Fix missing sum for parallel logging of clipping info.
 
 - Fix Postprocessing output bug for multidimensional vertex data.
