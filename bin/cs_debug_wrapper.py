@@ -264,12 +264,21 @@ def process_cmd_line(argv, pkg):
     # Debugger options
 
     if positions['debugger'] == -1:
-        debugger = 'gdb'
-        p_min = len(argv)
-        for s in positions.keys():
-            if positions[s] > -1 and positions[s] < p_min:
-                p_min = positions[s]
-        cmds['debugger'] = [debugger] + argv[0:p_min]
+        if 'valgrind' in cmds.keys():
+            need_gdb = False
+            for k in cmds['valgrind'][1:]:
+                if k[0:6] == '--vgdb':
+                    need_gdb = True
+            for k in cmds['valgrind'][1:]:
+                if k == '--vgdb=off':
+                    need_gdb = False
+        if need_gdb:
+            debugger = 'gdb'
+            p_min = len(argv)
+            for s in positions.keys():
+                if positions[s] > -1 and positions[s] < p_min:
+                    p_min = positions[s]
+            cmds['debugger'] = [debugger] + argv[0:p_min]
 
     return cmds
 
@@ -575,23 +584,27 @@ def run_valgrind(path, args=None, valgrind='valgrind', valgrind_opts=None):
     if valgrind_opts:
         cmd += valgrind_opts
 
-    cmd += path
+    cmd += [path]
 
     if args:
         cmd += args
 
     # Start building command to run
 
-    cmd_string = str(valgrind)
-    for c in cmd:
-        cmd_string += ' ' + enquote_arg(str(cmd))
+    if rank_id < 0:
+        return subprocess.call(cmd)
 
-    term = os.getenv('TERM')
-    if not term:
-        term = xterm
-    cmd = [term, '-e', cmd_string]
+    else:
+        term = os.getenv('TERM')
+        if not term:
+            term = xterm
 
-    return subprocess.call(cmd)
+        cmd_line = term + ' -e "' + valgrind
+        for c in cmd[1:]:
+            cmd_line += ' ' + enquote_arg(str(c))
+        cmd_line += ' ; read"'
+
+        return subprocess.call(cmd_line, shell=True)
 
 #-------------------------------------------------------------------------------
 # Run debugger
@@ -620,8 +633,7 @@ def run_debug(cmds):
         valgrind = cmds['valgrind'][0]
         valgrind_opts = []
         for cmd in cmds['valgrind'][1:]:
-            idx = cmd.find("--vgdb")
-            if idx == 0:
+            if cmd[0:6] == '--vgdb':
                 vgdb = True
             else:
                 valgrind_opts += cmd
@@ -635,7 +647,7 @@ def run_debug(cmds):
 
     debugger_ui = 'terminal'
 
-    if cmds['debugger']:
+    if 'debugger' in cmds.keys():
         debugger = cmds['debugger'][0]
         dbg_name = os.path.basename(debugger)
         if dbg_name in debuggers.keys() and dbg_name != 'gdb':
@@ -680,7 +692,7 @@ def run_debug(cmds):
             p.communicate()
             return p.returncode
 
-    elif valgrind in cmds.keys():
+    elif 'valgrind' in cmds.keys():
         return run_valgrind(path = cmds['program'][0],
                             args = cmds['program'][1:],
                             valgrind = cmds['valgrind'][0],
