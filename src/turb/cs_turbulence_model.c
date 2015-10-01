@@ -144,6 +144,10 @@ BEGIN_C_DECLS
         partially coupled version of \f$ k-\varepsilon \f$ (only for iturb=20)
         - 1: true (default)
         - 0: false
+  \var  cs_turb_rans_model_t::reinit_turb
+        Advanced re-init for EBRSM and k-omega models
+        - 1: true
+        - 0: false (default)
   \var  cs_turb_rans_model_t::irijco
         coupled solving of Rij
         - 1: true
@@ -237,24 +241,25 @@ const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
 static cs_turb_rans_model_t
 _turb_rans_model =
 {
-     0,     /* irccor */
-  -999,     /* itycor */
-     1,     /* idirsm */
-     0,     /* iclkep */
-     0,     /* igrhok */
-     1,     /* igrake */
-     1,     /* igrari */
-  -999,     /* ikecou */
-     0,     /* irijco */
-     0,     /* irijnu */
-     0,     /* irijrb */
-     0,     /* irijec */
-     1,     /* idifre */
-     1,     /* iclsyr */
-     0,     /* iclptr */
-  -999,     /* almax  */
- -1e13,     /* uref   */
- -1e13      /* xlomg  */
+  .irccor     =    0,
+  .itycor     = -999,
+  .idirsm     =    1,
+  .iclkep     =    0,
+  .igrhok     =    0,
+  .igrake     =    1,
+  .igrari     =    1,
+  .ikecou     = -999,
+  .reinit_turb=    0,
+  .irijco     =    0,
+  .irijnu     =    0,
+  .irijrb     =    0,
+  .irijec     =    0,
+  .idifre     =    1,
+  .iclsyr     =    1,
+  .iclptr     =    0,
+  .almax      = -999,
+  .uref       =-1e13,
+  .xlomlg      =-1e13
 };
 
 const cs_turb_rans_model_t  *cs_glob_turb_rans_model = &_turb_rans_model;
@@ -842,6 +847,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **igrake,
                                   int     **igrari,
                                   int     **ikecou,
+                                  int     **reinit_turb,
                                   int     **irijco,
                                   int     **irijnu,
                                   int     **irijrb,
@@ -907,6 +913,7 @@ cs_f_turb_model_get_pointers(int     **iturb,
  *   igrake --> pointer to cs_glob_turb_rans_model->igrake
  *   igrari --> pointer to cs_glob_turb_rans_model->igrari
  *   ikecou --> pointer to cs_glob_turb_rans_model->ikecou
+ *   reinit_turb --> pointer to cs_glob_turb_rans_model->reinit_turb
  *   irijco --> pointer to cs_glob_turb_rans_model->irijco
  *   irijnu --> pointer to cs_glob_turb_rans_model->irijnu
  *   irijrb --> pointer to cs_glob_turb_rans_model->irijrb
@@ -925,6 +932,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **igrake,
                                   int     **igrari,
                                   int     **ikecou,
+                                  int     **reinit_turb,
                                   int     **irijco,
                                   int     **irijnu,
                                   int     **irijrb,
@@ -941,6 +949,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
   *igrake = &(_turb_rans_model.igrake);
   *igrari = &(_turb_rans_model.igrari);
   *ikecou = &(_turb_rans_model.ikecou);
+  *reinit_turb= &(_turb_rans_model.reinit_turb);
   *irijco = &(_turb_rans_model.irijco);
   *irijnu = &(_turb_rans_model.irijnu);
   *irijrb = &(_turb_rans_model.irijrb);

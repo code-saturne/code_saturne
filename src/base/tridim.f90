@@ -131,6 +131,7 @@ double precision tditot, tdist2, tdist1, cvcst
 double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
+
 double precision, save :: tpar, tmet
 
 integer          ipass
@@ -225,6 +226,7 @@ interface
   end subroutine richards
 
 end interface
+
 
 !===============================================================================
 
@@ -1709,7 +1711,7 @@ if (iccvfg.eq.0) then
         cvar_k(iel)   = relaxk*cvar_k(iel)   + (1.d0-relaxk)*cvara_k(iel)
         cvar_omg(iel) = relaxw*cvar_omg(iel) + (1.d0-relaxw)*cvara_omg(iel)
       enddo
-    endif
+    end if
 
   else if( iturb.eq.70 ) then
 

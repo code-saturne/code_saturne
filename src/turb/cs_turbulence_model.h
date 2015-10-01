@@ -112,6 +112,9 @@ typedef struct {
                                  k-epsilon (only for iturb=20)
                                  - 1: true (default)
                                  - 0: false */
+  int           reinit_turb;  /* Advanced re-init for EBRSM and k-omega models
+                                 - 1: true (default)
+                                 - 0: false */
   int           irijco;       /* coupled solving of Rij
                                  - 1: true
                                  - 0: false (default) */

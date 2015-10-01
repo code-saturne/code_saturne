@@ -96,7 +96,7 @@ double precision ckupdc(ncepdp,6), smacel(ncesmp,nvar)
 
 character(len=80) :: chaine
 integer          iel   , ifac  , inc   , iprev,  iccocg, ivar
-integer          ii, f_id , iiun  , ifacpt
+integer          ii, f_id , iiun
 integer          iclipk, iclipw
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
@@ -119,6 +119,7 @@ double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
 double precision var, vrmin(2), vrmax(2)
+double precision utaurf,ut2,ypa,ya,xunorm, limiter
 
 double precision rvoid(1)
 
@@ -145,6 +146,7 @@ double precision, dimension(:), pointer :: cvar_var
 double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
+double precision, dimension(:,:), pointer :: vel
 
 !===============================================================================
 
@@ -1080,6 +1082,62 @@ call log_iteration_clipping_field(ivarfl(ik), iclipk, 0,    &
                                   vrmin(1:1), vrmax(1:1))
 call log_iteration_clipping_field(ivarfl(iomg), iclipw, 0,  &
                                   vrmin(2:2), vrmax(2:2))
+!===============================================================================
+! 16. Advanced reinit
+!===============================================================================
+
+! Automatic reinitialization at the end of the first iteration:
+! wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa, then y
+! so we have an idea of the wall distance in complexe geometries.
+! Then U is initialized with a Reichard lay
+! Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
+! k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu)
+! The blending function is chosen so that the asymptotic behavior
+! and give the correct pic of k (not the same blending than for the EBRSM
+! because k profile is not the same for k-omega)
+! For omega, far from the wall we take eps/Cmu/k, but next to the wall, omega solution is enforced
+!TODO FIXME: why not just before? Are the BC uncompatible?
+if (ntcabs.eq.1.and.reinit_turb.eq.1) then
+
+  call field_get_val_prev_v(ivarfl(iu), vel)
+
+  utaurf = 0.05d0*uref
+
+  do iel = 1, ncel
+    ! Compute the velocity magnitude
+    xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
+    xunorm = sqrt(xunorm)
+
+    ya = dispar(iel)
+    ypa = ya*utaurf/viscl0
+    ! Velocity magnitude is imposed (limitted only), the direction is
+    ! conserved
+    if (xunorm.le.1.d-12*uref) then
+      limiter = 1.d0
+    else
+      limiter = min(utaurf/xunorm*(2.5d0*dlog(1.d0+0.4d0*ypa)            &
+      +7.8d0*(1.d0-dexp(-ypa/11.d0)          &
+      -(ypa/11.d0)*dexp(-0.33d0*ypa))),      &
+      1.d0)
+    endif
+
+    vel(1,iel) = limiter*vel(1,iel)
+    vel(2,iel) = limiter*vel(2,iel)
+    vel(3,iel) = limiter*vel(3,iel)
+
+    ut2 = 0.05d0*uref
+    xeps = utaurf**3*min(1.d0/(0.41d0*15.d0*viscl0/utaurf), &
+    1.d0/(0.41d0*ya))
+    cvar_k(iel) = xeps/2.d0/viscl0*ya**2                    &
+    * exp(-ypa/25.d0)**2                        &
+    + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
+
+    cvar_omg(iel) = ut2**3/(0.41d0*15.d0*viscl0/ut2)/(ut2**2/0.3d0)/0.09d0
+
+  enddo
+end if
+
+
 
 ! Free memory
 deallocate(viscf, viscb)

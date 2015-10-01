@@ -201,6 +201,9 @@ do iel=1,ncel
   ! Durbin length scale
   xlldrb = xcl*max(xllke,xllkmg)
 
+  ! For automatic initialization, the length scale is fixed at L^+ =50
+  if (ntcabs.eq.1) xlldrb=50.d0*viscl0/(0.05d0*uref)
+
   l2      = xlldrb**2
 
   ! Explicit term
