@@ -827,10 +827,10 @@ on the extended neighbourhood).\\
 \motcleb{iturt}{ia}{0, 10, 20 or 30}{0}{O}{L2}
 {indicator of the turbulent flux model $ \overline{\varia^\prime \vect{u}^\prime}$
 for any scalar $\varia$\\
-\hspace*{1.3cm}= 0: Simple Gradient Hypothesis (default value)\\
-\hspace*{1.3cm}= 10: Generalized Gradient Hypothesis\\
-\hspace*{1.3cm}= 20: Algebraic Flux Model\\
-\hspace*{1.3cm}= 30: Differential Flux Model (transport equations of the turbulent flux)\\
+\hspace*{1.3cm}= 0: Simple Gradient Diffusion Hypothesis (SGDH) (default value)\\
+\hspace*{1.3cm}= 10: Generalized Gradient Diffusion Hypothesis (GGDH)\\
+\hspace*{1.3cm}= 20: Algebraic Flux Model (AFM)\\
+\hspace*{1.3cm}= 30: Differential Flux Model (DFM: transport equations of the turbulent flux)\\
 GGDH, AFM and DFM are only available when a second order closure is used ({\em i.e.} {\tt iturb}=30, 31, 32).
 }
 
@@ -1688,9 +1688,9 @@ The estimator $\eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1})$ is based on the
 following quantity (intrinsic to the code):
 \begin{equation}
 \begin{array}{lll}
- \eta^{\,der}_{\,i,k}(\vect{u}^{\,n+1})
+ \eta^{der}_{i,k}(\vect{u}^{n+1})
 &=& {|\Omega_i|}^{\,(k-2)/2}
-||div (\text{corrected mass flow after the pressure step})
+||\divs \left(\text{corrected mass flow after the pressure step}\right)
                                               -\ \Gamma||_{{L}^{2}(\Omega_i)} \\
 &=& {|\Omega_i|}^{\,(1-k)/2}
 |div (\text{corrected mass flow after the pressure step})-\ \Gamma|
