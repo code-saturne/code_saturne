@@ -418,8 +418,10 @@ _compute_weighting_offsetting(const cs_mesh_t             *mesh,
                 }
     double of_s = _MODULE_3D(v1) * _MODULE_3D(v2);
 
-    offsetting[cell1] = CS_MAX(offsetting[cell1], of_s / mesh_quantities->cell_vol[cell1]);
-    offsetting[cell2] = CS_MAX(offsetting[cell2], of_s / mesh_quantities->cell_vol[cell2]);
+    offsetting[cell1] = CS_MAX(offsetting[cell1],
+        1. - pow(of_s / mesh_quantities->cell_vol[cell1], 1./3.));
+    offsetting[cell2] = CS_MAX(offsetting[cell2],
+        1. - pow(of_s / mesh_quantities->cell_vol[cell2], 1./3.));
 
   } /* End of loop on faces */
 
