@@ -264,6 +264,7 @@ def process_cmd_line(argv, pkg):
     # Debugger options
 
     if positions['debugger'] == -1:
+        need_gdb = True
         if 'valgrind' in cmds.keys():
             need_gdb = False
             for k in cmds['valgrind'][1:]:
@@ -539,7 +540,7 @@ def run_vgdb_debug(path,
     cmd += [path]
     if args:
        cmd += args
-    p0 = subprocess.Popen(cmd, **kwargs)
+    p0 = subprocess.Popen(cmd, universal_newlines=True, **kwargs)
 
     cmd = None
     p1 = None
