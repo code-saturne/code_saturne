@@ -47,10 +47,17 @@ AC_ARG_WITH(coolprop-include,
              COOLPROP_CPPFLAGS="-I$with_coolprop_include"],
             [if test "x$with_coolprop" != "xno" -a "x$with_coolprop" != "xyes" \
 	          -a "x$with_coolprop" != "xcheck"; then
-               if test -f "$with_coolprop/include/CoolPropLib.h"; then
+               if test -f "$with_coolprop/include/CoolProp.h"; then
                  COOLPROP_CPPFLAGS="-I$with_coolprop/include"
-               elif test -f "$with_coolprop/CoolPropLib.h"; then
+               elif test -f "$with_coolprop/CoolProp.h"; then
                  COOLPROP_CPPFLAGS="-I$with_coolprop"
+               else
+                 find $with_coolprop | grep CoolProp.h > /dev/null 2>&1;
+                 if test $? == "0"; then
+                   cs_coolprop_tmp=`find $with_coolprop -name CoolProp.h | head -1`
+                   COOLPROP_CPPFLAGS="-I`dirname $cs_coolprop_tmp`"
+                   unset cs_coolprop_tmp
+                 fi
                fi
              fi])
 
@@ -86,30 +93,64 @@ AC_ARG_WITH(coolprop-lib,
                fi
              fi])
 
+AC_ARG_WITH(coolprop-pythonpath,
+            [AS_HELP_STRING([--with-coolprop-pythonpath=DIR],
+                            [specify directory for CoolProp Python bindings])],
+            [if test "x$with_coolprop" = "xcheck"; then
+               with_coolprop=yes
+             fi
+             COOLPROPPYTHONPATH="$with_coolprop_pythonpath"],
+            [if test "x$with_coolprop" != "xno" -a "x$with_coolprop" != "xyes" \
+	          -a "x$with_coolprop" != "xcheck"; then
+               find $with_coolprop -name CoolProp.py > /dev/null 2>&1;
+               if test $? == "0"; then
+                 cs_coolprop_tmp=`find $with_coolprop -name CoolProp.py | head -1`
+                 COOLPROPPYTHONPATH="`dirname $cs_coolprop_tmp`"
+                 unset cs_coolprop_tmp
+               fi
+             fi])
+
 if test "x$with_coolprop" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  COOLPROP_LIBS="-lCoolProp"
   CPPFLAGS="${CPPFLAGS} ${COOLPROP_CPPFLAGS}"
-  LDFLAGS="${LDFLAGS} ${COOLPROP_LDFLAGS}"
+
+  COOLPROP_LIBS="-lCoolProp"
   LIBS="${COOLPROP_LIBS} ${LIBS}"
 
   # Check that CoolProp files exist
 
-  # Coolprop is in C++, but provides a C wrapper, which we use for determination here.
-  # AC_LANG_PUSH([C++])
+  # Coolprop is in C++, though it also provides a C wrapper.
+  AC_LANG_PUSH([C++])
 
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "CoolPropLib.h"]],
-                                  [[double v = PropsSI("o", "n1", 1., "n2", 1., "r");]])],
-                                  [ AC_DEFINE([HAVE_COOLPROP], 1, [CoolProp support])
-                                    cs_have_coolprop=yes],
-                                   [cs_have_coolprop=no])
+  for coolprop_ldadd in "" "-ldl"
+  do
+    if test "x$cs_have_coolprop" != "xyes"; then
+      LDFLAGS="${saved_LDFLAGS} ${COOLPROP_LDFLAGS} ${coolprop_ldadd}"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "CoolProp.h"]],
+                                      [[std::vector<double> t;
+                                        std::vector<double> p;
+                                        std::vector<double> z;
+                                        std::vector<std::string> f;
+                                        std::vector<std::string> o;
+                                        CoolProp::PropsSImulti(o, "T", t, "P", p, "", f, z);]])],
+                                      [ AC_DEFINE([HAVE_COOLPROP], 1, [CoolProp support])
+                                        cs_have_coolprop=yes],
+                                       [cs_have_coolprop=no])
+    fi
+  done
+
+  AC_LANG_POP
 
   if test "x$cs_have_coolprop" != "xyes"; then
+    COOLPROP_CPPFLAGS=""
+    COOLPROP_LDFLAGS=""
     COOLPROP_LIBS=""
+    COOLPROPRUNPATH=""
+    COOLPROPPYTHONPATH=""
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
@@ -130,6 +171,7 @@ AC_SUBST(COOLPROP_CPPFLAGS)
 AC_SUBST(COOLPROP_LDFLAGS)
 AC_SUBST(COOLPROP_LIBS)
 AC_SUBST(COOLPROPRUNPATH)
+AC_SUBST(COOLPROPPYTHONPATH)
 
 # AC_LANG_POP([C++])
 

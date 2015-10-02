@@ -304,7 +304,8 @@ class config:
                          prefix="@coolprop_prefix@",
                          flags = {'cppflags': "@COOLPROP_CPPFLAGS@",
                                   'ldflags': "@COOLPROP_LDFLAGS@",
-                                  'libs': "@COOLPROP_LIBS@"})
+                                  'libs': "@COOLPROP_LIBS@",
+                                  'pythonpath': "@COOLPROPPYTHONPATH@"})
 
         self.libs['metis'] = \
             prerequisite("METIS",

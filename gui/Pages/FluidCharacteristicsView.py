@@ -56,16 +56,29 @@ import cs_config
 
 coolprop_fluids = []
 
-if cs_config.config().libs['coolprop'].have != "no":
+if cs_config.config().libs['coolprop'].have != "no" and not coolprop_fluids:
 
    try:
+      import sys
+      sys.path.insert(0, cs_config.config().libs['coolprop'].flags['pythonpath'])
       import CoolProp
+      sys.pop(0)
       seld.coolprop_fluids = []
       for f in CoolProp.__fluids__:
          coolprop_fluids.append(f)
       coolprop_fluids.sort()
 
    except Exception:  # CoolProp availble but not its Python bindings
+
+      import traceback
+      exc_info = sys.exc_info()
+      bt = traceback.format_exception(*exc_info)
+      for l in bt:
+         print(l)
+      del exc_info
+      print("Warning: CoolProp Python bindings not available or usable")
+      print("         list of fluids based on CoolProp 5.1.1")
+
       coolprop_fluids = ['1-Butene', 'Acetone', 'Air', 'Ammonia', 'Argon',
                          'Benzene', 'CarbonDioxide', 'CarbonMonoxide',
                          'CarbonylSulfide', 'CycloHexane', 'CycloPropane',

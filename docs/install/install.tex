@@ -128,7 +128,7 @@ created, building and installing \CS may be as simple as running:
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ ../../code\_saturne-\verscs/configure\\
 \$ make\\
-\$ make install\\
+\$ make install
 }\end{minipage}}
 
 The following chapters give more details on \CS's recommended
@@ -547,37 +547,82 @@ an ugly, but simple solution.
 \subsubsection{CoolProp\label{sec:ext:coolprop}}
 
 This library's build system is based on CMake, and building it
-is straightforward, but some versions seem to have build
-issues (the 5.1.0 release is missing a file, while the git trunk
-as of May 2 2015 builds fine).
+is straightforward, though some versions seem to have build
+issues (the 5.1.0 release is missing a file, while 5.1.1 release
+builds fine). CoolProp uses submodules which are downloaded
+using \texttt{git clone https://github.com/CoolProp/CoolProp.git --recursive},
+but may be missing when downloading a zip file.
+
+Its user documentation is good, but its installation documentation is poor,
+so recommendations are provided here
+
+To download and prepare CoolProp for build, using an out-of-tree build
+(so as to avoid polluting the source treee with cache files), the
+following commands are recommended:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ git clone https://github.com/CoolProp/CoolProp.git --recursive\\
+\$ cd CoolProp\\
+\$ git checkout release\\
+\$ cd ..\\
+\$ mkdir CoolProp\_build\\
+\$ cd CoolProp\_build
+}\end{minipage}}
+
+Then configure, build, and install, run:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ cmake
+\textbackslash \\
+\textcolor{Violet}{-DCOOLPROP\_INSTALL\_PREFIX}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}
+\textbackslash \\
+\textcolor{Violet}{-DCOOLPROP\_SHARED\_LIBRARY}=ON
+\textbackslash \\
+\textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}
+}\end{minipage}}
+
+Followed by:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ make \\
+\$ make install\\
+\$ make clean
+}\end{minipage}}
+
+CoolProp's installer only installs one C wrapper header, not the
+C++ headers required for lower-level access, so the following commands
+must also be run:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ cp -rp \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include
+{\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}\\
+\$ rm -f {\$INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}/CoolPropLib.h
+}\end{minipage}}
+
+Alternatively, to copy less files and avoid changing the structure provided
+by CoolProp:
+
+\fbox{\begin{minipage}{\textwidth}\texttt{\\
+\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include/CoolProp.h
+\textbackslash \\
+{INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name} \\
+\$ cp -r \textcolor{OliveGreen}{\$COOLPROP\_SRC\_PATH}/include/PlatFormDetermination.h
+\textbackslash \\
+{INSTALL\_PATH}/arch/\textcolor{OliveGreen}{\$machine\_name}
+}\end{minipage}}
 
 \sloppy
 
-It may be cleanly built out of source, but forcing its install path
-seems less straightforward, as \texttt{-DCOOLPROP\_INSTALL\_PREFIX}
-needs to be defined on the \texttt{cmake} or \texttt{ccmake}
-command line, not under the interactive \texttt{ccmake} configuration.
-
-In addition, its install structure is specific, and some header files,
-such as \texttt{include/CoolProp.h} may be missing upon installation.
-The  might not be copied to the installation directory, so it may need
-to be copied manually.
-
-Finally, to install the Python bindings, needed by the \CS GUI,
-it seems necessary to go into the CoolProp source directory, then run:
+To install CoolProp's Python bindings (used by the GUI when available),
+the straigthformward method is to go into the CoolProp source directory,
+then run:
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ python setup.py install --prefix=\$COOLPROP\_INSTALL\_PREFIX\\
+\$ python setup.py install --prefix=\$COOLPROP\_INSTALL\_PREFIX
 }\end{minipage}}
 
-So Using a post-install script to copy CoolProp's
-headers from its source directory to the install directory
-and install Python bindings is recommended, unless CoolProp's
-build system is improved.
-
-Although \CS does its best to find the appropriate files, separately specifying
-\texttt{--with-coolprop-include} and \texttt{--with-coolprop-lib}
-may also be necessary.
+Although this is not really an out-of-tree build, the Python
+setup also cleans the directory.
 
 \subsubsection{libxml2\label{sec:ext:libxml2}}
 
