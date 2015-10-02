@@ -52,11 +52,48 @@ else :
 # Coolprop
 #-------------------------------------------------------------------------------
 
-CPROP = 1
-try:
-   import CoolProp
-except:
-   CPROP = 0
+import cs_config
+
+coolprop_fluids = []
+
+if cs_config.config().libs['coolprop'].have != "no":
+
+   try:
+      import CoolProp
+      seld.coolprop_fluids = []
+      for f in CoolProp.__fluids__:
+         coolprop_fluids.append(f)
+      coolprop_fluids.sort()
+
+   except Exception:  # CoolProp availble but not its Python bindings
+      coolprop_fluids = ['1-Butene', 'Acetone', 'Air', 'Ammonia', 'Argon',
+                         'Benzene', 'CarbonDioxide', 'CarbonMonoxide',
+                         'CarbonylSulfide', 'CycloHexane', 'CycloPropane',
+                         'Cyclopentane', 'D4', 'D5', 'D6', 'Deuterium',
+                         'DimethylCarbonate', 'DimethylEther', 'Ethane',
+                         'Ethanol', 'EthylBenzene', 'Ethylene', 'Fluorine',
+                         'HFE143m', 'HeavyWater', 'Helium', 'Hydrogen',
+                         'HydrogenSulfide', 'IsoButane', 'IsoButene',
+                         'Isohexane', 'Isopentane', 'Krypton', 'MD2M', 'MD3M',
+                         'MD4M', 'MDM', 'MM', 'Methane', 'Methanol',
+                         'MethylLinoleate', 'MethylLinolenate', 'MethylOleate',
+                         'MethylPalmitate', 'MethylStearate', 'Neon',
+                         'Neopentane', 'Nitrogen', 'NitrousOxide', 'Novec649',
+                         'OrthoDeuterium', 'OrthoHydrogen', 'Oxygen',
+                         'ParaDeuterium', 'ParaHydrogen', 'Propylene',
+                         'Propyne', 'R11', 'R113', 'R114', 'R115', 'R116',
+                         'R12', 'R123', 'R1233zd(E)', 'R1234yf', 'R1234ze(E)',
+                         'R1234ze(Z)', 'R124', 'R125', 'R13', 'R134a', 'R13I1',
+                         'R14', 'R141b', 'R142b', 'R143a', 'R152A', 'R161',
+                         'R21', 'R218', 'R22', 'R227EA', 'R23', 'R236EA',
+                         'R236FA', 'R245fa', 'R32', 'R365MFC', 'R404A',
+                         'R407C', 'R41', 'R410A', 'R507A', 'RC318', 'SES36',
+                         'SulfurDioxide', 'SulfurHexafluoride', 'Toluene',
+                         'Water', 'Xenon', 'cis-2-Butene', 'm-Xylene',
+                         'n-Butane', 'n-Decane', 'n-Dodecane', 'n-Heptane',
+                         'n-Hexane', 'n-Nonane', 'n-Octane', 'n-Pentane',
+                         'n-Propane', 'n-Undecane', 'o-Xylene', 'p-Xylene',
+                         'trans-2-Butene']
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -190,7 +227,6 @@ temperature = enthalpy / 1040.;
 thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 """
 
-
     def __init__(self, parent, case):
         """
         Constructor
@@ -208,9 +244,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         if EOS == 1:
             self.ava = eosAva.EosAvailable()
-
-        if CPROP == 1:
-            self.CoolProp = CoolProp.__fluids__
 
         import cs_config
         cfg = cs_config.config()
@@ -310,7 +343,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.modelPhas.addItem(self.tr('liquid'), 'liquid')
         self.modelPhas.addItem(self.tr('gas'), 'gas')
 
-        if (self.freesteam == 0 and EOS == 0 and CPROP == 0) or \
+        if (self.freesteam == 0 and EOS == 0 and not coolprop_fluids) or \
             self.m_th.getThermalScalarModel() == "off" or \
             mdl_joule != 'off' or mdl_comp != 'off':
             self.groupBoxTableChoice.hide()
@@ -330,8 +363,8 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             if self.freesteam == 1 and EOS == 0:
                 self.modelMaterial.addItem(self.tr('Water'), 'Water')
 
-            if CPROP == 1 and EOS == 0:
-                for fli in self.CoolProp:
+            if coolprop_fluids and EOS == 0:
+                for fli in coolprop_fluids:
                     if self.freesteam == 1:
                         if fli != 'Water':
                             self.modelMaterial.addItem(self.tr(fli), fli)
@@ -590,7 +623,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             if self.freesteam == 1 and self.mdl.getMaterials() == "Water":
                 self.modelMethod.addItem(self.tr("freesteam"), "freesteam")
 
-            if CPROP == 1 and self.mdl.getMaterials() in self.CoolProp:
+            if self.mdl.getMaterials() in coolprop_fluids:
                 self.modelMethod.addItem(self.tr("CoolProp"), "CoolProp")
 
         # update comboBoxMethod
