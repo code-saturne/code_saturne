@@ -83,7 +83,7 @@ BEGIN_C_DECLS
  * Local constant and enum definitions
  *============================================================================*/
 
-static const char cs_cdoversion[] = "0.2";
+static const char cs_cdoversion[] = "0.3";
 
 /*============================================================================
  * Private function prototypes
@@ -148,8 +148,8 @@ _setup(cs_mesh_t             *m,
      fields */
   cs_user_cdo_set_properties();
 
-  /* Add user-defined material properties to fields */
-  cs_param_pty_add_fields();
+  /* Add user-defined material properties and/or advection fields to fields */
+  cs_param_add_fields();
 
   /* According to the settings, add or not predefined equations:
       >> Wall distance
@@ -160,6 +160,12 @@ _setup(cs_mesh_t             *m,
   /* Initial setup of user equations */
   cs_user_cdo_setup_equations(domain);
 
+  /* Initialize post-processing */
+  cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
+                          true);  /* activate if 1 */
+  cs_post_write_meshes(NULL);     /* time step management structure set to NULL
+                                     => Time-idenpendent output is considered */
+
   /* Last setup stage */
   cs_domain_last_init(domain);
 
@@ -167,12 +173,6 @@ _setup(cs_mesh_t             *m,
   cs_cdo_connect_summary(domain->connect);
   cs_param_pty_summary_all();
   cs_domain_summary(domain);
-
-  /* Initialize post-processing */
-  cs_post_activate_writer(-1,     /* default writer (volume mesh)*/
-                          true);  /* activate if 1 */
-  cs_post_write_meshes(NULL);     /* time step management structure set to NULL
-                                     => Time-idenpendent output is considered */
 
   cs_domain_create_builders(domain);
 
@@ -193,6 +193,7 @@ _finalize(cs_domain_t  **domain)
   cs_toolbox_finalize();
 
   cs_param_pty_finalize();
+  cs_param_adv_field_finalize();
 
   *domain = cs_domain_free(*domain);
 }

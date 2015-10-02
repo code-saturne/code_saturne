@@ -209,6 +209,22 @@ cs_user_cdo_add_properties(void)
                    "anisotropic",   // type of material property
                    -1);             // frequency of post-processing
 
+  /* =============================
+     User-defined advection fields
+     =============================
+
+     Users can also define additional material properties
+     1) Set a name specific to this convection field
+     3) Set the frequency of post-processing:
+        >> -1: no post-processing
+        >>  0: at the beginning of the simulation
+        >>  n: at each n iteration(s)
+  */
+
+  cs_param_adv_field_add("adv_field",  // property name
+                         0);           // frequency of post-processing
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -237,6 +253,21 @@ cs_user_cdo_set_properties(void)
                    "1.0  0.5  0.0\n" // value of the material property
                    "0.5  1.0  0.5\n"
                    "0.0  0.5  1.0\n");
+
+  /* In a second step, please set the value of the advection field.
+
+     1) Give the name of the property
+     2) Set the type of definition among the following choices:
+        >> "value", "analytic", "user"
+     3) Set the value
+        >> "1.0"     for an isotropic property set by value
+        >> _my_func  name of the function for a property set by analytic
+  */
+
+  cs_param_adv_field_set("adv_field",        // property name
+                         "value",            // type of definition
+                         "1.0  0.0  0.0\n"); // value of the advection field
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -323,6 +354,15 @@ cs_user_cdo_add_domain_equations(cs_domain_t   *domain)
                               true,          // diffusion ?
                               "zero_value"); // default boundary condition
 
+  cs_domain_add_user_equation(domain,
+                              "CODITS.FVCA", // equation name
+                              "Pot2",        // associated field name
+                              "scalar",      // type of equation
+                              true,          // steady ?
+                              true,          // convection ?
+                              true,          // diffusion ?
+                              "zero_value"); // default boundary condition
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -366,6 +406,63 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
     cs_equation_link(eq,              // equation
                      "diffusion",     // for the diffusion term
                      "conductivity"); // property name
+
+    /* Add a source term: There are several types of source terms
+
+       label of the source term is optional (i.e. NULL is possible)
+
+       type of the source is among the following choices:
+       >> "implicit", "explicit", "imex"
+          >> "implicit" means that the source term is added to the diagonal of
+          the linear system
+          >> "explicit" means that the source term is added to the right-hand
+          side of the linear system
+          >> "imex" means that there are two contributions: the first one is
+          implicit and the second one is explicit (Not implemented yet)
+
+       type of definition is among the following choices:
+       >> "value", "analytic", "user"
+
+     */
+
+    cs_equation_add_source_term(eq,
+                                "SourceTerm",    // label of the source term
+                                "cells",         // name of the mesh location
+                                "explicit",      // type of source term
+                                "analytic",      // type of definition
+                                _define_source_term); // analytic function
+
+  } /* eq != NULL */
+
+  eq = cs_domain_get_equation(domain, "CODITS.FVCA");
+
+  if (eq != NULL) { // Equation has been found
+
+    /* Define the boundary conditions (BCs) for equation eq
+
+       boundary conditions are among the following choices:
+       >> "dirichlet", "neumann" or "robin"
+
+       type of definition is among the following choices:
+       >> "value", "analytic", "user"
+
+     */
+
+    cs_equation_add_bc(eq,                // equation
+                       "boundary_faces",  // name of the mesh location
+                       "dirichlet",       // BC type
+                       "analytic",        // type of definition
+                       _define_bcs);      // pointer to the analytic function
+
+    /* Associate properties with terms at play in the equation */
+
+    cs_equation_link(eq,              // equation
+                     "diffusion",     // for the diffusion term
+                     "conductivity"); // property name
+
+    cs_equation_link(eq,
+                     "advection",
+                     "adv_field");
 
     /* Add a source term: There are several types of source terms
 

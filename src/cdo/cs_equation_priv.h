@@ -103,6 +103,7 @@ typedef struct {
   cs_equation_status_t  status;  /* predefined, user... */
   cs_equation_type_t    type;    /* scalar, vector, tensor... */
   int                   verbosity;  /* Level of detail to output */
+  int                   post_freq; /* Move this option to cs_field_t ? */
 
   /* Unsteady-Diffusion-Convection-Source term activated or not */
   int                   flag;
@@ -114,17 +115,18 @@ typedef struct {
   cs_space_scheme_t     space_scheme;
 
   /* High-level structure to manage/monitor the resolution of this equation */
-  cs_equation_algo_t    algo_info;
-  cs_param_itsol_t      itsol_info;
+  cs_equation_algo_t       algo_info;
+  cs_param_itsol_t         itsol_info;
 
   /* Unsteady term */
-  cs_param_hodge_t      unsteady_hodge;
-  bool                  is_multiplied_by_rho;  /* true or false */
+  cs_param_hodge_t         unsteady_hodge;
+  bool                     is_multiplied_by_rho;  /* true or false */
 
   /* Diffusion parameters */
-  cs_param_hodge_t      diffusion_hodge;
+  cs_param_hodge_t         diffusion_hodge;
 
-  /* Convection term (TODO) */
+  /* Advection term */
+  cs_param_advection_t     advection;
 
   /* Source term(s) */
   int                      n_source_terms;

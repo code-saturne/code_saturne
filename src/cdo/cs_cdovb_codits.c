@@ -52,6 +52,7 @@
 #include "cs_evaluate.h"
 #include "cs_cdo_bc.h"
 #include "cs_hodge.h"
+#include "cs_cdo_convection.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -303,11 +304,11 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
   /* Get the anisotropic ratio and the max. eigenvalue (if uniform) */
   if (is_uniform) {
     xyz[0] = xyz[1] = xyz[2] = 0.;
-    cs_param_pty_get_val(h_info.pty_id,
-                         tcur,       // when ?
-                         xyz,        // where ?
-                         h_info.inv_pty,
-                         &matpty);
+    cs_evaluate_pty(h_info.pty_id,
+                    tcur,       // when ?
+                    xyz,        // where ?
+                    h_info.inv_pty,
+                    &matpty);
 
     cs_eigen_mat33(matpty, &eig_ratio, &eig_max);
   }
@@ -324,11 +325,11 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
     assert(connect->f2c->idx[f_id+1] - connect->f2c->idx[f_id] == 1);
 
     if (!is_uniform) {
-      cs_param_pty_get_val(h_info.pty_id,
-                           tcur,                           // when ?
-                           &(quant->cell_centers[3*c_id]), // where ?
-                           h_info.inv_pty,
-                           &matpty);
+      cs_evaluate_pty(h_info.pty_id,
+                      tcur,                           // when ?
+                      &(quant->cell_centers[3*c_id]), // where ?
+                      h_info.inv_pty,
+                      &matpty);
 
       cs_eigen_mat33(matpty, &eig_ratio, &eig_max);
     }
@@ -489,45 +490,38 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the (full) right hand side (rhs) for a convection/diffusion
- *          equation.
- *          Take into account several contributions:
- *          --> Dirichlet, Neumann and Robin BCs
- *          --> Source terms
+ * \brief   Compute the (full) right hand side (rhs) from the contributions of
+ *          source terms
  *
- * \param[in]     m         pointer to a cs_mesh_t structure
- * \param[in]     connect   pointer to a cs_cdo_connect_t structure
- * \param[in]     quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]     ad        pointer to the (full) diffusion matrix
- * \param[in]     tcur      current physical time of the simulation
- * \param[in,out] builder   pointer to a cs_cdovb_codits_t structure
+ * \param[in]      m         pointer to a cs_mesh_t structure
+ * \param[in]      connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tcur      current physical time of the simulation
+ * \param[in, out] builder   pointer to a cs_cdovb_codits_t structure
+ * \param[in, out] rhs       pointer to a pointer of rhs values
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_rhs(const cs_mesh_t            *m,
-             const cs_cdo_connect_t     *connect,
-             const cs_cdo_quantities_t  *quant,
-             const cs_sla_matrix_t      *ad,
-             double                      tcur,
-             cs_cdovb_codits_t          *builder)
+_compute_st_rhs(const cs_mesh_t            *m,
+                const cs_cdo_connect_t     *connect,
+                const cs_cdo_quantities_t  *quant,
+                double                      tcur,
+                cs_cdovb_codits_t          *builder,
+                cs_real_t                 **rhs)
 {
   int  i;
 
   const cs_equation_param_t  *eqp = builder->eqp;
-  const cs_param_bc_t  *bc = eqp->bc;
-  const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
 
-  // only scalar equation are handled up to now (TODO)
-  assert(eqp->type == CS_EQUATION_TYPE_SCAL);
+  if (*rhs == NULL)
+    BFT_MALLOC(*rhs, builder->n_vertices, cs_real_t);
 
   /* Initialize rhs */
-  double *full_rhs = builder->work;
+  double *full_rhs = *rhs;
 
   for (i = 0; i < builder->n_vertices; i++)
     full_rhs[i] = 0.0;
-
-  /* SOURCE TERMS */
 
   if (eqp->n_source_terms > 0) { /* Add contribution from source terms */
 
@@ -553,89 +547,31 @@ _compute_rhs(const cs_mesh_t            *m,
                   st.def,             // definition of the explicit part
                   &contrib);          // updated inside this function
 
-        /* Update full rhs */
-        for (i = 0; i < builder->n_vertices; i++)
-          full_rhs[i] += contrib[i];
+      /* Update full rhs */
+      for (i = 0; i < builder->n_vertices; i++)
+        full_rhs[i] += contrib[i];
 
     } // Loop on source terms
 
   } /* There is at least one source term which is defined */
 
-  /* BOUNDARY CONDITIONS */
-
-  if (vtx_dir->n_nhmg_elts > 0) { /* Dirichlet BC */
-
-    cs_flag_t  dof_flag =
-      CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
-
-    cs_cdo_bc_dirichlet_set(dof_flag,
-                            tcur,
-                            m,
-                            bc,
-                            vtx_dir,
-                            builder->dir_val);
-
-    switch (builder->enforce) {
-
-    case CS_PARAM_BC_ENFORCE_STRONG:
-      {
-        double  *x_bc = builder->work + builder->n_vertices;
-        double  *contrib = builder->work + 2*builder->n_vertices;
-
-        for (i = 0; i < builder->n_vertices; i++)
-          x_bc[i] = 0.0;
-        for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
-          x_bc[vtx_dir->elt_ids[i]] = builder->dir_val[i];
-
-        /* Compute ad*Tbc: rhs = rhs - ad*Tbc */
-        cs_sla_matvec(ad, x_bc, &contrib, true);
-        for (i = 0; i < builder->n_vertices; i++)
-          full_rhs[i] -= contrib[i];
-      }
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_PENA:
-      {
-        cs_real_t  pena_coef = cs_weak_penalization_weight/cs_get_eps_machine();
-
-        for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
-          full_rhs[vtx_dir->elt_ids[i]] += pena_coef * builder->dir_val[i];
-      }
-      break;
-
-    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-      // Nothing done here. RHS is modified later, at the same time as matrix
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " This kind of BC enforcement is not implemented yet.\n"
-                " Please modify your settings.");
-
-    } // End of switch
-
-  } /* Dirichlet BC */
-
-  /* TODO: Add contribution for Neumann BC (if homogeneous nothing to do)
-     and Robin BC */
-
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize a stiffness matrix
+ * \brief   Initialize a (full diffusion) matrix
  *
  * \param[in]  n_vertices  number of vertices
  * \param[in]  connect     pointer to a cs_cdo_connect_t structure
  *
- * \return a pointer to an initialized stiffness matrix
+ * \return a pointer to an initialized (stiffness) matrix
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_sla_matrix_t *
-_init_stiffness(cs_lnum_t                n_vertices,
-                const cs_cdo_connect_t  *connect)
+_init_matrix(cs_lnum_t                n_vertices,
+             const cs_cdo_connect_t  *connect)
 {
   int  i, j, shift;
 
@@ -741,21 +677,20 @@ _encode_edge_masks(cs_lnum_t                c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define the full stiffness matrix and the matrix related to the
- *          discrete Hodge operator from a cellwise assembly process
+ * \brief   Define the full stiffness matrix from a cellwise assembly process
  *
  * \param[in]      connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]      quant       pointer to a cs_cdo_quantities_t struct.
  * \param[in, out] builder     pointer to a cs_cdovb_codits_t struct.
- *
- * \return a pointer to the full stiffness matrix
+ * \param[in, out] s           pointer to a cs_sla_matrix_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_sla_matrix_t *
-_build_stiffness_matrix(const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *quant,
-                        cs_cdovb_codits_t          *builder)
+static void
+_build_diffusion(const cs_cdo_connect_t     *connect,
+                 const cs_cdo_quantities_t  *quant,
+                 cs_cdovb_codits_t          *builder,
+                 cs_sla_matrix_t            *s)
 {
   int  i, j, n_ent, n_blocks, n_bits, mask_size;
   cs_lnum_t  c_id, v_id;
@@ -766,7 +701,6 @@ _build_stiffness_matrix(const cs_cdo_connect_t     *connect,
   cs_toolbox_locmat_t  *hloc = cs_toolbox_locmat_create(connect->n_max_ebyc);
   cs_toolbox_locmat_t  *sloc = cs_toolbox_locmat_create(connect->n_max_vbyc);
   cs_hodge_builder_t  *hb = cs_hodge_builder_init(connect->n_max_ebyc);
-  cs_sla_matrix_t  *s = _init_stiffness(quant->n_vertices, connect);
 
   const cs_connect_index_t  *c2v = connect->c2v;
   const cs_equation_param_t  *eqp = builder->eqp;
@@ -870,88 +804,102 @@ _build_stiffness_matrix(const cs_cdo_connect_t     *connect,
   hloc = cs_toolbox_locmat_free(hloc);
   sloc = cs_toolbox_locmat_free(sloc);
   hb = cs_hodge_builder_free(hb);
-
-  return s;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Define the matrix "Ad" for the diffusion term and its right hand
- *          side (rhs).
- *          rhs potentially collects these contributions:
- *           - Source terms
- *           - Neumann boundary conditions
- *           - Robin boundary conditions (TODO) [the explicit part]
- *           - Dirichlet boundary conditions : full Ad*Tbc
+ * \brief   Update the matrix of the linear system and the right hand side to
+ *          take into account the BCs for the diffusion term
  *
  * \param[in]      m         pointer to a cs_mesh_t structure
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]      tcur      current physical time of the simulation
- * \param[in, out] rhs       right-hand side
  * \param[in, out] builder   pointer to a cs_cdovb_codits_t structure
- *
- * \return a pointer to a cs_sla_matrix_t structure
+ * \param[in, out] rhs       pointer of pointer to the right-hand side
+ * \param[in, out] matrix    pointer to the pointer of a matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_sla_matrix_t *
-_build_diffusion_system(const cs_mesh_t            *m,
-                        const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *quant,
-                        double                      tcur,
-                        cs_real_t                  *rhs,
-                        cs_cdovb_codits_t          *builder)
+static void
+_update_diffusion_with_bc(const cs_mesh_t            *m,
+                          const cs_cdo_connect_t     *connect,
+                          const cs_cdo_quantities_t  *quant,
+                          double                      tcur,
+                          cs_cdovb_codits_t          *builder,
+                          cs_real_t                 **rhs,
+                          cs_sla_matrix_t           **matrix)
 {
   int  i;
 
-  cs_sla_matrix_t  *full_matrix = NULL, *final_matrix = NULL;
+  cs_sla_matrix_t  *full_matrix = *matrix, *final_matrix = NULL;
+  double  *full_rhs = *rhs, *final_rhs = NULL;
 
-  /* Build the (full) stiffness matrix i.e. without taking into account BCs */
-  full_matrix = _build_stiffness_matrix(connect, quant, builder);
-
-  /* Remove entries very small with respect to other coefficients */
-  //  cs_sla_matrix_clean(full_matrix, cs_get_eps_machine());
-
-  /* Compute the full rhs */
-  _compute_rhs(m, connect, quant, full_matrix, tcur, builder);
-
-  double  *full_rhs = builder->work; // stored in builder->work
+  const cs_cdo_bc_list_t  *vtx_dir = builder->vtx_dir;
 
   /* Enforce the Dirchlet boundary conditions on vertices */
   switch (builder->enforce) {
 
   case CS_PARAM_BC_ENFORCE_STRONG:
-    if (builder->n_vertices > builder->n_dof_vertices) {
-      /* Reduce size. Extract block with degrees of freedom */
+    {
+      double  *_rhs = builder->work;
 
-      for (i = 0; i < builder->n_dof_vertices; i++)
-        rhs[i] = full_rhs[builder->v_z2i_ids[i]];
+      if (vtx_dir->n_nhmg_elts > 0) {
 
-      final_matrix = cs_sla_matrix_pack(builder->n_dof_vertices, // n_block_rows
-                                        builder->n_dof_vertices, // n_block_cols
-                                        full_matrix,             // full matrix
-                                        builder->v_z2i_ids,      // row_z2i_ids
-                                        builder->v_i2z_ids,      // col_i2z_ids
-                                        true);                   // keep sym.
+        double  *x_bc = builder->work + builder->n_vertices;
+        double  *contrib = builder->work + 2*builder->n_vertices;
 
-      /* Free buffers */
-      full_matrix = cs_sla_matrix_free(full_matrix);
+        for (i = 0; i < builder->n_vertices; i++)
+          x_bc[i] = 0.0;
+        for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
+          x_bc[vtx_dir->elt_ids[i]] = builder->dir_val[i];
 
+        /* Compute full_matrix*Tbc: rhs = rhs - full_matrix*Tbc */
+        cs_sla_matvec(full_matrix, x_bc, &contrib, true);
+        for (i = 0; i < builder->n_vertices; i++)
+          full_rhs[i] -= contrib[i];
+
+      }
+
+      if (builder->n_vertices > builder->n_dof_vertices) {
+
+        memcpy(_rhs, full_rhs, builder->n_vertices*sizeof(double));
+        final_rhs = *rhs;
+        for (i = 0; i < builder->n_dof_vertices; i++)
+          final_rhs[i] = _rhs[builder->v_z2i_ids[i]];
+
+        /* Reduce size. Extract block with degrees of freedom */
+        final_matrix = cs_sla_matrix_pack(builder->n_dof_vertices, // n_pack_rows
+                                          builder->n_dof_vertices, // n_pack_cols
+                                          full_matrix,             // full matrix
+                                          builder->v_z2i_ids,      // row_z2i_ids
+                                          builder->v_i2z_ids,      // col_i2z_ids
+                                          true);                   // keep sym.
+
+        /* Free buffers */
+        full_matrix = cs_sla_matrix_free(full_matrix);
+
+      }
     }
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_PENA:
-    assert(builder->n_vertices == builder->n_dof_vertices); /* Sanity check */
+    {
+      /* Sanity check */
+      assert(builder->n_vertices == builder->n_dof_vertices);
 
-    cs_real_t  pena_coef = cs_weak_penalization_weight/cs_get_eps_machine();
+      cs_real_t  pena_coef = cs_weak_penalization_weight/cs_get_eps_machine();
 
-    for (i = 0; i < builder->vtx_dir->n_elts; i++)
-      full_matrix->diag[builder->vtx_dir->elt_ids[i]] += pena_coef;
+      for (i = 0; i < builder->vtx_dir->n_elts; i++)
+        full_matrix->diag[builder->vtx_dir->elt_ids[i]] += pena_coef;
 
-    // DBG
-    printf(" Weak enforcement with penalization coefficient %5.3e\n",
-           pena_coef);
+      for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
+        full_rhs[vtx_dir->elt_ids[i]] += pena_coef * builder->dir_val[i];
+
+      // DBG
+      printf(" Weak enforcement with penalization coefficient %5.3e\n",
+             pena_coef);
+    }
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
@@ -969,13 +917,179 @@ _build_diffusion_system(const cs_mesh_t            *m,
 
   } // End of switch (enforcement)
 
+  /* TODO: Add contribution for Neumann BC (if homogeneous nothing to do)
+     and Robin BC */
+
   if (builder->n_vertices == builder->n_dof_vertices) { // Keep the full system
     final_matrix = full_matrix;
-    memcpy(rhs, full_rhs, builder->n_vertices*sizeof(double));
+    final_rhs = full_rhs;
   }
 
-  //  cs_sla_matrix_dump("Stiffness.log", NULL, final_matrix); // DBG
-  return final_matrix;
+  /* Return pointers */
+  *matrix = final_matrix;
+  *rhs = final_rhs;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Update the matrix of the linear system to take into account the
+ *          convection term
+ *
+ * \param[in]      m            pointer to a cs_mesh_t structure
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      tcur         current physical time of the simulation
+ * \param[in, out] sys_builder  pointer to a cs_cdovb_codits_t structure
+ * \param[in, out] rhs          pointer of pointer to the right-hand side
+ * \param[in, out] matrix       pointer to a matrix structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_convection(const cs_mesh_t            *m,
+                  const cs_cdo_connect_t     *connect,
+                  const cs_cdo_quantities_t  *quant,
+                  double                      tcur,
+                  cs_cdovb_codits_t          *sys_builder,
+                  cs_real_t                  *rhs,
+                  cs_sla_matrix_t            *matrix)
+{
+  cs_lnum_t  i, j, k, f_id;
+  cs_qvect_t  beta;
+  cs_real_3_t  beta_uni, beta_g, xg = {0, 0, 0};
+  cs_real_t  dp = 0, flux = 0;
+
+  cs_lnum_t  *pos_dir = NULL;
+
+  const cs_real_t  one_third = 1./3;
+  const cs_real_t  *xyz = m->vtx_coord;
+  const cs_sla_matrix_t  *e2v = connect->e2v;
+  const cs_sla_matrix_t  *f2e = connect->f2e;
+  const cs_cdo_bc_list_t  *vtx_dir = sys_builder->vtx_dir;
+  const cs_equation_param_t  *eqp = sys_builder->eqp;
+  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_advection_t  a_info = eqp->advection;
+
+  bool  adv_uniform = cs_param_adv_field_is_uniform(a_info.adv_id);
+  bool  with_diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
+
+  cs_convection_builder_t  *adv_builder = cs_convection_builder_init(connect);
+
+  /* Build the first part of the cellwise convection operator and assemble
+     it into the system matrix */
+  if (with_diffusion)
+    cs_convection_with_diffusion(connect, quant,
+                                 tcur,
+                                 a_info, h_info,
+                                 adv_builder,
+                                 matrix);
+  else
+    cs_convection(connect, quant,
+                  tcur,
+                  a_info,
+                  adv_builder,
+                  matrix);
+
+  adv_builder = cs_convection_builder_free(adv_builder);
+
+  /* Update now the algebraic according to the boundary conditions */
+  if (adv_uniform) {
+    cs_evaluate_adv_field(a_info.adv_id, tcur, xg, &beta_uni);
+    cs_qvect(beta_uni, &beta);
+  }
+
+  /* Store the position in dir_val of vertices with a non-homogeneous
+     Dirichlet BC */
+  BFT_MALLOC(pos_dir, quant->n_vertices, cs_lnum_t);
+  for (i = 0; i < quant->n_vertices; i++)
+    pos_dir[i] = -1; // not a vertex with non-homogeneous Dirichlet BC
+  for (i = 0; i < vtx_dir->n_nhmg_elts; i++)
+    pos_dir[vtx_dir->elt_ids[i]] = i;
+
+  cs_real_t  pcoef = 0;
+  if (sys_builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_PENA)
+    pcoef = cs_weak_penalization_weight/cs_get_eps_machine();
+
+  /* Add diagonal term for vertices attached to a boundary face where
+     the advection field points inward */
+  for (f_id = quant->n_i_faces; f_id < quant->n_faces; f_id++) {
+
+    cs_quant_t  qf = quant->face[f_id];
+
+    /* Sanity check (this is a border face) */
+    assert(connect->f2c->idx[f_id+1] - connect->f2c->idx[f_id] == 1);
+
+    if (adv_uniform)
+      dp = _dp3(beta.unitv, qf.unitv);
+
+    /* Loop on border face edges */
+    for (i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
+
+      cs_lnum_t  e_id = f2e->col_id[i];
+      cs_quant_t  qe = quant->edge[e_id];
+      cs_lnum_t  e_shft = e2v->idx[e_id];
+
+      for (j = 0; j < 2; j++) {
+
+        cs_lnum_t  v_id = e2v->col_id[e_shft+j];
+
+        /* Could be improved with a more accurate computation of the flux */
+        if (!adv_uniform) {
+          for (k = 0; k < 3; k++)
+            xg[k] = one_third * (xyz[3*v_id+k] + qe.center[k] + qf.center[k]);
+          cs_evaluate_adv_field(a_info.adv_id, tcur, xg, &beta_g);
+          cs_qvect(beta_g, &beta);
+          dp = _dp3(beta.unitv, qf.unitv);
+        }
+
+        flux = dp * beta.meas * cs_surftri(&(xyz[3*v_id]), qe.center, qf.center);
+
+        if (dp < 0) { // advection field is inward w.r.t. the face normal
+
+          /* Weakly enforcement of Dirichlet BCs */
+          assert(pos_dir[v_id] > -1);
+
+          cs_real_t  bc_val = sys_builder->dir_val[pos_dir[v_id]];
+
+          switch (sys_builder->enforce) {
+
+          case CS_PARAM_BC_ENFORCE_WEAK_PENA:
+            rhs[v_id] += pcoef * bc_val;
+            matrix->diag[v_id] +=  pcoef;
+            break;
+
+          case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+          case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+            rhs[v_id] -= flux * bc_val;
+            if (a_info.form == CS_PARAM_ADVECTION_FORM_NONCONS)
+              matrix->diag[v_id] -= flux;
+            break;
+
+            default:
+              bft_error(__FILE__, __LINE__, 0,
+                        " Invalid type of BC enforcement when advection is"
+                        " activated.");
+
+            } // switch
+
+        }
+        else {  // advection is oriented outward
+
+          if (a_info.form == CS_PARAM_ADVECTION_FORM_CONSERV)
+            matrix->diag[v_id] += flux;
+
+        }
+
+      } // Loop on edge vertices
+
+    } // Loop on face edges
+
+  } // Loop on border faces
+
+  cs_sla_matrix_clean(matrix, 10*cs_get_eps_machine());
+
+  /* Free memory */
+  BFT_FREE(pos_dir);
 }
 
 /*============================================================================
@@ -1142,33 +1256,73 @@ cs_cdovb_codits_build_system(const cs_mesh_t            *m,
                              cs_real_t                 **rhs,
                              cs_sla_matrix_t           **sla_mat)
 {
-  cs_sla_matrix_t  *diffusion_mat = NULL;
-  cs_cdovb_codits_t  *_builder = (cs_cdovb_codits_t *)builder;
-  const cs_equation_param_t  *eqp = _builder->eqp;
+  cs_cdovb_codits_t  *sys_builder = (cs_cdovb_codits_t *)builder;
+
+  const cs_cdo_bc_list_t  *vtx_dir = sys_builder->vtx_dir;
+  const cs_equation_param_t  *eqp = sys_builder->eqp;
 
   /* Test to remove */
-  if (eqp->flag & CS_EQUATION_CONVECTION)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Convection term is not handled yet.\n"));
   if (eqp->flag & CS_EQUATION_UNSTEADY)
     bft_error(__FILE__, __LINE__, 0,
               _(" Unsteady terms are not handled yet.\n"));
 
-  if (*rhs == NULL)
-    BFT_MALLOC(*rhs, _builder->n_dof_vertices, cs_real_t);
+  /* Allocate and initialize a matrix with the larger stencil (that related
+     to diffusion => all vertices of a cell are potentially in interaction) */
+  cs_sla_matrix_t  *system_mat = _init_matrix(quant->n_vertices, connect);
+
+  /* Compute contribution of (explicit) source terms to the rhs */
+  _compute_st_rhs(m, connect, quant, tcur, sys_builder, rhs);
+
+  /* Update builder with the current values of Dirchlet BCs */
+  if (vtx_dir->n_nhmg_elts > 0) {
+
+    cs_flag_t  dof_flag =
+      CS_PARAM_FLAG_VERTEX | CS_PARAM_FLAG_PRIMAL | CS_PARAM_FLAG_SCAL;
+
+    cs_cdo_bc_dirichlet_set(dof_flag,
+                            tcur,
+                            m,
+                            eqp->bc,
+                            vtx_dir,
+                            sys_builder->dir_val);
+
+  } // Dirichlet BCs */
 
   /* Build diffusion system: stiffness matrix */
-  if (eqp->flag & CS_EQUATION_DIFFUSION)
-    diffusion_mat = _build_diffusion_system(m, connect, quant,
-                                            tcur,
-                                            *rhs,
-                                            _builder);
+  if (eqp->flag & CS_EQUATION_DIFFUSION) {
 
-  *sla_mat = diffusion_mat;
+    /* Build the (full) stiffness matrix i.e. without taking into account BCs */
+    _build_diffusion(connect, quant, sys_builder, system_mat);
 
-  /* Build convection system */
-  // TODO
+    /* Treatment differs according to the enforcement of BCs
+       In case of a strong enforcement of the BCs, rhs and matrix are resized */
+    _update_diffusion_with_bc(m, connect, quant,
+                              tcur,
+                              sys_builder,
+                              rhs,
+                              &system_mat);
 
+  }
+
+  if (eqp->flag & CS_EQUATION_CONVECTION) {
+
+    /* Only possible case: Weak enforcement of BCs */
+    assert(sys_builder->n_dof_vertices == sys_builder->n_vertices);
+
+    /* Build convection system (BCs are always weakly enforced) */
+    _build_convection(m, connect, quant,
+                      tcur,
+                      sys_builder,
+                      *rhs,
+                      system_mat);
+
+    /* Remove zero entries or entries which are very small w.r.t. to other
+       entries of the same line */
+    //    cs_sla_matrix_clean(system_mat, cs_get_eps_machine());
+
+  }
+
+  *sla_mat = system_mat;
 }
 
 /*----------------------------------------------------------------------------*/

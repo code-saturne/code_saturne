@@ -66,6 +66,8 @@ BEGIN_C_DECLS
 
 static int cs_param_n_properties = 0;
 static cs_param_pty_t  *cs_param_properties = NULL;
+static int cs_param_n_adv_fields = 0;
+static cs_param_adv_field_t  *cs_param_adv_fields = NULL;
 
 /*=============================================================================
  * Local Macro definitions and structure definitions
@@ -158,6 +160,26 @@ _check_pty_id(int   id)
               id, cs_param_n_properties);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the id related to an advection field is valid
+ *
+ * \param[in]     id     id to check
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_adv_field_id(int   id)
+{
+  if (id < 0 || id >= cs_param_n_adv_fields)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid id (equal to %d and should be between 0 and %d).\n"
+                " Cannot access to the definition of this advection field.\n"),
+              id, cs_param_n_adv_fields);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a cs_def_t structure
  *
  * \param[in]      def_type   type of definition (by value, function...)
@@ -499,59 +521,6 @@ cs_param_pty_set(const char     *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field related to a material property
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_add_fields(void)
-{
-  int  pty_id, dim;
-
-  for (pty_id = 0; pty_id < cs_param_n_properties; pty_id++) {
-
-    cs_param_pty_t  *pty = cs_param_properties + pty_id;
-
-    if (pty->post_freq > -1) { // Post-processing is requested
-
-      _Bool has_previous = (pty->flag & CS_PARAM_FLAG_UNSTEADY) ? true : false;
-      int  field_mask = CS_FIELD_PROPERTY;
-
-      /* Define dim */
-      switch (pty->type) {
-      case CS_PARAM_PTY_ISO:
-        dim = 1;
-      break;
-      case CS_PARAM_PTY_ORTHO:
-        dim = 3;
-        break;
-      case CS_PARAM_PTY_ANISO:
-        dim = 9;
-        break;
-      default:
-        dim = 0; // avoid a warning
-        bft_error(__FILE__, __LINE__, 0,
-                  _(" Type of property for %s is invalid with the creation"
-                    " of field.\n"), pty->name);
-      }
-
-      cs_field_create(pty->name,
-                      field_mask,
-                      CS_MESH_LOCATION_CELLS,
-                      dim,
-                      true,          // interleave
-                      has_previous);
-
-      pty->field_id = cs_field_id_by_name(pty->name);
-
-    }
-
-  } // Loop on material properties
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Query to know if the material property is uniform
  *
  * \param[in]    pty_id    id related to the material property to deal with
@@ -591,160 +560,6 @@ cs_param_pty_get_name(int            pty_id)
   cs_param_pty_t  *pty = cs_param_properties + pty_id;
 
   return pty->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the 3x3 matrix related to a general material property.
- *         This value is computed at location (x,y,z) and time t.
- *
- * \param[in]     pty_id    id related to the material property to deal with
- * \param[in]     tcur      time at which we evaluate the material property
- * \param[in]     xyz       location at which  we evaluate the material property
- * \param[in]     invers    true or false
- * \param[in,out] matval    pointer to the 3x3 matrix to return
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_get_val(int            pty_id,
-                     cs_real_t      tcur,
-                     cs_real_3_t    xyz,
-                     _Bool          invers,
-                     cs_real_33_t  *matval)
-{
-  int  k, l;
-  cs_get_t  get;
-
-  if (pty_id < 0 || pty_id >= cs_param_n_properties)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid id (eqal to %d).\n"
-                " Cannot access to the material property definition.\n"),
-              pty_id);
-
-  cs_param_pty_t  *pty = cs_param_properties + pty_id;
-
-  /* Initialize the tensor */
-  for (k = 0; k < 3; k++)
-    for (l = 0; l < 3; l++)
-      matval[0][k][l] = 0;
-
-  switch (pty->type) {
-
-  case CS_PARAM_PTY_ISO:
-
-    switch (pty->def_type) {
-
-    case CS_PARAM_DEF_BY_VALUE:
-      matval[0][0][0] = pty->def.get.val;
-      break;
-
-    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      pty->def.analytic(tcur, xyz, &get);
-      matval[0][0][0] = get.val;
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition of a material property."));
-      break;
-
-    } /* switch def_type */
-
-    matval[0][1][1] = matval[0][2][2] = matval[0][0][0];
-
-    if (invers) { /* Need to inverse material data */
-      assert(matval[0][0][0] > 0);
-      double  invval = 1.0 / matval[0][0][0];
-      matval[0][0][0] = matval[0][1][1] = matval[0][2][2] = invval;
-    }
-    break;
-
-  case CS_PARAM_PTY_ORTHO:
-
-    switch (pty->def_type) {
-
-    case CS_PARAM_DEF_BY_VALUE:
-      for (k = 0; k < 3; k++)
-        matval[0][k][k] = pty->def.get.vect[k];
-      break;
-
-    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      pty->def.analytic(tcur, xyz, &get);
-      for (k = 0; k < 3; k++)
-        matval[0][k][k] = get.vect[k];
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition of a material property."));
-      break;
-
-    } /* switch def_type */
-
-    if (invers) /* Need to inverse material data */
-      for (k = 0; k < 3; k++)
-        matval[0][k][k] /= 1.0;
-
-    break;
-
-  case CS_PARAM_PTY_ANISO:
-
-    switch (pty->def_type) {
-
-    case CS_PARAM_DEF_BY_VALUE:
-      for (k = 0; k < 3; k++)
-        for (l = 0; l < 3; l++)
-          matval[0][k][l] = pty->def.get.tens[k][l];
-      break;
-
-    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
-      pty->def.analytic(tcur, xyz, &get);
-      for (k = 0; k < 3; k++)
-        for (l = 0; l < 3; l++)
-          matval[0][k][l] = get.tens[k][l];
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid type of definition of a material property."));
-      break;
-
-    } /* switch deftype */
-
-    if (invers) {
-
-      cs_real_33_t  invmat;
-      const cs_real_33_t ptyval = {
-        {matval[0][0][0], matval[0][0][1], matval[0][0][2]},
-        {matval[0][1][0], matval[0][1][1], matval[0][1][2]},
-        {matval[0][2][0], matval[0][2][1], matval[0][2][2]}};
-
-      _invmat33(ptyval, &invmat);
-      for (k = 0; k < 3; k++)
-        for (l = 0; l < 3; l++)
-          matval[0][k][l] = invmat[k][l];
-
-    }
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of material property."));
-    break;
-
-  } /* switch type */
-
-#if CS_PARAM_PTY_DBG
-  bft_printf("\n  Material data at (% 8.5f, % 8.5f, % 8.5f) and time %f\n"
-             "   | % 10.6e  % 10.6e  % 10.6e |\n"
-             "   | % 10.6e  % 10.6e  % 10.6e |\n"
-             "   | % 10.6e  % 10.6e  % 10.6e |\n",
-             xyz[0], xyz[1], xyz[2], tcur,
-             matval[0][0][0], matval[0][0][1], matval[0][0][2],
-             matval[0][1][0], matval[0][1][1], matval[0][1][2],
-             matval[0][2][0], matval[0][2][1], matval[0][2][2]);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -847,6 +662,316 @@ cs_param_pty_finalize(void)
   BFT_FREE(cs_param_properties);
   cs_param_properties = NULL;
   cs_param_n_properties = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the number of advection fields defined
+ *
+ * \return the number of advection fields defined
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_get_n_adv_fields(void)
+{
+  return cs_param_n_adv_fields;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query to know if an advection field is uniform
+ *
+ * \param[in]    adv_id    id related to the advection field to deal with
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_adv_field_is_uniform(int   adv_id)
+{
+  _check_adv_field_id(adv_id);
+
+  cs_param_adv_field_t  *adv = cs_param_adv_fields + adv_id;
+
+  if (adv->flag & CS_PARAM_FLAG_UNIFORM)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of an advection field from its id
+ *
+ * \param[in]    adv_id    id related to the advection field to deal with
+ *
+ * \return  the name of the advection field
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_adv_field_get_name(int    adv_id)
+{
+  _check_adv_field_id(adv_id);
+
+  cs_param_adv_field_t  *adv = cs_param_adv_fields + adv_id;
+
+  return adv->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a cs_param_adv_field_t structure from its id
+ *
+ * \param[in]  adv_id   id related to an advection field
+ *
+ * \return a pointer to a cs_param_adv_field_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_adv_field_t *
+cs_param_adv_field_get(int  adv_id)
+{
+  _check_adv_field_id(adv_id);
+
+  return cs_param_adv_fields + adv_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the id related to an advection field definition from its name
+ *
+ * \param[in]  ref_name    name of the advection field to find
+ *
+ * \return -1 if not found otherwise the associated id
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_adv_get_id_by_name(const char  *ref_name)
+{
+  int  adv_id = -1;
+  int  reflen = strlen(ref_name);
+
+  for (int i = 0; i < cs_param_n_adv_fields; i++) {
+
+    const cs_param_adv_field_t  *adv = cs_param_adv_fields + i;
+    int  len = strlen(adv->name);
+
+    if (reflen == len) {
+      if (strcmp(ref_name, adv->name) == 0) {
+        adv_id = i;
+        break;
+      }
+    }
+
+  } /* Loop on advection fields */
+
+  return adv_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize an advection field structure
+ *
+ * \param[in]  name        name of the advection field
+ * \param[in]  post_freq   -1 (no post-processing), 0 (at the beginning)
+ *                         otherwise every post_freq iteration(s)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_adv_field_add(const char      *name,
+                       int              post_freq)
+{
+  int  adv_id = cs_param_adv_get_id_by_name(name);
+  cs_param_adv_field_t  *adv = NULL;
+
+  if (adv_id > -1) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_(" An existing advection field has already the same name %s.\n"
+                 " Stop adding this advection field.\n"), name);
+    return;
+  }
+
+  /* Allocate and initialize a new material property */
+  BFT_REALLOC(cs_param_adv_fields,
+              cs_param_n_adv_fields + 1,
+              cs_param_adv_field_t);
+
+  adv = cs_param_adv_fields + cs_param_n_adv_fields;
+  cs_param_n_adv_fields++;
+
+  adv->post_freq = post_freq;
+
+  /* Copy name */
+  int  len = strlen(name) + 1;
+  BFT_MALLOC(adv->name, len, char);
+  strncpy(adv->name, name, len);
+
+  /*Default initialization */
+  adv->flag = 0;
+  adv->def_type = CS_PARAM_N_DEF_TYPES;
+  for (int k = 0; k < 3; k++)
+    adv->def.get.vect[k] = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a way to compute the value of an advection field
+ *
+ * \param[in]  name      name of the advection field
+ * \param[in]  def_key   way of defining the value of the advection field
+ * \param[in]  val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_adv_field_set(const char     *name,
+                       const char     *def_key,
+                       const void     *val)
+{
+  int  adv_id = cs_param_adv_get_id_by_name(name);
+
+  if (adv_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Stop setting the material property %s.\n"
+                " Do not find a similar name in the property database.\n"),
+              name);
+
+  cs_param_adv_field_t  *adv = cs_param_adv_fields + adv_id;
+
+  /* Get the type of definition */
+  if (strcmp(def_key, "value") == 0) {
+    adv->def_type =  CS_PARAM_DEF_BY_VALUE;
+    adv->flag |= CS_PARAM_FLAG_UNIFORM;
+  }
+  else if (strcmp(def_key, "field") == 0)
+    adv->def_type = CS_PARAM_DEF_BY_FIELD;
+  else if (strcmp(def_key, "evaluator") == 0)
+    adv->def_type = CS_PARAM_DEF_BY_EVALUATOR;
+  else if (strcmp(def_key, "analytic") == 0)
+    adv->def_type = CS_PARAM_DEF_BY_ANALYTIC_FUNCTION;
+  else if (strcmp(def_key, "user") == 0)
+    adv->def_type = CS_PARAM_DEF_BY_USER_FUNCTION;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid key for setting the type of definition.\n"
+                " Given key: %s\n"
+                " Choice among value, field, evaluator, analytic, user, law"
+                " or file\n"
+                " Please modify your settings."), def_key);
+
+  _set_def(adv->def_type, CS_PARAM_VAR_VECT, val, &(adv->def));
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free structures dedicated to the definition of advection fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_adv_field_finalize(void)
+{
+  if (cs_param_adv_fields == NULL)
+    return;
+
+  for (int i = 0; i < cs_param_n_adv_fields; i++)
+    BFT_FREE(cs_param_adv_fields[i].name);
+
+  BFT_FREE(cs_param_adv_fields);
+  cs_param_adv_fields = NULL;
+  cs_param_n_adv_fields = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a field related to a material property and/or advection
+ *         fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_add_fields(void)
+{
+  int  id, dim;
+
+  for (id = 0; id < cs_param_n_properties; id++) {
+
+    cs_param_pty_t  *pty = cs_param_properties + id;
+
+    if (pty->post_freq > -1) { // Post-processing is requested
+      if (pty->def_type != CS_PARAM_DEF_BY_FIELD) { // not already a field
+
+        _Bool has_previous = (pty->flag & CS_PARAM_FLAG_UNSTEADY) ? true : false;
+        int  field_mask = CS_FIELD_PROPERTY;
+
+        /* Define dim */
+        switch (pty->type) {
+        case CS_PARAM_PTY_ISO:
+          dim = 1;
+          break;
+        case CS_PARAM_PTY_ORTHO:
+          dim = 3;
+          break;
+        case CS_PARAM_PTY_ANISO:
+          dim = 9;
+          break;
+        default:
+          dim = 0; // avoid a warning
+          bft_error(__FILE__, __LINE__, 0,
+                    _(" Type of property for %s is invalid with the creation"
+                      " of field.\n"), pty->name);
+        }
+
+        cs_field_t  *fld = cs_field_create(pty->name,
+                                           field_mask,
+                                           CS_MESH_LOCATION_CELLS,
+                                           dim,
+                                           true,          // interleave
+                                           has_previous);
+
+        pty->field_id = cs_field_id_by_name(pty->name);
+
+        /* Allocate and initialize values */
+        cs_field_allocate_values(fld);
+
+      }
+    }
+
+  } // Loop on material properties
+
+  for (id = 0; id < cs_param_n_adv_fields; id++) {
+
+    cs_param_adv_field_t  *adv = cs_param_adv_fields + id;
+
+    if (adv->post_freq > -1) { // Post-processing is requested
+      if (adv->def_type != CS_PARAM_DEF_BY_FIELD) { // not already a field
+
+        _Bool has_previous = (adv->flag & CS_PARAM_FLAG_UNSTEADY) ? true : false;
+        int  field_mask = CS_FIELD_PROPERTY;
+
+        cs_field_t  *fld = cs_field_create(adv->name,
+                                           field_mask,
+                                           CS_MESH_LOCATION_VERTICES,
+                                           3,    // always a vector-valued field
+                                           true, // interleave
+                                           has_previous);
+
+        adv->field_id = cs_field_id_by_name(adv->name);
+
+        /* Allocate and initialize values */
+        cs_field_allocate_values(fld);
+
+      }
+    }
+
+  } // Loop on advection fields
+
 }
 
 /*----------------------------------------------------------------------------*/

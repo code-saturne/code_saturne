@@ -403,15 +403,6 @@ _cdovb_post(const cs_mesh_t            *m,
   fprintf(resume, " -dim- n_cells          %d\n", cdoq->n_cells);
   fprintf(resume, msepline);
 
-  cs_post_write_vertex_var(-1,              // id du maillage de post
-                           field->name,
-                           1,               // dim
-                           false,           // interlace
-                           true,            // true = original mesh
-                           CS_POST_TYPE_cs_real_t,
-                           pdi,             // values on vertices
-                           NULL);           // time step management structure
-
   dinfo = cs_analysis_data(n_vertices, // n_elts
                            1,                // stride
                            CS_DOUBLE,        // cs_datatype_t
@@ -724,17 +715,6 @@ _cdofb_post(const cs_mesh_t            *m,
   fprintf(resume, " -dim- n_cells          %d\n", cdoq->n_cells);
   fprintf(resume, msepline);
 
-  cs_post_write_var(-1,              // id du maillage de post
-                    field->name,
-                    1,               // dim
-                    false,           // interlace
-                    true,            // true = original mesh
-                    CS_POST_TYPE_cs_real_t,
-                    cell_pdi,        // values on cells
-                    NULL,            // values at internal faces
-                    NULL,            // values at border faces
-                    NULL);           // time step management structure
-
   dinfo = cs_analysis_data(n_cells,    // n_elts
                            1,          // stride
                            CS_DOUBLE,  // cs_datatype_t
@@ -759,19 +739,6 @@ _cdofb_post(const cs_mesh_t            *m,
   fprintf(resume, " -bnd- Scal.Cell.Sigma % 10.6e\n", dinfo.sigma);
   fprintf(resume, msepline);
 
-  len = strlen(field->name) + 8 + 1;
-  BFT_MALLOC(postlabel, len, char);
-  sprintf(postlabel, "%s.Border", field->name);
-  cs_post_write_var(-2,                    // id du maillage de post
-                    postlabel,
-                    1,                     // dim
-                    false,                 // interlace
-                    true,                  // true = original mesh
-                    CS_POST_TYPE_cs_real_t,
-                    NULL,                  // values on cells
-                    NULL,                  // values at internal faces
-                    face_pdi + n_i_faces,  // values at border faces
-                    NULL);                 // time step management structure
 
   if (anacomp) {  /* Comparison with an analytical solution */
 

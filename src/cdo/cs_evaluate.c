@@ -57,6 +57,8 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
+#define CS_EVALLUATE_DBG 0
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -603,6 +605,203 @@ cs_evaluate(const cs_mesh_t              *m,
 
   /* Return values */
   *p_values = values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the 3x3 matrix related to a general material property.
+ *         This value is computed at location (x,y,z) and time tcur.
+ *
+ * \param[in]     pty_id    id related to the material property to deal with
+ * \param[in]     tcur      time at which we evaluate the material property
+ * \param[in]     xyz       location at which  we evaluate the material property
+ * \param[in]     invers    true or false
+ * \param[in,out] matval    pointer to the 3x3 matrix to return
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_pty(int                pty_id,
+                cs_real_t          tcur,
+                const cs_real_3_t  xyz,
+                bool               invers,
+                cs_real_33_t      *matval)
+{
+  int  k, l;
+  cs_get_t  get;
+
+  const cs_param_pty_t  *pty = cs_param_pty_get(pty_id);
+
+  /* Initialize the tensor */
+  for (k = 0; k < 3; k++)
+    for (l = 0; l < 3; l++)
+      matval[0][k][l] = 0;
+
+  switch (pty->type) {
+
+  case CS_PARAM_PTY_ISO:
+
+    switch (pty->def_type) {
+
+    case CS_PARAM_DEF_BY_VALUE:
+      matval[0][0][0] = pty->def.get.val;
+      break;
+
+    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+      pty->def.analytic(tcur, xyz, &get);
+      matval[0][0][0] = get.val;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of definition of a material property."));
+      break;
+
+    } /* switch def_type */
+
+    matval[0][1][1] = matval[0][2][2] = matval[0][0][0];
+
+    if (invers) { /* Need to inverse material data */
+      assert(matval[0][0][0] > 0);
+      double  invval = 1.0 / matval[0][0][0];
+      matval[0][0][0] = matval[0][1][1] = matval[0][2][2] = invval;
+    }
+    break;
+
+  case CS_PARAM_PTY_ORTHO:
+
+    switch (pty->def_type) {
+
+    case CS_PARAM_DEF_BY_VALUE:
+      for (k = 0; k < 3; k++)
+        matval[0][k][k] = pty->def.get.vect[k];
+      break;
+
+    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+      pty->def.analytic(tcur, xyz, &get);
+      for (k = 0; k < 3; k++)
+        matval[0][k][k] = get.vect[k];
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of definition of a material property."));
+      break;
+
+    } /* switch def_type */
+
+    if (invers) /* Need to inverse material data */
+      for (k = 0; k < 3; k++)
+        matval[0][k][k] /= 1.0;
+
+    break;
+
+  case CS_PARAM_PTY_ANISO:
+
+    switch (pty->def_type) {
+
+    case CS_PARAM_DEF_BY_VALUE:
+      for (k = 0; k < 3; k++)
+        for (l = 0; l < 3; l++)
+          matval[0][k][l] = pty->def.get.tens[k][l];
+      break;
+
+    case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+      pty->def.analytic(tcur, xyz, &get);
+      for (k = 0; k < 3; k++)
+        for (l = 0; l < 3; l++)
+          matval[0][k][l] = get.tens[k][l];
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of definition of a material property."));
+      break;
+
+    } /* switch deftype */
+
+    if (invers) {
+
+      cs_real_33_t  invmat;
+      const cs_real_33_t ptyval = {
+        {matval[0][0][0], matval[0][0][1], matval[0][0][2]},
+        {matval[0][1][0], matval[0][1][1], matval[0][1][2]},
+        {matval[0][2][0], matval[0][2][1], matval[0][2][2]}};
+
+      _invmat33(ptyval, &invmat);
+      for (k = 0; k < 3; k++)
+        for (l = 0; l < 3; l++)
+          matval[0][k][l] = invmat[k][l];
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of material property."));
+    break;
+
+  } /* switch type */
+
+#if CS_EVALLUATE_DBG
+  bft_printf("\n  Material data at (% 8.5f, % 8.5f, % 8.5f) and time %f\n"
+             "   | % 10.6e  % 10.6e  % 10.6e |\n"
+             "   | % 10.6e  % 10.6e  % 10.6e |\n"
+             "   | % 10.6e  % 10.6e  % 10.6e |\n",
+             xyz[0], xyz[1], xyz[2], tcur,
+             matval[0][0][0], matval[0][0][1], matval[0][0][2],
+             matval[0][1][0], matval[0][1][1], matval[0][1][2],
+             matval[0][2][0], matval[0][2][1], matval[0][2][2]);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the vector related to an advection field.
+ *         This value is computed at location (x,y,z) and time tcur.
+ *
+ * \param[in]     adv_id    id related to the advection field to deal with
+ * \param[in]     tcur      time at which we evaluate the material property
+ * \param[in]     xyz       location at which  we evaluate the material property
+ * \param[in,out] matval    pointer to the 3x3 matrix to return
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_adv_field(int                 adv_id,
+                      cs_real_t           tcur,
+                      const cs_real_3_t   xyz,
+                      cs_real_3_t        *vect)
+{
+  int  k;
+  cs_get_t  get;
+
+  const cs_param_adv_field_t  *adv = cs_param_adv_field_get(adv_id);
+
+  /* Initialize */
+  for (k = 0; k < 3; k++)
+    vect[0][k] = 0;
+
+  switch (adv->def_type) {
+
+  case CS_PARAM_DEF_BY_VALUE:
+    for (k = 0; k < 3; k++)
+      vect[0][k] = adv->def.get.vect[k];
+    break;
+
+  case CS_PARAM_DEF_BY_ANALYTIC_FUNCTION:
+    adv->def.analytic(tcur, xyz, &get);
+    for (k = 0; k < 3; k++)
+      vect[0][k] = get.vect[k];
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid type of definition for an advection field."));
+    break;
+
+  } /* switch def_type */
+
 }
 
 /*----------------------------------------------------------------------------*/

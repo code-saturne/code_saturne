@@ -31,6 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_mesh.h"
 #include "cs_cdo.h"
 #include "cs_quadrature.h"
 
@@ -170,6 +171,62 @@ typedef struct {
                                       if the COST algo. is used, other 0. */
 
 } cs_param_hodge_t;
+
+/* ADVECTION */
+/* ========= */
+
+/* Advection/convection field */
+typedef struct {
+
+  char       *restrict name;
+  cs_flag_t   flag;  /* Short descriptor (mask of bits) */
+  int         post_freq; /* -1 (no post-processing), 0 (at the beginning)
+                            otherwise every post_freq iteration(s) */
+  int         field_id;  /* If post-processing is required (-1 if not used) */
+
+  cs_param_def_type_t    def_type;
+  cs_def_t               def;
+
+} cs_param_adv_field_t;
+
+typedef enum {
+
+  CS_PARAM_ADVECTION_FORM_CONSERV,
+  CS_PARAM_ADVECTION_FORM_NONCONS,
+  CS_PARAM_N_ADVECTION_FORMULATIONS
+
+} cs_param_advection_form_t;
+
+typedef enum {
+
+  CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED,
+  CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND,
+  CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII,
+  CS_PARAM_ADVECTION_WEIGHT_ALGO_SG,
+  CS_PARAM_N_ADVECTION_WEIGHT_ALGOS
+
+} cs_param_advection_weight_algo_t;
+
+typedef enum {
+
+  CS_PARAM_ADVECTION_WEIGHT_FLUX,
+  CS_PARAM_ADVECTION_WEIGHT_XEXC,
+  CS_PARAM_N_ADVECTION_WEIGHTS
+
+} cs_param_advection_weight_t;
+
+
+  /* Contraction operator (also called interior product) */
+typedef struct {
+
+  int                               adv_id;  // id of the related advection field
+
+  cs_param_advection_form_t         form;
+  cs_param_advection_weight_algo_t  weight_algo;
+  cs_param_advection_weight_t       weight_criterion;
+  cs_quadra_type_t                  quad_type; // barycentric, higher, highest
+
+} cs_param_advection_t;
 
 /* BOUNDARY CONDITIONS */
 /* =================== */
@@ -399,15 +456,6 @@ cs_param_pty_set(const char     *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field related to a material property
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_add_fields(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Query to know if the material property is uniform
  *
  * \param[in]    pty_id    id related to the material property to deal with
@@ -434,26 +482,6 @@ cs_param_pty_get_name(int            pty_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the 3x3 matrix related to a general material property.
- *         This value is computed at location (x,y,z) and time t.
- *
- * \param[in]     pty_id    id related to the material property to deal with
- * \param[in]     t         time at which we evaluate the material property
- * \param[in]     xyz       location at which  we evaluate the material property
- * \param[in]     invers    true or false
- * \param[in,out] matval    pointer to the 3x3 matrix to return
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_get_val(int            pty_id,
-                     cs_real_t      t,
-                     cs_real_3_t    xyz,
-                     bool           invers,
-                     cs_real_33_t  *matval);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Summary of all the cs_param_pty_t structures
  */
 /*----------------------------------------------------------------------------*/
@@ -469,6 +497,117 @@ cs_param_pty_summary_all(void);
 
 void
 cs_param_pty_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the number of advection fields defined
+ *
+ * \return the number of advection fields defined
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_get_n_adv_fields(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Query to know if an advection field is uniform
+ *
+ * \param[in]    adv_id    id related to the advection field to deal with
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_adv_field_is_uniform(int   adv_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of an advection field from its id
+ *
+ * \param[in]    adv_id    id related to the advection field to deal with
+ *
+ * \return  the name of the advection field
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_adv_field_get_name(int    adv_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a cs_param_adv_field_t structure from its id
+ *
+ * \param[in]  adv_id   id related to an advection field
+ *
+ * \return a pointer to a cs_param_adv_field_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_adv_field_t *
+cs_param_adv_field_get(int  adv_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Find the id related to an advection field definition from its name
+ *
+ * \param[in]  ref_name    name of the advection field to find
+ *
+ * \return -1 if not found otherwise the associated id
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_param_adv_get_id_by_name(const char  *ref_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize an advection field structure
+ *
+ * \param[in]  name        name of the advection field
+ * \param[in]  post_freq   -1 (no post-processing), 0 (at the beginning)
+ *                         otherwise every post_freq iteration(s)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_adv_field_add(const char      *name,
+                       int              post_freq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a way to compute the value of an advection field
+ *
+ * \param[in]  name      name of the advection field
+ * \param[in]  def_key   way of defining the value of the advection field
+ * \param[in]  val       pointer to the value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_adv_field_set(const char     *name,
+                       const char     *def_key,
+                       const void     *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free structures dedicated to the definition of advection fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_adv_field_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a field related to a material property and/or advection
+ *         fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_add_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -50,6 +50,8 @@
 #include <bft_printf.h>
 
 #include "cs_mesh_location.h"
+#include "cs_post.h"
+#include "cs_evaluate.h"
 #include "cs_walldistance.h"
 
 #include "cs_prototypes.h"
@@ -115,6 +117,125 @@ _domain_boundary_ml_name[CS_PARAM_N_BOUNDARY_TYPES][CS_CDO_LEN_NAME] =
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Postprocessing of quantities attached to the current domain s.t.
+ *         material properties and/or advection fields
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  time_iter  id of the time iteration
+ * \param[in]  tcur       current physical time
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_domain_post(const cs_mesh_t   *mesh,
+             int                time_iter,
+             double             tcur)
+{
+  cs_lnum_t  v_id, id;
+
+  const int  n_adv_fields = cs_param_get_n_adv_fields();
+
+  bft_printf("\n Initial post-processing of quantities related to the current"
+             " domain\n");
+
+  /* Up to now, only advection field are post-processed */
+  for (id = 0; id < n_adv_fields; id++) {
+
+    cs_param_adv_field_t  *adv = cs_param_adv_field_get(id);
+
+    if (adv->post_freq > -1) { // Post-processing is requested
+
+      bool  do_post = true;
+
+      if (adv->post_freq % time_iter > 0)
+        do_post = false;
+      if (time_iter > 0 && adv->post_freq == 0)
+        do_post = false;
+
+      if (do_post) {
+
+        cs_lnum_t  shft;
+        cs_qvect_t  v;
+        cs_real_3_t  advect;
+
+        cs_field_t  *fld = cs_field_by_id(adv->field_id);
+        cs_real_t  *val = fld->val;
+        cs_real_t  *unitv = NULL, *magnitude = NULL;
+
+        const  cs_real_t  *xyz = mesh->vtx_coord;
+
+        bft_printf(" <post/advection_field> %s\n", adv->name);
+
+        BFT_MALLOC(unitv, 3*mesh->n_vertices, cs_real_t);
+        BFT_MALLOC(magnitude, mesh->n_vertices, cs_real_t);
+
+        /* Evaluate the value of the advection field at each vertex */
+        for (v_id = 0; v_id < mesh->n_vertices; v_id++) {
+
+          cs_evaluate_adv_field(id,
+                                tcur,
+                                xyz + 3*v_id,
+                                &advect);
+          cs_qvect(advect, &v);
+          magnitude[v_id] = v.meas;
+
+          shft = 3*v_id;
+          for (int k = 0; k < 3; k++) {
+            val[shft+k] = advect[k];
+            unitv[shft+k] = v.unitv[k];
+          }
+
+        } // Loop on vertices
+
+        cs_post_write_vertex_var(-1,              // id du maillage de post
+                                 fld->name,
+                                 3,               // dim
+                                 true,            // interlace
+                                 true,            // true = original mesh
+                                 CS_POST_TYPE_cs_real_t,
+                                 val,             // values on vertices
+                                 NULL);           // time step structure
+
+        char  *label = NULL;
+        int  len = strlen(fld->name) + 1 + 10;
+
+        BFT_MALLOC(label, len, char);
+        sprintf(label, "%s.Magnitude", fld->name);
+
+        cs_post_write_vertex_var(-1,              // id du maillage de post
+                                 label,
+                                 1,               // dim
+                                 true,            // interlace
+                                 true,            // true = original mesh
+                                 CS_POST_TYPE_cs_real_t,
+                                 magnitude,       // values on vertices
+                                 NULL);           // time step structure
+
+        sprintf(label, "%s.Unit", fld->name);
+        cs_post_write_vertex_var(-1,              // id du maillage de post
+                                 label,
+                                 3,               // dim
+                                 true,            // interlace
+                                 true,            // true = original mesh
+                                 CS_POST_TYPE_cs_real_t,
+                                 unitv,           // values on vertices
+                                 NULL);           // time step structure
+
+        /* Free temporay buffers */
+        BFT_FREE(label);
+        BFT_FREE(unitv);
+        BFT_FREE(magnitude);
+
+      } // Do post
+
+    } // Post is potentially requested
+
+  } // Loop on advection fields
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -357,6 +478,10 @@ cs_domain_last_init(cs_domain_t    *domain)
 
   for (int eq_id = 0; eq_id < domain->n_equations; eq_id++)
     cs_equation_last_init(domain->equations[eq_id]);
+
+  /* Post-processing before starting the time loop */
+  _domain_post(domain->mesh, -1, 0.0);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -828,6 +953,19 @@ cs_domain_extra_operations(cs_domain_t   *domain,
       cs_walldistance_compute(domain->connect,
                               domain->cdo_quantities,
                               domain->equations[eq_id]);
+
+  }
+  else /* Post-processing for time_iter == -1 already performed */
+    _domain_post(domain->mesh, time_iter, tcur);
+
+  for (int eq_id = 0; eq_id < domain->n_equations; eq_id++) {
+
+    cs_equation_t  *eq = domain->equations[eq_id];
+
+    cs_equation_post(domain->mesh,
+                     time_iter,
+                     tcur,
+                     eq);
 
   }
 

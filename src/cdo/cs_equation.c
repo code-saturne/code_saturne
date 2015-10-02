@@ -57,6 +57,7 @@
 #include "cs_cdo.h"
 #include "cs_mesh_location.h"
 #include "cs_field.h"
+#include "cs_post.h"
 #include "cs_multigrid.h"
 #include "cs_timer_stats.h"
 #include "cs_param.h"
@@ -217,6 +218,11 @@ typedef enum {
   EQKEY_VERBOSITY,
   EQKEY_BC_ENFORCEMENT,
   EQKEY_BC_QUADRATURE,
+  EQKEY_POST_FREQ,
+  EQKEY_ADV_OP_TYPE,
+  EQKEY_ADV_WEIGHT_ALGO,
+  EQKEY_ADV_WEIGHT_CRIT,
+  EQKEY_ADV_FLUX_QUADRA,
   EQKEY_ERROR
 
 } eqkey_t;
@@ -331,11 +337,10 @@ _add_view(KSP          ksp)
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with Jacobi preconditioner
+ * \brief PETSc solver using CG with Jacobi preconditioner
  *
- * parameters:
- *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
@@ -355,12 +360,11 @@ _cg_diag_setup_hook(void   *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with SSOR preconditioner
- * Warning: PETSc implementation is only available in serial mode computation
+ * \brief PETSc solver using CG with SSOR preconditioner
+ *        Warning: this PETSc implementation is only available in serial mode
  *
- * parameters:
- *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
@@ -381,11 +385,10 @@ _cg_ssor_setup_hook(void   *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with Additive Schwarz preconditioner
+ * \brief PETSc solver using CG with Additive Schwarz preconditioner
  *
- * parameters:
- *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
@@ -405,12 +408,11 @@ _cg_as_setup_hook(void   *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with ICC preconditioner
- * Warning: PETSc implementation is only available in serial mode computation
+ * \brief PETSc solver using CG with ICC preconditioner
+ *        Warning: this PETSc implementation is only available in serial mode
  *
- * parameters:
- *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
@@ -431,11 +433,10 @@ _cg_icc_setup_hook(void    *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with GAMG preconditioner
+ * \brief PETSc solver using CG with GAMG preconditioner
  *
- * parameters:
- *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
@@ -455,11 +456,10 @@ _cg_gamg_setup_hook(void    *context,
 }
 
 /*----------------------------------------------------------------------------
- * PETSc solver using CG with Boomer AMG preconditioner (Hypre library)
+ * \brief PETSc solver using CG with Boomer AMG preconditioner (Hypre library)
  *
- * parameters:
- *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> pointer to PETSc KSP context
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
@@ -474,6 +474,108 @@ _cg_bamg_setup_hook(void    *context,
 
   KSPGetPC(ksp, &pc);
   PCSetType(pc, PCHYPRE);
+
+  _add_view(ksp);
+}
+
+/*----------------------------------------------------------------------------
+ * \brief PETSc solver using GMRES with ILU0 preconditioner
+ *        Warning: this PETSc implementation is only available in serial mode
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_gmres_ilu_setup_hook(void    *context,
+                      KSP      ksp)
+{
+  PC pc;
+
+  const int  n_max_restart = 30;
+
+  KSPSetType(ksp, KSPGMRES);   /* Preconditioned GMRES */
+
+  KSPGMRESSetRestart(ksp, n_max_restart);
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCILU);
+  PCFactorSetLevels(pc, 0);
+
+  _add_view(ksp);
+}
+
+/*----------------------------------------------------------------------------
+ * \brief PETSc solver using GMRES with block Jacobi preconditioner
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_gmres_bjacobi_setup_hook(void    *context,
+                          KSP      ksp)
+{
+  PC pc;
+
+  const int  n_max_restart = 30;
+
+  KSPSetType(ksp, KSPGMRES);   /* Preconditioned GMRES */
+
+  KSPGMRESSetRestart(ksp, n_max_restart);
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCBJACOBI);
+
+  _add_view(ksp);
+}
+
+/*----------------------------------------------------------------------------
+ * \brief PETSc solver using BiCGStab with ILU0 preconditioner
+ *        Warning: this PETSc implementation is only available in serial mode
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_bicg_ilu_setup_hook(void    *context,
+                     KSP      ksp)
+{
+  PC pc;
+
+  KSPSetType(ksp, KSPBCGS);   /* Preconditioned BiCGStab */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCILU);
+  PCFactorSetLevels(pc, 0);
+
+  _add_view(ksp);
+}
+
+/*----------------------------------------------------------------------------
+ * \brief PETSc solver using BiCGStab with block Jacobi preconditioner
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_bicg_bjacobi_setup_hook(void    *context,
+                        KSP      ksp)
+{
+  PC pc;
+
+  const int  n_max_restart = 30;
+
+  KSPSetType(ksp, KSPBCGS);   /* Preconditioned BICGStab */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED); /* Try to have "true" norm */
+
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCBJACOBI);
 
   _add_view(ksp);
 }
@@ -543,6 +645,16 @@ _print_eqkey(eqkey_t  key)
     return "bc_enforcement";
   case EQKEY_BC_QUADRATURE:
     return "bc_quadrature";
+  case EQKEY_POST_FREQ:
+    return "post_freq";
+  case EQKEY_ADV_OP_TYPE:
+    return "adv_formulation";
+  case EQKEY_ADV_WEIGHT_ALGO:
+    return "adv_weight";
+  case EQKEY_ADV_WEIGHT_CRIT:
+    return "adv_weight_criterion";
+  case EQKEY_ADV_FLUX_QUADRA:
+    return "adv_flux_quad";
 
   default:
     assert(0);
@@ -602,6 +714,7 @@ _get_eqkey(const char *keyname)
     else if (strcmp(keyname, "hodge_time_algo") == 0)
       key = EQKEY_HODGE_TIME_ALGO;
   }
+
   else if (strncmp(keyname, "itsol", 5) == 0) { /* key begins with itsol */
     if (strcmp(keyname, "itsol") == 0)
       key = EQKEY_ITSOL;
@@ -612,19 +725,38 @@ _get_eqkey(const char *keyname)
     else if (strcmp(keyname, "itsol_resnorm") == 0)
       key = EQKEY_ITSOL_RESNORM;
   }
+
   else if (strcmp(keyname, "precond") == 0)
     key = EQKEY_PRECOND;
+
   else if (strcmp(keyname, "solver_family") == 0)
     key = EQKEY_SOLVER_FAMILY;
+
   else if (strcmp(keyname, "space_scheme") == 0)
     key = EQKEY_SPACE_SCHEME;
+
   else if (strcmp(keyname, "verbosity") == 0)
     key = EQKEY_VERBOSITY;
+
   else if (strncmp(keyname, "bc", 2) == 0) { /* key begins with bc */
     if (strcmp(keyname, "bc_enforcement") == 0)
       key = EQKEY_BC_ENFORCEMENT;
     else if (strcmp(keyname, "bc_quadrature") == 0)
       key = EQKEY_BC_QUADRATURE;
+  }
+
+  else if (strcmp(keyname, "post_freq") == 0)
+    key = EQKEY_POST_FREQ;
+
+  else if (strncmp(keyname, "adv_", 4) == 0) {
+    if (strcmp(keyname, "adv_formulation") == 0)
+      key = EQKEY_ADV_OP_TYPE;
+    else if (strcmp(keyname, "adv_weight_criterion") == 0)
+      key = EQKEY_ADV_WEIGHT_CRIT;
+    else if (strcmp(keyname, "adv_weight") == 0)
+      key = EQKEY_ADV_WEIGHT_ALGO;
+    else if (strcmp(keyname, "adv_flux_quad") == 0)
+      key = EQKEY_ADV_FLUX_QUADRA;
   }
 
   return key;
@@ -685,6 +817,7 @@ _create_equation_param(cs_equation_status_t   status,
   eqp->status = status;
   eqp->type = type;
   eqp->verbosity = 0;
+  eqp->post_freq = 5;
 
   /* Build the equation flag */
   eqp->flag = 0;
@@ -710,6 +843,12 @@ _create_equation_param(cs_equation_status_t   status,
   eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
   eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
   eqp->diffusion_hodge.coef = 1./3.;
+
+  eqp->advection.adv_id = -1; // No default value
+  eqp->advection.form = CS_PARAM_ADVECTION_FORM_CONSERV;
+  eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+  eqp->advection.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
+  eqp->advection.quad_type = CS_QUADRATURE_BARY;
 
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
@@ -910,15 +1049,15 @@ cs_equation_summary(const cs_equation_t  *eq)
     cs_param_bc_t  *bcp = eqp->bc;
 
     bft_printf("  <%s/Boundary Conditions>\n", eq->name);
-    bft_printf("\t<BC> Default BC: %s\n",
+    bft_printf("\t<bc> Default BC: %s\n",
                cs_param_get_bc_name(bcp->default_bc));
     if (eqp->verbosity > 1)
-      bft_printf("\t<BC> Enforcement: %s\n",
+      bft_printf("\t<bc> Enforcement: %s\n",
                  cs_param_get_bc_enforcement_name(bcp->enforcement));
-    bft_printf("\t<BC> Number of BCs defined: %d\n", bcp->n_defs);
+    bft_printf("\t<bc> Number of BCs defined: %d\n", bcp->n_defs);
     if (eqp->verbosity > 1) {
       for (int id = 0; id < bcp->n_defs; id++)
-        bft_printf("\t<BC> Location: %s; Type: %s; Definition type: %s\n",
+        bft_printf("\t<bc> Location: %s; Type: %s; Definition type: %s\n",
                    cs_mesh_location_get_name(bcp->defs[id].loc_id),
                    cs_param_get_bc_name(bcp->defs[id].bc_type),
                    cs_param_get_def_type_name(bcp->defs[id].def_type));
@@ -946,6 +1085,69 @@ cs_equation_summary(const cs_equation_t  *eq)
 
   } // Diffusion term
 
+  if (eqp->flag & CS_EQUATION_CONVECTION) {
+
+    const cs_param_advection_t  a_info = eqp->advection;
+
+    bft_printf("\n  <%s/Advection term>\n", eq->name);
+    bft_printf("\t<Advection field>  %s\n",
+               cs_param_adv_field_get_name(a_info.adv_id));
+
+    if (eqp->verbosity > 0) {
+      bft_printf("\t<Advection operator>");
+      switch(a_info.form) {
+      case CS_PARAM_ADVECTION_FORM_CONSERV:
+        bft_printf(" Conservative formulation");
+        break;
+      case CS_PARAM_ADVECTION_FORM_NONCONS:
+        bft_printf(" Non-conservative formulation");
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid operator type for advection.");
+      }
+
+      bft_printf(" & Weight scheme:");
+      switch(a_info.weight_algo) {
+      case CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED:
+        bft_printf(" centered\n");
+        break;
+      case CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND:
+        bft_printf(" upwind\n");
+        break;
+      case CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII:
+        bft_printf(" Samarskii\n");
+        break;
+      case CS_PARAM_ADVECTION_WEIGHT_ALGO_SG:
+        bft_printf(" Scharfetter-Gummel\n");
+        break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid weight algorithm for advection.");
+      }
+
+      if (eqp->verbosity > 1) {
+        bft_printf("\t<Evaluation of lambda function>");
+        switch(a_info.weight_criterion) {
+        case CS_PARAM_ADVECTION_WEIGHT_FLUX:
+          bft_printf(" Quadrature on the flux");
+          break;
+        case CS_PARAM_ADVECTION_WEIGHT_XEXC:
+          bft_printf(" Midpoint of [xe, xc]");
+          break;
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Invalid weight criterion for advection.");
+        }
+
+      } // verbosity > 1
+
+      bft_printf("\n");
+
+    } // verbosity > 0
+
+  } // Advection term
+
   if (eqp->n_source_terms > 0) {
 
     bft_printf("\n  <%s/Source terms>\n", eq->name);
@@ -953,15 +1155,15 @@ cs_equation_summary(const cs_equation_t  *eq)
 
       cs_param_source_term_t  st_info = eqp->source_terms[s_id];
 
-      bft_printf("\t<ST> name: %s\n", cs_param_source_term_get_name(st_info));
-      bft_printf("\t<ST> mesh location: %s\n",
+      bft_printf("\t<st> name: %s\n", cs_param_source_term_get_name(st_info));
+      bft_printf("\t<st> mesh location: %s\n",
                  cs_mesh_location_get_name(st_info.ml_id));
-      bft_printf("\t<ST> Type: %s; Variable type: %s; Definition type: %s\n",
+      bft_printf("\t<st> Type: %s; Variable type: %s; Definition type: %s\n",
                  cs_param_source_term_get_type_name(st_info),
                  cs_param_get_var_type_name(st_info.var_type),
                  cs_param_get_def_type_name(st_info.def_type));
       if (eqp->verbosity > 0)
-        bft_printf("\t<ST> Quadrature type: %s; Use subdivision: %s\n",
+        bft_printf("\t<st> Quadrature type: %s; Use subdivision: %s\n",
                    cs_quadrature_get_type_name(st_info.quad_type),
                    cs_base_strtf(st_info.use_subdiv));
 
@@ -977,13 +1179,13 @@ cs_equation_summary(const cs_equation_t  *eq)
     bft_printf(" Code_Saturne iterative solvers\n");
   else if (eqp->algo_info.type == CS_EQUATION_ALGO_PETSC_ITSOL)
     bft_printf(" PETSc iterative solvers\n");
-  bft_printf("\t<SLA> Solver.MaxIter     %d\n", itsol.n_max_iter);
-  bft_printf("\t<SLA> Solver.Name        %s\n",
+  bft_printf("\t<sla> Solver.MaxIter     %d\n", itsol.n_max_iter);
+  bft_printf("\t<sla> Solver.Name        %s\n",
              cs_param_get_solver_name(itsol.solver));
-  bft_printf("\t<SLA> Solver.Precond     %s\n",
+  bft_printf("\t<sla> Solver.Precond     %s\n",
              cs_param_get_precond_name(itsol.precond));
-  bft_printf("\t<SLA> Solver.Eps        % -10.6e\n", itsol.eps);
-  bft_printf("\t<SLA> Solver.Normalized  %s\n",
+  bft_printf("\t<sla> Solver.Eps        % -10.6e\n", itsol.eps);
+  bft_printf("\t<sla> Solver.Normalized  %s\n",
              cs_base_strtf(itsol.resid_normalized));
 
 }
@@ -1199,6 +1401,7 @@ cs_equation_last_init(cs_equation_t  *eq)
                                _cg_icc_setup_hook,
                                NULL);
           break;
+
         case CS_PARAM_PRECOND_AMG:
           {
             int  amg_type = 1;
@@ -1250,10 +1453,62 @@ cs_equation_last_init(cs_equation_t  *eq)
           break;
         default:
           bft_error(__FILE__, __LINE__, 0,
-                    " Couple (solver, preconditioner) not handled.");
+                    " Couple (solver, preconditioner) not handled with PETSc.");
           break;
 
-        } // switch on PETSc reconditionner
+        } // switch on PETSc preconditionner
+        break;
+
+      case CS_PARAM_ITSOL_GMRES:
+
+        switch (eqp->itsol_info.precond) {
+        case CS_PARAM_PRECOND_ILU0:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATSEQAIJ, // Warning SEQ not MPI
+                               _gmres_ilu_setup_hook,
+                               NULL);
+          break;
+        case CS_PARAM_PRECOND_DIAG:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _gmres_bjacobi_setup_hook,
+                               NULL);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Couple (solver, preconditioner) not handled with PETSc.");
+          break;
+
+        } // switch on PETSc preconditionner
+        break;
+
+      case CS_PARAM_ITSOL_BICG:
+
+        switch (eqp->itsol_info.precond) {
+        case CS_PARAM_PRECOND_ILU0:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATSEQAIJ, // Warning SEQ not MPI
+                               _bicg_ilu_setup_hook,
+                               NULL);
+          break;
+        case CS_PARAM_PRECOND_DIAG:
+          cs_sles_petsc_define(eq->field_id,
+                               NULL,
+                               MATMPIAIJ,
+                               _bicg_bjacobi_setup_hook,
+                               NULL);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " Couple (solver, preconditioner) not handled with PETSc.");
+          break;
+
+        } // switch on PETSc preconditionner
         break;
 
       default:
@@ -1472,10 +1727,10 @@ cs_equation_set(cs_equation_t       *eq,
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_STRONG;
     else if (strcmp(val, "penalization") == 0)
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_PENA;
-    else if (strcmp(val, "weak") == 0)
-      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
     else if (strcmp(val, "weak_sym") == 0)
       eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_SYM;
+    else if (strcmp(val, "weak") == 0)
+      eqp->bc->enforcement = CS_PARAM_BC_ENFORCE_WEAK_NITSCHE;
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
@@ -1500,6 +1755,75 @@ cs_equation_set(cs_equation_t       *eq,
                 _(" Invalid key value %s for setting the quadrature behaviour"
                   " of boundary conditions.\n"
                   " Choices are among subdiv, bary, higher and highest."), _val);
+    }
+    break;
+
+  case EQKEY_POST_FREQ:
+    eqp->post_freq = atoi(val);
+    break;
+
+  case EQKEY_ADV_OP_TYPE:
+    if (strcmp(val, "conservative") == 0)
+      eqp->advection.form = CS_PARAM_ADVECTION_FORM_CONSERV;
+    else if (strcmp(val, "non_conservative") == 0)
+      eqp->advection.form = CS_PARAM_ADVECTION_FORM_NONCONS;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value %s for setting the form of the convection"
+                  " term.\n"
+                  " Choices are among conservative and non_conservative."),
+                _val);
+    }
+    break;
+
+  case EQKEY_ADV_WEIGHT_ALGO:
+    if (strcmp(val, "upwind") == 0)
+      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_UPWIND;
+    else if (strcmp(val, "samarskii") == 0)
+      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SAMARSKII;
+    else if (strcmp(val, "sg") == 0)
+      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_SG;
+    else if (strcmp(val, "centered") == 0)
+      eqp->advection.weight_algo = CS_PARAM_ADVECTION_WEIGHT_ALGO_CENTERED;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value %s for setting the algorithm for defining"
+                  " the proportion of upwinding.\n"
+                  " Choices are among upwind, samarskii, sg and centered."),
+                _val);
+    }
+    break;
+
+  case EQKEY_ADV_WEIGHT_CRIT:
+    if (strcmp(val, "xexc") == 0)
+      eqp->advection.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_XEXC;
+    else if (strcmp(val, "flux") == 0)
+      eqp->advection.weight_criterion = CS_PARAM_ADVECTION_WEIGHT_FLUX;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value %s for setting the algorithm for"
+                  " computing the upwinding weight.\n"
+                  " Choices are among flux and xexc."),
+                _val);
+    }
+    break;
+
+  case EQKEY_ADV_FLUX_QUADRA:
+    if (strcmp(val, "bary") == 0)
+      eqp->advection.quad_type = CS_QUADRATURE_BARY;
+    else if (strcmp(val, "higher") == 0)
+      eqp->advection.quad_type = CS_QUADRATURE_HIGHER;
+    else if (strcmp(val, "highest") == 0)
+      eqp->advection.quad_type = CS_QUADRATURE_HIGHEST;
+    else {
+      const char *_val = val;
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid key value %s for setting the quadrature behaviour"
+                  " used for computing the advection flux.\n"
+                  " Choices are among bary, higher and highest."), _val);
     }
     break;
 
@@ -1540,6 +1864,8 @@ cs_equation_link(cs_equation_t       *eq,
     eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else if (strcmp("time", keyword) == 0)
     eqp->unsteady_hodge.pty_id = cs_param_pty_get_id_by_name(name);
+  else if (strcmp("advection", keyword) == 0)
+    eqp->advection.adv_id = cs_param_adv_get_id_by_name(name);
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting a property.\n"
@@ -2157,6 +2483,104 @@ cs_equation_solve(const cs_cdo_connect_t     *connect,
   /* Free memory */
   cs_sles_free(sles);
   BFT_FREE(x);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Post-processing related to this equation
+ *
+ * \param[in]  mesh       pointer to the mesh structure
+ * \param[in]  time_iter  id of the time iteration
+ * \param[in]  tcur       current physical time
+ * \param[in]  eq         pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_post(const cs_mesh_t          *mesh,
+                 int                       time_iter,
+                 cs_real_t                 tcur,
+                 const cs_equation_t      *eq)
+{
+  const cs_field_t  *field = cs_field_by_id(eq->field_id);
+  const cs_equation_param_t  *eqp = eq->param;
+
+  /* Cases where a post-processing is not required */
+  if (eqp->post_freq == -1)
+    return;
+  if (eqp->post_freq % time_iter > 0)
+    return;
+  if (time_iter > 0 && eqp->post_freq == 0)
+    return;
+
+  /* Perform the post-processing */
+  if (eq->post_ts_id > -1)
+    cs_timer_stats_start(eq->post_ts_id);
+
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    bft_printf(" <post/var> %s\n", field->name);
+    cs_post_write_vertex_var(-1,              // id du maillage de post
+                             field->name,
+                             field->dim,
+                             true,            // interlace
+                             true,            // true = original mesh
+                             CS_POST_TYPE_cs_real_t,
+                             field->val,      // values on vertices
+                             NULL);           // time step management structure
+
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    {
+      char *postlabel = NULL;
+
+      const cs_lnum_t  n_i_faces = mesh->n_i_faces;
+      const cs_real_t  *face_pdi = cs_equation_get_face_values(eq);
+
+      cs_post_write_var(-1,              // id du maillage de post
+                        field->name,
+                        field->dim,
+                        field->interleaved, // interlace
+                        true,               // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        field->val,         // values on cells
+                        NULL,               // values at internal faces
+                        NULL,               // values at border faces
+                        NULL);              // time step management structure
+
+
+      int  len = strlen(field->name) + 8 + 1;
+      BFT_MALLOC(postlabel, len, char);
+      sprintf(postlabel, "%s.Border", field->name);
+      cs_post_write_var(-2,                    // id du maillage de post
+                        postlabel,
+                        field->dim,
+                        field->interleaved,
+                        true,                  // true = original mesh
+                        CS_POST_TYPE_cs_real_t,
+                        NULL,                  // values on cells
+                        NULL,                  // values at internal faces
+                        face_pdi + n_i_faces,  // values at border faces
+                        NULL);                 // time step management structure
+
+
+      BFT_FREE(postlabel);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Space scheme for eq. %s is incompatible with a field.\n"
+                " Stop adding a cs_field_t structure.\n"), eq->name);
+    break;
+
+  } // Switch on space_scheme
+
+  if (eq->post_ts_id > -1)
+    cs_timer_stats_stop(eq->post_ts_id);
+
 }
 
 /*----------------------------------------------------------------------------*/

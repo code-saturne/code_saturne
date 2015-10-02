@@ -61,13 +61,6 @@ typedef enum {
 
 } cs_cdo_cc_algo_t;
 
-typedef struct {
-
-  double  meas;
-  double  unitv[3];
-
-} cs_qvect_t;
-
 /* For primal vector quantities (edge or face) */
 typedef struct {
 

@@ -87,6 +87,44 @@ cs_evaluate(const cs_mesh_t              *m,
             double                       *p_values[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the 3x3 matrix related to a general material property.
+ *         This value is computed at location (x,y,z) and time tcur.
+ *
+ * \param[in]     pty_id    id related to the material property to deal with
+ * \param[in]     tcur      time at which we evaluate the material property
+ * \param[in]     xyz       location at which  we evaluate the material property
+ * \param[in]     invers    true or false
+ * \param[in,out] matval    pointer to the 3x3 matrix to return
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_pty(int                pty_id,
+                cs_real_t          tcur,
+                const cs_real_3_t  xyz,
+                bool               invers,
+                cs_real_33_t      *matval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the vector related to an advection field.
+ *         This value is computed at location (x,y,z) and time tcur.
+ *
+ * \param[in]     adv_id    id related to the advection field to deal with
+ * \param[in]     tcur      time at which we evaluate the material property
+ * \param[in]     xyz       location at which  we evaluate the material property
+ * \param[in,out] matval    pointer to the 3x3 matrix to return
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_adv_field(int                 adv_id,
+                      cs_real_t           tcur,
+                      const cs_real_3_t   xyz,
+                      cs_real_3_t        *vect);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

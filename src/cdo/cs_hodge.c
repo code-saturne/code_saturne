@@ -47,6 +47,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_sort.h"
+#include "cs_evaluate.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -313,11 +314,11 @@ _prepare_local_hodge_cost(int                          cid,
     xyz[k] = quant->cell_centers[3*cid+k];
 
   cs_real_33_t  matval;
-  cs_param_pty_get_val(h_info.pty_id,
-                       -1.0, // when ?
-                       xyz,  // where ?
-                       h_info.inv_pty,
-                       &matval);
+  cs_evaluate_pty(h_info.pty_id,
+                  -1.0, // when ?
+                  xyz,  // where ?
+                  h_info.inv_pty,
+                  &matval);
 
   const cs_real_33_t ptyval = {{matval[0][0], matval[0][1], matval[0][2]},
                                {matval[1][0], matval[1][1], matval[1][2]},
@@ -984,11 +985,11 @@ cs_hodge_voronoi_build(const cs_cdo_connect_t      *connect,
   } /* End switch */
 
   if (cs_param_pty_is_uniform(h_info.pty_id))
-    cs_param_pty_get_val(h_info.pty_id,
-                         -1.0, // when ?
-                         xyz,  // where ?
-                         h_info.inv_pty,
-                         &matval);
+    cs_evaluate_pty(h_info.pty_id,
+                    -1.0, // when ?
+                    xyz,  // where ?
+                    h_info.inv_pty,
+                    &matval);
 
   /* Fill H */
   for (c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -997,11 +998,11 @@ cs_hodge_voronoi_build(const cs_cdo_connect_t      *connect,
     if (!cs_param_pty_is_uniform(h_info.pty_id)) {
       for (k = 0; k < 3; k++)
         xc[k] = quant->cell_centers[3*c_id+k];
-      cs_param_pty_get_val(h_info.pty_id,
-                           -1.0, // when ?
-                           xyz,  // where ?
-                           h_info.inv_pty,
-                           &matval);
+      cs_evaluate_pty(h_info.pty_id,
+                      -1.0, // when ?
+                      xyz,  // where ?
+                      h_info.inv_pty,
+                      &matval);
     }
 
     const cs_real_33_t ptyval = {{matval[0][0], matval[0][1], matval[0][2]},

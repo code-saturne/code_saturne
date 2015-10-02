@@ -42,6 +42,7 @@ pkginclude_HEADERS = \
 cs_cdo.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
+cs_cdo_convection.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_toolbox.h \
@@ -65,6 +66,7 @@ libcscdo_la_SOURCES = \
 cs_cdo.c \
 cs_cdo_bc.c \
 cs_cdo_connect.c \
+cs_cdo_convection.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_toolbox.c \

@@ -47,6 +47,13 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+typedef struct {
+
+  double  meas;
+  double  unitv[3];
+
+} cs_qvect_t;
+
 typedef enum {
 
   CS_TOOLBOX_SUM,        /* Sum of values*/
@@ -224,6 +231,19 @@ _invmat33(const cs_real_33_t   in,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_qvect_t structure from a cs_real_3_t
+ *
+ * \param[in]  v     vector of size 3
+ * \param[out] qv    pointer to a cs_qvect_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_qvect(const cs_real_3_t    v,
+         cs_qvect_t          *qv);
 
 /*----------------------------------------------------------------------------*/
 /*!
