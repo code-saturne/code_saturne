@@ -470,14 +470,14 @@ _enforce_weak_nitsche(const cs_mesh_t            *m,
 
   /* Free memory */
   if (builder->enforce == CS_PARAM_BC_ENFORCE_WEAK_SYM) {
-    cs_toolbox_locmat_free(transp);
+    transp = cs_toolbox_locmat_free(transp);
 
     BFT_FREE(_vec);
     BFT_FREE(_matvec);
     BFT_FREE(dir_vals);
   }
 
-  cs_toolbox_locmat_free(ntrgrd);
+  ntrgrd = cs_toolbox_locmat_free(ntrgrd);
 
   BFT_FREE(v_coef);
   BFT_FREE(loc_v_id);

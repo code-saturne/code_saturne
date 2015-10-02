@@ -523,12 +523,22 @@ cs_user_cdo_add_domain_equations(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify additional material properties
+ * \brief  Add user-defined material properties and/or advection fields
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_properties(void);
+cs_user_cdo_add_properties(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify the definition of additional material properties and/or
+ *         advection fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_set_properties(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -568,17 +578,19 @@ cs_user_cdo_numeric_settings(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Additional operations on results produced by CDO schemes.
+ * \brief  Additional operations on results provided by CDO schemes.
  *         Define advanced post-processing and/or analysis for instance.
  *
  * \param[in]  domain   pointer to a cs_domain_t structure
- * \param[in]  tcur     current physical time of the simulation
+ * \param[in]  t_iter   current iteration of the simulation
+ * \param[in]  t_cur    current physical time of the simulation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_extra_op(const cs_domain_t      *domain,
-                     double                  tcur);
+cs_user_cdo_extra_op(const cs_domain_t           *domain,
+                     int                          t_iter,
+                     double                       t_cur);
 
 /*----------------------------------------------------------------------------*/
 

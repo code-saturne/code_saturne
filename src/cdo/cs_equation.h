@@ -148,19 +148,19 @@ cs_equation_set(cs_equation_t       *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
+ * \brief  Associate a material property or an advection field with an equation
+ *         for a given term (diffusion, time, convection)
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       pty_key   "time", "diffusion"...
- * \param[in]       pty_name  name of the material property to associate
+ * \param[in]       keyword   "time", "diffusion", "advection"...
+ * \param[in]       name      name of the property to associate
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_pty(cs_equation_t       *eq,
-                    const char          *pty_key,
-                    const char          *pty_name);
+cs_equation_link(cs_equation_t       *eq,
+                 const char          *keyword,
+                 const char          *name);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -142,6 +142,22 @@ cs_param_source_term_type_name[CS_PARAM_N_SOURCE_TERM_TYPES][CS_CDO_LEN_NAME] =
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if the id related to a material property is valid
+ *
+ * \param[in]     id     id to check
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_pty_id(int   id)
+{
+  if (id < 0 || id >= cs_param_n_properties)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" Invalid id (equal to %d and should be between 0 and %d).\n"
+                " Cannot access to the definition of this material property.\n"),
+              id, cs_param_n_properties);
+}
+
  * \brief  Set a cs_def_t structure
  *
  * \param[in]      def_type   type of definition (by value, function...)
@@ -228,26 +244,6 @@ _set_def(cs_param_def_type_t      def_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy all structures related to properties
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_free_all(void)
-{
-  int  id;
-
-  if (cs_param_properties == NULL)
-    return;
-
-  for (id = 0; id < cs_param_n_properties; id++)
-    BFT_FREE(cs_param_properties[id].name);
-
-  BFT_FREE(cs_param_properties);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Retrieve a cs_param_pty_t structure from its id
  *
  * \param[in]  pty_id   id related to a property
@@ -259,11 +255,7 @@ cs_param_pty_free_all(void)
 cs_param_pty_t *
 cs_param_pty_get(int  pty_id)
 {
-  if (pty_id < 0 || pty_id >= cs_param_n_properties)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid id (equal to %d and should be between 0 and %d).\n"
-                " Cannot access to the definition of the material property.\n"),
-              pty_id, cs_param_n_properties);
+  _check_pty_id(pty_id);
 
   return cs_param_properties + pty_id;
 }
@@ -364,7 +356,7 @@ cs_param_pty_set_default(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and intialize a material property
+ * \brief  Create and initialize a material property structure
  *
  * \param[in]  name        name of the material property
  * \param[in]  key_type    keyname of the type of property
@@ -571,15 +563,9 @@ cs_param_pty_add_fields(void)
 _Bool
 cs_param_pty_is_uniform(int       pty_id)
 {
-  cs_param_pty_t  *pty = NULL;
+  _check_pty_id(pty_id);
 
-  if (pty_id < 0 || pty_id >= cs_param_n_properties)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid id (eqal to %d).\n"
-                " Cannot access to the material property definition.\n"),
-              pty_id);
-
-  pty = cs_param_properties + pty_id;
+  cs_param_pty_t  *pty = cs_param_properties + pty_id;
 
   if (pty->flag & CS_PARAM_FLAG_UNIFORM)
     return true;
@@ -600,11 +586,7 @@ cs_param_pty_is_uniform(int       pty_id)
 const char *
 cs_param_pty_get_name(int            pty_id)
 {
-  if (pty_id < 0 || pty_id >= cs_param_n_properties)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid id (eqal to %d).\n"
-                " Cannot access to the material property definition.\n"),
-              pty_id);
+  _check_pty_id(pty_id);
 
   cs_param_pty_t  *pty = cs_param_properties + pty_id;
 
@@ -856,9 +838,10 @@ cs_param_pty_summary_all(void)
 void
 cs_param_pty_finalize(void)
 {
-  int  i;
+  if (cs_param_properties == NULL)
+    return;
 
-  for (i = 0; i < cs_param_n_properties; i++)
+  for (int i = 0; i < cs_param_n_properties; i++)
     BFT_FREE(cs_param_properties[i].name);
 
   BFT_FREE(cs_param_properties);

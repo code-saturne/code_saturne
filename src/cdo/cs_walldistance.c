@@ -318,7 +318,7 @@ cs_walldistance_setup(cs_equation_t   *eq,
      are set */
 
   /* Unity is a material property defined by default */
-  cs_equation_set_pty(eq, "diffusion", "unity");
+  cs_equation_link(eq, "diffusion", "unity");
 
   /* Add boundary conditions */
   cs_equation_add_bc(eq,

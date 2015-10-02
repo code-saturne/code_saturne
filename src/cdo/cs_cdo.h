@@ -75,15 +75,15 @@ typedef union {
 
 /* Analytic definition through a function */
 typedef void
-(cs_analytic_func_t)(cs_real_t     time,
-                     cs_real_3_t   xyz,
-                     cs_get_t     *retval);
+(cs_analytic_func_t)(cs_real_t           time,
+                     const cs_real_3_t   xyz,
+                     cs_get_t           *retval);
 
 typedef void
 (cs_user_func_t) (const void         *input1,
                   const void         *input2,
-                  cs_real_t           cur_time,
-                  cs_real_3_t         xyz,
+                  cs_real_t           tcur,
+                  const cs_real_3_t   xyz,
                   cs_get_t           *output);
 
 /*============================================================================

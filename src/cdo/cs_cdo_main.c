@@ -125,6 +125,10 @@ _setup(cs_mesh_t             *m,
     cs_mesh_location_build(m, i);
   n_mesh_locations_ini = cs_mesh_location_n_locations();
 
+  /* Add material properties and.or advection fields */
+  cs_param_pty_set_default();
+  cs_user_cdo_add_properties();
+
   /* Create and initialize a new computational domain
      Add predefined and user-defined equations */
   cs_domain_t  *domain = cs_domain_init(m, mq);
@@ -140,16 +144,16 @@ _setup(cs_mesh_t             *m,
   /* Add variables related to user-defined and predefined equations */
   cs_domain_create_fields(domain);
 
-  /* Material properties */
-  cs_param_pty_set_default();
-  cs_user_cdo_setup_properties();
+  /* Set the definition of user-defined material properties and/or advection
+     fields */
+  cs_user_cdo_set_properties();
 
   /* Add user-defined material properties to fields */
   cs_param_pty_add_fields();
 
   /* According to the settings, add or not predefined equations:
       >> Wall distance
-      >> Hydrogeological flows
+      >> Underground flows
   */
   cs_domain_setup_predefined_equations(domain);
 
@@ -188,7 +192,7 @@ _finalize(cs_domain_t  **domain)
 {
   cs_toolbox_finalize();
 
-  cs_param_pty_free_all();
+  cs_param_pty_finalize();
 
   *domain = cs_domain_free(*domain);
 }

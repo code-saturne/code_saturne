@@ -94,12 +94,25 @@ cs_user_cdo_add_mesh_locations(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify additional material properties
+ * \brief  Add user-defined material properties and/or advection fields
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_properties(void)
+cs_user_cdo_add_properties(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify the definition of additional material properties and/or
+ *         advection fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_set_properties(void)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 }

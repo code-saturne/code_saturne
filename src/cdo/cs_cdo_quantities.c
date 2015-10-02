@@ -58,11 +58,9 @@ BEGIN_C_DECLS
  * Local macro and structure definitions
  *============================================================================*/
 
-#define  INNOV_QUANT_DEBUG 0  /* Switch off/on debug information */
+#define  CDO_QUANTITIES_DBG 0  /* Switch off/on debug information */
 
-/*
-  Temporary structures to build mesh quantities
- */
+/* Temporary structures to build mesh quantities */
 
 typedef struct {
 
@@ -104,7 +102,10 @@ typedef struct { /* These quantities are the integral of q on the plane
  * Static global variables
  *============================================================================*/
 
-static const double _overdim = 1./3.;
+static const double one_3 = 1/3.;
+static const double one_6 = 1/6.;
+static const double one_12 = 1/12.;
+static const double one_24 = 1/24.;
 
 /*============================================================================
  * Private function prototypes
@@ -122,7 +123,7 @@ static const double _overdim = 1./3.;
  * ---------------------------------------------------------------------------*/
 
 static _cdo_fspec_t
-_get_fspec(int                          fid,
+_get_fspec(cs_lnum_t                    f_id,
            const cs_mesh_t             *m,
            const cs_mesh_quantities_t  *mq)
 {
@@ -205,11 +206,11 @@ _get_fspec(int                          fid,
   fspec.XYZ[X] = (fspec.XYZ[Z] + 1) % 3;
   fspec.XYZ[Y] = (fspec.XYZ[X] + 1) % 3;
 
-#if INNOV_QUANT_DEBUG > 1
-    printf("\n F: (%d, %d) >> surf: %e; omega: %e; XYZ: %d%d%d; [%e, %e, %e]\n",
-           fid, f, fspec.surf, fspec.omega,
-           fspec.XYZ[0], fspec.XYZ[1], fspec.XYZ[2],
-           fspec.n[0], fspec.n[1], fspec.n[2]);
+#if CDO_QUANTITIES_DBG > 1
+  printf("\n F: (%d, %d) >> surf: %e; omega: %e; XYZ: %d%d%d; [%e, %e, %e]\n",
+         f_id, f, fspec.q.meas, fspec.omega,
+         fspec.XYZ[0], fspec.XYZ[1], fspec.XYZ[2],
+         fspec.q.unitv[0], fspec.q.unitv[1], fspec.q.unitv[2]);
 #endif
 
   return fspec;
@@ -231,12 +232,8 @@ _get_proj_quantities(int                        fid,
   double  a0, a1, a0_2, a1_2, a0_3;
   double  b0, b1, b0_2, b1_2, b0_3;
 
-  cs_sla_matrix_t  *f2e = connect->f2e;
-  cs_sla_matrix_t  *e2v = connect->e2v;
-
-  const double over_6  = 1.0 / 6.0;
-  const double over_12 = 1.0 / 12.0;
-  const double over_24 = 1.0 / 24.0;
+  const cs_sla_matrix_t  *f2e = connect->f2e;
+  const cs_sla_matrix_t  *e2v = connect->e2v;
 
   /* Initialize structure */
 
@@ -300,13 +297,6 @@ _get_proj_quantities(int                        fid,
     projq.pb2 += da * Cb2;
     projq.pab += db * (b1 * Cab + b0 * Kab);
 
-#if INNOV_QUANT_DEBUG > 1
-    printf(" enum: %d, vnum1: %d, vnum2: %d,"
-           " a0: %.2e, b0: %.2e, a1: %.2e, b1: %.2e, da: %.2e, db: %.2e,"
-           " p1: %.2e, pa: %.2e, pb: %.2e, pc: %.2e, pab: %.2e\n",
-           e_num, v_num[0], v_num[1], a0, b0, a1, b1, da, db,
-           projq.p1, projq.pa, projq.pb, projq.pc, projq.pab);
-#endif
 
   } /* Loop on face edges */
 
@@ -342,7 +332,7 @@ _get_fsub_quantities(int                         fid,
 
   projq = _get_proj_quantities(fid, connect, m->vtx_coord, fspec.XYZ);
 
-#if INNOV_QUANT_DEBUG > 1
+#if CDO_QUANTITIES_DBG > 1
   printf(" F: %d >> p1: %.4e, pa: %.4e, pb: %.4e, pc: %.4e,"
          " pab: %.4e, pa2: %.4e, pb2: %.4e\n",
          fid, projq.p1, projq.pa, projq.pb, projq.pc,
@@ -776,8 +766,8 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
   /* Allocate and initialize cell quantities */
   BFT_MALLOC(iq->face, n_faces, cs_quant_t);
-  BFT_MALLOC(iq->cell_centers, 3*n_cells, double);
-  BFT_MALLOC(iq->cell_vol, n_cells, double);
+  BFT_MALLOC(iq->cell_centers, 3*n_cells, cs_real_t);
+  BFT_MALLOC(iq->cell_vol, n_cells, cs_real_t);
   for (i = 0; i < n_cells; i++) {
     iq->cell_vol[i] = 0.0;
     for (k = 0; k < 3; k++)
@@ -833,7 +823,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
     for (k = 0; k < 3; k++)
       iq->cell_centers[3*i+k] *= inv_vol2;
 
-#if INNOV_QUANT_DEBUG > 1
+#if CDO_QUANTITIES_DBG > 1
     printf("\n (%4d) volINNOV: % -12.5e | volSAT % -12.5e | %-12.5e\n",
            i+1, iq->cell_vol[i], mq->cell_vol[i],
            fabs(iq->cell_vol[i] - mq->cell_vol[i]));
@@ -1181,7 +1171,7 @@ cs_compute_pvol_edge(const cs_cdo_connect_t      *connect,
 
       dvol  = dface.meas[0] * _dp3(edgeq.unitv, &(dface.unitv[0]));
       dvol += dface.meas[1] * _dp3(edgeq.unitv, &(dface.unitv[3]));
-      pvol[e_id] += dvol * _overdim * edgeq.meas;
+      pvol[e_id] += dvol * one_3 * edgeq.meas;
 
     }
   }
@@ -1236,7 +1226,7 @@ cs_compute_pvol_face(const cs_cdo_connect_t     *connect,
       height = fabs(_dp3(fq.unitv, xfc));
 
       /* Step 2: Compute volume of the pyramid */
-      pvol[f_id] += _overdim * fq.meas * height;
+      pvol[f_id] += one_3 * fq.meas * height;
 
     }
   }

@@ -238,7 +238,7 @@ _n3(const cs_real_3_t  v)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the length (euclidien norm) between two points xu and xv in
+ * \brief  Compute the length (euclidien norm) between two points xa and xb in
  *         a cartesian coordinate system of dimension 3
  *
  * \param[in]  xa   first coordinate
@@ -263,7 +263,7 @@ _length3(const cs_real_3_t  xa,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the length (euclidien norm) between two points xu and xv in
+ * \brief  Compute the length (euclidien norm) between two points xa and xb in
  *         a cartesian coordinate system of dimension 3
  *
  * \param[in]   xa       coordinate of the first extremity

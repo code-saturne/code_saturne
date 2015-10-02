@@ -333,15 +333,6 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy all structures related to properties
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_pty_free_all(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Retrieve a cs_param_pty_t structure from its id
  *
  * \param[in]  pty_id   id related to a property
@@ -377,7 +368,7 @@ cs_param_pty_set_default(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and intialize a material property
+ * \brief  Create and initialize a material property structure
  *
  * \param[in]  name        name of the material property
  * \param[in]  key_type    keyname of the type of property

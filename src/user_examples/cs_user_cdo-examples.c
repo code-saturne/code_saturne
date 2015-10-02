@@ -177,12 +177,12 @@ cs_user_cdo_add_mesh_locations(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify additional material properties
+ * \brief  Add user-defined material properties and/or advection fields
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_cdo_setup_properties(void)
+cs_user_cdo_add_properties(void)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
@@ -207,7 +207,20 @@ cs_user_cdo_setup_properties(void)
 
   cs_param_pty_add("conductivity",  // property name
                    "anisotropic",   // type of material property
-                   0);              // frequency of post-processing
+                   -1);             // frequency of post-processing
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Specify the definition of additional material properties and/or
+ *         advection fields
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_cdo_set_properties(void)
+{
+  return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
   /* In a second step, please set the value of the material property.
 
@@ -326,7 +339,9 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */
 
-  cs_equation_t  *eq = cs_domain_get_equation(domain, "FVCA6.1");
+  cs_equation_t  *eq = NULL;
+
+  eq = cs_domain_get_equation(domain, "FVCA6.1");
 
   if (eq != NULL) { // Equation has been found
 
@@ -346,11 +361,11 @@ cs_user_cdo_setup_equations(cs_domain_t   *domain)
                        "analytic",        // type of definition
                        _define_bcs);      // pointer to the analytic function
 
-    /* Associate the property related to the diffusion term to an equation */
+    /* Associate properties with terms at play in the equation */
 
-    cs_equation_set_pty(eq,              // equation
-                        "diffusion",     // for the diffusion term
-                        "conductivity"); // property name
+    cs_equation_link(eq,              // equation
+                     "diffusion",     // for the diffusion term
+                     "conductivity"); // property name
 
     /* Add a source term: There are several types of source terms
 

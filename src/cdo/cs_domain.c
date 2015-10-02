@@ -832,7 +832,7 @@ cs_domain_extra_operations(cs_domain_t   *domain,
   }
 
   /* User-defined extra operations */
-  cs_user_cdo_extra_op(domain, tcur);
+  cs_user_cdo_extra_op(domain, time_iter, tcur);
 }
 
 

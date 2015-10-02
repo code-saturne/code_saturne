@@ -1018,12 +1018,14 @@ _cdofb_post(const cs_mesh_t            *m,
  *         Define advanced post-processing and/or analysis for instance.
  *
  * \param[in]  domain   pointer to a cs_domain_t structure
+ * \param[in]  t_iter   current id of the time iteration
  * \param[in]  tcur     current physical time of the simulation
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_cdo_extra_op(const cs_domain_t          *domain,
+                     int                         t_iter,
                      double                      tcur)
 {
   return; /* REMOVE_LINE_FOR_USE_OF_SUBROUTINE */

@@ -1515,36 +1515,36 @@ cs_equation_set(cs_equation_t       *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an equation
+ * \brief  Associate a material property or an advection field with an equation
+ *         for a given term (diffusion, time, convection)
  *
  * \param[in, out]  eq        pointer to a cs_equation_t structure
- * \param[in]       pty_key   "time", "diffusion"...
- * \param[in]       pty_name  name of the material property to associate
+ * \param[in]       keyword   "time", "diffusion", "advection"...
+ * \param[in]       name      name of the property to associate
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_pty(cs_equation_t       *eq,
-                    const char          *pty_key,
-                    const char          *pty_name)
+cs_equation_link(cs_equation_t       *eq,
+                 const char          *keyword,
+                 const char          *name)
 {
   if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _(" cs_equation_t structure to set with property %s is NULL\n"),
-              pty_name);
+              name);
 
   cs_equation_param_t  *eqp = eq->param;
 
-  if (strcmp("diffusion", pty_key) == 0)
-    eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(pty_name);
-  else if (strcmp("time", pty_key) == 0)
-    eqp->unsteady_hodge.pty_id = cs_param_pty_get_id_by_name(pty_name);
+  if (strcmp("diffusion", keyword) == 0)
+    eqp->diffusion_hodge.pty_id = cs_param_pty_get_id_by_name(name);
+  else if (strcmp("time", keyword) == 0)
+    eqp->unsteady_hodge.pty_id = cs_param_pty_get_id_by_name(name);
   else
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid key for setting a property.\n"
                 " Current value: %s\n"
-                " Possible choice: diffusion or time\n"), pty_key);
+                " Possible choice: diffusion or time\n"), keyword);
 }
 
 /*----------------------------------------------------------------------------*/
